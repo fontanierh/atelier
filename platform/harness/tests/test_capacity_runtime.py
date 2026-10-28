@@ -80,6 +80,38 @@ def test_retry_keeps_logical_identity_while_unrelated_actions_are_distinct(clien
     assert first['id'] != other['id']
 
 
+@pytest.mark.parametrize('schema', [1, 2])
+def test_fresh_report_names_keep_original_logical_identity_and_resource_request(client, monkeypatch, schema):
+    configure_schema(client, monkeypatch, schema)
+    client[2]()
+    # Preserve the ORIGINAL string ingredient, including spelling; never resolve it here.
+    logical = 'logs/../logs/original-mesh.guard'
+    options = dict(kind='job', limit_gib=10, timeout=120,
+                   command=['Blender', '-b', '--threads', '3'], small_gib=1.0)
+    original = runtime.configured_session(folder=logical, **options)
+    none = runtime.configured_session(folder=logical, logical_folder=None, **options)
+    first = runtime.configured_session(folder='private/reports/attempt-one', logical_folder=logical, **options)
+    second = runtime.configured_session(folder='private/reports/attempt-two', logical_folder=logical, **options)
+    assert original == none == first == second  # Resources, flags, seconds and locks unchanged too.
+    assert runtime.configured_session(folder='private/reports/attempt-one', **options)['id'] != first['id']
+    other = runtime.configured_session(folder='private/reports/attempt-one',
+                                       logical_folder='logs/other-task.guard', **options)
+    assert other['id'] != first['id']
+    other_kind = runtime.configured_session(folder='private/reports/attempt-one', logical_folder=logical,
+                                            **(options | {'kind': 'compile'}))
+    assert other_kind['id'] != first['id']
+    normalized = runtime.configured_session(folder='private/reports/attempt-one',
+                                            logical_folder='logs/original-mesh.guard', **options)
+    assert normalized['id'] != first['id']
+
+
+@pytest.mark.parametrize('logical', ['', 0, True, object(), 'logs/invalid\0folder'])
+def test_logical_identity_refuses_invalid_original_folder_before_configuration(client, logical):
+    with pytest.raises(ValueError, match='logical_folder'):
+        runtime.configured_session(kind='job', limit_gib=10, timeout=0, logical_folder=logical)
+    assert client[3] == []
+
+
 def test_profile_cannot_hide_a_larger_actual_guard(client):
     client[2]()
     with pytest.raises(ValueError, match='smaller than the actual guard'):
@@ -380,3 +412,71 @@ def test_reviewed_host_pool_profiles_preserve_actual_worker_accounting(client, m
     assert request['resources']['memory_mib'] == 10240
     assert request['performance'] is exclusive
     assert client[0].read_bytes() == before
+
+
+@pytest.mark.parametrize('gpu,expected_guard', [(10., 10.), (2., 4.)])
+def test_full_job_gpu_reserves_only_requested_gpu_and_preserves_other_policy(client, monkeypatch, gpu, expected_guard):
+    configure_schema(client, monkeypatch, 2)
+    client[1]['profiles']['job']['resources']['gpu_mib'] = 0
+    client[2]()
+    before = client[0].read_bytes()
+    monkeypatch.setitem(sys.modules, 'atelier.harness.capacity_client', SimpleNamespace(
+        AdmissionSession=lambda socket, request, **kwargs: SimpleNamespace(request=request, **kwargs)))
+    options = dict(kind='job', limit_gib=10., timeout=60, command=['Blender', '--threads', '3'],
+                   small_gib=1., folder='same-task')
+    baseline = runtime.configured_session(**options)
+    selected = runtime.configured_session(**options, job_gpu_gib=gpu)
+    assert selected.guard_limit_gib == expected_guard
+    assert selected.request['resources'] == baseline.request['resources'] | {
+        'gpu_mib': math.ceil(gpu * 1024), 'memory_mib': math.ceil(expected_guard * 1024)}
+    for key in ('id', 'locks', 'seconds', 'performance', 'workers', 'phase'):
+        assert selected.request[key] == baseline.request[key]
+    assert selected.request['performance'] is False
+    assert client[0].read_bytes() == before
+
+
+@pytest.mark.parametrize('value', [True, False, 0, -1, float('nan'), float('inf'), 10.01, '10'])
+def test_invalid_job_gpu_refuses_before_configuration_or_admission(client, value):
+    with pytest.raises(ValueError, match='job GPU'):
+        runtime.configured_session(kind='job', limit_gib=10., timeout=60, job_gpu_gib=value)
+    assert not client[3]
+
+
+@pytest.mark.parametrize('schema', [None, 1, 3])
+def test_job_gpu_refuses_missing_legacy_and_maintenance_admission(client, monkeypatch, schema):
+    from atelier.harness import capacity_compat
+    monkeypatch.setattr(capacity_compat, 'read', lambda: None)
+    if schema is not None:
+        configure_schema(client, monkeypatch, 2 if schema == 3 else schema)
+        if schema == 3:
+            client[1].update(schema=3, mode='sealed-maintenance', seal_policy_sha256='a' * 64)
+        client[2]()
+    with pytest.raises(ValueError, match='full-capacity'):
+        runtime.configured_session(kind='job', limit_gib=10., timeout=60, job_gpu_gib=10.)
+    assert not client[3]
+
+
+@pytest.mark.parametrize('kind', ['compile', 'game'])
+def test_job_gpu_does_not_repurpose_other_launch_kinds(client, kind):
+    with pytest.raises(ValueError, match='job GPU'):
+        runtime.configured_session(kind=kind, limit_gib=10., timeout=60, job_gpu_gib=10.)
+    assert not client[3]
+
+
+def test_public_guard_forwards_gpu_to_automatic_admission_and_refuses_explicit_or_unlocked(monkeypatch, tmp_path):
+    from atelier.harness.safety import guarded
+    calls = []
+    class AtConfiguration(Exception):
+        pass
+    def configure(**kwargs):
+        calls.append(kwargs)
+        raise AtConfiguration
+    monkeypatch.setattr(runtime, 'configured_session', configure)
+    with pytest.raises(AtConfiguration):
+        guarded.run(['Blender', '--threads', '3'], tmp_path / 'guard', job_gpu_gib=10., limit_gib=10.)
+    assert calls[0]['job_gpu_gib'] == calls[0]['limit_gib'] == 10.
+    assert not (tmp_path / 'guard').exists()
+    for options in ({'admission': object()}, {'lock': False}, {'kind': 'game'}):
+        with pytest.raises(ValueError, match='Job GPU'):
+            guarded.run(['Blender'], tmp_path / 'guard', job_gpu_gib=10., **options)
+    assert len(calls) == 1

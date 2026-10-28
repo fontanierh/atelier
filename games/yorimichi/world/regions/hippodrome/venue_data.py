@@ -1,7 +1,7 @@
 """Explicit venue placements/course metadata and independent deterministic textures."""
 import sys
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path[:0]=[str(Path(__file__).resolve().parents[i]) for i in (2,1)]
 import numpy as np
 from hippodrome import layout as L
 from hippodrome.query_context import height

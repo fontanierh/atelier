@@ -165,3 +165,24 @@ def test_ground_graph_selects_final_carving_and_has_no_export_or_assembly_input(
         assert step.reads==['belmonte.final_surface.'+key]
         assert not any(path.suffix=='.glb' or path.name=='build-report.json' for path in step.inputs)
         assert all(path.name not in ('source_ground.py','carve_ground.py','terrain.py') for path in step.inputs)
+
+
+def test_surface_writer_uses_existing_managed_scratch_and_keeps_exact_packet(tmp_path, modules, monkeypatch):
+    from atelier.atomic_files import managed_temporaries
+    from test_belmonte_ground_pieces import model
+    surfaces, _, _, _ = modules
+    data = model(); entry = dict(name='SM_BM_NorthApron', sha256=hashlib.sha256(data).hexdigest(), triangles=4)
+    destination = tmp_path / 'declared' / 'SM_BM_NorthApron.surface'
+    destination.parent.mkdir(); scratch = tmp_path / 'managed'
+    original = surfaces.tempfile.NamedTemporaryFile; observed = []
+    def temporary(*args, **kwargs):
+        observed.append(Path(kwargs['dir']))
+        assert Path(kwargs['dir']) == scratch
+        return original(*args, **kwargs)
+    monkeypatch.setattr(surfaces.tempfile, 'NamedTemporaryFile', temporary)
+    with managed_temporaries(scratch):
+        surfaces.write(destination, entry, data)
+    assert observed == [scratch]
+    assert destination.read_bytes() == surfaces.encode(entry, data)
+    assert not list(scratch.iterdir())
+    assert [p.name for p in destination.parent.iterdir()] == [destination.name]

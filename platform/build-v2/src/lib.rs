@@ -7,8 +7,11 @@ pub mod checkout_locks;
 pub mod cleanup;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod completion;
+pub mod controller;
+pub mod controller_transport;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod demand;
+pub mod encoded_ops;
 pub mod explain;
 pub mod failure_policy;
 pub mod fixture;
@@ -23,8 +26,12 @@ pub mod integrity;
 pub mod keys;
 pub mod launch;
 pub mod leases;
+pub mod native_chains;
+pub mod native_modules;
+pub mod native_tool_ops;
+pub mod native_tools;
+pub mod native_verify;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-mod legacy_epoch;
 mod paths;
 pub mod plans;
 pub mod protocol;
@@ -33,6 +40,7 @@ pub mod python_backend;
 pub mod python_executor;
 pub mod python_sources;
 pub mod python_worker;
+pub mod recipe_ops;
 pub mod results;
 pub mod roots;
 pub mod scheduler;
@@ -46,6 +54,7 @@ pub mod store;
 #[allow(dead_code)]
 mod support;
 pub mod unreal;
+pub mod unreal_controller;
 pub mod validate;
 pub mod verify;
 pub mod worker_lifecycle;

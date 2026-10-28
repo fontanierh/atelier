@@ -38,9 +38,39 @@ pub struct KeyContext<'a> {
     pub validator: &'a ImplementationIdentity,
 }
 
+/// @cc [owner:fontanierh,label:correctness] native-cooked-content-cutoff
+/// Native content MUST bind package, exact CB, native dependency and source/installed entry hashes.
+/// Namespace/source keys and physical locators MUST NOT enter content keys or grant availability.
+/// Only the fixed packaging backend MAY consume this shape after fresh sealed restore evidence.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeCookedIdentity {
+    pub package: String,
+    pub record_sha256: String,
+    pub dependency_key: String,
+    pub entry_hash: String,
+    pub installed_entry_hash: String,
+}
+impl NativeCookedIdentity {
+    pub(crate) fn from_locator(
+        locator: &crate::results::zen_cook::CookLocator,
+    ) -> Result<Self, String> {
+        locator.validate()?;
+        Ok(Self {
+            package: locator.package.clone(),
+            record_sha256: locator.record_sha256.clone(),
+            dependency_key: locator.dependency_key.clone(),
+            entry_hash: locator.entry_hash.clone(),
+            installed_entry_hash: locator.installed_entry_hash.clone(),
+        })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum InputPayload {
     Absent,
+    /// A typed native-store handle; never represented as fabricated CAS files.
+    NativeCooked(NativeCookedIdentity),
     /// Raw file bytes, selected JSON bytes, or a reference descriptor; no locator.
     Bytes(Vec<u8>),
     /// C1 resolves these byte-addressed blobs and preserves this exact membership.
@@ -66,6 +96,41 @@ pub struct PreparedUnit {
 }
 
 impl PreparedUnit {
+    /// Derive only the fixed independent native verifier, preserving exact consumed CB identity.
+    /// The report has its own key/lease and never impersonates the external package completion.
+    pub(crate) fn native_verifier(&self) -> Result<Self, String> {
+        crate::native_verify::check_package(self)?;
+        let mut value = self.clone();
+        value.ingredients.op.kind = crate::results::zen_cook::VERIFY_OP.into();
+        value.ingredients.logical_outputs = vec![Item {
+            id: "verification".into(),
+            logical_path: format!(
+                "/Internal/NativeCookVerification{}",
+                self.ingredients.logical_outputs[0].logical_path
+            ),
+            class: "JsonData".into(),
+            destination: Destination::Store,
+            files: vec![OutputFile {
+                path: crate::results::zen_cook::VERIFY_REPORT.into(),
+                install_path: None,
+                required: true,
+            }],
+        }];
+        value.key = sha256(&canonical_bytes(&serde_json::json!({
+            "domain":"atelier-unit-key", "version":KEY_ENCODING_VERSION,
+            "ingredients":value.ingredients,
+        }))?);
+        value.template.unit = format!("{}.native-verifier", self.template.unit);
+        value.template.op = value.ingredients.op.clone();
+        value.template.outputs = value
+            .ingredients
+            .logical_outputs
+            .iter()
+            .flat_map(|item| item.files.clone())
+            .collect();
+        crate::unreal_controller::check_unit(&value)?;
+        Ok(value)
+    }
     pub fn key(&self) -> &str {
         &self.key
     }
@@ -150,8 +215,28 @@ pub fn normalized_mode(source_mode: u32) -> u32 {
 }
 
 fn item_payload(expected: &Item, stored: &StoredItem) -> Result<InputPayload, String> {
-    if expected.destination == Destination::External
-        || normalized_item(expected) != normalized_item(&stored.item)
+    if expected.destination == Destination::External {
+        if expected.class != "CookedPackage"
+            || !expected.files.is_empty()
+            || !stored.files.is_empty()
+            || normalized_item(expected) != normalized_item(&stored.item)
+        {
+            return Err("external consumer requires an exact CookedPackage declaration".into());
+        }
+        let locator = crate::results::zen_cook::CookLocator::decode(
+            stored
+                .external_locator
+                .as_deref()
+                .ok_or("external native item lacks a locator")?,
+        )?;
+        if locator.package != expected.logical_path {
+            return Err("external native item differs from its logical package".into());
+        }
+        return Ok(InputPayload::NativeCooked(
+            NativeCookedIdentity::from_locator(&locator)?,
+        ));
+    }
+    if normalized_item(expected) != normalized_item(&stored.item)
         || stored.external_locator.is_some()
     {
         return Err("producer item differs from declaration or needs an external adapter".into());
@@ -197,6 +282,12 @@ struct ContentItem<'a> {
 }
 
 fn item_identity(payload: &InputPayload) -> Result<ContentIdentity, String> {
+    if let InputPayload::NativeCooked(identity) = payload {
+        return Ok(ContentIdentity::Digest {
+            digest: sha256(&canonical_bytes(&serde_json::json!({
+            "domain":"atelier-native-cooked-content", "version":1, "content":identity }))?),
+        });
+    }
     let InputPayload::Item {
         logical_path,
         class,
@@ -444,7 +535,9 @@ pub fn prepare(
                 (
                     input.wire.name.clone(),
                     match &input.payload {
-                        InputPayload::Item { .. } => InputKind::Item,
+                        InputPayload::Item { .. } | InputPayload::NativeCooked(_) => {
+                            InputKind::Item
+                        }
                         InputPayload::Absent | InputPayload::Bytes(_) => InputKind::File,
                     },
                 )
@@ -487,4 +580,79 @@ pub fn prepare(
         inputs,
         template,
     })
+}
+
+#[cfg(test)]
+mod native_cooked_tests {
+    use super::*;
+    #[test]
+    fn native_content_excludes_namespace_but_binds_complete_package_identity() {
+        let mut locator = crate::results::zen_cook::CookLocator {
+            version: 2,
+            project: format!("AtelierV2_{}", "a".repeat(64)),
+            oplog: "Mac".into(),
+            package: "/Game/Real/Texture".into(),
+            source_key: "a".repeat(64),
+            record_sha256: "b".repeat(64),
+            dependency_key: "c".repeat(40),
+            entry_hash: "d".repeat(40),
+            installed_entry_hash: "e".repeat(40),
+            lifetime_marker: "/native/old/ue.projectstore".into(),
+            record_path: "/native/old/record.cb".into(),
+            project_file: "/native/old/Game.uproject".into(),
+        };
+        let item = Item {
+            id: "package".into(),
+            logical_path: locator.package.clone(),
+            class: "CookedPackage".into(),
+            files: vec![],
+            destination: Destination::External,
+        };
+        let stored = |locator: &crate::results::zen_cook::CookLocator| StoredItem {
+            item: item.clone(),
+            files: vec![],
+            external_locator: Some(locator.encode().unwrap()),
+        };
+        let first = item_payload(&item, &stored(&locator)).unwrap();
+        let before = item_identity(&first).unwrap();
+        assert!(matches!(first, InputPayload::NativeCooked(_)));
+        locator.source_key = "f".repeat(64);
+        locator.project = format!("AtelierV2_{}", locator.source_key);
+        locator.lifetime_marker = "/native/new/ue.projectstore".into();
+        locator.record_path = "/native/new/record.cb".into();
+        locator.project_file = "/native/new/Game.uproject".into();
+        assert_eq!(
+            before,
+            item_identity(&item_payload(&item, &stored(&locator)).unwrap()).unwrap()
+        );
+        for field in 0..4 {
+            let mut changed = locator.clone();
+            match field {
+                0 => changed.record_sha256 = "1".repeat(64),
+                1 => changed.dependency_key = "2".repeat(40),
+                2 => changed.entry_hash = "3".repeat(40),
+                _ => changed.installed_entry_hash = "4".repeat(40),
+            }
+            assert_ne!(
+                before,
+                item_identity(&item_payload(&item, &stored(&changed)).unwrap()).unwrap()
+            );
+        }
+        let mut wrong = stored(&locator);
+        wrong.item.class = "Data".into();
+        assert!(item_payload(&item, &wrong).is_err());
+        let mut wrong = stored(&locator);
+        wrong.files.push(StoredFile {
+            path: "fake".into(),
+            digest: "1".repeat(64),
+            size: 1,
+            mode: 0o644,
+        });
+        assert!(item_payload(&item, &wrong).is_err());
+        let mut wrong = stored(&locator);
+        wrong.external_locator = None;
+        assert!(item_payload(&item, &wrong).is_err());
+        locator.package = "/Game/Other".into();
+        assert!(item_payload(&item, &stored(&locator)).is_err());
+    }
 }

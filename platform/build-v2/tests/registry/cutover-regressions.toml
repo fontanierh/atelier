@@ -1,0 +1,58 @@
+schema_version = 1
+
+# Pure host metadata, key, archive and scheduler regressions; no SDK or worker launch.
+
+[[scenarios]]
+id = "cutover.groups.tests.mesh-set-policy-keys-only-the-selected-member"
+tests = ["atelier-build-v2/groups::tests::mesh_set_policy_keys_only_the_selected_member"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.native-modules.tests.explicit-subsets-validate-complete-archives-then-copy-only-requested-modules"
+tests = ["atelier-build-v2/native_modules::tests::explicit_subsets_validate_complete_archives_then_copy_only_requested_modules"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.native-modules.tests.omitted-or-false-subset-preserves-strict-editor-and-plugin-behavior"
+tests = ["atelier-build-v2/native_modules::tests::omitted_or_false_subset_preserves_strict_editor_and_plugin_behavior"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.native-modules.tests.subsets-require-every-selected-module-and-verify-even-unselected-binaries"
+tests = ["atelier-build-v2/native_modules::tests::subsets_require_every_selected_module_and_verify_even_unselected_binaries"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.paths.tests.ascii-fast-path-matches-full-unicode-folding"
+tests = ["atelier-build-v2/paths::tests::ascii_fast_path_matches_full_unicode_folding"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.plans.tests.selected-metadata-is-injected-as-a-reserved-child-parameter"
+tests = ["atelier-build-v2/plans::tests::selected_metadata_is_injected_as_a_reserved_child_parameter"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.explicit-authored-partitions-still-require-complete-disjoint-face-ownership"
+tests = ["atelier-build-v2::blender_ops/explicit_authored_partitions_still_require_complete_disjoint_face_ownership"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.mesh-set-metadata-preserves-heterogeneous-slots-and-exact-runtime-membership"
+tests = ["atelier-build-v2::blender_ops/mesh_set_metadata_preserves_heterogeneous_slots_and_exact_runtime_membership"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.selected-policy-receipt-matches-exact-keyed-object-and-types"
+tests = ["atelier-build-v2::blender_ops/selected_policy_receipt_matches_exact_keyed_object_and_types"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.game-finish-bodies-use-the-registered-native-contract"
+tests = ["atelier-build-v2::controller/game_finish_bodies_use_the_registered_native_contract"]
+tier = "t0"
+
+[[scenarios]]
+id = "cutover.cancellation-during-input-preparation-does-not-stage-remaining-frontier"
+tests = ["atelier-build-v2::scheduler/cancellation_during_input_preparation_does_not_stage_remaining_frontier"]
+tier = "t0"

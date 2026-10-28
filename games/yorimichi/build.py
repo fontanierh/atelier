@@ -163,12 +163,12 @@ def craterpark_v2_steps(out):
     return [
         Step('world.craterpark_geometry', [Python(v2 / runner, arguments)],
              inputs=[v2, *common, *volcano, *craterpark_v4.input_paths()],
-             outputs=[geometry / 'geometry.npz', geometry / 'geometry-report.json'],
+             outputs=[geometry / 'geometry.npz', geometry / 'geometry-report.json', geometry / 'lines'],
              about='Crater Park v2: layout -> conforming surfaces, solids, rails, render tiles and collision (numpy)',
              cutoff=True, heavy=True),
         *_load_helper_module('yorimichi_craterpark_atomic', GAME/'craterpark_atomic_build.py').steps(SimpleNamespace(out=out)),
         *([Step('world.craterpark_layout', [Python(WORLD / 'craterpark_layout.py')],
-                inputs=[WORLD / 'craterpark_layout.py', *CRATERPARK, *craterpark_v4.input_paths()],
+                inputs=[WORLD / 'craterpark_layout.py', *CRATERPARK, *craterpark_v4.input_paths(), geometry / 'geometry.npz'],
                 needs=['world.craterpark_geometry'], outputs=[out / 'craterpark' / 'layout-identity.json'],
                 cutoff=True, heavy=True,
                 about='validated Crater Park landform, exclusion and spawn identity for island consumers')]
@@ -234,6 +234,7 @@ STAGED = runtime_data.STAGED
 staged = runtime_data.staged
 staged_source = runtime_data.staged_source
 stage_data = runtime_data.stage_data
+
 
 
 @dataclass
@@ -552,6 +553,29 @@ def native_source_inputs():
                           support=(GAME / 'compile_inputs.py', Path(build_inputs.__file__)))
 
 
+
+def editor_compile_products():
+    """@cc [owner:fontanierh,label:correctness] complete-editor-plugin-output-roots
+    The editor compile MUST own a complete Mac binary root for each project-local
+    source plugin, including HorseRacing's receipt-listed module map and dylib, as
+    a separate named product for compiled native-module consumers. Shared
+    AdditionalPluginDirectories plugins MUST NOT claim separate roots: the real
+    receipt places their modules and module map in the project Binaries/Mac output.
+    """
+    descriptors = sorted((GAME / 'unreal/Plugins').rglob('*.uplugin'))
+    names = set()
+    products = []
+    for descriptor in descriptors:
+        if descriptor.is_symlink() or descriptor.resolve() != descriptor or not descriptor.is_file():
+            raise ValueError('Editor plugin descriptor is missing or aliased')
+        name = descriptor.stem
+        if name.casefold() in names:
+            raise ValueError('Ambiguous editor plugin output owner')
+        names.add(name.casefold())
+        products.append(Product('unreal.compile.' + name, (descriptor.parent / 'Binaries/Mac',)))
+    return products
+
+
 def cook_step(ctx, steps):
     from atelier.build_cook_recovery import CookRecovery
     out = ctx.out
@@ -643,18 +667,24 @@ def mover_export_steps(character, out):
     """
     k, threads = key(character), character.blender['threads']
     steps = [Step(f'characters.{k}', [body_export(character.id, threads=threads)], inputs=[character.folder, NAMES, PIPELINE],
-                  outputs=[out / character.output / 'export.json'], heavy=True,
+                  outputs=[out / character.output / 'export.json'],
+                  products=[Product(f'characters.{k}.export', tuple(out / character.output / name
+                                    for name in ('export.json', 'fbx', 'textures')))], heavy=True,
                   checkpoint_outputs=(out / character.output / 'fbx', out / character.output / 'textures', out / character.output / 'export.json'),
                   about=f"{character.name}'s body, textures and own clips, to FBX")]
     if character.playable:
         steps.append(Step(f'characters.{k}_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py', ('--character', character.id), threads=threads)],
                           inputs=[character.folder, NAMES, PIPELINE, ASSETS / 'vehicles' / 'bike', RIDE_COMMON], needs=['world.bike'],
-                          outputs=[out / character.output / 'bike' / 'export.json'], heavy=True,
+                          outputs=[out / character.output / 'bike' / 'export.json'],
+                          products=[Product(f'characters.{k}_bike.export', tuple(out / character.output / 'bike' / name
+                                            for name in ('export.json', 'fbx')))], heavy=True,
                           about=f"Every bike action authored on {character.name}'s rig, and the bike's channels"))
         steps.append(Step(f'characters.{k}_horse', [Blender(ASSETS / 'horses' / 'rider.py', ('--character', character.id), threads=threads)],
                           inputs=[character.folder, NAMES, PIPELINE, HORSES / 'rider.py', RIDE_COMMON, YORI], needs=['world.horses'],
                           outputs=[out / character.output / 'horse' / 'export.json',
-                                   *(out / character.output / 'horse' / 'fbx' / f'A_{c}.fbx' for c in HORSE_RIDER_CLIPS)], heavy=True,
+                                   *(out / character.output / 'horse' / 'fbx' / f'A_{c}.fbx' for c in HORSE_RIDER_CLIPS)],
+                          products=[Product(f'characters.{k}_horse.export', tuple(out / character.output / 'horse' / name
+                                            for name in ('export.json', 'fbx')))], heavy=True,
                           about=f"Every horseback riding action authored on {character.name}'s rig, with its reach errors"))
     # Imports consume exported character content, not the generator implementation identity.
     # FBX timestamps/IDs are normalized by the shared export digest; geometry, skinning,
@@ -719,7 +749,9 @@ def mover_adventure_steps(character, out):
         commands, needs = [retarget], ['characters.adventure', f'characters.{key(donor)}_adventure']
         outputs = [out / character.output / 'adventure' / 'export.json']
     return [
-        Step(f'characters.{k}_adventure', commands, inputs=retarget_inputs, needs=needs, outputs=outputs, heavy=True,
+        Step(f'characters.{k}_adventure', commands, inputs=retarget_inputs, needs=needs, outputs=outputs,
+             products=[Product(f'characters.{k}_adventure.export', tuple(out / character.output / 'adventure' / name
+                               for name in ('export.json', 'fbx')))], heavy=True,
              about=f'The merged move set retargeted onto {character.name}, to FBX'),
         Step(f'unreal.{k}_adventure', [importer], inputs=import_inputs, needs=[f'characters.{k}_adventure', f'unreal.{k}', 'unreal.adventure'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / character.id / 'adventure.json'], heavy=True,
@@ -774,7 +806,9 @@ def adventure_steps(out):
     adventure = CHARS / 'adventure'
     return [
         Step('characters.adventure', [Python(adventure / 'export.py')], inputs=[adventure, *library.sources()],
-             outputs=[out / 'adventure' / 'export.json'], about='Merged motion reference and two props'),
+             outputs=[out / 'adventure' / 'export.json'],
+             products=[Product('characters.adventure.export', (out / 'adventure/export.json', out / 'adventure/glb'))],
+             about='Merged motion reference and two props'),
         Step('unreal.adventure', [UnrealScript(SCRIPTS / 'import_adventure.py', 'ADVENTURE IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / 'import_adventure.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
              needs=['characters.adventure'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'adventure' / 'reference.json'],
@@ -1076,10 +1110,13 @@ def world_steps(ctx):
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py', WORLD / 'farhills_grid.py',
-                     *belmonte_train_corridor(out)],
+                     ASSETS / 'megapark' / 'map.json', ASSETS / 'megapark' / 'geometry', ASSETS / 'megapark' / 'collision',
+                     *belmonte_train_corridor(out), *craterpark_v4.input_paths(),
+                     *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else [])],
              needs=['world.treehouse_trees.data', *crater_geometry], reads=['treehouse.canopy_dimensions'], cutoff=True,
              outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
-                      out / 'megapark' / 'trail.json'],
+                      out / 'megapark' / 'trail.json', out / 'map_preview.png',
+                      out / 'zeppelin' / 'layout.json', out / 'treehouse' / 'removed.json'],
              about='terrain heightfield, road, scatter and every region layout -> world.json (dependents see these files)'),
         Step('world.forest_textures', [Python(TOOLS / 'forest_textures.py')],
              # Only the twig atlases it reads: a new rock or ground painting leaves the forest current.
@@ -1098,7 +1135,11 @@ def world_steps(ctx):
                      *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py',
-                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json'],
+                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json',
+                     *craterpark_v4.input_paths(),
+                     *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else []),
+                     ASSETS / 'belmonte/source.json', ASSETS / 'megapark/map.json',
+                     ASSETS / 'megapark/geometry', ASSETS / 'megapark/collision'],
              needs=['world.layout', *crater_geometry],
              products=[Product('terrain.FarHills.natural', (out / 'terrain/FarHills/natural.npz',)),
                        Product('terrain.FarHills.final', (out / 'terrain/FarHills/final.npz',)),
@@ -1128,13 +1169,13 @@ def world_steps(ctx):
         digest_step(out, 'world.zeppelin', 'meshes', 'the zeppelin meshes unreal.world reads', out / 'zeppelin', ['manifest.json', 'assets']),
         Step('world.hidamari_textures', [Python(TOOLS / 'hidamari_textures.py', ('finish',))],
              inputs=[TOOLS / 'hidamari_textures.py', TOOLS / 'treehouse_textures.py', ASSETS / 'hidamari' / 'textures'],
-             outputs=[out / 'hidamari' / 'textures' / 'textures.json'], pool_roots=[out / 'hidamari' / 'textures'],
+             outputs=[out / 'hidamari' / 'textures'], pool_roots=[out / 'hidamari' / 'textures'],
              about='Hidamari city surfaces: seamless detail maps from the Sunburst paintings'),
         *_load_helper_module('yorimichi_hidamari_props',GAME/'hidamari_prop_build.py').steps(ctx),
         hidamari_props_import_step(out),
         Step('world.treehouse_textures', [Python(TOOLS / 'treehouse_textures.py', ('finish',))],
              inputs=[TOOLS / 'treehouse_textures.py', ASSETS / 'treehouse' / 'textures'],
-             outputs=[out / 'treehouse' / 'textures' / 'textures.json'], pool_roots=[out / 'treehouse' / 'textures'],
+             outputs=[out / 'treehouse' / 'textures'], pool_roots=[out / 'treehouse' / 'textures'],
              about='tree house textures: seamless detail maps and pictures from the Sunburst paintings'),
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').prop_steps(ctx),
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').surface_steps(ctx),
@@ -1150,16 +1191,16 @@ def world_steps(ctx):
              about='2048x2048 Sunburst UV texture atlas for the Kasa Ronin and roadside mini-camp'),
         *_load_helper_module('yorimichi_swordcamp_atomic', GAME / 'swordcamp_build.py').steps(ctx),
         Step('world.megapark_restyle', [Python(TOOLS / 'megapark_textures.py', ('finish',))],
-             inputs=[TOOLS / 'megapark_textures.py', ASSETS / 'megapark' / 'restyle', ASSETS / 'megapark' / 'map.json',
-                     REGIONS / 'megapark' / 'sign.py', REGIONS / 'hidamari' / 'fonts' / 'NotoSansJP.ttf'],
-             outputs=[out / 'megapark' / 'textures' / 'textures.json', out / 'megapark' / 'lettering' / 'NotoSansJP-Black.ttf'],
+             inputs=_load_helper_module('yorimichi_megapark_finish_inputs', TOOLS / 'megapark_textures.py').finish_inputs(),
+             outputs=[out / 'megapark' / 'textures', out / 'megapark' / 'lettering' / 'NotoSansJP-Black.ttf'],
              about='Mega Park restyle: island-style rock, earth, paint and signs, lightmap levels, the 寄り道 font'),
         *_load_helper_module('yorimichi_megapark_atomic', GAME/'megapark_atomic_build.py').steps(ctx),
         Step('world.craterpark_restyle', [Python(TOOLS / 'craterpark_textures.py', ('finish',))],
              inputs=[TOOLS / 'craterpark_textures.py', ASSETS / 'craterpark' / 'restyle', ASSETS / 'craterpark' / 'textures',
                      ASSETS / 'craterpark' / 'materials.json', ASSETS / 'craterpark' / 'shrine',
                      REGIONS / 'craterpark' / 'v2' / 'shrine.py', REGIONS / 'craterpark' / 'v2' / 'dsl.py'],
-             outputs=[out / 'craterpark' / 'textures' / 'textures.json'],
+             # The whole folder: it also writes crater_floor.png and the other painted textures that importers read.
+             outputs=[out / 'craterpark' / 'textures'],
              about="Crater Park restyle: painted textures in the island's style, world-aligned ground and concrete"),
         *(craterpark_v2_steps(out) if CRATERPARK_V2 else [
         Step('world.craterpark', [Blender(REGIONS / 'craterpark' / 'build.py', threads=4)],
@@ -1299,7 +1340,7 @@ def world_steps(ctx):
                      out / 'belmonte-train' / 'route' / 'route.json', out / 'belmonte-train' / 'assembly' / 'consist.json',
                      out / 'belmonte-train' / 'furniture', *(out / 'belmonte-train' / v for v in TRAIN_VEHICLES)],
              needs=['world.belmonte_train_route', 'world.belmonte_train', 'world.belmonte_train_assembly'],
-             outputs=[out / 'belmonte-train' / 'service' / 'service.json'],
+             outputs=[out / 'belmonte-train' / 'service' / 'service.json', out / 'belmonte-train' / 'service' / 'glb'],
              verify=lambda: belmonte_train_service_present(out),
              about='Belmonte train service: line, loop, consist, collision boxes and timetable for Unreal'),
         Step('world.belmonte_track_data', [Python(TOOLS / 'belmonte_track_data.py',
@@ -1357,9 +1398,13 @@ def character_steps(ctx):
         *[step for character in definition.movers() for step in mover_export_steps(character, out)],
         *[step for character in definition.movers() for step in mover_grips_step(character)],
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
-             inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips', heavy=True),
+             inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'],
+             products=[Product('characters.fox_hunter.export', tuple(out / 'fox_hunter' / name
+                               for name in ('export.json', 'fbx', 'textures')))],
+             about='the fox hunter: mesh and 15 clips', heavy=True),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
-             inputs=[CHARS / 'wanderer'], outputs=[out / 'wanderer' / 'build.json'], about='the villagers (procedural model and clips)', heavy=True),
+             inputs=[CHARS / 'wanderer'], products=[Product('characters.wanderer.export', (out / 'wanderer',))],
+             about='the villagers (procedural model and clips)', heavy=True),
     ]
 
 
@@ -1469,7 +1514,8 @@ def sound_effect_steps(ctx):
              outputs=[out / 'audio' / 'music' / 'manifest.json'], explicit=True,
              about='select fetched Suno tracks for the optional music import'),
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
-             outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
+             outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], products=[Product('fx.textures', (out / 'combat_fx',))],
+             about='glow, spark, ring, dust and trail sprites'),
     ]
 
 
@@ -1509,10 +1555,11 @@ def unreal_steps(ctx):
                                       '--output', out / 'skate-simulation/verification.json'))],
              inputs=[SKATE_TOOLS / 'simulation_package.py', SKATE_TOOLS / 'motion_text.py', SKATE_TOOLS / 'runtime_text.py',
                      SKATE_DATA],
-             outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
+             outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[ctx.uproject],
-             deferred_inputs=[native_source_inputs()],
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')],
+             inputs=[ctx.uproject, *compile_inputs.files(native_source_inputs().settings[0])],
+             outputs=[GAME / 'unreal/Binaries/Mac'], products=editor_compile_products(),
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         # The game binary is its own unit: the cook runs with -skipbuild and restores this result instead of
@@ -1520,8 +1567,8 @@ def unreal_steps(ctx):
         # membership, the project descriptor, the installed engine build and the toolchain context.
         Step('unreal.game_binary',
              [UnrealGame('Yorimichi', products=GAME_BINARY_PRODUCTS), Call('verify game binary', game_binary.verify)],
-             inputs=[ctx.uproject, *engine_version(ctx), TOOLS / 'game_binary.py'],
-             deferred_inputs=[native_source_inputs()],
+             inputs=[ctx.uproject, *engine_version(ctx), TOOLS / 'game_binary.py',
+                     *compile_inputs.files(native_source_inputs().settings[0])],
              checkpoint_restore=game_binary.relocate, heavy=True,
              about='the Yorimichi game binary, app bundle and redistributed files; the cook does not build'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),
@@ -1581,7 +1628,8 @@ def unreal_steps(ctx):
                      out / 'hidamari' / 'north_crater.png', out / 'hidamari' / 'north_crater.json',
                      out / 'craterpark' / 'textures' / 'crater_floor.png', TOOLS / 'craterpark_textures.py',
                      *[SCRIPTS / n for n in ('import_hidamari.py', 'mountain_material.py', 'import_village.py', 'atmosphere.py', 'ground_grain.py', 'sea_look.py')]],
-             needs=['unreal.world', 'world.hidamari.north', 'world.craterpark_restyle'], heavy=True,
+             needs=['unreal.world', 'world.hidamari.north', 'world.craterpark_restyle'],
+             reads=['hidamari.north_masks'], heavy=True,
              about='/Game/Japan: the volcano (HD_North*), M_NorthMountains and its rock, snow and crater floor textures'),
         # The regions below place their own meshes with the world's materials, so they rerun when it is reimported.
         # Island pieces and their shared materials belong to unreal.island.
@@ -1818,11 +1866,22 @@ def unreal_steps(ctx):
 
 
 def staging_steps(ctx):
-    """Runtime data copied into Content/Data after its producers complete."""
+    """@cc [owner:fontanierh,label:correctness] runtime-stage-character-source-closure
+    data.stage MUST declare the character definition implementation and every current
+    character.toml, with corresponding PRESENT adventure.toml paths in deterministic input
+    membership. Absence/presence (including empty files) MUST differ through existing labeled
+    Merkle inputs; absent paths MUST NOT be declared required. Fresh roster membership MUST feed the existing input
+    provider. This correction MAY invalidate an old incomplete stamp once; it MUST NOT adopt
+    missing historical provenance or add an operational SourcePlan/v2 key to v1 fingerprints.
+    See test_staging_factory_declares_character_helper_roster_and_present_adventures.
+    """
     out = ctx.out
+    characters = sorted(CHARS.glob('*/character.toml'))
+    adventures = [path.with_name('adventure.toml') for path in characters if path.with_name('adventure.toml').exists()]
     return [
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json', ASSETS / 'ui/fonts/atlas-serif.ttf',
+                     PIPELINE / 'definition.py', *characters, *adventures,
                      runtime_data.RACING_COURSES, runtime_data.RACING_VALIDATOR, ASSETS / 'belmonte/source.json',
                      *runtime_data.courses.surface_inputs(),
                      *local_imports(runtime_data.courses.SOURCE_READER),
@@ -1989,12 +2048,19 @@ def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
     ferry = ferry_steps(ctx)
     gondola = gondola_steps(ctx)
-    result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
-              + [step for step in ferry if not step.name.startswith('unreal.')]
-              + [step for step in gondola if not step.name.startswith('unreal.')]
-              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx) + belmonte_steps(ctx.out)[3:]
-              + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')]
-              + [step for step in gondola if step.name.startswith('unreal.')])
+    result = world_steps(ctx)
+    result = result + character_steps(ctx)
+    result = result + sound_effect_steps(ctx)
+    result = result + [step for step in ferry if not step.name.startswith('unreal.')]
+    result = result + [step for step in gondola if not step.name.startswith('unreal.')]
+    result = result + unreal_steps(ctx)
+    result = result + staging_steps(ctx)
+    result = result + adventure_steps(ctx.out)
+    result = result + hippodrome_steps(ctx)
+    result = result + belmonte_steps(ctx.out)[3:]
+    result = result + brinecove_steps(ctx.out)[2:]
+    result = result + [step for step in ferry if step.name.startswith('unreal.')]
+    result = result + [step for step in gondola if step.name.startswith('unreal.')]
     result += fit_steps(ctx.out, result)
     result += pawn_steps(result)
     # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.
@@ -2092,15 +2158,15 @@ def steps(ctx):
 # restores like a source action; a run that saves elsewhere stays local (build.py checks each run's log). Imports
 # sharing a folder (Japan/*, a character's root with its adventure import, SkatePark) are left unpublished.
 OWNED_CONTENT = {
-    'unreal.adventure': ('Adventure',), 'unreal.belmonte_track': ('BelmonteTrack',),
-    'unreal.belmonte_train': ('BelmonteTrain',), 'unreal.cairo_adventure': ('CairoAdventure',),
-    'unreal.cairo_bike': ('CairoBike',), 'unreal.cairo_horse': ('CairoHorse',), 'unreal.crater_cloud': ('CraterPark/Cloud',),
-    'unreal.craterpark': ('CraterPark/Materials', 'CraterPark/Meshes'), 'unreal.ferry': ('Ferry',),
-    'unreal.fox_hunter': ('FoxHunter',), 'unreal.fx': ('FX',), 'unreal.gondola': ('Gondola',),
-    'unreal.hippodrome': ('Hippodrome',), 'unreal.horses': ('Horses',), 'unreal.kart': ('Japan/Kart',),
-    'unreal.modori_bike': ('ModoriBike',), 'unreal.modori_horse': ('ModoriHorse',), 'unreal.nox_bike': ('NoxBike',),
-    'unreal.nox_horse': ('NoxHorse',), 'unreal.paul_bike': ('PaulBike',), 'unreal.paul_horse': ('PaulHorse',),
-    'unreal.skate_clips': ('SkateRide',), 'unreal.swordcamp': ('SwordCamp',),
+'unreal.adventure': ('Adventure',), 'unreal.belmonte_track': ('BelmonteTrack',),
+'unreal.belmonte_train': ('BelmonteTrain',), 'unreal.cairo_adventure': ('CairoAdventure',),
+'unreal.cairo_bike': ('CairoBike',), 'unreal.cairo_horse': ('CairoHorse',), 'unreal.crater_cloud': ('CraterPark/Cloud',),
+'unreal.craterpark': ('CraterPark/Materials', 'CraterPark/Meshes'), 'unreal.ferry': ('Ferry',),
+'unreal.fox_hunter': ('FoxHunter',), 'unreal.fx': ('FX',), 'unreal.gondola': ('Gondola',),
+'unreal.hippodrome': ('Hippodrome',), 'unreal.horses': ('Horses',), 'unreal.kart': ('Japan/Kart',),
+'unreal.modori_bike': ('ModoriBike',), 'unreal.modori_horse': ('ModoriHorse',), 'unreal.nox_bike': ('NoxBike',),
+'unreal.nox_horse': ('NoxHorse',), 'unreal.paul_bike': ('PaulBike',), 'unreal.paul_horse': ('PaulHorse',),
+'unreal.skate_clips': ('SkateRide',), 'unreal.swordcamp': ('SwordCamp',),
 }
 
 

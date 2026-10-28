@@ -16,8 +16,10 @@ Each job runs a new Blender from the same installed binary, in the staged job fo
         --python-use-system-env --python-expr <blender_job.py + python_job.py source>
 
 with the configuration on stdin, the declared environment only, and every Blender user folder
-(`BLENDER_USER_*`, and `HOME`) pointed at a path inside the job folder that does not exist, so no
-user preferences, add-ons, extensions or caches load. On macOS the child runs under the same
+(`BLENDER_USER_*`, and `HOME`) pointed at an initially absent path inside its fresh private
+runtime folder, so no existing preferences, add-ons, extensions or caches load. That fixed
+job-local scratch is separate from published outputs and never reused between jobs. On macOS
+the child runs under the same
 deny-default kill-on-deny profile as a Python job, with the Blender application bundle as its
 platform: it may read the bundle, the platform files and its job folder, write only `output/`, and
 execute only the Blender binary. A clean process per job means no state carries from one job to
@@ -31,6 +33,7 @@ Installed Blender and its bundled add-ons are execution platform, not key ingred
 import argparse
 import importlib.util
 import os
+import stat
 from pathlib import Path
 import sys
 
@@ -54,11 +57,16 @@ BLENDER_FLAGS = ('--factory-startup', '-b', '--threads', str(THREADS), '--python
 # other JOB_ENVIRONMENT settings apply. The environment holds only declared names (no PYTHONPATH or
 # PYTHONHOME), so this adds no ambient input.
 JOB_FLAGS = BLENDER_FLAGS + ('--python-use-system-env',)
+# Bundled glog initializes before main and dereferences a missing account lookup
+# result when USER is absent. A fixed SDK identity avoids that lookup without
+# exposing the caller's account or granting directory-service access.
+SDK_ENVIRONMENT = {'USER': 'atelier-job'}
 # Folders Blender would otherwise take from the user's home; each points at a missing job-local path.
 # Staged code could occupy that path, so a job whose folder already holds it is refused.
 USER_FOLDERS = ('BLENDER_USER_RESOURCES', 'BLENDER_USER_CONFIG', 'BLENDER_USER_SCRIPTS',
                 'BLENDER_USER_DATAFILES', 'BLENDER_USER_EXTENSIONS', 'HOME')
-MISSING_USER_FOLDER = '.no-user-folder'
+RUNTIME_DIRECTORY = '.blender-runtime'
+MISSING_USER_FOLDER = RUNTIME_DIRECTORY + '/user'
 # Platform files Blender reads at startup beyond the Python job's: ICU data, and the system-wide
 # (not per-user) CoreFoundation preferences. Neither is in the home folder.
 BLENDER_READ_SUBPATHS = ('/usr/share/icu',)
@@ -74,10 +82,35 @@ BLENDER_READ_LITERALS = ('/Library/Preferences/.GlobalPreferences.plist',)
 #   the extensions add-on at startup) probes IPv6 support by binding a local socket. This later rule
 #   only replaces the kill with a plain refusal for binds; connections and all other network use
 #   still end the job, and job code cannot create sockets at all.
+# Background Metal rendering creates a Cocoa GHOST context lazily at the first render.
+# AppKit registers this fixed executable with LaunchServices and connects to WindowServer;
+# denying those exact SDK endpoints aborts _RegisterApplication before rendering starts.
+# AppKit also checks the exact system setup sentinel metadata while registering the app.
+# These are native platform services, not an allowance for arbitrary Mach names or job IO.
+BLENDER_RENDER_SERVICES = ('com.apple.windowserver.active',
+                           'com.apple.coreservices.launchservicesd',
+                           'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb')
+BLENDER_INPUT_SOURCE_DIRECTORIES = ('/Library/Keyboard Layouts', '/Library/Input Methods')
+BLENDER_METADATA_PATHS = ('/tmp', '/private/tmp', '/Applications/Xcode.app',
+                          '/private/var/db/.AppleSetupDone',
+                          '/Library/Application Support/Apple/Spotlight/MailUsesCoreSpotlight',
+                          *BLENDER_INPUT_SOURCE_DIRECTORIES)
 BLENDER_RULES = (
     '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient" "IOSurfaceRootUserClient"))',
-    '(allow file-read-metadata (literal "/tmp") (literal "/private/tmp") (literal "/Applications/Xcode.app"))',
+    '(allow file-read-metadata ' + ' '.join('(literal ' + python_worker._quote(path) + ')'
+                                          for path in BLENDER_METADATA_PATHS) + ')',
+    # Native Cocoa enumerates installed system keyboard layout names. This grants the
+    # directory roster only, never any layout file or a staged Python read role.
+    *('(allow file-read-data (require-all (literal ' + python_worker._quote(path)
+      + ') (vnode-type DIRECTORY)))' for path in BLENDER_INPUT_SOURCE_DIRECTORIES),
+    # Native AppKit/Metal initialization reads the system eligibility policy. Keep this
+    # exact startup role outside reads(), so staged Python receives no such data-read role.
+    '(allow file-read-data (literal "/private/var/db/eligibilityd/eligibility.plist"))',
     '(allow file-read-data (literal "/dev/urandom"))',
+    '(allow mach-lookup ' + ' '.join('(global-name ' + python_worker._quote(name) + ')'
+                                    for name in BLENDER_RENDER_SERVICES) + ')',
+    # Metal compiles the offscreen context shader through this exact Apple SDK XPC service.
+    '(allow mach-lookup (xpc-service-name "com.apple.MTLCompilerService"))',
     '(deny network-bind)',
 )
 
@@ -112,10 +145,24 @@ class BlenderPlatform(python_worker.Platform):
         return subpaths, literals + [self.blender, *BLENDER_READ_LITERALS] + links
 
     def extra_rules(self):
-        return list(BLENDER_RULES)
+        """@cc [owner:fontanierh,label:safety] background-render-sdk-registration
+        Background rendering MAY register only the installed Blender bundle for a read-only
+        LaunchServices extension and access the fixed native rendering service names. This
+        MUST NOT allow arbitrary Mach endpoints, extension targets, file writes or processes.
+        Ordinary job code remains subject to the existing Python and filesystem guards.
+        """
+        registration = []
+        if Path(self.bundle).suffix == '.app':
+            registration = ['(allow file-issue-extension (require-all '
+                '(extension-class "com.apple.app-sandbox.read") '
+                '(literal ' + python_worker._quote(self.bundle) + ')))']
+        return [*registration, *BLENDER_RULES]
 
     def import_roots(self):
         return sorted(set(python_worker.interpreter_roots()) | {self.bundle})
+
+    def write_subpaths(self, job_dir):
+        return [*super().write_subpaths(job_dir), os.path.join(job_dir, RUNTIME_DIRECTORY)]
 
 
 class BlenderWorker(python_worker.Worker):
@@ -131,20 +178,25 @@ class BlenderWorker(python_worker.Worker):
         return [self.blender, *JOB_FLAGS, '--python-expr', expression]
 
     def child_environment(self, job_dir):
-        environment = dict(python_worker.JOB_ENVIRONMENT)
+        environment = {**python_worker.JOB_ENVIRONMENT, **SDK_ENVIRONMENT}
         missing = os.path.join(job_dir, MISSING_USER_FOLDER)
         environment.update({name: missing for name in USER_FOLDERS})
+        environment['TMPDIR'] = os.path.join(job_dir, RUNTIME_DIRECTORY, 'tmp')
         return environment
 
     def check_job_folder(self, job_dir):
-        # lstat, so a dangling link there is refused too. The child cannot create the path later:
-        # it writes only output/.
+        # The controller reserves this one empty real directory before sealing the
+        # job root. Never chmod that root or adopt preseeded code/user state.
+        root = os.path.join(job_dir, RUNTIME_DIRECTORY)
         try:
-            os.lstat(os.path.join(job_dir, MISSING_USER_FOLDER))
-        except FileNotFoundError:
-            return
-        raise python_worker.JobRefused(
-            'protocol', f'the job folder holds {MISSING_USER_FOLDER}, reserved as the missing Blender user folder')
+            info = os.lstat(root)
+            if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+                    or info.st_mode & 0o077 or os.listdir(root)):
+                raise ValueError('not an empty private directory')
+        except (OSError, ValueError):
+            raise python_worker.JobRefused(
+                'protocol', f'{RUNTIME_DIRECTORY} is not fresh reserved Blender runtime scratch') from None
+        os.mkdir(os.path.join(root, 'tmp'), 0o700)
 
 
 def serve(request_fd, response_fd, sandboxed, blender):

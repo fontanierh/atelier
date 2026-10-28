@@ -237,9 +237,9 @@ pub struct VerificationReport {
 
 impl VerificationReport {
     /// @cc [owner:fontanierh,label:correctness] build-v2-unknown-integrity-not-verified
-    /// Sample-skipped entries, external Zen locators and unsupported versions MUST be reported
-    /// separately as Unverified, External or Unsupported and MUST NEVER be treated as
-    /// verified success. Only a non-empty audit where every inspected record and object is
+    /// Sample-skipped entries, external Zen locators lacking the fixed independent native
+    /// verifier's sealed proof, and unsupported versions MUST be reported separately as
+    /// Unverified, External or Unsupported and MUST NEVER be treated as verified success. Only a non-empty audit where every inspected record and object is
     /// Verified may report overall verification success.
     pub fn is_all_verified(&self) -> bool {
         if self.records.is_empty() && self.objects.is_empty() {
@@ -390,6 +390,63 @@ impl Verifier {
         owner: ProcessIdentity,
     ) -> Result<VerificationReport, VerifyError> {
         self.verify_observed(target, mode, owner, |_| Ok(()))
+    }
+
+    /// @cc [owner:fontanierh,label:correctness] sealed-native-external-audit
+    /// A Zen audit MUST upgrade only an exact source-key/item/path/canonical-locator
+    /// match with one fixed independent native verifier proof whose frozen report,
+    /// immutable retained native bytes and owned lifetime marker still validate.
+    /// Unknown locators, duplicate proofs, report strings and missing proof MUST
+    /// remain External; offline verification MUST retain its original refusal.
+    /// Explicit native audit. Default/offline verification continues to classify
+    /// external records separately; only the fixed independent verifier's sealed
+    /// proof can upgrade an exact canonical Zen record.
+    pub fn verify_with_zen(
+        &self,
+        target: &VerificationTarget<'_>,
+        mode: VerificationMode,
+        owner: ProcessIdentity,
+        proofs: &[crate::results::zen_cook::VerifiedPackage<'_>],
+    ) -> Result<VerificationReport, VerifyError> {
+        let mut report = self.verify(target, mode, owner)?;
+        for (key, outcome) in report.records.iter_mut() {
+            let RecordOutcome::External { items, .. } = outcome else {
+                continue;
+            };
+            let mut complete = !items.is_empty();
+            for item in items.iter() {
+                let matching = proofs
+                    .iter()
+                    .filter(|proof| {
+                        proof.locator().source_key == *key
+                            && proof.item().id == item.item_id
+                            && proof.item().logical_path == item.logical_path
+                            && proof.locator().encode().ok().as_deref()
+                                == Some(item.locator.as_str())
+                    })
+                    .collect::<Vec<_>>();
+                if matching.len() != 1 || matching[0].check().is_err() {
+                    complete = false;
+                    break;
+                }
+            }
+            if complete {
+                let unit = proofs
+                    .iter()
+                    .find(|proof| proof.locator().source_key == *key)
+                    .expect("complete nonempty native proof set")
+                    .source_unit()
+                    .to_string();
+                *outcome = RecordOutcome::Verified {
+                    key: key.clone(),
+                    unit,
+                    objects_verified: 0,
+                    bytes_hashed: 0,
+                };
+            }
+        }
+        report.counts = tally_counts(&report.records, &report.objects, report.counts.bytes_hashed);
+        Ok(report)
     }
 
     /// @cc [owner:fontanierh,label:correctness] build-v2-explicit-audit-bypasses-hints

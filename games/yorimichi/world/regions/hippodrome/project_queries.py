@@ -1,7 +1,7 @@
 """Publish exact consumed final heights before selected Hippodrome construction."""
 import sys
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path[:0]=[str(Path(__file__).resolve().parents[i]) for i in (2,1)]
 import argparse
 from atelier.atomic_files import atomic_json
 from hippodrome import layout as L
@@ -34,7 +34,7 @@ def project(destination):
         for side in (-1,1):
             x=lx+side*(L.LANE_WIDTH/2)
             record(x+side*1.5,ys[k]);record(x+side*1.5,ys[k+1])
-    atomic_json(destination,dict(schema=1,platform_z=z,ground=points))
+    atomic_json(Path(destination),dict(schema=1,platform_z=z,ground=points))
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);project(parser.parse_args().output)

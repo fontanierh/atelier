@@ -1,0 +1,195 @@
+"""Native package finalization requires actual SDK restores and complete globals."""
+import hashlib
+from pathlib import Path
+
+import pytest
+
+from atelier.build_v2.zen_package_finalise import finalise, Refused
+
+
+def runtime_fixture(tmp_path):
+    engine = tmp_path / 'SDK'; engine.mkdir()
+    project = tmp_path / 'Game/Game.uproject'; project.parent.mkdir(); project.write_text('{}')
+    frozen = tmp_path / 'frozen'; frozen.mkdir()
+    rows = []
+    for domain, tail in [('engine', 'Config/Android/BaseAndroid.ini'),
+                         ('project', 'Config/DefaultGame.ini'),
+                         ('project', 'Plugins/Example/Config/DefaultExample.ini'),
+                         ('engine', 'GlobalShaderCache-METAL.bin'),
+                         ('engine', 'Content/Internationalization/icu.dat'),
+                         ('project', 'Content/Data/Config/record.ini')]:
+        source = (engine / 'Engine' if domain == 'engine' else project.parent) / tail
+        source.parent.mkdir(parents=True, exist_ok=True); source.write_bytes(tail.encode())
+        capture = frozen / str(len(rows)); capture.write_bytes(source.read_bytes())
+        rows.append({'clientpath': '/{' + domain + '}/' + tail, 'path': str(capture),
+                     'sha256': hashlib.sha256(capture.read_bytes()).hexdigest()})
+    return rows, project, engine
+
+
+def test_stock_uat_owns_exact_config_roles_without_modifying_capture(tmp_path):
+    from atelier.build_v2.zen_package_finalise import select_runtime_globals
+    rows, project, engine = runtime_fixture(tmp_path)
+    before = [(row.copy(), Path(row['path']).read_bytes()) for row in rows]
+    assert select_runtime_globals(rows, project=project, engine=engine) == rows[3:]
+    assert [(row.copy(), Path(row['path']).read_bytes()) for row in rows] == before
+
+
+@pytest.mark.parametrize('cause', ['capture', 'sdk', 'missing', 'alias', 'duplicate', 'traversal', 'domain'])
+def test_runtime_config_disposition_refuses_changed_or_ambiguous_sources(tmp_path, cause):
+    from atelier.build_v2.zen_package_finalise import select_runtime_globals
+    rows, project, engine = runtime_fixture(tmp_path)
+    counterpart = engine / 'Engine/Config/Android/BaseAndroid.ini'
+    if cause == 'capture': Path(rows[0]['path']).write_bytes(b'changed')
+    if cause == 'sdk': counterpart.write_bytes(b'changed')
+    if cause == 'missing': counterpart.unlink()
+    if cause == 'alias':
+        alternate = counterpart.with_suffix('.saved'); counterpart.rename(alternate); counterpart.symlink_to(alternate)
+    if cause == 'duplicate': rows.append(rows[0].copy())
+    if cause == 'traversal': rows[0]['clientpath'] = '/{engine}/Config/../bad.ini'
+    if cause == 'domain': rows[0]['clientpath'] = '/{unknown}/Config/bad.ini'
+    with pytest.raises((Refused, OSError)):
+        select_runtime_globals(rows, project=project, engine=engine)
+
+
+def setup(tmp_path):
+    values = {}
+    for name in ('project.uproject', 'ue.projectstore', 'runtime.uproject', 'record.cb', 'ScriptObjects.bin'):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        values[name] = path
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    args = dict(destination={'project': 'AtelierV2_Global', 'oplog': 'Mac',
+        'project_file': str(values['project.uproject']), 'lifetime_marker': str(values['ue.projectstore'])},
+        packages=[{'record_sha256': sha(values['record.cb']), 'locator': {'package': '/Game/Test',
+            'dependency_key': 'a' * 40, 'entry_hash': 'b' * 40, 'record_path': str(values['record.cb']),
+            'record_sha256': sha(values['record.cb'])}}], histories=[{'declared': 'history'}],
+        global_histories=[{'declared': 'global-history'}], global_files=[{'clientpath': '/{project}/ScriptObjects.bin',
+            'path': str(values['ScriptObjects.bin']), 'sha256': sha(values['ScriptObjects.bin'])}],
+        output_dir=str(tmp_path / 'final'), library='Game', formats=['SF_METAL_SM5-METAL_SM5'],
+        runtime_project=str(values['runtime.uproject']), input_key='d' * 64)
+    calls = []
+    def call(method, request):
+        calls.append((method, request))
+        if method == 'zen_package_request':
+            return {**request, 'status': 'restored', 'root_hash': 'b' * 40, 'native_stored_key': 'a' * 40,
+                    'installed_root_hash': 'c' * 40}
+        if method == 'zen_finalise_request':
+            root = Path(request['output_dir']); root.mkdir()
+            filename = 'Global.metallib' if request['global_library'] else 'AssetRegistry.bin'
+            path = root / filename; path.write_bytes(filename.encode())
+            return {'version': 1, 'status': 'composed', 'packages': 0 if request['global_library'] else 1,
+                    'global_library': request['global_library'], 'native_libraries': True,
+                    'files': [{'path': filename, 'sha256': sha(path)}]}
+        return {'version': 1, 'status': 'finalized'}
+    return args, call, calls, values
+
+
+def test_restore_then_native_shader_composition_then_exact_endcook(tmp_path):
+    args, call, calls, _ = setup(tmp_path)
+    result = finalise(**args, call=call)
+    assert [method for method, _ in calls] == ['zen_package_request', 'zen_finalise_request',
+                                              'zen_finalise_request', 'zen_end_cook_request']
+    end = calls[-1][1]
+    assert end['packages'] == [{'name': '/Game/Test', 'installed_root_hash': 'c' * 40}]
+    assert {row['clientpath'] for row in end['globals']} == {'/{project}/ScriptObjects.bin',
+        '/{project}/AssetRegistry.bin', '/{project}/Global.metallib'}
+    assert result['endcook']['status'] == 'finalized'
+
+
+@pytest.mark.parametrize('cause', [None, 'unknown', 'missing', 'changed'])
+def test_sdk_debug_output_is_censused_and_hashed_but_not_a_runtime_global(tmp_path, cause):
+    args, original, calls, _ = setup(tmp_path)
+    filename = 'Metadata/ShaderDebug/global_sf_metal_sm5-metal_sm5.zip'
+    def call(method, request):
+        report = original(method, request)
+        if method == 'zen_finalise_request' and request['global_library']:
+            source = Path(request['output_dir']) / filename
+            source.parent.mkdir(parents=True); source.write_bytes(b'exact SDK debug artifact')
+            report['files'].append({'path': filename, 'sha256': hashlib.sha256(source.read_bytes()).hexdigest()})
+            report['diagnostic_files'] = [filename]
+            if cause == 'unknown': report['diagnostic_files'] = ['Metadata/unknown.zip']
+            if cause == 'missing': report['files'].pop()
+            if cause == 'changed': source.write_bytes(b'changed')
+        return report
+    if cause:
+        with pytest.raises(Refused): finalise(**args, call=call)
+        assert all(method != 'zen_end_cook_request' for method, _ in calls)
+    else:
+        report = finalise(**args, call=call)
+        assert report['global_composition']['diagnostic_files'] == [filename]
+        assert all(not row['clientpath'].endswith('.zip') for row in calls[-1][1]['globals'])
+        assert (tmp_path / 'final-global' / filename).read_bytes() == b'exact SDK debug artifact'
+
+
+@pytest.mark.parametrize('cause', ['record', 'stored', 'root', 'refused', 'libraries', 'roster', 'global'])
+def test_changed_source_or_incomplete_native_finalization_refuses(tmp_path, cause):
+    args, original, calls, values = setup(tmp_path)
+    if cause == 'record': values['record.cb'].write_bytes(b'changed')
+    if cause == 'global': values['ScriptObjects.bin'].write_bytes(b'changed')
+    def call(method, request):
+        result = original(method, request)
+        if method == 'zen_package_request':
+            if cause == 'stored': result['native_stored_key'] = 'e' * 40
+            if cause == 'root': result['root_hash'] = 'f' * 40
+            if cause == 'refused': result['status'] = 'refused'
+        if method == 'zen_finalise_request':
+            if cause == 'libraries': result['native_libraries'] = False
+            if cause == 'roster' and not request['global_library']: result['packages'] = 2
+        return result
+    with pytest.raises(Refused):
+        finalise(**args, call=call)
+    assert all(method != 'zen_end_cook_request' for method, _ in calls)
+
+
+@pytest.mark.parametrize('shaderless', [False, True])
+def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path, shaderless):
+    from atelier.build_v2 import recipe_job
+    from atelier.build_v2.zen_package_finalise import prepare_histories
+    def shaders(root, library):
+        root.mkdir(parents=True)
+        for stem, suffix in (('ShaderAssetInfo', '.assetinfo.json'), ('ShaderArchive', '.ushaderbytecode'),
+                             ('ShaderTypeInfo', '.stinfo')):
+            (root / (stem + '-' + library + '-SF_METAL_SM5-METAL_SM5' + suffix)).write_bytes(stem.encode())
+    cooked = tmp_path / 'cooked'
+    if not shaderless:
+        shaders(cooked / 'FixtureGame/Metadata/ShaderLibrarySource', 'FixtureGame')
+    metadata = cooked / 'FixtureGame/Metadata'; metadata.mkdir(parents=True, exist_ok=True)
+    (metadata / 'DevelopmentAssetRegistry.bin').write_bytes(b'registry')
+    (metadata / 'CookMetadata.ucookmeta').write_bytes(b'metadata')
+    # Private transport bytes are retained in the archive but never shader inputs.
+    (cooked / 'ue.projectstore').write_bytes(b'private locator')
+    archive = tmp_path / 'metadata.tree.tar'; recipe_job.pack_root(cooked, archive)
+    global_root = tmp_path / 'global'; shaders(global_root / 'Content', 'Global')
+    (global_root / 'Engine').mkdir()
+    (global_root / 'Engine/GlobalShaderCache-METAL_SM5.bin').write_bytes(b'engine shaders')
+    source = tmp_path / 'uncooked.uasset'; source.write_bytes(b'explicit frozen source, not a native execution fixture')
+    record = tmp_path / 'record.cb'; record.write_bytes(b'explicit consumed CB, not a native execution fixture')
+    carrier = {'version': 1, 'packages': [
+        {'locator': {'package': name, 'record_path': str(record), 'entry_hash': 'a' * 40},
+         'record_sha256': hashlib.sha256(record.read_bytes()).hexdigest(),
+         'source': {'path': str(source), 'sha256': hashlib.sha256(source.read_bytes()).hexdigest()},
+         'metadata_archive': str(archive),
+         'metadata_sha256': hashlib.sha256(archive.read_bytes()).hexdigest()}
+        for name in ('/Game/A', '/Game/B')]}
+    result = prepare_histories(carrier=carrier, global_root=global_root, folder=tmp_path / 'projection',
+                              project_name='FixtureGame', library='FixtureGame', unpack=recipe_job.unpack_root)
+    assert result['formats'] == ['SF_METAL_SM5-METAL_SM5']
+    assert len(result['histories']) == 1
+    assert [row['name'] for row in result['histories'][0]['packages']] == ['/Game/A', '/Game/B']
+    assert all(row['source']['path'] == str(source) and row['record']['path'] == str(record)
+               and row['root_hash'] == 'a' * 40 for row in result['histories'][0]['packages'])
+    assert len(result['histories'][0]['files']) == (0 if shaderless else 3)
+    assert result['global_histories'][0]['packages'] == []
+    assert result['global_files'][0]['clientpath'] == '/{engine}/GlobalShaderCache-METAL_SM5.bin'
+    assert all('ue.projectstore' not in str(row) for row in result['histories'])
+
+
+def test_missing_global_shader_triple_refuses_before_package_archive_use(tmp_path):
+    from atelier.build_v2.zen_package_finalise import prepare_histories
+    content = tmp_path / 'global/Content'; content.mkdir(parents=True)
+    (content / 'ShaderArchive-Global-SF_METAL_SM5-METAL_SM5.ushaderbytecode').write_bytes(b'shaders')
+    with pytest.raises((Refused, FileNotFoundError)):
+        prepare_histories(carrier={'version': 1, 'packages': [{'locator': {'package': '/Game/A'}}]},
+                          global_root=content.parent, folder=tmp_path / 'projection',
+                          project_name='FixtureGame', library='FixtureGame',
+                          unpack=lambda *_: pytest.fail('incomplete globals precede package archive reads'))

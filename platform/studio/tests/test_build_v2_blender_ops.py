@@ -62,6 +62,33 @@ def test_existing_decoder_and_in_job_plan_preserve_complete_corner_and_owner_dat
     assert facts['min'] == [0, 0, 0] and facts['max'] == [1, 1, 0]
 
 
+@pytest.mark.parametrize('material_graph', [False, True])
+def test_producer_checks_original_glb_settings_without_authorizing_fbx(tmp_path, material_graph):
+    from test_mesh_materials import spec
+    root, value = planned(tmp_path)
+    options = dict(export_apply=True, export_image_format='AUTO' if material_graph else 'NONE')
+    for row in value['pieces']:
+        path = root / row['payload']
+        meta, piece = mesh_ir.decode(path.read_bytes())
+        raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
+                             options=options, material_specs=[spec()] if material_graph else None)
+        path.write_bytes(raw)
+        row['sha256'] = hashlib.sha256(raw).hexdigest()
+        assert mesh_facts(raw, output_format=None)['options'] == options
+        with pytest.raises(ValueError):
+            mesh_facts(raw)  # The FBX consumer still refuses GLB settings/materials.
+    (root / 'plan.json').write_text(json.dumps(value))
+    assert ops.verify_plan(root, parent='Whole', limits=LIMITS, output_format='glb') == value
+
+
+@pytest.mark.parametrize('options', [dict(export_apply=1), dict(export_image_format='JPEG'),
+                                     dict(export_apply=True, global_scale=1), dict(filepath='foreign.glb')])
+def test_glb_options_remain_finite_and_do_not_mix_fbx_ownership(options):
+    from atelier.build_v2.blender_validate import validate_mesh_options
+    with pytest.raises(ValueError):
+        validate_mesh_options(options, output_format='glb')
+
+
 @pytest.mark.parametrize('fault', ['truncated', 'extra', 'missing', 'alias', 'overlap', 'bound', 'hash'])
 def test_producer_refuses_bad_emitted_inventory_and_bindings(tmp_path, fault):
     root, value = planned(tmp_path)
@@ -198,10 +225,45 @@ def test_receipt_and_binary_framing_check_never_claims_native_fidelity():
                                 payload_digest=source_digest, facts=facts)
 
 
+@pytest.mark.parametrize('material_graph', [False, True])
+def test_glb_consumer_preserves_exact_options_and_refuses_truncated_serializer(tmp_path, monkeypatch, material_graph):
+    from test_mesh_materials import spec
+    root = tmp_path / 'selected'
+    root.mkdir()
+    out = tmp_path / 'output'
+    out.mkdir()
+    meta, piece = mesh_ir.decode(payload())
+    options = dict(export_apply=True, export_image_format='AUTO' if material_graph else 'NONE')
+    raw = mesh_ir.encode(piece, key='Part', slots=meta['slots'], matrix=meta['matrix'], options=options,
+                         material_specs=[spec()] if material_graph else None)
+    (root / 'Part.npz').write_bytes(raw)
+    context = SimpleNamespace(params=dict(format='glb', payload_encoding='mesh_ir', payload_role='geometry',
+                                          payload_member='Part.npz'), inputs={'payload': root},
+                              outputs=['Part.glb', 'export.json'], output=lambda name: out / name)
+    called = []
+    def truncated(asset, metadata, _piece, path, actual):
+        called.append((asset, metadata['schema'], path.name, actual))
+        path.write_bytes(b'truncated')
+    monkeypatch.setattr(ops, '_export_mesh', truncated)
+    with pytest.raises((ValueError, __import__('struct').error)):
+        ops.run_export_piece(context)
+    assert called == [('Part', 3 if material_graph else 2, 'Part.glb', options)]
+    assert not (out / 'export.json').exists()
+    assert (root / 'Part.npz').read_bytes() == raw
+
+
 def test_per_piece_options_cannot_widen_owned_outputs_or_silently_override_selection():
     assert ops.export_options({'axis_forward': '-Y'}, {'axis_up': 'Z'}) == {'axis_forward': '-Y', 'axis_up': 'Z'}
+    assert ops.export_options({'object_types': ['MESH']}, {}) == {}
+    assert ops.export_options({}, {'object_types': ('MESH',)}) == {}
+    assert ops.export_options({'add_leaf_bones': False}, {}) == {'add_leaf_bones': False}
+    for value in (True, 0, None, 'false'):
+        with pytest.raises(ValueError):
+            ops.export_options({'add_leaf_bones': value}, {})
     for options in [{'filepath': 'foreign.fbx'}, {'use_selection': False}, {'bake_anim': True},
-                    {'object_types': ['LIGHT']}, {'batch_mode': 'SCENE'}, {'path_mode': 'COPY'}]:
+                    {'object_types': ['LIGHT']}, {'object_types': ['MESH', 'LIGHT']},
+                    {'object_types': []}, {'object_types': 'MESH'}, {'object_types': [True]},
+                    {'batch_mode': 'SCENE'}, {'path_mode': 'ABSOLUTE'}]:
         with pytest.raises(ValueError):
             ops.export_options(options, {})
 
@@ -336,3 +398,171 @@ def test_frozen_job_world_color_reaches_the_real_shared_validator_as_a_list():
     assert type(actual['scene_world_color']) is list
     assert validate_world_color(actual['scene_world_color']) == [0, 0.25, 1]
     assert context.params['options']['scene_world_color'] == frozen
+
+
+@pytest.mark.parametrize('mode', ['RELATIVE', 'STRIP', 'COPY'])
+def test_declared_fbx_media_policy_survives_payload_decode_and_export_options(mode):
+    meta, piece = mesh_ir.decode(payload())
+    options = {'path_mode': mode, 'apply_scale_options': 'FBX_SCALE_ALL',
+               'apply_unit_scale': True, 'axis_forward': '-Y', 'axis_up': 'Z',
+               'colors_type': 'SRGB', 'mesh_smooth_type': 'FACE',
+               'scene_world_color': [.05, .05, .05], 'use_custom_props': False, 'embed_textures': False, 'bake_anim': False}
+    raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
+                         options=options, collisions=meta['collisions'])
+    decoded, _, facts = decode_mesh_payload(raw, output_format='fbx')
+    assert decoded['options'] == facts['options'] == options
+    assert ops.export_options(decoded['options'], {}, output_format='fbx') == options
+
+
+@pytest.mark.parametrize('mode', ['ABSOLUTE', 'AUTO', 'copy', 'strip', True, None])
+def test_unknown_or_absolute_fbx_media_policies_refuse(mode):
+    with pytest.raises(ValueError, match='path_mode'):
+        ops.export_options({'path_mode': mode}, {}, output_format='fbx')
+
+
+def test_copy_policy_cannot_admit_graph_materials_embedding_or_batches():
+    options = {'path_mode': 'COPY', 'embed_textures': False, 'batch_mode': 'OFF'}
+    assert ops.export_options(options, {}) == options
+    for kwargs in ({'output_format': 'glb'}, {'finite_materials': True}):
+        with pytest.raises(ValueError):
+            ops.export_options(options, {}, **kwargs)
+    for override in ({'embed_textures': True}, {'embed_textures': 0},
+                     {'batch_mode': 'SCENE'}, {'use_batch_own_dir': True}):
+        with pytest.raises(ValueError):
+            ops.export_options(options, override)
+
+
+@pytest.mark.parametrize('declared', ['fbx', 'glb'])
+def test_recipe_geometry_checks_declared_format_against_actual_payload_before_completion(tmp_path, monkeypatch, declared):
+    from atelier.build_v2 import recipe_job
+    root, manifest = planned(tmp_path)
+    for row in manifest['pieces']:
+        path = root / row['payload']
+        meta, piece = mesh_ir.decode(path.read_bytes())
+        raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
+                             options={'export_apply': True, 'export_image_format': 'NONE'})
+        path.write_bytes(raw)
+        row['sha256'] = hashlib.sha256(raw).hexdigest()
+    (root / 'plan.json').write_text(json.dumps(manifest))
+    output = tmp_path / 'output'
+    output.mkdir()
+    monkeypatch.chdir(tmp_path)
+    context = SimpleNamespace(output_dir=output, params={'plan_limits': LIMITS,
+        'recipe': {'paths': {}, 'outputs': [], 'commands': [], 'verify': None,
+                   'geometry': {'source': 'plan', 'encoding': 'mesh_ir', 'format': declared, 'parent': 'Whole'}}})
+    if declared == 'glb':
+        recipe_job.run(context)
+        assert (output / 'geometry/plan.json').read_bytes() == (root / 'plan.json').read_bytes()
+    else:
+        with pytest.raises(ValueError, match='export_apply'):
+            recipe_job.run(context)
+        assert not (output / 'geometry').exists()
+
+
+@pytest.mark.parametrize('geometry', [{'encoding': 'mesh_ir'}, {'encoding': 'mesh_ir', 'format': 'GLB'},
+                                      {'encoding': 'encoded_glb', 'format': 'fbx'}])
+def test_recipe_geometry_refuses_missing_or_incompatible_format_before_body(geometry):
+    from atelier.build_v2 import recipe_job
+    with pytest.raises(ValueError, match='exact export format'):
+        recipe_job.run(SimpleNamespace(params={'recipe': {'geometry': geometry}}))
+
+
+@pytest.mark.parametrize('fault', [None, 'overlap', 'missing', 'unknown_policy'])
+def test_explicit_authored_plan_keeps_complete_disjoint_face_ownership(tmp_path, fault):
+    root, value = planned(tmp_path)
+    value['partition'] = 'explicit'
+    if fault == 'overlap':
+        value['pieces'][1]['source_faces'] = [0]
+    elif fault == 'missing':
+        value['pieces'][1]['source_faces'] = []
+    elif fault == 'unknown_policy':
+        value['partition'] = 'implicit'
+    (root / 'plan.json').write_text(json.dumps(value))
+    if fault is None:
+        assert ops.verify_plan(root, parent='Whole', limits=LIMITS) == value
+    else:
+        with pytest.raises(ValueError):
+            ops.verify_plan(root, parent='Whole', limits=LIMITS)
+
+
+@pytest.mark.parametrize('value', [True, 0, 1, None, 'false'])
+def test_embed_textures_only_admits_original_literal_false(value):
+    with pytest.raises(ValueError, match='embed_textures'):
+        ops.export_options({'embed_textures': value}, {}, output_format='fbx')
+
+
+def mesh_set_plan(tmp_path):
+    root, value = planned(tmp_path)
+    value.pop('partition'); value.pop('collision_owner')
+    value.update(kind='mesh_set', metadata={row['name']: {'collision': index == 0, 'cull_cm': 120000}
+        for index, row in enumerate(value['pieces'])}, diagnostics={'count': 2})
+    union = set()
+    for index, row in enumerate(value['pieces']):
+        row.pop('source_faces'); row.pop('source_material_indices')
+        row['slots'] = ['Material'] if index == 0 else ['Other', 'Unused']
+        union.update(row['slots'])
+        path = root / row['payload']
+        meta, piece = mesh_ir.decode(path.read_bytes())
+        raw = mesh_ir.encode(piece, key=row['name'], slots=row['slots'], matrix=meta['matrix'],
+                             options={'export_apply': True, 'export_image_format': 'NONE'})
+        path.write_bytes(raw); row['sha256'] = hashlib.sha256(raw).hexdigest()
+    value['slots'] = sorted(union)
+    (root / 'plan.json').write_text(json.dumps(value))
+    return root, value
+
+
+def test_mesh_set_preserves_heterogeneous_object_materials_and_complete_runtime_roster(tmp_path):
+    root, value = mesh_set_plan(tmp_path)
+    assert ops.verify_plan(root, parent='Whole', limits=LIMITS, output_format='glb', plan_encoding='mesh_set') == value
+    with pytest.raises(ValueError):
+        ops.verify_plan(root, parent='Whole', limits=LIMITS, output_format='glb')
+
+
+@pytest.mark.parametrize('fault', ['metadata', 'slots', 'member', 'hash', 'foreign', 'hulls', 'totals', 'unknown'])
+def test_mesh_set_refuses_incomplete_or_foreign_semantics_and_payloads(tmp_path, fault):
+    root, value = mesh_set_plan(tmp_path)
+    if fault == 'metadata': value['metadata'].pop('Whole_B')
+    elif fault == 'slots': value['slots'].pop()
+    elif fault == 'member': value['pieces'].pop()
+    elif fault == 'hash': value['pieces'][0]['sha256'] = '0' * 64
+    elif fault == 'foreign': (root / 'foreign').write_bytes(b'foreign')
+    elif fault == 'hulls': value['source_collision_hulls'] = 1
+    elif fault == 'totals': value['source_polygons'] += 1
+    elif fault == 'unknown': value['pieces'][0]['source_faces'] = [0]
+    (root / 'plan.json').write_text(json.dumps(value))
+    with pytest.raises(ValueError):
+        ops.verify_plan(root, parent='Whole', limits=LIMITS, output_format='glb', plan_encoding='mesh_set')
+
+
+def test_receipt_policy_is_exact_keyed_projection_json_including_frozen_values():
+    from atelier.build_v2.python_job import JobContext
+    from atelier.build_v2.blender_validate import selected_policy
+    raw = payload()
+    facts = mesh_facts(raw)
+    primary = FBX_HEADER + b'\x00' * 20
+    primary_digest = hashlib.sha256(primary).hexdigest()
+    payload_digest = hashlib.sha256(raw).hexdigest()
+    policy = {'collision': True, 'lods': False, 'material_kinds': {'Material': 'opaque'},
+              'source_extra': {'values': [1, 2]}}
+    frozen = JobContext({}, [], {'payload_metadata': policy}, 0).params['payload_metadata']
+    assert selected_policy(frozen) == policy
+    receipt = dict(schema=1, asset=facts['asset'], primary=facts['asset'] + '.fbx',
+        triangles=facts['triangles'], bounds=[facts['min'], facts['max']], sha256=primary_digest,
+        metadata=dict(geometry_sha256=payload_digest, slots=facts['slots'], polygons=facts['polygons'],
+            collision_hulls=facts['collision_hulls'], uv_channels=facts['uv_channels'], native_policy=policy))
+    def check(value, expected):
+        return validate_export_receipt(json.dumps(value).encode(), primary, asset=facts['asset'],
+            primary_digest=primary_digest, payload_digest=payload_digest, facts=facts, native_policy=expected)
+    assert check(receipt, frozen)['metadata']['native_policy'] == policy
+    changed = json.loads(json.dumps(receipt)); changed['metadata']['native_policy']['collision'] = 1
+    with pytest.raises(ValueError): check(changed, frozen)
+    with pytest.raises(ValueError): check(receipt, None)
+    receipt['metadata'].pop('native_policy')
+    with pytest.raises(ValueError): check(receipt, frozen)
+
+
+@pytest.mark.parametrize('value', [True, 0, 1, None, 'false'])
+def test_bake_anim_only_admits_original_literal_false(value):
+    for payload_options, declared_options in [({'bake_anim': value}, {}), ({}, {'bake_anim': value})]:
+        with pytest.raises(ValueError, match='bake_anim'):
+            ops.export_options(payload_options, declared_options, output_format='fbx')

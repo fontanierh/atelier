@@ -29,6 +29,21 @@ def import_names(source, change_token):
     return imports
 
 
+def package_import_base(source, module):
+    """@cc [owner:fontanierh,label:correctness] reached-package-literal-child
+    A literal import naming the reached source's own package MUST bind its existing
+    child module even when that package was reached relatively or has no initializer.
+    This only supplies an exact package parent for static source capture, never a runtime grant.
+    """
+    return _package_base(source, module.partition('.')[0])
+
+
+@lru_cache(maxsize=16384)
+def _package_base(source, head):
+    # Lexical path arithmetic only (no filesystem), so memoizing it never hides an added or removed module.
+    return next((parent.parent for parent in source.parents if parent.name == head), None)
+
+
 class ImportScanner:
     """Resolve imports while assembling one recipe. Discard the scanner before the next plan.
 
@@ -80,7 +95,9 @@ class ImportScanner:
                         raise ValueError(f'Invalid relative import in {source}')
                     bases = (source.parents[level - 1],)
                 for name in names:
-                    for base in bases:
+                    package_base = None if level else package_import_base(source, name)
+                    candidates = bases if package_base is None else (*bases, package_base)
+                    for base in dict.fromkeys(candidates):
                         found = self.resolve(base, name.split('.') if name else [])
                         if found:
                             todo.extend(found)

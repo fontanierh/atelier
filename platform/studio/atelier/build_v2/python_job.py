@@ -38,6 +38,7 @@ import fcntl
 import importlib.util
 import json
 import os
+import stat
 from pathlib import Path
 import sys
 import threading
@@ -66,14 +67,15 @@ def _frozen(value):
 class JobContext:
     """The op's whole view of its job. See the module docstring."""
 
-    __slots__ = ('_inputs', '_outputs', '_params', '_seed')
-    output_dir = Path('output')
+    __slots__ = ('_inputs', '_outputs', '_params', '_seed', 'output_dir', '_atomic_temporary')
 
     def __init__(self, inputs, outputs, params, seed):
         self._inputs = MappingProxyType({name: None if path is None else Path(path) for name, path in inputs.items()})
         self._outputs = tuple(outputs)
         self._params = _frozen(params)
         self._seed = seed
+        self.output_dir = Path('output')
+        self._atomic_temporary = None
 
     @property
     def inputs(self):
@@ -255,15 +257,26 @@ class PathGuard:
                         'unlink': 'write', 'chmod': 'write', 'chown': 'write', 'utime': 'write',
                         'mkfifo': 'write', 'mknod': 'write', 'rename': 'write', 'replace': 'write'}
 
-    def __init__(self, job_dir, subpaths, literals, report):
+    def __init__(self, job_dir, subpaths, literals, report, write_subpaths=None, relative_root=None, mkdir_existing=(), subprocess_allowed=None):
         self.job_dir = job_dir
+        self.relative_root = relative_root or job_dir
+        if not _inside(self.relative_root, job_dir):
+            raise ValueError("worker cwd is outside the job")
         self.reads = [job_dir] + [os.path.normpath(path) for path in subpaths]
         # Directory literals ('/', '/etc', ...) are kernel startup needs, not readable here: opening
         # one would give a descriptor for probing undeclared names relative to it.
         self.literals = {os.path.normpath(path) for path in literals if not os.path.isdir(path)}
         self.metadata = {ancestor for path in self.reads + sorted(literals) for ancestor in _ancestors(path)}
         self.metadata |= {os.path.normpath(path) for path in literals}
-        self.writes = os.path.join(job_dir, 'output')
+        self.writes = ([os.path.join(job_dir, 'output')] if write_subpaths is None
+                       else list(write_subpaths))
+        if not self.writes or any(not os.path.isabs(path) or path == job_dir
+                                  or not _inside(path, job_dir) for path in self.writes):
+            raise ValueError('Worker write roots must be proper job-local directories')
+        self.subprocess_allowed = subprocess_allowed
+        self.mkdir_existing = frozenset(mkdir_existing)
+        if any(not _inside(path, job_dir) or not os.path.isdir(path) or os.path.islink(path) for path in self.mkdir_existing):
+            raise ValueError("mkdir context must contain only existing owned directories")
         self.report = report
         self.checked = threading.local()
 
@@ -276,11 +289,11 @@ class PathGuard:
 
     def resolve(self, path):
         # Lexical only: the guard itself must not stat or follow anything. Jobs cannot create links.
-        return os.path.normpath(os.path.join(self.job_dir, os.fsdecode(path)))
+        return os.path.normpath(os.path.join(self.relative_root, os.fsdecode(path)))
 
     def allowed(self, access, path):
         if access == 'write':
-            return _inside(path, self.writes)
+            return any(_inside(path, root) for root in self.writes)
         if path in self.literals or any(_inside(path, root) for root in self.reads):
             return True
         return access == 'metadata' and path in self.metadata
@@ -318,6 +331,8 @@ class PathGuard:
             self.violation(access, text)
 
     def audit(self, event, args):
+        if event == 'subprocess.Popen' and self.subprocess_allowed is not None and self.subprocess_allowed(args):
+            return
         if event.startswith(self.REFUSED) or (event == 'ctypes.dlopen' and args[0] is not None):
             self.violation(event, '-')  # loading a named native library is a process-level escape
         if getattr(self.checked, 'skip', False):
@@ -330,6 +345,8 @@ class PathGuard:
             writes = (isinstance(mode, str) and any(char in mode for char in 'wax+')) or (
                 isinstance(flags, int) and flags & self.WRITE_FLAGS)
             self.check('write' if writes else 'read', path)
+        elif event == 'os.mkdir' and self.resolve(args[0]) in self.mkdir_existing:
+            return  # This already-existing directory cannot be removed or otherwise mutated.
         elif event in self.MUTATIONS:
             for index in self.MUTATIONS[event]:
                 self.check('write', args[index])
@@ -341,6 +358,12 @@ class PathGuard:
             if path is _NO_PATH:  # os.listdir() / os.scandir(): the working folder
                 self.check(access, '.')
                 return function()
+            if name == 'mkdir' and dir_fd is None and self.resolve(path) in self.mkdir_existing:
+                self.checked.skip = True
+                try:
+                    return function(path, *args, **kwargs)
+                finally:
+                    self.checked.skip = False
             kind = access
             if name == 'open':
                 flags = args[0] if args else kwargs.get('flags', 0)
@@ -430,9 +453,64 @@ def main(config, report):
     seed = config['params'].get('seed', 0)
     if isinstance(seed, bool) or not isinstance(seed, int):
         seed = 0
+    if config.get('working_directory'):
+        # NumPy's pinned installed initializer imports secrets to define its C
+        # generators. Initialize that platform module before refusing entropy;
+        # producer calls still run after the guard and fixed seed are installed.
+        try:
+            import numpy as np
+            import numpy.random
+        except ModuleNotFoundError as error:
+            if error.name != 'numpy':
+                raise
+        else:
+            np.random.seed(seed)
+            original_rng = np.random.default_rng
+            def declared_rng(value=None):
+                if value is None:
+                    raise DeterminismError('numpy default_rng requires an explicit seed')
+                return original_rng(value)
+            np.random.default_rng = declared_rng
     fix_clock_and_entropy(seed)
     context = JobContext(config['inputs'], config['outputs'], config['params'], seed)
-    guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report)
+    working = config.get('working_directory', job_dir)
+    if not os.path.isabs(working) or not _inside(working, job_dir):
+        raise ValueError('worker cwd is not job owned')
+    if working != job_dir:
+        context.output_dir = Path(job_dir) / 'output'
+        os.chdir(working)
+    node = None
+    if config.get('node_context') is not None:
+        # Only the outer frozen worker supplies this implementation and SDK role.
+        # It is bootstrap code, never code obtained from a recipe parameter.
+        values = config['node_context']
+        namespace = {'__name__': 'atelier_fixed_node_bootstrap'}
+        exec(compile(values['source'], '<build-v2 fixed node bootstrap>', 'exec'), namespace)
+        node = namespace['NodeExecution'](values['sdk'], view=values['view'], scratch=values['scratch'],
+                                          entry=values['entry'], sources=values['sources'])
+    if config.get('media_context') is not None:
+        if node is not None:
+            raise ValueError('multiple fixed tool contexts')
+        values = config['media_context']
+        namespace = {'__name__': 'atelier_fixed_media_bootstrap'}
+        exec(compile(values['source'], '<build-v2 fixed media bootstrap>', 'exec'), namespace)
+        node = namespace['MediaExecution'](values['sdk'], view=values['view'], scratch=values['scratch'],
+                                            inputs=values['inputs'], writes=values['writes'])
+    atomic_fd = None
+    if config.get('managed_atomic_directory') is not None:
+        directory = Path(config['managed_atomic_directory'])
+        expected = Path(job_dir) / '.recipe-runtime' / 'tmp'
+        if directory != expected or directory.resolve(strict=True) != directory:
+            raise ValueError('atomic scratch must be the existing canonical reserved recipe directory')
+        atomic_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        info = os.fstat(atomic_fd)
+        named = directory.lstat()
+        if not stat.S_ISDIR(info.st_mode) or (info.st_dev, info.st_ino) != (named.st_dev, named.st_ino):
+            os.close(atomic_fd)
+            raise ValueError('atomic scratch identity changed')
+        context._atomic_temporary = (directory, atomic_fd, info.st_dev, info.st_ino)
+    guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report,
+                      config.get('write_subpaths'), working, config.get('mkdir_existing', ()), None if node is None else node.allow_subprocess)
     guard.install()
     try:
         spec = importlib.util.spec_from_file_location('atelier_job_entry', os.path.join(job_dir, config['script']))
@@ -442,7 +520,11 @@ def main(config, report):
         entry = getattr(module, 'run', None)
         if not callable(entry):
             raise TypeError('the entry script defines no run(context) function')
-        entry(context)
+        if node is None:
+            entry(context)
+        else:
+            with node.install():
+                entry(context)
         if guard.path_hook not in sys.path_hooks or finder not in sys.meta_path:
             # Without them a probe of an undeclared import path could have gone unseen.
             raise UndeclaredModuleError('the job removed the import guards')
@@ -455,6 +537,9 @@ def main(config, report):
     except BaseException as error:  # noqa: BLE001 - every op failure is reported, never swallowed
         traceback.print_exc()
         return report({'status': 'failed', 'kind': 'job', 'message': f'{type(error).__name__}: {error}'})
+    finally:
+        if atomic_fd is not None:
+            os.close(atomic_fd)
     return report({'status': 'ok'})
 
 

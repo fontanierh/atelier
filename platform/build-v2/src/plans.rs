@@ -3,12 +3,36 @@ use crate::graph::BuildGraph;
 use crate::groups::{EncodedRole, OutputGroupContract, PlanEncoding, ValidatedGroup};
 use crate::schema::*;
 use crate::validate::OpRegistry;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+
+fn derive_payload_default() -> bool {
+    true
+}
+fn is_true(value: &bool) -> bool {
+    *value
+}
+fn substitute_piece(value: &mut serde_json::Value, piece: &str) {
+    match value {
+        serde_json::Value::String(text) => *text = text.replace("$piece", piece),
+        serde_json::Value::Array(values) => {
+            for value in values {
+                substitute_piece(value, piece);
+            }
+        }
+        serde_json::Value::Object(values) => {
+            for value in values.values_mut() {
+                substitute_piece(value, piece);
+            }
+        }
+        _ => {}
+    }
+}
 
 /// Authored executable/output contract. Plans supply only piece/member metadata.
 /// Every child uses the same code, op, staged slot and bounded output shape.
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ChildTemplate {
     pub producer: String,
     pub group: String,
@@ -17,11 +41,15 @@ pub struct ChildTemplate {
     pub script: String,
     pub code: Vec<String>,
     pub params: Params,
+    #[serde(default = "derive_payload_default", skip_serializing_if = "is_true")]
+    pub derive_payload: bool,
     pub payload_slot: String,
     pub staged_path: String,
     pub output_class: String,
     pub logical_namespace: String,
     pub files: Vec<OutputFile>,
+    #[serde(default)]
+    pub followers: Vec<crate::native_chains::FollowerTemplate>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -103,27 +131,38 @@ impl ChildTemplate {
         payload: &str,
         encoding: &PlanEncoding,
         role: Option<&EncodedRole>,
+        metadata: Option<&serde_json::Value>,
     ) -> Unit {
         let mut params = self.params.clone();
-        params.insert(
-            "payload_role".into(),
-            match role {
-                Some(EncodedRole::Render) => "render",
-                Some(EncodedRole::Collision) => "collision",
-                None => "geometry",
+        for value in params.values_mut() {
+            substitute_piece(value, piece);
+        }
+        if self.derive_payload {
+            if let Some(metadata) = metadata {
+                params.insert("payload_metadata".into(), metadata.clone());
             }
-            .into(),
-        );
-        params.insert("payload_member".into(), payload.into());
-        params.insert(
-            "payload_encoding".into(),
-            match encoding {
-                PlanEncoding::MeshIr => "mesh_ir",
-                PlanEncoding::MeshSet => "mesh_set",
-                PlanEncoding::EncodedGlb => "encoded_glb",
-            }
-            .into(),
-        );
+            params.insert(
+                "payload_role".into(),
+                match role {
+                    Some(EncodedRole::Render) => "render",
+                    Some(EncodedRole::Collision) => "collision",
+                    None if *encoding == PlanEncoding::FileSet => "file",
+                    None => "geometry",
+                }
+                .into(),
+            );
+            params.insert("payload_member".into(), payload.into());
+            params.insert(
+                "payload_encoding".into(),
+                match encoding {
+                    PlanEncoding::MeshIr => "mesh_ir",
+                    PlanEncoding::MeshSet => "mesh_set",
+                    PlanEncoding::EncodedGlb => "encoded_glb",
+                    PlanEncoding::FileSet => "file_set",
+                }
+                .into(),
+            );
+        }
         Unit {
             id: format!("{}.{piece}", self.unit_prefix),
             op: self.op.clone(),
@@ -142,9 +181,21 @@ impl ChildTemplate {
             }],
             outputs: vec![Item {
                 id: "asset".into(),
-                logical_path: format!("{}/{piece}", self.logical_namespace),
+                logical_path: format!("{}/{piece}", self.logical_namespace)
+                    .replace("$piece", piece),
                 class: self.output_class.clone(),
-                files: self.files.clone(),
+                files: self
+                    .files
+                    .iter()
+                    .map(|file| OutputFile {
+                        path: file.path.replace("$piece", piece),
+                        install_path: file
+                            .install_path
+                            .as_ref()
+                            .map(|p| p.replace("$piece", piece)),
+                        required: file.required,
+                    })
+                    .collect(),
                 destination: Destination::Store,
             }],
             output_groups: vec![],
@@ -172,6 +223,7 @@ impl RegisteredTemplate {
         if template.params.contains_key("payload_member")
             || template.params.contains_key("payload_encoding")
             || template.params.contains_key("payload_role")
+            || template.params.contains_key("payload_metadata")
         {
             return Err("template overrides derived member parameters".into());
         }
@@ -185,12 +237,34 @@ impl RegisteredTemplate {
         )?;
         let mut declaration = base.declaration().clone();
         declaration.schema_version = SCHEMA_VERSION;
-        declaration.units.push(template.child(
+        let child = template.child(
             "TemplateValidation",
             "TemplateValidation.npz",
             &contract.encoding,
             None,
-        ));
+            None,
+        );
+        let followers = crate::native_chains::instantiate(
+            &template.followers,
+            "TemplateValidation",
+            &child.id,
+        )?;
+        for follower in &followers.units {
+            let stage = &followers.staged_inputs[&follower.id];
+            let names = follower
+                .inputs
+                .iter()
+                .map(|input| match input {
+                    Input::Content { name, .. } | Input::Reference { name, .. } => name.as_str(),
+                })
+                .collect::<BTreeSet<_>>();
+            if stage.keys().map(String::as_str).collect::<BTreeSet<_>>() != names {
+                return Err("native follower staged paths omit/introduce an input".into());
+            }
+            crate::keys::safe_staged_paths(stage, &follower.code)?;
+        }
+        declaration.units.push(child);
+        declaration.units.extend(followers.units);
         crate::validate::validate_structure(&declaration, registry, allowed_install_roots)
             .map_err(|e| e.to_string())?;
         Ok(Self { template, contract })
@@ -201,6 +275,17 @@ impl RegisteredTemplate {
             self.template.payload_slot.clone(),
             self.template.staged_path.clone(),
         )])
+    }
+
+    pub fn staged_inputs_for(
+        &self,
+        piece: &str,
+    ) -> Result<BTreeMap<String, BTreeMap<String, String>>, String> {
+        let export = format!("{}.{piece}", self.template.unit_prefix);
+        let mut all = crate::native_chains::instantiate(&self.template.followers, piece, &export)?
+            .staged_inputs;
+        all.insert(export, self.staged_inputs());
+        Ok(all)
     }
 
     fn check_group(&self, group: &ValidatedGroup) -> Result<(), String> {
@@ -288,8 +373,18 @@ impl RegisteredTemplate {
                 &projection.payload,
                 &projection.encoding,
                 projection.role.as_ref(),
+                projection.metadata.as_ref(),
             );
-            children.insert(child.id.clone(), child);
+            let followers =
+                crate::native_chains::instantiate(&self.template.followers, piece, &child.id)?;
+            if children.insert(child.id.clone(), child).is_some() {
+                return Err("duplicate expanded export child".into());
+            }
+            for follower in followers.units {
+                if children.insert(follower.id.clone(), follower).is_some() {
+                    return Err("duplicate expanded native follower".into());
+                }
+            }
         }
         declaration.schema_version = SCHEMA_VERSION;
         declaration.units.extend(children.values().cloned());
@@ -387,6 +482,8 @@ mod tests {
             conditional: None,
         };
         let template = ChildTemplate {
+            derive_payload: true,
+            followers: vec![],
             producer: "planner".into(),
             group: "geometry".into(),
             unit_prefix: "export.Village".into(),
@@ -447,6 +544,7 @@ mod tests {
                         payload,
                         encoding: PlanEncoding::MeshIr,
                         role: None,
+                        metadata: None,
                     },
                 )
             })
@@ -512,6 +610,84 @@ mod tests {
         assert_eq!(selected.order(), ["planner", "export.Village.A"]);
         assert_eq!(selected.dependencies().len(), 1);
         assert_eq!(registered.staged_inputs()["payload"], "inputs/payload");
+
+        let (base, mut registry, mut template, contract) = fixture();
+        registry
+            .get_mut(&("fixture".into(), "1".into()))
+            .unwrap()
+            .inputs
+            .get_mut("payload")
+            .unwrap()
+            .item_classes
+            .insert("Mesh".into());
+        let mut raw = template.child("$piece", "unused", &contract.encoding, None, None);
+        raw.id = "raw.Village.$piece".into();
+        raw.params.clear();
+        raw.inputs = vec![Input::Content {
+            name: "payload".into(),
+            source: ContentSource::Item {
+                unit: "$export".into(),
+                item: "asset".into(),
+            },
+            whole: None,
+            conditional: None,
+        }];
+        raw.outputs[0].logical_path = "/Game/Raw/$piece".into();
+        let mut finish = raw.clone();
+        finish.id = "finish.Village.$piece".into();
+        finish.inputs = vec![Input::Content {
+            name: "payload".into(),
+            source: ContentSource::Item {
+                unit: "$previous".into(),
+                item: "asset".into(),
+            },
+            whole: None,
+            conditional: None,
+        }];
+        finish.outputs[0].logical_path = "/Game/Finished/$piece".into();
+        let stage = BTreeMap::from([("payload".into(), "inputs/upstream".into())]);
+        template.followers = vec![
+            crate::native_chains::FollowerTemplate {
+                unit: raw,
+                staged_inputs: stage.clone(),
+            },
+            crate::native_chains::FollowerTemplate {
+                unit: finish,
+                staged_inputs: stage,
+            },
+        ];
+        let registered =
+            RegisteredTemplate::register(&base, template.clone(), &registry, &[]).unwrap();
+        let first = registered
+            .expand(&base, &token(&contract, &["A"]), None, &registry, &[])
+            .unwrap();
+        let selected = first
+            .graph()
+            .select(&[Target::Unit("finish.Village.A".into())], &snapshot)
+            .unwrap();
+        assert_eq!(
+            selected.order(),
+            [
+                "planner",
+                "export.Village.A",
+                "raw.Village.A",
+                "finish.Village.A"
+            ]
+        );
+        assert_eq!(registered.staged_inputs_for("A").unwrap().len(), 3);
+        let next = registered
+            .expand(
+                first.graph(),
+                &token(&contract, &["B"]),
+                Some(first.receipt()),
+                &registry,
+                &[],
+            )
+            .unwrap();
+        assert_eq!(next.removals().len(), 3);
+        assert!(next.graph().unit("raw.Village.A").is_none());
+        template.followers[0].unit.id = "$unknown".into();
+        assert!(RegisteredTemplate::register(&base, template, &registry, &[]).is_err());
     }
 
     #[test]
@@ -737,7 +913,7 @@ mod tests {
         );
         // The first new member is valid; the second collides with an existing unit owner.
         let mut decl = base.declaration().clone();
-        let mut owner = template.child("C", "C.npz", &contract.encoding, None);
+        let mut owner = template.child("C", "C.npz", &contract.encoding, None, None);
         owner.id = "export.Village.C".into();
         owner
             .params
@@ -767,6 +943,18 @@ mod tests {
     }
 
     #[test]
+    fn selected_metadata_is_injected_as_a_reserved_child_parameter() {
+        let (base, registry, template, contract) = fixture();
+        let policy = serde_json::json!({"collision": true, "lods": false});
+        let child = template.child("A", "A.npz", &PlanEncoding::MeshSet, None, Some(&policy));
+        assert_eq!(child.params.get("payload_metadata"), Some(&policy));
+        let mut overridden = template;
+        overridden.params.insert("payload_metadata".into(), policy);
+        assert!(RegisteredTemplate::register(&base, overridden, &registry, &[]).is_err());
+        assert_eq!(contract.encoding, PlanEncoding::MeshIr);
+    }
+
+    #[test]
     fn template_interface_and_staging_alias_mutations_refuse() {
         let (base, registry, template, _) = fixture();
         for staged in ["ops/export.py", "OPS", "output/payload"] {
@@ -787,5 +975,76 @@ mod tests {
         let mut bad = template;
         bad.files[1].path = "MESH.FBX".into();
         assert!(RegisteredTemplate::register(&base, bad, &registry, &[]).is_err());
+    }
+    #[test]
+    fn file_set_direct_raw_template_substitutes_piece_without_derived_geometry_params() {
+        let (base, mut registry, mut template, mut contract) = fixture();
+        contract.encoding = PlanEncoding::FileSet;
+        let mut declaration = base.declaration().clone();
+        declaration.units[0].output_groups = vec![contract.clone()];
+        let definition = registry.get_mut(&("fixture".into(), "1".into())).unwrap();
+        definition.params.insert(
+            "destination".into(),
+            ParamRule {
+                kind: ParamKind::String,
+                required: false,
+            },
+        );
+        definition.params.insert(
+            "options".into(),
+            ParamRule {
+                kind: ParamKind::Object,
+                required: false,
+            },
+        );
+        let base = BuildGraph::validate(declaration, &registry, &[]).unwrap();
+        let old = serde_json::to_value(&template).unwrap();
+        assert!(old.get("derive_payload").is_none());
+        assert!(
+            serde_json::from_value::<ChildTemplate>(old)
+                .unwrap()
+                .derive_payload
+        );
+        template.derive_payload = false;
+        template.params = BTreeMap::from([
+            ("destination".into(), "/Game/Raw/$piece".into()),
+            (
+                "options".into(),
+                serde_json::json!({"source_member":"$piece.wav"}),
+            ),
+        ]);
+        template.files = vec![OutputFile {
+            path: "content/Game/Raw/$piece.uasset".into(),
+            install_path: None,
+            required: true,
+        }];
+        let registered =
+            RegisteredTemplate::register(&base, template.clone(), &registry, &[]).unwrap();
+        let child = template.child(
+            "Clip",
+            "Clip.wav",
+            &PlanEncoding::FileSet,
+            None,
+            Some(&serde_json::json!({"kind":"audio"})),
+        );
+        assert_eq!(child.params.len(), 2);
+        assert_eq!(child.params["destination"], "/Game/Raw/Clip");
+        assert_eq!(child.params["options"]["source_member"], "Clip.wav");
+        assert_eq!(
+            child.outputs[0].files[0].path,
+            "content/Game/Raw/Clip.uasset"
+        );
+        assert_eq!(registered.staged_inputs()["payload"], "inputs/payload");
+        template.derive_payload = true;
+        let child = template.child(
+            "Clip",
+            "Clip.wav",
+            &PlanEncoding::FileSet,
+            None,
+            Some(&serde_json::json!({"kind":"audio"})),
+        );
+        assert_eq!(child.params["payload_encoding"], "file_set");
+        assert_eq!(child.params["payload_member"], "Clip.wav");
+        assert_eq!(child.params["payload_metadata"]["kind"], "audio");
     }
 }

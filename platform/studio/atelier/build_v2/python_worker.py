@@ -50,7 +50,7 @@ SANDBOX_EXEC = '/usr/bin/sandbox-exec'
 # helpers). They are part of the installed execution platform, not project inputs.
 PLATFORM_READ_SUBPATHS = ('/System', '/usr/lib', '/usr/share/locale', '/private/var/db/timezone')
 PLATFORM_READ_LITERALS = ('/', '/etc', '/var', '/private/etc/passwd', '/private/etc/localtime',
-                          '/dev/dtracehelper', '/dev/null')
+                          '/private/etc/ssl/openssl.cnf', '/dev/dtracehelper', '/dev/null')
 SANDBOX_KILLED = 'the sandbox stopped the job: it read, checked, listed or connected to something undeclared'
 
 
@@ -156,9 +156,25 @@ class Platform:
         """Further sandbox allowances this platform needs, each a reviewed profile rule; none here."""
         return []
 
+    def write_subpaths(self, job_dir):
+        """@cc [owner:fontanierh,label:safety] fixed-worker-private-write-roots
+        Write roots MUST come only from the fixed worker platform, never project
+        message fields. Python MUST retain output-only writes; Blender MAY add only
+        its fresh reserved job-local runtime directory. Kernel and Python checks
+        MUST receive the same roots. Scratch MUST NOT enter published inventories.
+        """
+        return [os.path.join(job_dir, 'output')]
+
 
 def sandbox_profile(job_dir, platform=None):
-    """A deny-default profile: reads of the platform and the job folder, writes to `output/` only."""
+    """@cc [owner:fontanierh,label:safety] exact-platform-openssl-config
+    The installed OpenSSL config MUST be an exact canonical read literal, never a directory
+    allowance or an environment override. Neighboring certs/hosts MUST remain outside data-read
+    grants. All other file/network, Mach, write and process rules MUST remain unchanged.
+    It is installed platform context, not a new game input. See the profile-only portable
+    test_openssl_platform_config_literal_never_grants_neighbor_data_reads; actual sandbox
+    execution is separate guarded evidence, not a claim made by that profile inspection.
+    """
     platform = platform or Platform()
     subpaths, literals = platform.reads()
     reads = subpaths + [job_dir] + _links(job_dir)
@@ -173,7 +189,7 @@ def sandbox_profile(job_dir, platform=None):
         f'(allow process-exec {" ".join(f"(literal {_quote(path)})" for path in platform.executables())})',
         f'(allow file-read* {subpaths} {" ".join(f"(literal {_quote(path)})" for path in literals)})',
         f'(allow file-read-metadata {" ".join(f"(literal {_quote(path)})" for path in metadata)})',
-        f'(allow file-write* (subpath {_quote(os.path.join(job_dir, "output"))}) (literal "/dev/null"))',
+        f'(allow file-write* {" ".join(f"(subpath {_quote(path)})" for path in platform.write_subpaths(job_dir))} (literal "/dev/null"))',
         '(allow file-ioctl (literal "/dev/dtracehelper"))',
         '(allow sysctl-read)',
         *platform.extra_rules(),
@@ -205,7 +221,8 @@ def job_config(job, job_dir, result_fd, platform=None):
             'outputs': [_job_relative(item['path'], 'output') for item in job['outputs']],
             'params': job['params'], 'platform_roots': platform.import_roots(),
             'site_libraries': platform.site_libraries(), 'read_subpaths': platform.reads()[0],
-            'read_literals': platform.reads()[1], 'result_fd': result_fd}
+            'read_literals': platform.reads()[1], 'write_subpaths': platform.write_subpaths(job_dir),
+            'result_fd': result_fd}
 
 
 def output_files(job_dir):
@@ -284,6 +301,12 @@ class Worker:
                 self.run(request['job'])
             # A cancel for a job that already finished gets no reply.
 
+    def prepare_job(self, job, job_dir):
+        self.check_job_folder(job_dir)
+
+    def configuration(self, job, job_dir, result_fd):
+        return job_config(job, job_dir, result_fd, self.platform)
+
     def run(self, job):
         job_id = job['job_id']
         self.send({'type': 'started', 'job_id': job_id})
@@ -304,7 +327,7 @@ class Worker:
             raise JobRefused('protocol', 'the job folder is not a staged absolute folder with output/')
         if os.listdir(os.path.join(job_dir, 'output')):
             raise JobRefused('protocol', 'output/ is not empty before the job')
-        self.check_job_folder(job_dir)
+        self.prepare_job(job, job_dir)
         if self.sandboxed and not os.access(SANDBOX_EXEC, os.X_OK):
             raise JobRefused('dependency', 'no supported job sandbox on this platform')
         command = self.child_command()
@@ -316,7 +339,7 @@ class Worker:
             # argument limits. The child gets its own log pipe: inherited stdout/stderr files would be
             # undeclared paths to the sandbox; the loop forwards those logs to its own stderr. It stays
             # in the loop's process group, so a guard that stops the worker stops the job too.
-            config = json.dumps(job_config(job, job_dir, result_write, self.platform)).encode('utf-8')
+            config = json.dumps(self.configuration(job, job_dir, result_write)).encode('utf-8')
             child = subprocess.Popen(command, cwd=job_dir, env=self.child_environment(job_dir), stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, pass_fds=(result_write,))
         except OSError as error:

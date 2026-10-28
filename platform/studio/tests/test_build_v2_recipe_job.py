@@ -1,0 +1,300 @@
+"""Complete-root codec and producer-view boundary regressions."""
+import io
+import json
+from pathlib import Path
+import tarfile
+
+import pytest
+
+from atelier.build_v2 import recipe_job as job
+
+
+def test_complete_root_roundtrip_file_directory_empty_and_absent(tmp_path):
+    for kind in ('file', 'directory', 'empty', 'absent'):
+        source = tmp_path / kind
+        if kind == 'file':
+            source.write_bytes(b'raw\0payload')
+        elif kind in ('directory', 'empty'):
+            source.mkdir()
+            if kind == 'directory':
+                (source / 'nested').mkdir()
+                (source / 'nested/data').write_bytes(b'content')
+                (source / 'nested/executable').write_bytes(b'executable')
+                (source / 'nested/executable').chmod(0o755)
+        archive = tmp_path / (kind + '.tar')
+        manifest = job.pack_root(source, archive, required=kind != 'absent')
+        duplicate = tmp_path / (kind + '.again.tar')
+        job.pack_root(source, duplicate, required=kind != 'absent')
+        assert archive.read_bytes() == duplicate.read_bytes()
+        result = tmp_path / (kind + '.restored')
+        assert job.unpack_root(archive, result) == manifest
+        assert job.inventory(result) == job.inventory(source)
+
+
+def test_missing_required_link_and_existing_destination_refuse(tmp_path):
+    with pytest.raises(ValueError, match='required'):
+        job.pack_root(tmp_path / 'missing', tmp_path / 'required.tar')
+    target = tmp_path / 'target'
+    target.write_text('data')
+    alias = tmp_path / 'alias'
+    alias.symlink_to(target)
+    with pytest.raises(ValueError, match='link'):
+        job.pack_root(alias, tmp_path / 'link.tar')
+    archive = tmp_path / 'valid.tar'
+    job.pack_root(target, archive)
+    with pytest.raises(ValueError, match='exists'):
+        job.unpack_root(archive, target)
+    assert target.read_text() == 'data'
+
+
+@pytest.mark.parametrize('name,kind', [('../escape', 'file'), ('root', 'symlink'), ('root', 'hardlink')])
+def test_archive_unknown_paths_and_links_refuse_before_root_write(tmp_path, name, kind):
+    archive = tmp_path / 'bad.tar'
+    manifest = json.dumps({'version': 1, 'kind': 'file', 'entries': [['', 'file', 1, 0o644, '0' * 64]]}).encode()
+    with tarfile.open(archive, 'w', format=tarfile.USTAR_FORMAT) as output:
+        row = tarfile.TarInfo(job.MANIFEST)
+        row.size = len(manifest)
+        output.addfile(row, io.BytesIO(manifest))
+        row = tarfile.TarInfo(name)
+        row.size = 1
+        row.mode = 0o644
+        if kind != 'file':
+            row.type = tarfile.SYMTYPE if kind == 'symlink' else tarfile.LNKTYPE
+            row.linkname = '/outside'
+        output.addfile(row, io.BytesIO(b'x') if kind == 'file' else None)
+    destination = tmp_path / 'restored'
+    with pytest.raises(ValueError):
+        job.unpack_root(archive, destination)
+    assert not destination.exists()
+
+
+def test_view_uses_declared_mapping_and_refuses_output_input_overlap(tmp_path):
+    (tmp_path / job.RUNTIME).mkdir(mode=0o700)
+    (tmp_path / 'source.py').write_text('def run(): pass\n')
+    (tmp_path / 'inputs').mkdir()
+    (tmp_path / 'inputs/raw').write_text('input')
+    request = {'code': ['source.py'], 'inputs': [{'path': 'inputs/raw'}],
+               'params': {'recipe': {'paths': {'data/raw': 'inputs/raw'},
+                                     'outputs': [{'path': 'build/result'}]}}}
+    view, protected, writes = job.prepare_view(request, tmp_path)
+    assert (view / 'data/raw').read_text() == 'input'
+    assert str(view / 'source.py') in protected
+    assert writes == [str(view / 'build/result')]
+    assert (tmp_path / 'inputs/raw').read_text() == 'input'
+
+
+def test_view_materializer_restores_complete_roots_before_overlap_checks(tmp_path):
+    import shutil
+    from atelier.build_v2.recipe_root_clones import CommonRootClones
+    source=tmp_path/'source';source.mkdir();(source/'payload').write_bytes(b'complete root')
+    archive=tmp_path/'input.tree.tar';job.pack_root(source,archive)
+    cache=CommonRootClones(tmp_path/'common',clone=shutil.copyfile)
+    for name in ('first','second'):
+        directory=tmp_path/name;directory.mkdir();(directory/job.RUNTIME).mkdir()
+        (directory/'input.tree.tar').write_bytes(archive.read_bytes())
+        request={'code':[],'inputs':[{'path':'input.tree.tar'}],
+                 'params':{'recipe':{'paths':{'data':'input.tree.tar'},'outputs':[{'path':'data/forbidden'}]}}}
+        with pytest.raises(ValueError,match='output overlaps'):
+            job.prepare_view(request,directory,materializer=cache.materialize)
+        assert (directory/job.RUNTIME/'view/data/payload').read_bytes()==b'complete root'
+
+
+def test_root_unpack_and_inventory_cancel_during_bounded_file_reads(tmp_path):
+    source=tmp_path/'source';source.mkdir();(source/'large').write_bytes(b'x'*(4*1024*1024))
+    archive=tmp_path/'input.tree.tar';job.pack_root(source,archive);destination=tmp_path/'restored'
+    def cancel_unpack():
+        p=destination/'large'
+        if p.exists()and p.stat().st_size>=1024*1024:raise RuntimeError('cancelled during payload')
+    with pytest.raises(RuntimeError,match='cancelled during payload'):
+        job.unpack_root(archive,destination,check_cancelled=cancel_unpack)
+    assert 0<(destination/'large').stat().st_size<4*1024*1024
+    checks=[]
+    def cancel_inventory():
+        checks.append(True)
+        if len(checks)==4:raise RuntimeError('cancelled inventory')
+    with pytest.raises(RuntimeError,match='cancelled inventory'):
+        job.inventory(source,check_cancelled=cancel_inventory)
+    assert (source/'large').stat().st_size==4*1024*1024
+
+
+def test_view_cancellation_interrupts_raw_directory_copy(tmp_path):
+    (tmp_path/job.RUNTIME).mkdir();source=tmp_path/'inputs';source.mkdir()
+    (source/'large').write_bytes(b'x'*(4*1024*1024))
+    request={'code':[],'inputs':[{'path':'inputs'}],
+             'params':{'recipe':{'paths':{'data':'inputs'},'outputs':[]}}}
+    target=tmp_path/job.RUNTIME/'view/data/large'
+    def check():
+        if target.exists()and target.stat().st_size>=1024*1024:raise RuntimeError('cancelled raw copy')
+    with pytest.raises(RuntimeError,match='cancelled raw copy'):
+        job.prepare_view(request,tmp_path,check_cancelled=check)
+    assert 0<target.stat().st_size<4*1024*1024
+    assert (source/'large').stat().st_size==4*1024*1024
+
+
+def test_existing_parent_mkdir_is_noop_only_and_other_writes_remain_refused(tmp_path):
+    from atelier.build_v2.python_job import PathGuard
+    output = tmp_path / 'build' / 'product'
+    output.parent.mkdir()
+    guard = PathGuard(str(tmp_path), [], [], lambda report: None,
+                      [str(output)], mkdir_existing=[str(output.parent)])
+    calls = []
+    def mkdir(path, **kwargs):
+        calls.append(path)
+        raise FileExistsError(path)
+    wrapped = guard.wrap('mkdir', mkdir, 'write')
+    with pytest.raises(FileExistsError):
+        wrapped(str(output.parent))
+    assert calls == [str(output.parent)]
+    assert not guard.allowed('write', str(output.parent))
+    assert not guard.allowed('write', str(output.parent / 'other'))
+    assert guard.allowed('write', str(output))
+
+
+def test_nested_callback_binds_actual_freevars_without_evaluating_artificial_defaults(tmp_path):
+    source = tmp_path / 'callback.py'
+    source.write_text('def factory(path):\n    def action(value=3):\n        return path.name, value\n    return action\n')
+    fn = job.bind({'source': 'callback.py', 'qualname': 'factory.<locals>.action', 'line': 2,
+                   'captures': [{'path': 'data/expected'}], 'defaults': [7], 'kwdefaults': {}}, tmp_path)
+    assert fn() == ('expected', 7)
+    with pytest.raises(ValueError, match='closure'):
+        job.bind({'source': 'callback.py', 'qualname': 'factory.<locals>.action', 'line': 2,
+                  'captures': [], 'defaults': [], 'kwdefaults': {}}, tmp_path)
+
+
+def test_derived_roster_requires_actual_resolved_member_list(tmp_path):
+    descriptor = {'derived_items': {'root': 'build/exports', 'members': [
+        {'piece': 'PieceA', 'root': 'build/exports/PieceA', 'slot': 'derived_0'}]}}
+    result = job._value(descriptor, tmp_path)
+    assert result[0][1] == 'PieceA'
+    assert result[0][0].products[0].paths == (tmp_path / 'build/exports/PieceA',)
+    with pytest.raises(ValueError, match='unresolved'):
+        job._value({'derived_items': {'root': 'build/exports', 'templates': []}}, tmp_path)
+
+
+def test_callback_decorator_line_and_qualified_current_code_are_bound(tmp_path):
+    source = tmp_path / 'decorated.py'
+    source.write_text('from functools import cache\n@cache\ndef validate(value=1):\n    return value + 2\n')
+    fn = job.bind({'source': 'decorated.py', 'qualname': 'validate', 'line': 2,
+                   'captures': [], 'defaults': [5], 'kwdefaults': {}}, tmp_path)
+    assert fn() == 7
+    with pytest.raises(ValueError, match='closure'):
+        job.bind({'source': 'decorated.py', 'qualname': 'foreign', 'line': 2,
+                  'captures': [], 'defaults': [5], 'kwdefaults': {}}, tmp_path)
+
+
+def test_encoded_geometry_plan_decodes_every_selected_member_and_refuses_tampering(tmp_path):
+    import hashlib
+    from atelier import encoded_glb
+    from test_gltf_partition import model
+    root = tmp_path / 'plan'
+    root.mkdir()
+    packet = encoded_glb.encode(model(), key='Part')
+    identity, _ = encoded_glb.decode(packet)
+    (root / 'Part.mesh').write_bytes(packet)
+    value = dict(schema=1, kind='encoded_glb', complete=True, triangle_limit=32768,
+                 parent='Parent', source_triangles=identity['triangles'],
+                 source_render_triangles=identity['triangles'], source_collision_triangles=0,
+                 pieces=[dict(name='Part', payload='Part.mesh', sha256=hashlib.sha256(packet).hexdigest(),
+                              triangles=identity['triangles'], role='render', bounds=identity['bounds'])])
+    (root / 'plan.json').write_text(json.dumps(value))
+    limits = dict(max_pieces=10, max_manifest_bytes=1024 * 1024,
+                  max_member_bytes=1024 * 1024, max_total_bytes=2 * 1024 * 1024)
+    assert job.verify_encoded_plan(root, parent='Parent', limits=limits) == value
+    (root / 'Part.mesh').write_bytes(packet[:-1] + bytes([packet[-1] ^ 1]))
+    with pytest.raises(ValueError):
+        job.verify_encoded_plan(root, parent='Parent', limits=limits)
+
+
+def test_complete_root_rejects_physical_hardlinks(tmp_path):
+    import os
+    source = tmp_path / 'source'
+    source.write_text('data')
+    os.link(source, tmp_path / 'alias')
+    with pytest.raises(ValueError, match='hard link'):
+        job.pack_root(source, tmp_path / 'out.tar')
+
+
+def test_recipe_worker_announces_the_selected_runtime_before_initializing_protocol_identity():
+    from atelier.build_v2.recipe_worker import RecipeWorker, BLENDER_VERSION, PYTHON_VERSION
+    blender = RecipeWorker(io.BytesIO(), io.BytesIO(), True, blender='/installed/Blender')
+    assert blender.version == BLENDER_VERSION
+    python = RecipeWorker(io.BytesIO(), io.BytesIO(), True)
+    assert python.version == PYTHON_VERSION
+    fixture = RecipeWorker(io.BytesIO(), io.BytesIO(), False, blender='/installed/Blender')
+    assert fixture.version == BLENDER_VERSION + '+unsandboxed-test'
+
+
+def test_original_blender_argument_separator_is_preserved_by_generic_command_composition(tmp_path, monkeypatch):
+    import sys
+    from types import ModuleType, SimpleNamespace
+    view = tmp_path / job.RUNTIME / 'view'
+    view.mkdir(parents=True)
+    script = view / 'original.py'
+    script.write_text("import json, sys\nfrom pathlib import Path\nPath(__file__).with_name('argv.json').write_text(json.dumps(sys.argv[sys.argv.index('--')+1:]))\n")
+    monkeypatch.setitem(sys.modules, 'bpy', ModuleType('bpy'))
+    monkeypatch.setattr(sys, 'path', list(sys.path))
+    monkeypatch.chdir(view)
+    context = SimpleNamespace(output_dir=tmp_path / 'output', params={'recipe': {
+        'commands': [{'kind': 'blender', 'script': 'original.py', 'args': ['actual-role'], 'env': [], 'threads': 3}],
+        'paths': {}, 'outputs': [], 'verify': None}})
+    job.run(context)
+    assert json.loads((view / 'argv.json').read_text()) == ['actual-role']
+
+
+@pytest.mark.parametrize('raised', [False, True])
+def test_recipe_atomic_scope_reuses_bootstrap_held_scratch_and_resets_on_every_exit(tmp_path, monkeypatch, raised):
+    import os
+    from types import SimpleNamespace
+    from atelier import atomic_files
+    view = tmp_path / job.RUNTIME / 'view'
+    helper = view / 'platform/studio/atelier/atomic_files.py'
+    helper.parent.mkdir(parents=True)
+    helper.write_bytes(Path(atomic_files.__file__).read_bytes())
+    scratch = tmp_path / job.RUNTIME / 'tmp'
+    scratch.mkdir()
+    descriptor = os.open(scratch, os.O_RDONLY | os.O_DIRECTORY)
+    info = os.fstat(descriptor)
+    script = view / 'body.py'
+    script.write_text("from pathlib import Path\nfrom atelier.atomic_files import atomic_json\natomic_json(Path(__file__).with_name('result.json'), {'value': 1})\n" + ("raise RuntimeError('original error')\n" if raised else ''))
+    monkeypatch.chdir(view)
+    real_open = os.open
+    def without_root_anchor(path, flags, *args, **kwargs):
+        assert os.fspath(path) != '/', 'scope must not reopen the filesystem root under PathGuard'
+        return real_open(path, flags, *args, **kwargs)
+    monkeypatch.setattr(os, 'open', without_root_anchor)
+    from atelier.build_v2.python_job import JobContext
+    context = JobContext({}, [], {'recipe': {'paths': {}, 'commands': [{'kind':'python','script':'body.py','args':[],'env':[],'threads':3}],
+                           'outputs':[], 'verify':None}}, 0)
+    assert context._atomic_temporary is None
+    context.output_dir = tmp_path / 'output'
+    context._atomic_temporary = (scratch, descriptor, info.st_dev, info.st_ino)
+    try:
+        if raised:
+            with pytest.raises(RuntimeError, match='original error'):
+                job.run(context)
+        else:
+            job.run(context)
+        assert atomic_files._MANAGED_TEMPORARY.get() is None
+        assert json.loads((view / 'result.json').read_text()) == {'value': 1}
+        assert list(scratch.iterdir()) == []
+    finally:
+        os.close(descriptor)
+
+
+def test_file_group_projects_actual_completed_outputs_to_selected_members(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    source = tmp_path / 'generated'; source.mkdir()
+    (source / 'Footstep.wav').write_bytes(b'actual source wave bytes')
+    (source / 'Walk.fbx').write_bytes(b'actual source clip bytes')
+    (source / 'notes.txt').write_text('not selected by the explicit extension contract')
+    output = tmp_path / 'output'; output.mkdir()
+    monkeypatch.chdir(tmp_path)
+    context = SimpleNamespace(output_dir=output, params={'file_root': 'output/files', 'recipe': {
+        'version': 1, 'commands': [], 'paths': {}, 'outputs': [], 'verify': None,
+        'file_group': {'source': 'generated', 'parent': 'Assets', 'extensions': ['.wav', '.fbx']}}})
+    job.run(context)
+    manifest = json.loads((output / 'files/plan.json').read_bytes())
+    assert manifest['kind'] == 'file_set'
+    assert {row['name'] for row in manifest['pieces']} == {'Footstep', 'Walk'}
+    assert (output / 'files/Footstep.wav').read_bytes() == (source / 'Footstep.wav').read_bytes()
+    assert not (output / 'files/notes.txt').exists()

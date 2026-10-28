@@ -45,3 +45,8 @@ tier = "t0"
 id = "c1b.staging.pinned_objects_missing_object_is_io"
 tests = ["atelier-build-v2::staging/pinned_objects_report_a_missing_object_as_io_with_the_same_text"]
 tier = "t0"
+
+[[scenarios]]
+id = "c1b.only_keyed_blender_worker_receives_empty_private_runtime_scratch"
+tier = "t0"
+tests = ["atelier-build-v2::staging/only_keyed_blender_worker_receives_empty_private_runtime_scratch"]

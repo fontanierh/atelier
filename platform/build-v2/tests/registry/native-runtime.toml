@@ -1,0 +1,121 @@
+schema_version = 1
+
+[[scenarios]]
+id = "native.finish.opaque_data_files"
+tests = ["atelier-build-v2/unreal_controller::tests::finish_opaque_data_is_canonical_and_never_native_or_external"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.resident.context_partition"
+tests = ["atelier-build-v2/python_executor::tests::resident_groups_bind_settings_and_context_inputs_not_job_payloads"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.package.exact_uncooked_primary"
+tests = ["atelier-build-v2/native_verify::tests::selected_uncooked_primary_is_exact_unique_and_not_a_sibling"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.verify.certified_metadata_archive"
+tests = ["atelier-build-v2/native_verify::tests::native_transport_metadata_requires_certified_archive_and_exact_root_membership"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.tool.exact_worker_identity"
+tests = ["atelier-build-v2/native_tools::tests::native_worker_identity_binds_exact_project_sources_only"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.nested_worker_identity"
+tests = ["atelier-build-v2/results::zen_cook::native_tool_source::tests::native_worker_identity_binds_exact_project_sources_only"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.external_result_key_is_independent_from_the_completed_source_key"
+tests = ["atelier-build-v2/results::zen_cook::tests::external_result_key_is_independent_from_the_completed_source_key"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.source_producer_requires_exact_fixed_worker_not_an_operation_label"
+tests = ["atelier-build-v2/results::zen_cook::tests::source_producer_requires_exact_fixed_worker_not_an_operation_label"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.stock_native_paths_derive_from_producer_project_key_and_selected_package"
+tests = ["atelier-build-v2/results::zen_cook::tests::stock_native_paths_derive_from_producer_project_key_and_selected_package"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.producer_origin_requires_exact_consumed_native_bytes_and_role"
+tests = ["atelier-build-v2/results::zen_cook::tests::producer_origin_requires_exact_consumed_native_bytes_and_role"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.cached_source_authority_pins_and_hashes_the_current_transaction_cb"
+tests = ["atelier-build-v2/results::zen_cook::tests::cached_source_authority_pins_and_hashes_the_current_transaction_cb"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.retained_native_record_changes_and_missing_marker_refuse_publication"
+tests = ["atelier-build-v2/results::zen_cook::tests::retained_native_record_changes_and_missing_marker_refuse_publication"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.only_exact_canonical_native_locators_are_interpreted"
+tests = ["atelier-build-v2/results::zen_cook::tests::only_exact_canonical_native_locators_are_interpreted"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.materializes_independent_editor_and_plugin_context"
+tests = ["atelier-build-v2/native_modules::tests::materializes_independent_editor_and_plugin_context"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.an_existing_scope_refuses_and_is_kept"
+tests = ["atelier-build-v2/native_modules::tests::an_existing_scope_refuses_and_is_kept"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.wrong_build_modules_or_slots_refuse_and_clean_the_scope"
+tests = ["atelier-build-v2/native_modules::tests::wrong_build_modules_or_slots_refuse_and_clean_the_scope"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.staged_bytes_must_equal_keyed_digests"
+tests = ["atelier-build-v2/native_modules::tests::staged_bytes_must_equal_keyed_digests"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.archive_members_cannot_escape_overwrite_or_go_unlisted"
+tests = ["atelier-build-v2/native_modules::tests::archive_members_cannot_escape_overwrite_or_go_unlisted"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.nested_folders_materialize_in_order"
+tests = ["atelier-build-v2/native_modules::tests::nested_folders_materialize_in_order"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.zen.independent_verifier_uses_normal_key_encoding_and_exact_cb_content"
+tests = ["atelier-build-v2/native_verify::tests::independent_verifier_uses_normal_key_encoding_and_exact_cb_content"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.cooked_content_identity"
+tests = ["atelier-build-v2/keys::native_cooked_tests::native_content_excludes_namespace_but_binds_complete_package_identity"]
+tier = "t0"
+
+[[scenarios]]
+id = "native-followers.dynamic-record-key-substitution"
+tests = ["atelier-build-v2/native_chains::substitution_tests::native_cook_record_keys_bind_the_expanded_piece_and_refuse_aliases"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.derived.selected_member"
+tests = ["atelier-build-v2/controller::selected_derived_tests::a_named_derived_native_uses_only_the_actual_selected_child"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.derived.mapped_selected_member"
+tests = ["atelier-build-v2/controller::selected_derived_tests::a_mapped_derived_member_binds_only_the_observed_sibling"]
+tier = "t0"

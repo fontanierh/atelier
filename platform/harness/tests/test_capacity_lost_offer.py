@@ -94,3 +94,50 @@ def test_pressure_requeues_more_than_three_times_under_the_original_deadline(mon
     monkeypatch.setattr(guarded,'_run',run)
     assert guarded.run(['ordinary-python'],tmp_path)==0
     assert len(calls)==5 and len({c['_queue_deadline'] for c in calls})==1
+
+
+@pytest.mark.parametrize('gpu', [None, 10.])
+def test_logical_folder_survives_every_internal_requeue_while_reports_stay_fresh(monkeypatch, tmp_path, gpu):
+    # Exercise the actual outer requeue loop with a synthetic positively unexecuted denial;
+    # this is forwarding/report-path proof, not a real capacity or cleanup attestation.
+    folder = tmp_path / 'private-invocation'
+    folder.mkdir()
+    second_folder = tmp_path / 'other-private-invocation'
+    second_folder.mkdir()
+    logical = tmp_path / 'ordinary-step.guard'
+    logical.mkdir()
+    previous = logical / 'memory-health.json'
+    previous.write_text('{"peak_bytes":3758096384}')
+    admission = SimpleNamespace(child=(10, 20))
+    calls = []
+    def run(*args, **kwargs):
+        calls.append((args, kwargs))
+        actual = args[1]
+        assert actual in (folder, second_folder) and kwargs['logical_folder'] == logical
+        assert kwargs.get('job_gpu_gib') == gpu
+        for name in ('memory-health.json', 'memory-health-tree.json', 'stdout.log'):
+            (actual / name).write_text(actual.name if name == 'stdout.log' else '{}')
+        if len(calls) >= 3:
+            return 0
+        error = client.CapacityOfferLost(admission, 'pressure-wait')
+        error.cleanup = {'no_go': True, 'uncharged_close': True}
+        raise error
+    monkeypatch.setattr(guarded, '_run', run)
+    assert guarded.run(['ordinary-python'], folder, logical_folder=logical, queue_seconds=123, job_gpu_gib=gpu) == 0
+    assert len(calls) == 3 and len({kwargs['_queue_deadline'] for _, kwargs in calls}) == 1
+    assert all(args == calls[0][0] for args, _ in calls)
+    assert len(list(folder.glob('lost-offer-*/no-go.json'))) == 2
+    assert (folder / 'stdout.log').exists() and previous.read_text() == '{"peak_bytes":3758096384}'
+    assert not (logical / 'stdout.log').exists()
+    assert guarded.run(['ordinary-python'], second_folder, logical_folder=logical, queue_seconds=123, job_gpu_gib=gpu) == 0
+    assert (folder / 'stdout.log').read_text() == folder.name
+    assert (second_folder / 'stdout.log').read_text() == second_folder.name
+
+
+def test_explicit_admission_cannot_claim_automatic_logical_identity(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(guarded, '_run', lambda *args, **kwargs: calls.append(1))
+    with pytest.raises(ValueError, match='automatic admission'):
+        guarded.run(['ordinary-python'], tmp_path, logical_folder='ordinary-step.guard',
+                    admission=SimpleNamespace())
+    assert calls == []

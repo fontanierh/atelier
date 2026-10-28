@@ -1,8 +1,8 @@
-"""Unused D2 job bodies: existing MeshIR schema 2 to one independent FBX export.
+"""D2 job bodies: existing MeshIR to one independent explicitly selected FBX or GLB export.
 
 Project entry scripts call these functions inside C2b's fresh, declared-code job. They do not
-create tasks, cache entries, workers or installed files. MeshSet, encoded GLB and material-graph
-GLB routes are explicitly pending. Nothing here imports a v1 build/cache controller.
+create tasks, cache entries, workers or installed files. MeshSet remains unsupported; encoded
+GLB uses its separate lossless body. Nothing here imports a v1 build/cache controller.
 """
 import hashlib
 import json
@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 
 from atelier import mesh_ir, mesh_collision
 from atelier.export_manifest import TRIANGLE_LIMIT, name
-from .blender_validate import MAX_RECEIPT_BYTES, PLAN_FIELDS, MEMBER_FIELDS, decode_mesh_payload, mesh_facts, validate_member_row, validate_export_receipt, validate_mesh_options
+from .blender_validate import MAX_RECEIPT_BYTES, PLAN_FIELDS, MEMBER_FIELDS, decode_mesh_payload, mesh_facts, validate_member_row, validate_export_receipt, validate_mesh_options, selected_policy
 
 
 def _json(raw):
@@ -26,11 +26,14 @@ def _member(value):
     return value
 
 
-def verify_plan(root, *, parent, limits):
+def verify_plan(root, *, parent, limits, output_format='fbx', plan_encoding='mesh_ir'):
     """@cc [owner:fontanierh,label:correctness] d2-producer-verifies-emitted-plan
     The producer MUST verify its complete emitted set before Completed, fully decoding each
     selected MeshIR with the existing decoder, binding hashes and preserving exact face/material/
-    collision ownership. Unknown, missing, aliased or linked files and over-limit groups MUST fail.
+    collision ownership against the explicitly declared export format and plan encoding.
+    Mesh sets MUST retain independent object slot tables and the complete semantic roster;
+    they MUST NOT invent a shared face partition or material-index table. Unknown, missing, aliased
+    or linked files and over-limit groups MUST fail.
     B2 MUST independently check the later frozen inventory and bindings; this is in-job proof only.
     See test_build_v2_blender_ops.py.
     """
@@ -45,18 +48,26 @@ def verify_plan(root, *, parent, limits):
     paths = list(root.iterdir())
     if any(p.is_symlink() or not p.is_file() or p.stat().st_nlink != 1 for p in paths):
         raise ValueError('Plan contains a link, directory or unsupported member')
+    if output_format not in ('fbx', 'glb'):
+        raise ValueError('Producer requires an explicit FBX or GLB export format')
     manifest_path = root / 'plan.json'
     if not manifest_path.is_file() or manifest_path.stat().st_size > limits['max_manifest_bytes']:
         raise ValueError('Missing or oversized plan manifest')
     manifest = _json(manifest_path.read_bytes())
-    if (type(manifest) is not dict or set(manifest) != PLAN_FIELDS or type(manifest.get('schema')) is not int or manifest['schema'] != 1
-            or 'kind' in manifest or manifest.get('complete') is not True
+    if plan_encoding not in ('mesh_ir', 'mesh_set'):
+        raise ValueError('Unsupported declared geometry encoding')
+    mesh_set = plan_encoding == 'mesh_set'
+    fields = (PLAN_FIELDS - {'partition', 'collision_owner'} | {'kind', 'metadata', 'diagnostics'}
+              if mesh_set else PLAN_FIELDS)
+    if (type(manifest) is not dict or set(manifest) != fields or type(manifest.get('schema')) is not int or manifest['schema'] != 1
+            or (manifest.get('kind') != 'mesh_set' if mesh_set else 'kind' in manifest)
+            or manifest.get('complete') is not True
             or manifest.get('parent') != name(parent) or manifest.get('triangle_limit') != TRIANGLE_LIMIT
-            or manifest.get('partition') not in ('whole', 'spatial', 'logical')):
+            or (not mesh_set and manifest.get('partition') not in ('whole', 'spatial', 'logical', 'explicit'))):
         raise ValueError('Unsupported or incomplete MeshIR plan')
     if (type(manifest['source_triangles']) is not int or manifest['source_triangles'] <= 0
             or type(manifest['source_collision_hulls']) is not int or manifest['source_collision_hulls'] < 0
-            or (manifest['collision_owner'] is not None and type(manifest['collision_owner']) is not str)
+            or (manifest.get('collision_owner') is not None and type(manifest['collision_owner']) is not str)
             or not isinstance(manifest['slots'], list) or not manifest['slots']
             or any(type(slot) is not str or not slot for slot in manifest['slots'])
             or not isinstance(manifest['matrix'], list) or len(manifest['matrix']) != 4
@@ -67,14 +78,15 @@ def verify_plan(root, *, parent, limits):
     rows = manifest.get('pieces')
     if not isinstance(rows, list) or not 0 < len(rows) <= limits['max_pieces']:
         raise ValueError('Invalid plan piece count')
-    names, files, faces = set(), {'plan.json'}, set()
+    names, files, faces, all_slots = set(), {'plan.json'}, set(), set()
+    member_fields = MEMBER_FIELDS - {'source_faces', 'source_material_indices'} if mesh_set else MEMBER_FIELDS
     total_bytes = manifest_path.stat().st_size
     triangles = polygons = 0
     source_polygons = manifest.get('source_polygons')
     if type(source_polygons) is not int or source_polygons <= 0:
         raise ValueError('Missing complete source polygon inventory')
     for row in rows:
-        if type(row) is not dict or set(row) != MEMBER_FIELDS:
+        if type(row) is not dict or set(row) != member_fields:
             raise ValueError('Invalid plan member')
         if (any(type(row[field]) is not int or row[field] < minimum
                 for field, minimum in [('triangles', 1), ('polygons', 1), ('collision_hulls', 0)])
@@ -83,9 +95,11 @@ def verify_plan(root, *, parent, limits):
                        for field in ('min', 'max'))
                 or not isinstance(row['slots'], list) or not row['slots']
                 or any(type(slot) is not str or not slot for slot in row['slots'])
-                or not isinstance(row['source_material_indices'], list)):
+                or (not mesh_set and not isinstance(row['source_material_indices'], list))):
             raise ValueError('Mistyped piece metadata')
         asset = name(row.get('name'))
+        if mesh_set and not (asset == parent or asset.startswith(parent + '_')):
+            raise ValueError('Mesh-set member lies outside its declared parent')
         if asset.casefold() in names:
             raise ValueError('Aliased plan identity')
         names.add(asset.casefold())
@@ -99,14 +113,16 @@ def verify_plan(root, *, parent, limits):
         raw = path.read_bytes()
         if hashlib.sha256(raw).hexdigest() != row.get('sha256'):
             raise ValueError('Emitted payload hash differs from the plan')
-        facts = mesh_facts(raw, expected_asset=asset)
+        facts = mesh_facts(raw, expected_asset=asset, output_format=output_format)
         validate_member_row(facts, row, manifest)
-        membership = row.get('source_faces')
-        if (not isinstance(membership, list) or len(membership) != facts['polygons']
-                or any(type(i) is not int or not 0 <= i < source_polygons for i in membership)
-                or membership != sorted(set(membership)) or faces.intersection(membership)):
-            raise ValueError('Missing, duplicated or overlapping source-face ownership')
-        faces.update(membership)
+        all_slots.update(facts['slots'])
+        if not mesh_set:
+            membership = row.get('source_faces')
+            if (not isinstance(membership, list) or len(membership) != facts['polygons']
+                    or any(type(i) is not int or not 0 <= i < source_polygons for i in membership)
+                    or membership != sorted(set(membership)) or faces.intersection(membership)):
+                raise ValueError('Missing, duplicated or overlapping source-face ownership')
+            faces.update(membership)
         triangles += facts['triangles']
         polygons += facts['polygons']
         total_bytes += len(raw)
@@ -115,14 +131,22 @@ def verify_plan(root, *, parent, limits):
     if total_bytes > limits['max_total_bytes']:
         raise ValueError('Plan total byte budget exceeded')
     if (triangles != manifest.get('source_triangles') or polygons != source_polygons
-            or faces != set(range(source_polygons))):
+            or (not mesh_set and faces != set(range(source_polygons)))):
         raise ValueError('Incomplete geometry ownership')
     hulls = manifest.get('source_collision_hulls')
     if type(hulls) is not int or hulls < 0:
         raise ValueError('Invalid source collision inventory')
     if (hulls and manifest.get('collision_owner') != rows[0]['name']) or (not hulls and manifest.get('collision_owner') is not None):
         raise ValueError('Whole collision owner must be the explicit first piece')
-    if manifest['partition'] == 'whole' and [row['name'] for row in rows] != [parent]:
+    if mesh_set and (hulls != 0 or sorted(all_slots) != manifest['slots']
+                     or not isinstance(manifest['metadata'], dict)
+                     or set(manifest['metadata']) != {row['name'] for row in rows}
+                     or any(not isinstance(value, dict) for value in manifest['metadata'].values())
+                     or not isinstance(manifest['diagnostics'], dict)):
+        raise ValueError('Mesh-set material or semantic inventory is incomplete')
+    if mesh_set:
+        json.dumps({'metadata': manifest['metadata'], 'diagnostics': manifest['diagnostics']}, allow_nan=False)
+    if manifest.get('partition') == 'whole' and [row['name'] for row in rows] != [parent]:
         raise ValueError('Whole geometry must retain its existing whole owner')
     return manifest
 
@@ -167,14 +191,21 @@ def run_plan(context, producer):
             raise ValueError('Linked planner output ancestor')
     root.mkdir(parents=True, exist_ok=False)
     producer(root)
-    return verify_plan(root, parent=context.params['parent'], limits=context.params['plan_limits'])
+    return verify_plan(root, parent=context.params['parent'], limits=context.params['plan_limits'],
+                       output_format=context.params.get('format', 'fbx'))
 
 
 def run_export_piece(context):
     """Fully decode one selected payload, restore exactly its geometry and emit FBX + receipt."""
-    if (context.params['format'] != 'fbx' or context.params['payload_encoding'] != 'mesh_ir'
+    output_format = context.params['format']
+    if (output_format not in ('fbx', 'glb') or context.params['payload_encoding'] not in ('mesh_ir', 'mesh_set')
             or context.params['payload_role'] != 'geometry' or set(context.inputs) != {'payload'}):
-        raise ValueError('Only one selected MeshIR geometry payload to FBX is supported')
+        raise ValueError('Only one selected MeshIR geometry payload to FBX or GLB is supported')
+    policy = None
+    if context.params['payload_encoding'] == 'mesh_set':
+        policy = selected_policy(context.params.get('payload_metadata'))
+    elif 'payload_metadata' in context.params:
+        raise ValueError('Semantic projection metadata requires its mesh-set encoding')
     root = context.inputs['payload']
     member = _member(context.params['payload_member'])
     if root is None or root.is_symlink() or not root.is_dir():
@@ -186,17 +217,21 @@ def run_export_piece(context):
             or payload_path.stat().st_size > mesh_ir.MAX_BYTES):
         raise ValueError('Missing or invalid selected geometry payload')
     original = payload_path.read_bytes()
-    meta, piece, facts = decode_mesh_payload(original)
+    meta, piece, facts = decode_mesh_payload(original, output_format=output_format)
     asset = name(meta['asset'])
-    primary_names = [path for path in context.outputs if path.endswith('.fbx')]
+    primary_names = [path for path in context.outputs if path.endswith('.' + output_format)]
     if (member != asset + '.npz' or len(context.outputs) != 2 or len(primary_names) != 1
             or set(context.outputs) != {primary_names[0], 'export.json'}):
         raise ValueError('Selected member and complete export outputs differ')
     primary_name = _member(primary_names[0])
     name(primary_name[:-4])
-    options = export_options(meta['options'], context.params.get('options', {}))
+    options = export_options(meta['options'], context.params.get('options', {}),
+                             output_format=output_format, finite_materials=meta['schema'] == 3)
     _export_mesh(asset, meta, piece, context.output(primary_name), options)
-    verify_emitted_fbx(context.output(primary_name), expected_meshes=1 + len(meta['collisions']))
+    if output_format == 'fbx':
+        verify_emitted_fbx(context.output(primary_name), expected_meshes=1 + len(meta['collisions']))
+    else:
+        verify_emitted_glb(context.output(primary_name), expected_meshes=1 + len(meta['collisions']))
     primary = context.output(primary_name).read_bytes()
     primary_digest = hashlib.sha256(primary).hexdigest()
     payload_digest = hashlib.sha256(original).hexdigest()
@@ -204,9 +239,11 @@ def run_export_piece(context):
                    bounds=[facts['min'], facts['max']], sha256=primary_digest,
                    metadata=dict(geometry_sha256=payload_digest, slots=meta['slots'], polygons=len(piece['faces']),
                                  collision_hulls=len(meta['collisions']), uv_channels=facts['uv_channels']))
+    if policy is not None:
+        receipt['metadata']['native_policy'] = policy
     raw = json.dumps(receipt, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
     validate_export_receipt(raw, primary, asset=asset, primary_digest=primary_digest,
-                            payload_digest=payload_digest, facts=facts, primary_name=primary_name)
+                            payload_digest=payload_digest, facts=facts, primary_name=primary_name, native_policy=policy)
     if len(raw) > MAX_RECEIPT_BYTES:
         raise ValueError('Export receipt exceeds its fixed bound')
     context.output('export.json').write_bytes(raw)
@@ -229,14 +266,30 @@ def verify_emitted_fbx(path, *, expected_meshes):
         raise ValueError('Emitted FBX mesh inventory differs from the selected render/UCX set')
 
 
+def verify_emitted_glb(path, *, expected_meshes):
+    """Check complete GLB framing and the selected render/collision inventory before completion."""
+    from atelier.gltf import glb_parts
+    data = path.read_bytes()
+    doc, _binary = glb_parts(data)
+    if (len(doc.get('meshes', [])) != expected_meshes or doc.get('skins') or doc.get('animations')
+            or doc.get('images') or any('uri' in row for row in doc.get('buffers', []))):
+        raise ValueError('Emitted GLB differs from the image-free selected mesh inventory')
+
+
 def _export_mesh(asset, meta, piece, primary, options):
     import bpy
     from mathutils import Matrix
     from atelier.blender.fbx import export_atomic_fbx
     from .blender_geometry import create_mesh
-    actual = export_options(meta['options'], options)
+    output_format = primary.suffix[1:]
+    actual = export_options(meta['options'], options, output_format=output_format,
+                            finite_materials=meta['schema'] == 3)
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    piece['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label) for label in meta['slots']]
+    if meta['schema'] == 3:
+        from atelier.mesh_materials import restore
+        piece['slots'] = [restore(label, spec) for label, spec in zip(meta['slots'], meta['material_specs'])]
+    else:
+        piece['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label) for label in meta['slots']]
     obj = bpy.data.objects.new(asset, create_mesh(asset, piece))
     bpy.context.collection.objects.link(obj)
     obj.matrix_world = Matrix(meta['matrix'])
@@ -271,19 +324,28 @@ def _export_mesh(asset, meta, piece, primary, options):
     for item in selected:
         item.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    actual.update(filepath=str(primary), use_selection=True, object_types={'MESH'}, bake_anim=False)
-    export_atomic_fbx(**actual)
+    if output_format == 'glb':
+        from atelier.blender.gltf import export_atomic_glb
+        export_atomic_glb(primary, options=actual, finite_materials=meta['schema'] == 3)
+    else:
+        actual.update(filepath=str(primary), use_selection=True, object_types={'MESH'}, bake_anim=False)
+        export_atomic_fbx(**actual)
 
 
-def export_options(payload_options, declared_options):
+def export_options(payload_options, declared_options, *, output_format='fbx', finite_materials=False):
     """Per-piece settings may not widen the fixed export ownership or enable another format."""
     if not hasattr(payload_options, 'items') or not hasattr(declared_options, 'items'):
         raise ValueError('Export options must be explicit objects')
-    actual = validate_mesh_options(payload_options)
-    actual.update(validate_mesh_options(declared_options))
-    if any(key in actual for key in ('filepath', 'use_selection', 'object_types', 'bake_anim')):
+    check = lambda value: validate_mesh_options(value, output_format=output_format, finite_materials=finite_materials)
+    actual = check(payload_options)
+    actual.update(check(declared_options))
+    if output_format == 'glb':
+        return check(actual)
+    if any(key in actual for key in ('filepath', 'use_selection', 'object_types')):
         raise ValueError('Export options cannot override fixed selected-mesh ownership')
-    if (actual.get('path_mode', 'RELATIVE') != 'RELATIVE'
+    # This route restores schema2 labels into a fresh image-free scene. COPY is
+    # the original terrain policy and has no media resources to copy here.
+    if (actual.get('path_mode', 'RELATIVE') not in ('RELATIVE', 'STRIP', 'COPY')
             or actual.get('batch_mode', 'OFF') != 'OFF' or actual.get('use_batch_own_dir', False) is not False):
-        raise ValueError('This FBX slice supports one relative-media primary, not batched/copied resources')
+        raise ValueError('This FBX slice supports one image-free primary without batch outputs')
     return validate_mesh_options(actual)

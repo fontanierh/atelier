@@ -132,7 +132,13 @@ pub struct UnrealWorkerBundle {
 }
 
 /// The worker's files, by their name in the bundle; the script runs and imports only its sibling.
-pub const UNREAL_WORKER_FILES: [&str; 2] = ["protocol.py", "unreal_worker.py"];
+pub const UNREAL_WORKER_FILES: [&str; 5] = [
+    "protocol.py",
+    "python_job.py",
+    "recipe_job.py",
+    "unreal_inputs.py",
+    "unreal_worker.py",
+];
 /// The bundle's entry script.
 pub const UNREAL_WORKER_SCRIPT: &str = "unreal_worker.py";
 /// The session folder that holds the frozen bundle.
@@ -287,7 +293,7 @@ impl DdcPolicy {
             let allowed = match node.kind.as_str() {
                 "File System" => inside,
                 "Pak File" => node.path == self.engine_pak,
-                "Memory" => node.path.is_empty(),
+                "Memory" | "Async" => node.path.is_empty(),
                 _ => false,
             };
             if !allowed {
@@ -357,9 +363,6 @@ impl UnrealContext {
             return Err(invalid(
                 "the editor binaries identity is not a sha256 digest",
             ));
-        }
-        if self.modules.is_empty() {
-            return Err(invalid("a session loads at least one project module"));
         }
         let mut names = BTreeSet::new();
         for module in &self.modules {
@@ -667,6 +670,9 @@ pub struct LoadedContext {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ContextReport {
+    /// Source manifest compiled into the loaded project worker plugin.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_worker_source_digest: Option<String>,
     pub version: u32,
     pub loaded: LoadedContext,
     /// The editor's effective cache graph, read from the editor (never from the command line).
@@ -733,6 +739,8 @@ impl ScratchProject {
             engine_pak: pak_stamp(&engine_pak(context))?,
         };
         for folder in [
+            "Binaries",
+            "Binaries/Mac",
             "Content",
             "Config",
             "Saved",

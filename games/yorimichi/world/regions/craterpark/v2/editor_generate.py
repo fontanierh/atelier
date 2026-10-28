@@ -22,6 +22,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from atelier.atomic_files import managed_temporary_parent
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1]))
@@ -644,7 +645,7 @@ def main(argv=None):
     rep = generate.report(park, index, time.monotonic() - start)
     rep.update(layout='editor', v4=provenance, editor_playtest=index['editor_playtest'],
                bounds_native=index['bounds_native'], bowl_seal=bowl_seal)
-    temporary = out / 'geometry.tmp.npz'
+    temporary = managed_temporary_parent(out / 'geometry.tmp.npz') / 'geometry.tmp.npz'
     np.savez(temporary, **arrays)
     rep['geometry_sha256'] = hashlib.sha256(temporary.read_bytes()).hexdigest()
     if v4_config.provenance(park_path) != provenance:

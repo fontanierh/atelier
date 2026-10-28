@@ -1299,6 +1299,48 @@ fn a_failed_preparation_ends_the_unit_without_a_run_and_is_never_retried() {
         assert_eq!(unit.attempts[0].custody, Custody::Released);
     }
     assert_eq!(report.units[2].outcome.end, End::Completed);
+
+    // Startup evidence is checked only when the worker is Ready; a rejection never sends Run.
+    let space = Workspace::new();
+    let job_spec = spec(&space, "normal", 3_000);
+    let session = session_spec(&space, &job_spec);
+    let (handle, inbox) = session_channel();
+    handle.submit(unit_with(
+        "checked",
+        "checked",
+        job_spec.limits,
+        key(&job_spec),
+    ));
+    handle.close();
+    let (published, _records) = mpsc::channel();
+    let mut checked = 0;
+    let report = run_session_ready_checked(
+        &mut launcher("normal"),
+        &SystemClock::new(),
+        &session,
+        inbox,
+        &mut |_, _| Ok(()),
+        &mut |unit, attempt| {
+            let mut request = job();
+            request.job_id = unit.clone();
+            Ok(staged(&request, unit, attempt))
+        },
+        &mut |_| {
+            checked += 1;
+            Err("actual startup context mismatch".into())
+        },
+        published,
+    )
+    .unwrap();
+    assert_eq!(checked, 1);
+    assert!(runs(&space).is_empty());
+    assert_ne!(report.units[0].outcome.end, End::Completed);
+    assert!(
+        report
+            .sessions
+            .iter()
+            .all(|attempt| attempt.custody == Custody::Released)
+    );
 }
 
 #[test]

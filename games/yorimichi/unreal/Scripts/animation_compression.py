@@ -4,9 +4,6 @@ FBX keeps a 100x root scale. Generic local-unit tolerances can discard
 centimetres of visible motion. Use 0.0001 for these rigs (0.01 cm in game).
 Run this script alone to update existing character/item clips without reimport.
 """
-import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
-import json
-from pathlib import Path
 import unreal as U
 
 _settings=None
@@ -38,6 +35,11 @@ def apply_to(sequence):
     sequence.set_editor_property('bone_compression_settings',_settings)
 
 if __name__=='__main__':
+    import sys
+    from pathlib import Path
+    import json
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
+    import yori
     paths=[]
     for folder in ('/Game/CapeBoy','/Game/Wanderer'):
         for path in U.EditorAssetLibrary.list_assets(folder,recursive=True,include_folder=False):

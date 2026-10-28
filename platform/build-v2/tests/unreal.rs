@@ -80,6 +80,14 @@ fn repo_worker() -> PathBuf {
 fn copied_worker(space: &Workspace) -> PathBuf {
     let source = repo_worker();
     let script = space.write("worker/unreal_worker.py", &fs::read(&source).unwrap());
+    for name in UNREAL_WORKER_FILES {
+        if name != "unreal_worker.py" && name != "protocol.py" {
+            space.write(
+                &format!("worker/{name}"),
+                &fs::read(source.with_file_name(name)).unwrap(),
+            );
+        }
+    }
     space.write(
         "worker/protocol.py",
         &fs::read(source.with_file_name("protocol.py")).unwrap(),
@@ -219,7 +227,9 @@ fn contexts_refuse_what_a_session_cannot_load_honestly() {
     spaced.validate().unwrap();
     refused(&|c| c.build_id.clear(), "BuildId");
     refused(&|c| c.editor.identity = "not-a-digest".into(), "sha256");
-    refused(&|c| c.modules.clear(), "at least one");
+    let mut engine_only = base.clone();
+    engine_only.modules.clear();
+    engine_only.validate().unwrap();
     refused(&|c| c.modules.push(c.modules[0].clone()), "twice");
     refused(&|c| c.plugins.clear(), WORKER_PLUGIN);
     refused(
@@ -316,6 +326,11 @@ fn a_worker_bundle_freezes_only_regular_files_and_never_follows_or_blocks() {
         ));
         fs::create_dir_all(&dir).unwrap();
         fs::copy(&source, dir.join("unreal_worker.py")).unwrap();
+        for name in UNREAL_WORKER_FILES {
+            if name != "unreal_worker.py" && name != "protocol.py" {
+                fs::copy(source.with_file_name(name), dir.join(name)).unwrap();
+            }
+        }
         protocol(&dir.join("protocol.py"));
         UnrealWorkerBundle::read(&dir)
     };
@@ -362,6 +377,20 @@ fn the_ddc_policy_allows_only_the_v2_folder_and_the_engine_pak() {
     let v2 = node("File System", "/store/unreal-ddc/5.8");
     let pak = node("Pak File", "/engine/Engine/DerivedDataCache/Compressed.ddp");
     assert_eq!(policy.problem(&graph(vec![pak.clone(), v2.clone()])), None);
+    assert_eq!(
+        policy.problem(&graph(vec![node("Async", ""), pak.clone(), v2.clone()])),
+        None
+    );
+    assert!(
+        policy
+            .problem(&graph(vec![v2.clone(), node("Async", "/foreign")]))
+            .is_some()
+    );
+    assert!(
+        policy
+            .problem(&graph(vec![node("Async", ""), pak.clone()]))
+            .is_some()
+    );
     assert_eq!(
         policy.problem(&graph(vec![v2.clone(), node("Memory", "")])),
         None
@@ -708,6 +737,7 @@ fn context_and_import_evidence_are_required_well_formed_and_exact() {
     };
     let write = |loaded: &LoadedContext, nodes: Vec<DdcNode>| {
         let value = ContextReport {
+            native_worker_source_digest: None,
             version: EVIDENCE_VERSION,
             loaded: loaded.clone(),
             ddc_graph: DdcGraph {

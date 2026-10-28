@@ -8,12 +8,29 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub const INSTALL_METADATA: &str = "build/build-v2/install";
-pub(crate) const LEGACY_EPOCH: &str = "build/build-v2/install/legacy-epoch.json";
-
-/// Presence is intentionally stronger than parsing: foreign, linked or damaged epochs fence.
-pub(crate) fn require_no_legacy_epoch(checkout: &Path) -> Result<(), LockError> {
-    if crate::install_fs::RootFs::open(checkout)?.occupied(LEGACY_EPOCH)? {
-        return Err(LockError::LegacyEpochIncomplete);
+/// Unknown control entries may describe unfinished work. Never interpret, remove or
+/// silently adopt them as an install receipt; only the current install namespace is valid.
+pub(crate) fn require_known_install_metadata(checkout: &Path) -> Result<(), LockError> {
+    let fs = crate::install_fs::RootFs::open(checkout)?;
+    if !fs.occupied(INSTALL_METADATA)? {
+        return Ok(());
+    }
+    let known = [
+        "build.lock",
+        "content.lock",
+        "index.json",
+        "journal.json",
+        "receipts",
+        "transactions",
+        "quarantine",
+        "completions",
+    ];
+    if fs
+        .metadata_names(INSTALL_METADATA, 32)?
+        .iter()
+        .any(|name| !known.contains(&name.as_str()))
+    {
+        return Err(LockError::UnfinishedMetadata);
     }
     Ok(())
 }
@@ -22,7 +39,7 @@ pub(crate) fn require_no_legacy_epoch(checkout: &Path) -> Result<(), LockError> 
 pub enum LockError {
     Busy,
     RecoveryRequired,
-    LegacyEpochIncomplete,
+    UnfinishedMetadata,
     Io(io::Error),
 }
 impl fmt::Display for LockError {
@@ -32,9 +49,8 @@ impl fmt::Display for LockError {
             Self::RecoveryRequired => {
                 formatter.write_str("checkout install journal requires exclusive recovery")
             }
-            Self::LegacyEpochIncomplete => {
-                formatter.write_str("legacy epoch requires same-scope repair")
-            }
+            Self::UnfinishedMetadata => formatter
+                .write_str("unknown checkout control metadata requires explicit disposition"),
             Self::Io(error) => error.fmt(formatter),
         }
     }
@@ -101,12 +117,6 @@ pub struct ContentReadGuard(HeldLock);
 
 pub(crate) struct ContentWriteGuard {
     _lock: HeldLock,
-}
-
-/// Private fresh-exec exception only. No caller here changes inheritable flags or launches.
-pub(crate) struct LegacyExecCustody {
-    build: File,
-    content: File,
 }
 
 fn invalid(message: &str) -> io::Error {
@@ -232,7 +242,7 @@ impl CheckoutLocks {
             "content.lock",
             true,
         )?;
-        require_no_legacy_epoch(&self.checkout)?;
+        require_known_install_metadata(&self.checkout)?;
         match fs::symlink_metadata(self.metadata.join("journal.json")) {
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(ContentReadGuard(lock)),
             Err(error) => Err(error.into()),
@@ -256,15 +266,7 @@ impl BuildGuard {
         &self.0.metadata
     }
     pub(crate) fn try_write_content(&self) -> Result<ContentWriteGuard, LockError> {
-        let writer = self.try_legacy_write_content()?;
-        require_no_legacy_epoch(self.root())?;
-        Ok(writer)
-    }
-
-    // Acquiring exclusion is not authority to interpret or mutate an existing epoch.
-    // Only legacy_epoch's exact-record verification can issue that authority.
-    pub(crate) fn try_legacy_write_content(&self) -> Result<ContentWriteGuard, LockError> {
-        Ok(ContentWriteGuard {
+        let writer = ContentWriteGuard {
             _lock: acquire(
                 self.root(),
                 self.metadata(),
@@ -272,18 +274,9 @@ impl BuildGuard {
                 "content.lock",
                 false,
             )?,
-        })
-    }
-
-    pub(crate) fn owns_writer(&self, writer: &ContentWriteGuard) -> bool {
-        self.root() == writer._lock.checkout
-            && self.metadata() == writer._lock.metadata
-            && Arc::ptr_eq(&self.0.scope, &writer._lock.scope)
-            && self.0.current_identity("build.lock").unwrap_or(false)
-            && writer
-                ._lock
-                .current_identity("content.lock")
-                .unwrap_or(false)
+        };
+        require_known_install_metadata(self.root())?;
+        Ok(writer)
     }
 
     pub(crate) fn matches_current_root(&self, root: &fs::Metadata) -> bool {
@@ -292,24 +285,6 @@ impl BuildGuard {
             .metadata()
             .is_ok_and(|original| (original.dev(), original.ino()) == (root.dev(), root.ino()))
             && self.0.current_identity("build.lock").unwrap_or(false)
-    }
-
-    /// @cc [owner:fontanierh,label:safety] legacy-exec-same-description-pair
-    /// The private fresh-exec pair MUST require real same-checkout build and EX guards,
-    /// atomically duplicate BOTH same open descriptions with CLOEXEC and never unlock,
-    /// adopt a raw FD or change inheritable flags. No bootstrap is implemented here.
-    /// See legacy_epoch::tests and checkout_locks::tests::legacy_exec_pair_is_same_ofd_and_cloexec.
-    pub(crate) fn duplicate_for_legacy_exec(
-        &self,
-        writer: &ContentWriteGuard,
-    ) -> Result<LegacyExecCustody, LockError> {
-        if !self.owns_writer(writer) {
-            return Err(invalid("legacy writer belongs to another checkout").into());
-        }
-        Ok(LegacyExecCustody {
-            build: self.0.duplicate()?,
-            content: writer._lock.duplicate()?,
-        })
     }
 
     /// Explicit custody duplicate: F_DUPFD_CLOEXEC shares the SAME open file description
@@ -442,65 +417,33 @@ mod tests {
         assert!(locks.metadata.join("content.lock").is_file());
     }
     #[test]
-    fn legacy_exec_pair_is_same_ofd_and_cloexec() {
-        use std::os::fd::AsRawFd;
-        use std::os::unix::fs::MetadataExt;
-        let workspace = Workspace::new();
-        let locks = workspace.locks();
-        let build = locks.try_build_exclusive().unwrap();
-        let writer = build.try_legacy_write_content().unwrap();
-        let pair = build.duplicate_for_legacy_exec(&writer).unwrap();
-        for (original, duplicate) in [
-            (&build.0.file, &pair.build),
-            (&writer._lock.file, &pair.content),
-        ] {
-            assert_eq!(
-                original.metadata().unwrap().ino(),
-                duplicate.metadata().unwrap().ino()
-            );
-            let flags = unsafe { libc::fcntl(duplicate.as_raw_fd(), libc::F_GETFD) };
-            assert!(flags >= 0 && flags & libc::FD_CLOEXEC != 0);
+    fn unknown_install_metadata_refuses_readers_writers_without_mutation() {
+        let _gate = spawn_gate_read();
+        for kind in ["file", "directory", "link"] {
+            let workspace = Workspace::new();
+            let locks = workspace.locks();
+            let path = locks.metadata.join("unfinished.json");
+            match kind {
+                "file" => fs::write(&path, b"unfinished control state").unwrap(),
+                "directory" => fs::create_dir(&path).unwrap(),
+                "link" => std::os::unix::fs::symlink("missing-control", &path).unwrap(),
+                _ => unreachable!(),
+            }
+            let before = fs::symlink_metadata(&path).unwrap();
+            let build = locks.try_build_exclusive().unwrap();
+            assert!(matches!(
+                locks.try_read_content(),
+                Err(LockError::UnfinishedMetadata)
+            ));
+            assert!(matches!(
+                build.try_write_content(),
+                Err(LockError::UnfinishedMetadata)
+            ));
+            assert_eq!(before.ino(), fs::symlink_metadata(&path).unwrap().ino());
+            if kind == "file" {
+                assert_eq!(fs::read(&path).unwrap(), b"unfinished control state");
+            }
         }
-        let foreign = Workspace::new();
-        let foreign_locks = foreign.locks();
-        let foreign_build = foreign_locks.try_build_exclusive().unwrap();
-        let foreign_write = foreign_build.try_legacy_write_content().unwrap();
-        assert!(build.duplicate_for_legacy_exec(&foreign_write).is_err());
-        drop(writer);
-        drop(build);
-        assert!(matches!(locks.try_build_exclusive(), Err(LockError::Busy)));
-        assert!(matches!(locks.try_read_content(), Err(LockError::Busy)));
-        // No immediate post-close acquisition assertion: unrelated concurrent forks may
-        // transiently retain CLOEXEC copies, as the separate spawn contract documents.
-        drop(pair);
-
-        // Real guards retain their original root anchor, not just its pathname.
-        let workspace = Workspace::new();
-        let locks = workspace.locks();
-        let cloned = locks.clone();
-        let build = cloned.try_build_exclusive().unwrap();
-        let flags = unsafe { libc::fcntl(build.0.scope.as_raw_fd(), libc::F_GETFD) };
-        assert!(flags >= 0 && flags & libc::FD_CLOEXEC != 0);
-        let writer = build.try_legacy_write_content().unwrap();
-        assert!(build.duplicate_for_legacy_exec(&writer).is_ok());
-        let displaced = workspace.0.with_extension("displaced");
-        fs::rename(&workspace.0, &displaced).unwrap();
-        fs::create_dir(&workspace.0).unwrap();
-        assert!(build.duplicate_for_legacy_exec(&writer).is_err());
-        assert!(!build.matches_current_root(&fs::metadata(&workspace.0).unwrap()));
-        assert!(locks.try_build_exclusive().is_err());
-        fs::remove_dir(&workspace.0).unwrap();
-        fs::rename(&displaced, &workspace.0).unwrap();
-        for name in ["build.lock", "content.lock"] {
-            let original = locks.metadata.join(name);
-            let displaced = locks.metadata.join(format!("saved-{name}"));
-            fs::rename(&original, &displaced).unwrap();
-            fs::write(&original, b"replacement lock inode").unwrap();
-            assert!(build.duplicate_for_legacy_exec(&writer).is_err());
-            fs::remove_file(&original).unwrap();
-            fs::rename(&displaced, &original).unwrap();
-        }
-        assert!(build.duplicate_for_legacy_exec(&writer).is_ok());
     }
 
     #[test]

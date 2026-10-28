@@ -328,6 +328,30 @@ def sign(tid, slug, how):
     return np.concatenate([rgb, base[..., 3:]], -1)
 
 
+def finish_inputs():
+    """@cc [owner:fontanierh,label:correctness] complete-offline-megapark-inputs
+    Declare every original/lightmap image and painted-membership input read by finish.
+    Collection MUST NOT generate textures, compile fonts, or make paid requests.
+    """
+    records = json.loads((SOURCE / 'map.json').read_text())
+    ids = set(RECOLOUR)
+    for tid, (slug, how) in SIGNS.items():
+        names = [slug] + (['waves'] if how != 'fit' else [])
+        if all((PAINTED / (name + '.jpg')).is_file() for name in names):
+            ids.add(tid)
+    ids.update(p['retail_texture_ids']['lightmap'] for model in records['models'] for p in model['meshes']
+               if 'lightmap' in p.get('retail_texture_ids', {})
+               and p['retail_texture_ids']['lightmap'] in records['textures'])
+    originals = []
+    for tid in sorted(ids):
+        member = Path(records['textures'][tid]['png'])
+        if member.is_absolute() or '..' in member.parts:
+            raise ValueError('Mega Park texture source must stay in its committed library')
+        originals.append(SOURCE / member)
+    return [Path(__file__), GAME / 'world/yori.py', SOURCE / 'map.json', PAINTED,
+            Path(letters.__file__), letters.FONT, *originals]
+
+
 def finish():
     import numpy as np
     from PIL import Image

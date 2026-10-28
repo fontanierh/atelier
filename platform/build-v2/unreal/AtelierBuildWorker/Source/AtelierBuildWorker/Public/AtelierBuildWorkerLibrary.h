@@ -7,15 +7,38 @@
  * What the build-v2 Unreal job loop (platform/studio/atelier/build_v2/unreal_worker.py) asks of the editor, seen from
  * Python as unreal.AtelierBuildWorkerLibrary.<snake_case>. Results that are structures are JSON text.
  */
+class UStaticMesh;
+class USkeletalMesh;
+class USkeleton;
+class UPhysicsAsset;
+
 UCLASS()
 class ATELIERBUILDWORKER_API UAtelierBuildWorkerLibrary : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:
+    /** Bind freshly duplicated job-owned skeletal partners; Python exposes neither skeleton setter nor all preview setters. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build")
+    static bool BindSkeletalPartners(USkeletalMesh* Mesh, USkeleton* Skeleton, UPhysicsAsset* PhysicsAsset);
+    /** Actual cooked complex collision, with the same bounds and triangle checks as receivers. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build")
+    static bool ValidateMeshCollision(UStaticMesh* Mesh, int32 ExpectedTriangles, bool HasAuthoredHulls);
     /** {build_id, modules: [project module], plugins: {name: base dir}, libraries: [loaded module file], rhi}. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString NativeContext();
     /** {graph, nodes: [{kind, path, local, status}]}: every cache store of the effective DDC graph, from its stats tree (full paths). */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString DdcGraph();
+    /** Publish exact native ReferencedSet then EndCook; source dependency evaluation stays separate. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenEndCookRequest(const FString& RequestJson);
+    /** Fixed selected registry/shader globals builder; native producer checks precede a completed report. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenFinaliseRequest(const FString& RequestJson);
+    /** Fixed stock cooker invocation with per-job project/namespace and complete VM reset. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString SourceCookRequest(const FString& RequestJson);
+    /** Fixed native capture/verify/restore. Refusals never certify package completeness or globals. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenPackageRequest(const FString& RequestJson);
+    /** False means recording is unavailable; the job must refuse. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static bool BeginReadRecording();
+    /** {version:1, best_effort:true, files:[absolute path]}; IO bypassing IPlatformFile is not observable. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString EndReadRecording();
     /** Start recording every package save (UPackage::PackageSavedWithContextEvent). */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static void BeginSaveRecording();
     /** Stop recording; [{package, filename, files: {path: sha1}}] saved since BeginSaveRecording, in order, hashed after each save's writes were flushed. */

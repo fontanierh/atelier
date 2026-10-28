@@ -13,11 +13,19 @@ import sys
 import pytest
 
 from atelier.build_v2 import blender_worker, protocol, python_worker
-from test_build_v2_python_worker import Loop, failure, stage
+from test_build_v2_python_worker import Loop, failure, stage as python_stage
 
 FIXTURES = Path(__file__).resolve().parents[2] / 'build-v2/tests/fixtures'
 UNSANDBOXED = FIXTURES / 'unsandboxed_blender_loop.py'
 WORKER = Path(blender_worker.__file__)
+
+
+def stage(*args, **kwargs):
+    job = python_stage(*args, **kwargs)
+    scratch = Path(job['job_dir']) / blender_worker.RUNTIME_DIRECTORY
+    if not os.path.lexists(scratch):
+        scratch.mkdir(mode=0o700)
+    return job
 
 
 def fake_blender(root):
@@ -124,7 +132,7 @@ def run(context):
     assert loop.run(first)['type'] == 'completed'
     assert loop.run(second)['type'] == 'completed'
     names, folders, salted = __import__('json').loads(output(first))
-    assert names == sorted(set(python_worker.JOB_ENVIRONMENT) | set(blender_worker.USER_FOLDERS))
+    assert names == sorted(set(python_worker.JOB_ENVIRONMENT) | set(blender_worker.SDK_ENVIRONMENT) | set(blender_worker.USER_FOLDERS) | {'TMPDIR'})
     assert folders == [str(Path(os.path.realpath(tmp_path / 'one')) / blender_worker.MISSING_USER_FOLDER)]
     assert not (tmp_path / 'one' / blender_worker.MISSING_USER_FOLDER).exists()
     # The declared hash seed reaches the job's Python; the second job's own folder differs, the hash not.
@@ -138,13 +146,39 @@ def test_jobs_whose_folder_holds_the_missing_user_folder_are_refused_before_blen
     script = f'def run(context):\n    open({str(marker)!r}, "w").close()\n'
     code = {f'{blender_worker.MISSING_USER_FOLDER}/startup/helper.py': 'raise SystemExit(3)\n'}
     declared = stage(tmp_path / 'declared', script=script, code=code)
-    assert blender_worker.MISSING_USER_FOLDER in failure(loop.run(declared), 'protocol')
+    worker = blender_worker.BlenderWorker(None, None, sandboxed=True, blender=str(loop.blender))
+    with pytest.raises(python_worker.JobRefused, match=blender_worker.RUNTIME_DIRECTORY):
+        worker.check_job_folder(declared['job_dir'])
+    assert blender_worker.RUNTIME_DIRECTORY in failure(loop.run(declared), 'protocol')
     dangling = stage(tmp_path / 'dangling', script=script, job_id='job-2')
-    os.symlink(tmp_path / 'nowhere', tmp_path / 'dangling' / blender_worker.MISSING_USER_FOLDER)
-    assert blender_worker.MISSING_USER_FOLDER in failure(loop.run(dangling), 'protocol')
+    (tmp_path / 'dangling' / blender_worker.RUNTIME_DIRECTORY).rmdir()
+    os.symlink(tmp_path / 'nowhere', tmp_path / 'dangling' / blender_worker.RUNTIME_DIRECTORY)
+    with pytest.raises(python_worker.JobRefused, match=blender_worker.RUNTIME_DIRECTORY):
+        worker.check_job_folder(dangling['job_dir'])
+    assert blender_worker.RUNTIME_DIRECTORY in failure(loop.run(dangling), 'protocol')
     assert not marker.exists()
-    assert os.listdir(tmp_path / 'declared/output') == os.listdir(tmp_path / 'dangling/output') == []
+    assert (tmp_path / 'declared' / blender_worker.MISSING_USER_FOLDER / 'startup/helper.py').read_text() == 'raise SystemExit(3)\n'
+    assert (tmp_path / 'dangling' / blender_worker.RUNTIME_DIRECTORY).is_symlink()
     assert loop.run(stage(tmp_path / 'next', job_id='job-3'))['type'] == 'completed'
+    loop.close()
+
+
+def test_factory_user_directory_is_fresh_private_scratch_and_not_product_output(tmp_path, loop):
+    script = '''
+import os
+from pathlib import Path
+def run(context):
+    home = Path(os.environ['HOME'])
+    home.mkdir(parents=True)
+    (home / 'unexpected-preference').write_text('must remain in actual inventory')
+    context.output('piece.txt').write_text('complete')
+'''
+    job = stage(tmp_path / 'factory', script=script)
+    result = loop.run(job)
+    assert result['type'] == 'completed'
+    assert result['outputs']['files'] == ['piece.txt']
+    assert (tmp_path / 'factory' / blender_worker.MISSING_USER_FOLDER / 'unexpected-preference').read_text() == 'must remain in actual inventory'
+    assert Path(os.environ.get('HOME', '')).resolve() != (tmp_path / 'factory' / blender_worker.MISSING_USER_FOLDER)
     loop.close()
 
 
@@ -230,7 +264,10 @@ def test_sandbox_profile_allows_the_bundle_and_only_the_blender_binary(tmp_path,
     home = os.path.expanduser('~')
     assert f'"{home}"' not in reads and f'"{home}/Library' not in profile
     writes = next(line for line in lines if line.startswith('(allow file-write*'))
-    assert writes == f'(allow file-write* (subpath "{job_dir}/output") (literal "/dev/null"))'
+    assert writes == (f'(allow file-write* (subpath "{job_dir}/output") '
+                      f'(subpath "{job_dir}/{blender_worker.RUNTIME_DIRECTORY}") (literal "/dev/null"))')
+    default_profile = python_worker.sandbox_profile(job_dir)
+    assert f'(subpath "{job_dir}/{blender_worker.RUNTIME_DIRECTORY}")' not in default_profile
     assert str(tmp_path / 'platform/Blender.app') in worker.platform.import_roots()
     # The reviewed Blender allowances follow the kill rule, so the bind refusal replaces the kill for binds only.
     assert lines[-len(blender_worker.BLENDER_RULES):] == list(blender_worker.BLENDER_RULES)
@@ -280,3 +317,61 @@ def run(context):
         script = f'import os, random, uuid\ndef run(context):\n    {call}\n'
         assert loop.run(stage(tmp_path / f'entropy{index}', script=script))['failure']['kind'] == 'dependency'
     loop.close()
+
+
+def test_background_render_registration_has_exact_native_service_and_bundle_bounds(tmp_path, blender):
+    platform = blender_worker.BlenderPlatform(str(blender))
+    profile = python_worker.sandbox_profile(str(tmp_path / 'job'), platform)
+    rules = [line for line in profile.splitlines() if line.startswith('(allow mach-lookup (global-name')]
+    assert rules == ['(allow mach-lookup ' + ' '.join('(global-name "' + service + '")'
+                       for service in blender_worker.BLENDER_RENDER_SERVICES) + ')']
+    assert set(blender_worker.BLENDER_RENDER_SERVICES) == {
+        'com.apple.windowserver.active', 'com.apple.coreservices.launchservicesd',
+        'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb'}
+    compiler = [line for line in profile.splitlines() if '(xpc-service-name' in line]
+    assert compiler == ['(allow mach-lookup (xpc-service-name "com.apple.MTLCompilerService"))']
+    extension = [line for line in profile.splitlines() if line.startswith('(allow file-issue-extension')]
+    assert extension == ['(allow file-issue-extension (require-all '
+        '(extension-class "com.apple.app-sandbox.read") (literal "' + platform.bundle + '")))']
+    ordinary = python_worker.sandbox_profile(str(tmp_path / 'job'))
+    assert '(allow mach-lookup' not in ordinary and '(allow file-issue-extension' not in ordinary
+    assert 'com.apple.pasteboard' not in profile and 'com.apple.tccd' not in profile
+    setup = [line for line in profile.splitlines() if '/private/var/db/.AppleSetupDone' in line]
+    assert len(setup) == 1 and setup[0].startswith('(allow file-read-metadata ')
+    assert '(literal "/private/var/db/.AppleSetupDone")' in setup[0]
+    assert '(subpath "/private/var/db")' not in profile
+    spotlight = '/Library/Application Support/Apple/Spotlight/MailUsesCoreSpotlight'
+    probe = [line for line in profile.splitlines() if spotlight in line]
+    assert len(probe) == 1 and probe[0].startswith('(allow file-read-metadata ')
+    assert '(subpath "/Library/Application Support/Apple")' not in profile
+    keyboard = [line for line in profile.splitlines() if '/Library/Keyboard Layouts' in line]
+    assert len(keyboard) == 2 and keyboard[0].startswith('(allow file-read-metadata ')
+    assert keyboard[1] == '(allow file-read-data (require-all (literal "/Library/Keyboard Layouts") (vnode-type DIRECTORY)))'
+    assert '(subpath "/Library/Keyboard Layouts")' not in profile
+    methods = [line for line in profile.splitlines() if '/Library/Input Methods' in line]
+    assert len(methods) == 2 and methods[0].startswith('(allow file-read-metadata ')
+    assert methods[1] == '(allow file-read-data (require-all (literal "/Library/Input Methods") (vnode-type DIRECTORY)))'
+    assert '(subpath "/Library/Input Methods")' not in profile
+    eligibility = '/private/var/db/eligibilityd/eligibility.plist'
+    assert '(allow file-read-data (literal "' + eligibility + '"))' in profile
+    roots, literals = platform.reads()
+    for native in (eligibility, *blender_worker.BLENDER_INPUT_SOURCE_DIRECTORIES):
+        assert native not in literals and not any(native.startswith(root + '/') for root in roots)
+    assert '(allow process*)' not in profile and '(allow network*)' not in profile
+    assert profile.splitlines()[-1] == '(deny network-bind)'
+    outside_bundle = blender_worker.BlenderPlatform(str(tmp_path / 'plain/Blender'))
+    assert not any(line.startswith('(allow file-issue-extension') for line in outside_bundle.extra_rules())
+
+
+def test_blender_native_startup_identity_is_fixed_and_never_inherited(tmp_path, blender, monkeypatch):
+    from atelier.build_v2 import recipe_worker
+    monkeypatch.setenv('USER', 'host-identity-must-not-leak')
+    worker = blender_worker.BlenderWorker(None, None, sandboxed=True, blender=str(blender))
+    recipe = recipe_worker.RecipeWorker(None, None, True, blender=str(blender))
+    for environment in (worker.child_environment(str(tmp_path / 'job')),
+                        recipe.child_environment(str(tmp_path / 'job'))):
+        assert environment['USER'] == 'atelier-job'
+        assert 'host-identity-must-not-leak' not in environment.values()
+        assert 'PATH' not in environment and 'PYTHONPATH' not in environment
+        assert environment['HOME'].startswith(str(tmp_path / 'job'))
+    assert 'USER' not in python_worker.Worker(None, None, True).child_environment(str(tmp_path / 'job'))

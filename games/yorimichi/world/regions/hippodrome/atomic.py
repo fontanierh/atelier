@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 GAME=Path(__file__).resolve().parents[3]
-sys.path.insert(0,str(GAME));sys.path.insert(0,str(GAME/"world"))
+sys.path[:0]=[str(GAME),str(GAME/"world"),str(GAME/"world/regions")]
 import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json
 from atelier.build import Call, Product, Step, Python

@@ -1,0 +1,113 @@
+"""Independent original Sailboat materials and five rigid native followers."""
+from copy import deepcopy
+import importlib.util
+import json
+from pathlib import Path
+
+FINISH = 'games/yorimichi/world/sailboat_finish_v2.py'
+CALL = 'games/yorimichi/world/native_author_call_v2.py'
+MATERIAL_SOURCE = 'games/yorimichi/unreal/Scripts/sailboat_material.py'
+CLOTH = '/Game/Japan/Materials/M_SailboatCloth'
+FOAM = '/Game/Japan/Materials/M_SailboatWake'
+MATERIAL = '/Game/Japan/Materials/M_Village'
+
+
+def _load(root, path, name):
+    spec = importlib.util.spec_from_file_location(name, root / path)
+    value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value); return value
+
+
+def attach_followers(geometry, natives, *, checkout):
+    """@cc [owner:fontanierh,label:correctness] sailboat-current-native-followers
+    All five original Sailboat parents MUST consume their own selected FBX export
+    and MeshIR. Cloth and wake MUST call only the keyed original material factory;
+    other parts MUST bind exact supplied M_Village and its declared dependencies.
+    Imported collision/UV policies MUST remain intact. No whole-world alias,
+    generated discovery, original importer or retirement MAY run.
+    """
+    from atelier.source_imports import ImportScanner
+    root = Path(checkout).resolve()
+    sources = _load(root, 'games/yorimichi/world/vehicle_sources.py', 'sailboat_original_sources')
+    texture = _load(root, 'games/yorimichi/v2_texture_units.py', 'sailboat_texture_policy')
+    island = _load(root, 'games/yorimichi/v2_island_units.py', 'sailboat_item_policy')
+    parents = tuple(sources.FAMILIES['sailboat']['builders'])
+    material = natives.get(MATERIAL)
+    if not isinstance(material, dict) or material.get('package') != MATERIAL:
+        raise ValueError('Missing exact supplied Sailboat native material: ' + MATERIAL)
+    dependencies = {}
+    def add(ref):
+        if (not isinstance(ref, dict) or not all(isinstance(ref.get(k), str) and ref[k] for k in ('unit', 'item', 'package'))
+                or not ref['package'].startswith('/Game/')):
+            raise ValueError('Sailboat native dependencies require actual finished Item refs')
+        key = ref['unit'], ref['item']
+        if key in dependencies:
+            if dependencies[key][1]['package'] != ref['package']: raise ValueError('Sailboat native Item aliases packages')
+            return dependencies[key][0]
+        slot = 'native' + str(len(dependencies)); dependencies[key] = slot, ref
+        for child in ref.get('dependencies', ()):
+            if isinstance(child, str):
+                if child not in natives: raise ValueError('Missing Sailboat transitive native material input: ' + child)
+                child = natives[child]
+            add(child)
+        return slot
+    material_slot = add(material)
+    code = set(texture._code(root))
+    code.update(p.relative_to(root).as_posix() for p in ImportScanner().local_imports(root / FINISH,
+        (root / 'platform/studio', root / 'games/yorimichi', root / 'games/yorimichi/world')))
+    for relative in code:
+        if (root / relative).is_symlink() or not (root / relative).is_file():
+            raise ValueError('Sailboat keyed source is missing or linked: ' + relative)
+    descriptor = json.loads((root / 'games/yorimichi/unreal/Yorimichi.uproject').read_text())
+    modules = [{'name': m['Name'], 'kind': m['Type'], 'loading_phase': m.get('LoadingPhase', 'Default')} for m in descriptor['Modules']]
+    result = deepcopy(geometry); requirements = dict(result.get('module_requirements', {})); seen = set()
+    material_refs = {}
+    for wake, package in ((False, CLOTH), (True, FOAM)):
+        unit_id = 'unreal.sailboat.material.' + package.rsplit('/', 1)[-1]
+        output = island._item(package, raw=False); output['class'] = 'Material'
+        closure = set(texture._code(root))
+        for source in (CALL, MATERIAL_SOURCE):
+            closure.update(p.relative_to(root).as_posix() for p in ImportScanner().local_imports(root/source,
+                (root/'platform/studio', root/'games/yorimichi', root/'games/yorimichi/world', root/'games/yorimichi/unreal/Scripts')))
+        unit = {'id': unit_id, 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': CALL,
+            'code': sorted(closure), 'inputs': [], 'params': {'args': {'module': MATERIAL_SOURCE, 'function': 'material',
+                'arguments': [], 'keyword_arguments': {'wake': True} if wake else {}, 'expected_package': package}, 'settings': []},
+            'outputs': [output]}
+        result.setdefault('units', []).append(unit); result.setdefault('staged_inputs', {})[unit_id] = {}
+        ref = {'unit': unit_id, 'item': 'asset', 'package': package}
+        result.setdefault('packages', {})[package] = ref; material_refs[package] = ref
+    result.setdefault('content_slots', {})
+    for template in result['templates']:
+        if not template['unit_prefix'].startswith('world.vehicle_sailboat.export.'): continue
+        parent = template['unit_prefix'].removeprefix('world.vehicle_sailboat.export.')
+        if (parent not in parents or parent in seen or template['producer'] != 'world.vehicle_sailboat.geometry.' + parent
+                or template['group'] != 'geometry' or template['op'] != {'kind': 'blender_export_piece', 'version': '1'}
+                or template['params'].get('format') != 'fbx' or template.get('followers')):
+            raise ValueError('Sailboat followers require each original FBX D2 parent exactly once')
+        seen.add(parent); raw_package = '/Game/_Raw/Sailboat/$piece'; destination = '/Game/Japan/Assets/$piece'
+        raw = {'id': '$export.raw', 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': texture.OPS,
+               'code': texture._code(root), 'inputs': [{'role': 'content', 'name': 'source',
+                   'source': {'kind': 'item', 'unit': '$export', 'item': 'asset'}}],
+               'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': raw_package,
+                          'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']},
+               'outputs': [island._item(raw_package, raw=True)]}
+        selected_package = CLOTH if parent == 'SB_Sail' else FOAM if parent == 'SB_Wake' else MATERIAL
+        selected_dependencies = {'material': material_refs[selected_package]} if selected_package != MATERIAL else {slot: ref for slot, ref in dependencies.values()}
+        selected_slot = 'material' if selected_package != MATERIAL else material_slot
+        inputs = [{'role': 'content', 'name': 'raw', 'source': {'kind': 'item', 'unit': '$previous', 'item': 'raw'}},
+                  {'role': 'content', 'name': 'source_export', 'source': {'kind': 'item', 'unit': '$export', 'item': 'asset'}},
+                  {'role': 'content', 'name': 'payload', 'source': {'kind': 'group_member', 'unit': template['producer'], 'group': 'geometry', 'piece': '$piece'}},
+                  *({'role': 'content', 'name': slot, 'source': {'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
+                    for slot, ref in selected_dependencies.items())]
+        finish = {'id': '$export.finish', 'op': {'kind': 'unreal.finish', 'version': '1'}, 'script': FINISH,
+                  'code': sorted(code), 'inputs': inputs,
+                  'params': {'op': 'finish', 'kind': 'static_mesh', 'source': 'raw', 'destination': destination,
+                      'package_sources': {'raw': raw_package}, 'args': {'parent': parent, 'source_export': 'source_export', 'payload': 'payload',
+                          'material': selected_slot, 'native_inputs': {slot: ref['package'] for slot, ref in selected_dependencies.items()}},
+                      'settings': ['-ForceDPCVars=Editor.AsyncStaticMeshCompilation=0']},
+                  'outputs': [island._item(destination, raw=False)]}
+        template['followers'] = [{'unit': raw, 'staged_inputs': {'source': 'inputs/source'}},
+                                 {'unit': finish, 'staged_inputs': {i['name']: 'inputs/' + i['name'] for i in inputs}}]
+        requirements[template['unit_prefix']] = modules
+    if seen != set(parents): raise ValueError('Sailboat native followers require the complete five-parent family')
+    result['module_requirements'] = requirements
+    return result

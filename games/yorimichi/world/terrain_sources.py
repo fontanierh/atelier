@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from atelier.atomic_files import atomic_json
+from atelier.atomic_files import atomic_json, managed_temporary_parent
 from atelier.export_manifest import real_directory
 
 ASSETS = ('Terrain', 'Road', 'Lane', 'Guardrail', 'Wires', 'FarHills', 'Sea')
@@ -48,7 +48,7 @@ def publish(world, heightmap, output, *, city):
         raise ValueError('Island heightmap does not match its declared lattice')
     for key, value in values.items():
         atomic_json(output / (key + '.json'), value)
-    temporary = output / '.heightmap.npy.tmp'
+    temporary = managed_temporary_parent(output / 'heightmap.npy') / '.heightmap.npy.tmp'
     with temporary.open('wb') as stream:
         np.save(stream, heightmap, allow_pickle=False)
     temporary.replace(output / 'heightmap.npy')

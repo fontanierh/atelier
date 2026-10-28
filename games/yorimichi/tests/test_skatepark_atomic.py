@@ -157,3 +157,105 @@ def test_roundtrip_counts_exact_shared_index_opposite_faces_without_changing_exp
     assert piece['faces']==faces and piece['triangles']==5
     # Coordinate-coincident but independently indexed faces remain independent.
     assert source.imported_triangle_count(dict(faces=[[0,1,2],[3,4,5]]))==2
+
+
+def test_skate_collision_bytes_use_existing_managed_scratch_under_real_recipe_guard(tmp_path):
+    import io
+    import subprocess
+    from atelier.build_v2.recipe_worker import RecipeWorker
+    from atelier.build_v2 import recipe_job
+    root=tmp_path.resolve();(root/recipe_job.RUNTIME).mkdir();(root/'output').mkdir()
+    (root/'entry.py').write_text('def run(context): pass\n')
+    request={'script':'entry.py','code':['entry.py'],'inputs':[],
+             'outputs':[{'path':'products/query.tree.tar'}],
+             'params':{'recipe':{'paths':{},'outputs':[{'path':'build/data/queries/collision.json'}]}}}
+    worker=RecipeWorker(io.BytesIO(),io.BytesIO(),True)
+    worker.prepare_job(request,str(root));config=worker.configuration(request,str(root),99)
+    program='''
+import importlib.util,json,sys
+from pathlib import Path
+from atelier.atomic_files import managed_temporaries
+from atelier.build_v2.python_job import PathGuard
+values=json.load(sys.stdin);config=values['config']
+spec=importlib.util.spec_from_file_location('skate_source',values['source'])
+module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+root=Path(values['job_dir']);destination=Path(config['working_directory'])/'build/data/queries/collision.json'
+guard=PathGuard(str(root),config['read_subpaths'],config['read_literals'],lambda _:None,
+                config['write_subpaths'],config['working_directory'],config['mkdir_existing'])
+with managed_temporaries(root/'.recipe-runtime/tmp'):
+    guard.install()
+    module.write_bytes(destination,b'exact original collision bytes')
+assert not guard.allowed('write',str(destination.parent))
+assert not guard.allowed('write',str(destination.with_name('foreign')))
+'''
+    payload={'config':config,'source':source.__file__,'job_dir':str(root)}
+    result=subprocess.run([sys.executable,'-c',program],input=json.dumps(payload),text=True,capture_output=True)
+    assert result.returncode==0,result.stdout+result.stderr
+    assert (root/recipe_job.RUNTIME/'view/build/data/queries/collision.json').read_bytes()==b'exact original collision bytes'
+    assert list((root/recipe_job.RUNTIME/'tmp').iterdir())==[]
+    ordinary=tmp_path/'ordinary/collision.json';source.write_bytes(ordinary,b'ordinary sibling semantics')
+    assert ordinary.read_bytes()==b'ordinary sibling semantics'
+@pytest.mark.parametrize('name', [*source.BOARD, 'SM_SkateParkFurniture'])
+def test_actual_selected_planner_declares_whole_board_and_explicit_park_policy(tmp_path, monkeypatch, name):
+    fake_bpy = SimpleNamespace(ops=SimpleNamespace(wm=SimpleNamespace(read_factory_settings=lambda **kwargs: None)),
+                               data=SimpleNamespace(materials=SimpleNamespace(new=lambda name: name)))
+    monkeypatch.setitem(sys.modules, 'bpy', fake_bpy)
+    planner = module('selected_skate_policy', GAME / 'world/regions/skatepark/plan_atomic.py')
+    obj = SimpleNamespace(data=SimpleNamespace(materials=[SimpleNamespace(name='SkateParkPalette')]))
+    monkeypatch.setattr(planner.geom, 'to_object', lambda *args: obj)
+    monkeypatch.setattr(planner.geom, 'shade', lambda *args: None)
+    monkeypatch.setattr(planner.source, 'material_objects', lambda path: 'Palette')
+    monkeypatch.setattr(planner, 'capture', lambda data: {
+        'vertex_indices': np.array([0, 1, 2]), 'starts': [0], 'counts': [3],
+        'positions': np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]])})
+    calls = []
+    def plan(obj, root, **kwargs):
+        calls.append(kwargs)
+        return {'pieces': [{'name': name}]}
+    monkeypatch.setattr(planner, 'plan', plan)
+    planner.main(['--asset', name, '--record', str(tmp_path / 'record.json'),
+                  '--output', str(tmp_path / 'geometry')])
+    assert len(calls) == 1 and calls[0]['options'] == planner.OPTIONS
+    if name in source.BOARD:
+        assert calls[0]['partition'] == 'whole' and calls[0]['face_groups'] is None
+    else:
+        assert calls[0]['partition'] == 'explicit' and calls[0]['face_groups'] == [(name, (0,))]
+    assert json.loads((tmp_path / 'record.json').read_text())['pieces'] == [name]
+
+
+def test_skate_collision_bytes_use_existing_managed_scratch_under_real_recipe_guard(tmp_path):
+    import io
+    import subprocess
+    from atelier.build_v2.recipe_worker import RecipeWorker
+    from atelier.build_v2 import recipe_job
+    root=tmp_path.resolve();(root/recipe_job.RUNTIME).mkdir();(root/'output').mkdir()
+    (root/'entry.py').write_text('def run(context): pass\n')
+    request={'script':'entry.py','code':['entry.py'],'inputs':[],
+             'outputs':[{'path':'products/query.tree.tar'}],
+             'params':{'recipe':{'paths':{},'outputs':[{'path':'build/data/queries/collision.json'}]}}}
+    worker=RecipeWorker(io.BytesIO(),io.BytesIO(),True)
+    worker.prepare_job(request,str(root));config=worker.configuration(request,str(root),99)
+    program='''
+import importlib.util,json,sys
+from pathlib import Path
+from atelier.atomic_files import managed_temporaries
+from atelier.build_v2.python_job import PathGuard
+values=json.load(sys.stdin);config=values['config']
+spec=importlib.util.spec_from_file_location('skate_source',values['source'])
+module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+root=Path(values['job_dir']);destination=Path(config['working_directory'])/'build/data/queries/collision.json'
+guard=PathGuard(str(root),config['read_subpaths'],config['read_literals'],lambda _:None,
+                config['write_subpaths'],config['working_directory'],config['mkdir_existing'])
+with managed_temporaries(root/'.recipe-runtime/tmp'):
+    guard.install()
+    module.write_bytes(destination,b'exact original collision bytes')
+assert not guard.allowed('write',str(destination.parent))
+assert not guard.allowed('write',str(destination.with_name('foreign')))
+'''
+    payload={'config':config,'source':source.__file__,'job_dir':str(root)}
+    result=subprocess.run([sys.executable,'-c',program],input=json.dumps(payload),text=True,capture_output=True)
+    assert result.returncode==0,result.stdout+result.stderr
+    assert (root/recipe_job.RUNTIME/'view/build/data/queries/collision.json').read_bytes()==b'exact original collision bytes'
+    assert list((root/recipe_job.RUNTIME/'tmp').iterdir())==[]
+    ordinary=tmp_path/'ordinary/collision.json';source.write_bytes(ordinary,b'ordinary sibling semantics')
+    assert ordinary.read_bytes()==b'ordinary sibling semantics'

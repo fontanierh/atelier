@@ -34,6 +34,11 @@ pub(crate) fn logical_path(value: &str) -> Result<(), String> {
 }
 
 pub(crate) fn folded(path: &str) -> String {
+    // ASCII is already canonically decomposed, and its full non-Turkic fold is
+    // exactly lowercase. Most staged/code paths use this branch during admission.
+    if path.is_ascii() {
+        return path.to_ascii_lowercase();
+    }
     // Canonical decomposition + full non-Turkic folding conservatively rejects
     // ambiguous aliases. This is not an emulator of every APFS Unicode revision.
     path.nfd().case_fold().nfd().collect()
@@ -73,6 +78,20 @@ pub(crate) fn claim(claims: &mut Claims, path: &str, owner: &str) -> Result<(), 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ascii_fast_path_matches_full_unicode_folding() {
+        let ascii: String = (0_u8..=127).map(char::from).collect();
+        for path in [
+            ascii.as_str(),
+            "inputs/context_editor/outputs/0.tree.tar",
+            "games/Example/Unreal/Content/Data/Mesh_012.json",
+            "Mixed-CASE/ASCII + Punctuation_123",
+            "Café/模型/Straße",
+        ] {
+            let reference: String = path.nfd().case_fold().nfd().collect();
+            assert_eq!(folded(path), reference, "{path:?}");
+        }
+    }
     #[test]
     fn path_policy_refuses_mutations_and_normalized_owner_aliases() {
         for invalid in [

@@ -137,3 +137,37 @@ def test_actual_blender_adapter_preserves_guard_callbacks_environment_and_marker
                               '--python-exit-code', '1', '--python', 'action.py', '--', 'argument']
     assert observed[0][1]['env']['FIXTURE'] == 'declared'
     assert observed[0][1]['progress'] == 25. and polls == [123] and slots == ['big']
+
+
+@pytest.mark.parametrize('raised', [False, True])
+def test_managed_light_command_keeps_normal_guard_and_only_attests_observed_return(tmp_path, monkeypatch, raised):
+    events = []
+    class BoundProvider:
+        guard_directory = tmp_path / 'private-reports'
+        def command_timeout(self):
+            return 120.
+        def guard_options(self, argv, env, kind):
+            events.append('intent-bound-options')
+            return {'custody_fds': (10, 11, 12), 'queue_seconds': 30., 'logical_folder': tmp_path / 'normal-task.guard'}
+        def guard_returned(self, code):
+            events.append(('observed-normal-return', code))
+    provider = BoundProvider()
+    ctx = SimpleNamespace(game='fixture', logs=tmp_path, legacy_authority=provider)
+    command = build.Python(tmp_path / 'action.py')
+    step = build.Step('actual.light', [command], heavy=False)
+    def guard(argv, folder, **options):
+        events.append('normal-guard')
+        assert folder == provider.guard_directory
+        assert options['custody_fds'] == (10, 11, 12)
+        assert options['timeout'] == 120. and options['queue_seconds'] == 30.
+        if raised:
+            raise OSError('unknown close')
+        folder.mkdir()
+        (folder / 'stdout.log').write_text('failed command, positive outer return\n')
+        return 1
+    monkeypatch.setattr(build_source.guarded, 'run', guard)
+    monkeypatch.setattr(build_source.subprocess, 'run', lambda *a, **k: pytest.fail('unguarded light fallback'))
+    with pytest.raises(OSError if raised else RuntimeError):
+        build_source.run_argv(ctx, step, command, ['python', 'action.py'], (), io.StringIO(), None, None)
+    assert events == (['intent-bound-options', 'normal-guard'] if raised else
+                      ['intent-bound-options', 'normal-guard', ('observed-normal-return', 1)])

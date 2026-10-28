@@ -29,14 +29,23 @@ OPTION_BOOLEANS = frozenset(('apply_unit_scale', 'use_space_transform', 'bake_sp
 OPTION_ENUMS = dict(apply_scale_options={'FBX_SCALE_NONE', 'FBX_SCALE_UNITS', 'FBX_SCALE_CUSTOM', 'FBX_SCALE_ALL'},
                     axis_forward={'X', 'Y', 'Z', '-X', '-Y', '-Z'}, axis_up={'X', 'Y', 'Z', '-X', '-Y', '-Z'},
                     mesh_smooth_type={'OFF', 'FACE', 'EDGE'}, colors_type={'NONE', 'SRGB', 'LINEAR'},
-                    path_mode={'RELATIVE'}, batch_mode={'OFF'})
+                    path_mode={'RELATIVE', 'STRIP', 'COPY'}, batch_mode={'OFF'})
 
 
-def validate_mesh_options(options):
+def validate_mesh_options(options, *, output_format='fbx', finite_materials=False):
     """Admit only this route's typed finite settings before producer completion/native work."""
     if not hasattr(options, 'items'):
         raise ValueError('Export options must be an explicit object')
     result = dict(options)
+    if output_format == 'glb':
+        if (set(result) - {'export_apply', 'export_image_format'}
+                or type(result.get('export_apply', False)) is not bool
+                or result.get('export_image_format', 'AUTO' if finite_materials else 'NONE')
+                    != ('AUTO' if finite_materials else 'NONE')):
+            raise ValueError('Unsupported declared atomic GLB export option')
+        return result
+    if output_format != 'fbx' or finite_materials:
+        raise ValueError('Unsupported mesh export format')
     for key, value in result.items():
         if key in OPTION_BOOLEANS:
             valid = type(value) is bool
@@ -49,7 +58,10 @@ def validate_mesh_options(options):
         elif key == 'scene_world_color':
             valid = (isinstance(value, (list, tuple)) and len(value) == 3
                      and all(type(v) in (int, float) and 0 <= v <= 1 and math.isfinite(v) for v in value))
-        elif key == 'use_batch_own_dir':
+        elif key == 'object_types':
+            valid = (isinstance(value, (list, tuple)) and len(value) == 1
+                     and type(value[0]) is str and value[0] == 'MESH')
+        elif key in ('use_batch_own_dir', 'embed_textures', 'bake_anim', 'add_leaf_bones'):
             valid = value is False
         else:
             valid = False
@@ -60,24 +72,32 @@ def validate_mesh_options(options):
             result[key] = list(value)
     if 'axis_forward' in result and 'axis_up' in result and result['axis_forward'][-1] == result['axis_up'][-1]:
         raise ValueError('Export forward/up axes must be independent')
+    # Existing producers record this fixed selection in their payload. It is
+    # redundant with the exporter's unconditional mesh-only ownership; never
+    # pass a source-supplied object selection through as an exporter override.
+    result.pop('object_types', None)
     return result
 
 
-def mesh_facts(payload, *, expected_asset=None):
+def mesh_facts(payload, *, expected_asset=None, output_format='fbx'):
     """Decode the existing MeshIR, including its collision/material/channel validation.
 
     Only compact semantic facts leave this function. No arrays, original bytes, source locators,
     planner key, roster or siblings become selected-child metadata.
     """
-    return decode_mesh_payload(payload, expected_asset=expected_asset)[2]
+    return decode_mesh_payload(payload, expected_asset=expected_asset, output_format=output_format)[2]
 
 
-def decode_mesh_payload(payload, *, expected_asset=None):
+def decode_mesh_payload(payload, *, expected_asset=None, output_format='fbx'):
     """Return the fully checked existing decoder result and its compact facts, once."""
     meta, piece = mesh_ir.decode(payload)
-    if meta['schema'] != 2:
+    if output_format is None:
+        # Producer proof admits the existing finite encodings; it does not choose a child's exporter.
+        output_format = ('glb' if meta['schema'] == 3 or
+                         set(meta['options']) & {'export_apply', 'export_image_format'} else 'fbx')
+    if meta['schema'] != 2 and output_format != 'glb':
         raise ValueError('This FBX slice refuses material-graph payloads; their GLB route is pending')
-    validate_mesh_options(meta['options'])
+    validate_mesh_options(meta['options'], output_format=output_format, finite_materials=meta['schema'] == 3)
     if expected_asset is not None and meta['asset'] != name(expected_asset):
         raise ValueError('Selected payload belongs to another piece')
     positions = piece['positions'] @ np.asarray(meta['matrix'])[:3, :3].T + np.asarray(meta['matrix'])[:3, 3]
@@ -133,8 +153,16 @@ def _finite_bounds(value):
             and all(a <= b for a, b in zip(*value)))
 
 
+
+def selected_policy(value):
+    """Retain the exact JSON object from the keyed selected projection, including frozen values."""
+    if not hasattr(value, 'items'):
+        raise ValueError('Selected semantic metadata must be an explicit object')
+    return json.loads(json.dumps(dict(value), default=dict, sort_keys=True, allow_nan=False))
+
+
 def validate_export_receipt(receipt_bytes, primary_bytes, *, asset,
-                            primary_digest, payload_digest, facts, primary_name=None):
+                            primary_digest, payload_digest, facts, primary_name=None, native_policy=None):
     """Validate in-job receipt binding and binary framing, not native FBX geometry fidelity.
 
     The producer supplies the just-written bytes and their computed digests. The caller checks
@@ -143,8 +171,8 @@ def validate_export_receipt(receipt_bytes, primary_bytes, *, asset,
     """
     asset = name(asset)
     primary_name = primary_name or asset + '.fbx'
-    if type(primary_name) is not str or not primary_name.endswith('.fbx'):
-        raise ValueError('Invalid declared FBX primary')
+    if type(primary_name) is not str or not primary_name.endswith(('.fbx', '.glb')):
+        raise ValueError('Invalid declared mesh primary')
     name(primary_name[:-4])
     if (type(primary_digest) is not str or len(primary_digest) != 64
             or any(c not in '0123456789abcdef' for c in primary_digest)
@@ -165,11 +193,17 @@ def validate_export_receipt(receipt_bytes, primary_bytes, *, asset,
     metadata = receipt['metadata']
     expected = dict(geometry_sha256=payload_digest, slots=facts['slots'], polygons=facts['polygons'],
                     collision_hulls=facts['collision_hulls'], uv_channels=facts['uv_channels'])
-    if (metadata != expected or facts['asset'] != asset
+    if native_policy is not None:
+        expected['native_policy'] = selected_policy(native_policy)
+    if (json.dumps(metadata, sort_keys=True, allow_nan=False) != json.dumps(expected, sort_keys=True, allow_nan=False)
+            or facts['asset'] != asset
             or receipt['triangles'] != facts['triangles']
             or receipt['bounds'] != [facts['min'], facts['max']]):
         raise ValueError('Export receipt differs from its selected geometry payload')
     # Bounded framing check only; do not claim this substitutes for native importer comparisons.
-    if not isinstance(primary_bytes, bytes) or len(primary_bytes) <= len(FBX_HEADER) + 4 or not primary_bytes.startswith(FBX_HEADER):
+    if primary_name.endswith('.glb'):
+        from atelier.gltf import glb_parts
+        glb_parts(primary_bytes)
+    elif not isinstance(primary_bytes, bytes) or len(primary_bytes) <= len(FBX_HEADER) + 4 or not primary_bytes.startswith(FBX_HEADER):
         raise ValueError('Expected an emitted binary FBX primary')
     return receipt

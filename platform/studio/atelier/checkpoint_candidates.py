@@ -47,6 +47,8 @@ def stage_worker(ctx, request_id):
     if 'donors' in request:
         return stage_composed_worker(ctx, request_id, request)
     proof = inventory(ctx, request['checkpoint'], request['donor_task'])
+    from .checkpoint_actions import destination, reject_controller_overlap
+    reject_controller_overlap(ctx, [destination(ctx, member) for member in request['members']])
     task_name(request['receiver_task'])
     files = {}
     folder = root(ctx) / request['checkpoint'] / request['receiver_task'] / request_id
@@ -86,6 +88,8 @@ def stage_composed_worker(ctx, request_id, request):
     for selected in request['donors']:
         try:
             proof = inventory(ctx, selected['checkpoint'], selected['donor_task'])
+            from .checkpoint_actions import destination, reject_controller_overlap
+            reject_controller_overlap(ctx, [destination(ctx, member) for member in selected['members']])
             files = {}
             for member in selected['members']:
                 entry = proof['files'].get(member)
@@ -218,7 +222,8 @@ def publish_bundles(ctx, task, manifests):
 
 
 def select(ctx, scope, files):
-    from .checkpoint_actions import label
+    from .checkpoint_actions import label, reject_controller_overlap
+    reject_controller_overlap(ctx, [*scope.files, *scope.directories])
     required = [label(ctx, p) for p in scope.files]
     prefixes = [label(ctx, p).rstrip('/') + '/' for p in scope.directories]
     if any(name not in files or files[name]['kind'] != 'file' for name in required):

@@ -4,6 +4,8 @@ from pathlib import Path
 import io
 import zipfile
 
+from atelier.atomic_files import managed_temporary_parent
+
 import numpy as np
 
 
@@ -63,7 +65,9 @@ def save(path, mesh, *, owner, stage, city):
     Persist ordered world-metre geometry without welding, resampling or moving
     triangulation ahead of deformation. Identical arrays and explicit owner,
     stage and city mode MUST yield identical product bytes. No revision/time or
-    machine path enters the geometry identity.
+    machine path enters the geometry identity. Managed scratch MUST use the existing
+    held same-filesystem scope; default writes retain their sibling temporary path,
+    identical ZIP bytes and atomic replacement, with no copy fallback.
     """
     _identity(owner, stage, city)
     arrays = {'schema': np.array(1, dtype='<i8'), 'owner': np.array(owner), 'stage': np.array(stage),
@@ -71,7 +75,7 @@ def save(path, mesh, *, owner, stage, city):
               'offsets': mesh.offsets, 'triangles': mesh.triangles()}
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix+'.tmp')
+    temporary = managed_temporary_parent(path) / (path.name+'.tmp')
     try:
         with zipfile.ZipFile(temporary, 'w', compression=zipfile.ZIP_STORED) as archive:
             for name, array in sorted(arrays.items()):

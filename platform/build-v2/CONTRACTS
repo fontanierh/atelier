@@ -2,22 +2,6 @@
 The crate MUST remain independent of production v1 until a separately validated caller cutover.
 A0 schemas MUST NOT decide cache hits, launch native tools or publish results.
 
-@cc [owner:fontanierh,label:correctness;safety] legacy-operational-epoch-fence
-The dormant legacy epoch MUST remain separate from install journals, keys and result authority.
-Production qualification MUST refuse until a separately reviewed finite adapter issues private
-source/plan/ownership/settlement/cleanup/finalization evidence; records and booleans MUST NOT issue it.
-Begin MUST hold real build+EX custody, publish all pending tasks no-replace and fsync before work.
-Transitions MUST verify prior identity, persist before memory assignment and preserve the marker
-on errors/drop BEFORE verified barrier removal. Repair MUST bind unchanged scope/source/root, demand replay or verified restore
-for unverified tasks, and preserve revalidated independent results. Clearing MUST require fresh
-complete settlement, positive cleanup and finalization, then exact-owned removal and parent fsync.
-Any epoch entry MUST fence SH readers and default B3 mutators; the private exact-own EX observation
-MUST retain the separate install-journal blocker and shared receipt validator without nested SH.
-This unit fences Rust admission only; Python/v1 reader/producer admission, actual bootstrap and
-the production normal-repair issuer remain separate activation gates. No caller/bootstrap/CLI/native
-activation is authorized by this module. See legacy_epoch::tests
-and docs/build-v2/LEGACY_EPOCH.md for concrete fixture and platform proof limits.
-
 @cc [owner:fontanierh,label:correctness] build-v2-summary-observation
 Explanations MUST consume existing typed decisions and compact original-ingredient metadata without
 extra source/payload/cache reads, execution capabilities or provenance/platform key additions.
@@ -142,7 +126,12 @@ Each Python job MUST run in its own child of the job loop, in its staged folder,
 environment only, loading only installed platform modules and the unit's declared code; the checkout
 MUST NOT be on its import path. The child keeps `-P -s -S` and runs no `.pth` file: installed
 libraries come only from the loop's own purelib and platlib folders, passed in the child's private
-configuration and appended after the standard library, and the child MUST fail the job as
+configuration and appended after the standard library. The installed OpenSSL configuration MAY be
+read through the exact canonical literal /private/etc/ssl/openssl.cnf as platform context, not a
+new keyed game input; this MUST NOT grant neighboring files, an etc/ssl directory, Mach lookups,
+network access or an OPENSSL_CONF override. See the portable profile inspection in
+test_build_v2_python_worker.py; actual sandbox execution remains separate guarded evidence.
+The child MUST fail the job as
 `dependency` before running it when any such folder is missing, relative, not a folder, or resolves
 (symbolic links included) outside the approved platform roots. Installed libraries stay platform
 context and never enter a key. On macOS the child MUST run under a deny-default sandbox that lets
@@ -317,7 +306,12 @@ compiled-output identity. See tests/unreal.rs
 @cc [owner:fontanierh,label:safety] build-v2-unreal-ddc
 Every Unreal session MUST cache derived data only in the persistent, v2-owned folder
 `<store root>/unreal-ddc/<engine BuildId>`, never in job or session scratch and never emptied per
-job. Its command line MUST pass `-nowrite -NoZenAutoLaunch` and the inline graph
+job. Ordinary import/finish/author sessions MUST pass `-nowrite -NoZenAutoLaunch`.
+Only the fixed native cook verifier, issued with private source-cook evidence, MAY omit
+`-NoZenAutoLaunch` for the installed SDK's normal Zen package-store service lifetime; its
+session compatibility profile MUST have the distinct `-native-store` suffix. This exception
+MUST NOT enable Zen DDC, skip namespace/CB checks, or create an unknown namespace.
+Every session MUST retain `-nowrite` and the inline graph
 `-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=<that folder>))`, and those flags, the graph
 and the folder MUST be in the session profile, so a change to any of them is a new session and never
 a reuse of an old one. The DDC is rebuildable acceleration only: no reuse, key or receipt decision
@@ -349,7 +343,7 @@ One editor MUST run one job at a time, starting each with an empty `/Game` and e
 Input packages MUST be copied read-only to their logical paths and removed afterwards. The packages
 saved during a job MUST be exactly its declared output packages (an undeclared save or file is a
 `dependency` failure, a missing required package or an unsaved change is a `job` failure, and a
-changed input is a `dependency` failure). Every output file MUST belong to a package saved during
+changed input is a `dependency` failure). Every native package output file MUST belong to a package saved during
 the job, companion files included; a package file written any other way is a `dependency` failure.
 Every collected file MUST hold exactly the bytes its package's last save wrote: the plugin MUST take
 each save's file hashes only after an explicit flush of the save's writes
@@ -362,9 +356,19 @@ attestation (so a later save that leaves a companion alone keeps the earlier has
 two packages is a `dependency` failure, and a collected file MUST be attested by its own package's
 save. A mismatch, an unhashed file or another package's attestation is a `dependency` failure.
 Those SHA1 hashes are an integrity check only and MUST NOT become a key ingredient. Every required
-output file MUST exist when the job ends (otherwise a `job` failure), and a file written into
-`output/` directly is a `dependency` failure. Outputs MUST be moved out of `/Game` into `output/`. A failed job's `output/` MAY hold partially
+output file MUST exist when the job ends (otherwise a `job` failure). Native package files written into
+`output/` directly are a `dependency` failure; they MUST be moved out of `/Game` into `output/`.
+An `unreal.finish` unit MAY additionally declare opaque `Data` files at exact `data/` paths:
+only those named files MAY be written directly, their required inventory MUST be complete and
+regular, owned and unaliased, and they MUST NOT count as native package save evidence.
+Unknown files or directories MUST refuse. A failed job's `output/` MAY hold partially
 moved files, so the controller MUST collect `output/` only from a completed job.
+An `unreal.author` unit MAY instead own one required `JsonData` file under `data/`:
+the keyed body MUST return the exact named finite JSON value without file-write permission.
+The trusted worker serializes only that declared result after ordinary native read, input,
+save, dirty-package and ensure checks; the job MUST save no package. Native context verification,
+positive reset, guard cleanup and frozen-result publication MUST still apply. See
+`test_native_data_result_owns_one_exact_finite_json_output`.
 A package saved more than once to the same file counts once; one saved to more than one file is a
 `dependency` failure. A failed ensure during the job is a `job` failure. After every job the worker
 MUST restore its Python state, empty `/Game` and the asset registry, unload every package the job
@@ -422,3 +426,33 @@ without claiming another semantic geometry decode or reading live producer files
 formats, roles, incomplete/aliased/linked outputs and ownership-widening settings MUST refuse.
 See tests/blender_ops.rs and platform/studio/tests/test_build_v2_blender_ops.py. Native geometry
 fidelity/determinism, dynamic dispatch and production activation remain separate pending acceptance.
+
+@cc [owner:fontanierh,label:correctness] bounded-private-failure-diagnostics
+Failure diagnostics MUST retain at most 4096 UTF8 bytes on the original unit attempt, mark
+truncation explicitly and preserve the first diagnostic of each attempt through later errors
+and retries. This metadata MUST NOT affect policy, custody, keys, cache or publication decisions.
+Flattened driver reports MUST preserve attempt association. Only failed post-driver observations
+MAY write a private 0600 no-replace diagnostic.json under their original owned guard parent;
+Completed MUST NOT write it. Diagnostic IO failure MUST NOT change or mask the original outcome.
+Missing diagnostics MUST stay explicitly unknown, never evidence of cleanup. Messages and private
+files MUST NOT be published as CI artifacts or added to the strict controller/A7 report wire.
+See session_lifecycle::diagnostic_tests, python_executor::production_tests failure diagnostic
+cases and test_build_v2_controller_entry.py failed-target locator test. Actual historical M1 call1
+cause remains unknown; no functional retry or fullmixed activation is certified by these tests.
+
+@cc [owner:fontanierh,label:correctness;safety] unknown-install-metadata-refusal
+Reader and writer admission MUST refuse unknown install-control entries before interpreting
+receipts or mutating installed products. Unknown regular files, directories and links MUST
+remain untouched; current install journals retain exclusive recovery semantics. No old control
+format or completion credit is adopted. See checkout_locks::tests::unknown_install_metadata_refuses_readers_writers_without_mutation.
+
+@cc [owner:fontanierh,label:correctness] selected-derived-member-binding
+A named derived-member selector MUST resolve only the actual validated child for that
+piece and requested output Item, before the consumer key is formed. An unexpanded
+group MUST remain unresolved; a missing named member in an expanded group MUST fail.
+Sibling children MUST NOT become the selected consumer's content inputs, and no
+caller-invented future child unit ID MAY substitute for the expansion's actual ID.
+
+An authored selected-piece prefix transform MUST bind only a canonical observed sibling
+member, preserving the same before-key exact-item and absent/unexpanded behavior.
+The transform MUST NOT introduce a unit ID or stage unselected sibling packages.

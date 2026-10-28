@@ -188,6 +188,10 @@ fn parents(root: &Path, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// @cc [owner:fontanierh,label:correctness;performance] ephemeral-job-input-writes
+/// Job inputs MUST be written completely into fresh read-only files before dispatch, but MUST NOT
+/// require a per-file durable flush: these disposable copies never certify results or recovery.
+/// Durable leases, frozen result publication and checkout-install journals remain separate authorities.
 fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
     let mut file = OpenOptions::new()
         .write(true)
@@ -196,9 +200,7 @@ fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
         .custom_flags(libc::O_NOFOLLOW)
         .open(path)
         .map_err(|error| io_error(path, error))?;
-    file.write_all(bytes)
-        .and_then(|()| file.sync_all())
-        .map_err(|error| io_error(path, error))
+    file.write_all(bytes).map_err(|error| io_error(path, error))
 }
 
 fn set_mode(path: &Path, mode: u32) -> Result<(), String> {
@@ -243,7 +245,7 @@ fn stage_item(
 }
 
 /// Every directory below `root` except `output/`, deepest first.
-fn staged_directories(root: &Path) -> Result<Vec<PathBuf>, String> {
+fn staged_directories(root: &Path, scratch: Option<&Path>) -> Result<Vec<PathBuf>, String> {
     let mut found = vec![];
     let mut pending = vec![root.to_path_buf()];
     while let Some(directory) = pending.pop() {
@@ -251,6 +253,7 @@ fn staged_directories(root: &Path) -> Result<Vec<PathBuf>, String> {
             let entry = entry.map_err(|error| io_error(&directory, error))?;
             let path = entry.path();
             if path != root.join("output")
+                && scratch != Some(path.as_path())
                 && entry
                     .file_type()
                     .map_err(|error| io_error(&path, error))?
@@ -273,7 +276,9 @@ fn staged_directories(root: &Path) -> Result<Vec<PathBuf>, String> {
 /// from certified sources with their recorded size and executable bit: pinned CAS objects, checkout
 /// descriptors under read custody, or sealed local snapshots. Checkout read custody MUST end after
 /// independent job clones are staged, before worker execution; absent optional inputs
-/// create nothing. Every staged file and directory except `output/` MUST be read-only. Unsafe
+/// create nothing. The fixed Blender worker additionally receives one empty private
+/// `.blender-runtime/` directory for isolated native startup state. Every other staged
+/// file and directory except `output/` MUST be read-only. Unsafe
 /// paths, links, shape mismatches and incomplete items MUST fail the staging. An object source's
 /// refusal MUST reach the caller as `StageError::Source` with its typed kind and the digest asked
 /// for, never flattened or retried by copying; every other failure is `StageError::Staging`. The
@@ -337,6 +342,14 @@ fn stage_into(
                 parents(job_dir, &destination)?;
                 write_new(&destination, bytes)?;
             }
+            (InputPayload::NativeCooked(identity), Some(InputKind::Item)) => {
+                parents(job_dir, &destination)?;
+                fs::create_dir(&destination).map_err(|error| io_error(&destination, error))?;
+                write_new(
+                    &destination.join("native.json"),
+                    &crate::keys::canonical_bytes(identity)?,
+                )?;
+            }
             (InputPayload::Item { files, .. }, Some(InputKind::Item)) => {
                 parents(job_dir, &destination)?;
                 fs::create_dir(&destination).map_err(|error| io_error(&destination, error))?;
@@ -349,8 +362,34 @@ fn stage_into(
     }
     let output = job_dir.join("output");
     fs::create_dir(&output).map_err(|error| io_error(&output, error))?;
-    for directory in staged_directories(job_dir)? {
+    let runtime_name = match ingredients.worker_version.as_str() {
+        crate::launch::BLENDER_JOB_LOOP_VERSION => Some(".blender-runtime"),
+        crate::unreal::UNREAL_JOB_LOOP_VERSION => Some(".unreal-runtime"),
+        crate::recipe_ops::PYTHON_VERSION
+        | crate::recipe_ops::BLENDER_VERSION
+        | "atelier-native-tool-job-1" => Some(".recipe-runtime"),
+        _ => None,
+    };
+    let scratch = if let Some(name) = runtime_name {
+        let path = job_dir.join(name);
+        fs::create_dir(&path).map_err(|error| io_error(&path, error))?;
+        set_mode(&path, 0o700)?;
+        Some(path)
+    } else {
+        None
+    };
+    let evidence = if ingredients.worker_version == crate::unreal::UNREAL_JOB_LOOP_VERSION {
+        let path = job_dir.join("evidence");
+        fs::create_dir(&path).map_err(|error| io_error(&path, error))?;
+        Some(path)
+    } else {
+        None
+    };
+    for directory in staged_directories(job_dir, scratch.as_deref())? {
         set_mode(&directory, 0o555)?;
+    }
+    if let Some(path) = evidence {
+        set_mode(&path, 0o700)?;
     }
     let folder = job_dir.to_str().ok_or("the job folder is not UTF-8")?;
     let mut request = prepared.request(job_id, folder);

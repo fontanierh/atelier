@@ -229,8 +229,8 @@ class SimulationDataTests(unittest.TestCase):
         with patch.object(sys, 'path', [str(repository / 'platform/studio'), *sys.path]):
             from atelier import build
             recipe = build.load_recipe(GAME.name)
-        output = Path(self.temporary.name) / 'output'
-        data = Path(self.temporary.name) / 'Data'
+        output = Path(self.temporary.name).resolve() / 'output'
+        data = Path(self.temporary.name).resolve() / 'Data'
         context = SimpleNamespace(game=GAME.name, out=output,
                                   uproject=GAME / 'unreal/Yorimichi.uproject')
         # Recipe construction only: no build command, editor, compiler or cache write.
@@ -250,7 +250,7 @@ class SimulationDataTests(unittest.TestCase):
                          ('--assemble', package, '--output', report))
         self.assertEqual(set(runtime.inputs), {TOOLS / 'simulation_package.py', TOOLS / 'motion_text.py',
                                                TOOLS / 'runtime_text.py', simulation.DATA})
-        self.assertEqual(runtime.outputs, [report, package / simulation.MANIFEST])
+        self.assertEqual(runtime.outputs, [report, package])
         for name in ('unreal.skate_clips', 'unreal.skate_data'):
             self.assertIn(runtime.name, steps[name].needs)
             self.assertTrue(any(simulation.MOTION.is_relative_to(path) for path in steps[name].inputs))

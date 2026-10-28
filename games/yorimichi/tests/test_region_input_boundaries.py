@@ -28,7 +28,7 @@ def test_editor_geometry_still_tracks_natural_math_and_selected_design(edited, t
 
 
 @pytest.fixture
-def registry_build(tmp_path, monkeypatch):
+def registry_build(tmp_path, monkeypatch, unmanaged_builder_checkout):
     """Exercise normal cutoff/stamp execution with a cheap stand-in for the Blender consumer."""
     assets = tmp_path / 'assets'
     models = assets / 'brinecove/models'

@@ -862,9 +862,15 @@ capture supplies complete descriptor observations; later live-edit acceptance re
 
 `python_worker` binds exactly the frozen worker, job bootstrap and protocol files into its implementation
 identity, then materializes those same files read-only under each unit's local lease. Installed Python
-and dependencies remain platform context. `python_executor` uses C5b's existing lifecycle and refuses
-production dispatch until actual custodian registration is available; its scripted-bridge constructor
-exists only in test builds. Scripted admission cannot prove real guarded batching or cleanup custody.
+and dependencies remain platform context. `python_executor` uses one independent C5c session per
+original miss ticket. The existing exclusive build guard is duplicated for the monitor only; actual
+worker and correlated monitor identities must be durably added to both original leases before Run.
+Normal unit limits remain 120 seconds of execution, 30 seconds of cleanup and 1800 seconds overall;
+the session backstop is their checked execution-plus-cleanup sum (150 seconds). It does not reuse a
+resident worker or accept quiescence in place of full guard cleanup. A crash retry that would need
+fresh staging refuses before a second Run and preserves partial evidence. The scripted-bridge
+constructor exists only in test builds. Portable synthetic guard tests verify this production path's
+registration and settlement gates, not actual admission, sandbox execution or monitor cleanup.
 
 This unused checkpoint includes real sandbox/I/O T1a cases and independent-harness integration.
 Dynamic cold targets, conditional regeneration of unavailable recorded payloads,
@@ -994,6 +1000,21 @@ The engine-wide writes the T2 probes measured are named proof gaps in `build-v2-
 
 D2 unused Blender op definitions and in-job bodies support the initial schema-2 MeshIR → FBX route. See [Blender op contracts](../../docs/build-v2/BLENDER_OPS.md) for ownership, frozen validation and pending native acceptance.
 
-The dormant [legacy operational epoch](../../docs/build-v2/LEGACY_EPOCH.md) adds strict control-state
-fencing and private same-scope repair demands. It has no production plan issuer, caller, repair CLI
-or bootstrap; it does not activate mixed/default builds or qualify arbitrary legacy/native work.
+Failed Python targets retain bounded, attempt-specific diagnostics privately in the original
+leased guard parent as `diagnostic.json`. The normal CLI prints the private controller-log
+locator; that log points to the diagnostic file, or reports a retention error. Read each
+attempt's `source`, optional worker `kind`, `message` and `truncated` flag. A missing message
+means the cause is unknown. These records do not certify cleanup or cache publication and are
+not included in public CI artifacts or semantic keys. Successful `Completed` observations do
+not create this failure file. The first M1 failed call predates this retention and its cause
+remains unknown; these diagnostics do not imply a successful build.
+
+The Python sandbox permits the installed platform's OpenSSL configuration through the single
+canonical read literal `/private/etc/ssl/openssl.cnf`, as it permits installed interpreter files.
+The worker source change updates its semantic bundle identity normally. The installed config
+contents remain platform context, not a new game input or automatic installed-tool key. Neighboring
+certificates/hosts, directory data reads, Mach lookups and network access gain no permission;
+no `OPENSSL_CONF` override skips configuration. Profile-only portable tests inspect this boundary;
+they do not prove successful Mac execution. Both stopped M1 attempts have independent later OS
+reports binding their child to its guarded parent and recording that exact denied config read.
+Original receipts remain unchanged, and neither op-body progress nor a successful build is claimed.

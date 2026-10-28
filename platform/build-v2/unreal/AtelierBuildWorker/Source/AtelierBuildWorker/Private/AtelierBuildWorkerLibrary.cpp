@@ -1,8 +1,18 @@
 #include "AtelierBuildWorkerLibrary.h"
+#include "AtelierZenFinalise.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/SkeletalMesh.h"
+#include "Animation/Skeleton.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "Chaos/TriangleMeshImplicitObject.h"
 
 #include "AssetCompilingManager.h"
 #include "HAL/FileManager.h"
 #include "AssetRegistry/IAssetRegistry.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Algo/AllOf.h"
+#include "Misc/App.h"
 #include "DerivedDataCacheInterface.h"
 #include "DerivedDataCacheUsageStats.h"
 #include "Editor.h"
@@ -26,6 +36,11 @@
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
 #include "ShaderCompiler.h"
+#include "Commandlets/Commandlet.h"
+#include "Misc/CommandLine.h"
+#include "Misc/PackageName.h"
+#include "PackageTools.h"
+#include "ZenStoreHttpClient.h"
 #include "Serialization/ArchiveProxy.h"
 
 #include <sys/stat.h>
@@ -34,6 +49,7 @@
 #include "UObject/PackageFileSummary.h"
 #include "UObject/Package.h"
 #include "UObject/UObjectIterator.h"
+#include "UObject/ICookInfo.h"
 #include "UObject/UObjectGlobals.h"
 
 namespace
@@ -240,6 +256,7 @@ namespace
 FString UAtelierBuildWorkerLibrary::NativeContext()
 {
     const TSharedRef<FJsonObject> Context = MakeShared<FJsonObject>();
+    Context->SetStringField(TEXT("worker_source_digest"), UTF8_TO_TCHAR(ATELIER_BUILD_WORKER_SOURCE_DIGEST));
     FModuleManifest Engine;
     const FString EngineBinaries = FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries"), FPlatformProcess::GetBinariesSubdirectory());
     Context->SetStringField(TEXT("build_id"), FModuleManifest::TryRead(FModuleManifest::GetFileName(EngineBinaries, false), Engine) ? Engine.BuildId : FString());
@@ -274,6 +291,23 @@ FString UAtelierBuildWorkerLibrary::NativeContext()
     Context->SetObjectField(TEXT("plugins"), Plugins);
     Context->SetStringField(TEXT("rhi"), GUsingNullRHI ? TEXT("null") : TEXT("other"));
     return Write(MakeShared<FJsonValueObject>(Context));
+}
+
+extern bool BeginAtelierReadRecording();
+extern TArray<FString> EndAtelierReadRecording();
+
+bool UAtelierBuildWorkerLibrary::BeginReadRecording()
+{
+    return BeginAtelierReadRecording();
+}
+
+FString UAtelierBuildWorkerLibrary::EndReadRecording()
+{
+    const TSharedRef<FJsonObject> Report = MakeShared<FJsonObject>();
+    Report->SetNumberField(TEXT("version"), 1);
+    Report->SetBoolField(TEXT("best_effort"), true);
+    Report->SetField(TEXT("files"), Strings(EndAtelierReadRecording()));
+    return Write(MakeShared<FJsonValueObject>(Report));
 }
 
 void UAtelierBuildWorkerLibrary::BeginSaveRecording()
@@ -515,4 +549,159 @@ int32 UAtelierBuildWorkerLibrary::EnsureCount()
 void UAtelierBuildWorkerLibrary::ForgetFiles(const TArray<FString>& Files)
 {
     IAssetRegistry::GetChecked().ScanModifiedAssetFiles(Files);
+}
+
+FString UAtelierBuildWorkerLibrary::ZenFinaliseRequest(const FString& RequestJson)
+{
+    return AtelierZenFinaliseRequest(RequestJson);
+}
+
+// This check is independent of any game's runtime module and creates no assets.
+bool UAtelierBuildWorkerLibrary::ValidateMeshCollision(UStaticMesh* Mesh, int32 ExpectedTriangles, bool HasAuthoredHulls)
+{
+    if (!Mesh || ExpectedTriangles < 1 || Mesh->LODForCollision != 0 || Mesh->ComplexCollisionMesh) return false;
+    const auto* Body = Mesh->GetBodySetup();
+    const auto Trace = HasAuthoredHulls ? CTF_UseSimpleAndComplex : CTF_UseComplexAsSimple;
+    if (!Body || Body->CollisionTraceFlag != Trace || Body->BuildScale3D != FVector::OneVector ||
+        Body->bNeverNeedsCookedCollisionData || !Body->bCreatedPhysicsMeshes || Body->bFailedToCreatePhysicsMeshes ||
+        Body->TriMeshGeometries.IsEmpty()) return false;
+    int64 Triangles = 0;
+    for (const auto& Geometry : Body->TriMeshGeometries)
+    {
+        if (!Geometry) return false;
+        Triangles += Geometry->Elements().GetNumTriangles();
+    }
+    return Triangles == ExpectedTriangles;
+}
+
+bool UAtelierBuildWorkerLibrary::BindSkeletalPartners(USkeletalMesh* Mesh, USkeleton* Skeleton, UPhysicsAsset* PhysicsAsset)
+{
+    // Callers duplicate into their declared outputs first. These typed setters do
+    // not save files; ordinary C3 output/dirty-input/save verification still applies.
+    const auto GameObject = [](const UObject* Object)
+    {
+        return IsValid(Object) && Object->GetOutermost()->GetName().StartsWith(TEXT("/Game/"));
+    };
+    if (!GameObject(Mesh) || !GameObject(Skeleton) || (PhysicsAsset && !GameObject(PhysicsAsset))) return false;
+    Mesh->SetSkeleton(Skeleton);
+    Skeleton->SetPreviewMesh(Mesh, true);
+    if (PhysicsAsset)
+    {
+        Mesh->SetPhysicsAsset(PhysicsAsset);
+        PhysicsAsset->SetPreviewMesh(Mesh, true);
+    }
+    return Mesh->GetSkeleton() == Skeleton && Skeleton->GetPreviewMesh() == Mesh &&
+        (!PhysicsAsset || (Mesh->GetPhysicsAsset() == PhysicsAsset && PhysicsAsset->GetPreviewMesh() == Mesh));
+}
+
+
+FString UAtelierBuildWorkerLibrary::SourceCookRequest(const FString& RequestJson)
+{
+    // A fixed producer entry only. The Python/Rust issuer still has to bind the actual
+    // cooked CB and complete per-unit frozen source; an echoed input key grants nothing.
+    TSharedPtr<FJsonObject> Request;
+    TSharedPtr<FJsonObject> Report = MakeShared<FJsonObject>();
+    auto Finish = [&](const TCHAR* Status, const FString& Error = FString())
+    {
+        Report->SetNumberField(TEXT("version"), 1);
+        Report->SetStringField(TEXT("status"), Status);
+        if (!Error.IsEmpty()) Report->SetStringField(TEXT("error"), Error);
+        FString Text; FJsonSerializer::Serialize(Report.ToSharedRef(), TJsonWriterFactory<>::Create(&Text));
+        return Text;
+    };
+    if (!IsInGameThread() || !IsRunningCookCommandlet()
+        || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request)
+        || !Request || Request->Values.Num() != 4 || Request->GetIntegerField(TEXT("version")) != 1)
+        return Finish(TEXT("refused"), TEXT("invalid_request"));
+    FString Key, Project, Package;
+    if (!Request->TryGetStringField(TEXT("source_key"), Key) || !Request->TryGetStringField(TEXT("project_file"), Project)
+        || !Request->TryGetStringField(TEXT("package"), Package) || Key.Len() != 64
+        || !Key.ToLower().Equals(Key) || !Algo::AllOf(Key, [](TCHAR C) { return FChar::IsHexDigit(C); })
+        || FPaths::IsRelative(Project) || !Project.EndsWith(TEXT(".uproject"))
+        || !Project.Contains(TEXT("/projects/") + Key + TEXT("/view/"))
+        || !IFileManager::Get().FileExists(*Project) || FPaths::GetBaseFilename(Project) != FApp::GetProjectName()
+        || !(Package.StartsWith(TEXT("/Game/")) || Package.StartsWith(TEXT("/Engine/")))
+        || !FPackageName::IsValidLongPackageName(Package) || Package.Contains(TEXT("..")))
+        return Finish(TEXT("refused"), TEXT("invalid_source_identity"));
+    FString Canonical = FPaths::ConvertRelativePathToFull(Project);
+    FPaths::CollapseRelativeDirectories(Canonical);
+    if (Canonical != Project) return Finish(TEXT("refused"), TEXT("noncanonical_project"));
+    auto UnloadGame = [&]()
+    {
+        FinishBackgroundWork();
+        for (int32 Pass = 0; Pass < 3; ++Pass)
+        {
+            TArray<UPackage*> Packages;
+            for (const FString& Name : LoadedPackageNames(TEXT("/Game/")))
+                if (UPackage* Value = FindPackage(nullptr, *Name)) Packages.Add(Value);
+            if (!Packages.IsEmpty())
+            {
+                FText Error;
+                // Stock cook may dirty its in-memory input while producing cooked bytes.
+                // Its immutable input files are checked by the fixed producer after this call.
+                UPackageTools::UnloadPackages(Packages, Error, true);
+            }
+            CollectGarbageNow();
+            if (LoadedPackageNames(TEXT("/Game/")).IsEmpty()) return true;
+        }
+        return false;
+    };
+    if (!UnloadGame()) return Finish(TEXT("refused"), TEXT("prior_game_packages_loaded"));
+    IAssetRegistry& Registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
+    TArray<FAssetData> Remaining;
+    Registry.GetAssetsByPath(FName(TEXT("/Game")), Remaining, true);
+    if (!Remaining.IsEmpty()) return Finish(TEXT("refused"), TEXT("prior_game_registry_retained"));
+    // ProjectDir/SavedDir are cached by the SDK. Keep the one real runtime
+    // project stable, with a removable /Game overlay onto this producer's exact
+    // immutable Content. Namespace provenance also points at that retained project.
+    UE::FZenStoreHttpClient Namespace;
+    if (!Namespace.TryCreateProject(TEXT("AtelierV2_") + Key, FStringView(), TEXT("Mac"),
+            FPaths::ConvertRelativePathToFull(FPaths::RootDir()), FPaths::ConvertRelativePathToFull(FPaths::EngineDir()),
+            FPaths::GetPath(Project), Project))
+        return Finish(TEXT("refused"), TEXT("source_namespace_creation_failed"));
+    const FString ContentRoot = FPaths::GetPath(Project) / TEXT("Content/");
+    const auto Mount = FPackageName::RegisterMountPoint(TEXT("/Game/"), ContentRoot);
+    Registry.ScanPathsSynchronous({TEXT("/Game")}, true);
+    if (!FPackageName::DoesPackageExist(Package))
+    {
+        FPackageName::UnRegisterMountPoint(Mount);
+        return Finish(TEXT("refused"), TEXT("declared_source_package_not_found"));
+    }
+    const FString SavedCommandLine(FCommandLine::Get());
+    const FString Args = TEXT("-targetplatform=Mac -package=") + Package
+        + TEXT(" -OutputDir=\"") + FPaths::GetPath(Project) + TEXT("/Saved/Cooked/[Platform]\"")
+        + TEXT(" -cooksinglepackagenorefs -Cook.DependencyTracking=1 -ZenStore -ZenStoreProject=AtelierV2_") + Key
+        + TEXT(" -ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True")
+        + TEXT(" -ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=True")
+        + TEXT(" -unattended -nop4 -nullrhi -stdout -FullStdOutLogOutput");
+    FCommandLine::Set(*(TEXT("\"") + Project + TEXT("\" -run=cook ") + Args));
+    int32 Code = -1;
+    {
+        // RunAsCookCommandlet initializes the FIRST listener before engine startup.
+        // Each stock Main consumes it; only subsequent producer calls reinitialize.
+        static bool bCookStartupConsumed = false;
+        UClass* Class = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.CookCommandlet"));
+        if (Class && Class->IsChildOf(UCommandlet::StaticClass()))
+        {
+            UCommandlet* Commandlet = NewObject<UCommandlet>(GetTransientPackage(), Class);
+            Commandlet->AddToRoot();
+            if (bCookStartupConsumed) UE::Cook::InitializeCookGlobals();
+            bCookStartupConsumed = true;
+            Code = Commandlet->Main(Args);
+            Commandlet->RemoveFromRoot();
+        }
+    }
+    FCommandLine::Set(*SavedCommandLine);
+    const bool Clean = UnloadGame();
+    FPackageName::UnRegisterMountPoint(Mount);
+    Remaining.Reset(); Registry.GetAssetsByPath(FName(TEXT("/Game")), Remaining, true);
+    Report->SetStringField(TEXT("source_key"), Key);
+    Report->SetStringField(TEXT("project_file"), Project);
+    Report->SetStringField(TEXT("package"), Package);
+    Report->SetStringField(TEXT("project"), TEXT("AtelierV2_") + Key);
+    Report->SetNumberField(TEXT("exit_code"), Code);
+    Report->SetBoolField(TEXT("game_unloaded"), Clean && Remaining.IsEmpty());
+    if (Code != 0 || !Clean || !Remaining.IsEmpty())
+        return Finish(TEXT("refused"), TEXT("stock_cook_or_reset_failed"));
+    return Finish(TEXT("cooked"));
 }

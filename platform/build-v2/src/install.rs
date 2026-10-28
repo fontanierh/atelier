@@ -608,7 +608,7 @@ impl ReceiptReader {
     }
     fn guard(&self, guard: &BuildGuard) -> Result<(), InstallError> {
         self.guard_root(guard)?;
-        crate::checkout_locks::require_no_legacy_epoch(guard.root())?;
+        crate::checkout_locks::require_known_install_metadata(guard.root())?;
         Ok(())
     }
     fn guard_root(&self, guard: &BuildGuard) -> Result<(), InstallError> {
@@ -793,25 +793,6 @@ impl ReceiptReader {
     ) -> Result<CurrentStatus, InstallError> {
         self.guard(guard)?;
         let _reader = self.locks.try_read_content()?;
-        self.current_locked(unit)
-    }
-
-    /// Private already-EX observation for the exact active/repair epoch only.
-    /// The B3 install journal remains an unconditional blocker; receipt parsing is shared.
-    pub(crate) fn receipt_status_exclusive(
-        &self,
-        guard: &BuildGuard,
-        writer: &crate::checkout_locks::ContentWriteGuard,
-        permit: &crate::legacy_epoch::EpochPermit<'_, '_>,
-        unit: &PreparedUnit,
-    ) -> Result<CurrentStatus, InstallError> {
-        self.guard_root(guard)?;
-        permit
-            .verify(guard, writer)
-            .map_err(|_| invalid("foreign or changed legacy epoch permit"))?;
-        if self.fs.occupied(JOURNAL)? {
-            return Err(recovery("install journal blocks legacy epoch observation"));
-        }
         self.current_locked(unit)
     }
 

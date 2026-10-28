@@ -12,7 +12,9 @@ The script is the session's frozen, read-only copy of this file, beside a frozen
 path; the source tree is never run. It speaks protocol version 1 (`protocol.py`) on the two inherited pipes, made close-on-exec at once
 so no helper process the editor starts inherits them. Stdout and stderr are the editor's logs.
 
-**Unreal is not sandboxed.** Per-job isolation is detection only:
+Filesystem isolation inside Unreal uses per-job detection. Fixed resident import/finish sessions
+add a kernel fork/exec denial after startup and before Hello; their jobs cannot start helpers.
+Per-job checks remain:
 - each job's input packages are copied into the session's empty `/Game` at their logical paths,
   read-only, and removed afterwards;
 - the packages saved during the job must be exactly the declared output packages (a package saved
@@ -45,6 +47,7 @@ inside, `output/`.
 The editor surface is `Editor`: the `unreal` module plus the editor-only `AtelierBuildWorker`
 plugin library, whose functions this file defines by use (the T0 stand-in implements the same).
 """
+from contextlib import contextmanager
 from decimal import Decimal
 import hashlib
 import importlib.util
@@ -56,6 +59,7 @@ import runpy
 import shutil
 import stat
 import sys
+import shlex
 
 if __package__:
     from . import protocol
@@ -64,15 +68,89 @@ else:  # run by the editor as a script: load the sibling module by path
     protocol = importlib.util.module_from_spec(_spec)
     _spec.loader.exec_module(protocol)
 
+def _bundle_module(name):
+    spec = importlib.util.spec_from_file_location('atelier_c3_' + name,
+                                                Path(__file__).with_name(name + '.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@contextmanager
+def declared_python(job_dir, code, reads, platform_roots, *, entry=None, writes=()):
+    """Reuse C2's path/import checks for the project Python body inside C3.
+
+    A caught refusal remains sticky. The audit hook is inactive outside this scope;
+    all wrapped process functions and import hooks are restored before reset.
+    """
+    helper = _bundle_module('python_job')
+    class Guard(helper.PathGuard):
+        failed = None
+        def resolve(self, path):
+            # Unreal's process cwd is not the staged job directory. Check the
+            # path the actual syscall will use, including native cwd changes.
+            return os.path.normpath(os.path.join(os.getcwd(), os.fsdecode(path)))
+        def violation(self, access, path):
+            self.failed = f'undeclared Python {access}: {path}'
+            raise JobRefused('dependency', self.failed)
+    root = str(job_dir)
+    guard = Guard(root, [str(p) for p in platform_roots],
+                  {str(p) for p in reads}, lambda _: None)
+    guard.writes = []  # C2 defaults to output/; C3 permits only explicit opaque Data files.
+    for path in writes:
+        path = Path(path)
+        if not path.is_absolute() or not path.is_relative_to(Path(root) / 'output/data') or '..' in path.parts:
+            raise JobRefused('protocol', 'native Python write role is outside declared Data outputs')
+        guard.writes.append(str(path))
+    # Staged job bytes are already immutable. Scratch content contains only this
+    # job's staged inputs and native saves; Python cannot write native Content.
+    guard.reads += [str(p) for p in reads if Path(p).is_dir()]
+    finder = helper.DeclaredCodeFinder(root, set(code), [str(p) for p in platform_roots])
+    originals = {name: getattr(os, name) for name in guard.DESCRIPTOR_CALLS if hasattr(os, name)}
+    meta, hooks, search = list(sys.meta_path), list(sys.path_hooks), list(sys.path)
+    project_roots = [str(Path(root) / Path(entry).parent)] if entry is not None else []
+    for relative in sorted(code):
+        path = Path(relative)
+        project_roots.append(str(Path(root) / path.parent))
+        if path.parts[:2] == ('platform', 'studio'):
+            project_roots.append(str(Path(root) / 'platform/studio'))
+        if len(path.parts) > 2 and path.parts[0] == 'games':
+            project_roots.append(str(Path(root).joinpath(*path.parts[:2])))
+    bytecode = sys.dont_write_bytecode
+    active = [True]
+    guard.original_readlink = os.readlink
+    sys.addaudithook(lambda event, args: guard.audit(event, args) if active[0] else None)
+    try:
+        sys.dont_write_bytecode = True
+        # Search locations do not authorize code: the finder still checks every
+        # imported origin against the exact frozen closure.
+        sys.path[:] = list(dict.fromkeys(project_roots + search))
+        for name, function in originals.items():
+            setattr(os, name, guard.wrap(name, function, guard.DESCRIPTOR_CALLS[name]))
+        sys.meta_path.insert(0, finder)
+        yield
+        if guard.failed:
+            raise JobRefused('dependency', guard.failed)
+    finally:
+        active[0] = False
+        sys.dont_write_bytecode = bytecode
+        for name, function in originals.items():
+            setattr(os, name, function)
+        sys.meta_path[:] = meta
+        sys.path_hooks[:] = hooks
+        sys.path[:] = search
+
+
 WORKER_VERSION = 'atelier-unreal-job-1'
 EXPECTED_CONTEXT = 'Atelier/expected-context.json'
 CONTEXT_REPORT = 'unreal-context.json'
 IMPORT_EVIDENCE = 'evidence/imports.json'
+READ_EVIDENCE = 'evidence/reads.json'
 EVIDENCE_VERSION = 1
 GAME = '/Game/'
 INPUT_CONTENT = 'in/content/Game/'
 OUTPUT_CONTENT = 'content/Game/'
-PACKAGE_FILES = ('.uasset', '.umap', '.uexp', '.ubulk', '.uptnl')
+PACKAGE_FILES = ('.uasset', '.umap', '.uexp', '.m.ubulk', '.ubulk', '.uptnl', '.upayload')
 PRIMARY_FILES = ('.uasset', '.umap')
 INI_SETTING = re.compile(r'-ini:([^:\[\]]+):\[([^\]]+)\]:([^=]+)=(.*)')
 
@@ -106,7 +184,8 @@ def worker_identity():
     script, module = Path(__file__).resolve(), Path(protocol.__file__).resolve()
     if module.parent != script.parent:
         return f'protocol loaded from outside the bundle: {module}'
-    digests = {'protocol.py': sha256(module), script.name: sha256(script)}
+    digests = {name: sha256(script.with_name(name)) for name in
+               ('protocol.py', 'python_job.py', 'recipe_job.py', 'unreal_inputs.py', 'unreal_worker.py')}
     canonical = json.dumps({'domain': 'atelier-unreal-worker', 'version': 1, 'files': digests},
                            sort_keys=True, separators=(',', ':'))
     return hashlib.sha256(canonical.encode()).hexdigest()
@@ -142,13 +221,104 @@ def ddc_problem(policy, nodes):
             local = local or allowed
         elif node['kind'] == 'Pak File':
             allowed = path == policy['engine_pak']
-        elif node['kind'] == 'Memory':
+        elif node['kind'] in ('Memory', 'Async'):
             allowed = not path
         else:
             allowed = False
         if not allowed:
             return f'a {node["kind"]} node at {path!r} is outside the v2 DDC folder'
     return None if local else 'no cache node is inside the v2 DDC folder'
+
+
+def validate_read_report(report, declared, platform_roots=(), generated=()):
+    """@cc [owner:fontanierh,label:correctness] unreal-observed-input-closure
+    Observed unknown reads MUST fail before Completed. Generated files MUST be attested
+    outputs of this job. This best-effort report MUST NOT certify unobserved native IO.
+    """
+    if (not isinstance(report, dict) or set(report) != {'version', 'best_effort', 'files'}
+            or type(report['version']) is not int or report['version'] != 1
+            or report['best_effort'] is not True or not isinstance(report['files'], list)):
+        raise JobRefused('dependency', 'missing or malformed native read report')
+    allowed = {Path(path).resolve() for path in (*declared, *generated)}
+    roots = tuple(Path(path).resolve() for path in platform_roots)
+    unknown = []
+    for item in report['files']:
+        if not isinstance(item, str) or not Path(item).is_absolute():
+            raise JobRefused('dependency', 'native read report contains a non-absolute path')
+        path = Path(item).resolve()
+        if path not in allowed and not any(path.is_relative_to(root) for root in roots):
+            unknown.append(item)
+    if unknown:
+        raise JobRefused('dependency', f'opened undeclared files: {sorted(set(unknown))}')
+
+
+def native_store_metadata_files(engine_dir, *, home=None):
+    """@cc [owner:fontanierh,label:correctness;safety] native-zen-sdk-metadata
+    Only the fixed native verifier MAY classify these five default installed SDK
+    service metadata files as platform reads. No directory, asset, code or other
+    user-settings file MAY be authorized. Aliases and non-regular roles MUST refuse.
+    These runtime SDK locators MUST NOT become semantic asset inputs or certificates.
+    """
+    import pwd
+    version = json.loads((Path(engine_dir) / 'Build/Build.version').read_bytes())
+    numbers = [version.get(key) for key in ('MajorVersion', 'MinorVersion')]
+    if any(type(value) is not int or not 0 <= value < 100 for value in numbers):
+        raise JobRefused('dependency', 'installed SDK has no canonical engine version')
+    home = Path(home) if home is not None else Path(pwd.getpwuid(os.getuid()).pw_dir)
+    epic = home / 'Library/Application Support/Epic'
+    common = epic / 'UnrealEngine/Common/Zen/Install'
+    files = [epic / 'Epic Games/KeyValueStore.ini',
+             epic / f'UnrealEngine/{numbers[0]}.{numbers[1]}/Saved/Zen/zen.version',
+             *(common / name for name in ('security-config.json', 'zen.version', 'zen_plugin_versions.json'))]
+    for path in files:
+        if not path.is_absolute() or path.resolve() != path:
+            raise JobRefused('dependency', 'native SDK metadata role contains an alias')
+        if path.exists():
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise JobRefused('dependency', 'native SDK metadata role is not a regular file')
+    return files
+
+
+def generated_save_reads(report, saved, folder, before):
+    """UE SavePackage uses Saved/<package-leaf[:32]><FGuid Digits>.tmp.
+
+    Only a new direct temporary for an actually attested package save is generated state.
+    Preexisting names, aliases, other roots and other names remain undeclared reads.
+    """
+    folder = Path(folder)
+    if folder.resolve() != folder or folder.is_symlink():
+        return []
+    prefixes = {item['package'].rsplit('/', 1)[-1][:32] for item in saved}
+    result = []
+    for raw in report.get('files', ()):
+        path = Path(raw)
+        if path.parent == folder and path.name not in before and any(
+                re.fullmatch(re.escape(prefix) + r'[0-9A-F]{32}\.tmp', path.name)
+                for prefix in prefixes):
+            if path.is_symlink():
+                continue
+            result.append(path)
+    return result
+
+
+def content_has_files(root):
+    """Empty editor-created folder scaffolding is not package content; links are never empty."""
+    with os.scandir(root) as entries:
+        for entry in entries:
+            if not entry.is_dir(follow_symlinks=False) or content_has_files(entry.path):
+                return True
+    return False
+
+
+def verify_readonly_editor_state(before, after, saved, ensures, content):
+    """Native verification preserves startup dirty state and never dirties /Game."""
+    if (any(name.startswith(GAME) for name in before) or sorted(before) != sorted(after)
+            or saved or ensures or content):
+        detail = dict(dirty_before=sorted(before)[:8], dirty_after=sorted(after)[:8],
+                      saved_count=len(saved), ensures=ensures, content=content)
+        raise JobRefused('dependency', 'native verification mutated package/editor state: '
+                         + json.dumps(detail, sort_keys=True))
 
 
 def log(message):
@@ -231,6 +401,25 @@ def _job_relative(path, label):
     return path
 
 
+def collect_data_outputs(output, declared):
+    """Census exact additional Data files, never native-package save evidence."""
+    allowed = set(declared)
+    parents = {str(parent) for name in allowed for parent in Path(name).parents if str(parent) != '.'}
+    found = {}
+    for directory, dirs, files in os.walk(output, followlinks=False):
+        for name in dirs + files:
+            path = Path(directory, name)
+            relative = path.relative_to(output).as_posix()
+            info = path.lstat()
+            if stat.S_ISDIR(info.st_mode) and relative in parents:
+                continue
+            if (relative not in allowed or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                    or info.st_uid != os.getuid() or path.resolve() != path):
+                raise JobRefused('dependency', f'undeclared or aliased Data output {relative}')
+            found[relative] = path
+    return found
+
+
 class Editor:
     """Everything the loop asks of the editor."""
 
@@ -266,8 +455,13 @@ class Editor:
         return {'graph': graph['graph'], 'nodes': nodes}
 
     def begin_job(self):
+        if not self.library.begin_read_recording():
+            raise JobRefused('dependency', 'native read recording is unavailable')
         self.library.begin_ensure_count()
         self.library.begin_save_recording()
+
+    def read_report(self):
+        return json.loads(self.library.end_read_recording())
 
     def ensures(self):
         """Failed ensures since `begin_job` (the editor runs with -nocrashreports, so none is reported elsewhere)."""
@@ -332,16 +526,62 @@ class Editor:
         return remaining
 
 
+def encode_data_result(result, outputs):
+    """@cc [owner:fontanierh,label:correctness] native-derived-json-is-explicit
+    Serialize only the sole exact declared finite JSON result returned by the keyed
+    native body. The body MUST receive no filesystem write capability; native reads,
+    input integrity, unsaved changes and cleanup MUST retain ordinary C3 admission.
+    """
+    if (len(outputs) != 1 or not isinstance(result, dict) or set(result) != set(outputs)
+            or any(not isinstance(path, str) or _job_relative(path, 'output') != path
+                   or not path.startswith('data/') or not path.endswith('.json') for path in outputs)):
+        raise JobRefused('dependency', 'native data result differs from its exact declared JSON output')
+    try:
+        return {path: (json.dumps(result[path], indent=1, allow_nan=False) + '\n').encode('utf-8') for path in outputs}
+    except (TypeError, ValueError) as error:
+        raise JobRefused('job', 'native data result is not finite JSON') from error
+
+
 class Context:
     """What an op sees: its params, staged inputs and declared outputs; no repository paths."""
 
-    def __init__(self, job_dir, inputs, packages, params, outputs, content_dir):
+    def __init__(self, job_dir, inputs, packages, params, outputs, content_dir, *, zen_request=None, data_outputs=()):
         self.job_dir = Path(job_dir)
         self.inputs = inputs  # name -> logical package (staged) or job-folder path
         self.packages = packages  # name -> logical package, for staged package inputs
         self.params = params
         self.outputs = outputs  # declared output packages
+        self.data_outputs = tuple(data_outputs)  # exact declared relative Data result names
         self.content_dir = Path(content_dir)
+        if zen_request is not None:
+            self.zen_request = zen_request
+
+
+def trusted_verify_context(job_dir):
+    """Read only the private execution carrier; semantic params cannot supply it."""
+    path = Path(job_dir) / '.unreal-runtime/native-verify.json'
+    info = path.lstat()
+    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_nlink != 1
+            or stat.S_IMODE(info.st_mode) != 0o400 or info.st_size > 4 * 1024 * 1024):
+        raise JobRefused('protocol', 'native verifier carrier is not an immutable owned control file')
+    value = json.loads(path.read_bytes())
+    if (not isinstance(value, dict) or set(value) != {'version', 'request', 'record_sha256', 'producer_key'}
+            or type(value['version']) is not int or value['version'] != 1
+            or any(not isinstance(value[name], str) or not re.fullmatch('[a-f0-9]{64}', value[name])
+                   for name in ('record_sha256', 'producer_key'))):
+        raise JobRefused('protocol', 'malformed private native verifier carrier')
+    request = value['request']
+    fields = {'version', 'mode', 'project', 'oplog', 'source_package', 'expected_stored_key',
+              'expected_root_hash', 'record_path', 'project_file', 'marker_path', 'input_key',
+              'runtime_project_file'}
+    if (not isinstance(request, dict) or set(request) != fields or type(request['version']) is not int
+            or request['version'] != 1 or request['mode'] not in ('verify', 'restore')):
+        raise JobRefused('protocol', 'invalid native readback request')
+    for name in ('record_path', 'project_file', 'marker_path', 'runtime_project_file'):
+        path = Path(request[name])
+        if not path.is_absolute() or '..' in path.parts or path.is_symlink():
+            raise JobRefused('protocol', 'native verifier path is not canonical owned execution metadata')
+    return value
 
 
 class Worker:
@@ -351,6 +591,8 @@ class Worker:
         self.responses = responses
         self.project = editor.project_dir()
         self.content = self.project / 'Content'
+        self.read_platform_roots = ()
+        self.resident = False
 
     def send(self, message):
         protocol.write_frame(self.responses, protocol.RESPONSE, message)
@@ -380,13 +622,16 @@ class Worker:
                   'rhi': native['rhi'], 'ddc': expected['ddc']}
         graph = self.editor.ddc_graph()
         write_atomic(self.project.parent / CONTEXT_REPORT,
-                     {'version': EVIDENCE_VERSION, 'loaded': loaded, 'ddc_graph': graph, 'settings_read': reads})
+                     {'version': EVIDENCE_VERSION, 'loaded': loaded, 'ddc_graph': graph, 'settings_read': reads,
+                      **({'native_worker_source_digest': native['worker_source_digest']}
+                         if 'worker_source_digest' in native else {})})
         if loaded != {**expected, 'modules': sorted(expected['modules']), 'plugins': sorted(expected['plugins'])}:
             raise StartRefused('the editor loaded a different native context than the session declared')
         problem = ddc_problem(expected['ddc'], graph['nodes'])
         if problem:
             raise StartRefused(f"the editor's cache graph is not the v2 graph: {problem}")
-        if any(self.content.iterdir()) or self.editor.registry_game_assets():
+        self.read_platform_roots = (self.editor.engine_dir(), Path(expected['ddc']['dir']))
+        if content_has_files(self.content) or self.editor.registry_game_assets():
             raise StartRefused('/Game is not empty at startup')
 
     def observed_setting(self, token, cvars, reads):
@@ -452,67 +697,92 @@ class Worker:
             problem = self.reset(job, touched, moved, state)
         except Exception as error:  # the editor is in an unknown state: reply, then retire
             problem = f'reset raised {type(error).__name__}: {error}'
+        if not problem and self.resident:
+            try:
+                write_atomic(Path(job['job_dir']) / '.unreal-runtime/reset.json',
+                             {'version': 1, 'job_id': job_id})
+            except Exception as error:
+                problem = f'reset receipt raised {type(error).__name__}: {error}'
+        if problem and reply['type'] == 'completed':
+            reply = {'type': 'failed', 'job_id': job_id, 'failure': {'kind': 'job', 'message': problem}}
         self.send(reply)
         return problem
 
     def execute(self, job, touched, moved):
+        """@cc [owner:fontanierh,label:correctness;safety] finish-opaque-data-outputs
+        Extra FINISH Data MUST be exact canonical data/ files, never package-save
+        evidence. Python writes MUST stay within those files and use the actual
+        process cwd. Package attestation, declared read checks, complete output
+        census and required files MUST remain enforced. The caller MUST retain
+        reset, positive cleanup and B1 freezing before any result publication.
+        """
         job_dir = Path(job['job_dir'])
         if not job_dir.is_absolute() or not (job_dir / 'output').is_dir():
             raise JobRefused('protocol', 'the job folder is not a staged absolute folder with output/')
         if any((job_dir / 'output').iterdir()):
             raise JobRefused('protocol', 'output/ is not empty before the job')
-        if any(self.content.iterdir()):
+        if content_has_files(self.content):
             raise JobRefused('dependency', '/Game is not empty before the job')
-        declared, required = {}, set()
+        if job['op']['kind'] == 'unreal.cook.verify':
+            return self.execute_verifier(job)
+        declared, required, data_outputs, data_required = {}, set(), [], set()
+        data_author = job['op']['kind'] == 'unreal.author'
         for item in job['outputs']:
             path = _job_relative(item['path'], 'output')
+            if ((data_author and path.startswith('data/') and path.endswith('.json'))
+                    or (job['op']['kind'] == 'unreal.finish' and path.startswith('data/'))):
+                data_outputs.append(path)
+                if item['required']: data_required.add(path)
+                continue
             if not path.startswith(OUTPUT_CONTENT) or not path.endswith(PACKAGE_FILES):
                 raise JobRefused('protocol', f'output {path!r} is not a package file under {OUTPUT_CONTENT}')
             declared[path] = item['required']
+        if data_author and data_outputs and (declared or len(data_outputs) != 1 or not all(item['required'] for item in job['outputs'])):
+            raise JobRefused('protocol', 'a native data author owns one required JSON result and no packages')
+        if job['op']['kind'] == 'unreal.finish' and not declared:
+            raise JobRefused('protocol', 'finish Data outputs need their declared native package')
+        data_paths = [job_dir / 'output' / name for name in data_outputs]
+        for path in data_paths:
+            path.parent.mkdir(parents=True, exist_ok=True)  # trusted bootstrap, before the body guard
         packages = {package_of(path, OUTPUT_CONTENT) for path in declared} - {None}
         required = {package_of(path, OUTPUT_CONTENT) for path, need in declared.items() if need} - {None}
         if job['script'] not in job['code']:
             raise JobRefused('protocol', 'the entry script is outside the declared code')
-        staged, inputs, input_packages = {}, {}, {}
-        for item in job['inputs']:
-            path = _job_relative(item['path'], 'input')
-            source = job_dir / path
-            present = item['identity']['state'] != 'absent'
-            if present != os.path.lexists(source):
-                raise JobRefused('protocol', f'input {item["name"]!r} does not match its staged presence')
-            package = package_of(path, INPUT_CONTENT)
-            if path.startswith(INPUT_CONTENT) and present:
-                if not path.endswith(PACKAGE_FILES):
-                    raise JobRefused('protocol', f'input {path!r} is not a package file')
-                target = self.content / path[len(INPUT_CONTENT):]
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, target)
-                os.chmod(target, 0o444)
-                staged[target] = sha256(target)
-                if package:
-                    input_packages[item['name']] = package
-                    touched.add(package)
-                    if package in packages:
-                        raise JobRefused('protocol', f'{package} is both an input and an output')
-                inputs[item['name']] = package or str(target)
-            else:
-                inputs[item['name']] = str(source) if present else None
+        helper = _bundle_module('unreal_inputs')
+        try:
+            prepared = helper.stage_inputs(job_dir, job['inputs'], self.content,
+                runtime_dir=job_dir / '.unreal-runtime', output_packages=packages,
+                root_bindings=job['params'].get('input_roots', {}))
+        except (OSError, ValueError) as error:
+            raise JobRefused('dependency', str(error)) from error
+        staged, inputs, input_packages = (prepared['staged_files'], prepared['inputs'], prepared['packages'])
+        for values in input_packages.values():
+            touched.update(values)
         if staged:
             self.editor.scan(staged)
         self.settings = self.editor.settings()
+        save_folder = self.project.parent / 'user' / 'Saved'
+        save_before = set(os.listdir(save_folder)) if save_folder.is_dir() else set()
         self.editor.begin_job()
         recording = True
         try:
-            entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_unreal_job')
-            if not callable(entry.get('run')):
-                raise JobRefused('protocol', 'the entry script defines no run(context)')
-            entry['run'](Context(job_dir, inputs, input_packages, job['params'], sorted(packages), self.content))
+            with declared_python(job_dir, job['code'],
+                    [*prepared['declared_reads'], self.content, *data_paths],
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script'],
+                    writes=data_paths if job['op']['kind'] == 'unreal.finish' else ()):
+                entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_unreal_job')
+                if not callable(entry.get('run')):
+                    raise JobRefused('protocol', 'the entry script defines no run(context)')
+                result = entry['run'](Context(job_dir, inputs, input_packages, job['params'], sorted(packages),
+                                              self.content, data_outputs=data_outputs))
             self.editor.finish_background_work()
             saved = self.editor.saved_packages()
+            read_report = self.editor.read_report()
             recording = False
         finally:
             if recording:
                 touched.update(item['package'] for item in self.editor.saved_packages())
+                self.editor.read_report()
         # Every file a save attested, with the package that saved it: in save order, so a file's
         # latest attestation wins, and a later save that leaves a companion alone keeps its hash.
         files_of, attested, shared = {}, {}, set()
@@ -524,6 +794,12 @@ class Worker:
                 if owner != item['package']:
                     shared.add(resolved)
                 attested[resolved] = (item['package'], digest)
+        write_atomic(job_dir / READ_EVIDENCE, read_report)
+        declared_reads = [job_dir / path for path in job['code']]
+        declared_reads += prepared['declared_reads']
+        declared_reads += list(staged)
+        generated = [*attested, *data_paths, *generated_save_reads(read_report, saved, save_folder, save_before)]
+        validate_read_report(read_report, declared_reads, self.read_platform_roots, generated)
         # The registry forgets every saved file at reset, even one the op deleted afterwards.
         moved.extend(Path(filename) for filenames in files_of.values() for filename in filenames)
         names = set(files_of)
@@ -538,8 +814,9 @@ class Worker:
             raise JobRefused('job', f'the editor reported {ensures} failed ensure(s) during the job')
         if names - packages:
             raise JobRefused('dependency', f'saved undeclared packages: {sorted(names - packages)}')
-        if any((job_dir / 'output').iterdir()):
-            raise JobRefused('dependency', 'the job wrote into output/ directly; only package saves produce outputs')
+        data_files = collect_data_outputs(job_dir / 'output', data_outputs)
+        if data_author and data_files:
+            raise JobRefused('dependency', 'a JSON data author must return its data instead of writing output/')
         if required - names:
             raise JobRefused('job', f'did not save declared packages: {sorted(required - names)}')
         dirty = sorted(name for name in self.editor.dirty_packages() if name.startswith(GAME))
@@ -584,9 +861,86 @@ class Worker:
             target.parent.mkdir(parents=True, exist_ok=True)
             moved.append(path)
             shutil.move(path, target)
+        if data_outputs and (data_author or isinstance(result, dict)):
+            returned = data_outputs if data_author else sorted(result)
+            if any(name not in data_outputs or not name.endswith('.json') for name in returned):
+                raise JobRefused('dependency', 'native data return names undeclared JSON outputs')
+            encoded = encode_data_result(result, returned)
+            for relative, data in encoded.items():
+                target = job_dir / 'output' / relative
+                if target.exists() or target.is_symlink():
+                    raise JobRefused('dependency', 'returned native JSON would overwrite an existing Data output')
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open('xb') as stream:
+                    stream.write(data)
+            data_files.update({relative: job_dir / 'output' / relative for relative in encoded})
+        missing_data = sorted(data_required - data_files.keys())
+        if missing_data:
+            raise JobRefused('job', f'required Data outputs are missing: {missing_data}')
+        files.update(data_files)
         write_atomic(job_dir / IMPORT_EVIDENCE, {'version': EVIDENCE_VERSION, 'packages': [
             {'package': name, 'imports': imports[name]} for name in sorted(names)]})
         return sorted(files)
+
+    def execute_verifier(self, job):
+        job_dir = Path(job['job_dir'])
+        if (job['op']['version'] != '1'
+                or job['script'] != 'platform/studio/atelier/build_v2/zen_verify.py'
+                or job['script'] not in job['code']
+                or job['outputs'] != [{'path': 'zen-verified.json', 'required': True}]):
+            raise JobRefused('protocol', 'unsupported native verification body or report inventory')
+        carrier = trusted_verify_context(job_dir)
+        request = carrier['request']
+        if Path(request['runtime_project_file']) != self.project / 'Atelier.uproject':
+            raise JobRefused('protocol', 'native verification runtime differs from its own scratch project')
+        records = [Path(request[name]) for name in ('record_path', 'project_file', 'marker_path')]
+        if sha256(records[0]) != carrier['record_sha256']:
+            raise JobRefused('dependency', 'native CB differs from certified producer bytes')
+        before = {path: sha256(path) for path in records}
+        declared_reads = [job_dir / path for path in job['code']] + records
+        self.settings = self.editor.settings()
+        dirty_before = self.editor.dirty_packages()
+        self.editor.begin_job()
+        recording = True
+        try:
+            with declared_python(job_dir, job['code'], records,
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script']):
+                entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_native_verify')
+                if not callable(entry.get('run')):
+                    raise JobRefused('protocol', 'fixed verifier has no run entry')
+                result = entry['run'](Context(job_dir, {}, {}, job['params'], [], self.content,
+                                              zen_request=request))
+                self.editor.finish_background_work()
+                saved = self.editor.saved_packages()
+                report = self.editor.read_report()
+                recording = False
+        finally:
+            if recording:
+                self.editor.read_report()
+        write_atomic(job_dir / READ_EVIDENCE, report)
+        verify_readonly_editor_state(dirty_before, self.editor.dirty_packages(), saved,
+                                     self.editor.ensures(), content_has_files(self.content))
+        sdk_metadata = native_store_metadata_files(self.editor.engine_dir())
+        validate_read_report(report, [*declared_reads, *sdk_metadata], self.read_platform_roots)
+        if any(sha256(path) != digest for path, digest in before.items()):
+            raise JobRefused('dependency', 'native verification changed its source record or lifetime metadata')
+        output = job_dir / 'output'
+        if any(output.iterdir()):
+            raise JobRefused('dependency', 'native verifier wrote an unexpected output')
+        if not isinstance(result, dict):
+            raise JobRefused('dependency', 'fixed native verifier did not return its report')
+        encoded = json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if len(encoded) > 8 * 1024 * 1024:
+            raise JobRefused('dependency', 'native verification report exceeds its bound')
+        target = output / 'zen-verified.json'
+        proof = json.loads(encoded)
+        if proof.get('record_sha256') != carrier['record_sha256']:
+            raise JobRefused('dependency', 'native verification report binds another CB')
+        with target.open('xb') as frozen_report:
+            frozen_report.write(encoded)
+        write_atomic(job_dir / READ_EVIDENCE, report)
+        write_atomic(job_dir / IMPORT_EVIDENCE, {'version': EVIDENCE_VERSION, 'packages': []})
+        return ['zen-verified.json']
 
     def reset(self, job, touched, moved, state):
         """Return the editor to its between-jobs state; returns the first problem, or None."""
@@ -601,13 +955,15 @@ class Worker:
                 removed.append(path)
             for name in folders:
                 Path(directory, name).rmdir()
-        if removed:
-            self.editor.forget(removed)
         remaining = self.editor.unload(sorted(touched | set(self.editor.loaded_game_packages())))
         if remaining:
             problems.append(f'packages still loaded after unload: {remaining}')
         if self.editor.loaded_game_packages():
             problems.append(f'/Game packages still loaded: {self.editor.loaded_game_packages()}')
+        # A force rescan while duplicate/import objects are still loaded can rediscover
+        # those in-memory assets. Remove their disk entries only after synchronous GC.
+        if removed:
+            self.editor.forget(removed)
         if self.editor.registry_game_assets():
             problems.append('the asset registry still lists /Game assets')
         before = getattr(self, 'settings', None)
@@ -630,20 +986,82 @@ class _PythonState:
         self.argv = list(sys.argv)
         self.environ = dict(os.environ)
         self.cwd = os.getcwd()
-        self.modules = set(sys.modules)
+        self.modules = dict(sys.modules)
 
     def restore(self, job_dir):
+        if any(sys.modules.get(name) is not module for name, module in self.modules.items()):
+            raise JobRefused('dependency', 'the job replaced or removed a baseline Python module')
         sys.path[:] = self.path
         sys.argv[:] = self.argv
         os.environ.clear()
         os.environ.update(self.environ)
         os.chdir(self.cwd)
-        for name in set(sys.modules) - self.modules:
+        for name in set(sys.modules) - self.modules.keys():
             module = sys.modules.get(name)
             location = getattr(module, '__file__', None) or ''
             # Modules the job brought in from its own folder never outlive it.
             if location and Path(location).resolve().is_relative_to(job_dir.resolve()):
                 del sys.modules[name]
+
+
+def resident_no_fork():
+    """Apply a kernel restriction after native startup and before a resident session's Hello.
+
+    This only removes fork/exec authority. Existing per-job declared read/import and save checks
+    remain in force; failure to install the restriction refuses the session before any Run.
+    """
+    import ctypes
+    library = ctypes.CDLL('/usr/lib/libsandbox.dylib', use_errno=True)
+    library.sandbox_init.argtypes = [ctypes.c_char_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char_p)]
+    library.sandbox_init.restype = ctypes.c_int
+    error = ctypes.c_char_p()
+    profile = b'(version 1)(allow default)(deny process-fork)(deny process-exec)'
+    if library.sandbox_init(profile, 0, ctypes.byref(error)) != 0:
+        raise StartRefused('the resident kernel no-fork restriction could not be installed')
+
+
+def warm_native_store(editor):
+    """@cc [owner:fontanierh,label:correctness;safety] resident-native-store-startup
+    Only immutable controller startup metadata MAY select this warmup. It MUST
+    bind the compiled worker and certified source CB, use read-only verify, and
+    never restore or publish a completion. The caller MUST recheck the full
+    context/DDC, then install kernel NoFork before Hello. Each actual restore
+    MUST still use its own private carrier after Started.
+
+    This never restores a package or emits a completion. Actual restore/readback
+    still runs after Started with each job's separately issued private carrier.
+    """
+    path = editor.project_dir() / 'Atelier/native-store-startup.json'
+    if not path.exists() and not path.is_symlink():
+        return
+    info = path.lstat()
+    if (path.resolve() != path or not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+            or info.st_nlink != 1 or stat.S_IMODE(info.st_mode) != 0o400 or info.st_size > 65536):
+        raise StartRefused('native-store startup control is not an immutable owned file')
+    control = json.loads(path.read_bytes())
+    if (not isinstance(control, dict) or set(control) != {'version', 'job_dir', 'native_source_digest'}
+            or type(control['version']) is not int or control['version'] != 1
+            or not isinstance(control['job_dir'], str)
+            or not isinstance(control['native_source_digest'], str)
+            or not re.fullmatch('[a-f0-9]{64}', control['native_source_digest'])
+            or editor.native_context().get('worker_source_digest') != control['native_source_digest']):
+        raise StartRefused('native-store warmup differs from the keyed native implementation')
+    job = Path(control['job_dir'])
+    if not job.is_absolute() or job.resolve() != job:
+        raise StartRefused('native-store warmup job is not an anchored private scope')
+    carrier = trusted_verify_context(job)
+    request = dict(carrier['request'], mode='verify')
+    record = Path(request['record_path'])
+    if sha256(record) != carrier['record_sha256']:
+        raise StartRefused('native-store warmup record differs from its certified source')
+    report = json.loads(editor.library.zen_package_request(json.dumps(request, sort_keys=True, separators=(',', ':'))))
+    if (not isinstance(report, dict) or report.get('status') != 'verified' or report.get('mode') != 'verify'
+            or report.get('root_hash') != request['expected_root_hash']
+            or report.get('native_stored_key') != request['expected_stored_key']
+            or sha256(record) != carrier['record_sha256']):
+        raise StartRefused('read-only native-store warmup refused the bound source record')
+    log('native-store transport warmed read-only before resident NoFork')
+    return True
 
 
 def main():
@@ -656,6 +1074,12 @@ def main():
         responses = os.fdopen(response_fd, 'wb', buffering=0)
         worker = Worker(editor, requests, responses)
         worker.start()
+        tokens = shlex.split(editor.command_line())
+        if tokens.count('--resident-no-fork') == 1:
+            if warm_native_store(editor):
+                worker.start()  # Recheck the complete context/DDC after SDK initialization.
+            resident_no_fork()
+            worker.resident = True
     except StartRefused as refusal:
         log(f'refusing to start: {refusal}')
         raise SystemExit(3)

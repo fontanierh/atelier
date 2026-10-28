@@ -55,7 +55,7 @@ def test_only_asset_backed_textures_declare_those_images(tmp_path):
 
 
 @pytest.fixture
-def actual_build(tmp_path, monkeypatch):
+def actual_build(tmp_path, monkeypatch, unmanaged_builder_checkout):
     for name in ('ATELIER_ARTIFACT_URL', 'ATELIER_ARTIFACT_TRUST', 'ATELIER_ARTIFACT_TIMEOUT',
                  'ATELIER_PYTHON', 'PYTHONPATH', 'PYTHONHOME'):
         monkeypatch.delenv(name, raising=False)

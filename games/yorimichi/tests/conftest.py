@@ -6,6 +6,23 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture
+def unmanaged_builder_checkout(tmp_path, monkeypatch):
+    """Bind isolated v1 Context/recipe simulations to their actual unmanaged checkout.
+
+    These tests do not exercise the real mixed game caller. Do not override management
+    decisions: use a checkout with no controller declarations or saved B3 ownership.
+    The real normal-CLI integration fixture does not request this substitution.
+    """
+    from atelier.build_v2 import legacy_entry
+    monkeypatch.setattr(legacy_entry, '_checkout', lambda: tmp_path)
+    assert legacy_entry.controller_names('yorimichi', tmp_path) == ()
+    metadata = tmp_path / 'build/build-v2/install'
+    assert not metadata.exists() and not metadata.is_symlink()
+    assert not legacy_entry.managed('yorimichi', ())
+    return tmp_path
+
+
 @pytest.fixture(scope='session')
 def skating_package(tmp_path_factory):
     """@cc [owner:fontanierh,label:correctness] fresh-shared-skating-fixture

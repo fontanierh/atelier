@@ -75,6 +75,13 @@ def _fast_import_names(source, change_token):
 
 
 class _FastImportScanner(source_imports.ImportScanner):
+    """One plan's import resolution: each directory is listed once per scanner.
+
+    A probe whose name is absent from its directory's listing is a miss without a stat; a present name is checked
+    exactly. Misses are kept as (directory, name) entries, and a cached closure stays valid only while every such
+    name is still absent from a fresh listing, so added modules and packages are rediscovered. Resolution per
+    (base, name) is shared; which base wins stays per (source, search), so import precedence is unchanged.
+    """
     def __init__(self):
         super().__init__()
         self._realpaths = {}
@@ -82,8 +89,7 @@ class _FastImportScanner(source_imports.ImportScanner):
         self._direct = {}
         self._closures = {}
         self._call_cache = {}
-        self._missed = {}
-        self._checked_missed = set()
+        self._listings = {}
 
     def _realpath(self, path):
         path = Path(path)
@@ -103,51 +109,74 @@ class _FastImportScanner(source_imports.ImportScanner):
             self._tokens[source] = token
             return token
 
-    def _missed_clear(self, candidates):
-        checked = self._checked_missed
-        for candidate in candidates:
-            if candidate not in checked:
-                if candidate.is_file():
-                    return False
-                checked.add(candidate)
-        return True
+    def _entries(self, directory):
+        try:
+            return self._listings[directory]
+        except KeyError:
+            pass
+        # Case-folded, so a case-insensitive volume never turns a present name into a miss.
+        try:
+            names = frozenset(name.casefold() for name in os.listdir(directory))
+        except (FileNotFoundError, NotADirectoryError):
+            names = frozenset()
+        self._listings[directory] = names
+        return names
+
+    def _is_file(self, directory, name):
+        return name.casefold() in self._entries(directory) and os.path.isfile(os.path.join(directory, name))
+
+    def _missed_clear(self, missed):
+        entries = self._entries
+        return not any(name.casefold() in entries(directory) for directory, name in missed)
 
     def _resolve_with_missed(self, root, parts):
-        key = (root, tuple(parts))
-        if key in self.resolved:
-            return self.resolved[key], self._missed[key]
-        namespace_parents = []
+        key = (os.fspath(root), tuple(parts))
+        try:
+            return self.resolved[key]
+        except KeyError:
+            pass
+        namespace = False
         if root == paths.STUDIO / 'atelier':
             root, parts = paths.STUDIO, ['atelier', *parts]
         if root == paths.STUDIO and parts and parts[0] == 'atelier':
-            namespace_parents = [paths.STUDIO / 'atelier' / '__init__.py']
+            namespace = True
             if len(parts) > 1 and parts[1] == 'harness':
                 root, parts = paths.HARNESS, parts[1:]
             elif len(parts) > 1 and (parts[1] in {'board', 'capacity', 'safety'}
                                     or parts[1].startswith(('board_', 'capacity_'))):
                 root, parts = paths.HARNESS, ['harness', *parts[1:]]
-        target = root.joinpath(*parts)
-        candidates = [target / '__init__.py'] if not parts else [target.with_suffix('.py'), target / '__init__.py']
-        missed = []
-        found = None
-        for candidate in candidates:
-            if candidate.is_file():
-                found = candidate
+        join, entries = os.path.join, self._entries
+        directory, missed, result = os.fspath(root), [], []
+        for part in parts[:-1]:
+            if part.casefold() not in entries(directory):
+                # Nothing below an absent package directory can resolve; its later creation invalidates.
+                missed.append((directory, part))
                 break
-            missed.append(candidate)
-        if found:
-            parents = [root.joinpath(*parts[:i], '__init__.py') for i in range(1, len(parts))]
-            result = [found]
-            for parent_init in [*parents, *namespace_parents]:
-                if parent_init.is_file():
-                    result.append(parent_init)
-                else:
-                    missed.append(parent_init)
+            directory = join(directory, part)
         else:
-            result = []
-        self.resolved[key] = result
-        self._missed[key] = tuple(missed)
-        return result, self._missed[key]
+            if parts:
+                last = parts[-1]
+                candidates = ((directory, last + '.py'), (join(directory, last), '__init__.py'))
+            else:
+                candidates = ((directory, '__init__.py'),)
+            found = None
+            for candidate in candidates:
+                if self._is_file(*candidate):
+                    found = candidate
+                    break
+                missed.append(candidate)
+            if found:
+                result.append(Path(join(*found)))
+                inits = [(join(os.fspath(root), *parts[:i]), '__init__.py') for i in range(1, len(parts))]
+                if namespace:
+                    inits.append((os.fspath(paths.STUDIO / 'atelier'), '__init__.py'))
+                for init in inits:
+                    if self._is_file(*init):
+                        result.append(Path(join(*init)))
+                    else:
+                        missed.append(init)
+        value = self.resolved[key] = (result, tuple(missed))
+        return value
 
     def resolve(self, root, parts):
         return self._resolve_with_missed(root, parts)[0]
@@ -187,6 +216,7 @@ class _FastImportScanner(source_imports.ImportScanner):
         seen, todo = set(), [script]
         all_missed = set()
         bindings = {}
+        resolve = self._resolve_with_missed
         while todo:
             raw = todo.pop()
             source = self._realpath(raw)
@@ -202,22 +232,25 @@ class _FastImportScanner(source_imports.ImportScanner):
                 all_missed.update(direct_missed)
                 continue
             found_all = []
-            direct_missed = []
+            direct_missed = set()
+            parent = source.parent
             for level, names in _fast_import_names(source, self._token(source)):
-                bases = (source.parent, *search)
+                bases = (parent, *search)
                 if level:
                     if level > len(source.parents):
                         raise ValueError(f'Invalid relative import in {source}')
                     bases = (source.parents[level - 1],)
                 for name in names:
                     parts = name.split('.') if name else []
-                    for base in bases:
-                        found, missed = self._resolve_with_missed(base, parts)
-                        direct_missed.extend(missed)
+                    package_base = None if level else source_imports.package_import_base(source, name)
+                    candidates = bases if package_base is None else (*bases, package_base)
+                    for base in dict.fromkeys(candidates):
+                        found, missed = resolve(base, parts)
+                        direct_missed.update(missed)
                         if found:
                             found_all.extend(found)
                             break
-            self._direct[direct_key] = (tuple(found_all), tuple(dict.fromkeys(direct_missed)))
+            self._direct[direct_key] = (tuple(found_all), tuple(direct_missed))
             todo.extend(found_all)
             all_missed.update(direct_missed)
         result = tuple(sorted(seen))
@@ -226,7 +259,7 @@ class _FastImportScanner(source_imports.ImportScanner):
         _CLOSURE_CACHE[closure_key] = (
             result,
             tuple((f, self._token(f)) for f in result),
-            tuple(sorted(all_missed)),
+            tuple(all_missed),
             tuple(sorted(bindings.items())),
         )
         return list(result)
@@ -438,6 +471,7 @@ class Step:
     checkpoint_restore: object = field(default=None, repr=False)  # optional non-destructive recertification callback
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
     candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
+    export_format: str | None = field(default=None, kw_only=True)  # exact declared atomic primary format
     replan: bool = field(default=False, kw_only=True)  # reload recipe after a completed source planner
 
 
@@ -970,43 +1004,22 @@ def slot_summary(slots):
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
           max_heavy_commands=None, recover_cook=None, record_cook_recovery=False, rebuild_touched=False, cook_memory_gib=None,
           rebuild_reason=None, fail_fast=False):
-    """@cc [owner:fontanierh,label:correctness] rebuild-touched-certificates
-    An explicit touched-only rebuild MUST replace only explicitly named touched certificates through normal
-    execution or verified product restoration, without changing action keys or skipping guards.
-    Current proven certificates MUST remain current. Planning MUST explain the same rebuild rule.
-    The repair MUST NOT combine with force, touch or cook recording/recovery.
+    """@cc [owner:fontanierh,label:correctness] default-build-is-v2
+    The ordinary build command MUST route directly to the existing v2 engine, with
+    no compatibility host or old scheduler/cache fallback. An unavailable full target
+    MUST refuse instead of reporting a migrated subset as the whole build.
     """
-    cook_memory_limit(cook_memory_gib, wanted)
-    if cook_memory_gib is not None and (touch or recover_cook is not None):
-        raise ValueError('--cook-memory-gib cannot combine with touch or certification-only recovery')
-    if rebuild_touched and (force or touch or recover_cook is not None or record_cook_recovery):
-        raise ValueError('Rebuilding touched prerequisites is a separate build, without force/touch/cook recovery')
-    if recover_cook is not None and (force or dry or touch or cook_mode is not None or max_heavy_commands is not None):
-        raise ValueError('Cook recovery requires ordinary execution without force/touch/experimental/budget flags')
-    if recover_cook is not None and list(wanted) not in (['unreal.cook'], ['unreal.package']):
-        raise ValueError('Cook recovery selects exactly unreal.cook or unreal.package')
-    if record_cook_recovery and (recover_cook is not None or list(wanted) not in (['unreal.cook'], ['unreal.package'])):
-        raise ValueError('Record cook recovery selects unreal.cook or unreal.package, without --recover-cook')
-    if max_heavy_commands is not None and (type(max_heavy_commands) is not int or max_heavy_commands < 1):
-        raise ValueError('max_heavy_commands must be a positive integer')
-    from .build_snapshot import require_complete
+    from .build_v2.controller_entry import exact_selection, execute
+    unsupported = (force or touch or verify or cook_mode is not None or cook_reason is not None
+                   or cook_memory_gib is not None or recover_cook is not None or record_cook_recovery
+                   or rebuild_touched or rebuild_reason is not None or max_heavy_commands is not None or fail_fast)
+    if unsupported:
+        raise ValueError('requested build option has no v2 implementation yet')
+    selection = exact_selection(game, wanted)
     if dry:
-        require_complete(paths.build_root() / game, game=game)
-        from .build_plan import show
-        return show(game, wanted, force=force, echo=echo, verify=verify,
-                    **({'rebuild_touched': True} if rebuild_touched else {}),
-                    **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
-                    **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
-    ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
-                  **({'recover_cook': recover_cook} if recover_cook is not None else {}),
-                  **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
-    ctx.fail_fast = fail_fast  # Default: finish and publish every step a failure does not block.
-    # TERM/HUP unwind the build, so running children are stopped and completed results stay published.
-    from atelier.harness.safety.cancellation import termination_cleanup
-    with termination_cleanup():
-        return _prepared_build(ctx, wanted, force=force, touch=touch, echo=echo, verify=verify,
-                               rebuild_reason=rebuild_reason, rebuild_touched=rebuild_touched,
-                               record_cook_recovery=record_cook_recovery, max_heavy_commands=max_heavy_commands)
+        echo(f'{selection.name:34s} unknown (readonly v2 cache observation unavailable)')
+        return 0
+    return execute(selection, echo=echo)
 
 
 def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, rebuild_touched,
@@ -1786,11 +1799,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
 
 
 def list_steps(game, echo=print):
-    ctx = Context(game, create=False)
-    for s in load_recipe(game).steps(ctx):
-        needs = f'  (needs {", ".join(s.needs)})' if s.needs else ''
-        needs += f'  (after {", ".join(s.after)})' if s.after else ''
-        needs += f'  (products {", ".join(p.name for p in s.products)})' if s.products else ''
-        needs += f'  (reads {", ".join(s.reads)})' if s.reads else ''
-        needs += f'  (references {", ".join(s.references)})' if s.references else ''
-        echo(f'{s.name:34s} {s.about}{needs}')
+    from .build_v2.controller_entry import discover
+    for name in discover(game):
+        echo(name)

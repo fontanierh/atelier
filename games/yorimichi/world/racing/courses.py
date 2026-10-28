@@ -87,14 +87,16 @@ def validate_surface(data, scene):
                 raise ValueError(f'{name}: lane {offset:g} leaves the committed venue surface')
 
 
-def load(path=DATA, scene=SCENE):
+def load_bytes(raw, scene=SCENE):
     """@cc [owner:fontanierh,label:correctness] racing-course-source
     Published courses MUST match the committed venue scene, declare their frame and version,
     and have finite nondegenerate closed tracks with measured lap lengths and valid finish
     offsets. All six lanes MUST have actual committed surface support within 5cm at 2m samples.
     Invalid data MUST fail before staging writes any runtime file.
     """
-    data = json.loads(Path(path).read_text())
+    # Match the original UTF-8 text loader, including refusal of a BOM/UTF-16;
+    # json.loads(bytes) would silently accept additional encodings.
+    data = json.loads(raw.decode('utf-8'))
     if not isinstance(data, dict) or type(data.get('version')) is not int or data['version'] != 1 or data.get('frame') != FRAME:
         raise ValueError('Unsupported racing course version or coordinate frame')
     provenance = data.get('source')
@@ -128,3 +130,8 @@ def load(path=DATA, scene=SCENE):
             raise ValueError(f'{name}: racing course must run counter-clockwise')
     validate_surface(data, scene)
     return data
+
+
+def load(path=DATA, scene=SCENE):
+    """Validate a course file using the same preflight as frozen worker inputs."""
+    return load_bytes(Path(path).read_bytes(), scene)
