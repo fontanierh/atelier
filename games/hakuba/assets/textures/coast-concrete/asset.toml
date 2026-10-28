@@ -1,4 +1,4 @@
 # Source concrete texture for coastal utility poles.
 kind = "texture"
 source = "src/texture.jpg"
-inputs_sha256 = "20cebb068e1e49eb0430d9a0c82fd64f33eca80bb244f699f4b85b759bd81154"
+inputs_sha256 = "920e0f54cd7b5228955e75fb48ab7a35bdf5aab5b4fdf3390b1a5a47569a8674"

@@ -32,7 +32,7 @@ use crate::vertex_paint::{
     MotionProfile, MovingPainted, MovingPaintedMaterials, Painted, PaintedMaterials, Profile, SurfaceProfile,
 };
 use crate::water::{WaterMaterial, WaterMaterials};
-use crate::wind::{SourceFoliage, SourceProfile, Swaying, SwayingMaterials};
+use crate::wind::{ShadowFoliage, SourceFoliage, SourceProfile, Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
 const MERGE_BELOW_VERTICES: usize = 256;
@@ -239,21 +239,13 @@ fn spawn(
                     };
                     parts
                 } else {
-                    match parts(
-                        &assets,
-                        &models,
-                        &meshes,
-                        &mut materials.swaying,
-                        &mut materials.painted,
-                        &mut materials.moving,
-                        node,
-                    ) {
+                    match parts(&assets, &models, &meshes, &mut materials, node, role) {
                         Ok(Some(parts)) => parts,
                         Ok(None) => continue 'copies,
                         Err(reason) => {
                             let asset = waiting.model.path().map_or_else(|| "model".to_string(), |p| p.to_string());
                             error!("invalid {asset} node {name}: {reason}");
-                            commands.insert_resource(Missing(asset));
+                            commands.insert_resource(Missing(format!("{asset}: {reason}")));
                             commands.entity(entity).remove::<Waiting>();
                             continue 'copies;
                         }
@@ -394,7 +386,7 @@ fn place(
                     distance,
                     bounds: Aabb::enclosing(positions.iter().copied().map(Vec3::from_array))?,
                     motion: match &job.look {
-                        Look::SourceFoliage(_, profile) => {
+                        Look::SourceFoliage(_, profile) | Look::ShadowFoliage(_, profile) => {
                             let VertexAttributeValues::Float32x4(colours) =
                                 meshes.get(&mesh)?.attribute(Mesh::ATTRIBUTE_COLOR)?
                             else {
@@ -424,6 +416,7 @@ fn place(
                 Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::SourceFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
+                Look::ShadowFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Water(material) => part.insert(MeshMaterial3d(material.clone())),
@@ -547,10 +540,9 @@ fn parts(
     assets: &AssetServer,
     models: &Models,
     meshes: &Assets<Mesh>,
-    swaying: &mut SwayingMaterials,
-    painted: &mut PaintedMaterials,
-    moving: &mut MovingPaintedMaterials,
+    materials: &mut Materials,
     node: &GltfNode,
+    role: Role,
 ) -> Result<Option<Parts>, String> {
     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else { return Ok(None) };
     let mut surface_profile = None;
@@ -601,26 +593,57 @@ fn parts(
     {
         return Err("invalid source surface paint parameters".into());
     }
+    let shadow_textures: Option<Vec<Option<String>>> = if matches!(role, Role::Shadow) && source_foliage.is_some() {
+        let extras = node.extras.as_ref().ok_or("shadow foliage needs texture metadata")?;
+        let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
+        let entries: Vec<Option<String>> = serde_json::from_value(
+            value.get("shadow_alpha_textures").cloned().ok_or("shadow foliage needs texture metadata")?,
+        )
+        .map_err(|e| e.to_string())?;
+        if entries.len() != mesh.primitives.len() {
+            return Err("shadow texture count does not match primitives".into());
+        }
+        Some(entries)
+    } else {
+        None
+    };
     let mut parts = Vec::with_capacity(mesh.primitives.len());
-    for primitive in &mesh.primitives {
+    for (index, primitive) in mesh.primitives.iter().enumerate() {
         let Some(source) = meshes.get(&primitive.mesh) else { return Ok(None) };
         let material = standard_of(assets, primitive.material.as_ref());
         let look = if let Some(profile) = &profile {
             if let Some(motion) = &motion_profile {
                 validate_paint(source, true)?;
-                let Some(material) = moving.of(painted, &material, profile, motion)? else { return Ok(None) };
+                let Some(material) = materials.moving.of(&mut materials.painted, &material, profile, motion)? else {
+                    return Ok(None);
+                };
                 Look::MovingPainted(material)
             } else {
                 validate_static_paint(source)?;
-                let Some(material) = painted.of(&material, profile)? else { return Ok(None) };
+                let Some(material) = materials.painted.of(&material, profile)? else { return Ok(None) };
                 Look::Painted(material)
             }
         } else if let Some(profile) = &source_foliage {
             if !source.contains_attribute(Mesh::ATTRIBUTE_COLOR) || !source.contains_attribute(Mesh::ATTRIBUTE_UV_0) {
                 return Err("source foliage needs colors and UVs".into());
             }
-            let Some(material) = swaying.source_of(&material, profile) else { return Ok(None) };
-            Look::SourceFoliage(material, profile.clone())
+            let Some(material) = materials.swaying.source_of(&material, profile) else { return Ok(None) };
+            if matches!(role, Role::Shadow) && materials.swaying.is_masked(&material) {
+                let uri = shadow_textures
+                    .as_ref()
+                    .and_then(|v| v[index].as_deref())
+                    .ok_or("masked shadow needs an alpha texture")?;
+                if !uri.starts_with("textures/")
+                    || !uri.ends_with(".alpha.ktx2")
+                    || uri.split('/').any(|part| part == "..")
+                {
+                    return Err("invalid shadow alpha texture path".into());
+                }
+                let Some(shadow) = materials.swaying.shadow_of(&material, uri)? else { return Ok(None) };
+                Look::ShadowFoliage(shadow, profile.clone())
+            } else {
+                Look::SourceFoliage(material, profile.clone())
+            }
         } else if let Some(profile) = &surface_profile {
             if source.contains_attribute(Mesh::ATTRIBUTE_COLOR)
                 || source.contains_attribute(Mesh::ATTRIBUTE_UV_1)
@@ -629,10 +652,10 @@ fn parts(
             {
                 return Err("source surface paint requires static uncoloured geometry".into());
             }
-            let Some(material) = painted.of_surface(&material, profile)? else { return Ok(None) };
+            let Some(material) = materials.painted.of_surface(&material, profile)? else { return Ok(None) };
             Look::Painted(material)
         } else if source.contains_attribute(Mesh::ATTRIBUTE_UV_1) {
-            let Some(material) = swaying.of(&material) else { return Ok(None) };
+            let Some(material) = materials.swaying.of(&material) else { return Ok(None) };
             Look::Swaying(material)
         } else {
             Look::Still(material)
@@ -704,6 +727,7 @@ enum Look {
     Still(Handle<StandardMaterial>),
     Swaying(Handle<Swaying>),
     SourceFoliage(Handle<SourceFoliage>, SourceProfile),
+    ShadowFoliage(Handle<ShadowFoliage>, SourceProfile),
     Painted(Handle<Painted>),
     MovingPainted(Handle<MovingPainted>),
     Water(Handle<WaterMaterial>),

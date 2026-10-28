@@ -56,7 +56,7 @@ games/hakuba/
     audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
   schemas/                  data formats shared by the exporter and game, without Bevy dependencies
   index.html                the page the browser build runs in, with the canvas the game draws into
-  Trunk.toml                what the browser build copies next to the game
+  Trunk.toml                export checks and what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)
   tools/export/             the asset exporter, run with `cargo export` (tools/README.md)
   .gitattributes            which files Git LFS stores

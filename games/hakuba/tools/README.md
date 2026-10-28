@@ -152,10 +152,14 @@ off its handle's surface: then it did not hold that handle.
 Each level averages the one above it in linear light, each colour weighted by its opacity, and is stored as 8-bit
 sRGB, compressed with zstd. In an image with clear parts, such as leaves, every level keeps at least the share of
 pixels opaque enough to show, so leaves stay as full far away as near. Its sides must be powers of two.
+When `alpha_shadow` is true, the exporter also writes `<folder name>.alpha.ktx2`; its single channel contains the
+same alpha byte from each finished colour mip. Source foliage names this companion for its shadow-only mesh, and the
+export check rejects missing or mismatched companions.
 
 | Setting  | Meaning                                       |
 |----------|-----------------------------------------------|
 | `source` | the image, PNG or JPEG, relative to the folder |
+| `alpha_shadow` | export an exact single-channel companion for source foliage shadows (default false) |
 
 **`sound`** writes a sound's takes, WAV files at one sample rate and channel count, one after the other with 50 ms of
 silence between, as `<folder name>.ogg` (Ogg Vorbis, which the browser and the desktop both decode), and where each

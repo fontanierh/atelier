@@ -7,12 +7,14 @@
 //! plants (`push.rs`), however the wind blows. Its fragment shader, in `leaves.wesl`, lights only the texels a leaf card
 //! keeps; anything else cut out with the standard material is reported, since it pays the lighting of every texel.
 
+use bevy::asset::LoadState;
 use bevy::asset::embedded_asset;
 use bevy::ecs::system::SystemParam;
+use bevy::image::ImageLoaderSettings;
 use bevy::pbr::{ExtendedMaterial, MaterialExtension};
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::*;
-use bevy::render::render_resource::{AsBindGroup, ShaderType};
+use bevy::render::render_resource::{AsBindGroup, ShaderType, TextureDimension, TextureFormat};
 use bevy::render::storage::ShaderBuffer;
 use bevy::shader::ShaderRef;
 use serde::{Deserialize, Serialize};
@@ -29,6 +31,8 @@ pub type Swaying = ExtendedMaterial<StandardMaterial, Wind>;
 
 /// Original per-vertex foliage weights, distinct from generated-plant bend and phase.
 pub type SourceFoliage = ExtendedMaterial<StandardMaterial, SourceWind>;
+/// The same source foliage motion, with an alpha-only texture for its shadow.
+pub type ShadowFoliage = ExtendedMaterial<StandardMaterial, ShadowWind>;
 
 pub struct WindPlugin;
 
@@ -38,9 +42,14 @@ impl Plugin for WindPlugin {
         embedded_asset!(app, "leaves.wesl");
         embedded_asset!(app, "source_foliage.wesl");
         embedded_asset!(app, "source_leaves.wesl");
-        app.add_plugins((MaterialPlugin::<Swaying>::default(), MaterialPlugin::<SourceFoliage>::default()))
-            .init_resource::<Made>()
-            .add_systems(PostUpdate, cut_out_in_full);
+        embedded_asset!(app, "shadow_alpha.wesl");
+        app.add_plugins((
+            MaterialPlugin::<Swaying>::default(),
+            MaterialPlugin::<SourceFoliage>::default(),
+            MaterialPlugin::<ShadowFoliage>::default(),
+        ))
+        .init_resource::<Made>()
+        .add_systems(PostUpdate, cut_out_in_full);
     }
 }
 
@@ -160,12 +169,49 @@ impl MaterialExtension for SourceWind {
     }
 }
 
+/// The source foliage wind bindings and shadow-only alpha sampling.
+#[derive(Asset, AsBindGroup, Reflect, Clone, Default)]
+pub struct ShadowWind {
+    #[storage(100, read_only)]
+    pushers: Handle<ShaderBuffer>,
+    #[uniform(101)]
+    profile: SourceUniform,
+}
+
+impl MaterialExtension for ShadowWind {
+    fn prepass_vertex_shader() -> ShaderRef {
+        "embedded://hakuba_world/source_foliage.wesl".into()
+    }
+    fn prepass_fragment_shader() -> ShaderRef {
+        "embedded://hakuba_world/shadow_alpha.wesl".into()
+    }
+}
+
 /// The swaying version of each plant material, made once, so every copy of a plant shares it and is drawn with the
 /// others.
 #[derive(Resource, Default)]
 struct Made {
     generated: HashMap<AssetId<StandardMaterial>, Handle<Swaying>>,
     source: HashMap<(AssetId<StandardMaterial>, String), Handle<SourceFoliage>>,
+    shadows: HashMap<(AssetId<SourceFoliage>, String), Handle<ShadowFoliage>>,
+    alpha_images: HashMap<(AssetId<Image>, String), Handle<Image>>,
+    companions: HashMap<String, Handle<Image>>,
+}
+
+/// Retain the first load handle: requesting a failed asset again would start another load instead of reporting it.
+fn companion(made: &mut Made, assets: &AssetServer, uri: &str) -> Result<Handle<Image>, String> {
+    let handle = made.companions.entry(uri.to_owned()).or_insert_with(|| {
+        assets
+            .load_builder()
+            .with_settings(|settings: &mut ImageLoaderSettings| {
+                settings.is_srgb = false;
+            })
+            .load(uri.to_owned())
+    });
+    if matches!(assets.load_state(&*handle), LoadState::Failed(_)) {
+        return Err(format!("shadow alpha texture failed to load: {uri}"));
+    }
+    Ok(handle.clone())
 }
 
 /// Makes the swaying versions of plant materials.
@@ -175,10 +221,53 @@ pub struct SwayingMaterials<'w> {
     standard: Res<'w, Assets<StandardMaterial>>,
     swaying: ResMut<'w, Assets<Swaying>>,
     source: ResMut<'w, Assets<SourceFoliage>>,
+    shadows: ResMut<'w, Assets<ShadowFoliage>>,
+    images: ResMut<'w, Assets<Image>>,
+    assets: Res<'w, AssetServer>,
     pushers: Res<'w, Pushers>,
 }
 
 impl SwayingMaterials<'_> {
+    pub fn is_masked(&self, source: &Handle<SourceFoliage>) -> bool {
+        self.source.get(source).is_some_and(|material| matches!(material.base.alpha_mode, AlphaMode::Mask(_)))
+    }
+    pub fn shadow_of(
+        &mut self,
+        source: &Handle<SourceFoliage>,
+        uri: &str,
+    ) -> Result<Option<Handle<ShadowFoliage>>, String> {
+        let key = (source.id(), uri.to_owned());
+        if let Some(handle) = self.made.shadows.get(&key) {
+            return Ok(Some(handle.clone()));
+        }
+        let Some(source_material) = self.source.get(source).cloned() else { return Ok(None) };
+        let Some(texture) = source_material.base.base_color_texture.as_ref() else {
+            return Err("masked shadow has no texture".into());
+        };
+        let image_key = (texture.id(), uri.to_owned());
+        let alpha = if let Some(handle) = self.made.alpha_images.get(&image_key) {
+            handle.clone()
+        } else {
+            let Some(image) = self.images.get(texture) else { return Ok(None) };
+            let companion = companion(&mut self.made, &self.assets, uri)?;
+            let Some(shadow) = self.images.get(&companion) else { return Ok(None) };
+            if !alpha_matches(image, shadow) {
+                return Err(format!("shadow alpha texture does not match: {uri}"));
+            }
+            let mut sampled = shadow.clone();
+            sampled.sampler = image.sampler.clone();
+            let handle = self.images.add(sampled);
+            self.made.alpha_images.insert(image_key, handle.clone());
+            handle
+        };
+        let mut base = source_material.base;
+        base.base_color_texture = Some(alpha);
+        let extension =
+            ShadowWind { pushers: source_material.extension.pushers, profile: source_material.extension.profile };
+        let handle = self.shadows.add(ShadowFoliage { base, extension });
+        self.made.shadows.insert(key, handle.clone());
+        Ok(Some(handle))
+    }
     /// The source-foliage material, or None while its base is loading.
     pub fn source_of(
         &mut self,
@@ -227,6 +316,36 @@ impl SwayingMaterials<'_> {
     }
 }
 
+/// A companion must retain exactly the original alpha bytes and texture layout at every mip.
+fn alpha_matches(image: &Image, shadow: &Image) -> bool {
+    let (Some(colour), Some(mask)) = (&image.data, &shadow.data) else { return false };
+    let size = image.texture_descriptor.size;
+    let levels = image.texture_descriptor.mip_level_count;
+    if size.width == 0
+        || size.height == 0
+        || size.depth_or_array_layers != 1
+        || levels == 0
+        || levels > u32::BITS - size.width.max(size.height).leading_zeros()
+    {
+        return false;
+    }
+    let expected = (0..levels).try_fold(0usize, |sum, level| {
+        let w = (size.width >> level).max(1) as usize;
+        let h = (size.height >> level).max(1) as usize;
+        sum.checked_add(w.checked_mul(h)?)
+    });
+    matches!(image.texture_descriptor.format, TextureFormat::Rgba8Unorm | TextureFormat::Rgba8UnormSrgb)
+        && shadow.texture_descriptor.format == TextureFormat::R8Unorm
+        && image.texture_descriptor.dimension == TextureDimension::D2
+        && shadow.texture_descriptor.dimension == TextureDimension::D2
+        && image.texture_descriptor.size == shadow.texture_descriptor.size
+        && image.texture_descriptor.mip_level_count == shadow.texture_descriptor.mip_level_count
+        && image.data_order == shadow.data_order
+        && Some(mask.len()) == expected
+        && mask.len().checked_mul(4) == Some(colour.len())
+        && colour.iter().skip(3).step_by(4).copied().eq(mask.iter().copied())
+}
+
 /// Reports, once each, the standard materials that cut out what they draw: Bevy's shader lights every texel they
 /// discard in the browser, so anything cut out belongs with the plants' fragment shader.
 fn cut_out_in_full(
@@ -248,6 +367,53 @@ fn cut_out_in_full(
 
 #[cfg(test)]
 mod shadow_motion_tests {
+    use super::{Made, alpha_matches, companion};
+    use bevy::prelude::Image;
+    use bevy::render::render_resource::TextureFormat;
+
+    #[test]
+    fn shadow_alpha_matches_all_mips_and_rejects_corruption() {
+        let mut colour = Image::default();
+        colour.texture_descriptor.format = TextureFormat::Rgba8UnormSrgb;
+        colour.texture_descriptor.mip_level_count = 2;
+        colour.texture_descriptor.size.width = 2;
+        colour.texture_descriptor.size.height = 2;
+        colour.data = Some(vec![1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 9]);
+        let mut alpha = colour.clone();
+        alpha.texture_descriptor.format = TextureFormat::R8Unorm;
+        alpha.data = Some(vec![4, 8, 4, 8, 9]);
+        assert!(alpha_matches(&colour, &alpha));
+        alpha.data.as_mut().unwrap()[4] = 10;
+        assert!(!alpha_matches(&colour, &alpha));
+        alpha.data.as_mut().unwrap()[4] = 9;
+        alpha.texture_descriptor.mip_level_count = 1;
+        assert!(!alpha_matches(&colour, &alpha));
+    }
+
+    #[test]
+    fn missing_shadow_companion_reports_the_named_failure_without_retrying() {
+        use bevy::asset::{AssetApp, AssetPlugin, AssetServer, LoadState};
+        use bevy::ecs::system::RunSystemOnce;
+        use bevy::prelude::{App, Handle, MinimalPlugins, Res, ResMut};
+        const URI: &str = "textures/missing-test/missing.alpha.ktx2";
+        fn probe(mut made: ResMut<Made>, assets: Res<AssetServer>) -> Result<Handle<Image>, String> {
+            companion(&mut made, &assets, URI)
+        }
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, AssetPlugin::default())).init_asset::<Image>().init_resource::<Made>();
+        let handle = app.world_mut().run_system_once(probe).unwrap().unwrap();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+        while !matches!(app.world().resource::<AssetServer>().load_state(&handle), LoadState::Failed(_)) {
+            assert!(std::time::Instant::now() < deadline);
+            app.update();
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        for _ in 0..2 {
+            let error = app.world_mut().run_system_once(probe).unwrap().unwrap_err();
+            assert!(error.contains(URI), "{error}");
+            assert!(matches!(app.world().resource::<AssetServer>().load_state(&handle), LoadState::Failed(_)));
+        }
+    }
     use super::SourceProfile;
 
     #[test]

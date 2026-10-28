@@ -86,6 +86,8 @@ A texture more than one asset shows is its own asset under `textures/`: an image
 with every mipmap level. Other assets name it by its folder name, and their exports point at its file rather than
 holding a copy, so repainting a texture changes no other asset's export. A texture only one asset shows stays
 inside that asset, such as Nox's skin in his model.
+Source foliage shadow textures also export a single-channel companion with the same alpha at every mip. The browser
+build checks that all exports and required companions are current before copying them.
 
 ## Exporting
 

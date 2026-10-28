@@ -11,7 +11,7 @@ use hakuba_settings::{AntiAliasing, Settings};
 
 use crate::painterly::Painterly;
 use crate::scenery::Placing;
-use crate::wind::{self, SourceFoliage, Swaying};
+use crate::wind::{self, ShadowFoliage, SourceFoliage, Swaying};
 
 pub struct SettingsPlugin;
 
@@ -65,8 +65,10 @@ fn look(
     }
 }
 
-type SwayingPlants = Or<(With<MeshMaterial3d<Swaying>>, With<MeshMaterial3d<SourceFoliage>>)>;
-type AddedSwayingPlants = Or<(Added<MeshMaterial3d<Swaying>>, Added<MeshMaterial3d<SourceFoliage>>)>;
+type SwayingPlants =
+    Or<(With<MeshMaterial3d<Swaying>>, With<MeshMaterial3d<SourceFoliage>>, With<MeshMaterial3d<ShadowFoliage>>)>;
+type AddedSwayingPlants =
+    Or<(Added<MeshMaterial3d<Swaying>>, Added<MeshMaterial3d<SourceFoliage>>, Added<MeshMaterial3d<ShadowFoliage>>)>;
 
 /// Tells every swaying plant how strongly the wind blows, through its mesh tag, when the setting changes and as plants
 /// spawn.
@@ -87,14 +89,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn source_foliage_receives_wind_setting_and_updates() {
+    fn source_foliage_and_its_shadow_receive_wind_setting_and_updates() {
         let mut app = App::new();
         app.init_resource::<Settings>().add_systems(Update, blow);
         let plant = app.world_mut().spawn(MeshMaterial3d::<SourceFoliage>(Handle::default())).id();
+        let shadow = app.world_mut().spawn(MeshMaterial3d::<ShadowFoliage>(Handle::default())).id();
         app.update();
         assert_eq!(app.world().get::<MeshTag>(plant).unwrap().value, wind::tag(Settings::default().wind));
+        assert_eq!(app.world().get::<MeshTag>(shadow).unwrap().value, wind::tag(Settings::default().wind));
         app.world_mut().resource_mut::<Settings>().wind = 0.25;
         app.update();
         assert_eq!(app.world().get::<MeshTag>(plant).unwrap().value, wind::tag(0.25));
+        assert_eq!(app.world().get::<MeshTag>(shadow).unwrap().value, wind::tag(0.25));
+        let added = app.world_mut().spawn(MeshMaterial3d::<ShadowFoliage>(Handle::default())).id();
+        app.update();
+        assert_eq!(app.world().get::<MeshTag>(added).unwrap().value, wind::tag(0.25));
     }
 }

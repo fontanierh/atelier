@@ -84,6 +84,31 @@ impl Asset {
             Asset::Texture(_) => "ktx2",
         }
     }
+
+    /// The files this asset's own kind publishes.
+    fn outputs(&self, output: &Path) -> Vec<PathBuf> {
+        match self {
+            Asset::Texture(settings) => settings.outputs(output),
+            Asset::Sound(_) => vec![output.to_path_buf(), sound::takes_file(output)],
+            _ => vec![output.to_path_buf()],
+        }
+    }
+
+    /// Validation belongs to the kind that owns the output.
+    fn output_problems(&self, output: &Path) -> Vec<String> {
+        match self {
+            Asset::Texture(settings) => settings.output_problems(output),
+            _ => Vec::new(),
+        }
+    }
+
+    /// Asset-relative files named by this export, checked without making them rebuild inputs.
+    fn required_outputs(&self, output: &Path) -> Result<Vec<String>> {
+        match self {
+            Asset::Plant(_) | Asset::Prop(_) => model::required_outputs(output),
+            _ => Ok(Vec::new()),
+        }
+    }
 }
 
 /// The checksum `export` writes into `asset.toml`.
@@ -199,12 +224,40 @@ impl Folder {
 
     fn problems(&self) -> Result<Vec<String>> {
         let mut found = Vec::new();
-        if !self.output().is_file() {
-            found.push(format!("{} is missing", self.output().file_name().unwrap().to_string_lossy()));
+        let output = self.output();
+        for file in self.asset.outputs(&output) {
+            if !file.is_file() {
+                found.push(format!("{} is missing", file.file_name().unwrap().to_string_lossy()));
+            }
         }
-        let takes = sound::takes_file(&self.output());
-        if matches!(self.asset, Asset::Sound(_)) && !takes.is_file() {
-            found.push(format!("{} is missing", takes.file_name().unwrap().to_string_lossy()));
+        found.extend(self.asset.output_problems(&output));
+        if output.is_file() {
+            match self.asset.required_outputs(&output) {
+                Ok(paths) => {
+                    for path in paths {
+                        let required = Path::new(ASSETS).join(&path);
+                        let Some(folder) = required.parent() else {
+                            found.push(format!("invalid required output path: {path}"));
+                            continue;
+                        };
+                        let result = (|| -> Result<()> {
+                            let dependency = Folder::read(folder)?;
+                            if !dependency.asset.outputs(&dependency.output()).contains(&required) {
+                                bail!("required output is not declared");
+                            }
+                            let problems = dependency.problems()?;
+                            if !problems.is_empty() {
+                                bail!("{}", problems.join(", "));
+                            }
+                            Ok(())
+                        })();
+                        if let Err(error) = result {
+                            found.push(format!("{path}: {error}"));
+                        }
+                    }
+                }
+                Err(error) => found.push(format!("invalid required output metadata: {error}")),
+            }
         }
         if self.recorded_checksum() != Some(self.inputs_checksum()?.as_str()) {
             found.push("its inputs changed since the last export".into());

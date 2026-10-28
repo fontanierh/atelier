@@ -17,7 +17,7 @@ ground_texture = "ground"
 ground_texture_m = 24.0
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "791d3ed95ba9b2b6ba07c726d343148990b5d712a4ba577304875694c91eb0e0"
+inputs_sha256 = "86332193fee887ed190910a1ea9ce046a8eac7e48379030856f655aaace27523"
 
 # Model-frame lower geometry considered for source contact; the reference records source gaps.
 [[grounding]]

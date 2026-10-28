@@ -100,6 +100,7 @@ fn export_inner(
         let mut extras = value["nodes"][middle]["extras"].as_object().cloned().unwrap_or_default();
         let settings = profile.as_ref().context("missing foliage profile")?;
         extras.insert("source_foliage".into(), settings.profile.clone());
+        extras.insert("shadow_alpha_textures".into(), shadow_alpha_textures(&value, middle)?);
         if let Some(distance) = settings.shadow_distance {
             extras.insert("shadow_distance_m".into(), json!(distance));
         }
@@ -113,6 +114,36 @@ fn export_inner(
         glb.add_marker(&format!("anchor {k}"), y_up(DVec3::from_array(anchor)), DQuat::IDENTITY);
     }
     glb.write(output)
+}
+
+/// Each masked middle primitive names its exported alpha companion relative to the asset root.
+pub(super) fn shadow_alpha_textures(value: &Value, node: usize) -> Result<Value> {
+    let mesh = value["nodes"][node]["mesh"].as_u64().context("middle foliage needs a mesh")? as usize;
+    let primitives = value["meshes"][mesh]["primitives"].as_array().context("foliage needs primitives")?;
+    let mut result = Vec::with_capacity(primitives.len());
+    for primitive in primitives {
+        let material = primitive["material"].as_u64().context("foliage needs a material")? as usize;
+        let material = &value["materials"][material];
+        if material["alphaMode"] != "MASK" {
+            result.push(Value::Null);
+            continue;
+        }
+        let texture = material["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+            .as_u64()
+            .context("masked foliage needs a base colour texture")? as usize;
+        let image = value["textures"][texture]["source"].as_u64().context("texture needs an image")? as usize;
+        let uri = value["images"][image]["uri"].as_str().context("texture needs a URI")?;
+        let relative = uri
+            .strip_prefix("../../textures/")
+            .and_then(|s| s.strip_suffix(".ktx2"))
+            .context("shadow texture URI must name an exported texture")?;
+        ensure!(
+            relative.split('/').count() == 2 && relative.split('/').all(|s| !s.is_empty() && s != "." && s != ".."),
+            "invalid shadow texture URI"
+        );
+        result.push(json!(format!("textures/{relative}.alpha.ktx2")));
+    }
+    Ok(Value::Array(result))
 }
 
 /// Reads the restricted static GLB layout accepted by source props, and checks actual bytes, not just bounds metadata.
@@ -425,6 +456,20 @@ mod tests {
     use crate::shapes::cuboid;
     use glam::DVec3;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn shadow_alpha_metadata_tracks_each_masked_primitive() {
+        let mut value = json!({
+            "nodes": [{"mesh": 0}],
+            "meshes": [{"primitives": [{"material": 0}, {"material": 1}]}],
+            "materials": [{"alphaMode": "OPAQUE"}, {"alphaMode": "MASK", "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}],
+            "textures": [{"source": 0}],
+            "images": [{"uri": "../../textures/leaf/leaf.ktx2"}]
+        });
+        assert_eq!(shadow_alpha_textures(&value, 0).unwrap(), json!([null, "textures/leaf/leaf.alpha.ktx2"]));
+        value["images"][0]["uri"] = json!("../../outside/leaf.ktx2");
+        assert!(shadow_alpha_textures(&value, 0).is_err());
+    }
 
     fn fixture(collision: bool) -> Vec<u8> {
         let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
