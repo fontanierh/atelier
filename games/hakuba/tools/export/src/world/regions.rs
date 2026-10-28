@@ -1,6 +1,7 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
 use super::actors::Actor;
+use super::placed::Placed;
 use super::authored::AuthoredSurface;
 use super::levelling::{Pad, Strip};
 use super::overlay::Overlay;
@@ -62,5 +63,20 @@ pub trait Region {
     fn scenery(&self, land: &Land) -> Scenery;
 }
 
-pub const REGIONS: [&dyn Region; 4] =
-    [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses, &momiji_village::MomijiVillage, &woodland::Woodland];
+/// A data-only region, [`Placed`] from its folder's `placements.json`.
+macro_rules! placed {
+    ($name:literal) => {
+        &Placed {
+            name: $name,
+            placements: include_str!(concat!("../../../../assets/world/src/regions/", $name, "/placements.json")),
+        }
+    };
+}
+
+pub const REGIONS: &[&dyn Region] = &[
+    &momiji_coast::MomijiCoast,
+    &roadside_houses::RoadsideHouses,
+    &momiji_village::MomijiVillage,
+    &woodland::Woodland,
+    placed!("treehouse"),
+];

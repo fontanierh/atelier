@@ -110,14 +110,6 @@ impl Ground {
         })
     }
 
-    pub fn diagonal_extent(&self) -> Option<((usize, usize), (usize, usize))> {
-        self.diagonal_extent
-    }
-
-    pub fn native_extent(&self) -> Option<((usize, usize), (usize, usize))> {
-        self.native_extent
-    }
-
     /// Upper grid bounds of the loaded pages, with overflow rejected.
     pub fn max_steps(&self) -> Option<(usize, usize)> {
         let x = self.pages.keys().map(|(x, _)| *x).max()?.checked_add(1)?.checked_mul(self.page_steps)?;

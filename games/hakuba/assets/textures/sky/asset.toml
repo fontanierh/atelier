@@ -2,4 +2,4 @@
 # in src/sky.png, laid around the sky dome from its zenith (top row) to its nadir.
 kind = "texture"
 source = "src/sky.png"
-inputs_sha256 = "567b270709b91450bb720551d72a4ade46e87db570ca002ced20561c8ce815f1"
+inputs_sha256 = "37c07ef0c1d6c60568fcdb9dc5722d86b802b8f43795d6424623aee1f3e991dc"

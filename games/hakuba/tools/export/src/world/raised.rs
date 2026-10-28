@@ -179,22 +179,6 @@ impl<'a> Prepared<'a> {
         self.owner(p, false)
     }
 
-    /// Actual raised and retained-cut triangles which may touch a contact footprint.
-    pub fn under(&self, outline: [DVec2; 3], middle: bool) -> Vec<[DVec3; 3]> {
-        let low = outline[0].min(outline[1]).min(outline[2]);
-        let high = outline[0].max(outline[1]).max(outline[2]);
-        let first = self.tile(low);
-        let last = self.tile(high);
-        let mut result = Vec::new();
-        let surfaces = if middle { &self.middle } else { &self.full };
-        for (id, surface) in surfaces.iter().flatten().chain(self.cut_ground[usize::from(middle)].iter()) {
-            if id.0 >= first.0 && id.0 <= last.0 && id.1 >= first.1 && id.1 <= last.1 {
-                result.extend(surface.under(outline));
-            }
-        }
-        result
-    }
-
     /// Position used by emitted f32 geometry where it can touch a raised owner.
     pub fn emitted_at(&self, p: DVec2) -> DVec2 {
         if self.needs_precision(p) { stored(p) } else { p }

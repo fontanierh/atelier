@@ -14,7 +14,6 @@
 
 mod glb;
 mod model;
-mod random;
 mod rig;
 mod shapes;
 mod sound;
@@ -118,12 +117,11 @@ const CHECKSUM: &str = "inputs_sha256";
 const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
 
 /// The exporter's files that every kind is built from, relative to the exporter: the command, the glTF reader and
-/// writer, the shapes meshes are built from, the seeded random numbers, and the crate and Rust versions.
-const SHARED_CODE: [&str; 7] = [
+/// writer, the shapes meshes are built from, and the crate and Rust versions.
+const SHARED_CODE: [&str; 6] = [
     "src/main.rs",
     "src/glb.rs",
     "src/shapes.rs",
-    "src/random.rs",
     "Cargo.toml",
     "../../Cargo.lock",
     "../../rust-toolchain.toml",
