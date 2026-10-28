@@ -18,11 +18,12 @@ Install once per machine: [Rust](https://rustup.rs), [trunk](https://trunkrs.dev
 and Git LFS (`brew install git-lfs`, then `git lfs install`). Without Git LFS a clone holds small pointer files
 instead of the models; `git lfs pull` fetches them afterwards.
 
-Run commands from this folder. The first build compiles Bevy and takes a few minutes; after that, builds only
-compile Hakuba.
+Run commands from this folder. The first build compiles Bevy and takes a few minutes; later builds reuse unchanged
+compiled dependencies.
 
 ```sh
-trunk serve                  # browser, at http://127.0.0.1:8080
+trunk serve --release        # browser play, at http://127.0.0.1:8080
+trunk serve                  # faster-to-build browser development
 cargo run                    # desktop
 ```
 

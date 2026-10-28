@@ -8,6 +8,8 @@ measure and why the rules are what they are.
 ## Measuring
 
 Measure in the browser, which is slower than the desktop build and differs from it in ways that matter (below).
+Use `trunk serve --release` for the reference measurement. Plain `trunk serve` uses the faster-to-build development
+profile, whose frame rate is not the reference measurement.
 
 - **Nothing else on the GPU.** A video playing in another browser, another game, a Rust build or a second headless
   browser each moves a frame by several milliseconds. With the same build and settings, frames measured 7.4 ms and
