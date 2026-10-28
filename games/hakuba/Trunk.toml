@@ -1,5 +1,10 @@
 # The browser build copies assets/ next to the game, without what only the exports use: src/ folders, asset.toml and the world's tile checksums.
 [[hooks]]
+stage = "pre_build"
+command = "cargo"
+command_arguments = ["export", "--check", "assets"]
+
+[[hooks]]
 stage = "post_build"
 command = "sh"
 command_arguments = ["-c", "rsync -a --exclude=src/ --exclude=asset.toml --exclude=checksums.toml assets/ \"$TRUNK_STAGING_DIR/assets/\""]

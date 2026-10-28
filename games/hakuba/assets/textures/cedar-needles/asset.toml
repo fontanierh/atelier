@@ -1,4 +1,4 @@
 # Sprays of cedar foliage, one in each quarter, on a clear ground.
 kind = "texture"
 source = "src/cedar-needles.png"
-inputs_sha256 = "95553e94061e77308b11b307f830793657dfb84b896f11e10e739ee80e39e404"
+inputs_sha256 = "52017a0a3658c2a35abfe36e82ee817562926816c519c4cebde1c8f09ecaa621"

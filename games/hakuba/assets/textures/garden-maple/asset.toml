@@ -1,6 +1,7 @@
 # Source texture for roadside garden plants.
 kind = "texture"
+alpha_shadow = true
 source = "src/texture.png"
 alpha_cutoff = 0.4
 mip_colour = "average"
-inputs_sha256 = "5939a228422b7f4a3046929a2bc5d41f8094ae6f3a006a018cd7127e2e17d337"
+inputs_sha256 = "ae843ca8178563bb124921d222142a9be04dc7a511a84250edd2ab2660776958"

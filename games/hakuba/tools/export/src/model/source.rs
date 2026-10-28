@@ -10,7 +10,8 @@ use serde_json::{Value, json};
 use crate::glb::{Glb, y_up};
 
 /// @cc [owner:fontanierh,label:correctness] static-source-prop
-/// A source prop preserves its static geometry and only uses declared texture assets.
+/// A source prop preserves its bind-pose geometry and only uses declared texture assets. Painted motion weights MUST
+/// have valid explicit motion parameters; the exporter MUST preserve those weights and parameters.
 pub(super) fn export(
     source: &str,
     solid: bool,
@@ -18,7 +19,7 @@ pub(super) fn export(
     anchors: &[[f64; 3]],
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, solid, textures, anchors, None, None, output)
+    export_inner(source, solid, textures, anchors, None, output)
 }
 
 pub(super) fn export_foliage(
@@ -26,9 +27,16 @@ pub(super) fn export_foliage(
     textures: &[String],
     profile: Value,
     surface_height: Option<f32>,
+    shadow_distance: Option<f32>,
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, false, textures, &[], Some(profile), surface_height, output)
+    export_inner(source, false, textures, &[], Some(FoliageExport { profile, surface_height, shadow_distance }), output)
+}
+
+struct FoliageExport {
+    profile: Value,
+    surface_height: Option<f32>,
+    shadow_distance: Option<f32>,
 }
 
 fn export_inner(
@@ -36,8 +44,7 @@ fn export_inner(
     solid: bool,
     textures: &[String],
     anchors: &[[f64; 3]],
-    profile: Option<Value>,
-    surface_height: Option<f32>,
+    profile: Option<FoliageExport>,
     output: &Path,
 ) -> Result<()> {
     let path = Path::new(source);
@@ -70,6 +77,7 @@ fn export_inner(
         })
         .collect::<Result<_>>()?;
     let foliage = profile.as_ref().map(|_| allowed.as_slice());
+    let surface_height = profile.as_ref().and_then(|p| p.surface_height);
     let (value, collision) = validate_kind(&bytes, foliage, surface_height, &allowed)?;
     ensure!(!collision || solid, "a collision mesh requires solid = true");
     let mut glb = Glb::read(&file)?;
@@ -80,13 +88,22 @@ fn export_inner(
         extras.insert("solid".into(), json!(true));
     }
     if foliage.is_some() {
-        extras.insert("source_foliage".into(), profile.clone().context("missing foliage profile")?);
+        let settings = profile.as_ref().context("missing foliage profile")?;
+        extras.insert("source_foliage".into(), settings.profile.clone());
+        if let Some(distance) = settings.shadow_distance {
+            extras.insert("shadow_distance_m".into(), json!(distance));
+        }
     }
     glb.set_extras(full, extras.into());
     if foliage.is_some() && value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == "middle")) {
         let middle = glb.node("middle")?;
         let mut extras = value["nodes"][middle]["extras"].as_object().cloned().unwrap_or_default();
-        extras.insert("source_foliage".into(), profile.clone().context("missing foliage profile")?);
+        let settings = profile.as_ref().context("missing foliage profile")?;
+        extras.insert("source_foliage".into(), settings.profile.clone());
+        extras.insert("shadow_alpha_textures".into(), shadow_alpha_textures(&value, middle)?);
+        if let Some(distance) = settings.shadow_distance {
+            extras.insert("shadow_distance_m".into(), json!(distance));
+        }
         glb.set_extras(middle, extras.into());
     }
     for (k, &anchor) in anchors.iter().enumerate() {
@@ -97,6 +114,36 @@ fn export_inner(
         glb.add_marker(&format!("anchor {k}"), y_up(DVec3::from_array(anchor)), DQuat::IDENTITY);
     }
     glb.write(output)
+}
+
+/// Each masked middle primitive names its exported alpha companion relative to the asset root.
+pub(super) fn shadow_alpha_textures(value: &Value, node: usize) -> Result<Value> {
+    let mesh = value["nodes"][node]["mesh"].as_u64().context("middle foliage needs a mesh")? as usize;
+    let primitives = value["meshes"][mesh]["primitives"].as_array().context("foliage needs primitives")?;
+    let mut result = Vec::with_capacity(primitives.len());
+    for primitive in primitives {
+        let material = primitive["material"].as_u64().context("foliage needs a material")? as usize;
+        let material = &value["materials"][material];
+        if material["alphaMode"] != "MASK" {
+            result.push(Value::Null);
+            continue;
+        }
+        let texture = material["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+            .as_u64()
+            .context("masked foliage needs a base colour texture")? as usize;
+        let image = value["textures"][texture]["source"].as_u64().context("texture needs an image")? as usize;
+        let uri = value["images"][image]["uri"].as_str().context("texture needs a URI")?;
+        let relative = uri
+            .strip_prefix("../../textures/")
+            .and_then(|s| s.strip_suffix(".ktx2"))
+            .context("shadow texture URI must name an exported texture")?;
+        ensure!(
+            relative.split('/').count() == 2 && relative.split('/').all(|s| !s.is_empty() && s != "." && s != ".."),
+            "invalid shadow texture URI"
+        );
+        result.push(json!(format!("textures/{relative}.alpha.ktx2")));
+    }
+    Ok(Value::Array(result))
 }
 
 /// Reads the restricted static GLB layout accepted by source props, and checks actual bytes, not just bounds metadata.
@@ -194,6 +241,10 @@ fn validate_kind(
         ensure!(node.get("extras").is_none_or(Value::is_object), "source extras must be an object");
         let name = node["name"].as_str().context("source root needs a name")?;
         let vertex_paint = name == "full" && node["extras"].get("vertex_paint").is_some();
+        let motion = node["extras"].get("vertex_motion");
+        if let Some(motion) = motion {
+            ensure!(vertex_paint && valid_motion(motion), "painted motion needs valid parameters on the full node");
+        }
         if vertex_paint {
             ensure!(node["extras"]["vertex_paint"].is_object(), "vertex paint extras must be an object");
         }
@@ -296,8 +347,13 @@ fn validate_kind(
                 if key == "COLOR_0" && vertex_paint {
                     ensure!(
                         kind.1 == "VEC4"
-                            && data.chunks_exact(16).all(|v| f32::from_le_bytes(v[12..16].try_into().unwrap()) == 0.0),
-                        "static vertex paint needs zero motion weight in its alpha channel"
+                            && data.chunks_exact(16).all(|v| {
+                                let weight = f32::from_le_bytes(v[12..16].try_into().unwrap());
+                                weight.is_finite()
+                                    && (0.0..=1.0).contains(&weight)
+                                    && (motion.is_some() || weight == 0.0)
+                            }),
+                        "vertex paint needs valid alpha weights and an explicit motion profile"
                     );
                 }
             }
@@ -332,6 +388,18 @@ fn validate_kind(
     ensure!(seen_meshes.len() == meshes.len(), "source cannot contain unused meshes");
     let collision = seen.contains(&"collision");
     Ok((value, collision))
+}
+
+fn valid_motion(value: &Value) -> bool {
+    let Some(object) = value.as_object() else { return false };
+    if object.len() != 4 {
+        return false;
+    }
+    let finite = |v: &Value| v.as_f64().is_some_and(|x| x.is_finite() && x.abs() <= 10_000.0);
+    let array = |name: &str, size: usize| {
+        object.get(name).and_then(Value::as_array).is_some_and(|v| v.len() == size && v.iter().all(finite))
+    };
+    object.get("rate").is_some_and(finite) && array("spatial", 2) && array("amplitude", 3) && array("harmonic", 3)
 }
 
 fn accessor<'a>(value: &'a Value, binary: &'a [u8], index: usize) -> Result<(&'a [u8], usize, (u64, &'a str))> {
@@ -388,6 +456,20 @@ mod tests {
     use crate::shapes::cuboid;
     use glam::DVec3;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn shadow_alpha_metadata_tracks_each_masked_primitive() {
+        let mut value = json!({
+            "nodes": [{"mesh": 0}],
+            "meshes": [{"primitives": [{"material": 0}, {"material": 1}]}],
+            "materials": [{"alphaMode": "OPAQUE"}, {"alphaMode": "MASK", "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}],
+            "textures": [{"source": 0}],
+            "images": [{"uri": "../../textures/leaf/leaf.ktx2"}]
+        });
+        assert_eq!(shadow_alpha_textures(&value, 0).unwrap(), json!([null, "textures/leaf/leaf.alpha.ktx2"]));
+        value["images"][0]["uri"] = json!("../../outside/leaf.ktx2");
+        assert!(shadow_alpha_textures(&value, 0).is_err());
+    }
 
     fn fixture(collision: bool) -> Vec<u8> {
         let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
@@ -538,6 +620,33 @@ mod tests {
             + 12;
         bytes[offset..offset + 4].copy_from_slice(&0.2_f32.to_le_bytes());
         assert!(validate(&bytes).is_err());
+    }
+
+    #[test]
+    fn painted_weights_require_a_valid_explicit_motion_profile() {
+        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        let mut mesh = Mesh::default();
+        cuboid(&mut mesh, DVec3::ZERO, DVec3::splat(2.0));
+        mesh.colours = vec![[0.2, 0.3, 0.4, 0.5]; mesh.positions.len()];
+        mesh.material = glb.add_material(&Material {
+            name: "paint",
+            texture: None,
+            colour: [1.0; 3],
+            cut_out: false,
+            two_sided: false,
+        });
+        let node = glb.add_mesh("full", &[&mesh]);
+        let profile = json!({"spatial": [0.2, 0.3], "rate": 1.7, "amplitude": [0.022, 0.004, 0.013], "harmonic": [1.0, 1.3, 0.81]});
+        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06}, "vertex_motion": profile}));
+        static NEXT_MOTION: AtomicUsize = AtomicUsize::new(0);
+        let id = NEXT_MOTION.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!("hakuba-source-motion-{}-{id}.glb", std::process::id()));
+        glb.write(&path).unwrap();
+        assert!(validate(&fs::read(&path).unwrap()).is_ok());
+        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06}, "vertex_motion": {"rate": 1.7}}));
+        glb.write(&path).unwrap();
+        assert!(validate(&fs::read(&path).unwrap()).is_err());
+        fs::remove_file(path).unwrap();
     }
 
     #[test]

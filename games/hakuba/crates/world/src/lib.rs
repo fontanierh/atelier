@@ -3,6 +3,7 @@
 //! on ([`Ground`]), and [`PushesPlants`], which makes the plants around whatever carries it lean away; the player
 //! crate moves the camera.
 
+mod actors;
 mod ground;
 mod loading;
 mod look;
@@ -14,6 +15,7 @@ mod scenery;
 mod settings;
 mod tiles;
 mod vertex_paint;
+mod water;
 mod wind;
 
 use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
@@ -26,6 +28,7 @@ use tiles::Tile;
 pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
 pub use loading::Unready;
 pub use push::PushesPlants;
+pub use water::WaterBodies;
 
 /// The world's index: one node per tile, and the spawn.
 const INDEX: &str = "world/world.glb";
@@ -41,6 +44,7 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            actors::ActorsPlugin,
             ground::GroundPlugin,
             loading::LoadingPlugin,
             look::LookPlugin,
@@ -52,6 +56,7 @@ impl Plugin for WorldPlugin {
             settings::SettingsPlugin,
             tiles::TilesPlugin,
             vertex_paint::VertexPaintPlugin,
+            water::WaterPlugin,
             wind::WindPlugin,
         ))
         .add_systems(OnEnter(Screen::World), spawn_world)
@@ -59,6 +64,9 @@ impl Plugin for WorldPlugin {
         .add_systems(PostUpdate, no_crossfades.before(VisibilitySystems::CheckVisibility));
     }
 }
+
+#[derive(Component)]
+struct WorldCamera;
 
 /// The world's index, while it loads.
 #[derive(Resource)]
@@ -78,6 +86,7 @@ fn spawn_world(
 ) {
     commands.insert_resource(Index(assets.load(INDEX)));
     commands.remove_resource::<Spawn>();
+    commands.remove_resource::<WaterBodies>();
     commands.spawn((
         Name::new("Sea"),
         DespawnOnExit(Screen::World),
@@ -91,6 +100,7 @@ fn spawn_world(
     let drawn = pixels::spawn(&mut commands, &mut images);
     commands.spawn((
         Name::new("Camera"),
+        WorldCamera,
         DespawnOnExit(Screen::World),
         Camera3d::default(),
         look::camera(&mut images),
@@ -104,15 +114,42 @@ fn read_index(
     index: Option<Res<Index>>,
     gltfs: Res<Assets<Gltf>>,
     nodes: Res<Assets<GltfNode>>,
+    assets: Res<AssetServer>,
     mut camera: Single<&mut Transform, With<Camera3d>>,
 ) {
     let Some(index) = index else { return };
     let Some(gltf) = gltfs.get(&index.0) else { return };
+    if let Some(handle) = gltf.named_nodes.get("water bodies") {
+        let node = nodes.get(handle).expect("a loaded glTF's nodes are loaded");
+        let water = node.extras.as_ref().and_then(|e| {
+            let raw: serde_json::Value = serde_json::from_str(&e.value).ok()?;
+            hakuba_water_schema::validate(raw.get("waters")?.as_array()?).ok()?;
+            serde_json::from_value::<WaterBodies>(raw).ok()
+        });
+        match water {
+            Some(water) => commands.insert_resource(water),
+            _ => {
+                error!("invalid bounded water in the world's index");
+                commands.insert_resource(loading::Missing(INDEX.to_owned()));
+                commands.spawn((Name::new("Invalid water metadata"), Unready, DespawnOnExit(Screen::World)));
+                commands.remove_resource::<Index>();
+                return;
+            }
+        }
+    }
     for (name, node) in &gltf.named_nodes {
         let node = nodes.get(node).expect("a loaded glTF's nodes are loaded");
         if &**name == "spawn" {
             commands.insert_resource(Spawn(node.transform));
             **camera = node.transform.with_translation(node.transform.translation + Vec3::Y * EYE_HEIGHT_M);
+        } else if name.starts_with("actor ") {
+            if let Some(actor) =
+                node.extras.as_ref().and_then(|extras| serde_json::from_str::<actors::Actor>(&extras.value).ok())
+            {
+                actors::spawn(&mut commands, &assets, actor);
+            } else {
+                error!("invalid actor declaration: {name}");
+            }
         } else if let Some(tile) = Tile::named(name, node.transform.translation) {
             commands.spawn((
                 Name::new(name.to_string()),

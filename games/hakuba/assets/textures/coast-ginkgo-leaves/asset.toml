@@ -1,6 +1,7 @@
 # Source texture for coastal foliage.
 kind = "texture"
+alpha_shadow = true
 source = "src/texture.png"
 alpha_cutoff = 0.4
 mip_colour = "average"
-inputs_sha256 = "3f2941e2f78f304e9abfb44c4066b1c320283bd79659663fa803b88e88e468f7"
+inputs_sha256 = "0d1edc3c98242e2963b46aa7a00b83b945dee5d326c665b65fef0a5e7c7185d3"

@@ -2,12 +2,13 @@
 //! draws smoothly both near and far. Each level averages the one above it in linear light, with either opacity-weighted
 //! or plain colours as the asset declares, and is stored as 8-bit sRGB, compressed with zstd. In an image with clear
 //! parts, every level preserves coverage at the asset's declared alpha cutoff (0.5 by default). A texture's sides must
-//! be powers of two.
+//! be powers of two. `alpha_shadow = true` also writes `<name>.alpha.ktx2`, a linear R8 copy of each final mip’s alpha.
 
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, bail, ensure};
 use ktx2::dfd::{Basic, Block};
 use ktx2::{Format, Header, Index, LevelIndex, SupercompressionScheme};
 use ruzstd::encoding::{CompressionLevel, compress_to_vec};
@@ -24,6 +25,28 @@ pub struct Settings {
     /// Colour averaging method for mipmaps; defaults to opacity-weighted.
     #[serde(default)]
     mip_colour: MipColour,
+    /// Also export the exact final mip alpha as a linear R8 shadow texture.
+    #[serde(default)]
+    pub alpha_shadow: bool,
+}
+
+impl Settings {
+    pub fn outputs(&self, output: &Path) -> Vec<PathBuf> {
+        let mut files = vec![output.to_path_buf()];
+        if self.alpha_shadow {
+            files.push(shadow_file(output));
+        }
+        files
+    }
+
+    pub fn output_problems(&self, output: &Path) -> Vec<String> {
+        if self.alpha_shadow
+            && let Err(error) = validate_shadow(output)
+        {
+            return vec![format!("shadow alpha export missing or invalid: {error}")];
+        }
+        Vec::new()
+    }
 }
 
 #[derive(Clone, Copy, Default, Serialize, Deserialize)]
@@ -59,6 +82,71 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     fs::write(output, ktx2(width, height, &levels)?)?;
+    let shadow = shadow_file(output);
+    if settings.alpha_shadow {
+        fs::write(shadow, alpha_ktx2(width, height, &levels)?)?;
+    } else if shadow.is_file() {
+        fs::remove_file(shadow)?;
+    }
+    Ok(())
+}
+
+/// The declared alpha companion beside a texture's colour export.
+pub fn shadow_file(output: &Path) -> PathBuf {
+    output.with_extension("alpha.ktx2")
+}
+
+/// @cc [owner:fontanierh,label:correctness] shadow-alpha-mips
+/// An alpha companion MUST be linear R8 with the colour export's dimensions and complete mip chain. Every decoded
+/// byte MUST equal the corresponding final colour mip's alpha, including coverage correction.
+pub fn validate_shadow(output: &Path) -> Result<()> {
+    let colour = fs::read(output).with_context(|| format!("reading {}", output.display()))?;
+    let shadow_path = shadow_file(output);
+    let shadow = fs::read(&shadow_path).with_context(|| format!("reading {}", shadow_path.display()))?;
+    let colour = ktx2::Reader::new(colour.as_slice()).context("invalid colour KTX2")?;
+    let shadow = ktx2::Reader::new(shadow.as_slice()).context("invalid shadow KTX2")?;
+    let a = colour.header();
+    let b = shadow.header();
+    ensure!(a.format == Some(Format::R8G8B8A8_SRGB), "shadow source must be RGBA8 sRGB");
+    ensure!(b.format == Some(Format::R8_UNORM), "shadow companion must be linear R8");
+    ensure!(
+        a.pixel_width.is_power_of_two()
+            && a.pixel_height.is_power_of_two()
+            && a.pixel_width == b.pixel_width
+            && a.pixel_height == b.pixel_height,
+        "shadow companion dimensions differ from colour"
+    );
+    let mip_count = a.pixel_width.max(a.pixel_height).ilog2() + 1;
+    ensure!(a.level_count == mip_count && b.level_count == mip_count, "shadow companion mip chain differs from colour");
+    for header in [a, b] {
+        ensure!(
+            header.type_size == 1
+                && header.pixel_depth == 0
+                && header.layer_count == 0
+                && header.face_count == 1
+                && header.supercompression_scheme == Some(SupercompressionScheme::Zstandard),
+            "shadow textures must be two-dimensional Zstandard KTX2"
+        );
+    }
+    for (mip, (colour, shadow)) in colour.levels().zip(shadow.levels()).enumerate() {
+        let size = ((a.pixel_width >> mip).max(1) as usize)
+            .checked_mul((a.pixel_height >> mip).max(1) as usize)
+            .context("shadow mip dimensions overflow")?;
+        let colour_size = size.checked_mul(4).context("colour mip dimensions overflow")?;
+        let decode = |level: ktx2::Level<'_>, expected| -> Result<Vec<u8>> {
+            ensure!(level.uncompressed_byte_length == expected as u64, "wrong uncompressed shadow mip length");
+            let mut bytes = Vec::new();
+            ruzstd::decoding::StreamingDecoder::new(level.data)?.take(expected as u64 + 1).read_to_end(&mut bytes)?;
+            ensure!(bytes.len() == expected, "wrong decoded shadow mip length");
+            Ok(bytes)
+        };
+        let colour = decode(colour, colour_size).with_context(|| format!("colour mip {mip}"))?;
+        let shadow = decode(shadow, size).with_context(|| format!("shadow mip {mip}"))?;
+        ensure!(
+            colour.chunks_exact(4).map(|pixel| pixel[3]).eq(shadow),
+            "shadow alpha differs from colour at mip {mip}"
+        );
+    }
     Ok(())
 }
 
@@ -138,13 +226,24 @@ fn srgb(c: f32) -> u8 {
 /// The KTX2 file holding `levels`, largest first: the header, the index of levels, the format's description, then
 /// each level compressed, smallest first.
 fn ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
-    let (basic, type_size) = Basic::from_format(Format::R8G8B8A8_SRGB).map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    let bytes: Vec<&[u8]> = levels.iter().map(|level| level.rgba.as_slice()).collect();
+    encode_ktx2(width, height, Format::R8G8B8A8_SRGB, &bytes)
+}
+
+fn alpha_ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
+    let alpha: Vec<Vec<u8>> = levels.iter().map(|level| level.rgba.chunks_exact(4).map(|p| p[3]).collect()).collect();
+    let bytes: Vec<&[u8]> = alpha.iter().map(Vec::as_slice).collect();
+    encode_ktx2(width, height, Format::R8_UNORM, &bytes)
+}
+
+fn encode_ktx2(width: u32, height: u32, format: Format, levels: &[&[u8]]) -> Result<Vec<u8>> {
+    let (basic, type_size) = Basic::from_format(format).map_err(|e| anyhow::anyhow!("{e:?}"))?;
     let block = Block::Basic(basic).to_vec();
     let mut dfd = ((4 + block.len()) as u32).to_le_bytes().to_vec();
     dfd.extend(block);
 
     let compressed: Vec<Vec<u8>> =
-        levels.iter().map(|level| compress_to_vec(level.rgba.as_slice(), CompressionLevel::Fastest)).collect();
+        levels.iter().map(|level| compress_to_vec(*level, CompressionLevel::Fastest)).collect();
     let dfd_offset = Header::LENGTH + levels.len() * LevelIndex::LENGTH;
     let mut offset = dfd_offset + dfd.len();
     let mut index = vec![None; levels.len()];
@@ -152,13 +251,13 @@ fn ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
         index[k] = Some(LevelIndex {
             byte_offset: offset as u64,
             byte_length: compressed[k].len() as u64,
-            uncompressed_byte_length: levels[k].rgba.len() as u64,
+            uncompressed_byte_length: levels[k].len() as u64,
         });
         offset += compressed[k].len();
     }
 
     let header = Header {
-        format: Some(Format::R8G8B8A8_SRGB),
+        format: Some(format),
         type_size,
         pixel_width: width,
         pixel_height: height,
@@ -209,6 +308,98 @@ mod tests {
             let pixels: Vec<u8> = std::io::Read::bytes(pixels).map(|b| b.unwrap()).collect();
             assert_eq!(pixels, level.rgba);
         }
+    }
+
+    fn alpha_fixture() -> (PathBuf, Settings) {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let id = NEXT.fetch_add(1, Ordering::Relaxed);
+        let folder = std::env::temp_dir().join(format!("hakuba-shadow-alpha-{}-{id}", std::process::id()));
+        fs::create_dir_all(&folder).unwrap();
+        image::RgbaImage::from_fn(32, 16, |x, y| {
+            image::Rgba([(x * 3 + y * 5) as u8, (x * 7 + y) as u8, (x + y * 11) as u8, (x * 37 + y * 53) as u8])
+        })
+        .save(folder.join("input.png"))
+        .unwrap();
+        let settings = Settings {
+            source: "input.png".into(),
+            alpha_cutoff: 0.4,
+            mip_colour: MipColour::Average,
+            alpha_shadow: true,
+        };
+        (folder, settings)
+    }
+
+    fn decoded(bytes: &[u8]) -> Vec<Vec<u8>> {
+        ktx2::Reader::new(bytes)
+            .unwrap()
+            .levels()
+            .map(|level| {
+                let mut bytes = Vec::new();
+                ruzstd::decoding::StreamingDecoder::new(level.data).unwrap().read_to_end(&mut bytes).unwrap();
+                bytes
+            })
+            .collect()
+    }
+
+    #[test]
+    fn shadow_export_keeps_every_final_mip_alpha() {
+        let (folder, mut settings) = alpha_fixture();
+        let output = folder.join("texture.ktx2");
+        for mode in [MipColour::Average, MipColour::OpacityWeighted] {
+            settings.mip_colour = mode;
+            export(&folder, &settings, &output).unwrap();
+            let colour = fs::read(&output).unwrap();
+            let alpha = fs::read(shadow_file(&output)).unwrap();
+            let colour_header = ktx2::Reader::new(colour.as_slice()).unwrap().header();
+            let alpha_header = ktx2::Reader::new(alpha.as_slice()).unwrap().header();
+            assert_eq!(alpha_header.format, Some(Format::R8_UNORM));
+            assert_eq!(
+                (colour_header.pixel_width, colour_header.pixel_height, colour_header.level_count),
+                (alpha_header.pixel_width, alpha_header.pixel_height, alpha_header.level_count)
+            );
+            let colour = decoded(&colour);
+            let alpha = decoded(&alpha);
+            assert!(colour.len() > 1);
+            assert_eq!(colour.len(), alpha.len());
+            for (rgba, alpha) in colour.iter().zip(&alpha) {
+                let expected: Vec<_> = rgba.chunks_exact(4).map(|p| p[3]).collect();
+                assert_eq!(*alpha, expected);
+            }
+            validate_shadow(&output).unwrap();
+        }
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn missing_or_changed_companion_is_stale_and_disabling_removes_it() {
+        let (folder, mut settings) = alpha_fixture();
+        let output = folder.join("texture.ktx2");
+        export(&folder, &settings, &output).unwrap();
+        let colour = fs::read(&output).unwrap();
+        let path = shadow_file(&output);
+        let original = fs::read(&path).unwrap();
+        let header = ktx2::Reader::new(original.as_slice()).unwrap().header();
+        let mut alpha = decoded(&original);
+        // A stale lower mip must fail even when the full-resolution level still matches.
+        alpha.last_mut().unwrap()[0] ^= 1;
+        let refs: Vec<_> = alpha.iter().map(Vec::as_slice).collect();
+        fs::write(&path, encode_ktx2(header.pixel_width, header.pixel_height, Format::R8_UNORM, &refs).unwrap())
+            .unwrap();
+        assert!(validate_shadow(&output).is_err());
+        fs::write(&path, &colour).unwrap();
+        assert!(validate_shadow(&output).is_err());
+        fs::write(&path, &original[..original.len() / 2]).unwrap();
+        assert!(validate_shadow(&output).is_err());
+        fs::remove_file(&path).unwrap();
+        assert!(validate_shadow(&output).is_err());
+        export(&folder, &settings, &output).unwrap();
+        validate_shadow(&output).unwrap();
+        settings.alpha_shadow = false;
+        export(&folder, &settings, &output).unwrap();
+        assert!(!path.exists());
+        assert_eq!(fs::read(&output).unwrap(), colour);
+        fs::remove_dir_all(folder).unwrap();
     }
 
     /// A clear pixel adds no colour to the level below it: an opaque red beside a clear white stays red.

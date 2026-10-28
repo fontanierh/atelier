@@ -54,6 +54,7 @@ impl Asset {
             | Asset::Prop(_)
             | Asset::Sound(_)
             | Asset::Texture(_) => Vec::new(),
+            Asset::Character(settings) if settings.uses_authored_clips() => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
             Asset::World(settings) => world::reads(settings),
         }
@@ -83,6 +84,31 @@ impl Asset {
             Asset::Texture(_) => "ktx2",
         }
     }
+
+    /// The files this asset's own kind publishes.
+    fn outputs(&self, output: &Path) -> Vec<PathBuf> {
+        match self {
+            Asset::Texture(settings) => settings.outputs(output),
+            Asset::Sound(_) => vec![output.to_path_buf(), sound::takes_file(output)],
+            _ => vec![output.to_path_buf()],
+        }
+    }
+
+    /// Validation belongs to the kind that owns the output.
+    fn output_problems(&self, output: &Path) -> Vec<String> {
+        match self {
+            Asset::Texture(settings) => settings.output_problems(output),
+            _ => Vec::new(),
+        }
+    }
+
+    /// Asset-relative files named by this export, checked without making them rebuild inputs.
+    fn required_outputs(&self, output: &Path) -> Result<Vec<String>> {
+        match self {
+            Asset::Plant(_) | Asset::Prop(_) => model::required_outputs(output),
+            _ => Ok(Vec::new()),
+        }
+    }
 }
 
 /// The checksum `export` writes into `asset.toml`.
@@ -109,6 +135,15 @@ fn code(folder: &str) -> Result<Vec<PathBuf>> {
     let root = Path::new(EXPORTER);
     let mut code: Vec<PathBuf> = SHARED_CODE.iter().map(|file| root.join(file)).collect();
     code.extend(files(&root.join(folder))?.into_iter().filter(|file| file.extension().is_some_and(|e| e == "rs")));
+    if folder == "src/world" {
+        // Only world metadata uses this shared schema; its edits must invalidate the world export.
+        code.push(root.join("../../schemas/water/Cargo.toml"));
+        code.extend(
+            files(&root.join("../../schemas/water/src"))?
+                .into_iter()
+                .filter(|p| p.extension().is_some_and(|e| e == "rs")),
+        );
+    }
     Ok(code)
 }
 
@@ -189,12 +224,40 @@ impl Folder {
 
     fn problems(&self) -> Result<Vec<String>> {
         let mut found = Vec::new();
-        if !self.output().is_file() {
-            found.push(format!("{} is missing", self.output().file_name().unwrap().to_string_lossy()));
+        let output = self.output();
+        for file in self.asset.outputs(&output) {
+            if !file.is_file() {
+                found.push(format!("{} is missing", file.file_name().unwrap().to_string_lossy()));
+            }
         }
-        let takes = sound::takes_file(&self.output());
-        if matches!(self.asset, Asset::Sound(_)) && !takes.is_file() {
-            found.push(format!("{} is missing", takes.file_name().unwrap().to_string_lossy()));
+        found.extend(self.asset.output_problems(&output));
+        if output.is_file() {
+            match self.asset.required_outputs(&output) {
+                Ok(paths) => {
+                    for path in paths {
+                        let required = Path::new(ASSETS).join(&path);
+                        let Some(folder) = required.parent() else {
+                            found.push(format!("invalid required output path: {path}"));
+                            continue;
+                        };
+                        let result = (|| -> Result<()> {
+                            let dependency = Folder::read(folder)?;
+                            if !dependency.asset.outputs(&dependency.output()).contains(&required) {
+                                bail!("required output is not declared");
+                            }
+                            let problems = dependency.problems()?;
+                            if !problems.is_empty() {
+                                bail!("{}", problems.join(", "));
+                            }
+                            Ok(())
+                        })();
+                        if let Err(error) = result {
+                            found.push(format!("{path}: {error}"));
+                        }
+                    }
+                }
+                Err(error) => found.push(format!("invalid required output metadata: {error}")),
+            }
         }
         if self.recorded_checksum() != Some(self.inputs_checksum()?.as_str()) {
             found.push("its inputs changed since the last export".into());
@@ -311,6 +374,16 @@ fn export_in_order(mut pending: Vec<Folder>) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn character_dependencies_follow_the_clip_source() {
+        let authored = Folder::read(&Path::new(ASSETS).join("characters/wanderer")).unwrap();
+        let shared = Folder::read(&Path::new(ASSETS).join("characters/nox")).unwrap();
+        assert!(authored.asset.reads().is_empty());
+        let expected: Vec<_> = rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect();
+        assert!(!expected.is_empty());
+        assert_eq!(shared.asset.reads(), expected);
+    }
 
     /// Each kind's code folder under `src/`, and the asset groups whose `.rs` files it compiles in.
     const KINDS: [(&str, &[&str]); 5] = [

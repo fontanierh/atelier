@@ -1,0 +1,10 @@
+# A villager in a haori and straw hat. The source model carries its own idle, walk and interaction clips.
+kind = "character"
+source = "src/model.glb"
+height_m = 1.5017756279557943
+texture_size = 2048
+vertex_emission = 0.25
+authored_clips = ["idle", "walk", "interact"]
+authored_pelvis = "pelvis"
+authored_speeds = { walk = 0.90 }
+inputs_sha256 = "e0a5e0064c7a658c20dc764cc8a09f96c4268f2807dd7ac6a5f870dce9f030c3"

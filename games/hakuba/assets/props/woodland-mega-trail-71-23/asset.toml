@@ -1,0 +1,5 @@
+# Original woodland source mesh in one world tile.
+kind = "prop"
+source = "src/source.glb"
+solid = true
+inputs_sha256 = "ba2dd4a3596307264470e3093444ee39002a0793dfb56e1e7f49836c024e64a5"

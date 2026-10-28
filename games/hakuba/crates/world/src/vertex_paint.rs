@@ -1,6 +1,6 @@
 //! Vertex-painted opaque models: source colour, bounded paper glow and asset-owned aerial perspective.
 
-use crate::scenery::Placing;
+use crate::scenery::{Placing, validate_static_paint};
 use crate::tiles::TILES;
 use bevy::asset::{LoadState, embedded_asset};
 use bevy::ecs::system::SystemParam;
@@ -14,9 +14,10 @@ use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
 /// @cc [owner:fontanierh,label:correctness] vertex-paint-preserves-static-colour
-/// A painted model MUST use its linear vertex RGB and asset-owned profile. Zero alpha is a static motion weight,
-/// never opacity; nonzero weights and unsupported animated meshes MUST be reported instead of silently made static.
-/// Its profile MUST apply its haze once, while models without a profile keep their existing material path.
+/// A painted model MUST use its linear vertex RGB and asset-owned profile. Alpha is a motion weight, never opacity;
+/// nonzero weights without valid declared motion and unsupported animated meshes MUST be reported instead of silently
+/// made static. Declared motion MUST agree across visible and prepass vertices. Its profile MUST apply its haze once,
+/// while models without a profile keep their existing material path.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Profile {
     pub fill: f32,
@@ -90,12 +91,69 @@ impl MaterialExtension for Paint {
 
 pub type Painted = ExtendedMaterial<StandardMaterial, Paint>;
 
+/// Source-authored motion of a painted vertex, in world metres.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct MotionProfile {
+    pub spatial: [f32; 2],
+    pub rate: f32,
+    pub amplitude: [f32; 3],
+    pub harmonic: [f32; 3],
+}
+
+impl MotionProfile {
+    pub fn valid(&self) -> bool {
+        self.rate.is_finite()
+            && self.rate.abs() <= 10_000.0
+            && self
+                .spatial
+                .iter()
+                .chain(&self.amplitude)
+                .chain(&self.harmonic)
+                .all(|x| x.is_finite() && x.abs() <= 10_000.0)
+    }
+}
+
+#[derive(Clone, Default, ShaderType)]
+struct MovingUniform {
+    lower: Vec4,
+    upper: Vec4,
+    haze: Vec4,
+    colour: Vec4,
+    phase: Vec4,
+    amplitude: Vec4,
+    harmonic: Vec4,
+}
+
+#[derive(Asset, AsBindGroup, Reflect, Clone)]
+pub struct MovingPaint {
+    #[uniform(100)]
+    #[reflect(ignore)]
+    data: MovingUniform,
+}
+
+impl MaterialExtension for MovingPaint {
+    fn vertex_shader() -> ShaderRef {
+        "embedded://hakuba_world/paint_motion.wesl".into()
+    }
+    fn prepass_vertex_shader() -> ShaderRef {
+        "embedded://hakuba_world/paint_motion.wesl".into()
+    }
+    fn fragment_shader() -> ShaderRef {
+        "embedded://hakuba_world/vertex_paint.wesl".into()
+    }
+}
+
+pub type MovingPainted = ExtendedMaterial<StandardMaterial, MovingPaint>;
+
 pub struct VertexPaintPlugin;
 impl Plugin for VertexPaintPlugin {
     fn build(&self, app: &mut App) {
         embedded_asset!(app, "vertex_paint.wesl");
-        app.add_plugins(MaterialPlugin::<Painted>::default())
+        embedded_asset!(app, "paint_motion.wesl");
+        app.add_plugins((MaterialPlugin::<Painted>::default(), MaterialPlugin::<MovingPainted>::default()))
             .init_resource::<Made>()
+            .init_resource::<MovingMade>()
             .add_systems(Update, (read_surfaces, prepare_surfaces).chain().before(Placing));
     }
 }
@@ -104,6 +162,49 @@ type MadeEntries = Vec<(Profile, u8, Handle<Painted>)>;
 
 #[derive(Resource, Default)]
 struct Made(HashMap<AssetId<StandardMaterial>, MadeEntries>);
+
+type MovingEntries = Vec<(Profile, MotionProfile, Handle<MovingPainted>)>;
+
+#[derive(Resource, Default)]
+struct MovingMade(HashMap<AssetId<StandardMaterial>, MovingEntries>);
+
+#[derive(SystemParam)]
+pub struct MovingPaintedMaterials<'w> {
+    made: ResMut<'w, MovingMade>,
+    moving: ResMut<'w, Assets<MovingPainted>>,
+}
+
+impl MovingPaintedMaterials<'_> {
+    pub fn of(
+        &mut self,
+        painted: &mut PaintedMaterials,
+        material: &Handle<StandardMaterial>,
+        profile: &Profile,
+        motion: &MotionProfile,
+    ) -> Result<Option<Handle<MovingPainted>>, String> {
+        if let Some((_, _, handle)) =
+            self.made.0.get(&material.id()).and_then(|items| items.iter().find(|(p, m, _)| p == profile && m == motion))
+        {
+            return Ok(Some(handle.clone()));
+        }
+        let Some(handle) = painted.of(material, profile)? else { return Ok(None) };
+        let source = painted.painted.get(&handle).expect("new painted material is present");
+        let data = &source.extension.data;
+        let uniform = MovingUniform {
+            lower: data.lower,
+            upper: data.upper,
+            haze: data.haze,
+            colour: data.colour,
+            phase: Vec4::new(motion.spatial[0], motion.spatial[1], motion.rate, 0.0),
+            amplitude: Vec3::from_array(motion.amplitude).extend(0.0),
+            harmonic: Vec3::from_array(motion.harmonic).extend(0.0),
+        };
+        let handle =
+            self.moving.add(MovingPainted { base: source.base.clone(), extension: MovingPaint { data: uniform } });
+        self.made.0.entry(material.id()).or_default().push((profile.clone(), motion.clone(), handle.clone()));
+        Ok(Some(handle))
+    }
+}
 
 #[derive(SystemParam)]
 pub struct PaintedMaterials<'w> {
@@ -173,13 +274,13 @@ impl PaintedMaterials<'_> {
 }
 
 /// @cc [owner:fontanierh,label:correctness] painted-surface-before-tile-activation
-/// A profiled tile surface MUST retain its texture and UVs, apply its asset-owned haze once, and finish preparation
-/// before its tile is activated. Invalid profiles or unsupported geometry MUST fail the pending tile, preserving any
-/// previous visible version; unprofiled tile surfaces MUST keep their original material.
+/// A profiled tile surface MUST retain its source texture and UVs or its static vertex colours, apply its asset-owned
+/// haze once, and finish preparation before its tile is activated. Invalid profiles or unsupported geometry MUST fail
+/// the pending tile, preserving any previous visible version; unprofiled surfaces MUST keep their original material.
 ///
 /// A tile surface waits for its source material and mesh before receiving the shared paint response.
 #[derive(Component)]
-pub(crate) struct SurfaceWaiting(Profile, bool);
+pub(crate) struct SurfaceWaiting(Profile, u8);
 
 #[derive(Component)]
 pub(crate) struct SurfaceFailed;
@@ -198,6 +299,26 @@ pub(crate) fn read_surfaces(
             continue;
         }
         let Ok(value) = serde_json::from_str::<serde_json::Value>(&extras.value) else { continue };
+        if let Some(raw) = value.get("vertex_paint") {
+            if value.get("surface_paint").is_some()
+                || value.get("surface_untextured").is_some()
+                || value.get("vertex_motion").is_some()
+            {
+                error!("conflicting paint profiles on tile node {entity}");
+                commands.entity(entity).insert(SurfaceFailed);
+                continue;
+            }
+            match serde_json::from_value::<Profile>(raw.clone()) {
+                Ok(profile) if profile.valid() => {
+                    commands.entity(entity).insert(SurfaceWaiting(profile, 0));
+                }
+                _ => {
+                    error!("invalid vertex paint profile on tile node {entity}");
+                    commands.entity(entity).insert(SurfaceFailed);
+                }
+            }
+            continue;
+        }
         let Some(raw) = value.get("surface_paint") else { continue };
         let untextured = match value.get("surface_untextured") {
             None => false,
@@ -210,7 +331,7 @@ pub(crate) fn read_surfaces(
         };
         match serde_json::from_value::<SurfaceProfile>(raw.clone()) {
             Ok(profile) if profile.profile().valid() => {
-                commands.entity(entity).insert(SurfaceWaiting(profile.profile(), untextured));
+                commands.entity(entity).insert(SurfaceWaiting(profile.profile(), if untextured { 3 } else { 1 }));
             }
             _ => {
                 error!("invalid surface paint profile on tile node {entity}");
@@ -246,7 +367,13 @@ pub(crate) fn prepare_surfaces(
                 }
                 break;
             };
-            if !mesh.contains_attribute(Mesh::ATTRIBUTE_POSITION)
+            if profile.1 == 0 {
+                if let Err(error) = validate_static_paint(mesh) {
+                    error!("vertex paint: {error}");
+                    failed = true;
+                    break;
+                }
+            } else if !mesh.contains_attribute(Mesh::ATTRIBUTE_POSITION)
                 || !mesh.contains_attribute(Mesh::ATTRIBUTE_NORMAL)
                 || !mesh.contains_attribute(Mesh::ATTRIBUTE_UV_0)
                 || mesh.contains_attribute(Mesh::ATTRIBUTE_COLOR)
@@ -258,7 +385,7 @@ pub(crate) fn prepare_surfaces(
                 failed = true;
                 break;
             }
-            match painted.make(&material.0, &profile.0, if profile.1 { 3 } else { 1 }) {
+            match painted.make(&material.0, &profile.0, profile.1) {
                 Ok(Some(handle)) => replacements.push((entity, handle)),
                 Ok(None) => {
                     if matches!(assets.load_state(&material.0), LoadState::Failed(_)) {
@@ -291,6 +418,87 @@ pub(crate) fn prepare_surfaces(
 mod tests {
     use super::*;
     use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn vertex_painted_tile_prepares_static_colours_and_rejects_motion_weights() {
+        use bevy::asset::RenderAssetUsages;
+        use bevy::mesh::PrimitiveTopology;
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::asset::AssetPlugin::default()))
+            .init_asset::<Mesh>()
+            .init_resource::<Assets<StandardMaterial>>()
+            .init_resource::<Assets<Painted>>()
+            .init_resource::<Made>();
+        let material = app.world_mut().resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
+        let profile = Profile {
+            fill: 0.06,
+            glow: 0.8,
+            glow_min: [0.8, 0.35, 0.0],
+            glow_max: [1.0, 0.72, 0.3],
+            haze_start_m: 30.0,
+            haze_length_m: 9000.0,
+            haze_colour: [0.0932, 0.2301, 0.5328],
+        };
+        let mut nodes = Vec::new();
+        for weight in [0.0, 1.0] {
+            let mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default())
+                .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0., 0., 0.]; 3])
+                .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0., 1., 0.]; 3])
+                .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.2, 0.3, 0.4, weight]; 3]);
+            let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
+            nodes.push(
+                app.world_mut()
+                    .spawn((Mesh3d(mesh), MeshMaterial3d(material.clone()), SurfaceWaiting(profile.clone(), 0)))
+                    .id(),
+            );
+        }
+        app.world_mut().run_system_once(prepare_surfaces).unwrap();
+        assert!(app.world().get::<MeshMaterial3d<Painted>>(nodes[0]).is_some());
+        assert!(app.world().get::<SurfaceFailed>(nodes[1]).is_some());
+    }
+
+    #[test]
+    fn moving_paint_uses_the_same_material_response_and_declared_motion() {
+        use bevy::ecs::system::SystemState;
+        let mut world = World::new();
+        world.insert_resource(Assets::<StandardMaterial>::default());
+        world.insert_resource(Assets::<Painted>::default());
+        world.insert_resource(Assets::<MovingPainted>::default());
+        world.insert_resource(Made::default());
+        world.insert_resource(MovingMade::default());
+        let source = world.resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
+        let profile = Profile {
+            fill: 0.06,
+            glow: 0.8,
+            glow_min: [0.8, 0.35, 0.0],
+            glow_max: [1.0, 0.72, 0.3],
+            haze_start_m: 30.0,
+            haze_length_m: 9000.0,
+            haze_colour: [0.0932, 0.2301, 0.5328],
+        };
+        let motion = MotionProfile {
+            spatial: [0.2, 0.3],
+            rate: 1.7,
+            amplitude: [0.022, 0.004, 0.013],
+            harmonic: [1.0, 1.3, 0.81],
+        };
+        assert!(motion.valid());
+        let mut state = SystemState::<(PaintedMaterials, MovingPaintedMaterials)>::new(&mut world);
+        let (first, again) = {
+            let (mut painted, mut moving) = state.get_mut(&mut world).unwrap();
+            (
+                moving.of(&mut painted, &source, &profile, &motion).unwrap().unwrap(),
+                moving.of(&mut painted, &source, &profile, &motion).unwrap().unwrap(),
+            )
+        };
+        assert_eq!(first, again);
+        let material = world.resource::<Assets<MovingPainted>>().get(&first).unwrap();
+        assert!(!material.base.fog_enabled);
+        assert_eq!(material.base.reflectance, 0.0);
+        assert_eq!(material.extension.data.phase, Vec4::new(0.2, 0.3, 1.7, 0.0));
+        assert_eq!(material.extension.data.amplitude, Vec4::new(0.022, 0.004, 0.013, 0.0));
+        assert!(!MotionProfile { rate: f32::NAN, ..motion }.valid());
+    }
 
     #[test]
     fn source_surface_preserves_textured_and_tinted_parts() {
@@ -353,7 +561,7 @@ mod tests {
                 MeshMaterial3d(source.clone()),
                 SurfaceWaiting(
                     SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
-                    false,
+                    1,
                 ),
             ))
             .id();
@@ -399,7 +607,7 @@ mod tests {
                 MeshMaterial3d(source.clone()),
                 SurfaceWaiting(
                     SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
-                    true,
+                    3,
                 ),
             ))
             .id();
@@ -442,7 +650,7 @@ mod tests {
                 MeshMaterial3d(material),
                 SurfaceWaiting(
                     SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
-                    false,
+                    1,
                 ),
             ))
             .id();
@@ -469,7 +677,7 @@ mod tests {
                 MeshMaterial3d(material),
                 SurfaceWaiting(
                     SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
-                    false,
+                    1,
                 ),
             ))
             .id();

@@ -14,19 +14,53 @@ pub struct Triangle {
     pub xyz: [[f64; 3]; 3],
     pub uv: [[f64; 2]; 3],
     pub normal: [[f64; 3]; 3],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub colour: Option<[[f64; 4]; 3]>,
+}
+
+#[derive(Serialize)]
+pub struct VertexPaint {
+    pub fill: f32,
+    pub glow: f32,
+    pub glow_min: [f32; 3],
+    pub glow_max: [f32; 3],
+    pub haze_start_m: f32,
+    pub haze_length_m: f32,
+    pub haze_colour: [f32; 3],
 }
 
 pub struct AuthoredSurface {
     pub name: &'static str,
-    pub texture: &'static str,
+    pub texture: Option<&'static str>,
     pub tint: [f64; 3],
     pub paint: Option<SurfacePaint>,
+    pub vertex_paint: Option<VertexPaint>,
     pub triangles: Vec<Triangle>,
 }
 
 impl AuthoredSurface {
     /// Source triangles retain their own elevations and attributes, including source-proven terrain crossings.
     pub fn validate(&self) -> Result<()> {
+        if self.texture.is_some() == self.vertex_paint.is_some() || (self.paint.is_some() && self.texture.is_none()) {
+            bail!("authored surface needs exactly one textured or vertex-painted material");
+        }
+        if self.vertex_paint.is_some() && self.tint != [1.0; 3] {
+            bail!("vertex-painted surfaces require a white base");
+        }
+        if let Some(paint) = &self.vertex_paint
+            && (!paint.fill.is_finite()
+                || paint.fill < 0.0
+                || !paint.glow.is_finite()
+                || paint.glow < 0.0
+                || !paint.haze_start_m.is_finite()
+                || paint.haze_start_m < 0.0
+                || !paint.haze_length_m.is_finite()
+                || paint.haze_length_m <= 0.0
+                || paint.haze_colour.iter().any(|x| !x.is_finite() || *x < 0.0)
+                || paint.glow_min.iter().zip(paint.glow_max).any(|(a, b)| !a.is_finite() || !b.is_finite() || *a > b))
+        {
+            bail!("invalid vertex-painted surface profile");
+        }
         if self.paint.as_ref().is_some_and(|paint| !paint.valid()) {
             bail!("invalid authored surface paint");
         }
@@ -34,6 +68,13 @@ impl AuthoredSurface {
             bail!("invalid surface tint");
         }
         for tri in &self.triangles {
+            if tri.colour.is_some() != self.vertex_paint.is_some()
+                || tri.colour.is_some_and(|c| {
+                    c.iter().any(|v| v[3] != 0.0 || v[..3].iter().any(|x| !x.is_finite() || !(0.0..=1.0).contains(x)))
+                })
+            {
+                bail!("invalid authored surface colours");
+            }
             if !tri
                 .xyz
                 .iter()
@@ -75,6 +116,17 @@ impl AuthoredSurface {
                     mesh.positions.push(game(p.extend(z)).as_vec3().to_array());
                     mesh.normals.push(game(normal).as_vec3().to_array());
                     mesh.uvs.push(uv.as_vec2().to_array());
+                    if let Some(c) = source.colour {
+                        let encode =
+                            |x: f64| if x <= 0.0031308 { 12.92 * x } else { 1.055 * x.powf(1.0 / 2.4) - 0.055 };
+                        let decode = |x: f64| if x <= 0.04045 { x / 12.92 } else { ((x + 0.055) / 1.055).powf(2.4) };
+                        let mut colour = [0.0_f32; 4];
+                        for i in 0..3 {
+                            colour[i] =
+                                decode(w.x * encode(c[0][i]) + w.y * encode(c[1][i]) + w.z * encode(c[2][i])) as f32;
+                        }
+                        mesh.colours.push(colour);
+                    }
                 }
                 for n in 1..clip.len() as u32 - 1 {
                     let indices = [first, first + n, first + n + 1];
@@ -126,13 +178,15 @@ mod tests {
     fn source() -> AuthoredSurface {
         AuthoredSurface {
             name: "test road",
-            texture: "road",
+            texture: Some("road"),
             tint: [1.0; 3],
             paint: None,
+            vertex_paint: None,
             triangles: vec![Triangle {
                 xyz: [[0.0, 0.0, -1.0], [2.0, 0.0, 1.0], [0.0, 2.0, -1.0]],
                 uv: [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]],
                 normal: [[0.0, 0.0, 1.0], [0.02, 0.0, 1.0], [0.0, 0.02, 1.0]],
+                colour: None,
             }],
         }
     }
@@ -158,6 +212,28 @@ mod tests {
             vertices
         };
         assert_eq!(edge(&left), edge(&right));
+    }
+
+    #[test]
+    fn painted_clipping_preserves_encoded_colour_interpolation() {
+        let mut surface = source();
+        surface.texture = None;
+        surface.vertex_paint = Some(VertexPaint {
+            fill: 0.06,
+            glow: 0.8,
+            glow_min: [0.8, 0.35, 0.0],
+            glow_max: [1.0, 0.72, 0.3],
+            haze_start_m: 30.0,
+            haze_length_m: 9000.0,
+            haze_colour: [0.0932, 0.2301, 0.5328],
+        });
+        surface.triangles[0].colour = Some([[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]);
+        surface.validate().unwrap();
+        let mesh = surface.mesh(DVec2::ZERO, DVec2::new(1.0, 2.0)).unwrap();
+        let index = mesh.positions.iter().position(|v| v[0] == 1.0 && v[2] == 0.0).unwrap();
+        // Halfway in the original encoded colour is about 0.214 linear, not 0.5 linear.
+        assert!((mesh.colours[index][0] - 0.21404114).abs() < 1e-6);
+        assert_eq!(mesh.colours[index][3], 0.0);
     }
     #[test]
     fn explicit_crossing_queries_visible_surface_and_keeps_default_ground() {

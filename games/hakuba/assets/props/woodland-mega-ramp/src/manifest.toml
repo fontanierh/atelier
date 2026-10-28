@@ -1,0 +1,5 @@
+# Original source mesh and its recorded conversion.
+path = "source.glb"
+sha256 = "45db9a71ca24f6e64f5d8fcd7cf18317e6c9576d0e710ba9159f77a1ba835b83"
+authoring_fbx_sha256 = "b8f82ee0e9f6036f3312e517c5c2a72b9c8cc40cfd34ac27dcea94e1d4559db7"
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; source colours quantized; Blender normals retained within measured tolerance"

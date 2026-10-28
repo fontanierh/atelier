@@ -1,0 +1,5 @@
+# Original cabin, jetty, boat and shore details; the mesh is solid.
+kind = "prop"
+source = "src/source.glb"
+solid = true
+inputs_sha256 = "39de78a9b53592ffee47e63c32a19c0198775cf0f1665c8e5409824d29df3a2d"

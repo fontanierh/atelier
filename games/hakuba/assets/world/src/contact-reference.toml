@@ -1,11 +1,11 @@
 # Source contact measurements, in metres, for the authored instances and original terrain.
 format = "HCNT0001"
 path = "contact-reference.bin"
-sha256 = "770c9f7e50f6cf2d97f6279e6b39ce9e4a71da1cf010d3c61e895a1dc2852e69"
+sha256 = "7d234bbaf0ba8c324cbeb058f1d64bf85fe4d284c67cd91e5f040eb0ea5caffa"
 tolerance_m = 0.01
-placement_extent_m = [[-300, -172], [300, 84]]
-surface_extent_m = [[-300, -256], [300, 128]]
-method = "FBX SDK triangulation of source terrain, full-model contact triangles, authored crossing and raised-owner surfaces"
+placement_extent_m = [[-300, -172], [300, 300]]
+surface_extent_m = [[-300, -256], [300, 300]]
+method = "FBX SDK terrain and Village Ground triangles, full-model contact triangles, source crossing and raised-owner surfaces"
 
 [terrain_source_sha256]
 "Terrain_cell_-1_-1" = "2bd19c914df168760b93269388858abcfb336a6bf3fdd4aa8ac0409ffc5e1dc5"
@@ -27,6 +27,20 @@ method = "FBX SDK triangulation of source terrain, full-model contact triangles,
 "Terrain_cell_2_-2" = "a6f10693764ac1d73516b0d978398e756dfcd28f58e1b914e5a6e99718be2597"
 "Terrain_cell_2_0" = "7273f831ee43650a9ad843f3350e9cb727d5847fc59d05312d16bb131b69c5d4"
 
+"Terrain_cell_-1_1" = "7f4ee3f75b54f09c387b45273963bacd245470f73f0bf0eafd1ba3ed4c01d8de"
+"Terrain_cell_-1_2" = "d8910efb12cd6facd840c03d6c4618311ee095bba30c2a07541067bc27244dca"
+"Terrain_cell_-2_1" = "f9581171c23a243d70cd0850b9bda8fc278ae3fcdf856db112d28729a0383f0b"
+"Terrain_cell_-2_2" = "a29878f9f540b302d90a98c656d7ac01e200b3f334c5eee50015e1f6b072e8f6"
+"Terrain_cell_-3_1" = "c983b0bcda49e5a4015ecf29d71589101f622b6116db60535c04f9021e8bb48c"
+"Terrain_cell_-3_2" = "48ae0f626d9531649237c4eb84115da80a18efc8673db49873ebfa3f09453274"
+"Terrain_cell_0_1" = "024f42957424d4caa8322e4846721a0a7805dea996cde09c1cfaead9aee1e1f8"
+"Terrain_cell_0_2" = "2abe8b6a6c39d9ca17c1a8261e768fdf8ca22d74c42de27857b3e20c97a8185c"
+"Terrain_cell_1_1" = "9e451c01bcb0099d4f1b291c666a903ae761d33b7196ffa38e1eb47cc7dde967"
+"Terrain_cell_1_2" = "094e36233919f924154bf96fe8de1503658c141eb1ea40700dc31369f604dbab"
+"Terrain_cell_2_1" = "898385a2fabf721d143da58fe46e3fcac63e5f870d4aa49d4e0222f52605e4bb"
+"Terrain_cell_2_2" = "64dbd8bac7dc99ba2200c5ca9b20f56fed0ddd01e9ca82aaaae9d5725bf286b2"
+
+# Hashes of model exports used for the source measurements; later tree shadow metadata does not change geometry.
 [model_export_sha256]
 "plants/coast-broad-a" = "0d33255f5c7201470d3ed15ab24d94b7cb57f255aade3450243a6443b80ddf52"
 "plants/coast-broad-b" = "37c007e0376323b121cfa0afdaab9d3d2e08beb8f15130fd40ab4833705f283e"
@@ -60,3 +74,78 @@ method = "FBX SDK triangulation of source terrain, full-model contact triangles,
 "props/road-house-lot-4" = "382406dc01ae7d83fd05e032b7489c6a3d62ff254744f17610a85f2d63be1895"
 "props/road-house-lot-5" = "676dc41e6de7ec784961aada0f54fa8e2013df1eb609e9104c30e3a40ca191b5"
 "props/stone-lantern" = "ae2ccbd088a4e39bb7c301c5f20cdad754b9fd397ffa48e08b7a41529c10df7d"
+
+[village_ground_source]
+authoring_fbx_sha256 = "4a3604f443c622966ab0b6645c41204fb8febc5b375656d221789411693318db"
+restored_glb_sha256 = "0493a2f014df000ac40c7cf7155ba469f1256606895a00e2cf217eb1af3cdc74"
+triangles_sha256 = "b06c182713650ff224a5fed80c356e1a839b7df8cbf1911b9a2a3d3dcefe5507"
+
+[village_model_source_sha256]
+"props/village-cottage-a" = "4ce9c29e6089066e9ddc6d565c529d8d72ec386a6676c3eadbcb5ab6f4e4208a"
+"props/village-cottage-b" = "e3c29f3b08f0d799f26509cfad41f94baf7992dc4cac7716028f9f3e5b90615c"
+"props/village-garden" = "9193472ba4b6e08dd0c411d326c1dc18fc3772c5af26cec7568e8694d77509c0"
+"props/village-sign" = "3ef2a5bfcd664aab6da7d700a8636605cb2fe14ae478c712433d287ba7dae917"
+"props/village-storehouse" = "d33e87a1de37b3ee9cb9aeee49c66c7c3c8693c95a553618f6ffdf0889f12340"
+"props/village-tea-house" = "f3983c66822cb5fbdc4dc14e16b211bacf813676a2a2cfd9957eac2b728ecaa4"
+"props/village-threshold" = "4127f25088412eda41b68f99a13792f3a370e641ead4224ba62b2d731ba2df56"
+"props/village-workshop" = "68b580f3d47f980df7376719a3373a3cc7ab10d829b25e0f9640de49cc1cae21"
+
+# Fixed world geometry has an exact triangle, pose and bounds witness and an independent
+# SDK-surface minimum gap per placement. The minimum does not prove every footprint point.
+[fixed_source_reference]
+path = "fixed-source-reference.json"
+sha256 = "f25c1d12c58e8e01e582fe1e80364f679a97037e43e5525b19b4d4d5b1debae5"
+placements = 50
+village_sdk_terrain_glb_sha256 = "859bdef5ed4223577f00e9e3670071081103170430f0a895501303e39457fa1a"
+village_sdk_measurements_sha256 = "3698cb7a8c94d8070fd1a4c6712a7d630c509406742458b3263d1f2d0c9eac0c"
+
+woodland_sdk_terrain_glb_sha256 = "1674117ac3862ce88cea5b6391494bc6b34873b8f77aef193f1b67c8c253b5ca"
+woodland_sdk_measurements_sha256 = "37986bca3b1b498afe04ba7d18896c501e5b7b82afbf0eae5cbee7b221ffb2ca"
+
+# Restore original north terrain samples, including duplicated page-edge values.
+[northern_terrain_restore]
+source = "FBX SDK source terrain triangles"
+distinct_samples = 128
+visible_extent_samples = 8
+source_margin_samples = 120
+stored_page_values = 133
+coast_below_y_m = 84
+
+# Northern forest and adjacent canopy contacts preserve all prior measured rows.
+[woodland_source_contacts]
+retained_placements = 94881
+new_vegetation_placements = 12731
+new_fixed_placements = 23
+combined_placements = 107635
+updated_prior_placements = 0
+source_terrain_triangles = 166800
+method = "Independent SDK terrain and original authored crossing triangles; minimum full-model gaps for fixed source geometry"
+
+[woodland_model_source_sha256]
+"plants/woodland-canopy-amber" = "930debbd7feee79e4d264f271bef9c38540b2cda474072c394ea60bcaaed0323"
+"plants/woodland-canopy-crimson" = "1e5fea3ece2e75f1a12b27d2b58572178c3b3a8f6ae5484113410293885b7aed"
+"plants/woodland-canopy-ginkgo" = "c5c0f8b6ff4ae5ca1ecc32d43079e9dc62c81beec929199bbb6b516b2aba2613"
+"plants/woodland-canopy-maple" = "5b4d222e2a0edcb53ee8f4ee32d19ebdebe302d54da9d78ba3e11fe5981c82c7"
+"props/woodland-lake-cabin" = "7a681d5ceb93c2673f15195be96170e841f01c78a4af35d0bfc1c8d2b4658fa5"
+"props/woodland-lake-plants-66-23" = "a655b270de8a1d1e61d26e531092983f74aa6572762182d866e80738b8bfc43a"
+"props/woodland-lake-plants-66-24" = "d236e4b6906c020a68bd0d6b8f2b4e52f572e2a85a19506b841d5bcb675508c6"
+"props/woodland-lake-plants-67-23" = "7738ce9898a66986914c142444fb144817fd237791051ebc7c5252b4df8f25f7"
+"props/woodland-lake-plants-67-24" = "5de791706739ba3b2898feb918e365c1439e1762cc895306312229427c716d45"
+"props/woodland-lake-shore-66-24" = "7403a802899857c6fe49cc14f75650e10b6612404160110346ef06732aa44a2b"
+"props/woodland-lake-shore-67-23" = "ab5a5f670fbfaf67e9570ecc94a8b17c04e0579bf465374d3948be7271e00bb1"
+"props/woodland-lake-shore-67-24" = "0fa95d66703ebdda2eda6fe400d6ba80342881d0104538985c14c71dbf28d58f"
+"props/woodland-lake-trail-67-23" = "454671ca3c6bd16ffe72c229ec9657721361bf51c808dd23c4e2abba58a43559"
+"props/woodland-lake-trail-67-24" = "45cec444b3bb483e4e3f8a3029731fa55dfa26ce10a364db9641156e4db489aa"
+"props/woodland-lake-trail-68-23" = "1dc3fcbd6cc623f27d74f6376598d4646db929d52e66914958391d0dd118c583"
+"props/woodland-lake-trail-68-24" = "84c32b9c2226f10d11f925426e49213f6c292d85be375018f43f27b8e8565e1f"
+"props/woodland-lake-trail-69-24" = "3ce0c1442a23f3245d670291b430f1acd2bfde14beb668dc8c6115d170effc24"
+"props/woodland-lake-water-66-24" = "f3faabc186615b582299f3164542c5dd436d52fbfe77dd8163cd85522876b77b"
+"props/woodland-lake-water-67-23" = "e9f7da6a39c60be83872db4647780924905c6d9b540d37a4ca3a98dcf06a4783"
+"props/woodland-lake-water-67-24" = "d66b974f6cdbc11fecb8329ea71fa776a4a49f27ae4d086d4a643059aa1c4f41"
+"props/woodland-mega-ramp" = "45db9a71ca24f6e64f5d8fcd7cf18317e6c9576d0e710ba9159f77a1ba835b83"
+"props/woodland-mega-trail-69-24" = "cc4d362b2e55010c57361f80f0e9e9da1b92c2f28d470fdf4a5e4aa79eb998dd"
+"props/woodland-mega-trail-70-23" = "048df486191e55b846a4076190921ef412b701e68627e17b7cea40aface8edb9"
+"props/woodland-mega-trail-70-24" = "ca46865331370a4def7e76df04ebbaf98bd51fc92b8bf112b4ba655dcf4f4207"
+"props/woodland-mega-trail-71-23" = "d0200a30421dd1967e6160934fe8c3087b37566fbbe3ff4cbac20d6c9a0e5f15"
+"props/woodland-mega-trail-71-24" = "945bb201a753925fad0a2d820fe4d65429adf430b4d7f6e187c0c82cb239c3e5"
+"props/woodland-mega-trim" = "da45173320596e3d9babd57b191ddabb594abd7ad38661c41dc59cdb324230d6"

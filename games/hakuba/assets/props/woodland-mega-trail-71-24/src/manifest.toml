@@ -1,0 +1,7 @@
+# Source mesh, clipped at tile edges.
+path = "source.glb"
+sha256 = "945bb201a753925fad0a2d820fe4d65429adf430b4d7f6e187c0c82cb239c3e5"
+authoring_fbx_sha256 = "ebef6c676439bf694cbe90150fc3c14d6080794017d7b16a8d2ace64b544dabd"
+source_origin_m = [180, 244, 53]
+tile = [71, 24]
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; clipped with interpolated source attributes"

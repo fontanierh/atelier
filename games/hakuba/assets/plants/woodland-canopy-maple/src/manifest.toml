@@ -1,0 +1,5 @@
+# Original source tree and its retained material slots.
+path = "model.glb"
+sha256 = "5b4d222e2a0edcb53ee8f4ee32d19ebdebe302d54da9d78ba3e11fe5981c82c7"
+authoring_fbx_sha256 = "9a1acb9efbf82a50d2700be9c791e0dcbb2f48810951c09f9a0be91c49a62558"
+conversion = "FBX SDK 2020.2 triangulation; direct source corner attributes"

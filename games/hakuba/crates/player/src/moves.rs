@@ -9,7 +9,7 @@
 
 use bevy::prelude::*;
 use hakuba_characters::{Clips, Play, Playing};
-use hakuba_world::{Ground, Hit, SEA_LEVEL_M};
+use hakuba_world::{Ground, Hit, SEA_LEVEL_M, WaterBodies};
 
 use crate::input::Controls;
 use crate::{Body, Player};
@@ -222,6 +222,7 @@ pub fn advance(
     controls: Res<Controls>,
     time: Res<Time>,
     mut ground: Ground,
+    waters: Option<Res<WaterBodies>>,
     mut players: Query<(&mut Player, &mut Transform)>,
     bodies: Query<(Entity, &Clips, &Playing), With<Body>>,
 ) {
@@ -309,10 +310,10 @@ pub fn advance(
             }
         }
 
-        // Fell where there is nothing to stand on, or into deep water: back to the last dry ground.
-        if at.y < SEA_LEVEL_M - LOST_M || (motion.mode != Mode::Ground && at.y < SEA_LEVEL_M - WADE_M) {
-            at = motion.safe;
-            *motion = Motion { mode: Mode::Ground, yaw: motion.yaw, safe: motion.safe, ..default() };
+        // Bounded water has its own source-authored safe shore; the sea keeps the last dry ground.
+        if let Some(shore) = recovery_target(waters.as_deref(), at, motion.mode, motion.safe) {
+            at = shore;
+            *motion = Motion { mode: Mode::Ground, yaw: motion.yaw, safe: shore, ..default() };
             play(&mut commands, Play::looping(body, "idle"));
         }
 
@@ -320,6 +321,12 @@ pub fn advance(
         transform.rotation = Quat::from_rotation_y(motion.yaw);
         animate(&mut commands, motion, body, clips, playing);
     }
+}
+
+fn recovery_target(waters: Option<&WaterBodies>, at: Vec3, mode: Mode, safe: Vec3) -> Option<Vec3> {
+    waters.and_then(|waters| waters.recovery(at)).or_else(|| {
+        (at.y < SEA_LEVEL_M - LOST_M || (mode != Mode::Ground && at.y < SEA_LEVEL_M - WADE_M)).then_some(safe)
+    })
 }
 
 trait WalkingGround {
@@ -836,6 +843,15 @@ fn animate(commands: &mut Commands, motion: &mut Motion, body: Entity, clips: &C
 mod step_tests {
     use super::*;
     use hakuba_world::Surface;
+
+    #[test]
+    fn ocean_recovery_still_uses_last_safe_ground() {
+        let safe = Vec3::new(10.0, 3.0, 20.0);
+        let empty = WaterBodies::default();
+        assert_eq!(recovery_target(Some(&empty), Vec3::new(0.0, -0.7, 0.0), Mode::Air, safe), Some(safe));
+        assert_eq!(recovery_target(Some(&empty), Vec3::new(0.0, -0.7, 0.0), Mode::Ground, safe), None);
+        assert_eq!(recovery_target(None, Vec3::new(0.0, -LOST_M - 0.1, 0.0), Mode::Ground, safe), Some(safe));
+    }
 
     struct Fixture {
         rise: f32,

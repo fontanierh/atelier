@@ -15,4 +15,8 @@ impl Character for Nox {
     fn name(&self) -> &'static str {
         "nox"
     }
+
+    fn skeleton(&self) -> Option<&dyn Skeleton> {
+        Some(self)
+    }
 }

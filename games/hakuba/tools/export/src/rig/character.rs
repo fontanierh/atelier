@@ -7,6 +7,7 @@
 //! out). The rig bones keep the rig's names, so the game finds the hands as `hand_l` and `hand_r`.
 
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
@@ -37,9 +38,27 @@ pub struct Settings {
     /// The character's changes to each animation, by animation name, in the form that animation reads.
     #[serde(default)]
     animations: BTreeMap<String, Value>,
+    /// Preserve these named clips from the source model instead of fitting the shared library.
+    #[serde(default)]
+    authored_clips: Vec<String>,
+    /// The source pelvis node and each moving authored clip's speed in metres a second.
+    #[serde(default)]
+    authored_pelvis: Option<String>,
+    #[serde(default)]
+    authored_speeds: BTreeMap<String, f64>,
+    /// How much of the vertex-tinted base colour the material emits.
+    #[serde(default)]
+    vertex_emission: Option<f64>,
     /// Where its right hand holds things, from its palm.
     #[serde(default)]
     hold: Hold,
+}
+
+impl Settings {
+    /// Authored clips come from the model itself, without reading the shared animation exports.
+    pub fn uses_authored_clips(&self) -> bool {
+        !self.authored_clips.is_empty()
+    }
 }
 
 /// Where a hand holds things: its palm's frame, moved and turned. The palm's axes are x, out of the right palm; y,
@@ -69,14 +88,61 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if let Some(name) = settings.animations.keys().find(|name| animations::named(name).is_none()) {
         bail!("animations.{name}: there is no animation named {name}");
     }
-    animate(&mut glb, character, &settings.animations, &settings.hold)?;
+    if !settings.uses_authored_clips() {
+        if settings.authored_pelvis.is_some() || !settings.authored_speeds.is_empty() {
+            bail!("authored metadata requires authored clips");
+        }
+        animate(&mut glb, character, &settings.animations, &settings.hold)?;
+    } else {
+        if character.skeleton().is_some() {
+            bail!("an authored character must not provide a shared-library skeleton map");
+        }
+        if !settings.animations.is_empty() {
+            bail!("authored clips cannot have shared animation changes");
+        }
+        validate_authored(&folder.join(&settings.source), &settings.authored_clips)?;
+        if settings
+            .authored_speeds
+            .iter()
+            .any(|(name, speed)| !settings.authored_clips.contains(name) || !speed.is_finite() || *speed <= 0.0)
+        {
+            bail!("authored speeds must name authored clips and be finite and positive");
+        }
+        let pelvis = settings.authored_pelvis.as_deref().context("authored clips require a pelvis node")?;
+        let hips = glb.worlds(&glb.rest()?)[glb.node(pelvis)?].w_axis.y;
+        if !hips.is_finite() || hips <= 0.0 {
+            bail!("authored pelvis must stand above the model origin");
+        }
+        glb.add_data("clips", json!({ "speeds": settings.authored_speeds, "hips_m": hips }));
+    }
+    if let Some(factor) = settings.vertex_emission {
+        if !factor.is_finite() || factor < 0.0 {
+            bail!("vertex emission must be finite and nonnegative");
+        }
+        glb.add_data("vertex_emission", json!({ "factor": factor }));
+    }
     glb.write(output)
+}
+
+/// Checks that every declared clip exists exactly once without resampling the authored interpolation.
+fn validate_authored(path: &Path, clips: &[String]) -> Result<()> {
+    let bytes = fs::read(path)?;
+    let size = u32::from_le_bytes(bytes.get(12..16).context("missing GLB JSON length")?.try_into()?) as usize;
+    let json: Value = serde_json::from_slice(bytes.get(20..20 + size).context("truncated GLB JSON")?)?;
+    let animations = json["animations"].as_array().context("the source has no authored animations")?;
+    for name in clips {
+        if name.is_empty() || animations.iter().filter(|clip| clip["name"].as_str() == Some(name)).count() != 1 {
+            bail!("authored clip {name:?} must occur exactly once");
+        }
+    }
+    Ok(())
 }
 
 /// Fits every animation to `character`, with its `changes` to each, and adds it to its model with how fast each
 /// carries it; puts its right hand's grip where it `hold`s things; then renames its rig bones to the rig's names.
 fn animate(glb: &mut Glb, character: &dyn Character, changes: &BTreeMap<String, Value>, hold: &Hold) -> Result<()> {
-    let nodes = rig_nodes(glb, &character.bones())?;
+    let skeleton = character.skeleton().context("a character using the shared library needs a skeleton map")?;
+    let nodes = rig_nodes(glb, &skeleton.bones())?;
     let rest_locals = glb.rest()?;
     let rest_worlds = glb.worlds(&rest_locals);
     let rest = rig_pose(&rest_worlds, &nodes);

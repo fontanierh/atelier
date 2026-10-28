@@ -18,11 +18,12 @@ Install once per machine: [Rust](https://rustup.rs), [trunk](https://trunkrs.dev
 and Git LFS (`brew install git-lfs`, then `git lfs install`). Without Git LFS a clone holds small pointer files
 instead of the models; `git lfs pull` fetches them afterwards.
 
-Run commands from this folder. The first build compiles Bevy and takes a few minutes; after that, builds only
-compile Hakuba.
+Run commands from this folder. The first build compiles Bevy and takes a few minutes; later builds reuse unchanged
+compiled dependencies.
 
 ```sh
-trunk serve                  # browser, at http://127.0.0.1:8080
+trunk serve --release        # browser play, at http://127.0.0.1:8080
+trunk serve                  # faster-to-build browser development
 cargo run                    # desktop
 ```
 
@@ -54,8 +55,9 @@ games/hakuba/
     rendering/              shared rendering commands and 3D shadow views
     viewer/                 the character viewer
     audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
+  schemas/                  data formats shared by the exporter and game, without Bevy dependencies
   index.html                the page the browser build runs in, with the canvas the game draws into
-  Trunk.toml                what the browser build copies next to the game
+  Trunk.toml                export checks and what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)
   tools/export/             the asset exporter, run with `cargo export` (tools/README.md)
   .gitattributes            which files Git LFS stores

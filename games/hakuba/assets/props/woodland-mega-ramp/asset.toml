@@ -1,0 +1,5 @@
+# Original plywood ramp, supports and ladder; its geometry is solid.
+kind = "prop"
+source = "src/source.glb"
+solid = true
+inputs_sha256 = "4547aa65bff89e125be739d3bf0945eefb774a70f221fa70f8cf115c6dde504b"

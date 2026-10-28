@@ -1,0 +1,7 @@
+# Source water mesh, clipped at tile edges.
+path = "source.glb"
+sha256 = "e9f7da6a39c60be83872db4647780924905c6d9b540d37a4ca3a98dcf06a4783"
+authoring_fbx_sha256 = "4646d5f66ffc8bdd0da9611f5714b418472c319bb0e440c69a4b9c90a4aacf41"
+source_origin_m = [-76, 180, 76]
+tile = [67, 23]
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; clipped with interpolated source attributes"

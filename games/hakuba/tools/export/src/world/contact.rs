@@ -20,7 +20,7 @@ pub struct Model {
     triangles: Vec<[DVec3; 3]>,
 }
 
-fn key(placement: &Placement) -> String {
+pub(super) fn key(placement: &Placement) -> String {
     let mut hash = Sha256::new();
     hash.update(placement.model.as_bytes());
     hash.update([0]);
@@ -34,7 +34,7 @@ fn key(placement: &Placement) -> String {
     format!("{:x}", hash.finalize())
 }
 
-pub fn read(policies: &[Policy]) -> Result<BTreeMap<String, Model>> {
+pub fn read(policies: &[Policy], fixed: &super::fixed::FixedSources) -> Result<BTreeMap<String, Model>> {
     let mut models = BTreeMap::new();
     for policy in policies {
         if policy.models.is_empty() || !policy.band_m.is_finite() || policy.band_m < 0.0 {
@@ -45,7 +45,10 @@ pub fn read(policies: &[Policy]) -> Result<BTreeMap<String, Model>> {
             let path = Path::new(crate::ASSETS).join(name).join(format!("{}.glb", name.rsplit('/').next().unwrap()));
             let triangles = Glb::read(&path)?.node_triangles("full")?;
             let lowest = triangles.iter().flatten().map(|p| p.y).fold(f64::INFINITY, f64::min);
-            let triangles = triangles.into_iter().filter(|t| t.iter().any(|p| p.y <= lowest + policy.band_m)).collect();
+            let triangles = triangles
+                .into_iter()
+                .filter(|t| fixed.contains_model(name) || t.iter().any(|p| p.y <= lowest + policy.band_m))
+                .collect();
             if models.insert(name.clone(), Model { triangles }).is_some() {
                 bail!("duplicate contact policy for {name}");
             }
@@ -59,10 +62,14 @@ pub fn footprint_radius(
     scenery: &[Scenery],
     selection: (DVec2, DVec2),
     models: &BTreeMap<String, Model>,
+    fixed: &super::fixed::FixedSources,
 ) -> Result<f64> {
     let mut radius = 0.0_f64;
     for placement in scenery.iter().flat_map(|scene| &scene.placements) {
         if placement.at.cmplt(selection.0).any() || placement.at.cmpge(selection.1).any() {
+            continue;
+        }
+        if fixed.contains_model(placement.model) {
             continue;
         }
         let model =
@@ -167,8 +174,8 @@ fn verify_gap(name: &str, at: DVec2, gap: f64, expected: f64) -> Result<()> {
 }
 
 /// @cc [owner:fontanierh,label:correctness] source-contact-reference
-/// Every selected authored placement MUST have exactly one source measurement, and the transformed model's
-/// contact geometry MUST agree with it on the logical visible owner surface within the source tolerance.
+/// Every selected placement MUST agree with its independently measured minimum gap on the logical visible owner
+/// surface. Fixed source geometry MUST also match its exact source pose and geometry and be selected by its bounds.
 /// Validation MUST run on every export, including tile checksum hits, and MUST fail on missing or changed rows.
 /// Cropping tiles MUST NOT replace an owner with hidden terrain or change the reference surface.
 pub struct Reference {
@@ -218,6 +225,7 @@ pub fn validate(
     selection: (DVec2, DVec2),
     models: &BTreeMap<String, Model>,
     reference: &Reference,
+    fixed: &super::fixed::FixedSources,
 ) -> Result<()> {
     let (low, high) = selection;
     if low.cmplt(reference.low).any() || high.cmpgt(reference.high).any() {
@@ -226,7 +234,9 @@ pub fn validate(
     let mut unseen: BTreeSet<_> = reference
         .entries
         .iter()
-        .filter(|(_, entry)| entry.at.cmpge(low).all() && entry.at.cmplt(high).all())
+        .filter(|(id, entry)| {
+            fixed.selects_id(id, selection).unwrap_or_else(|| entry.at.cmpge(low).all() && entry.at.cmplt(high).all())
+        })
         .map(|(id, _)| id.as_str())
         .collect();
     let started = std::time::Instant::now();
@@ -235,7 +245,11 @@ pub fn validate(
     for scene in scenery {
         for placement in &scene.placements {
             let (at, yaw, scale, _) = effective_pose(land.raised, land.rendered, placement);
-            if at.cmplt(low).any() || at.cmpge(high).any() {
+            if fixed.contains_model(placement.model) {
+                if !fixed.selects_placement(placement, at, yaw, scale, selection)? {
+                    continue;
+                }
+            } else if at.cmplt(low).any() || at.cmpge(high).any() {
                 continue;
             }
             let id = key(placement);
@@ -244,8 +258,13 @@ pub fn validate(
             }
             let model =
                 models.get(placement.model).with_context(|| format!("no contact policy for {}", placement.model))?;
-            let seat = land.height(at).with_context(|| format!("{} has no drawn ground at {at}", placement.model))?;
-            let origin = placement.origin_height_m.unwrap_or(seat + placement.origin_offset_m);
+            let origin = if fixed.contains_model(placement.model) {
+                placement.origin_height_m.context("fixed source needs an absolute height")?
+            } else {
+                let seat =
+                    land.height(at).with_context(|| format!("{} has no drawn ground at {at}", placement.model))?;
+                placement.origin_height_m.unwrap_or(seat + placement.origin_offset_m)
+            };
             let gap = check(model, placement.model, at, yaw, scale, origin, land)?;
             verify_gap(placement.model, at, gap, reference.entries[&id].gap)?;
             completed += 1;
@@ -404,6 +423,95 @@ mod tests {
     }
 
     #[test]
+    fn grounded_absolute_height_still_requires_origin_owner() {
+        let placement = Placement {
+            model: "grounded",
+            at: DVec2::splat(-0.5),
+            yaw: 0.0,
+            scale: 1.0,
+            origin_offset_m: 0.0,
+            origin_height_m: Some(1.0),
+            afar: false,
+        };
+        let triangle = [DVec3::new(1.0, 0.0, -1.0), DVec3::new(1.5, 0.0, -1.0), DVec3::new(1.0, 0.0, -1.5)];
+        let models = BTreeMap::from([("grounded".to_string(), Model { triangles: vec![triangle] })]);
+        let reference = Reference {
+            low: DVec2::splat(-1.0),
+            high: DVec2::splat(3.0),
+            entries: BTreeMap::from([(key(&placement), Entry { at: placement.at, gap: 1.0 })]),
+        };
+        let scene = Scenery { placements: vec![placement], ..Default::default() };
+        let ground = Ground::page(3, 1.0, |_, _| 0.0);
+        let raised = Prepared::new(&[], DVec2::ZERO, 3.0);
+        let land = Land {
+            ground: &ground,
+            rendered: None,
+            raised: &raised,
+            middle: false,
+            low: DVec2::splat(-1.0),
+            high: DVec2::splat(3.0),
+            regions: &[],
+        };
+        assert!(
+            validate(
+                &[scene],
+                &land,
+                (DVec2::splat(-1.0), DVec2::splat(3.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn fixed_crop_checks_source_minimum_even_when_origin_is_outside() {
+        let placement = || Placement {
+            model: "fixed",
+            at: DVec2::ZERO,
+            yaw: 0.0,
+            scale: 1.0,
+            origin_offset_m: 0.0,
+            origin_height_m: Some(1.0),
+            afar: false,
+        };
+        let triangle = [DVec3::new(1.0, 0.0, -1.0), DVec3::new(1.8, 0.0, -1.0), DVec3::new(1.0, 0.0, -1.8)];
+        let fixed = super::super::fixed::FixedSources::test_instance(
+            &placement(),
+            vec![triangle],
+            [[1.0, 1.0, 1.0], [1.8, 1.8, 1.0]],
+        );
+        let model = Model { triangles: vec![triangle] };
+        let models = BTreeMap::from([("fixed".to_string(), model)]);
+        let reference = Reference {
+            low: DVec2::ZERO,
+            high: DVec2::splat(3.0),
+            entries: BTreeMap::from([(key(&placement()), Entry { at: placement().at, gap: 1.0 })]),
+        };
+        let scene = Scenery { placements: vec![placement()], ..Default::default() };
+        let crop = (DVec2::splat(1.1), DVec2::splat(1.7));
+        let ground = Ground::page(3, 1.0, |_, _| 0.0);
+        let raised = Prepared::new(&[], DVec2::ZERO, 3.0);
+        let land = Land {
+            ground: &ground,
+            rendered: None,
+            raised: &raised,
+            middle: false,
+            low: DVec2::ZERO,
+            high: DVec2::splat(3.0),
+            regions: &[],
+        };
+        assert!(validate(std::slice::from_ref(&scene), &land, crop, &models, &reference, &fixed).is_ok());
+        assert!(validate(&[Scenery::default()], &land, crop, &models, &reference, &fixed).is_err());
+        let duplicate = Scenery { placements: vec![placement(), placement()], ..Default::default() };
+        assert!(validate(&[duplicate], &land, crop, &models, &reference, &fixed).is_err());
+        let changed_ground = Ground::page(3, 1.0, |_, _| 0.2);
+        let changed = Land { ground: &changed_ground, ..land };
+        assert!(validate(&[scene], &changed, crop, &models, &reference, &fixed).is_err());
+    }
+
+    #[test]
     fn crop_uses_the_same_logical_surface_and_checks_selected_rows() {
         let ground = Ground::page(2, 1.0, |_, _| 0.0);
         let surface = peak(0.2);
@@ -442,18 +550,52 @@ mod tests {
         let models = BTreeMap::from([("test".to_string(), model)]);
         let scene = Scenery { placements: vec![a, b], ..Default::default() };
         assert!(
-            validate(std::slice::from_ref(&scene), &land, (DVec2::ZERO, DVec2::splat(2.0)), &models, &reference)
-                .is_ok()
+            validate(
+                std::slice::from_ref(&scene),
+                &land,
+                (DVec2::ZERO, DVec2::splat(2.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_ok()
         );
         // The first triangle extends past the crop; it must still use the same owner surface.
         assert!(
-            validate(std::slice::from_ref(&scene), &land, (DVec2::ZERO, DVec2::splat(1.0)), &models, &reference)
-                .is_ok()
+            validate(
+                std::slice::from_ref(&scene),
+                &land,
+                (DVec2::ZERO, DVec2::splat(1.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_ok()
         );
         let missing = Scenery::default();
-        assert!(validate(&[missing], &land, (DVec2::ZERO, DVec2::splat(1.0)), &models, &reference).is_err());
+        assert!(
+            validate(
+                &[missing],
+                &land,
+                (DVec2::ZERO, DVec2::splat(1.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_err()
+        );
         let mut altered = scene;
         altered.placements[0].yaw = 0.1;
-        assert!(validate(&[altered], &land, (DVec2::ZERO, DVec2::splat(1.0)), &models, &reference).is_err());
+        assert!(
+            validate(
+                &[altered],
+                &land,
+                (DVec2::ZERO, DVec2::splat(1.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_err()
+        );
     }
 }

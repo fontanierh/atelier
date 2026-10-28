@@ -92,8 +92,8 @@ fn count(cache: Res<PipelineCache>, pipelines: Res<Pipelines>) {
 }
 
 /// How many pipelines the renderer had made once the world had loaded, and since.
-#[derive(Resource)]
-struct Loaded {
+#[derive(Resource, Default)]
+pub(crate) struct Loaded {
     pipelines: usize,
 }
 

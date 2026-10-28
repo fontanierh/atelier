@@ -27,13 +27,19 @@ pub const FILE: &str = "checksums.toml";
 /// A checksum of the code that writes tiles, which goes into every tile's: the world's code but the regions list,
 /// whose regions' overlays a tile's checksum covers instead, and the shared code but the command.
 pub fn code() -> Result<Vec<u8>> {
-    let code: Vec<PathBuf> = crate::code("src/world")?
-        .into_iter()
-        .filter(|file| !file.ends_with("src/world/regions.rs") && !file.ends_with("src/main.rs"))
-        .collect();
+    let code = tile_code(crate::code("src/world")?);
     let mut digest = Sha256::new();
     crate::add_files(&mut digest, Path::new(EXPORTER), &code)?;
     Ok(digest.finalize().to_vec())
+}
+
+fn tile_code(code: Vec<PathBuf>) -> Vec<PathBuf> {
+    let schema = Path::new(EXPORTER).join("../../schemas/water");
+    code.into_iter()
+        .filter(|file| {
+            !file.ends_with("src/world/regions.rs") && !file.ends_with("src/main.rs") && !file.starts_with(&schema)
+        })
+        .collect()
 }
 
 impl Tile {
@@ -86,12 +92,17 @@ impl Tile {
             }
             digest.update(surface.name.as_bytes());
             digest.update([0]);
-            digest.update(surface.texture.as_bytes());
+            if let Some(texture) = surface.texture {
+                digest.update(texture.as_bytes());
+            }
             digest.update([0]);
             for value in surface.tint {
                 digest.update(value.to_bits().to_le_bytes());
             }
             digest.update(serde_json::to_vec(&surface.paint).expect("paint serializes"));
+            if let Some(paint) = &surface.vertex_paint {
+                digest.update(serde_json::to_vec(paint).expect("vertex paint serializes"));
+            }
             digest.update(serde_json::to_vec(&triangles).expect("source triangles serialize"));
         }
         for overlay in overlays {
@@ -177,4 +188,18 @@ pub fn write(tiles: &Path, checksums: &BTreeMap<String, String>) -> Result<()> {
         text.push_str(&format!("{tile} = \"{checksum}\"\n"));
     }
     Ok(fs::write(tiles.join(FILE), text)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn water_schema_invalidates_world_input_but_not_tile_code() {
+        let world = crate::code("src/world").unwrap();
+        let schema = Path::new(EXPORTER).join("../../schemas/water/src/lib.rs");
+        assert!(world.contains(&schema));
+        assert!(!tile_code(world).contains(&schema));
+        assert!(!crate::code("src/model").unwrap().contains(&schema));
+    }
 }

@@ -1,0 +1,5 @@
+# A painted source mesh with declared motion and collision.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "e9d501bae39efe4300cbd1a878b017d1b744c3506fadfe5f0e8909f6b33cb443"

@@ -14,7 +14,7 @@ mod source;
 
 use std::path::Path;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail, ensure};
 use glam::{DQuat, DVec3};
 use serde_json::json;
 
@@ -22,6 +22,27 @@ use crate::glb::{Glb, Material, Mesh, y_up};
 
 /// A model's version: its parts, each its triangles and how they look.
 type Version<'a> = Vec<(Mesh, Material<'a>)>;
+
+/// Check exported source foliage's primitive mapping and return the required alpha texture paths.
+pub fn required_outputs(output: &Path) -> Result<Vec<String>> {
+    let bytes = std::fs::read(output)?;
+    let header = bytes.get(12..20).context("truncated model")?;
+    ensure!(&header[4..] == b"JSON", "model needs a JSON chunk");
+    let length = u32::from_le_bytes(header[..4].try_into().unwrap()) as usize;
+    let value: serde_json::Value = serde_json::from_slice(bytes.get(20..20 + length).context("truncated model JSON")?)?;
+    let mut paths = Vec::new();
+    if let Some(nodes) = value["nodes"].as_array() {
+        for (index, node) in nodes.iter().enumerate() {
+            if node["name"] != "middle" || node["extras"].get("source_foliage").is_none() {
+                continue;
+            }
+            let expected = source::shadow_alpha_textures(&value, index)?;
+            ensure!(node["extras"]["shadow_alpha_textures"] == expected, "shadow alpha mapping is missing or stale");
+            paths.extend(expected.as_array().unwrap().iter().filter_map(|p| p.as_str().map(str::to_owned)));
+        }
+    }
+    Ok(paths)
+}
 
 /// Writes the model to `output`: `full`, then `middle` if any, then `anchors`. Fails if a version does not reach
 /// below the model's foot.
@@ -60,4 +81,37 @@ fn write(
         glb.add_marker(&format!("anchor {k}"), y_up(*anchor), DQuat::IDENTITY);
     }
     glb.write(output)
+}
+
+#[cfg(test)]
+mod shadow_tests {
+    use super::*;
+
+    #[test]
+    fn shadow_dependencies_reject_missing_or_mismatched_primitive_metadata() {
+        let mut value = json!({
+            "nodes": [{"name": "middle", "mesh": 0, "extras": {"source_foliage": {}, "shadow_alpha_textures": ["textures/leaf/leaf.alpha.ktx2"]}}],
+            "meshes": [{"primitives": [{"material": 0}]}],
+            "materials": [{"alphaMode": "MASK", "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}],
+            "textures": [{"source": 0}], "images": [{"uri": "../../textures/leaf/leaf.ktx2"}]
+        });
+        let path = std::env::temp_dir().join(format!("hakuba-shadow-metadata-{}.glb", std::process::id()));
+        let save = |value: &serde_json::Value| {
+            let json = serde_json::to_vec(value).unwrap();
+            let mut bytes = vec![0; 12];
+            bytes.extend((json.len() as u32).to_le_bytes());
+            bytes.extend(b"JSON");
+            bytes.extend(json);
+            std::fs::write(&path, bytes).unwrap();
+        };
+        save(&value);
+        assert_eq!(required_outputs(&path).unwrap(), ["textures/leaf/leaf.alpha.ktx2"]);
+        value["nodes"][0]["extras"]["shadow_alpha_textures"] = json!(["textures/wrong/wrong.alpha.ktx2"]);
+        save(&value);
+        assert!(required_outputs(&path).is_err());
+        value["nodes"][0]["extras"].as_object_mut().unwrap().remove("shadow_alpha_textures");
+        save(&value);
+        assert!(required_outputs(&path).is_err());
+        std::fs::remove_file(path).unwrap();
+    }
 }

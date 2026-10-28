@@ -12,6 +12,7 @@ path = "src/main.rs"
 [dependencies]
 geo = { version = "=0.33.1", default-features = false, features = ["earcut"] }
 anyhow = "1.0.98"
+hakuba_water_schema.workspace = true
 glam = "0.33.12"
 hound = "3.5.1"
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] }

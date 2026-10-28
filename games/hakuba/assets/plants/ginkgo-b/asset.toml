@@ -1,7 +1,7 @@
 # A smaller ginkgo, 7 m high, its leaves turned autumn gold.
 kind = "plant"
 seed = 24
-inputs_sha256 = "de975b1bf92a6f7eb8339556bf3b36df6522fa2f5d6d050be19a22c53268672b"
+inputs_sha256 = "a6ba9908a8fb4b4f23231af548f2a3096f9f3efbd0ea6579ed6d97d712d0882d"
 
 [wood]
 texture = "bark"
