@@ -1,0 +1,4 @@
+# Brinecove's palm frond material, its colour times its texture.
+path = "texture.png"
+sha256 = "d84c05471090fc897ef6014279e24a1d47a8b2b3463dc0c172f59e5b11994773"
+authoring_texture_sha256 = "6c6f7f7f78e0d57a0f56c48eb4f56cb6f5312d3bc92ff73e4990d4571f57b2de"

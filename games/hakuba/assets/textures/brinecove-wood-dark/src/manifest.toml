@@ -1,0 +1,4 @@
+# Brinecove's wood dark material, its colour times its texture.
+path = "texture.png"
+sha256 = "a992da935c0f27e6e5e48998a7e19b54c02bbb6a5bee7eef16e8b677d1191766"
+authoring_texture_sha256 = "63cdac7deb801aaecd22f54df5af223c683dad73ef7f3667167c8a1ff68d3759"

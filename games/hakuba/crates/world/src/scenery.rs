@@ -2,23 +2,25 @@
 //! model and listing where each copy stands. Once the model has loaded, each copy of a large model, such as a tree, is
 //! spawned with the model's own meshes and materials, shared by every copy, so Bevy draws them together, in one call
 //! across every tile. The copies of a small model, such as a tuft of grass, are merged instead, into one mesh per
-//! square: shadow-casting models use 16 m squares and others use 32 m. Thousands of entities would cost more to cull
-//! one by one than their few vertices cost together, and squares out of view are not drawn. Merging a large model
-//! would not pay: each merged mesh is drawn on its own.
+//! square: shadow-casting models use 32 m squares and others a whole tile. Thousands of entities would cost more to
+//! cull and draw one by one than their few vertices cost together, and squares out of view are not drawn. Merging a large model
+//! would not pay: each merged mesh is drawn on its own. A far tile shows a plant's few-triangle far version instead,
+//! and the far versions share one texture, so a far tile merges all its plants together, whatever their model: one
+//! mesh a tile, where the browser would otherwise issue a draw for each model in each of thousands of far tiles.
 //!
 //! A plant in a full tile shows its full version wherever the camera is, so it never changes as the player walks up to
 //! it, and casts the shadow of its middle version, which is never seen: the sun's shadow maps draw far fewer leaves.
 
 use std::collections::VecDeque;
 
-use bevy::asset::RenderAssetUsages;
+use bevy::asset::{RenderAssetUsages, UntypedAssetId};
 use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
-use bevy::mesh::{MeshTag, VertexAttributeValues};
+use bevy::mesh::{MeshTag, MeshVertexAttributeId, VertexAttributeValues};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
@@ -27,20 +29,20 @@ use serde::Deserialize;
 use crate::ground::built_solid;
 use crate::loading::Missing;
 use crate::look::SHADOW_ONLY;
-use crate::tiles::TILES;
+use crate::tiles::{Spawning, TILES};
 use crate::vertex_paint::{
     MotionProfile, MovingPainted, MovingPaintedMaterials, Painted, PaintedMaterials, Profile, SurfaceProfile,
 };
 use crate::water::{WaterMaterial, WaterMaterials};
 use crate::wind::{ShadowFoliage, SourceFoliage, SourceProfile, Swaying, SwayingMaterials};
 
-/// A model with fewer vertices than this has its copies merged.
-const MERGE_BELOW_VERTICES: usize = 256;
+/// A model with fewer vertices than this has its copies merged: a bush, a fern or a tuft of grass, never a tree.
+const MERGE_BELOW_VERTICES: usize = 512;
 
-/// The side of the squares whose copies of a small model are merged together, in metres: small enough that the camera
-/// sees few squares it does not need, since every vertex of grass costs its swaying in the prepass and the main pass,
-/// large enough to stay a few hundred meshes.
-const MERGED_SQUARE_M: f32 = 16.0;
+/// The side of the squares whose copies of a small, shadow-casting model are merged together, in metres: small enough
+/// that each shadow cascade draws few squares it does not need, large enough to stay a few hundred meshes. In the
+/// browser each mesh costs its draw's preparation in the prepass and the main pass, far more than its vertices.
+const MERGED_SQUARE_M: f32 = 32.0;
 
 /// The most vertices one tile's merged copies of a model may hold: past this, merging costs more memory than it saves.
 const MERGED_AT_MOST_VERTICES: usize = 500_000;
@@ -52,7 +54,7 @@ pub struct SceneryPlugin;
 
 impl Plugin for SceneryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (read, spawn).chain().in_set(Placing)).add_systems(
+        app.init_resource::<FarTiles>().add_systems(Update, (read, spawn).chain().in_set(Placing)).add_systems(
             PostUpdate,
             cull_shadows
                 .after(TransformSystems::Propagate)
@@ -92,6 +94,8 @@ fn default_shadows() -> bool {
 pub struct Waiting {
     model: Handle<Gltf>,
     middle: bool,
+    /// Its tile's root, if the tile shows plants' far versions.
+    far: Option<Entity>,
     instances: Vec<f32>,
     jobs: Option<VecDeque<Job>>,
 }
@@ -113,19 +117,62 @@ struct Job {
 #[derive(Component)]
 pub struct Placed(pub Handle<Gltf>);
 
+/// A data node whose plants' far versions wait to be merged with the rest of its tile's.
+#[derive(Component)]
+pub struct FarMerging;
+
+/// Data nodes whose copies are not all spawned yet.
+pub type Unplaced = Or<(With<Waiting>, With<FarMerging>)>;
+
+/// The far tiles still merging their plants, by tile root.
+#[derive(Resource, Default)]
+struct FarTiles(HashMap<Entity, FarTile>);
+
+#[derive(Default)]
+struct FarTile {
+    /// The tile's data nodes, which may hold plants with far versions.
+    nodes: Vec<Entity>,
+    /// The node the merged meshes are spawned under.
+    anchor: Option<Entity>,
+    groups: Vec<FarGroup>,
+}
+
+/// A far tile's copies drawn alike, merging into one mesh.
+struct FarGroup {
+    key: FarKey,
+    look: Look,
+    vertices: usize,
+    copies: VecDeque<FarCopies>,
+    mesh: Option<Mesh>,
+}
+
+/// What lets far parts merge: their texture and wind, or their material, and their vertex attributes.
+type FarKey = (UntypedAssetId, String, Vec<MeshVertexAttributeId>);
+
+struct FarCopies {
+    mesh: Handle<Mesh>,
+    vertices: usize,
+    transforms: Vec<Transform>,
+    cursor: usize,
+}
+
 /// Reads each data node of a tile as it spawns, and starts loading its model.
 fn read(
     mut commands: Commands,
     assets: Res<AssetServer>,
     added: Query<(Entity, &GltfExtras), Added<GltfExtras>>,
     parents: Query<&ChildOf>,
-    roots: Query<&WorldAssetRoot>,
+    roots: Query<(&WorldAssetRoot, Option<&Spawning>)>,
+    mut far_tiles: ResMut<FarTiles>,
 ) {
     for (entity, extras) in &added {
         // Only the tiles' data nodes: other models, such as the characters, carry extras of their own.
-        let Some(path) = parents.iter_ancestors(entity).find_map(|e| roots.get(e).ok()).and_then(|r| r.0.path()) else {
+        let Some((tile, (root, spawning))) =
+            parents.iter_ancestors(entity).find_map(|e| roots.get(e).ok().map(|root| (e, root)))
+        else {
             continue;
         };
+        let Some(path) = root.0.path() else { continue };
         if !path.path().starts_with(TILES) {
             continue;
         }
@@ -149,9 +196,14 @@ fn read(
                 continue;
             }
         };
+        let far = (copies.detail == "middle" && spawning.is_some_and(Spawning::far)).then_some(tile);
+        if far.is_some() {
+            far_tiles.0.entry(tile).or_default().nodes.push(entity);
+        }
         let waiting = Waiting {
             model: assets.load(model),
             middle: copies.detail == "middle",
+            far,
             instances: copies.instances,
             jobs: None,
         };
@@ -181,8 +233,10 @@ struct Materials<'w> {
 /// A model without either declaration MUST remain non-solid.
 ///
 /// Spawns the copies whose model has loaded. A middle tile shows the model's `middle` node, if it has one, and its
-/// `full` node otherwise; a prop's middle version is a file of its own holding only that node. A full tile shows the `full` node, and a model that has a `middle` node casts that one's
-/// shadow instead.
+/// `full` node otherwise, but a far one shows a plant's `far` node, if it has one, merged with the tile's other far
+/// versions that look alike and casting no shadow; a prop's middle version is a file of its own holding only that
+/// node. A full tile shows the `full` node, and a model that has a `middle` node casts that one's shadow instead.
+#[allow(clippy::too_many_arguments)]
 fn spawn(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -190,6 +244,8 @@ fn spawn(
     models: Models,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: Materials,
+    mut far_tiles: ResMut<FarTiles>,
+    roots: Query<(), With<WorldAssetRoot>>,
 ) {
     let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
     'copies: for (entity, mut waiting) in &mut waiting {
@@ -200,8 +256,15 @@ fn spawn(
             }
             let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
             let has_middle = gltf.named_nodes.contains_key("middle");
+            let far = waiting.far.filter(|_| gltf.named_nodes.contains_key("far"));
             // A prop's separate middle version holds only its `middle` node, which a middle tile shows.
-            let main = if waiting.middle && has_middle { "middle" } else { "full" };
+            let main = if far.is_some() {
+                "far"
+            } else if waiting.middle && has_middle {
+                "middle"
+            } else {
+                "full"
+            };
             let Some(main_handle) = gltf.named_nodes.get(main) else {
                 warn!("a model has no {main} node");
                 commands.entity(entity).remove::<Waiting>();
@@ -211,6 +274,7 @@ fn spawn(
             let collision = gltf.named_nodes.contains_key("collision");
             let solid = !collision && model_extras(main_node).is_some_and(|extras| extras.solid);
             let mut versions = match (waiting.middle, has_middle) {
+                _ if far.is_some() => vec![("far", Role::Both)],
                 (true, true) => vec![("middle", Role::Both)],
                 (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
                 (_, false) => vec![("full", Role::Both)],
@@ -295,9 +359,31 @@ fn spawn(
                 let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
                     let shadows = shadows && !matches!(look, Look::Water(_));
-                    let vertices = meshes.get(&mesh).map_or(0, Mesh::count_vertices).max(1);
+                    let Some(source) = meshes.get(&mesh) else { continue };
+                    let vertices = source.count_vertices().max(1);
+                    // A far tile is seen whole or not at all, so its alike far versions merge as one.
+                    if let Some(tile) = far
+                        && merge
+                        && !solid
+                        && let Some(far_tile) = far_tiles.0.get_mut(&tile)
+                    {
+                        let key = far_key(&materials, &look, source);
+                        far_tile.anchor.get_or_insert(entity);
+                        commands.entity(entity).insert(FarMerging);
+                        far_tile.add(
+                            key,
+                            look,
+                            FarCopies { mesh, vertices, transforms: transforms.clone(), cursor: 0 },
+                        );
+                        continue;
+                    }
                     if merge {
-                        for square in squares(&transforms, if shadows { MERGED_SQUARE_M } else { 32.0 }) {
+                        let squares: Vec<Vec<Transform>> = if shadows {
+                            squares(&transforms, MERGED_SQUARE_M).collect()
+                        } else {
+                            vec![transforms.clone()]
+                        };
+                        for square in squares {
                             jobs.push_back(Job {
                                 mesh: mesh.clone(),
                                 look: look.clone(),
@@ -334,6 +420,92 @@ fn spawn(
         if jobs.is_empty() {
             commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
         }
+    }
+    far_tiles.0.retain(|root, _| roots.contains(*root));
+    let mut done = Vec::new();
+    for (&root, tile) in &mut far_tiles.0 {
+        let merging = tile.merge(&mut meshes, &mut budget);
+        // A node whose model has not loaded yet may still bring far versions.
+        if merging || tile.nodes.iter().any(|&node| waiting.get(node).is_ok_and(|(_, w)| w.jobs.is_none())) {
+            continue;
+        }
+        for group in tile.groups.drain(..) {
+            let (Some(anchor), Some(mesh)) = (tile.anchor, group.mesh) else { continue };
+            let mut part = commands.spawn((Mesh3d(meshes.add(mesh)), Transform::IDENTITY, ChildOf(anchor)));
+            insert_look(&mut part, &group.look);
+            part.insert(NotShadowCaster);
+        }
+        for &node in &tile.nodes {
+            if let Ok(mut node) = commands.get_entity(node) {
+                node.remove::<FarMerging>();
+            }
+        }
+        done.push(root);
+    }
+    for root in done {
+        far_tiles.0.remove(&root);
+    }
+}
+
+impl FarTile {
+    /// Adds copies to the group they merge with, keeping each group's mesh within `MERGED_AT_MOST_VERTICES`.
+    fn add(&mut self, key: FarKey, look: Look, copies: FarCopies) {
+        let vertices = copies.vertices * copies.transforms.len();
+        let group = match self
+            .groups
+            .iter_mut()
+            .position(|group| group.key == key && group.vertices + vertices <= MERGED_AT_MOST_VERTICES)
+        {
+            Some(k) => &mut self.groups[k],
+            None => {
+                self.groups.push(FarGroup { key, look, vertices: 0, copies: VecDeque::new(), mesh: None });
+                self.groups.last_mut().unwrap()
+            }
+        };
+        group.vertices += vertices;
+        group.copies.push_back(copies);
+    }
+
+    /// Merges what the budget allows of the tile's waiting copies; whether any are left.
+    fn merge(&mut self, meshes: &mut Assets<Mesh>, budget: &mut Budget) -> bool {
+        for group in &mut self.groups {
+            while let Some(copies) = group.copies.front_mut() {
+                if copies.cursor == copies.transforms.len() {
+                    group.copies.pop_front();
+                    continue;
+                }
+                let count = (budget.vertices / copies.vertices).min(copies.transforms.len() - copies.cursor);
+                if count == 0 {
+                    return true;
+                }
+                let range = copies.cursor..copies.cursor + count;
+                copies.cursor += count;
+                budget.vertices -= count * copies.vertices;
+                let Some(chunk) = merged(meshes, &copies.mesh, &copies.transforms[range], false) else { continue };
+                match &mut group.mesh {
+                    Some(mesh) => {
+                        if let Err(error) = mesh.merge(&chunk) {
+                            warn!("far plants could not merge: {error}");
+                        }
+                    }
+                    None => group.mesh = Some(chunk),
+                }
+            }
+        }
+        false
+    }
+}
+
+/// Far parts merge when they show the same texture with the same wind, or the same material, and have the same vertex
+/// attributes: each model's file has a material of its own, though the far versions all show one texture.
+fn far_key(materials: &Materials, look: &Look, mesh: &Mesh) -> FarKey {
+    let attributes = mesh.attributes().map(|(attribute, _)| attribute.id).collect();
+    match look {
+        Look::SourceFoliage(material, profile) => match materials.swaying.texture_of(material) {
+            Some(texture) => (texture.untyped(), serde_json::to_string(profile).unwrap_or_default(), attributes),
+            None => (material.id().untyped(), String::new(), attributes),
+        },
+        look => (look.id(), String::new(), attributes),
     }
 }
 
@@ -415,15 +587,7 @@ fn place(
         }
         mark_solid(&mut part, job.solid);
         if !matches!(job.role, Role::Collision) {
-            match &job.look {
-                Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
-                Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
-                Look::SourceFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
-                Look::ShadowFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
-                Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
-                Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
-                Look::Water(material) => part.insert(MeshMaterial3d(material.clone())),
-            };
+            insert_look(&mut part, &job.look);
         }
         match job.role {
             Role::Both if job.shadows => {}
@@ -439,6 +603,18 @@ fn place(
             }
         }
     }
+}
+
+fn insert_look(part: &mut EntityCommands, look: &Look) {
+    match look {
+        Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
+        Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
+        Look::SourceFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
+        Look::ShadowFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
+        Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
+        Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
+        Look::Water(material) => part.insert(MeshMaterial3d(material.clone())),
+    };
 }
 
 fn model_extras(node: &GltfNode) -> Option<ModelExtras> {
@@ -736,6 +912,20 @@ enum Look {
     Water(Handle<WaterMaterial>),
 }
 
+impl Look {
+    fn id(&self) -> UntypedAssetId {
+        match self {
+            Look::Still(material) => material.id().untyped(),
+            Look::Swaying(material) => material.id().untyped(),
+            Look::SourceFoliage(material, _) => material.id().untyped(),
+            Look::ShadowFoliage(material, _) => material.id().untyped(),
+            Look::Painted(material) => material.id().untyped(),
+            Look::MovingPainted(material) => material.id().untyped(),
+            Look::Water(material) => material.id().untyped(),
+        }
+    }
+}
+
 /// The standard material Bevy made from a glTF material: the material's own asset, labelled `<label>/std`.
 fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMaterial>>) -> Handle<StandardMaterial> {
     let Some(path) = material.and_then(|material| material.path()) else { return Handle::default() };
@@ -773,6 +963,39 @@ mod tests {
 
     #[derive(Component)]
     struct TestJobs(VecDeque<Job>);
+
+    #[test]
+    fn far_tile_merges_alike_models_into_one_mesh_across_updates() {
+        let mut meshes = Assets::<Mesh>::default();
+        let cube = meshes.add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+        let wedge = meshes.add(Mesh::from(Cuboid::new(2.0, 1.0, 1.0)));
+        let vertices = meshes.get(&cube).unwrap().count_vertices();
+        let copies = |mesh: &Handle<Mesh>, n: usize| FarCopies {
+            mesh: mesh.clone(),
+            vertices,
+            transforms: (0..n).map(|x| Transform::from_xyz(x as f32, 0.0, 0.0)).collect(),
+            cursor: 0,
+        };
+        let alike: FarKey = (AssetId::<Image>::default().untyped(), String::new(), vec![Mesh::ATTRIBUTE_POSITION.id]);
+        let other: FarKey = (AssetId::<Image>::default().untyped(), String::new(), vec![Mesh::ATTRIBUTE_NORMAL.id]);
+        let mut tile = FarTile::default();
+        tile.add(alike.clone(), Look::Still(Handle::default()), copies(&cube, 30));
+        tile.add(alike, Look::Still(Handle::default()), copies(&wedge, 20));
+        tile.add(other, Look::Still(Handle::default()), copies(&cube, 5));
+        assert_eq!(tile.groups.len(), 2);
+        let mut updates = 0;
+        loop {
+            let mut budget = Budget { vertices: 10 * vertices, instances: INSTANCES_PER_UPDATE };
+            updates += 1;
+            if !tile.merge(&mut meshes, &mut budget) {
+                break;
+            }
+            assert!(updates < 10, "merging must make progress");
+        }
+        assert!(updates > 1);
+        let counts: Vec<_> = tile.groups.iter().map(|group| group.mesh.as_ref().unwrap().count_vertices()).collect();
+        assert_eq!(counts, [50 * vertices, 5 * vertices]);
+    }
 
     #[test]
     fn placement_budget_spreads_real_geometry_without_losing_copies() {

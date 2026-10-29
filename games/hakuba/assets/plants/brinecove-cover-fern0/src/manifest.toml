@@ -1,0 +1,5 @@
+# Original foliage geometry.
+path = "model.glb"
+sha256 = "e0090a16f6b8195680cdb3e18a1a4ad66829e1722120d1e406832e29d4abfa01"
+authoring_glb_sha256 = "d1980dbc42197def121ce4303e714b5603161693e481bd1690899e85640f25a1"
+conversion = "the source GLB's triangles, one primitive per material, with wind weights by material"

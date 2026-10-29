@@ -177,7 +177,10 @@ take starts and how long it lasts as `<folder name>.takes.json`, which also says
 
 **`plant`** imports a tree, a bush or a tuft of grass from a static source mesh whose vertices carry their foliage
 wind weights, with its leaves' textures and its material's wind, push and haze response, and writes it as
-`<folder name>.glb`.
+`<folder name>.glb`. The source's root `full` is the plant up close. An optional root `middle` is what middle tiles
+show and what full tiles cast as its shadow. An optional root `far`, a few cards or a few dozen triangles of leaves,
+is what middle tiles show from 320 m away. Far versions that show the same texture with the same wind merge, every
+model's copies in a tile into one mesh, so plants' far versions share one texture (`far-plants`).
 
 | Setting             | Meaning                                                                  |
 |---------------------|--------------------------------------------------------------------------|

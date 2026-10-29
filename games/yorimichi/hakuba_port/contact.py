@@ -3,14 +3,15 @@ that floats is listed.
 
     uv run python games/yorimichi/hakuba_port/contact.py
 
-For each instance in a region's `placements.json`, its model's lowest vertices (within `FOOT` of its lowest point)
-are its foot, compared with the ground pages' height under each, blended as the exporter blends it. A model is buried
-if its highest point is below the ground under its centre, and adrift if its whole foot is more than `ADRIFT` above
-the ground; either fails the check. A model floats if its whole foot is more than `FLOAT` above the ground, as a roof
+For each instance in a region's `placements.json`, its model's lowest vertices (within `FOOT` of its lowest point,
+at most `POINTS` of them) are its foot. The model stands at its height or, for a group on the ground, that far above
+the ground under its origin; each foot vertex is compared with the ground pages' height under it, blended as the
+exporter blends it. A model is buried if none of its vertices (at most `POINTS` of them) is above the ground under
+it, and adrift if its whole foot is more than `ADRIFT` above the ground; either fails the check, as does a model on
+the ground whose origin is off it. A model floats if its whole foot is more than `FLOAT` above the ground, as a roof
 or a lantern may, and is sunk if its whole foot is more than `SUNK` under it, as a foundation on a slope may; both
 are counted for review."""
 import json
-import math
 import sys
 from pathlib import Path
 
@@ -22,6 +23,8 @@ FOOT = 0.25
 FLOAT = 0.3
 SUNK = 3.0
 ADRIFT = 100.0
+POINTS = 64
+FLUSH = 0.005
 
 
 def mosaic(world):
@@ -68,29 +71,47 @@ def main():
                 points = np.unique(tris.reshape(-1, 3), axis=0)
                 east, north, up = points[:, 0], -points[:, 2], points[:, 1]
                 low = up.min()
-                foot = up <= low + FOOT
-                feet[model] = (east[foot], north[foot], up[foot], up.max())
-            east, north, up, top = feet[model]
-            for x, y, z, yaw, scale in group['instances']:
-                turn = math.radians(yaw)
-                cos, sin = math.cos(turn), math.sin(turn)
-                fx, fy = x + scale * (cos * east - sin * north), y + scale * (sin * east + cos * north)
-                ground = ground_at(heights, south_west, step, fx, fy)
-                over = ~np.isnan(ground)
-                if not over.any():
-                    continue
-                checked += 1
-                gap = z + scale * up[over] - ground[over]
-                centre = ground_at(heights, south_west, step, np.array([x]), np.array([y]))[0]
-                where = f'{region} {model} at {x:.1f}, {y:.1f}'
-                if not np.isnan(centre) and z + scale * top < centre:
+                foot = np.flatnonzero(up <= low + FOOT)
+                # At most `POINTS` of the foot, evenly spread through it, keep a large group's check small.
+                foot = foot[np.linspace(0, len(foot) - 1, min(len(foot), POINTS)).astype(int)]
+                # And at most `POINTS` of all its vertices, from low to high, to tell whether any shows.
+                body = np.argsort(up)[np.linspace(0, len(up) - 1, min(len(up), POINTS)).astype(int)]
+                feet[model] = (east[foot], north[foot], up[foot], (east[body], north[body], up[body]))
+            east, north, up, body = feet[model]
+            rows = np.array(group['instances'], float).reshape(-1, 5)
+            x, y, z, scale = rows[:, :1], rows[:, 1:2], rows[:, 2], rows[:, 4:5]
+            turn = np.radians(rows[:, 3:4])
+            def under(east, north):
+                # The ground under each of the model's points, for each instance.
+                fx = x + scale * (np.cos(turn) * east - np.sin(turn) * north)
+                fy = y + scale * (np.sin(turn) * east + np.cos(turn) * north)
+                return ground_at(heights, south_west, step, fx, fy)
+
+            ground = under(east, north)
+            centre = ground_at(heights, south_west, step, x[:, 0], y[:, 0])
+            if group.get('on_ground'):
+                # A height on the ground is an offset above the ground under the model's origin.
+                z = z + centre
+            over = ~np.isnan(ground)
+            seen = over.any(axis=1)
+            checked += int(seen.sum())
+            gap = np.where(over, z[:, None] + scale * up - ground, np.nan)
+            # A point over no ground shows, and so does one within `FLUSH` of the ground, as a leaf lying on it.
+            showing = ~(z[:, None] + scale * body[2] <= under(body[0], body[1]) + FLUSH)
+            with np.errstate(all='ignore'):
+                lowest, highest = np.nanmin(gap, axis=1), np.nanmax(gap, axis=1)
+            for i in np.flatnonzero(seen):
+                where = f'{region} {model} at {x[i, 0]:.1f}, {y[i, 0]:.1f}'
+                if np.isnan(z[i]):
+                    failed.append(f'{where}: stands on the ground but its origin is off it')
+                elif not showing[i].any():
                     failed.append(f'{where}: buried')
-                elif gap.min() > ADRIFT:
-                    failed.append(f'{where}: adrift {gap.min():.0f} m above the ground')
-                elif gap.max() < -SUNK:
-                    sunk.setdefault(region, []).append(f'{where}: {-gap.max():.2f} m under')
-                elif gap.min() > FLOAT:
-                    floating.setdefault(region, []).append(f'{where}: {gap.min():.2f} m above')
+                elif lowest[i] > ADRIFT:
+                    failed.append(f'{where}: adrift {lowest[i]:.0f} m above the ground')
+                elif highest[i] < -SUNK:
+                    sunk.setdefault(region, []).append(f'{where}: {-highest[i]:.2f} m under')
+                elif lowest[i] > FLOAT:
+                    floating.setdefault(region, []).append(f'{where}: {lowest[i]:.2f} m above')
     print(f'{checked} instances over the ground checked')
     for kind, found in (('float', floating), ('sunk', sunk)):
         for region, items in sorted(found.items()):

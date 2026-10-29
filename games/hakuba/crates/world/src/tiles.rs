@@ -11,10 +11,15 @@ use hakuba_settings::Settings;
 
 use crate::ground::{self, PendingSolid};
 use crate::loading::{Loaded, Missing};
-use crate::scenery::{Placed, Placing, Waiting};
+use crate::scenery::{FarMerging, Placed, Placing, Waiting};
 use crate::vertex_paint::{SurfaceFailed, SurfaceWaiting};
 
 const MIDDLE_M: f32 = 2500.0;
+/// From how far from the camera, to a tile's centre, a middle tile shows its plants' far versions, merged: there a
+/// tree is a few pixels tall, and the forests on every hill around would otherwise be hundreds of thousands of copies.
+const FAR_M: f32 = 320.0;
+/// How far past [`FAR_M`] a tile keeps its version, so a camera moving to and fro across it does not respawn the tile.
+const FAR_MARGIN_M: f32 = 16.0;
 /// The most tiles that load at once, so the nearest are not kept waiting behind the far.
 const LOADING: usize = 16;
 /// The most tiles that load at once under the splash, when nothing is drawn yet; a browser refuses thousands of
@@ -44,6 +49,8 @@ impl Plugin for TilesPlugin {
 enum Detail {
     Full,
     Middle,
+    /// The middle version, showing its plants' far versions.
+    Far,
 }
 
 #[derive(Component)]
@@ -87,15 +94,22 @@ impl Tile {
 
 #[derive(Component)]
 pub struct Spawning(Entity, Detail);
+
+impl Spawning {
+    /// Whether this version shows its plants' far versions.
+    pub fn far(&self) -> bool {
+        self.1 == Detail::Far
+    }
+}
 #[derive(Component)]
 struct SceneReady(u32);
 #[derive(Component)]
 struct Prepared;
 
-/// Picks each tile's version by its distance from the camera: full detail near, middle detail out to [`MIDDLE_M`],
-/// nothing beyond, the nearest first, at most [`LOADING_UNDER_SPLASH`] at once until the world has loaded and
-/// [`LOADING`] afterwards. A tile waiting its turn is queued, so the splash holds until all it shows is ready. A tile
-/// leaving every version is dropped at once.
+/// Picks each tile's version by its distance from the camera: full detail near, middle detail out to [`MIDDLE_M`]
+/// (from [`FAR_M`] with its plants' far versions), nothing beyond, the nearest first, at most
+/// [`LOADING_UNDER_SPLASH`] at once until the world has loaded and [`LOADING`] afterwards. A tile waiting its turn is
+/// queued, so the splash holds until all it shows is ready. A tile leaving every version is dropped at once.
 fn choose(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -111,7 +125,10 @@ fn choose(
         let distance = (tile.centre - eye).with_y(0.0).length();
         let detail = match distance {
             d if d < settings.detail.full_m() => Some(Detail::Full),
-            d if d < MIDDLE_M => Some(Detail::Middle),
+            d if d < FAR_M + if tile.detail == Some(Detail::Middle) { FAR_MARGIN_M } else { -FAR_MARGIN_M } => {
+                Some(Detail::Middle)
+            }
+            d if d < MIDDLE_M => Some(Detail::Far),
             _ => None,
         };
         loading += usize::from(tile.pending.is_some());
@@ -211,7 +228,7 @@ fn scene_ready(
 }
 
 type PendingScene = (Entity, &'static SceneReady, &'static WorldAssetRoot);
-type WaitingForContent = Or<(With<Waiting>, With<SurfaceWaiting>)>;
+type WaitingForContent = Or<(With<Waiting>, With<FarMerging>, With<SurfaceWaiting>)>;
 
 /// Only a later Update can observe every data node read by Placing after the scene-spawn schedule.
 fn prepare(
@@ -342,7 +359,7 @@ mod tests {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
         app.init_resource::<Settings>().init_resource::<Loaded>();
-        app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(1000.0, 0.0, 0.0))));
+        app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(250.0, 0.0, 0.0))));
         let owner = app.world_mut().spawn(Tile::named("tile 1 2", Vec3::ZERO).unwrap()).id();
         let old = app.world_mut().spawn((ChildOf(owner), Visibility::Inherited)).id();
         let pending = app.world_mut().spawn((ChildOf(owner), Visibility::Hidden, Spawning(owner, Detail::Full))).id();
@@ -393,6 +410,31 @@ mod tests {
         app.init_resource::<Loaded>();
         app.world_mut().run_system_once(choose).unwrap();
         assert_eq!(count(&app, |tile| tile.pending.is_some()), LOADING, "once loaded, at most LOADING at once");
+    }
+
+    #[test]
+    fn tiles_past_the_far_distance_load_the_middle_file_showing_far_plants() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<bevy::world_serialization::WorldAsset>();
+        app.init_resource::<Settings>();
+        app.world_mut().spawn((Camera3d::default(), GlobalTransform::IDENTITY));
+        let near = app
+            .world_mut()
+            .spawn(Tile::named("tile 1 1", Vec3::new(FAR_M - 2.0 * FAR_MARGIN_M, 0.0, 0.0)).unwrap())
+            .id();
+        let far = app
+            .world_mut()
+            .spawn(Tile::named("tile 2 1", Vec3::new(FAR_M + 2.0 * FAR_MARGIN_M, 0.0, 0.0)).unwrap())
+            .id();
+        app.world_mut().run_system_once(choose).unwrap();
+        for (tile, detail) in [(near, Detail::Middle), (far, Detail::Far)] {
+            let tile = app.world().get::<Tile>(tile).unwrap();
+            assert_eq!(tile.detail, Some(detail));
+            let spawning = app.world().get::<Spawning>(tile.pending.unwrap()).unwrap();
+            assert_eq!(spawning.far(), detail == Detail::Far);
+            assert!(tile.path(detail).ends_with(".middle.glb"), "a far tile is the middle version");
+        }
     }
 
     #[test]

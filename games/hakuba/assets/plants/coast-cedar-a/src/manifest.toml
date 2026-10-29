@@ -1,6 +1,8 @@
 # Original cedar geometry and source detail levels.
 path = "model.glb"
-sha256 = "fede4b8e06a0d00546741b02ad22874ade6d99215f01244e08e27537bd82aecf"
+sha256 = "cc6fff18a3959cc3f5c083d8fcf65a073df6bf152e7d64986587e39404955a62"
 authoring_fbx_sha256 = "ea034d2474c3fe32dbced2ba17ae88c43921fe1c5f3556d15241cd618e7f457a"
 authoring_lod2_fbx_sha256 = "8033a30eabd2c701587f8de94bb92bc049646c94acc7554277ad6a5535d64b7e"
 conversion = "FBX SDK 2020.2 triangulation; full LOD0 and middle LOD2 retain per-corner positions, normals, UVs and RGBA"
+authoring_far_fbx_sha256 = "1d0f13760dbfd1b7db06fac289add49e05cc86b32275281dacd302be5a9dfdcd"
+far_conversion = "Blender FBX import of LOD4, retaining per-corner positions, normals, UVs and RGBA"
