@@ -11,7 +11,9 @@ Hakuba's Crater Park props in place of the park's riding pieces.
 
 - **Ground:** Hakuba's ground heights, triangulated with its own diagonals (`world/src/ground`), as one terrain owner.
   Each station's floor stands 0.55 m over the highest ground under it, on timber posts with stone feet; each tower's
-  datum is over the highest ground under its feet; the access stairs come down to the ground.
+  datum is over the highest ground under its feet; the access stairs come down to the ground, Hidamari's and the
+  southeast rim's with their own fits (`ACCESS_FITS`, through `site.access_stair`'s `fit`), so that no ground rises
+  through a floor past site's own 3 cm allowance and no join face overlaps another.
 - **Gates kept:** every fitted mesh is closed, without coplanar overlaps, seated and carried by the ground; static
   supports and stairs leave the park's riding pieces untouched; the cabin's path clears the park's riding and jump
   geometry by 15 m, the ground by 6 m outside the 35 m station approaches; the jaws seat on the rope and the cabin
@@ -71,24 +73,15 @@ from gondola.clearance import riding_clearance  # noqa: E402
 STRETCH_M = 60.0
 # Hakuba's ground cells, as the gondola surfaces bin their triangles.
 CELL_M = 32.0
-# Coplanar overlap a fitted mesh may keep, in all.
-COPLANAR_M2 = 0.25
-# How far Hakuba's ground may rise through an access stair's ground join (`site.access_stair` allows 3 cm over
-# Yorimichi's finer terrain; Hakuba's is drawn on 2 m triangles that the join's sampled edge can cut across).
-INTRUSION_M = 0.08
-INTRUSIONS = []
-
-
-def floor_intrusion(G, polygon, heights):
-    """`support.floor_intrusion`, recorded, failing past INTRUSION_M; `site.access_stair` sees at most its own 3 cm."""
-    value = _floor_intrusion(G, polygon, heights)
-    INTRUSIONS.append(value)
-    if value > INTRUSION_M:
-        raise ValueError(f'Hakuba\'s ground rises {value:.3f} m through an access floor')
-    return min(value, .03)
-
-
-_floor_intrusion, S.floor_intrusion = S.floor_intrusion, floor_intrusion
+# Access stairs fitted to Hakuba's ground where the station's own search (or authored fit) leaves its ground join cut
+# by Hakuba's 2 m triangles: at Hidamari a triangle edge 1 mm inside the stair's side makes a sliver join face that
+# overlaps its neighbour, and at the southeast rim the ground crests 4.8 cm through the last tread. Each fit was chosen
+# for no coplanar overlap and the least ground through any floor: 4 mm at Hidamari (site's own allowance is 3 cm),
+# none at the southeast rim.
+ACCESS_FITS = {
+    'hidamari': {'risers': 11, 'run_m': 4.3, 'join_m': 0.6},
+    'southeast': {'risers': 6, 'run_m': 3.6, 'join_m': 0.8},
+}
 # Cabins per line, as Yorimichi's service runs them.
 CABINS = {'L1': 12, 'L2': 12, 'L3': 4}
 # A cabin this close to a station's mouth is at its attach zone, which the kit's loop audit covers.
@@ -254,9 +247,8 @@ def export(mesh, folder, mats):
 
 
 def export_world(mesh, folder, mats, G, frame, riding_triangles, limit=50000, seats=()):
-    """`site.export_world`'s gates over Hakuba's ground: closed, within its budget, clear of the riding pieces, seated
-    and carried by the ground. Coplanar overlaps, which Hakuba's ground can make where two access floors meet, are
-    recorded and fail only past COPLANAR_M2 in all. Returns the file name and the proofs."""
+    """`site.export_world`'s gates over Hakuba's ground: closed, within its budget, clear of the riding pieces, without
+    coplanar overlaps, seated and carried by the ground. Returns the file name and the proofs."""
     xy = S.world_xy(np.asarray(mesh.verts, float)[:, :2], frame)
     G.surface.cover(xy.min(0) - 2, xy.max(0) + 2)
     proof = solid.closed(mesh)
@@ -267,7 +259,7 @@ def export_world(mesh, folder, mats, G, frame, riding_triangles, limit=50000, se
     area = sum(sample['area_m2'] for sample in samples)
     seating = solid.seats([mesh], seats)
     summary, failures = solid._shared.carried_failures([mesh], S.world_ground(mesh, frame, G))
-    if area > COPLANAR_M2 or failures or any(row['status'] != 'ok' for row in seating):
+    if count or failures or any(row['status'] != 'ok' for row in seating):
         raise ValueError(f'{mesh.name}: coplanar/seating/carried proof failed: {samples}, {seating}, {failures}')
     name = export(mesh, folder, mats)
     return name, {'name': mesh.name, 'triangles': mesh.tris(), 'closed': proof,
@@ -334,7 +326,7 @@ def main():
             for shell in shells[data['kind']].values():
                 S.untouched_riding(shell, frame, ride)
             foundation, posts = S.station_foundation(key, layouts[data['kind']], G, frame)
-            stair, access = S.access_stair(key, layouts[data['kind']], G, frame)
+            stair, access = S.access_stair(key, layouts[data['kind']], G, frame, fit=ACCESS_FITS.get(key))
             loop = R.station_loop(p['gauge'] / 2, d['rope_height_above_platform'], d['rope_height_above_platform'], 7.6,
                                   p['rope_radius'], step=.5).pts
             data['jump'] = S.station_jump_clearance(S.placed(loop, frame), ride,
@@ -345,8 +337,7 @@ def main():
             piece(name, f"{spec['name']}'s stair down to the ground", [placement(frame)])
             kinds_used.add(data['kind'])
             data.update(posts=len(posts), access={k: access[k] for k in ('width', 'risers', 'riser', 'tread')},
-                        ground_through_access_m=max(INTRUSIONS, default=0.0))
-            INTRUSIONS.clear()
+                        access_ground=access['ground_proof'])
             proofs['stations'][key] = {k: v for k, v in data.items() if k not in ('footprints',)}
             frames[key] = (frame, data)
         A, B = np.asarray(S.STATIONS[first]['mouth']), np.asarray(S.STATIONS[last]['mouth'])

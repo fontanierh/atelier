@@ -357,7 +357,8 @@ def gondola(build):
 def ferry(build):
     """The passenger ferry, docked at Hidamari's berth, and its two terminals, in their materials' flat colours: the
     ship and the terminals draw no images. The Hidamari terminal is modelled in map metres, the Brinecove one in
-    Brinecove's own frame, moved onto the map by its recorded offset."""
+    Brinecove's own frame, moved onto the map by its recorded offset. The hull, each landing and each brow are solid,
+    so the walk from the quay onto the deck has collision all the way."""
     ship = build / 'ferry'
     terminals = json.loads((ship / 'terminals' / 'manifest.json').read_text())
     site = json.loads((ship / 'terminals' / 'site.json').read_text())
@@ -380,9 +381,10 @@ def ferry(build):
         for mesh in terminal['meshes']:
             part = mesh.removeprefix(f'FT_{prefix}_')
             name = f'ferry-{key}-{kebab(part)}'
+            # The landing carries the terminal's fixed hulls; the brow, which swings in the source game, its own.
             own = part == landing
             region.models[name] = Model(
-                ship / 'terminals' / 'assets' / f'{mesh}.fbx', slots=slots, solid=own,
+                ship / 'terminals' / 'assets' / f'{mesh}.fbx', slots=slots, solid=own or part == 'Brow',
                 collision=ship / 'terminals' / 'assets' / f'FT_{prefix}_Collision.fbx' if own else None,
                 about=f"The {kebab(part).replace('-', ' ')} of the ferry terminal at {key.title()}.")
             region.groups.append((name, None, at))

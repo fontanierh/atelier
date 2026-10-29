@@ -1,6 +1,6 @@
 {"groups":[
 {"model":"props/gondola-hidamari-foundation","afar":true,"instances":[[1125.4812,441.1828,43.9713,87.8321,1.0]]},
-{"model":"props/gondola-hidamari-access","afar":false,"instances":[[1141.2237,436.9843,44.6681,87.8321,1.0]]},
+{"model":"props/gondola-hidamari-access","afar":false,"instances":[[1141.3436,436.9797,44.6681,87.8321,1.0]]},
 {"model":"props/gondola-southeast-foundation","afar":true,"instances":[[1176.0177,2053.7605,682.9679,-92.1679,1.0]]},
 {"model":"props/gondola-southeast-access","afar":true,"instances":[[1252.6225,2280.8575,699.5373,-92.1679,1.0]]},
 {"model":"props/gondola-l1-0-tower","afar":true,"instances":[[1121.3259,490.0259,46.81,87.8321,1.0]]},

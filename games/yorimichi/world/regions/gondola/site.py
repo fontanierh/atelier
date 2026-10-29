@@ -434,7 +434,9 @@ def emit_tower_landing_and_hoist_portal(mesh, rail_layout, G, frame):
     return supports
 
 
-def access_stair(key,layout,G,frame):
+def access_stair(key,layout,G,frame,fit=None):
+    """The station's stair down to the ground. `fit` replaces the station's authored access fit (risers, run_m,
+    join_m and optional tread_m, flights, landing_m): a port of the network onto other ground fits its own."""
     access=layout['access'][0]
     edge=np.asarray(access['edge'],float);start=edge.mean(0)
     across=edge[1]-edge[0];across/=np.linalg.norm(across)
@@ -488,7 +490,7 @@ def access_stair(key,layout,G,frame):
             # supplies the other end of this short separator rail.
             railing(mesh,rail_layout,[entry[1],exit_[1]],'timber',z0=top,
                     on=('access_landing',),start_post=False)
-    fit=STATIONS[key].get('access_fit')
+    fit=STATIONS[key].get('access_fit') if fit is None else fit
     join_length=.8;tread=.32
     if fit is not None:
         n,length,join_length=fit['risers'],fit['run_m'],fit['join_m']
