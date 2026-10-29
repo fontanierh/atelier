@@ -1,0 +1,7 @@
+# The Belmonte train's second class and canteen, from outside, standing at a terminus, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["railway-underframe"]
+own_textures = ["railway-blue-panel-worn", "railway-blue-worn", "railway-dark-worn", "railway-ivory-worn", "railway-paint-peel", "railway-roof-worn"]
+solid = true
+inputs_sha256 = "bed50a43c19c511f754e86f642dc21a0fd442dbeed3f3afc872f1642180769d4"

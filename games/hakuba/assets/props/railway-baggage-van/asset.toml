@@ -1,0 +1,6 @@
+# The Belmonte train's baggage van, from outside, standing at a terminus, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["railway-blue-panel", "railway-ivory", "railway-roof", "railway-underframe", "railway-walnut"]
+solid = true
+inputs_sha256 = "8491f7a29176c313be59cbf1848810429d2b4e089c4fd7537ca6a328967e9c82"

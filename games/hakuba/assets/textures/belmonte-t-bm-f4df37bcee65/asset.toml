@@ -1,5 +1,5 @@
-# The t bm f4df37bcee65 texture that the belmonte props draw.
+# A texture that the belmonte props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "098f0f77a41c0812dbed46c63eddf15b686effd2f074195cb66ad642ce83b76d"
+inputs_sha256 = "5a8681018c02096c00e209a35416f63d6d804668a290f527474d3cea1b1ec268"

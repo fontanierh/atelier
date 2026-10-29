@@ -1,0 +1,5 @@
+# A turnout at an end of the passing loop, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "f485f379dec922c7bf4f407beb025db95490da7a86755786419a245e36370678"

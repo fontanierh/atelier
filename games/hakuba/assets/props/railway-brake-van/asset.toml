@@ -1,0 +1,7 @@
+# The Belmonte train's rear brake van, from outside, standing at a terminus, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["railway-blue-panel", "railway-ivory", "railway-roof", "railway-underframe", "railway-walnut"]
+own_textures = ["railway-panel-tall"]
+solid = true
+inputs_sha256 = "c8aec2ce651a71a4322fd9aa8aed83d89ac39cee5beea18d92d57cedd504dccb"

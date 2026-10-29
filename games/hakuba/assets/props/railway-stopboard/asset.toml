@@ -1,0 +1,5 @@
+# A stop board, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "648cf35eaf439948e5972409017cd264d166f4896835b75a72f5a91174e4b86a"

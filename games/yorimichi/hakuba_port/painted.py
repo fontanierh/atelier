@@ -1,7 +1,10 @@
-"""Writes Hakuba's prop source GLBs: a `full` node coloured per vertex in linear RGB, or drawn with textured
-materials, and an optional `collision` node. Plain NumPy, so both `convert.py` in Blender and `crater_park.py` without
-it write the same shape."""
+"""Hakuba's prop source GLBs, in plain NumPy: `glb` writes a `full` node coloured per vertex in linear RGB, or drawn
+with textured materials, and an optional `collision` node; `prop` writes one prop with its origin at its footprint's
+centre; `read` returns another GLB's triangles; `rename_images` repoints a GLB's images. `convert.py` in Blender,
+`crater_park.py` and `transport.py` without it all write the same shape."""
+import base64
 import json
+import struct
 
 import numpy as np
 
@@ -112,6 +115,110 @@ def glb(nodes, path, materials=None):
         f.write(b'glTF' + (2).to_bytes(4, 'little') + (28 + len(text) + len(blob)).to_bytes(4, 'little'))
         f.write(len(text).to_bytes(4, 'little') + b'JSON' + text)
         f.write(len(blob).to_bytes(4, 'little') + b'BIN\0' + bytes(blob))
+
+
+def prop(position, normal, colour, triangles, output, textured=None):
+    """Write one prop: corners' map-frame `position`, `normal` and linear `colour` (RGB or RGBA) and `triangles` of
+    corner indices, painted per vertex (alpha 0, no motion), or with `textured`, (uv, face material, materials) as
+    `glb` takes them, drawn as a textured surface times that colour, materials that draw alike joined. Its origin
+    moves to the centre of its footprint, 1 cm above its lowest point, as `convert.py` places it; returns that origin
+    in the source frame and the model's size."""
+    position = np.asarray(position, np.float64)
+    colour = np.asarray(colour, np.float32)
+    if colour.shape[1] == 3:
+        colour = np.hstack([colour, np.full((len(colour), 1), 1.0 if textured else 0.0, np.float32)])
+    triangles = np.asarray(triangles, np.int64).reshape(-1, 3)
+    used = position[np.unique(triangles)]
+    low, high = used.min(axis=0), used.max(axis=0)
+    origin = np.array([(low[0] + high[0]) / 2, (low[1] + high[1]) / 2, low[2] + 0.01])
+    node = ['full', SURFACE if textured else {'vertex_paint': PAINT}, position - origin,
+            np.asarray(normal, np.float32), colour, triangles]
+    materials = None
+    if textured:
+        uv, face_material, materials = textured
+        # Materials that draw alike (the same texture, colour and sides) become one, drawn as one part.
+        keys = [(m['texture'], tuple(m['colour']), m['two_sided']) for m in materials]
+        kinds = list(dict.fromkeys(keys))
+        alike = np.array([kinds.index(key) for key in keys])
+        materials = [materials[keys.index(key)] for key in kinds]
+        node += [np.asarray(uv, np.float32), alike[np.asarray(face_material)]]
+    glb([tuple(node)], output, materials)
+    return origin.tolist(), float(max(high - low))
+
+
+def _matrix(node):
+    if 'matrix' in node:
+        return np.array(node['matrix'], float).reshape(4, 4).T
+    x, y, z, w = node.get('rotation', [0.0, 0.0, 0.0, 1.0])
+    r = np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                  [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                  [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+    m = np.eye(4)
+    m[:3, :3] = r * np.array(node.get('scale', [1.0, 1.0, 1.0]))
+    m[:3, 3] = node.get('translation', [0.0, 0.0, 0.0])
+    return m
+
+
+def read(path):
+    """A GLB's document, its images' bytes by index, and every mesh node's triangles in the map frame (x east, y north,
+    z up): (corner positions (n, 3, 3), corner normals (n, 3, 3), corner UVs (n, 3, 2), the material index per
+    triangle), with each node's transform applied."""
+    data = open(path, 'rb').read()
+    length = struct.unpack_from('<I', data, 12)[0]
+    doc = json.loads(data[20:20 + length])
+    binary = data[20 + length + 8:]
+
+    def accessor(index):
+        acc = doc['accessors'][index]
+        view = doc['bufferViews'][acc['bufferView']]
+        kind = {5126: '<f4', 5125: '<u4', 5123: '<u2', 5121: 'u1'}[acc['componentType']]
+        width = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4}[acc['type']]
+        start = view.get('byteOffset', 0) + acc.get('byteOffset', 0)
+        out = np.frombuffer(binary, kind, acc['count'] * width, start).reshape(-1, width).astype(np.float64)
+        if acc.get('normalized'):
+            out /= {5123: 65535.0, 5121: 255.0}[acc['componentType']]
+        return out
+
+    images = {}
+    for k, image in enumerate(doc.get('images', [])):
+        if 'bufferView' in image:
+            view = doc['bufferViews'][image['bufferView']]
+            start = view.get('byteOffset', 0)
+            images[k] = binary[start:start + view['byteLength']]
+        elif image.get('uri', '').startswith('data:'):
+            images[k] = base64.b64decode(image['uri'].split(',', 1)[1])
+    up = np.array([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], float)  # glTF Y-up to map Z-up
+    parts = []
+
+    def visit(index, parent):
+        node = doc['nodes'][index]
+        m = parent @ _matrix(node)
+        if 'mesh' in node:
+            normal_m = np.linalg.inv(m[:3, :3]).T
+            for primitive in doc['meshes'][node['mesh']]['primitives']:
+                if primitive.get('mode', 4) != 4:
+                    continue
+                attrs = primitive['attributes']
+                p = accessor(attrs['POSITION'])
+                n = accessor(attrs['NORMAL']) if 'NORMAL' in attrs else np.zeros_like(p)
+                uv = accessor(attrs['TEXCOORD_0']) if 'TEXCOORD_0' in attrs else np.zeros((len(p), 2))
+                if 'indices' in primitive:
+                    idx = accessor(primitive['indices']).astype(np.int64).ravel()
+                else:
+                    idx = np.arange(len(p))
+                p = (up @ np.c_[p @ m[:3, :3].T + m[:3, 3], np.ones(len(p))].T).T[:, :3]
+                n = n @ normal_m.T
+                n = (up[:3, :3] @ n.T).T
+                n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+                tri = idx.reshape(-1, 3)
+                parts.append((p[tri], n[tri], uv[tri], np.full(len(tri), primitive.get('material', -1))))
+        for child in node.get('children', []):
+            visit(child, m)
+
+    scene = doc.get('scenes', [{}])[doc.get('scene', 0)]
+    for root in scene.get('nodes', range(len(doc['nodes']))):
+        visit(root, np.eye(4))
+    return doc, images, parts
 
 
 def rename_images(path, names):

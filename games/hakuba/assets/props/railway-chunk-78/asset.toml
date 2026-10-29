@@ -1,0 +1,6 @@
+# A hundred-metre stretch of track, with its sleepers, on the Belmonte railway, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["belmonte-t-bm-0fe86703fe93", "belmonte-t-bm-bb1c8b9d4039"]
+solid = true
+inputs_sha256 = "e872bba3f7ef2b6dea1c57cde06a27a5e52a3e65125bc6f8063517f9d012ad2d"

@@ -1,0 +1,6 @@
+# A stretch of a viaduct's arches, on the Belmonte railway, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["belmonte-t-bm-0d86c8bae5dc", "belmonte-t-bm-de86965ec07c"]
+solid = true
+inputs_sha256 = "b1486e685275b6842324331a514722c63ba2cd262f8f06aeabfbe59eb577c2cb"

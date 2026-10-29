@@ -1,0 +1,5 @@
+# A texture that the megapark props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "0a547ba67484b9eb3b0bb7cd3da773f9bbfaf4a28cd646e2cd2e9455f066c015"

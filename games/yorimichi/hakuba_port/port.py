@@ -77,6 +77,15 @@ def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def describe(texture, region):
+    """A ported texture asset's description, from its name less the region's prefix: `The <words> texture that the
+    <region> props draw.`, or `A texture that the <region> props draw.` when the name holds no words (an id)."""
+    words = texture.removeprefix(region + '-').split('-')
+    if not any(re.fullmatch(r'[a-z]{3,}', w) and not re.fullmatch(r'[a-f]{6,}', w) for w in words):
+        return f'A texture that the {region} props draw.'
+    return f'The {" ".join(words)} texture that the {region} props draw.'
+
+
 def write_texture(name, source, about):
     """`source` as the texture asset `name`, in BC7 blocks, its sides rounded up to powers of two of at most
     `LONGEST` texels."""
@@ -186,10 +195,11 @@ def jobs(region, scratch):
                     while texture in textures.values():
                         texture += '-b'
                     textures[image] = texture
-                    words = texture.removeprefix(region.name + '-').replace('-', ' ')
-                    write_texture(texture, image, f'The {words} texture that the {region.name} props draw.')
+                    write_texture(texture, image, describe(texture, region.name))
                 rule = {key: value for key, value in rule.items() if key not in ('mean', 'sample')}
-                rule['texture'], rule['mean_rgb'] = textures[image], means.setdefault(image, mean(image))
+                if image not in means:
+                    means[image] = mean(image)
+                rule['texture'], rule['mean_rgb'] = textures[image], means[image]
             rules[slot] = rule
         default = rules.pop(None)
         job = {'source': str(model.source), 'output': str(out), 'slots': rules, 'default': default,
