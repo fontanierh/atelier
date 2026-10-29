@@ -1,7 +1,7 @@
 # A street lamp's arm and head, 7.9 m up, made to stand on a utility pole: its arm leaves the pole at 7.4 m and
 # reaches 1.5 m along its y. It reaches down inside the pole to the ground, so it stands as the pole does.
 kind = "prop"
-inputs_sha256 = "ee96bb1aeb6ed0be43357ecc89d4ab6b79fb87307725e2e1b0245e02f24d5cb4"
+inputs_sha256 = "feee8c150889aa7af8b5eaa1612314a029784f736c2952caefee0cd217634f1b"
 
 [materials]
 metal = [0.35, 0.35, 0.37]

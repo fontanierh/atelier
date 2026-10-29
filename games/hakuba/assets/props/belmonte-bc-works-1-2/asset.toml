@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["belmonte-t-bm-0d86c8bae5dc", "belmonte-t-bm-70491bcd4c11", "belmonte-t-bm-96d3faa5f412"]
 solid = true
-inputs_sha256 = "e1b6e47fb8fcb584f24fb83c1314ff13916071d9a6e974f0487524775daa7984"
+inputs_sha256 = "0c63bb87a1c9704c47a36f3efd0df55f9005141b68b4b68a5fb3f9928964c594"

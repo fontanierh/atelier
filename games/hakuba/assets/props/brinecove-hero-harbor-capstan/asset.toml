@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["brinecove-t-bc-hero-harbor-capstan-0", "brinecove-t-bc-hero-harbor-capstan-1", "brinecove-t-bc-hero-harbor-capstan-2", "brinecove-t-bc-hero-harbor-capstan-3"]
 solid = true
-inputs_sha256 = "40f40ec5f49ec435598b0cd912d9d372dbc0109774f5871d6f57a9dc7bdcb57b"
+inputs_sha256 = "056904c3f15d5ad66166dbc0d31ab1233bf907090c716ca329791f2443573389"

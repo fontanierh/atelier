@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-bonsai-shelf"]
 solid = true
-inputs_sha256 = "15b147c2b46c6757c952774f796c46affec5eb254bd81bad7b7f8eba519ca791"
+inputs_sha256 = "fe3d5c4659858d3638e8011e036976f458b2ec832a2ef6ca149d7c4a1c97fd51"

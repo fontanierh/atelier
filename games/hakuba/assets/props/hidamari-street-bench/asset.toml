@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-street-bench"]
 solid = true
-inputs_sha256 = "68a4d5b502a8a22b6d3f477a73096e7a43d358a77cbe6127e6a54e8285fb2db6"
+inputs_sha256 = "bc089407d2c26c5a19cb3f9f92fc9f7bee95f75cef1b4138aa7c4268f32a9327"

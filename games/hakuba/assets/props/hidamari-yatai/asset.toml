@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-yatai"]
 solid = true
-inputs_sha256 = "414201060752a6802d7f380d76f2d6c78625a9e102d5c39f002b73d0dd185b70"
+inputs_sha256 = "b0f28ccd3ae9e57eec1eb4d02ab474157dbbd866316db3861de39cff4bda4872"

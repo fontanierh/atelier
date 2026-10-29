@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-sake-barrels"]
 solid = true
-inputs_sha256 = "cf2d298487952b4a10d156278b884dcfe7458695a64613740bdb726997623fd8"
+inputs_sha256 = "20a08fb20ea14c9603f1b4a8943838658a023bc4f04dce9cc3dfe5c12921f008"

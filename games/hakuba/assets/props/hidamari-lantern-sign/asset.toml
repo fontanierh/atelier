@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-lantern-sign"]
 solid = true
-inputs_sha256 = "4b56d75967dd15a34dcfdffa4eb4291c8ca4ff6db3f9fa1b19f6821945989f7c"
+inputs_sha256 = "61e2b9d7cd26031a219a25273d2079708859f6d23535bc705d5c5a76c7198cfe"

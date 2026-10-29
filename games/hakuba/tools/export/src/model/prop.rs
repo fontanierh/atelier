@@ -243,4 +243,20 @@ mod tests {
             assert!(prism(&mut Mesh::default(), &valid, y).is_err());
         }
     }
+
+    /// A prop publishes the textures only it shows beside its export and middle version.
+    #[test]
+    fn own_textures_are_outputs() {
+        let settings: Settings =
+            toml_edit::de::from_str("source = \"src/model.glb\"\nown_textures = [\"parasol\"]").unwrap();
+        let output = Path::new("props/cafe/cafe.glb");
+        assert_eq!(
+            settings.outputs(output),
+            [
+                PathBuf::from("props/cafe/cafe.glb"),
+                "props/cafe/cafe.middle.glb".into(),
+                "props/cafe/parasol.ktx2".into()
+            ]
+        );
+    }
 }

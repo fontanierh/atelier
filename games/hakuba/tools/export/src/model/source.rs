@@ -695,8 +695,8 @@ mod tests {
         let input = fixture(true);
         fs::write(root.join("src/model.glb"), &input).unwrap();
         let output = root.join("out.glb");
-        assert!(export("src/model.glb", false, &[], &[], &output).is_err());
-        export("src/model.glb", true, &[], &[], &output).unwrap();
+        assert!(export("src/model.glb", false, &[], &[], &[], &output).is_err());
+        export("src/model.glb", true, &[], &[], &[], &output).unwrap();
         let result = Glb::read(&output).unwrap();
         assert_eq!(result.extras("full").unwrap()["vertex_paint"]["fill"], 0.06);
         assert!(result.extras("full").unwrap().get("solid").is_none());
@@ -760,6 +760,14 @@ mod tests {
         assert!(validate_with_textures(&bytes, &[uri.into()]).is_ok());
         assert!(validate_with_textures(&bytes, &["../../textures/other/other.ktx2".into()]).is_err());
         assert!(validate(&bytes).is_err());
+        // A texture only this prop shows is named by its file beside the export, and must be declared too.
+        let mut own = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        mesh.material = own.add_material(&Material::textured("texture", "parasol.ktx2"));
+        own.add_mesh("full", &[&mesh]);
+        own.write(&input).unwrap();
+        let own = fs::read(&input).unwrap();
+        assert!(validate_with_textures(&own, &["parasol.ktx2".into()]).is_ok());
+        assert!(validate_with_textures(&own, &[uri.into()]).is_err());
         let mut missing_uv = Glb::from_json(json!({"asset": {"version": "2.0"}}));
         mesh.uvs.clear();
         mesh.material = missing_uv.add_material(&Material::textured("texture", uri));
@@ -769,13 +777,13 @@ mod tests {
         // An untextured source isolates the normal model-frame to glTF-frame anchor conversion.
         fs::write(&input, fixture(false)).unwrap();
         let output = root.join("out.glb");
-        export("src/model.glb", false, &[], &[[1.0, 2.0, 3.0]], &output).unwrap();
+        export("src/model.glb", false, &[], &[], &[[1.0, 2.0, 3.0]], &output).unwrap();
         let result = fs::read(&output).unwrap();
         let len = u32::from_le_bytes(result[12..16].try_into().unwrap()) as usize;
         let json: Value = serde_json::from_slice(&result[20..20 + len]).unwrap();
         let anchor = json["nodes"].as_array().unwrap().iter().find(|n| n["name"] == "anchor 0").unwrap();
         assert_eq!(anchor["translation"], json!([1.0, 3.0, -2.0]));
-        assert!(export("src/model.glb", false, &[], &[[f64::MAX, 0.0, 0.0]], &output).is_err());
+        assert!(export("src/model.glb", false, &[], &[], &[[f64::MAX, 0.0, 0.0]], &output).is_err());
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -846,9 +854,9 @@ mod tests {
         assert!(validate(&bytes).is_err());
         let root = std::env::temp_dir().join(format!("hakuba-source-path-{}", std::process::id()));
         fs::create_dir_all(root.join("src")).unwrap();
-        assert!(export("src/../model.glb", true, &[], &[], &root.join("out.glb")).is_err());
+        assert!(export("src/../model.glb", true, &[], &[], &[], &root.join("out.glb")).is_err());
         for path in ["src/.hidden.glb", "src/target/model.glb", "src/.hidden/model.glb"] {
-            let error = export(path, true, &[], &[], &root.join("out.glb")).unwrap_err();
+            let error = export(path, true, &[], &[], &[], &root.join("out.glb")).unwrap_err();
             assert!(error.to_string().contains("checksum"));
         }
         fs::remove_dir_all(root).unwrap();
@@ -898,7 +906,7 @@ mod tests {
         fs::create_dir_all(root.join("outside")).unwrap();
         fs::write(root.join("outside/model.glb"), fixture(false)).unwrap();
         symlink(root.join("outside"), root.join("asset/src")).unwrap();
-        assert!(export("src/model.glb", true, &[], &[], &root.join("asset/out.glb")).is_err());
+        assert!(export("src/model.glb", true, &[], &[], &[], &root.join("asset/out.glb")).is_err());
         fs::remove_dir_all(root).unwrap();
     }
 }
