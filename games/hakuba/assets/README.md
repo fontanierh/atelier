@@ -26,7 +26,7 @@ assets/
     woodland-canopy-*/      the northern woodland's tall canopy trees
   props/                    made objects: generated from their settings, such as `utility-pole/`, or imported
                             with their colours painted per vertex, named after their region (`hidamari-*/`,
-                            `brinecove-*/`, `belmonte-*/`, `treehouse-*/`, ...)
+                            `brinecove-*/`, `belmonte-*/`, `treehouse-*/`, `megapark-*/`, ...)
   sounds/                   every sound the game plays (sounds/README.md)
     footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
     dash/                   a burst of cloth and air
