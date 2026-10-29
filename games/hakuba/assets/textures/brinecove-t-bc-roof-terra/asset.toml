@@ -1,0 +1,5 @@
+# T_BC_roof_terra.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "8656c440444f02f3078c22de0412830d823f10b81ad6b50d0f65b1f1a4500805"

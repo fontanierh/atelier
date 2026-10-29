@@ -1,0 +1,5 @@
+# T_bark.jpg from Yorimichi's shrines, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "60b7bb080c45d31b0ac65e53b751b9c2a0d6cb435dfc8333eed039b39e9f6e63"

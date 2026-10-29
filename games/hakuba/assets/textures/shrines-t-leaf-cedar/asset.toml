@@ -1,0 +1,5 @@
+# T_leaf_cedar.png from Yorimichi's shrines, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "31fafc7655606df1fed1dbd7ce4961c73711981aa515a89dce49ad77f17d4470"

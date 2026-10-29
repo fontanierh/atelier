@@ -1,0 +1,5 @@
+# T_leaf_ginkgo.png from Yorimichi's shrines, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "e64d2e7b64df29f0acdfa4b710477357821681c3d28e8807a28d6a8181b2e5f1"

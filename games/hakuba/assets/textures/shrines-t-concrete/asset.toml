@@ -1,0 +1,5 @@
+# T_concrete.jpg from Yorimichi's shrines, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "70fe60fc3ec24391ee637d289f55fc6d92b8e7934641b43a0808dd111da51438"

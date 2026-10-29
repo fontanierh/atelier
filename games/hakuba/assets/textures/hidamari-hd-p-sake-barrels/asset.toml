@@ -1,0 +1,5 @@
+# HD_P_sake_barrels.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "5b12499fbc23d53cb006d97b1ff20a312e597e6af5fed0993a736a3bd90d681a"

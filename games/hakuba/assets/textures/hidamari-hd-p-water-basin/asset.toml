@@ -1,0 +1,5 @@
+# HD_P_water_basin.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "6df6d0b821f12bc76d3232df0d06b3973fad561984c040bde627a72f3f0a9a31"

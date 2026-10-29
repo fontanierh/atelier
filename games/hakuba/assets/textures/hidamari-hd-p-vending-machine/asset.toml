@@ -1,0 +1,5 @@
+# HD_P_vending_machine.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "33df7db67e2a6126cfdbb680384344129e911af03db68ba2e437ea68ad70a1a2"

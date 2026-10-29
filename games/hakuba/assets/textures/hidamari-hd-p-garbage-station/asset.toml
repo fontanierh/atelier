@@ -1,0 +1,5 @@
+# HD_P_garbage_station.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "249b5a4898940b8a83d702a5e760dc56aef3a62a74881e2713d405813bab747c"

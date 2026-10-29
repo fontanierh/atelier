@@ -1,0 +1,5 @@
+# HD_P_postbox.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "50bb40b0e92f3f36bfd6f48abd90e48ee2439bbde568e7c4860ab1a5d356aff9"

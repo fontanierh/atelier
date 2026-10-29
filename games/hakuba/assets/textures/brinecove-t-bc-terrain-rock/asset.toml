@@ -1,0 +1,5 @@
+# T_BC_terrain_rock.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "a9877046fef564bf5fa4bd85f40b036de2f0b42c61a9bcd18c12680914f33e64"

@@ -1,0 +1,5 @@
+# HD_P_propane_tanks.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "6c0a9b4b5dd9d1516fd24d0263a9467c7f39282ed471816c3f5f718ced993f18"

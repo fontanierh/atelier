@@ -1,0 +1,5 @@
+# HD_P_drink_crates.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "ff6ccbd506c762201dab305042468e30342c730157961542ebeebfaaa6314099"

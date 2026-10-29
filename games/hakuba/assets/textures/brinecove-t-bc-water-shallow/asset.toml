@@ -1,0 +1,5 @@
+# T_BC_water_shallow.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "19d654d153b633f1377efab901e6c8eb814b91b98420ab7fc79acb6e0a83bbbd"

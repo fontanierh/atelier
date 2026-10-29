@@ -1,0 +1,5 @@
+# T_BC_sail.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "7c0db0eef96725ea90b7f220ebbbb68c5eb06ba5971270f5f5ed39c258e6bfe3"

@@ -1,0 +1,5 @@
+# T_BC_autumn_olive.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "94e6e8a662dc8345392de1a2ba4ef809c0a9da3d0f738e6eeb43858f4b22eaa2"

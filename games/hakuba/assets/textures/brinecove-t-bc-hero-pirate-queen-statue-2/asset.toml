@@ -1,0 +1,5 @@
+# T_BC_hero_pirate-queen-statue_2.png from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4f8391a1842fae1c86eeab6b004e25ec98aa21e2e70594b5e6cf07122cf43b90"

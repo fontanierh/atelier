@@ -1,0 +1,5 @@
+# HD_P_planter_box.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "200ebf1c791fd7d18baaee614f1fcbab47b113bcd3cf90b606623e10ae5c70b0"

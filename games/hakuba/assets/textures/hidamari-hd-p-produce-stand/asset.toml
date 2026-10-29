@@ -1,0 +1,5 @@
+# HD_P_produce_stand.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "cc5193c262de6514924aae48d9ca9b9558f0069184d1186e3b1bfc8363336fd1"

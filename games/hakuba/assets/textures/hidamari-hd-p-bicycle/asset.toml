@@ -1,0 +1,5 @@
+# HD_P_bicycle.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "5bca46561b01866dabbd180ec246d6c219d199a6994c65932ea913a59bce81b5"

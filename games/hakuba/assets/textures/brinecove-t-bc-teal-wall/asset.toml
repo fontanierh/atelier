@@ -1,0 +1,5 @@
+# T_BC_teal_wall.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "5288731b2d65f74ad39e002360e589c1b7f78ee2887760e3276ca21ad94e32dc"

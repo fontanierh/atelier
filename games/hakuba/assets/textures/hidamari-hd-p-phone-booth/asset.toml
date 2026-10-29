@@ -1,0 +1,5 @@
+# HD_P_phone_booth.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "35376d8c457953a695b57ce435657c6305b2c7d12287c964ca9fb5b16d21be2b"

@@ -1,5 +1,6 @@
 # A piece of the roadside sword camp, ported with its colours painted per vertex.
 kind = "prop"
 source = "src/model.glb"
+textures = ["sword-camp-swordcamp-atlas"]
 solid = true
-inputs_sha256 = "c4a9baa586aa3e80ba1c9b0687bfd199ed97901817c413944c5a7e4d8bd2134a"
+inputs_sha256 = "0af2b68974eef902896b0c9066ca73529c7c138432bdf687c6e7793cb121dcea"

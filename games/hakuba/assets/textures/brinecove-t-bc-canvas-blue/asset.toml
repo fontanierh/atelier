@@ -1,0 +1,5 @@
+# T_BC_canvas_blue.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "c658996baf39a16eeb5cb2bb8c0129520ae83fcc0f29e4dcafc79d9deb5c8b9b"

@@ -1,0 +1,5 @@
+# T_BC_deck_planks.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "93f53f0182d0ca87903b1c10a3a881492c418e8ee2d06380f82b975a3fef1641"

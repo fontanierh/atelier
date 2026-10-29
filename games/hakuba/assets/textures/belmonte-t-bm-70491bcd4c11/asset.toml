@@ -1,0 +1,5 @@
+# T_BM_70491bcd4c11.png from Yorimichi's belmonte, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "5b36285fdb3f5896e3bc813a36d8f3989896477cd3bbedd18d305e2542f859a3"

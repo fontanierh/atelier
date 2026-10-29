@@ -1,0 +1,5 @@
+# HD_P_fire_buckets.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "ab060ba82e351f6212b52aaf2963d507e085bbee2382c550a240420efc66d7ca"

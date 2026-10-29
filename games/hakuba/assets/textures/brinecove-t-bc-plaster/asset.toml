@@ -1,0 +1,5 @@
+# T_BC_plaster.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "8846cc1ed2d24e8bfe661011db3c2f8d51458760be0bce0b1211464739f9ce68"

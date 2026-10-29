@@ -1,0 +1,5 @@
+# HD_P_ac_unit.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "1beb61be5436cddabf6a5ca63b6f3d02a0e7d6fd0f17c0bc80efe6671386876c"

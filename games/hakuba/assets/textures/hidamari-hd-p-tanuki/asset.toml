@@ -1,0 +1,5 @@
+# HD_P_tanuki.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "f40d4d3bbdd5b8042c6036f929091b05a89f4d1c22822a2dba3ea5fb576ad49f"

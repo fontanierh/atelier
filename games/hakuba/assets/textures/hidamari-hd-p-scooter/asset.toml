@@ -1,0 +1,5 @@
+# HD_P_scooter.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "e9a87028079f80a5622c9eb1ce923018b4621bfbec8828260413c032aee8ca58"

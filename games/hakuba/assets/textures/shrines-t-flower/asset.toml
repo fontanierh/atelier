@@ -1,0 +1,5 @@
+# T_flower.png from Yorimichi's shrines, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "494cce8b1fc48ee0ed5ae0d2ba4594c767141d6ea0e3c0c8581136951603f981"

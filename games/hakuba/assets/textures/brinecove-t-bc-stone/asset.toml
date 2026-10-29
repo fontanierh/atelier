@@ -1,0 +1,5 @@
+# T_BC_stone.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4108cbfaf5aefc5ea5550a63c63b543307446114082b19ecc0ab2eec06c84882"

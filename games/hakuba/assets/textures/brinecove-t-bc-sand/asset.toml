@@ -1,0 +1,5 @@
+# T_BC_sand.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "9710efbec65a824a52d3d28d65d053df71b429036d20b76043e976613b49d0cb"

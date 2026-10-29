@@ -1,0 +1,5 @@
+# HD_P_town_bus.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "680feb1cffa2cfa6519aa4503856dd41d6710aa89d5638d55dcc2bcec0c6a5bc"

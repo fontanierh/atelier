@@ -1,0 +1,5 @@
+# T_BC_roof_slate.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "e4eedcdb9d9b99e5e184367bcdb285d9deda916526eb68139a72e86b4f27998c"

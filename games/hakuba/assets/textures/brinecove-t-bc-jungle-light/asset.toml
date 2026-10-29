@@ -1,0 +1,5 @@
+# T_BC_jungle_light.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "8db868c72f426249184c9e4854ad93608386a24bd357ccba392d64d1d1c7d670"

@@ -1,0 +1,5 @@
+# HD_P_bonsai_shelf.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "a7c035429c66019220a1fd4d61d5d89bf5719c987d00c03606f5595ff95cf43e"

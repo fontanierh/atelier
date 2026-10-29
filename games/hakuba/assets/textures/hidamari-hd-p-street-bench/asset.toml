@@ -1,0 +1,5 @@
+# HD_P_street_bench.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "ef0249a1109dd47fae138575a2b6d41444a639882bf80b9b7008ac3485f82c0e"

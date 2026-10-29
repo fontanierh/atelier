@@ -1,0 +1,5 @@
+# T_BC_roof_straw.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "51e348432eb51a362c7e2e554eba7ba05684dd9d1ba76dbda031aed075b9fcb7"

@@ -1,0 +1,5 @@
+# T_BC_cobble_dark.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "388deab72319906d43c1fdfea024d2a3d2975f8f324d3bc1c278c5be8c32f235"

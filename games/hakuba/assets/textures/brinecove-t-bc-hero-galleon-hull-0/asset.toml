@@ -1,0 +1,5 @@
+# T_BC_hero_galleon-hull_0.png from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "044a2404e93488831f6e67bf1a4cee3dafa698246c4b657012126af1ce6c7f84"

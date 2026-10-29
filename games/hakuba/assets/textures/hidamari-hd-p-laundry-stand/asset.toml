@@ -1,0 +1,5 @@
+# HD_P_laundry_stand.png from Yorimichi's hidamari, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4f9bbbe317ef6ca452fdcda2e27c1ff7d3d8402c131593107e4081b67c0494b2"

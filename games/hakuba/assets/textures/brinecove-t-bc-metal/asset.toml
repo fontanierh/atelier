@@ -1,0 +1,5 @@
+# T_BC_metal.jpg from Yorimichi's brinecove, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "ea464d0ccfcefc35570247c905d94d0604030688be1e61d337518b0824c83f89"
