@@ -1,4 +1,4 @@
 # Source texture for Brinecove's plants.
 kind = "texture"
 source = "src/texture.png"
-inputs_sha256 = "ff15e50a7c801b333cf47f92079f7bbec3e80db14378e1d6c7f19aa7b3f8b5d1"
+inputs_sha256 = "789c661b6789d54cd9275bfaf532e15010905807365745e15cafb849d0a7e5b0"

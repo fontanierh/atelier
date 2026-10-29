@@ -267,11 +267,8 @@ fn bc7(level: &Level) -> Vec<u8> {
         }
     }
     let opaque = level.rgba.chunks_exact(4).all(|pixel| pixel[3] == 255);
-    let settings = if opaque {
-        intel_tex_2::bc7::opaque_basic_settings()
-    } else {
-        intel_tex_2::bc7::alpha_basic_settings()
-    };
+    let settings =
+        if opaque { intel_tex_2::bc7::opaque_basic_settings() } else { intel_tex_2::bc7::alpha_basic_settings() };
     let surface = intel_tex_2::RgbaSurface { data: &rgba, width, height, stride: width * 4 };
     intel_tex_2::bc7::compress_blocks(&settings, &surface)
 }
@@ -356,12 +353,10 @@ mod tests {
         }
     }
 
-    /// A BC7 file reads back as BC7 with every level's blocks, down to the 1 × 1 level's one block, and its colours
-    /// close to the source's.
+    /// A BC7 file reads back as BC7 with every level's blocks, down to the 1 × 1 level's one block.
     #[test]
     fn bc7_reads_back() {
-        let rgba: Vec<u8> =
-            (0..8 * 4).flat_map(|k| [(k * 8) as u8, (255 - k * 8) as u8, (k * 3) as u8, 255]).collect();
+        let rgba: Vec<u8> = (0..8 * 4).flat_map(|k| [(k * 8) as u8, (255 - k * 8) as u8, (k * 3) as u8, 255]).collect();
         let mut levels = vec![Level { width: 8, height: 4, rgba }];
         while let Some(smaller) = levels.last().unwrap().halved(MipColour::OpacityWeighted) {
             levels.push(smaller);

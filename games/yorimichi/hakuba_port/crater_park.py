@@ -75,8 +75,8 @@ class Materials:
         for name, entry in self.textures.items():
             source = self.folder / entry['png']
             assert sha256(source) == entry['sha256'], entry['png']
-            write_texture(name, source, f'Crater Park\'s restyled {entry["slug"].replace("_", " ")} texture: '
-                          f'{entry["how"]}.')
+            write_texture(name, source, f'Crater Park\'s restyled {name.removeprefix("craterpark-").replace("-", " ")} '
+                          'texture.')
 
     def corners(self, material, uv, position, normal, occlusion):
         """Corners of one material: their texture positions and linear RGBA, the cavity's darkening, alpha 1."""

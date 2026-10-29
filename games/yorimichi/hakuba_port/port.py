@@ -132,8 +132,8 @@ def jobs(region, scratch):
                     while texture in textures.values():
                         texture += '-b'
                     textures[image] = texture
-                    write_texture(texture, image, f'{Path(image).name} from Yorimichi\'s {region.name}, as its '
-                                  'props draw it.')
+                    words = texture.removeprefix(region.name + '-').replace('-', ' ')
+                    write_texture(texture, image, f'The {words} texture that the {region.name} props draw.')
                 rule = {key: value for key, value in rule.items() if key not in ('mean', 'sample')}
                 rule['texture'], rule['mean_rgb'] = textures[image], means.setdefault(image, mean(image))
             rules[slot] = rule

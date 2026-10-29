@@ -2,4 +2,4 @@
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "3a8792196394498d4682cdba6fe249c805765d1f00085ea81e978d29b6378d64"
+inputs_sha256 = "26bdc9d83f92c20f070d5744a1464806c74b14c3e305df9af7953354df9446dd"
