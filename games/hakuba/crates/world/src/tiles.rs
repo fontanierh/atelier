@@ -54,6 +54,7 @@ enum Detail {
 }
 
 #[derive(Component)]
+#[require(crate::shadow_cull::TileShadows)]
 pub struct Tile {
     column: u32,
     row: u32,

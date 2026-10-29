@@ -29,6 +29,8 @@ src/
   leaves.wesl    its fragment shader, which lights only what a leaf card keeps
   push.rs        gives that shader where the things that push plants are, up to four, the nearest the camera
   settings.rs    applies the settings: the painterly filter, the wind, anti-aliasing and shadows
+  shadow_cull.rs culls the sun's shadow casters a tile at a time: a tile whose box around its meshes misses every
+                 cascade marks its casters `NotShadowCaster` until it meets one, so Bevy tests far fewer meshes
   pause.rs       the pause screen over the world, with the settings
 ```
 

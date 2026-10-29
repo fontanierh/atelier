@@ -78,5 +78,11 @@ its wind in the shadow, prepass and main passes.
   intersections. At the reference setting, walking rose from about 57 to 60 frames a second.
 - **Let the browser pace 60.** A frame cap's timer runs apart from the display's refreshes, so a 60 cap in the browser
   drew 14 and 28 ms frames by turns. In the browser a cap of 60 or more leaves the pacing to `requestAnimationFrame`.
+- **Cull shadow casters by tile.** Bevy tests every shadow-casting mesh against each cascade every frame, on the
+  browser's one thread. Each tile now keeps a box around its meshes, and a tile whose box misses every cascade marks
+  its casters `NotShadowCaster`, which Bevy's test skips, so the shadow maps draw exactly what they drew. From the
+  crater rim, two runs of main and one with it differed less from each other with it than main did from itself
+  (0.1% against 2% of pixels, the rest is wind). With the machine loaded (load average 30 to 50), main and it both
+  ran at 40 to 42 frames a second: any gain was below that noise and wants a named profile on a quiet machine.
 - **What did not pay**: hardware 2 × 2 shadow filtering (no gain), a 1024 shadow map (1.7 ms, visibly softer shadows).
   Shadow map sizes must be powers of two.

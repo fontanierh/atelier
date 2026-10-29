@@ -634,7 +634,7 @@ fn shadow_distance(node: &GltfNode) -> Result<Option<f32>, String> {
 
 /// A declared caster range, independent of visible geometry and detail.
 #[derive(Component)]
-struct ShadowDistance {
+pub(crate) struct ShadowDistance {
     distance: f32,
     bounds: Aabb,
     // World-space horizontal motion: wind coefficient and maximum player push.

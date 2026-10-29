@@ -13,6 +13,7 @@ mod pixels;
 mod push;
 mod scenery;
 mod settings;
+mod shadow_cull;
 mod start;
 mod tiles;
 mod vertex_paint;
@@ -55,6 +56,7 @@ impl Plugin for WorldPlugin {
             push::PushPlugin,
             scenery::SceneryPlugin,
             settings::SettingsPlugin,
+            shadow_cull::ShadowCullPlugin,
             tiles::TilesPlugin,
             vertex_paint::VertexPaintPlugin,
             water::WaterPlugin,
