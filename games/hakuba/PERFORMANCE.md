@@ -73,6 +73,10 @@ its wind in the shadow, prepass and main passes.
   time a frame went to those lookups. Rigid meshes now note them once, when the mesh is prepared or its buffer moves,
   and draw from the note: looking over the island from the crater rim, the browser went from about 48 frames a second
   to 60.
+- **Fetch a draw's resources only when it uses them.** Bevy's draw state fetches every resource its commands might
+  read for every item; the rigid-mesh draw, which carried Bevy's binding and draw as fallbacks, fetched 16 per item,
+  about 13% of the browser's main thread at the crater rim. It now fetches the 5 its own path reads, and the
+  fallbacks' resources only when a draw falls back.
 - **Keep ground rays to nearby solids.** Bevy's general mesh picker checked bounds on decorative meshes before the
   solid filter. Ground now queries solid meshes directly, bounds each ray by its reach and uses Bevy's triangle
   intersections. At the reference setting, walking rose from about 57 to 60 frames a second.

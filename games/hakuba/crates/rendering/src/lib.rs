@@ -4,24 +4,25 @@ use std::ops::Range;
 
 use bevy::core_pipeline::core_3d::{AlphaMask3d, Opaque3d};
 use bevy::core_pipeline::prepass::{AlphaMask3dPrepass, MotionVectorPrepass, Opaque3dPrepass};
-use bevy::ecs::query::Has;
-use bevy::ecs::system::SystemParamItem;
+
+use bevy::ecs::query::{Has, QueryEntityError, QueryState};
 use bevy::ecs::system::lifetimeless::SRes;
+use bevy::ecs::system::{ReadOnlySystemParam, SystemParamItem, SystemState};
 use bevy::light::{Cascades, SimulationLightSystems};
 use bevy::pbr::{
     DrawDepthOnlyPrepass, DrawMaterial, DrawMesh, DrawPrepass, MeshBindGroups, MeshMorphBindGroupKey, MorphIndices,
     PreprocessBindGroups, PreprocessPipeline, PreprocessPipelines, RenderMeshInstances, SetMaterialBindGroup,
     SetMeshBindGroup, SetMeshViewBindGroup, SetMeshViewBindingArrayBindGroup, SetPrepassEmptyMaterialBindGroup,
-    SetPrepassViewBindGroup, SetPrepassViewEmptyBindGroup, Shadow,
+    SetPrepassViewBindGroup, SetPrepassViewEmptyBindGroup, Shadow, SkinUniforms,
 };
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::*;
 use bevy::render::batching::gpu_preprocessing::{GpuPreprocessingMode, GpuPreprocessingSupport};
 use bevy::render::mesh::allocator::{MeshAllocator, MeshSlabs, allocate_and_free_meshes};
-use bevy::render::mesh::{RenderMesh, RenderMeshBufferInfo};
+use bevy::render::mesh::{MeshMetadataFallbackBuffer, RenderMesh, RenderMeshBufferInfo};
 use bevy::render::render_asset::{ExtractedAssets, RenderAssets, prepare_assets};
 use bevy::render::render_phase::{
-    DrawFunctions, PhaseItem, PhaseItemExtraIndex, RenderCommand, RenderCommandResult, RenderCommandState,
+    Draw, DrawError, DrawFunctions, PhaseItem, PhaseItemExtraIndex, RenderCommand, RenderCommandResult,
     SetItemPipeline, TrackedRenderPass,
 };
 use bevy::render::render_resource::{Buffer, IndexFormat, PipelineCache};
@@ -62,33 +63,28 @@ fn retain_3d_shadow_views(
     }
 }
 
-type FastMaterial =
-    (SetItemPipeline, SetMeshViewBindGroup<0>, SetMeshViewBindingArrayBindGroup<1>, SetMaterialBindGroup<3>, FastMesh);
-type FastPrepass =
-    (SetItemPipeline, SetPrepassViewBindGroup<0>, SetPrepassViewEmptyBindGroup<1>, SetMaterialBindGroup<3>, FastMesh);
-
-type FastDepth = (
-    SetItemPipeline,
-    SetPrepassViewBindGroup<0>,
-    SetPrepassViewEmptyBindGroup<1>,
-    SetPrepassEmptyMaterialBindGroup<3>,
-    FastMesh,
-);
+/// The commands before each rigid mesh's binding and draw; Bevy's own are `(.., SetMeshBindGroup<2>, DrawMesh)`.
+type MaterialCommands =
+    (SetItemPipeline, SetMeshViewBindGroup<0>, SetMeshViewBindingArrayBindGroup<1>, SetMaterialBindGroup<3>);
+type PrepassCommands =
+    (SetItemPipeline, SetPrepassViewBindGroup<0>, SetPrepassViewEmptyBindGroup<1>, SetMaterialBindGroup<3>);
+type DepthCommands =
+    (SetItemPipeline, SetPrepassViewBindGroup<0>, SetPrepassViewEmptyBindGroup<1>, SetPrepassEmptyMaterialBindGroup<3>);
 
 fn register(world: &mut World) {
-    let command = RenderCommandState::<Opaque3d, FastMaterial>::new(world);
+    let command = FastDraw::<Opaque3d, MaterialCommands>::new(world);
     world.resource::<DrawFunctions<Opaque3d>>().write().add_with::<DrawMaterial, _>(command);
-    let command = RenderCommandState::<AlphaMask3d, FastMaterial>::new(world);
+    let command = FastDraw::<AlphaMask3d, MaterialCommands>::new(world);
     world.resource::<DrawFunctions<AlphaMask3d>>().write().add_with::<DrawMaterial, _>(command);
-    let command = RenderCommandState::<Opaque3dPrepass, FastPrepass>::new(world);
+    let command = FastDraw::<Opaque3dPrepass, PrepassCommands>::new(world);
     world.resource::<DrawFunctions<Opaque3dPrepass>>().write().add_with::<DrawPrepass, _>(command);
-    let command = RenderCommandState::<AlphaMask3dPrepass, FastPrepass>::new(world);
+    let command = FastDraw::<AlphaMask3dPrepass, PrepassCommands>::new(world);
     world.resource::<DrawFunctions<AlphaMask3dPrepass>>().write().add_with::<DrawPrepass, _>(command);
-    let command = RenderCommandState::<Opaque3dPrepass, FastDepth>::new(world);
+    let command = FastDraw::<Opaque3dPrepass, DepthCommands>::new(world);
     world.resource::<DrawFunctions<Opaque3dPrepass>>().write().add_with::<DrawDepthOnlyPrepass, _>(command);
-    let command = RenderCommandState::<Shadow, FastPrepass>::new(world);
+    let command = FastDraw::<Shadow, PrepassCommands>::new(world);
     world.resource::<DrawFunctions<Shadow>>().write().add_with::<DrawPrepass, _>(command);
-    let command = RenderCommandState::<Shadow, FastDepth>::new(world);
+    let command = FastDraw::<Shadow, DepthCommands>::new(world);
     world.resource::<DrawFunctions<Shadow>>().write().add_with::<DrawDepthOnlyPrepass, _>(command);
 }
 
@@ -200,79 +196,168 @@ fn note_mesh_draws(
     draws.noted.note(|id| meshes.get(id).map(|mesh| MeshDraw::new(id, mesh, &allocator)));
 }
 
-/// Binds a rigid GPU-built mesh with Bevy's metadata slab and dynamic offset, without querying device limits for every
-/// draw, and draws it directly from its noted draw. Anything requiring skin, morph or lightmap data uses Bevy's own
-/// binding; a mesh drawn indirectly or not yet noted uses Bevy's own draw.
-struct FastMesh;
-impl<P: PhaseItem> RenderCommand<P> for FastMesh {
-    type Param =
-        (<SetMeshBindGroup<2> as RenderCommand<P>>::Param, <DrawMesh as RenderCommand<P>>::Param, SRes<MeshDraws>);
-    type ViewQuery = (Has<MotionVectorPrepass>, Has<PreprocessBindGroups>);
-    type ItemQuery = ();
+/// What every rigid mesh's draw reads. Bevy's draw state fetches each resource its commands might use for every item,
+/// which in the browser costs as much as the draw itself, so the resources only a fallback needs are fetched when used.
+type FastParam =
+    (SRes<MeshDraws>, SRes<RenderMeshInstances>, SRes<SkinUniforms>, SRes<MorphIndices>, SRes<MeshBindGroups>);
+/// Read only for a mesh not yet noted, or noted without a metadata slab.
+type UnnotedParam = (SRes<MeshAllocator>, SRes<MeshMetadataFallbackBuffer>);
+type BindParam<P> = <SetMeshBindGroup<2> as RenderCommand<P>>::Param;
+type DrawParam<P> = <DrawMesh as RenderCommand<P>>::Param;
 
-    fn render<'w>(
-        item: &P,
-        (motion, preprocessed): (bool, bool),
-        query: Option<()>,
-        (bind, draw, draws): SystemParamItem<'w, '_, Self::Param>,
-        pass: &mut TrackedRenderPass<'w>,
-    ) -> RenderCommandResult {
-        let entity = item.main_entity();
-        let draws = draws.into_inner();
-        let rigid = {
-            let (_, _, instances, skins, morphs, allocator, _, fallback) = &bind;
-            // This is the same shared instance data returned by Bevy's queue-data lookup, without cloning render layers.
-            if let RenderMeshInstances::GpuBuilding(gpu_instances) = &**instances
-                && let Some(data) = gpu_instances.get(&entity)
-                && data.shared.lightmap_slab_index().is_none()
-                && skins.skin_byte_offset(entity).is_none()
-                && !match &**morphs {
-                    MorphIndices::Uniform { current, .. } => current.contains_key(&entity),
-                    MorphIndices::Storage { morph_weights_info, .. } => morph_weights_info.contains_key(&entity),
-                }
-            {
-                let id = data.shared.mesh_asset_id();
-                let noted = draws.noted.ready.get(&id);
-                let slabs = noted.map(|mesh| mesh.slabs).or_else(|| allocator.mesh_slabs(&id));
-                if slabs.is_some_and(|slabs| slabs.morph_target_slab_id.is_some()) {
-                    None
-                } else {
-                    Some((slabs.and_then(|slabs| slabs.metadata_slab_id).unwrap_or(fallback.slab_id), noted))
-                }
-            } else {
-                None
-            }
-        };
-        let Some((slab, noted)) = rigid else {
-            return match SetMeshBindGroup::<2>::render(item, motion, query, bind, pass) {
-                RenderCommandResult::Success => DrawMesh::render(item, preprocessed, query, draw, pass),
-                result => result,
-            };
-        };
-        let (_, groups, _, _, _, _, _, _) = bind;
-        let phase = match groups.into_inner() {
-            MeshBindGroups::CpuPreprocessing(phase) => Some(phase),
-            MeshBindGroups::GpuPreprocessing(phases) => phases.get(&std::any::TypeId::of::<P>()),
-        };
-        if let Some(phase) = phase {
-            let Some(group) = phase.get(slab, None, false, MeshMorphBindGroupKey::NoMorphTargets, motion) else {
-                return RenderCommandResult::Failure("missing static mesh bind group");
-            };
-            match item.extra_index() {
-                PhaseItemExtraIndex::DynamicOffset(offset) => pass.set_bind_group(2, group, &[offset]),
-                _ => pass.set_bind_group(2, group, &[]),
-            }
+/// Runs the commands `C`, then binds a rigid GPU-built mesh with Bevy's metadata slab and dynamic offset, without
+/// querying device limits for every draw, and draws it directly from its noted draw. Anything requiring skin, morph or
+/// lightmap data uses Bevy's own binding; a mesh drawn indirectly or not yet noted uses Bevy's own draw. It is the
+/// draw state of `(C, SetMeshBindGroup<2>, DrawMesh)` with the fallbacks' resources fetched only when they are used.
+struct FastDraw<P: PhaseItem, C: RenderCommand<P>> {
+    state: SystemState<(C::Param, FastParam)>,
+    view: QueryState<(C::ViewQuery, Has<MotionVectorPrepass>, Has<PreprocessBindGroups>)>,
+    entity: QueryState<C::ItemQuery>,
+    unnoted: SystemState<UnnotedParam>,
+    bind: SystemState<BindParam<P>>,
+    draw: SystemState<DrawParam<P>>,
+}
+
+impl<P: PhaseItem, C: RenderCommand<P>> FastDraw<P, C> {
+    fn new(world: &mut World) -> Self {
+        Self {
+            state: SystemState::new(world),
+            view: world.query(),
+            entity: world.query(),
+            unnoted: SystemState::new(world),
+            bind: SystemState::new(world),
+            draw: SystemState::new(world),
         }
-        // Bevy's draw also waits for the shaders preparing each instance's data and the view's prepared data, as here.
-        let direct = matches!(item.extra_index(), PhaseItemExtraIndex::None | PhaseItemExtraIndex::DynamicOffset(_));
-        let Some(mesh) = noted.filter(|_| direct && draws.direct && preprocessed) else {
-            return DrawMesh::render(item, preprocessed, query, draw, pass);
-        };
-        pass.set_vertex_buffer(0, mesh.vertices.slice(..));
-        pass.set_index_buffer(mesh.indices.slice(..), mesh.index_format);
-        pass.draw_indexed(mesh.index_range.clone(), mesh.first_vertex, item.batch_range().clone());
-        RenderCommandResult::Success
     }
+}
+
+impl<P: PhaseItem, C: RenderCommand<P> + Send + Sync + 'static> Draw<P> for FastDraw<P, C>
+where
+    C::Param: ReadOnlySystemParam,
+{
+    fn prepare(&mut self, world: &World) {
+        self.view.update_archetypes(world);
+        self.entity.update_archetypes(world);
+    }
+
+    fn draw<'w>(
+        &mut self,
+        world: &'w World,
+        pass: &mut TrackedRenderPass<'w>,
+        view: Entity,
+        item: &P,
+    ) -> Result<(), DrawError> {
+        let Self { state, view: views, entity, unnoted, bind, draw } = self;
+        let (commands, fast) = state.get(world).expect("rigid mesh draw resources");
+        let (view, motion, preprocessed) = match views.get_manual(world, view) {
+            Ok(view) => view,
+            Err(QueryEntityError::NotSpawned(_)) => return Err(DrawError::ViewEntityNotFound),
+            Err(_) => return Err(DrawError::InvalidViewQuery),
+        };
+        let query = entity.get_manual(world, item.entity()).ok();
+        // Bevy's binding and draw have no item query of their own; they see whether the item's whole query matched.
+        let found = query.is_some().then_some(());
+        let result = match C::render(item, view, query, commands, pass) {
+            RenderCommandResult::Success => {
+                let fallback = Fallback { world, found, motion, preprocessed, unnoted, bind, draw };
+                draw_mesh(item, fast, fallback, pass)
+            }
+            result => result,
+        };
+        match result {
+            RenderCommandResult::Success | RenderCommandResult::Skip => Ok(()),
+            RenderCommandResult::Failure(reason) => Err(DrawError::RenderCommandFailure(reason)),
+        }
+    }
+}
+
+/// What a rigid mesh's draw needs to fetch Bevy's own binding and draw, when it uses them.
+struct Fallback<'w, 's, P: PhaseItem> {
+    world: &'w World,
+    found: Option<()>,
+    motion: bool,
+    preprocessed: bool,
+    unnoted: &'s mut SystemState<UnnotedParam>,
+    bind: &'s mut SystemState<BindParam<P>>,
+    draw: &'s mut SystemState<DrawParam<P>>,
+}
+
+impl<'w, P: PhaseItem> Fallback<'w, '_, P> {
+    fn unnoted(&mut self) -> SystemParamItem<'w, '_, UnnotedParam> {
+        self.unnoted.get(self.world).expect("mesh allocator")
+    }
+
+    fn draw(&mut self, item: &P, pass: &mut TrackedRenderPass<'w>) -> RenderCommandResult {
+        DrawMesh::render(item, self.preprocessed, self.found, self.draw.get(self.world).expect("mesh draw"), pass)
+    }
+
+    fn bind_and_draw(mut self, item: &P, pass: &mut TrackedRenderPass<'w>) -> RenderCommandResult {
+        let bind = self.bind.get(self.world).expect("mesh binding");
+        match SetMeshBindGroup::<2>::render(item, self.motion, self.found, bind, pass) {
+            RenderCommandResult::Success => self.draw(item, pass),
+            result => result,
+        }
+    }
+}
+
+fn draw_mesh<'w, P: PhaseItem>(
+    item: &P,
+    (draws, instances, skins, morphs, groups): SystemParamItem<'w, '_, FastParam>,
+    mut fallback: Fallback<'w, '_, P>,
+    pass: &mut TrackedRenderPass<'w>,
+) -> RenderCommandResult {
+    let entity = item.main_entity();
+    let draws = draws.into_inner();
+    // This is the same shared instance data returned by Bevy's queue-data lookup, without cloning render layers.
+    let rigid = if let RenderMeshInstances::GpuBuilding(gpu_instances) = &*instances
+        && let Some(data) = gpu_instances.get(&entity)
+        && data.shared.lightmap_slab_index().is_none()
+        && skins.skin_byte_offset(entity).is_none()
+        && !match &*morphs {
+            MorphIndices::Uniform { current, .. } => current.contains_key(&entity),
+            MorphIndices::Storage { morph_weights_info, .. } => morph_weights_info.contains_key(&entity),
+        } {
+        let id = data.shared.mesh_asset_id();
+        let noted = draws.noted.ready.get(&id);
+        let slabs = match noted {
+            Some(mesh) => Some(mesh.slabs),
+            None => fallback.unnoted().0.mesh_slabs(&id),
+        };
+        if slabs.is_some_and(|slabs| slabs.morph_target_slab_id.is_some()) {
+            None
+        } else {
+            let slab = match slabs.and_then(|slabs| slabs.metadata_slab_id) {
+                Some(slab) => slab,
+                None => fallback.unnoted().1.slab_id,
+            };
+            Some((slab, noted))
+        }
+    } else {
+        None
+    };
+    let Some((slab, noted)) = rigid else { return fallback.bind_and_draw(item, pass) };
+    let phase = match groups.into_inner() {
+        MeshBindGroups::CpuPreprocessing(phase) => Some(phase),
+        MeshBindGroups::GpuPreprocessing(phases) => phases.get(&std::any::TypeId::of::<P>()),
+    };
+    if let Some(phase) = phase {
+        let Some(group) = phase.get(slab, None, false, MeshMorphBindGroupKey::NoMorphTargets, fallback.motion) else {
+            return RenderCommandResult::Failure("missing static mesh bind group");
+        };
+        match item.extra_index() {
+            PhaseItemExtraIndex::DynamicOffset(offset) => pass.set_bind_group(2, group, &[offset]),
+            _ => pass.set_bind_group(2, group, &[]),
+        }
+    }
+    // Bevy's draw also waits for the shaders preparing each instance's data and the view's prepared data, as here.
+    let direct = matches!(item.extra_index(), PhaseItemExtraIndex::None | PhaseItemExtraIndex::DynamicOffset(_));
+    let Some(mesh) = noted.filter(|_| direct && draws.direct && fallback.preprocessed) else {
+        return fallback.draw(item, pass);
+    };
+    pass.set_vertex_buffer(0, mesh.vertices.slice(..));
+    pass.set_index_buffer(mesh.indices.slice(..), mesh.index_format);
+    pass.draw_indexed(mesh.index_range.clone(), mesh.first_vertex, item.batch_range().clone());
+    RenderCommandResult::Success
 }
 
 #[cfg(test)]
@@ -321,6 +406,26 @@ mod tests {
         noted.note(|_| Some(Some(2)));
         assert_eq!(noted.ready.get(&a), Some(&2));
         assert!(noted.pending.is_empty());
+    }
+
+    #[test]
+    fn rigid_draws_fetch_fallback_resources_only_when_used() {
+        let mut world = World::new();
+        // Each draw state must build without conflicting access in every phase it is registered for.
+        let _ = FastDraw::<Opaque3d, MaterialCommands>::new(&mut world);
+        let _ = FastDraw::<AlphaMask3dPrepass, PrepassCommands>::new(&mut world);
+        let draw = FastDraw::<Shadow, DepthCommands>::new(&mut world);
+        let (draws, instances, skins, morphs, groups) = draw.state.param_state().1;
+        let read = [draws, instances, skins, morphs, groups];
+        // Resources read only by Bevy's own binding and draw, or for a mesh not yet noted, are not fetched per item.
+        let fallback_only = [
+            world.component_id::<MeshAllocator>(),
+            world.component_id::<MeshMetadataFallbackBuffer>(),
+            world.component_id::<RenderAssets<RenderMesh>>(),
+            world.component_id::<bevy::pbr::RenderLightmaps>(),
+            world.component_id::<bevy::render::renderer::RenderDevice>(),
+        ];
+        assert!(fallback_only.iter().all(|id| id.is_some_and(|id| !read.contains(&id))));
     }
 
     #[test]
