@@ -708,13 +708,15 @@ impl Tile {
     fn ground(&self, ground: &Ground, detail: Detail, material: usize, texture_steps: f64) -> Mesh {
         let mut mesh = Mesh { material, ..Mesh::default() };
         let grain = ground.wholly_coloured(self.columns, self.rows);
+        // Only a tile with a colour of its own carries vertex colours, so a colour elsewhere changes nothing here.
+        let coloured = ground.any_coloured(self.columns, self.rows);
         let mut points: HashMap<(usize, usize), u32> = HashMap::new();
         let vertex = |mesh: &mut Mesh, i: f64, j: f64| {
             let p = ground.at(i, j);
             mesh.positions.push(game(p).as_vec3().to_array());
             mesh.normals.push(game(ground.normal(p.truncate())).as_vec3().to_array());
             mesh.uvs.push([(i / texture_steps) as f32, (-j / texture_steps) as f32]);
-            if ground.has_colours() {
+            if coloured {
                 mesh.colours.push(ground.tint(i.round() as usize, j.round() as usize, grain));
             }
             (mesh.positions.len() - 1) as u32

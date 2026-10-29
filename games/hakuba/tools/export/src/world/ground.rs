@@ -196,6 +196,11 @@ impl Ground {
         [r, g, b, 1.0]
     }
 
+    /// Whether any grid point from (`i0`, `j0`) to (`i1`, `j1`) has a colour.
+    pub fn any_coloured(&self, (i0, i1): (usize, usize), (j0, j1): (usize, usize)) -> bool {
+        !self.colours.is_empty() && (j0..=j1).any(|j| (i0..=i1).any(|i| self.colour(i, j).is_some()))
+    }
+
     /// Whether any page has a colour.
     pub fn has_colours(&self) -> bool {
         !self.colours.is_empty()
