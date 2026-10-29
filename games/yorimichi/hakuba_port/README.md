@@ -37,3 +37,17 @@ the source's vertex colour, a texture's mean or its texel at each corner, a flat
 Yorimichi material combined them. Slots with no painted equivalent (water, cut-out leaves, additive light) are
 dropped. Plants (trees, bushes, grass) are ported by `plants.py` as Hakuba's plant kind, which sways them in the
 wind.
+
+`plants.py` stands each plant on Hakuba's ground, except a Belmonte or Brinecove plant its source stands more than
+2 m above it: that one keeps its source height only where a ported prop's surface, as the last export's tiles draw it,
+is within 0.5 m of it (a planter, a terrace, a roof garden). Over no prop it would float, so it stands on the ground
+like the island's plants. Run it after an export that holds the ported props.
+
+`contact.py`'s floating and sunk counts are for review; most are as built. A prop is checked against the ground
+alone, so one standing on another prop floats in the count: the hippodrome stand's café chairs and tables, the
+bridge's lantern posts, the tree house's furniture, the north gate's rocks and air station, the plaza trees on the
+plaza floor, the lighthouse on its breakwater. Some hang or float by design: the street wires, the wall lanterns,
+the tree house's bell, the harbour boats over the sea floor. The sunk ones are foundations and set stones as built:
+the north country's terrain skirts tucked under Belmonte's ground, Brinecove's sea cliffs and town footings on its
+slope, the south-west boulders set into the sea bed. Each keeps its Yorimichi position exactly (the converter's
+origin shift is undone in the placement), so none needs moving.

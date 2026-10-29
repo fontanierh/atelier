@@ -36,7 +36,7 @@ from pathlib import Path
 
 import numpy as np
 
-from contact import ground_at, mosaic
+from contact import ground_at, mosaic, supports
 from ground import HAKUBA, WORLD, settings, triangles
 from port import kebab
 
@@ -139,6 +139,10 @@ START = (-300.0, -172.0, 300.0, 300.0)
 # A plant stands this far into the ground at most, and never above it; where the source ground differs from Hakuba's
 # by more than `MISMATCH_M`, it sinks by `SINK_M`. A small plant sinks by no more than `SINK_SHARE` of its height.
 DEEPEST_M, MISMATCH_M, SINK_M, SINK_SHARE = -0.6, 2.0, -0.3, 0.2
+# A region's plant that its source stands well above Hakuba's ground keeps that height only where a ported prop's
+# surface, as the exported tiles draw it, is within `SEAT_M` under it or over it; over nothing it would float, so it
+# stands on the ground as the island's plants do.
+SEAT_M = 0.5
 # The steepest ground a plant stands on: the most the ground rises a metre from its foot (about 56°).
 CLIFF = 1.5
 # The island's own trees stand as close as 1.5 m, in stands far denser than Hakuba's woods, which the browser could not
@@ -593,6 +597,26 @@ def spaced(trees, skipped):
     return kept
 
 
+def embedding(model, scale):
+    """The deepest a copy of `model` at `scale` stands into what it stands on, in metres (negative)."""
+    return np.maximum(DEEPEST_M, -SINK_SHARE * height(model) * scale)
+
+
+def seated(z, surface, deepest):
+    """Plants kept at source height `z`, seated on the prop surface under them (`surface`; NaN off Hakuba's ground,
+    which leaves `z`): never above it, and at most `deepest` into it."""
+    with np.errstate(invalid='ignore'):
+        return np.where(np.isnan(surface), z, surface + np.clip(z - surface, deepest, 0.0))
+
+
+def keeps_height(z, ground, surface):
+    """Which of a region's plants keep their source height `z`: those off Hakuba's ground (`ground` NaN), and those
+    standing more than `MISMATCH_M` above it with a ported prop's drawn surface (`surface`, NaN where none) within
+    `SEAT_M` under or over them. Every other plant stands on the ground."""
+    with np.errstate(invalid='ignore'):
+        return np.isnan(ground) | ((z - ground > MISMATCH_M) & (np.abs(z - surface) <= SEAT_M))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--build', type=Path, required=True, help="Yorimichi's build folder, build/yorimichi")
@@ -609,6 +633,8 @@ def main():
     heights = mosaic(world)
     south_west, step = np.array(world['south_west_m']), world['ground_step_m']
     groups, skipped, trees = collections.defaultdict(list), collections.Counter(), []
+    # The ported props as the last export drew them, which a region's plants may stand on.
+    drawn = supports(world)
     for name, rows, kept in sources(args.build.resolve()):
         model = MODELS.get(name) or (brinecove_name(name) if name.startswith(BRINECOVE) else None)
         if model is None:
@@ -625,16 +651,19 @@ def main():
         rows, ground = rows[~cliff], ground[~cliff]
         off = np.isnan(ground)
         if kept:
-            # Off Hakuba's ground, or well above it, the plant stands on one of its region's ground props.
+            surface = np.full(len(rows), np.nan)
             with np.errstate(invalid='ignore'):
-                off |= rows[:, 2] - ground > MISMATCH_M
+                high = ~off & (rows[:, 2] - ground > MISMATCH_M)
+            surface[high] = drawn.heights(rows[high, 0], rows[high, 1], rows[high, 2])
+            off = keeps_height(rows[:, 2], ground, surface)
+            rows[off, 2] = seated(rows[off, 2], surface[off], embedding(model, rows[off, 4]))
             groups[model, False].extend([round(x, 3), round(y, 3), round(z, 3), round(yaw % 360.0, 2), round(scale, 4)]
                                         for x, y, z, yaw, scale in rows[off].tolist())
         else:
             skipped['off the ground'] += int(off.sum())
         rows, ground = rows[~off], ground[~off]
         depth = rows[:, 2] - ground
-        deepest = np.maximum(DEEPEST_M, -SINK_SHARE * height(model) * rows[:, 4])
+        deepest = embedding(model, rows[:, 4])
         depth = np.clip(np.where(np.abs(depth) > MISMATCH_M, SINK_M, depth), deepest, 0.0)
         if not kept and name.startswith('Tree_'):
             trees.extend((model, row, d) for row, d in zip(rows.tolist(), depth.tolist()))

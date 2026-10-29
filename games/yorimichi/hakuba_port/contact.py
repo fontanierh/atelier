@@ -263,6 +263,24 @@ def accessor(doc, binary, index):
         if width == 1 else np.frombuffer(binary, kind, acc['count'] * width, start).reshape(-1, width)
 
 
+def ported_copies():
+    """The ported copies: each model's placements, by where they stand, so that Hakuba's own copies of the same model
+    are left to Hakuba's checks."""
+    ported = {}
+    for path in (WORLD / 'src' / 'regions').glob('*/placements.json'):
+        for group in json.loads(path.read_text())['groups']:
+            ported.setdefault(group['model'], set()).update(map(tuple, stored(
+                np.array(group['instances'], float).reshape(-1, 5)[:, :2])))
+    return ported
+
+
+def supports(world, ported=None):
+    """The surfaces a plant may stand on: a ported prop, a deck or a ground piece, as well as the ground; a prop stands
+    on the ground alone, so that none holds itself up."""
+    ported = ported_copies() if ported is None else ported
+    return Drawn(world, {model: at for model, at in ported.items() if model.startswith('props/')})
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--leave-out', action='store_true',
@@ -271,16 +289,8 @@ def main():
     world = settings()
     drawn = Drawn(world)
     failed, sunk, floating, checked, found, buried = [], {}, {}, 0, 0, {}
-    # The ported copies: each model's placements, by where they stand, so that Hakuba's own copies of the same model
-    # are left to Hakuba's checks.
-    ported = {}
-    for path in (WORLD / 'src' / 'regions').glob('*/placements.json'):
-        for group in json.loads(path.read_text())['groups']:
-            ported.setdefault(group['model'], set()).update(map(tuple, stored(
-                np.array(group['instances'], float).reshape(-1, 5)[:, :2])))
-    # A plant may stand on a ported prop, a deck or a ground piece, as well as on the ground; a prop stands on the
-    # ground alone, so that none holds itself up.
-    supported = Drawn(world, {model: at for model, at in ported.items() if model.startswith('props/')})
+    ported = ported_copies()
+    supported = supports(world, ported)
     tiles = sorted(p for p in drawn.tiles.glob('*_*.glb') if not p.name.endswith('.middle.glb'))
     # Row by row, so that a tile's neighbours stay cached.
     tiles.sort(key=lambda p: tuple(int(n) for n in p.stem.split('_'))[::-1])
