@@ -12,6 +12,13 @@ pub struct Ground {
     /// Each page's heights by page column and row, row by row from its south-west corner. Neighbouring pages share
     /// their edge heights. A NaN marks a place with no ground.
     pages: HashMap<(usize, usize), Vec<f32>>,
+    /// Each page's colour, laid out as its heights, if it has one: sRGB bytes and an alpha of 255 at a point with a
+    /// colour, or 0 at one without.
+    colours: HashMap<(usize, usize), Vec<[u8; 4]>>,
+    /// The ground texture's mean linear colour, which a point's colour tints the texture towards.
+    texture_mean: [f32; 3],
+    /// The mean of the grain-only texture a wholly coloured tile shows instead, if there is one.
+    coloured_mean: Option<f32>,
     /// How many steps each page spans.
     page_steps: usize,
     /// The distance between neighbouring heights.
@@ -24,7 +31,8 @@ pub struct Ground {
 }
 
 impl Ground {
-    /// Reads every `<column>_<row>.bin` page in `folder`: little-endian 32-bit floats in metres.
+    /// Reads every `<column>_<row>.bin` page in `folder`: little-endian 32-bit floats in metres, and each page's colour
+    /// from `colours/<column>_<row>.bin`, four bytes a point, if that folder holds it.
     pub fn read(folder: &Path, page_steps: usize, step: f64, south_west: DVec2) -> Result<Self> {
         let samples = page_steps + 1;
         let mut pages = HashMap::new();
@@ -42,8 +50,26 @@ impl Ground {
             }
             pages.insert(page, bytes.chunks(4).map(|b| f32::from_le_bytes(b.try_into().unwrap())).collect());
         }
+        let mut colours = HashMap::new();
+        let folder = folder.join("colours");
+        if folder.is_dir() {
+            for page in pages.keys() {
+                let path = folder.join(format!("{}_{}.bin", page.0, page.1));
+                if !path.is_file() {
+                    continue;
+                }
+                let bytes = fs::read(&path)?;
+                if bytes.len() != samples * samples * 4 {
+                    bail!("{}: expected {samples} × {samples} colours", path.display());
+                }
+                colours.insert(*page, bytes.chunks(4).map(|b| b.try_into().unwrap()).collect());
+            }
+        }
         Ok(Self {
             pages,
+            colours,
+            texture_mean: [1.0; 3],
+            coloured_mean: None,
             page_steps,
             step,
             south_west,
@@ -145,6 +171,55 @@ impl Ground {
         })
     }
 
+    /// Sets the ground texture's mean linear colour and, if wholly coloured tiles show a grain-only texture
+    /// instead, that texture's mean, for [`Ground::tint`].
+    pub fn set_texture_means(&mut self, mean: [f64; 3], coloured: Option<f64>) {
+        self.texture_mean = mean.map(|c| c as f32);
+        self.coloured_mean = coloured.map(|c| c as f32);
+    }
+
+    /// Whether every grid point with ground from (`i0`, `j0`) to (`i1`, `j1`) has a colour, so the tile there can
+    /// show the grain-only texture.
+    pub fn wholly_coloured(&self, (i0, i1): (usize, usize), (j0, j1): (usize, usize)) -> bool {
+        self.coloured_mean.is_some()
+            && (j0..=j1).all(|j| (i0..=i1).all(|i| self.sample(i, j).is_none() || self.colour(i, j).is_some()))
+    }
+
+    /// The vertex colour the ground texture is multiplied by at grid point (`i`, `j`): its colour over the mean of
+    /// the texture shown (the grain-only one if `grain`), or white where it has none.
+    pub fn tint(&self, i: usize, j: usize, grain: bool) -> [f32; 4] {
+        let mean = match (grain, self.coloured_mean) {
+            (true, Some(mean)) => [mean; 3],
+            _ => self.texture_mean,
+        };
+        let [r, g, b] = self.colour(i, j).map_or([1.0; 3], |c| [0, 1, 2].map(|k| c[k] / mean[k]));
+        [r, g, b, 1.0]
+    }
+
+    /// Whether any page has a colour.
+    pub fn has_colours(&self) -> bool {
+        !self.colours.is_empty()
+    }
+
+    /// The linear colour at grid point (`i`, `j`), if its page gives it one.
+    pub fn colour(&self, i: usize, j: usize) -> Option<[f32; 3]> {
+        let pages = |k: usize| [k / self.page_steps, k.saturating_sub(1) / self.page_steps];
+        pages(i).into_iter().flat_map(|pi| pages(j).map(|pj| (pi, pj))).find_map(|(pi, pj)| {
+            let colours = self.colours.get(&(pi, pj))?;
+            let [r, g, b, a] = colours[(j - pj * self.page_steps) * (self.page_steps + 1) + i - pi * self.page_steps];
+            let linear = |c: u8| {
+                let c = c as f32 / 255.0;
+                if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+            };
+            (a == 255).then(|| [linear(r), linear(g), linear(b)])
+        })
+    }
+
+    /// Whether there is ground at any grid point from (`i0`, `j0`) to (`i1`, `j1`).
+    pub fn touches(&self, (i0, i1): (usize, usize), (j0, j1): (usize, usize)) -> bool {
+        (j0..=j1).any(|j| (i0..=i1).any(|i| self.sample(i, j).is_some()))
+    }
+
     /// Whether there is ground at every grid point from (`i0`, `j0`) to (`i1`, `j1`).
     pub fn covers(&self, (i0, i1): (usize, usize), (j0, j1): (usize, usize)) -> bool {
         (j0..=j1).all(|j| (i0..=i1).all(|i| self.sample(i, j).is_some()))
@@ -213,6 +288,9 @@ impl Ground {
         let heights = (0..samples * samples).map(|k| height(k % samples, k / samples)).collect();
         Self {
             pages: HashMap::from([((0, 0), heights)]),
+            colours: HashMap::new(),
+            texture_mean: [1.0; 3],
+            coloured_mean: None,
             page_steps,
             step,
             south_west: DVec2::ZERO,

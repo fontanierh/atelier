@@ -121,8 +121,15 @@ def belmonte(build):
         return colour
 
     region = Region('belmonte', 'Belmonte and the Haras valley')
-    return runtime_groups(build, region, 'belmonte', ['belmonte_models', 'belmonte_ground', 'belmonte_north'], 'SM_BM_',
-                          rule, collision=lambda asset: build / 'belmonte' / 'glb' / f'{asset}_Collision.glb')
+    region = runtime_groups(build, region, 'belmonte', ['belmonte_models', 'belmonte_ground', 'belmonte_north'],
+                            'SM_BM_', rule, collision=lambda asset: build / 'belmonte' / 'glb' / f'{asset}_Collision.glb')
+    # The valley villages are Belmonte's own backdrop, hundreds of metres up around its map; on the island's map
+    # they would hang in the sky over the island and the sea.
+    backdrop = {name for name in region.models if name.startswith('belmonte-bvv-village')}
+    for name in backdrop:
+        del region.models[name]
+    region.groups = [group for group in region.groups if group[0] not in backdrop]
+    return region
 
 
 

@@ -80,6 +80,16 @@ pub struct Settings {
     ground_texture: String,
     /// How far apart the ground's texture repeats, in metres.
     ground_texture_m: f64,
+    /// The ground texture's mean linear colour. Where the ground's pages give a colour, the ground is tinted by that
+    /// colour over this mean, so the texture keeps its grain and shows the colour on average.
+    #[serde(default)]
+    ground_texture_mean: Option<[f64; 3]>,
+    /// A grain-only texture, and its mean linear lightness, that a tile whose ground is coloured everywhere shows
+    /// instead, so the colour shows true and only the grain is the texture's.
+    #[serde(default)]
+    coloured_ground_texture: Option<String>,
+    #[serde(default)]
+    coloured_ground_texture_mean: Option<f64>,
     /// Where the player starts, on the map.
     spawn_m: [f64; 2],
     /// Which way the player faces at the start, as a compass bearing east of north.
@@ -204,6 +214,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         .map(|overlay| &overlay.texture)
         .chain(raised.iter().map(|surface| &surface.texture))
         .chain([&settings.ground_texture])
+        .chain(&settings.coloured_ground_texture)
     {
         crate::uri_of_texture(texture)?;
     }
@@ -213,8 +224,18 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if !ground.covers_diagonals(whole.columns, whole.rows) {
         bail!("world extent is outside the source terrain diagonal coverage");
     }
-    if !ground.covers(whole.columns, whole.rows) {
-        bail!("the tiles reach past the ground");
+    if ground.has_colours() {
+        match settings.ground_texture_mean {
+            Some(mean) if mean.iter().all(|&c| c > 0.0 && c.is_finite()) => {
+                let grain = match (&settings.coloured_ground_texture, settings.coloured_ground_texture_mean) {
+                    (Some(_), Some(mean)) if mean > 0.0 && mean.is_finite() => Some(mean),
+                    (None, None) => None,
+                    _ => bail!("a grain-only ground texture needs its positive mean lightness"),
+                };
+                ground.set_texture_means(mean, grain);
+            }
+            _ => bail!("a coloured ground needs the ground texture's positive mean colour"),
+        }
     }
     let tile_m = settings.tile_steps as f64 * settings.ground_step_m;
     let collars = raised.iter().map(|surface| underlay::owner_collar(surface, tile_m)).collect::<Result<Vec<_>>>()?;
@@ -314,7 +335,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         settings.tile_steps,
         settings.middle_uses_fine_ground,
         settings.ground_texture,
-        settings.ground_texture_m
+        settings.ground_texture_m,
+        settings.ground_texture_mean,
+        settings.coloured_ground_texture,
+        settings.coloured_ground_texture_mean
     ]))?;
     // A tile past the ground draws no ground, so only the grid placing it is among its settings.
     let scenery_settings =
@@ -328,6 +352,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         for row in first_row..=last_row {
             let tile = whole.clip_tile(span(column), span(row)).expect("declared tiles intersect extent");
             let tile_scenery = scenery.remove(&(column, row)).unwrap_or_default();
+            // A tile out at sea, with no ground and nothing standing in it, is not exported.
+            if tile_scenery.is_empty() && !ground.touches(tile.columns, tile.rows) {
+                continue;
+            }
             let stem = format!("{column}_{row}");
             let files = [
                 (Detail::Full, tiles.join(format!("{stem}.glb"))),
@@ -354,8 +382,11 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 rebuilt += 1;
             }
             current.insert(stem, checksum);
-            let centre =
-                ground.at((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
+            let middle = ground.position(
+                (tile.columns.0 + tile.columns.1) as f64 / 2.0,
+                (tile.rows.0 + tile.rows.1) as f64 / 2.0,
+            );
+            let centre = middle.extend(ground.height(middle).unwrap_or(0.0));
             index.add_marker(&format!("tile {column} {row}"), game(centre), DQuat::IDENTITY);
         }
     }
@@ -596,8 +627,11 @@ impl Tile {
     ) -> Result<()> {
         let (overlays, raised, prepared, underlay, authored) = surfaces;
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
-        let ground_material =
-            glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
+        let texture = match &settings.coloured_ground_texture {
+            Some(texture) if ground.wholly_coloured(self.columns, self.rows) => texture,
+            _ => &settings.ground_texture,
+        };
+        let ground_material = glb.add_material(&Material::textured("ground", &crate::uri_of_texture(texture)?));
         let texture_steps = settings.ground_texture_m / settings.ground_step_m;
         let ground_mesh = self.ground(
             ground,
@@ -612,7 +646,9 @@ impl Tile {
         let visible = Surface::with_crossings(&ground_mesh, &source_meshes);
         let cut_mesh = if underlay.is_empty() { ground_mesh } else { underlay::remove_covered(&ground_mesh, underlay) };
         let cut = Surface::new(&cut_mesh);
-        glb.add_mesh("ground", &[&cut_mesh]);
+        if !cut_mesh.indices.is_empty() {
+            glb.add_mesh("ground", &[&cut_mesh]);
+        }
         for overlay in overlays {
             let mut mesh = overlay.mesh(ground, &drawn);
             if mesh.indices.is_empty() {
@@ -667,16 +703,21 @@ impl Tile {
 
     /// The ground in this tile. In full detail every grid square is two triangles. In middle detail the squares are
     /// `COARSE` steps wide; each is a fan around its centre through its corners and, on the tile's edges, every fine
-    /// point along them. Its texture repeats every `texture_steps` grid steps, counted from the world's south-west
-    /// corner, so it runs on unbroken across tiles and both versions.
+    /// point along them. A square with a corner off the ground, out at sea, is left out. Its texture repeats every
+    /// `texture_steps` grid steps, counted from the world's south-west corner, so it runs on unbroken across tiles
+    /// and both versions; where the ground has colours, each vertex carries its tint.
     fn ground(&self, ground: &Ground, detail: Detail, material: usize, texture_steps: f64) -> Mesh {
         let mut mesh = Mesh { material, ..Mesh::default() };
+        let grain = ground.wholly_coloured(self.columns, self.rows);
         let mut points: HashMap<(usize, usize), u32> = HashMap::new();
         let vertex = |mesh: &mut Mesh, i: f64, j: f64| {
             let p = ground.at(i, j);
             mesh.positions.push(game(p).as_vec3().to_array());
             mesh.normals.push(game(ground.normal(p.truncate())).as_vec3().to_array());
             mesh.uvs.push([(i / texture_steps) as f32, (-j / texture_steps) as f32]);
+            if ground.has_colours() {
+                mesh.colours.push(ground.tint(i.round() as usize, j.round() as usize, grain));
+            }
             (mesh.positions.len() - 1) as u32
         };
         let mut point = |mesh: &mut Mesh, i: usize, j: usize| {
@@ -685,6 +726,9 @@ impl Tile {
         if detail == Detail::Full {
             for j in self.rows.0..self.rows.1 {
                 for i in self.columns.0..self.columns.1 {
+                    if !ground.covers((i, i + 1), (j, j + 1)) {
+                        continue;
+                    }
                     let [a, b, c, d] =
                         [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)].map(|(i, j)| point(&mut mesh, i, j));
                     if ground.alternate_diagonal(i, j) {
@@ -705,6 +749,9 @@ impl Tile {
         for pair_j in rows.windows(2) {
             for pair_i in columns.windows(2) {
                 let ((i0, i1), (j0, j1)) = ((pair_i[0], pair_i[1]), (pair_j[0], pair_j[1]));
+                if !ground.covers((i0, i1), (j0, j1)) {
+                    continue;
+                }
                 // The square's outline, counter-clockwise seen from above, through every fine point on a tile edge.
                 let mut outline = Vec::new();
                 let side = |on_edge: bool, from: usize, to: usize| -> Vec<usize> {
@@ -731,6 +778,21 @@ impl Tile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_square_off_the_ground_draws_nothing_in_either_detail() {
+        let ground = Ground::page(8, 1.0, |i, j| if i == 0 && j == 0 { f32::NAN } else { 1.0 });
+        let tile = Tile { columns: (0, 8), rows: (0, 8) };
+        assert_eq!(tile.ground(&ground, Detail::Full, 0, 1.0).indices.len(), (64 - 1) * 6);
+        let middle = tile.ground(&ground, Detail::Middle, 0, 1.0);
+        let (low, high) = (COARSE as f32, 8.0 - COARSE as f32);
+        assert!(!middle.indices.is_empty());
+        assert!(
+            middle.positions.iter().all(|p| p[0] >= low || -p[2] >= low || p[0] > high || -p[2] > high),
+            "the coarse square holding the missing point is left out"
+        );
+        assert!(!ground.touches((20, 28), (20, 28)), "past the page there is no ground");
+    }
 
     #[test]
     fn bounded_water_requires_placed_models() {
@@ -820,6 +882,9 @@ mod tests {
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
             ground_texture_m: 24.0,
+            ground_texture_mean: None,
+            coloured_ground_texture: None,
+            coloured_ground_texture_mean: None,
             spawn_m: [0.0, 0.0],
             spawn_bearing_deg: 0.0,
         };
@@ -860,6 +925,9 @@ mod tests {
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
             ground_texture_m: 6.0,
+            ground_texture_mean: None,
+            coloured_ground_texture: None,
+            coloured_ground_texture_mean: None,
             spawn_m: [0.0, 0.0],
             spawn_bearing_deg: 0.0,
         };
@@ -969,6 +1037,9 @@ mod tests {
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
             ground_texture_m: 6.0,
+            ground_texture_mean: None,
+            coloured_ground_texture: None,
+            coloured_ground_texture_mean: None,
             spawn_m: [0.0, 0.0],
             spawn_bearing_deg: 0.0,
         };
@@ -1019,6 +1090,9 @@ mod tests {
                     middle_uses_fine_ground: false,
                     ground_texture: "ground".into(),
                     ground_texture_m: 6.0,
+                    ground_texture_mean: None,
+                    coloured_ground_texture: None,
+                    coloured_ground_texture_mean: None,
                     spawn_m: [0.0, 0.0],
                     spawn_bearing_deg: 0.0,
                 };
@@ -1112,6 +1186,9 @@ mod tests {
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
             ground_texture_m: 6.0,
+            ground_texture_mean: None,
+            coloured_ground_texture: None,
+            coloured_ground_texture_mean: None,
             spawn_m: [0.0, 0.0],
             spawn_bearing_deg: 0.0,
         };

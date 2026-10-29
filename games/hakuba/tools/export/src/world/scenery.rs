@@ -172,6 +172,13 @@ pub struct TileScenery {
     posts: Vec<RailPost>,
 }
 
+impl TileScenery {
+    /// Whether the tile holds nothing.
+    pub fn is_empty(&self) -> bool {
+        self.models.is_empty() && self.cables.is_empty() && self.rails.is_empty() && self.posts.is_empty()
+    }
+}
+
 /// The world's tiles, as the scenery needs them: where the first starts on the map, and their side in metres.
 pub struct Grid {
     pub south_west: DVec2,
