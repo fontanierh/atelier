@@ -1,5 +1,6 @@
 # Original source tree and its retained material slots.
 path = "model.glb"
-sha256 = "c5c0f8b6ff4ae5ca1ecc32d43079e9dc62c81beec929199bbb6b516b2aba2613"
+sha256 = "29171a5abba8070cad065f4cb8d7c82ea58c17224fee8717d4e0a27986d122af"
 authoring_fbx_sha256 = "ccbc6b37728f9a8c67b02127542c5535f59b655e8d31bedb185a54f056855369"
 conversion = "FBX SDK 2020.2 triangulation; direct source corner attributes"
+far_conversion = "32 of the full version's leaf cards, spread through the crown and enlarged to cover 60% of its leaves' area, and its trunk as 3 pairs of crossed cards"

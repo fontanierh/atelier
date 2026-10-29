@@ -1,8 +1,8 @@
 # Source foliage for the coast.
 kind = "plant"
 source = "src/model.glb"
-textures = ["coast-ochre-leaves"]
-inputs_sha256 = "21a12e4ebdc2635c48a108ac9db4e795b75c3d27929cba3e375a2150b617f9eb"
+textures = ["coast-ochre-leaves", "far-plants"]
+inputs_sha256 = "69811d29dbf01505ea196c75140af1c8d3aff6feecbfdd13a792d4c6380da298"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

@@ -1,7 +1,7 @@
 """Port Yorimichi's island forest into Hakuba's `forest` region: every tree, bush and tuft of grass the island's world,
 Hidamari's city, Belmonte and Brinecove stand outside the regions Hakuba plants itself.
 
-    uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models]
+    uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --far]
 
 The island's world (`world.json`) stands its plants over the whole map; Yorimichi's map clears them inside
 Hidamari's city and its north mountains, Belmonte and Brinecove, whose own plants replace them, and Hakuba's start
@@ -9,13 +9,15 @@ regions (`momiji-coast`, `momiji-village`, `woodland`) already hold theirs. The 
 Belmonte and Brinecove (their `runtime.json`) add their own plants, kept everywhere. Each plant becomes the Hakuba
 plant made from the same source model (`MODELS`), standing on Hakuba's ground at the depth it stood in its source.
 Belmonte's and Brinecove's plants off Hakuba's ground, or well above it, stand on their ground props at their source
-heights. Any other plant off Hakuba's ground, on a cliff, or of a model Hakuba has no plant for, is left out and
-counted, as is any tree of the island's world or city closer than `TREE_SPACING_M` to a taller one.
+heights, as do the island's plants on Belmonte's north country (`PROP_GROUND`). Any other plant off Hakuba's ground, on
+a cliff, or of a model Hakuba has no plant for, is left out and counted, as is any tree of the island's world or city
+closer than `TREE_SPACING_M` to a taller one.
 
 `--models` first imports the tree models Hakuba lacks (`NEW`) as plants, with their full, middle and far detail levels
 (`plant_convert.py`, one guarded Blender run each), and the leaf and bark textures they need (`TEXTURES`). It adds a
-far version to Hakuba's own trees (`FAR`), moves every far version onto one atlas texture (`FAR_TEXTURE`), and imports
-Brinecove's own plants from their GLBs, each material a texture of its colour.
+far version to Hakuba's own trees (`FAR`) and imports Brinecove's own plants from their GLBs, each material a texture
+of its colour. It then makes the far versions of the plants without a lower detail level (`far_versions`) and moves
+every far version onto one atlas texture (`FAR_TEXTURE`). `--far` does only that last step, without Blender.
 """
 import argparse
 import collections
@@ -34,7 +36,7 @@ from pathlib import Path
 import numpy as np
 
 from contact import ground_at, mosaic
-from ground import HAKUBA, WORLD, settings, triangles
+from ground import HAKUBA, WORLD, cells, settings, triangles
 from port import kebab
 
 # Each Yorimichi plant model and the Hakuba plant made from it.
@@ -96,15 +98,28 @@ TEXTURES = {
     'tuscan-oak-leaves': 'forest/textures/T_LeafOak.png', 'tuscan-olive-leaves': 'forest/textures/T_LeafOlive.png',
     'tuscan-stone-pine-leaves': 'forest/textures/T_LeafStonePine.png',
 }
-# The far versions' textures share one atlas, `FAR_TEXTURE`, so a far tile merges every tree it holds into one mesh:
-# each texture fills a cell `FAR_CELL` texels wide, its edge texels repeated `FAR_GUTTER` deep around it so that coarse
-# mip levels keep its own colours. The renders are only seen there, from their source image.
-FAR_TEXTURE, FAR_CELL, FAR_GUTTER = 'far-plants', 512, 16
+# The far versions' textures share one atlas, `FAR_TEXTURE`, so a far tile merges every plant it holds into one mesh:
+# each texture fills a cell `FAR_CELL` texels wide, more than a far plant ever covers on screen, its edge texels
+# repeated `FAR_GUTTER` deep around it so that coarse mip levels keep its own colours. The cells fill rows of a power
+# of two of them, as many rows as they need, rounded up to a power of two. The renders are only seen there, from their
+# source image.
+FAR_TEXTURE, FAR_CELL, FAR_GUTTER = 'far-plants', 256, 8
 RENDERS = {impostor(tree): f'forest/assembled/Tree_{tree}_colour.png' for tree in IMPOSTORS}
-# Brinecove's own plants, each `brinecove-<name>` in Hakuba. Having no far version, only its palms, the port's
-# landmarks, are seen from middle tiles.
+# Brinecove's own plants, each `brinecove-<name>` in Hakuba. Only its palms, the port's landmarks, are seen from
+# middle tiles.
 BRINECOVE = 'SM_BC_Plant_'
 BRINECOVE_AFAR = ('brinecove-palm',)
+# The plants whose sources have no lower detail level, and how `far_versions` makes their far version: the woodland's
+# canopy trees from `CARDS` of their leaf cards, spread through the crown and enlarged to cover `CARD_COVER` of the
+# leaves' area, the palms from their fronds, each half of a frond's `FROND_SEGMENTS` cards joined `FROND_JOIN` at a
+# time; each with its trunk (`TRUNKS`), a tall one seen from afar, as `TRUNK_SEGMENTS` pairs of crossed cards along it.
+CANOPY = ('woodland-canopy-amber', 'woodland-canopy-crimson', 'woodland-canopy-ginkgo', 'woodland-canopy-maple')
+CARDS, CARD_COVER = 32, 0.6
+FRONDS = {f'brinecove-palm{k}': 'brinecove-palm-frond' for k in range(6)}
+FROND_SEGMENTS, FROND_JOIN = 6, 3
+TRUNKS, TRUNK_SEGMENTS = ('garden-bark', 'brinecove-palm-trunk'), 3
+# The bushes and flowers, whose middle version, a few dozen triangles of leaves, is their far version too.
+BUSHES = ('coast-green-a', 'garden-green-b', 'coast-ochre-a', 'coast-ochre-b', 'coast-flower-a', 'garden-flower-b')
 BLENDER = os.environ.get('BLENDER', '/usr/local/bin/blender')
 # The trees' wind, push and haze response, as Hakuba's other trees have it.
 PROFILE = """[source_profile]
@@ -130,6 +145,11 @@ CLIFF = 1.5
 # The island's own trees stand as close as 1.5 m, in stands far denser than Hakuba's woods, which the browser could not
 # draw at its frame rate: of two trees closer than this, the smaller is left out.
 TREE_SPACING_M = 4.0
+# The terrain kept as props that the island's plants stand on off Hakuba's ground, at their source heights where these
+# are within `MISMATCH_M` of its surface: Belmonte's north country and apron, the island's groves north of its hills.
+PROP_GROUND = [('belmonte', 'belmonte-north-')]
+# The squares `prop_surface` sorts the props' triangles into are this many metres wide, or as wide as the widest.
+PROP_SQUARE_M = 16.0
 
 
 def inside(rows, rectangle):
@@ -238,21 +258,148 @@ def import_models(build):
                      'RGBA"']
         (out / 'manifest.toml').write_text('\n'.join(manifest) + '\n')
         print(f'{MODELS[model]}: far {far}')
-    far_atlas(build)
+
+
+def far_versions():
+    """Adds a far version to each plant of `CANOPY`, `FRONDS` and `BUSHES`, and records how."""
+    for model in CANOPY + tuple(FRONDS) + BUSHES:
+        out = HAKUBA / 'plants' / model / 'src'
+        nodes = read_plant_glb(out / 'model.glb')
+        if model in BUSHES:
+            nodes['far'] = [dict(primitive) for primitive in leaves(nodes['middle'])]
+            assert len(nodes['far']) == len(nodes['middle']), f'{model}: a bush is all leaves'
+            how = 'its middle version\'s leaves'
+        else:
+            if model in FRONDS:
+                nodes['far'] = [fronds(next(primitive for primitive in nodes['full']
+                                            if primitive['texture'] == FRONDS[model]))]
+                how = f'the full version\'s fronds, every {FROND_JOIN} of their cards joined into one'
+            else:
+                nodes['far'] = cards(leaves(nodes['full']))
+                how = (f'{CARDS} of the full version\'s leaf cards, spread through the crown and enlarged to cover '
+                       f'{CARD_COVER:.0%} of its leaves\' area')
+            nodes['far'].append(trunk(next(primitive for primitive in nodes['full'] if primitive['texture'] in TRUNKS)))
+            how += f', and its trunk as {TRUNK_SEGMENTS} pairs of crossed cards'
+        write_plant_glb(nodes, out / 'model.glb')
+        manifest = [line for line in (out / 'manifest.toml').read_text().splitlines()
+                    if not line.startswith(('sha256', 'far_conversion'))]
+        manifest.insert(2, f'sha256 = "{sha256(out / "model.glb")}"')
+        manifest.append(f'far_conversion = "{how}"')
+        (out / 'manifest.toml').write_text('\n'.join(manifest) + '\n')
+        print(f'{model}: far from {how}')
+
+
+def trunk(bark):
+    """A trunk, `bark`, as `TRUNK_SEGMENTS` pairs of crossed cards from its foot to its top along its middle, each
+    as wide at either end as the trunk is there and showing its whole texture once, swaying as the trunk does."""
+    positions = bark['POSITION'][bark['indices']].astype(float)
+    low, high = positions[:, 1].min(), positions[:, 1].max()
+    heights = np.linspace(low, high, TRUNK_SEGMENTS + 1)
+    centres, widths = [], []
+    for y in heights:
+        band = positions[np.abs(positions[:, 1] - y) <= (high - low) / TRUNK_SEGMENTS / 2]
+        centre = band.mean(0)
+        centres.append(np.array([centre[0], y, centre[2]]))
+        widths.append(2 * float(np.median(np.hypot(band[:, 0] - centre[0], band[:, 2] - centre[2]))))
+    colour = bark['COLOR_0'].mean(0).astype('<f4')
+    corners, uvs, normals = [], [], []
+    for k in range(TRUNK_SEGMENTS):
+        for side, normal in ((np.array([0.5, 0, 0]), [0, 0, 1]), (np.array([0, 0, 0.5]), [1, 0, 0])):
+            a, b = centres[k], centres[k + 1]
+            corners += [a - side * widths[k], a + side * widths[k], b + side * widths[k + 1], b - side * widths[k + 1]]
+            uvs += [[0, 1], [1, 1], [1, 0], [0, 0]]
+            normals += [normal] * 4
+    count = len(corners) // 4
+    return {'material': bark['material'], 'texture': bark['texture'], 'masked': True, 'double': True,
+            'POSITION': np.array(corners, '<f4'), 'NORMAL': np.array(normals, '<f4'),
+            'TEXCOORD_0': np.array(uvs, '<f4'), 'COLOR_0': np.tile(colour, (4 * count, 1)),
+            'indices': (np.array([0, 1, 2, 0, 2, 3])[None] + 4 * np.arange(count)[:, None]).reshape(-1).astype('<u4')}
+
+
+def fronds(primitive):
+    """A palm's fronds, `primitive`, with every `FROND_JOIN` cards along each half of a frond joined into one. A frond
+    is `FROND_SEGMENTS` pairs of cards (each two triangles of their own four corners) from its foot to its tip, its
+    left and right halves in turn, each card's foot the edge further down its texture."""
+    quads = primitive['indices'].reshape(-1, 6)
+    pattern = quads[0] - quads[0].min()
+    assert len(quads) % (2 * FROND_SEGMENTS) == 0 and set(pattern.tolist()) == {0, 1, 2, 3} and (
+        quads - quads.min(1, keepdims=True) == pattern).all(), 'fronds are cards'
+    v = primitive['TEXCOORD_0'][:, 1]
+    rows = []
+    for frond in range(len(quads) // (2 * FROND_SEGMENTS)):
+        for half in range(2):
+            for start in range(0, FROND_SEGMENTS, FROND_JOIN):
+                first, last = (quads[(2 * FROND_SEGMENTS) * frond + 2 * k + half].min() + np.arange(4)
+                               for k in (start, start + FROND_JOIN - 1))
+                assert v[first].mean() > v[last].mean(), 'a frond runs from its foot to its tip'
+                corners = first.copy()
+                # The joined card keeps the first card's foot and takes the last card's tip.
+                tips = first[np.argsort(v[first])[:2]]
+                for tip in tips:
+                    match = last[np.argsort(v[last])[:2]]
+                    u = primitive['TEXCOORD_0'][:, 0]
+                    corners[corners == tip] = match[np.argmin(np.abs(u[match] - u[tip]))]
+                rows.append(corners)
+    rows = np.array(rows)
+    out = {key: value for key, value in primitive.items() if not isinstance(value, np.ndarray)}
+    for key, value in primitive.items():
+        if isinstance(value, np.ndarray) and key != 'indices':
+            out[key] = value[rows.reshape(-1)].copy()
+    out['indices'] = (pattern[None] + 4 * np.arange(len(rows))[:, None]).reshape(-1).astype('<u4')
+    return out
+
+
+def cards(primitives):
+    """`CARDS` of the leaf cards (each two triangles of their own four corners), the next always the farthest from
+    those chosen, each enlarged about its centre so that together they cover `CARD_COVER` of the leaves' area."""
+    quads = [(primitive, quad) for primitive in primitives for quad in range(len(primitive['indices']) // 6)]
+    corners = [primitive['indices'][6 * quad:6 * quad + 6] for primitive, quad in quads]
+    assert all(len(set(c.tolist())) == 4 and c.min() == c.max() - 3 for c in corners), 'leaves must be cards'
+    centres = np.array([primitive['POSITION'][c].mean(0) for (primitive, _), c in zip(quads, corners)], float)
+
+    def area(primitive, c):
+        a, b, d = (primitive['POSITION'][c[k::3]].astype(float) for k in range(3))
+        return float(np.linalg.norm(np.cross(b - a, d - a), axis=1).sum() / 2)
+
+    areas = np.array([area(primitive, c) for (primitive, _), c in zip(quads, corners)])
+    # The highest card first, then each farthest from those chosen.
+    chosen = [int(np.argmax(centres[:, 1]))]
+    distance = np.linalg.norm(centres - centres[chosen[0]], axis=1)
+    while len(chosen) < min(CARDS, len(quads)):
+        chosen.append(int(np.argmax(distance)))
+        distance = np.minimum(distance, np.linalg.norm(centres - centres[chosen[-1]], axis=1))
+    scale = math.sqrt(CARD_COVER * areas.sum() / areas[chosen].sum())
+    out = []
+    for primitive in primitives:
+        picked = [k for k in sorted(chosen) if quads[k][0] is primitive]
+        if not picked:
+            continue
+        part = {key: value for key, value in primitive.items() if not isinstance(value, np.ndarray)}
+        rows = np.concatenate([np.arange(corners[k].min(), corners[k].min() + 4) for k in picked])
+        for key, value in primitive.items():
+            if isinstance(value, np.ndarray) and key != 'indices':
+                part[key] = value[rows].copy()
+        positions = part['POSITION'].reshape(-1, 4, 3).astype(float)
+        middle = positions.mean(1, keepdims=True)
+        part['POSITION'] = (middle + scale * (positions - middle)).reshape(-1, 3).astype('<f4')
+        part['indices'] = np.concatenate([corners[k] - corners[k].min() + 4 * n
+                                          for n, k in enumerate(picked)]).astype('<u4')
+        out.append(part)
+    return out
 
 
 def far_atlas(build):
     """Moves every plant's far version onto `FAR_TEXTURE`, an atlas of the textures they show, and records each
-    plant's new source."""
+    plant's new source. A far version already on the atlas is first read back to the texture it shows."""
     from PIL import Image
     plants = {}
     for source in sorted((HAKUBA / 'plants').glob('*/src/model.glb')):
         nodes = read_plant_glb(source)
         if 'far' in nodes:
             plants[source] = nodes
+    unatlas(plants)
     textures = sorted({primitive['texture'] for nodes in plants.values() for primitive in nodes['far']})
-    columns = math.ceil(math.sqrt(len(textures)))
-    rows = math.ceil(len(textures) / columns)
+    columns, rows = atlas_grid(len(textures))
     atlas = np.zeros((rows * FAR_CELL, columns * FAR_CELL, 4), np.uint8)
     images, inner = {}, FAR_CELL - 2 * FAR_GUTTER
     for k, texture in enumerate(textures):
@@ -290,6 +437,36 @@ def far_atlas(build):
         asset = [f'textures = {json.dumps(shown)}' if line.startswith('textures') else line for line in asset]
         (source.parent.parent / 'asset.toml').write_text('\n'.join(asset) + '\n')
     print(f'{FAR_TEXTURE}: {len(textures)} textures, {len(plants)} plants')
+
+
+def atlas_grid(count):
+    """The columns and rows of an atlas of `count` cells."""
+    columns = 2 ** math.ceil(math.log2(math.ceil(math.sqrt(count))))
+    return columns, 2 ** math.ceil(math.log2(math.ceil(count / columns)))
+
+
+def unatlas(plants):
+    """Moves each far version on `FAR_TEXTURE` back to the texture it shows, as the atlas's manifest lists them and
+    its width sizes their cells."""
+    from PIL import Image
+    folder = HAKUBA / 'textures' / FAR_TEXTURE / 'src'
+    if not (folder / 'manifest.toml').is_file():
+        return
+    textures = [line.split(' = ')[0].removeprefix('authoring_').removesuffix('_sha256').replace('_', '-')
+                for line in (folder / 'manifest.toml').read_text().splitlines() if line.startswith('authoring_')]
+    columns, rows = atlas_grid(len(textures))
+    cell = Image.open(folder / 'texture.png').width // columns
+    size, inner = np.array([columns, rows], float) * cell, cell - 2 * (cell * FAR_GUTTER // FAR_CELL)
+    for nodes in plants.values():
+        for primitive in nodes['far']:
+            if primitive['texture'] != FAR_TEXTURE:
+                continue
+            texel = primitive['TEXCOORD_0'].astype(float) * size
+            column, row = (np.floor(texel.mean(0) / cell)).astype(int)
+            corner = np.array([column, row], float) * cell + (cell - inner) / 2
+            primitive['TEXCOORD_0'] = ((texel - corner) / inner).astype('<f4')
+            texture = textures[row * columns + column]
+            primitive.update(texture=texture, material=texture)
 
 
 def leaves(primitives):
@@ -517,8 +694,46 @@ def glb_json(path):
     return json.loads(data[20:20 + int.from_bytes(data[12:16], 'little')])
 
 
+@functools.cache
+def prop_squares():
+    """The triangles of the props of `PROP_GROUND`, the squares' width, and the key and triangle of each triangle in
+    every square its bounds touch, sorted by key."""
+    tris = np.concatenate([tris for tris, _ in cells(PROP_GROUND)])
+    square = max(PROP_SQUARE_M, float((tris[..., :2].max(1) - tris[..., :2].min(1)).max()) + 1e-6)
+    low = np.floor(tris[..., :2].min(1) / square).astype(int)
+    high = np.floor(tris[..., :2].max(1) / square).astype(int)
+    keys, owners = [], []
+    for di in (0, 1):
+        for dj in (0, 1):
+            touch = (low[:, 0] + di <= high[:, 0]) & (low[:, 1] + dj <= high[:, 1])
+            keys.append((low[touch, 0] + di) * 100003 + low[touch, 1] + dj)
+            owners.append(np.flatnonzero(touch))
+    keys, owners = np.concatenate(keys), np.concatenate(owners)
+    order = np.argsort(keys, kind='stable')
+    return tris, square, keys[order], owners[order]
+
+
+def prop_surface(x, y):
+    """The highest surface of the props of `PROP_GROUND` over each map point (`x`, `y`), NaN off them."""
+    tris, square, keys, owners = prop_squares()
+    surface = np.full(len(x), np.nan)
+    for k, (px, py) in enumerate(zip(x, y)):
+        key = math.floor(px / square) * 100003 + math.floor(py / square)
+        a, b, c = (tris[owners[np.searchsorted(keys, key):np.searchsorted(keys, key, 'right')], n] for n in range(3))
+        det = (b[:, 1] - c[:, 1]) * (a[:, 0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (a[:, 1] - c[:, 1])
+        with np.errstate(divide='ignore', invalid='ignore'):
+            u = ((b[:, 1] - c[:, 1]) * (px - c[:, 0]) + (c[:, 0] - b[:, 0]) * (py - c[:, 1])) / det
+            v = ((c[:, 1] - a[:, 1]) * (px - c[:, 0]) + (a[:, 0] - c[:, 0]) * (py - c[:, 1])) / det
+        w = 1 - u - v
+        inside = (np.abs(det) > 1e-12) & (u >= -1e-6) & (v >= -1e-6) & (w >= -1e-6)
+        if inside.any():
+            surface[k] = (u * a[:, 2] + v * b[:, 2] + w * c[:, 2])[inside].max()
+    return surface
+
+
 def spaced(trees, skipped):
-    """`trees`, (model, row, depth), less each tree closer than `TREE_SPACING_M` to a taller one."""
+    """`trees`, (model, row, depth or height, on the ground), less each tree closer than `TREE_SPACING_M` to a taller
+    one."""
     cells, kept = collections.defaultdict(list), []
     for tree in sorted(trees, key=lambda tree: -height(tree[0]) * tree[1][4]):
         x, y = tree[1][:2]
@@ -536,10 +751,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--build', type=Path, required=True, help="Yorimichi's build folder, build/yorimichi")
     parser.add_argument('--models', action='store_true', help="first import the tree models Hakuba lacks")
+    parser.add_argument('--far', action='store_true', help="first make the far versions and their atlas again")
     args = parser.parse_args()
     if args.models:
         import_models(args.build.resolve())
         import_brinecove(args.build.resolve())
+    if args.models or args.far:
+        far_versions()
+        far_atlas(args.build.resolve())
     world = settings()
     heights = mosaic(world)
     south_west, step = np.array(world['south_west_m']), world['ground_step_m']
@@ -566,18 +785,29 @@ def main():
             groups[model, False].extend([round(x, 3), round(y, 3), round(z, 3), round(yaw % 360.0, 2), round(scale, 4)]
                                         for x, y, z, yaw, scale in rows[off].tolist())
         else:
-            skipped['off the ground'] += int(off.sum())
+            # On a prop of `PROP_GROUND`, a plant stands at its source height.
+            surface = prop_surface(rows[off, 0], rows[off, 1]) if off.any() else np.zeros(0)
+            with np.errstate(invalid='ignore'):
+                on_prop = np.abs(rows[off, 2] - surface) <= MISMATCH_M
+            skipped['off the ground'] += int((~on_prop).sum())
+            standing = rows[off][on_prop]
+            if name.startswith('Tree_'):
+                trees.extend((model, row, row[2], False) for row in standing.tolist())
+            elif len(standing):
+                groups[model, False].extend([round(x, 3), round(y, 3), round(z, 3), round(yaw % 360.0, 2),
+                                             round(scale, 4)] for x, y, z, yaw, scale in standing.tolist())
         rows, ground = rows[~off], ground[~off]
         depth = rows[:, 2] - ground
         deepest = np.maximum(DEEPEST_M, -SINK_SHARE * height(model) * rows[:, 4])
         depth = np.clip(np.where(np.abs(depth) > MISMATCH_M, SINK_M, depth), deepest, 0.0)
         if not kept and name.startswith('Tree_'):
-            trees.extend((model, row, d) for row, d in zip(rows.tolist(), depth.tolist()))
+            trees.extend((model, row, d, True) for row, d in zip(rows.tolist(), depth.tolist()))
             continue
         groups[model, True].extend([round(x, 3), round(y, 3), round(d, 3), round(yaw % 360.0, 2), round(scale, 4)]
                              for (x, y, _, yaw, scale), d in zip(rows.tolist(), depth.tolist()))
-    for model, (x, y, _, yaw, scale), d in spaced(trees, skipped):
-        groups[model, True].append([round(x, 3), round(y, 3), round(d, 3), round(yaw % 360.0, 2), round(scale, 4)])
+    for model, (x, y, _, yaw, scale), d, on_ground in spaced(trees, skipped):
+        groups[model, on_ground].append([round(x, 3), round(y, 3), round(d, 3), round(yaw % 360.0, 2),
+                                         round(scale, 4)])
     for model, _ in groups:
         assert (HAKUBA / 'plants' / model / 'asset.toml').is_file(), f'no Hakuba plant {model}'
     placements = [{'model': f'plants/{model}', 'afar': afar(model), 'on_ground': on_ground, 'instances': rows}
