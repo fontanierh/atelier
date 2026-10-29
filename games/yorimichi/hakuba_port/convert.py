@@ -4,10 +4,11 @@ Run as `blender -b --threads 3 -P convert.py -- JOBS.json`. Each job names one s
 output GLB. The output holds a node `full`, the visible mesh, and, when the source has `UCX_` hulls or the job names a
 `collision_source`, a node `collision` holding them. Each corner's colour, in linear RGB, is the product of what its
 material slot's rule names: a flat `rgb`, the source's vertex colour (`vertex`) and a `gain`. A slot whose rule names a
-`texture` asset draws it on the mesh's own UVs, times that colour, and then the whole `full` node is a textured
-surface; on a mesh without UVs it shows the texture's mean colour (`mean_rgb`) instead. Otherwise the colour alone is
-painted per vertex, with alpha 0 (no motion). A slot whose rule says `drop` loses its faces. Corners that store the
-same position, normal, colour and texture position share one vertex.
+`texture` asset draws it on the mesh's own UVs, over the rule's `tile` (the UV span one repeat of the image covers, 1
+by default), times that colour, and then the whole `full` node is a textured surface; on a mesh without UVs it shows
+the texture's mean colour (`mean_rgb`) instead. Otherwise the colour alone is painted per vertex, with alpha 0 (no
+motion). A slot whose rule says `drop` loses its faces. Corners that store the same position, normal, colour and
+texture position share one vertex.
 """
 import json
 import os
@@ -168,13 +169,18 @@ def convert(job):
     drop(full, job)
     textures = paint(full, job)
     position, normal, colour, triangles, uv, slot = arrays(full, True)
+    # Each corner's texture position over its slot's tile.
+    names = [m.name if m else '' for m in full.data.materials] or ['']
+    tile = np.array([rule.get('tile', 1.0) for rule in slot_rules(job, names)], dtype=np.float32)
+    corner_slot = np.zeros(len(uv), dtype=np.int64)
+    corner_slot[triangles.ravel()] = np.repeat(slot, 3)
+    uv = uv / tile[corner_slot][:, None]
     used = np.unique(slot)
     materials = None
     if any(textures[k] for k in used):
         # A textured surface: one material per texture its slots draw (or none), each named after its first slot,
         # times the corner colour, which keeps each slot's own colour; slots drawing the same texture share one
         # material, so the prop is drawn in as few parts as it has textures.
-        names = [m.name if m else '' for m in full.data.materials] or ['']
         first = {}
         for k in used:
             first.setdefault(textures[k], k)

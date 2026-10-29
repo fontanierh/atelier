@@ -102,9 +102,10 @@ def brinecove(build):
 
 
 def belmonte(build):
-    """Belmonte and the Haras valley: the town, its ground, the hippodrome and the northern hills. A material's colour
-    is its colour, tint and brightness times its texture's mean (or, for an atlas, the texel under each corner), and
-    terrain uses its green layer; water is left out."""
+    """Belmonte and the Haras valley: the town, its ground, the hippodrome and the northern hills. A material draws as
+    Belmonte's material does (`import_belmonte.py`): its colour, tint and brightness times its texture on the mesh's
+    UVs over the material's tile in metres; a detail texture (one that is not an atlas) is neutral grey, so it counts
+    twice. Terrain uses its green layer; water is left out."""
     report = json.loads((build / 'belmonte' / 'build-report.json').read_text())['materials']
     by_name = {entry['name']: entry for entry in report.values()}
     textures = build / 'belmonte' / 'textures'
@@ -118,7 +119,8 @@ def belmonte(build):
             return {'rgb': [c * g for c, g in zip(rgb, entry['layers']['Green'])]}
         colour = {'rgb': rgb, 'vertex': entry['white_vertex'] is False}
         if entry['texture']:
-            colour['sample' if entry['atlas'] else 'mean'] = str(textures / entry['texture'])
+            colour.update(sample=str(textures / entry['texture']), tile=entry['tile_m'],
+                          gain=1.0 if entry['atlas'] else 2.0)
         return colour
 
     region = Region('belmonte', 'Belmonte and the Haras valley')

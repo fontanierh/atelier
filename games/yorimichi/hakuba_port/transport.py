@@ -12,7 +12,7 @@ listed once in Hakuba's `tools/export/src/world/regions.rs`.
 - `railway`: the track, its tunnels' portals, viaducts, banks, buffer stops, turnouts, Belmonte's station and the
   road's overbridge, from `world/train/track.py` on the committed line (`assets/vehicles/belmonte-train/line.json`),
   and the two trains, one at each terminus, from the coach shells `world/train/build.py` wrote (`--train`, by
-  default `<build>/belmonte-train`), each vehicle's outside at its middle detail. Sleepers are joined into their
+  default `<build>/belmonte-train`), each vehicle's outside at its full detail. Sleepers are joined into their
   stretch of track. Pieces wholly under Hakuba's ground (inside the tunnels) and the tunnels' lamps are left out.
   A track piece's Belmonte materials (`MI_B_*`, ballast, stone, timber, ...) are Belmonte's own, as Unreal binds them
   (`import_belmonte_track.py`): Belmonte's detail texture on the piece's planar UVs in metres over the material's tile,
@@ -33,13 +33,15 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
+# A smooth non-metal's reflectance, glTF's default specular.
+SHEEN = 0.04
 YORIMICHI = HERE.parent
 sys.path.insert(0, str(HERE))
 
 import painted as glb  # noqa: E402
 from contact import POINTS, ground_at, mosaic  # noqa: E402
 from ground import settings  # noqa: E402
-from port import HAKUBA, Model, Region, kebab, settle_textures, write, write_texture  # noqa: E402
+from port import HAKUBA, Model, Region, describe, kebab, settle_textures, write, write_texture  # noqa: E402
 
 
 class Ground:
@@ -108,8 +110,7 @@ def track_looks(build):
             image = build / 'belmonte' / 'textures' / entry['texture']
             texture = f'belmonte-{kebab(image.stem)}'
             if not (HAKUBA / 'assets' / 'textures' / texture).exists():
-                words = texture.removeprefix('belmonte-').replace('-', ' ')
-                write_texture(texture, image, f'The {words} texture that the belmonte props draw.')
+                write_texture(texture, image, describe(texture, 'belmonte'))
             rgb = [2.0 * c * t * entry['brightness'] for c, t in zip(entry['colour'][:3], entry['tint'][:3])]
             looks.append((name, rgb, texture, entry['tile_m']))
         else:
@@ -148,7 +149,8 @@ def shell(path, scratch):
     material's base colour, with its UVs and each triangle's material, and the materials `painted.glb` draws: each
     image the shell's materials draw becomes the texture asset `railway-<image>`, written from `scratch`. Glass is
     painted dark, as the trains' far shells draw their windows; other see-through materials (the crest decal) are left
-    out."""
+    out. Hakuba draws every surface matte, so an untextured paint's sheen, the 4 % a non-metal reflects, less the
+    rougher it is, is folded into its colour: the glossy black engine reads as black paint, not a void."""
     doc, images, parts = glb.read(path)
     materials, chosen = [], {}
     for k, material in enumerate(doc.get('materials', [])):
@@ -159,7 +161,10 @@ def shell(path, scratch):
             if 'Glass' not in material.get('name', ''):
                 continue
             colour = np.array([0.02, 0.024, 0.03])
-        elif 'baseColorTexture' in pbr:
+        elif 'baseColorTexture' not in pbr:
+            if pbr.get('metallicFactor', 1.0) < 0.5:
+                colour = colour + SHEEN * (1.0 - pbr.get('roughnessFactor', 1.0))
+        else:
             source = doc['textures'][pbr['baseColorTexture']['index']]['source']
             image = doc['images'][source]['name']
             texture = 'railway-' + kebab(image.removeprefix('T_BT_'))
@@ -262,7 +267,7 @@ def railway(build, shells, scratch):
         prop = 'railway-' + vehicle['id']
         out = HAKUBA / 'assets' / 'props' / prop / 'src' / 'model.glb'
         out.parent.mkdir(parents=True, exist_ok=True)
-        *corners, textured, textures = shell(shells / vehicle['id'] / f'SM_BT_{title}_Exterior_LOD1.glb', scratch)
+        *corners, textured, textures = shell(shells / vehicle['id'] / f'SM_BT_{title}_Exterior_LOD0.glb', scratch)
         origins[prop] = glb.prop(*corners, out, textured)
         region.models[prop] = Model(None, textures=textures, about=f"The Belmonte train's "
                                     f"{vehicle['title'].lower()}, from outside, standing at a terminus, drawn with "
