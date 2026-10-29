@@ -33,7 +33,7 @@ from pathlib import Path
 
 import numpy as np
 
-from contact import ground_at, mosaic
+from contact import ground_at, mosaic, supports
 from ground import HAKUBA, WORLD, settings, triangles
 from port import kebab
 
@@ -125,6 +125,10 @@ START = (-300.0, -172.0, 300.0, 300.0)
 # A plant stands this far into the ground at most, and never above it; where the source ground differs from Hakuba's
 # by more than `MISMATCH_M`, it sinks by `SINK_M`. A small plant sinks by no more than `SINK_SHARE` of its height.
 DEEPEST_M, MISMATCH_M, SINK_M, SINK_SHARE = -0.6, 2.0, -0.3, 0.2
+# A region's plant that its source stands well above Hakuba's ground keeps that height only where a ported prop's
+# surface, as the exported tiles draw it, is within `SEAT_M` under it or over it; over nothing it would float, so it
+# stands on the ground as the island's plants do.
+SEAT_M = 0.5
 # The steepest ground a plant stands on: the most the ground rises a metre from its foot (about 56°).
 CLIFF = 1.5
 # The island's own trees stand as close as 1.5 m, in stands far denser than Hakuba's woods, which the browser could not
@@ -544,6 +548,8 @@ def main():
     heights = mosaic(world)
     south_west, step = np.array(world['south_west_m']), world['ground_step_m']
     groups, skipped, trees = collections.defaultdict(list), collections.Counter(), []
+    # The ported props as the last export drew them, which a region's plants may stand on.
+    drawn = supports(world)
     for name, rows, kept in sources(args.build.resolve()):
         model = MODELS.get(name) or (brinecove_name(name) if name.startswith(BRINECOVE) else None)
         if model is None:
@@ -560,9 +566,13 @@ def main():
         rows, ground = rows[~cliff], ground[~cliff]
         off = np.isnan(ground)
         if kept:
-            # Off Hakuba's ground, or well above it, the plant stands on one of its region's ground props.
+            # Off Hakuba's ground, or well above it on a ported prop, the plant keeps its source height; well above
+            # it over no prop, it stands on the ground.
             with np.errstate(invalid='ignore'):
                 off |= rows[:, 2] - ground > MISMATCH_M
+            surface = drawn.heights(rows[off, 0], rows[off, 1], rows[off, 2])
+            with np.errstate(invalid='ignore'):
+                off[off] = np.isnan(ground[off]) | (rows[off, 2] - surface <= SEAT_M)
             groups[model, False].extend([round(x, 3), round(y, 3), round(z, 3), round(yaw % 360.0, 2), round(scale, 4)]
                                         for x, y, z, yaw, scale in rows[off].tolist())
         else:
