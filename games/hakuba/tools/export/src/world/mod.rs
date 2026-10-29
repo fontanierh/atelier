@@ -382,10 +382,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 rebuilt += 1;
             }
             current.insert(stem, checksum);
-            let middle = ground.position(
-                (tile.columns.0 + tile.columns.1) as f64 / 2.0,
-                (tile.rows.0 + tile.rows.1) as f64 / 2.0,
-            );
+            let middle = ground
+                .position((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
             let centre = middle.extend(ground.height(middle).unwrap_or(0.0));
             index.add_marker(&format!("tile {column} {row}"), game(centre), DQuat::IDENTITY);
         }
@@ -703,7 +701,8 @@ impl Tile {
 
     /// The ground in this tile. In full detail every grid square is two triangles. In middle detail the squares are
     /// `COARSE` steps wide; each is a fan around its centre through its corners and, on the tile's edges, every fine
-    /// point along them. A square with a corner off the ground, out at sea, is left out. Its texture repeats every
+    /// point along them. A grid square with a corner off the ground, out at sea, is left out, and a coarse square
+    /// holding one draws its fine squares. Its texture repeats every
     /// `texture_steps` grid steps, counted from the world's south-west corner, so it runs on unbroken across tiles
     /// and both versions; where the ground has colours, each vertex carries its tint.
     fn ground(&self, ground: &Ground, detail: Detail, material: usize, texture_steps: f64) -> Mesh {
@@ -723,14 +722,14 @@ impl Tile {
         let mut point = |mesh: &mut Mesh, i: usize, j: usize| {
             *points.entry((i, j)).or_insert_with(|| vertex(mesh, i as f64, j as f64))
         };
-        if detail == Detail::Full {
-            for j in self.rows.0..self.rows.1 {
-                for i in self.columns.0..self.columns.1 {
+        // The fine squares from (`i0`, `j0`) to (`i1`, `j1`) that are on the ground, two triangles each.
+        let fine = |mesh: &mut Mesh, point: &mut dyn FnMut(&mut Mesh, usize, usize) -> u32, (i0, i1), (j0, j1)| {
+            for j in j0..j1 {
+                for i in i0..i1 {
                     if !ground.covers((i, i + 1), (j, j + 1)) {
                         continue;
                     }
-                    let [a, b, c, d] =
-                        [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)].map(|(i, j)| point(&mut mesh, i, j));
+                    let [a, b, c, d] = [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)].map(|(i, j)| point(mesh, i, j));
                     if ground.alternate_diagonal(i, j) {
                         mesh.indices.extend([a, b, d, b, c, d]);
                     } else {
@@ -738,6 +737,9 @@ impl Tile {
                     }
                 }
             }
+        };
+        if detail == Detail::Full {
+            fine(&mut mesh, &mut point, self.columns, self.rows);
             return mesh;
         }
         let coarse = |(first, last): (usize, usize)| {
@@ -746,24 +748,38 @@ impl Tile {
             stops
         };
         let (columns, rows) = (coarse(self.columns), coarse(self.rows));
-        for pair_j in rows.windows(2) {
-            for pair_i in columns.windows(2) {
-                let ((i0, i1), (j0, j1)) = ((pair_i[0], pair_i[1]), (pair_j[0], pair_j[1]));
+        // A coarse square with a corner off the ground draws its fine squares instead, so the coast keeps the full
+        // detail's edge; a whole neighbour then meets it through every fine point on their shared side.
+        let partial = |a: usize, b: usize| {
+            a + 1 < columns.len()
+                && b + 1 < rows.len()
+                && !ground.covers((columns[a], columns[a + 1]), (rows[b], rows[b + 1]))
+                && ground.touches((columns[a], columns[a + 1]), (rows[b], rows[b + 1]))
+        };
+        for b in 0..rows.len() - 1 {
+            for a in 0..columns.len() - 1 {
+                let ((i0, i1), (j0, j1)) = ((columns[a], columns[a + 1]), (rows[b], rows[b + 1]));
                 if !ground.covers((i0, i1), (j0, j1)) {
+                    fine(&mut mesh, &mut point, (i0, i1), (j0, j1));
                     continue;
                 }
-                // The square's outline, counter-clockwise seen from above, through every fine point on a tile edge.
+                // The square's outline, counter-clockwise seen from above, through every fine point on a tile edge
+                // or beside a square drawn fine.
                 let mut outline = Vec::new();
-                let side = |on_edge: bool, from: usize, to: usize| -> Vec<usize> {
-                    if !on_edge {
+                let side = |fine: bool, from: usize, to: usize| -> Vec<usize> {
+                    if !fine {
                         return vec![from];
                     }
                     if from < to { (from..to).collect() } else { (to + 1..=from).rev().collect() }
                 };
-                outline.extend(side(j0 == self.rows.0, i0, i1).into_iter().map(|i| (i, j0)));
-                outline.extend(side(i1 == self.columns.1, j0, j1).into_iter().map(|j| (i1, j)));
-                outline.extend(side(j1 == self.rows.1, i1, i0).into_iter().map(|i| (i, j1)));
-                outline.extend(side(i0 == self.columns.0, j1, j0).into_iter().map(|j| (i0, j)));
+                let south = b == 0 || partial(a, b - 1);
+                let east = a + 2 == columns.len() || partial(a + 1, b);
+                let north = b + 2 == rows.len() || partial(a, b + 1);
+                let west = a == 0 || partial(a - 1, b);
+                outline.extend(side(south, i0, i1).into_iter().map(|i| (i, j0)));
+                outline.extend(side(east, j0, j1).into_iter().map(|j| (i1, j)));
+                outline.extend(side(north, i1, i0).into_iter().map(|i| (i, j1)));
+                outline.extend(side(west, j1, j0).into_iter().map(|j| (i0, j)));
                 let centre = vertex(&mut mesh, (i0 + i1) as f64 / 2.0, (j0 + j1) as f64 / 2.0);
                 let outline: Vec<u32> = outline.into_iter().map(|(i, j)| point(&mut mesh, i, j)).collect();
                 for k in 0..outline.len() {
@@ -780,17 +796,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_square_off_the_ground_draws_nothing_in_either_detail() {
+    fn a_square_off_the_ground_draws_nothing_and_its_coast_meets_without_a_seam() {
         let ground = Ground::page(8, 1.0, |i, j| if i == 0 && j == 0 { f32::NAN } else { 1.0 });
         let tile = Tile { columns: (0, 8), rows: (0, 8) };
         assert_eq!(tile.ground(&ground, Detail::Full, 0, 1.0).indices.len(), (64 - 1) * 6);
         let middle = tile.ground(&ground, Detail::Middle, 0, 1.0);
-        let (low, high) = (COARSE as f32, 8.0 - COARSE as f32);
-        assert!(!middle.indices.is_empty());
-        assert!(
-            middle.positions.iter().all(|p| p[0] >= low || -p[2] >= low || p[0] > high || -p[2] > high),
-            "the coarse square holding the missing point is left out"
-        );
+        let at = |east: f32, north: f32| middle.positions.iter().any(|p| p[0] == east && -p[2] == north);
+        assert!(!at(0.0, 0.0), "no triangle reaches the missing point");
+        assert!((1..4).all(|j| at(1.0, j as f32) && at(4.0, j as f32)), "the partial square is drawn fine");
+        let triangles = middle.indices.len() / 3;
+        // The partial square's 15 fine squares, then each coarse fan through one point a side, or every fine point
+        // on a tile edge or beside the partial square: 4 + 4 + 1 + 4, 4 + 1 + 4 + 4 and 1 + 4 + 4 + 1 triangles.
+        assert_eq!(triangles, 15 * 2 + 13 + 13 + 10, "the coarse fans meet the fine squares point for point");
         assert!(!ground.touches((20, 28), (20, 28)), "past the page there is no ground");
     }
 
