@@ -316,6 +316,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         settings.ground_texture,
         settings.ground_texture_m
     ]))?;
+    // A tile past the ground draws no ground, so only the grid placing it is among its settings.
+    let scenery_settings =
+        serde_json::to_vec(&json!([settings.south_west_m, settings.ground_step_m, settings.tile_steps]))?;
     let mut rebuilt = 0;
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     if !waters.is_empty() {
@@ -369,7 +372,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             let files = [(false, tiles.join(format!("{stem}.glb"))), (true, tiles.join(format!("{stem}.middle.glb")))];
             let mut digest = Sha256::new();
             digest.update(&code);
-            digest.update(&tile_settings);
+            digest.update(&scenery_settings);
             digest.update(stem.as_bytes());
             digest.update(scenery::checksum_bytes(&tile_scenery));
             let checksum = format!("{:x}", digest.finalize());
