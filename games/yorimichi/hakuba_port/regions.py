@@ -137,7 +137,8 @@ def hidamari(build):
     """Hidamari, the city east of the coast, with its ground, streets, harbour and the northern mountains behind it.
     Its parents are split into pieces in the parent's own frame; `city.json` stands each parent, and so all its pieces.
     The city's colour is its vertex colour (its textures are neutral detail around 1); a street prop samples its own
-    atlas. Plants are left to Hakuba's plants."""
+    atlas. Plants are left to Hakuba's plants. The city's flat sea is left out: Hakuba draws one sea at sea level
+    under the whole island, and the city's copy lay on it as an off-coloured rectangle seen from the rim."""
     out = build / 'hidamari'
     instances = json.loads((out / 'city.json').read_text())['instances']
     region = Region('hidamari', 'Hidamari, the city east of the coast, and the northern mountains')
@@ -152,6 +153,8 @@ def hidamari(build):
                 continue
             for piece in pieces:
                 name = 'hidamari-' + kebab(piece.removeprefix('HD_P_').removeprefix('HD_'))
+                if name == 'hidamari-sea':
+                    continue
                 region.models[name] = Model(export_source(build, step, piece), default=rule_for(piece))
                 region.groups.append((name, None, placed))
     if skipped:
