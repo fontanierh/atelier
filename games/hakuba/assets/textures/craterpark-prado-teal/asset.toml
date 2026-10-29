@@ -1,5 +1,5 @@
-# Crater Park's restyled prado teal texture: concrete recoloured to albedo [18, 128, 140], grain x0.35.
+# Crater Park's restyled prado teal texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "1d59a90dd64c8e7f6fe9806fe45aa0618ac487c3c542f3381e55132a5fd1d146"
+inputs_sha256 = "4970e62e882f742ec99551f06ca0017d53747799ed00a393d7894c60a852bda3"

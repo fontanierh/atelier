@@ -1,4 +1,4 @@
-# indigo.png from Yorimichi's treehouse, as its props draw it.
+# The indigo texture that the treehouse props draw.
 path = "texture.png"
 sha256 = "50214ccb8a6da4d8447bee8ff0ac83f3c5c28d8a0dbf20877f388d68f57cb183"
 authoring_texture_sha256 = "50214ccb8a6da4d8447bee8ff0ac83f3c5c28d8a0dbf20877f388d68f57cb183"

@@ -1,5 +1,5 @@
-# T_BC_planks.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc planks texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "2f8466b2d923210eb2deac60b3b99e98648ed32096420bc0566d44f818ae30f7"
+inputs_sha256 = "67c5a902eaaf16cf40a1cfb9246109a911d805bdcbf51e2654cb9b880a10736c"

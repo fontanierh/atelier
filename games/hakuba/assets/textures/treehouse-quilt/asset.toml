@@ -1,5 +1,5 @@
-# quilt.png from Yorimichi's treehouse, as its props draw it.
+# The quilt texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "4099bc2be70f5678f26a6e9d502f99ccd42ba3b65b8399ff8816f646d9b0d92b"
+inputs_sha256 = "73bb7ab736b4bc4a7565ccd26a1b39b3d450041331699edd3784ef048976c71e"

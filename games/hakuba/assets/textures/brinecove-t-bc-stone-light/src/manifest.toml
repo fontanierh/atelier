@@ -1,4 +1,4 @@
-# T_BC_stone_light.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc stone light texture that the brinecove props draw.
 path = "texture.png"
 sha256 = "60f956a6e6dcbacbac614d709345211fe615d5b6183540779db5c53d0c18d41e"
 authoring_texture_sha256 = "7ba3d65c28bf5ce68ac11127e56bc1200bf6a69f3edab608c01b6aba17746165"

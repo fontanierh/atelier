@@ -1,5 +1,5 @@
-# rope.png from Yorimichi's treehouse, as its props draw it.
+# The rope texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "7b5f07abe95153cbf05fd9fd970ef672841ac46f9515d4dee0d5914cf945977e"
+inputs_sha256 = "6fe318466fb5e0d0b1d6970b57b14e752d08210555f6105ce22fab689185d122"

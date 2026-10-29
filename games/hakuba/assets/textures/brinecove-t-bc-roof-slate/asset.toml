@@ -1,5 +1,5 @@
-# T_BC_roof_slate.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc roof slate texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "2d5bfe3e2653d8fa982de0863a2120a6b8e0e281ca7baa4220b92ede73611774"
+inputs_sha256 = "b5a52587c06632cdbf46acf1d76d3b8bd60e9700622bc9a9d9f6bd711aaba40d"

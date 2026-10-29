@@ -1,5 +1,5 @@
-# HD_P_water_basin.png from Yorimichi's hidamari, as its props draw it.
+# The hd p water basin texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "468496d7b9b95a910d8b91c5372a8ae9773370a02e2944c87cf244e43f8af349"
+inputs_sha256 = "c415ccc0d6947cff0a6725f28cd44f12c0fa4513d7ffcd114a149c51342e56e7"

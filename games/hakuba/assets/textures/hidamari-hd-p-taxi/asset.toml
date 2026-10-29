@@ -1,5 +1,5 @@
-# HD_P_taxi.png from Yorimichi's hidamari, as its props draw it.
+# The hd p taxi texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "65cfff0c4d6ec45df9beece78f74148cff026f7b7e5e4d80a6e1a6a6b6d29fc1"
+inputs_sha256 = "605b10bb4af0d4f229a36e12f0ebaf73a483d8e799ede08ec6fb067230d4bdf8"

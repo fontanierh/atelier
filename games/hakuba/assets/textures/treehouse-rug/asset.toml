@@ -1,5 +1,5 @@
-# rug.png from Yorimichi's treehouse, as its props draw it.
+# The rug texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "26bdc9d83f92c20f070d5744a1464806c74b14c3e305df9af7953354df9446dd"
+inputs_sha256 = "7c45619637b6eda4037ec875872af4859cb1d87a13f293322a53b10e0dea4f4a"

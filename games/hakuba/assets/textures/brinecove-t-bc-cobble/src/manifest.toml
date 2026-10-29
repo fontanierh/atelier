@@ -1,4 +1,4 @@
-# T_BC_cobble.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc cobble texture that the brinecove props draw.
 path = "texture.png"
 sha256 = "d1b3b138cbd251c403c0cd696e4919cf88e0562835188654ac0650ba25fa97e5"
 authoring_texture_sha256 = "30aacabce4aa946eb040c6255784a7dc661ec08d526adf7602b4765814c0906c"

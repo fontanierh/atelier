@@ -1,5 +1,5 @@
-# Crater Park's restyled prado orange texture: concrete recoloured to albedo [238, 116, 34], grain x0.35.
+# Crater Park's restyled prado orange texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "cbbff9ffa3b61612933e45554efd1c0795fc8aa3b9b2b8ecbdc20782ffa413a7"
+inputs_sha256 = "2f699fd287279c111b702b43a4c5dc70eaf634b97c3bf9c552948c9f5d90497e"

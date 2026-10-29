@@ -1,5 +1,5 @@
-# Crater Park's restyled nobori texture: the Tripo model's own texture, material_049.
+# Crater Park's restyled shrine nobori texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "ecc5ab015f5886cd418e5b534a9f989128c9d6de2ad64a06d5455acf576cb065"
+inputs_sha256 = "d4ad5ae60a5b149cc63f4aa2867dbc95400ce8aa15a186f1eedafb9a3021bcc9"

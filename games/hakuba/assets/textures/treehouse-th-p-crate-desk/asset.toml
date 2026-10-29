@@ -1,5 +1,5 @@
-# TH_P_crate_desk.png from Yorimichi's treehouse, as its props draw it.
+# The th p crate desk texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "08d04b6370686e91523b66d5d3e6fb110aef1046b8437cb271503591f61257f6"
+inputs_sha256 = "378ae2eb5240ed79350c3bfbc8257a10f678bb459f3bfcbc6085d528ce4bf5b3"

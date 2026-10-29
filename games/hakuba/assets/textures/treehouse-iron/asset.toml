@@ -1,5 +1,5 @@
-# iron.png from Yorimichi's treehouse, as its props draw it.
+# The iron texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "608b5b773ee15ba6dab2c442afd3403061ddc9f4363cb9567854795afb9e3259"
+inputs_sha256 = "8ef970a2442aea4b96b7919f6ffec20ac8a267583c63b0780184cbc98ca72bab"

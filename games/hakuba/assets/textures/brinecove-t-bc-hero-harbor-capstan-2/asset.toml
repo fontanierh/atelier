@@ -1,5 +1,5 @@
-# T_BC_hero_harbor-capstan_2.png from Yorimichi's brinecove, as its props draw it.
+# The t bc hero harbor capstan 2 texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "136577480e7a59e0bca09b4eec2a565a2b6ee78e1c47b56cc91a89071b3e3875"
+inputs_sha256 = "a5e7586ad3d4fe996a17587b97df5fde771c8474b141fe87546304bf53deae60"

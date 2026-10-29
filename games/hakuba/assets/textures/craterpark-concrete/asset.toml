@@ -1,5 +1,5 @@
-# Crater Park's restyled concrete texture: painted, wraps xy (blend), mean [168, 164, 152], detail x2.50.
+# Crater Park's restyled concrete texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "446b45ca6e84f593669c4d5cf3cfa1e0dc6d9cf43962ccfe5cf1a7e6cec70c5e"
+inputs_sha256 = "da564a8f32d15c7d4fd7cf8f7a386e3764dcb499de56061689baa55741e614ab"

@@ -1,5 +1,5 @@
-# T_BM_f4df37bcee65.png from Yorimichi's belmonte, as its props draw it.
+# The t bm f4df37bcee65 texture that the belmonte props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "3796f113fbca4d3f7dee2e9ea6c87ab139561fe7b252bb38cb3b6664d4d36ab1"
+inputs_sha256 = "99e4c51eac71c7e6a62d1d1a76d695c3bcb049da6d992dbf1889ee36220f17e9"

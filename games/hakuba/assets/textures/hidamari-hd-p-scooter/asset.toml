@@ -1,5 +1,5 @@
-# HD_P_scooter.png from Yorimichi's hidamari, as its props draw it.
+# The hd p scooter texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "5123ef8a5e54a4294991ed5d984e85c17cfc6b68a9566234465da7ec592fbb10"
+inputs_sha256 = "37ca6f28c3fa585795542424285f9dcfd109cede0f0adcba240d8aec822c4473"

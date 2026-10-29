@@ -1,5 +1,5 @@
-# HD_P_jizo.png from Yorimichi's hidamari, as its props draw it.
+# The hd p jizo texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "0a307fa05849d511f2162d3e77aad935b45ae2565a8b78138fff4859d874cd21"
+inputs_sha256 = "230c9c8a9002fa54d86bb71aa80391c309f4591be912ee560bd1234d43dfb414"

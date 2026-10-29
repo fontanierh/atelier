@@ -1,5 +1,5 @@
-# HD_P_phone_booth.png from Yorimichi's hidamari, as its props draw it.
+# The hd p phone booth texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "42e840ebc6801302029f307421aab2d0dc611ce0a6cf788ef985538f57963d6c"
+inputs_sha256 = "4db79921d16826e04804474fc700a1cfcd85c333443b08959531d90d2f73f43c"

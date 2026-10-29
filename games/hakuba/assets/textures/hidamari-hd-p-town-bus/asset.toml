@@ -1,5 +1,5 @@
-# HD_P_town_bus.png from Yorimichi's hidamari, as its props draw it.
+# The hd p town bus texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "c5c70abaa4eca5b5256428183d13949aba89d2d0b1c5da6bf6ea3124fd6e37e6"
+inputs_sha256 = "5c1db61fac43037f122ec64cf45915c4e9a8bb82c528e0bc5e742750902f7db8"

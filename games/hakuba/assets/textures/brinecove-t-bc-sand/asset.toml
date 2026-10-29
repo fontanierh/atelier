@@ -1,5 +1,5 @@
-# T_BC_sand.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc sand texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "79fa958dde02e06f41ce0f58e307506689a4af8b320bf3e0065d18bdd689a4ff"
+inputs_sha256 = "400932a01a13a918cfd02daba2b41600e530d83069f68160bdf31a1a7f7294a4"

@@ -1,5 +1,5 @@
-# TH_P_kamado.png from Yorimichi's treehouse, as its props draw it.
+# The th p kamado texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "f0656c4e1535567eabd54f6905163c81e1045267d4861705f5a3cd477a78dad4"
+inputs_sha256 = "0cf19b68572f877a0990d758e33357225a0a586acd1f44024241860bf3d7f37a"

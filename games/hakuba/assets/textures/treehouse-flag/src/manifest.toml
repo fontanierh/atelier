@@ -1,4 +1,4 @@
-# flag.png from Yorimichi's treehouse, as its props draw it.
+# The flag texture that the treehouse props draw.
 path = "texture.png"
 sha256 = "dbd0b1363616872fad20340e31cbe82717878542f9c0284c110b594752783ec8"
 authoring_texture_sha256 = "dbd0b1363616872fad20340e31cbe82717878542f9c0284c110b594752783ec8"

@@ -1,5 +1,5 @@
-# HD_P_drink_crates.png from Yorimichi's hidamari, as its props draw it.
+# The hd p drink crates texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "2656a367b953172f7e4d195494efc2791c96feaaff95e354ca4d744f6986d79b"
+inputs_sha256 = "4e837ba163a0062106ee99c0d29e7fb087b5b1c613a5d15946490f54a9be65f1"

@@ -1,5 +1,5 @@
-# HD_P_laundry_stand.png from Yorimichi's hidamari, as its props draw it.
+# The hd p laundry stand texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "528db8c441c2a3e3e5cc4d8795d0dde98d037ccaff660f90f7ebe10760d18674"
+inputs_sha256 = "6d2d1a67fca5f57eb16e08d63a593396ffc9ffac376105ee470f330fcd0e07fa"

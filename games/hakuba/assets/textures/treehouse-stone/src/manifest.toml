@@ -1,4 +1,4 @@
-# stone.png from Yorimichi's treehouse, as its props draw it.
+# The stone texture that the treehouse props draw.
 path = "texture.png"
 sha256 = "c6c1de593e192640ac5bed60ed8f6e5a8abb33a168ff2aca464d12e703b84f31"
 authoring_texture_sha256 = "c6c1de593e192640ac5bed60ed8f6e5a8abb33a168ff2aca464d12e703b84f31"

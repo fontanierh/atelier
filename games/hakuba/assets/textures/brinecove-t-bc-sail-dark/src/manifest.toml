@@ -1,4 +1,4 @@
-# T_BC_sail_dark.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc sail dark texture that the brinecove props draw.
 path = "texture.png"
 sha256 = "1fa64bb19f9e10283f26ddde36dc6ff35e06d6ad46fb06d27983985b7fa98268"
 authoring_texture_sha256 = "29b786e4c19c608b7ac24580a63ea721f23e9f8ec39f5e02eba7635a1a305d89"

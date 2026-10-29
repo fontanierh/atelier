@@ -1,4 +1,4 @@
-# HD_P_stone_lantern.png from Yorimichi's hidamari, as its props draw it.
+# The hd p stone lantern texture that the hidamari props draw.
 path = "texture.png"
 sha256 = "6d5caf454b78b8982bb1bd42a455fa5cb6f7f9eb77f5a93459459f1ba7f89cf5"
 authoring_texture_sha256 = "51aff3487ebe9f03d9973ac64ad70c511fd3ed2a4fde13836d2dd6dd8a663841"

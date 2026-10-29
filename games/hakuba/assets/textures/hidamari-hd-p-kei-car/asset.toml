@@ -1,5 +1,5 @@
-# HD_P_kei_car.png from Yorimichi's hidamari, as its props draw it.
+# The hd p kei car texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "7fc7e6dd672f8961274e7ec4053603179b8eb13e62e7c5d33db660e343805d53"
+inputs_sha256 = "e08bf6b5dc4599a6f44ed9ed31e0dcd53ccf5193a34924b377b721a8503f42ef"

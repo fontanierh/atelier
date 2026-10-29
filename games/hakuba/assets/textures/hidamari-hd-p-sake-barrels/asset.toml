@@ -1,5 +1,5 @@
-# HD_P_sake_barrels.png from Yorimichi's hidamari, as its props draw it.
+# The hd p sake barrels texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "14bbbc5a94c0c785c6fa557d9dc700d48cfe585cc04c0f2ab731a59009d3db00"
+inputs_sha256 = "292b18ecc4ebafd4ad3fcbe83382b7b445c98dcbe3ddc0f292731fb6c6c7b87b"

@@ -1,5 +1,5 @@
-# Crater Park's restyled megapark:rock texture: world-aligned games/yorimichi/assets/megapark/restyle/rock.jpg, wraps xy (blend), mean [150, 146, 152], detail x1.00; Tint white.
+# Crater Park's restyled material 027 texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "187fd859aa57c60586a115b255a4e6eb7d3234314ffe6727130a39ab9863b13b"
+inputs_sha256 = "f27abe41276e8af0981d43b1cda348f5af7187aa9da4fd1836955e5af3990cd9"

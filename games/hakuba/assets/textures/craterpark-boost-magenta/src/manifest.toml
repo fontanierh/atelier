@@ -1,4 +1,4 @@
-# Crater Park's restyled boost magenta texture: ramp_planks recoloured to albedo [212, 28, 92], grain x0.35.
+# Crater Park's restyled boost magenta texture.
 path = "texture.png"
 sha256 = "03ad3735c7d51675aac1ef6fe7bec0b2d00c0d7571c112dd36b0c9a89be4ed9e"
 authoring_texture_sha256 = "03ad3735c7d51675aac1ef6fe7bec0b2d00c0d7571c112dd36b0c9a89be4ed9e"

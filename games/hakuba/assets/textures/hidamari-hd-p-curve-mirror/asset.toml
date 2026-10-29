@@ -1,5 +1,5 @@
-# HD_P_curve_mirror.png from Yorimichi's hidamari, as its props draw it.
+# The hd p curve mirror texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "0d12af5fd00e789f809eead5fe1a9db006d80b020d2f39b3d336e1d4893d0d11"
+inputs_sha256 = "e3a23afe938433ec97d8cb91d3ab620890c32bcfce2711b836df99230b1f4397"

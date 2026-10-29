@@ -1,4 +1,4 @@
-# T_BC_rose_wall.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc rose wall texture that the brinecove props draw.
 path = "texture.png"
 sha256 = "7941de942feeebf2ea60d49335ecd45bf2b3dd280530818205d1572a350af654"
 authoring_texture_sha256 = "99bdcda50f5f5836a44c28807ffab5add00bca404924d19d20aa273546f0a235"

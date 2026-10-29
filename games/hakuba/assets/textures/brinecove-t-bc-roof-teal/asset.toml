@@ -1,5 +1,5 @@
-# T_BC_roof_teal.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc roof teal texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "c6bf83446ddfbe438671cde84256a68ac1b08a9daf0d49aef88717400c383604"
+inputs_sha256 = "28c1d23163474b5b7f91c58723e54f93f3d2568dadbe898f76e4f5b91b04cfe4"

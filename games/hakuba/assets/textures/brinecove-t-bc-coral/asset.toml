@@ -1,5 +1,5 @@
-# T_BC_coral.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc coral texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "42595adee00937062e983e5ffa1a07b88f6fd60c532e634f631e2fe8f17dbe0e"
+inputs_sha256 = "95fbbc8a32f7f8280f387e4d0c8c3974e71ebc3dd8ee73211837d59ad39e128a"

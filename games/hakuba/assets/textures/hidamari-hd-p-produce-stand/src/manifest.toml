@@ -1,4 +1,4 @@
-# HD_P_produce_stand.png from Yorimichi's hidamari, as its props draw it.
+# The hd p produce stand texture that the hidamari props draw.
 path = "texture.png"
 sha256 = "ac4715c2e6051a583bb52c0de5e52809ffab4484fc64a54237567911c32a9580"
 authoring_texture_sha256 = "a6d6db69b3f51eec460342f5b0044237cb6a97cbfcf17103a1ae918cf5443c28"

@@ -1,5 +1,5 @@
-# T_BC_gold.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc gold texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "7b35ed4883ec53341ffb7c2108d074b323d26a75f3dd08138e92a4ab40476a3a"
+inputs_sha256 = "8b95c52c7c0776de06863797c3a9b626fafecf09083af1091ad38b7a44dd653c"

@@ -1,4 +1,4 @@
-# HD_P_potted_plants.png from Yorimichi's hidamari, as its props draw it.
+# The hd p potted plants texture that the hidamari props draw.
 path = "texture.png"
 sha256 = "e64bfa9a6ffe3ae183a3fee35aec5f8a2b790d75bf02cd3446d317e0aa7a4d45"
 authoring_texture_sha256 = "b98d6ac95bb31708ad1db71ad370f89bdcf11a0398c60f7511768f868b908d78"

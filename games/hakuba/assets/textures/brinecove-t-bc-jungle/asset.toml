@@ -1,5 +1,5 @@
-# T_BC_jungle.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc jungle texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "da196bfecaa4c15a0706856d46330735a5bc9be622f88fa15344d644c822cd77"
+inputs_sha256 = "e2fa49acd9a6094e3953a43f764851df1cb0b0f2255cacf7f30706be14e76ee7"

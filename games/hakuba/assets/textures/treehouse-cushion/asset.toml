@@ -1,5 +1,5 @@
-# cushion.png from Yorimichi's treehouse, as its props draw it.
+# The cushion texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "31c48ff7c49985ecd9b69a481b91638131952f21e99efcdc7837bf4b50d37505"
+inputs_sha256 = "24eadc0f910de6e6b9ce026473dfe12415585b9c4f1cd1bb2d4207528e6099bc"

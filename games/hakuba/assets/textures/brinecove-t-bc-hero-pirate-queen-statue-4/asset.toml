@@ -1,5 +1,5 @@
-# T_BC_hero_pirate-queen-statue_4.png from Yorimichi's brinecove, as its props draw it.
+# The t bc hero pirate queen statue 4 texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "a93d586d02828ff40fb3797f969a0aad3891c25556030b4b9e52fa8303626286"
+inputs_sha256 = "9dae84ba7fddb76a6dec9ec32c0c6f8c04dd54fccb138173520bcb7d171e7450"

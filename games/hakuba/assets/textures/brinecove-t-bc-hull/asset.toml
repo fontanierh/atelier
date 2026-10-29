@@ -1,5 +1,5 @@
-# T_BC_hull.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc hull texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "abfa90cdf88c38d905d0f183b9bf33dfa7d95180b7df69de487b78092961e715"
+inputs_sha256 = "d0284ffee8262fdf8f858e7a92908ae2401384df080a7b5c2858b345658e1782"

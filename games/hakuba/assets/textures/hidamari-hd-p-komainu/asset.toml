@@ -1,5 +1,5 @@
-# HD_P_komainu.png from Yorimichi's hidamari, as its props draw it.
+# The hd p komainu texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "5f9ffa000f63e98704daf161367c19d50a53670a95c4e80e9d831cbcb3f35d1f"
+inputs_sha256 = "0c75eca135c27588fef0c5bf9e03f6dcbcac6d317744ac56d787ad9e344fa5cb"

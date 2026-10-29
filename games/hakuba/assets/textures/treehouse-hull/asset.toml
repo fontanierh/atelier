@@ -1,5 +1,5 @@
-# hull.png from Yorimichi's treehouse, as its props draw it.
+# The hull texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "19acdf791efdda7d37b9001d727c1b62d1d123ccfa8905bef6b35fe7ba6a2039"
+inputs_sha256 = "005ee7608f9694552ffd333456b424f8e66069511d09afd034cdd80ee42ef7b2"

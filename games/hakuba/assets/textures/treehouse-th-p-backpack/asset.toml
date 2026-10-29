@@ -1,5 +1,5 @@
-# TH_P_backpack.png from Yorimichi's treehouse, as its props draw it.
+# The th p backpack texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "8f58698489ce7e0a3b675e1cc9dd5b176e8e63eb6d13d0b88042f9387f2bf236"
+inputs_sha256 = "f985ac93755a2b091c2d6aa3b22c366f566aac59a656899f53f5313cee310feb"

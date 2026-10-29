@@ -1,5 +1,5 @@
-# HD_P_planter_box.png from Yorimichi's hidamari, as its props draw it.
+# The hd p planter box texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "6f0dd36f4118f51d1f2e07e1ea56d55b6c158668395f9bc354e3c37f921a271b"
+inputs_sha256 = "20368c77d9fd8d91fdc4da644652ee27a9e2dda1d73ff344a30e1dd34e0ff147"

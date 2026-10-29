@@ -1,5 +1,5 @@
-# Crater Park's restyled torii texture: the Tripo model's own texture, material_048.
+# Crater Park's restyled shrine torii texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "029b6fa748d72fcbebeaf7126042cfb205b2ece4c3e43c72f60810d4df9e27a6"
+inputs_sha256 = "bd98f10085ab2d9c51a6a2e8694bfa37e73c089ffef2df4752dd08c71fc129ee"

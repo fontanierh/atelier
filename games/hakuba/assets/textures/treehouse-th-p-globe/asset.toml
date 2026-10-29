@@ -1,5 +1,5 @@
-# TH_P_globe.png from Yorimichi's treehouse, as its props draw it.
+# The th p globe texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "39fb080fa41358710d8a8f2dc5d1d8ed892a568d625e48a412cdada342798183"
+inputs_sha256 = "b8176db25ee81ec222b704841457fefece3c01981acc79b4996531741105f63d"

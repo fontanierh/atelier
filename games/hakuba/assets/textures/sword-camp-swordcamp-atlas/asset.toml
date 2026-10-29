@@ -1,5 +1,5 @@
-# swordcamp_atlas.jpg from Yorimichi's sword-camp, as its props draw it.
+# The swordcamp atlas texture that the sword-camp props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "58ed6abbc1f1364a66946cfea33f901cee38bc31fab91761d622fb888cc9e4f6"
+inputs_sha256 = "dcdebd7211ea4c9fc7700c01cd66702f2df0359d5bf37a18182ac6ec94adcb9c"

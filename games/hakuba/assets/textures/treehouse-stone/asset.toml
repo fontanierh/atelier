@@ -1,5 +1,5 @@
-# stone.png from Yorimichi's treehouse, as its props draw it.
+# The stone texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "6eed0ae64ce4d676a24f7946255e66f230c3cd76788ce80d030e0a002af26120"
+inputs_sha256 = "6858c6709b033c9b23ac2755183b58828d4840f41568bdcd36e4baafb99879be"

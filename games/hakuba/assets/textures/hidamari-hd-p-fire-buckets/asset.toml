@@ -1,5 +1,5 @@
-# HD_P_fire_buckets.png from Yorimichi's hidamari, as its props draw it.
+# The hd p fire buckets texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "8bac8cc6cd8d1b29ea340c6d8eb31b1cf5143a54e56b03322941e7fee33c4074"
+inputs_sha256 = "0376b4832eee0f75cceea5615d6f090a0b815b3a8cfcefa525ae97fab4994f66"

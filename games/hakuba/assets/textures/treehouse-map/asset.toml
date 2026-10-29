@@ -1,5 +1,5 @@
-# map.png from Yorimichi's treehouse, as its props draw it.
+# The map texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "952812f1bf924052bbbe768479da24541fbf5167f79c80e6fbe6df98965ba733"
+inputs_sha256 = "3289b6d2f418d1d3eb46207a76b26484088f410a4ac86f8d3f2594d618e6852f"

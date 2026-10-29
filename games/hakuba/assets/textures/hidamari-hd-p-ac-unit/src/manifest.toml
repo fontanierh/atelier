@@ -1,4 +1,4 @@
-# HD_P_ac_unit.png from Yorimichi's hidamari, as its props draw it.
+# The hd p ac unit texture that the hidamari props draw.
 path = "texture.png"
 sha256 = "e5f8e0fe9fc1e5336e5e7ae447a1bef98869755d605e90204ce0aa253f25f075"
 authoring_texture_sha256 = "8f2859e975236952a6e68c97313cd7cb1c66c0f1b7973977e8d84890865a6b5f"

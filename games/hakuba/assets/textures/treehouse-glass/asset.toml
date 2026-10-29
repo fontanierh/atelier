@@ -1,5 +1,5 @@
-# glass.png from Yorimichi's treehouse, as its props draw it.
+# The glass texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "e1c4388c0418e0bddc459b85ca4b59af845dbd1032f74fb033caa1b7e1d74078"
+inputs_sha256 = "37ebc7d999ec115d1cdb75ad961ef69bc7156463f874485471693710a03fac21"

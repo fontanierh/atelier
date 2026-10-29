@@ -1,4 +1,4 @@
-# Crater Park's restyled prado magenta texture: concrete recoloured to albedo [212, 28, 92], grain x0.35.
+# Crater Park's restyled prado magenta texture.
 path = "texture.png"
 sha256 = "54333953612a18ecb3a997838a29dec288c826e538e0698c491c887b70c89f52"
 authoring_texture_sha256 = "54333953612a18ecb3a997838a29dec288c826e538e0698c491c887b70c89f52"

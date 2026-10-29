@@ -1,5 +1,5 @@
-# T_BC_sage_wall.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc sage wall texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "3ed28de649e6bfcfe6fd8305525abdef99d98f12526b370509fa06ab78cd886c"
+inputs_sha256 = "c66b4ed14b5fb463effe4219cd1bea358b0637ce962bbc69fc4f8c611c5f44e2"

@@ -1,4 +1,4 @@
-# T_BC_canvas_red.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc canvas red texture that the brinecove props draw.
 path = "texture.png"
 sha256 = "c467939937c837056585cf4c0c8803e5196653c812012bd0331b6add0589f391"
 authoring_texture_sha256 = "82feb07040aa67cf00b619d69db7a6cbfc9d6cf03c5508063ba70a6f659fe305"

@@ -1,4 +1,4 @@
-# HD_P_street_bench.png from Yorimichi's hidamari, as its props draw it.
+# The hd p street bench texture that the hidamari props draw.
 path = "texture.png"
 sha256 = "e3e9f222be441a89bf5401478db127e9afcff693574c48131d260b68c5e21edf"
 authoring_texture_sha256 = "a6cb57560686d22ac62e02c1a3f728156c66632917532dc63a0d3453071061dc"

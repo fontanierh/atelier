@@ -1,5 +1,5 @@
-# Crater Park's restyled keyaki texture: world-aligned games/yorimichi/assets/craterpark/restyle/keyaki.jpg, wraps xy (blend), mean [128, 94, 64], detail x1.20; Tint white.
+# Crater Park's restyled material 045 texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "5601c317e2e31ff8db3db16ecf933b96421d5ee1fdb4bb263c2dcb5e87d963e2"
+inputs_sha256 = "681844fdf0f285d4cf06a35b4ddde680137c5ff74a89d33ea137741070261861"

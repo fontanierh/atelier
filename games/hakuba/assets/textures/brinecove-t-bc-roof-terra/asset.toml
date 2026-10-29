@@ -1,5 +1,5 @@
-# T_BC_roof_terra.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc roof terra texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "c440b0bcf6c08d6b74586d21340a0287f028eeee198bb66a5637afc89d4905be"
+inputs_sha256 = "cb9bd21ea4978fd0d881bc357c9d0d619d6d48c0c962e430957fee056ce3a514"

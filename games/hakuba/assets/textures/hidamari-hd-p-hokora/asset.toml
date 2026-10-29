@@ -1,5 +1,5 @@
-# HD_P_hokora.png from Yorimichi's hidamari, as its props draw it.
+# The hd p hokora texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "ef34b8545d114d6fb26fff7614fac6f0a9de1dd990db598a1fcfa23d0ea071d7"
+inputs_sha256 = "c82a20f23506270ef44f112e106653ac158a83ad77d841afba528bba125982bd"

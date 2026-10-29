@@ -1,5 +1,5 @@
-# Crater Park's restyled prado navy texture: concrete recoloured to albedo [30, 46, 112], grain x0.35.
+# Crater Park's restyled prado navy texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "e9571b431492778653eb347bee21256e64c0d192d4d06a2708f668c90031a5cf"
+inputs_sha256 = "900b6446454180c3803529371150f1c0c49516c97d174b793eab1a40d8ebe58d"

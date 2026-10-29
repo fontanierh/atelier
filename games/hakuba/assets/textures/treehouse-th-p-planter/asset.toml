@@ -1,5 +1,5 @@
-# TH_P_planter.png from Yorimichi's treehouse, as its props draw it.
+# The th p planter texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "3b86a506ab382ebe3e5fda30fc44ba7f1839e32e414230533d61c050757a2925"
+inputs_sha256 = "cbafd45fce4546f82fbc70c75c7cb4778e275c14a871fe20520f30104c1b7ea1"

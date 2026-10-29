@@ -1,5 +1,5 @@
-# TH_P_bookshelf.png from Yorimichi's treehouse, as its props draw it.
+# The th p bookshelf texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "59153dcb58af653f775880172a0c4dfc6e35ac996b63f98d3def03716c36daeb"
+inputs_sha256 = "47f45fba34263fb8c68a94544473fc980619e80347f9ff8f4522ed2647878272"

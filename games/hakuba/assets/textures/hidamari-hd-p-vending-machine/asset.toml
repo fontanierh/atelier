@@ -1,5 +1,5 @@
-# HD_P_vending_machine.png from Yorimichi's hidamari, as its props draw it.
+# The hd p vending machine texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "cb586613ad73109fd0ff7935df4d87bcd753addff2a594204502b03ca1dcda96"
+inputs_sha256 = "c42fefd535ce5b89bcc6d516531fec340470e2d991c300bd22b06ca730e7895d"

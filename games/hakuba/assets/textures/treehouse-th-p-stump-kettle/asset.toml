@@ -1,5 +1,5 @@
-# TH_P_stump_kettle.png from Yorimichi's treehouse, as its props draw it.
+# The th p stump kettle texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "fb50c23556b8911d8144a051359e5974ca668859e2a0ffe1d62441a75507c324"
+inputs_sha256 = "0fd6638c31dd2873b42874cd8e6b2bf185ab664edb8b53eef80ea1cfc074a209"

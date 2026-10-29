@@ -1,5 +1,5 @@
-# T_BC_moss.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc moss texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "c8522f29f11717b66ecb9405286cb9f9800bfe7b05c516eaa2dbfe142754c96e"
+inputs_sha256 = "50d56f718bf446558f487b2e120a1249261c519571e37c6b20b5039481aab4d2"

@@ -1,5 +1,5 @@
-# HD_P_bicycle_shelter.png from Yorimichi's hidamari, as its props draw it.
+# The hd p bicycle shelter texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "6f98e415468858b92635dc079522cee9241db9752788b0b58e1208e22605da88"
+inputs_sha256 = "b8a72ce47c531ef14d56d88db9f1c3dfb9a12e56c00e87a8072ca2ef66ae6779"

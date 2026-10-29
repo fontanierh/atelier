@@ -1,5 +1,5 @@
-# T_BC_peach_wall.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc peach wall texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "0c5978a24daacdcb0ca760a15e2e9c93e7e1bb3b6c0847e982dd4fc255c45d29"
+inputs_sha256 = "4f7fd34403e4aa8195870e9e4df407819059ede57bdaf5df11759cb01801d749"

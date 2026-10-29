@@ -1,5 +1,5 @@
-# Crater Park's restyled bell pavilion texture: the Tripo model's own texture, material_046.
+# Crater Park's restyled shrine bell pavilion texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "7b35d25c920e94c764b490e7a83d864703671b3bca0294bcddb62f8ae5d017fe"
+inputs_sha256 = "4c98f5a6a07eb0a361071ccb339c7d594f904eb6c93a70d125534773e1c681ee"

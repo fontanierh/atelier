@@ -1,4 +1,4 @@
-# pictures.png from Yorimichi's treehouse, as its props draw it.
+# The pictures texture that the treehouse props draw.
 path = "texture.png"
 sha256 = "dbb86891ccefc46db3763f935443d52ed438e3bb6f779d7825c903159dd1bf32"
 authoring_texture_sha256 = "dbb86891ccefc46db3763f935443d52ed438e3bb6f779d7825c903159dd1bf32"

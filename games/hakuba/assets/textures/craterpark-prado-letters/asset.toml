@@ -1,5 +1,5 @@
-# Crater Park's restyled prado letters texture: the restyled concrete under navy PRADO strokes, 8192x2048.
+# Crater Park's restyled prado letters texture.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "f32c9ffb5bf9e8f587ffad0358394271490a9ad8ff09ca8a0a2efde43ed0dd02"
+inputs_sha256 = "40c477f0d729abda8ab29c724b6494fc5e16c5f8abb8579703d65591d84b650b"

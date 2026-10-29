@@ -1,5 +1,5 @@
-# T_BC_ochre.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc ochre texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "41bca3627c7af284559c41b168b34c6b8551505b5a558d57c56aeb09005bbd7e"
+inputs_sha256 = "b957d73f46bcdac14d8900af4825024d05e55ebd598e5da05932aec734f958a3"

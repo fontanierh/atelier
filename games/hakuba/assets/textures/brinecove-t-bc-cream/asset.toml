@@ -1,5 +1,5 @@
-# T_BC_cream.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc cream texture that the brinecove props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "425e0b39a133ac15c989eafcb3b419c7ad4e69dfe44471b6d220832392802c75"
+inputs_sha256 = "cedf8897d374bb78f5e600207241a31e0ad678b20650ebd0523a8af4056cfed9"

@@ -1,4 +1,4 @@
-# T_BC_plaster.jpg from Yorimichi's brinecove, as its props draw it.
+# The t bc plaster texture that the brinecove props draw.
 path = "texture.png"
 sha256 = "d8c7cd0b422664fcc97e15d6d836ebaa45c9e769396edea9e5753412411ffe3f"
 authoring_texture_sha256 = "e54f8fd51f6bab99ed9ecf234a74ec8f40a213135670e1c37dc12724012ea8ff"

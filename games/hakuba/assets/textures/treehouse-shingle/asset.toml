@@ -1,5 +1,5 @@
-# shingle.png from Yorimichi's treehouse, as its props draw it.
+# The shingle texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "de0679c7c38af94856f5dfb82c4b229f395cc7af9731f1a2c02106dd61f6f9b0"
+inputs_sha256 = "7630b9b9e9781600f2305877d5d376dee63be599210332db0ded284c10bbaed1"

@@ -1,5 +1,5 @@
-# TH_P_bell.png from Yorimichi's treehouse, as its props draw it.
+# The th p bell texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "7bb52f70e0e3f5000ea56d011fe0c06434abcb7f5c44bc4c4dea3b4d6ac8dda3"
+inputs_sha256 = "cc5a4b5686dfa6ca40e51896d8512874f759aa93c9126c148fd9c00892b4dd2a"

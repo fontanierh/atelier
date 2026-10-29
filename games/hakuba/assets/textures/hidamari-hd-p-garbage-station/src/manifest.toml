@@ -1,4 +1,4 @@
-# HD_P_garbage_station.png from Yorimichi's hidamari, as its props draw it.
+# The hd p garbage station texture that the hidamari props draw.
 path = "texture.png"
 sha256 = "8a30232a1982d55040d9f4e6553acba85c070c9a8f1892fecad1611c4eb7b64d"
 authoring_texture_sha256 = "38e382d4e5cced8bc5f2fd135b9c83c58b168bf74f52bb35f5e155e2f8be5482"

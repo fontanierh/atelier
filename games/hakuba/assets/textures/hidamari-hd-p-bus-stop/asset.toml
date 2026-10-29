@@ -1,5 +1,5 @@
-# HD_P_bus_stop.png from Yorimichi's hidamari, as its props draw it.
+# The hd p bus stop texture that the hidamari props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "cf75b3b9d7d97841486fa23bf5e3d5dd33131cf10f604a5c5cdefb0446bd0ddf"
+inputs_sha256 = "93641775f73d98ccb016e072bd93a41d88ff7938e4cc8086f22b0bffad6141c2"

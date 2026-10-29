@@ -1,5 +1,5 @@
-# TH_P_telescope.png from Yorimichi's treehouse, as its props draw it.
+# The th p telescope texture that the treehouse props draw.
 kind = "texture"
 source = "src/texture.png"
 compression = "bc7"
-inputs_sha256 = "69fe4d027578273f98fc1c27d6db5cbe0cef9f058347f5b3373be65d8ac9bee0"
+inputs_sha256 = "446d7da345c48ec0b24e026d3a76eac54770b8ab40b16dcc8ed249fdaa3c2bdd"
