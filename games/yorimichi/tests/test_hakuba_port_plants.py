@@ -18,3 +18,11 @@ def test_plants_keep_height_only_on_a_prop():
     surface = np.array([np.nan, 5.3, 14.0, 9.7, np.nan, np.nan])
     # Over no prop, seated on one, 4 m under one, seated just under one's surface, off the ground, near the ground.
     assert plants.keeps_height(z, ground, surface).tolist() == [False, True, False, True, True, False]
+
+
+def test_kept_plants_sit_on_their_prop():
+    z = np.array([10.0, 9.7, 9.0, 7.0])
+    surface = np.array([9.7, 10.0, 10.0, np.nan])
+    deepest = np.array([-0.6, -0.6, -0.6, -0.6])
+    # Above its surface it comes down onto it; under it, it sinks no deeper than its embedding; off the ground it stays.
+    assert plants.seated(z, surface, deepest).tolist() == [9.7, 9.7, 9.4, 7.0]

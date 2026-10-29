@@ -597,6 +597,18 @@ def spaced(trees, skipped):
     return kept
 
 
+def embedding(model, scale):
+    """The deepest a copy of `model` at `scale` stands into what it stands on, in metres (negative)."""
+    return np.maximum(DEEPEST_M, -SINK_SHARE * height(model) * scale)
+
+
+def seated(z, surface, deepest):
+    """Plants kept at source height `z`, seated on the prop surface under them (`surface`; NaN off Hakuba's ground,
+    which leaves `z`): never above it, and at most `deepest` into it."""
+    with np.errstate(invalid='ignore'):
+        return np.where(np.isnan(surface), z, surface + np.clip(z - surface, deepest, 0.0))
+
+
 def keeps_height(z, ground, surface):
     """Which of a region's plants keep their source height `z`: those off Hakuba's ground (`ground` NaN), and those
     standing more than `MISMATCH_M` above it with a ported prop's drawn surface (`surface`, NaN where none) within
@@ -644,13 +656,14 @@ def main():
                 high = ~off & (rows[:, 2] - ground > MISMATCH_M)
             surface[high] = drawn.heights(rows[high, 0], rows[high, 1], rows[high, 2])
             off = keeps_height(rows[:, 2], ground, surface)
+            rows[off, 2] = seated(rows[off, 2], surface[off], embedding(model, rows[off, 4]))
             groups[model, False].extend([round(x, 3), round(y, 3), round(z, 3), round(yaw % 360.0, 2), round(scale, 4)]
                                         for x, y, z, yaw, scale in rows[off].tolist())
         else:
             skipped['off the ground'] += int(off.sum())
         rows, ground = rows[~off], ground[~off]
         depth = rows[:, 2] - ground
-        deepest = np.maximum(DEEPEST_M, -SINK_SHARE * height(model) * rows[:, 4])
+        deepest = embedding(model, rows[:, 4])
         depth = np.clip(np.where(np.abs(depth) > MISMATCH_M, SINK_M, depth), deepest, 0.0)
         if not kept and name.startswith('Tree_'):
             trees.extend((model, row, d) for row, d in zip(rows.tolist(), depth.tolist()))
