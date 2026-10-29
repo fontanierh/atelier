@@ -178,10 +178,11 @@ impl Ground {
         self.coloured_mean = coloured.map(|c| c as f32);
     }
 
-    /// Whether every grid point with ground from (`i0`, `j0`) to (`i1`, `j1`) has a colour, so the tile there can
-    /// show the grain-only texture.
+    /// Whether there is ground from (`i0`, `j0`) to (`i1`, `j1`) and every grid point with ground has a colour, so
+    /// the tile there can show the grain-only texture.
     pub fn wholly_coloured(&self, (i0, i1): (usize, usize), (j0, j1): (usize, usize)) -> bool {
         self.coloured_mean.is_some()
+            && self.any_coloured((i0, i1), (j0, j1))
             && (j0..=j1).all(|j| (i0..=i1).all(|i| self.sample(i, j).is_none() || self.colour(i, j).is_some()))
     }
 

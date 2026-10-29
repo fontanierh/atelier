@@ -224,18 +224,16 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if !ground.covers_diagonals(whole.columns, whole.rows) {
         bail!("world extent is outside the source terrain diagonal coverage");
     }
-    if ground.has_colours() {
-        match settings.ground_texture_mean {
-            Some(mean) if mean.iter().all(|&c| c > 0.0 && c.is_finite()) => {
-                let grain = match (&settings.coloured_ground_texture, settings.coloured_ground_texture_mean) {
-                    (Some(_), Some(mean)) if mean > 0.0 && mean.is_finite() => Some(mean),
-                    (None, None) => None,
-                    _ => bail!("a grain-only ground texture needs its positive mean lightness"),
-                };
-                ground.set_texture_means(mean, grain);
-            }
-            _ => bail!("a coloured ground needs the ground texture's positive mean colour"),
-        }
+    // The means come from the settings alone, which every tile's checksum covers, never from colour pages elsewhere.
+    let grain = match (&settings.coloured_ground_texture, settings.coloured_ground_texture_mean) {
+        (Some(_), Some(mean)) if mean > 0.0 && mean.is_finite() => Some(mean),
+        (None, None) => None,
+        _ => bail!("a grain-only ground texture needs its positive mean lightness"),
+    };
+    match settings.ground_texture_mean {
+        Some(mean) if mean.iter().all(|&c| c > 0.0 && c.is_finite()) => ground.set_texture_means(mean, grain),
+        None if !ground.has_colours() && grain.is_none() => {}
+        _ => bail!("a coloured ground needs the ground texture's positive mean colour"),
     }
     let tile_m = settings.tile_steps as f64 * settings.ground_step_m;
     let collars = raised.iter().map(|surface| underlay::owner_collar(surface, tile_m)).collect::<Result<Vec<_>>>()?;
