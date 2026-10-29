@@ -61,11 +61,47 @@ class Ground:
         return bool((~(body[:, 2] < under)).any())
 
 
+def fill(points):
+    """Triangles (index triples) filling the simple polygon whose corners, in order, are the 2D `points`, each wound
+    as the polygon: a fan when it is convex, else ear clipping, so a concave outline (a portal's wall around its arch)
+    keeps its opening."""
+    q = np.asarray(points, float) - np.mean(points, axis=0)
+    count = len(q)
+    area = 0.5 * np.sum(q[:, 0] * np.roll(q[:, 1], -1) - np.roll(q[:, 0], -1) * q[:, 1])
+    order = list(range(count)) if area > 0 else list(range(count))[::-1]
+    eps = 1e-9 * max(float(np.ptp(q, axis=0).max()), 1e-6) ** 2
+
+    def turn(i, j, k):
+        return (q[j, 0] - q[i, 0]) * (q[k, 1] - q[i, 1]) - (q[j, 1] - q[i, 1]) * (q[k, 0] - q[i, 0])
+
+    if all(turn(order[k - 1], order[k], order[(k + 1) % count]) >= -eps for k in range(count)):
+        return [(0, k, k + 1) for k in range(1, count - 1)]
+    out = []
+    while len(order) > 3:
+        for k in range(len(order)):
+            i, j, l = order[k - 1], order[k], order[(k + 1) % len(order)]
+            if turn(i, j, l) <= eps:
+                continue
+            ear = q[[i, j, l]]
+            if any(min(turn(i, j, p), turn(j, l, p), turn(l, i, p)) >= -eps
+                   and not np.any(np.all(np.abs(ear - q[p]) <= 1e-9, axis=1)) for p in order if p not in (i, j, l)):
+                continue
+            out.append((i, j, l))
+            del order[k]
+            break
+        else:
+            raise ValueError('fill: no ear, the polygon is not simple')
+    if abs(turn(*order)) > eps:
+        out.append(tuple(order))
+    return out if area > 0 else [(i, l, j) for i, j, l in out]
+
+
 def track_corners(meshes, looks):
-    """Corner arrays of one or more `track.Mesh`es (map frame, relative to their origin): each polygon split into a fan
-    of triangles with its face's normal, its material's colour and its planar UVs in metres along the face's dominant
-    axis (as `track_build.py` writes them) over that material's tile, and each triangle's index into `looks`, a list of
-    (material name, linear colour, Hakuba texture or None, tile in metres). Polygons of other materials are left out."""
+    """Corner arrays of one or more `track.Mesh`es (map frame, relative to their origin): each polygon filled with
+    triangles (`fill`) with its face's normal, its material's colour and its planar UVs in metres along the face's
+    dominant axis (as `track_build.py` writes them) over that material's tile, and each triangle's index into `looks`,
+    a list of (material name, linear colour, Hakuba texture or None, tile in metres). Polygons of other materials are
+    left out."""
     index = {look[0]: k for k, look in enumerate(looks)}
     position, normal, colour, uv, face = [], [], [], [], []
     for mesh in meshes:
@@ -80,12 +116,13 @@ def track_corners(meshes, looks):
             if length < 1e-12:
                 continue
             a, b = [k for k in range(3) if k != int(np.argmax(np.abs(n)))]
-            for k in range(1, len(poly) - 1):
-                for v in (ring[0], ring[k], ring[k + 1]):
+            triangles = fill(ring[:, [a, b]])
+            for corners in triangles:
+                for v in ring[list(corners)]:
                     position.append(v)
                     # Blender's V runs up the image, glTF's down it.
                     uv.append((v[a] / tile, (1.0 - v[b]) / tile))
-            count = 3 * (len(poly) - 2)
+            count = 3 * len(triangles)
             normal += [n / length] * count
             colour += [rgb] * count
             face += [index[mat]] * (count // 3)
