@@ -8,6 +8,8 @@ uv run python games/yorimichi/hakuba_port/port.py --build build/yorimichi REGION
 uv run python games/yorimichi/hakuba_port/ground.py   # after porting a region's terrain
 uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models]
 (cd games/hakuba && cargo export assets)
+uv run python games/yorimichi/hakuba_port/contact.py --leave-out   # drops the forest's buried plants
+(cd games/hakuba && cargo export assets)
 uv run python games/yorimichi/hakuba_port/contact.py
 ```
 

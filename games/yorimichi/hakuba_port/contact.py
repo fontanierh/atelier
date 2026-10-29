@@ -1,16 +1,21 @@
-"""Checks every exported copy of a ported placement against the ground the game draws, independently of the exporter:
-none may be buried, and any that floats is listed.
+"""Checks every exported copy of a ported placement against the surface the game draws under it, independently of
+the exporter: none may be buried, and any that floats is listed.
 
-    uv run python games/yorimichi/hakuba_port/contact.py
+    uv run python games/yorimichi/hakuba_port/contact.py [--leave-out]
 
 It reads the exported full-detail tiles: each tile's ground mesh, as drawn, and each of its data nodes' copies, at the
-positions the game spawns them, matched with the regions' placements by where they stand. Each copy's lowest vertices
-(within `FOOT` of its lowest point, at most `POINTS` of them) are its foot, compared with the height of the drawn ground
-triangle under each one, in its own tile or the next. A copy is buried if none of its vertices (at most `POINTS` of
-them) is above the ground under it, and adrift if its whole foot is more than `ADRIFT` above the ground; either fails
-the check. A copy floats if its whole foot is more than `FLOAT` above the ground, as a roof or a lantern may, and is
-sunk if its whole foot is more than `SUNK` under it, as a foundation on a slope may; both are counted for review.
+positions the game spawns them, matched with the regions' placements by where they stand. A plant may also stand on a
+ported prop, such as Belmonte's and Brinecove's ground pieces past the terrain, so plants are checked against the ground
+and every ported prop copy around them, transformed as the tiles place it; a prop is checked against the ground alone,
+so that none holds itself up. Under each point, the surface is the one nearest the copy's origin. Each copy's lowest
+vertices (within `FOOT` of its lowest point, at most `POINTS` of them) are its foot, compared with the surface under
+each one. A copy is buried if none of its vertices (at most `POINTS` of them) is above the surface under it, and adrift
+if its whole foot is more than `ADRIFT` above it; either fails the check. A copy floats if its whole foot is more than
+`FLOAT` above the surface, as a roof or a lantern may, and is sunk if its whole foot is more than `SUNK` under it, as a
+foundation on a slope may; both are counted for review. With `--leave-out`, the forest's buried plants are removed from
+its placements instead of failing, as ground cover a little inside the ground prop it stands on, for export again.
 `mosaic` and `ground_at` read the ground pages, for the port's scripts that place models before export."""
+import argparse
 import functools
 import json
 import struct
@@ -57,17 +62,19 @@ def ground_at(heights, south_west, step, x, y):
 
 
 class Drawn:
-    """The ground the game draws: each full tile's ground mesh, its triangles binned by the ground's squares."""
+    """The surfaces the game draws: each full tile's ground mesh and, with `props`, the copies of the ported props
+    standing in it and its neighbours, as the tiles place them; their triangles binned by the ground's squares."""
 
-    def __init__(self, world):
+    def __init__(self, world, props=None):
         self.south_west, self.step = np.array(world['south_west_m']), world['ground_step_m']
         self.tile_m = world['tile_steps'] * self.step
         self.tiles = WORLD / 'tiles'
+        self.props = props
 
     @functools.lru_cache(maxsize=64)
     def tile(self, i, j):
-        """A tile's triangles as map (east, north) corners and heights, and each square's triangles; None off the
-        ground."""
+        """A tile's triangles as map (east, north) corners and heights, and each square's triangles; None where it
+        draws none."""
         path = self.tiles / f'{i}_{j}.glb'
         if not path.is_file():
             return None
@@ -79,6 +86,8 @@ class Drawn:
             for primitive in doc['meshes'][node['mesh']]['primitives']:
                 positions = accessor(doc, binary, primitive['attributes']['POSITION'])
                 corners.append(positions[accessor(doc, binary, primitive['indices']).reshape(-1, 3)])
+        if self.props is not None:
+            corners.extend(self.supports(i, j))
         if not corners:
             return None
         tris = np.concatenate(corners).astype(np.float64)
@@ -86,22 +95,61 @@ class Drawn:
         x0 = self.south_west[0] + i * self.tile_m
         y0 = self.south_west[1] + j * self.tile_m
         side = int(round(self.tile_m / self.step))
-        cx0 = np.clip(np.floor((east.min(1) - x0) / self.step), 0, side - 1).astype(int)
-        cx1 = np.clip(np.floor((east.max(1) - x0) / self.step - 1e-9), 0, side - 1).astype(int)
-        cy0 = np.clip(np.floor((north.min(1) - y0) / self.step), 0, side - 1).astype(int)
-        cy1 = np.clip(np.floor((north.max(1) - y0) / self.step - 1e-9), 0, side - 1).astype(int)
-        pairs = [(cy * side + cx, t) for t in range(len(tris))
-                 for cx in range(cx0[t], cx1[t] + 1) for cy in range(cy0[t], cy1[t] + 1)]
-        cells, owners = np.array(pairs, int).T
+        cx0 = np.floor((east.min(1) - x0) / self.step).astype(int)
+        cx1 = np.floor((east.max(1) - x0) / self.step - 1e-9).astype(int)
+        cy0 = np.floor((north.min(1) - y0) / self.step).astype(int)
+        cy1 = np.floor((north.max(1) - y0) / self.step - 1e-9).astype(int)
+        # A neighbour's prop may reach into this tile; only the part over its squares is kept.
+        keep = (cx1 >= 0) & (cy1 >= 0) & (cx0 < side) & (cy0 < side)
+        cx0, cx1 = np.clip(cx0, 0, side - 1), np.clip(cx1, 0, side - 1)
+        cy0, cy1 = np.clip(cy0, 0, side - 1), np.clip(cy1, 0, side - 1)
+        kept = np.flatnonzero(keep)
+        if not len(kept):
+            return None
+        # Each triangle in every square its bounds cover.
+        wide, high = cx1[kept] - cx0[kept] + 1, cy1[kept] - cy0[kept] + 1
+        owners = np.repeat(kept, wide * high)
+        within = np.arange(len(owners)) - np.repeat(np.cumsum(wide * high) - wide * high, wide * high)
+        span = np.repeat(wide, wide * high)
+        cells = (cy0[owners] + within // span) * side + cx0[owners] + within % span
         order = np.argsort(cells, kind='stable')
         cells, owners = cells[order], owners[order]
         starts = np.searchsorted(cells, np.arange(side * side))
         ends = np.searchsorted(cells, np.arange(side * side), side='right')
         return np.stack([east, north], -1), up, owners, starts, ends, x0, y0, side
 
-    def heights(self, x, y):
-        """The drawn ground's height under map points (`x`, `y`); NaN where no tile draws ground."""
-        x, y = np.asarray(x, float).ravel(), np.asarray(y, float).ravel()
+    def supports(self, i, j):
+        """The triangles, in the game's frame, of the ported prop copies the tile and its neighbours place."""
+        return [shape for di in (-1, 0, 1) for dj in (-1, 0, 1) for shape in self.placed_props(i + di, j + dj)]
+
+    @functools.lru_cache(maxsize=256)
+    def placed_props(self, i, j):
+        """The triangles, in the game's frame, of the ported prop copies one tile places."""
+        path = self.tiles / f'{i}_{j}.glb'
+        if not path.is_file():
+            return []
+        doc, _ = glb(path)
+        found = []
+        for node in doc.get('nodes', []):
+            extras = node.get('extras') or {}
+            model = node.get('name', '')
+            if extras.get('detail') != 'full' or model not in self.props:
+                continue
+            shape = full_triangles(model)
+            if shape is None:
+                continue
+            rows = np.array(extras['instances'], float).reshape(-1, 5)
+            rows = rows[[tuple(at) in self.props[model] for at in stored(rows[:, [0, 2]] * (1, -1))]]
+            px, py, pz = shape[None, ..., 0], shape[None, ..., 1], shape[None, ..., 2]
+            x, y, z, yaw, scale = (rows[:, k, None, None] for k in range(5))
+            found.extend(np.stack([x + scale * (np.cos(yaw) * px + np.sin(yaw) * pz), y + scale * py,
+                                   z + scale * (-np.sin(yaw) * px + np.cos(yaw) * pz)], -1))
+        return found
+
+    def heights(self, x, y, near):
+        """The height of the drawn surface under map points (`x`, `y`) nearest to heights `near`; NaN where none is
+        drawn."""
+        x, y, near = (np.asarray(v, float).ravel() for v in (x, y, near))
         out = np.full(len(x), np.nan)
         ti = np.floor((x - self.south_west[0]) / self.tile_m).astype(int)
         tj = np.floor((y - self.south_west[1]) / self.tile_m).astype(int)
@@ -111,29 +159,43 @@ class Drawn:
                 continue
             flat, up, owners, starts, ends, x0, y0, side = tile
             pick = np.flatnonzero((ti == i) & (tj == j))
-            px, py = x[pick], y[pick]
+            px, py, seat = x[pick], y[pick], near[pick]
             cell = (np.clip(np.floor((py - y0) / self.step), 0, side - 1).astype(int) * side
                     + np.clip(np.floor((px - x0) / self.step), 0, side - 1).astype(int))
             first, count = starts[cell], ends[cell] - starts[cell]
-            found = np.full(len(pick), np.nan)
+            found, apart = np.full(len(pick), np.nan), np.full(len(pick), np.inf)
             for k in range(int(count.max(initial=0))):
-                todo = (k < count) & np.isnan(found)
-                if not todo.any():
-                    break
-                t = owners[first[todo] + k]
+                rows = np.flatnonzero(k < count)
+                t = owners[first[rows] + k]
                 a, b, c = flat[t, 0], flat[t, 1], flat[t, 2]
-                q = np.stack([px[todo], py[todo]], -1)
+                q = np.stack([px[rows], py[rows]], -1)
                 v0, v1, v2 = b - a, c - a, q - a
                 den = v0[:, 0] * v1[:, 1] - v1[:, 0] * v0[:, 1]
+                # A wall, upright, has no area seen from above and holds nothing up.
                 with np.errstate(divide='ignore', invalid='ignore'):
                     u = (v2[:, 0] * v1[:, 1] - v1[:, 0] * v2[:, 1]) / den
                     v = (v0[:, 0] * v2[:, 1] - v2[:, 0] * v0[:, 1]) / den
-                inside = (u >= -1e-6) & (v >= -1e-6) & (u + v <= 1 + 1e-6)
-                h = up[t, 0] + u * (up[t, 1] - up[t, 0]) + v * (up[t, 2] - up[t, 0])
-                rows = np.flatnonzero(todo)
-                found[rows[inside]] = h[inside]
+                    inside = (u >= -1e-6) & (v >= -1e-6) & (u + v <= 1 + 1e-6)
+                    h = up[t, 0] + u * (up[t, 1] - up[t, 0]) + v * (up[t, 2] - up[t, 0])
+                rows, h = rows[inside], h[inside]
+                nearer = np.abs(h - seat[rows]) < apart[rows]
+                rows, h = rows[nearer], h[nearer]
+                found[rows], apart[rows] = h, np.abs(h - seat[rows])
             out[pick] = found
         return out
+
+
+@functools.lru_cache(maxsize=None)
+def full_triangles(model):
+    """A Hakuba model's `full` triangles, in its glTF frame, or None for a model with no source."""
+    source = HAKUBA / model / 'src' / 'model.glb'
+    if not source.is_file():
+        return None
+    doc, binary = glb(source)
+    return np.concatenate([accessor(doc, binary, primitive['attributes']['POSITION'])[
+        accessor(doc, binary, primitive['indices']).reshape(-1, 3)]
+        for node in doc['nodes'] if node.get('name') == 'full'
+        for primitive in doc['meshes'][node['mesh']]['primitives']]).astype(np.float64)
 
 
 def full_positions(path):
@@ -162,13 +224,15 @@ def points_of(model):
 
 def placed(drawn, rows, points):
     """The heights of a model's `points` in each copy (`rows` of game-frame x, y, z, yaw in radians, scale), turned
-    about up and scaled as the game spawns it, and of the drawn ground under each, NaN where none is drawn."""
+    about up and scaled as the game spawns it, and of the drawn surface under each, NaN where none is drawn."""
     yaw, scale = rows[:, 3:4], rows[:, 4:5]
     px, py, pz = points[:, 0], points[:, 1], points[:, 2]
     gx = rows[:, :1] + scale * (np.cos(yaw) * px + np.sin(yaw) * pz)
     gz = rows[:, 2:3] + scale * (-np.sin(yaw) * px + np.cos(yaw) * pz)
     gy = rows[:, 1:2] + scale * py
-    return gy, drawn.heights(gx, -gz).reshape(gx.shape)
+    # Every point of a copy is seated on the surface nearest the copy's origin: a plant beside a rock stands on the
+    # ground, and one sunk into the rock on the rock.
+    return gy, drawn.heights(gx, -gz, np.broadcast_to(rows[:, 1:2], gx.shape)).reshape(gx.shape)
 
 
 def showing(height, ground):
@@ -200,9 +264,13 @@ def accessor(doc, binary, index):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    parser.add_argument('--leave-out', action='store_true',
+                        help="remove the forest's buried plants from its placements")
+    args = parser.parse_args()
     world = settings()
     drawn = Drawn(world)
-    failed, sunk, floating, checked, found = [], {}, {}, 0, 0
+    failed, sunk, floating, checked, found, buried = [], {}, {}, 0, 0, {}
     # The ported copies: each model's placements, by where they stand, so that Hakuba's own copies of the same model
     # are left to Hakuba's checks.
     ported = {}
@@ -210,6 +278,9 @@ def main():
         for group in json.loads(path.read_text())['groups']:
             ported.setdefault(group['model'], set()).update(map(tuple, stored(
                 np.array(group['instances'], float).reshape(-1, 5)[:, :2])))
+    # A plant may stand on a ported prop, a deck or a ground piece, as well as on the ground; a prop stands on the
+    # ground alone, so that none holds itself up.
+    supported = Drawn(world, {model: at for model, at in ported.items() if model.startswith('props/')})
     tiles = sorted(p for p in drawn.tiles.glob('*_*.glb') if not p.name.endswith('.middle.glb'))
     # Row by row, so that a tile's neighbours stay cached.
     tiles.sort(key=lambda p: tuple(int(n) for n in p.stem.split('_'))[::-1])
@@ -229,12 +300,13 @@ def main():
             rows = np.array(extras['instances'], float).reshape(-1, 5)
             rows = rows[[tuple(at) in ported[model] for at in stored(rows[:, [0, 2]] * (1, -1))]]
             found += len(rows)
-            height, ground = placed(drawn, rows, foot)
+            surface = supported if model.startswith('plants/') else drawn
+            height, ground = placed(surface, rows, foot)
             over = ~np.isnan(ground)
             seen = over.any(axis=1)
             checked += int(seen.sum())
             gap = np.where(over, height - ground, np.nan)
-            body_height, body_ground = placed(drawn, rows, body)
+            body_height, body_ground = placed(surface, rows, body)
             shows = showing(body_height, body_ground)
             with np.errstate(all='ignore'), warnings.catch_warnings():
                 warnings.simplefilter('ignore', RuntimeWarning)
@@ -245,6 +317,7 @@ def main():
                 where = f'{model} at {rows[i, 0]:.1f}, {-rows[i, 2]:.1f} ({path.stem})'
                 if not shows[i]:
                     failed.append(f'{where}: buried, its top {-top[i]:.2f} m under')
+                    buried[model, tuple(stored([rows[i, 0], -rows[i, 2]]))] = failed[-1]
                 elif lowest[i] > ADRIFT:
                     failed.append(f'{where}: adrift {lowest[i]:.0f} m above the ground')
                 elif highest[i] < -SUNK:
@@ -252,14 +325,35 @@ def main():
                 elif lowest[i] > FLOAT:
                     floating.setdefault(region, []).append(f'{where}: {lowest[i]:.2f} m above')
     total = sum(map(len, ported.values()))
-    print(f'{found} of {total} ported copies found in the full tiles, {checked} of them over the drawn ground checked')
+    print(f'{found} of {total} ported copies found in the full tiles, {checked} of them over a drawn surface checked')
     for kind, found in (('float', floating), ('sunk', sunk)):
         for group, items in sorted(found.items()):
             print(f'{group}: {len(items)} {kind}, such as {"; ".join(items[:3])}')
+    if args.leave_out:
+        return leave_out(buried, failed)
     for item in failed:
         print('FAIL', item)
     return 1 if failed else 0
 
+
+def leave_out(buried, failed):
+    """Removes the forest's buried plants from its placements; every other failure still fails."""
+    path = WORLD / 'src' / 'regions' / 'forest' / 'placements.json'
+    groups, removed = json.loads(path.read_text())['groups'], set()
+    for group in groups:
+        rows = group['instances']
+        keys = [(group['model'], tuple(at)) for at in stored(np.array(rows, float).reshape(-1, 5)[:, :2])]
+        removed.update(key for key in keys if key in buried)
+        group['instances'] = [row for row, key in zip(rows, keys) if key not in buried]
+    groups = [group for group in groups if group['instances']]
+    # Written as `plants.py` writes it, one group a line.
+    text = json.dumps({'groups': groups}, separators=(',', ':'))
+    path.write_text(text.replace('{"model"', '\n{"model"') + '\n')
+    print(f'{len(removed)} buried forest plants left out of {path.name}')
+    others = [item for item in failed if item not in {buried[key] for key in removed}]
+    for item in others:
+        print('FAIL', item)
+    return 1 if others else 0
 
 if __name__ == '__main__':
     sys.exit(main())
