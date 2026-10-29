@@ -1,5 +1,0 @@
-# A piece of Belmonte and the Haras valley, ported with its colours painted per vertex.
-kind = "prop"
-source = "src/model.glb"
-solid = true
-inputs_sha256 = "c2d7a27906645d9c2f55a23c2515e8d7e2d272b0a9dcc1f3ae6aa72097f8f34b"
