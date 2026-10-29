@@ -218,7 +218,13 @@ tubes already, so its middle version is a copy of its export.
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, or the
 region is only data, a `placements.json` of models standing at map positions; `world/regions.rs` lists it. Models
-past the ground stand in tiles that hold only them, within `scenery_tiles`. Each tile is written in full detail and in middle detail, for seeing from afar. The
+past the ground stand in tiles that hold only them, within `scenery_tiles`. Each tile is written in full detail and in middle detail, for seeing from afar. A
+page height may be NaN, out at sea: a grid square with such a corner draws no ground, and a tile with no ground and
+nothing standing in it is not exported. A page may have a colour page `src/ground/colours/<column>_<row>.bin`, four
+bytes a point (sRGB and an alpha of 255, or 0 where it gives no colour); the ground's vertices there tint its
+texture by that colour over `ground_texture_mean`, so the texture keeps its grain and shows the colour on average. A
+tile whose every ground point has a colour shows `coloured_ground_texture`, a grain-only texture, tinted by the colour
+over its mean lightness, so a rock's grey or a beach's sand shows true rather than through the grass. The
 ground and each overlay show a texture asset, named by its folder: a tile points at the texture's `.ktx2` and never
 holds it, and the export fails if no such texture asset exists. An
 overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere, or
@@ -256,6 +262,9 @@ texture asset does not exist, if a model stands on an overlay, or if a cable com
 | `middle_uses_fine_ground` | whether middle tiles retain full-detail ground triangles       |
 | `ground_texture`    | the texture the ground shows, by its folder under `assets/textures/`  |
 | `ground_texture_m`  | how far apart the ground's texture repeats                            |
+| `ground_texture_mean` | the ground texture's mean linear colour, needed by colour pages     |
+| `coloured_ground_texture` | optional; the grain-only texture a wholly coloured tile shows   |
+| `coloured_ground_texture_mean` | that texture's mean linear lightness                       |
 | `spawn_m`           | where the player starts, on the map                                   |
 | `spawn_bearing_deg` | which way the player faces there, as a compass bearing east of north  |
 

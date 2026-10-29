@@ -5,8 +5,12 @@ reads or names anything outside its own folder.
 
 ```sh
 uv run python games/yorimichi/hakuba_port/port.py --build build/yorimichi REGION...
+uv run python games/yorimichi/hakuba_port/ground.py   # after porting a region's terrain
 cd games/hakuba && cargo export assets
 ```
+
+A region's terrain cells become Hakuba's shared ground, not props: `ground.py` samples them into the height and
+colour pages and removes them. The far hills are only terrain, so `far-hills` is not listed as a Hakuba region.
 
 `--build` is a Yorimichi build folder holding the world steps' products (`exports/`, `atomic_regions/`, each
 region's runtime data and textures). The port converts every mesh of the named regions in one Blender run under
@@ -18,6 +22,7 @@ listed once in Hakuba's `tools/export/src/world/regions.rs`.
 |--------------|-------------------------------------------------------------------------------------------------|
 | `port.py`    | the command: runs an adapter, converts its meshes, writes the props and the placements          |
 | `regions.py` | one adapter per region: which meshes to bring, how each material slot is coloured, where each stands |
+| `ground.py`  | samples the ported terrain cells (far hills, Brinecove, Hidamari, Belmonte, the southwest islet) into Hakuba's ground height and colour pages, then removes those cells' props and placements |
 | `convert.py` | the Blender script: joins a mesh, bakes each slot's colour per vertex, keeps `UCX_` or separate collision hulls, moves the origin to the footprint's centre and writes the GLB Hakuba's exporter accepts |
 
 Colours are baked per vertex in linear RGB, the way Hakuba's painted props draw: a slot's colour is the product of

@@ -72,6 +72,14 @@ impl Tile {
                 digest.update(ground.sample(i, j).unwrap_or(f64::NAN).to_bits().to_le_bytes());
             }
         }
+        // A point's colour tints the ground there and chooses the tile's texture; only the tile's own points do.
+        for j in self.rows.0..=self.rows.1 {
+            for i in self.columns.0..=self.columns.1 {
+                for c in ground.colour(i, j).unwrap_or([f32::NAN; 3]) {
+                    digest.update(c.to_bits().to_le_bytes());
+                }
+            }
+        }
         let (low, high) = (
             ground.position(self.columns.0 as f64, self.rows.0 as f64),
             ground.position(self.columns.1 as f64, self.rows.1 as f64),

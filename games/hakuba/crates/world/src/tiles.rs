@@ -17,6 +17,9 @@ use crate::vertex_paint::{SurfaceFailed, SurfaceWaiting};
 const MIDDLE_M: f32 = 2500.0;
 /// The most tiles that load at once, so the nearest are not kept waiting behind the far.
 const LOADING: usize = 16;
+/// The most tiles that load at once under the splash, when nothing is drawn yet; a browser refuses thousands of
+/// fetches at once.
+const LOADING_UNDER_SPLASH: usize = 32;
 pub const TILES: &str = "world/tiles";
 
 pub struct TilesPlugin;
@@ -53,6 +56,8 @@ pub struct Tile {
     shown_detail: Option<Detail>,
     pending: Option<Entity>,
     failed: bool,
+    /// Whether it wants another version but waits its turn to start loading it.
+    queued: bool,
 }
 
 impl Tile {
@@ -68,10 +73,11 @@ impl Tile {
             shown_detail: None,
             pending: None,
             failed: false,
+            queued: false,
         })
     }
     pub fn shown(&self) -> bool {
-        self.failed || (self.detail == self.shown_detail && self.pending.is_none())
+        self.failed || (!self.queued && self.detail == self.shown_detail && self.pending.is_none())
     }
     fn path(&self, detail: Detail) -> String {
         let suffix = if detail == Detail::Full { "" } else { ".middle" };
@@ -87,9 +93,9 @@ struct SceneReady(u32);
 struct Prepared;
 
 /// Picks each tile's version by its distance from the camera: full detail near, middle detail out to [`MIDDLE_M`],
-/// nothing beyond, the nearest first. Until the world has loaded every tile starts at once, so the splash holds until
-/// all it shows is ready; afterwards at most [`LOADING`] tiles load at once. A tile leaving every version is dropped at
-/// once.
+/// nothing beyond, the nearest first, at most [`LOADING_UNDER_SPLASH`] at once until the world has loaded and
+/// [`LOADING`] afterwards. A tile waiting its turn is queued, so the splash holds until all it shows is ready. A tile
+/// leaving every version is dropped at once.
 fn choose(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -110,10 +116,12 @@ fn choose(
         };
         loading += usize::from(tile.pending.is_some());
         if detail == tile.detail {
+            tile.queued = false;
             continue;
         }
         if detail.is_none() {
             tile.detail = None;
+            tile.queued = false;
             if let Some(pending) = tile.pending.take() {
                 commands.entity(pending).despawn();
             }
@@ -127,10 +135,13 @@ fn choose(
         wanted.push((distance, entity, detail));
     }
     wanted.sort_by(|a, b| a.0.total_cmp(&b.0));
-    // The splash counts a tile not yet loading as shown, so until the world has loaded every tile starts at once.
-    let free = if loaded.is_some() { LOADING.saturating_sub(loading) } else { usize::MAX };
-    for (_, entity, detail) in wanted.into_iter().take(free) {
+    let free = if loaded.is_some() { LOADING } else { LOADING_UNDER_SPLASH }.saturating_sub(loading);
+    for (k, (_, entity, detail)) in wanted.into_iter().enumerate() {
         let Ok((_, mut tile)) = tiles.get_mut(entity) else { continue };
+        tile.queued = k >= free;
+        if tile.queued {
+            continue;
+        }
         tile.detail = detail;
         if let Some(pending) = tile.pending.take() {
             commands.entity(pending).despawn();
@@ -353,35 +364,35 @@ mod tests {
     }
 
     #[test]
-    fn every_tile_starts_before_the_world_has_loaded_then_only_a_few_at_once() {
+    fn tiles_past_the_cap_wait_queued_and_hold_the_splash() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
         app.init_asset::<bevy::world_serialization::WorldAsset>();
         app.init_resource::<Settings>();
         app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(1000.0, 0.0, 0.0))));
-        let near = app.world_mut().spawn(Tile::named("tile 1 2", Vec3::new(1000.0, 0.0, 10.0)).unwrap()).id();
-        let far = app.world_mut().spawn(Tile::named("tile 2 2", Vec3::ZERO).unwrap()).id();
-        let ring: Vec<Entity> = (0..LOADING)
+        let tiles: Vec<Entity> = (0..LOADING_UNDER_SPLASH + 8)
             .map(|k| {
-                let at = Vec3::new(1000.0 + 600.0 * (k as f32 / LOADING as f32 * 6.3).cos(), 0.0, 600.0);
+                let at = Vec3::new(1000.0, 0.0, 300.0 + 20.0 * k as f32);
                 app.world_mut().spawn(Tile::named(&format!("tile {} 9", 10 + k), at).unwrap()).id()
             })
             .collect();
-        app.world_mut().run_system_once(choose).unwrap();
-        assert_eq!(app.world().get::<Tile>(near).unwrap().detail, Some(Detail::Full));
-        assert_eq!(app.world().get::<Tile>(far).unwrap().detail, Some(Detail::Middle));
-        let pending = |app: &App, tiles: &[Entity]| {
-            tiles.iter().filter(|&&tile| app.world().get::<Tile>(tile).unwrap().pending.is_some()).count()
+        let count = |app: &App, test: fn(&Tile) -> bool| {
+            tiles.iter().filter(|&&tile| test(app.world().get::<Tile>(tile).unwrap())).count()
         };
-        assert_eq!(pending(&app, &ring), LOADING, "the splash waits for every tile, so all start at once");
-        for &tile in &ring {
-            let pending = app.world_mut().get_mut::<Tile>(tile).unwrap().pending.take().unwrap();
-            app.world_mut().despawn(pending);
+        app.world_mut().run_system_once(choose).unwrap();
+        assert_eq!(count(&app, |tile| tile.pending.is_some()), LOADING_UNDER_SPLASH);
+        assert_eq!(count(&app, |tile| tile.queued && !tile.shown()), 8, "a queued tile holds the splash");
+        let first = app.world().get::<Tile>(tiles[0]).unwrap();
+        assert!(first.pending.is_some(), "the nearest start first");
+        for &tile in &tiles {
+            if let Some(pending) = app.world_mut().get_mut::<Tile>(tile).unwrap().pending.take() {
+                app.world_mut().despawn(pending);
+            }
             app.world_mut().get_mut::<Tile>(tile).unwrap().detail = None;
         }
         app.init_resource::<Loaded>();
         app.world_mut().run_system_once(choose).unwrap();
-        assert_eq!(pending(&app, &ring), LOADING - 2, "once loaded, at most LOADING load at once, nearest first");
+        assert_eq!(count(&app, |tile| tile.pending.is_some()), LOADING, "once loaded, at most LOADING at once");
     }
 
     #[test]
