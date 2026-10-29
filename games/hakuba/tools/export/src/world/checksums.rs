@@ -70,7 +70,11 @@ impl Tile {
         for j in self.rows.0.saturating_sub(1)..=self.rows.1 + 1 {
             for i in self.columns.0.saturating_sub(1)..=self.columns.1 + 1 {
                 digest.update(ground.sample(i, j).unwrap_or(f64::NAN).to_bits().to_le_bytes());
-                // A point's colour tints the ground there and chooses the tile's texture.
+            }
+        }
+        // A point's colour tints the ground there and chooses the tile's texture; only the tile's own points do.
+        for j in self.rows.0..=self.rows.1 {
+            for i in self.columns.0..=self.columns.1 {
                 for c in ground.colour(i, j).unwrap_or([f32::NAN; 3]) {
                     digest.update(c.to_bits().to_le_bytes());
                 }
