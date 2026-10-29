@@ -1,6 +1,6 @@
 # A piece of Brinecove, the pirate port on the western coast, ported with its textures.
 kind = "prop"
 source = "src/model.glb"
-own_textures = ["brinecove-t-bc-hero-harbor-capstan-0", "brinecove-t-bc-hero-harbor-capstan-1", "brinecove-t-bc-hero-harbor-capstan-2", "brinecove-t-bc-hero-harbor-capstan-3"]
+textures = ["brinecove-t-bc-hero-pirate-queen-statue-4", "brinecove-t-bc-hero-pirate-queen-statue-5", "brinecove-t-bc-hero-pirate-queen-statue-6", "brinecove-t-bc-hero-pirate-queen-statue-7"]
 solid = true
-inputs_sha256 = "7becaa0104ecf6c15b4f2dd67321738252e89770be67b2ccadd73e9bed24d60f"
+inputs_sha256 = "61f0dd87bdd1752613c734bafbf8c698033c40dd3cd0de4a10001b72e2a0a03c"

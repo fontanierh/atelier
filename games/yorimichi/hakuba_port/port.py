@@ -106,9 +106,47 @@ def mean(path):
 def settle_textures(prefixes):
     """Settle the texture assets ported regions wrote (named `<prefix>-...`) by how many assets name them: one no asset
     names any more is deleted (a slot's on a mesh without UVs, a terrain prop's `ground.py` removed); one only a prop
-    names moves into that prop, as its own texture `src/<name>.png`, which its source model names as `<name>.ktx2`."""
+    names moves into that prop, as its own texture `src/<name>.png`, which its source model names as `<name>.ktx2`.
+    One image under several names (a source image several slots name) is one texture first: the first name, which
+    every asset that names another instead names, as a texture asset or as its own texture."""
     from painted import rename_images
     assets = HAKUBA / 'assets'
+
+    def ported(name):
+        return any(name.startswith(prefix + '-') for prefix in prefixes)
+
+    def listed(text, key):
+        return json.loads((re.search(rf'^{key} = (\[.*\])$', text, re.M) or [None, '[]'])[1])
+
+    def name_textures(settings, shared, own):
+        text = re.sub(r'^(own_)?textures = .*\n', '', settings.read_text(), flags=re.M)
+        lines = text.rstrip('\n').split('\n')
+        lines[3:3] = ([f'textures = {json.dumps(shared)}'] if shared else []) + (
+            [f'own_textures = {json.dumps(own)}'] if own else [])
+        settings.write_text('\n'.join(lines) + '\n')
+
+    first = {}
+    for folder in sorted((assets / 'textures').iterdir()):
+        if ported(folder.name):
+            first.setdefault(sha256(folder / 'src' / 'texture.png'), folder.name)
+    for settings in assets.glob('props/*/asset.toml'):
+        text = settings.read_text()
+        shared, own, uris = listed(text, 'textures'), listed(text, 'own_textures'), {}
+        for name in [*shared, *own]:
+            mine = name in own
+            image = settings.parent / 'src' / f'{name}.png' if mine else assets / 'textures' / name / 'src' / 'texture.png'
+            kept = first.get(sha256(image)) if ported(name) and image.exists() else None
+            if kept and (kept != name or mine):
+                uri = f'{name}.ktx2' if mine else f'../../textures/{name}/{name}.ktx2'
+                uris[uri] = f'../../textures/{kept}/{kept}.ktx2'
+                shared = [t for t in shared if t != name] + ([] if kept in shared else [kept])
+                own = [t for t in own if t != name]
+                if mine:
+                    image.unlink()
+        if uris:
+            rename_images(settings.parent / 'src' / 'model.glb', uris)
+            name_textures(settings, shared, own)
+
     users = {}
     for toml in assets.glob('**/asset.toml'):
         for names in re.findall(r'^textures = (\[.*\])$', toml.read_text(), re.M):
@@ -125,12 +163,8 @@ def settle_textures(prefixes):
             rename_images(prop / 'src' / 'model.glb', {f'../../textures/{name}/{name}.ktx2': f'{name}.ktx2'})
             settings = prop / 'asset.toml'
             text = settings.read_text()
-            shared = [t for t in json.loads(re.search(r'^textures = (\[.*\])$', text, re.M).group(1)) if t != name]
-            own = sorted({*json.loads((re.search(r'^own_textures = (\[.*\])$', text, re.M) or [None, '[]'])[1]), name})
-            text = re.sub(r'^(own_)?textures = .*\n', '', text, flags=re.M)
-            lines = text.rstrip('\n').split('\n')
-            lines[3:3] = ([f'textures = {json.dumps(shared)}'] if shared else []) + [f'own_textures = {json.dumps(own)}']
-            settings.write_text('\n'.join(lines) + '\n')
+            name_textures(settings, [t for t in listed(text, 'textures') if t != name],
+                          sorted({*listed(text, 'own_textures'), name}))
         elif len(named) > 1:
             continue
         shutil.rmtree(folder)

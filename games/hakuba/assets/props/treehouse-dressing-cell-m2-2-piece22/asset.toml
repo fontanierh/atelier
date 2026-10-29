@@ -1,6 +1,6 @@
 # A piece of the tree house in the northern woodland, ported with its textures.
 kind = "prop"
 source = "src/model.glb"
-textures = ["treehouse-books", "treehouse-canvas", "treehouse-flat", "treehouse-glass", "treehouse-moss", "treehouse-noren-cream", "treehouse-paper", "treehouse-rope", "treehouse-rug-blue", "treehouse-straw", "treehouse-wood-pale", "treehouse-wood-timber"]
+textures = ["treehouse-books", "treehouse-canvas", "treehouse-flat", "treehouse-moss", "treehouse-noren-cream", "treehouse-paper", "treehouse-rope", "treehouse-rug-blue", "treehouse-straw", "treehouse-wood-pale", "treehouse-wood-timber"]
 solid = true
-inputs_sha256 = "14180d42623267298af8e473c2c466018f9a5d3f32fa983a67c05c915cf7ea4d"
+inputs_sha256 = "09be561d064d37822bb703de2bc456f2441764d98fa627df2e28e25eb4b0926f"

@@ -1,5 +1,0 @@
-# The glass texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "93b56089d32b203a5cb472c0a8f41831c017b6c302587f3ecc6163b5fa978afa"
