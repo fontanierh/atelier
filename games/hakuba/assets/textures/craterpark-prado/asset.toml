@@ -1,5 +1,0 @@
-# Crater Park's restyled prado texture: a decal on its piece, not tiled.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "899183cda200cbcd752acd7a9f74fba2e8fe1384bfe91ab158766e3c85d5d807"

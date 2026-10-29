@@ -1,5 +1,0 @@
-# Crater Park's restyled paving texture: painted, wraps xy (edges), mean [160, 128, 92], detail x1.10.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "226882a9239f59d84b91ca0423e7c5429b23a00aa7d6c325793046ca3354cd09"

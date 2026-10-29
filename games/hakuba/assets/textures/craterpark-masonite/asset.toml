@@ -1,5 +1,0 @@
-# Crater Park's restyled masonite texture: painted, wraps xy (edges), mean [170, 124, 84], detail x2.50.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "1726a8720ca8469c2b1864a5c0cecbc7dfe5fb8ab31f211aa7928ae748d35136"

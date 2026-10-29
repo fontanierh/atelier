@@ -1,5 +1,0 @@
-# Crater Park's restyled brick coping texture: painted, wraps xy (edges), mean [176, 92, 62], detail x1.00.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "647aae0d60be667f00b434edd345fa4fea68e45bb2d6c0c79294412818d17bd9"

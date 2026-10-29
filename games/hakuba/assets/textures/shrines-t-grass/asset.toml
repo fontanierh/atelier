@@ -1,5 +1,0 @@
-# T_grass.png from Yorimichi's shrines, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "66af7813d4073dfce7dcd1ef3166fe560b4bb95072222b173ce42b254e111ff4"

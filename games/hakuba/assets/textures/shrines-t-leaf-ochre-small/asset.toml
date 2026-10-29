@@ -1,5 +1,0 @@
-# T_leaf_ochre_small.png from Yorimichi's shrines, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "0dc88d1551e1178b228bf10d680d590c4ad418bf679de0729654ba08a1ed9afb"

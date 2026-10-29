@@ -1,5 +1,0 @@
-# T_litter.png from Yorimichi's shrines, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "7b173c3d2c3f3f0d8c1fc87e6ea06f0f6b4250704518456c39b28e6f9c1830bd"

@@ -1,5 +1,0 @@
-# Crater Park's restyled pool texture: painted, wraps xy (blend), mean [82, 158, 212], detail x2.50.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "689e55504b002a0cd8b239cd6a6f3929176d194cf47f2971ef1da983c52754ac"

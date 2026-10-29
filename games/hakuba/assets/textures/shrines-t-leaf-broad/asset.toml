@@ -1,5 +1,0 @@
-# T_leaf_broad.png from Yorimichi's shrines, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "5d29b9c341e702594771c251a4058f7454f8d5a9f6fedf6b665ff79ad9f0ef80"

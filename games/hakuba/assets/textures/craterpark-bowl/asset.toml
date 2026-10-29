@@ -1,5 +1,0 @@
-# Crater Park's restyled bowl texture: painted, wraps xy (blend), mean [48, 52, 60], detail x2.47.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "d9331be5206a93fd924ce26775155879b434146fae48cd298f790973bfa0d88a"

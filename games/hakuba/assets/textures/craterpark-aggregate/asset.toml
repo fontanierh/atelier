@@ -1,5 +1,0 @@
-# Crater Park's restyled aggregate texture: painted, wraps x (edges).
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "b0392c83804406e1a089ba22d171ad7b5ff48880511168a3f6f1524d37f4a466"

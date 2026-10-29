@@ -1,5 +1,0 @@
-# T_rooftile.jpg from Yorimichi's shrines, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "f834ee44860067fd132220ec8e413bd6424b3dff957d233da18d7ddd8a3ddc1a"

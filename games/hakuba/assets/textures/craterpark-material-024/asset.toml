@@ -1,5 +1,0 @@
-# Crater Park's restyled ground texture: world-aligned games/yorimichi/assets/craterpark/restyle/ground.jpg, wraps xy (blend), mean [116, 112, 116], detail x1.00; Tint white.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "8618671a1460ff23c0cab510ea9260e526ef092c083b110d3318cbe472f09c1c"

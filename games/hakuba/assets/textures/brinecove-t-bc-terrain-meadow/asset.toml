@@ -1,5 +1,0 @@
-# T_BC_terrain_meadow.jpg from Yorimichi's brinecove, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "7c8767b5fb943df01b1862f37f4278e033d991b43fa14f277aa36ef0d0b7dc61"

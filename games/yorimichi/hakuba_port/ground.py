@@ -190,6 +190,9 @@ def consume():
         text = json.dumps({'groups': kept}, separators=(',', ':'))
         path.write_text(text.replace('{"model"', '\n{"model"') + '\n')
     print(f'removed {removed} terrain props')
+    # The removed props' textures go with them.
+    from port import prune_textures
+    prune_textures(['far-hills', 'brinecove', 'hidamari', 'belmonte', 'southwest'])
 
 
 if __name__ == '__main__':

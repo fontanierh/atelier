@@ -1,5 +1,0 @@
-# T_bark_olive.jpg from Yorimichi's shrines, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "c384b1d36d6694ab67e4d404fe00eca2062c36bcf49488fa31a40f945064caec"

@@ -1,5 +1,0 @@
-# Crater Park's restyled retaining wall texture: painted, wraps xy (edges), mean [88, 84, 82], detail x1.00.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "58c3a0e185c5e9b0087277ac99a2032282f87e9f03199fada98a98f3cb28979d"

@@ -1,5 +1,0 @@
-# Crater Park's restyled side bank texture: painted, wraps xy (edges), mean [166, 161, 150], detail x1.06.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "0ac6e0d1e2aedbf4db7eab6798e2415d249308daa10950d9830e3ebd56745b56"

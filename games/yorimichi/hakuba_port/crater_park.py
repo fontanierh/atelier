@@ -31,7 +31,7 @@ sys.path[:0] = [str(YORIMICHI / 'world' / 'regions'), str(YORIMICHI / 'world'), 
 from craterpark import placement  # noqa: E402
 from craterpark.v2 import dsl, v4_config  # noqa: E402
 from painted import SURFACE, glb  # noqa: E402
-from port import HAKUBA, Model, Region, sha256, write, write_texture  # noqa: E402
+from port import HAKUBA, Model, Region, prune_textures, sha256, write, write_texture  # noqa: E402
 
 # As `import_craterpark.py`: the steel coping's sRGB colour, the warm tints over restyled textures and how much the
 # baked occlusion takes from the albedo.
@@ -180,6 +180,8 @@ def main():
         origins[name] = (origin.tolist(), float(max(high - low)))
         triangles += len(drawn)
     write(region, origins)
+    # Restyled textures of materials the selected design leaves unused.
+    prune_textures(['craterpark'])
     design = index.get('editor_playtest', {})
     print(f'craterpark: {len(region.models)} props, {triangles} triangles, design rev {design.get("rev")}, '
           f'source {index["v4"]["source_sha256"][:12]}')

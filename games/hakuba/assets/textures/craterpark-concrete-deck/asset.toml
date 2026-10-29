@@ -1,5 +1,0 @@
-# Crater Park's restyled concrete deck texture: painted, wraps xy (edges), mean [168, 164, 152], detail x2.50.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "96a0f8339bf68cf94fe181d5d3ee16f38e06e9d980f816f177b87258e10a0057"

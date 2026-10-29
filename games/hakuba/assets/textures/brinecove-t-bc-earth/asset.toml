@@ -1,5 +1,0 @@
-# T_BC_earth.jpg from Yorimichi's brinecove, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "700457f0882e5888eb3c54f6e9ec686209ef91c9d4db32268197ad37e64308e5"

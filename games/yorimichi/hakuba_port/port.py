@@ -15,6 +15,7 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -100,6 +101,19 @@ def mean(path):
     from PIL import Image
     rgb = np.asarray(Image.open(path).convert('RGB'), np.float64) / 255.0
     return np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4).reshape(-1, 3).mean(axis=0).tolist()
+
+
+def prune_textures(prefixes):
+    """Delete the texture assets ported regions wrote (named `<prefix>-...`) that no asset names any more, such as
+    those of slots on meshes without UVs or of terrain props `ground.py` removed."""
+    assets = HAKUBA / 'assets'
+    used = set()
+    for toml in assets.glob('**/asset.toml'):
+        for names in re.findall(r'^textures = (\[.*\])$', toml.read_text(), re.M):
+            used.update(json.loads(names))
+    for folder in sorted((assets / 'textures').iterdir()):
+        if folder.name not in used and any(folder.name.startswith(prefix + '-') for prefix in prefixes):
+            shutil.rmtree(folder)
 
 
 def jobs(region, scratch):
@@ -219,6 +233,7 @@ def main():
         write(region, origins)
         count = sum(len(i) for _, _, i in region.groups)
         print(f'{region.name}: {len(region.models)} props, {count} placements')
+    prune_textures(args.region)
 
 
 if __name__ == '__main__':

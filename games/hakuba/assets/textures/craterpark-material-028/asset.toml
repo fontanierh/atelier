@@ -1,5 +1,0 @@
-# Crater Park's restyled basalt texture: world-aligned games/yorimichi/assets/craterpark/restyle/basalt.jpg, wraps xy (blend), mean [104, 106, 114], detail x1.00; Tint white.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "ae8bebdbb364cab5843a7f40344977b4443bf45a4ec404cd2df2ac8606fb4d1c"

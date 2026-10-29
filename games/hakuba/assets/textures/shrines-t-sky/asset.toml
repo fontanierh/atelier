@@ -1,5 +1,0 @@
-# T_sky.png from Yorimichi's shrines, as its props draw it.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "3fe84a9cc62ff3499f7dd9980f4e72644dd1426369c309408ca167f2c57646e6"
