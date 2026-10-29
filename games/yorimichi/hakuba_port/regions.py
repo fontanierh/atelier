@@ -1,5 +1,6 @@
 """Each region's adapter: which of Yorimichi's built meshes become Hakuba props, how each is coloured, and where each
 stands. An adapter takes the build folder and returns a `port.Region`; `ADAPTERS` names them."""
+import functools
 import json
 import math
 import sys
@@ -239,9 +240,12 @@ def sword_camp(build):
 def megapark(build):
     """The Super Ultra Mega Park in the western foothills: its 32 authored models and the hillside seam that meets the
     air station's footbridge, standing where `megapark/park.json` stands them, as one body turned about the park
-    actor. A material's colour is its diffuse texture's mean (the restyled image where the restyle replaced it), times
-    its macro overlay's mean at the overlay's opacity. Cut-out materials (ground cover, sign cut-outs, lamp glow) are
-    left out, and so are the park's own trees and parked cars, which are plants and another region's models."""
+    actor. A material's colour is Yorimichi's park material's base colour (`import_megapark.py`, `material`), averaged
+    over its textures in linear RGB: the diffuse (the restyled image where the restyle replaced it), with the decal laid
+    over it by the decal's alpha, times the macro overlay at the overlay's opacity. The park has no tints or vertex
+    colours. The averages are taken here, decoded from sRGB: the converter's `mean` reads 8-bit images undecoded.
+    Cut-out materials (ground cover, sign cut-outs, lamp glow) are left out, and so are the park's own trees and parked
+    cars, which are plants and another region's models."""
     import numpy as np
     from PIL import Image
     out = build / 'megapark'
@@ -257,9 +261,12 @@ def megapark(build):
             return out / 'textures' / restyle[tid]['png']
         return source / report['textures'][tid]['png']
 
-    def mean(path):
-        rgb = np.asarray(Image.open(path).convert('RGB'), np.float64) / 255.0
-        return np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4).reshape(-1, 3).mean(0)
+    @functools.cache
+    def pixels(tid):
+        """A texture's linear RGB and its alpha, each texel's."""
+        rgba = np.asarray(Image.open(texture(tid)).convert('RGBA'), np.float64).reshape(-1, 4) / 255.0
+        rgb = rgba[:, :3]
+        return np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4), rgba[:, 3:]
 
     slots = {}
     for key, material in report['materials'].items():
@@ -267,15 +274,18 @@ def megapark(build):
         if material.get('alpha_mode', 0) != 0 or 'diffuse' not in ids:
             slots[key] = {'drop': True}
             continue
-        rule = {'mean': str(texture(ids['diffuse']))}
+        # B = lerp(diffuse, decal, decal alpha) * lerp(1, macro, MacroOpacity), as the park's material draws it.
+        colour = pixels(ids['diffuse'])[0].mean(0)
+        if 'decal' in ids:
+            decal, alpha = pixels(ids['decal'])
+            colour = colour * (1.0 - alpha.mean()) + (decal * alpha).mean(0)
         if 'macrooverlay' in ids:
             try:
                 opacity = float(material['retail_parameters']['macroOverlayOpacity'][0])
             except (KeyError, ValueError):
                 opacity = 0.0
-            if opacity:
-                rule['rgb'] = [round(float(1.0 + opacity * (c - 1.0)), 4) for c in mean(texture(ids['macrooverlay']))]
-        slots[key] = rule
+            colour = colour * (1.0 + opacity * (pixels(ids['macrooverlay'])[0].mean(0) - 1.0))
+        slots[key] = {'rgb': [round(float(c), 4) for c in colour]}
     x0, y0, z0 = park['location_cm']
     turn = math.radians(park['yaw_deg'])
     region = Region('megapark', 'the Super Ultra Mega Park in the western foothills')
