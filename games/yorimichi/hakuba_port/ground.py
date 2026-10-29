@@ -6,8 +6,9 @@ Reads each terrain cell in `LAYERS` where its region's `placements.json` stands 
 overlap, and writes for each page `world/src/ground/<column>_<row>.bin`, 257 × 257 little-endian f32 heights 2 m apart, rows
 from the south, NaN where no cell covers a point (the sea), and `world/src/ground/colours/<column>_<row>.bin`, the
 cells' vertex colour at each point as sRGB bytes and an alpha of 255, or 0 where no cell gave one. The start's
-terrain inside `START` keeps the heights it has. The cells are then the ground's, so their props and placements are
-removed: run it once after `port.py` brings a region's terrain."""
+terrain inside `START`, and any ground a page already has, keep their heights: a region sampled later only fills the
+land the pages lack. The cells are then the ground's, so their props and placements are removed: run it once after
+`port.py` brings a region's terrain."""
 import json
 import math
 import shutil
@@ -23,7 +24,8 @@ WORLD = HAKUBA / 'world'
 LAYERS = [('far-hills', 'far-hills-cell-'), ('southwest', 'southwest-island-cell-'),
           ('hidamari', 'hidamari-terrain-cell-'), ('hidamari', 'hidamari-north-mountains-cell-'),
           ('brinecove', 'brinecove-ground-'),
-          ('belmonte', 'belmonte-bt-terrain-')]
+          ('belmonte', 'belmonte-bt-terrain-'), ('belmonte', 'belmonte-north-country-'),
+          ('belmonte', 'belmonte-north-apron-')]
 # The start's own terrain, authored in Hakuba: west, south, east, north in metres.
 START = (-300.0, -300.0, 300.0, 300.0)
 
@@ -147,9 +149,11 @@ def main():
             rgba[known, 3] = 255
             colour_path = WORLD / world['ground'] / 'colours' / f'{column}_{row}.bin'
             if path.is_file():
-                # What this run samples nothing for keeps the heights and colours the page has.
+                # Ground the page already has keeps its heights and colours: a later region's terrain only fills
+                # the land the pages lack. Belmonte's north country overlaps the island's hills south of its apron,
+                # where the island's ground, not the north country's ramp, meets the apron.
                 old = np.fromfile(path, '<f4').reshape(page_steps + 1, page_steps + 1).astype(np.float64)
-                keep = start | np.isnan(page)
+                keep = kept(page, old, start)
                 page[keep] = old[keep]
                 old_rgba = (np.fromfile(colour_path, np.uint8).reshape(rgba.shape) if colour_path.is_file()
                             else np.zeros_like(rgba))
@@ -161,6 +165,12 @@ def main():
             written += 1
     print(f'wrote {written} pages over columns {columns.start}..{columns.stop - 1}, rows {rows.start}..{rows.stop - 1}')
     consume()
+
+
+def kept(page, old, start):
+    """Where a page keeps what it already holds rather than a later region's terrain: inside the start regions'
+    rectangle (`start`), where the new terrain has no ground, and wherever the page already has ground."""
+    return start | np.isnan(page) | ~np.isnan(old)
 
 
 def consume():

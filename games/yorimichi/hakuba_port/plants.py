@@ -1,7 +1,7 @@
 """Port Yorimichi's island forest into Hakuba's `forest` region: every tree, bush and tuft of grass the island's world,
 Hidamari's city, Belmonte and Brinecove stand outside the regions Hakuba plants itself.
 
-    uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models]
+    uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove]
 
 The island's world (`world.json`) stands its plants over the whole map; Yorimichi's map clears them inside
 Hidamari's city and its north mountains, Belmonte and Brinecove, whose own plants replace them, and Hakuba's start
@@ -13,10 +13,13 @@ heights. Any other plant off Hakuba's ground, on a cliff, or of a model Hakuba h
 counted, as is any tree of the island's world or city closer than `TREE_SPACING_M` to a taller one.
 
 `--models` first imports the tree models Hakuba lacks (`NEW`) as plants, with their full, middle and far detail levels
-(`plant_convert.py`, one guarded Blender run each), and the leaf and bark textures they need (`TEXTURES`). It adds a
-far version to Hakuba's own trees (`FAR`), moves every far version onto one atlas texture (`FAR_TEXTURE`), and imports
-Brinecove's own plants from their GLBs, each material a texture of its colour.
-"""
+(`plant_convert.py`, one guarded Blender run each), and the leaf and bark textures they need (`TEXTURES`). Hakuba's own
+trees keep their committed sources, far versions included, and are never rewritten. It imports Brinecove's own plants
+from their GLBs, each material a texture of its colour, its palms with a far version made from their fronds and trunk
+(`FRONDS`), then writes the atlas texture every far version shows (`FAR_TEXTURE`). Each plant's source is written once,
+by the step importing it from its own source, its far version already on the atlas, whose cells are fixed
+(`FAR_TEXTURES`), so running it again writes the same files. `--brinecove` imports only Brinecove's plants and writes
+the atlas, without Blender."""
 import argparse
 import collections
 import functools
@@ -68,9 +71,6 @@ NEW = {
     'Tree_Tuscan_Olive': ('forest/mesh-files', "an olive tree of Belmonte's hills", 'LOD3'),
     'Tree_Tuscan_Pine': ('forest/mesh-files', "a stone pine of Belmonte's hills", 'LOD3'),
 }
-# Hakuba's own trees, made from the same sources, and the detail level each adds as its far version.
-FAR = {name: 'LOD4' for name in ('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Pine_A', 'Tree_Pine_B', 'Tree_Cedar_A',
-                                 'Tree_Cedar_B', 'Tree_Broad_A', 'Tree_Broad_B', 'Tree_Ginkgo')}
 # The trees whose far version shows their renders, and the texture of those renders.
 IMPOSTORS = ('Forest_Ginkgo', 'Forest_Maple', 'Forest_Oak', 'Forest_Pine', 'Tuscan_Cypress', 'Tuscan_Oak',
              'Tuscan_Olive', 'Tuscan_Pine')
@@ -96,15 +96,29 @@ TEXTURES = {
     'tuscan-oak-leaves': 'forest/textures/T_LeafOak.png', 'tuscan-olive-leaves': 'forest/textures/T_LeafOlive.png',
     'tuscan-stone-pine-leaves': 'forest/textures/T_LeafStonePine.png',
 }
-# The far versions' textures share one atlas, `FAR_TEXTURE`, so a far tile merges every tree it holds into one mesh:
-# each texture fills a cell `FAR_CELL` texels wide, its edge texels repeated `FAR_GUTTER` deep around it so that coarse
-# mip levels keep its own colours. The renders are only seen there, from their source image.
-FAR_TEXTURE, FAR_CELL, FAR_GUTTER = 'far-plants', 512, 16
+# The far versions' textures share one atlas, `FAR_TEXTURE`, so a far tile merges every plant it holds into one mesh:
+# each texture fills a cell `FAR_CELL` texels wide, more than a far plant ever covers on screen, its edge texels
+# repeated `FAR_GUTTER` deep around it so that coarse mip levels keep its own colours. The cells fill rows of a power
+# of two of them, as many rows as they need, rounded up to a power of two. The renders are only seen there, from their
+# source image.
+FAR_TEXTURE, FAR_CELL, FAR_GUTTER = 'far-plants', 256, 8
+# The atlas's textures, cell by cell, row by row: a new far texture takes the next cell, so that the plants already on
+# the atlas keep theirs.
+FAR_TEXTURES = ('coast-ginkgo-leaves', 'forest-ginkgo-impostor', 'forest-maple-impostor', 'forest-oak-impostor',
+                'forest-pine-impostor', 'garden-cedar', 'garden-leaves', 'garden-maple', 'garden-pine',
+                'tuscan-cypress-impostor', 'tuscan-oak-impostor', 'tuscan-olive-impostor', 'tuscan-pine-impostor',
+                'brinecove-palm-frond', 'brinecove-palm-trunk')
 RENDERS = {impostor(tree): f'forest/assembled/Tree_{tree}_colour.png' for tree in IMPOSTORS}
-# Brinecove's own plants, each `brinecove-<name>` in Hakuba. Having no far version, only its palms, the port's
-# landmarks, are seen from middle tiles.
+# Brinecove's own plants, each `brinecove-<name>` in Hakuba. Only its palms, the port's landmarks, are seen from
+# middle and far tiles.
 BRINECOVE = 'SM_BC_Plant_'
 BRINECOVE_AFAR = ('brinecove-palm',)
+# Brinecove's palms have one detail level; `import_brinecove` makes their far version from their fronds, each half of
+# a frond's `FROND_SEGMENTS` cards joined `FROND_JOIN` at a time, and their trunk (`TRUNKS`), as `TRUNK_SEGMENTS` pairs
+# of crossed cards along it.
+FRONDS = {f'brinecove-palm{k}': 'brinecove-palm-frond' for k in range(6)}
+FROND_SEGMENTS, FROND_JOIN = 6, 3
+TRUNKS, TRUNK_SEGMENTS = ('brinecove-palm-trunk',), 3
 BLENDER = os.environ.get('BLENDER', '/usr/local/bin/blender')
 # The trees' wind, push and haze response, as Hakuba's other trees have it.
 PROFILE = """[source_profile]
@@ -195,8 +209,7 @@ def sha256(path):
 
 
 def import_models(build):
-    """Writes each texture of `TEXTURES` and each plant of `NEW` as a Hakuba asset, and adds a far version to each of
-    Hakuba's own trees in `FAR`, then moves the far versions onto their atlas."""
+    """Writes each texture of `TEXTURES` and each plant of `NEW` as a Hakuba asset, from its own source."""
     for name, source in TEXTURES.items():
         source = build / source
         folder = HAKUBA / 'textures' / name / 'src'
@@ -214,52 +227,105 @@ def import_models(build):
         levels = {'full': build / folder / f'{model}.fbx', 'middle': build / folder / f'{model}_LOD2.fbx',
                   'far': build / folder / f'{model}_{far}.fbx'}
         out = HAKUBA / 'plants' / MODELS[model] / 'src'
-        out.mkdir(parents=True, exist_ok=True)
-        write_plant_glb({level: leaves(converted(fbx)) if level == 'far' else converted(fbx)
-                         for level, fbx in levels.items()}, out / 'model.glb')
-        images = glb_json(out / 'model.glb')['images']
-        textures = list(dict.fromkeys(Path(image['uri']).parent.name for image in images))
-        (out / 'manifest.toml').write_text(
-            '# Original foliage geometry and source detail levels.\npath = "model.glb"\n'
-            f'sha256 = "{sha256(out / "model.glb")}"\nauthoring_fbx_sha256 = "{sha256(levels["full"])}"\n'
-            f'authoring_lod2_fbx_sha256 = "{sha256(levels["middle"])}"\n'
-            f'authoring_far_fbx_sha256 = "{sha256(levels["far"])}"\nconversion = "Blender FBX import; full LOD0, '
-            f'middle LOD2 and far {far} retain per-corner positions, normals, UVs and RGBA"\n')
-        (out.parent / 'asset.toml').write_text(
-            f'# Source foliage: {about}.\nkind = "plant"\nshadow_distance_m = 80.0\nsource = "src/model.glb"\n'
-            f'textures = {json.dumps(textures)}\n\n{PROFILE}')
-        print(f'{MODELS[model]}: {textures}')
-    for model, far in FAR.items():
-        out = HAKUBA / 'plants' / MODELS[model] / 'src'
-        nodes = read_plant_glb(out / 'model.glb')
-        nodes['far'] = leaves(converted(build / 'foliage' / model / f'{model}_{far}.fbx'))
-        write_plant_glb(nodes, out / 'model.glb')
-        manifest = [line for line in (out / 'manifest.toml').read_text().splitlines()
-                    if not line.startswith(('sha256', 'authoring_far', 'far_conversion'))]
-        manifest.insert(2, f'sha256 = "{sha256(out / "model.glb")}"')
-        manifest += [f'authoring_far_fbx_sha256 = "{sha256(build / "foliage" / model / f"{model}_{far}.fbx")}"',
-                     f'far_conversion = "Blender FBX import of {far}, retaining per-corner positions, normals, UVs and '
-                     'RGBA"']
-        (out / 'manifest.toml').write_text('\n'.join(manifest) + '\n')
-        print(f'{MODELS[model]}: far {far}')
-    far_atlas(build)
+        nodes = {level: leaves(converted(fbx)) if level == 'far' else converted(fbx) for level, fbx in levels.items()}
+        manifest = ['# Original foliage geometry and source detail levels.', 'path = "model.glb"', 'sha256 = ""',
+                    f'authoring_fbx_sha256 = "{sha256(levels["full"])}"',
+                    f'authoring_lod2_fbx_sha256 = "{sha256(levels["middle"])}"',
+                    f'authoring_far_fbx_sha256 = "{sha256(levels["far"])}"',
+                    f'conversion = "Blender FBX import; full LOD0, middle LOD2 and far {far} retain per-corner '
+                    'positions, normals, UVs and RGBA"']
+        asset = (f'# Source foliage: {about}.\nkind = "plant"\nshadow_distance_m = 80.0\nsource = "src/model.glb"\n'
+                 f'textures = []\n\n{PROFILE}').splitlines()
+        write_plant(out, nodes, manifest, asset)
+        print(f'{MODELS[model]}: converted')
+
+def trunk(bark):
+    """A trunk, `bark`, as `TRUNK_SEGMENTS` pairs of crossed cards from its foot to its top along its middle, each
+    as wide at either end as the trunk is there and showing its whole texture once, swaying as the trunk does."""
+    positions = bark['POSITION'][bark['indices']].astype(float)
+    low, high = positions[:, 1].min(), positions[:, 1].max()
+    heights = np.linspace(low, high, TRUNK_SEGMENTS + 1)
+    centres, widths = [], []
+    for y in heights:
+        band = positions[np.abs(positions[:, 1] - y) <= (high - low) / TRUNK_SEGMENTS / 2]
+        centre = band.mean(0)
+        centres.append(np.array([centre[0], y, centre[2]]))
+        widths.append(2 * float(np.median(np.hypot(band[:, 0] - centre[0], band[:, 2] - centre[2]))))
+    colour = bark['COLOR_0'].mean(0).astype('<f4')
+    corners, uvs, normals = [], [], []
+    for k in range(TRUNK_SEGMENTS):
+        for side, normal in ((np.array([0.5, 0, 0]), [0, 0, 1]), (np.array([0, 0, 0.5]), [1, 0, 0])):
+            a, b = centres[k], centres[k + 1]
+            corners += [a - side * widths[k], a + side * widths[k], b + side * widths[k + 1], b - side * widths[k + 1]]
+            uvs += [[0, 1], [1, 1], [1, 0], [0, 0]]
+            normals += [normal] * 4
+    count = len(corners) // 4
+    return {'material': bark['material'], 'texture': bark['texture'], 'masked': True, 'double': True,
+            'POSITION': np.array(corners, '<f4'), 'NORMAL': np.array(normals, '<f4'),
+            'TEXCOORD_0': np.array(uvs, '<f4'), 'COLOR_0': np.tile(colour, (4 * count, 1)),
+            'indices': (np.array([0, 1, 2, 0, 2, 3])[None] + 4 * np.arange(count)[:, None]).reshape(-1).astype('<u4')}
+
+
+def fronds(primitive):
+    """A palm's fronds, `primitive`, with every `FROND_JOIN` cards along each half of a frond joined into one. A frond
+    is `FROND_SEGMENTS` pairs of cards (each two triangles of their own four corners) from its foot to its tip, its
+    left and right halves in turn, each card's foot the edge further down its texture."""
+    quads = primitive['indices'].reshape(-1, 6)
+    pattern = quads[0] - quads[0].min()
+    assert len(quads) % (2 * FROND_SEGMENTS) == 0 and set(pattern.tolist()) == {0, 1, 2, 3} and (
+        quads - quads.min(1, keepdims=True) == pattern).all(), 'fronds are cards'
+    v = primitive['TEXCOORD_0'][:, 1]
+    rows = []
+    for frond in range(len(quads) // (2 * FROND_SEGMENTS)):
+        for half in range(2):
+            for start in range(0, FROND_SEGMENTS, FROND_JOIN):
+                first, last = (quads[(2 * FROND_SEGMENTS) * frond + 2 * k + half].min() + np.arange(4)
+                               for k in (start, start + FROND_JOIN - 1))
+                assert v[first].mean() > v[last].mean(), 'a frond runs from its foot to its tip'
+                corners = first.copy()
+                # The joined card keeps the first card's foot and takes the last card's tip.
+                tips = first[np.argsort(v[first])[:2]]
+                for tip in tips:
+                    match = last[np.argsort(v[last])[:2]]
+                    u = primitive['TEXCOORD_0'][:, 0]
+                    corners[corners == tip] = match[np.argmin(np.abs(u[match] - u[tip]))]
+                rows.append(corners)
+    rows = np.array(rows)
+    out = {key: value for key, value in primitive.items() if not isinstance(value, np.ndarray)}
+    for key, value in primitive.items():
+        if isinstance(value, np.ndarray) and key != 'indices':
+            out[key] = value[rows.reshape(-1)].copy()
+    out['indices'] = (pattern[None] + 4 * np.arange(len(rows))[:, None]).reshape(-1).astype('<u4')
+    return out
+
+
+def write_plant(out, nodes, manifest, asset):
+    """Writes a plant's source, `nodes`, its far version moved onto its cells of `FAR_TEXTURE`, then its manifest and
+    asset lines, with the source's hash and the textures it shows."""
+    columns, rows = atlas_grid(len(FAR_TEXTURES))
+    size, inner = np.array([columns, rows], np.float32) * FAR_CELL, FAR_CELL - 2 * FAR_GUTTER
+    for primitive in nodes.get('far', []):
+        assert primitive['texture'] in FAR_TEXTURES, f'{out.parent.name}: {primitive["texture"]} has no atlas cell'
+        row, column = divmod(FAR_TEXTURES.index(primitive['texture']), columns)
+        corner = np.array([column, row], np.float32) * FAR_CELL + FAR_GUTTER
+        primitive['TEXCOORD_0'] = ((corner + primitive['TEXCOORD_0'] * inner) / size).astype('<f4')
+        primitive.update(material='FarPlants', texture=FAR_TEXTURE)
+    out.mkdir(parents=True, exist_ok=True)
+    write_plant_glb(nodes, out / 'model.glb')
+    manifest = [f'sha256 = "{sha256(out / "model.glb")}"' if line.startswith('sha256') else line for line in manifest]
+    (out / 'manifest.toml').write_text('\n'.join(manifest) + '\n')
+    shown = list(dict.fromkeys(Path(image['uri']).parent.name for image in glb_json(out / 'model.glb')['images']))
+    asset = [f'textures = {json.dumps(shown)}' if line.startswith('textures') else line for line in asset]
+    (out.parent / 'asset.toml').write_text('\n'.join(asset) + '\n')
 
 
 def far_atlas(build):
-    """Moves every plant's far version onto `FAR_TEXTURE`, an atlas of the textures they show, and records each
-    plant's new source."""
+    """Writes `FAR_TEXTURE`, each texture of `FAR_TEXTURES` in its cell, from its source image."""
     from PIL import Image
-    plants = {}
-    for source in sorted((HAKUBA / 'plants').glob('*/src/model.glb')):
-        nodes = read_plant_glb(source)
-        if 'far' in nodes:
-            plants[source] = nodes
-    textures = sorted({primitive['texture'] for nodes in plants.values() for primitive in nodes['far']})
-    columns = math.ceil(math.sqrt(len(textures)))
-    rows = math.ceil(len(textures) / columns)
+    columns, rows = atlas_grid(len(FAR_TEXTURES))
     atlas = np.zeros((rows * FAR_CELL, columns * FAR_CELL, 4), np.uint8)
     images, inner = {}, FAR_CELL - 2 * FAR_GUTTER
-    for k, texture in enumerate(textures):
+    for k, texture in enumerate(FAR_TEXTURES):
         images[texture] = build / RENDERS[texture] if texture in RENDERS else next(
             (HAKUBA / 'textures' / texture / 'src').glob('texture.*'))
         # Premultiplied, so that the clear texels' colour never darkens the leaves' edges.
@@ -274,26 +340,17 @@ def far_atlas(build):
         "# The plants' far textures, each in a cell of this atlas, row by row.\npath = \"texture.png\"\n"
         f'sha256 = "{sha256(folder / "texture.png")}"\n'
         + ''.join(f'authoring_{texture.replace("-", "_")}_sha256 = "{sha256(images[texture])}"\n'
-                  for texture in textures))
+                  for texture in FAR_TEXTURES))
     (folder.parent / 'asset.toml').write_text(
         "# Source texture for the plants' far versions.\nkind = \"texture\"\nsource = \"src/texture.png\"\n"
         'alpha_cutoff = 0.4\nmip_colour = "average"\n')
-    size = np.array([columns, rows], np.float32) * FAR_CELL
-    for source, nodes in plants.items():
-        for primitive in nodes['far']:
-            row, column = divmod(textures.index(primitive['texture']), columns)
-            corner = np.array([column, row], np.float32) * FAR_CELL + FAR_GUTTER
-            primitive['TEXCOORD_0'] = ((corner + primitive['TEXCOORD_0'] * inner) / size).astype('<f4')
-            primitive.update(material='FarPlants', texture=FAR_TEXTURE)
-        write_plant_glb(nodes, source)
-        manifest = (source.parent / 'manifest.toml').read_text().splitlines()
-        manifest = [f'sha256 = "{sha256(source)}"' if line.startswith('sha256') else line for line in manifest]
-        (source.parent / 'manifest.toml').write_text('\n'.join(manifest) + '\n')
-        shown = list(dict.fromkeys(Path(image['uri']).parent.name for image in glb_json(source)['images']))
-        asset = (source.parent.parent / 'asset.toml').read_text().splitlines()
-        asset = [f'textures = {json.dumps(shown)}' if line.startswith('textures') else line for line in asset]
-        (source.parent.parent / 'asset.toml').write_text('\n'.join(asset) + '\n')
-    print(f'{FAR_TEXTURE}: {len(textures)} textures, {len(plants)} plants')
+    print(f'{FAR_TEXTURE}: {len(FAR_TEXTURES)} textures')
+
+
+def atlas_grid(count):
+    """The columns and rows of an atlas of `count` cells."""
+    columns = 2 ** math.ceil(math.log2(math.ceil(math.sqrt(count))))
+    return columns, 2 ** math.ceil(math.log2(math.ceil(count / columns)))
 
 
 def leaves(primitives):
@@ -365,7 +422,8 @@ def srgb(linear):
 def import_brinecove(build):
     """Writes each of Brinecove's plants as a Hakuba plant from its GLB, and each material it shows as a texture: the
     material's colour times its texture, or the colour alone. Wood stands still in the wind (red 0); every other part
-    sways (red 1). Brinecove's plants have one detail level."""
+    sways (red 1). Brinecove's plants have one detail level; a palm of `FRONDS` gains a far version
+    made from its fronds and trunk."""
     report = {entry['name']: entry for entry in
               json.loads((build / 'brinecove' / 'build-report.json').read_text())['materials'].values()}
     made = set()
@@ -413,22 +471,25 @@ def import_brinecove(build):
                     'indices': indices})
         model = brinecove_name(source.stem)
         out = HAKUBA / 'plants' / model / 'src'
-        out.mkdir(parents=True, exist_ok=True)
-        write_plant_glb({'full': primitives}, out / 'model.glb')
-        textures = list(dict.fromkeys(p['texture'] for p in primitives))
-        (out / 'manifest.toml').write_text(
-            '# Original foliage geometry.\npath = "model.glb"\n'
-            f'sha256 = "{sha256(out / "model.glb")}"\nauthoring_glb_sha256 = "{sha256(source)}"\n'
-            'conversion = "the source GLB\'s triangles, one primitive per material, with wind weights by material"\n')
+        nodes = {'full': primitives}
+        manifest = ['# Original foliage geometry.', 'path = "model.glb"', 'sha256 = ""',
+                    f'authoring_glb_sha256 = "{sha256(source)}"',
+                    'conversion = "the source GLB\'s triangles, one primitive per material, with wind weights by '
+                    'material"']
+        if model in FRONDS:
+            nodes['far'] = [fronds(next(p for p in primitives if p['texture'] == FRONDS[model])),
+                            trunk(next(p for p in primitives if p['texture'] in TRUNKS))]
+            manifest.append(f'far_conversion = "the full version\'s fronds, every {FROND_JOIN} of their cards joined '
+                            f'into one, and its trunk as {TRUNK_SEGMENTS} pairs of crossed cards"')
         about = 'ground cover' if source.stem.startswith(f'{BRINECOVE}Cover') else 'a plant'
         # A plant standing on its foot, rather than reaching below it, declares its lowest height.
         lowest = min(float(p['POSITION'][p['indices'], 1].min()) for p in primitives)
         surface = f'surface_height_m = {np.float32(lowest)}\n' if lowest >= 0 else ''
-        (out.parent / 'asset.toml').write_text(
-            f'# Source foliage: {about} of Brinecove\'s hills.\nkind = "plant"\n'
-            + ('' if about == 'ground cover' else 'shadow_distance_m = 80.0\n') + surface
-            + f'source = "src/model.glb"\ntextures = {json.dumps(textures)}\n\n{PROFILE}')
-        print(f'{model}: {textures}')
+        asset = (f'# Source foliage: {about} of Brinecove\'s hills.\nkind = "plant"\n'
+                 + ('' if about == 'ground cover' else 'shadow_distance_m = 80.0\n') + surface
+                 + f'source = "src/model.glb"\ntextures = []\n\n{PROFILE}').splitlines()
+        write_plant(out, nodes, manifest, asset)
+        print(f'{model}: {list(dict.fromkeys(p["texture"] for p in primitives))}')
 
 
 def write_colour_texture(build, entry, name):
@@ -540,10 +601,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--build', type=Path, required=True, help="Yorimichi's build folder, build/yorimichi")
     parser.add_argument('--models', action='store_true', help="first import the tree models Hakuba lacks")
+    parser.add_argument('--brinecove', action='store_true',
+                        help="first import Brinecove's plants only, without Blender")
     args = parser.parse_args()
     if args.models:
         import_models(args.build.resolve())
+    if args.models or args.brinecove:
         import_brinecove(args.build.resolve())
+        far_atlas(args.build.resolve())
     world = settings()
     heights = mosaic(world)
     south_west, step = np.array(world['south_west_m']), world['ground_step_m']
