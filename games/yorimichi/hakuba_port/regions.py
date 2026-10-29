@@ -236,6 +236,61 @@ def sword_camp(build):
 
 
 
+def megapark(build):
+    """The Super Ultra Mega Park in the western foothills: its 32 authored models and the hillside seam that meets the
+    air station's footbridge, standing where `megapark/park.json` stands them, as one body turned about the park
+    actor. A material's colour is its diffuse texture's mean (the restyled image where the restyle replaced it), times
+    its macro overlay's mean at the overlay's opacity. Cut-out materials (ground cover, sign cut-outs, lamp glow) are
+    left out, and so are the park's own trees and parked cars, which are plants and another region's models."""
+    import numpy as np
+    from PIL import Image
+    out = build / 'megapark'
+    report = json.loads((out / 'build.json').read_text())
+    park = json.loads((out / 'park.json').read_text())
+    restyle = json.loads((out / 'textures' / 'textures.json').read_text())['textures']
+    source = Path(__file__).resolve().parents[1] / 'assets' / 'megapark'
+    if json.loads((source / 'provenance.json').read_text())['converted_manifest_sha256'] != report['source_sha256']:
+        raise SystemExit(f'{source}: not the park source this build read')
+
+    def texture(tid):
+        if tid in restyle:
+            return out / 'textures' / restyle[tid]['png']
+        return source / report['textures'][tid]['png']
+
+    def mean(path):
+        rgb = np.asarray(Image.open(path).convert('RGB'), np.float64) / 255.0
+        return np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4).reshape(-1, 3).mean(0)
+
+    slots = {}
+    for key, material in report['materials'].items():
+        ids = material.get('retail_texture_ids', {})
+        if material.get('alpha_mode', 0) != 0 or 'diffuse' not in ids:
+            slots[key] = {'drop': True}
+            continue
+        rule = {'mean': str(texture(ids['diffuse']))}
+        if 'macrooverlay' in ids:
+            try:
+                opacity = float(material['retail_parameters']['macroOverlayOpacity'][0])
+            except (KeyError, ValueError):
+                opacity = 0.0
+            if opacity:
+                rule['rgb'] = [round(float(1.0 + opacity * (c - 1.0)), 4) for c in mean(texture(ids['macrooverlay']))]
+        slots[key] = rule
+    x0, y0, z0 = park['location_cm']
+    turn = math.radians(park['yaw_deg'])
+    region = Region('megapark', 'the Super Ultra Mega Park in the western foothills')
+    for entry in park['render']:
+        asset = entry['name']
+        name = 'megapark-' + asset.removeprefix('SM_MP_').lower()
+        region.models[name] = Model(export_source(build, 'megapark', asset), slots=slots)
+        # Unreal's frame: the actor turns its children by its yaw; Hakuba's y is Unreal's -y, and its turn the opposite.
+        ox, oy, oz = entry['origin_cm']
+        ux = x0 + ox * math.cos(turn) - oy * math.sin(turn)
+        uy = y0 + ox * math.sin(turn) + oy * math.cos(turn)
+        region.groups.append((name, None, [[ux / 100, -uy / 100, (z0 + oz) / 100, -park['yaw_deg'], 1.0]]))
+    return region
+
+
 def far_hills(build):
     """The far hills: the island's coarse land between and around the regions, in cells. Cells wholly under the sea
     or south of the island's tiles are left out."""
@@ -256,5 +311,5 @@ def far_hills(build):
 ADAPTERS = {
     'treehouse': treehouse, 'brinecove': brinecove, 'belmonte': belmonte, 'hidamari': hidamari,
     'southwest': southwest, 'shrines': shrines, 'zeppelin': zeppelin, 'sword-camp': sword_camp,
-    'far-hills': far_hills,
+    'far-hills': far_hills, 'megapark': megapark,
 }
