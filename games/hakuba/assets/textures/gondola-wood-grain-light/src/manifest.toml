@@ -1,0 +1,4 @@
+# The wood grain light texture that the gondola props draw.
+path = "texture.png"
+sha256 = "3ae9dbe658a0a59412c0e1539037fb15a6d603f68bd360c2066103e43c0c9186"
+authoring_texture_sha256 = "96e8e36c93ad85353ebd1790ce3c2136464cd902c98e410b91c2895957bc0e6f"

@@ -1,0 +1,4 @@
+# The brow of the ferry terminal at Brinecove.
+kind = "prop"
+source = "src/model.glb"
+inputs_sha256 = "63b515a597232e53bc0362c75ce543e0f5bc06f5072d557a55ab19048743174a"

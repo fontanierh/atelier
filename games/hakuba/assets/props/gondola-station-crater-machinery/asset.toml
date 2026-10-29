@@ -1,0 +1,4 @@
+# A gondola crater station's machinery.
+kind = "prop"
+source = "src/model.glb"
+inputs_sha256 = "7dfab42d6068686dbb936e3fc749f9ce618d321b7f398967cabc0f8940a49e91"

@@ -1,0 +1,5 @@
+# The wood grain texture that the gondola props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "98f37e0024006651e795e05009769549332affa799c7093bacceac63aa712cdb"

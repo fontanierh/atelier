@@ -1,0 +1,4 @@
+# The grip of a cabin of gondola line L2.
+kind = "prop"
+source = "src/model.glb"
+inputs_sha256 = "1cd7ac48b8705076b93ed8210c6d25203b21dd54d82eb3aa4bd9f4984a82dce5"

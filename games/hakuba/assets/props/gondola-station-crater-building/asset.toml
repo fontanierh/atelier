@@ -1,0 +1,5 @@
+# A gondola crater station's building.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-shingle", "gondola-wood-grain", "gondola-wood-grain-dark", "gondola-wood-panel"]
+inputs_sha256 = "5d1cbd363c56813172b5707907e0691897113e41e97f6a14cc1e2cc03dbc54ef"

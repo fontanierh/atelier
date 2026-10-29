@@ -1,0 +1,5 @@
+# The landing of the ferry terminal at Brinecove.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "615d3b63489feafd328554c5bfac48dfa1aedb95d2fe677b2967add0caaf46bd"

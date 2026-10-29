@@ -1,0 +1,5 @@
+# A gondola valley station's fittings.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-wood-grain", "gondola-wood-grain-dark"]
+inputs_sha256 = "4f041c1a0373942ae4a56d4c78020905475dba78e3011e8335984a5d3b6313d0"

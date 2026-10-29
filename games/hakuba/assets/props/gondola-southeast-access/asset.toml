@@ -1,0 +1,6 @@
+# Southeast Rim — Hidamari's stair down to the ground.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-deck-planks", "gondola-wood-grain", "gondola-wood-grain-dark"]
+solid = true
+inputs_sha256 = "f29cfbc28084ea8c356142a96641e8da2613858d63f2e4eebdbd7aa0424a3700"

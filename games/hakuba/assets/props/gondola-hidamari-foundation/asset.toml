@@ -1,0 +1,6 @@
+# Hidamari — Southeast Rim's timber posts and braces on their stone feet.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-wood-grain", "gondola-wood-grain-dark"]
+solid = true
+inputs_sha256 = "3c6dec02527b4243dd6862cbc7f41eec22fc728c9f4a681cc3a99649ae4f2682"

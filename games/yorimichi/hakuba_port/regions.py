@@ -323,8 +323,74 @@ def far_hills(build):
     return region
 
 
+def flat(materials):
+    """Colour rules for materials given as (sRGB 0-255, roughness, metallic): each its linear colour, a non-metal's
+    sheen folded in as `transport.py` folds it, since Hakuba draws every surface matte."""
+    from transport import SHEEN
+    rules = {}
+    for name, (rgb, roughness, metallic) in materials.items():
+        linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in (v / 255 for v in rgb)]
+        rules[name] = {'rgb': [c + (SHEEN * (1 - roughness) if metallic == 0 else 0.0) for c in linear]}
+    return rules
+
+
+def gondola(build):
+    """The three gondola lines, standing still where `gondola_fit.py` fitted them to Hakuba's ground (its
+    `gondola/hakuba/gondola.json`): the stations with their posts and stairs, the towers, the haul ropes and the
+    cabins. A timber material draws the kit's procedural timber texture on the mesh's UVs in metres, as the kit's
+    materials do; the others are their flat colours."""
+    folder = build / 'gondola' / 'hakuba'
+    data = json.loads((folder / 'gondola.json').read_text())
+    slots = flat(data['materials'])
+    for name, texture in data['textured_materials'].items():
+        slots[name] = {'sample': str(folder / 'textures' / f'{texture}.png'), 'rgb': [1.0, 1.0, 1.0]}
+    region = Region('gondola', 'the gondola lines between Hidamari, Belmonte and Crater Park')
+    for piece in data['pieces']:
+        name = 'gondola-' + kebab(Path(piece['fbx']).stem.removeprefix('GD_'))
+        collision = folder / 'assets' / piece['collision'] if piece['collision'] else None
+        region.models[name] = Model(folder / 'assets' / piece['fbx'], slots=slots, solid=piece['solid'],
+                                    collision=collision, about=piece['about'][0].upper() + piece['about'][1:] + '.')
+        region.groups.append((name, None, piece['instances']))
+    return region
+
+
+def ferry(build):
+    """The passenger ferry, docked at Hidamari's berth, and its two terminals, in their materials' flat colours: the
+    ship and the terminals draw no images. The Hidamari terminal is modelled in map metres, the Brinecove one in
+    Brinecove's own frame, moved onto the map by its recorded offset."""
+    ship = build / 'ferry'
+    terminals = json.loads((ship / 'terminals' / 'manifest.json').read_text())
+    site = json.loads((ship / 'terminals' / 'site.json').read_text())
+    slots = flat({**json.loads((ship / 'manifest.json').read_text())['materials'], **terminals['materials']})
+    region = Region('ferry', 'the passenger ferry between Hidamari and Brinecove')
+    berth = site['hidamari']['berth']
+    docked = [[*berth['centre'], 0.0, berth['heading_deg'], 1.0]]
+    for part in ('Hull', 'Superstructure', 'Funnel', 'Lifeboats', 'Rails', 'Masts', 'Fittings', 'BoardingGate'):
+        hull = part == 'Hull'
+        region.models[f'ferry-{kebab(part)}'] = Model(
+            ship / 'assets' / f'FY_{part}.fbx', slots=slots, solid=hull,
+            collision=ship / 'assets' / 'FY_Collision.fbx' if hull else None,
+            about=f"The passenger ferry's {kebab(part).replace('-', ' ')}, docked at Hidamari.")
+        region.groups.append((f'ferry-{kebab(part)}', True, docked))
+    for key, prefix, landing in (('hidamari', 'HD', 'Jetty'), ('brinecove', 'BC', 'Landing')):
+        terminal = terminals['terminals'][key]
+        offset = (0.0, 0.0) if terminal['frame'] == 'world' else site[key]['origin_m']
+        x, y, z = terminal['anchor']
+        at = [[x + offset[0], y + offset[1], z, 0.0, 1.0]]
+        for mesh in terminal['meshes']:
+            part = mesh.removeprefix(f'FT_{prefix}_')
+            name = f'ferry-{key}-{kebab(part)}'
+            own = part == landing
+            region.models[name] = Model(
+                ship / 'terminals' / 'assets' / f'{mesh}.fbx', slots=slots, solid=own,
+                collision=ship / 'terminals' / 'assets' / f'FT_{prefix}_Collision.fbx' if own else None,
+                about=f"The {kebab(part).replace('-', ' ')} of the ferry terminal at {key.title()}.")
+            region.groups.append((name, None, at))
+    return region
+
+
 ADAPTERS = {
     'treehouse': treehouse, 'brinecove': brinecove, 'belmonte': belmonte, 'hidamari': hidamari,
     'southwest': southwest, 'shrines': shrines, 'zeppelin': zeppelin, 'sword-camp': sword_camp,
-    'far-hills': far_hills, 'megapark': megapark,
+    'far-hills': far_hills, 'megapark': megapark, 'gondola': gondola, 'ferry': ferry,
 }

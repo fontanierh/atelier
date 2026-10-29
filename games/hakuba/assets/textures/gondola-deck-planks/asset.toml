@@ -1,0 +1,5 @@
+# The deck planks texture that the gondola props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "35462b476efbcf74344bac8a5e727b74c26b032d462d3a358f8344cacf8f1c2d"

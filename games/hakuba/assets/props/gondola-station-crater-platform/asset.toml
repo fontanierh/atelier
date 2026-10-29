@@ -1,0 +1,6 @@
+# A gondola crater station's platform.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-deck-planks", "gondola-wood-grain-dark"]
+solid = true
+inputs_sha256 = "1679fd4cf7e326c102160b104a3c78bf632600ed532d4644a466d446a0565af8"

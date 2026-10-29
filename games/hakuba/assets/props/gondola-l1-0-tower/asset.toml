@@ -1,0 +1,6 @@
+# A 13 m timber tower of gondola line L1.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-wood-grain"]
+solid = true
+inputs_sha256 = "73a6d2c29b4ace1ab3e44792814b9031cf56e70cdbdef0538a2a31fbc4bbeba3"

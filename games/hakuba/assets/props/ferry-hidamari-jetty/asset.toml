@@ -1,0 +1,5 @@
+# The jetty of the ferry terminal at Hidamari.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "1bb4ab1947f910205e353b4d610d08c56ed91880daad633433247d86fc176699"

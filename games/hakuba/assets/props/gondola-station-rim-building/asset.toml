@@ -1,0 +1,5 @@
+# A gondola rim station's building.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-shingle", "gondola-wood-grain", "gondola-wood-grain-dark", "gondola-wood-grain-light"]
+inputs_sha256 = "4ed951c6834d69687abe753465d96f2e6fc42dbf4a6e68afce10554d81df93a0"
