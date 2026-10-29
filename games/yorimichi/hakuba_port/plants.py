@@ -303,10 +303,12 @@ def converted(fbx):
     script = Path(__file__).resolve().parent / 'plant_convert.py'
     with tempfile.TemporaryDirectory() as scratch:
         # The converter is given every slot's texture and names those its model's slots show.
-        subprocess.run(['nice', '-n', '10', BLENDER, '--background', '--threads', '3', '--python', str(script), '--',
-                        str(fbx), str(Path(scratch) / 'level.glb')]
-                       + [f'{slot}={texture}' for slot, texture in SLOTS.items()], check=True,
-                       stdout=subprocess.DEVNULL)
+        command = [sys.executable, '-m', 'atelier.safety.guarded', '--report', str(Path(scratch) / 'guard'),
+                   '--timeout', '1800', '--small', '4', '--kind', 'job', '--purpose',
+                   f'hakuba port: convert {fbx.name}', '--',
+                   BLENDER, '--background', '--threads', '3', '--python', str(script), '--',
+                   str(fbx), str(Path(scratch) / 'level.glb'), *(f'{slot}={texture}' for slot, texture in SLOTS.items())]
+        subprocess.run(['nice', '-n', '10', *command], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return read_plant_glb(Path(scratch) / 'level.glb')['full']
 
 
