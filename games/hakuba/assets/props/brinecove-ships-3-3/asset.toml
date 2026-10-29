@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["brinecove-t-bc-cream", "brinecove-t-bc-metal", "brinecove-t-bc-wood", "brinecove-t-bc-wood-dark"]
 own_textures = ["brinecove-t-bc-sail-dark"]
 solid = true
-inputs_sha256 = "78b164aafd440de2aaa0f02b6dc99e99b4aa26f12210e4125d333576a6621b43"
+inputs_sha256 = "6abae95229b6b5cd05760fddb322ab78d5c57f34d253e8d1fcd345f651bf73c5"

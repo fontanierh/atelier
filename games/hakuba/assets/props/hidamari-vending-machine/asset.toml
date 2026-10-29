@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-vending-machine"]
 solid = true
-inputs_sha256 = "d33c6696e11126112d27e8e29a1e8256627e9b6b63fed62d29abee462fdf2ef8"
+inputs_sha256 = "f4ae37cd8f7cb8276f50284b978e1b9c5ac09c6659e4ec29945fe3a6574147fd"

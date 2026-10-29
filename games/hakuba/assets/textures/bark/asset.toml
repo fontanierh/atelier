@@ -3,4 +3,4 @@
 # brown.
 kind = "texture"
 source = "src/bark.jpg"
-inputs_sha256 = "291e727ed47dad12f2c1aceeef3792ffb372e3684b0efbdaea09deb89c7ce781"
+inputs_sha256 = "2675d12f066e6c816d0a5f1b1495254c932a0855f7ae458bb8ab0c3fbfb8072d"

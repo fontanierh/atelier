@@ -163,7 +163,7 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
             if name.is_empty() || !name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') {
                 bail!("own texture name must be kebab case");
             }
-            crate::texture::export_bc7(folder, &format!("src/{name}.png"), &own_texture(output, name))?;
+            crate::ktx2::write_bc7(&folder.join(format!("src/{name}.png")), &own_texture(output, name))?;
             own.push(format!("{name}.ktx2"));
         }
         return super::source::export(source, settings.solid, &settings.textures, &own, &settings.anchors, output);

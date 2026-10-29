@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["treehouse-bark", "treehouse-iron", "treehouse-moss", "treehouse-plaster", "treehouse-shingle", "treehouse-tile", "treehouse-wood-pale", "treehouse-wood-plank", "treehouse-wood-timber"]
 own_textures = ["treehouse-stone"]
 solid = true
-inputs_sha256 = "14c5cf29be19bb98f3abeb2c31c1a0f816f0a3ccc96e276438eef63df3bb4623"
+inputs_sha256 = "3ced02071746d33f89b68af38d6bbfc16594e009c4db23bf9c104acdd5b6a39e"

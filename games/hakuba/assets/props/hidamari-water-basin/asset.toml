@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-water-basin"]
 solid = true
-inputs_sha256 = "bf14f5c271fe7a5ae56bd9b044eafa126bc5dd65ac27ed102e6b0c85d03c6dd3"
+inputs_sha256 = "0b4a956d6100801086a80391cd025239129aa0ba4e8dbd71fb5961ebb6f38429"

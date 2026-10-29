@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-propane-tanks"]
 solid = true
-inputs_sha256 = "ae68269bd151623e64e7bcd6953f258ee33a393c4c1bc1bed3a8cf2c01050611"
+inputs_sha256 = "2abf19d3b7cb9bbf5a15135b9853c858cf90e7a3ba61a627e808ef36e840c263"

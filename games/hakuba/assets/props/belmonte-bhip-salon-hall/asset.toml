@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["belmonte-t-bm-0d86c8bae5dc", "belmonte-t-bm-545174045712", "belmonte-t-bm-a85386eda38e", "belmonte-t-bm-bb1c8b9d4039"]
 own_textures = ["belmonte-t-bm-a56121473d0a"]
 solid = true
-inputs_sha256 = "9ad8c0f9c213caf3e7bbdc9a854cd85abdaadbcb3671b28bc888960522079436"
+inputs_sha256 = "1442a6700c0eab4060604310062b6d2e55a2051139b0f0cf1b785618567b1621"

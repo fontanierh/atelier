@@ -2,4 +2,4 @@
 # carries its own colour shows it, so its colour is the ground's and only the grain is the texture's.
 kind = "texture"
 source = "src/ground-detail.png"
-inputs_sha256 = "cfb894ae4d008c24a77ad3fd1e70407e8b3c643cc1e19d752d676c73e016f635"
+inputs_sha256 = "d61b7d37365819b3b4e92b1ced101c58d4a25e9932688e0daa34c6ac5f044dc8"

@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["sword-camp-swordcamp-atlas"]
 solid = true
-inputs_sha256 = "4801a4cc1c3ea7c0e1aab6d16792ad13d4e03102c360314bd41ed15528d3a0c7"
+inputs_sha256 = "015db310e4535122e83334184ea60b7953460632f60b6d5eeaae9515ae102642"
