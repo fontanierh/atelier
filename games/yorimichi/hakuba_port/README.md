@@ -38,13 +38,16 @@ listed once in Hakuba's `tools/export/src/world/regions.rs`.
 | `painted.py` | writes the prop GLBs Hakuba's exporter accepts, without Blender: a `full` node coloured per vertex in linear RGB, or drawn with textured materials, and an optional `collision` node; `prop` writes one with its origin at its footprint's centre, `read` returns a GLB's triangles, UVs, materials and images (the train's coach shells), and `rename_images` repoints a prop's images at its own textures |
 
 Props look as Yorimichi draws them: each image a slot's rule names becomes a Hakuba texture asset
-(`<region>-<image>`, BC7-compressed; one only a single prop shows moves into that prop as its own texture), drawn on the mesh's own UVs, times a colour baked per vertex in linear RGB, the
-product of the source's vertex colour, a flat colour and a gain, as that region's Yorimichi material combined them.
-A prop with no textured slot is painted per vertex alone. A material whose look layers images on other UVs or at
-another scale keeps only the image on the mesh's first UVs and folds the others in by their mean: the Mega Park's
-decals (third UVs) and macro overlays (first UVs at 0.3 or 0.7 times), with its baked lightmap occlusion left out. Slots with no equivalent (water, cut-out leaves, additive
-light) are dropped. Plants (trees, bushes, grass) are ported by `plants.py` as Hakuba's plant kind, which sways them in the
-wind.
+(`<region>-<image>`, BC7-compressed; one only a single prop shows moves into that prop as its own texture), drawn on
+the mesh's own UVs over the rule's `tile`, times a colour baked per vertex in linear RGB, the product of the source's
+vertex colour, a flat colour and a gain, as that region's Yorimichi material combined them. Belmonte's materials draw
+their texture over their tile in metres, and a neutral detail texture twice over. A prop with no textured slot is
+painted per vertex alone. Hakuba draws every surface matte, so an untextured paint's sheen is folded into its colour
+(the trains' black engine). A material whose look layers images on other UVs or at another scale keeps only the image
+on the mesh's first UVs and folds the others in by their mean: the Mega Park's decals (third UVs) and macro overlays
+(first UVs at 0.3 or 0.7 times), with its baked lightmap occlusion left out. Slots with no equivalent (water, cut-out
+leaves, additive light) are dropped. Plants (trees, bushes, grass) are ported by `plants.py` as Hakuba's plant kind,
+which sways them in the wind.
 
 `plants.py` stands each plant on Hakuba's ground, except a Belmonte or Brinecove plant its source stands more than
 2 m above it: that one keeps its source height only where a ported prop's surface, as the last export's tiles draw it,

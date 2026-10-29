@@ -1,0 +1,6 @@
+# A piece of the Super Ultra Mega Park in the western foothills, ported with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["megapark-00008c6803e3870a", "megapark-00008d0103e3870a", "megapark-2c70170a001d0060", "megapark-2c70170a001d008e", "megapark-2c70170a001d0129", "megapark-2c70170a002f0cac", "megapark-2c70170a002f1116"]
+solid = true
+inputs_sha256 = "3086969e63c12d7f389b305bdcfe7a9c538d59b58ca2d8cc5ac940e5df02e959"

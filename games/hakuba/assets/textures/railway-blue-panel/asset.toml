@@ -1,0 +1,5 @@
+# The Belmonte train's blue panel texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b4cbb5d2ec1ecf420d732d05829667d242d8c827c868756630bda674d429fbab"

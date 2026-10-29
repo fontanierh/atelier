@@ -1,0 +1,6 @@
+# The road's stone bridge over the last cutting, on the Belmonte railway, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["belmonte-t-bm-0d86c8bae5dc", "belmonte-t-bm-0fe86703fe93", "belmonte-t-bm-de86965ec07c"]
+solid = true
+inputs_sha256 = "f655b87115bc6e76d9bc8952a7b9620cbe98eb61b22517fb6ead4c18f339a6b4"

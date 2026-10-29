@@ -1,0 +1,5 @@
+# The Belmonte train's walnut texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "1b68c79d6d05cea29ddefaf14204f497e90e476528775c7a304159ee04e6ad6f"

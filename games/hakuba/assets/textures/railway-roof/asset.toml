@@ -1,0 +1,5 @@
+# The Belmonte train's roof texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "ae6aecc87e389bf816fa1cf6f276f56de3376c62efe232eb580d65d4accae74b"

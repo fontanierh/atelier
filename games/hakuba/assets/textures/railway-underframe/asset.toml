@@ -1,0 +1,5 @@
+# The Belmonte train's underframe texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "541830d8a80ab4a8ef40f3813b17f544a49778b6689bc22a7b2ab3fa5df74cf2"

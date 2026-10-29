@@ -1,0 +1,5 @@
+# A buffer stop, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "eb4890fb7309ef6f2eb28e9bf284294fda8fc0deb68dbbd5bbd1ffc2a7f7daa2"

@@ -1,0 +1,4 @@
+# The Belmonte train's roof texture.
+path = "texture.png"
+sha256 = "874ea5d506b4bf602e354c92e22cc25067c177b9eb50e1e88036b8cef1281a6f"
+authoring_texture_sha256 = "0269313a909dcbca91d7e983df314b3ce1fa4b0b689de73d0accb8f672cb4998"

@@ -1,0 +1,6 @@
+# A tunnel's stone portal, on the Belmonte railway, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["belmonte-t-bm-0d86c8bae5dc", "belmonte-t-bm-de86965ec07c"]
+solid = true
+inputs_sha256 = "526afe86a2934d4715e040e0cd58ae8ee99bd015c7a3a9e70dbdf5adecf45d68"

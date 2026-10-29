@@ -1,0 +1,6 @@
+# A piece of Belmonte's station, on the Belmonte railway, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["belmonte-t-bm-0d86c8bae5dc", "belmonte-t-bm-0fe86703fe93", "belmonte-t-bm-70491bcd4c11", "belmonte-t-bm-bb1c8b9d4039", "belmonte-t-bm-de86965ec07c"]
+solid = true
+inputs_sha256 = "43c86750120b79d89237505b5f240e87b8253b2a2f59b74278911b4283bf17d4"

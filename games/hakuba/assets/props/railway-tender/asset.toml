@@ -1,0 +1,6 @@
+# The Belmonte train's tender, from outside, standing at a terminus, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["railway-roof", "railway-underframe", "railway-walnut"]
+solid = true
+inputs_sha256 = "60427aea3bbb2e098a512d0fc49e108dcae01918a3cc74c655bf03c0ac44e715"

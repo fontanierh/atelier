@@ -1,0 +1,7 @@
+# The Belmonte train's locomotive 4-6-2, from outside, standing at a terminus, drawn with its textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["railway-underframe", "railway-walnut"]
+own_textures = ["railway-smokebox-door"]
+solid = true
+inputs_sha256 = "99f77c930b41e1ca801255dac20a7be11f544c97f0fcd841920c2b5bacbba2cb"

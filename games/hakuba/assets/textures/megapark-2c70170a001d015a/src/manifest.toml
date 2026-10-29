@@ -1,0 +1,4 @@
+# A texture that the megapark props draw.
+path = "texture.png"
+sha256 = "b09afdb96a8abe27980f3f7699ae4fbfc0abefa8ec86235ab3149b871a33dba1"
+authoring_texture_sha256 = "b09afdb96a8abe27980f3f7699ae4fbfc0abefa8ec86235ab3149b871a33dba1"

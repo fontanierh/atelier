@@ -1,4 +1,4 @@
-# The t bm b62cf5b69761 texture that the belmonte props draw.
+# A texture that the belmonte props draw.
 path = "texture.png"
 sha256 = "3f52e4287fee9c77a876b0ef4d4fdd212e7d9217566f8ffbcc708fc95842ecfd"
 authoring_texture_sha256 = "3f52e4287fee9c77a876b0ef4d4fdd212e7d9217566f8ffbcc708fc95842ecfd"
