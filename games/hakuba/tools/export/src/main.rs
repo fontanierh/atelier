@@ -20,6 +20,7 @@ mod sound;
 mod texture;
 mod world;
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -89,6 +90,7 @@ impl Asset {
         match self {
             Asset::Texture(settings) => settings.outputs(output),
             Asset::Sound(_) => vec![output.to_path_buf(), sound::takes_file(output)],
+            Asset::Prop(settings) => settings.outputs(output),
             _ => vec![output.to_path_buf()],
         }
     }
@@ -118,14 +120,8 @@ const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
 
 /// The exporter's files that every kind is built from, relative to the exporter: the command, the glTF reader and
 /// writer, the shapes meshes are built from, and the crate and Rust versions.
-const SHARED_CODE: [&str; 6] = [
-    "src/main.rs",
-    "src/glb.rs",
-    "src/shapes.rs",
-    "Cargo.toml",
-    "../../Cargo.lock",
-    "../../rust-toolchain.toml",
-];
+const SHARED_CODE: [&str; 6] =
+    ["src/main.rs", "src/glb.rs", "src/shapes.rs", "Cargo.toml", "../../Cargo.lock", "../../rust-toolchain.toml"];
 
 /// The exporter's files that a kind is built from: [`SHARED_CODE`] and the `.rs` files in the kind's `folder`. Docs
 /// and other kinds' code are left out, so editing them marks no export of this kind out of date.
@@ -166,6 +162,18 @@ fn uri_of_asset(folder: &str, extension: &str) -> Result<String> {
     }
     let name = folder.rsplit('/').next().unwrap_or(folder);
     Ok(format!("../../{folder}/{name}.{extension}"))
+}
+
+/// Whether the model asset `folder` exports a middle version beside its export, `<name>.middle.glb`.
+fn has_middle(folder: &str) -> Result<bool> {
+    static KNOWN: std::sync::Mutex<BTreeMap<String, bool>> = std::sync::Mutex::new(BTreeMap::new());
+    if let Some(&known) = KNOWN.lock().unwrap().get(folder) {
+        return Ok(known);
+    }
+    let has =
+        matches!(Folder::read(&Path::new(ASSETS).join(folder))?.asset, Asset::Prop(settings) if settings.has_middle());
+    KNOWN.lock().unwrap().insert(folder.to_string(), has);
+    Ok(has)
 }
 
 /// Where an export two folders below `assets/` finds the texture `name`. An export names its textures and never holds
@@ -364,7 +372,9 @@ fn export_in_order(mut pending: Vec<Folder>) -> Result<()> {
             let names: Vec<String> = pending.iter().map(|folder| folder.path.display().to_string()).collect();
             bail!("these assets read each other's exports: {}", names.join(", "));
         };
-        pending.remove(next).export()?;
+        let folder = pending.remove(next);
+        let path = folder.path.clone();
+        folder.export().with_context(|| format!("exporting {}", path.display()))?;
     }
     Ok(())
 }

@@ -2,7 +2,8 @@
 
 Run as `blender -b --threads 3 -P convert.py -- JOBS.json`. Each job names one source mesh (FBX or GLB) and one
 output GLB. The output holds a node `full`, the visible mesh, coloured per vertex in linear RGB with alpha 0 (no
-motion), and, when the source has `UCX_` hulls, a node `collision` holding them. Each material slot's colour comes
+motion), and, when the source has `UCX_` hulls or the job names a `collision_source`, a node `collision` holding
+them. Corners that store the same position, normal and colour share one vertex. Each material slot's colour comes
 from the job: a flat `rgb`, an image's mean colour (`mean`) or the image sampled at each corner's UV (`sample`),
 times its `gain`; a slot whose rule says `drop` loses its faces.
 """
@@ -42,13 +43,15 @@ def linear(c):
     return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
 
 
-def import_source(path):
-    bpy.ops.wm.read_factory_settings(use_empty=True)
+def import_source(path, reset=True):
+    if reset:
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+    before = set(bpy.data.objects)
     if path.lower().endswith('.fbx'):
         bpy.ops.import_scene.fbx(filepath=path)
     else:
         bpy.ops.import_scene.gltf(filepath=path)
-    return [o for o in bpy.data.objects if o.type == 'MESH']
+    return [o for o in bpy.data.objects if o.type == 'MESH' and o not in before]
 
 
 def join(objects, name):
@@ -125,7 +128,8 @@ def paint(o, job):
         if not any(key in rule for key in ('vertex', 'mean', 'sample', 'rgb')):
             c *= 0.5
         c *= np.asarray(rule.get('rgb', [1.0, 1.0, 1.0]), dtype=np.float32) * rule.get('gain', 1.0)
-        colours[sel, :3] = c
+        # Hakuba draws painted colour in [0, 1]; a gain can push a bright texel past it.
+        colours[sel, :3] = np.clip(c, 0.0, 1.0)
     for attr in list(mesh.color_attributes):
         mesh.color_attributes.remove(attr)
     attr = mesh.color_attributes.new(name='Color', type='FLOAT_COLOR', domain='CORNER')
@@ -144,9 +148,6 @@ def arrays(o, coloured):
     position = co.reshape(-1, 3)[vi]
     normal = np.empty(n * 3, dtype=np.float32)
     mesh.corner_normals.foreach_get('vector', normal)
-    uv = np.zeros(n * 2, dtype=np.float32)
-    if mesh.uv_layers:
-        mesh.uv_layers[0].data.foreach_get('uv', uv)
     colour = None
     if coloured:
         colour = np.empty(n * 4, dtype=np.float32)
@@ -158,11 +159,11 @@ def arrays(o, coloured):
     a, b, c = (position[triangles[:, k]] for k in range(3))
     area = np.linalg.norm(np.cross(b - a, c - a), axis=1)
     triangles = triangles[area > 1e-10]
-    return position, normal.reshape(-1, 3), uv.reshape(-1, 2), colour, triangles
+    return position, normal.reshape(-1, 3), colour, triangles
 
 
 def glb(nodes, path):
-    """Write `nodes`, each (name, extras, position, normal, uv, colour, triangles), as a GLB in glTF's Y-up frame."""
+    """Write `nodes`, each (name, extras, position, normal, colour, triangles), as a GLB in glTF's Y-up frame."""
     blob = bytearray()
     views, accessors, meshes, gl_nodes = [], [], [], []
 
@@ -175,26 +176,35 @@ def glb(nodes, path):
             view['target'] = target
         views.append(view)
         blob.extend(data.tobytes())
-        acc = {'bufferView': len(views) - 1, 'componentType': 5125 if data.dtype == np.uint32 else 5126,
-               'count': int(len(data)), 'type': kind}
+        component = {np.dtype(np.uint16): 5123, np.dtype(np.uint32): 5125}.get(data.dtype, 5126)
+        acc = {'bufferView': len(views) - 1, 'componentType': component, 'count': int(len(data)), 'type': kind}
         if minmax:
             acc['min'] = data.min(axis=0).tolist()
             acc['max'] = data.max(axis=0).tolist()
         accessors.append(acc)
         return len(accessors) - 1
 
-    for name, extras, position, normal, uv, colour, triangles in nodes:
-        used, remap = np.unique(triangles.ravel(), return_inverse=True)
-        p = position[used]
-        attrs = {
-            'POSITION': add(np.stack([p[:, 0], p[:, 2], -p[:, 1]], axis=1).astype(np.float32), 'VEC3', 34962, True),
-        }
-        nm = normal[used]
-        attrs['NORMAL'] = add(np.stack([nm[:, 0], nm[:, 2], -nm[:, 1]], axis=1).astype(np.float32), 'VEC3', 34962)
-        attrs['TEXCOORD_0'] = add(np.stack([uv[used, 0], 1.0 - uv[used, 1]], axis=1).astype(np.float32), 'VEC2', 34962)
-        primitive = {'attributes': attrs, 'indices': add(remap.astype(np.uint32), 'SCALAR', 34963)}
+    for name, extras, position, normal, colour, triangles in nodes:
+        # Drop triangles whose stored 32-bit corners enclose no area.
+        stored = position.astype(np.float32).astype(np.float64)
+        a, b, c = (stored[triangles[:, k]] for k in range(3))
+        triangles = triangles[(np.cross(b - a, c - a) ** 2).sum(axis=1) > 0.0]
+        # Corners that store the same position, normal and colour become one vertex. Painted props draw no texture,
+        # so their UVs are zero and never split a vertex.
+        corners = triangles.ravel()
+        p, nm = position[corners], normal[corners]
+        columns = [np.stack([p[:, 0], p[:, 2], -p[:, 1]], axis=1), np.stack([nm[:, 0], nm[:, 2], -nm[:, 1]], axis=1)]
         if colour is not None:
-            attrs['COLOR_0'] = add(colour[used].astype(np.float32), 'VEC4', 34962)
+            columns.append(colour[corners])
+        key = np.ascontiguousarray(np.hstack(columns).astype(np.float32))
+        _, first, remap = np.unique(key.view(np.uint32), axis=0, return_index=True, return_inverse=True)
+        vertices = key[first]
+        attrs = {'POSITION': add(vertices[:, 0:3], 'VEC3', 34962, True), 'NORMAL': add(vertices[:, 3:6], 'VEC3', 34962),
+                 'TEXCOORD_0': add(np.zeros((len(vertices), 2), dtype=np.float32), 'VEC2', 34962)}
+        index_type = np.uint16 if len(vertices) < 65536 else np.uint32
+        primitive = {'attributes': attrs, 'indices': add(remap.ravel().astype(index_type), 'SCALAR', 34963)}
+        if colour is not None:
+            attrs['COLOR_0'] = add(vertices[:, 6:10], 'VEC4', 34962)
             primitive['material'] = 0
         meshes.append({'primitives': [primitive]})
         node = {'mesh': len(meshes) - 1, 'name': name}
@@ -220,12 +230,14 @@ def glb(nodes, path):
 
 
 def convert(job):
-    """Convert one job. The model's lowest point must lie below its origin, so a model resting on its origin is
-    lifted 1 cm; with `recentre`, the origin moves to the centre of its footprint, 1 cm above its lowest point. The
-    result reports where the new origin is in the source frame."""
+    """Convert one job. The model's origin moves to the centre of its footprint, 1 cm above its lowest point, so its
+    lowest point lies below its origin and it streams with the tile it stands in. The result reports where the new
+    origin is in the source frame."""
     objects = import_source(job['source'])
     hulls = [o for o in objects if o.name.startswith('UCX_')]
     visible = [o for o in objects if not o.name.startswith('UCX_')]
+    if job.get('collision_source'):
+        hulls += import_source(job['collision_source'], reset=False)
     if not visible:
         raise RuntimeError(f"{job['source']}: no visible mesh")
     full = join(visible, 'full')
@@ -235,18 +247,15 @@ def convert(job):
     if hulls and job.get('collision', True):
         collision = join(hulls, 'collision')
         parts.append(('collision', None, *arrays(collision, False)))
-    if len(parts[0][6]) == 0:
+    if len(parts[0][5]) == 0:
         raise RuntimeError(f"{job['source']}: no triangles with area")
-    position = parts[0][2][np.unique(parts[0][6])]
+    position = parts[0][2][np.unique(parts[0][5])]
     low, high = position.min(axis=0), position.max(axis=0)
-    if job.get('recentre'):
-        origin = np.array([(low[0] + high[0]) / 2, (low[1] + high[1]) / 2, low[2] + 0.01])
-    else:
-        origin = np.array([0.0, 0.0, 0.0 if low[2] < 0.0 else low[2] + 0.01])
+    origin = np.array([(low[0] + high[0]) / 2, (low[1] + high[1]) / 2, low[2] + 0.01])
     parts = [(n, e, p - origin, *rest) for n, e, p, *rest in parts]
     glb(parts, job['output'])
-    return {'output': job['output'], 'triangles': int(len(parts[0][6])), 'collision': len(parts) == 2,
-                    'origin': origin.tolist()}
+    return {'output': job['output'], 'triangles': int(len(parts[0][5])), 'collision': len(parts) == 2,
+            'origin': origin.tolist(), 'size': float(max(high - low))}
 
 
 def main():

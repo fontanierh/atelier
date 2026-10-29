@@ -16,4 +16,4 @@ takes = [
     "src/ground-walk-b.wav",
 ]
 quality = 0.3
-inputs_sha256 = "0bf9861c9f688d94a6d31c369b4e3a87f8387121e569bbc32408b356bebef122"
+inputs_sha256 = "f4b5ac47eb54f874c96c8d05ee9c528579e76656fdec4c665ee71a7c5abd0d1d"

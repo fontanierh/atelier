@@ -10,11 +10,13 @@ use hakuba_screens::Screen;
 use hakuba_settings::Settings;
 
 use crate::ground::{self, PendingSolid};
-use crate::loading::Missing;
+use crate::loading::{Loaded, Missing};
 use crate::scenery::{Placed, Placing, Waiting};
 use crate::vertex_paint::{SurfaceFailed, SurfaceWaiting};
 
 const MIDDLE_M: f32 = 2500.0;
+/// The most tiles that load at once, so the nearest are not kept waiting behind the far.
+const LOADING: usize = 16;
 pub const TILES: &str = "world/tiles";
 
 pub struct TilesPlugin;
@@ -84,35 +86,54 @@ struct SceneReady(u32);
 #[derive(Component)]
 struct Prepared;
 
+/// Picks each tile's version by its distance from the camera, as Unreal's world partition streams its cells: full
+/// detail near, middle detail out to [`MIDDLE_M`], nothing beyond. Until the world has loaded only full detail loads,
+/// so the splash waits for the world around the player alone; afterwards at most [`LOADING`] tiles load at once, the
+/// nearest first. A tile leaving every version is dropped at once.
 fn choose(
     mut commands: Commands,
     assets: Res<AssetServer>,
     camera: Single<&GlobalTransform, With<Camera3d>>,
     settings: Res<Settings>,
+    loaded: Option<Res<Loaded>>,
     mut tiles: Query<(Entity, &mut Tile)>,
 ) {
     let eye = camera.translation();
+    let mut wanted = Vec::new();
+    let mut loading = 0;
     for (entity, mut tile) in &mut tiles {
         let distance = (tile.centre - eye).with_y(0.0).length();
         let detail = match distance {
             d if d < settings.detail.full_m() => Some(Detail::Full),
-            d if d < MIDDLE_M => Some(Detail::Middle),
+            d if d < MIDDLE_M && loaded.is_some() => Some(Detail::Middle),
             _ => None,
         };
+        loading += usize::from(tile.pending.is_some());
         if detail == tile.detail {
             continue;
         }
-        tile.detail = detail;
-        if let Some(pending) = tile.pending.take() {
-            commands.entity(pending).despawn();
-        }
         if detail.is_none() {
+            tile.detail = None;
+            if let Some(pending) = tile.pending.take() {
+                commands.entity(pending).despawn();
+            }
             if let Some(old) = tile.showing.take() {
                 commands.entity(old).despawn();
             }
             tile.shown_detail = None;
             tile.failed = false;
             continue;
+        }
+        wanted.push((distance, entity, detail));
+    }
+    wanted.sort_by(|a, b| a.0.total_cmp(&b.0));
+    // The splash counts a tile not yet loading as shown, so until the world has loaded every near tile starts at once.
+    let free = if loaded.is_some() { LOADING.saturating_sub(loading) } else { usize::MAX };
+    for (_, entity, detail) in wanted.into_iter().take(free) {
+        let Ok((_, mut tile)) = tiles.get_mut(entity) else { continue };
+        tile.detail = detail;
+        if let Some(pending) = tile.pending.take() {
+            commands.entity(pending).despawn();
         }
         if tile.failed || detail == tile.shown_detail {
             continue;
@@ -309,7 +330,7 @@ mod tests {
     fn changing_back_cancels_pending_work_and_keeps_existing_tile() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
-        app.init_resource::<Settings>();
+        app.init_resource::<Settings>().init_resource::<Loaded>();
         app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(1000.0, 0.0, 0.0))));
         let owner = app.world_mut().spawn(Tile::named("tile 1 2", Vec3::ZERO).unwrap()).id();
         let old = app.world_mut().spawn((ChildOf(owner), Visibility::Inherited)).id();
@@ -329,6 +350,24 @@ mod tests {
         assert!(app.world().get_entity(pending).is_err());
         assert!(app.world().get_entity(child).is_err());
         assert_eq!(*app.world().get::<Visibility>(old).unwrap(), Visibility::Inherited);
+    }
+
+    #[test]
+    fn middle_tiles_wait_until_the_world_has_loaded() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<bevy::world_serialization::WorldAsset>();
+        app.init_resource::<Settings>();
+        app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(1000.0, 0.0, 0.0))));
+        let near = app.world_mut().spawn(Tile::named("tile 1 2", Vec3::new(1000.0, 0.0, 10.0)).unwrap()).id();
+        let far = app.world_mut().spawn(Tile::named("tile 2 2", Vec3::ZERO).unwrap()).id();
+        app.world_mut().run_system_once(choose).unwrap();
+        assert_eq!(app.world().get::<Tile>(near).unwrap().detail, Some(Detail::Full));
+        assert!(app.world().get::<Tile>(far).unwrap().pending.is_none());
+        app.init_resource::<Loaded>();
+        app.world_mut().run_system_once(choose).unwrap();
+        assert_eq!(app.world().get::<Tile>(far).unwrap().detail, Some(Detail::Middle));
+        assert!(app.world().get::<Tile>(far).unwrap().pending.is_some());
     }
 
     #[test]

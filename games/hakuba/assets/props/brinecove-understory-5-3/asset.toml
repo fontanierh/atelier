@@ -1,0 +1,5 @@
+# A piece of Brinecove, the pirate port on the western coast, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "b9eb5b827dfba4776a8938807c20bc81e9355758ef814118b4d90901f15ec610"

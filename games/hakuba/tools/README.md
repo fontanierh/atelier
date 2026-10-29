@@ -30,7 +30,6 @@ tools/
       main.rs               the `export` command: reads asset.toml, runs its kind's exporter, records its inputs
       glb.rs                reading, editing and writing .glb files, shared by every kind
       shapes.rs             closed tubes, boxes and cards that meshes are built from, shared by every kind
-      random.rs             repeatable random numbers, shared by every kind
       rig/                  the rig, and the `animation` and `character` kinds made on it
         mod.rs              the rig and the `Skeleton` trait
         pose.rs             poses: each rig bone's world rotation and position
@@ -52,12 +51,17 @@ tools/
       world/                the `world` kind
         mod.rs              the settings, and cutting the world into tiles
         regions.rs          every region, and the `Region` trait: what a region adds to the world
+        placed.rs           a region that is only data: models at map positions, from its `placements.json`
         checksums.rs        what each tile is made from, so an export rebuilds only the tiles that changed
         ground.rs           the ground's heights, read from its pages
         levelling.rs        strips of ground a region levels along a course, with shoulders easing back to the ground
         overlay.rs          flat shapes laid over the ground, such as roads
         curve.rs            a smooth curve through a course's points, sampled every metre
-        ribbon.rs           strips of even width along a curve, for regions to lay as overlays
+        raised.rs           planar surfaces a region raises above the ground, which own their footprints
+        underlay.rs         cutting the ground away under raised surfaces
+        authored.rs         source triangle surfaces a region lays as they are
+        published.rs        published plant poses, cropped and checked against clearings
+        actors.rs           animated characters standing in a region
         scenery.rs          the models, cables and rails regions stand on the ground, shared out between tiles
         surface.rs          finding what lies under a point of a mesh, and cutting shapes along its triangles
 ```
@@ -171,19 +175,17 @@ take starts and how long it lasts as `<folder name>.takes.json`, which also says
 | `looped`  | whether the game loops each take; then each must loop seamlessly |
 | `quality` | the Vorbis quality, from -0.1 (smallest) to 1 (best)             |
 
-**`plant`** builds a tree, a bush or a tuft of grass from its settings alone, in its own frame (x and y level, z up,
-metres, its foot at the origin), and writes it as `<folder name>.glb`. A tree or bush is `wood`, a trunk of bark
-with a branch to each clump of leaves, and `leaves`, cards cut out of a leaf image scattered through those clumps.
-Grass is a `tuft` of curved blades coloured per vertex; it casts no shadow. Every model reaches below its foot, so
-it stands on sloping ground with no gap; the export fails if it does not. A plant with `middle_cards` also writes a
-lighter `middle` version for seeing from afar.
+**`plant`** imports a tree, a bush or a tuft of grass from a static source mesh whose vertices carry their foliage
+wind weights, with its leaves' textures and its material's wind, push and haze response, and writes it as
+`<folder name>.glb`.
 
-| Setting  | Meaning                                                                                           |
-|----------|---------------------------------------------------------------------------------------------------|
-| `seed`   | the seed of every random draw                                                                     |
-| `wood`   | its bark's texture, its trunk's points and radii, and the radius of its branches                   |
-| `leaves` | its leaves' texture and tint, how many cards in each version and how wide, and its clumps of leaves |
-| `tuft`   | how many blades, their spread, height, width, curl and colours                                    |
+| Setting             | Meaning                                                                  |
+|---------------------|--------------------------------------------------------------------------|
+| `source`            | the source GLB under `src/`                                              |
+| `textures`          | the texture assets the source names                                      |
+| `source_profile`    | the material's wind, push and haze response                              |
+| `surface_height_m`  | optional; for a surface above its origin, its exact lowest height        |
+| `shadow_distance_m` | optional; how far away it still casts a shadow                           |
 
 **`prop`** builds a made object, such as a pole, from closed tubes, boxes and convex prisms of plain colours, in the same frame as
 a plant, and writes it as `<folder name>.glb`. Its anchors are empty nodes `anchor 0`, `anchor 1` and so on, the
@@ -205,12 +207,17 @@ finite float positions and optional normals, UVs and colours; textures, animatio
 supported. The full mesh reaches below its foot. With `solid = true`, the full mesh supplies raycast collision unless
 the source has a `collision` root; that root then supplies the collision without being rendered or casting a shadow.
 Source extras on `full` are preserved except `solid`, which is set from the prop settings. A static `vertex_paint`
-profile requires RGBA vertex colours with zero alpha
+profile requires RGBA vertex colours in [0, 1] with zero alpha
 (the motion weight) and an opaque material; this alpha is not opacity.
 
+A source prop also exports `<name>.middle.glb`, the version middle tiles show: one root `middle`, the full mesh's
+parts simplified regardless of topology (meshoptimizer's sloppy simplifier) to 16 triangles a metre of the model's
+size, between 48 and 1500 in all, with the full node's extras but never solid.
+
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
-them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and
-`world/regions.rs` lists it. Each tile is written in full detail and in middle detail, for seeing from afar. The
+them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, or the
+region is only data, a `placements.json` of models standing at map positions; `world/regions.rs` lists it. Models
+past the ground stand in tiles that hold only them, within `scenery_tiles`. Each tile is written in full detail and in middle detail, for seeing from afar. The
 ground and each overlay show a texture asset, named by its folder: a tile points at the texture's `.ktx2` and never
 holds it, and the export fails if no such texture asset exists. An
 overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere, or
@@ -243,6 +250,7 @@ texture asset does not exist, if a model stands on an overlay, or if a cable com
 | `page_steps`        | how many heights apart page edges are                                 |
 | `tile_steps`        | how many heights apart tile edges are                                 |
 | `tiles`             | the first and last tile exported, each as `[column, row]`             |
+| `scenery_tiles`     | optional; a wider range of tiles past the ground holding only models at their own heights |
 | `extent_m`          | optional ground-grid-aligned map rectangle clipping boundary tiles    |
 | `middle_uses_fine_ground` | whether middle tiles retain full-detail ground triangles       |
 | `ground_texture`    | the texture the ground shows, by its folder under `assets/textures/`  |
@@ -260,7 +268,7 @@ those it reads.
 
 A kind's code is its folder under `src/` (`rig/` for the animation, character and equipment kinds, `texture/`,
 `sound/`, `model/` or `world/`) and the shared code: `main.rs`,
-`glb.rs`, `shapes.rs`, `random.rs`, `Cargo.toml`, the lock file and the toolchain. Each kind uses only its own
+`glb.rs`, `shapes.rs`, `Cargo.toml`, the lock file and the toolchain. Each kind uses only its own
 folder and the shared code, so editing the world's code never marks a character out of date, and editing the rig
 never marks the world. Docs and `CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind
 uses another's code.

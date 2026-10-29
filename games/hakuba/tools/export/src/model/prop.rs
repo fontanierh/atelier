@@ -2,7 +2,7 @@
 //! with the anchors other things fasten to.
 
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use glam::{DVec2, DVec3};
@@ -128,6 +128,21 @@ fn prism(mesh: &mut Mesh, profile: &[[f64; 2]], y: [f64; 2]) -> Result<()> {
         face(vec![point(i, 0), point(j, 0), point(j, 1), point(i, 1)]);
     }
     Ok(())
+}
+
+impl Settings {
+    /// A prop made from a source model also exports its middle version, which middle tiles show.
+    pub fn has_middle(&self) -> bool {
+        self.source.is_some()
+    }
+
+    pub fn outputs(&self, output: &Path) -> Vec<PathBuf> {
+        let mut outputs = vec![output.to_path_buf()];
+        if self.has_middle() {
+            outputs.push(super::source::middle_path(output));
+        }
+        outputs
+    }
 }
 
 pub fn export(settings: &Settings, output: &Path) -> Result<()> {

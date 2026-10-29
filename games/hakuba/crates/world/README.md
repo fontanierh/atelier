@@ -1,7 +1,8 @@
 # world
 
 The world screen: the ground, the road and what stands around it from `assets/world`, the sea, the sky, sun and haze, and a camera
-that starts at the spawn. It publishes where the player starts (`Spawn`), what the player stands on (`Ground`) and
+that starts at the spawn, or at a start chosen in the page's address (`#start=x,y,z,bearing`, map metres and a
+compass bearing) or, on the desktop, in `HAKUBA_START`. It publishes where the player starts (`Spawn`), what the player stands on (`Ground`) and
 `PushesPlants`, which makes the grass and bushes around whatever carries it lean away; the player crate spawns the
 player with it and moves the camera. The settings change it as they change, and Escape pauses it.
 

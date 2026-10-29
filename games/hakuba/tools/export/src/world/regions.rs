@@ -1,10 +1,10 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
 use super::actors::Actor;
-use super::placed::Placed;
 use super::authored::AuthoredSurface;
 use super::levelling::{Pad, Strip};
 use super::overlay::Overlay;
+use super::placed::Placed;
 use super::raised::Raised;
 use super::scenery::{Land, Placement, ScatterKind, Scenery};
 
@@ -61,6 +61,11 @@ pub trait Region {
 
     /// What it stands on `land` and runs along it.
     fn scenery(&self, land: &Land) -> Scenery;
+
+    /// Models standing past `land`, at their own explicit heights, which tiles past the ground hold alone.
+    fn beyond(&self, _land: &Land) -> Vec<Placement> {
+        Vec::new()
+    }
 }
 
 /// A data-only region, [`Placed`] from its folder's `placements.json`.
@@ -79,4 +84,12 @@ pub const REGIONS: &[&dyn Region] = &[
     &momiji_village::MomijiVillage,
     &woodland::Woodland,
     placed!("treehouse"),
+    placed!("brinecove"),
+    placed!("belmonte"),
+    placed!("hidamari"),
+    placed!("southwest"),
+    placed!("shrines"),
+    placed!("zeppelin"),
+    placed!("sword-camp"),
+    placed!("far-hills"),
 ];

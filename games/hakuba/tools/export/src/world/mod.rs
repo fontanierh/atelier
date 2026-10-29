@@ -39,6 +39,7 @@ use anyhow::{Context, Result, bail};
 use glam::{DQuat, DVec2, DVec3};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 
 use crate::glb::{Glb, Material, Mesh, y_up as game};
 use ground::Ground;
@@ -65,6 +66,10 @@ pub struct Settings {
     tile_steps: usize,
     /// The first and the last tile exported, each as [column, row].
     tiles: [[usize; 2]; 2],
+    /// The first and the last tile that may hold scenery past the ground, a range around `tiles`. A tile there but
+    /// outside `tiles` holds only models at their own heights, and is exported only if it holds any.
+    #[serde(default)]
+    scenery_tiles: Option<[[usize; 2]; 2]>,
     /// Optional map rectangle, aligned to ground samples, clipping the boundary tiles.
     #[serde(default)]
     extent_m: Option<[[f64; 2]; 2]>,
@@ -262,7 +267,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         middle: false,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
-        regions: &regions::REGIONS,
+        regions: regions::REGIONS,
     };
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     let sceneries: Vec<_> = regions::REGIONS.iter().map(|region| region.scenery(&land)).collect();
@@ -271,6 +276,32 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     validate_water_models(&waters, sceneries.iter().flat_map(|s| s.placements.iter().map(|p| p.model)))?;
 
     let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &prepared, &drawn)?;
+    let [[scenery_first_column, scenery_first_row], [scenery_last_column, scenery_last_row]] =
+        settings.scenery_tiles.unwrap_or(settings.tiles);
+    if scenery_first_column > first_column
+        || scenery_first_row > first_row
+        || scenery_last_column < last_column
+        || scenery_last_row < last_row
+    {
+        bail!("the scenery tiles must surround the ground's tiles");
+    }
+    for region in regions::REGIONS {
+        for placement in region.beyond(&land) {
+            let past = placement.at - grid.south_west;
+            let (column, row) = grid.tile(placement.at);
+            if past.min_element() < 0.0
+                || !(scenery_first_column..=scenery_last_column).contains(&column)
+                || !(scenery_first_row..=scenery_last_row).contains(&row)
+            {
+                bail!("{} at {} stands past the scenery tiles", placement.model, placement.at);
+            }
+            if placement.origin_height_m.is_none() {
+                bail!("{} at {} stands past the ground without its own height", placement.model, placement.at);
+            }
+            crate::uri_of_asset(placement.model, "glb")?;
+            scenery.entry((column, row)).or_default().add(&placement);
+        }
+    }
 
     let tiles = folder.join("tiles");
     fs::create_dir_all(&tiles)?;
@@ -323,6 +354,39 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             let centre =
                 ground.at((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
             index.add_marker(&format!("tile {column} {row}"), game(centre), DQuat::IDENTITY);
+        }
+    }
+    // Tiles past the ground hold only the models standing there.
+    for column in scenery_first_column..=scenery_last_column {
+        for row in scenery_first_row..=scenery_last_row {
+            if (first_column..=last_column).contains(&column) && (first_row..=last_row).contains(&row) {
+                continue;
+            }
+            let Some(tile_scenery) = scenery.remove(&(column, row)) else {
+                continue;
+            };
+            let stem = format!("{column}_{row}");
+            let files = [(false, tiles.join(format!("{stem}.glb"))), (true, tiles.join(format!("{stem}.middle.glb")))];
+            let mut digest = Sha256::new();
+            digest.update(&code);
+            digest.update(&tile_settings);
+            digest.update(stem.as_bytes());
+            digest.update(scenery::checksum_bytes(&tile_scenery));
+            let checksum = format!("{:x}", digest.finalize());
+            if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
+                for (middle, file) in &files {
+                    // A tile with nothing seen from afar still holds a scene, empty, for the game to load.
+                    let mut glb = Glb::from_json(
+                        json!({ "asset": { "version": "2.0" }, "scene": 0, "scenes": [{ "nodes": [] }] }),
+                    );
+                    tile_scenery.write_beyond(&mut glb, *middle, file)?;
+                    glb.write(file)?;
+                }
+                rebuilt += 1;
+            }
+            current.insert(stem, checksum);
+            let centre = grid.south_west + (DVec2::new(column as f64, row as f64) + 0.5) * grid.tile_m;
+            index.add_marker(&format!("tile {column} {row}"), game(centre.extend(0.0)), DQuat::IDENTITY);
         }
     }
     let [x, y] = settings.spawn_m;
@@ -748,6 +812,7 @@ mod tests {
             page_steps: 64,
             tile_steps: 32,
             tiles: [[0, 0], [1, 0]],
+            scenery_tiles: None,
             extent_m: Some([[0.0, 0.0], [88.0, 64.0]]),
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
@@ -787,6 +852,7 @@ mod tests {
             page_steps: 32,
             tile_steps: 8,
             tiles: [[0, 0], [1, 1]],
+            scenery_tiles: None,
             extent_m: None,
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
@@ -895,6 +961,7 @@ mod tests {
             page_steps: 8,
             tile_steps: 8,
             tiles: [[0, 0], [0, 0]],
+            scenery_tiles: None,
             extent_m: None,
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
@@ -944,6 +1011,7 @@ mod tests {
                     page_steps: 32,
                     tile_steps: 8,
                     tiles: [[0, 0], if expanded { [3, 3] } else { [0, 0] }],
+                    scenery_tiles: None,
                     extent_m: None,
                     middle_uses_fine_ground: false,
                     ground_texture: "ground".into(),
@@ -1036,6 +1104,7 @@ mod tests {
             page_steps: 8,
             tile_steps: 8,
             tiles: [[0, 0], [0, 0]],
+            scenery_tiles: None,
             extent_m: None,
             middle_uses_fine_ground: false,
             ground_texture: "ground".into(),

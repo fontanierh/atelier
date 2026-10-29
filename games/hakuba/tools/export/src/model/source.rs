@@ -1,13 +1,13 @@
 //! Importing a self-contained static prop, including an optional separate collision mesh.
 
 use std::fs;
-use std::path::{Component, Path};
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::{Context, Result, bail, ensure};
 use glam::{DQuat, DVec3};
 use serde_json::{Value, json};
 
-use crate::glb::{Glb, y_up};
+use crate::glb::{Glb, Mesh, y_up};
 
 /// @cc [owner:fontanierh,label:correctness] static-source-prop
 /// A source prop preserves its bind-pose geometry and only uses declared texture assets. Painted motion weights MUST
@@ -113,7 +113,130 @@ fn export_inner(
         );
         glb.add_marker(&format!("anchor {k}"), y_up(DVec3::from_array(anchor)), DQuat::IDENTITY);
     }
-    glb.write(output)
+    glb.write(output)?;
+    if foliage.is_none() {
+        let mut extras = value["nodes"][full]["extras"].as_object().cloned().unwrap_or_default();
+        extras.remove("solid");
+        write_middle(&value, binary(&bytes), full, extras.into(), &middle_path(output))?;
+    }
+    Ok(())
+}
+
+/// Where a source prop's middle version is written: beside its export, as `<name>.middle.glb`.
+pub(crate) fn middle_path(output: &Path) -> PathBuf {
+    output.with_extension("middle.glb")
+}
+
+/// How many triangles a middle version keeps in all, for a model `size_m` across: enough for its outline from the
+/// distance where full detail ends.
+fn middle_triangles(size_m: f32) -> usize {
+    (16.0 * size_m).clamp(48.0, 1500.0) as usize
+}
+
+/// Writes the version a middle tile shows: a node `middle`, the `full` node's parts each simplified, regardless of
+/// their topology, to its share of [`middle_triangles`], with the source's materials and `extras`. It holds no
+/// collision, so nothing far away is solid.
+fn write_middle(value: &Value, binary: &[u8], full: usize, extras: Value, path: &Path) -> Result<()> {
+    let mesh = value["nodes"][full]["mesh"].as_u64().context("the full node has no mesh")? as usize;
+    let parts = value["meshes"][mesh]["primitives"]
+        .as_array()
+        .context("the full mesh has no primitives")?
+        .iter()
+        .map(|primitive| part(value, binary, primitive))
+        .collect::<Result<Vec<_>>>()?;
+    let (low, high) = parts
+        .iter()
+        .flat_map(|part| &part.positions)
+        .fold((glam::Vec3::splat(f32::MAX), glam::Vec3::splat(f32::MIN)), |(low, high), &p| {
+            (low.min(p.into()), high.max(p.into()))
+        });
+    let budget = middle_triangles((high - low).max_element());
+    let total: usize = parts.iter().map(|part| part.indices.len() / 3).sum();
+    let mut simplified: Vec<Mesh> =
+        parts.iter().map(|part| simplify(part, budget * part.indices.len() / 3 / total)).collect();
+    simplified.retain(|part| !part.indices.is_empty());
+    if simplified.is_empty() {
+        simplified = parts;
+    }
+    let mut document = json!({ "asset": { "version": "2.0" } });
+    for key in ["materials", "textures", "images", "samplers", "extensionsUsed"] {
+        if let Some(entry) = value.get(key) {
+            document[key] = entry.clone();
+        }
+    }
+    let mut glb = Glb::from_json(document);
+    let node = glb.add_mesh("middle", &simplified.iter().collect::<Vec<_>>());
+    glb.set_extras(node, extras);
+    glb.write(path)
+}
+
+/// A validated source primitive's vertices and triangles.
+fn part(value: &Value, binary: &[u8], primitive: &Value) -> Result<Mesh> {
+    let floats = |key: &str| -> Result<Option<(Vec<f32>, &str)>> {
+        let Some(index) = primitive["attributes"][key].as_u64() else { return Ok(None) };
+        let (data, _, (_, kind)) = accessor(value, binary, index as usize)?;
+        Ok(Some((data.chunks_exact(4).map(|v| f32::from_le_bytes(v.try_into().unwrap())).collect(), kind)))
+    };
+    let triples = |values: Vec<f32>| values.chunks_exact(3).map(|v| [v[0], v[1], v[2]]).collect::<Vec<_>>();
+    let (positions, _) = floats("POSITION")?.context("a source primitive has no positions")?;
+    let (normals, _) = floats("NORMAL")?.context("a source primitive has no normals")?;
+    let uvs = floats("TEXCOORD_0")?.map_or_else(Vec::new, |(v, _)| v.chunks_exact(2).map(|v| [v[0], v[1]]).collect());
+    let colours = match floats("COLOR_0")? {
+        Some((v, "VEC3")) => v.chunks_exact(3).map(|v| [v[0], v[1], v[2], 1.0]).collect(),
+        Some((v, _)) => v.chunks_exact(4).map(|v| [v[0], v[1], v[2], v[3]]).collect(),
+        None => Vec::new(),
+    };
+    let index = primitive["indices"].as_u64().context("a source primitive has no indices")? as usize;
+    let (data, _, (component, _)) = accessor(value, binary, index)?;
+    let indices = if component == 5123 {
+        data.chunks_exact(2).map(|v| u32::from(u16::from_le_bytes(v.try_into().unwrap()))).collect()
+    } else {
+        data.chunks_exact(4).map(|v| u32::from_le_bytes(v.try_into().unwrap())).collect()
+    };
+    let material = primitive["material"].as_u64().unwrap_or(0) as usize;
+    Ok(Mesh {
+        positions: triples(positions),
+        normals: triples(normals),
+        uvs,
+        colours,
+        sway: Vec::new(),
+        indices,
+        material,
+    })
+}
+
+/// `part` with at most `triangles` triangles, its unused vertices dropped.
+fn simplify(part: &Mesh, triangles: usize) -> Mesh {
+    if part.indices.len() / 3 <= triangles {
+        return part.clone();
+    }
+    let bytes: Vec<u8> = part.positions.iter().flatten().flat_map(|v| v.to_le_bytes()).collect();
+    let Ok(vertices) = meshopt::VertexDataAdapter::new(&bytes, 12, 0) else { return part.clone() };
+    let kept = meshopt::simplify_sloppy(&part.indices, &vertices, triangles * 3, f32::MAX, None);
+    let mut remap = vec![u32::MAX; part.positions.len()];
+    let mut out = Mesh { material: part.material, ..Mesh::default() };
+    for &i in &kept {
+        let i = i as usize;
+        if remap[i] == u32::MAX {
+            remap[i] = out.positions.len() as u32;
+            out.positions.push(part.positions[i]);
+            out.normals.push(part.normals[i]);
+            if !part.uvs.is_empty() {
+                out.uvs.push(part.uvs[i]);
+            }
+            if !part.colours.is_empty() {
+                out.colours.push(part.colours[i]);
+            }
+        }
+        out.indices.push(remap[i]);
+    }
+    out
+}
+
+/// A validated source GLB's binary chunk.
+fn binary(bytes: &[u8]) -> &[u8] {
+    let json_len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
+    &bytes[20 + json_len + 8..]
 }
 
 /// Each masked middle primitive names its exported alpha companion relative to the asset root.
@@ -348,12 +471,14 @@ fn validate_kind(
                     ensure!(
                         kind.1 == "VEC4"
                             && data.chunks_exact(16).all(|v| {
-                                let weight = f32::from_le_bytes(v[12..16].try_into().unwrap());
-                                weight.is_finite()
+                                let channel = |at: usize| f32::from_le_bytes(v[at..at + 4].try_into().unwrap());
+                                let weight = channel(12);
+                                [0, 4, 8].iter().all(|&at| (0.0..=1.0).contains(&channel(at)))
+                                    && weight.is_finite()
                                     && (0.0..=1.0).contains(&weight)
                                     && (motion.is_some() || weight == 0.0)
                             }),
-                        "vertex paint needs valid alpha weights and an explicit motion profile"
+                        "vertex paint needs colours in [0, 1], valid alpha weights and an explicit motion profile"
                     );
                 }
             }
@@ -557,16 +682,42 @@ mod tests {
         let (after, _) = validate(&out).unwrap();
         assert_eq!(before["meshes"], after["meshes"]);
         assert_eq!(before["materials"], after["materials"]);
-        fn binary(bytes: &[u8]) -> &[u8] {
-            let len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
-            &bytes[20 + len + 8..]
-        }
         for attribute in ["POSITION", "NORMAL", "TEXCOORD_0", "COLOR_0"] {
             let a = before["meshes"][0]["primitives"][0]["attributes"][attribute].as_u64().unwrap() as usize;
             let b = after["meshes"][0]["primitives"][0]["attributes"][attribute].as_u64().unwrap() as usize;
             assert_eq!(accessor(&before, binary(&input), a).unwrap().0, accessor(&after, binary(&out), b).unwrap().0);
         }
+        // The middle version: its own file, the full node's extras, never solid and no collision.
+        let middle = Glb::read(&middle_path(&output)).unwrap();
+        assert_eq!(middle.extras("middle").unwrap()["vertex_paint"]["fill"], 0.06);
+        assert!(middle.extras("middle").unwrap().get("solid").is_none());
+        assert!(middle.node("full").is_err() && middle.node("collision").is_err());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn simplify_keeps_at_most_its_budget_and_only_used_vertices() {
+        // A 100 m square of 100 by 100 cells, 20 000 triangles.
+        let mut grid = Mesh::default();
+        for y in 0..=100 {
+            for x in 0..=100 {
+                grid.positions.push([x as f32, 0.0, y as f32]);
+                grid.normals.push([0.0, 1.0, 0.0]);
+                grid.colours.push([0.5, 0.5, 0.5, 0.0]);
+            }
+        }
+        for y in 0..100 {
+            for x in 0..100 {
+                let i = y * 101 + x;
+                grid.indices.extend([i, i + 101, i + 1, i + 1, i + 101, i + 102]);
+            }
+        }
+        let simple = simplify(&grid, 500);
+        assert!(!simple.indices.is_empty() && simple.indices.len() / 3 <= 500);
+        assert!(simple.indices.iter().all(|&i| (i as usize) < simple.positions.len()));
+        assert_eq!(simple.positions.len(), simple.colours.len());
+        assert_eq!(middle_triangles(1.0), 48);
+        assert_eq!(middle_triangles(500.0), 1500);
     }
 
     #[test]
@@ -605,21 +756,24 @@ mod tests {
     }
 
     #[test]
-    fn static_vertex_paint_rejects_nonzero_motion_weight() {
-        let mut bytes = fixture(false);
-        let (json, _) = validate(&bytes).unwrap();
-        let json_len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
-        let index = json["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"].as_u64().unwrap() as usize;
-        let accessor = &json["accessors"][index];
-        let view = &json["bufferViews"][accessor["bufferView"].as_u64().unwrap() as usize];
-        let offset = 20
-            + json_len
-            + 8
-            + view["byteOffset"].as_u64().unwrap_or(0) as usize
-            + accessor["byteOffset"].as_u64().unwrap_or(0) as usize
-            + 12;
-        bytes[offset..offset + 4].copy_from_slice(&0.2_f32.to_le_bytes());
-        assert!(validate(&bytes).is_err());
+    fn static_vertex_paint_rejects_motion_weight_and_colour_past_one() {
+        // The first corner's alpha weight without a motion profile, then its red past 1.
+        for (channel, value) in [(12, 0.2_f32), (0, 1.5)] {
+            let mut bytes = fixture(false);
+            let (json, _) = validate(&bytes).unwrap();
+            let json_len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
+            let index = json["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"].as_u64().unwrap() as usize;
+            let accessor = &json["accessors"][index];
+            let view = &json["bufferViews"][accessor["bufferView"].as_u64().unwrap() as usize];
+            let offset = 20
+                + json_len
+                + 8
+                + view["byteOffset"].as_u64().unwrap_or(0) as usize
+                + accessor["byteOffset"].as_u64().unwrap_or(0) as usize
+                + channel;
+            bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+            assert!(validate(&bytes).is_err());
+        }
     }
 
     #[test]

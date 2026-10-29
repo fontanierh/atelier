@@ -1,0 +1,5 @@
+# A piece of Hidamari, the city east of the coast, and the northern mountains, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "168693ed75a1881c61877f2288070f5a2b3a8c3b0d86a3c3f4edf3a80992666c"

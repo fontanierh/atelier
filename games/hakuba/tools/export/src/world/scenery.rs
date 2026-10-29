@@ -179,7 +179,7 @@ pub struct Grid {
 }
 
 impl Grid {
-    fn tile(&self, p: DVec2) -> (usize, usize) {
+    pub fn tile(&self, p: DVec2) -> (usize, usize) {
         let k = ((p - self.south_west) / self.tile_m).floor();
         (k.x as usize, k.y as usize)
     }
@@ -489,6 +489,48 @@ impl TileScenery {
         middle: bool,
         path: &Path,
     ) -> Result<()> {
+        self.write_models(glb, middle, path, |at| {
+            raised.check_point(at)?;
+            Ok(raised.height_with_crossing(
+                at,
+                middle,
+                |p| surface.ground_height(p),
+                |p, base| surface.crossing_over(p, base),
+            ))
+        })?;
+        self.write_fixed(glb, middle)
+    }
+
+    /// Adds a model standing at its own explicit height, such as one past the ground.
+    pub fn add(&mut self, placement: &Placement) {
+        let entry = self.models.entry(placement.model).or_default();
+        entry.push((
+            placement.at.to_array(),
+            placement.yaw,
+            placement.scale,
+            placement.afar,
+            false,
+            placement.origin_offset_m,
+            placement.origin_height_m,
+        ));
+    }
+
+    /// Adds what a tile past the ground holds to `glb`: only models, each at its own explicit height.
+    pub fn write_beyond(&self, glb: &mut Glb, middle: bool, path: &Path) -> Result<()> {
+        if !self.cables.is_empty() || !self.rails.is_empty() || !self.posts.is_empty() {
+            bail!("{}: cables and rails need ground", path.display());
+        }
+        self.write_models(glb, middle, path, |_| Ok(None))
+    }
+
+    /// Adds the models, each instance's origin at its explicit height or on `seat`, the ground under it if any.
+    fn write_models(
+        &self,
+        glb: &mut Glb,
+        middle: bool,
+        path: &Path,
+        seat: impl Fn(DVec2) -> Result<Option<f64>>,
+    ) -> Result<()> {
         for (model, instances) in &self.models {
             let mut numbers = Vec::new();
             for &(at, yaw, scale, afar, precise, origin_offset_m, origin_height_m) in instances {
@@ -496,16 +538,14 @@ impl TileScenery {
                     continue;
                 }
                 let at = DVec2::from_array(at);
-                raised.check_point(at)?;
-                let seat = raised
-                    .height_with_crossing(
-                        at,
-                        middle,
-                        |p| surface.ground_height(p),
-                        |p, base| surface.crossing_over(p, base),
-                    )
-                    .with_context(|| format!("{}: {model} at {at} stands on no ground", path.display()))?;
-                let origin = origin_height_m.unwrap_or(seat + origin_offset_m);
+                let ground = seat(at)?;
+                let origin = match origin_height_m {
+                    Some(height) => height,
+                    None => {
+                        ground.with_context(|| format!("{}: {model} at {at} stands on no ground", path.display()))?
+                            + origin_offset_m
+                    }
+                };
                 if !origin.is_finite() || (precise && !(origin as f32).is_finite()) {
                     bail!("{model} has an invalid origin height");
                 }
@@ -520,13 +560,20 @@ impl TileScenery {
             if numbers.is_empty() {
                 continue;
             }
+            // A middle tile shows a model's lighter middle version where it has one.
+            let extension = if middle && crate::has_middle(model)? { "middle.glb" } else { "glb" };
             let extras = json!({
-                "model": crate::uri_of_asset(model, "glb")?,
+                "model": crate::uri_of_asset(model, extension)?,
                 "detail": if middle { "middle" } else { "full" },
                 "instances": numbers,
             });
             glb.add_data(model, extras);
         }
+        Ok(())
+    }
+
+    /// Adds the cables, rails and rail posts, which only full detail draws.
+    fn write_fixed(&self, glb: &mut Glb, middle: bool) -> Result<()> {
         if middle {
             return Ok(());
         }

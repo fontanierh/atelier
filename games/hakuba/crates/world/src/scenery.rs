@@ -181,7 +181,7 @@ struct Materials<'w> {
 /// A model without either declaration MUST remain non-solid.
 ///
 /// Spawns the copies whose model has loaded. A middle tile shows the model's `middle` node, if it has one, and its
-/// `full` node otherwise. A full tile shows the `full` node, and a model that has a `middle` node casts that one's
+/// `full` node otherwise; a prop's middle version is a file of its own holding only that node. A full tile shows the `full` node, and a model that has a `middle` node casts that one's
 /// shadow instead.
 fn spawn(
     mut commands: Commands,
@@ -199,15 +199,18 @@ fn spawn(
                 continue;
             }
             let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
-            let Some(full_handle) = gltf.named_nodes.get("full") else {
-                warn!("a model has no full node");
+            let has_middle = gltf.named_nodes.contains_key("middle");
+            // A prop's separate middle version holds only its `middle` node, which a middle tile shows.
+            let main = if waiting.middle && has_middle { "middle" } else { "full" };
+            let Some(main_handle) = gltf.named_nodes.get(main) else {
+                warn!("a model has no {main} node");
                 commands.entity(entity).remove::<Waiting>();
                 continue;
             };
-            let Some(full) = models.nodes.get(full_handle) else { continue };
+            let Some(main_node) = models.nodes.get(main_handle) else { continue };
             let collision = gltf.named_nodes.contains_key("collision");
-            let solid = !collision && model_extras(full).is_some_and(|extras| extras.solid);
-            let mut versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
+            let solid = !collision && model_extras(main_node).is_some_and(|extras| extras.solid);
+            let mut versions = match (waiting.middle, has_middle) {
                 (true, true) => vec![("middle", Role::Both)],
                 (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
                 (_, false) => vec![("full", Role::Both)],

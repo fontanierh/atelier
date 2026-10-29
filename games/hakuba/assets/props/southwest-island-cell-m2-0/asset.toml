@@ -1,0 +1,5 @@
+# A piece of the south-west fishing hamlet and Temple Island, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "e15a3ee6e9c7272d5a045944ce0e7e753195e4f3494cf6a1fb797b512b1df80f"

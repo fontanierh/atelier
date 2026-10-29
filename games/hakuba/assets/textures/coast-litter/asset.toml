@@ -2,4 +2,4 @@
 kind = "texture"
 source = "src/texture.png"
 alpha_cutoff = 0.4
-inputs_sha256 = "078048d29733bf31850745189b5cff234940ed233495638294d02178bc93ade1"
+inputs_sha256 = "00a4cce285ed5ffd5d8b7e236283ecd3376e4e1aebf55463c1ada808a3f53e90"

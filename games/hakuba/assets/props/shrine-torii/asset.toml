@@ -1,0 +1,5 @@
+# A piece of the island's torii and stone lanterns, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "67d8f0e40bff84bae1124a7fbbbf9276253b9eec89867093db3931c77166e278"

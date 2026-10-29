@@ -23,23 +23,27 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 HAKUBA = REPO / 'games' / 'hakuba'
 BLENDER = os.environ.get('BLENDER', '/usr/local/bin/blender')
+# Models at least this large across are drawn in middle-detail tiles too, seen from afar.
+AFAR_M = 6.0
 
 
 @dataclass
 class Model:
-    """One mesh to convert: its source file, its colour rules (see `convert.py`) and whether it is solid."""
+    """One mesh to convert: its source file, its colour rules (see `convert.py`), whether it is solid, and an optional
+    separate collision mesh."""
     source: Path
     slots: dict = field(default_factory=dict)
     default: dict = field(default_factory=dict)
-    recentre: bool = False
     solid: bool = True
+    collision: object = None
     about: str = ''
 
 
 @dataclass
 class Region:
-    """A region's models, by Hakuba prop name, and its groups: (prop name, afar, [[x, y, z, yaw, scale], ...]).
-    A recentred model's group lists `None` for its one instance; the port stands it where the converter moved it."""
+    """A region's models, by Hakuba prop name, and its groups: (prop name, afar, [[x, y, z, yaw, scale], ...]), each
+    instance the model's source origin on the map, its turn counter-clockwise in degrees and its scale. `afar` None
+    leaves it to the model's size; a height of None stands the model on Hakuba's ground."""
     name: str
     about: str
     models: dict = field(default_factory=dict)
@@ -67,8 +71,11 @@ def convert(models, scratch):
     for name, model in models.items():
         out = HAKUBA / 'assets' / 'props' / name / 'src' / 'model.glb'
         out.parent.mkdir(parents=True, exist_ok=True)
-        jobs.append({'source': str(model.source), 'output': str(out), 'slots': model.slots, 'default': model.default,
-                     'recentre': model.recentre})
+        job = {'source': str(model.source), 'output': str(out), 'slots': model.slots, 'default': model.default,
+               'collision': model.solid}
+        if model.collision:
+            job['collision_source'] = str(model.collision)
+        jobs.append(job)
     job_file = scratch / 'jobs.json'
     job_file.write_text(json.dumps(jobs))
     report = scratch / 'guard'
@@ -80,7 +87,7 @@ def convert(models, scratch):
     for line in (report / 'stdout.log').read_text().splitlines():
         if line.startswith('CONVERTED '):
             result = json.loads(line[len('CONVERTED '):])
-            origins[Path(result['output']).parents[1].name] = result['origin']
+            origins[Path(result['output']).parents[1].name] = (result['origin'], result['size'])
         elif line.startswith('FAILED '):
             failures.append(json.loads(line[len('FAILED '):]))
     for failure in failures:
@@ -98,18 +105,20 @@ def write(region, origins):
         (folder / 'asset.toml').write_text('\n'.join(lines) + '\n')
     groups = []
     for name, afar, instances in region.groups:
-        ox, oy, oz = origins[name]
+        (ox, oy, oz), size = origins[name]
+        on_ground = any(instance[2] is None for instance in instances)
+        if afar is None:
+            afar = size >= AFAR_M
         placed = []
-        for instance in instances:
-            if instance is None:
-                placed.append([round(ox, 4), round(oy, 4), round(oz, 4), 0.0, 1.0])
-                continue
-            x, y, z, yaw, scale = instance
-            # The converter moved the origin by (ox, oy, oz) in the model's frame: stand it there.
+        for x, y, z, yaw, scale in instances:
+            # The converter moved the origin to (ox, oy, oz) in the model's frame: stand it there.
             c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
             placed.append([round(x + scale * (c * ox - s * oy), 4), round(y + scale * (s * ox + c * oy), 4),
-                           round(z + scale * oz, 4), round(yaw, 4), round(scale, 4)])
-        groups.append({'model': f'props/{name}', 'afar': afar, 'instances': placed})
+                           round((z or 0.0) + scale * oz, 4), round(yaw, 4), round(scale, 4)])
+        group = {'model': f'props/{name}', 'afar': afar, 'instances': placed}
+        if on_ground:
+            group['on_ground'] = True
+        groups.append(group)
     folder = HAKUBA / 'assets' / 'world' / 'src' / 'regions' / region.name
     folder.mkdir(parents=True, exist_ok=True)
     text = json.dumps({'groups': groups}, separators=(',', ':'))
