@@ -17,4 +17,4 @@ coloured_ground_texture = "ground-detail"   # its grain alone, shown where the g
 coloured_ground_texture_mean = 0.5
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "0904ca8f9cc6e8bda3c731bbbbd91ba90be29b57973247abad9cccf10f158393"
+inputs_sha256 = "ac333254d849d3cf000e4b01d699898a9391f1ee1d53d31fb8543495fc71ec18"
