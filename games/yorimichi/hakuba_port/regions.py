@@ -1,5 +1,6 @@
 """Each region's adapter: which of Yorimichi's built meshes become Hakuba props, how each is coloured, and where each
 stands. An adapter takes the build folder and returns a `port.Region`; `ADAPTERS` names them."""
+import functools
 import json
 import math
 import sys
@@ -236,6 +237,73 @@ def sword_camp(build):
 
 
 
+def megapark(build):
+    """The Super Ultra Mega Park in the western foothills: its 32 authored models and the hillside seam that meets the
+    air station's footbridge, standing where `megapark/park.json` stands them, as one body turned about the park
+    actor. A material draws its diffuse image (the restyled one where the restyle replaced it) on the mesh's first UVs,
+    as Yorimichi's park material does (`import_megapark.py`, `material`: B = lerp(diffuse, decal, decal alpha) *
+    lerp(1, macro overlay, its opacity)). The decal runs on the third UVs and the macro overlay on the first at 0.3 or
+    0.7 times their scale, so neither can be laid into the diffuse image: each is folded in by its mean, the material's
+    colour being the mean of B over the mean of the diffuse, in linear RGB. The baked lightmap's occlusion (second UVs)
+    is left out. The park has no tints or vertex colours. Cut-out materials (ground cover, sign cut-outs, lamp glow) are
+    left out, and so are the park's own trees and parked cars, which are plants and another region's models."""
+    import numpy as np
+    from PIL import Image
+    out = build / 'megapark'
+    report = json.loads((out / 'build.json').read_text())
+    park = json.loads((out / 'park.json').read_text())
+    restyle = json.loads((out / 'textures' / 'textures.json').read_text())['textures']
+    source = Path(__file__).resolve().parents[1] / 'assets' / 'megapark'
+    if json.loads((source / 'provenance.json').read_text())['converted_manifest_sha256'] != report['source_sha256']:
+        raise SystemExit(f'{source}: not the park source this build read')
+
+    def texture(tid):
+        if tid in restyle:
+            return out / 'textures' / restyle[tid]['png']
+        return source / report['textures'][tid]['png']
+
+    @functools.cache
+    def pixels(tid):
+        """A texture's linear RGB and its alpha, each texel's."""
+        rgba = np.asarray(Image.open(texture(tid)).convert('RGBA'), np.float64).reshape(-1, 4) / 255.0
+        rgb = rgba[:, :3]
+        return np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4), rgba[:, 3:]
+
+    slots = {}
+    for key, material in report['materials'].items():
+        ids = material.get('retail_texture_ids', {})
+        if material.get('alpha_mode', 0) != 0 or 'diffuse' not in ids:
+            slots[key] = {'drop': True}
+            continue
+        # B = lerp(diffuse, decal, decal alpha) * lerp(1, macro, MacroOpacity), as the park's material draws it.
+        diffuse = pixels(ids['diffuse'])[0].mean(0)
+        colour = diffuse
+        if 'decal' in ids:
+            decal, alpha = pixels(ids['decal'])
+            colour = colour * (1.0 - alpha.mean()) + (decal * alpha).mean(0)
+        if 'macrooverlay' in ids:
+            try:
+                opacity = float(material['retail_parameters']['macroOverlayOpacity'][0])
+            except (KeyError, ValueError):
+                opacity = 0.0
+            colour = colour * (1.0 + opacity * (pixels(ids['macrooverlay'])[0].mean(0) - 1.0))
+        slots[key] = {'sample': str(texture(ids['diffuse'])),
+                      'rgb': [round(float(c / max(d, 1e-4)), 4) for c, d in zip(colour, diffuse)]}
+    x0, y0, z0 = park['location_cm']
+    turn = math.radians(park['yaw_deg'])
+    region = Region('megapark', 'the Super Ultra Mega Park in the western foothills')
+    for entry in park['render']:
+        asset = entry['name']
+        name = 'megapark-' + asset.removeprefix('SM_MP_').lower()
+        region.models[name] = Model(export_source(build, 'megapark', asset), slots=slots)
+        # Unreal's frame: the actor turns its children by its yaw; Hakuba's y is Unreal's -y, and its turn the opposite.
+        ox, oy, oz = entry['origin_cm']
+        ux = x0 + ox * math.cos(turn) - oy * math.sin(turn)
+        uy = y0 + ox * math.sin(turn) + oy * math.cos(turn)
+        region.groups.append((name, None, [[ux / 100, -uy / 100, (z0 + oz) / 100, -park['yaw_deg'], 1.0]]))
+    return region
+
+
 def far_hills(build):
     """The far hills: the island's coarse land between and around the regions, in cells. Cells wholly under the sea
     or south of the island's tiles are left out."""
@@ -256,5 +324,5 @@ def far_hills(build):
 ADAPTERS = {
     'treehouse': treehouse, 'brinecove': brinecove, 'belmonte': belmonte, 'hidamari': hidamari,
     'southwest': southwest, 'shrines': shrines, 'zeppelin': zeppelin, 'sword-camp': sword_camp,
-    'far-hills': far_hills,
+    'far-hills': far_hills, 'megapark': megapark,
 }

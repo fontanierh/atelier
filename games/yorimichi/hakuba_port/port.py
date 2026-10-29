@@ -189,7 +189,9 @@ def jobs(region, scratch):
                     words = texture.removeprefix(region.name + '-').replace('-', ' ')
                     write_texture(texture, image, f'The {words} texture that the {region.name} props draw.')
                 rule = {key: value for key, value in rule.items() if key not in ('mean', 'sample')}
-                rule['texture'], rule['mean_rgb'] = textures[image], means.setdefault(image, mean(image))
+                if image not in means:
+                    means[image] = mean(image)
+                rule['texture'], rule['mean_rgb'] = textures[image], means[image]
             rules[slot] = rule
         default = rules.pop(None)
         job = {'source': str(model.source), 'output': str(out), 'slots': rules, 'default': default,

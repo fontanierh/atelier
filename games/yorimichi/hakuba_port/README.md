@@ -6,8 +6,9 @@ reads or names anything outside its own folder.
 ```sh
 uv run python games/yorimichi/hakuba_port/port.py --build build/yorimichi REGION...
 uv run python games/yorimichi/hakuba_port/ground.py   # after porting a region's terrain
-uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove]
 uv run python games/yorimichi/hakuba_port/crater_park.py --build build/yorimichi
+uv run python games/yorimichi/hakuba_port/transport.py --build build/yorimichi railway
+uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove]
 (cd games/hakuba && cargo export assets)
 uv run python games/yorimichi/hakuba_port/contact.py --leave-out   # drops the forest's buried plants
 (cd games/hakuba && cargo export assets)
@@ -30,15 +31,18 @@ listed once in Hakuba's `tools/export/src/world/regions.rs`.
 | `ground.py`  | samples the ported terrain cells (far hills, Brinecove, Hidamari, Belmonte with its north country and apron, the southwest islet) into Hakuba's ground height and colour pages, then removes those cells' props and placements |
 | `plants.py`  | ports the island's trees, bushes, grass and ground cover into Hakuba's `forest` region, each standing on the ground; `--models` first imports the tree models and Brinecove's plants Hakuba lacks, with their textures, each plant's far version made by the step that imports it (Brinecove's palms' from their fronds and trunk), already in its fixed cell of one atlas; `--brinecove` imports only Brinecove's plants, without Blender |
 | `plant_convert.py` | the Blender script: writes one of a tree's FBX detail levels as a GLB, keeping each corner's wind weights; `plants.py` joins a tree's full, middle and far levels into one plant |
+| `transport.py` | ports the transport as standing scenery, nothing moving or ridden, without Blender: `railway` brings the Belmonte railway's track, structures and station from `world/train/track.py` on the committed line, its Belmonte materials drawn with Belmonte's textures, and its two trains, one at each terminus, from the coach shells `world/train/build.py` wrote, drawn with their own textures |
 | `contact.py` | checks every exported copy of a ported placement against the ground the tiles draw: buried or adrift models fail, floating and sunk ones are counted |
 | `crater_park.py` | ports Crater Park into Hakuba's `craterpark` region without Blender: each grid cell of the park's built meshes (`craterpark/v2/geometry.npz`) becomes one prop on the caldera floor, drawn with the park's own restyled textures and colours as its Yorimichi materials draw them, its riding surfaces and sides its collision; the park's ground is the volcano's terrain, already Hakuba's ground |
 | `convert.py` | the Blender script: joins a mesh, keeps its UVs and each slot's texture, bakes each slot's colour per vertex, keeps `UCX_` or separate collision hulls, moves the origin to the footprint's centre and writes the GLB with `painted.py` |
-| `painted.py` | writes the prop GLBs Hakuba's exporter accepts, without Blender: a `full` node coloured per vertex in linear RGB, or drawn with textured materials, and an optional `collision` node |
+| `painted.py` | writes the prop GLBs Hakuba's exporter accepts, without Blender: a `full` node coloured per vertex in linear RGB, or drawn with textured materials, and an optional `collision` node; `prop` writes one with its origin at its footprint's centre, `read` returns a GLB's triangles, UVs, materials and images (the train's coach shells), and `rename_images` repoints a prop's images at its own textures |
 
 Props look as Yorimichi draws them: each image a slot's rule names becomes a Hakuba texture asset
 (`<region>-<image>`, BC7-compressed; one only a single prop shows moves into that prop as its own texture), drawn on the mesh's own UVs, times a colour baked per vertex in linear RGB, the
 product of the source's vertex colour, a flat colour and a gain, as that region's Yorimichi material combined them.
-A prop with no textured slot is painted per vertex alone. Slots with no equivalent (water, cut-out leaves, additive
+A prop with no textured slot is painted per vertex alone. A material whose look layers images on other UVs or at
+another scale keeps only the image on the mesh's first UVs and folds the others in by their mean: the Mega Park's
+decals (third UVs) and macro overlays (first UVs at 0.3 or 0.7 times), with its baked lightmap occlusion left out. Slots with no equivalent (water, cut-out leaves, additive
 light) are dropped. Plants (trees, bushes, grass) are ported by `plants.py` as Hakuba's plant kind, which sways them in the
 wind.
 

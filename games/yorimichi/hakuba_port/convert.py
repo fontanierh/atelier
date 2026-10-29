@@ -108,8 +108,9 @@ def paint(o, job):
         if not any(key in rule for key in ('vertex', 'texture', 'rgb')):
             c *= 0.5
         c *= np.asarray(rule.get('rgb', [1.0, 1.0, 1.0]), dtype=np.float32) * rule.get('gain', 1.0)
-        # Hakuba draws painted colour in [0, 1]; a gain can push a bright texel past it.
-        colours[sel, :3] = np.clip(c, 0.0, 1.0)
+        # Hakuba paints vertex colour in [0, 1], and a gain can push past it; a colour multiplying a texture may
+        # brighten it, as a material lightening its image (a pale decal folded in by its mean) does.
+        colours[sel, :3] = c if texture else np.clip(c, 0.0, 1.0)
     for attr in list(mesh.color_attributes):
         mesh.color_attributes.remove(attr)
     attr = mesh.color_attributes.new(name='Color', type='FLOAT_COLOR', domain='CORNER')
@@ -170,12 +171,19 @@ def convert(job):
     used = np.unique(slot)
     materials = None
     if any(textures[k] for k in used):
-        # A textured surface: one material per slot it draws, each its texture or none, times the corner colour.
+        # A textured surface: one material per texture its slots draw (or none), each named after its first slot,
+        # times the corner colour, which keeps each slot's own colour; slots drawing the same texture share one
+        # material, so the prop is drawn in as few parts as it has textures.
         names = [m.name if m else '' for m in full.data.materials] or ['']
-        materials = [{'name': names[k], 'colour': [1.0, 1.0, 1.0], 'texture': textures[k], 'two_sided': False}
-                     for k in used]
+        first = {}
+        for k in used:
+            first.setdefault(textures[k], k)
+        kinds = list(first)
+        materials = [{'name': names[first[t]], 'colour': [1.0, 1.0, 1.0], 'texture': t, 'two_sided': False}
+                     for t in kinds]
+        of_slot = np.array([kinds.index(textures[k]) for k in used])
         colour[:, 3] = 1.0
-        parts = [('full', SURFACE, position, normal, colour, triangles, uv, np.searchsorted(used, slot))]
+        parts = [('full', SURFACE, position, normal, colour, triangles, uv, of_slot[np.searchsorted(used, slot)])]
     else:
         parts = [('full', {'vertex_paint': PAINT}, position, normal, colour, triangles)]
     if hulls and job.get('collision', True):
