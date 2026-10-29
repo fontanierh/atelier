@@ -597,6 +597,14 @@ def spaced(trees, skipped):
     return kept
 
 
+def keeps_height(z, ground, surface):
+    """Which of a region's plants keep their source height `z`: those off Hakuba's ground (`ground` NaN), and those
+    standing more than `MISMATCH_M` above it with a ported prop's drawn surface (`surface`, NaN where none) within
+    `SEAT_M` under or over them. Every other plant stands on the ground."""
+    with np.errstate(invalid='ignore'):
+        return np.isnan(ground) | ((z - ground > MISMATCH_M) & (np.abs(z - surface) <= SEAT_M))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--build', type=Path, required=True, help="Yorimichi's build folder, build/yorimichi")
@@ -631,13 +639,11 @@ def main():
         rows, ground = rows[~cliff], ground[~cliff]
         off = np.isnan(ground)
         if kept:
-            # Off Hakuba's ground, or well above it on a ported prop, the plant keeps its source height; well above
-            # it over no prop, it stands on the ground.
+            surface = np.full(len(rows), np.nan)
             with np.errstate(invalid='ignore'):
-                off |= rows[:, 2] - ground > MISMATCH_M
-            surface = drawn.heights(rows[off, 0], rows[off, 1], rows[off, 2])
-            with np.errstate(invalid='ignore'):
-                off[off] = np.isnan(ground[off]) | (rows[off, 2] - surface <= SEAT_M)
+                high = ~off & (rows[:, 2] - ground > MISMATCH_M)
+            surface[high] = drawn.heights(rows[high, 0], rows[high, 1], rows[high, 2])
+            off = keeps_height(rows[:, 2], ground, surface)
             groups[model, False].extend([round(x, 3), round(y, 3), round(z, 3), round(yaw % 360.0, 2), round(scale, 4)]
                                         for x, y, z, yaw, scale in rows[off].tolist())
         else:
