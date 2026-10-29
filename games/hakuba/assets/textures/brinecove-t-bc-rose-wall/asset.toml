@@ -1,0 +1,5 @@
+# The t bc rose wall texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "a2cf3df09532163f9514419809912eeb879a895cc5a9b016f4d2341c058bfd86"

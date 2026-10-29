@@ -1,0 +1,5 @@
+# The straw texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "3ae6c318ad63f656f13da37d06bc3b6a5b292a2f2937bdc66ceea58596cdbad8"

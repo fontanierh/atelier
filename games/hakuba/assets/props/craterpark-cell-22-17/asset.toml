@@ -1,0 +1,6 @@
+# A cell of Crater Park, the skate park on the volcano's caldera floor, with its own textures.
+kind = "prop"
+source = "src/model.glb"
+textures = ["craterpark-concrete", "craterpark-material-023", "craterpark-material-027", "craterpark-prado-magenta", "craterpark-prado-navy", "craterpark-prado-teal", "craterpark-prado-yellow"]
+solid = true
+inputs_sha256 = "18ba99f7110df5673faf1a933c646bb090ec21dffb1e2368a74e7f743d3351dc"

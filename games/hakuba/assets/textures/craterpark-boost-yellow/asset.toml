@@ -1,0 +1,5 @@
+# Crater Park's restyled boost yellow texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b07bc2feff191ed09b836232b7c38eab90838dd69dd3b997c79836c1439ef8bf"

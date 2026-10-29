@@ -1,0 +1,5 @@
+# The t bc roof straw texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "fd5ffb24c90295e92a5d2dd7b6124dba436d24b9511871e6e5c2a0649f84006a"

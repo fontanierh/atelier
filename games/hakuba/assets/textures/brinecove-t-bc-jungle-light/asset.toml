@@ -1,0 +1,5 @@
+# The t bc jungle light texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "1ffbe26f6c3f5d0cb59a7fdac84ea5abf2de2265b74f10776d26a8bc9e403b83"

@@ -1,0 +1,4 @@
+# The t bc autumn olive texture that the brinecove props draw.
+path = "texture.png"
+sha256 = "f90b643dc733d470282c3b5ae4efa9a5cc10c95e60c28da2bee3e72d3941e0a4"
+authoring_texture_sha256 = "ef05db0c9d7981fd277b923e7ca44666e57dde0d7cc838defec5fc512be6cc55"

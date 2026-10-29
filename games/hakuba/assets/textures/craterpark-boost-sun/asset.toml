@@ -1,0 +1,5 @@
+# Crater Park's restyled boost sun texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4892cca236636579ea22d489dfceeef2060c00dcefbe11aff0cf9556dc14b790"

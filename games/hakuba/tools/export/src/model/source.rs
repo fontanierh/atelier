@@ -10,16 +10,18 @@ use serde_json::{Value, json};
 use crate::glb::{Glb, Mesh, y_up};
 
 /// @cc [owner:fontanierh,label:correctness] static-source-prop
-/// A source prop preserves its bind-pose geometry and only uses declared texture assets. Painted motion weights MUST
-/// have valid explicit motion parameters; the exporter MUST preserve those weights and parameters.
+/// A source prop preserves its bind-pose geometry and only uses declared texture assets and its own declared textures
+/// (`own`, each named by its file beside the export). Painted motion weights MUST have valid explicit motion
+/// parameters; the exporter MUST preserve those weights and parameters.
 pub(super) fn export(
     source: &str,
     solid: bool,
     textures: &[String],
+    own: &[String],
     anchors: &[[f64; 3]],
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, solid, textures, anchors, None, output)
+    export_inner(source, solid, textures, own, anchors, None, output)
 }
 
 pub(super) fn export_foliage(
@@ -30,7 +32,15 @@ pub(super) fn export_foliage(
     shadow_distance: Option<f32>,
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, false, textures, &[], Some(FoliageExport { profile, surface_height, shadow_distance }), output)
+    export_inner(
+        source,
+        false,
+        textures,
+        &[],
+        &[],
+        Some(FoliageExport { profile, surface_height, shadow_distance }),
+        output,
+    )
 }
 
 struct FoliageExport {
@@ -43,6 +53,7 @@ fn export_inner(
     source: &str,
     solid: bool,
     textures: &[String],
+    own: &[String],
     anchors: &[[f64; 3]],
     profile: Option<FoliageExport>,
     output: &Path,
@@ -66,7 +77,7 @@ fn export_inner(
     let file = folder.join(path).canonicalize().context("reading source model")?;
     ensure!(file.starts_with(root), "source path must stay in src/");
     let bytes = fs::read(&file).context("reading source model")?;
-    let allowed: Vec<String> = textures
+    let mut allowed: Vec<String> = textures
         .iter()
         .map(|name| {
             ensure!(
@@ -76,6 +87,7 @@ fn export_inner(
             crate::uri_of_texture(name)
         })
         .collect::<Result<_>>()?;
+    allowed.extend(own.iter().cloned());
     let foliage = profile.as_ref().map(|_| allowed.as_slice());
     let surface_height = profile.as_ref().and_then(|p| p.surface_height);
     let (value, collision) = validate_kind(&bytes, foliage, surface_height, &allowed)?;
@@ -683,8 +695,8 @@ mod tests {
         let input = fixture(true);
         fs::write(root.join("src/model.glb"), &input).unwrap();
         let output = root.join("out.glb");
-        assert!(export("src/model.glb", false, &[], &[], &output).is_err());
-        export("src/model.glb", true, &[], &[], &output).unwrap();
+        assert!(export("src/model.glb", false, &[], &[], &[], &output).is_err());
+        export("src/model.glb", true, &[], &[], &[], &output).unwrap();
         let result = Glb::read(&output).unwrap();
         assert_eq!(result.extras("full").unwrap()["vertex_paint"]["fill"], 0.06);
         assert!(result.extras("full").unwrap().get("solid").is_none());
@@ -748,6 +760,14 @@ mod tests {
         assert!(validate_with_textures(&bytes, &[uri.into()]).is_ok());
         assert!(validate_with_textures(&bytes, &["../../textures/other/other.ktx2".into()]).is_err());
         assert!(validate(&bytes).is_err());
+        // A texture only this prop shows is named by its file beside the export, and must be declared too.
+        let mut own = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        mesh.material = own.add_material(&Material::textured("texture", "parasol.ktx2"));
+        own.add_mesh("full", &[&mesh]);
+        own.write(&input).unwrap();
+        let own = fs::read(&input).unwrap();
+        assert!(validate_with_textures(&own, &["parasol.ktx2".into()]).is_ok());
+        assert!(validate_with_textures(&own, &[uri.into()]).is_err());
         let mut missing_uv = Glb::from_json(json!({"asset": {"version": "2.0"}}));
         mesh.uvs.clear();
         mesh.material = missing_uv.add_material(&Material::textured("texture", uri));
@@ -757,13 +777,13 @@ mod tests {
         // An untextured source isolates the normal model-frame to glTF-frame anchor conversion.
         fs::write(&input, fixture(false)).unwrap();
         let output = root.join("out.glb");
-        export("src/model.glb", false, &[], &[[1.0, 2.0, 3.0]], &output).unwrap();
+        export("src/model.glb", false, &[], &[], &[[1.0, 2.0, 3.0]], &output).unwrap();
         let result = fs::read(&output).unwrap();
         let len = u32::from_le_bytes(result[12..16].try_into().unwrap()) as usize;
         let json: Value = serde_json::from_slice(&result[20..20 + len]).unwrap();
         let anchor = json["nodes"].as_array().unwrap().iter().find(|n| n["name"] == "anchor 0").unwrap();
         assert_eq!(anchor["translation"], json!([1.0, 3.0, -2.0]));
-        assert!(export("src/model.glb", false, &[], &[[f64::MAX, 0.0, 0.0]], &output).is_err());
+        assert!(export("src/model.glb", false, &[], &[], &[[f64::MAX, 0.0, 0.0]], &output).is_err());
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -834,9 +854,9 @@ mod tests {
         assert!(validate(&bytes).is_err());
         let root = std::env::temp_dir().join(format!("hakuba-source-path-{}", std::process::id()));
         fs::create_dir_all(root.join("src")).unwrap();
-        assert!(export("src/../model.glb", true, &[], &[], &root.join("out.glb")).is_err());
+        assert!(export("src/../model.glb", true, &[], &[], &[], &root.join("out.glb")).is_err());
         for path in ["src/.hidden.glb", "src/target/model.glb", "src/.hidden/model.glb"] {
-            let error = export(path, true, &[], &[], &root.join("out.glb")).unwrap_err();
+            let error = export(path, true, &[], &[], &[], &root.join("out.glb")).unwrap_err();
             assert!(error.to_string().contains("checksum"));
         }
         fs::remove_dir_all(root).unwrap();
@@ -886,7 +906,7 @@ mod tests {
         fs::create_dir_all(root.join("outside")).unwrap();
         fs::write(root.join("outside/model.glb"), fixture(false)).unwrap();
         symlink(root.join("outside"), root.join("asset/src")).unwrap();
-        assert!(export("src/model.glb", true, &[], &[], &root.join("asset/out.glb")).is_err());
+        assert!(export("src/model.glb", true, &[], &[], &[], &root.join("asset/out.glb")).is_err());
         fs::remove_dir_all(root).unwrap();
     }
 }

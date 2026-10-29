@@ -1,0 +1,5 @@
+# Crater Park's restyled boost magenta texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "74255903ecb3cf2843689d4229e9054af4674439b9d0f7aa02aac91630c1ee5e"

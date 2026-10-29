@@ -1,0 +1,5 @@
+# The t bc stone dark texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "020688dc0f430600c496d5e091c70bbcb1b536c21b8e132c2cff453cd3909229"

@@ -1,0 +1,5 @@
+# Crater Park's restyled prado navy texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "213477a84c484030774d388be10705ccc3aad9ceb8e29db9b3e095c31267f41f"

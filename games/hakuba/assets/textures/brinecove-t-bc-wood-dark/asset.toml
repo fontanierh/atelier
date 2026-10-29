@@ -1,0 +1,5 @@
+# The t bc wood dark texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "36f8b77aad1ca839c06f31f86f80accb8c6d2eeff211467d838d224198cf2f11"

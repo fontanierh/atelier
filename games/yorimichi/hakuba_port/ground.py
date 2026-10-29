@@ -190,6 +190,9 @@ def consume():
         text = json.dumps({'groups': kept}, separators=(',', ':'))
         path.write_text(text.replace('{"model"', '\n{"model"') + '\n')
     print(f'removed {removed} terrain props')
+    # The removed props' textures go with them, or into the one prop left that shows them.
+    from port import settle_textures
+    settle_textures(['far-hills', 'brinecove', 'hidamari', 'belmonte', 'southwest'])
 
 
 if __name__ == '__main__':

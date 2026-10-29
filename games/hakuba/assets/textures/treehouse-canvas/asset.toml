@@ -1,0 +1,5 @@
+# The canvas texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "781329cddec2e0a9afa17b81a58791a7f7c929e29bc8be3a1b70367ef2b3d4c5"

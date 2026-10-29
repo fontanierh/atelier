@@ -1,0 +1,5 @@
+# The t bc water shallow texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "fa34786433ddfe0249de938fef7f00750440200e0d06929c592258e9b2a479e2"

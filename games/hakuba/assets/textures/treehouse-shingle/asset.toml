@@ -1,0 +1,5 @@
+# The shingle texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "9b16a895e352d34e157b4f2de997233297eb91e9b8481b178cf5c6adc085bb1b"

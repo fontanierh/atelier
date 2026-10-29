@@ -1,0 +1,5 @@
+# The t bc metal texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "9a61135811b31ae3ceeb05b0c6dc96da89d45d641f03bc3f2c25bc3a17970f6a"

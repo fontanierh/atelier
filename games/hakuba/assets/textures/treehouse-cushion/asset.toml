@@ -1,0 +1,5 @@
+# The cushion texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b8e01cf75ef3aadc9ecf496b66bc4bc93836de1cd2e98f2c770169ee49d2d699"

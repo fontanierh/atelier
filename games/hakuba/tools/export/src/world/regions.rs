@@ -92,4 +92,5 @@ pub const REGIONS: &[&dyn Region] = &[
     placed!("zeppelin"),
     placed!("sword-camp"),
     placed!("forest"),
+    placed!("craterpark"),
 ];

@@ -1,0 +1,5 @@
+# Crater Park's restyled prado orange texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "904d6e399db8d530679be81af2e7a5d85caeb0da5efdaa28f8645320440c932c"

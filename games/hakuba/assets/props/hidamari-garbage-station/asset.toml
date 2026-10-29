@@ -1,5 +1,6 @@
-# A piece of Hidamari, the city east of the coast, and the northern mountains, ported with its colours painted per vertex.
+# A piece of Hidamari, the city east of the coast, and the northern mountains, ported with its textures.
 kind = "prop"
 source = "src/model.glb"
+own_textures = ["hidamari-hd-p-garbage-station"]
 solid = true
-inputs_sha256 = "51b020e1f68294c3f07265423b79ff62edabb3f81722f4c5023921fc8b5b3e0d"
+inputs_sha256 = "0755cd63208b5431f22cc2bc64be68cf3ec0a9b44d2be18243c45b4fa8930f32"

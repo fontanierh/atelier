@@ -1,0 +1,4 @@
+# The t bc hull texture that the brinecove props draw.
+path = "texture.png"
+sha256 = "e510a2b060ad39e8380aa31515fc793e0d244fc4651fc92a832e3e3f9e577a5d"
+authoring_texture_sha256 = "e8962726ecb637fdaf9c2b4cf84ad41e67552eabb51aa809598234a2836de2fc"

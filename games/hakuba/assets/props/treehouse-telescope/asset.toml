@@ -1,5 +1,6 @@
-# A piece of the tree house in the northern woodland, ported with its colours painted per vertex.
+# A piece of the tree house in the northern woodland, ported with its textures.
 kind = "prop"
 source = "src/model.glb"
+own_textures = ["treehouse-th-p-telescope"]
 solid = true
-inputs_sha256 = "c8c68f9c4f490d2332c4623821f0adbdca97bfc39dfb03bc7ab4b1b1bff39532"
+inputs_sha256 = "0ccd478c7966fd4febfa52c0664d2932be628bf09b484d5f9e5a6c95bbab6a56"

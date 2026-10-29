@@ -1,0 +1,5 @@
+# The t bc roof terra texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "04ec68d7a2a05b1837e90b6df3fc1e7d496d9fe5e66b869042749553d9af93ef"

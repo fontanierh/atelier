@@ -1,0 +1,5 @@
+# The t bc roof slate texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4eadaceba2d051f1bfc50ebd45e44ce92385de302f56287d9e2a83865c6637b1"

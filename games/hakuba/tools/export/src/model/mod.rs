@@ -8,7 +8,8 @@
 //! one part per material. A model that casts no shadow, such as grass, says so in each
 //! node's extras: `{ "casts_shadows": false }`. A solid prop says `{ "solid": true }` in its full node's extras.
 //! A prop may also hold empty nodes `anchor 0`, `anchor 1` and so on,
-//! the points other things fasten to, such as cables.
+//! the points other things fasten to, such as cables. A source prop names shared texture assets by relative path, and
+//! exports the textures only it shows (`own_textures`) beside its own file, as BC7.
 
 pub mod plant;
 pub mod prop;

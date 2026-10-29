@@ -1,0 +1,5 @@
+# The t bc hero pirate queen statue 6 texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "c6826bf885f5f9b2cfed8469ea985bba01631f591cca1dec8dcec008d3ddbc18"

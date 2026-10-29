@@ -1,4 +1,4 @@
 # Source texture for the island forest's trees.
 kind = "texture"
 source = "src/texture.jpg"
-inputs_sha256 = "dcdcf9199b64a8b22aea329e83d27a64db7983a7fd223d4aaff0bba5955c91e1"
+inputs_sha256 = "31457346fe6d826bd3d394dc5c7de50ee03cf49daa70e358ce8e8b0f14381fb5"

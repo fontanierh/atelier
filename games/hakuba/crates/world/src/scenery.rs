@@ -824,12 +824,12 @@ fn parts(
                 Look::SourceFoliage(material, profile.clone())
             }
         } else if let Some(profile) = &surface_profile {
-            if source.contains_attribute(Mesh::ATTRIBUTE_COLOR)
-                || source.contains_attribute(Mesh::ATTRIBUTE_UV_1)
+            // A source surface's vertex colour, if any, only shades its material's texture and colour.
+            if source.contains_attribute(Mesh::ATTRIBUTE_UV_1)
                 || source.contains_attribute(Mesh::ATTRIBUTE_JOINT_INDEX)
                 || source.has_morph_targets()
             {
-                return Err("source surface paint requires static uncoloured geometry".into());
+                return Err("source surface paint requires static geometry".into());
             }
             let Some(material) = materials.painted.of_surface(&material, profile)? else { return Ok(None) };
             Look::Painted(material)

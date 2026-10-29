@@ -1,0 +1,5 @@
+# The flat texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "8a4cb4d285ef1bd94acf0f17bec6347e9f750c1b4956ac0e4e42e2c531b8743d"

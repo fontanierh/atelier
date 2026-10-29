@@ -1,0 +1,5 @@
+# The t bc cobble texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "a8e7e660ac0029cdad7b841b514b3bd6fbb9790fc4251b23e2d530b0d8d9dd83"

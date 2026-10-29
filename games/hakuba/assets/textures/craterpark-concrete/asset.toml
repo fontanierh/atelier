@@ -1,0 +1,5 @@
+# Crater Park's restyled concrete texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "390f7bc7c8176ed32b127981d725251544e1b902b0c305b1892c15999790bd28"

@@ -1,0 +1,5 @@
+# The noren indigo texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b027f7448e05981cf52e43c055ccafee32e8c43fe42becd8109cbe6fe402d060"

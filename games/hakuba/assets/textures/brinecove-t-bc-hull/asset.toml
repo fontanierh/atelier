@@ -1,0 +1,5 @@
+# The t bc hull texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b11faaae2bbc9065fe98733329a6457da478607d0554c7a14aed6a814d903c96"

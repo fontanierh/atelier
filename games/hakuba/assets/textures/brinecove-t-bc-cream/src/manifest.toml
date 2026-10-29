@@ -1,0 +1,4 @@
+# The t bc cream texture that the brinecove props draw.
+path = "texture.png"
+sha256 = "8735ab3411379cff762c33beece8201899a2115923fb6ae894884d84389fe452"
+authoring_texture_sha256 = "fa69677fdbdf87ca3ddd3c960d7d4c0c14fe474803191f762b6c50c1e59fab72"

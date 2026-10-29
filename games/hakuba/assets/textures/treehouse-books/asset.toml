@@ -1,0 +1,5 @@
+# The books texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "258936a219a56eba16bac249b6a8708a5c9ad33f19147506c35c4bc0aa8945c5"

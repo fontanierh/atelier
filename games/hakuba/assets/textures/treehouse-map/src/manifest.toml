@@ -1,0 +1,4 @@
+# The map texture that the treehouse props draw.
+path = "texture.png"
+sha256 = "cc62ec2b56ce511cfb5cf0ca159024a90a4ddda1568ea897f323128ab6364810"
+authoring_texture_sha256 = "cc62ec2b56ce511cfb5cf0ca159024a90a4ddda1568ea897f323128ab6364810"

@@ -1,0 +1,5 @@
+# The t bc cream texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "2b87e59dab9f99ba34d1357e29885fad4b75c8deca56b63b86407b874d1625b3"

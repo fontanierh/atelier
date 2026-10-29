@@ -1,0 +1,5 @@
+# The rug blue texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "7fbd98bf59342dee05c6d89f5fab46d500a69239f746c8ff300532978ccc4b11"

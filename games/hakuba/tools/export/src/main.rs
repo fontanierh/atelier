@@ -13,6 +13,7 @@
 //! match that checksum.
 
 mod glb;
+mod ktx2;
 mod model;
 mod rig;
 mod shapes;
@@ -118,9 +119,16 @@ const CHECKSUM: &str = "inputs_sha256";
 const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
 
 /// The exporter's files that every kind is built from, relative to the exporter: the command, the glTF reader and
-/// writer, the shapes meshes are built from, and the crate and Rust versions.
-const SHARED_CODE: [&str; 6] =
-    ["src/main.rs", "src/glb.rs", "src/shapes.rs", "Cargo.toml", "../../Cargo.lock", "../../rust-toolchain.toml"];
+/// writer, the KTX2 writer, the shapes meshes are built from, and the crate and Rust versions.
+const SHARED_CODE: [&str; 7] = [
+    "src/main.rs",
+    "src/glb.rs",
+    "src/ktx2.rs",
+    "src/shapes.rs",
+    "Cargo.toml",
+    "../../Cargo.lock",
+    "../../rust-toolchain.toml",
+];
 
 /// The exporter's files that a kind is built from: [`SHARED_CODE`] and the `.rs` files in the kind's `folder`. Docs
 /// and other kinds' code are left out, so editing them marks no export of this kind out of date.

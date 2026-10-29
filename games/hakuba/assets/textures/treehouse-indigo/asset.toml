@@ -1,0 +1,5 @@
+# The indigo texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "6efd0a1965840edf31e998105f496ff46e4cf8165f893859ba0a39506678a373"

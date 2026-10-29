@@ -1,0 +1,5 @@
+# The t bc roof teal texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "f2b5cbf107cc09cecdadf401e6ced2f74423121d3ca9bbee7bc0c032784d8fa3"

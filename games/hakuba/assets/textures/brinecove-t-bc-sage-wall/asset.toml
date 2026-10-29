@@ -1,0 +1,5 @@
+# The t bc sage wall texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "e4bf5956714990f24e35e2db469121b6b385ff84b65355fd87dbd08797070df5"

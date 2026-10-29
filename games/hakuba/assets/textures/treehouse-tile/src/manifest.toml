@@ -1,0 +1,4 @@
+# The tile texture that the treehouse props draw.
+path = "texture.png"
+sha256 = "7edad8d13a7b9a10b716f11a27c6b9c0435d9fe3b435f181368d428b414fcf60"
+authoring_texture_sha256 = "7edad8d13a7b9a10b716f11a27c6b9c0435d9fe3b435f181368d428b414fcf60"

@@ -1,0 +1,5 @@
+# Crater Park's restyled prado teal texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "2d330c8aeb0974c4e39af188efac4abe8ea8e2443554ac95f676863cefe7ddc9"

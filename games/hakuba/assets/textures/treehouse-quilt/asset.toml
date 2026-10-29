@@ -1,0 +1,5 @@
+# The quilt texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "f3791ca1b74aead0cfdd09ad2a536fa6a39306f87824c4b4aa56fbe042ce6ffe"

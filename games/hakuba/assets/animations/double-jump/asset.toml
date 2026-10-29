@@ -4,4 +4,4 @@
 kind = "animation"
 source = "src/source.glb"
 clip = "Animation"
-inputs_sha256 = "25e4042348be070e644da4b8201e3720e073f89fd8556eab5234e0b855c0e86b"
+inputs_sha256 = "69ed2ea823e633d0a32fdc53c8eae4ab4de9a2714c0b47fce48f68fa1af0969e"

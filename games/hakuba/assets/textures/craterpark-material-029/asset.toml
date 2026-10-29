@@ -1,0 +1,5 @@
+# Crater Park's restyled material 029 texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "a5f0ec7902c581699482f78b209f9b782af3b9f9c37ac73c2874c9f39dc7a69a"

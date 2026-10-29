@@ -1,0 +1,4 @@
+# The t bc planks texture that the brinecove props draw.
+path = "texture.png"
+sha256 = "283b6f17bc7b09163eede43379e0b4b05d66c9cab4b3586738d99f3fc66b560e"
+authoring_texture_sha256 = "828271c8186b8e759ce66e8d058d3ed8dad2c0b1d2e35d2873ec5a8bc636d23b"

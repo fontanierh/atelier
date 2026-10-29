@@ -1,0 +1,5 @@
+# Crater Park's restyled prado yellow texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "6fad40899d91a1ba1a31c1a5cbd924820ace88a53b6abc122ca3fddf8f82ac98"

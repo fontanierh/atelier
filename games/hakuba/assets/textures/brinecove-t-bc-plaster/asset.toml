@@ -1,0 +1,5 @@
+# The t bc plaster texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "34ab5b1d99047b23fdc3b9c53eb2b72c2732949ce586291bea1e2e3447afefcc"

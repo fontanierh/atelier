@@ -1,0 +1,4 @@
+# The t bc canvas gold texture that the brinecove props draw.
+path = "texture.png"
+sha256 = "9704ec6e555864e253fa1c68c030163715e4859112f3f9a7a116a554d83cfa5f"
+authoring_texture_sha256 = "89ba6037fc4dd5ef733c8cb74634a7bf194b78969d8c16fbd11220498142e6b2"

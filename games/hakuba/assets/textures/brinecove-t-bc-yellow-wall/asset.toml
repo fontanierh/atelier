@@ -1,0 +1,5 @@
+# The t bc yellow wall texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "1b4a81808307fb2c5dc606f62d408a87048d40dc6c30266cd5e6653ec7a2d288"

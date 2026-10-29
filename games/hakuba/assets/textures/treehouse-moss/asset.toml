@@ -1,0 +1,5 @@
+# The moss texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "3b3f8e58362e316644475e376093be2c2d5edf13feecce556b025a6a44ad36c9"

@@ -1,0 +1,4 @@
+# The t bc cobble dark texture that the brinecove props draw.
+path = "texture.png"
+sha256 = "4e0e0c638e3054d3b1ed44bc8d4d20f6c6388c76904ad8f925abcd9126c6218c"
+authoring_texture_sha256 = "efecb2b79b66164528f4e705d651455884a3b5ef2be4072fc3d7789c7d657070"

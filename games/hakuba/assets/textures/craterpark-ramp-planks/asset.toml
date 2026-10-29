@@ -1,0 +1,5 @@
+# Crater Park's restyled ramp planks texture.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "ed2408e157334841f92f5f6d815abe4498667502b34ecdea30234887e8c5a1dd"

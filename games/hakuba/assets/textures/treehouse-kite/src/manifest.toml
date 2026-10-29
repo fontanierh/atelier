@@ -1,0 +1,4 @@
+# The kite texture that the treehouse props draw.
+path = "texture.png"
+sha256 = "b4d0483dc0c077bafd1d1c26b71357f73bafdfcda598d9725a2bd21776d0dbcd"
+authoring_texture_sha256 = "b4d0483dc0c077bafd1d1c26b71357f73bafdfcda598d9725a2bd21776d0dbcd"

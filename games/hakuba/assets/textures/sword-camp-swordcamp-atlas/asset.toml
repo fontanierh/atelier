@@ -1,0 +1,5 @@
+# The swordcamp atlas texture that the sword-camp props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "429b49238f5d134a70ac43182df57e0f421f12349ef9f8b087d1b12c167d56f1"

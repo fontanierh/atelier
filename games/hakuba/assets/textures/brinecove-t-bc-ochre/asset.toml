@@ -1,0 +1,5 @@
+# The t bc ochre texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "e159397695760e0a107adb269ed13933a318959a221908f6241be94b1ca0e154"

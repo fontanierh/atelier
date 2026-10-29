@@ -1,0 +1,5 @@
+# The flag texture that the treehouse props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4a5d6cda05cea622193ec99f64ab9ee49830e10c3fc46971301e6935abebcfc6"

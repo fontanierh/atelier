@@ -3,7 +3,7 @@ kind = "plant"
 shadow_distance_m = 80.0
 source = "src/model.glb"
 textures = ["garden-bark", "garden-cedar", "far-plants"]
-inputs_sha256 = "b7051a069e283c40bbd23a29775ab61d6ab1d992bde95f3ce3398eb7e2184333"
+inputs_sha256 = "a311c678cb15af4ace3dd2bf259c0d93c962ec36e040e212ed6cb063517cb778"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

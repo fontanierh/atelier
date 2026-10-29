@@ -1,0 +1,5 @@
+# The t bc moss texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b2dd51f9ca9ae64821b0538a44587558b0f05deb2c20ad1e786b7c53301c5fdc"

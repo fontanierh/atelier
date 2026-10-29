@@ -15,6 +15,7 @@ anyhow = "1.0.98"
 hakuba_water_schema.workspace = true
 glam = "0.33.12"
 hound = "3.5.1"
+intel_tex_2 = "0.5.0"
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] }
 ktx2 = "0.5.0"
 ruzstd = "0.8.3"

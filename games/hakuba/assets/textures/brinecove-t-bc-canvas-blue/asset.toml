@@ -1,0 +1,5 @@
+# The t bc canvas blue texture that the brinecove props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "67ad28f77486512749a69940685099272b7643eee6b9305f192cee6cd56b5614"
