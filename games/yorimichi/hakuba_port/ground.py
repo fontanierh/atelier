@@ -92,9 +92,9 @@ def srgb(linear):
     return np.round(255 * np.where(c <= 0.0031308, 12.92 * c, 1.055 * c ** (1 / 2.4) - 0.055)).astype(np.uint8)
 
 
-def cells(layers=LAYERS):
+def cells():
     """Every terrain cell's triangles and corner colours on the map, x east, y north, z up, layer by layer."""
-    for region, prefix in layers:
+    for region, prefix in LAYERS:
         path = WORLD / 'src' / 'regions' / region / 'placements.json'
         if not path.is_file():
             continue

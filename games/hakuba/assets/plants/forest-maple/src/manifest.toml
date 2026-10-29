@@ -1,6 +1,6 @@
 # Original foliage geometry and source detail levels.
 path = "model.glb"
-sha256 = "e890ff0d326308915b2e9a806368799d263704ab38b0b1d8c8c11fc7865ed63b"
+sha256 = "93c4890aad8240e11d27275d820e43104168af2892fbd1cf59944f8bb8727f68"
 authoring_fbx_sha256 = "bebb5f41dddccbd48d89ef8f7ffdb983bcf881c8f47733889184dee20a6bc2fa"
 authoring_lod2_fbx_sha256 = "9095dbedea05325fe8ff6a2ba2a1dc3c3ca9ab649df5f5b270720e33ed208356"
 authoring_far_fbx_sha256 = "7c080d7299e342f7c6e34ab0d7626642edfe46f8d790f6f2c05390b45d98206c"

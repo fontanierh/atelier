@@ -1,8 +1,8 @@
 # Original tall woodland canopy tree.
 kind = "plant"
 source = "src/model.glb"
-textures = ["garden-bark", "garden-maple", "far-plants"]
-inputs_sha256 = "b8ee37007d59e537da791a647e9b993f13b4f295f02da5f00ec3238878a3a702"
+textures = ["garden-bark", "garden-maple"]
+inputs_sha256 = "f4d16a6602de517aa63f00972e3e6e226c537cb375c777f87615189eea6eebaa"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]
