@@ -1,5 +1,0 @@
-# The hd p bonsai shelf texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "ec0e9815867bfb04af429dacb0f1ef40bafa643327c6f1f9c0cbe41eed219f43"

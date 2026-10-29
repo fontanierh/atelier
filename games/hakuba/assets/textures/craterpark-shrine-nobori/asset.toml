@@ -1,5 +1,0 @@
-# Crater Park's restyled shrine nobori texture.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "d4ad5ae60a5b149cc63f4aa2867dbc95400ce8aa15a186f1eedafb9a3021bcc9"

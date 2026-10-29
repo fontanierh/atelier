@@ -1,5 +1,0 @@
-# The hd p bus stop texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "93641775f73d98ccb016e072bd93a41d88ff7938e4cc8086f22b0bffad6141c2"

@@ -1,5 +1,0 @@
-# The hd p hokora texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "c82a20f23506270ef44f112e106653ac158a83ad77d841afba528bba125982bd"

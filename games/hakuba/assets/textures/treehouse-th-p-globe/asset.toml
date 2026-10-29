@@ -1,5 +1,0 @@
-# The th p globe texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "b8176db25ee81ec222b704841457fefece3c01981acc79b4996531741105f63d"

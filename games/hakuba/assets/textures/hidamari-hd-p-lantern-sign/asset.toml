@@ -1,5 +1,0 @@
-# The hd p lantern sign texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "def6734bdbd6ced1d04fb3cb9e0af3d6065ec4b5a7e67655698a8737ed83afc8"

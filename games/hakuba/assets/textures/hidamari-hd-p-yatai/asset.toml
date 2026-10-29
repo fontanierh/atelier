@@ -1,5 +1,0 @@
-# The hd p yatai texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "a859e770727e77da987dd042915d40f07312acfd1bf4634d37f25097d73969d6"

@@ -1,5 +1,0 @@
-# The hd p garbage station texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "9d953be98534925df3334246cfa59544a85bcfc7a55884c8fbed76402b0e3a95"

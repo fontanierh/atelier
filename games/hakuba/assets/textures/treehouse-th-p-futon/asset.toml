@@ -1,5 +1,0 @@
-# The th p futon texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "07d1c1652a594769ca0538240f9797d012440d1f8e0724e53f78209e404cd69b"

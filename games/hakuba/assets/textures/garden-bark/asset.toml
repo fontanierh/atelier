@@ -1,4 +1,4 @@
 # Source texture for roadside garden plants.
 kind = "texture"
 source = "src/texture.jpg"
-inputs_sha256 = "691d96b4718c1963aed7e0e16fa13e6741840a37857ef74594492faeb7c0262a"
+inputs_sha256 = "a402537ee7dc9c49df4066003777fce5040dbcededfa585206e66dabd0c8af51"

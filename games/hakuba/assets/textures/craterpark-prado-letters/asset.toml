@@ -1,5 +1,0 @@
-# Crater Park's restyled prado letters texture.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "40c477f0d729abda8ab29c724b6494fc5e16c5f8abb8579703d65591d84b650b"

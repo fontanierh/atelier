@@ -1,5 +1,0 @@
-# The th p bell texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "cc5a4b5686dfa6ca40e51896d8512874f759aa93c9126c148fd9c00892b4dd2a"

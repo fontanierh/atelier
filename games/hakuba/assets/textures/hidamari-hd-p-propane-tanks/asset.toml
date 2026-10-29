@@ -1,5 +1,0 @@
-# The hd p propane tanks texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "caabe8ea3b378b8412df9407dd9eca24573a0c9ffee84bb105e9bce700bcbc41"

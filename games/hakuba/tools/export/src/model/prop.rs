@@ -24,6 +24,10 @@ pub struct Settings {
     /// Texture assets referenced by the source model.
     #[serde(default)]
     textures: Vec<String>,
+    /// Images only this prop shows, each `src/<name>.png`, exported beside it as `<name>.ktx2` in BC7 blocks; the
+    /// source model names each as `<name>.ktx2`.
+    #[serde(default)]
+    own_textures: Vec<String>,
     #[serde(default)]
     tubes: Vec<Tube>,
     #[serde(default)]
@@ -131,10 +135,17 @@ fn prism(mesh: &mut Mesh, profile: &[[f64; 2]], y: [f64; 2]) -> Result<()> {
 }
 
 impl Settings {
-    /// Every prop also exports its middle version, which middle tiles show.
+    /// Every prop also exports its middle version, which middle tiles show, and the textures only it shows.
     pub fn outputs(&self, output: &Path) -> Vec<PathBuf> {
-        vec![output.to_path_buf(), super::source::middle_path(output)]
+        let mut files = vec![output.to_path_buf(), super::source::middle_path(output)];
+        files.extend(self.own_textures.iter().map(|name| own_texture(output, name)));
+        files
     }
+}
+
+/// Where a prop's own texture `name` is exported: beside the prop's export.
+fn own_texture(output: &Path, name: &str) -> PathBuf {
+    output.with_file_name(format!("{name}.ktx2"))
 }
 
 pub fn export(settings: &Settings, output: &Path) -> Result<()> {
@@ -146,10 +157,19 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
         {
             bail!("a source model cannot also specify generated geometry or materials");
         }
-        return super::source::export(source, settings.solid, &settings.textures, &settings.anchors, output);
+        let folder = output.parent().context("a prop has an asset folder")?;
+        let mut own = Vec::new();
+        for name in &settings.own_textures {
+            if name.is_empty() || !name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') {
+                bail!("own texture name must be kebab case");
+            }
+            crate::texture::export_bc7(folder, &format!("src/{name}.png"), &own_texture(output, name))?;
+            own.push(format!("{name}.ktx2"));
+        }
+        return super::source::export(source, settings.solid, &settings.textures, &own, &settings.anchors, output);
     }
-    if !settings.textures.is_empty() {
-        bail!("named textures require a source model");
+    if !settings.textures.is_empty() || !settings.own_textures.is_empty() {
+        bail!("textures require a source model");
     }
     // Each material's mesh, holding every part made of it.
     let mut meshes: BTreeMap<&str, Mesh> = BTreeMap::new();

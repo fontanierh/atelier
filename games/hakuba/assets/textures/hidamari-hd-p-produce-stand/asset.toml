@@ -1,5 +1,0 @@
-# The hd p produce stand texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "6f1bb465ed41af296b02ea3d5a0a061dc600b82882fa2e2ee41ec27bb597c0ce"

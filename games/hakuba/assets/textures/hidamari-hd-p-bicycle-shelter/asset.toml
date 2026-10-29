@@ -1,5 +1,0 @@
-# The hd p bicycle shelter texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "b8a72ce47c531ef14d56d88db9f1c3dfb9a12e56c00e87a8072ca2ef66ae6779"

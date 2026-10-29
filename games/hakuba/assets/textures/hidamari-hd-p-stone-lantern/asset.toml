@@ -1,5 +1,0 @@
-# The hd p stone lantern texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "e4dc16564225fc37b714b4acb643b4d8e8c2d50b61ff8f44f9a36f6588920ab9"

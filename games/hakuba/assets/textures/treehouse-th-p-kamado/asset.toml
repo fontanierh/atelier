@@ -1,5 +1,0 @@
-# The th p kamado texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "0cf19b68572f877a0990d758e33357225a0a586acd1f44024241860bf3d7f37a"

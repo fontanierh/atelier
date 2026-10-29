@@ -112,3 +112,18 @@ def glb(nodes, path, materials=None):
         f.write(b'glTF' + (2).to_bytes(4, 'little') + (28 + len(text) + len(blob)).to_bytes(4, 'little'))
         f.write(len(text).to_bytes(4, 'little') + b'JSON' + text)
         f.write(len(blob).to_bytes(4, 'little') + b'BIN\0' + bytes(blob))
+
+
+def rename_images(path, names):
+    """Point the GLB at `path`'s images named by `names` ({old uri: new uri}) at their new URIs, in place."""
+    data = open(path, 'rb').read()
+    length = int.from_bytes(data[12:16], 'little')
+    doc = json.loads(data[20:20 + length])
+    for image in doc.get('images', []):
+        image['uri'] = names.get(image['uri'], image['uri'])
+    text = json.dumps(doc, separators=(',', ':')).encode()
+    text += b' ' * (-len(text) % 4)
+    rest = data[20 + length:]
+    with open(path, 'wb') as f:
+        f.write(b'glTF' + (2).to_bytes(4, 'little') + (20 + len(text) + len(rest)).to_bytes(4, 'little'))
+        f.write(len(text).to_bytes(4, 'little') + b'JSON' + text + rest)

@@ -1,5 +1,0 @@
-# Crater Park's restyled shrine torii texture.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "bd98f10085ab2d9c51a6a2e8694bfa37e73c089ffef2df4752dd08c71fc129ee"

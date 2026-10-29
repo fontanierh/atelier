@@ -1,5 +1,0 @@
-# The t bc deck planks texture that the brinecove props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "edf703f954141096f3b3dddb22512ad0d182dfdb5eb79b40d3d1a40c39a5223f"

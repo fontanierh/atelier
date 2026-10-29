@@ -1,5 +1,0 @@
-# The hd p scooter texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "37ca6f28c3fa585795542424285f9dcfd109cede0f0adcba240d8aec822c4473"

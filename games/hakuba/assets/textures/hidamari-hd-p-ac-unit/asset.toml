@@ -1,5 +1,0 @@
-# The hd p ac unit texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "68d105e15a7c0dd51743a14d6b0bfc9352f338a4ff0500c42771131df0b39ab2"

@@ -1,5 +1,0 @@
-# The hd p postbox texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "82607eb38363e670f693816beb23e77bb60f3033fb8f8e17f305a1fdaa62fadf"

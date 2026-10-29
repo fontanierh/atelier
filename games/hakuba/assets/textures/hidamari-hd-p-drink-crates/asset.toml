@@ -1,5 +1,0 @@
-# The hd p drink crates texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "4e837ba163a0062106ee99c0d29e7fb087b5b1c613a5d15946490f54a9be65f1"

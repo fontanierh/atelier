@@ -1,5 +1,0 @@
-# The hd p planter box texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "20368c77d9fd8d91fdc4da644652ee27a9e2dda1d73ff344a30e1dd34e0ff147"

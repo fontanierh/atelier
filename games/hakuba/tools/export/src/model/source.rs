@@ -10,16 +10,18 @@ use serde_json::{Value, json};
 use crate::glb::{Glb, Mesh, y_up};
 
 /// @cc [owner:fontanierh,label:correctness] static-source-prop
-/// A source prop preserves its bind-pose geometry and only uses declared texture assets. Painted motion weights MUST
-/// have valid explicit motion parameters; the exporter MUST preserve those weights and parameters.
+/// A source prop preserves its bind-pose geometry and only uses declared texture assets and its own declared textures
+/// (`own`, each named by its file beside the export). Painted motion weights MUST have valid explicit motion
+/// parameters; the exporter MUST preserve those weights and parameters.
 pub(super) fn export(
     source: &str,
     solid: bool,
     textures: &[String],
+    own: &[String],
     anchors: &[[f64; 3]],
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, solid, textures, anchors, None, output)
+    export_inner(source, solid, textures, own, anchors, None, output)
 }
 
 pub(super) fn export_foliage(
@@ -30,7 +32,15 @@ pub(super) fn export_foliage(
     shadow_distance: Option<f32>,
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, false, textures, &[], Some(FoliageExport { profile, surface_height, shadow_distance }), output)
+    export_inner(
+        source,
+        false,
+        textures,
+        &[],
+        &[],
+        Some(FoliageExport { profile, surface_height, shadow_distance }),
+        output,
+    )
 }
 
 struct FoliageExport {
@@ -43,6 +53,7 @@ fn export_inner(
     source: &str,
     solid: bool,
     textures: &[String],
+    own: &[String],
     anchors: &[[f64; 3]],
     profile: Option<FoliageExport>,
     output: &Path,
@@ -66,7 +77,7 @@ fn export_inner(
     let file = folder.join(path).canonicalize().context("reading source model")?;
     ensure!(file.starts_with(root), "source path must stay in src/");
     let bytes = fs::read(&file).context("reading source model")?;
-    let allowed: Vec<String> = textures
+    let mut allowed: Vec<String> = textures
         .iter()
         .map(|name| {
             ensure!(
@@ -76,6 +87,7 @@ fn export_inner(
             crate::uri_of_texture(name)
         })
         .collect::<Result<_>>()?;
+    allowed.extend(own.iter().cloned());
     let foliage = profile.as_ref().map(|_| allowed.as_slice());
     let surface_height = profile.as_ref().and_then(|p| p.surface_height);
     let (value, collision) = validate_kind(&bytes, foliage, surface_height, &allowed)?;

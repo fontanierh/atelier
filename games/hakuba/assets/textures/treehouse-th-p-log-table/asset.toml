@@ -1,5 +1,0 @@
-# The th p log table texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "a680d56c0fcd2a4132b81077428f26730c068391262f5c6dce4c49d5e15a5239"

@@ -1,5 +1,0 @@
-# The hd p kei car texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "e08bf6b5dc4599a6f44ed9ed31e0dcd53ccf5193a34924b377b721a8503f42ef"

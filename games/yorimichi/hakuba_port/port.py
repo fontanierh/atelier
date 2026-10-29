@@ -103,17 +103,37 @@ def mean(path):
     return np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4).reshape(-1, 3).mean(axis=0).tolist()
 
 
-def prune_textures(prefixes):
-    """Delete the texture assets ported regions wrote (named `<prefix>-...`) that no asset names any more, such as
-    those of slots on meshes without UVs or of terrain props `ground.py` removed."""
+def settle_textures(prefixes):
+    """Settle the texture assets ported regions wrote (named `<prefix>-...`) by how many assets name them: one no asset
+    names any more is deleted (a slot's on a mesh without UVs, a terrain prop's `ground.py` removed); one only a prop
+    names moves into that prop, as its own texture `src/<name>.png`, which its source model names as `<name>.ktx2`."""
+    from painted import rename_images
     assets = HAKUBA / 'assets'
-    used = set()
+    users = {}
     for toml in assets.glob('**/asset.toml'):
         for names in re.findall(r'^textures = (\[.*\])$', toml.read_text(), re.M):
-            used.update(json.loads(names))
+            for name in json.loads(names):
+                users.setdefault(name, []).append(toml.parent)
     for folder in sorted((assets / 'textures').iterdir()):
-        if folder.name not in used and any(folder.name.startswith(prefix + '-') for prefix in prefixes):
-            shutil.rmtree(folder)
+        name = folder.name
+        if not any(name.startswith(prefix + '-') for prefix in prefixes):
+            continue
+        named = users.get(name, [])
+        if len(named) == 1 and named[0].parent.name == 'props':
+            prop = named[0]
+            shutil.copyfile(folder / 'src' / 'texture.png', prop / 'src' / f'{name}.png')
+            rename_images(prop / 'src' / 'model.glb', {f'../../textures/{name}/{name}.ktx2': f'{name}.ktx2'})
+            settings = prop / 'asset.toml'
+            text = settings.read_text()
+            shared = [t for t in json.loads(re.search(r'^textures = (\[.*\])$', text, re.M).group(1)) if t != name]
+            own = sorted({*json.loads((re.search(r'^own_textures = (\[.*\])$', text, re.M) or [None, '[]'])[1]), name})
+            text = re.sub(r'^(own_)?textures = .*\n', '', text, flags=re.M)
+            lines = text.rstrip('\n').split('\n')
+            lines[3:3] = ([f'textures = {json.dumps(shared)}'] if shared else []) + [f'own_textures = {json.dumps(own)}']
+            settings.write_text('\n'.join(lines) + '\n')
+        elif len(named) > 1:
+            continue
+        shutil.rmtree(folder)
 
 
 def jobs(region, scratch):
@@ -179,7 +199,11 @@ def convert(region, scratch):
 def write(region, origins):
     for name, model in region.models.items():
         folder = HAKUBA / 'assets' / 'props' / name
-        about = model.about or f'A piece of {region.about}, ported with its colours painted per vertex.'
+        # A fresh conversion names shared textures only; `settle_textures` brings back those only this prop shows.
+        for image in (folder / 'src').glob('*.png'):
+            image.unlink()
+        drawn = 'its textures' if model.textures else 'its colours painted per vertex'
+        about = model.about or f'A piece of {region.about}, ported with {drawn}.'
         lines = [f'# {about}', 'kind = "prop"', 'source = "src/model.glb"']
         if model.textures:
             lines.append(f'textures = {json.dumps(sorted(model.textures))}')
@@ -233,7 +257,7 @@ def main():
         write(region, origins)
         count = sum(len(i) for _, _, i in region.groups)
         print(f'{region.name}: {len(region.models)} props, {count} placements')
-    prune_textures(args.region)
+    settle_textures(args.region)
 
 
 if __name__ == '__main__':

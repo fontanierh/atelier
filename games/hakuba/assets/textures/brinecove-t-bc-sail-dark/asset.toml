@@ -1,5 +1,0 @@
-# The t bc sail dark texture that the brinecove props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "96e61c23c6870c10489376c6d70e8eb88b898627ce92f3f8bf3bfa31ca43d739"

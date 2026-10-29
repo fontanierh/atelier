@@ -1,5 +1,0 @@
-# Crater Park's restyled shrine stone lantern texture.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "86281c94285545b81fc75c1d9f4438c3f37ff99b929f64dad0d60995d4310d8f"

@@ -1,5 +1,0 @@
-# The hd p street bench texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "72993f0441e4a3806d0ef8e38402bd76acfa53a0ea0a6b3015820608e06ea0ab"

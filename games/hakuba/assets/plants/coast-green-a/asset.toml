@@ -2,7 +2,7 @@
 kind = "plant"
 source = "src/model.glb"
 textures = ["garden-leaves"]
-inputs_sha256 = "f980ecea15376115da1ea22559241db47d93482a3cd47933f1bdd3a73095f98d"
+inputs_sha256 = "07fab017a71c617f291aa59cbab8b81840d6ffac1664bb6b6b6069ba22249acd"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

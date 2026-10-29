@@ -36,7 +36,7 @@ listed once in Hakuba's `tools/export/src/world/regions.rs`.
 | `painted.py` | writes the prop GLBs Hakuba's exporter accepts, without Blender: a `full` node coloured per vertex in linear RGB, or drawn with textured materials, and an optional `collision` node |
 
 Props look as Yorimichi draws them: each image a slot's rule names becomes a Hakuba texture asset
-(`<region>-<image>`, BC7-compressed), drawn on the mesh's own UVs, times a colour baked per vertex in linear RGB, the
+(`<region>-<image>`, BC7-compressed; one only a single prop shows moves into that prop as its own texture), drawn on the mesh's own UVs, times a colour baked per vertex in linear RGB, the
 product of the source's vertex colour, a flat colour and a gain, as that region's Yorimichi material combined them.
 A prop with no textured slot is painted per vertex alone. Slots with no equivalent (water, cut-out leaves, additive
 light) are dropped. Plants (trees, bushes, grass) are ported by `plants.py` as Hakuba's plant kind, which sways them in the

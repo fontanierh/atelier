@@ -1,5 +1,0 @@
-# The hd p sake barrels texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "292b18ecc4ebafd4ad3fcbe83382b7b445c98dcbe3ddc0f292731fb6c6c7b87b"

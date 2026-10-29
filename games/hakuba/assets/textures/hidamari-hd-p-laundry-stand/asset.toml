@@ -1,5 +1,0 @@
-# The hd p laundry stand texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "6d2d1a67fca5f57eb16e08d63a593396ffc9ffac376105ee470f330fcd0e07fa"

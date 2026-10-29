@@ -1,5 +1,0 @@
-# The hd p curve mirror texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "e3a23afe938433ec97d8cb91d3ab620890c32bcfce2711b836df99230b1f4397"

@@ -1,5 +1,0 @@
-# The hd p potted plants texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "55795b43786b1ae7c2107e67f62b52d74729c548f359cba9f2803c62cd1a2bb3"

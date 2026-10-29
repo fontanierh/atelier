@@ -1,5 +1,0 @@
-# The hd p bicycle texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "e0c702ce1e860e5c29e740a7b8fd562c0de7fd0babbeedcb4f78091b47b0227a"

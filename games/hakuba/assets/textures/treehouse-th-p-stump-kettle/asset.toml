@@ -1,5 +1,0 @@
-# The th p stump kettle texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "0fd6638c31dd2873b42874cd8e6b2bf185ab664edb8b53eef80ea1cfc074a209"

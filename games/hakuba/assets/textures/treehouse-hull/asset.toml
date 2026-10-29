@@ -1,5 +1,0 @@
-# The hull texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "005ee7608f9694552ffd333456b424f8e66069511d09afd034cdd80ee42ef7b2"

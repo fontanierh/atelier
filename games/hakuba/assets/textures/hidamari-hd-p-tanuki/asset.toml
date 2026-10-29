@@ -1,5 +1,0 @@
-# The hd p tanuki texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "0dc66c23820ae68e3daa774b46eb4925aa1cf6a0ad4141cc9b78316a2f7351b2"

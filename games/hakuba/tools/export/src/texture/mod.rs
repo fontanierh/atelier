@@ -73,6 +73,19 @@ fn default_cutoff() -> f32 {
     0.5
 }
 
+/// Exports the opaque or plainly averaged image `source` (relative to `folder`) as BC7: a texture only one asset
+/// shows, which that asset exports beside its own file.
+pub fn export_bc7(folder: &Path, source: &str, output: &Path) -> Result<()> {
+    let settings = Settings {
+        source: source.into(),
+        alpha_cutoff: default_cutoff(),
+        mip_colour: MipColour::Average,
+        alpha_shadow: false,
+        compression: Compression::Bc7,
+    };
+    export(folder, &settings, output)
+}
+
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if !(settings.alpha_cutoff.is_finite() && 0.0 < settings.alpha_cutoff && settings.alpha_cutoff <= 1.0) {
         bail!("alpha cutoff must be finite and greater than 0 and at most 1");

@@ -1,5 +1,0 @@
-# The stone texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "6858c6709b033c9b23ac2755183b58828d4840f41568bdcd36e4baafb99879be"

@@ -1,5 +1,0 @@
-# The t bc hero harbor capstan 1 texture that the brinecove props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "f588994f2a89dbfea9b157ec9eac5f850a7ec9e38e0510d4b17c4dae28cfe469"

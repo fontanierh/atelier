@@ -1,5 +1,0 @@
-# The th p basket texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "66bc046855113885286481d213ba49030e830f2cc1d2516f81942908461b4a0e"

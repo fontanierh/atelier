@@ -1,5 +1,0 @@
-# Crater Park's restyled prado sun texture.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "0f0e206c8573ac457ab820da8f2964a90cf9be1ba7cbb307cda4f748a86a23b6"

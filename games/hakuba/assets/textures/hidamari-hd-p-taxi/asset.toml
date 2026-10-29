@@ -1,5 +1,0 @@
-# The hd p taxi texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "605b10bb4af0d4f229a36e12f0ebaf73a483d8e799ede08ec6fb067230d4bdf8"

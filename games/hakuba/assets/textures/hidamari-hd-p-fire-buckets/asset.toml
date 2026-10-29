@@ -1,5 +1,0 @@
-# The hd p fire buckets texture that the hidamari props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "0376b4832eee0f75cceea5615d6f090a0b815b3a8cfcefa525ae97fab4994f66"

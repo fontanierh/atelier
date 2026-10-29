@@ -1,5 +1,0 @@
-# The th p telescope texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "446d7da345c48ec0b24e026d3a76eac54770b8ab40b16dcc8ed249fdaa3c2bdd"

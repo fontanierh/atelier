@@ -1,5 +1,0 @@
-# The th p bookshelf texture that the treehouse props draw.
-kind = "texture"
-source = "src/texture.png"
-compression = "bc7"
-inputs_sha256 = "47f45fba34263fb8c68a94544473fc980619e80347f9ff8f4522ed2647878272"

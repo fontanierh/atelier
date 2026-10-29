@@ -128,6 +128,10 @@ fn code(folder: &str) -> Result<Vec<PathBuf>> {
     let root = Path::new(EXPORTER);
     let mut code: Vec<PathBuf> = SHARED_CODE.iter().map(|file| root.join(file)).collect();
     code.extend(files(&root.join(folder))?.into_iter().filter(|file| file.extension().is_some_and(|e| e == "rs")));
+    if folder == "src/model" {
+        // A prop exports the textures only it shows with the texture kind's code.
+        code.extend(files(&root.join("src/texture"))?.into_iter().filter(|p| p.extension().is_some_and(|e| e == "rs")));
+    }
     if folder == "src/world" {
         // Only world metadata uses this shared schema; its edits must invalidate the world export.
         code.push(root.join("../../schemas/water/Cargo.toml"));
