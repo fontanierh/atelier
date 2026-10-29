@@ -1,0 +1,5 @@
+# A piece of the island's far hills, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "f4d2fa1f3901053e2c8b9b1eea0183c2e492a37c971665931b4a29e68d3af248"

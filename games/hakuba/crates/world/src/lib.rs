@@ -13,6 +13,7 @@ mod pixels;
 mod push;
 mod scenery;
 mod settings;
+mod start;
 mod tiles;
 mod vertex_paint;
 mod water;
@@ -140,8 +141,9 @@ fn read_index(
     for (name, node) in &gltf.named_nodes {
         let node = nodes.get(node).expect("a loaded glTF's nodes are loaded");
         if &**name == "spawn" {
-            commands.insert_resource(Spawn(node.transform));
-            **camera = node.transform.with_translation(node.transform.translation + Vec3::Y * EYE_HEIGHT_M);
+            let spawn = start::chosen().unwrap_or(node.transform);
+            commands.insert_resource(Spawn(spawn));
+            **camera = spawn.with_translation(spawn.translation + Vec3::Y * EYE_HEIGHT_M);
         } else if name.starts_with("actor ") {
             if let Some(actor) =
                 node.extras.as_ref().and_then(|extras| serde_json::from_str::<actors::Actor>(&extras.value).ok())

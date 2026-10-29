@@ -15,4 +15,4 @@ takes = [
     "src/grass-single.wav",
 ]
 quality = 0.3
-inputs_sha256 = "5675c5333ce2275593a06a63245f387c6c4f263956d3c72ae988d899ad5bbc75"
+inputs_sha256 = "63a0742ff01f7c5ddff614760a9a32ba9b986e51d014274dac0812f078c7c469"

@@ -2,7 +2,7 @@
 //! with the anchors other things fasten to.
 
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use glam::{DVec2, DVec3};
@@ -130,6 +130,13 @@ fn prism(mesh: &mut Mesh, profile: &[[f64; 2]], y: [f64; 2]) -> Result<()> {
     Ok(())
 }
 
+impl Settings {
+    /// Every prop also exports its middle version, which middle tiles show.
+    pub fn outputs(&self, output: &Path) -> Vec<PathBuf> {
+        vec![output.to_path_buf(), super::source::middle_path(output)]
+    }
+}
+
 pub fn export(settings: &Settings, output: &Path) -> Result<()> {
     if let Some(source) = &settings.source {
         if !settings.materials.is_empty()
@@ -162,7 +169,10 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
         full.push((mesh, Material { name, texture: None, colour, cut_out: false, two_sided: false }));
     }
     let anchors: Vec<DVec3> = settings.anchors.iter().copied().map(DVec3::from_array).collect();
-    write(full, None, true, settings.solid, &anchors, output)
+    write(full, None, true, settings.solid, &anchors, output)?;
+    // A made prop is a few boxes and tubes already, so its middle version is its export.
+    std::fs::copy(output, super::source::middle_path(output)).context("writing the middle version")?;
+    Ok(())
 }
 
 #[cfg(test)]

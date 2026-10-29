@@ -1,0 +1,5 @@
+{"groups":[
+{"model":"props/camp-fire-pit","afar":false,"instances":[[-54.0112,-94.0237,-0.0243,92.4896,1.0]],"on_ground":true},
+{"model":"props/camp-jinmaku","afar":false,"instances":[[-53.8366,-100.1988,0.01,182.4896,1.0]],"on_ground":true},
+{"model":"props/camp-weapon-rack","afar":false,"instances":[[-58.2302,-96.4739,0.01,57.4896,1.0]],"on_ground":true},
+{"model":"props/camp-bales","afar":false,"instances":[[-49.4613,-96.3783,-0.0156,122.4896,1.0]],"on_ground":true}]}

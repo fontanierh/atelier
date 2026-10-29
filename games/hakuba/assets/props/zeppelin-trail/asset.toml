@@ -1,0 +1,5 @@
+# A piece of the air stations, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "dd6185f66efede74198c88483a2a043a9dfe9970a1405e862d948359e960d04a"

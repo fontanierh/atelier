@@ -14,7 +14,6 @@
 
 mod glb;
 mod model;
-mod random;
 mod rig;
 mod shapes;
 mod sound;
@@ -90,6 +89,7 @@ impl Asset {
         match self {
             Asset::Texture(settings) => settings.outputs(output),
             Asset::Sound(_) => vec![output.to_path_buf(), sound::takes_file(output)],
+            Asset::Prop(settings) => settings.outputs(output),
             _ => vec![output.to_path_buf()],
         }
     }
@@ -118,16 +118,9 @@ const CHECKSUM: &str = "inputs_sha256";
 const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
 
 /// The exporter's files that every kind is built from, relative to the exporter: the command, the glTF reader and
-/// writer, the shapes meshes are built from, the seeded random numbers, and the crate and Rust versions.
-const SHARED_CODE: [&str; 7] = [
-    "src/main.rs",
-    "src/glb.rs",
-    "src/shapes.rs",
-    "src/random.rs",
-    "Cargo.toml",
-    "../../Cargo.lock",
-    "../../rust-toolchain.toml",
-];
+/// writer, the shapes meshes are built from, and the crate and Rust versions.
+const SHARED_CODE: [&str; 6] =
+    ["src/main.rs", "src/glb.rs", "src/shapes.rs", "Cargo.toml", "../../Cargo.lock", "../../rust-toolchain.toml"];
 
 /// The exporter's files that a kind is built from: [`SHARED_CODE`] and the `.rs` files in the kind's `folder`. Docs
 /// and other kinds' code are left out, so editing them marks no export of this kind out of date.
@@ -366,7 +359,9 @@ fn export_in_order(mut pending: Vec<Folder>) -> Result<()> {
             let names: Vec<String> = pending.iter().map(|folder| folder.path.display().to_string()).collect();
             bail!("these assets read each other's exports: {}", names.join(", "));
         };
-        pending.remove(next).export()?;
+        let folder = pending.remove(next);
+        let path = folder.path.clone();
+        folder.export().with_context(|| format!("exporting {}", path.display()))?;
     }
     Ok(())
 }

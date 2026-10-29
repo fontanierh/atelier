@@ -2,7 +2,7 @@
 kind = "plant"
 source = "src/model.glb"
 textures = ["coast-ochre-leaves"]
-inputs_sha256 = "7f9a8210e2989b706afb91005e5f468c2b9c31843a3c2029bd871be89745c07b"
+inputs_sha256 = "84fc8e5cfc5cc8aef27ac06882e5e5cecfda83df370506f0e4f6bc502472f4a2"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

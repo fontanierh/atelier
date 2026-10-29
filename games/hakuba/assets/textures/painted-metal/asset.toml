@@ -1,7 +1,0 @@
-# Weathered painted sheet metal: light grey paint with soft scratches, faint rust spots and streaks running down. Its
-# opposite edges match, so it repeats along and across a rail. The image was painted by gpt-image-2.5-sunburst at high
-# quality as blue painted metal, then in linear light its colours were scaled so the paint is neutral, their
-# saturation halved, and its brightness scaled to average 0.75.
-kind = "texture"
-source = "src/painted-metal.jpg"
-inputs_sha256 = "2085fba6458b92990c6ae407219dcaff0a2f3a2ba3953e1cddc0a65b4a29326d"

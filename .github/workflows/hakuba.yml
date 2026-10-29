@@ -33,7 +33,17 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      # Hakuba's .glb and .bin files are in Git LFS, and the check reads their bytes.
+      # Hakuba's .glb and .bin files are in Git LFS, and the check reads their bytes. The LFS objects are cached, keyed
+      # by the list of them, so a run downloads only the objects that are new since a cached one.
+      - name: List Hakuba's LFS objects
+        run: git lfs ls-files -l --include='games/hakuba/assets/**' | cut -d' ' -f1 | sort > "$GITHUB_WORKSPACE/hakuba-lfs-objects"
+      - name: Restore Hakuba's LFS objects
+        continue-on-error: true
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
+        with:
+          path: .git/lfs/objects
+          key: hakuba-lfs-${{ hashFiles('hakuba-lfs-objects') }}
+          restore-keys: hakuba-lfs-
       - name: Fetch Hakuba's assets
         run: git lfs pull --include='games/hakuba/assets/**'
       - name: Restore Rust dependencies

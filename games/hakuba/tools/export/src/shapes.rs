@@ -3,7 +3,7 @@
 
 use std::f64::consts::TAU;
 
-use glam::{DMat3, DVec2, DVec3};
+use glam::{DVec2, DVec3};
 
 use crate::glb::{Mesh, y_up};
 
@@ -106,26 +106,6 @@ fn cycle(axis: usize, shift: usize) -> [f64; 3] {
     let mut v = [0.0; 3];
     v[(axis + shift) % 3] = 1.0;
     v
-}
-
-/// A square card `size` wide centred on `centre`, turned by `turn` from standing in the x-z plane. Each corner takes
-/// its normal from `normal`, its texture position from the square `cell` (its lower-left corner and side in the
-/// texture), and its colour from `shade`.
-pub fn card(
-    mesh: &mut Mesh,
-    centre: DVec3,
-    size: f64,
-    turn: DMat3,
-    normal: impl Fn(DVec3) -> DVec3,
-    cell: (DVec2, f64),
-    shade: f64,
-) {
-    let (low, side) = cell;
-    let corners = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)].map(|(s, t)| {
-        let at = centre + turn * DVec3::new((s - 0.5) * size, 0.0, (t - 0.5) * size);
-        vertex(mesh, at, normal(at), low + DVec2::new(s, t) * side, Some([shade, shade, shade, 1.0]))
-    });
-    mesh.indices.extend([corners[0], corners[1], corners[2], corners[0], corners[2], corners[3]]);
 }
 
 #[cfg(test)]

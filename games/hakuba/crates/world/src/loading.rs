@@ -1,5 +1,6 @@
-//! A splash over the world until it has loaded, so the player steps into a whole world rather than one filling in:
-//! the index, every tile in sight and every model standing in them, every texture the materials use, and every shader
+//! A splash over the world until it has loaded, so the player steps into a whole world around them, not one filling in:
+//! the index, every tile in full detail around the player and every model standing in them (the middle tiles beyond
+//! stream in afterwards), every texture the materials use, and every shader
 //! the renderer needs to draw them, whichever way the camera turns. What other crates add to the world holds the splash
 //! too while it is [`Unready`], such as the player until their character stands on the ground. A file that fails to
 //! load is reported as an error and named on the splash. What the world can show without, such as a texture, a tile, a
@@ -10,6 +11,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use bevy::asset::{LoadState, RecursiveDependencyLoadState, UntypedAssetId, UntypedAssetLoadFailedEvent};
+use bevy::camera::primitives::{Aabb, MeshAabb};
 use bevy::camera::visibility::NoFrustumCulling;
 use bevy::prelude::*;
 use bevy::render::render_resource::PipelineCache;
@@ -140,15 +142,24 @@ fn spawn(mut commands: Commands, time: Res<Time>) {
     ));
 }
 
-/// While the splash shows, draws every mesh spawned whichever way the camera looks.
+/// While the splash shows, draws every mesh spawned whichever way the camera looks. Bevy bounds only culled meshes,
+/// and rays find solids by their bounds, so an unculled mesh is bounded here: the player arriving on scenery, such as
+/// a ported town's street, would otherwise find no ground and hold the splash forever.
 fn uncull(
     add: On<Add<Mesh3d>>,
     mut commands: Commands,
     splash: Query<(), With<Splash>>,
-    culled: Query<Has<NoFrustumCulling>>,
+    culled: Query<(&Mesh3d, Has<NoFrustumCulling>, Has<Aabb>)>,
+    meshes: Res<Assets<Mesh>>,
 ) {
-    if !splash.is_empty() && culled.get(add.entity).is_ok_and(|already| !already) {
-        commands.entity(add.entity).insert((NoFrustumCulling, Unculled));
+    let Ok((mesh, already, bounded)) = culled.get(add.entity) else { return };
+    if splash.is_empty() || already {
+        return;
+    }
+    let mut entity = commands.entity(add.entity);
+    entity.insert((NoFrustumCulling, Unculled));
+    if !bounded && let Some(bounds) = meshes.get(&mesh.0).and_then(MeshAabb::get_aabb) {
+        entity.insert(bounds);
     }
 }
 
@@ -190,6 +201,23 @@ fn lift(
         + waiting.iter().len()
         + unready.iter().len();
     let world = all > 0 && done == all;
+    // A long load names what it still waits for, every ten seconds.
+    let waited = time.elapsed_secs() - splash.since;
+    if !world && waited > 30.0 && (waited / 10.0).floor() != ((waited - time.delta_secs()) / 10.0).floor() {
+        warn!(
+            "the world still waits after {waited:.0} s: {} of {} tiles, {} of {} scenes, {} of {} placed models, {} tiles \
+             spawning, {} models waiting, {} unready",
+            tiles.iter().filter(|tile| !tile.shown()).count(),
+            tiles.iter().len(),
+            roots.iter().filter(|root| !loaded(root.0.id().untyped())).count(),
+            roots.iter().len(),
+            placed.iter().filter(|placed| !loaded(placed.0.id().untyped())).count(),
+            placed.iter().len(),
+            spawning.iter().len(),
+            waiting.iter().len(),
+            unready.iter().len(),
+        );
+    }
     let textured = world && materials.iter().all(|(_, material)| textured(material, &images, &assets));
     let made = pipelines.all.load(Ordering::Relaxed);
     let settling = textured && pipelines.waiting.load(Ordering::Relaxed) == 0 && made == splash.pipelines;

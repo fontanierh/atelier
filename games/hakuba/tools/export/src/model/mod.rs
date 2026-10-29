@@ -3,7 +3,9 @@
 //! on the ground. Each model reaches below its foot, so it stands on any ground within that depth with no gap.
 //!
 //! The export holds a node `full`, the model in detail, and may hold a node `middle`, a lighter model for seeing
-//! from afar. Each is one mesh, one part per material. A model that casts no shadow, such as grass, says so in each
+//! from afar. A prop made from a source model writes its middle version as a file of its own, `<folder name>.middle.glb`,
+//! its parts simplified to a triangle budget for its size, so a middle tile loads none of its detail. Each is one mesh,
+//! one part per material. A model that casts no shadow, such as grass, says so in each
 //! node's extras: `{ "casts_shadows": false }`. A solid prop says `{ "solid": true }` in its full node's extras.
 //! A prop may also hold empty nodes `anchor 0`, `anchor 1` and so on,
 //! the points other things fasten to, such as cables.

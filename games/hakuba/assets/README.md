@@ -21,19 +21,12 @@ assets/
     nox/                    Nox, the playable character, with every animation fitted to him
   equipment/
     glider/                 the paraglider, held in both hands above the head
-  plants/                   trees, bushes and grass, each built from its settings alone
-    maple-a/, maple-b/      maples
-    broad-a/, broad-b/      broadleaf trees
-    ginkgo-a/, ginkgo-b/    ginkgos
-    pine-a/, pine-b/        pines
-    cedar-a/, cedar-b/      cedars
-    green-bush-a/, -b/      green bushes
-    ochre-bush-a/, -b/      bushes of autumn leaves
-    flower-bush-a/, -b/     flowering bushes
-    grass-a/, grass-b/      tufts of grass
-  props/                    made objects, each built from its settings alone
-    utility-pole/           a concrete pole with insulators that cables fasten to
-    street-lamp/            a lamp's arm and head, standing on a utility pole
+  plants/                   trees, bushes and grass, each imported with its leaves' wind weights
+    coast-*/, garden-*/     the coast's and gardens' trees, bushes, flowers, grass and litter
+    woodland-canopy-*/      the northern woodland's tall canopy trees
+  props/                    made objects: generated from their settings, such as `utility-pole/`, or imported
+                            with their colours painted per vertex, named after their region (`hidamari-*/`,
+                            `brinecove-*/`, `belmonte-*/`, `treehouse-*/`, ...)
   sounds/                   every sound the game plays (sounds/README.md)
     footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
     dash/                   a burst of cloth and air
@@ -43,12 +36,10 @@ assets/
     ground/                 the ground's grass and earth
     road/                   a road's asphalt and lines
     bark/                   tree bark
-    painted-metal/          weathered white paint on sheet metal, for the guardrails
-    maple-leaves/ ...       the leaves of each kind of plant: maple, ginkgo, ochre and small leaves, pine and
-                            cedar needles, and flowers
+    coast-*/, garden-*/     the imported plants' leaves, needles, flowers and bark
   world/                    the world, in tiles
     src/ground/             the ground's heights, in pages 512 m wide
-    src/regions/            one folder per region, with its layout
+    src/regions/            one folder per region, with its layout code or its `placements.json`
     tiles/                  each tile in full and middle detail, and `checksums.toml`: what each was made from
 ```
 

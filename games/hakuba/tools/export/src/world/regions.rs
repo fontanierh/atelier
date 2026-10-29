@@ -4,6 +4,7 @@ use super::actors::Actor;
 use super::authored::AuthoredSurface;
 use super::levelling::{Pad, Strip};
 use super::overlay::Overlay;
+use super::placed::Placed;
 use super::raised::Raised;
 use super::scenery::{Land, Placement, ScatterKind, Scenery};
 
@@ -60,7 +61,35 @@ pub trait Region {
 
     /// What it stands on `land` and runs along it.
     fn scenery(&self, land: &Land) -> Scenery;
+
+    /// Models standing past `land`, at their own explicit heights, which tiles past the ground hold alone.
+    fn beyond(&self, _land: &Land) -> Vec<Placement> {
+        Vec::new()
+    }
 }
 
-pub const REGIONS: [&dyn Region; 4] =
-    [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses, &momiji_village::MomijiVillage, &woodland::Woodland];
+/// A data-only region, [`Placed`] from its folder's `placements.json`.
+macro_rules! placed {
+    ($name:literal) => {
+        &Placed {
+            name: $name,
+            placements: include_str!(concat!("../../../../assets/world/src/regions/", $name, "/placements.json")),
+        }
+    };
+}
+
+pub const REGIONS: &[&dyn Region] = &[
+    &momiji_coast::MomijiCoast,
+    &roadside_houses::RoadsideHouses,
+    &momiji_village::MomijiVillage,
+    &woodland::Woodland,
+    placed!("treehouse"),
+    placed!("brinecove"),
+    placed!("belmonte"),
+    placed!("hidamari"),
+    placed!("southwest"),
+    placed!("shrines"),
+    placed!("zeppelin"),
+    placed!("sword-camp"),
+    placed!("far-hills"),
+];

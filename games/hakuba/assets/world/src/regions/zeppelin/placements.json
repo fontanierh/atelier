@@ -1,0 +1,6 @@
+{"groups":[
+{"model":"props/zeppelin-woodland","afar":true,"instances":[[-204.875,226.3475,69.905,0.0,1.0]]},
+{"model":"props/zeppelin-belmonte","afar":true,"instances":[[410.125,4626.092,217.0507,0.0,1.0]]},
+{"model":"props/zeppelin-trail","afar":true,"instances":[[539.8826,262.4846,34.4174,0.0,1.0]]},
+{"model":"props/zeppelin-city","afar":true,"instances":[[1273.125,317.3475,35.005,0,1]]},
+{"model":"props/zeppelin-mega-park","afar":true,"instances":[[-182.5319,1480.3475,127.5327,0,1]]}]}
