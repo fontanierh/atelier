@@ -68,6 +68,11 @@ its wind in the shadow, prepass and main passes.
 - **Keep presentation cameras out of 3D visibility work.** The window's 2D camera displays the world image and UI;
   it has no 3D render layers or directional-light shadow view. Rigid GPU-built meshes also use a direct binding path, while
   skinned, morphed, lightmapped and CPU-built meshes retain Bevy's original binding.
+- **Note where each mesh's buffers sit.** Bevy's draw looked up a mesh's vertex, index and metadata places in the mesh
+  allocator for every draw in the prepass, main and shadow passes: over the whole island, a quarter of the browser's
+  time a frame went to those lookups. Rigid meshes now note them once, when the mesh is prepared or its buffer moves,
+  and draw from the note: looking over the island from the crater rim, the browser went from about 48 frames a second
+  to 60.
 - **Keep ground rays to nearby solids.** Bevy's general mesh picker checked bounds on decorative meshes before the
   solid filter. Ground now queries solid meshes directly, bounds each ray by its reach and uses Bevy's triangle
   intersections. At the reference setting, walking rose from about 57 to 60 frames a second.
