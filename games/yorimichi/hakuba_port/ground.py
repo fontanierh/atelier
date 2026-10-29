@@ -6,9 +6,9 @@ Reads each terrain cell in `LAYERS` where its region's `placements.json` stands 
 overlap, and writes for each page `world/src/ground/<column>_<row>.bin`, 257 × 257 little-endian f32 heights 2 m apart, rows
 from the south, NaN where no cell covers a point (the sea), and `world/src/ground/colours/<column>_<row>.bin`, the
 cells' vertex colour at each point as sRGB bytes and an alpha of 255, or 0 where no cell gave one. The start's
-terrain inside `START` keeps the heights it has, and a page's ground above a new cell's surface keeps its own. The
-cells are then the ground's, so their props and placements are removed: run it once after `port.py` brings a
-region's terrain."""
+terrain inside `START`, and any ground a page already has, keep their heights: a region sampled later only fills the
+land the pages lack. The cells are then the ground's, so their props and placements are removed: run it once after
+`port.py` brings a region's terrain."""
 import json
 import math
 import shutil
@@ -149,11 +149,11 @@ def main():
             rgba[known, 3] = 255
             colour_path = WORLD / world['ground'] / 'colours' / f'{column}_{row}.bin'
             if path.is_file():
-                # What this run samples nothing for, or samples under the page's ground, keeps the heights and
-                # colours the page has: the highest surface wins, as if every layer were sampled in one run.
+                # Ground the page already has keeps its heights and colours: a later region's terrain only fills
+                # the land the pages lack. Belmonte's north country overlaps the island's hills south of its apron,
+                # where the island's ground, not the north country's ramp, meets the apron.
                 old = np.fromfile(path, '<f4').reshape(page_steps + 1, page_steps + 1).astype(np.float64)
-                with np.errstate(invalid='ignore'):
-                    keep = start | np.isnan(page) | (old >= page)
+                keep = start | np.isnan(page) | ~np.isnan(old)
                 page[keep] = old[keep]
                 old_rgba = (np.fromfile(colour_path, np.uint8).reshape(rgba.shape) if colour_path.is_file()
                             else np.zeros_like(rgba))
