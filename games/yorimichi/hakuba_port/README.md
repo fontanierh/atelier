@@ -26,7 +26,7 @@ listed once in Hakuba's `tools/export/src/world/regions.rs`.
 |--------------|-------------------------------------------------------------------------------------------------|
 | `port.py`    | the command: runs an adapter, converts its meshes, writes the props and the placements          |
 | `regions.py` | one adapter per region: which meshes to bring, how each material slot is coloured, where each stands |
-| `ground.py`  | samples the ported terrain cells (far hills, Brinecove, Hidamari, Belmonte, the southwest islet) into Hakuba's ground height and colour pages, then removes those cells' props and placements |
+| `ground.py`  | samples the ported terrain cells (far hills, Brinecove, Hidamari, Belmonte with its north country and apron, the southwest islet) into Hakuba's ground height and colour pages, then removes those cells' props and placements |
 | `plants.py`  | ports the island's trees, bushes, grass and ground cover into Hakuba's `forest` region, each standing on the ground; `--models` first imports the tree models and Brinecove's plants Hakuba lacks, with their textures, each plant's far version made by the step that imports it (Brinecove's palms' from their fronds and trunk), already in its fixed cell of one atlas; `--brinecove` imports only Brinecove's plants, without Blender |
 | `plant_convert.py` | the Blender script: writes one of a tree's FBX detail levels as a GLB, keeping each corner's wind weights; `plants.py` joins a tree's full, middle and far levels into one plant |
 | `contact.py` | checks every exported copy of a ported placement against the ground the tiles draw: buried or adrift models fail, floating and sunk ones are counted |
