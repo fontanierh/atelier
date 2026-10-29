@@ -6,7 +6,7 @@ kind = "character"
 source = "src/model.glb"
 height_m = 1.78        # the source stands about 1.08 m tall
 texture_size = 2048    # the source's 4K textures, halved for the browser download
-inputs_sha256 = "a3bc2a4483b53426db8d595191076bdea3b773f8c51e1fc9d576134ac521382c"
+inputs_sha256 = "d62513f9c38c9b47eb8f16b059b53afc0c4258d1031eb21c2f2aeabcf2592fcc"
 
 # Hips back, a slight forward lean with the upper back held up, narrower feet, knees out and arms back.
 [animations.idle]

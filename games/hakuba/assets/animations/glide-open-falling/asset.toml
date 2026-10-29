@@ -4,4 +4,4 @@ kind = "animation"
 source = "src/source.glb"
 clip = "Equip_Float_On_Fall"
 frames = [4.0, 60.0]
-inputs_sha256 = "ee6db07b1fdbb260a12d0ba24ab621ae73c6832a2fbe1f52d6c9a64d65b2d746"
+inputs_sha256 = "d1e2060d237d783235003be02ef3a19d5cc1c24670c16efc0d8cc50ac3c50181"

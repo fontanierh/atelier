@@ -20,7 +20,6 @@ mod sound;
 mod texture;
 mod world;
 
-use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -162,18 +161,6 @@ fn uri_of_asset(folder: &str, extension: &str) -> Result<String> {
     }
     let name = folder.rsplit('/').next().unwrap_or(folder);
     Ok(format!("../../{folder}/{name}.{extension}"))
-}
-
-/// Whether the model asset `folder` exports a middle version beside its export, `<name>.middle.glb`.
-fn has_middle(folder: &str) -> Result<bool> {
-    static KNOWN: std::sync::Mutex<BTreeMap<String, bool>> = std::sync::Mutex::new(BTreeMap::new());
-    if let Some(&known) = KNOWN.lock().unwrap().get(folder) {
-        return Ok(known);
-    }
-    let has =
-        matches!(Folder::read(&Path::new(ASSETS).join(folder))?.asset, Asset::Prop(settings) if settings.has_middle());
-    KNOWN.lock().unwrap().insert(folder.to_string(), has);
-    Ok(has)
 }
 
 /// Where an export two folders below `assets/` finds the texture `name`. An export names its textures and never holds

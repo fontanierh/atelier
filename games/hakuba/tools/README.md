@@ -210,9 +210,10 @@ Source extras on `full` are preserved except `solid`, which is set from the prop
 profile requires RGBA vertex colours in [0, 1] with zero alpha
 (the motion weight) and an opaque material; this alpha is not opacity.
 
-A source prop also exports `<name>.middle.glb`, the version middle tiles show: one root `middle`, the full mesh's
-parts simplified regardless of topology (meshoptimizer's sloppy simplifier) to 16 triangles a metre of the model's
-size, between 48 and 1500 in all, with the full node's extras but never solid.
+Every prop also exports `<name>.middle.glb`, the version middle tiles show. A source prop's has one root `middle`, the
+full mesh's parts simplified regardless of topology (meshoptimizer's sloppy simplifier) to 16 triangles a metre of the
+model's size, between 48 and 1500 in all, with the full node's extras but never solid. A made prop is a few boxes and
+tubes already, so its middle version is a copy of its export.
 
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, or the

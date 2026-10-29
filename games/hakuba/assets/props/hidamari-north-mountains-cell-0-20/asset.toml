@@ -2,4 +2,4 @@
 kind = "prop"
 source = "src/model.glb"
 solid = true
-inputs_sha256 = "5c97b865a8b1267adf000a35909cb3892a336bb34e440e7f870f70304521e1d2"
+inputs_sha256 = "604bcca8201d4278cc1a53ac17c35ef987b23798b9306bc7dc3d421f7ef6f9c9"
