@@ -13,13 +13,13 @@ heights. Any other plant off Hakuba's ground, on a cliff, or of a model Hakuba h
 counted, as is any tree of the island's world or city closer than `TREE_SPACING_M` to a taller one.
 
 `--models` first imports the tree models Hakuba lacks (`NEW`) as plants, with their full, middle and far detail levels
-(`plant_convert.py`, one guarded Blender run each), and the leaf and bark textures they need (`TEXTURES`). It adds a
-far version to Hakuba's own trees (`FAR`) and imports Brinecove's own plants from their GLBs, each material a texture
-of its colour, its palms with a far version made from their fronds and trunk (`FRONDS`), then writes the atlas texture
-every far version shows (`FAR_TEXTURE`). Each plant's source is written once, by the step importing it from its own
-source, its far version already on the atlas, whose cells are fixed (`FAR_TEXTURES`), so running it again writes the
-same files. `--brinecove` imports only Brinecove's plants and writes the atlas, without Blender.
-"""
+(`plant_convert.py`, one guarded Blender run each), and the leaf and bark textures they need (`TEXTURES`). Hakuba's own
+trees keep their committed sources, far versions included, and are never rewritten. It imports Brinecove's own plants
+from their GLBs, each material a texture of its colour, its palms with a far version made from their fronds and trunk
+(`FRONDS`), then writes the atlas texture every far version shows (`FAR_TEXTURE`). Each plant's source is written once,
+by the step importing it from its own source, its far version already on the atlas, whose cells are fixed
+(`FAR_TEXTURES`), so running it again writes the same files. `--brinecove` imports only Brinecove's plants and writes
+the atlas, without Blender."""
 import argparse
 import collections
 import functools
@@ -71,9 +71,6 @@ NEW = {
     'Tree_Tuscan_Olive': ('forest/mesh-files', "an olive tree of Belmonte's hills", 'LOD3'),
     'Tree_Tuscan_Pine': ('forest/mesh-files', "a stone pine of Belmonte's hills", 'LOD3'),
 }
-# Hakuba's own trees, made from the same sources, and the detail level each adds as its far version.
-FAR = {name: 'LOD4' for name in ('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Pine_A', 'Tree_Pine_B', 'Tree_Cedar_A',
-                                 'Tree_Cedar_B', 'Tree_Broad_A', 'Tree_Broad_B', 'Tree_Ginkgo')}
 # The trees whose far version shows their renders, and the texture of those renders.
 IMPOSTORS = ('Forest_Ginkgo', 'Forest_Maple', 'Forest_Oak', 'Forest_Pine', 'Tuscan_Cypress', 'Tuscan_Oak',
              'Tuscan_Olive', 'Tuscan_Pine')
@@ -208,8 +205,7 @@ def sha256(path):
 
 
 def import_models(build):
-    """Writes each texture of `TEXTURES` and each plant of `NEW` as a Hakuba asset, and adds a far version to each of
-    Hakuba's own trees in `FAR`."""
+    """Writes each texture of `TEXTURES` and each plant of `NEW` as a Hakuba asset, from its own source."""
     for name, source in TEXTURES.items():
         source = build / source
         folder = HAKUBA / 'textures' / name / 'src'
@@ -238,19 +234,6 @@ def import_models(build):
                  f'textures = []\n\n{PROFILE}').splitlines()
         write_plant(out, nodes, manifest, asset)
         print(f'{MODELS[model]}: converted')
-    for model, far in FAR.items():
-        out = HAKUBA / 'plants' / MODELS[model] / 'src'
-        nodes = read_plant_glb(out / 'model.glb')
-        nodes['far'] = leaves(converted(build / 'foliage' / model / f'{model}_{far}.fbx'))
-        manifest = [line for line in (out / 'manifest.toml').read_text().splitlines()
-                    if not line.startswith(('sha256', 'authoring_far', 'far_conversion'))]
-        manifest.insert(2, 'sha256 = ""')
-        manifest += [f'authoring_far_fbx_sha256 = "{sha256(build / "foliage" / model / f"{model}_{far}.fbx")}"',
-                     f'far_conversion = "Blender FBX import of {far}, retaining per-corner positions, normals, UVs and '
-                     'RGBA"']
-        write_plant(out, nodes, manifest, (out.parent / 'asset.toml').read_text().splitlines())
-        print(f'{MODELS[model]}: far {far}')
-
 
 def trunk(bark):
     """A trunk, `bark`, as `TRUNK_SEGMENTS` pairs of crossed cards from its foot to its top along its middle, each
