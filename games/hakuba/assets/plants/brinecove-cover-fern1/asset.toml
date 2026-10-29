@@ -1,0 +1,16 @@
+# Source foliage: ground cover of Brinecove's hills.
+kind = "plant"
+surface_height_m = 0.0
+source = "src/model.glb"
+textures = ["brinecove-cover-fern", "brinecove-cover-fern-light"]
+inputs_sha256 = "9ae5214db6ef6e265213f93d98fa1590a2bf425e039ac5ba8a6174bae38579e3"
+
+[source_profile]
+direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]
+slow = [0.28, 0.11, 0.16, 0.6]
+fast = [0.7, 0.2, 0.3, 0.5]
+global_slow = [0.37, 0.04, 0.45, 1.0]
+global_fast = [1.1, 0.07, 0.3, 0.15]
+global_tail = [2.9, 0.15, 0.0, 0.0]
+push_haze = [1.7, 0.7, 30.0, 9000.0]
+haze_colour = [0.0932, 0.2301, 0.5328]

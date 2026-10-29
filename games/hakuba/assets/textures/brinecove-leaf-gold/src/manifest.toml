@@ -1,0 +1,4 @@
+# Brinecove's leaf gold material, its colour times its texture.
+path = "texture.png"
+sha256 = "acb138b9b2dbd3be5799a577b9d6c5b3f609ae43a6268542078fff3b7da6ddd4"
+authoring_texture_sha256 = "e21f216d399509ce6d067fe588fce34e6d2f3eefb28db1dbd6176aa819f9fd6b"

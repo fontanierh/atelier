@@ -1,0 +1,4 @@
+# Brinecove's leaf light material, its colour times its texture.
+path = "texture.png"
+sha256 = "1c89e6519eb618f15bc5ab63235090bf4b173622960c0a5d2f33edd6a9036463"
+authoring_texture_sha256 = "5158f54bca4425a30dc8fb2f64f6d7a2efc372ed317a1f60b9872aa7cf2ce9b9"

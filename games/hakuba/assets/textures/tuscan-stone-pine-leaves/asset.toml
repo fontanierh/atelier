@@ -1,0 +1,7 @@
+# Source texture for the island forest's trees.
+kind = "texture"
+alpha_shadow = true
+source = "src/texture.png"
+alpha_cutoff = 0.4
+mip_colour = "average"
+inputs_sha256 = "6a4895fb0c643e5466f85ce28507ae8c7107392155179d2df02a8b95f164e138"

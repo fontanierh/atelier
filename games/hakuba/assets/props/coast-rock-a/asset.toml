@@ -2,4 +2,4 @@
 kind = "prop"
 source = "src/rock.glb"
 solid = false
-inputs_sha256 = "984801e2c16b0d3e75167bc99ac61eb0df0d0f052ecf037db8b8dce6373a03da"
+inputs_sha256 = "14ef28fb7082c594dfecbc8a317aa45842197c187704ee2b5980e82a4c05930d"

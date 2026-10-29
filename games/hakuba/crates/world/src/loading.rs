@@ -19,7 +19,7 @@ use bevy::render::{Render, RenderApp, RenderSystems};
 use bevy::world_serialization::WorldAssetRoot;
 use hakuba_screens::{Screen, text};
 
-use crate::scenery::{Placed, Placing, Waiting};
+use crate::scenery::{Placed, Placing, Unplaced};
 use crate::tiles::{Spawning, Tile};
 
 /// How many frames in a row the renderer must start no new pipeline and wait on none before the splash lifts: what a
@@ -177,7 +177,7 @@ fn lift(
     (mut stage, missing): (Single<&mut Text, With<Stage>>, Option<Res<Missing>>),
     tiles: Query<&Tile>,
     spawning: Query<(), With<Spawning>>,
-    waiting: Query<(), With<Waiting>>,
+    waiting: Query<(), Unplaced>,
     roots: Query<&WorldAssetRoot>,
     placed: Query<&Placed>,
     unready: Query<(), With<Unready>>,

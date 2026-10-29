@@ -95,16 +95,23 @@ fn export_inner(
         }
     }
     glb.set_extras(full, extras.into());
-    if foliage.is_some() && value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == "middle")) {
-        let middle = glb.node("middle")?;
-        let mut extras = value["nodes"][middle]["extras"].as_object().cloned().unwrap_or_default();
+    for level in ["middle", "far"] {
+        if foliage.is_none() || !value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == level))
+        {
+            continue;
+        }
+        let node = glb.node(level)?;
+        let mut extras = value["nodes"][node]["extras"].as_object().cloned().unwrap_or_default();
         let settings = profile.as_ref().context("missing foliage profile")?;
         extras.insert("source_foliage".into(), settings.profile.clone());
-        extras.insert("shadow_alpha_textures".into(), shadow_alpha_textures(&value, middle)?);
+        // Only a full tile casts the middle version's shadow; a far version is seen and casts its own.
+        if level == "middle" {
+            extras.insert("shadow_alpha_textures".into(), shadow_alpha_textures(&value, node)?);
+        }
         if let Some(distance) = settings.shadow_distance {
             extras.insert("shadow_distance_m".into(), json!(distance));
         }
-        glb.set_extras(middle, extras.into());
+        glb.set_extras(node, extras.into());
     }
     for (k, &anchor) in anchors.iter().enumerate() {
         ensure!(
@@ -239,9 +246,9 @@ fn binary(bytes: &[u8]) -> &[u8] {
     &bytes[20 + json_len + 8..]
 }
 
-/// Each masked middle primitive names its exported alpha companion relative to the asset root.
+/// Each masked primitive of a plant's middle version names its exported alpha companion relative to the asset root.
 pub(super) fn shadow_alpha_textures(value: &Value, node: usize) -> Result<Value> {
-    let mesh = value["nodes"][node]["mesh"].as_u64().context("middle foliage needs a mesh")? as usize;
+    let mesh = value["nodes"][node]["mesh"].as_u64().context("lower foliage detail needs a mesh")? as usize;
     let primitives = value["meshes"][mesh]["primitives"].as_array().context("foliage needs primitives")?;
     let mut result = Vec::with_capacity(primitives.len());
     for primitive in primitives {
@@ -351,9 +358,11 @@ fn validate_kind(
     let scenes = array("scenes")?;
     ensure!(scenes.len() == 1 && value["scene"].as_u64().unwrap_or(0) == 0, "source must have one scene");
     let roots = scenes[0]["nodes"].as_array().context("source scene has no roots")?;
+    // A prop has `full` and an optional `collision`; a plant `full` and an optional `middle` and `far`.
+    let most = if foliage.is_some() { 3 } else { 2 };
     ensure!(
-        nodes.len() == roots.len() && (nodes.len() == 1 || nodes.len() == 2),
-        "source needs full and optional collision roots"
+        nodes.len() == roots.len() && (1..=most).contains(&nodes.len()),
+        "source needs full and optional collision roots, or a plant's optional middle and far"
     );
     let mut seen = Vec::new();
     let mut seen_meshes = Vec::new();
@@ -372,9 +381,11 @@ fn validate_kind(
             ensure!(node["extras"]["vertex_paint"].is_object(), "vertex paint extras must be an object");
         }
         ensure!(
-            (name == "full" || (foliage.is_none() && name == "collision") || (foliage.is_some() && name == "middle"))
+            (name == "full"
+                || (foliage.is_none() && name == "collision")
+                || (foliage.is_some() && matches!(name, "middle" | "far")))
                 && !seen.contains(&name),
-            "source roots must be full and optional collision"
+            "source roots must be full and optional collision, or a plant's optional middle and far"
         );
         seen.push(name);
         ensure!(
@@ -623,7 +634,7 @@ mod tests {
     }
 
     #[test]
-    fn foliage_needs_declared_textures_and_preserves_both_versions() {
+    fn foliage_needs_declared_textures_and_preserves_every_version() {
         let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
         let mut mesh = Mesh::default();
         cuboid(&mut mesh, DVec3::ZERO, DVec3::splat(2.0));
@@ -631,6 +642,7 @@ mod tests {
         mesh.material = glb.add_material(&Material::textured("leaf", "../../textures/a/a.ktx2"));
         glb.add_mesh("full", &[&mesh]);
         glb.add_mesh("middle", &[&mesh]);
+        glb.add_mesh("far", &[&mesh]);
         static NEXT_FOLIAGE: AtomicUsize = AtomicUsize::new(0);
         let id = NEXT_FOLIAGE.fetch_add(1, Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!("hakuba-foliage-fixture-{}-{id}.glb", std::process::id()));

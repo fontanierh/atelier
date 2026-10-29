@@ -1,0 +1,7 @@
+# Source texture for Brinecove's plants.
+kind = "texture"
+alpha_shadow = true
+source = "src/texture.png"
+alpha_cutoff = 0.4
+mip_colour = "average"
+inputs_sha256 = "0d2ed07fd3e1554ccf88f382ea1c7e3d43a6cd8d4ec72e858fab6c8f56c52298"

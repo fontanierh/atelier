@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["coast-concrete"]
 solid = true
 anchors = [[0, -1.05, 10.58], [0, 0, 10.58], [0, 1.05, 10.58], [0, -0.85, 9.68], [0, 0.85, 9.68]]
-inputs_sha256 = "99b9de6fd776150c43d806a05d4df4d11603ddeed1ea029d853ff3a2372d5f68"
+inputs_sha256 = "18c215e6485e9d3c1a59c1597cccc5fbe46d59a2785b8c8f05e21d876995d881"

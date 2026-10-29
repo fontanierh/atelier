@@ -1,0 +1,4 @@
+# Brinecove's leaf rust material, its colour times its texture.
+path = "texture.png"
+sha256 = "8e9f3b2f7234dec4206e2f162a0887ede3b2aade055c231bb996e88056386382"
+authoring_texture_sha256 = "3b8119374e0507885c51468e7379ce0f8704aa6b497c7393ea30ba330bdb40ac"

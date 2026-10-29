@@ -1,0 +1,7 @@
+# Original foliage geometry and source detail levels.
+path = "model.glb"
+sha256 = "802dcf4ce3cc294815b958c1e81b66126bcfffc781f49774d103b19d731c5af6"
+authoring_fbx_sha256 = "79936b050f37dec431a559463f7a03659dc98d3f7ce832b513d5075102924274"
+authoring_lod2_fbx_sha256 = "bcddb4d4d3a91ae0cbc2f35cf55405e34a69d6d4fbc35e7106d95ad1ddab2c2a"
+authoring_far_fbx_sha256 = "9a02218081893d49849a94e98ee4a3207ef64f04081a523aa81bafcdb9f63d3f"
+conversion = "Blender FBX import; full LOD0, middle LOD2 and far LOD3 retain per-corner positions, normals, UVs and RGBA"

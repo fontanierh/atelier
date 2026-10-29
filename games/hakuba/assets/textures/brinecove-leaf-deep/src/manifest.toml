@@ -1,0 +1,4 @@
+# Brinecove's leaf deep material, its colour times its texture.
+path = "texture.png"
+sha256 = "37f700b2c3cd925b25264133be62532e103c592588d21172a94106babf381115"
+authoring_texture_sha256 = "c3bf826283112434d8b47febe26312e4099788434ecafda8f74f5ba7f0c3876e"

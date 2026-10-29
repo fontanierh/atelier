@@ -228,6 +228,11 @@ pub struct SwayingMaterials<'w> {
 }
 
 impl SwayingMaterials<'_> {
+    /// The texture a source foliage material shows, if any.
+    pub fn texture_of(&self, source: &Handle<SourceFoliage>) -> Option<AssetId<Image>> {
+        self.source.get(source)?.base.base_color_texture.as_ref().map(Handle::id)
+    }
+
     pub fn is_masked(&self, source: &Handle<SourceFoliage>) -> bool {
         self.source.get(source).is_some_and(|material| matches!(material.base.alpha_mode, AlphaMode::Mask(_)))
     }
