@@ -1,12 +1,13 @@
 //! The models standing in the tiles: trees, bushes, grass and poles. A tile holds one data node per model, naming the
 //! model and listing where each copy stands. Once the model has loaded, each copy of a large model, such as a tree, is
 //! spawned with the model's own meshes and materials, shared by every copy, so Bevy draws them together, in one call
-//! across every tile. The copies of a small model, such as a tuft of grass, are merged instead, into one mesh per
-//! square: shadow-casting models use 32 m squares and others a whole tile. Thousands of entities would cost more to
-//! cull and draw one by one than their few vertices cost together, and squares out of view are not drawn. Merging a large model
-//! would not pay: each merged mesh is drawn on its own. A far tile shows a plant's few-triangle far version instead,
-//! and the far versions share one texture, so a far tile merges all its plants together, whatever their model: one
-//! mesh a tile, where the browser would otherwise issue a draw for each model in each of thousands of far tiles.
+//! across every tile. The copies of a small model, such as a tuft of grass or a tree's middle version, are merged
+//! instead, into one mesh per square: shadow-casting models use 32 m squares and others a whole tile. Thousands of
+//! entities would cost more to cull and draw one by one than their few vertices cost together, and squares out of view
+//! are not drawn. Merging a large model would not pay: each merged mesh is drawn on its own. A far tile shows a plant's
+//! few-triangle far version instead, and the far versions share one texture, so a far tile merges all its plants
+//! together, whatever their model: one mesh a tile, where the browser would otherwise issue a draw for each model in
+//! each of thousands of far tiles.
 //!
 //! A plant in a full tile shows its full version wherever the camera is, so it never changes as the player walks up to
 //! it, and casts the shadow of its middle version, which is never seen: the sun's shadow maps draw far fewer leaves.
@@ -27,7 +28,7 @@ use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
 use crate::ground::built_solid;
-use crate::loading::Missing;
+use crate::loading::{Loaded, Missing};
 use crate::look::SHADOW_ONLY;
 use crate::tiles::{Spawning, TILES};
 use crate::vertex_paint::{
@@ -36,8 +37,10 @@ use crate::vertex_paint::{
 use crate::water::{WaterMaterial, WaterMaterials};
 use crate::wind::{ShadowFoliage, SourceFoliage, SourceProfile, Swaying, SwayingMaterials};
 
-/// A model with fewer vertices than this has its copies merged: a bush, a fern or a tuft of grass, never a tree.
-const MERGE_BELOW_VERTICES: usize = 512;
+/// A model with fewer vertices than this has its copies merged: a bush, a fern, a tuft of grass, and a tree's middle
+/// version, which a middle tile shows and a full tile's trees cast their shadows with. A forest seen from its edge is
+/// thousands of these, each its own entity to cull and draw otherwise; a tree's full version is never merged.
+const MERGE_BELOW_VERTICES: usize = 1024;
 
 /// The side of the squares whose copies of a small, shadow-casting model are merged together, in metres: small enough
 /// that each shadow cascade draws few squares it does not need, large enough to stay a few hundred meshes. In the
@@ -49,6 +52,8 @@ const MERGED_AT_MOST_VERTICES: usize = 500_000;
 /// Work issued to the renderer each update while tile scenery is being prepared.
 const MERGE_VERTICES_PER_UPDATE: usize = 20_000;
 const INSTANCES_PER_UPDATE: usize = 64;
+/// How many times that work each update while the splash is up, when no frame is drawn for the player to stutter.
+const UNDER_SPLASH: usize = 8;
 
 pub struct SceneryPlugin;
 
@@ -246,8 +251,10 @@ fn spawn(
     mut materials: Materials,
     mut far_tiles: ResMut<FarTiles>,
     roots: Query<(), With<WorldAssetRoot>>,
+    loaded: Option<Res<Loaded>>,
 ) {
-    let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
+    let times = if loaded.is_some() { 1 } else { UNDER_SPLASH };
+    let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE * times, instances: INSTANCES_PER_UPDATE * times };
     'copies: for (entity, mut waiting) in &mut waiting {
         if waiting.jobs.is_none() {
             if assets.load_state(&waiting.model).is_failed() {
