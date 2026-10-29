@@ -6,11 +6,12 @@ Hidamari's city, Belmonte and Brinecove stand outside the regions Hakuba plants 
 The island's world (`world.json`) stands its plants over the whole map; Yorimichi's map clears them inside
 Hidamari's city and its north mountains, Belmonte and Brinecove, whose own plants replace them, and Hakuba's start
 regions (`momiji-coast`, `momiji-village`, `woodland`) already hold theirs. The city (`hidamari/city.json`),
-Belmonte and Brinecove (their `runtime.json`) add their own plants, kept everywhere. Each plant becomes the Hakuba
-plant made from the same source model (`MODELS`), standing on Hakuba's ground at the depth it stood in its source.
-Belmonte's and Brinecove's plants off Hakuba's ground, or well above it, stand on their ground props at their source
-heights. Any other plant off Hakuba's ground, on a cliff, or of a model Hakuba has no plant for, is left out and
-counted, as is any tree of the island's world or city closer than `TREE_SPACING_M` to a taller one.
+Belmonte and Brinecove (their `runtime.json`) and the Mega Park (its `park.json`) add their own plants, kept
+everywhere. Each plant becomes the Hakuba plant made from the same source model (`MODELS`), standing on Hakuba's
+ground at the depth it stood in its source. Belmonte's, Brinecove's and the Mega Park's plants off Hakuba's ground, or
+well above it, stand on their ground props at their source heights. Any other plant off Hakuba's ground, on a cliff,
+or of a model Hakuba has no plant for, is left out and counted, as is any tree of the island's world or city closer
+than `TREE_SPACING_M` to a taller one.
 
 `--models` first imports the tree models Hakuba lacks (`NEW`) as plants, with their full, middle and far detail levels
 (`plant_convert.py`, one guarded Blender run each), and the leaf and bark textures they need (`TEXTURES`). Hakuba's own
@@ -157,7 +158,7 @@ def inside(rows, rectangle):
 
 def sources(build):
     """(source name, rows, kept off the ground) for each plant group in the island's world, cleared as Yorimichi's map
-    clears it, then in Hidamari's city, Belmonte and Brinecove."""
+    clears it, then in Hidamari's city, Belmonte, the Mega Park and Brinecove."""
     island = json.loads((build / 'world.json').read_text())['instances']
     city = json.loads((build / 'hidamari' / 'city.json').read_text())
     cleared = [(300.0, -450.0, 2200.0, 1600.0), tuple(city['north_bounds']), START,
@@ -177,6 +178,16 @@ def sources(build):
         name = group['asset'].rsplit('.', 1)[-1]
         if name.startswith(PLANTS):
             yield name, transforms(group, ox, oy, oz), True
+    # The Mega Park stands its forest and its own plants (`megapark/park.json` `trees`, each [x, y, z, yaw, scale] in
+    # centimetres and degrees) in its actor's frame, which turns them about the actor as it turns the park's models.
+    park = json.loads((build / 'megapark' / 'park.json').read_text())
+    x0, y0, z0 = park['location_cm']
+    turn = math.radians(park['yaw_deg'])
+    for name, rows in park['trees'].items():
+        if name.startswith(PLANTS) and rows:
+            x, y, z, yaw, scale = np.array(rows, float).T
+            ux, uy = x0 + x * math.cos(turn) - y * math.sin(turn), y0 + x * math.sin(turn) + y * math.cos(turn)
+            yield name, np.column_stack([ux / 100, -uy / 100, (z0 + z) / 100, -(park['yaw_deg'] + yaw), scale]), True
     # So does Brinecove, its plants (`SM_BC_Plant_*`) its own models.
     runtime = json.loads((build / 'brinecove' / 'runtime.json').read_text())
     ox, oy, oz = runtime['origin_cm']
