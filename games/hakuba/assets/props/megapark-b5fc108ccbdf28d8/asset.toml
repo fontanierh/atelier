@@ -1,0 +1,5 @@
+# A piece of the Super Ultra Mega Park in the western foothills, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "c43fe9e23f57e4a09e0b7c53bd8a4fd5b6c35bdd529089ff5f8bd5ae1ddbe466"
