@@ -1,0 +1,5 @@
+# The Belmonte train's tender, from outside, standing at a terminus, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "7b8658560f74e3ae375ad7d2e91070647cab3e0bc77050980e56bfee9989e3e8"

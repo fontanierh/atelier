@@ -1,0 +1,5 @@
+# A stretch of a tunnel's lining, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "3c1a54bd883c497e93f3f152a706e8a64263e125772f87fd8e1347b870f9c3cd"

@@ -1,0 +1,5 @@
+# A bank the track runs on, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "d3c02bb8665ed5698b50e281f7166386d1b50b868d8d9ecdcd0fe0474e9db65e"

@@ -1,0 +1,5 @@
+# The Belmonte train's first class, from outside, standing at a terminus, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "9105b874ffa4f82e2704de963a318f2d0dc29f04954008f5c597c4bd57ec4e6d"

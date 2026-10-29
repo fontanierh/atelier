@@ -1,0 +1,5 @@
+# The Belmonte train's locomotive 4-6-2, from outside, standing at a terminus, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "dc9d151c3bd8f305368bed2f2243c1e459443768af062d623d8977ef8379fa19"

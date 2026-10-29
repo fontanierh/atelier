@@ -1,0 +1,5 @@
+# The Belmonte train's second class and canteen, from outside, standing at a terminus, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "80cf23a7632dd9a7763d974ff6fb7fd822d3c65404f640841875d229230c76c7"

@@ -1,0 +1,5 @@
+# A piece of Belmonte's station, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "738e95ff49e29edef32e7d9548316a2f8b820bde1ca8859071c654d594089736"

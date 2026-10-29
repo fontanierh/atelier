@@ -1,0 +1,5 @@
+# A stretch of a viaduct's arches, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "27d2e437b8aca19059e3a3f08be2f30580d45e6ad96916a91c62e7a760de0a79"

@@ -1,0 +1,5 @@
+# The Belmonte train's dining car, from outside, standing at a terminus, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "408f4635776baf9cafe209c599e8eebe93f61e991bddfaa6b0c17aa7eceb0fb9"

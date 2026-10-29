@@ -1,0 +1,5 @@
+# A hundred-metre stretch of track, with its sleepers, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "e9b38f7a60b5fca4513e3796d0b0b2d54b9583b7fa238ed425a0916545a7bcec"

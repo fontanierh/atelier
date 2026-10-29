@@ -1,0 +1,5 @@
+# The Belmonte train's baggage van, from outside, standing at a terminus, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "d4b6d21bd6e1df111d753a00b4bc528dfc03594034d325a23465997ad0847f6f"

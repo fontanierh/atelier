@@ -1,0 +1,5 @@
+# A tunnel's stone portal, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "a2e5ffa2b9334a0a4f4ca737a8ae1eadb2df6845851e57c98f59087ba9d72ef7"

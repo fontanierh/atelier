@@ -1,0 +1,5 @@
+# The Belmonte train's rear brake van, from outside, standing at a terminus, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "7568b4c285f58043952827ccb4929ac54fe5527776190a40ab3027dad3482741"

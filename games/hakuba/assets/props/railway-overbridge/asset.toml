@@ -1,0 +1,5 @@
+# The road's stone bridge over the last cutting, on the Belmonte railway, painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "4e0bea39f3804a629524e0e512ceb8f0bff29f5eaa91f291391f13f9d0561680"
