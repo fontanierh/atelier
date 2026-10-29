@@ -622,7 +622,9 @@ impl Tile {
         path: &Path,
     ) -> Result<()> {
         let (overlays, raised, prepared, underlay, authored) = surfaces;
-        let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
+        // A tile whose ground is all cut away, with nothing standing in it, still holds a scene, empty, for the game
+        // to load.
+        let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" }, "scene": 0, "scenes": [{ "nodes": [] }] }));
         let texture = match &settings.coloured_ground_texture {
             Some(texture) if ground.wholly_coloured(self.columns, self.rows) => texture,
             _ => &settings.ground_texture,
@@ -1184,6 +1186,46 @@ mod tests {
         assert_eq!(spawn_position(at, &ground, &prepared, None).unwrap(), DVec3::new(1.0, 0.25, 3.0));
         let empty = raised::Prepared::new(&[], DVec2::ZERO, 8.0);
         assert_eq!(spawn_position(at, &ground, &empty, None).unwrap(), at.extend(0.0));
+    }
+
+    /// A tile that draws nothing, its ground all holes, still holds its empty scene at both details, which the game
+    /// loads as `Scene0`.
+    #[test]
+    fn a_tile_drawing_nothing_still_holds_a_scene() {
+        let ground = Ground::page(8, 1.0, |_, _| f32::NAN);
+        let tile = Tile { columns: (0, 8), rows: (0, 8) };
+        let settings = Settings {
+            terrain_diagonals: None,
+            ground: PathBuf::new(),
+            south_west_m: [0.0, 0.0],
+            ground_step_m: 1.0,
+            page_steps: 8,
+            tile_steps: 8,
+            tiles: [[0, 0], [0, 0]],
+            scenery_tiles: None,
+            extent_m: None,
+            middle_uses_fine_ground: false,
+            ground_texture: "ground".into(),
+            ground_texture_m: 6.0,
+            ground_texture_mean: None,
+            coloured_ground_texture: None,
+            coloured_ground_texture_mean: None,
+            spawn_m: [0.0, 0.0],
+            spawn_bearing_deg: 0.0,
+        };
+        let prepared = raised::Prepared::new(&[], DVec2::ZERO, 8.0);
+        for (detail, suffix) in [(Detail::Full, "full"), (Detail::Middle, "middle")] {
+            let path = std::env::temp_dir().join(format!("empty-tile-{}-{suffix}.glb", std::process::id()));
+            tile.write(&ground, (&[], &[], &prepared, &[], &[]), &TileScenery::default(), &settings, detail, &path)
+                .unwrap();
+            let bytes = std::fs::read(&path).unwrap();
+            std::fs::remove_file(&path).unwrap();
+            let len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
+            let value: serde_json::Value = serde_json::from_slice(&bytes[20..20 + len]).unwrap();
+            assert!(value.get("nodes").is_none_or(|nodes| nodes.as_array().unwrap().is_empty()));
+            assert_eq!(value["scene"], 0);
+            assert_eq!(value["scenes"], json!([{ "nodes": [] }]));
+        }
     }
 
     #[test]

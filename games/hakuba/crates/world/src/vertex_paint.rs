@@ -160,8 +160,40 @@ impl Plugin for VertexPaintPlugin {
 
 type MadeEntries = Vec<(Profile, u8, Handle<Painted>)>;
 
+/// The painted materials made for each source material, and each one made by its look, which every source material
+/// that looks the same shares.
 #[derive(Resource, Default)]
-struct Made(HashMap<AssetId<StandardMaterial>, MadeEntries>);
+struct Made(HashMap<AssetId<StandardMaterial>, MadeEntries>, HashMap<Look, Handle<Painted>>);
+
+/// What a painted material draws: its colour, texture and its transform, which faces it shows, its profile and its
+/// mode. Models from different files that share a texture and colour then share one material, which the renderer
+/// binds once for all of them rather than once for each.
+#[derive(PartialEq, Eq, Hash)]
+struct Look(Vec<u32>, Option<AssetId<Image>>, u8);
+
+impl Look {
+    fn of(base: &StandardMaterial, profile: &Profile, mode: u8) -> Self {
+        let colour = base.base_color.to_linear().to_f32_array();
+        let faces = [
+            match base.cull_mode {
+                None => 0.0,
+                Some(bevy::render::render_resource::Face::Front) => 1.0,
+                Some(bevy::render::render_resource::Face::Back) => 2.0,
+            },
+            f32::from(u8::from(base.double_sided)),
+        ];
+        let numbers = colour
+            .iter()
+            .chain(&base.emissive.to_f32_array())
+            .chain(&base.uv_transform.to_cols_array())
+            .chain(&faces)
+            .chain(&[profile.fill, profile.glow, profile.haze_start_m, profile.haze_length_m])
+            .chain(profile.glow_min.iter().chain(&profile.glow_max).chain(&profile.haze_colour))
+            .map(|n| n.to_bits())
+            .collect();
+        Self(numbers, base.base_color_texture.as_ref().map(Handle::id), mode)
+    }
+}
 
 type MovingEntries = Vec<(Profile, MotionProfile, Handle<MovingPainted>)>;
 
@@ -261,6 +293,11 @@ impl PaintedMaterials<'_> {
         base.fog_enabled = false;
         base.perceptual_roughness = 1.0;
         base.reflectance = 0.0;
+        let look = Look::of(&base, profile, mode);
+        if let Some(handle) = self.made.1.get(&look).cloned() {
+            self.made.0.entry(material.id()).or_default().push((profile.clone(), mode, handle.clone()));
+            return Ok(Some(handle));
+        }
         let data = PaintUniform {
             lower: Vec3::from_array(profile.glow_min).extend(profile.fill),
             upper: Vec3::from_array(profile.glow_max).extend(profile.glow),
@@ -268,6 +305,7 @@ impl PaintedMaterials<'_> {
             colour: Vec3::from_array(profile.haze_colour).extend(0.0),
         };
         let handle = self.painted.add(Painted { base, extension: Paint { data } });
+        self.made.1.insert(look, handle.clone());
         self.made.0.entry(material.id()).or_default().push((profile.clone(), mode, handle.clone()));
         Ok(Some(handle))
     }
@@ -740,5 +778,46 @@ mod tests {
         assert_eq!(painted.base.alpha_mode, AlphaMode::Opaque);
         assert_eq!(painted.base.reflectance, 0.0);
         assert_eq!(painted.base.perceptual_roughness, 1.0);
+    }
+
+    /// Source materials from different files that look the same share one painted material, so it is bound once for
+    /// all of them; one that differs in colour, faces or mode gets its own.
+    #[test]
+    fn alike_source_materials_share_one_painted_material() {
+        use bevy::ecs::system::SystemState;
+        let mut world = World::new();
+        world.insert_resource(Assets::<StandardMaterial>::default());
+        world.insert_resource(Assets::<Painted>::default());
+        world.insert_resource(Made::default());
+        let image = Assets::<Image>::default().add(Image::default());
+        let textured = |colour: Color| StandardMaterial {
+            base_color: colour,
+            base_color_texture: Some(image.clone()),
+            ..default()
+        };
+        let mut sources = world.resource_mut::<Assets<StandardMaterial>>();
+        let one = sources.add(textured(Color::WHITE));
+        let other = sources.add(textured(Color::WHITE));
+        let tinted = sources.add(textured(Color::srgb(0.5, 0.4, 0.3)));
+        let two_sided = sources.add(StandardMaterial { double_sided: true, cull_mode: None, ..textured(Color::WHITE) });
+        let profile = Profile {
+            fill: 0.06,
+            glow: 0.8,
+            glow_min: [0.8, 0.35, 0.0],
+            glow_max: [1.0, 0.72, 0.3],
+            haze_start_m: 30.0,
+            haze_length_m: 9000.0,
+            haze_colour: [0.0932, 0.2301, 0.5328],
+        };
+        let mut state = SystemState::<PaintedMaterials>::new(&mut world);
+        let mut materials = state.get_mut(&mut world).unwrap();
+        let mut surface = |source| materials.of_surface(source, &profile).unwrap().unwrap();
+        let (one, other, tinted, two_sided) = (surface(&one), surface(&other), surface(&tinted), surface(&two_sided));
+        assert_eq!(one, other);
+        assert_ne!(one, tinted);
+        assert_ne!(one, two_sided);
+        let source = world.resource_mut::<Assets<StandardMaterial>>().add(textured(Color::WHITE));
+        let mut materials = state.get_mut(&mut world).unwrap();
+        assert_ne!(materials.of(&source, &profile).ok().flatten(), Some(one));
     }
 }
