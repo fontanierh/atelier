@@ -1,0 +1,5 @@
+# cushion.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "854ea48474260d06b8c5a1d02b0c72be2d206c39c55b8ad8eb466d91911367d0"

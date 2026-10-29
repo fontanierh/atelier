@@ -1,0 +1,5 @@
+# quilt.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "cc4cf2bd9be5ab87f4fe46e05ad166263b66c1319487065d58a7b5b3b3e2c01b"

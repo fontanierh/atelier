@@ -1,0 +1,5 @@
+# Crater Park's restyled coping frieze texture: painted, wraps x (edges).
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "105e3266f06cc04998aa6e003ac424847a86d29fc829fd54745d4429e0212369"

@@ -1,0 +1,5 @@
+# TH_P_planter.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "f25938953afcb9f89272539003955befc58f19958eb42c9111b5b35c98eed247"

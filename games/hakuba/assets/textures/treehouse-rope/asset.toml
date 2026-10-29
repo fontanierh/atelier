@@ -1,0 +1,5 @@
+# rope.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "9262e8d93048dd24a7080d07c5cfbd5974a6380ed4c19abba8bb069400fc0dc7"

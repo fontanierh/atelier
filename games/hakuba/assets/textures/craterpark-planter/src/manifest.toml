@@ -1,0 +1,4 @@
+# Crater Park's restyled planter texture: painted, wraps xy (edges), mean [146, 134, 114], detail x2.00.
+path = "texture.png"
+sha256 = "981e40c90f29717f17ceea361de5437866f935a29d516e2317cb9e0cc5e897b9"
+authoring_texture_sha256 = "981e40c90f29717f17ceea361de5437866f935a29d516e2317cb9e0cc5e897b9"

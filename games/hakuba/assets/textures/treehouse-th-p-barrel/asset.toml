@@ -1,0 +1,5 @@
+# TH_P_barrel.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b12b1b4de62bc362d973514044170fccbd21e4b5c61ebe4e37822efb16e8717b"

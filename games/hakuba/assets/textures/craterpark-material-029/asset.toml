@@ -1,0 +1,5 @@
+# Crater Park's restyled masonry texture: world-aligned games/yorimichi/assets/craterpark/restyle/masonry.jpg, wraps xy (edges), mean [84, 80, 80], detail x1.00; Tint white.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "af63183ce4753bf9b788b2aaf7515bcfee117978d72c06e2994861f1a9e99b25"

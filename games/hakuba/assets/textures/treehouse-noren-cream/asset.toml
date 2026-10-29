@@ -1,0 +1,5 @@
+# noren_cream.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "7bc44f60ab4b3bfd5aff3b31afb27bdefc4b8855ea1eb413a6e1f61f973616a8"

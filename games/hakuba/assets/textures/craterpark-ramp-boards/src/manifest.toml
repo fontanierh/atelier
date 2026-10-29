@@ -1,0 +1,4 @@
+# Crater Park's restyled ramp boards texture: painted, wraps xy (edges), mean [170, 124, 84], detail x2.34.
+path = "texture.png"
+sha256 = "5e1aef45676436261fe22be0e409aa770a9384ac94c6e21a3e08d5387ada50c5"
+authoring_texture_sha256 = "5e1aef45676436261fe22be0e409aa770a9384ac94c6e21a3e08d5387ada50c5"

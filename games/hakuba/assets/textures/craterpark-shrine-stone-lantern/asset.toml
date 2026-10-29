@@ -1,0 +1,5 @@
+# Crater Park's restyled stone lantern texture: the Tripo model's own texture, material_047.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "73a924cea5261a404730a75161f1d6d7f07c4605f32a52db88cdec94c671a0dc"

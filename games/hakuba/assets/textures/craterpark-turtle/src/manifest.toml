@@ -1,0 +1,4 @@
+# Crater Park's restyled turtle texture: painted, wraps xy (edges).
+path = "texture.png"
+sha256 = "45251ea316e67e4fcc88dda455d57d45e204112be341940fb3bc002274258054"
+authoring_texture_sha256 = "45251ea316e67e4fcc88dda455d57d45e204112be341940fb3bc002274258054"

@@ -1,0 +1,5 @@
+# Crater Park's restyled ramp planks texture: painted, wraps xy (edges), mean [170, 124, 84], detail x1.00.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "7a9e97fec77c546c673199df8105ffe54cd3dd6b9174e25c4152f0f3bd689e50"

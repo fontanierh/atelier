@@ -1,0 +1,5 @@
+# Crater Park's restyled prado sun texture: concrete recoloured to albedo [240, 150, 14], grain x0.35.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "5f566bc2938171d61221fcce8b2fc202725b5eb5987df8aa8b07654d8801ed43"

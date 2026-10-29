@@ -1,0 +1,5 @@
+# Crater Park's restyled turtle texture: painted, wraps xy (edges).
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "214691444add480891c29f5d8b4eb534ad6a458142d5c60faf86c11d541a1af2"

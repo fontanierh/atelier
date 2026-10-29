@@ -1,0 +1,5 @@
+# indigo.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "a1bc6a7815abe660564b04def7b8098649619752adf3dcccd526852a5efbd944"

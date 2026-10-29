@@ -1,0 +1,5 @@
+# stone.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "651a014fbf8a116d6e400bccaebb30e79337fae5a8716e370f2fa2ec5336c03a"

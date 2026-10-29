@@ -1,0 +1,4 @@
+# Crater Park's restyled side bank texture: painted, wraps xy (edges), mean [166, 161, 150], detail x1.06.
+path = "texture.png"
+sha256 = "768350bfd8f7ef2aacba5bff407a84c3533d15babd85ba722a024cadf140a244"
+authoring_texture_sha256 = "768350bfd8f7ef2aacba5bff407a84c3533d15babd85ba722a024cadf140a244"

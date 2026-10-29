@@ -1,0 +1,4 @@
+# Crater Park's restyled coping tile texture: painted, wraps x (edges).
+path = "texture.png"
+sha256 = "5fda4916c0baca2d0114bc3ddee9ed486827d2235cc49a0d0be031139a934cc0"
+authoring_texture_sha256 = "5fda4916c0baca2d0114bc3ddee9ed486827d2235cc49a0d0be031139a934cc0"

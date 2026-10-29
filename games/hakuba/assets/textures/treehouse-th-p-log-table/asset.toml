@@ -1,0 +1,5 @@
+# TH_P_log_table.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "e002feb44739a7dd7f2ae5f6748d18ed4175b949eed3af3a7f05f6dda6155bb7"

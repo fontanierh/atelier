@@ -1,0 +1,5 @@
+# TH_P_stump_kettle.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4dfbd6ec30ca2c70401c8e24d1160041019edda9f0e8b9d909f5c19bf9fa3f5f"

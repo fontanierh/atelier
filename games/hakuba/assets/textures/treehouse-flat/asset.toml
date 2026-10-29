@@ -1,0 +1,5 @@
+# flat.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "3f2cf73300e7ff63c9b5a2f35548c3ed2e5f6421550e54c5d518da1d7daded86"

@@ -1,0 +1,5 @@
+# straw.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "57a03f9b82666be550922f081b33137d4aaca5c67249c5f88402a3f5da4c1ece"

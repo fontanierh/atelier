@@ -1,0 +1,5 @@
+# map.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "60c1f09e639b7f901e8e24606362bddc75e5aa1a3b319d1860e351124efbe1ee"

@@ -1,5 +1,6 @@
-# A cell of Crater Park, the skate park on the volcano's caldera floor, its colours painted per vertex.
+# A cell of Crater Park, the skate park on the volcano's caldera floor, with its own textures.
 kind = "prop"
 source = "src/model.glb"
+textures = ["craterpark-material-027"]
 solid = true
-inputs_sha256 = "a1a53c5310a555795cd4be1f1388ad4a3f698642e4cf049562e3e010ae95637f"
+inputs_sha256 = "f445ecb978c3c974b2261749bec0796a2c5489f70b093517ca57d2953b4fe588"

@@ -1,8 +1,9 @@
 //! The `texture` kind: an image other assets name, written as `<folder name>.ktx2` with every mipmap level, so it
 //! draws smoothly both near and far. Each level averages the one above it in linear light, with either opacity-weighted
-//! or plain colours as the asset declares, and is stored as 8-bit sRGB, compressed with zstd. In an image with clear
-//! parts, every level preserves coverage at the asset's declared alpha cutoff (0.5 by default). A texture's sides must
-//! be powers of two. `alpha_shadow = true` also writes `<name>.alpha.ktx2`, a linear R8 copy of each final mip’s alpha.
+//! or plain colours as the asset declares, and is stored as 8-bit sRGB, or with `compression = "bc7"` as sRGB BC7
+//! blocks, a quarter of the size in memory and on the wire, then compressed with zstd. In an image with clear parts,
+//! every level preserves coverage at the asset's declared alpha cutoff (0.5 by default). A texture's sides must be
+//! powers of two. `alpha_shadow = true` also writes `<name>.alpha.ktx2`, a linear R8 copy of each final mip’s alpha.
 
 use std::fs;
 use std::io::Read;
@@ -28,6 +29,17 @@ pub struct Settings {
     /// Also export the exact final mip alpha as a linear R8 shadow texture.
     #[serde(default)]
     pub alpha_shadow: bool,
+    /// How each level's texels are stored: plain 8-bit RGBA, or BC7 blocks.
+    #[serde(default)]
+    compression: Compression,
+}
+
+#[derive(Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Compression {
+    #[default]
+    None,
+    Bc7,
 }
 
 impl Settings {
@@ -65,6 +77,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if !(settings.alpha_cutoff.is_finite() && 0.0 < settings.alpha_cutoff && settings.alpha_cutoff <= 1.0) {
         bail!("alpha cutoff must be finite and greater than 0 and at most 1");
     }
+    if settings.alpha_shadow && settings.compression != Compression::None {
+        bail!("an alpha shadow needs an uncompressed texture");
+    }
     let file = folder.join(&settings.source);
     let image = image::open(&file).with_context(|| format!("reading {}", file.display()))?.to_rgba8();
     let (width, height) = image.dimensions();
@@ -81,7 +96,11 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             level.keep_coverage(coverage, settings.alpha_cutoff);
         }
     }
-    fs::write(output, ktx2(width, height, &levels)?)?;
+    let file = match settings.compression {
+        Compression::None => ktx2(width, height, &levels)?,
+        Compression::Bc7 => bc7_ktx2(width, height, &levels)?,
+    };
+    fs::write(output, file)?;
     let shadow = shadow_file(output);
     if settings.alpha_shadow {
         fs::write(shadow, alpha_ktx2(width, height, &levels)?)?;
@@ -230,6 +249,33 @@ fn ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
     encode_ktx2(width, height, Format::R8G8B8A8_SRGB, &bytes)
 }
 
+/// As [`ktx2`], each level stored as sRGB BC7 blocks of 4 × 4 texels; a level smaller than a block repeats its edge
+/// texels to fill one. A level with clear texels keeps its alpha; an opaque one spends every bit on colour.
+fn bc7_ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
+    let blocks: Vec<Vec<u8>> = levels.iter().map(bc7).collect();
+    let bytes: Vec<&[u8]> = blocks.iter().map(Vec::as_slice).collect();
+    encode_ktx2(width, height, Format::BC7_SRGB_BLOCK, &bytes)
+}
+
+fn bc7(level: &Level) -> Vec<u8> {
+    let (width, height) = (level.width.next_multiple_of(4), level.height.next_multiple_of(4));
+    let mut rgba = Vec::with_capacity((width * height * 4) as usize);
+    for y in 0..height {
+        for x in 0..width {
+            let at = ((y.min(level.height - 1) * level.width + x.min(level.width - 1)) * 4) as usize;
+            rgba.extend_from_slice(&level.rgba[at..at + 4]);
+        }
+    }
+    let opaque = level.rgba.chunks_exact(4).all(|pixel| pixel[3] == 255);
+    let settings = if opaque {
+        intel_tex_2::bc7::opaque_basic_settings()
+    } else {
+        intel_tex_2::bc7::alpha_basic_settings()
+    };
+    let surface = intel_tex_2::RgbaSurface { data: &rgba, width, height, stride: width * 4 };
+    intel_tex_2::bc7::compress_blocks(&settings, &surface)
+}
+
 fn alpha_ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
     let alpha: Vec<Vec<u8>> = levels.iter().map(|level| level.rgba.chunks_exact(4).map(|p| p[3]).collect()).collect();
     let bytes: Vec<&[u8]> = alpha.iter().map(Vec::as_slice).collect();
@@ -310,6 +356,24 @@ mod tests {
         }
     }
 
+    /// A BC7 file reads back as BC7 with every level's blocks, down to the 1 × 1 level's one block, and its colours
+    /// close to the source's.
+    #[test]
+    fn bc7_reads_back() {
+        let rgba: Vec<u8> =
+            (0..8 * 4).flat_map(|k| [(k * 8) as u8, (255 - k * 8) as u8, (k * 3) as u8, 255]).collect();
+        let mut levels = vec![Level { width: 8, height: 4, rgba }];
+        while let Some(smaller) = levels.last().unwrap().halved(MipColour::OpacityWeighted) {
+            levels.push(smaller);
+        }
+        let file = bc7_ktx2(8, 4, &levels).unwrap();
+        let reader = ktx2::Reader::new(file.as_slice()).unwrap();
+        assert_eq!(reader.header().format, Some(Format::BC7_SRGB_BLOCK));
+        assert_eq!(reader.header().level_count, 4);
+        let lengths: Vec<u64> = reader.levels().map(|level| level.uncompressed_byte_length).collect();
+        assert_eq!(lengths, [32, 16, 16, 16]);
+    }
+
     fn alpha_fixture() -> (PathBuf, Settings) {
         use std::sync::atomic::{AtomicUsize, Ordering};
         static NEXT: AtomicUsize = AtomicUsize::new(0);
@@ -326,6 +390,7 @@ mod tests {
             alpha_cutoff: 0.4,
             mip_colour: MipColour::Average,
             alpha_shadow: true,
+            compression: Compression::None,
         };
         (folder, settings)
     }

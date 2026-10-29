@@ -1,0 +1,5 @@
+# Crater Park's restyled tile edge texture: painted, wraps x (edges), mean [138, 92, 70], detail x1.22.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "617e2f91aecbcbaea69ac6cfeeaa6fd4a9d2a082e98e81e263aa8097df59f7ba"

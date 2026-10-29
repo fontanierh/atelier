@@ -4,4 +4,4 @@ kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Lockon_Jump_B_Ed"
 frames = [5.0, 26.0]
-inputs_sha256 = "ed82eae73923047c42159adafd0251efffb2215a03c6baf9eab1750e3ccf11b2"
+inputs_sha256 = "cb4b8c6362b9afc2c83ea71aa7d5c1603b45231ad1d89a630606fc732afe4847"

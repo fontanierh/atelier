@@ -1,0 +1,5 @@
+# Crater Park's restyled herringbone texture: painted, wraps xy (edges).
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "41043e7e454c5e0716ee677c9e7182ee723c8163627ab7454f43bf2b0c34c94a"

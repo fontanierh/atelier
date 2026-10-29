@@ -1,0 +1,5 @@
+# kite.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "c82dece665fca4bedef2fbbb73c2e6a4d9f10aabb615af57b70f851b131937f9"

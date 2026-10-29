@@ -1,0 +1,5 @@
+# Crater Park's restyled stair brick texture: painted, wraps xy (edges).
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b883ee0b32c4e3165ab9d16a8c3c730c57f8dab9252519196be974374a4352ab"

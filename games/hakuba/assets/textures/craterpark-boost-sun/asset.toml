@@ -1,0 +1,5 @@
+# Crater Park's restyled boost sun texture: ramp_planks recoloured to albedo [240, 150, 14], grain x0.35.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "fb6e6450d00e7ece61b33d9eb94cd14728daa25631f1651bede94f797155262f"

@@ -1,0 +1,5 @@
+# hull.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "2d9de2dbe1ed6a1d8357ef5575bc788ffcd80565f689d46340ec7caa13fdb428"

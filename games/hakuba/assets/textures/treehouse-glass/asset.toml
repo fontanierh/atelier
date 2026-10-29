@@ -1,0 +1,5 @@
+# glass.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "7dac85733f4bc104bf2cf70bbcac6fe56e8e4b85548dd32aa14eef3e6e6e032b"

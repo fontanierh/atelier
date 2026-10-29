@@ -1,0 +1,4 @@
+# Crater Park's restyled concrete texture: painted, wraps xy (blend), mean [168, 164, 152], detail x2.50.
+path = "texture.png"
+sha256 = "e769440383d989a81a4f49d5d77f64c0f0542f412043ccee46f9dd66a47214e6"
+authoring_texture_sha256 = "e769440383d989a81a4f49d5d77f64c0f0542f412043ccee46f9dd66a47214e6"

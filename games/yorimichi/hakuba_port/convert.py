@@ -1,11 +1,13 @@
 """Blender script: turn Yorimichi export meshes into Hakuba source props.
 
 Run as `blender -b --threads 3 -P convert.py -- JOBS.json`. Each job names one source mesh (FBX or GLB) and one
-output GLB. The output holds a node `full`, the visible mesh, coloured per vertex in linear RGB with alpha 0 (no
-motion), and, when the source has `UCX_` hulls or the job names a `collision_source`, a node `collision` holding
-them. Corners that store the same position, normal and colour share one vertex. Each material slot's colour comes
-from the job: a flat `rgb`, an image's mean colour (`mean`) or the image sampled at each corner's UV (`sample`),
-times its `gain`; a slot whose rule says `drop` loses its faces.
+output GLB. The output holds a node `full`, the visible mesh, and, when the source has `UCX_` hulls or the job names a
+`collision_source`, a node `collision` holding them. Each corner's colour, in linear RGB, is the product of what its
+material slot's rule names: a flat `rgb`, the source's vertex colour (`vertex`) and a `gain`. A slot whose rule names a
+`texture` asset draws it on the mesh's own UVs, times that colour, and then the whole `full` node is a textured
+surface; on a mesh without UVs it shows the texture's mean colour (`mean_rgb`) instead. Otherwise the colour alone is
+painted per vertex, with alpha 0 (no motion). A slot whose rule says `drop` loses its faces. Corners that store the
+same position, normal, colour and texture position share one vertex.
 """
 import json
 import os
@@ -16,22 +18,7 @@ import bpy
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from painted import PAINT, glb  # noqa: E402
-
-
-_images = {}
-
-
-def image(path):
-    """An image's linear RGB pixels as a (height, width, 3) array, cached by path."""
-    if path not in _images:
-        img = bpy.data.images.load(path, check_existing=True)
-        img.colorspace_settings.name = 'sRGB'
-        w, h = img.size
-        px = np.empty(w * h * 4, dtype=np.float32)
-        img.pixels.foreach_get(px)  # Blender converts to linear float pixels
-        _images[path] = px.reshape(h, w, 4)[:, :, :3]
-    return _images[path]
+from painted import PAINT, SURFACE, glb  # noqa: E402
 
 
 def slot_rules(job, names):
@@ -82,8 +69,8 @@ def drop(o, job):
 
 def paint(o, job):
     """Write each corner's linear colour into a `Color` attribute: the product of what its slot's rule names, the
-    source's vertex colour (`vertex`, decoded from sRGB once more with `decode`), an image's mean (`mean`) or its
-    texel at the corner's UV (`sample`), a flat `rgb`, and a `gain`."""
+    source's vertex colour (`vertex`, decoded from sRGB once more with `decode`), a flat `rgb` and a `gain`, and the
+    texture's mean (`mean_rgb`) where the mesh has no UVs to draw it on. Returns each slot's texture, or None."""
     mesh = o.data
     names = [m.name if m else '' for m in mesh.materials] or ['']
     rules = slot_rules(job, names)
@@ -100,32 +87,25 @@ def paint(o, job):
         existing = np.empty(n * 4, dtype=np.float32)
         source.data.foreach_get('color', existing)
         existing = existing.reshape(-1, 4)[:, :3]
-    uv = np.zeros((n, 2), dtype=np.float32)
-    if mesh.uv_layers:
-        flat = np.empty(n * 2, dtype=np.float32)
-        mesh.uv_layers[0].data.foreach_get('uv', flat)
-        uv = flat.reshape(-1, 2)
     material = np.zeros(len(mesh.polygons), dtype=np.int32)
     mesh.polygons.foreach_get('material_index', material)
     total = np.empty(len(mesh.polygons), dtype=np.int32)
     mesh.polygons.foreach_get('loop_total', total)
     loop_material = np.repeat(material, total)
     colours = np.zeros((n, 4), dtype=np.float32)
+    textures = []
     for k, rule in enumerate(rules):
+        texture = rule.get('texture') if mesh.uv_layers else None
+        textures.append(texture)
         sel = loop_material == k
         if not sel.any():
             continue
         c = np.ones((int(sel.sum()), 3), dtype=np.float32)
         if rule.get('vertex') and existing is not None:
             c *= linear(existing[sel]) if rule.get('decode') else existing[sel]
-        if 'mean' in rule:
-            c *= image(rule['mean']).reshape(-1, 3).mean(axis=0)
-        if 'sample' in rule:
-            px = image(rule['sample'])
-            h, w, _ = px.shape
-            u, v = np.mod(uv[sel, 0], 1.0), np.mod(uv[sel, 1], 1.0)
-            c *= px[(v * (h - 1)).astype(int), (u * (w - 1)).astype(int)]
-        if not any(key in rule for key in ('vertex', 'mean', 'sample', 'rgb')):
+        if rule.get('texture') and not texture:
+            c *= np.asarray(rule['mean_rgb'], dtype=np.float32)
+        if not any(key in rule for key in ('vertex', 'texture', 'rgb')):
             c *= 0.5
         c *= np.asarray(rule.get('rgb', [1.0, 1.0, 1.0]), dtype=np.float32) * rule.get('gain', 1.0)
         # Hakuba draws painted colour in [0, 1]; a gain can push a bright texel past it.
@@ -134,10 +114,13 @@ def paint(o, job):
         mesh.color_attributes.remove(attr)
     attr = mesh.color_attributes.new(name='Color', type='FLOAT_COLOR', domain='CORNER')
     attr.data.foreach_set('color', colours.ravel())
+    return textures
 
 
 def arrays(o, coloured):
-    """A mesh's corners as flat float arrays in the map frame, and its triangles, without zero-area ones."""
+    """A mesh's corners as flat float arrays in the map frame, and its triangles, without zero-area ones; with
+    `coloured`, also its corners' texture positions (rows running down the image, as glTF's) and each triangle's
+    material slot."""
     mesh = o.data
     mesh.calc_loop_triangles()
     n = len(mesh.loops)
@@ -148,18 +131,25 @@ def arrays(o, coloured):
     position = co.reshape(-1, 3)[vi]
     normal = np.empty(n * 3, dtype=np.float32)
     mesh.corner_normals.foreach_get('vector', normal)
-    colour = None
-    if coloured:
-        colour = np.empty(n * 4, dtype=np.float32)
-        mesh.color_attributes['Color'].data.foreach_get('color', colour)
-        colour = colour.reshape(-1, 4)
     triangles = np.empty(len(mesh.loop_triangles) * 3, dtype=np.int64)
     mesh.loop_triangles.foreach_get('loops', triangles)
     triangles = triangles.reshape(-1, 3)
+    slot = np.empty(len(mesh.loop_triangles), dtype=np.int32)
+    mesh.loop_triangles.foreach_get('material_index', slot)
     a, b, c = (position[triangles[:, k]] for k in range(3))
-    area = np.linalg.norm(np.cross(b - a, c - a), axis=1)
-    triangles = triangles[area > 1e-10]
-    return position, normal.reshape(-1, 3), colour, triangles
+    area = np.linalg.norm(np.cross(b - a, c - a), axis=1) > 1e-10
+    triangles, slot = triangles[area], slot[area]
+    if not coloured:
+        return position, normal.reshape(-1, 3), None, triangles
+    colour = np.empty(n * 4, dtype=np.float32)
+    mesh.color_attributes['Color'].data.foreach_get('color', colour)
+    uv = np.zeros((n, 2), dtype=np.float32)
+    if mesh.uv_layers:
+        flat = np.empty(n * 2, dtype=np.float32)
+        mesh.uv_layers[0].data.foreach_get('uv', flat)
+        uv = flat.reshape(-1, 2)
+        uv[:, 1] = 1.0 - uv[:, 1]
+    return position, normal.reshape(-1, 3), colour.reshape(-1, 4), triangles, uv, slot
 
 
 def convert(job):
@@ -175,8 +165,19 @@ def convert(job):
         raise RuntimeError(f"{job['source']}: no visible mesh")
     full = join(visible, 'full')
     drop(full, job)
-    paint(full, job)
-    parts = [('full', {'vertex_paint': PAINT}, *arrays(full, True))]
+    textures = paint(full, job)
+    position, normal, colour, triangles, uv, slot = arrays(full, True)
+    used = np.unique(slot)
+    materials = None
+    if any(textures[k] for k in used):
+        # A textured surface: one material per slot it draws, each its texture or none, times the corner colour.
+        names = [m.name if m else '' for m in full.data.materials] or ['']
+        materials = [{'name': names[k], 'colour': [1.0, 1.0, 1.0], 'texture': textures[k], 'two_sided': False}
+                     for k in used]
+        colour[:, 3] = 1.0
+        parts = [('full', SURFACE, position, normal, colour, triangles, uv, np.searchsorted(used, slot))]
+    else:
+        parts = [('full', {'vertex_paint': PAINT}, position, normal, colour, triangles)]
     if hulls and job.get('collision', True):
         collision = join(hulls, 'collision')
         parts.append(('collision', None, *arrays(collision, False)))
@@ -186,9 +187,10 @@ def convert(job):
     low, high = position.min(axis=0), position.max(axis=0)
     origin = np.array([(low[0] + high[0]) / 2, (low[1] + high[1]) / 2, low[2] + 0.01])
     parts = [(n, e, p - origin, *rest) for n, e, p, *rest in parts]
-    glb(parts, job['output'])
+    glb(parts, job['output'], materials)
     return {'output': job['output'], 'triangles': int(len(parts[0][5])), 'collision': len(parts) == 2,
-            'origin': origin.tolist(), 'size': float(max(high - low))}
+            'origin': origin.tolist(), 'size': float(max(high - low)),
+            'textures': sorted({m['texture'] for m in materials or [] if m['texture']})}
 
 
 def main():

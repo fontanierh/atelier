@@ -1,0 +1,4 @@
+# Crater Park's restyled cast concrete texture: world-aligned games/yorimichi/assets/craterpark/restyle/cast_concrete.jpg, wraps xy (edges), mean [148, 142, 132], detail x2.50; Tint white.
+path = "texture.png"
+sha256 = "413285d019ec51f4e062c0235d7edb8c0ade14d35f669eaa79ff7b49b1c64be4"
+authoring_texture_sha256 = "413285d019ec51f4e062c0235d7edb8c0ade14d35f669eaa79ff7b49b1c64be4"

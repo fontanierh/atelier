@@ -1,0 +1,4 @@
+# Crater Park's restyled flagstone texture: painted masonite, wraps xy (edges), mean [160, 122, 86], detail x2.50.
+path = "texture.png"
+sha256 = "3d68ea80a8e0e5b902fab0264e44a9353c7845e1baf0c57627375910804687d0"
+authoring_texture_sha256 = "3d68ea80a8e0e5b902fab0264e44a9353c7845e1baf0c57627375910804687d0"

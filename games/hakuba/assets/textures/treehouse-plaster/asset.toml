@@ -1,0 +1,5 @@
+# plaster.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "0df8ea83465f4a354362470cdbae7a70dd1623be9b2800386e9954bc160ecbb1"

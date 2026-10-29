@@ -1,0 +1,5 @@
+# Crater Park's restyled ramp fascia texture: painted, wraps xy (edges), mean [112, 76, 52], detail x1.00.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "15698b0c23c0e23331728075f4df1222be4595c5569323e0bb05f407326ad705"

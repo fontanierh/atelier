@@ -1,0 +1,4 @@
+# Crater Park's restyled concrete edge texture: painted, wraps xy (edges), mean [168, 164, 152], detail x2.31.
+path = "texture.png"
+sha256 = "df4d2fab1cd03b578341911ba685a92c4e504f45beb2bbee27cf1368a70d9b9e"
+authoring_texture_sha256 = "df4d2fab1cd03b578341911ba685a92c4e504f45beb2bbee27cf1368a70d9b9e"

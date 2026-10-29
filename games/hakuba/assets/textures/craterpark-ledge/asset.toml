@@ -1,0 +1,5 @@
+# Crater Park's restyled ledge texture: painted, wraps x (edges), mean [172, 165, 150], detail x1.72.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "853670935dca67a8840b2117af19c791bf597f1ecc09f404e1c796a27628b9c8"

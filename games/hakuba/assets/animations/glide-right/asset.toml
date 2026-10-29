@@ -3,4 +3,4 @@
 kind = "animation"
 source = "src/source.glb"
 clip = "Float_Float_R"
-inputs_sha256 = "13621561900c7b001cb567c608d084d30f29ac57e2224b2dac9bb3b081349be3"
+inputs_sha256 = "7008f02b58af6a18a3e54c69ddb52092f6154498cabd8c5d4357c72932d9c4e9"

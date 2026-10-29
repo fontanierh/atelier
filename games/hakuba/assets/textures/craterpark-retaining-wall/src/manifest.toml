@@ -1,0 +1,4 @@
+# Crater Park's restyled retaining wall texture: painted, wraps xy (edges), mean [88, 84, 82], detail x1.00.
+path = "texture.png"
+sha256 = "dad2ea8c90d30728ed29f3a9ec60ce1535f7a47579a7bd6a1c012a6c2e94862c"
+authoring_texture_sha256 = "dad2ea8c90d30728ed29f3a9ec60ce1535f7a47579a7bd6a1c012a6c2e94862c"

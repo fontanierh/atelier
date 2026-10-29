@@ -2,4 +2,4 @@
 kind = "prop"
 source = "src/lantern.glb"
 solid = true
-inputs_sha256 = "92dccde0ecd31617c4189b5b9aa5547cd2bf0af9dcbdb04d489c04dfce36c659"
+inputs_sha256 = "106cd2dfb07e87956d299b19539984435b2592ff89dcac173b72b5afbcb08a84"

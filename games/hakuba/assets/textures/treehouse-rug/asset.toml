@@ -1,0 +1,5 @@
+# rug.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "3a8792196394498d4682cdba6fe249c805765d1f00085ea81e978d29b6378d64"

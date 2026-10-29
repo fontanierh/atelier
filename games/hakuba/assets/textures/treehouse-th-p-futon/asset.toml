@@ -1,0 +1,5 @@
+# TH_P_futon.png from Yorimichi's treehouse, as its props draw it.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "a677ac637319b8d2e5c647e702a08b4eab6fc1e73aea719fa5e7d096e113537d"

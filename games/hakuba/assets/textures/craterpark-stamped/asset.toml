@@ -1,0 +1,5 @@
+# Crater Park's restyled stamped texture: painted, wraps xy (edges), mean [170, 160, 138], detail x2.29.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "308c4f848e603a6063fa2649bb441d80cfaf7282cb42ff8e80d3e01e0e6a0ec5"
