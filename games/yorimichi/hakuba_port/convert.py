@@ -13,7 +13,8 @@ hulls about the source origin first. A job's `keep`, a rectangle [west, south, e
 only the visible faces whose centre lies in it, west and south edges included; with none there, the job writes no
 GLB and reports itself `EMPTY`. A job's `ground_owned` slots lose their faces facing up (`UP`), a walking surface the
 world's ground draws instead. A job's `meet`, segments in the source frame, is an edge its vertices within a couple of
-centimetres of it move onto, first (`seam.py`).
+centimetres of it move onto, first (`seam.py`). A job's `faces` moves faces of a slot whose mean colour passes a test into
+another slot, which its own rule draws (`split_faces`).
 """
 import json
 import os
@@ -89,6 +90,81 @@ def keep(o, rectangle):
     bmesh.ops.delete(mesh, geom=outside, context='FACES')
     mesh.to_mesh(o.data)
     mesh.free()
+
+
+def face_colours(o):
+    """Each face's mean corner colour as Blender reads the source's `Color` attribute (linear RGB, and its alpha), or
+    None for a mesh without one."""
+    mesh = o.data
+    source = mesh.color_attributes.get('Color')
+    if source is None:
+        return None
+    n = len(mesh.loops)
+    if source.domain == 'POINT':
+        point = np.empty(len(mesh.vertices) * 4, dtype=np.float32)
+        source.data.foreach_get('color', point)
+        vi = np.empty(n, dtype=np.int32)
+        mesh.loops.foreach_get('vertex_index', vi)
+        corners = point.reshape(-1, 4)[vi]
+    else:
+        corners = np.empty(n * 4, dtype=np.float32)
+        source.data.foreach_get('color', corners)
+        corners = corners.reshape(-1, 4)
+    start = np.empty(len(mesh.polygons), dtype=np.int32)
+    mesh.polygons.foreach_get('loop_start', start)
+    total = np.empty(len(mesh.polygons), dtype=np.int32)
+    mesh.polygons.foreach_get('loop_total', total)
+    return np.add.reduceat(corners, start) / total[:, None]
+
+
+def matches(test, colour):
+    """Whether faces of mean colour `colour` (n by 4: linear RGB and alpha) pass a `faces` test: `saturated`, the
+    spread of their channels above it; `alpha`, [centre, reach], their alpha within reach of the centre; `wood`, a
+    warm brown, red at least 1.45 times green and green 1.5 times blue, red under 0.35, as Yorimichi's arcade
+    material picks its timber."""
+    rgb, alpha = colour[:, :3], colour[:, 3]
+    if 'saturated' in test:
+        return rgb.max(1) - rgb.min(1) > test['saturated']
+    if 'alpha' in test:
+        centre, reach = test['alpha']
+        return np.abs(alpha - centre) < reach
+    if test.get('wood'):
+        r, g, b = rgb.T
+        return (r >= 1.45 * g) & (g >= 1.5 * b) & (r < 0.35)
+    raise ValueError(f'unknown face test {test}')
+
+
+def split_faces(o, job):
+    """Move each face of a slot the job's `faces` names into the first slot whose test its mean colour passes, so that
+    slot's own rule draws it, as Yorimichi's material treats such colours apart (a fallen leaf on paving, a band of
+    timber). Faces that pass no test stay."""
+    tests = job.get('faces')
+    if not tests:
+        return
+    colour = face_colours(o)
+    if colour is None:
+        return
+    mesh = o.data
+    names = [m.name if m else '' for m in mesh.materials]
+    material = np.empty(len(mesh.polygons), dtype=np.int32)
+    mesh.polygons.foreach_get('material_index', material)
+    moved = np.zeros(len(material), bool)
+    counts = {}
+    for slot, rules in tests.items():
+        here = np.array([names[k].split('.')[0] == slot for k in material]) if names else np.zeros(len(material), bool)
+        for test, target in rules:
+            pick = here & ~moved & matches(test, colour)
+            if not pick.any():
+                continue
+            if target not in names:
+                mesh.materials.append(bpy.data.materials.get(target) or bpy.data.materials.new(target))
+                names.append(target)
+            material[pick] = names.index(target)
+            moved |= pick
+            counts[target] = counts.get(target, 0) + int(pick.sum())
+    mesh.polygons.foreach_set('material_index', material)
+    mesh.update()
+    print('FACES', o.name, json.dumps(counts, sort_keys=True))
 
 
 def drop(o, job):
@@ -215,6 +291,7 @@ def convert(job):
         if not full.data.polygons:
             return None
     drop(full, job)
+    split_faces(full, job)
     textures = paint(full, job)
     position, normal, colour, triangles, uv, slot = arrays(full, True)
     # Each corner's texture position over its slot's tile.

@@ -1,0 +1,4 @@
+# The arcade timber texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "45a301121bdf88d2c6b91d553b29f27a32b222383b445de966efc22aa395a1e9"
+authoring_texture_sha256 = "45a301121bdf88d2c6b91d553b29f27a32b222383b445de966efc22aa395a1e9"
