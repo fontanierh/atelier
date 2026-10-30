@@ -1,0 +1,4 @@
+# The earth texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "22469710162bf7a35c37aa32eb52021ce8ade09f9853375f3c43c4228562d278"
+authoring_texture_sha256 = "22469710162bf7a35c37aa32eb52021ce8ade09f9853375f3c43c4228562d278"

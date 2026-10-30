@@ -1,0 +1,4 @@
+# The stone texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "b4b3e930679db0b0060e2553187f8766dae4fa0209415c2a475163d98bfe9991"
+authoring_texture_sha256 = "b4b3e930679db0b0060e2553187f8766dae4fa0209415c2a475163d98bfe9991"

@@ -1,0 +1,4 @@
+# The paint texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "9eea1e7fce1613caf4d3df820ea2f9b29818fc38c3738118e5779e720d6fb734"
+authoring_texture_sha256 = "9eea1e7fce1613caf4d3df820ea2f9b29818fc38c3738118e5779e720d6fb734"

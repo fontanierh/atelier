@@ -1,0 +1,5 @@
+# The siding texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "0afbe6d7492d09036ed3290800baeb5c3f10cae8210be0f279d953078958bac4"

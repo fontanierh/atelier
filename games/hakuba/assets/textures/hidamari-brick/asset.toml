@@ -1,0 +1,5 @@
+# The brick texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "d9c297b402b6bde7856957cdc9a652484ad05a94ae050819e9c1d7af67c60b17"

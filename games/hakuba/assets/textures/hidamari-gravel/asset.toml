@@ -1,0 +1,5 @@
+# The gravel texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "d04b69283810e71106c8ed8e44123e45793f33f9ef13213327a10bab6c9886e0"

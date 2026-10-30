@@ -1,0 +1,5 @@
+# The moss texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "7f4733d3d53d515bb71e4d7f4b16acdf391a52d14df4cd11aeccbaed51cb4887"

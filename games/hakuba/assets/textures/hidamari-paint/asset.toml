@@ -1,0 +1,5 @@
+# The paint texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "02a12c6c56e3288a62345ae8e5e8f2c662fe4aa3c7b1f80ffde32f764b9a7d7b"

@@ -136,15 +136,58 @@ def belmonte(build):
 
 
 
+# Hidamari's textured surfaces, as Yorimichi's city material (`unreal/Scripts/city_material.py`, M_HDCity) draws a slot
+# `HDS_<surface>`: the vertex colour times twice the surface's neutral detail map (mean about a half) over `tile_m`
+# metres of the mesh's metre UVs, mixed towards 1 by the surface's strength (1 unless named here). `flat` is the vertex
+# colour alone; `road` draws the island road's own material there, which Hakuba's slot leaves to the vertex colour.
+HD_STRENGTH = {'flat': 0.0, 'paint': 0.7, 'roof': 0.8, 'metal': 0.8}
+# The city's own poles (with the wires between them), street lamps and rocks stand Hakuba's props of the same source
+# models, as the coast road stands its own.
+HD_SHARED = {'Pole': 'coast-pole', 'Pole_Lamp': 'coast-pole-lamp', 'Rock_B': 'garden-rock'}
+# The city's terrain becomes Hakuba's ground (`ground.py` samples its vertex colour), so it keeps its colour alone.
+HD_GROUND = ('HD_Terrain', 'HD_NorthMountains')
+
+
+def hidamari_surfaces(build):
+    """The rule for each of the city's textured surfaces, by slot: its detail map at its strength (a map mixed
+    towards a flat half, written under this checkout's `build/hakuba_port/hidamari`), drawn over its tile, times twice
+    the vertex colour."""
+    import numpy as np
+    from PIL import Image
+    from port import REPO
+    textures = build / 'hidamari' / 'textures'
+    out = REPO / 'build' / 'hakuba_port' / 'hidamari'
+    out.mkdir(parents=True, exist_ok=True)
+    rules = {'HDS_flat': {'vertex': True}, 'HDS_road': {'vertex': True}}
+    for surface, info in json.loads((textures / 'textures.json').read_text()).items():
+        strength = HD_STRENGTH.get(surface, 1.0)
+        if strength == 0.0:
+            continue
+        image = textures / f'{surface}.png'
+        if strength != 1.0:
+            rgb = np.asarray(Image.open(image).convert('RGB'), np.float64) / 255.0
+            linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+            mixed = (1.0 - strength) / 2.0 + strength * linear
+            srgb = np.where(mixed <= 0.0031308, mixed * 12.92, 1.055 * mixed ** (1 / 2.4) - 0.055)
+            image = out / f'{surface}.png'
+            Image.fromarray(np.round(np.clip(srgb, 0, 1) * 255).astype(np.uint8)).save(image)
+        rules[f'HDS_{surface}'] = {'sample': str(image), 'tile': info['tile_m'], 'vertex': True, 'gain': 2.0}
+    return rules
+
+
 def hidamari(build):
     """Hidamari, the city east of the coast, with its ground, streets, harbour and the northern mountains behind it.
     Its parents are split into pieces in the parent's own frame; `city.json` stands each parent, and so all its pieces.
-    The city's colour is its vertex colour (its textures are neutral detail around 1); a street prop samples its own
-    atlas. Plants are left to Hakuba's plants. The city's flat sea is left out: Hakuba draws one sea at sea level
-    under the whole island, and the city's copy lay on it as an off-coloured rectangle seen from the rim."""
+    The city's colour is its vertex colour; its textured surfaces (`HDS_<surface>` slots: walls, roofs, streets and
+    paths) draw their detail maps over it (`hidamari_surfaces`), but for the terrain, which becomes the ground
+    (`HD_GROUND`), and a street prop samples its own atlas. The city's own poles, street lamps and rocks stand
+    Hakuba's props of the same models (`HD_SHARED`). Plants are left to Hakuba's plants. The city's flat sea is left
+    out: Hakuba draws one sea at sea level under the whole island, and the city's copy lay on it as an off-coloured
+    rectangle seen from the rim."""
     out = build / 'hidamari'
     instances = json.loads((out / 'city.json').read_text())['instances']
     region = Region('hidamari', 'Hidamari, the city east of the coast, and the northern mountains')
+    surfaces = hidamari_surfaces(build)
     skipped = []
     for step, rule_for in (('hidamari', lambda piece: {'vertex': True}),
                            ('hidamari_props', lambda piece: {'sample': str(out / 'props' / f'{piece}.png')})):
@@ -158,8 +201,12 @@ def hidamari(build):
                 name = 'hidamari-' + kebab(piece.removeprefix('HD_P_').removeprefix('HD_'))
                 if name == 'hidamari-sea':
                     continue
-                region.models[name] = Model(export_source(build, step, piece), default=rule_for(piece))
+                region.models[name] = Model(export_source(build, step, piece), default=rule_for(piece),
+                                            slots=surfaces if step == 'hidamari' and parent not in HD_GROUND else {})
                 region.groups.append((name, None, placed))
+    for source, prop in HD_SHARED.items():
+        region.shared.add(prop)
+        region.groups.append((prop, True, [list(map(float, i)) for i in instances[source]]))
     if skipped:
         print('hidamari: parents never placed:', ', '.join(skipped))
     return region

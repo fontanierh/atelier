@@ -1,0 +1,5 @@
+# The metal texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "5a178e49c132bff81085604890c2c0efa1156ff2110ee6ae7b785828ea7111ba"

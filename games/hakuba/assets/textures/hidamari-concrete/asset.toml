@@ -1,0 +1,5 @@
+# The concrete texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "064e82b4c23eab6210730238fa6b1273f0f6fba1a3fb91afd2f07bc752171825"

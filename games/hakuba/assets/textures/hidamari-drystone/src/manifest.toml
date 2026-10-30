@@ -1,0 +1,4 @@
+# The drystone texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "0cb319b5e7c28103224f2247843a9a0dc25bd2ee593423d47e4c0be641814686"
+authoring_texture_sha256 = "0cb319b5e7c28103224f2247843a9a0dc25bd2ee593423d47e4c0be641814686"
