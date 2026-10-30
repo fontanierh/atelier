@@ -9,7 +9,7 @@
 
 use bevy::prelude::*;
 use hakuba_characters::{Clips, Play, Playing};
-use hakuba_world::{Ground, Hit, SEA_LEVEL_M, WaterBodies};
+use hakuba_world::{Ground, Hit, SEA_LEVEL_M, SceneryLoaded, WaterBodies};
 
 use crate::input::Controls;
 use crate::{Body, Player};
@@ -101,7 +101,8 @@ const LOST_M: f32 = 50.0;
 /// What the player is standing on, if anything.
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub enum Mode {
-    /// Not on the ground yet: the world is loading under the player.
+    /// Not on the ground yet: the world is loading under the player, who stands on the highest ground under them once
+    /// its scenery has ([`SceneryLoaded`]).
     #[default]
     Arriving,
     Ground,
@@ -223,6 +224,7 @@ pub fn advance(
     time: Res<Time>,
     mut ground: Ground,
     waters: Option<Res<WaterBodies>>,
+    scenery: Option<Res<SceneryLoaded>>,
     mut players: Query<(&mut Player, &mut Transform)>,
     bodies: Query<(Entity, &Clips, &Playing), With<Body>>,
 ) {
@@ -240,7 +242,9 @@ pub fn advance(
 
         match motion.mode {
             Mode::Arriving => {
-                if let Some(hit) = ground.below(at, 2.0, 50.0) {
+                if scenery.is_some()
+                    && let Some(hit) = ground.below(at, 2.0, 50.0)
+                {
                     at.y = hit.point.y;
                     motion.mode = Mode::Ground;
                     motion.safe = at;

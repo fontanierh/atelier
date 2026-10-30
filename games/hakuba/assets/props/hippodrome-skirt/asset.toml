@@ -1,0 +1,5 @@
+# A piece of the Hidamari Hippodrome on the slope north of the city, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "0244dbc777cfc8aa4b754f831bff8f3407b5583dd2b1df5e9f3ae5d4ef7f9252"

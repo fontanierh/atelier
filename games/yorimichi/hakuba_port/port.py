@@ -127,9 +127,10 @@ def mean(path):
 def settle_textures(prefixes):
     """Settle the texture assets ported regions wrote (named `<prefix>-...`) by how many assets name them: one no asset
     names any more is deleted (a slot's on a mesh without UVs, a terrain prop's `ground.py` removed); one only a prop
-    names moves into that prop, as its own texture `src/<name>.png`, which its source model names as `<name>.ktx2`.
-    One image under several names (a source image several slots name) is one texture first: the first name, which
-    every asset that names another instead names, as a texture asset or as its own texture."""
+    names moves into that prop, as its own texture `src/<name>.png`, which its source model names as `<name>.ktx2`. A
+    region's `layout.rs` naming one, as an overlay does, counts as the world naming it. One image under several names (a
+    source image several slots name) is one texture first: the first name, which every asset that names another instead
+    names, as a texture asset or as its own texture."""
     from painted import rename_images
     assets = HAKUBA / 'assets'
 
@@ -173,6 +174,11 @@ def settle_textures(prefixes):
         for names in re.findall(r'^textures = (\[.*\])$', toml.read_text(), re.M):
             for name in json.loads(names):
                 users.setdefault(name, []).append(toml.parent)
+    # A region's layout naming a texture, such as its overlay's, makes the world one of its users.
+    layouts = [layout.read_text() for layout in (assets / 'world' / 'src' / 'regions').glob('*/layout.rs')]
+    for folder in (assets / 'textures').iterdir():
+        if any(f'"{folder.name}"' in layout for layout in layouts):
+            users.setdefault(folder.name, []).append(assets / 'world')
     for folder in sorted((assets / 'textures').iterdir()):
         name = folder.name
         if not any(name.startswith(prefix + '-') for prefix in prefixes):

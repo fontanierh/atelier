@@ -4,7 +4,8 @@ Hidamari's city, Belmonte and Brinecove stand outside the regions Hakuba plants 
     uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove | --caldera]
 
 The island's world (`world.json`) stands its plants over the whole map; Yorimichi's map clears them inside
-Hidamari's city and its north mountains, Belmonte and Brinecove, whose own plants replace them, and Hakuba's start
+Hidamari's city and its north mountains, Belmonte and Brinecove, whose own plants replace them, round the Hippodrome's
+platform and lane (its `hippodrome.json` `clearance`, written by `hippodrome.py`), and Hakuba's start
 regions (`momiji-coast`, `momiji-village`, `woodland`) already hold theirs. The city (`hidamari/city.json`),
 Belmonte and Brinecove (their `runtime.json`), the Mega Park (its `park.json`) and Crater Park's caldera floor (its
 `craterpark/v2/geometry.npz`) add their own plants, kept everywhere. Each plant becomes the Hakuba plant made from the
@@ -198,20 +199,26 @@ def inside(rows, rectangle):
 
 def sources(build):
     """(source name, rows, kept off the ground: True, or `DECK` on a deck) for each plant group in the island's world,
-    cleared as Yorimichi's map clears it, then in Hidamari's city, Belmonte, the Mega Park, Crater Park, Sunset Pier
-    and Brinecove."""
+    cleared as Yorimichi's map clears it and round the Hippodrome, then in Hidamari's city, Belmonte, the Mega Park,
+    Crater Park, Sunset Pier and Brinecove."""
     island = json.loads((build / 'world.json').read_text())['instances']
     city = json.loads((build / 'hidamari' / 'city.json').read_text())
     cleared = [(300.0, -450.0, 2200.0, 1600.0), tuple(city['north_bounds']), START,
                tuple(json.loads((build / 'belmonte' / 'runtime.json').read_text())['clearance_m']),
                tuple(json.loads((build / 'products' / 'brinecove' / 'map.json').read_text())['clearance_m'])]
+    # The Hippodrome clears its platform and its lane (`hippodrome.py`'s `clearance` polygons, map metres) of the
+    # island's plants and the city's, as Yorimichi's world removes every plant inside them.
+    venue = [(*np.min(polygon, axis=0), *np.max(polygon, axis=0))
+             for polygon in json.loads((build / 'hippodrome' / 'region' / 'hippodrome.json').read_text())['clearance']]
+    cleared += venue
     for name, rows in island.items():
         if name.startswith(PLANTS) and rows:
             rows = np.array([row[:5] for row in rows], float)
             yield name, rows[~np.any([inside(rows, rectangle) for rectangle in cleared], axis=0)], False
     for name, rows in city['instances'].items():
         if name.startswith(PLANTS) and rows:
-            yield name, np.array([row[:5] for row in rows], float), False
+            rows = np.array([row[:5] for row in rows], float)
+            yield name, rows[~np.any([inside(rows, rectangle) for rectangle in venue], axis=0)], False
     # Belmonte stands its plants from its runtime groups.
     runtime = json.loads((build / 'belmonte' / 'runtime.json').read_text())
     ox, oy, oz = runtime['origin_cm']
