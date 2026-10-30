@@ -1,4 +1,4 @@
 # The pavilion of the ferry terminal at Brinecove.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "08c3134c612641a417688314156ff363a1d1bd523b2572298f5b81603ba0001c"
+inputs_sha256 = "cea2ff9b20d8cf9f5dfdb8853aa32ff6f6e26d1c105b190834e2ca91d0e11277"

@@ -178,6 +178,18 @@ impl Motion {
         Self { yaw, ..default() }
     }
 
+    /// Resumes on foot without retaining an old jump, glide or step crossing.
+    pub fn resuming(at: Vec3, yaw: f32, velocity: Vec3, grounded: bool) -> Self {
+        Self {
+            mode: if grounded { Mode::Ground } else { Mode::Air },
+            yaw,
+            velocity,
+            safe: at,
+            fall_from: at.y,
+            ..default()
+        }
+    }
+
     /// How fast the paraglider turns, in radians a second toward the left: 0 off it.
     pub fn glide_turn(&self) -> f32 {
         if self.mode == Mode::Glide { self.glide_turn } else { 0.0 }
@@ -233,6 +245,9 @@ pub fn advance(
         return;
     }
     for (mut player, mut transform) in &mut players {
+        if player.owner != crate::MovementOwner::Walking {
+            continue;
+        }
         let Ok((body, clips, playing)) = bodies.get(player.body) else { continue };
         let camera_yaw = player.camera.yaw;
         let motion = &mut player.motion;

@@ -32,6 +32,22 @@ Escape goes back to the menu.
 
 The browser needs WebGPU: a recent Chrome, Edge or other Chromium browser, or Safari 26.
 
+### Skateboard controls
+
+Press **V** to get on or off the board. Off the board, the native rider carries it and can get back on; **F** requests
+stowing and returns to walking after 0.2 seconds of stable ground. **W** pushes, **S** brakes, and **A/D** steer. Hold **Space** to crouch,
+then release to pop. Drag with the left mouse button, or use the arrow keys, to move the trick stick. **Q/E** are
+left/right grab triggers; off the board they drop or throw the carried board. **R** requests a transfer,
+**B** bails, and **Enter** asks the native recovery state to get up. While riding, **Shift/C** move the left stick forward/back for drift and handplant input; **T** is the right
+shoulder button. Off the board, **WASD** moves, **Shift** sprints and **Space** jumps. Hold **M + Down** to place a
+marker, or **M + Up** to return after the native hold delay. A controller uses its two sticks and triggers directly;
+Select gets on or off, and left shoulder plus left stick forward requests a transfer. Left shoulder plus D-pad
+Down/Up places/returns to a marker. The on-screen readout shows the actual simulation state, speed, trick and score.
+Skating waits for the world's full collision around the rider.
+
+The simulation and board assets are exported with the rest of the game. See `crates/skate/README.md` and
+`assets/simulations/skate-simulation/src/README.md` for the runtime and data provenance.
+
 Test in the browser first: what works there almost always works on desktop, but not always the other way round.
 
 ## Layout
@@ -51,7 +67,8 @@ games/hakuba/
     world/                  the world
     characters/             the playable characters: their models and clips
     glider/                 the paraglider, and how a character holds it
-    player/                 the character the player controls in the world
+    player/                 walking, running, jumping and movement ownership
+    skate/                  fixed-step board and rider simulation, input, solved pose and skating camera
     rendering/              shared rendering commands and 3D shadow views
     viewer/                 the character viewer
     audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside

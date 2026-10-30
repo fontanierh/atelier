@@ -1,0 +1,21 @@
+{
+  "description": "steel trucks grinding on a rail",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": true,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "grind_01.wav",
+      "sha256": "d825726f12fec716dcf9844ec6353c12e3b4e2d3d6ce94203449e8130360027b"
+    }
+  ]
+}

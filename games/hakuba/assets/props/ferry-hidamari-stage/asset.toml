@@ -1,4 +1,4 @@
 # The stage of the ferry terminal at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "bcf09f7450f3fdda9341e2acbb6c913d7cf47d12bda1f0657ce00647a4f67fc3"
+inputs_sha256 = "cfb49f48824185577ff6ceda8a6d817b3a88e2f06b1b8de6e87e81e62e6a7a3a"

@@ -1,0 +1,35 @@
+{
+  "description": "feet catching the board",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "audioville_stick_hit_13_wild.wav",
+      "sha256": "623d96e36eff804b4fb3aa50111426065fbdef94e401aff35c92f143d38b7f0b",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    },
+    {
+      "recording": "audioville_wooden_sword_hit_11.wav",
+      "sha256": "2f654f62b4302ea96c2bc70a07f2ab34deabcd2642babb3912c71dba5e23efa1",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    }
+  ],
+  "takes": [
+    {
+      "file": "catch_01.wav",
+      "sha256": "e5b6935df1d779f9c2d73a66320ed7af44324e516ed5f0fa4c6651aeb81bbe41"
+    },
+    {
+      "file": "catch_02.wav",
+      "sha256": "a227c5a8ba874dfe1a16841c31b1144cd8435226b84fe67b92e64f4c248bcd22"
+    },
+    {
+      "file": "catch_03.wav",
+      "sha256": "74ce545e4f5da7a88bf7507504fa1418f59430caf3e0a939120de7f39c619964"
+    }
+  ]
+}

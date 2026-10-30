@@ -14,6 +14,7 @@ use hakuba_player::PlayerPlugin;
 use hakuba_rendering::RenderingPlugin;
 use hakuba_screens::ScreensPlugin;
 use hakuba_settings::SettingsPlugin;
+use hakuba_skate::SkatePlugin;
 use hakuba_viewer::ViewerPlugin;
 use hakuba_world::WorldPlugin;
 
@@ -56,6 +57,7 @@ fn main() {
             CharactersPlugin,
             GliderPlugin,
             PlayerPlugin,
+            SkatePlugin,
             DevPlugin,
             ViewerPlugin,
             SoundsPlugin,

@@ -27,6 +27,9 @@ const LOADING: usize = 16;
 const LOADING_UNDER_SPLASH: usize = 32;
 pub const TILES: &str = "world/tiles";
 
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct CollisionActivation;
+
 pub struct TilesPlugin;
 impl Plugin for TilesPlugin {
     fn build(&self, app: &mut App) {
@@ -38,6 +41,7 @@ impl Plugin for TilesPlugin {
             .add_systems(
                 PostUpdate,
                 activate
+                    .in_set(CollisionActivation)
                     .after(TransformSystems::Propagate)
                     .before(VisibilitySystems::VisibilityPropagate)
                     .run_if(in_state(Screen::World)),
@@ -58,6 +62,7 @@ pub struct Tile {
     column: u32,
     row: u32,
     centre: Vec3,
+    pub(crate) collision_bounds: Option<[Vec2; 2]>,
     detail: Option<Detail>,
     showing: Option<Entity>,
     shown_detail: Option<Detail>,
@@ -75,6 +80,7 @@ impl Tile {
             column,
             row,
             centre,
+            collision_bounds: None,
             detail: None,
             showing: None,
             shown_detail: None,
@@ -82,6 +88,15 @@ impl Tile {
             failed: false,
             queued: false,
         })
+    }
+    pub(crate) fn collision_state(&self) -> ([u32; 2], Vec3, Option<Entity>, bool, Option<[Vec2; 2]>) {
+        (
+            [self.column, self.row],
+            self.centre,
+            self.showing,
+            self.shown_detail == Some(Detail::Full),
+            self.collision_bounds,
+        )
     }
     pub fn shown(&self) -> bool {
         self.failed || (!self.queued && self.detail == self.shown_detail && self.pending.is_none())
@@ -116,6 +131,8 @@ fn choose(
     camera: Single<&GlobalTransform, With<Camera3d>>,
     settings: Res<Settings>,
     loaded: Option<Res<Loaded>>,
+    focus: Option<Res<crate::collision::CollisionFocus>>,
+    grid: Option<Res<crate::collision::TileGrid>>,
     mut tiles: Query<(Entity, &mut Tile)>,
 ) {
     let eye = camera.translation();
@@ -123,7 +140,10 @@ fn choose(
     let mut loading = 0;
     for (entity, mut tile) in &mut tiles {
         let distance = (tile.centre - eye).with_y(0.0).length();
+        let pinned =
+            focus.as_ref().is_some_and(|f| f.intersects(tile.centre, grid.as_ref().map_or(64.0, |g| g.tile_m)));
         let detail = match distance {
+            _ if pinned => Some(Detail::Full),
             d if d < settings.detail.full_m() => Some(Detail::Full),
             d if d < FAR_M + if tile.detail == Some(Detail::Middle) { FAR_MARGIN_M } else { -FAR_MARGIN_M } => {
                 Some(Detail::Middle)
@@ -149,7 +169,7 @@ fn choose(
             tile.failed = false;
             continue;
         }
-        wanted.push((distance, entity, detail));
+        wanted.push((if pinned { -1.0 } else { distance }, entity, detail));
     }
     wanted.sort_by(|a, b| a.0.total_cmp(&b.0));
     let free = if loaded.is_some() { LOADING } else { LOADING_UNDER_SPLASH }.saturating_sub(loading);

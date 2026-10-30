@@ -27,6 +27,7 @@ use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
+use crate::collision::CollisionSource;
 use crate::ground::built_solid;
 use crate::loading::{Loaded, Missing};
 use crate::look::SHADOW_ONLY;
@@ -107,6 +108,8 @@ pub struct Waiting {
 
 struct Job {
     mesh: Handle<Mesh>,
+    material: String,
+    face_materials: Vec<String>,
     look: Look,
     role: Role,
     shadows: bool,
@@ -365,6 +368,21 @@ fn spawn(
                 let vertices = vertices(&models.meshes, &meshes, node);
                 let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
+                    let material = node
+                        .mesh
+                        .as_ref()
+                        .and_then(|m| models.meshes.get(m))
+                        .and_then(|m| m.primitives.iter().find(|p| p.mesh == mesh))
+                        .and_then(|p| p.material.as_ref())
+                        .and_then(|handle| {
+                            gltf.named_materials.iter().find(|(_, h)| *h == handle).map(|(n, _)| n.to_string())
+                        })
+                        .unwrap_or_default();
+                    let face_materials = if matches!(role, Role::Collision) {
+                        collision_materials(gltf, &models, &meshes, &mesh)
+                    } else {
+                        Vec::new()
+                    };
                     let shadows = shadows && !matches!(look, Look::Water(_));
                     let Some(source) = meshes.get(&mesh) else { continue };
                     let vertices = source.count_vertices().max(1);
@@ -393,6 +411,8 @@ fn spawn(
                         for square in squares {
                             jobs.push_back(Job {
                                 mesh: mesh.clone(),
+                                material: material.clone(),
+                                face_materials: face_materials.clone(),
                                 look: look.clone(),
                                 role,
                                 shadows,
@@ -407,6 +427,8 @@ fn spawn(
                     } else {
                         jobs.push_back(Job {
                             mesh,
+                            material,
+                            face_materials,
                             look,
                             role,
                             shadows,
@@ -587,8 +609,26 @@ fn place(
         } else {
             None
         };
+        let source = if job.solid {
+            Some(CollisionSource {
+                mesh: job.mesh.clone(),
+                material: job.material.clone(),
+                face_materials: job.face_materials.clone(),
+                // A merged mesh has identity placement. Retain each original instance, in source order.
+                instances: if job.merge {
+                    job.transforms[job.cursor..job.cursor + count].to_vec()
+                } else {
+                    vec![Transform::IDENTITY]
+                },
+            })
+        } else {
+            None
+        };
         job.cursor += count;
         let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
+        if let Some(source) = source {
+            part.insert(source);
+        }
         if let Some(bounds) = shadow_bounds {
             part.insert(bounds);
         }
@@ -610,6 +650,70 @@ fn place(
             }
         }
     }
+}
+
+/// Collision-only exports can omit materials. Recover each face's material only from an identical drawn face,
+/// never a nearest surface: neighbouring layers and hidden contact faces keep their independent geometry.
+fn collision_materials(gltf: &Gltf, models: &Models, meshes: &Assets<Mesh>, collision: &Handle<Mesh>) -> Vec<String> {
+    let Some(full) = gltf
+        .named_nodes
+        .get("full")
+        .and_then(|h| models.nodes.get(h))
+        .and_then(|n| n.mesh.as_ref())
+        .and_then(|h| models.meshes.get(h))
+    else {
+        return Vec::new();
+    };
+    let mut materials = std::collections::BTreeMap::new();
+    for part in &full.primitives {
+        let name = part
+            .material
+            .as_ref()
+            .and_then(|h| gltf.named_materials.iter().find(|(_, m)| *m == h).map(|(n, _)| n.to_string()))
+            .unwrap_or_default();
+        if let Some(mesh) = meshes.get(&part.mesh) {
+            for key in triangle_keys(mesh) {
+                materials.entry(key).or_insert_with(|| name.clone());
+            }
+        }
+    }
+    meshes
+        .get(collision)
+        .map(|mesh| {
+            triangle_keys(mesh).into_iter().map(|key| materials.get(&key).cloned().unwrap_or_default()).collect()
+        })
+        .unwrap_or_default()
+}
+
+fn triangle_keys(mesh: &Mesh) -> Vec<[[u32; 3]; 3]> {
+    use bevy::mesh::{Indices, PrimitiveTopology};
+    if mesh.primitive_topology() != PrimitiveTopology::TriangleList {
+        return Vec::new();
+    }
+    let Some(points) = mesh.try_attribute(Mesh::ATTRIBUTE_POSITION).ok().and_then(|v| v.as_float3()) else {
+        return Vec::new();
+    };
+    let Ok(indices) = mesh.try_indices_option() else { return Vec::new() };
+    let count = match indices {
+        Some(Indices::U16(v)) => v.len(),
+        Some(Indices::U32(v)) => v.len(),
+        None => points.len(),
+    };
+    (0..count / 3)
+        .filter_map(|face| {
+            let mut key = [[0; 3]; 3];
+            for (i, p) in key.iter_mut().enumerate() {
+                let index = match indices {
+                    Some(Indices::U16(v)) => usize::from(v[face * 3 + i]),
+                    Some(Indices::U32(v)) => v[face * 3 + i] as usize,
+                    None => face * 3 + i,
+                };
+                *p = points.get(index)?.map(|f| if f == 0. { 0 } else { f.to_bits() });
+            }
+            key.sort();
+            Some(key)
+        })
+        .collect()
 }
 
 fn insert_look(part: &mut EntityCommands, look: &Look) {
@@ -945,6 +1049,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn collision_material_keys_match_reordered_drawn_faces_not_nearby_layers() {
+        use bevy::mesh::{Indices, PrimitiveTopology};
+        let mut drawn = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD);
+        drawn.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0., 0., 0.], [0., 0., 1.], [1., 0., 0.], [0., 0.01, 0.], [0., 0.01, 1.], [1., 0.01, 0.]],
+        );
+        drawn.insert_indices(Indices::U32(vec![0, 1, 2, 3, 4, 5]));
+        let mut collision = drawn.clone();
+        collision.insert_indices(Indices::U32(vec![2, 0, 1]));
+        let keys = triangle_keys(&drawn);
+        assert_eq!(triangle_keys(&collision)[0], keys[0]);
+        assert_ne!(keys[0], keys[1], "a separate sheet cannot borrow this material");
+    }
+
+    #[test]
     fn static_paint_keeps_zero_weight_and_rejects_cloth() {
         let mut mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
         let count = mesh.count_vertices();
@@ -1015,6 +1135,8 @@ mod tests {
             let expected = merged(app.world().resource::<Assets<Mesh>>(), &mesh, &transforms, true).unwrap();
             let jobs = VecDeque::from([Job {
                 mesh,
+                material: String::new(),
+                face_materials: Vec::new(),
                 look: Look::Still(Handle::default()),
                 role: Role::Both,
                 shadows: true,
@@ -1061,6 +1183,8 @@ mod tests {
             .into_iter()
             .map(|role| Job {
                 mesh: mesh.clone(),
+                material: String::new(),
+                face_materials: Vec::new(),
                 look: Look::Still(Handle::default()),
                 role,
                 shadows: true,
@@ -1173,6 +1297,8 @@ mod tests {
         let transforms: Vec<_> = (0..count).map(|x| Transform::from_xyz(x as f32, 0.0, 0.0)).collect();
         let jobs = VecDeque::from([Job {
             mesh,
+            material: String::new(),
+            face_materials: Vec::new(),
             look: Look::Still(Handle::default()),
             role: Role::Both,
             shadows: true,
@@ -1214,6 +1340,8 @@ mod tests {
                 .world_mut()
                 .spawn(TestJobs(VecDeque::from([Job {
                     mesh,
+                    material: String::new(),
+                    face_materials: Vec::new(),
                     look: Look::Still(Handle::default()),
                     role: Role::Collision,
                     shadows: false,

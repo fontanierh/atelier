@@ -1,0 +1,8 @@
+# Land sand surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/land_sand_01.wav", "src/land_sand_02.wav", "src/land_sand_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "f24e98ca6c827b022ed7ac83713967d8ca55ed165e4970c4d2fa606f5959c2d8"

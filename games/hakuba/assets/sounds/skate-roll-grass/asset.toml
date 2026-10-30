@@ -1,0 +1,8 @@
+# Roll grass surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/roll_grass_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "14718b3992bbd7b26f81585f9c887454fe2c7399a53cafdeb4e21a549f8c44e0"

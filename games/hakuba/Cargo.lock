@@ -3140,6 +3140,7 @@ dependencies = [
  "hakuba_rendering",
  "hakuba_screens",
  "hakuba_settings",
+ "hakuba_skate",
  "hakuba_viewer",
  "hakuba_world",
 ]
@@ -3152,6 +3153,7 @@ dependencies = [
  "hakuba_player",
  "hakuba_screens",
  "hakuba_settings",
+ "hakuba_skate",
  "hakuba_world",
  "serde",
  "serde_json",
@@ -3187,7 +3189,9 @@ dependencies = [
  "anyhow",
  "geo",
  "glam",
+ "hakuba_skate_schema",
  "hakuba_water_schema",
+ "hakuba_world_skate_schema",
  "hound",
  "image",
  "intel_tex_2",
@@ -3256,6 +3260,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_skate"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_characters",
+ "hakuba_glider",
+ "hakuba_player",
+ "hakuba_screens",
+ "hakuba_settings",
+ "hakuba_skate_schema",
+ "hakuba_world",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "hakuba_skate_schema"
+version = "0.1.0"
+dependencies = [
+ "sha2",
+]
+
+[[package]]
 name = "hakuba_viewer"
 version = "0.1.0"
 dependencies = [
@@ -3281,10 +3308,18 @@ dependencies = [
  "hakuba_screens",
  "hakuba_settings",
  "hakuba_water_schema",
+ "hakuba_world_skate_schema",
  "parry3d",
  "serde",
  "serde_json",
  "web-sys",
+]
+
+[[package]]
+name = "hakuba_world_skate_schema"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

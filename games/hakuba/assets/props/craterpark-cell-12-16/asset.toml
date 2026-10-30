@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["craterpark-material-027", "craterpark-material-045", "craterpark-shrine-bell-pavilion"]
 own_textures = ["craterpark-shrine-nobori"]
 solid = true
-inputs_sha256 = "60e5b8fe6e07526546c9efac198d3d42cd4bfbd0fb10a2e8b2902f66ab56277e"
+inputs_sha256 = "1a8d7c32bc16824a2d5e8a7b5359950314ac0d31f50643d485160d50ecbee213"

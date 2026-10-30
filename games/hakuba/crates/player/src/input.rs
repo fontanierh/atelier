@@ -54,7 +54,12 @@ pub fn read(
     window: Single<&Window, With<PrimaryWindow>>,
     gamepads: Query<&Gamepad>,
     time: Res<Time<Real>>,
+    players: Query<&crate::Player>,
 ) {
+    if players.iter().any(|player| player.owner != crate::MovementOwner::Walking) {
+        *controls = Controls::default();
+        return;
+    }
     let dt = time.delta_secs();
     let key = |code: KeyCode| if keys.pressed(code) { 1.0 } else { 0.0 };
     let mut stick = Vec2::new(key(KeyCode::KeyD) - key(KeyCode::KeyA), key(KeyCode::KeyW) - key(KeyCode::KeyS));

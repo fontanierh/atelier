@@ -1,5 +1,7 @@
-//! The `equipment` kind: something a character holds in both hands above it, such as the paraglider, written as
-//! `<folder name>.glb` with its one clip under the folder's name.
+//! The `equipment` kind: a held library clip, or independent scenes driven by solved skeleton bones.
+//! Each articulated scene has one identity root whose mesh is baked into that bone's local game frame.
+//! Its holder names the same-frame attachment targets; the runtime must not add a second grip offset.
+//! Held clips are written as `<folder name>.glb` with their one clip under the folder's name.
 //!
 //! It comes from the motion library with the skeleton that held it there, posed as it held it, and is drawn at its
 //! source's size, the size that skeleton held it at. Its export is placed in that skeleton's body frame between its
@@ -37,9 +39,25 @@ const MOST_FINGER_OFF_HANDLE_M: f64 = 0.02;
 /// The fingers but the thumb, whose three joints each must lie on the handle.
 const FINGERS: [&str; 4] = ["index", "middle", "ring", "pinky"];
 
+/// Held equipment has one library clip; articulated equipment has independent driven scenes.
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Settings {
+    Held(Held),
+    Articulated(Articulated),
+}
+
+/// A source whose named scenes follow the matching solved skeleton bones.
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Settings {
+pub struct Articulated {
+    source: PathBuf,
+    parts: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Held {
     /// The equipment, with its clip, relative to the asset folder.
     source: PathBuf,
     /// The clip's name in that file.
@@ -60,6 +78,47 @@ pub struct Settings {
 }
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
+    match settings {
+        Settings::Held(settings) => export_held(folder, settings, output),
+        Settings::Articulated(settings) => {
+            let glb = Glb::read(&folder.join(&settings.source))?;
+            let scenes = glb.scenes();
+            if settings.parts.is_empty() || scenes.len() != settings.parts.len() {
+                bail!("articulated equipment needs exactly one scene per part");
+            }
+            let rest = glb.rest()?;
+            let unique: std::collections::BTreeSet<_> = settings.parts.iter().collect();
+            if unique.len() != settings.parts.len() {
+                bail!("articulated equipment part names must be unique");
+            }
+            for part in &settings.parts {
+                let node = glb.node(part)?;
+                if scenes.iter().filter(|(name, roots)| name == part && roots == &[node]).count() != 1 {
+                    bail!("part {part} needs its own matching single-root scene");
+                }
+                if !rest[node].matrix().abs_diff_eq(DMat4::IDENTITY, 1e-8) {
+                    bail!("part {part} must be baked into its driven bone frame");
+                }
+                if glb.extras(part)?["bone"].as_str() != Some(part.as_str()) {
+                    bail!("part {part} must name the bone that drives it");
+                }
+            }
+            let holder = glb.extras("holder")?;
+            if holder["frame"].as_str() != Some("solved-bone-local")
+                || holder["reference_pose"].as_str().is_none_or(str::is_empty)
+                || holder["reference_bank"].as_u64().is_none()
+                || holder["attachment_targets"].as_array().is_none_or(|targets| {
+                    targets.is_empty() || targets.iter().any(|target| target.as_str().is_none_or(str::is_empty))
+                })
+            {
+                bail!("articulated equipment must declare its solved frame, source reference and attachment targets");
+            }
+            glb.write(output)
+        }
+    }
+}
+
+fn export_held(folder: &Path, settings: &Held, output: &Path) -> Result<()> {
     let name = folder.file_name().unwrap().to_string_lossy();
     let holder = Glb::read(&folder.join(&settings.holder))?;
     let nodes = rig_nodes(&holder, &Bones::library())?;
@@ -132,4 +191,45 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
 /// `point`'s coordinates rounded to `1 / per` metres.
 fn round(point: DVec3, per: f64) -> [f64; 3] {
     point.to_array().map(|v| (v * per).round() / per)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn articulated_parts_preserve_their_frames_and_reject_unbound_sources() {
+        let folder = std::env::temp_dir().join(format!("hakuba-equipment-{}", std::process::id()));
+        fs::create_dir_all(&folder).unwrap();
+        let source = json!({
+            "asset": { "version": "2.0" },
+            "scene": 0,
+            "scenes": [{ "name": "body", "nodes": [0] }],
+            "nodes": [
+                { "name": "body", "extras": { "bone": "body" }, "children": [1] },
+                { "name": "holder", "extras": {
+                    "frame": "solved-bone-local", "reference_pose": "rest", "reference_bank": 0,
+                    "attachment_targets": ["hand_target"]
+                } }
+            ]
+        });
+        let settings = Settings::Articulated(Articulated { source: "source.glb".into(), parts: vec!["body".into()] });
+        Glb::from_json(source.clone()).write(&folder.join("source.glb")).unwrap();
+        export(&folder, &settings, &folder.join("out.glb")).unwrap();
+        let result = Glb::read(&folder.join("out.glb")).unwrap();
+        assert_eq!(result.scenes(), vec![("body".into(), vec![0])]);
+        assert_eq!(result.extras("holder").unwrap()["attachment_targets"], json!(["hand_target"]));
+
+        let mut moved = source.clone();
+        moved["nodes"][0]["translation"] = json!([0.1, 0.0, 0.0]);
+        Glb::from_json(moved).write(&folder.join("source.glb")).unwrap();
+        assert!(export(&folder, &settings, &folder.join("out.glb")).is_err());
+
+        let mut unbound = source;
+        unbound["nodes"][1]["extras"]["attachment_targets"] = json!([]);
+        Glb::from_json(unbound).write(&folder.join("source.glb")).unwrap();
+        assert!(export(&folder, &settings, &folder.join("out.glb")).is_err());
+        fs::remove_dir_all(folder).unwrap();
+    }
 }

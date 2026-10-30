@@ -1,0 +1,8 @@
+# Pop metal surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/pop_metal_01.wav", "src/pop_metal_02.wav", "src/pop_metal_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "2e4bee7142d182b8b45d9df3f8a0742a00f837b898fdb0d4ed61750e7fed264c"

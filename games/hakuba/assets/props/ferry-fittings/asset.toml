@@ -1,4 +1,4 @@
 # The passenger ferry's fittings, docked at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "cdea0ce58e2fc401e45c9117bc363f79c2f6225eb109184edc566fca1c0e5b42"
+inputs_sha256 = "a9841b7166297b1e7d042f8a55c4bc2a506b83eee6604950a99228445855acfa"

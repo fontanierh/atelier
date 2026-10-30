@@ -20,9 +20,12 @@ hakuba_player = { path = "crates/player" }
 hakuba_rendering = { path = "crates/rendering" }
 hakuba_screens = { path = "crates/screens" }
 hakuba_settings = { path = "crates/settings" }
+hakuba_skate = { path = "crates/skate" }
 hakuba_viewer = { path = "crates/viewer" }
 hakuba_world = { path = "crates/world" }
 hakuba_water_schema = { path = "schemas/water" }
+hakuba_skate_schema = { path = "schemas/skate" }
+hakuba_world_skate_schema = { path = "schemas/world-skate" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 
@@ -45,6 +48,7 @@ hakuba_player.workspace = true
 hakuba_rendering.workspace = true
 hakuba_screens.workspace = true
 hakuba_settings.workspace = true
+hakuba_skate.workspace = true
 hakuba_viewer.workspace = true
 hakuba_world.workspace = true
 

@@ -80,13 +80,29 @@ fn blow(
 ) {
     let plants: Vec<_> = if settings.is_changed() { all.iter().collect() } else { added.iter().collect() };
     for plant in plants {
-        commands.entity(plant).insert(MeshTag::new(wind::tag(settings.wind)));
+        // A streamed tile may despawn this plant before the deferred wind update is applied.
+        commands.entity(plant).try_insert(MeshTag::new(wind::tag(settings.wind)));
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wind_update_ignores_a_plant_removed_before_deferred_commands_are_applied() {
+        use bevy::ecs::system::IntoSystem;
+
+        let mut world = World::new();
+        world.init_resource::<Settings>();
+        let plant = world.spawn(MeshMaterial3d::<SourceFoliage>(Handle::default())).id();
+        let mut wind_update = IntoSystem::into_system(blow);
+        wind_update.initialize(&mut world);
+        wind_update.run_without_applying_deferred((), &mut world).unwrap();
+        world.despawn(plant);
+        wind_update.apply_deferred(&mut world);
+        assert!(world.get_entity(plant).is_err());
+    }
 
     #[test]
     fn source_foliage_and_its_shadow_receive_wind_setting_and_updates() {

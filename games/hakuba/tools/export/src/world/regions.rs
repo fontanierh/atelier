@@ -58,6 +58,11 @@ pub trait Region {
         Vec::new()
     }
 
+    /// Complete skating contact lines and zones in the game's Y-up world frame.
+    fn skate(&self) -> hakuba_world_skate_schema::Metadata {
+        Default::default()
+    }
+
     /// Bounded water bodies and their shared material and recovery settings, in map coordinates.
     fn water(&self) -> Vec<serde_json::Value> {
         Vec::new()

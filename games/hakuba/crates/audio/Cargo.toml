@@ -8,6 +8,7 @@ publish.workspace = true
 [dependencies]
 bevy.workspace = true
 hakuba_player.workspace = true
+hakuba_skate.workspace = true
 hakuba_screens.workspace = true
 hakuba_settings.workspace = true
 hakuba_world.workspace = true

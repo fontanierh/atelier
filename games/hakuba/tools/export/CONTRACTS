@@ -4,7 +4,8 @@ tiling, laying overlays, shared shape helpers. It MUST NOT name a particular ass
 animation, a region) or hold one asset's numbers, shapes, courses, colours or choices. Those belong in
 that asset's `src/`, which calls the exporter's methods and helpers. A concept only one asset uses (a road,
 a stance, a building) MUST NOT appear in the exporter until a second asset needs it, and then only as a
-general method under a general name.
+general method under a general name. A simulation kind MAY encode its published byte formats and validate an
+asset-supplied integrity manifest; source identities, expected counts and payload contents MUST stay in the asset.
 
 @cc [owner:fontanierh,label:architecture] exporter-lists-are-the-only-names
 `rig/animations.rs`, `rig/characters.rs` and `world/regions.rs` are the only exporter files that name assets.
@@ -42,7 +43,16 @@ world's tiles, a region MUST NOT make tiles it does not reach rebuild, and repai
 MUST NOT rebuild any tile, though moving a prop's anchors rebuilds the tiles its cables start in.
 
 @cc [owner:fontanierh,label:correctness] equipment-says-how-it-was-held
-An `equipment` export MUST carry, in its `holder` node, how the skeleton that held it in the motion library held it:
-its hips' height, each handle and its radius, and each palm frame, in the export's own frame, so the game places it
-and the hands on it from those alone. The export MUST fail if any joint of that skeleton's fingers but the thumb
-lies more than 2 cm off its handle's surface: the source's grip is then wrong, and no game-side offset may hide it.
+An `equipment` export with a fixed held clip MUST carry, in its `holder` node, how the skeleton that held it in the
+motion library held it: its hips' height, each handle and its radius, and each palm frame, in the export's own frame,
+so the game places it and the hands on it from those alone. The export MUST fail if any joint of that skeleton's
+fingers but the thumb lies more than 2 cm off its handle's surface: the source's grip is then wrong, and no game-side
+offset may hide it. Articulated equipment driven by a solved pose MUST instead declare each part's matching bone
+and identity-root scene in that bone's local frame, and its holder MUST name the same-frame attachment targets.
+It MUST NOT claim a fixed grip or invent palm offsets when the source carries time-varying attachment targets.
+
+@cc [owner:fontanierh,label:correctness] simulation-payloads-retain-their-identities
+A simulation export MUST preserve source ordering, exact binary32 words, compact constant tracks, bank identities,
+source offsets and source checksums. Before publication and during `--check`, it MUST validate the safe exact file
+set, required formats, each payload's size and SHA-256, manifest identity and aggregate counts against its asset's
+supplied descriptor. Its indexed archive MUST validate bounded contiguous payload ranges and every payload checksum.

@@ -13,3 +13,5 @@ walking surface: `layout.rs` lays the source's own triangles from `path-source.j
 and its joints, each drawing the pier's concrete map tinted as its source face is, and the path's props keep only its
 skirts, edges and railings. The path's end meets the coast road's edge (`momiji-coast`) exactly, its vertices there on the
 road's own edge, and the ground stays at least 5 cm under the path.
+
+The placements own 70 authored rail and coping lines and physical material rules. Lines keep their original endpoints and run continuously across the tile grid.

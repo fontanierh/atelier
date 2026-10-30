@@ -1,0 +1,35 @@
+{
+  "description": "the loose board tumbling after a bail",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "audioville_stick_hit_13_wild.wav",
+      "sha256": "623d96e36eff804b4fb3aa50111426065fbdef94e401aff35c92f143d38b7f0b",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    },
+    {
+      "recording": "audioville_wooden_sword_hit_11.wav",
+      "sha256": "2f654f62b4302ea96c2bc70a07f2ab34deabcd2642babb3912c71dba5e23efa1",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    }
+  ],
+  "takes": [
+    {
+      "file": "clatter_01.wav",
+      "sha256": "0e85317914f75f64a54c07d977e6e703c5343f088987b5b9579a425c170d070c"
+    },
+    {
+      "file": "clatter_02.wav",
+      "sha256": "19f00c35d3386b1cb8b072b3c9b87adaf6051d02ede4f8abfec6601d0d0d0c1a"
+    },
+    {
+      "file": "clatter_03.wav",
+      "sha256": "3ef278188a3291ccf8fbab97d9fb39f10a2c7feae2ecb568001fd3bc02adaf35"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "looped": false,
+  "takes": [
+    {
+      "start": 0.0,
+      "seconds": 0.25
+    },
+    {
+      "start": 0.3,
+      "seconds": 0.25
+    },
+    {
+      "start": 0.6,
+      "seconds": 0.25
+    }
+  ]
+}

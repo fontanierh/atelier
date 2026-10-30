@@ -1,0 +1,21 @@
+{
+  "description": "the wooden deck sliding on a ledge",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": true,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "slide_01.wav",
+      "sha256": "2097f9fcfbe4dedbdeed90a92113eaa37c22c914261feb87ac97793a3572ab0e"
+    }
+  ]
+}

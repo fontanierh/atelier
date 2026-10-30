@@ -1,0 +1,8 @@
+# Urethane wheels scrubbing in a powerslide; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/skid_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "0525f9a266db3af8de22470a61208da7ccc7a13d4cc12e1f2743b63cba9010c8"

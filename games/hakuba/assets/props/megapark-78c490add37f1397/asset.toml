@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["megapark-2c70170a001d0133", "megapark-2c70170a001d0135", "megapark-2c70170a001d014f", "megapark-2c70170a001d015a", "megapark-2c70170a001d0163", "megapark-2c70170a001d0169", "megapark-2c70170a001d016c", "megapark-2c70170a002f03b5"]
 own_textures = ["megapark-2c70170a001d0183"]
 solid = true
-inputs_sha256 = "ad20f7de5c5516b0819bcbc6edc6f3843d1c2f91a299fc42ca8b4f8863b435ff"
+inputs_sha256 = "b5c021038d0c5d60aedc710703e96e6393d60f67af66811febb7e935db3743dc"

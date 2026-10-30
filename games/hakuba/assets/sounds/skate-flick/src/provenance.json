@@ -1,0 +1,29 @@
+{
+  "description": "the board spinning in the air",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "flick_01.wav",
+      "sha256": "cd9210f5d4de7d5e31ccc38ce368fdcb463a23a98a6fd0ee9be19bae76c4745d"
+    },
+    {
+      "file": "flick_02.wav",
+      "sha256": "84a3aa529ce6d0eeee7e73630937bd7649bf30a40c630cb080d314f6decdaeb3"
+    },
+    {
+      "file": "flick_03.wav",
+      "sha256": "a64c8580842a1115cdcb149e8313f5a16a1d1bce90ad94d26297677643b8221e"
+    }
+  ]
+}

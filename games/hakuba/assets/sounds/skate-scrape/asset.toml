@@ -1,0 +1,8 @@
+# A shoe braking against concrete; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/scrape_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "4e762c009d6e4f9c648fe816cc639813db3725623aa3dd0aeb0e8e70cc283545"

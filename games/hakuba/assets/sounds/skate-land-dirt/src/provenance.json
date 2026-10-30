@@ -1,0 +1,29 @@
+{
+  "description": "land dirt surface variant",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "land_dirt_01.wav",
+      "sha256": "9c5a2d28a3961e95db04e2749661a009595ca5df6d701fb3d25349f5b48e4fb8"
+    },
+    {
+      "file": "land_dirt_02.wav",
+      "sha256": "3d08da46e11730b8ba074acd321b72f32be52ef53e6cf7b483ceb6c8136e5796"
+    },
+    {
+      "file": "land_dirt_03.wav",
+      "sha256": "d6bc3d14341b4b1a595e6415f4dcf73486ca5b9a33ee14bd3fb970f35b269dc8"
+    }
+  ]
+}

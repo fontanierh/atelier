@@ -1,0 +1,8 @@
+# Roll metal surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/roll_metal_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "6700ec966f76b70c3943667025a6467e44f331a5748276b175dbc43d4ce46ee5"
