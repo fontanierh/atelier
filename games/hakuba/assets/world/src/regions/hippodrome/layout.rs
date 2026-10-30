@@ -18,16 +18,19 @@ const PLATFORM_EDGE_Y: f64 = 443.0;
 /// dirt meets the platform's top exactly (`dirt_meets_the_platform_top`).
 const PLATFORM_CLEARANCE_M: f64 = 0.06;
 /// The lane's centre line, from the street's north end (x 560, y 343) to `LANDING_M` short of the platform's edge.
-/// The levelled ground stays flat for the strip's half width past the line's end, so it is flat across the 2 m grid
-/// cell the edge lies in, and meets the edge exactly.
-const LANDING_M: f64 = 2.0;
+/// The levelled ground stays flat for the strip's half width past the line's end, so it is flat wherever either
+/// detail's ground meets the edge, and meets it exactly. Middle detail draws the 8 m square the edge lies in (x 556 to
+/// 564, y 436 to 444) as a fan round its centre (560, 440): the line ends at that centre, and the flat reaches the
+/// square's northern corners.
+const LANDING_M: f64 = 3.0;
 const LANE: [[f64; 2]; 2] = [[560.0, 343.0], [560.0, PLATFORM_EDGE_Y - LANDING_M]];
 /// Its heights at either end: the street's, and the seam's under the platform's top.
 const LANE_HEIGHTS_M: [f64; 2] = [36.0, PLATFORM_TOP_M - PLATFORM_CLEARANCE_M];
 const LANE_HALF_WIDTH_M: f64 = 3.0;
-/// The ground levelled either side of the centre line: a grid step wider than the lane, so the dirt lies on level
-/// ground to its edges, and then eased into the hillside over the shoulder.
-const LEVEL_HALF_WIDTH_M: f64 = 5.0;
+/// The ground levelled either side of the centre line: wider than the lane, so the dirt lies on level ground to its
+/// edges, and past the line's end as far as the middle-detail square's corners (`LANDING_M`); then eased into the
+/// hillside over the shoulder.
+const LEVEL_HALF_WIDTH_M: f64 = 6.0;
 const LANE_SHOULDER_M: f64 = 6.0;
 /// The dirt starts this far inside the strip's south end, where the ground on the 2 m grid bends into the street.
 const DIRT_INSET_M: f64 = 2.0;
@@ -133,18 +136,24 @@ mod tests {
         }
     }
 
-    /// The dirt as the tiles draw it, over the levelled ground, ends at the platform's top along the whole entrance.
+    /// The dirt as the tiles draw it in either detail, over the levelled ground, ends at the platform's top along the
+    /// whole entrance.
     #[test]
     fn dirt_meets_the_platform_top() {
         let ground = levelled();
-        let tile = Tile { columns: (260, 300), rows: (160, 240) };
-        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
-        let dirt = Hippodrome.overlays().remove(0).mesh(&ground, &drawn);
-        let edge: Vec<_> =
-            dirt.positions.iter().filter(|[_, _, z]| (-z - PLATFORM_EDGE_Y as f32).abs() < 1e-3).collect();
-        assert!(edge.len() >= 2, "the dirt has {} points on the platform's edge", edge.len());
-        for [x, height, _] in edge {
-            assert!((*height as f64 - PLATFORM_TOP_M).abs() < 1e-4, "the dirt ends at {height} m at x {x}");
+        // The world's grid starts at (-4396, -1324), so its 8 m middle-detail squares start at x and y 4 m past a
+        // multiple of 8; this tile's do too, as the test grid starts at 0.
+        let tile = Tile { columns: (262, 294), rows: (162, 226) };
+        for (detail, name) in [(Detail::Full, "full"), (Detail::Middle, "middle")] {
+            let drawn = Surface::new(&tile.ground(&ground, detail, 0, 1.0));
+            let dirt = Hippodrome.overlays().remove(0).mesh(&ground, &drawn);
+            let edge: Vec<_> =
+                dirt.positions.iter().filter(|[_, _, z]| (-z - PLATFORM_EDGE_Y as f32).abs() < 1e-3).collect();
+            assert!(edge.len() >= 2, "the dirt has {} points on the platform's edge", edge.len());
+            for [x, height, _] in edge {
+                let off = *height as f64 - PLATFORM_TOP_M;
+                assert!(off.abs() < 1e-4, "in {name} detail the dirt ends {off} m off the top at x {x}");
+            }
         }
     }
 
