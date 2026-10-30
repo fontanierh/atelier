@@ -1,6 +1,10 @@
 """Blender script: fit Yorimichi's three gondola lines to Hakuba's ground and write every fitted piece for `gondola.py`.
 
-    blender -b --threads 3 -P games/yorimichi/hakuba_port/gondola_fit.py -- KIT OUT
+    uv run python -m atelier.safety.guarded --report REPORT --timeout 3600 --small 4 \
+        --purpose 'hakuba port: fit the gondola' -- blender -b --threads 3 \
+        -P games/yorimichi/hakuba_port/gondola_fit.py -- KIT OUT
+
+Run it under the machine's guard, as above: the fit is native work, like the Blender runs `port.py` makes.
 
 `KIT` is the gondola kit's build folder (`build/yorimichi/gondola`, written by the kit's own `build.py`), which must be
 current with its sources and have passed its gates. `OUT` receives `assets/*.fbx` and `gondola.json`.
@@ -13,7 +17,8 @@ Hakuba's Crater Park props in place of the park's riding pieces.
   Each station's floor stands 0.55 m over the highest ground under it, on timber posts with stone feet; each tower's
   datum is over the highest ground under its feet; the access stairs come down to the ground, Hidamari's and the
   southeast rim's with their own fits (`ACCESS_FITS`, through `site.access_stair`'s `fit`), so that no ground rises
-  through a floor past site's own 3 cm allowance and no join face overlaps another.
+  through any stair floor (`FLOOR_CLEAR_M`, stricter than site's own 3 cm allowance) and no join face overlaps
+  another.
 - **Gates kept:** every fitted mesh is closed, without coplanar overlaps, seated and carried by the ground; static
   supports and stairs leave the park's riding pieces untouched; the cabin's path clears the park's riding and jump
   geometry by 15 m, the ground by 6 m outside the 35 m station approaches; the jaws seat on the rope and the cabin
@@ -75,13 +80,16 @@ STRETCH_M = 60.0
 CELL_M = 32.0
 # Access stairs fitted to Hakuba's ground where the station's own search (or authored fit) leaves its ground join cut
 # by Hakuba's 2 m triangles: at Hidamari a triangle edge 1 mm inside the stair's side makes a sliver join face that
-# overlaps its neighbour, and at the southeast rim the ground crests 4.8 cm through the last tread. Each fit was chosen
-# for no coplanar overlap and the least ground through any floor: 4 mm at Hidamari (site's own allowance is 3 cm),
-# none at the southeast rim.
+# overlaps its neighbour, and at the southeast rim the ground crests 4.8 cm through the last tread. Each fit has no
+# coplanar overlap and no ground through any floor. Hidamari's ground keeps falling away past the stair's foot, 4 mm
+# over its last tread and join, so its foot is lifted 1 cm (`lift_m`) and the join ramps down to the ground.
 ACCESS_FITS = {
-    'hidamari': {'risers': 11, 'run_m': 4.3, 'join_m': 0.6},
+    'hidamari': {'risers': 11, 'run_m': 4.3, 'join_m': 0.6, 'lift_m': 0.01},
     'southeast': {'risers': 6, 'run_m': 3.6, 'join_m': 0.8},
 }
+# The most any ground may rise through an access stair's floor: none. A join's outer edge meets the ground by
+# construction, so the measure there is rounding.
+FLOOR_CLEAR_M = 1e-9
 # Cabins per line, as Yorimichi's service runs them.
 CABINS = {'L1': 12, 'L2': 12, 'L3': 4}
 # A cabin this close to a station's mouth is at its attach zone, which the kit's loop audit covers.
@@ -317,6 +325,9 @@ def main():
                 S.untouched_riding(shell, frame, ride)
             foundation, posts = S.station_foundation(key, layouts[data['kind']], G, frame)
             stair, access = S.access_stair(key, layouts[data['kind']], G, frame, fit=ACCESS_FITS.get(key))
+            if access['ground_proof']['maximum_intrusion_m'] > FLOOR_CLEAR_M:
+                raise ValueError(f"{key}: ground rises {access['ground_proof']['maximum_intrusion_m']:.4f} m through "
+                                 'an access floor')
             loop = R.station_loop(p['gauge'] / 2, d['rope_height_above_platform'], d['rope_height_above_platform'], 7.6,
                                   p['rope_radius'], step=.5).pts
             data['jump'] = S.station_jump_clearance(S.placed(loop, frame), ride,

@@ -8,7 +8,9 @@ uv run python games/yorimichi/hakuba_port/port.py --build build/yorimichi REGION
 uv run python games/yorimichi/hakuba_port/ground.py   # after porting a region's terrain
 uv run python games/yorimichi/hakuba_port/crater_park.py --build build/yorimichi
 uv run python games/yorimichi/hakuba_port/transport.py --build build/yorimichi railway
-blender -b --threads 3 -P games/yorimichi/hakuba_port/gondola_fit.py -- build/yorimichi/gondola build/yorimichi/gondola/hakuba
+uv run python -m atelier.safety.guarded --report build/yorimichi/gondola/fit-guard --timeout 3600 --small 4 \
+  --purpose 'hakuba port: fit the gondola' -- blender -b --threads 3 -P games/yorimichi/hakuba_port/gondola_fit.py \
+  -- build/yorimichi/gondola build/yorimichi/gondola/hakuba   # under the machine's guard, as port.py runs Blender
 uv run python games/yorimichi/hakuba_port/port.py --build build/yorimichi gondola ferry
 uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove]
 (cd games/hakuba && cargo export assets)
