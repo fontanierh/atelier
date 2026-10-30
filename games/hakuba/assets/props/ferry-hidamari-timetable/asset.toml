@@ -1,0 +1,4 @@
+# The timetable of the ferry terminal at Hidamari.
+kind = "prop"
+source = "src/model.glb"
+inputs_sha256 = "50ae7999acdc2881e2e82bcbd26d8ad40e50ab0701c2d5733338df87ca41aaa7"

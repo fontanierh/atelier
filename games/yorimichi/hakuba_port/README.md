@@ -8,6 +8,10 @@ uv run python games/yorimichi/hakuba_port/port.py --build build/yorimichi REGION
 uv run python games/yorimichi/hakuba_port/ground.py   # after porting a region's terrain
 uv run python games/yorimichi/hakuba_port/crater_park.py --build build/yorimichi
 uv run python games/yorimichi/hakuba_port/transport.py --build build/yorimichi railway
+uv run python -m atelier.safety.guarded --report build/yorimichi/gondola/fit-guard --timeout 3600 --small 4 \
+  --purpose 'hakuba port: fit the gondola' -- blender -b --threads 3 -P games/yorimichi/hakuba_port/gondola_fit.py \
+  -- build/yorimichi/gondola build/yorimichi/gondola/hakuba   # under the machine's guard, as port.py runs Blender
+uv run python games/yorimichi/hakuba_port/port.py --build build/yorimichi gondola ferry
 uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove]
 (cd games/hakuba && cargo export assets)
 uv run python games/yorimichi/hakuba_port/contact.py --leave-out   # drops the forest's buried plants
@@ -27,11 +31,12 @@ listed once in Hakuba's `tools/export/src/world/regions.rs`.
 | File         | What it holds                                                                                   |
 |--------------|-------------------------------------------------------------------------------------------------|
 | `port.py`    | the command: runs an adapter, converts its meshes, writes the props, their texture assets and the placements |
-| `regions.py` | one adapter per region: which meshes to bring, how each material slot is coloured, where each stands |
+| `regions.py` | one adapter per region: which meshes to bring, how each material slot is coloured, where each stands; the `ferry` adapter reads the ship and both terminals, so `assets/vehicles/ferry/build.py` and `assets/vehicles/ferry/terminals/build.py` must be built first |
 | `ground.py`  | samples the ported terrain cells (far hills, Brinecove, Hidamari, Belmonte with its north country and apron, the southwest islet) into Hakuba's ground height and colour pages, then removes those cells' props and placements |
 | `plants.py`  | ports the island's trees, bushes, grass and ground cover into Hakuba's `forest` region, each standing on the ground; `--models` first imports the tree models and Brinecove's plants Hakuba lacks, with their textures, each plant's far version made by the step that imports it (Brinecove's palms' from their fronds and trunk), already in its fixed cell of one atlas; `--brinecove` imports only Brinecove's plants, without Blender |
 | `plant_convert.py` | the Blender script: writes one of a tree's FBX detail levels as a GLB, keeping each corner's wind weights; `plants.py` joins a tree's full, middle and far levels into one plant |
 | `transport.py` | ports the transport as standing scenery, nothing moving or ridden, without Blender: `railway` brings the Belmonte railway's track, structures and station from `world/train/track.py` on the committed line, its Belmonte materials drawn with Belmonte's textures, and its two trains, one at each terminus, from the coach shells `world/train/build.py` wrote, drawn with their own textures |
+| `gondola_fit.py` | the Blender script: fits the three gondola lines to Hakuba's ground with `regions/gondola/site.py`'s own functions (stations on timber posts and their stairs, towers, haul ropes simplified within the jaw's contact allowance in stretches of about 60 m and audited as read back from their FBX, and each line's cabins where the service clock has them at the moment, of eight across a headway, with the most cabins out on the rope, hanging plumb, each grip a mesh of its own), keeps its closure, seating, ground, riding, jump and rope-contact gates, and writes the pieces and `gondola.json` for the `gondola` adapter; the gondola kit (`assets/vehicles/gondola/build.py`) must be built first |
 | `contact.py` | checks every exported copy of a ported placement against the ground the tiles draw: buried or adrift models fail, floating and sunk ones are counted |
 | `crater_park.py` | ports Crater Park into Hakuba's `craterpark` region without Blender: each grid cell of the park's built meshes (`craterpark/v2/geometry.npz`) becomes one prop on the caldera floor, drawn with the park's own restyled textures and colours as its Yorimichi materials draw them, its riding surfaces and sides its collision; the park's ground is the volcano's terrain, already Hakuba's ground |
 | `convert.py` | the Blender script: joins a mesh, keeps its UVs and each slot's texture, bakes each slot's colour per vertex, keeps `UCX_` or separate collision hulls, moves the origin to the footprint's centre and writes the GLB with `painted.py` |

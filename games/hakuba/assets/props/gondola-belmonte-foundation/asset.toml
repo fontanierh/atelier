@@ -1,0 +1,6 @@
+# Belmonte — Northwest Rim's timber posts and braces on their stone feet.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-wood-grain", "gondola-wood-grain-dark"]
+solid = true
+inputs_sha256 = "cf70215ea0545c2ea6160294856e5427aa88c1717ed48872aa4616b32a6e8b85"

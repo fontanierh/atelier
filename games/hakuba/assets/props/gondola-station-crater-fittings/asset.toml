@@ -1,0 +1,5 @@
+# A gondola crater station's fittings.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-wood-grain"]
+inputs_sha256 = "94e5fec88e4b0cb730e03b227a40c2c4b69bdc7662094cab1f941e82ea161d7b"

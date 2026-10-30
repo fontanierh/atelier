@@ -1,0 +1,6 @@
+# Crater Floor's stair down to the ground.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-deck-planks", "gondola-wood-grain", "gondola-wood-grain-dark"]
+solid = true
+inputs_sha256 = "ea15eb4851a62e38062cc72ac9c5763eb1096f148ca78fde7293ca32b116b874"

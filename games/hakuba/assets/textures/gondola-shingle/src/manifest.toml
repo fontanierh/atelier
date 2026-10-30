@@ -1,0 +1,4 @@
+# The shingle texture that the gondola props draw.
+path = "texture.png"
+sha256 = "60b0ca99309a145d94546a36a036d5df8c6e7afcb04e54a7bb1194e20d758191"
+authoring_texture_sha256 = "19f082734defde9d9f9971712400c1b409b3c60050c921642264f13a1a8d8619"

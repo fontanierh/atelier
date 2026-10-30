@@ -1,0 +1,5 @@
+# A gondola rim station's fittings.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-wood-grain"]
+inputs_sha256 = "67350b2150ea74f786dfad093903ec3ff7c2f7ba3c2cb095ce668df885389a95"

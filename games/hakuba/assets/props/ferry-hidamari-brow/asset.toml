@@ -1,0 +1,5 @@
+# The brow of the ferry terminal at Hidamari.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "2d74658910c121fa629b9805074c66ab99d131826ab5cd5de4b4cb8260e492a8"

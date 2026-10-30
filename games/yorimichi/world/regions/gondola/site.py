@@ -434,7 +434,11 @@ def emit_tower_landing_and_hoist_portal(mesh, rail_layout, G, frame):
     return supports
 
 
-def access_stair(key,layout,G,frame):
+def access_stair(key,layout,G,frame,fit=None):
+    """The station's stair down to the ground. `fit` replaces the station's authored access fit (risers, run_m,
+    join_m and optional tread_m, flights, landing_m, lift_m): a port of the network onto other ground fits its own.
+    `lift_m` raises the stair's foot over the ground at its end, for ground still falling away past it: the last tread
+    then clears the ground behind the end, and the join ramps down to the ground."""
     access=layout['access'][0]
     edge=np.asarray(access['edge'],float);start=edge.mean(0)
     across=edge[1]-edge[0];across/=np.linalg.norm(across)
@@ -488,7 +492,7 @@ def access_stair(key,layout,G,frame):
             # supplies the other end of this short separator rail.
             railing(mesh,rail_layout,[entry[1],exit_[1]],'timber',z0=top,
                     on=('access_landing',),start_post=False)
-    fit=STATIONS[key].get('access_fit')
+    fit=STATIONS[key].get('access_fit') if fit is None else fit
     join_length=.8;tread=.32
     if fit is not None:
         n,length,join_length=fit['risers'],fit['run_m'],fit['join_m']
@@ -512,7 +516,9 @@ def access_stair(key,layout,G,frame):
         n,length,end,bottom,rise=chosen
     flights=fit.get('flights',[n]) if fit else [n]
     landing_length=fit.get('landing_m',1.2) if fit else 1.2
-    if (not isinstance(flights,list) or not flights or sum(flights)!=n or
+    lift=fit.get('lift_m',0.) if fit else 0.
+    if (type(lift) not in (int,float) or not math.isfinite(lift) or not 0<=lift<=.1 or
+            not isinstance(flights,list) or not flights or sum(flights)!=n or
             any(type(v) is not int or v<=0 for v in flights) or
             not math.isfinite(tread) or tread<W.TREAD_MIN or
             not math.isfinite(landing_length) or landing_length<1.2):
@@ -524,7 +530,7 @@ def access_stair(key,layout,G,frame):
     route=preface
     G_stair=floor_rim_link_ground(G) if key=='floor_rim' and turn==0. else G
     edge_t,edge_z=ground_edge(G_stair,frame,end,across,width)
-    bottom=float(max(edge_z))
+    bottom=float(max(edge_z))+lift
     rise=(top-bottom)/n
     if not .10<=rise<=.30:
         raise ValueError(f'{key}: fitted final stair riser is invalid')

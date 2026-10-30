@@ -1,0 +1,6 @@
+# Belmonte — Northwest Rim's stair down to the ground.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-deck-planks", "gondola-wood-grain", "gondola-wood-grain-dark"]
+solid = true
+inputs_sha256 = "7961d52a1c31f771fa23505dd345ad327ac340fc043a5521812d0bbbbb02d349"

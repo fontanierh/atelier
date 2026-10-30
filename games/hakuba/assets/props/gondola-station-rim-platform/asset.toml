@@ -1,0 +1,6 @@
+# A gondola rim station's platform.
+kind = "prop"
+source = "src/model.glb"
+textures = ["gondola-deck-planks", "gondola-wood-grain", "gondola-wood-grain-dark"]
+solid = true
+inputs_sha256 = "d7acb82fff4edaac5715429148afb77d57efe60014bf08830d718b0547829296"
