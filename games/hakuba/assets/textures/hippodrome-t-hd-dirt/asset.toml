@@ -1,0 +1,5 @@
+# The t hd dirt texture that the hippodrome props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "96cf9db86c6cc65d44253f8af144f878aa8f9f82e677843d99e96e89437a3a8a"

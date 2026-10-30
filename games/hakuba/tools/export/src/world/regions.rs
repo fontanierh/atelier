@@ -8,6 +8,8 @@ use super::placed::Placed;
 use super::raised::Raised;
 use super::scenery::{Land, Placement, ScatterKind, Scenery};
 
+#[path = "../../../../assets/world/src/regions/hippodrome/layout.rs"]
+mod hippodrome;
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
 #[path = "../../../../assets/world/src/regions/momiji-village/layout.rs"]
@@ -101,4 +103,5 @@ pub const REGIONS: &[&dyn Region] = &[
     placed!("railway"),
     placed!("gondola"),
     placed!("ferry"),
+    &hippodrome::Hippodrome,
 ];

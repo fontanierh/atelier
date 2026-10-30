@@ -75,6 +75,12 @@ struct Stage;
 #[derive(Component)]
 pub struct Unready;
 
+/// Present once every tile around the player shows the version it needs and every model in them has spawned, solid
+/// where it is: all that holds the splash but what is [`Unready`], such as the player, who arrives on the highest
+/// ground under them only then, not on the terrain under a deck that has yet to spawn.
+#[derive(Resource)]
+pub struct SceneryLoaded;
+
 /// A mesh drawn while the splash shows even where the camera does not look, so the renderer makes the pipelines it
 /// would need when the camera turns to it.
 #[derive(Component)]
@@ -163,7 +169,7 @@ fn uncull(
     }
 }
 
-/// Fills the bar, and lifts the splash once every tile shows the version it needs, every model in them has spawned
+/// Fills the bar, says when the scenery has loaded ([`SceneryLoaded`]), and lifts the splash once every tile shows the version it needs, every model in them has spawned
 /// with its textures, nothing else is [`Unready`] and the renderer has settled.
 #[allow(clippy::too_many_arguments)]
 fn lift(
@@ -182,7 +188,7 @@ fn lift(
     placed: Query<&Placed>,
     unready: Query<(), With<Unready>>,
     unculled: Query<Entity, With<Unculled>>,
-    time: Res<Time>,
+    (time, scenery): (Res<Time>, Option<Res<SceneryLoaded>>),
 ) {
     let (entity, mut splash) = splash.into_inner();
     let loaded = |id: UntypedAssetId| {
@@ -201,6 +207,10 @@ fn lift(
         + waiting.iter().len()
         + unready.iter().len();
     let world = all > 0 && done == all;
+    let holding = all - unready.iter().len();
+    if scenery.is_none() && holding > 0 && done == holding {
+        commands.insert_resource(SceneryLoaded);
+    }
     // A long load names what it still waits for, every ten seconds.
     let waited = time.elapsed_secs() - splash.since;
     if !world && waited > 30.0 && (waited / 10.0).floor() != ((waited - time.delta_secs()) / 10.0).floor() {

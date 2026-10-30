@@ -1,0 +1,6 @@
+# A piece of the Hidamari Hippodrome on the slope north of the city, ported with its textures.
+kind = "prop"
+source = "src/model.glb"
+own_textures = ["hippodrome-hd-grandstand"]
+solid = true
+inputs_sha256 = "e1ae5cc2b8406a089b8291a2bc97d4f4cb0a3e5e75e9fae1156398f260783dde"

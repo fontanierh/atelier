@@ -27,7 +27,7 @@ use hakuba_screens::Screen;
 use tiles::Tile;
 
 pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
-pub use loading::Unready;
+pub use loading::{SceneryLoaded, Unready};
 pub use push::PushesPlants;
 pub use water::WaterBodies;
 

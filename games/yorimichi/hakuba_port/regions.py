@@ -540,6 +540,35 @@ def skatepark(build):
                                                 solid=blocks[parent], keep=keep, ground_owned=PIER_GROUND.get(parent), meet=meet,
                                                 about=f"A piece of Sunset Pier's {PIER_PARTS[parent]}.")
                     region.groups.append((name, None, at))
+
+
+# Linear colours of the course's untextured surfaces, as `import_hippodrome.py` makes their materials.
+HIPPODROME_SURFACES = {'HD_Stone': {'rgb': [0.36, 0.35, 0.32]}, 'HD_Rail': {'rgb': [0.86, 0.85, 0.80]}}
+
+
+def hippodrome(build):
+    """The Hidamari Hippodrome, the racecourse on the slope north of the city: its grass platform and the skirt down to
+    the hillside, the dirt track and its rails, the grandstand, the judges' tower, the finish post and the tote board,
+    as `hippodrome.py` writes them in `hippodrome/region`. Each stands where the venue data places it round the course
+    origin, as Yorimichi's `AHippodrome` does: at the origin plus its offset, in map metres, turned by its yaw. The
+    course draws its grass and dirt textures, its stone skirts and white rails the colours Yorimichi's import gives them
+    (`HIPPODROME_SURFACES`); each structure draws its own image."""
+    out = build / 'hippodrome' / 'region'
+    data = json.loads((out / 'hippodrome.json').read_text())
+    ox, oy, oz = data['origin']
+    slots = {material: {'sample': str(out / 'textures' / image)} for material, image in data['textures'].items()}
+    slots.update(HIPPODROME_SURFACES)
+    for image in (out / 'textures').glob('HD_*.*'):
+        slots.setdefault(image.stem, {'sample': str(image)})
+    region = Region('hippodrome', 'the Hidamari Hippodrome on the slope north of the city')
+    for mesh in data['meshes']:
+        # The lane is the region's ground, levelled to its ramp and laid with dirt by its `layout.rs`.
+        if mesh['name'] in ('SM_HD_Lane', 'SM_HD_LaneSkirt'):
+            continue
+        name = 'hippodrome-' + kebab(mesh['name'].removeprefix('SM_HD_'))
+        region.models[name] = Model(out / 'glb' / f"{mesh['name']}.glb", slots=slots)
+        x, y, z = mesh['at']
+        region.groups.append((name, None, [[ox + x, oy + y, oz + z, mesh['yaw'], 1.0]]))
     return region
 
 
@@ -547,5 +576,5 @@ ADAPTERS = {
     'treehouse': treehouse, 'brinecove': brinecove, 'belmonte': belmonte, 'hidamari': hidamari,
     'southwest': southwest, 'shrines': shrines, 'zeppelin': zeppelin, 'sword-camp': sword_camp,
     'far-hills': far_hills, 'megapark': megapark, 'gondola': gondola, 'ferry': ferry, 'kei': kei,
-    'skatepark': skatepark,
+    'skatepark': skatepark, 'hippodrome': hippodrome,
 }

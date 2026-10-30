@@ -1,0 +1,9 @@
+{"groups":[
+{"model":"props/hippodrome-ground","afar":true,"instances":[[611.5,516.0,48.27,0.0,1.0]]},
+{"model":"props/hippodrome-skirt","afar":true,"instances":[[611.5,516.0,44.8883,0.0,1.0]]},
+{"model":"props/hippodrome-track","afar":true,"instances":[[600.0,525.0,48.3,0.0,1.0]]},
+{"model":"props/hippodrome-rails","afar":true,"instances":[[600.0,525.0,48.27,0.0,1.0]]},
+{"model":"props/hippodrome-grandstand","afar":true,"instances":[[600.0,453.0,48.27,90.0,1.0]]},
+{"model":"props/hippodrome-judges-tower","afar":true,"instances":[[578.0,500.0,48.27,-90.0,1.0]]},
+{"model":"props/hippodrome-finish-post","afar":false,"instances":[[600.0,483.2,48.27,-90.0,1.0]]},
+{"model":"props/hippodrome-tote-board","afar":true,"instances":[[625.0,543.0,48.27,-90.0,1.0]]}]}
