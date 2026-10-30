@@ -31,8 +31,13 @@ clock puts them at one moment: of eight across a cabin's headway, the one with t
 are one mesh placed level and turned to its heading, and its grip, which takes the rope's pitch, is a mesh of its own
 in that same frame. Each placed cabin's jaws are checked seated on the rope and the rest of it clear of the rope.
 
-The ropes are cut into stretches of about 60 m, each a mesh of its own, so that no model spans more than a tile or
-two. `gondola.json` lists each piece: its FBX, its collision, whether it is solid, a description and its instances
+The ropes are drawn as the source's nearest rope: each track's axis simplified within what the span's own groove error
+leaves of the jaw's 2 mm contact allowance (`line.near_rope_tolerance`). Both tracks are cut at the same places into
+stretches of about 60 m, each a mesh of its own, so that no model spans more than a tile or two. Each stretch's axes are
+read back from its emitted FBX (`site.recovered_rope_axes`) and, joined, audited against the cabin's groove pose by
+pose, both ways, within the 2 mm groove and 0.095 m hardware refusals (`line.stored_groove_audit`).
+
+`gondola.json` lists each piece: its FBX, its collision, whether it is solid, a description and its instances
 `[x, y, z, yaw, 1]` (map metres, the height absolute, the turn counter-clockwise in degrees), with the proofs.
 """
 import importlib.util
@@ -264,18 +269,22 @@ def export_world(mesh, folder, mats, G, frame, riding_triangles, limit=50000, se
     return f'{mesh.name}.fbx', proofs
 
 
-def stretches(points, name):
-    """The rope polyline `points` cut into stretches of at most STRETCH_M, each `(name, origin, local points)`."""
-    arc = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1))]
-    count = max(1, math.ceil(arc[-1] / STRETCH_M))
-    cuts = np.linspace(0.0, arc[-1], count + 1)
+def stretches(tracks, A, direction):
+    """Both tracks' rope polylines, cut at the same distances along the span into stretches of at most STRETCH_M, each
+    `(origin, [each track's points from the origin])`, the origin the first track's first point. A cut point lies on
+    its polyline's own segment, so the stretches keep the polyline's shape."""
+    along = [(track[:, :2] - A) @ direction for track in tracks]
+    count = max(1, math.ceil((along[0][-1] - along[0][0]) / STRETCH_M))
+    cuts = np.linspace(along[0][0], along[0][-1], count + 1)
     out = []
-    for k, (a, b) in enumerate(zip(cuts[:-1], cuts[1:])):
-        inside = (arc > a) & (arc < b)
-        piece = np.vstack([[np.interp(a, arc, points[:, i]) for i in range(3)], points[inside],
-                           [np.interp(b, arc, points[:, i]) for i in range(3)]])
-        origin = piece[0].copy()
-        out.append((f'{name}_{k:02d}', origin, piece - origin))
+    for a, b in zip(cuts[:-1], cuts[1:]):
+        pieces = []
+        for track, t in zip(tracks, along):
+            inside = (t > a) & (t < b)
+            pieces.append(np.vstack([[np.interp(a, t, track[:, i]) for i in range(3)], track[inside],
+                                     [np.interp(b, t, track[:, i]) for i in range(3)]]))
+        origin = pieces[0][0].copy()
+        out.append((origin, [piece - origin for piece in pieces]))
     return out
 
 
@@ -371,14 +380,33 @@ def main():
         gap = S.ground_gap(profile, A, direction, G, d['grip_to_floor'] + p['cabin_floor_depth'])
         audit = S.audit_span(line['id'], profile, cab, p)
         normal = np.array([-direction[1], direction[0]])
-        for side in (-1, 1):
-            points = np.c_[A + profile[:, 0, None] * direction + side * p['gauge'] / 2 * normal, profile[:, 1]]
-            points = S.simplify(points, .015)
-            for name, origin, local in stretches(points, f'GD_{line["id"]}_Rope{"AB"[side > 0]}'):
-                mesh = solid.Mesh(name)
-                mesh.tube([tuple(q) for q in local], p['rope_radius'], solid.STEEL, n=8)
-                piece(export(mesh, assets, mats), f'a stretch of gondola line {line["id"]}\'s haul rope',
-                      [[*map(float, origin), 0.0, 1.0]], solid_=False)
+        # The ropes, as the source's nearest rope: simplified within the jaw's remaining contact allowance, emitted,
+        # read back and audited against the groove in the form they were written.
+        near = S.near_rope_tolerance(audit['groove_max_mm'])
+        tracks = [S.simplify(np.c_[A + profile[:, 0, None] * direction + side * p['gauge'] / 2 * normal, profile[:, 1]],
+                             near) for side in (-1, 1)]
+        stored, extra = [[], []], 0.0
+        for k, (origin, cut) in enumerate(stretches(tracks, A, direction)):
+            mesh = solid.Mesh(f'GD_{line["id"]}_Rope_{k:02d}')
+            for local in cut:
+                mesh.tube([tuple(q) for q in local], p['rope_radius'], solid.STEEL, n=12)
+            name = export(mesh, assets, mats)
+            axes, _ = S.recovered_rope_axes(mesh, assets / name, [len(local) for local in cut])
+            for side, (axis, local) in enumerate(zip(axes, cut)):
+                extra = max(extra, float(np.linalg.norm(axis - local.astype(np.float32).astype(float), axis=1).max()))
+                # Neighbouring stretches share their cut point.
+                stored[side].append((axis + origin)[1 if k else 0:])
+            piece(name, f'a stretch of gondola line {line["id"]}\'s haul ropes', [[*map(float, origin), 0.0, 1.0]],
+                  solid_=False)
+        local = []
+        for side, parts in zip((-1, 1), stored):
+            delta = np.concatenate(parts)[:, :2] - A - side * p['gauge'] / 2 * normal
+            local.append(np.c_[delta @ direction, delta @ normal, np.concatenate(parts)[:, 2]])
+        stored_contact = S.stored_groove_audit(profile, local, cabin.groove, R.RopePath, p['rope_radius'])
+        stored_contact.update(axis_tolerance_m=near, axis_extra_m=extra, axis_bound_m=near + extra,
+                              hardware_bound_m=audit['hardware_min_m'] - near - extra)
+        if not stored_contact['pass'] or stored_contact['hardware_bound_m'] < .095:
+            raise ValueError(f'{line["id"]}: the stored rope exceeds the contact or clearance budget: {stored_contact}')
         # The cabins, where the service clock has them at the chosen moment.
         loop = R.station_loop(p['gauge'] / 2, d['rope_height_above_platform'], d['rope_height_above_platform'], 7.6,
                               p['rope_radius']).pts
@@ -444,6 +472,8 @@ def main():
             'tower_contact': [[{k: v for k, v in side.items() if k in ('side', 'poses', 'contacts', 'body_envelope')}
                                for side in row['contact_audit']] for row in towers],
             'riding': clearance, 'ground': gap, 'span_audit': audit,
+            'stored_rope': {k: v for k, v in stored_contact.items()
+                            if isinstance(v, (bool, int, float, str, np.generic))},
             'cabins': {'count': count, 'phase_s': phase, 'in_stations': in_station, 'on_the_line': len(placed),
                        'groove_max_mm': groove.get('max_error_mm'),
                        'rope_clearance_m': rope.get('min_distance_from_rope_axis_m'), 'jaw': jaw.get('ok')}}
