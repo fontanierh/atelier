@@ -1,0 +1,21 @@
+{
+  "description": "roll metal surface variant",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": true,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "roll_metal_01.wav",
+      "sha256": "0e11551efc4140d399cb10fe7c97084c88b3e23b67580090e7ca67358e575f05"
+    }
+  ]
+}

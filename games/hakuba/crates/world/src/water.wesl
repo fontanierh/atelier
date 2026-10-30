@@ -52,5 +52,7 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
     surface.N = normalize(vec3<f32>(-slope.x * calm, 1.0, slope.y * calm));
     var out: FragmentOutput;
     out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
+    @if(FORWARD_MOTION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);
     return out;
 }

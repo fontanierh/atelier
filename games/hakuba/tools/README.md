@@ -44,6 +44,7 @@ tools/
         mod.rs              the `texture` kind
       sound/
         mod.rs              the `sound` kind
+      simulation/           readable simulation sources to one indexed byte archive (simulation/README.md)
       model/                still models: the `plant` and `prop` kinds
         mod.rs              writing a model's versions and anchors
         plant.rs            the `plant` kind
@@ -65,6 +66,14 @@ tools/
         scenery.rs          the models, cables and rails regions stand on the ground, shared out between tiles
         surface.rs          finding what lies under a point of a mesh, and cutting shapes along its triangles
 ```
+
+## Simulation data
+
+The `simulation` kind writes `<asset-name>.skatepack`. Its `descriptor` setting names the integrity descriptor under
+`src/`; the source tree holds `motion/` and `runtime/` JSON plus the descriptor and manifest. The export packs the
+existing binary payloads unchanged with a sorted index and SHA-256 per payload. The normal `--check` verifies the
+archive and its full manifest, so missing, stale or corrupt payloads cannot pass. Source data and its distribution
+notice stay under the asset's `src/`; no source JSON is copied to the browser build.
 
 ## The rig
 
@@ -151,6 +160,12 @@ off its handle's surface: then it did not hold that handle.
 | `handle_left_m`    | the left handle's stretch, back end then front end, in the source's frame  |
 | `handle_right_m`   | the right handle's                                                         |
 | `handle_radius_m`  | the handles' tube's radius in the source                                   |
+
+Equipment driven by a solved skeleton instead uses `source` and `parts`, a list of scene names. Each scene has one
+identity root with the same name and `extras.bone`, and its mesh is baked into that bone's local game frame. Its
+`holder` metadata declares `frame = "solved-bone-local"`, the source `reference_pose` and `reference_bank`, and the
+same-frame `attachment_targets`. The game moves each scene with that solve's matching bone, not an unrelated rigid
+body centre or a separately animated pose. A time-varying hold has no invented fixed palm offset.
 
 **`texture`** writes an image as `<folder name>.ktx2`, with every mipmap level so it draws smoothly near and far.
 Each level averages the one above it in linear light, each colour weighted by its opacity, and is stored as 8-bit

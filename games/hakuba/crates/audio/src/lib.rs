@@ -6,6 +6,8 @@
 //! then.
 
 mod moves;
+mod skate;
+mod soften;
 mod sound;
 
 use bevy::audio::Volume;
@@ -20,7 +22,7 @@ pub struct SoundsPlugin;
 
 impl Plugin for SoundsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(sound::TakesPlugin)
+        app.add_plugins((sound::TakesPlugin, skate::SkateSoundsPlugin))
             .add_systems(Startup, load)
             .add_systems(OnEnter(Screen::World), |mut commands: Commands| commands.insert_resource(Pending))
             .add_systems(

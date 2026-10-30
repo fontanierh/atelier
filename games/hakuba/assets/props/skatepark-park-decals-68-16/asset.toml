@@ -2,4 +2,4 @@
 kind = "prop"
 source = "src/model.glb"
 textures = ["skatepark-concrete-albedo"]
-inputs_sha256 = "391a1516ab95b01a9df83d91463bd093d29e61223775da071d32f0ebd8f17e50"
+inputs_sha256 = "e3d48a9a02cd68303254dab6347af0348ff1edfa5d042de2850ed84cd2ca26b6"

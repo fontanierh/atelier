@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["treehouse-bark"]
 solid = true
-inputs_sha256 = "30219a828277def4e74c8c329a1f56a22b94688e03d47269aeb60ef19af1e5b4"
+inputs_sha256 = "cdb5ea4617e310b8aae6fdbe008c24b896c154890e52220b58becf5188568f31"

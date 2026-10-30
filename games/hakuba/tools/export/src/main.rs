@@ -17,6 +17,7 @@ mod ktx2;
 mod model;
 mod rig;
 mod shapes;
+mod simulation;
 mod sound;
 mod texture;
 mod world;
@@ -40,6 +41,7 @@ enum Asset {
     Plant(Box<model::plant::Settings>),
     Prop(model::prop::Settings),
     Sound(sound::Settings),
+    Simulation(simulation::Settings),
     Texture(texture::Settings),
     World(world::Settings),
 }
@@ -53,6 +55,7 @@ impl Asset {
             | Asset::Plant(_)
             | Asset::Prop(_)
             | Asset::Sound(_)
+            | Asset::Simulation(_)
             | Asset::Texture(_) => Vec::new(),
             Asset::Character(settings) if settings.uses_authored_clips() => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
@@ -66,6 +69,7 @@ impl Asset {
             Asset::Animation(_) | Asset::Character(_) | Asset::Equipment(_) => "src/rig",
             Asset::Plant(_) | Asset::Prop(_) => "src/model",
             Asset::Sound(_) => "src/sound",
+            Asset::Simulation(_) => "src/simulation",
             Asset::Texture(_) => "src/texture",
             Asset::World(_) => "src/world",
         }
@@ -81,6 +85,7 @@ impl Asset {
             | Asset::Prop(_)
             | Asset::World(_) => "glb",
             Asset::Sound(_) => "ogg",
+            Asset::Simulation(_) => "skatepack",
             Asset::Texture(_) => "ktx2",
         }
     }
@@ -99,6 +104,7 @@ impl Asset {
     fn output_problems(&self, output: &Path) -> Vec<String> {
         match self {
             Asset::Texture(settings) => settings.output_problems(output),
+            Asset::Simulation(settings) => simulation::output_problems(settings, output),
             _ => Vec::new(),
         }
     }
@@ -137,11 +143,15 @@ fn code(folder: &str) -> Result<Vec<PathBuf>> {
     let root = Path::new(EXPORTER);
     let mut code: Vec<PathBuf> = SHARED_CODE.iter().map(|file| root.join(file)).collect();
     code.extend(files(&root.join(folder))?.into_iter().filter(|file| file.extension().is_some_and(|e| e == "rs")));
-    if folder == "src/world" {
-        // Only world metadata uses this shared schema; its edits must invalidate the world export.
-        code.push(root.join("../../schemas/water/Cargo.toml"));
+    let schemas: &[&str] = match folder {
+        "src/world" => &["water", "world-skate"],
+        "src/simulation" => &["skate"],
+        _ => &[],
+    };
+    for schema in schemas {
+        code.push(root.join(format!("../../schemas/{schema}/Cargo.toml")));
         code.extend(
-            files(&root.join("../../schemas/water/src"))?
+            files(&root.join(format!("../../schemas/{schema}/src")))?
                 .into_iter()
                 .filter(|p| p.extension().is_some_and(|e| e == "rs")),
         );
@@ -250,7 +260,14 @@ impl Folder {
         let mut digest = Sha256::new();
         digest.update(serde_json::to_vec(&self.asset)?);
         digest.update([0]);
-        add_files(&mut digest, &self.path, &files(&self.path.join("src"))?)?;
+        let source_files: Vec<_> = files(&self.path.join("src"))?
+            .into_iter()
+            .filter(|path| {
+                path.extension().is_none_or(|extension| extension != "md")
+                    && path.file_name().is_none_or(|name| name != "CONTRACTS")
+            })
+            .collect();
+        add_files(&mut digest, &self.path, &source_files)?;
         add_files(&mut digest, Path::new(EXPORTER), &code(self.asset.code_folder())?)?;
         // An asset read covers its own code too, through its recorded checksum: a character runs each animation's.
         for folder in self.asset.reads() {
@@ -323,6 +340,7 @@ impl Folder {
             Asset::Plant(settings) => model::plant::export(settings, &output)?,
             Asset::Prop(settings) => model::prop::export(settings, &output)?,
             Asset::Sound(settings) => sound::export(&self.path, settings, &output)?,
+            Asset::Simulation(settings) => simulation::export(&self.path, settings, &output)?,
             Asset::Texture(settings) => texture::export(&self.path, settings, &output)?,
             Asset::World(settings) => world::export(&self.path, settings, &output)?,
         }
@@ -445,10 +463,11 @@ mod tests {
     }
 
     /// Each kind's code folder under `src/`, and the asset groups whose `.rs` files it compiles in.
-    const KINDS: [(&str, &[&str]); 5] = [
+    const KINDS: [(&str, &[&str]); 6] = [
         ("model", &["plants", "props"]),
         ("rig", &["animations", "characters"]),
         ("sound", &["sounds"]),
+        ("simulation", &["simulations"]),
         ("texture", &["textures"]),
         ("world", &["world"]),
     ];

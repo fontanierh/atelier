@@ -1,0 +1,21 @@
+{
+  "description": "roll stone surface variant",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": true,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "roll_stone_01.wav",
+      "sha256": "a711270f5d2e19c6406d7a7f21342aef3ef9dd497585eb137f3cf5ca661a0dcc"
+    }
+  ]
+}

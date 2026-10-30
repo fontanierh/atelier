@@ -1,0 +1,29 @@
+{
+  "description": "land sand surface variant",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "land_sand_01.wav",
+      "sha256": "e3e32bcecebf1c060ea109e9628e302b9dcc7050c0c6bcd748a078541f72ce63"
+    },
+    {
+      "file": "land_sand_02.wav",
+      "sha256": "4df0adc796cc5255a041107f1df71eacce60e6008edc126a24e9734f54071a6e"
+    },
+    {
+      "file": "land_sand_03.wav",
+      "sha256": "4001f5064e65a93681587e9c9b5a2470b242626f0ac5b2d82708c0d9dcd31ca1"
+    }
+  ]
+}

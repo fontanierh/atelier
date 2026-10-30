@@ -1,0 +1,8 @@
+# Pop sand surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/pop_sand_01.wav", "src/pop_sand_02.wav", "src/pop_sand_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "31be6386c597658bf1246a09c6b319b12e79ac99110fb2044f913c5ae178e677"

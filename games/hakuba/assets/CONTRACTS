@@ -3,7 +3,8 @@ Every asset MUST be one folder, named in kebab case: `assets/<group>/<asset-name
 and `animations/`), or `assets/world/` for the one world. It holds exactly: `asset.toml` (its kind, settings and
 inputs checksum), `src/` (every input of its export other than its settings, left out when there is none), and what
 its kind's exporter writes: `<asset-name>.glb` (`<asset-name>.ktx2` for a texture, `<asset-name>.ogg` for a sound),
-plus the outputs that kind declares (the world's `tiles/`, a sound's `<asset-name>.takes.json`).
+plus the outputs that kind declares (the world's `tiles/`, a sound's `<asset-name>.takes.json`). A simulation's
+export is `<asset-name>.skatepack`, an indexed archive of immutable binary payloads.
 Nothing else MAY sit in an asset folder. Folders inside `src/` follow the kind's layout (the world's
 `src/ground/` and `src/regions/<region>/`).
 

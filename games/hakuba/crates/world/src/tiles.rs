@@ -27,6 +27,9 @@ const LOADING: usize = 16;
 const LOADING_UNDER_SPLASH: usize = 32;
 pub const TILES: &str = "world/tiles";
 
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct CollisionActivation;
+
 pub struct TilesPlugin;
 impl Plugin for TilesPlugin {
     fn build(&self, app: &mut App) {
@@ -38,6 +41,7 @@ impl Plugin for TilesPlugin {
             .add_systems(
                 PostUpdate,
                 activate
+                    .in_set(CollisionActivation)
                     .after(TransformSystems::Propagate)
                     .before(VisibilitySystems::VisibilityPropagate)
                     .run_if(in_state(Screen::World)),
@@ -58,6 +62,7 @@ pub struct Tile {
     column: u32,
     row: u32,
     centre: Vec3,
+    pub(crate) collision_bounds: Option<[Vec2; 2]>,
     detail: Option<Detail>,
     showing: Option<Entity>,
     shown_detail: Option<Detail>,
@@ -75,6 +80,7 @@ impl Tile {
             column,
             row,
             centre,
+            collision_bounds: None,
             detail: None,
             showing: None,
             shown_detail: None,
@@ -82,6 +88,15 @@ impl Tile {
             failed: false,
             queued: false,
         })
+    }
+    pub(crate) fn collision_state(&self) -> ([u32; 2], Vec3, Option<Entity>, bool, Option<[Vec2; 2]>) {
+        (
+            [self.column, self.row],
+            self.centre,
+            self.showing,
+            self.shown_detail == Some(Detail::Full),
+            self.collision_bounds,
+        )
     }
     pub fn shown(&self) -> bool {
         self.failed || (!self.queued && self.detail == self.shown_detail && self.pending.is_none())
@@ -116,6 +131,9 @@ fn choose(
     camera: Single<&GlobalTransform, With<Camera3d>>,
     settings: Res<Settings>,
     loaded: Option<Res<Loaded>>,
+    focus: Option<Res<crate::collision::CollisionFocus>>,
+    grid: Option<Res<crate::collision::TileGrid>>,
+    mut collision_dirty: Option<ResMut<crate::collision::CollisionDirty>>,
     mut tiles: Query<(Entity, &mut Tile)>,
 ) {
     let eye = camera.translation();
@@ -123,7 +141,10 @@ fn choose(
     let mut loading = 0;
     for (entity, mut tile) in &mut tiles {
         let distance = (tile.centre - eye).with_y(0.0).length();
+        let pinned =
+            focus.as_ref().is_some_and(|f| f.intersects(tile.centre, grid.as_ref().map_or(64.0, |g| g.tile_m)));
         let detail = match distance {
+            _ if pinned => Some(Detail::Full),
             d if d < settings.detail.full_m() => Some(Detail::Full),
             d if d < FAR_M + if tile.detail == Some(Detail::Middle) { FAR_MARGIN_M } else { -FAR_MARGIN_M } => {
                 Some(Detail::Middle)
@@ -144,12 +165,15 @@ fn choose(
             }
             if let Some(old) = tile.showing.take() {
                 commands.entity(old).despawn();
+                if let Some(dirty) = collision_dirty.as_deref_mut() {
+                    dirty.mark();
+                }
             }
             tile.shown_detail = None;
             tile.failed = false;
             continue;
         }
-        wanted.push((distance, entity, detail));
+        wanted.push((if pinned { -1.0 } else { distance }, entity, detail));
     }
     wanted.sort_by(|a, b| a.0.total_cmp(&b.0));
     let free = if loaded.is_some() { LOADING } else { LOADING_UNDER_SPLASH }.saturating_sub(loading);
@@ -277,6 +301,7 @@ fn activate(
     mut tiles: Query<&mut Tile>,
     children: Query<&Children>,
     pending: Query<&PendingSolid>,
+    mut collision_dirty: Option<ResMut<crate::collision::CollisionDirty>>,
 ) {
     for (root, Spawning(owner, detail)) in &roots {
         let Ok(mut tile) = tiles.get_mut(*owner) else { continue };
@@ -289,6 +314,9 @@ fn activate(
         }
         tile.pending = None;
         tile.shown_detail = Some(*detail);
+        if let Some(dirty) = collision_dirty.as_deref_mut() {
+            dirty.mark();
+        }
         commands.entity(root).remove::<(Spawning, SceneReady, Prepared)>().insert(Visibility::Inherited);
     }
 }
@@ -496,6 +524,70 @@ mod tests {
         assert!(tile.failed && tile.pending.is_none());
         assert!(app.world().get_entity(root).is_err());
         assert!(app.world().resource::<Missing>().0.contains("invalid-paint.glb"));
+    }
+
+    #[test]
+    fn collision_republishes_after_activation_and_mesh_readiness_changes() {
+        use crate::collision::{CollisionDirty, CollisionFocus, SkateMetadata, TileGrid, WorldCollision, publish};
+        use bevy::asset::AssetEvent;
+        use bevy::mesh::PrimitiveTopology;
+        use hakuba_world_skate_schema::Metadata;
+
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .init_resource::<Assets<Mesh>>()
+            .init_resource::<WorldCollision>()
+            .init_resource::<CollisionFocus>()
+            .init_resource::<CollisionDirty>()
+            .add_message::<AssetEvent<Mesh>>()
+            .insert_resource(TileGrid { tile_m: 64. })
+            .insert_resource(SkateMetadata(Metadata::default()))
+            .add_systems(Update, publish);
+        app.world_mut().resource_mut::<CollisionFocus>().request(Vec3::ZERO, Vec3::ZERO);
+        let owner = app.world_mut().spawn(Tile::named("tile 1 2", Vec3::ZERO).unwrap()).id();
+        let root = app.world_mut().spawn((ChildOf(owner), Spawning(owner, Detail::Full), Prepared)).id();
+        let mesh = app.world().resource::<Assets<Mesh>>().reserve_handle();
+        app.world_mut().spawn((ChildOf(root), Mesh3d(mesh.clone()), GlobalTransform::IDENTITY, ground::built_solid()));
+        {
+            let mut tile = app.world_mut().get_mut::<Tile>(owner).unwrap();
+            tile.detail = Some(Detail::Full);
+            tile.pending = Some(root);
+        }
+        app.update();
+        assert!(!app.world().resource::<WorldCollision>().snapshot.ready);
+        app.world_mut().run_system_once(activate).unwrap();
+        app.update();
+        let collision = app.world().resource::<WorldCollision>();
+        assert!(!collision.snapshot.ready, "missing mesh must hold readiness");
+        let generation = collision.generation;
+        app.update();
+        assert_eq!(app.world().resource::<WorldCollision>().generation, generation);
+
+        let mut geometry = Mesh::new(PrimitiveTopology::TriangleList, bevy::asset::RenderAssetUsages::MAIN_WORLD);
+        geometry.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0., 0., 0.], [0., 0., 1.], [1., 0., 0.]]);
+        app.world_mut().resource_mut::<Assets<Mesh>>().insert(mesh.id(), geometry).unwrap();
+        app.world_mut().write_message(AssetEvent::Added { id: mesh.id() });
+        app.update();
+        let collision = app.world().resource::<WorldCollision>();
+        assert_eq!(collision.generation, generation + 1);
+        assert!(collision.snapshot.ready);
+        assert!(collision.snapshot.covers(Vec3::ZERO));
+        assert_eq!(collision.snapshot.triangles.len(), 1);
+        let retained = collision.snapshot.clone();
+
+        app.world_mut().get_mut::<Tile>(owner).unwrap().collision_bounds = Some([Vec2::splat(-2.), Vec2::splat(2.)]);
+        app.world_mut().resource_mut::<CollisionDirty>().mark();
+        app.update();
+        let collision = app.world().resource::<WorldCollision>();
+        assert!(collision.snapshot.ready);
+        assert!(!collision.snapshot.covers(Vec3::X * 3.));
+        assert!(collision.snapshot.covers(Vec3::X));
+
+        app.world_mut().resource_mut::<Assets<Mesh>>().remove(mesh.id());
+        app.world_mut().write_message(AssetEvent::Removed { id: mesh.id() });
+        app.update();
+        assert!(!app.world().resource::<WorldCollision>().snapshot.ready);
+        assert_eq!(retained.triangles.len(), 1, "old snapshots retain their geometry");
     }
 
     #[test]

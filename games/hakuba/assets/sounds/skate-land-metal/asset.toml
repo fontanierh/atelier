@@ -1,0 +1,8 @@
+# Land metal surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/land_metal_01.wav", "src/land_metal_02.wav", "src/land_metal_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "f45086680bd028986820f595834329c5fe53402d658f2113e065fcff95029e3e"

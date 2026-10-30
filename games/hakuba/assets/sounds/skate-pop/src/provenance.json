@@ -1,0 +1,35 @@
+{
+  "description": "the tail cracking against the ground",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "audioville_stick_hit_13_wild.wav",
+      "sha256": "623d96e36eff804b4fb3aa50111426065fbdef94e401aff35c92f143d38b7f0b",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    },
+    {
+      "recording": "audioville_wooden_sword_hit_11.wav",
+      "sha256": "2f654f62b4302ea96c2bc70a07f2ab34deabcd2642babb3912c71dba5e23efa1",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    }
+  ],
+  "takes": [
+    {
+      "file": "pop_01.wav",
+      "sha256": "d11a53cd2eca0f42f4a4ab59719e292a0f0c2c1a5471ff7e4bce46dcb99df6c5"
+    },
+    {
+      "file": "pop_02.wav",
+      "sha256": "6ddfe93233b89e4a534368be982c3b7858d8ed76bfcfcdf8355a1ebbde037c81"
+    },
+    {
+      "file": "pop_03.wav",
+      "sha256": "8c5118e0c9acc416001960affdb8dda47d920341fe98308e184421108315a943"
+    }
+  ]
+}

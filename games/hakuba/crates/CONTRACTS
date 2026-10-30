@@ -16,7 +16,9 @@ world crate makes any range abrupt and logs an error). Detail MUST swap whole pr
 swap whole. A vertex shader that moves geometry MUST write motion vectors that say how it moved, or say on
 purpose that it stood still, as the wind's do. It MUST also draw the main pass no further than its prepass did (the
 wind's `DEPTH_MARGIN`): the two passes are compiled apart, and a vertex a rounding error further fails the depth test
-and leaves a hole showing the clear colour for a frame.
+and leaves a hole showing the clear colour for a frame. A forward color-and-motion camera MAY omit its geometry
+prepass only when it publishes complete motion and depth before temporal consumers; it MUST keep shadow passes and
+ordinary cameras unchanged. A comparison mode MUST retain the original prepass and its displayed TAA inputs.
 
 @cc [owner:fontanierh,label:correctness] nothing-appears-after-loading
 The world MUST NOT show until all it draws is ready: its tiles, models and textures loaded and every pipeline made,

@@ -1,0 +1,8 @@
+# The loose board tumbling after a bail; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/clatter_01.wav", "src/clatter_02.wav", "src/clatter_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "2ef11e295c99fee8fe86afb09ff555093f826bb9a511122702d6cce3d19ecf0f"

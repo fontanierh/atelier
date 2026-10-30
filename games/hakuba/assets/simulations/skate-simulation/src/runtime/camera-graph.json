@@ -1,0 +1,1610 @@
+{
+  "state": {"name": "Camera", "policy": "Priority"},
+  "children": [
+    {
+      "state": {"name": "CameraLow"},
+      "children": [
+        {
+          "expression": {"op": "or"},
+          "children": [
+            {"condition": {"name": "IsCameraTypeActive", "type": "0", "mask": "always"}},
+            {"condition": {"name": "IsInObserverMode", "mask": "always"}}
+          ]
+        },
+        {
+          "state": {"name": "WipeOut"},
+          "children": [
+            {"expression": {}, "children": [{"condition": {"name": "IsWipingOut", "mask": "always"}}]},
+            {
+              "state": {"name": "SlowMo"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "IsBrokenBoneSlowMo", "mask": "always"}}]},
+                {
+                  "behaviour": {
+                    "name": "CameraChooseShot",
+                    "shot1": "wipeout_slowmo",
+                    "transitionIn": "0.0",
+                    "transitionOut": "1.0"
+                  }
+                }
+              ]
+            },
+            {
+              "state": {"name": "CannonBall"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "CannonBall", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_cannonball"}}
+              ]
+            },
+            {
+              "state": {"name": "JudoKick"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "JudoKick", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_judokick"}}
+              ]
+            },
+            {
+              "state": {"name": "SwanDive"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "SwanDive", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_swandive"}}
+              ]
+            },
+            {
+              "state": {"name": "Torpedo"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "Torpedo", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_torpedo"}}
+              ]
+            },
+            {
+              "state": {"name": "Freefall"},
+              "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout", "transitionIn": "0.1"}}]
+            }
+          ]
+        },
+        {
+          "state": {"name": "OffBoard"},
+          "children": [
+            {"expression": {}, "children": [{"condition": {"name": "IsOffboard", "mask": "always"}}]},
+            {
+              "state": {"name": "DroppingIn"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [{"condition": {"name": "SkaterIsDroppingIn", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "drop_in", "transitionOut": "0.3"}}
+              ]
+            },
+            {
+              "state": {"name": "OffboardAir"},
+              "children": [
+                {
+                  "expression": {"op": "or"},
+                  "children": [
+                    {"condition": {"name": "IsAirOffboard", "mask": "always"}},
+                    {"condition": {"name": "IsInOnBoardAir", "mask": "always"}}
+                  ]
+                },
+                {
+                  "state": {"name": "offboard_low_air_From_Low_ollie"},
+                  "children": [
+                    {
+                      "expression": {},
+                      "children": [
+                        {
+                          "condition": {
+                            "name": "IsPreviousShot",
+                            "shot1": "low_ollie",
+                            "shot2": "offboard_low_air",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "offboard_low_air",
+                        "transitionIn": "0.2",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "offboard_low_air"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "expression": {"op": "not"},
+                          "children": [{"condition": {"name": "IsReentry", "mask": "always"}}]
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedHeightDistanceRatio",
+                            "value": ".67",
+                            "comparison": "LessThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "PredictedMaxHeight", "value": "2.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedLandingHeight",
+                            "value": "-0.5",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "LaunchInclineAngle", "value": "45", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {"name": "LandingInclineAngle", "value": "10", "comparison": "LessThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "offboard_low_air",
+                        "transitionIn": "0.2",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "offboard_air_follow"},
+                  "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "offboard_air", "transitionOut": "0.5"}}]
+                }
+              ]
+            },
+            {
+              "state": {"name": "HippyHurdle"},
+              "children": [
+                {
+                  "expression": {"op": "or"},
+                  "children": [
+                    {"condition": {"name": "SkaterIsPerformingHippyHurdle", "mask": "always"}},
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {"condition": {"name": "SkaterIsPerformingHippyJump", "mask": "always"}},
+                        {"condition": {"name": "IsPreviousShot", "shot1": "hippyhurdle", "mask": "always"}}
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "behaviour": {"name": "CameraChooseShot", "shot1": "hippyhurdle", "transitionIn": "0.0", "transitionOut": "0.5"}
+                }
+              ]
+            },
+            {
+              "state": {"name": "HippyJump"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [{"condition": {"name": "SkaterIsPerformingHippyJump", "mask": "always"}}]
+                },
+                {
+                  "state": {"name": "Low"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {
+                            "name": "PredictedHeightDistanceRatio",
+                            "value": ".47",
+                            "comparison": "LessThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "PredictedMaxHeight", "value": "1.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedLandingHeight",
+                            "value": "-0.5",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "hippyjump",
+                        "transitionIn": "0.0",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "High"},
+                  "children": [
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "hippyjump_high",
+                        "transitionIn": "0.5",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "state": {"name": "MovingObject"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "SkaterIsMovingObject", "mask": "always"}}]},
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "moving_object"}}
+              ]
+            },
+            {
+              "state": {"name": "Default"},
+              "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "offboard_ground", "transitionIn": "1.0"}}]
+            }
+          ]
+        },
+        {
+          "state": {"name": "Skitching"},
+          "children": [
+            {"expression": {}, "children": [{"condition": {"name": "SkaterIsSkitching", "mask": "always"}}]},
+            {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_skitching"}}
+          ]
+        },
+        {
+          "state": {"name": "NPC_Security"},
+          "children": [
+            {
+              "expression": {"op": "and"},
+              "children": [
+                {"condition": {"name": "SkaterIsUnderThreat", "mask": "always"}},
+                {
+                  "condition": {"name": "PredictedAirTime", "value": "0.15", "comparison": "LessThan", "mask": "always"}
+                }
+              ]
+            },
+            {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_security", "transitionOut": "2.0"}}
+          ]
+        },
+        {
+          "state": {"name": "OnBoard"},
+          "children": [
+            {
+              "state": {"name": "FixedInAir"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "IsFixedInAir", "mask": "always"}}]},
+                {
+                  "behaviour": {"name": "CameraChooseShot", "shot1": "fixed_in_air", "transitionIn": "1.0", "transitionOut": "1.0"}
+                }
+              ]
+            },
+            {
+              "state": {"name": "GrindExitLowOllie"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {"condition": {"name": "SkaterWasGrinding", "mask": "always"}},
+                    {
+                      "condition": {
+                        "name": "PredictedHeightDistanceRatio",
+                        "value": ".47",
+                        "comparison": "LessThan",
+                        "mask": "always"
+                      }
+                    },
+                    {
+                      "condition": {"name": "PredictedMaxHeight", "value": "1.0", "comparison": "LessThan", "mask": "always"}
+                    },
+                    {
+                      "condition": {"name": "PredictedAirTime", "value": "0.15", "comparison": "GreaterThan", "mask": "always"}
+                    },
+                    {
+                      "condition": {
+                        "name": "PredictedLandingHeight",
+                        "value": "-0.5",
+                        "comparison": "GreaterThan",
+                        "mask": "always"
+                      }
+                    },
+                    {
+                      "expression": {"op": "not"},
+                      "children": [{"condition": {"name": "IsPlayerSkateboardOnGround", "mask": "always"}}]
+                    }
+                  ]
+                },
+                {
+                  "behaviour": {"name": "CameraChooseShot", "shot1": "low_ollie", "transitionIn": "1.0", "transitionOut": "0.3"}
+                }
+              ]
+            },
+            {
+              "state": {"name": "GrindExitGround"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {"condition": {"name": "SkaterWasGrinding", "mask": "always"}},
+                    {
+                      "condition": {"name": "PredictedAirTime", "value": "0.2", "comparison": "GreaterThan", "mask": "always"}
+                    },
+                    {
+                      "expression": {"op": "not"},
+                      "children": [{"condition": {"name": "IsPlayerSkateboardOnGround", "mask": "always"}}]
+                    }
+                  ]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "grind_exit", "transitionIn": "0.5"}}
+              ]
+            },
+            {
+              "state": {"name": "Air"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {
+                      "condition": {"name": "PredictedAirTime", "value": "0.1", "comparison": "GreaterThan", "mask": "always"}
+                    },
+                    {
+                      "expression": {"op": "not"},
+                      "children": [{"condition": {"name": "IsPlayerSkateboardOnGround", "mask": "always"}}]
+                    },
+                    {
+                      "expression": {"op": "not"},
+                      "children": [{"condition": {"name": "SkaterIsGrinding", "mask": "always"}}]
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "Reentry"},
+                  "children": [
+                    {"expression": {}, "children": [{"condition": {"name": "IsReentry", "mask": "always"}}]},
+                    {
+                      "state": {"name": "ShortAir"},
+                      "children": [
+                        {
+                          "expression": {},
+                          "children": [
+                            {
+                              "condition": {
+                                "name": "PredictedAirTime",
+                                "value": "1.35",
+                                "comparison": "LessThan",
+                                "mask": "always"
+                              }
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "LowAir"},
+                      "children": [
+                        {
+                          "expression": {},
+                          "children": [
+                            {
+                              "condition": {
+                                "name": "PredictedMaxHeight",
+                                "value": "1.0",
+                                "comparison": "LessThan",
+                                "mask": "always"
+                              }
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "SpineTransfer"},
+                      "children": [
+                        {
+                          "expression": {},
+                          "children": [
+                            {
+                              "condition": {
+                                "name": "TransferAngle",
+                                "value": "120.0",
+                                "comparison": "GreaterThan",
+                                "mask": "always"
+                              }
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "Frontside"},
+                      "children": [
+                        {
+                          "expression": {"op": "or"},
+                          "children": [
+                            {"condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_fs", "mask": "always"}},
+                            {
+                              "expression": {"op": "and"},
+                              "children": [
+                                {
+                                  "condition": {
+                                    "name": "FrontsideAngle",
+                                    "value": "0.0",
+                                    "comparison": "LessThan",
+                                    "mask": "always"
+                                  }
+                                },
+                                {
+                                  "expression": {"op": "not"},
+                                  "children": [
+                                    {
+                                      "condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_bs", "mask": "always"}
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_reentry_fs", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "Backside"},
+                      "children": [
+                        {
+                          "expression": {"op": "or"},
+                          "children": [
+                            {"condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_bs", "mask": "always"}},
+                            {
+                              "expression": {"op": "and"},
+                              "children": [
+                                {
+                                  "condition": {
+                                    "name": "FrontsideAngle",
+                                    "value": "0.0",
+                                    "comparison": "GreaterEqual",
+                                    "mask": "always"
+                                  }
+                                },
+                                {
+                                  "expression": {"op": "not"},
+                                  "children": [
+                                    {
+                                      "condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_fs", "mask": "always"}
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_reentry_bs", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "Default"},
+                      "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air"}}]
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "AirPredictorBugFix"},
+                  "children": [
+                    {
+                      "expression": {},
+                      "children": [
+                        {
+                          "condition": {
+                            "name": "PredictedLandingHeight",
+                            "value": "-400000",
+                            "comparison": "LessThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "low_ollie", "transitionOut": "0.3"}}
+                  ]
+                },
+                {
+                  "state": {"name": "MegaParkAirBugFix"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "expression": {"op": "not"},
+                          "children": [{"condition": {"name": "SkaterWasGrinding", "mask": "always"}}]
+                        },
+                        {
+                          "condition": {"name": "PredictedAirTime", "value": "2.0", "comparison": "GreaterThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "SlowMotionController"}},
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air", "transitionOut": "0.5"}}
+                  ]
+                },
+                {
+                  "state": {"name": "Air_Up"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "expression": {"op": "not"},
+                          "children": [{"condition": {"name": "IsReentry", "mask": "always"}}]
+                        },
+                        {
+                          "condition": {"name": "LaunchInclineAngle", "value": "60", "comparison": "GreaterThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {"name": "PredictedAirTime", "value": "1.35", "comparison": "LessThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air", "transitionOut": "0.5"}}
+                  ]
+                },
+                {
+                  "state": {"name": "Air_Up_High"},
+                  "children": [
+                    {
+                      "expression": {},
+                      "children": [
+                        {
+                          "condition": {"name": "LaunchInclineAngle", "value": "60", "comparison": "GreaterThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air", "transitionOut": "0.5"}}
+                  ]
+                },
+                {
+                  "state": {"name": "LowOllie"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "expression": {"op": "not"},
+                          "children": [{"condition": {"name": "IsReentry", "mask": "always"}}]
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedHeightDistanceRatio",
+                            "value": ".47",
+                            "comparison": "LessThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "PredictedMaxHeight", "value": "1.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedLandingHeight",
+                            "value": "-0.5",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "low_ollie",
+                        "transitionIn": "1.0",
+                        "transitionOut": "0.3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "DefaultAir"},
+                  "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "bl_air", "transitionOut": "0.5"}}]
+                }
+              ]
+            },
+            {
+              "state": {"name": "HandPlant"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "SkaterIsPerformingHandPlant", "mask": "always"}}]
+                },
+                {
+                  "state": {"name": "Frontside"},
+                  "children": [
+                    {
+                      "expression": {},
+                      "children": [
+                        {
+                          "condition": {"name": "FrontsideAngle", "value": "0.0", "comparison": "LessThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "handplant_fs", "transitionOut": "0.5"}}
+                  ]
+                },
+                {
+                  "state": {"name": "Backside"},
+                  "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "handplant_bs", "transitionOut": "0.5"}}]
+                }
+              ]
+            },
+            {
+              "state": {"name": "HighBoneless"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {"condition": {"name": "SkaterIsPerformingBoneless", "mask": "always"}},
+                    {
+                      "condition": {"name": "LaunchInclineAngle", "value": "40", "comparison": "GreaterThan", "mask": "always"}
+                    }
+                  ]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "highboneless", "transitionIn": "0.0"}}
+              ]
+            },
+            {
+              "state": {"name": "FootPlant_From_Low_ollie"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {"condition": {"name": "SkaterIsPerformingFootPlant", "mask": "always"}},
+                    {
+                      "condition": {"name": "IsPreviousShot", "shot1": "low_ollie", "shot2": "footplant", "mask": "always"}
+                    }
+                  ]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "footplant", "transitionIn": "1.0"}}
+              ]
+            },
+            {
+              "state": {"name": "FootPlant"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "SkaterIsPerformingFootPlant", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "highfootplant", "transitionIn": "1.0"}}
+              ]
+            },
+            {
+              "state": {"name": "Boneless"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "SkaterIsPerformingBoneless", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "boneless", "transitionIn": "1.0"}}
+              ]
+            },
+            {
+              "state": {"name": "DeathRace"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [
+                    {
+                      "condition": {
+                        "name": "IsInWorldPainterRegion",
+                        "layer": "Cameras_Race",
+                        "type": "svm_race",
+                        "mask": "always"
+                      }
+                    }
+                  ]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_race"}}
+              ]
+            },
+            {
+              "state": {"name": "Grinding"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "SkaterIsGrinding", "mask": "always"}}]},
+                {
+                  "state": {"name": "GrindingStop"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {"name": "CameraSubjectSpeed", "value": "2.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "CameraSubjectSpeed",
+                            "value": "-2.0",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "GrindInclineAngle", "value": "5.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "GrindInclineAngle",
+                            "value": "-5.0",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "stop_grind",
+                        "transitionIn": "0.0",
+                        "transitionOut": "0.3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "GrindingLedgeLeft"},
+                  "children": [
+                    {"expression": {}, "children": [{"condition": {"name": "IsGrindLedgeLeft", "mask": "always"}}]},
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "bl_grind_ledge_left",
+                        "transitionIn": "1.0",
+                        "transitionOut": "0.3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "GrindingLedgeRight"},
+                  "children": [
+                    {"expression": {}, "children": [{"condition": {"name": "IsGrindLedgeRight", "mask": "always"}}]},
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "bl_grind_ledge_right",
+                        "transitionIn": "1.0",
+                        "transitionOut": "0.3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "GrindingDefault"},
+                  "children": [
+                    {
+                      "behaviour": {"name": "CameraChooseShot", "shot1": "bl_grind", "transitionIn": "0.5", "transitionOut": "0.3"}
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "state": {"name": "Road"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "SkaterIsOnRoad", "mask": "always"}}]},
+                {
+                  "state": {"name": "RoadTurning"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {"name": "TurningCentredTime", "value": "0.3", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "CameraSubjectSpeed",
+                            "value": "1.0",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_road_turning"}}
+                  ]
+                },
+                {
+                  "state": {"name": "RoadStraight"},
+                  "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "bl_road"}}]
+                }
+              ]
+            },
+            {
+              "state": {"name": "Ground"},
+              "children": [
+                {
+                  "state": {"name": "Volume"},
+                  "children": [
+                    {
+                      "expression": {},
+                      "children": [{"condition": {"name": "IsInVolume", "volume": "MyVolumeName", "mask": "always"}}]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_security"}}
+                  ]
+                },
+                {
+                  "state": {"name": "Manual"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {"condition": {"name": "IsInManual", "mask": "always"}},
+                        {
+                          "condition": {"name": "LaunchInclineAngle", "value": "45", "comparison": "LessThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_manual", "transitionIn": "2.0"}}
+                  ]
+                },
+                {
+                  "state": {"name": "OllieAnticipation"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {"condition": {"name": "IsPreparingToJump", "mask": "always"}},
+                        {
+                          "condition": {"name": "LaunchInclineAngle", "value": "30", "comparison": "LessThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_chase"}}
+                  ]
+                },
+                {
+                  "state": {"name": "Turning"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {"name": "TurningCentredTime", "value": "0.3", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "CameraSubjectSpeed",
+                            "value": "1.0",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_turning"}}
+                  ]
+                },
+                {
+                  "state": {"name": "PotentialLand"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {"name": "IsPreviousShot", "shot1": "bl_air", "shot2": "air_small", "mask": "always"}
+                        },
+                        {"condition": {"name": "IsInOnBoardAir", "mask": "always"}}
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "air_small"}}
+                  ]
+                },
+                {
+                  "state": {"name": "Forwards"},
+                  "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "bl_chase"}}]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": {"name": "CameraHigh"},
+      "children": [
+        {"expression": {}, "children": [{"condition": {"name": "IsCameraTypeActive", "type": "1", "mask": "always"}}]},
+        {
+          "state": {"name": "WipeOut"},
+          "children": [
+            {"expression": {}, "children": [{"condition": {"name": "IsWipingOut", "mask": "always"}}]},
+            {
+              "state": {"name": "SlowMo"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "IsBrokenBoneSlowMo", "mask": "always"}}]},
+                {
+                  "behaviour": {
+                    "name": "CameraChooseShot",
+                    "shot1": "wipeout_slowmo",
+                    "transitionIn": "0.0",
+                    "transitionOut": "1.0"
+                  }
+                }
+              ]
+            },
+            {
+              "state": {"name": "CannonBall"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "CannonBall", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_cannonball"}}
+              ]
+            },
+            {
+              "state": {"name": "JudoKick"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "JudoKick", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_judokick"}}
+              ]
+            },
+            {
+              "state": {"name": "SwanDive"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "SwanDive", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_swandive"}}
+              ]
+            },
+            {
+              "state": {"name": "Torpedo"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "IsWipeoutBodyTweak", "tweak": "Torpedo", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout_torpedo"}}
+              ]
+            },
+            {
+              "state": {"name": "Freefall"},
+              "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "wipeout", "transitionIn": "0.1"}}]
+            }
+          ]
+        },
+        {
+          "state": {"name": "OffBoard"},
+          "children": [
+            {"expression": {}, "children": [{"condition": {"name": "IsOffboard", "mask": "always"}}]},
+            {
+              "state": {"name": "DroppingIn"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [{"condition": {"name": "SkaterIsDroppingIn", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "drop_in", "transitionOut": "0.3"}}
+              ]
+            },
+            {
+              "state": {"name": "OffboardAir"},
+              "children": [
+                {
+                  "expression": {"op": "or"},
+                  "children": [
+                    {"condition": {"name": "IsAirOffboard", "mask": "always"}},
+                    {"condition": {"name": "IsInOnBoardAir", "mask": "always"}}
+                  ]
+                },
+                {
+                  "state": {"name": "offboard_low_air_From_Low_ollie"},
+                  "children": [
+                    {
+                      "expression": {},
+                      "children": [
+                        {
+                          "condition": {
+                            "name": "IsPreviousShot",
+                            "shot1": "low_ollie",
+                            "shot2": "offboard_low_air",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "offboard_low_air",
+                        "transitionIn": "0.2",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "offboard_low_air"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "expression": {"op": "not"},
+                          "children": [{"condition": {"name": "IsReentry", "mask": "always"}}]
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedHeightDistanceRatio",
+                            "value": ".67",
+                            "comparison": "LessThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "PredictedMaxHeight", "value": "2.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedLandingHeight",
+                            "value": "-0.5",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "LaunchInclineAngle", "value": "45", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {"name": "LandingInclineAngle", "value": "10", "comparison": "LessThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "offboard_low_air",
+                        "transitionIn": "0.2",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "offboard_air"},
+                  "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "offboard_air", "transitionOut": "0.5"}}]
+                }
+              ]
+            },
+            {
+              "state": {"name": "HippyHurdle"},
+              "children": [
+                {
+                  "expression": {"op": "or"},
+                  "children": [
+                    {"condition": {"name": "SkaterIsPerformingHippyHurdle", "mask": "always"}},
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {"condition": {"name": "SkaterIsPerformingHippyJump", "mask": "always"}},
+                        {"condition": {"name": "IsPreviousShot", "shot1": "hippyhurdle", "mask": "always"}}
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "behaviour": {"name": "CameraChooseShot", "shot1": "hippyhurdle", "transitionIn": "0.0", "transitionOut": "0.5"}
+                }
+              ]
+            },
+            {
+              "state": {"name": "HippyJump"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [{"condition": {"name": "SkaterIsPerformingHippyJump", "mask": "always"}}]
+                },
+                {
+                  "state": {"name": "Low"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {
+                            "name": "PredictedHeightDistanceRatio",
+                            "value": ".47",
+                            "comparison": "LessThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "PredictedMaxHeight", "value": "1.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedLandingHeight",
+                            "value": "-0.5",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "hippyjump",
+                        "transitionIn": "0.0",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "High"},
+                  "children": [
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "hippyjump_high",
+                        "transitionIn": "0.5",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "state": {"name": "MovingObject"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "SkaterIsMovingObject", "mask": "always"}}]},
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "moving_object"}}
+              ]
+            },
+            {
+              "state": {"name": "Default"},
+              "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "offboard_ground", "transitionIn": "1.0"}}]
+            }
+          ]
+        },
+        {
+          "state": {"name": "Skitching"},
+          "children": [
+            {"expression": {}, "children": [{"condition": {"name": "SkaterIsSkitching", "mask": "always"}}]},
+            {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_high_skitching"}}
+          ]
+        },
+        {
+          "state": {"name": "NPC_Security"},
+          "children": [
+            {
+              "expression": {"op": "and"},
+              "children": [
+                {"condition": {"name": "SkaterIsUnderThreat", "mask": "always"}},
+                {
+                  "condition": {"name": "PredictedAirTime", "value": "0.15", "comparison": "LessThan", "mask": "always"}
+                }
+              ]
+            },
+            {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_security", "transitionOut": "2.0"}}
+          ]
+        },
+        {
+          "state": {"name": "OnBoard"},
+          "children": [
+            {
+              "state": {"name": "FixedInAir"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "IsFixedInAir", "mask": "always"}}]},
+                {
+                  "behaviour": {"name": "CameraChooseShot", "shot1": "fixed_in_air", "transitionIn": "1.0", "transitionOut": "1.0"}
+                }
+              ]
+            },
+            {
+              "state": {"name": "HandPlant"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "SkaterIsPerformingHandPlant", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "handplant"}}
+              ]
+            },
+            {
+              "state": {"name": "HighBoneless"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {"condition": {"name": "SkaterIsPerformingBoneless", "mask": "always"}},
+                    {
+                      "condition": {"name": "LaunchInclineAngle", "value": "40", "comparison": "GreaterThan", "mask": "always"}
+                    }
+                  ]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "highboneless", "transitionIn": "0.0"}}
+              ]
+            },
+            {
+              "state": {"name": "FootPlant_From_Low_ollie"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {"condition": {"name": "SkaterIsPerformingFootPlant", "mask": "always"}},
+                    {
+                      "condition": {"name": "IsPreviousShot", "shot1": "low_ollie", "shot2": "footplant", "mask": "always"}
+                    }
+                  ]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "footplant", "transitionIn": "0.0"}}
+              ]
+            },
+            {
+              "state": {"name": "FootPlant"},
+              "children": [
+                {
+                  "expression": {},
+                  "children": [{"condition": {"name": "SkaterIsPerformingFootPlant", "mask": "always"}}]
+                },
+                {"behaviour": {"name": "CameraChooseShot", "shot1": "highfootplant", "transitionIn": "0.0"}}
+              ]
+            },
+            {
+              "state": {"name": "Grinding"},
+              "children": [
+                {"expression": {}, "children": [{"condition": {"name": "SkaterIsGrinding", "mask": "always"}}]},
+                {
+                  "state": {"name": "GrindingStop"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {"name": "CameraSubjectSpeed", "value": "2.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "CameraSubjectSpeed",
+                            "value": "-2.0",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "GrindInclineAngle", "value": "5.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "GrindInclineAngle",
+                            "value": "-5.0",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "stop_grind", "transitionOut": "0.0"}}
+                  ]
+                },
+                {
+                  "state": {"name": "GrindingLedgeLeft"},
+                  "children": [
+                    {"expression": {}, "children": [{"condition": {"name": "IsGrindLedgeLeft", "mask": "always"}}]},
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "high_grind_left",
+                        "transitionIn": "1.0",
+                        "transitionOut": "0.3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "GrindingLedgeRight"},
+                  "children": [
+                    {"expression": {}, "children": [{"condition": {"name": "IsGrindLedgeRight", "mask": "always"}}]},
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "high_grind_right",
+                        "transitionIn": "1.0",
+                        "transitionOut": "0.3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "GrindingDefault"},
+                  "children": [
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "high_grind",
+                        "transitionIn": "0.5",
+                        "transitionOut": "0.3"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "state": {"name": "Air"},
+              "children": [
+                {
+                  "expression": {"op": "and"},
+                  "children": [
+                    {
+                      "condition": {"name": "PredictedAirTime", "value": "0.1", "comparison": "GreaterThan", "mask": "always"}
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "Reentry"},
+                  "children": [
+                    {"expression": {}, "children": [{"condition": {"name": "IsReentry", "mask": "always"}}]},
+                    {
+                      "state": {"name": "ShortAir"},
+                      "children": [
+                        {
+                          "expression": {},
+                          "children": [
+                            {
+                              "condition": {
+                                "name": "PredictedAirTime",
+                                "value": "1.35",
+                                "comparison": "LessThan",
+                                "mask": "always"
+                              }
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_high_air", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "LowAir"},
+                      "children": [
+                        {
+                          "expression": {},
+                          "children": [
+                            {
+                              "condition": {
+                                "name": "PredictedMaxHeight",
+                                "value": "1.0",
+                                "comparison": "LessThan",
+                                "mask": "always"
+                              }
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_high_air", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "SpineTransfer"},
+                      "children": [
+                        {
+                          "expression": {},
+                          "children": [
+                            {
+                              "condition": {
+                                "name": "TransferAngle",
+                                "value": "120.0",
+                                "comparison": "GreaterThan",
+                                "mask": "always"
+                              }
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_high_air", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "Frontside"},
+                      "children": [
+                        {
+                          "expression": {"op": "or"},
+                          "children": [
+                            {"condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_fs", "mask": "always"}},
+                            {
+                              "expression": {"op": "and"},
+                              "children": [
+                                {
+                                  "condition": {
+                                    "name": "FrontsideAngle",
+                                    "value": "0.0",
+                                    "comparison": "LessThan",
+                                    "mask": "always"
+                                  }
+                                },
+                                {
+                                  "expression": {"op": "not"},
+                                  "children": [
+                                    {
+                                      "condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_bs", "mask": "always"}
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_reentry_fs", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "Backside"},
+                      "children": [
+                        {
+                          "expression": {"op": "or"},
+                          "children": [
+                            {"condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_bs", "mask": "always"}},
+                            {
+                              "expression": {"op": "and"},
+                              "children": [
+                                {
+                                  "condition": {
+                                    "name": "FrontsideAngle",
+                                    "value": "0.0",
+                                    "comparison": "GreaterEqual",
+                                    "mask": "always"
+                                  }
+                                },
+                                {
+                                  "expression": {"op": "not"},
+                                  "children": [
+                                    {
+                                      "condition": {"name": "IsPreviousShot", "shot1": "bl_reentry_fs", "mask": "always"}
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_reentry_bs", "transitionOut": "0.5"}}
+                      ]
+                    },
+                    {
+                      "state": {"name": "Default"},
+                      "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "bl_high_air"}}]
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "LowOllie"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {
+                          "condition": {
+                            "name": "LaunchInclineAngle",
+                            "value": "-3.0",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        },
+                        {
+                          "condition": {"name": "PredictedAirTime", "value": "0.2", "comparison": "GreaterThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {"name": "PredictedMaxHeight", "value": "1.0", "comparison": "LessThan", "mask": "always"}
+                        },
+                        {
+                          "condition": {
+                            "name": "PredictedLandingHeight",
+                            "value": "-0.5",
+                            "comparison": "GreaterThan",
+                            "mask": "always"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "low_ollie",
+                        "transitionIn": "0.0",
+                        "transitionOut": "0.5"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "state": {"name": "DefaultAir"},
+                  "children": [
+                    {
+                      "behaviour": {
+                        "name": "CameraChooseShot",
+                        "shot1": "bl_high_air",
+                        "transitionIn": "0.0",
+                        "transitionOut": "1.0"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "state": {"name": "Ground"},
+              "children": [
+                {
+                  "state": {"name": "Manual"},
+                  "children": [
+                    {
+                      "expression": {"op": "and"},
+                      "children": [
+                        {"condition": {"name": "IsInManual", "mask": "always"}},
+                        {
+                          "condition": {"name": "LaunchInclineAngle", "value": "45", "comparison": "LessThan", "mask": "always"}
+                        }
+                      ]
+                    },
+                    {"behaviour": {"name": "CameraChooseShot", "shot1": "high_manual"}}
+                  ]
+                },
+                {
+                  "state": {"name": "Forwards"},
+                  "children": [{"behaviour": {"name": "CameraChooseShot", "shot1": "bl_high_chase"}}]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": {"name": "Default"},
+      "children": [
+        {
+          "behaviour": {
+            "name": "PrintText2D",
+            "x": "40",
+            "y": "220",
+            "numFrames": "100",
+            "text": "WARNING: No Camera Graph state has been resolved. We need to fix this."
+          }
+        },
+        {"behaviour": {"name": "CameraChooseShot", "shot1": "bl_chase"}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "description": "pop dirt surface variant",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "audioville_stick_hit_13_wild.wav",
+      "sha256": "623d96e36eff804b4fb3aa50111426065fbdef94e401aff35c92f143d38b7f0b",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    },
+    {
+      "recording": "audioville_wooden_sword_hit_11.wav",
+      "sha256": "2f654f62b4302ea96c2bc70a07f2ab34deabcd2642babb3912c71dba5e23efa1",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    }
+  ],
+  "takes": [
+    {
+      "file": "pop_dirt_01.wav",
+      "sha256": "caec2505ede33f694a59e15d6829ed839da11a924382058b418f8ea086f0a2b0"
+    },
+    {
+      "file": "pop_dirt_02.wav",
+      "sha256": "39a1cfa003d60fcdd2043d857ea5e4fa0f9e77715acb08c145618c15a27ff11e"
+    },
+    {
+      "file": "pop_dirt_03.wav",
+      "sha256": "01efe2b0c840b1228954c2626188020e143143950624d3f2acb548cf6e1b4a60"
+    }
+  ]
+}

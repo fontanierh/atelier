@@ -19,6 +19,8 @@ use crate::world::scenery::{Land, Placement, Scenery};
 struct Placements<'a> {
     #[serde(borrow)]
     groups: Vec<Group<'a>>,
+    #[serde(default)]
+    skate: hakuba_world_skate_schema::Metadata,
 }
 
 #[derive(Deserialize)]
@@ -49,6 +51,12 @@ impl Region for Placed {
 
     fn overlays(&self) -> Vec<Overlay> {
         Vec::new()
+    }
+
+    fn skate(&self) -> hakuba_world_skate_schema::Metadata {
+        let file: Placements<'static> = serde_json::from_str(self.placements)
+            .unwrap_or_else(|error| panic!("{}: invalid placements.json: {error}", self.name));
+        file.skate
     }
 
     fn scenery(&self, land: &Land) -> Scenery {
@@ -88,5 +96,32 @@ impl Placed {
                 }
             })
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn placed_skating_metadata_is_valid_and_keeps_whole_lines() {
+        let source = r#"{"groups":[],"skate":{"rails":[{"id":"lip","points":[[0,1,0],[64,1,0],[128,1,0]],"closed":false,"kind":"coping","surface":"metal"}]}}"#;
+        let placed = Placed { name: "test", placements: source };
+        let metadata = placed.skate();
+        metadata.validate().unwrap();
+        assert_eq!(metadata.rails[0].points.len(), 3);
+        assert_eq!(metadata.rails[0].points[2], [128., 1., 0.]);
+    }
+    #[test]
+    fn every_region_exports_valid_nonconflicting_skating_metadata() {
+        let mut materials = std::collections::BTreeMap::new();
+        for region in crate::world::regions::REGIONS {
+            let metadata = region.skate();
+            metadata.validate().unwrap();
+            for material in metadata.materials {
+                if let Some(previous) = materials.insert(material.material, material.surface) {
+                    assert_eq!(previous, material.surface)
+                }
+            }
+        }
     }
 }

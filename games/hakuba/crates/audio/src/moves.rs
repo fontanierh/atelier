@@ -125,6 +125,10 @@ pub fn hear(
     if pause.is_some_and(|pause| *pause.get() == Pause::Paused) {
         return;
     }
+    if player.owner != hakuba_player::MovementOwner::Walking {
+        *heard = Heard { player: Some(entity), ..default() };
+        return;
+    }
     let motion = &player.motion;
     let at = place.translation();
     let volume = settings.volume;
@@ -250,7 +254,10 @@ pub fn wind(
 ) {
     let player = players.single().ok();
     let playing = pause.is_none_or(|pause| *pause.get() == Pause::Playing);
-    let gliding = playing && player.is_some_and(|player| player.motion.mode == Mode::Glide);
+    let gliding = playing
+        && player.is_some_and(|player| {
+            player.owner == hakuba_player::MovementOwner::Walking && player.motion.mode == Mode::Glide
+        });
     let step = time.delta_secs() / WIND_FADE_S;
     *level = if gliding { (*level + step).min(1.0) } else { (*level - step).max(0.0) };
     let speed = player.map_or(0.0, |player| player.motion.velocity.length());

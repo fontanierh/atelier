@@ -1,4 +1,4 @@
 # The passenger ferry's masts, docked at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "a6dec6f94cc762048817c9d595f610d3eb6809cff64ffdfce804fe83726263b2"
+inputs_sha256 = "e2cba094a85f49ef4bda9f3468bc787449265e052d103694701ce7d5c9d0ad30"

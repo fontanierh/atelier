@@ -52,21 +52,24 @@ impl AssetLoader for TakesLoader {
 }
 
 /// One sound: its file, its takes, and the take it played last.
+#[derive(Clone)]
 pub struct Sound {
-    name: &'static str,
+    name: String,
     audio: Handle<AudioSource>,
     takes: Handle<Takes>,
     last: Option<usize>,
+    board: Option<Handle<super::soften::BoardSource>>,
 }
 
 impl Sound {
     /// Starts loading the sound `assets/sounds/<name>/`.
-    pub fn load(assets: &AssetServer, name: &'static str) -> Self {
+    pub fn load(assets: &AssetServer, name: &str) -> Self {
         Self {
-            name,
+            name: name.to_owned(),
             audio: assets.load(format!("sounds/{name}/{name}.ogg")),
             takes: assets.load(format!("sounds/{name}/{name}.takes.json")),
             last: None,
+            board: None,
         }
     }
 
@@ -84,21 +87,47 @@ impl Sound {
         }
         self.last = Some(index);
         let take = list.takes[index];
-        commands.spawn((
-            Name::new(format!("Sound {}", self.name)),
-            DespawnOnExit(Screen::World),
-            AudioPlayer::new(self.audio.clone()),
-            PlaybackSettings::DESPAWN
-                .with_volume(Volume::Linear(volume))
-                .with_speed(speed)
-                .with_start_position(Duration::from_secs_f32(take.start))
-                .with_duration(Duration::from_secs_f32(take.seconds)),
-        ));
+        let settings = PlaybackSettings::DESPAWN
+            .with_volume(Volume::Linear(volume))
+            .with_speed(speed)
+            .with_start_position(Duration::from_secs_f32(take.start))
+            .with_duration(Duration::from_secs_f32(take.seconds));
+        let entity =
+            commands.spawn((Name::new(format!("Sound {}", self.name)), DespawnOnExit(Screen::World), settings)).id();
+        if let Some(board) = &self.board {
+            commands.entity(entity).insert(AudioPlayer::<super::soften::BoardSource>(board.clone()));
+        } else {
+            commands.entity(entity).insert(AudioPlayer::new(self.audio.clone()));
+        }
+    }
+
+    pub fn board_source(
+        &mut self,
+        audio: &Assets<AudioSource>,
+        sources: &mut Assets<super::soften::BoardSource>,
+        preferences: &super::soften::VoicePreferences,
+    ) -> bool {
+        if self.board.is_some() {
+            return true;
+        }
+        let Some(audio) = audio.get(&self.audio) else { return false };
+        self.board =
+            Some(sources.add(super::soften::BoardSource { audio: audio.clone(), preferences: preferences.clone() }));
+        true
     }
 
     /// Whether the list of takes has loaded.
     pub fn loaded(&self, takes: &Assets<Takes>) -> bool {
         takes.contains(&self.takes)
+    }
+
+    pub fn failed(&self, assets: &AssetServer) -> bool {
+        assets.load_state(&self.audio).is_failed() || assets.load_state(&self.takes).is_failed()
+    }
+
+    /// Both exported takes and decoded audio are ready before a required sound releases the splash.
+    pub fn ready(&self, assets: &AssetServer, takes: &Assets<Takes>) -> bool {
+        self.loaded(takes) && assets.is_loaded_with_dependencies(&self.audio)
     }
 
     /// Spawns every take looping, silent until its volume is set, until the world closes; each gets `marker` and its
@@ -120,13 +149,19 @@ impl Sound {
             if !list.looped {
                 warn!("sounds/{}: its takes do not loop", self.name);
             }
-            commands.spawn((
-                Name::new(format!("Sound {} {index}", self.name)),
-                DespawnOnExit(Screen::World),
-                AudioPlayer::new(self.audio.clone()),
-                settings,
-                marker(index),
-            ));
+            let entity = commands
+                .spawn((
+                    Name::new(format!("Sound {} {index}", self.name)),
+                    DespawnOnExit(Screen::World),
+                    settings,
+                    marker(index),
+                ))
+                .id();
+            if let Some(board) = &self.board {
+                commands.entity(entity).insert(AudioPlayer::<super::soften::BoardSource>(board.clone()));
+            } else {
+                commands.entity(entity).insert(AudioPlayer::new(self.audio.clone()));
+            }
         }
     }
 }

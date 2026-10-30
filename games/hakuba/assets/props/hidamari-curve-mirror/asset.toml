@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-curve-mirror"]
 solid = true
-inputs_sha256 = "e0302a7f48ea1e90da86e615e34111b5de7ff64ec04e991f0e7757e85382a09e"
+inputs_sha256 = "3ef1b3f20c05489533fff77b5fb66f6892c0cb2d1f3af721ea55ba4d9a703ede"

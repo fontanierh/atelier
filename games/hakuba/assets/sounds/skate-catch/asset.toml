@@ -1,0 +1,8 @@
+# Feet catching the board; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/catch_01.wav", "src/catch_02.wav", "src/catch_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "b44620e0c2ee950720d7357d882ffe3466f32f3c8e9d998b1452f87f8170517d"

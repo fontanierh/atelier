@@ -2,6 +2,11 @@
 //! itself to the chosen frame rate. The Settings screen, from the menu, shows the [`panel`] of them.
 
 mod panel;
+mod places;
+pub use places::{SavedSkatePlace, SkateMarker, SkatePlaces};
+mod skate;
+
+pub use skate::{SkateDifficulty, SkateMode, SkatePreferences};
 
 use std::time::Duration;
 
@@ -43,6 +48,10 @@ pub struct Settings {
     pub frame_rate: FrameRate,
     /// How loud every sound plays, from 0 (silent) to 1 (as recorded).
     pub volume: f32,
+    /// Skating feel, controls, camera and sound, saved with the other settings.
+    pub skate: SkatePreferences,
+    /// Named destinations and the current native marker, in the same settings store.
+    pub skate_places: SkatePlaces,
 }
 
 impl Default for Settings {
@@ -56,6 +65,8 @@ impl Default for Settings {
             detail: Detail::Normal,
             frame_rate: FrameRate::Sixty,
             volume: 1.0,
+            skate: SkatePreferences::default(),
+            skate_places: SkatePlaces::default(),
         }
     }
 }
@@ -246,7 +257,9 @@ mod kept {
 /// The kept settings, or the defaults if none are kept or they cannot be read. A setting missing from what was kept
 /// takes its default.
 fn load() -> Settings {
-    kept::read().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default()
+    let mut settings: Settings = kept::read().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default();
+    settings.skate.sanitize();
+    settings
 }
 
 fn save(settings: Res<Settings>) {

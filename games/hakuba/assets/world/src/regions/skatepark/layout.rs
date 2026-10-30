@@ -66,6 +66,10 @@ impl Region for SkatePark {
             .collect()
     }
 
+    fn skate(&self) -> hakuba_world_skate_schema::Metadata {
+        PIECES.skate()
+    }
+
     fn scenery(&self, land: &Land) -> Scenery {
         PIECES.scenery(land)
     }

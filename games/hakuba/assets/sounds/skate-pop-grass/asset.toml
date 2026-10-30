@@ -1,0 +1,8 @@
+# Pop grass surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/pop_grass_01.wav", "src/pop_grass_02.wav", "src/pop_grass_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "75380b8f78efaff36ea59c38c194118e26224d6dda6d847c355ba1502772724d"

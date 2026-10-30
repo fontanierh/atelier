@@ -32,3 +32,5 @@ only the clips every character has and their measured speeds, and the paraglider
 so a new character moves the same way. Nothing here names a character.
 
 Nothing moves while the game is paused: the systems run only in `Pause::Playing`.
+
+`Player.owner` gives root, pose and camera authority to exactly one controller. `PlayerSystems` orders input, movement and camera handoffs. `resume_walking` resets private glide/jump/step state at the current position and momentum, so a ride cannot resume stale walking state.

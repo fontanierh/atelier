@@ -21,6 +21,7 @@ assets/
     nox/                    Nox, the playable character, with every animation fitted to him
   equipment/
     glider/                 the paraglider, held in both hands above the head
+    skateboard/             the deck, two trucks and four wheels, each driven by its solved rig bone
   plants/                   trees, bushes and grass, each imported with its leaves' wind weights
     coast-*/, garden-*/     the coast's and gardens' trees, bushes, flowers, grass and litter
     woodland-canopy-*/      the northern woodland's tall canopy trees
@@ -29,6 +30,8 @@ assets/
                             with their colours painted per vertex, named after their region (`hidamari-*/`,
                             `brinecove-*/`, `belmonte-*/`, `treehouse-*/`, `craterpark-*/`, `megapark-*/`,
                             `gondola-*/`, `ferry-*/`, `kei-*/`, `skatepark-*/`, ...)
+  simulations/
+    skate-simulation/       compact animation, settings and graph resources (`src/README.md` describes provenance)
   sounds/                   every sound the game plays (sounds/README.md)
     footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
     dash/                   a burst of cloth and air
@@ -95,4 +98,4 @@ cargo export --check assets            # lists every export whose inputs changed
 
 ## Storage
 
-`.glb`, `.bin`, `.ktx2`, `.ogg` and `.wav` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.
+`.glb`, `.bin`, `.ktx2`, `.ogg`, `.wav` and `.skatepack` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.

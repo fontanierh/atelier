@@ -1,0 +1,8 @@
+# The board spinning in the air; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/flick_01.wav", "src/flick_02.wav", "src/flick_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "5771e15646696e5f2dc66e6a53ae7e36b1561b8b88db03888040cd27f9920fce"
