@@ -4,7 +4,7 @@ kind = "prop"
 solid = true
 # The insulators' tops: three on the upper arm, two on the lower.
 anchors = [[0, -1.05, 10.58], [0, 0, 10.58], [0, 1.05, 10.58], [0, -0.85, 9.68], [0, 0.85, 9.68]]
-inputs_sha256 = "11cdfae72f82e81705db0cb7be9b8008cb5406286fe30c06413209bab065fc75"
+inputs_sha256 = "1b133dc0d76914123e1b99a6d155cc5564992e478eb14947df6015dfa753e952"
 
 [materials]
 concrete = [0.62, 0.61, 0.59]

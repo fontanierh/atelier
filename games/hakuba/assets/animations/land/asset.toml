@@ -3,4 +3,4 @@
 kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Wait_Land"
-inputs_sha256 = "f8dd81bc3f9b4c70c6b297173dfd43e3d60da93fd2f8dea354c7bd788ff62ec8"
+inputs_sha256 = "7c5cce1910246173baa94d9b8ba534091d28ae61ede063de8e62f877eb26c419"

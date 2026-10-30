@@ -13,6 +13,7 @@ publish = false
 bevy = "0.20.0"
 hakuba_audio = { path = "crates/audio" }
 hakuba_characters = { path = "crates/characters" }
+hakuba_dev = { path = "crates/dev" }
 hakuba_glider = { path = "crates/glider" }
 hakuba_menu = { path = "crates/menu" }
 hakuba_player = { path = "crates/player" }
@@ -37,6 +38,7 @@ publish.workspace = true
 bevy = { workspace = true, features = ["webgpu"] }
 hakuba_audio.workspace = true
 hakuba_characters.workspace = true
+hakuba_dev.workspace = true
 hakuba_glider.workspace = true
 hakuba_menu.workspace = true
 hakuba_player.workspace = true

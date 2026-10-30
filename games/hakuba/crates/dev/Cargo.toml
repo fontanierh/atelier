@@ -1,0 +1,31 @@
+# Dev mode: a free camera for exploring the world and taking notes on it. See README.md.
+[package]
+name = "hakuba_dev"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+bevy.workspace = true
+crc32fast = "1.5.3"
+hakuba_screens.workspace = true
+hakuba_world.workspace = true
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+
+# In the browser the notes download as a zip and are sent back to the server the game came from.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3.106"
+wasm-bindgen = "0.2.129"
+web-sys = { version = "0.3.106", features = [
+  "Blob",
+  "BlobPropertyBag",
+  "Document",
+  "Element",
+  "HtmlAnchorElement",
+  "HtmlElement",
+  "Request",
+  "RequestInit",
+  "Response",
+  "Url",
+  "Window",
+] }

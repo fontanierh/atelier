@@ -7,4 +7,4 @@ takes = [
 ]
 looped = true
 quality = 0.2
-inputs_sha256 = "573ecefa526c679bbe630494622d7e0a2087431502112978710e97ff4e18a71d"
+inputs_sha256 = "e551dea6ffacc29bce687895ab920c0e31f047cf348ba598547c666b61d7e7fb"

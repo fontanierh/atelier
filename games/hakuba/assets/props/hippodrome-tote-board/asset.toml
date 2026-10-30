@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hippodrome-hd-tote-board"]
 solid = true
-inputs_sha256 = "dc3609c1695d55036b75088b432f1ce397496de8214912fb11cb3adb76b9a880"
+inputs_sha256 = "3de7e6c0f84ff3af244fce1d2c869e282ccb2a77fe2f476d8b24bcc349248968"

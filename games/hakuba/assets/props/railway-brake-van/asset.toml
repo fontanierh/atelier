@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["railway-blue-panel", "railway-ivory", "railway-roof", "railway-underframe", "railway-walnut"]
 own_textures = ["railway-panel-tall"]
 solid = true
-inputs_sha256 = "c8aec2ce651a71a4322fd9aa8aed83d89ac39cee5beea18d92d57cedd504dccb"
+inputs_sha256 = "aa63e6ff183c4bc9700bd462f55e3ff2b169a90d1aada7d884e7427de97c4007"

@@ -3,4 +3,4 @@
 kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Damage_Land_Stand"
-inputs_sha256 = "83e6662b5e21e2779e127ab1a41dd51bab8c8cb8870379edb6a30ab18f69f318"
+inputs_sha256 = "5bd7febe1cd0a53f031c89327dd8de30a3c681fa80e390f228f6dc52f325551c"

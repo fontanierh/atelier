@@ -1,4 +1,4 @@
 # A gondola valley station's machinery.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "7dfab42d6068686dbb936e3fc749f9ce618d321b7f398967cabc0f8940a49e91"
+inputs_sha256 = "fd3ecb2ba9952401f7945f5f5bda37ac901c6bf509c07c8928582e8a5ce21654"

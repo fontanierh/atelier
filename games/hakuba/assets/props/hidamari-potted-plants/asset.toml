@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-potted-plants"]
 solid = true
-inputs_sha256 = "fc3879af37cd72c62e541bcdd955981dc9427fe810fc095e0eafcf78e2f3a131"
+inputs_sha256 = "aa8c26ff5e8c70670b467b2dbc755b4f0c63e17c8e60a742d1f0f6d2cdd79d4f"
