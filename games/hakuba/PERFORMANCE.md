@@ -8,6 +8,30 @@ used the same browser connection for viewport setup and measurement; the canvas 
 The mounted player rolled under normal gravity, so this is not a fixed-camera comparison. `crates/CONTRACTS` holds
 the rules below as checks for every change; this file says how to measure and why the rules are what they are.
 
+## Forward-motion prototype
+
+The explicit `?forward_motion=single` browser mode writes opaque/masked color and motion together, then publishes
+motion and depth to TAA. It keeps shadow rendering unchanged and omits the camera prepass's geometry draws.
+The normal world still uses its original renderer while temporal edge quality is checked.
+
+A clean release-browser sample at the same reference setting measured **60.00 FPS idle and 59.33 FPS mounted**,
+30 seconds each after warm-up, with Nominal thermal pressure. The viewport connection remained open and both
+samples recorded CSS 2560 × 1440, device scale 2 and canvas 2560 × 1440. No capture, CPU profile or GPU-query
+injection ran during measurement. The mounted 99th-percentile frame interval was 32.2 ms: this is an improvement
+over 55.2 FPS, not sustained 60 FPS acceptance.
+
+A separate 29-sample GPU diagnostic verified zero indexed geometry in the camera prepass and both shadow cascades
+still rendering. Main rendering drew about 6,496 meshes / 27.48 million indexed entries; its median pass interval
+was 14.22 ms. Motion transfer had equal, unresolved timestamps in many samples; positive intervals had one
+0.065536 ms timestamp quantum as their median. TAA remained about 0.131 ms. The earlier geometry prepass was about
+8.19 ms and main about 9.83 ms in a slightly different visible workload. These overlapping pass intervals are not additive frame
+times or a workload-matched A/B. The main pass pays more shading without the prepass's depth rejection.
+
+Main foliage retains its existing depth margin, so its surface winner can differ from the unbiased old prepass
+at intersections. Exact motion-texture publication does not prove identical TAA edge quality. `compare` keeps the
+old displayed TAA input; `publish` retains both geometry passes but feeds TAA from main. These remain explicit
+validation modes, not quality settings or proof that the 60 FPS contract is met.
+
 ## Measuring
 
 Measure in the browser, which is slower than the desktop build and differs from it in ways that matter (below).

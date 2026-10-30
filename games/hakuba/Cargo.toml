@@ -3,6 +3,11 @@
 [workspace]
 members = ["crates/*", "schemas/*", "tools/export"]
 resolver = "3"
+exclude = ["vendor/bevy_pbr"]
+
+# A project-local opt-in forward-motion comparison patch; provenance and licenses are in vendor/.
+[patch.crates-io]
+bevy_pbr = { path = "vendor/bevy_pbr" }
 
 [workspace.package]
 version = "0.1.0"

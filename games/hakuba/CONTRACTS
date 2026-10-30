@@ -2,6 +2,8 @@
 Each concern MUST live in its one home, and nowhere else:
 - game code that runs when the game plays: `crates/<feature>/`, one Bevy plugin per crate;
 - data schemas shared by the exporter and game: `schemas/<schema>/`, independent of Bevy;
+- a pinned third-party dependency correction: `vendor/<crate>/`, selected by a project-local Cargo patch, with its
+  upstream licenses and provenance; game-specific render scheduling remains in `crates/rendering/`;
 - wiring the plugins into the app: `src/main.rs`, which holds no game logic;
 - what an asset is (its source files and its own numbers, shapes and choices): that asset's `src/` under `assets/`;
 - how every asset of a kind is made: `tools/export/`;
@@ -14,8 +16,10 @@ describe anything outside it, including other games and the `atelier` command. A
 MUST build, export and run Hakuba with plain `cargo` and `trunk`.
 
 @cc [owner:fontanierh,label:architecture] hakuba-everything-used-and-described
-Every committed file MUST be used by the game or by its exports. Every folder and file MUST say what it is
-for, in a README beside it or a header comment, describing only what is there now, in short, plain words.
+Every committed file MUST be used by the game or by its exports. A pinned vendored library MAY retain upstream
+feature-gated sources and shader modules together so its declared Cargo features remain complete; its licenses,
+manifest and source provenance are part of that dependency. Every folder and file MUST say what it is for, in a
+README beside it or a header comment, describing only what is there now, in short, plain words.
 
 @cc [owner:fontanierh,label:performance] sixty-on-the-reference-setting
 The game MUST hold 60 frames a second in the browser on the reference setting `PERFORMANCE.md` names. A change that

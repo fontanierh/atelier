@@ -8,6 +8,7 @@ publish.workspace = true
 [dependencies]
 bevy.workspace = true
 hakuba_characters.workspace = true
+hakuba_rendering.workspace = true
 hakuba_screens.workspace = true
 hakuba_settings.workspace = true
 hakuba_water_schema.workspace = true

@@ -71,6 +71,11 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     // error further than the depth the prepass wrote, fail the depth test and leave a hole showing the clear colour for
     // a frame: black leaves flickering in the wind.
     out.position.z *= DEPTH_MARGIN;
+    @if(FORWARD_MOTION) {
+        let previous = mesh_functions::get_previous_world_from_local(vertex_in.instance_index);
+        let before = mesh_functions::mesh_position_local_to_world(previous, vec4<f32>(vertex.position, 1.0));
+        out.previous_world_position = vec4<f32>(before.xyz + motion, 1.0);
+    }
     out.world_normal = select(mesh_functions::mesh_normal_local_to_world(vertex.normal, vertex_in.instance_index), vec3<f32>(0.0, 1.0, 0.0), profile.global_tail.w > 0.5);
     @if(VERTEX_UVS_A)
     out.uv = vertex.uv;

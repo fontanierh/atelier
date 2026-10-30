@@ -1,5 +1,9 @@
 //! Shared rendering commands for rigid meshes and 3D shadow views.
 
+mod forward_motion;
+
+pub use forward_motion::{ForwardMotionComparison, ForwardMotionMode};
+
 use std::ops::Range;
 
 use bevy::core_pipeline::core_3d::{AlphaMask3d, Opaque3d};
@@ -33,6 +37,7 @@ pub struct RenderingPlugin;
 
 impl Plugin for RenderingPlugin {
     fn build(&self, app: &mut App) {
+        forward_motion::build(app);
         app.add_systems(
             PostUpdate,
             retain_3d_shadow_views
@@ -78,11 +83,11 @@ fn register(world: &mut World) {
     world.resource::<DrawFunctions<Opaque3d>>().write().add_with::<DrawMaterial, _>(command);
     let command = FastDraw::<AlphaMask3d, MaterialCommands>::new(world);
     world.resource::<DrawFunctions<AlphaMask3d>>().write().add_with::<DrawMaterial, _>(command);
-    let command = FastDraw::<Opaque3dPrepass, PrepassCommands>::new(world);
+    let command = FastDraw::<Opaque3dPrepass, PrepassCommands, true>::new(world);
     world.resource::<DrawFunctions<Opaque3dPrepass>>().write().add_with::<DrawPrepass, _>(command);
-    let command = FastDraw::<AlphaMask3dPrepass, PrepassCommands>::new(world);
+    let command = FastDraw::<AlphaMask3dPrepass, PrepassCommands, true>::new(world);
     world.resource::<DrawFunctions<AlphaMask3dPrepass>>().write().add_with::<DrawPrepass, _>(command);
-    let command = FastDraw::<Opaque3dPrepass, DepthCommands>::new(world);
+    let command = FastDraw::<Opaque3dPrepass, DepthCommands, true>::new(world);
     world.resource::<DrawFunctions<Opaque3dPrepass>>().write().add_with::<DrawDepthOnlyPrepass, _>(command);
     let command = FastDraw::<Shadow, PrepassCommands>::new(world);
     world.resource::<DrawFunctions<Shadow>>().write().add_with::<DrawPrepass, _>(command);
@@ -237,7 +242,7 @@ type DrawParam<P> = <DrawMesh as RenderCommand<P>>::Param;
 /// querying device limits for every draw, and draws it directly from its noted draw. Anything requiring skin, morph or
 /// lightmap data uses Bevy's own binding; a mesh drawn indirectly or not yet noted uses Bevy's own draw. It is the
 /// draw state of `(C, SetMeshBindGroup<2>, DrawMesh)` with the fallbacks' resources fetched only when they are used.
-struct FastDraw<P: PhaseItem, C: RenderCommand<P>> {
+struct FastDraw<P: PhaseItem, C: RenderCommand<P>, const CAMERA_PREPASS: bool = false> {
     state: SystemState<(C::Param, FastParam)>,
     view: QueryState<(C::ViewQuery, Has<MotionVectorPrepass>, Has<PreprocessBindGroups>)>,
     entity: QueryState<C::ItemQuery>,
@@ -246,7 +251,7 @@ struct FastDraw<P: PhaseItem, C: RenderCommand<P>> {
     draw: SystemState<DrawParam<P>>,
 }
 
-impl<P: PhaseItem, C: RenderCommand<P>> FastDraw<P, C> {
+impl<P: PhaseItem, C: RenderCommand<P>, const CAMERA_PREPASS: bool> FastDraw<P, C, CAMERA_PREPASS> {
     fn new(world: &mut World) -> Self {
         Self {
             state: SystemState::new(world),
@@ -259,7 +264,8 @@ impl<P: PhaseItem, C: RenderCommand<P>> FastDraw<P, C> {
     }
 }
 
-impl<P: PhaseItem, C: RenderCommand<P> + Send + Sync + 'static> Draw<P> for FastDraw<P, C>
+impl<P: PhaseItem, C: RenderCommand<P> + Send + Sync + 'static, const CAMERA_PREPASS: bool> Draw<P>
+    for FastDraw<P, C, CAMERA_PREPASS>
 where
     C::Param: ReadOnlySystemParam,
 {
@@ -275,6 +281,9 @@ where
         view: Entity,
         item: &P,
     ) -> Result<(), DrawError> {
+        if CAMERA_PREPASS && forward_motion::camera_prepass_elided(world, view) {
+            return Ok(());
+        }
         let Self { state, view: views, entity, unnoted, bind, draw } = self;
         let (commands, fast) = state.get(world).expect("rigid mesh draw resources");
         let (view, motion, preprocessed) = match views.get_manual(world, view) {
@@ -501,7 +510,7 @@ mod tests {
         let mut world = World::new();
         // Each draw state must build without conflicting access in every phase it is registered for.
         let _ = FastDraw::<Opaque3d, MaterialCommands>::new(&mut world);
-        let _ = FastDraw::<AlphaMask3dPrepass, PrepassCommands>::new(&mut world);
+        let _ = FastDraw::<AlphaMask3dPrepass, PrepassCommands, true>::new(&mut world);
         let draw = FastDraw::<Shadow, DepthCommands>::new(&mut world);
         let (draws, instances, groups) = draw.state.param_state().1;
         let read = [draws, instances, groups];

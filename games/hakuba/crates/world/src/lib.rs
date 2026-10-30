@@ -114,14 +114,39 @@ fn spawn_world(
         })),
     ));
     let drawn = pixels::spawn(&mut commands, &mut images);
-    commands.spawn((
-        Name::new("Camera"),
-        WorldCamera,
-        DespawnOnExit(Screen::World),
-        Camera3d::default(),
-        look::camera(&mut images),
-        drawn,
-    ));
+    let camera = commands
+        .spawn((
+            Name::new("Camera"),
+            WorldCamera,
+            DespawnOnExit(Screen::World),
+            Camera3d::default(),
+            look::camera(&mut images),
+            drawn,
+        ))
+        .id();
+    if let Some(mode) = forward_motion_requested() {
+        commands.entity(camera).insert(mode);
+        info!(?mode, "forward motion validation enabled");
+    }
+}
+
+/// Explicit validation only: native environment or browser query, never a stored game setting.
+fn forward_motion_requested() -> Option<hakuba_rendering::ForwardMotionMode> {
+    #[cfg(not(target_arch = "wasm32"))]
+    let requested = std::env::var("HAKUBA_FORWARD_MOTION").ok();
+    #[cfg(target_arch = "wasm32")]
+    let requested = web_sys::window().and_then(|window| window.location().search().ok()).and_then(|query| {
+        query
+            .trim_start_matches('?')
+            .split('&')
+            .find_map(|part| part.strip_prefix("forward_motion=").map(str::to_owned))
+    });
+    match requested.as_deref() {
+        Some("compare") => Some(hakuba_rendering::ForwardMotionMode::Compare),
+        Some("publish") => Some(hakuba_rendering::ForwardMotionMode::Publish),
+        Some("single") => Some(hakuba_rendering::ForwardMotionMode::Single),
+        _ => None,
+    }
 }
 
 /// Once the index has loaded: records the spawn, puts the camera there and adds a [`Tile`] for each tile.

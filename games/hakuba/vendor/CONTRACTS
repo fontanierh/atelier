@@ -1,0 +1,9 @@
+@cc [owner:fontanierh,label:correctness] local-pbr-patch-is-opt-in
+The Bevy PBR patch MUST preserve unmarked views and retain upstream licenses and source provenance. Forward-motion
+comparison views MUST keep the original prepass and TAA inputs until their motion output and temporal edge quality
+have been validated. Shader output fields, render targets, view bindings and dynamic offsets MUST use one mode key.
+
+@cc [owner:fontanierh,label:architecture] dependency-patch-has-one-copy
+The patched PBR crate MUST be selected through the project-local Cargo patch. Runtime and exporter builds MUST NOT
+read or modify a shared registry source or require a dependency checkout outside this game. Upstream feature-gated
+library and shader files MAY remain together, with their purpose documented in the vendor README.

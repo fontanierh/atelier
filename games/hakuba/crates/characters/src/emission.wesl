@@ -22,5 +22,7 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
         surface.material.emissive = vec4<f32>(surface.material.base_color.rgb * emission_factor, 1.0);
         out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
     }
+    @if(FORWARD_MOTION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);
     return out;
 }

@@ -26,6 +26,9 @@ fn vertex(input: Vertex) -> VertexOutput {
     var out: VertexOutput;
     out.world_position = mesh_functions::mesh_position_local_to_world(transform, vec4<f32>(v.position, 1.0));
     out.position = position_world_to_clip(out.world_position.xyz);
+    @if(FORWARD_MOTION)
+    out.previous_world_position = mesh_functions::mesh_position_local_to_world(
+        mesh_functions::get_previous_world_from_local(input.instance_index), vec4<f32>(v.position, 1.0));
     @if(VERTEX_NORMALS)
     out.world_normal = mesh_functions::mesh_normal_local_to_world(v.normal, input.instance_index);
     @if(VERTEX_UVS_A)
@@ -58,5 +61,7 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
     surface.material.emissive = vec4<f32>(color * (paint.lower.w + glow * paint.upper.w) * (1.0 - haze) + paint.colour.xyz * haze, 1.0);
     var out: FragmentOutput;
     out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
+    @if(FORWARD_MOTION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);
     return out;
 }
