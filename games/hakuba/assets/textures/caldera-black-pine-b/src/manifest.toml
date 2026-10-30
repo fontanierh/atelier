@@ -1,0 +1,4 @@
+# The texture of a Japanese black pine of the caldera round Crater Park: its Tripo model's image, at most 1024 texels wide, times its gain of 0.656.
+path = "texture.png"
+sha256 = "c19586c2e5529b093dc841c9e46e3e6b388a8902f45e71ab2a9baf71973d0436"
+authoring_glb_sha256 = "2e0c378b68c9fa96d46ee31ba31a479108a5a9b2399f39d645fe8388e41d2e01"

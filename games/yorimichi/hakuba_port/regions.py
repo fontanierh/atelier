@@ -248,7 +248,7 @@ def megapark(build):
     0.7 times their scale, so neither can be laid into the diffuse image: each is folded in by its mean, the material's
     colour being the mean of B over the mean of the diffuse, in linear RGB. The baked lightmap's occlusion (second UVs)
     is left out. The park has no tints or vertex colours. Cut-out materials (ground cover, sign cut-outs, lamp glow) are
-    left out, and so are the park's own trees and parked cars, which are plants and another region's models."""
+    left out, and so are the park's own trees and parked cars, which are plants and the `kei` region's models."""
     import numpy as np
     from PIL import Image
     out = build / 'megapark'
@@ -303,6 +303,41 @@ def megapark(build):
         ux = x0 + ox * math.cos(turn) - oy * math.sin(turn)
         uy = y0 + ox * math.sin(turn) + oy * math.cos(turn)
         region.groups.append((name, None, [[ux / 100, -uy / 100, (z0 + oz) / 100, -park['yaw_deg'], 1.0]]))
+    return region
+
+
+def kei(build):
+    """The Mega Park car park's four kei cars (`assets/vehicles/kei/build.py`, assembled into `kei/assets`), flat
+    shaded in their vertex colours as Yorimichi's village material draws them (`import_kei.py`), each solid with its
+    box hulls, parked where `megapark/park.json` `props` parks it: its nose along `forward` and its roof along `up` in
+    the park actor's frame, about the ground under its middle. The cars stand a few degrees out of upright on the car
+    park's slope, so each car, placed once, takes its tilt into its own mesh and its heading as its placement's yaw."""
+    import numpy as np
+    park = json.loads((build / 'megapark' / 'park.json').read_text())
+    x0, y0, z0 = park['location_cm']
+    turn = math.radians(park['yaw_deg'])
+    actor = np.array([[math.cos(turn), -math.sin(turn), 0.0], [math.sin(turn), math.cos(turn), 0.0], [0.0, 0.0, 1.0]])
+    # Hakuba's y is Unreal's -y.
+    flip = np.diag([1.0, -1.0, 1.0])
+    region = Region('kei', "the Mega Park car park's kei cars")
+    for entry in park['props']:
+        asset = entry['mesh']
+        if not asset.startswith('SM_Kei_'):
+            continue
+        forward, up = (flip @ actor @ np.asarray(entry[key], float) for key in ('forward', 'up'))
+        up /= np.linalg.norm(up)
+        forward -= up * (forward @ up)
+        forward /= np.linalg.norm(forward)
+        # The car's frame on the map: its nose (+x), its left (+y) and its roof (+z), as its builder makes it.
+        frame = np.column_stack([forward, np.cross(up, forward), up])
+        heading = math.atan2(forward[1], forward[0])
+        c, s = math.cos(heading), math.sin(heading)
+        tilt = np.array([[c, s, 0.0], [-s, c, 0.0], [0.0, 0.0, 1.0]]) @ frame
+        name = 'kei-' + kebab(asset.removeprefix('SM_Kei_'))
+        region.models[name] = Model(build / 'kei' / 'assets' / f'{asset}.fbx', default={'vertex': True},
+                                    turn=np.round(tilt, 6).tolist())
+        ux, uy, uz = actor @ np.asarray(entry['location_cm'], float) + (x0, y0, z0)
+        region.groups.append((name, None, [[ux / 100, -uy / 100, uz / 100, math.degrees(heading), 1.0]]))
     return region
 
 
@@ -412,5 +447,5 @@ def ferry(build):
 ADAPTERS = {
     'treehouse': treehouse, 'brinecove': brinecove, 'belmonte': belmonte, 'hidamari': hidamari,
     'southwest': southwest, 'shrines': shrines, 'zeppelin': zeppelin, 'sword-camp': sword_camp,
-    'far-hills': far_hills, 'megapark': megapark, 'gondola': gondola, 'ferry': ferry,
+    'far-hills': far_hills, 'megapark': megapark, 'gondola': gondola, 'ferry': ferry, 'kei': kei,
 }

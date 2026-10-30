@@ -8,7 +8,8 @@ material slot's rule names: a flat `rgb`, the source's vertex colour (`vertex`) 
 by default), times that colour, and then the whole `full` node is a textured surface; on a mesh without UVs it shows
 the texture's mean colour (`mean_rgb`) instead. Otherwise the colour alone is painted per vertex, with alpha 0 (no
 motion). A slot whose rule says `drop` loses its faces. Corners that store the same position, normal, colour and
-texture position share one vertex.
+texture position share one vertex. A job's `turn`, a 3 by 3 rotation row by row, turns the visible mesh and its
+hulls about the source origin first.
 """
 import json
 import os
@@ -17,6 +18,7 @@ import sys
 import bmesh
 import bpy
 import numpy as np
+from mathutils import Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from painted import PAINT, SURFACE, glb  # noqa: E402
@@ -163,6 +165,10 @@ def convert(job):
     visible = [o for o in objects if not o.name.startswith('UCX_')]
     if job.get('collision_source'):
         hulls += import_source(job['collision_source'], reset=False)
+    if job.get('turn'):
+        turn = Matrix(job['turn']).to_4x4()
+        for o in visible + hulls:
+            o.matrix_world = turn @ o.matrix_world
     if not visible:
         raise RuntimeError(f"{job['source']}: no visible mesh")
     full = join(visible, 'full')

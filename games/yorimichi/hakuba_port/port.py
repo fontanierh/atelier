@@ -37,7 +37,9 @@ LONGEST = 4096
 @dataclass
 class Model:
     """One mesh to convert: its source file, its colour rules (see `convert.py`), whether it is solid, an optional
-    separate collision mesh, and the Hakuba texture assets its materials draw."""
+    separate collision mesh, the Hakuba texture assets its materials draw, and an optional `turn`, a rotation (3 by 3,
+    row by row) about its source origin that it takes before converting: a model placed once, tilted out of upright,
+    which a placement's yaw alone cannot stand."""
     source: Path
     slots: dict = field(default_factory=dict)
     default: dict = field(default_factory=dict)
@@ -45,6 +47,7 @@ class Model:
     collision: object = None
     about: str = ''
     textures: list = field(default_factory=list)
+    turn: list = None
 
 
 @dataclass
@@ -206,6 +209,8 @@ def jobs(region, scratch):
                'collision': model.solid}
         if model.collision:
             job['collision_source'] = str(model.collision)
+        if model.turn is not None:
+            job['turn'] = model.turn
         result.append(job)
     job_file = scratch / 'jobs.json'
     job_file.write_text(json.dumps(result))

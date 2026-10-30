@@ -1,30 +1,33 @@
 """Port Yorimichi's island forest into Hakuba's `forest` region: every tree, bush and tuft of grass the island's world,
 Hidamari's city, Belmonte and Brinecove stand outside the regions Hakuba plants itself.
 
-    uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove]
+    uv run python games/yorimichi/hakuba_port/plants.py --build build/yorimichi [--models | --brinecove | --caldera]
 
 The island's world (`world.json`) stands its plants over the whole map; Yorimichi's map clears them inside
 Hidamari's city and its north mountains, Belmonte and Brinecove, whose own plants replace them, and Hakuba's start
 regions (`momiji-coast`, `momiji-village`, `woodland`) already hold theirs. The city (`hidamari/city.json`),
-Belmonte and Brinecove (their `runtime.json`) and the Mega Park (its `park.json`) add their own plants, kept
-everywhere. Each plant becomes the Hakuba plant made from the same source model (`MODELS`), standing on Hakuba's
-ground at the depth it stood in its source. Belmonte's, Brinecove's and the Mega Park's plants off Hakuba's ground, or
-well above it, stand on their ground props at their source heights. Any other plant off Hakuba's ground, on a cliff,
-or of a model Hakuba has no plant for, is left out and counted, as is any tree of the island's world or city closer
-than `TREE_SPACING_M` to a taller one.
+Belmonte and Brinecove (their `runtime.json`), the Mega Park (its `park.json`) and Crater Park's caldera floor (its
+`craterpark/v2/geometry.npz`) add their own plants, kept everywhere. Each plant becomes the Hakuba plant made from the
+same source model (`MODELS`), standing on Hakuba's ground at the depth it stood in its source. Belmonte's, Brinecove's,
+the Mega Park's and the caldera's plants off Hakuba's ground, or well above it, stand on their ground props at their
+source heights. Any other plant off Hakuba's ground, on a cliff, or of a model Hakuba has no plant for, is left out and
+counted, as is any tree of the island's world or city closer than `TREE_SPACING_M` to a taller one.
 
 `--models` first imports the tree models Hakuba lacks (`NEW`) as plants, with their full, middle and far detail levels
 (`plant_convert.py`, one guarded Blender run each), and the leaf and bark textures they need (`TEXTURES`). Hakuba's own
 trees keep their committed sources, far versions included, and are never rewritten. It imports Brinecove's own plants
 from their GLBs, each material a texture of its colour, its palms with a far version made from their fronds and trunk
-(`FRONDS`), then writes the atlas texture every far version shows (`FAR_TEXTURE`). Each plant's source is written once,
-by the step importing it from its own source, its far version already on the atlas, whose cells are fixed
-(`FAR_TEXTURES`), so running it again writes the same files. `--brinecove` imports only Brinecove's plants and writes
-the atlas, without Blender."""
+(`FRONDS`), and the caldera's conifers (`CALDERA`) from the fitted detail levels the source game's prop export wrote,
+each showing its Tripo model's texture, then writes the atlas texture every far version shows (`FAR_TEXTURE`). Each
+plant's source is written once, by the step importing it from its own source, its far version already on the atlas,
+whose cells are fixed (`FAR_TEXTURES`), so running it again writes the same files. `--brinecove` imports only
+Brinecove's plants and writes the atlas, without Blender; `--caldera` imports only the caldera's conifers and writes the
+atlas."""
 import argparse
 import collections
 import functools
 import hashlib
+import io
 import json
 import math
 import os
@@ -40,6 +43,11 @@ import numpy as np
 from contact import ground_at, mosaic, supports
 from ground import HAKUBA, WORLD, settings, triangles
 from port import kebab
+
+# Crater Park's placement, which moves the caldera's conifers onto the island as it moves the park.
+sys.path += [str(Path(__file__).resolve().parents[1] / 'world' / 'regions'),
+             str(Path(__file__).resolve().parents[1] / 'world')]
+from craterpark import placement  # noqa: E402
 
 # Each Yorimichi plant model and the Hakuba plant made from it.
 MODELS = {
@@ -57,6 +65,8 @@ MODELS = {
     'Tree_Forest_Ginkgo': 'forest-ginkgo', 'Tree_Forest_Maple': 'forest-maple', 'Tree_Forest_Oak': 'forest-oak',
     'Tree_Forest_Pine': 'forest-pine', 'Tree_Tuscan_Cypress': 'tuscan-cypress', 'Tree_Tuscan_Oak': 'tuscan-oak',
     'Tree_Tuscan_Olive': 'tuscan-olive', 'Tree_Tuscan_Pine': 'tuscan-pine',
+    'Tree_Caldera_BlackPine_A': 'caldera-black-pine-a', 'Tree_Caldera_BlackPine_B': 'caldera-black-pine-b',
+    'Tree_Caldera_Cedar_A': 'caldera-cedar-a', 'Tree_Caldera_Cedar_B': 'caldera-cedar-b',
 }
 # The models `--models` imports: each one's build folder, holding `<model>.fbx`, `<model>_LOD2.fbx` and a lower level,
 # the full, middle and far detail levels, what it is and which level is its far version: the Forest and Tuscan trees'
@@ -81,6 +91,27 @@ def impostor(tree):
     return f'{kebab(tree)}-impostor'
 
 
+# The caldera's conifers round Crater Park, which `--caldera` imports: each one's Tripo source folder under
+# `assets/craterpark/trees` and what it is. The prop export (`CALDERA_EXPORT`) holds each detail level in its own
+# folder, `<model>` and `<model>_LOD1` to `_LOD3`, all showing the one texture of the source's GLB: the plant keeps LOD0
+# in full, LOD2 as its middle version and LOD3, a closed shell, as its far version, on its quarter of `CALDERA_FAR`.
+CALDERA = {
+    'Tree_Caldera_BlackPine_A': ('black_pine_a', 'a Japanese black pine of the caldera round Crater Park'),
+    'Tree_Caldera_BlackPine_B': ('black_pine_b', 'a Japanese black pine of the caldera round Crater Park'),
+    'Tree_Caldera_Cedar_A': ('cedar_a', 'a sugi cedar of the caldera round Crater Park'),
+    'Tree_Caldera_Cedar_B': ('cedar_b', 'a sugi cedar of the caldera round Crater Park'),
+}
+CALDERA_EXPORT = 'exports/world.hidamari_props.export'
+CALDERA_SOURCE = Path(__file__).resolve().parents[1] / 'assets' / 'craterpark' / 'trees'
+# The source game draws a caldera conifer's texture at most `CALDERA_TEXELS` wide, times the gain its fit gave it
+# (`hidamari/props/props.json`, `city_material.prop_materials`), in linear light.
+CALDERA_TEXELS = 1024
+
+
+def caldera_texture(model):
+    return MODELS[model]
+
+
 # Each source material slot and the Hakuba texture it shows; a slot's own texture replaces its colour, as in the
 # source.
 SLOTS = {
@@ -90,6 +121,7 @@ SLOTS = {
     'LeafOak': 'tuscan-oak-leaves',
     'LeafOlive': 'tuscan-olive-leaves', 'LeafStonePine': 'tuscan-stone-pine-leaves',
     **{f'Tree_{tree}_Impostor': impostor(tree) for tree in IMPOSTORS},
+    **{model: caldera_texture(model) for model in CALDERA},
 }
 # The textures Hakuba lacks: each one's source image in the build folder.
 TEXTURES = {
@@ -108,7 +140,11 @@ FAR_TEXTURE, FAR_CELL, FAR_GUTTER = 'far-plants', 256, 8
 FAR_TEXTURES = ('coast-ginkgo-leaves', 'forest-ginkgo-impostor', 'forest-maple-impostor', 'forest-oak-impostor',
                 'forest-pine-impostor', 'garden-cedar', 'garden-leaves', 'garden-maple', 'garden-pine',
                 'tuscan-cypress-impostor', 'tuscan-oak-impostor', 'tuscan-olive-impostor', 'tuscan-pine-impostor',
-                'brinecove-palm-frond', 'brinecove-palm-trunk')
+                'brinecove-palm-frond', 'brinecove-palm-trunk', 'caldera-conifers')
+# A far texture made of several, each in a quarter of its cell, row by row, with its own `FAR_GUTTER` / 2 of repeated
+# edge texels: the four caldera conifers share one cell, so the atlas keeps its grid of 4 by 4.
+CALDERA_FAR = 'caldera-conifers'
+MOSAICS = {CALDERA_FAR: tuple(caldera_texture(model) for model in CALDERA)}
 RENDERS = {impostor(tree): f'forest/assembled/Tree_{tree}_colour.png' for tree in IMPOSTORS}
 # Brinecove's own plants, each `brinecove-<name>` in Hakuba. Only its palms, the port's landmarks, are seen from
 # middle and far tiles.
@@ -188,6 +224,17 @@ def sources(build):
             x, y, z, yaw, scale = np.array(rows, float).T
             ux, uy = x0 + x * math.cos(turn) - y * math.sin(turn), y0 + x * math.sin(turn) + y * math.cos(turn)
             yield name, np.column_stack([ux / 100, -uy / 100, (z0 + z) / 100, -(park['yaw_deg'] + yaw), scale]), True
+    # Crater Park's floor stands the caldera's conifers (`craterpark/v2/geometry.npz` `index` `trees`, each [x, y, z,
+    # yaw, scale] in the park's own Unreal centimetres, 100 (x, z, y) of its native frame), moved onto the island as the
+    # park is and turned with its actor.
+    with np.load(build / 'craterpark' / 'v2' / 'geometry.npz', allow_pickle=False) as geometry:
+        trees = json.loads(str(geometry['index']))['trees']
+    turn = placement.unreal_transform()['yaw_deg']
+    for name, rows in sorted(trees.items()):
+        if rows:
+            x, y, z, yaw, scale = np.array(rows, float).T
+            at = placement.native_to_island(np.column_stack([x, z, y]) / 100)
+            yield name, np.column_stack([at, -(turn + yaw), scale]), True
     # So does Brinecove, its plants (`SM_BC_Plant_*`) its own models.
     runtime = json.loads((build / 'brinecove' / 'runtime.json').read_text())
     ox, oy, oz = runtime['origin_cm']
@@ -249,6 +296,60 @@ def import_models(build):
                  f'textures = []\n\n{PROFILE}').splitlines()
         write_plant(out, nodes, manifest, asset)
         print(f'{MODELS[model]}: converted')
+
+
+def import_caldera(build):
+    """Writes each caldera conifer of `CALDERA` as a Hakuba plant from the prop export's fitted detail levels, and the
+    texture it shows from its Tripo model's own image, as the source game draws it: at most `CALDERA_TEXELS` wide,
+    times the fit's gain in linear light."""
+    from PIL import Image
+    fitted = json.loads((build / 'hidamari' / 'props' / 'props.json').read_text())
+    for model, (folder, about) in CALDERA.items():
+        source = CALDERA_SOURCE / folder / 'raw' / 'output_model_url.glb'
+        image = Image.open(io.BytesIO(glb_image(source))).convert('RGB')
+        if max(image.size) > CALDERA_TEXELS:
+            shrink = CALDERA_TEXELS / max(image.size)
+            image = image.resize((round(image.width * shrink), round(image.height * shrink)), Image.LANCZOS)
+        rgb = np.asarray(image, np.float32) / 255
+        gain = fitted[model]['gain']
+        linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4) * gain
+        texture = HAKUBA / 'textures' / caldera_texture(model) / 'src'
+        texture.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(np.round(srgb(linear) * 255).astype(np.uint8), 'RGB').save(texture / 'texture.png')
+        (texture / 'manifest.toml').write_text(
+            f'# The texture of {about}: its Tripo model\'s image, at most {CALDERA_TEXELS} texels wide, times its '
+            f'gain of {gain}.\npath = "texture.png"\nsha256 = "{sha256(texture / "texture.png")}"\n'
+            f'authoring_glb_sha256 = "{sha256(source)}"\n')
+        (texture.parent / 'asset.toml').write_text("# Source texture for the caldera's conifers.\nkind = \"texture\"\n"
+                                                   'source = "src/texture.png"\ncompression = "bc7"\n')
+        export = build / CALDERA_EXPORT
+        levels = {level: export / f'{model}{suffix}' / f'{model}{suffix}.fbx'
+                  for level, suffix in (('full', ''), ('middle', '_LOD2'), ('far', '_LOD3'))}
+        nodes = {level: converted(fbx) for level, fbx in levels.items()}
+        manifest = ['# Original fitted tree geometry and source detail levels.', 'path = "model.glb"', 'sha256 = ""',
+                    f'authoring_fbx_sha256 = "{sha256(levels["full"])}"',
+                    f'authoring_lod2_fbx_sha256 = "{sha256(levels["middle"])}"',
+                    f'authoring_far_fbx_sha256 = "{sha256(levels["far"])}"',
+                    'conversion = "Blender FBX import; full LOD0, middle LOD2 and far LOD3, its texture a quarter of '
+                    f'{CALDERA_FAR}\'s cell, retain per-corner positions, normals, UVs and RGBA"']
+        # The fit stands the tree on its foot, so it declares its lowest height.
+        lowest = min(float(p['POSITION'][p['indices'], 1].min()) for p in nodes['full'])
+        surface = f'surface_height_m = {np.float32(lowest)}\n' if lowest >= 0 else ''
+        asset = (f'# Source foliage: {about}.\nkind = "plant"\nshadow_distance_m = 80.0\n{surface}'
+                 f'source = "src/model.glb"\ntextures = []\n\n{PROFILE}').splitlines()
+        write_plant(HAKUBA / 'plants' / MODELS[model] / 'src', nodes, manifest, asset)
+        print(f'{MODELS[model]}: converted')
+
+
+def glb_image(path):
+    """The bytes of a GLB's one embedded image."""
+    data = Path(path).read_bytes()
+    size = int.from_bytes(data[12:16], 'little')
+    gltf, blob = json.loads(data[20:20 + size]), data[28 + size:]
+    (image,) = gltf['images']
+    view = gltf['bufferViews'][image['bufferView']]
+    start = view.get('byteOffset', 0)
+    return blob[start:start + view['byteLength']]
 
 def trunk(bark):
     """A trunk, `bark`, as `TRUNK_SEGMENTS` pairs of crossed cards from its foot to its top along its middle, each
@@ -316,6 +417,16 @@ def write_plant(out, nodes, manifest, asset):
     columns, rows = atlas_grid(len(FAR_TEXTURES))
     size, inner = np.array([columns, rows], np.float32) * FAR_CELL, FAR_CELL - 2 * FAR_GUTTER
     for primitive in nodes.get('far', []):
+        mosaic = next((name for name, parts in MOSAICS.items() if primitive['texture'] in parts), None)
+        if mosaic:
+            # Onto the texture's quarter of its mosaic's cell, inside the quarter's own gutter.
+            uv = primitive['TEXCOORD_0']
+            assert (uv >= 0).all() and (uv <= 1).all(), f'{out.parent.name}: far UVs outside its texture'
+            row, column = divmod(MOSAICS[mosaic].index(primitive['texture']), 2)
+            half, gutter = inner / 2, FAR_GUTTER / 2
+            primitive['TEXCOORD_0'] = ((np.array([column, row], np.float32) * half + gutter
+                                        + uv * (half - 2 * gutter)) / inner).astype('<f4')
+            primitive['texture'] = mosaic
         assert primitive['texture'] in FAR_TEXTURES, f'{out.parent.name}: {primitive["texture"]} has no atlas cell'
         row, column = divmod(FAR_TEXTURES.index(primitive['texture']), columns)
         corner = np.array([column, row], np.float32) * FAR_CELL + FAR_GUTTER
@@ -336,12 +447,28 @@ def far_atlas(build):
     columns, rows = atlas_grid(len(FAR_TEXTURES))
     atlas = np.zeros((rows * FAR_CELL, columns * FAR_CELL, 4), np.uint8)
     images, inner = {}, FAR_CELL - 2 * FAR_GUTTER
-    for k, texture in enumerate(FAR_TEXTURES):
-        images[texture] = build / RENDERS[texture] if texture in RENDERS else next(
+
+    def source(texture):
+        return build / RENDERS[texture] if texture in RENDERS else next(
             (HAKUBA / 'textures' / texture / 'src').glob('texture.*'))
+
+    def square(texture, size):
         # Premultiplied, so that the clear texels' colour never darkens the leaves' edges.
-        cell = Image.open(images[texture]).convert('RGBA').convert('RGBa').resize((inner, inner), Image.LANCZOS)
-        cell = np.pad(np.asarray(cell.convert('RGBA')), ((FAR_GUTTER,) * 2, (FAR_GUTTER,) * 2, (0, 0)), mode='edge')
+        images[texture] = source(texture)
+        cell = Image.open(images[texture]).convert('RGBA').convert('RGBa').resize((size, size), Image.LANCZOS)
+        return np.asarray(cell.convert('RGBA'))
+
+    for k, texture in enumerate(FAR_TEXTURES):
+        if texture in MOSAICS:
+            # Its textures in quarters of the cell, each inside its own gutter.
+            parts, half, gutter = MOSAICS[texture], inner // 2, FAR_GUTTER // 2
+            assert len(parts) == 4, f'{texture}: a mosaic of four'
+            quarters = [np.pad(square(part, half - 2 * gutter), ((gutter,) * 2, (gutter,) * 2, (0, 0)), mode='edge')
+                        for part in parts]
+            cell = np.concatenate([np.concatenate(quarters[:2], axis=1), np.concatenate(quarters[2:], axis=1)])
+        else:
+            cell = square(texture, inner)
+        cell = np.pad(cell, ((FAR_GUTTER,) * 2, (FAR_GUTTER,) * 2, (0, 0)), mode='edge')
         row, column = divmod(k, columns)
         atlas[row * FAR_CELL:(row + 1) * FAR_CELL, column * FAR_CELL:(column + 1) * FAR_CELL] = cell
     folder = HAKUBA / 'textures' / FAR_TEXTURE / 'src'
@@ -351,7 +478,7 @@ def far_atlas(build):
         "# The plants' far textures, each in a cell of this atlas, row by row.\npath = \"texture.png\"\n"
         f'sha256 = "{sha256(folder / "texture.png")}"\n'
         + ''.join(f'authoring_{texture.replace("-", "_")}_sha256 = "{sha256(images[texture])}"\n'
-                  for texture in FAR_TEXTURES))
+                  for texture in images))
     (folder.parent / 'asset.toml').write_text(
         "# Source texture for the plants' far versions.\nkind = \"texture\"\nsource = \"src/texture.png\"\n"
         'alpha_cutoff = 0.4\nmip_colour = "average"\n')
@@ -634,11 +761,15 @@ def main():
     parser.add_argument('--models', action='store_true', help="first import the tree models Hakuba lacks")
     parser.add_argument('--brinecove', action='store_true',
                         help="first import Brinecove's plants only, without Blender")
+    parser.add_argument('--caldera', action='store_true', help="first import the caldera's conifers only")
     args = parser.parse_args()
     if args.models:
         import_models(args.build.resolve())
+    if args.models or args.caldera:
+        import_caldera(args.build.resolve())
     if args.models or args.brinecove:
         import_brinecove(args.build.resolve())
+    if args.models or args.brinecove or args.caldera:
         far_atlas(args.build.resolve())
     world = settings()
     heights = mosaic(world)

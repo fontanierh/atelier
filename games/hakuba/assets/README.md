@@ -24,10 +24,11 @@ assets/
   plants/                   trees, bushes and grass, each imported with its leaves' wind weights
     coast-*/, garden-*/     the coast's and gardens' trees, bushes, flowers, grass and litter
     woodland-canopy-*/      the northern woodland's tall canopy trees
+    caldera-*/              the conifers on the caldera floor round Crater Park
   props/                    made objects: generated from their settings, such as `utility-pole/`, or imported
                             with their colours painted per vertex, named after their region (`hidamari-*/`,
                             `brinecove-*/`, `belmonte-*/`, `treehouse-*/`, `craterpark-*/`, `megapark-*/`,
-                            `gondola-*/`, `ferry-*/`, ...)
+                            `gondola-*/`, `ferry-*/`, `kei-*/`, ...)
   sounds/                   every sound the game plays (sounds/README.md)
     footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
     dash/                   a burst of cloth and air
