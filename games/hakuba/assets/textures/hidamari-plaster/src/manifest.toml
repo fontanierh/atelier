@@ -1,0 +1,4 @@
+# The plaster texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "f1d0cf0be580bd8733c814c53d4bb6cb1e9f0a87991f74ee657afb6d00b5a3f9"
+authoring_texture_sha256 = "f1d0cf0be580bd8733c814c53d4bb6cb1e9f0a87991f74ee657afb6d00b5a3f9"

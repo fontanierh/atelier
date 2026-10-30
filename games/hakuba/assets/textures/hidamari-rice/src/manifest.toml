@@ -1,0 +1,4 @@
+# The rice texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "a6b28faa1242925b7b9edf158fb8509c19e1a861223be1ad9e0fa541a448f4ca"
+authoring_texture_sha256 = "a6b28faa1242925b7b9edf158fb8509c19e1a861223be1ad9e0fa541a448f4ca"

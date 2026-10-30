@@ -1,0 +1,5 @@
+# The drystone texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "08ec464d71c70a11bdfe288409c3f5ceaa037beb5d1759d6cc15031917edb6a3"

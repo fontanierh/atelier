@@ -1,0 +1,4 @@
+# The gravel texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "f806470d702490622137b4d0a7545a5021b97fc064004744be27271f39c40351"
+authoring_texture_sha256 = "f806470d702490622137b4d0a7545a5021b97fc064004744be27271f39c40351"

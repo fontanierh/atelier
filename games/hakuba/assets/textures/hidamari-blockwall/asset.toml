@@ -1,0 +1,5 @@
+# The blockwall texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "647d1d22f579fe9263892d999ee4bcab7e742f5bce99e755b16c399d8af09571"

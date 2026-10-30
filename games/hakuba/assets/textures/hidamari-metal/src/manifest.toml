@@ -1,0 +1,4 @@
+# The metal texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "d4f43ffc0adb426c812acd996f52cf49581ca1b9ab019c84899620124cf91e61"
+authoring_texture_sha256 = "d4f43ffc0adb426c812acd996f52cf49581ca1b9ab019c84899620124cf91e61"

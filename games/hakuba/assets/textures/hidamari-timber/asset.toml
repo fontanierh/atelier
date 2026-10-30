@@ -1,0 +1,5 @@
+# The timber texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "d9f9149ba2d2225c24dc9569b3a16606bd7b57863e7a9a02a3073d3443b1e1d4"

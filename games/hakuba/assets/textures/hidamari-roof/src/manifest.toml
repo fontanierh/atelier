@@ -1,0 +1,4 @@
+# The roof texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "c93cfe8e57dc9fa1eb212c9d23d332f43768d28784013b3c98d1c304e4b69d25"
+authoring_texture_sha256 = "c93cfe8e57dc9fa1eb212c9d23d332f43768d28784013b3c98d1c304e4b69d25"

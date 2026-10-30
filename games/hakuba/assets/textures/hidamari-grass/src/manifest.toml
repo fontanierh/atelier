@@ -1,0 +1,4 @@
+# The grass texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "9fb48a0fce85f547ccac2c861289d57c2cac388e23c510196fb1d9b5522a0c6c"
+authoring_texture_sha256 = "9fb48a0fce85f547ccac2c861289d57c2cac388e23c510196fb1d9b5522a0c6c"

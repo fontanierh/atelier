@@ -1,5 +1,6 @@
-# A piece of Hidamari, the city east of the coast, and the northern mountains, ported with its colours painted per vertex.
+# A piece of Hidamari, the city east of the coast, and the northern mountains, ported with its textures.
 kind = "prop"
 source = "src/model.glb"
+textures = ["hidamari-earth", "hidamari-grass", "hidamari-metal", "hidamari-paint", "hidamari-plaster", "hidamari-sidewalk", "hidamari-stone", "hidamari-timber"]
 solid = true
-inputs_sha256 = "5abcb290fb795cd1b57092ad37281667b12b4f1ab21d51dd186b6625b95aa93a"
+inputs_sha256 = "ecf1f8cdb75badc9ef858d1d00d3b01e2738d8a858aa4a203b72c3dae117b7eb"

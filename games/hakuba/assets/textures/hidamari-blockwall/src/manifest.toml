@@ -1,0 +1,4 @@
+# The blockwall texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "2e02a6fadcb1a819e88a66e9db526dc904bc8828046243e8a01c1e97b706fc87"
+authoring_texture_sha256 = "2e02a6fadcb1a819e88a66e9db526dc904bc8828046243e8a01c1e97b706fc87"

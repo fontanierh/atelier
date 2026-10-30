@@ -1,0 +1,5 @@
+# The asphalt texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4b176dd91082b9881a2ac8629db74b806b7b2f1a0291936e7c751f2959d3afff"

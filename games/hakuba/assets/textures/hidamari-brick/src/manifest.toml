@@ -1,0 +1,4 @@
+# The brick texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "a5eefa3b0bc699e221cff606fe12c15060a194948399557fa2f0025c292cde97"
+authoring_texture_sha256 = "a5eefa3b0bc699e221cff606fe12c15060a194948399557fa2f0025c292cde97"

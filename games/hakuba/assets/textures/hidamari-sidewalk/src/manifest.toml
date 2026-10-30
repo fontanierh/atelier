@@ -1,0 +1,4 @@
+# The sidewalk texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "e89eae1fdb8bb02f8a609ad959f04e0a41453fd87810eab07321aa2e07ea75e8"
+authoring_texture_sha256 = "e89eae1fdb8bb02f8a609ad959f04e0a41453fd87810eab07321aa2e07ea75e8"

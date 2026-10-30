@@ -1,0 +1,5 @@
+# The rice texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "477d173b41617c6c5b897daebb3733e211ea0acf03c8609b45e76896c447938d"

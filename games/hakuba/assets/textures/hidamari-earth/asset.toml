@@ -1,0 +1,5 @@
+# The earth texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "3582eedb1150f8969aeb5b985c459447ebe42bf85c76d5750a45ed2608ec90f2"

@@ -63,11 +63,14 @@ class Model:
 class Region:
     """A region's models, by Hakuba prop name, and its groups: (prop name, afar, [[x, y, z, yaw, scale], ...]), each
     instance the model's source origin on the map, its turn counter-clockwise in degrees and its scale. `afar` None
-    leaves it to the model's size; a height of None stands the model on Hakuba's ground."""
+    leaves it to the model's size; a height of None stands the model on Hakuba's ground. A group may also stand one
+    of `shared`, a prop Hakuba already has whose origin is its source's own (a pole at its foot), converted by no one
+    here; its group names `afar`."""
     name: str
     about: str
     models: dict = field(default_factory=dict)
     groups: list = field(default_factory=list)
+    shared: set = field(default_factory=set)
 
 
 def kebab(name):
@@ -282,7 +285,7 @@ def write(region, origins):
         (folder / 'asset.toml').write_text('\n'.join(lines) + '\n')
     groups = []
     for name, afar, instances in region.groups:
-        (ox, oy, oz), size = origins[name]
+        (ox, oy, oz), size = origins[name] if name in origins else ((0.0, 0.0, 0.0), None)
         on_ground = any(instance[2] is None for instance in instances)
         if afar is None:
             afar = size >= AFAR_M
@@ -324,7 +327,10 @@ def main():
             for path in sorted(folder.rglob('*'), reverse=True):
                 path.unlink() if path.is_file() else path.rmdir()
             folder.rmdir()
-        region.groups = [group for group in region.groups if group[0] in region.models]
+        for name in region.shared:
+            if not (HAKUBA / 'assets' / 'props' / name / 'asset.toml').exists():
+                raise SystemExit(f'{region.name}: no Hakuba prop {name} to stand')
+        region.groups = [group for group in region.groups if group[0] in region.models or group[0] in region.shared]
         write(region, origins)
         count = sum(len(i) for _, _, i in region.groups)
         print(f'{region.name}: {len(region.models)} props, {count} placements')

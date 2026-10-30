@@ -1,0 +1,5 @@
+# The stone texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "367b29aeb6567f2fc8beb6e800f55162576602252870b2e1c6bad638767f5ba0"

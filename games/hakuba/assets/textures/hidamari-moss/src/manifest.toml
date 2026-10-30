@@ -1,0 +1,4 @@
+# The moss texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "3305ede148cf04322578e33c80564fcd60c31f80eb6504efe2fbeebbfac6ec1f"
+authoring_texture_sha256 = "3305ede148cf04322578e33c80564fcd60c31f80eb6504efe2fbeebbfac6ec1f"

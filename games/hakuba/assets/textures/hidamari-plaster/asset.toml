@@ -1,0 +1,5 @@
+# The plaster texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "2257803ad3d9d00bb3c7d719dec11d1b34dcf56edf39886832b16bd08b498d78"
