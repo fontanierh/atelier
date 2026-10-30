@@ -3,4 +3,9 @@
 {"model":"props/zeppelin-belmonte","afar":true,"instances":[[410.125,4626.092,217.0507,0.0,1.0]]},
 {"model":"props/zeppelin-trail","afar":true,"instances":[[539.8826,262.4846,34.4174,0.0,1.0]]},
 {"model":"props/zeppelin-city","afar":true,"instances":[[1273.125,317.3475,35.005,0,1]]},
-{"model":"props/zeppelin-mega-park","afar":true,"instances":[[-182.5319,1480.3475,127.5327,0,1]]}]}
+{"model":"props/zeppelin-mega-park","afar":true,"instances":[[-182.5319,1480.3475,127.5327,0,1]]},
+{"model":"props/zeppelin-airship","afar":true,"instances":[[-199.0,234.0,71.54,0.0,1.0]]},
+{"model":"props/zeppelin-motors","afar":true,"instances":[[-195.995,234.0,77.66,0.0,1.0]]},
+{"model":"props/zeppelin-propeller","afar":false,"instances":[[-195.355,227.9433,76.5149,0.0,1.0],[-195.355,239.9433,76.5149,0.0,1.0]]},
+{"model":"props/zeppelin-gate","afar":false,"instances":[[-199.0,232.27,72.13,0.0,1.0],[-199.0,231.01,72.13,0.0,1.0],[1279.0,322.01,37.23,0.0,1.0],[-194.0,1485.01,131.73,0.0,1.0],[416.0,4661.01,219.48,0.0,1.0]]},
+{"model":"props/zeppelin-gangway","afar":false,"instances":[[-199.0,231.69,71.94,0.0,1.0]]}]}

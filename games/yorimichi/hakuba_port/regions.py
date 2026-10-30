@@ -204,17 +204,49 @@ def shrines(build):
     return region
 
 
+# The zeppelin docks first at its first station, the Woodland air station, as Yorimichi's service starts. Its parts'
+# offsets, in metres east, north and up, as the service attaches them: the deck gate from the ship's datum, a station's
+# dock gate and gangway from the station's origin.
+ZEPPELIN_DOCK = 0
+ZEPPELIN_DECK_GATE = (-0.85, -1.70, 0.0)
+ZEPPELIN_DOCK_GATE = (5.15, 1.04, 1.65)
+ZEPPELIN_GANGWAY = (6.0, 1.04, 1.65)
+ZEPPELIN_PARTS = {'ZP_Airship': 'hull, deck and envelope', 'ZP_Motors': 'motor pods',
+                  'ZP_Propeller': 'propellers', 'ZP_Gate': 'deck and dock gates', 'ZP_Gangway': 'gangway'}
+
+
 def zeppelin(build):
-    """The air stations and the trail up to the woodland station, coloured by their palette per vertex."""
+    """The air stations and the trail up to the woodland station, and the airship docked at its first stop, the
+    Woodland air station, standing still as the service starts there: its hull and envelope, motors, both propellers
+    and its deck gate shut, the station's gangway let down to it, and every station's dock gate shut. Each part stands
+    where Yorimichi's zeppelin service puts it, relative to the ship's or the station's datum. Everything is coloured
+    by its palette per vertex, as Yorimichi's materials draw it (the envelope's own material shades the same vertex
+    colour). Only the gangway is solid, as the service makes it walkable at the dock; the ship has no collision."""
     placed = {**_core(build), **json.loads((build / 'hidamari' / 'city.json').read_text())['instances']}
-    region = Region('zeppelin', 'the air stations')
+    line = json.loads((build / 'world.json').read_text())['zeppelin']
+    region = Region('zeppelin', 'the air stations and the docked airship')
     for asset in ('ZP_Woodland', 'ZP_Belmonte', 'ZP_Trail', 'ZP_City', 'ZP_MegaPark'):
         if asset not in placed:
             continue
         name = 'zeppelin-' + kebab(asset.removeprefix('ZP_'))
-        region.models[name] = Model(export_source(build, 'zeppelin', asset),
-                                    default={'vertex': True}, slots={'ZeppelinFabric': {'rgb': [0.62, 0.6, 0.55]}})
+        region.models[name] = Model(export_source(build, 'zeppelin', asset), default={'vertex': True})
         region.groups.append((name, None, placed[asset]))
+    stations = line['stations']
+    ship = stations[ZEPPELIN_DOCK]['ship']
+    origin = stations[ZEPPELIN_DOCK]['origin']
+
+    def at(datum, offset):
+        return [datum[0] + offset[0], datum[1] + offset[1], datum[2] + offset[2], 0.0, 1.0]
+    parts = {'ZP_Airship': [at(ship, (0, 0, 0))], 'ZP_Motors': [at(ship, (0, 0, 0))],
+             'ZP_Propeller': [at(ship, c) for c in line['propeller_centers']],
+             'ZP_Gate': [at(ship, ZEPPELIN_DECK_GATE)] + [at(s['origin'], ZEPPELIN_DOCK_GATE) for s in stations],
+             'ZP_Gangway': [at(origin, ZEPPELIN_GANGWAY)]}
+    for asset, rows in parts.items():
+        name = 'zeppelin-' + kebab(asset.removeprefix('ZP_'))
+        region.models[name] = Model(export_source(build, 'zeppelin', asset), default={'vertex': True},
+                                    solid=asset == 'ZP_Gangway',
+                                    about=f"The zeppelin line's {ZEPPELIN_PARTS[asset]}.")
+        region.groups.append((name, None, rows))
     return region
 
 

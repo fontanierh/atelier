@@ -1,4 +1,4 @@
-# A piece of the air stations, ported with its colours painted per vertex.
+# A piece of the air stations and the docked airship, ported with its colours painted per vertex.
 kind = "prop"
 source = "src/model.glb"
 solid = true
