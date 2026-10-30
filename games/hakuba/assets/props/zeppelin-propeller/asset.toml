@@ -1,0 +1,4 @@
+# The zeppelin line's propellers.
+kind = "prop"
+source = "src/model.glb"
+inputs_sha256 = "f9150e6ebcda47431b71e0f42e0ba064b33c56de42cadcdfc62b83ac4913a830"

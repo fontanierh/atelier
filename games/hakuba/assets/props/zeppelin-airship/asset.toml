@@ -1,0 +1,4 @@
+# The zeppelin line's hull, deck and envelope.
+kind = "prop"
+source = "src/model.glb"
+inputs_sha256 = "3a4f36062f997b41f6b7f60a5f27a393d254963d2b30d435b12cebc3bbcfa7d3"
