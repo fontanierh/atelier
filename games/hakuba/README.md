@@ -30,7 +30,8 @@ cargo run                    # desktop
 The game opens on a menu: **World** enters the world, **Character viewer** shows each character and plays its clips.
 Escape goes back to the menu.
 
-The browser needs WebGPU: a recent Chrome, Edge or other Chromium browser, or Safari 26.
+The browser needs WebGPU and standard WebAssembly SIMD: a recent Chrome, Edge or other Chromium browser, or Safari 26.
+Browser builds enable 128-bit SIMD for vector math; they do not enable relaxed SIMD or fast-math operations.
 
 ### Skateboard controls
 

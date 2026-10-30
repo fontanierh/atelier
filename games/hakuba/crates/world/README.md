@@ -21,12 +21,15 @@ src/
   pixels.rs      draws the world into an image of the resolution the settings ask and stretches it over the window
   tiles.rs       prepares each new detail version hidden, then swaps its visibility and collision together
   scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models
-                 per 16 m square when they cast shadows or 32 m otherwise; preparation is spread across updates.
+                 per 32 m square when they cast shadows or whole tile otherwise; preparation is spread across updates.
                  A tree or bush in a full tile shows its full version and casts its middle version's shadow;
                  model exports can mark their visible meshes solid
   vertex_paint.rs an opaque static vertex-colour material with asset-owned fill, glow bounds and haze
   vertex_paint.wesl its colour, emission and aerial-perspective shaders
-  wind.rs        sways leaves and grass in the wind, by how far the export says each vertex sways
+  wind.rs        sways leaves and grass by their exported weights
+  source_foliage.wesl source-weighted motion in the main, prepass and shadow vertices
+  source_leaves.wesl source foliage colour, haze and cut-out lighting
+  shadow_alpha.wesl shadow-only cut-outs from exact alpha companions
   wind.wesl      its vertex shaders, which also lean leaves and blades away from what pushes plants aside
   leaves.wesl    its fragment shader, which lights only what a leaf card keeps
   push.rs        gives that shader where the things that push plants are, up to four, the nearest the camera

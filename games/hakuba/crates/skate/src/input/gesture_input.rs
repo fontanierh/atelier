@@ -11,7 +11,6 @@ pub(crate) struct GestureInput {
     maximum_misses: [u8; 2],
     authored_misses: [u8; 2],
     pace: f32,
-    samples_per_tick: u8,
     tight_flicks: bool,
     held_pattern: Option<String>,
 }
@@ -29,19 +28,18 @@ impl GestureInput {
         for (stick, patterns) in &root.gestures {
             recognizers.push((*stick, Recognizer::new(patterns.clone())?));
         }
+        let authored_misses = [misses("left_stick")?, misses("right_stick")?];
         Ok(Self {
             recognizers,
-            maximum_misses: [misses("left_stick")?, misses("right_stick")?],
-            authored_misses: [misses("left_stick")?, misses("right_stick")?],
+            maximum_misses: authored_misses.map(|misses| (u16::from(misses) * 2).clamp(2, 120) as u8),
+            authored_misses,
             pace: 1.0,
-            samples_per_tick: 1,
             tight_flicks: false,
             held_pattern: None,
         })
     }
 
-    pub fn tune(&mut self, radius: f32, window: f32, pace: f32, tight: bool, fine: bool) {
-        self.samples_per_tick = if fine { 2 } else { 1 };
+    pub fn tune(&mut self, radius: f32, window: f32, pace: f32, tight: bool) {
         if tight != self.tight_flicks && !self.recognizers.is_empty() {
             let extra = if tight {
                 vec![
@@ -65,15 +63,9 @@ impl GestureInput {
         for (_, recognizer) in &mut self.recognizers {
             recognizer.scale_radius(radius);
         }
-        let rate = self.samples_per_tick;
         for i in 0..2 {
-            self.maximum_misses[i] = if window == 1.0 && rate == 1 {
-                self.authored_misses[i]
-            } else {
-                (f32::from(self.authored_misses[i]) * window * f32::from(rate))
-                    .round()
-                    .clamp(f32::from(rate), 60.0 * f32::from(rate)) as u8
-            };
+            self.maximum_misses[i] =
+                (f32::from(self.authored_misses[i]) * window * 2.0).round().clamp(2.0, 120.0) as u8;
         }
         self.pace = pace;
     }
@@ -118,17 +110,8 @@ impl GestureInput {
                 }
             }
             for (_, recognizer) in self.recognizers.iter_mut().filter(|r| r.0 == stick) {
-                let settings = Settings {
-                    maximum_misses: self.maximum_misses[stick],
-                    difficulty,
-                    pace: self.pace,
-                    samples_per_tick: self.samples_per_tick,
-                };
-                let matched = if self.samples_per_tick == 2 {
-                    recognizer.sample_tick(earlier.map(|axes| axes[stick]), samples[stick], settings)
-                } else {
-                    recognizer.sample(samples[stick], settings)
-                };
+                let settings = Settings { maximum_misses: self.maximum_misses[stick], difficulty, pace: self.pace };
+                let matched = recognizer.sample_tick(earlier.map(|axes| axes[stick]), samples[stick], settings);
                 if let Some(result) = matched {
                     let name = recognizer.patterns()[result.pattern].name.clone();
                     // Listener retains only these four hold-capable events.
@@ -236,22 +219,25 @@ mod package_tests {
         crate::resources::Resources::from_bytes(bytes).unwrap()
     }
     #[test]
-    fn all_authored_package_patterns_keep_packet_fallback_results() {
+    fn every_authored_pattern_recognizes_ordinary_packets() {
         let source = resources();
         assert_eq!(source.gestures.len(), 7);
+        let settings = Settings { maximum_misses: 6, difficulty: 0, pace: 1.0 };
         for (_, patterns) in &source.gestures {
             for pattern in patterns {
-                let mut stock = Recognizer::new(patterns.clone()).unwrap();
-                let mut fine = stock.clone();
-                let base = Settings { maximum_misses: 3, difficulty: 0, pace: 1.0, samples_per_tick: 1 };
-                let doubled = Settings { maximum_misses: 6, samples_per_tick: 2, ..base };
-                let mut samples = vec![[0.0; 2]];
-                samples.extend(std::iter::repeat_n(pattern.points[0], 5));
-                samples.extend(pattern.points[1..].iter().copied());
-                samples.extend([[0.0; 2]; 3]);
-                for point in samples {
-                    assert_eq!(stock.sample(point, base), fine.sample_tick(None, point, doubled), "{}", pattern.name);
+                let mut recognizer = Recognizer::new(vec![pattern.clone()]).unwrap();
+                recognizer.sample_tick(None, [0.0; 2], settings);
+                let mut result = None;
+                for &point in &pattern.points {
+                    if let Some(matched) = recognizer.sample_tick(None, point, settings) {
+                        result = Some(matched);
+                        break;
+                    }
                 }
+                let result = result.unwrap_or_else(|| panic!("{} was not recognized", pattern.name));
+                assert_eq!(result.pattern, 0);
+                assert_eq!(result.elapsed, pattern.points.len() as f32, "{}", pattern.name);
+                assert_eq!(result.strength, 1.0, "{}", pattern.name);
             }
         }
     }
@@ -260,19 +246,20 @@ mod package_tests {
         let source = resources();
         let mut input = GestureInput::load(&source).unwrap();
         let authored = input.recognizers[0].1.patterns().to_vec();
-        input.tune(1.0, 1.0, 1.0, true, false);
+        assert_eq!(input.maximum_misses, input.authored_misses.map(|m| (u16::from(m) * 2).clamp(2, 120) as u8));
+        input.tune(1.0, 1.0, 1.0, true);
         assert_eq!(&input.recognizers[0].1.patterns()[..authored.len()], authored.as_slice());
         assert_eq!(input.recognizers[0].1.patterns().len(), authored.len() + 2);
-        input.tune(1.5, 2.0, 0.8, true, true);
-        input.tune(1.0, 1.0, 1.0, false, false);
+        input.tune(1.5, 2.0, 0.8, true);
+        input.tune(1.0, 1.0, 1.0, false);
         assert_eq!(input.recognizers[0].1.patterns(), authored.as_slice());
-        assert_eq!(input.maximum_misses, input.authored_misses);
+        assert_eq!(input.maximum_misses, input.authored_misses.map(|m| (u16::from(m) * 2).clamp(2, 120) as u8));
         for (name, points) in [
             ("Hardflip", [[0.34202, 0.93969], [-0.03490, 0.99939], [0.37461, -0.92718]]),
             ("InwardHeelflip", [[-0.34202, 0.93969], [0.03490, 0.99939], [-0.37461, -0.92718]]),
         ] {
             let mut input = GestureInput::load(&source).unwrap();
-            input.tune(1.0, 1.0, 1.0, true, true);
+            input.tune(1.0, 1.0, 1.0, true);
             let mut ag = IntentMap::new();
             input.publish([[0.0; 2]; 2], 0, 0, 100, &mut ag);
             let packet = |p: [f32; 2]| [[0.0; 2], [p[0], -p[1]]];

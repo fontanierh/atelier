@@ -288,19 +288,36 @@ pub(super) fn read(
     }
 }
 
+pub(super) fn set_hud_text(text: &mut Mut<Text>, next: std::borrow::Cow<'_, str>) -> bool {
+    if text.0 == next.as_ref() {
+        return false;
+    }
+    text.0 = next.into_owned();
+    true
+}
+
 pub(super) fn hud(places: Res<Places>, settings: Res<Settings>, mut text: Query<&mut Text, With<PlacesHud>>) {
     for mut text in &mut text {
         let s = places.status;
-        **text = if let Some(editor) = &places.editing {
-            format!(
+        let next = if let Some(editor) = &places.editing {
+            std::borrow::Cow::Owned(format!(
                 "{} place: {}_\nType a name | Enter/A save | Esc/B cancel\nController: left/right choose [{}] | Y append | X erase",
                 if editor.rename { "Rename" } else { "Save" },
                 editor.name,
                 LETTERS.as_bytes()[editor.letter] as char
-            )
+            ))
         } else if places.open {
             let name = settings.skate_places.selected().map_or("No saved places", |m| m.name.as_str());
-            format!(
+            let return_line = if places.returning {
+                std::borrow::Cow::Owned(format!(
+                    "Return {:.0}% | {}",
+                    s.progress * 100.,
+                    if s.can_return { "hold Enter/A" } else { "destination unavailable" }
+                ))
+            } else {
+                std::borrow::Cow::Borrowed("Hold Enter/A return | P or Esc/B close")
+            };
+            std::borrow::Cow::Owned(format!(
                 "Saved places | {}\n{}\n{}\n{}",
                 name,
                 if places.delete_confirm {
@@ -308,27 +325,22 @@ pub(super) fn hud(places: Res<Places>, settings: Res<Settings>, mut text: Query<
                 } else {
                     "Left/right choose | N/Y save here | F2/X rename | Delete/Down twice delete"
                 },
-                if places.returning {
-                    format!(
-                        "Return {:.0}% | {}",
-                        s.progress * 100.,
-                        if s.can_return { "hold Enter/A" } else { "destination unavailable" }
-                    )
-                } else {
-                    "Hold Enter/A return | P or Esc/B close".into()
-                },
+                return_line,
                 places.flash
-            )
+            ))
         } else if s.visible || places.returning {
-            format!(
+            std::borrow::Cow::Owned(format!(
                 "Marker | place {} | return {} | {:.0}%\n{}",
                 if s.can_place { "ready" } else { "blocked" },
                 if s.can_return { "ready" } else { "unavailable" },
                 s.progress * 100.,
                 places.flash
-            )
+            ))
         } else {
-            "M+Down place | hold M+Up return | LB+DPad Down/Up | P / LB+DPad Left saved places".into()
+            std::borrow::Cow::Borrowed(
+                "M+Down place | hold M+Up return | LB+DPad Down/Up | P / LB+DPad Left saved places",
+            )
         };
+        set_hud_text(&mut text, next);
     }
 }

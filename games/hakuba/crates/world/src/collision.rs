@@ -1,22 +1,50 @@
 //! Immutable collision prepared from the world's own active solids, with predictive full-tile residency.
 use crate::ground::Solid;
 use crate::tiles::{CollisionActivation, Tile};
+use bevy::asset::{AssetEvent, AssetEventSystems, AssetId};
 use bevy::gltf::GltfMaterialName;
 use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
 use bevy::transform::TransformSystems;
 use hakuba_screens::Screen;
 use hakuba_world_skate_schema::{Metadata, Rail, Zone};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 pub(crate) struct CollisionPlugin;
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<WorldCollision>().init_resource::<CollisionFocus>().add_systems(
-            PostUpdate,
-            publish.after(CollisionActivation).after(TransformSystems::Propagate).run_if(in_state(Screen::World)),
-        );
+        app.init_resource::<WorldCollision>()
+            .init_resource::<CollisionFocus>()
+            .init_resource::<CollisionDirty>()
+            .add_observer(tile_added)
+            .add_observer(tile_removed)
+            .add_systems(
+                PostUpdate,
+                publish
+                    .after(CollisionActivation)
+                    .after(TransformSystems::Propagate)
+                    .after(AssetEventSystems)
+                    .run_if(in_state(Screen::World)),
+            );
     }
+}
+
+/// Changes to a tile's published root are recorded by the tile systems; creation and removal are observed.
+#[derive(Resource, Default)]
+pub(crate) struct CollisionDirty(u64);
+impl CollisionDirty {
+    pub(crate) fn mark(&mut self) {
+        self.0 = self.0.wrapping_add(1);
+    }
+}
+
+fn tile_added(_: On<Add<Tile>>, mut dirty: ResMut<CollisionDirty>) {
+    dirty.mark();
+}
+
+fn tile_removed(_: On<Remove<Tile>>, mut dirty: ResMut<CollisionDirty>) {
+    dirty.mark();
 }
 
 #[derive(Component)]
@@ -39,7 +67,7 @@ pub(crate) struct CollisionSource {
 }
 
 /// A swept horizontal corridor to keep in full detail before a rider enters it.
-#[derive(Resource, Clone, Debug)]
+#[derive(Resource, Clone, Debug, PartialEq)]
 pub struct CollisionFocus {
     pub enabled: bool,
     pub position: Vec3,
@@ -138,10 +166,18 @@ type SolidData = (
     Option<&'static GltfMaterialName>,
 );
 
+#[derive(Default)]
+pub(crate) struct Published {
+    focus: Option<CollisionFocus>,
+    dirty: u64,
+    signature: Vec<([u32; 2], Option<Entity>, bool, Option<[Vec2; 2]>)>,
+    meshes: HashSet<AssetId<Mesh>>,
+}
+
 /// @cc [owner:fontanierh,label:correctness] immutable-world-collision
 /// Snapshots MUST contain only the world's active solid meshes, including hidden collision, in stable source order.
 /// Incomplete requested coverage MUST NOT be reported ready. Each generation owns its triangles beyond entity despawn.
-fn publish(
+pub(crate) fn publish(
     mut commands: Commands,
     initial: Query<Entity, With<InitialCoverage>>,
     mut output: ResMut<WorldCollision>,
@@ -152,21 +188,40 @@ fn publish(
     children: Query<&Children>,
     solids: Query<SolidData>,
     meshes: Res<Assets<Mesh>>,
-    mut previous: Local<Vec<(u32, u32, Option<Entity>, bool)>>,
+    dirty: Res<CollisionDirty>,
+    mut mesh_events: MessageReader<AssetEvent<Mesh>>,
+    mut previous: Local<Published>,
 ) {
     let Some(grid) = grid else { return };
     let Some(metadata) = metadata else { return };
+    let mut mesh_changed = false;
+    for event in mesh_events.read() {
+        match event {
+            AssetEvent::Added { id } | AssetEvent::Modified { id } | AssetEvent::Removed { id } => {
+                mesh_changed |= previous.meshes.contains(id);
+            }
+            _ => {}
+        }
+    }
+    let resources_changed = grid.is_changed() || metadata.is_changed();
+    let focus_changed = previous.focus.as_ref() != Some(&*focus);
+    if output.generation != 0 && !resources_changed && !focus_changed && dirty.0 == previous.dirty && !mesh_changed {
+        return;
+    }
     let mut selected: Vec<_> = tiles
         .iter()
         .map(Tile::collision_state)
         .filter(|(_, centre, _, _, _)| focus.intersects(*centre, grid.tile_m))
         .collect();
     selected.sort_by_key(|(tile, _, _, _, _)| *tile);
-    let signature: Vec<_> = selected.iter().map(|(id, _, root, full, _)| (id[0], id[1], *root, *full)).collect();
-    if signature == *previous && output.generation != 0 {
+    let signature: Vec<_> = selected.iter().map(|(id, _, root, full, bounds)| (*id, *root, *full, *bounds)).collect();
+    previous.focus = Some((*focus).clone());
+    previous.dirty = dirty.0;
+    if signature == previous.signature && output.generation != 0 && !resources_changed && !mesh_changed {
         return;
     }
-    let complete_signature = signature;
+    previous.signature = signature;
+    previous.meshes.clear();
     let mut snapshot = CollisionSnapshot {
         ready: focus.enabled && !selected.is_empty(),
         rails: metadata.0.rails.clone(),
@@ -188,6 +243,7 @@ fn publish(
                 continue;
             };
             let handle = source.map_or(&mesh.0, |s| &s.mesh);
+            previous.meshes.insert(handle.id());
             let Some(mesh) = meshes.get(handle) else {
                 valid = false;
                 continue;
@@ -248,7 +304,6 @@ fn publish(
             commands.entity(entity).despawn();
         }
     }
-    *previous = complete_signature;
     output.generation = output.generation.wrapping_add(1);
     output.snapshot = Arc::new(snapshot);
 }
@@ -322,6 +377,8 @@ mod tests {
             .init_resource::<Assets<Mesh>>()
             .init_resource::<WorldCollision>()
             .init_resource::<CollisionFocus>()
+            .init_resource::<CollisionDirty>()
+            .add_message::<AssetEvent<Mesh>>()
             .insert_resource(TileGrid { tile_m: 64. })
             .insert_resource(SkateMetadata(Metadata::default()));
         app.world_mut().resource_mut::<CollisionFocus>().request(Vec3::ZERO, Vec3::ZERO);
@@ -334,6 +391,65 @@ mod tests {
         assert!(!retained.ready);
         assert!(!app.world().resource::<WorldCollision>().snapshot.covers(Vec3::ZERO));
     }
+    #[test]
+    fn unchanged_frames_skip_tile_scan_and_changes_republish() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .init_resource::<Assets<Mesh>>()
+            .init_resource::<WorldCollision>()
+            .init_resource::<CollisionFocus>()
+            .init_resource::<CollisionDirty>()
+            .add_message::<AssetEvent<Mesh>>()
+            .add_observer(tile_added)
+            .add_observer(tile_removed)
+            .insert_resource(TileGrid { tile_m: 64. })
+            .insert_resource(SkateMetadata(Metadata::default()))
+            .add_systems(Update, publish);
+
+        // A stable selected tile is enough to show that an invalidation reaches the scan.
+        app.world_mut().resource_mut::<CollisionFocus>().request(Vec3::ZERO, Vec3::ZERO);
+        let tile = app.world_mut().spawn(Tile::named("tile 1 1", Vec3::ZERO).unwrap()).id();
+        app.update();
+        let generation = app.world().resource::<WorldCollision>().generation;
+        assert_eq!(generation, 1);
+        app.update();
+        assert_eq!(app.world().resource::<WorldCollision>().generation, generation);
+
+        // This test-only bypass is a probe: no dirty notification means no scan can see this tile.
+        app.world_mut().entity_mut(tile).insert(Tile::named("tile 2 2", Vec3::ZERO).unwrap());
+        app.update();
+        assert_eq!(app.world().resource::<WorldCollision>().generation, generation);
+        app.world_mut().resource_mut::<CollisionDirty>().mark();
+        app.update();
+        assert_eq!(app.world().resource::<WorldCollision>().generation, generation + 1);
+
+        app.world_mut().spawn(Tile::named("tile 3 3", Vec3::X * 2000.).unwrap());
+        app.update();
+        let before = app.world().resource::<WorldCollision>().generation;
+        app.world_mut().resource_mut::<CollisionFocus>().destination = Some(Vec3::X * 2000.);
+        app.update();
+        assert_eq!(app.world().resource::<WorldCollision>().generation, before + 1);
+        let before = app.world().resource::<WorldCollision>().generation;
+        let metadata = Metadata {
+            rails: vec![Rail {
+                id: "test rail".into(),
+                points: vec![[0., 0., 0.], [1., 0., 0.]],
+                closed: false,
+                kind: "rail".into(),
+                surface: hakuba_world_skate_schema::Surface::Metal,
+            }],
+            ..default()
+        };
+        app.world_mut().insert_resource(SkateMetadata(metadata));
+        app.update();
+        assert_eq!(app.world().resource::<WorldCollision>().generation, before + 1);
+        assert_eq!(app.world().resource::<WorldCollision>().snapshot.rails.len(), 1);
+        let before = app.world().resource::<WorldCollision>().generation;
+        app.world_mut().despawn(tile);
+        app.update();
+        assert_eq!(app.world().resource::<WorldCollision>().generation, before + 1);
+    }
+
     #[test]
     fn destination_pins_both_ends_without_loading_the_whole_gap() {
         let mut focus = CollisionFocus::default();

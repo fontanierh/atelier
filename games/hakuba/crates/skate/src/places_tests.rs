@@ -2,6 +2,26 @@
 use super::super::{SkateStatus, ride_input};
 use super::*;
 use bevy::input::{gamepad::RawGamepadEvent, keyboard::Key, mouse::AccumulatedMouseMotion};
+
+#[test]
+fn hud_text_only_changes_when_the_display_string_changes() {
+    let mut world = World::new();
+    let entity = world.spawn(Text::new("unchanged")).id();
+    world.clear_trackers();
+
+    {
+        let mut text = world.get_mut::<Text>(entity).unwrap();
+        assert!(!set_hud_text(&mut text, std::borrow::Cow::Borrowed("unchanged")));
+        assert!(!text.is_changed());
+    }
+
+    {
+        let mut text = world.get_mut::<Text>(entity).unwrap();
+        assert!(set_hud_text(&mut text, std::borrow::Cow::Borrowed("changed")));
+        assert_eq!(text.0, "changed");
+        assert!(text.is_changed());
+    }
+}
 fn session() -> Session {
     let bytes = std::fs::read(concat!(
         env!("CARGO_MANIFEST_DIR"),

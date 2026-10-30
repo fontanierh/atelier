@@ -104,7 +104,6 @@ fn fine_sticks_use_the_same_pad_conditioning_and_mismatched_packets_fall_back() 
     let actual = s.controls.gesture_axes(input.left, input.right);
     let words = s.controls.controller.words();
     assert_eq!(actual, [[words[7], words[8]], [words[9], words[10]]].map(|pair| pair.map(f32::from_bits)));
-    s.set_feel(crate::feel::FeelTuning { flick_120hz: true, ..Default::default() }).unwrap();
     s.tick_with_sticks(input, input, Controls::default()).unwrap();
     assert!(s.fine_sticks.is_none());
 }

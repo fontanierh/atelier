@@ -15,7 +15,6 @@ pub struct Settings {
     pub maximum_misses: u8,
     pub difficulty: u32,
     pub pace: f32,
-    pub samples_per_tick: u8,
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -29,7 +28,7 @@ struct Node {
 }
 
 impl Node {
-    fn tick(&mut self, pattern: &Pattern, sample: [f32; 2], maximum_misses: u8, miss_mask: u8, weight: u8) {
+    fn tick(&mut self, pattern: &Pattern, sample: [f32; 2], maximum_misses: u8, weight: u8) {
         if !self.active {
             let distance = distance_squared(pattern.points[0], sample);
             if distance <= pattern.tolerance_squared {
@@ -56,7 +55,7 @@ impl Node {
                 // Holding the first point does not age a pending gesture.
                 if self.next != 1 || distance_squared(pattern.points[0], sample) > pattern.tolerance_squared {
                     self.elapsed = (self.elapsed + u16::from(weight)) & 0x3ff;
-                    self.misses = self.misses.wrapping_add(weight) & miss_mask;
+                    self.misses = self.misses.wrapping_add(weight) & 0x7f;
                 }
                 if self.misses > maximum_misses {
                     *self = Self::default();
@@ -174,36 +173,35 @@ impl Recognizer {
             self.has_previous_sample = true;
             return false;
         }
-        let mask = if settings.samples_per_tick == 2 { 0x7f } else { 0x3f };
         for (node, pattern) in self.nodes.iter_mut().zip(&self.patterns) {
-            node.tick(pattern, sample, settings.maximum_misses, mask, weight);
+            node.tick(pattern, sample, settings.maximum_misses, weight);
         }
         true
     }
 
-    fn ticks(elapsed: u16, settings: Settings) -> f32 {
-        if settings.samples_per_tick == 2 { elapsed as f32 / 2.0 + 1.0 } else { elapsed as f32 }
+    fn ticks(elapsed: u16) -> f32 {
+        elapsed as f32 / 2.0 + 1.0
     }
 
-    fn score(&self, index: usize, settings: Settings) -> f32 {
-        self.nodes[index].score(self.patterns[index].points.len(), Self::ticks(self.nodes[index].elapsed, settings))
+    fn score(&self, index: usize) -> f32 {
+        self.nodes[index].score(self.patterns[index].points.len(), Self::ticks(self.nodes[index].elapsed))
     }
 
-    fn best(&self, settings: Settings) -> Option<usize> {
+    fn best(&self) -> Option<usize> {
         let mut best = None;
         for (index, node) in self.nodes.iter().enumerate() {
-            if node.complete && best.is_none_or(|old| self.score(index, settings) > self.score(old, settings)) {
+            if node.complete && best.is_none_or(|old| self.score(index) > self.score(old)) {
                 best = Some(index);
             }
         }
         best
     }
 
-    pub fn sample(&mut self, sample: [f32; 2], settings: Settings) -> Option<Recognition> {
+    fn sample(&mut self, sample: [f32; 2], settings: Settings) -> Option<Recognition> {
         if !self.advance(sample, settings, 1) {
             return None;
         }
-        self.best(settings).map(|best| self.recognize(best, settings))
+        self.best().map(|best| self.recognize(best, settings))
     }
 
     /// Two real readings compete within a physics tick. With no middle reading,
@@ -213,18 +211,18 @@ impl Recognizer {
             if !self.advance(now, settings, 2) {
                 return None;
             }
-            return self.best(settings).map(|best| self.recognize(best, settings));
+            return self.best().map(|best| self.recognize(best, settings));
         };
         if !self.advance(half, settings, 1) {
             return self.sample(now, settings);
         }
-        let Some(first) = self.best(settings) else {
+        let Some(first) = self.best() else {
             return self.sample(now, settings);
         };
         let at_half = self.nodes.clone();
         self.advance(now, settings, 1);
-        if let Some(second) = self.best(settings) {
-            if second != first && self.score(second, settings) > self.score(first, settings) {
+        if let Some(second) = self.best() {
+            if second != first && self.score(second) > self.score(first) {
                 return Some(self.recognize(second, settings));
             }
         }
@@ -236,7 +234,7 @@ impl Recognizer {
 
     fn recognize(&mut self, pattern: usize, settings: Settings) -> Recognition {
         let node = self.nodes[pattern];
-        let elapsed = Self::ticks(node.elapsed, settings);
+        let elapsed = Self::ticks(node.elapsed);
         let ratio = elapsed / self.patterns[pattern].points.len() as f32;
         let (low, high) = if settings.difficulty == 2 { (1.5, 3.0) } else { (1.75, 4.4) };
         let (low, high) = (low / settings.pace, high / settings.pace);
@@ -248,7 +246,7 @@ impl Recognizer {
             let slope = 1.0 / (low - high);
             slope.mul_add(ratio, -(slope * high))
         };
-        self.refractory = if settings.samples_per_tick == 2 { 2 } else { 1 };
+        self.refractory = 2;
         self.held = Some(pattern);
         Recognition { pattern, strength, distance: node.distance, elapsed }
     }
@@ -265,39 +263,57 @@ mod tests {
         }])
         .unwrap()
     }
-    const SETTINGS: Settings = Settings { maximum_misses: 3, difficulty: 0, pace: 1.0, samples_per_tick: 1 };
+    const SETTINGS: Settings = Settings { maximum_misses: 6, difficulty: 0, pace: 1.0 };
 
     #[test]
     fn anticipation_hold_does_not_weaken_authored_scoop() {
         let mut r = recognizer();
         let points = r.patterns[0].points.clone();
-        r.sample([0.0; 2], SETTINGS);
+        r.sample_tick(None, [0.0; 2], SETTINGS);
         for _ in 0..120 {
-            assert!(r.sample(points[0], SETTINGS).is_none());
+            assert!(r.sample_tick(None, points[0], SETTINGS).is_none());
         }
-        assert!(r.sample(points[1], SETTINGS).is_none());
-        assert!(r.sample(points[2], SETTINGS).is_none());
-        let result = r.sample(points[3], SETTINGS).unwrap();
+        assert!(r.sample_tick(None, points[1], SETTINGS).is_none());
+        assert!(r.sample_tick(None, points[2], SETTINGS).is_none());
+        let result = r.sample_tick(None, points[3], SETTINGS).unwrap();
         assert_eq!((result.pattern, result.strength, result.elapsed), (0, 1.0, 4.0));
         assert_eq!(r.held(points[3]), Some(0));
-        assert!(r.sample(points[3], SETTINGS).is_none());
+        assert!(r.sample_tick(None, points[3], SETTINGS).is_none());
         assert_eq!(r.held([0.0; 2]), None);
     }
 
     #[test]
-    fn fine_packet_fallback_preserves_every_stock_result() {
-        let mut stock = recognizer();
-        let mut fine = stock.clone();
-        let points = stock.patterns[0].points.clone();
-        let settings = Settings { maximum_misses: 6, samples_per_tick: 2, ..SETTINGS };
-        let mut samples = vec![[0.0; 2]];
-        samples.extend(std::iter::repeat_n(points[0], 20));
-        samples.extend(points[1..].iter().copied());
-        samples.extend([[0.0; 2]; 4]);
-        for sample in samples {
-            assert_eq!(stock.sample(sample, SETTINGS), fine.sample_tick(None, sample, settings));
+    fn packet_fallback_keeps_elapsed_strength_and_refractory_weight() {
+        let mut r = recognizer();
+        let points = r.patterns[0].points.clone();
+        assert!(r.sample_tick(None, [0.0; 2], SETTINGS).is_none());
+        assert!(r.sample_tick(None, points[0], SETTINGS).is_none());
+        for &point in &points[1..3] {
+            assert!(r.sample_tick(None, point, SETTINGS).is_none());
         }
+        let result = r.sample_tick(None, points[3], SETTINGS).unwrap();
+        assert_eq!((result.pattern, result.strength, result.elapsed), (0, 1.0, 4.0));
+        assert!(r.sample_tick(None, points[0], SETTINGS).is_none());
+        assert_eq!(r.refractory, 0);
     }
+    #[test]
+    fn packet_fallback_and_two_real_misses_have_equal_elapsed_weight() {
+        let mut fallback = recognizer();
+        let points = fallback.patterns[0].points.clone();
+        fallback.sample_tick(None, [0.0; 2], SETTINGS);
+        fallback.sample_tick(None, points[0], SETTINGS);
+        let mut observed = fallback.clone();
+        assert!(fallback.sample_tick(None, [0.0; 2], SETTINGS).is_none());
+        assert!(observed.sample_tick(Some([0.0; 2]), [0.0; 2], SETTINGS).is_none());
+        assert_eq!(fallback.nodes[0].elapsed, observed.nodes[0].elapsed);
+        assert_eq!(fallback.nodes[0].misses, observed.nodes[0].misses);
+        for &point in &points[1..3] {
+            assert_eq!(fallback.sample_tick(None, point, SETTINGS), observed.sample_tick(None, point, SETTINGS));
+        }
+        let expected = fallback.sample_tick(None, points[3], SETTINGS).unwrap();
+        assert_eq!(Some(expected), observed.sample_tick(None, points[3], SETTINGS));
+    }
+
     #[test]
     fn midpoint_flick_is_seen_without_doubling_physics_ticks() {
         let mut r = Recognizer::new(vec![Pattern {
@@ -306,10 +322,11 @@ mod tests {
             tolerance_squared: 0.01,
         }])
         .unwrap();
-        let settings = Settings { maximum_misses: 6, samples_per_tick: 2, ..SETTINGS };
-        r.sample_tick(None, [0.0; 2], settings);
-        r.sample_tick(None, [0.0, -1.0], settings);
-        let result = r.sample_tick(Some([1.0, 0.0]), [0.0, 1.0], settings).unwrap();
+        r.sample_tick(None, [0.0; 2], SETTINGS);
+        r.sample_tick(None, [0.0, -1.0], SETTINGS);
+        let mut fallback = r.clone();
+        assert!(fallback.sample_tick(None, [0.0, 1.0], SETTINGS).is_none());
+        let result = r.sample_tick(Some([1.0, 0.0]), [0.0, 1.0], SETTINGS).unwrap();
         assert_eq!((result.pattern, result.elapsed, result.strength), (0, 2.0, 1.0));
     }
     #[test]
@@ -319,10 +336,9 @@ mod tests {
             Pattern { name: "long".into(), points: vec![[0.0, -1.0], [1.0, 0.0], [0.0, 1.0]], tolerance_squared: 0.01 },
         ])
         .unwrap();
-        let s = Settings { maximum_misses: 6, samples_per_tick: 2, ..SETTINGS };
-        r.sample_tick(None, [0.0; 2], s);
-        r.sample_tick(None, [0.0, -1.0], s);
-        assert_eq!(r.sample_tick(Some([1.0, 0.0]), [0.0, 1.0], s).unwrap().pattern, 1);
+        r.sample_tick(None, [0.0; 2], SETTINGS);
+        r.sample_tick(None, [0.0, -1.0], SETTINGS);
+        assert_eq!(r.sample_tick(Some([1.0, 0.0]), [0.0, 1.0], SETTINGS).unwrap().pattern, 1);
     }
 
     #[test]
@@ -339,18 +355,18 @@ mod tests {
     fn disconnected_scoop_and_reverse_path_do_not_trigger() {
         let mut r = recognizer();
         let points = r.patterns[0].points.clone();
-        r.sample([0.0; 2], SETTINGS);
-        r.sample(points[0], SETTINGS);
+        r.sample_tick(None, [0.0; 2], SETTINGS);
+        r.sample_tick(None, points[0], SETTINGS);
         for _ in 0..4 {
-            assert!(r.sample([0.0; 2], SETTINGS).is_none());
+            assert!(r.sample_tick(None, [0.0; 2], SETTINGS).is_none());
         }
         for &point in &points[1..] {
-            assert!(r.sample(point, SETTINGS).is_none());
+            assert!(r.sample_tick(None, point, SETTINGS).is_none());
         }
         let mut r = recognizer();
-        r.sample([0.0; 2], SETTINGS);
+        r.sample_tick(None, [0.0; 2], SETTINGS);
         for &point in points.iter().rev() {
-            assert!(r.sample(point, SETTINGS).is_none());
+            assert!(r.sample_tick(None, point, SETTINGS).is_none());
         }
     }
 }

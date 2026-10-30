@@ -26,6 +26,7 @@ use bevy::render::render_phase::{
     SetItemPipeline, TrackedRenderPass,
 };
 use bevy::render::render_resource::{Buffer, IndexFormat, PipelineCache};
+use bevy::render::sync_world::{MainEntity, MainEntityHashSet};
 use bevy::render::{Render, RenderApp, RenderStartup, RenderSystems};
 
 pub struct RenderingPlugin;
@@ -46,6 +47,7 @@ impl Plugin for RenderingPlugin {
                         .in_set(RenderSystems::PrepareAssets)
                         .after(allocate_and_free_meshes)
                         .before(prepare_assets::<RenderMesh>),
+                    // Extraction has updated skin allocations and morph weights before this render schedule starts.
                     note_mesh_draws.in_set(RenderSystems::PrepareResources).after(prepare_assets::<RenderMesh>),
                 ),
             );
@@ -164,9 +166,33 @@ impl<T> Noted<T> {
 #[derive(Resource, Default)]
 struct MeshDraws {
     noted: Noted<MeshDraw>,
+    /// Entities whose current skin or morph weights require Bevy's own binding.
+    deformed: MainEntityHashSet,
     /// Whether the noted draws can be used this update: when the shaders preparing each instance's data are loaded and
     /// draw directly, not indirectly. Bevy's own draw is used until then.
     direct: bool,
+}
+
+impl MeshDraws {
+    /// Skin allocations and morph indices are updated during extraction. Refresh their union every render frame.
+    fn note_deformed<'a>(&mut self, skins: impl IntoIterator<Item = &'a MainEntity>, morphs: &MorphIndices) {
+        self.deformed.clear();
+        self.deformed.extend(skins);
+        match morphs {
+            MorphIndices::Uniform { current, .. } => self.deformed.extend(current.keys()),
+            MorphIndices::Storage { morph_weights_info, .. } => self.deformed.extend(morph_weights_info.keys()),
+        }
+    }
+
+    #[inline]
+    fn rigid_mesh_id(&self, instances: &RenderMeshInstances, entity: MainEntity) -> Option<AssetId<Mesh>> {
+        let RenderMeshInstances::GpuBuilding(gpu_instances) = instances else { return None };
+        let data = gpu_instances.get(&entity)?;
+        if data.shared.lightmap_slab_index().is_some() || self.deformed.contains(&entity) {
+            return None;
+        }
+        Some(data.shared.mesh_asset_id())
+    }
 }
 
 /// Runs after the allocator has placed this update's meshes, and before their removals are cleared.
@@ -183,6 +209,8 @@ fn note_mesh_draws(
     mut draws: ResMut<MeshDraws>,
     meshes: Res<RenderAssets<RenderMesh>>,
     allocator: Res<MeshAllocator>,
+    skins: Res<SkinUniforms>,
+    morphs: Res<MorphIndices>,
     pipelines: Option<Res<PreprocessPipelines>>,
     support: Res<GpuPreprocessingSupport>,
     cache: Res<PipelineCache>,
@@ -194,12 +222,12 @@ fn note_mesh_draws(
             loaded(&pipelines.direct_preprocess) && loaded(&pipelines.gpu_frustum_culling_preprocess)
         });
     draws.noted.note(|id| meshes.get(id).map(|mesh| MeshDraw::new(id, mesh, &allocator)));
+    draws.note_deformed(skins.all_skins(), &morphs);
 }
 
 /// What every rigid mesh's draw reads. Bevy's draw state fetches each resource its commands might use for every item,
 /// which in the browser costs as much as the draw itself, so the resources only a fallback needs are fetched when used.
-type FastParam =
-    (SRes<MeshDraws>, SRes<RenderMeshInstances>, SRes<SkinUniforms>, SRes<MorphIndices>, SRes<MeshBindGroups>);
+type FastParam = (SRes<MeshDraws>, SRes<RenderMeshInstances>, SRes<MeshBindGroups>);
 /// Read only for a mesh not yet noted, or noted without a metadata slab.
 type UnnotedParam = (SRes<MeshAllocator>, SRes<MeshMetadataFallbackBuffer>);
 type BindParam<P> = <SetMeshBindGroup<2> as RenderCommand<P>>::Param;
@@ -302,22 +330,14 @@ impl<'w, P: PhaseItem> Fallback<'w, '_, P> {
 
 fn draw_mesh<'w, P: PhaseItem>(
     item: &P,
-    (draws, instances, skins, morphs, groups): SystemParamItem<'w, '_, FastParam>,
+    (draws, instances, groups): SystemParamItem<'w, '_, FastParam>,
     mut fallback: Fallback<'w, '_, P>,
     pass: &mut TrackedRenderPass<'w>,
 ) -> RenderCommandResult {
     let entity = item.main_entity();
     let draws = draws.into_inner();
     // This is the same shared instance data returned by Bevy's queue-data lookup, without cloning render layers.
-    let rigid = if let RenderMeshInstances::GpuBuilding(gpu_instances) = &*instances
-        && let Some(data) = gpu_instances.get(&entity)
-        && data.shared.lightmap_slab_index().is_none()
-        && skins.skin_byte_offset(entity).is_none()
-        && !match &*morphs {
-            MorphIndices::Uniform { current, .. } => current.contains_key(&entity),
-            MorphIndices::Storage { morph_weights_info, .. } => morph_weights_info.contains_key(&entity),
-        } {
-        let id = data.shared.mesh_asset_id();
+    let rigid = if let Some(id) = draws.rigid_mesh_id(&instances, entity) {
         let noted = draws.noted.ready.get(&id);
         let slabs = match noted {
             Some(mesh) => Some(mesh.slabs),
@@ -409,17 +429,87 @@ mod tests {
     }
 
     #[test]
+    fn rigid_eligibility_tracks_current_skin_morph_lightmap_and_instances() {
+        use bevy::pbr::{MorphIndex, RenderMeshInstanceGpu, RenderMeshInstanceGpuFlatBlob, RenderMeshInstancesGpu};
+        use bevy::render::sync_world::MainEntityHashMap;
+
+        let entities = [1, 2, 3].map(|n| MainEntity::from(Entity::from_raw_u32(n).unwrap()));
+        let [rigid, skin, morph] = entities;
+        let mesh = AssetId::<Mesh>::from(bevy::asset::uuid::Uuid::from_u128(7));
+        let replacement = AssetId::<Mesh>::from(bevy::asset::uuid::Uuid::from_u128(8));
+        let mut gpu = RenderMeshInstancesGpu::default();
+        for entity in entities {
+            let instance = RenderMeshInstanceGpu {
+                shared: default(),
+                gpu_specific: RenderMeshInstanceGpuFlatBlob::default(),
+                render_layers: None,
+            };
+            instance.shared.set_mesh_asset_id(mesh);
+            instance.shared.set_lightmap_slab_index(None);
+            gpu.insert(entity, instance);
+        }
+        let mut instances = RenderMeshInstances::GpuBuilding(gpu);
+        let mut draws = MeshDraws::default();
+        let mut morphs =
+            MorphIndices::Uniform { current: MainEntityHashMap::default(), prev: MainEntityHashMap::default() };
+        let MorphIndices::Uniform { current, .. } = &mut morphs else { unreachable!() };
+        current.insert(morph, MorphIndex { index: 0 });
+        draws.note_deformed([&skin], &morphs);
+        assert_eq!(draws.rigid_mesh_id(&instances, rigid), Some(mesh));
+        assert_eq!(draws.rigid_mesh_id(&instances, skin), None);
+        assert_eq!(draws.rigid_mesh_id(&instances, morph), None);
+
+        // The next frame makes both deformed meshes rigid, and removes the former rigid instance.
+        let MorphIndices::Uniform { current, .. } = &mut morphs else { unreachable!() };
+        let old = current.remove(&morph).unwrap();
+        let MorphIndices::Uniform { prev, .. } = &mut morphs else { unreachable!() };
+        prev.insert(morph, old);
+        draws.note_deformed([], &morphs);
+        let RenderMeshInstances::GpuBuilding(gpu) = &mut instances else { unreachable!() };
+        gpu.remove(&rigid);
+        gpu.get(&skin).unwrap().shared.set_lightmap_slab_index(Some(0u32.into()));
+        gpu.get(&morph).unwrap().shared.set_mesh_asset_id(replacement);
+        assert_eq!(draws.rigid_mesh_id(&instances, rigid), None);
+        assert_eq!(draws.rigid_mesh_id(&instances, skin), None);
+        assert_eq!(draws.rigid_mesh_id(&instances, morph), Some(replacement));
+
+        // An entity may become skinned or morphed again in a later frame.
+        let MorphIndices::Uniform { current, .. } = &mut morphs else { unreachable!() };
+        current.insert(skin, MorphIndex { index: 0 });
+        draws.note_deformed([&morph], &morphs);
+        let RenderMeshInstances::GpuBuilding(gpu) = &mut instances else { unreachable!() };
+        gpu.get(&skin).unwrap().shared.set_lightmap_slab_index(None);
+        assert_eq!(draws.rigid_mesh_id(&instances, skin), None);
+        assert_eq!(draws.rigid_mesh_id(&instances, morph), None);
+
+        // Switching to storage morphs also drops entries from the previous frame.
+        let storage = MorphIndices::Storage {
+            morph_weights_info: default(),
+            gpu_descriptor_indices: default(),
+            gpu_descriptor_free_list: vec![],
+        };
+        draws.note_deformed([], &storage);
+        assert_eq!(draws.rigid_mesh_id(&instances, skin), Some(mesh));
+        assert_eq!(draws.rigid_mesh_id(&instances, morph), Some(replacement));
+
+        let cpu = RenderMeshInstances::CpuBuilding(default());
+        assert_eq!(draws.rigid_mesh_id(&cpu, morph), None);
+    }
+
+    #[test]
     fn rigid_draws_fetch_fallback_resources_only_when_used() {
         let mut world = World::new();
         // Each draw state must build without conflicting access in every phase it is registered for.
         let _ = FastDraw::<Opaque3d, MaterialCommands>::new(&mut world);
         let _ = FastDraw::<AlphaMask3dPrepass, PrepassCommands>::new(&mut world);
         let draw = FastDraw::<Shadow, DepthCommands>::new(&mut world);
-        let (draws, instances, skins, morphs, groups) = draw.state.param_state().1;
-        let read = [draws, instances, skins, morphs, groups];
+        let (draws, instances, groups) = draw.state.param_state().1;
+        let read = [draws, instances, groups];
         // Resources read only by Bevy's own binding and draw, or for a mesh not yet noted, are not fetched per item.
         let fallback_only = [
             world.component_id::<MeshAllocator>(),
+            world.component_id::<SkinUniforms>(),
+            world.component_id::<MorphIndices>(),
             world.component_id::<MeshMetadataFallbackBuffer>(),
             world.component_id::<RenderAssets<RenderMesh>>(),
             world.component_id::<bevy::pbr::RenderLightmaps>(),

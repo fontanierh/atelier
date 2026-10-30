@@ -1,3 +1,7 @@
 # `cargo export ...` runs the asset exporter (tools/export).
 [alias]
 export = "run --quiet --package hakuba_export --"
+
+# The supported WebGPU browsers also support standard WebAssembly SIMD. Keep IEEE operations, not relaxed SIMD.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "target-feature=+simd128"]

@@ -103,7 +103,7 @@ impl PlayerControls {
     }
     pub fn tune_gestures(&mut self, feel: crate::feel::FeelTuning) -> Result<(), String> {
         let gestures = self.gestures.as_mut().ok_or("Skating feel requires the gesture recognizer")?;
-        gestures.tune(feel.flick_radius, feel.flick_window, feel.flick_pace, feel.tight_flicks, feel.flick_120hz);
+        gestures.tune(feel.flick_radius, feel.flick_window, feel.flick_pace, feel.tight_flicks);
         Ok(())
     }
     pub fn publish_gestures_fine(&mut self, half: Option<[[f32; 2]; 2]>, difficulty: u32, physical_state: u32) {

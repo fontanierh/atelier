@@ -38,7 +38,6 @@ pub(super) fn apply(session: &mut Session, saved: &SkatePreferences) -> Result<(
         auto_push: p.auto_push,
         assisted_air: p.assisted_air,
         tight_flicks: p.tight_flicks,
-        flick_120hz: p.flick_120hz,
         drift_powerslide: p.drift_powerslide,
         powerslide_turn: p.powerslide_turn,
         drift_grip: p.drift_grip,

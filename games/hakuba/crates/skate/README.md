@@ -60,5 +60,5 @@ The host supplies raw controller packets; the crate does not poll platform devic
 The runtime reads only the committed exported `.skatepack`, not archive-era assets or the local filesystem.
 Its 60 Hz simulation clock is advanced by the host, independently of rendered frames. Current project-format
 settings, graph, rig, metadata, gesture and clip words are retained, including separate animation-bank identity.
-The optional 120 Hz flick history uses real timestamped stick observations when available. Ordinary frame-only
+The 120 Hz flick history uses real timestamped stick observations when available. Ordinary frame-only
 controller events fall back to one packet with double weight; the host never invents midpoint device samples.

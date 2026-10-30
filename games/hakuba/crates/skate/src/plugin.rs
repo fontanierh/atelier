@@ -525,11 +525,7 @@ fn simulate(
         }
         packet = places::packet(&mut places, packet);
         let tick_end = real_time.elapsed_secs_f64() - f64::from(ride.accumulator - period);
-        let fine = if ride.session.as_ref().unwrap().feel().flick_120hz {
-            input.fine_for_tick(tick_end, period, packet)
-        } else {
-            None
-        };
+        let fine = input.fine_for_tick(tick_end, period, packet);
         let result = if let Some((half, end)) = fine {
             ride.session.as_mut().unwrap().tick_with_sticks(packet, half, end)
         } else {
@@ -762,26 +758,29 @@ fn clear(mut ride: ResMut<Ride>, mut status: ResMut<SkateStatus>, mut focus: Res
 }
 fn hud(status: Res<SkateStatus>, mut text: Query<&mut Text, With<RideHud>>) {
     for mut text in &mut text {
-        **text = if let Some(error) = &status.failure {
-            format!("Skating unavailable: {error}")
+        let next = if let Some(error) = &status.failure {
+            std::borrow::Cow::Owned(format!("Skating unavailable: {error}"))
         } else if status.waiting_for_collision {
-            "Preparing the ride collision...".into()
+            std::borrow::Cow::Borrowed("Preparing the ride collision...")
         } else if status.recovering {
-            "Recovering where the rider fell...".into()
+            std::borrow::Cow::Borrowed("Recovering where the rider fell...")
         } else if status.active && status.on_foot {
-            "Carrying skateboard | W/A/S/D move | Shift run | Space jump | Q/E drop/throw | V mount | F stow".into()
+            std::borrow::Cow::Borrowed(
+                "Carrying skateboard | W/A/S/D move | Shift run | Space jump | Q/E drop/throw | V mount | F stow",
+            )
         } else if status.active {
-            format!(
+            std::borrow::Cow::Owned(format!(
                 "{}  |  {:.0} km/h  |  {:.0} pts\n{}\nW push | S brake | A/D steer | Space pop | mouse/up/down flick/manual | Q/E grab | R transfer | V carry | F stow{}",
                 status.state,
                 status.speed_mps * 3.6,
                 status.score,
                 status.trick,
                 if status.bailed { " | Enter recover" } else { "" }
-            )
+            ))
         } else {
-            "V | skateboard".into()
+            std::borrow::Cow::Borrowed("V | skateboard")
         };
+        places::set_hud_text(&mut text, next);
     }
 }
 

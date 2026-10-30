@@ -67,7 +67,6 @@ macro_rules! skate_preferences {
             pub auto_push: Option<bool>,
             pub assisted_air: Option<bool>,
             pub tight_flicks: bool,
-            pub flick_120hz: bool,
             pub drift_powerslide: bool,
             pub soften: bool,
             $(pub $field: f32,)*
@@ -81,7 +80,6 @@ macro_rules! skate_preferences {
                     auto_push: None,
                     assisted_air: Some(false),
                     tight_flicks: false,
-                    flick_120hz: true,
                     drift_powerslide: true,
                     soften: true,
                     $($field: $initial,)*
@@ -202,6 +200,9 @@ mod tests {
         assert_eq!(partial.skate.gravity, 0.8);
         assert!(!partial.skate.goofy);
         assert_eq!(partial.skate.pop, 1.0);
+        let legacy: Settings = serde_json::from_str(r#"{"skate":{"flick_120hz":false,"gravity":0.8}}"#).unwrap();
+        assert_eq!(legacy.skate.gravity, 0.8);
+        assert!(!serde_json::to_string(&legacy).unwrap().contains("flick_120hz"));
         let json = serde_json::to_string(&partial).unwrap();
         assert_eq!(serde_json::from_str::<Settings>(&json).unwrap(), partial);
         assert!(partial.skate.validate().is_ok());
@@ -212,7 +213,7 @@ mod tests {
         let prefs = SkatePreferences::default();
         assert_eq!(prefs.mode, SkateMode::Custom);
         assert_eq!(prefs.difficulty, SkateDifficulty::Easy);
-        assert!(prefs.goofy && prefs.flick_120hz && prefs.soften);
+        assert!(prefs.goofy && prefs.soften);
         assert!(!prefs.tight_flicks);
         assert_eq!(prefs.auto_push, None);
         assert_eq!(prefs.assisted_air, Some(false));
@@ -264,7 +265,7 @@ mod tests {
             assert_eq!(effective.camera_fov, -1.0);
             assert_eq!(effective.bowl_boost, 1.8);
             assert_eq!(effective.volume, 0.5);
-            assert!(effective.goofy && effective.flick_120hz && effective.soften);
+            assert!(effective.goofy && effective.soften);
             assert!(!effective.tight_flicks);
             assert_eq!(effective.auto_push, None);
             assert_eq!(effective.assisted_air, None);
@@ -282,6 +283,5 @@ mod tests {
         assert_eq!(prefs.gravity, 1.5);
         assert_eq!(prefs.stick_reach, 0.8);
         assert!(prefs.validate().is_ok());
-        assert!(SkatePreferences::default().flick_120hz);
     }
 }

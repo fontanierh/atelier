@@ -14,7 +14,6 @@ pub(super) enum Row {
     AutoPush,
     AssistedAir,
     TightFlicks,
-    Flick120Hz,
     Drift,
     Soften,
     Knob(usize),
@@ -28,7 +27,6 @@ impl Row {
             Self::AutoPush => "Auto push",
             Self::AssistedAir => "Assisted spins and flips",
             Self::TightFlicks => "Tight hardflips / inwards",
-            Self::Flick120Hz => "120 Hz flick reading",
             Self::Drift => "Drift powerslides",
             Self::Soften => "Soften skate sounds",
             Self::Knob(i) => SKATE_KNOBS[i].label,
@@ -49,7 +47,6 @@ impl Row {
             Self::AutoPush => choice(p.auto_push).into(),
             Self::AssistedAir => choice(p.assisted_air).into(),
             Self::TightFlicks => on(p.tight_flicks).into(),
-            Self::Flick120Hz => on(p.flick_120hz).into(),
             Self::Drift => on(p.drift_powerslide).into(),
             Self::Soften => on(p.soften).into(),
             Self::Knob(i) => {
@@ -70,7 +67,6 @@ impl Row {
             Self::AutoPush => p.auto_push = next(&[None, Some(false), Some(true)], p.auto_push, by),
             Self::AssistedAir => p.assisted_air = next(&[None, Some(false), Some(true)], p.assisted_air, by),
             Self::TightFlicks => p.tight_flicks = by > 0,
-            Self::Flick120Hz => p.flick_120hz = by > 0,
             Self::Drift => p.drift_powerslide = by > 0,
             Self::Soften => p.soften = by > 0,
             Self::Knob(i) => {
@@ -193,7 +189,7 @@ pub(super) fn show_pages(
                 "Air" => &[Row::AssistedAir],
                 "Rolling" => &[Row::AutoPush],
                 "Turning" => &[Row::Drift],
-                "Controls" => &[Row::TightFlicks, Row::Flick120Hz],
+                "Controls" => &[Row::TightFlicks],
                 "Audio" => &[Row::Soften],
                 _ => &[],
             };

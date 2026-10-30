@@ -18,13 +18,13 @@ the desktop.
 volume. `Settings.skate` holds skating preferences in that same desktop file or browser storage entry.
 Easy, Normal and Hardcore use the authored feel on that difficulty. Custom changes the saved base difficulty,
 trucks, flick recognition, air, rails, rolling, turning, balance and bails. Custom edits stay saved while a preset
-is selected. Stance, stick and mouse controls, tight and optional 120 Hz flick reading, drift powerslides, bowl
-boost, camera and sound choices apply in every mode. The skate crate applies `skate.effective()` to the session.
+is selected. Stance, stick and mouse controls, tight flicks, drift powerslides, bowl boost, camera and sound choices
+apply in every mode. The skate crate applies `skate.effective()` to the session.
 
 `panel()` has General and Skating tabs, shared by both screens. Skating uses short grouped pages with step
 buttons and scrolling on smaller windows; Custom-only rows are disabled in a preset. Every numeric feel knob,
-including half/full drift grip, wall-follow airs and camera follow speed, has a row. The default enables 120 Hz
-flick reading when real midpoint stick readings are available; otherwise it uses the frame's sample. This crate also
+including half/full drift grip, wall-follow airs and camera follow speed, has a row. Flick recognition uses 120 Hz
+readings when real midpoint stick observations are available; otherwise it uses the frame's sample. This crate also
 holds the game to its chosen drawing frame rate, separately from skating physics.
 
 ```text

@@ -34,6 +34,60 @@ fn assert_pose(pose: &Pose) {
     assert!(position.is_finite() && basis.is_finite() && fov.is_finite());
 }
 
+fn assert_pose_board_matches_legacy(session: &Session) {
+    let board = &session.physics.board;
+    let physical_board = crate::animation::native_matrix(super::super::solve::deck_frame(board));
+    let board_delta =
+        session.skater.recovery.shown_board().map_or(Mat4::IDENTITY, |shown| shown * physical_board.inverse());
+    let expected_board: Vec<_> = board
+        .part_transforms()
+        .iter()
+        .map(|t| {
+            board_delta
+                * Mat4::from_mat3_translation(
+                    Mat3::from_cols_array_2d(&t.basis.columns),
+                    Vec3::new(t.translation.x, t.translation.y, t.translation.z),
+                )
+        })
+        .collect();
+    let parts = board.part_transforms();
+    let center =
+        parts[..4].iter().map(|t| Vec3::new(t.translation.x, t.translation.y, t.translation.z)).sum::<Vec3>() * 0.25;
+    let up = Vec3::from_array(parts[crate::core::physics::board::BodyId::Deck.index()].basis.columns[1]);
+    let expected_ground = center - up * session.physics.settings.wheel_radius;
+    let pose = session.pose();
+    for (actual, expected) in pose.board.iter().zip(&expected_board) {
+        assert_eq!(actual.to_cols_array().map(f32::to_bits), expected.to_cols_array().map(f32::to_bits));
+    }
+    assert_eq!(pose.board.len(), expected_board.len());
+    assert_eq!(pose.ground_point.to_array().map(f32::to_bits), expected_ground.to_array().map(f32::to_bits));
+}
+
+#[test]
+fn shared_pose_board_parts_match_legacy_separate_computations() {
+    let mut session = session();
+    session.activate_on_foot([7., 0., -11.], 0.7).unwrap();
+    assert_pose_board_matches_legacy(&session);
+    session.activate([7., 0., -11.], 0.7).unwrap();
+    assert_pose_board_matches_legacy(&session);
+    session.launch([2., 0., 5.]);
+    for tick in 0..120 {
+        session.tick(Controls { buttons: if tick < 45 { 0x1000 } else { 0 }, ..Default::default() }).unwrap();
+        assert_pose_board_matches_legacy(&session);
+    }
+    session.request_bail().unwrap();
+    let mut saw_unprepared_recovery = false;
+    for _ in 0..900 {
+        session.tick(Controls::default()).unwrap();
+        saw_unprepared_recovery |= session.skater.recovery.shown_board().is_some();
+        assert_pose_board_matches_legacy(&session);
+        if saw_unprepared_recovery && session.skater.recovery.shown_board().is_none() {
+            break;
+        }
+    }
+    assert!(saw_unprepared_recovery, "test must cover the shown-board recovery delta");
+}
+
 #[test]
 fn both_stances_push_ollie_and_land_from_raw_packets() {
     let mut session = session();

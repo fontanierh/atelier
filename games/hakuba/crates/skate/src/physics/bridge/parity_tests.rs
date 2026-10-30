@@ -33,7 +33,7 @@ fn feel(value: Option<&Value>) -> Result<crate::FeelTuning, String> {
             macro_rules! floats { ($($name:ident),* $(,)?) => { match key.as_str() {
                 $(stringify!($name) => feel.$name = f()?,)*
                 "tight_flicks" => feel.tight_flicks = f()? != 0.,
-                "flick_120hz" => feel.flick_120hz = f()? != 0.,
+                "flick_120hz" => return Err("Legacy flick_120hz fixture option is unsupported; recognizer always uses 120 Hz".into()),
                 "drift_powerslide" => feel.drift_powerslide = f()? != 0.,
                 "auto_push" | "assisted_air" => {
                     let choice = match f()? { -1. => None, 0. => Some(false), 1. => Some(true), _ => return Err("Invalid feel choice".into()) };
@@ -284,10 +284,19 @@ fn replay(root: &Path, folder: &Path, prepared: &crate::PreparedResources) -> Re
     output.flush().map_err(|e| e.to_string())?;
     let unread_cpp_rows = cpp.count();
     Ok(json!({"fixture":folder.strip_prefix(root).unwrap_or(folder),"rows":rows,"rust_states":states,
+        "recognizer":"Rust uses 120 Hz; matching oracle recognizer settings are not established.",
         "state_mismatches":state_mismatches,"first_state_mismatch":first_state_mismatch,
         "numeric":categories.iter().map(|(key,value)|(key.clone(),value.report())).collect::<BTreeMap<_,_>>(),
         "structural_or_label_mismatches_first20":shape_mismatches,"unread_cpp_rows":unread_cpp_rows,
         "execution_error":execution_error}))
+}
+
+#[test]
+fn removed_flick_rate_fixture_is_rejected() {
+    for value in [0, 1] {
+        let error = feel(Some(&json!({"flick_120hz": value}))).unwrap_err();
+        assert!(error.contains("unsupported"));
+    }
 }
 
 #[test]
@@ -315,7 +324,7 @@ fn current_cpp_raw_fixtures_report_session_deltas() {
             fs::write(folder.join("rust-comparison.json"),serde_json::to_vec_pretty(&report).unwrap()).unwrap();
             reports.insert(name,report);
             fs::write(root.join("rust-comparison.json"),serde_json::to_vec_pretty(&json!({
-                "scope":"Current C++ production versus current Rust port over identical external raw fixtures; no historical or exact-parity claim.",
+                "scope":"Current C++ production versus current Rust port over identical external raw fixtures; no historical or exact-parity claim. Rust always uses 120 Hz flick recognition; an omitted oracle option does not establish matching recognizer settings.",
                 "thresholds":"1e-6, 1e-4, and 1e-2 report witnesses only, never acceptance tolerances.",
                 "floating_point_environment":"Rust test process environment; C++ oracle explicitly flushes denormals. Any arithmetic difference needs investigation, not a relaxed pass.",
                 "fixtures":reports})).unwrap()).unwrap();

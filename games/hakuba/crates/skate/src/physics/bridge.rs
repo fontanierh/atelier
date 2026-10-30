@@ -383,7 +383,7 @@ impl Session {
     /// Genuine midpoint device reading, in the same raw stick frame as the packet.
     /// Inconsistent end readings fall back to one packet with double weight.
     pub fn tick_with_sticks(&mut self, input: Controls, half: Controls, end: Controls) -> Result<(), String> {
-        if self.feel.flick_120hz && input.left == end.left && input.right == end.right {
+        if input.left == end.left && input.right == end.right {
             self.fine_sticks = Some(half);
         } else {
             self.fine_sticks = None;
@@ -391,7 +391,14 @@ impl Session {
         self.tick(input)
     }
     pub fn pose(&self) -> Pose {
-        let physical_board = crate::animation::native_matrix(super::solve::deck_frame(&self.physics.board));
+        let parts = self.physics.board.part_transforms();
+        let deck = parts[crate::core::physics::board::BodyId::Deck.index()];
+        let mut deck_frame = crate::core::physics::skeleton_animation_record::IDENTITY;
+        for (axis, column) in deck.basis.columns.iter().enumerate() {
+            deck_frame[axis][..3].copy_from_slice(column);
+        }
+        deck_frame[3] = [deck.translation.x, deck.translation.y, deck.translation.z, 0.0];
+        let physical_board = crate::animation::native_matrix(deck_frame);
         let board_delta =
             self.skater.recovery.shown_board().map_or(Mat4::IDENTITY, |shown| shown * physical_board.inverse());
         let v = self.physics.board.bodies()[crate::core::physics::board::BodyId::Deck.index()].rates.linear_velocity;
@@ -400,10 +407,7 @@ impl Session {
             bones: self.skater.render_pose.iter().map(|m| crate::animation::native_matrix(*m)).collect(),
             names: self.skater.animation.evaluator.frames.bone_names.clone(),
             parents: self.skater.animation.evaluator.frames.parents.clone(),
-            board: self
-                .physics
-                .board
-                .part_transforms()
+            board: parts
                 .iter()
                 .map(|t| {
                     board_delta
@@ -432,7 +436,6 @@ impl Session {
             board_visibility: self.skater.recovery.board_visibility,
             surface: self.surface(),
             ground_point: {
-                let parts = self.physics.board.part_transforms();
                 let center = parts[..4]
                     .iter()
                     .map(|t| Vec3::new(t.translation.x, t.translation.y, t.translation.z))
