@@ -1,0 +1,7 @@
+# Original fitted tree geometry and source detail levels.
+path = "model.glb"
+sha256 = "c13a0f8fd24d276eed6545091acdb3d78d0f1796181f2d1562277642b9952e41"
+authoring_fbx_sha256 = "ccae7661c398220383f54f37463cd61ce9cdfa04f4c7df424b268c92950931f1"
+authoring_lod2_fbx_sha256 = "ebad6098d6440e7fd6248bfe68becf4c4e010398618f75684b074568d242c784"
+authoring_far_fbx_sha256 = "94082e6a9dfc56953c53ec0ed103f4d5dc93a8e03604b7b1a7b954dcad21131d"
+conversion = "Blender FBX import; full LOD0, middle LOD2 and far LOD3, its texture a quarter of caldera-conifers's cell, retain per-corner positions, normals, UVs and RGBA"

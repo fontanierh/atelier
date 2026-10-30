@@ -1,0 +1,4 @@
+# The texture of a sugi cedar of the caldera round Crater Park: its Tripo model's image, at most 1024 texels wide, times its gain of 0.5844.
+path = "texture.png"
+sha256 = "ec4908e23949d4ea0bd3120af78dd615ca7d794d427a6ee82fe7c6181b12bf88"
+authoring_glb_sha256 = "78f62c042570b6fbfe065b4eebc45ad40249222331fa7eebb6a01f4b318945a9"

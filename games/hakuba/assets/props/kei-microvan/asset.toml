@@ -1,0 +1,5 @@
+# A piece of the Mega Park car park's kei cars, ported with its colours painted per vertex.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "4cfee4b457d47413bb3df2629154118ca9a116a4ee488e0027b247fedd874f4e"

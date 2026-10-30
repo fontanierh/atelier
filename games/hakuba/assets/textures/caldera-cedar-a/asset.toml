@@ -1,0 +1,5 @@
+# Source texture for the caldera's conifers.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "4ec52020621d48149aa25076c4f9cfb763f5ec8d3ef519450cb37a39c874309a"

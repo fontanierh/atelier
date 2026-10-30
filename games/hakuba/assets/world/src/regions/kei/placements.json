@@ -1,0 +1,5 @@
+{"groups":[
+{"model":"props/kei-pickup","afar":false,"instances":[[-24.8584,1406.8261,118.4183,-150.0313,1.0]]},
+{"model":"props/kei-wagon","afar":false,"instances":[[-22.0284,1402.0295,118.1716,-150.0141,1.0]]},
+{"model":"props/kei-retro","afar":false,"instances":[[-19.8307,1397.845,118.046,-150.0001,1.0]]},
+{"model":"props/kei-microvan","afar":false,"instances":[[-17.2902,1393.3657,118.0412,-150.0001,1.0]]}]}
