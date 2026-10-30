@@ -3,6 +3,7 @@
 `FY_BoardingGate` is built about its hinge at the sill, with its rail running along +X across the opening. Standing it
 at the ship's origin, as the hull is stood, buried it at the waterline some 7 m below the deck.
 """
+import importlib.util
 import json
 import math
 import sys
@@ -12,7 +13,10 @@ import pytest
 
 PORT = Path(__file__).resolve().parents[1] / 'hakuba_port'
 sys.path.insert(0, str(PORT))
-import regions  # noqa: E402
+# The adapters by their file: other tests import the source world's `regions` package under that name.
+_spec = importlib.util.spec_from_file_location('hakuba_port_regions', PORT / 'regions.py')
+regions = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(regions)
 
 # The ship's two boarding openings as its build records them: ship metres, +X bow, the centre on the sill.
 OPENINGS = [
