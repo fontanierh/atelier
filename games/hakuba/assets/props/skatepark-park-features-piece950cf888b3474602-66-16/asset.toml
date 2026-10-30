@@ -1,0 +1,6 @@
+# A piece of Sunset Pier's skating features: rails, ledges, stairs, banks and transitions.
+kind = "prop"
+source = "src/model.glb"
+textures = ["skatepark-ceramic-albedo"]
+solid = true
+inputs_sha256 = "6134fdb63d42502c67b2fe31001a119a03b4b7179d0a8b761713b891bc13fd1d"

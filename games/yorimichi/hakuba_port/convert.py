@@ -9,7 +9,10 @@ by default), times that colour, and then the whole `full` node is a textured sur
 the texture's mean colour (`mean_rgb`) instead. Otherwise the colour alone is painted per vertex, with alpha 0 (no
 motion). A slot whose rule says `drop` loses its faces. Corners that store the same position, normal, colour and
 texture position share one vertex. A job's `turn`, a 3 by 3 rotation row by row, turns the visible mesh and its
-hulls about the source origin first.
+hulls about the source origin first. A job's `keep`, a rectangle [west, south, east, north] in the source frame, keeps
+only the visible faces whose centre lies in it, west and south edges included; with none there, the job writes no
+GLB and reports itself `EMPTY`. A job's `ground_owned` slots lose their faces facing up (`UP`), a walking surface the
+world's ground draws instead.
 """
 import json
 import os
@@ -55,6 +58,35 @@ def join(objects, name):
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     o.name = o.data.name = name
     return o
+
+
+# A ground-owned slot's face is a walking surface when its normal rises at least this steeply.
+UP = 0.5
+
+
+def ground_owned(o, slots):
+    """Remove the faces of `slots` facing up, as `pier_path.py` takes them for the ground."""
+    names = [m.name.split('.')[0] if m else '' for m in o.data.materials]
+    turn = o.matrix_world.to_3x3().inverted().transposed()
+    mesh = bmesh.new()
+    mesh.from_mesh(o.data)
+    up = [f for f in mesh.faces if names[f.material_index] in slots and (turn @ f.normal).normalized().z > UP]
+    bmesh.ops.delete(mesh, geom=up, context='FACES')
+    mesh.to_mesh(o.data)
+    mesh.free()
+
+
+def keep(o, rectangle):
+    """Keep only `o`'s faces whose centre lies in `rectangle`, [west, south, east, north] in the source frame, its west
+    and south edges included."""
+    west, south, east, north = rectangle
+    mesh = bmesh.new()
+    mesh.from_mesh(o.data)
+    centres = [o.matrix_world @ f.calc_center_median() for f in mesh.faces]
+    outside = [f for f, c in zip(mesh.faces, centres) if not (west <= c.x < east and south <= c.y < north)]
+    bmesh.ops.delete(mesh, geom=outside, context='FACES')
+    mesh.to_mesh(o.data)
+    mesh.free()
 
 
 def drop(o, job):
@@ -172,6 +204,12 @@ def convert(job):
     if not visible:
         raise RuntimeError(f"{job['source']}: no visible mesh")
     full = join(visible, 'full')
+    if job.get('ground_owned'):
+        ground_owned(full, set(job['ground_owned']))
+    if job.get('keep'):
+        keep(full, job['keep'])
+        if not full.data.polygons:
+            return None
     drop(full, job)
     textures = paint(full, job)
     position, normal, colour, triangles, uv, slot = arrays(full, True)
@@ -217,7 +255,11 @@ def main():
     jobs = json.load(open(sys.argv[sys.argv.index('--') + 1]))
     for job in jobs:
         try:
-            print('CONVERTED', json.dumps(convert(job)), flush=True)
+            result = convert(job)
+            if result is None:
+                print('EMPTY', json.dumps({'output': job['output']}), flush=True)
+            else:
+                print('CONVERTED', json.dumps(result), flush=True)
         except Exception as error:  # report every failure, then keep converting the others
             print('FAILED', json.dumps({'output': job['output'], 'error': str(error)}), flush=True)
 

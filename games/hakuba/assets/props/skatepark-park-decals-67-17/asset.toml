@@ -1,0 +1,5 @@
+# A piece of Sunset Pier's floor paint and mural.
+kind = "prop"
+source = "src/model.glb"
+textures = ["skatepark-concrete-albedo"]
+inputs_sha256 = "588eae9679c1343ed0e83793c6d80982f035bd369e83d1ece71d5c91714464e6"

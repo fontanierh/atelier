@@ -1,0 +1,4 @@
+# The steel albedo texture that the skatepark props draw.
+path = "texture.png"
+sha256 = "dda7f35c1af9798d9c1b718844aa93f5268aaf772348f2b723b8ad81b7822878"
+authoring_texture_sha256 = "dda7f35c1af9798d9c1b718844aa93f5268aaf772348f2b723b8ad81b7822878"

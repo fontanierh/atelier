@@ -1,0 +1,4 @@
+# The ceramic albedo texture that the skatepark props draw.
+path = "texture.png"
+sha256 = "953ce935cf4c831eb092ac26f0ea9a6a98c33d55047fbe0cd11732e122314e0d"
+authoring_texture_sha256 = "953ce935cf4c831eb092ac26f0ea9a6a98c33d55047fbe0cd11732e122314e0d"

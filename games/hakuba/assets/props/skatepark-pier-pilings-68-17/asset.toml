@@ -1,0 +1,6 @@
+# A piece of Sunset Pier's pilings.
+kind = "prop"
+source = "src/model.glb"
+textures = ["skatepark-concrete-albedo"]
+solid = true
+inputs_sha256 = "ca0f041c5e65710df635f096331effe5ccadaaded834dd55780844aae51199bb"

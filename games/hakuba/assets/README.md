@@ -28,7 +28,7 @@ assets/
   props/                    made objects: generated from their settings, such as `utility-pole/`, or imported
                             with their colours painted per vertex, named after their region (`hidamari-*/`,
                             `brinecove-*/`, `belmonte-*/`, `treehouse-*/`, `craterpark-*/`, `megapark-*/`,
-                            `gondola-*/`, `ferry-*/`, `kei-*/`, ...)
+                            `gondola-*/`, `ferry-*/`, `kei-*/`, `skatepark-*/`, ...)
   sounds/                   every sound the game plays (sounds/README.md)
     footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
     dash/                   a burst of cloth and air

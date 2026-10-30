@@ -1,0 +1,5 @@
+# The concrete albedo texture that the skatepark props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "ee1d48a923fe91d7ce1158c8265caf45530ef41bf20e948032173d9284e4b794"
