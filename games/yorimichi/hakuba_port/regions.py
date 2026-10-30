@@ -358,11 +358,18 @@ def ferry(build):
     """The passenger ferry, docked at Hidamari's berth, and its two terminals, in their materials' flat colours: the
     ship and the terminals draw no images. The Hidamari terminal is modelled in map metres, the Brinecove one in
     Brinecove's own frame, moved onto the map by its recorded offset. The hull, each landing and each brow are solid,
-    so the walk from the quay onto the deck has collision all the way."""
+    so the walk from the quay onto the deck has collision all the way.
+
+    The boarding gate is built about its hinge at the sill, so it stands in each of the ship's boarding openings as the
+    source's ferry service hangs it (`ferry/service.py`'s `ship_data`): its hinge at the opening's sill, `width - 0.2`
+    of rail running across the opening. Berthed with the brow down, the gate on the berth's side, starboard as every
+    terminal berths the ship, stands swung open outboard (the source's `open_yaw`, given in Unreal's left-handed turn);
+    the other stays shut."""
     ship = build / 'ferry'
     terminals = json.loads((ship / 'terminals' / 'manifest.json').read_text())
     site = json.loads((ship / 'terminals' / 'site.json').read_text())
-    slots = flat({**json.loads((ship / 'manifest.json').read_text())['materials'], **terminals['materials']})
+    built = json.loads((ship / 'manifest.json').read_text())
+    slots = flat({**built['materials'], **terminals['materials']})
     region = Region('ferry', 'the passenger ferry between Hidamari and Brinecove')
     berth = site['hidamari']['berth']
     docked = [[*berth['centre'], 0.0, berth['heading_deg'], 1.0]]
@@ -372,7 +379,18 @@ def ferry(build):
             ship / 'assets' / f'FY_{part}.fbx', slots=slots, solid=hull,
             collision=ship / 'assets' / 'FY_Collision.fbx' if hull else None,
             about=f"The passenger ferry's {kebab(part).replace('-', ' ')}, docked at Hidamari.")
-        region.groups.append((f'ferry-{kebab(part)}', True, docked))
+        if part != 'BoardingGate':
+            region.groups.append((f'ferry-{kebab(part)}', True, docked))
+    turn = math.radians(berth['heading_deg'])
+    gates = []
+    for opening in built['boarding_openings']:
+        x, y, z = opening['centre']
+        x -= (opening['width'] - 0.2) / 2
+        swung = -90.0 if opening['side'] == 'starboard' else 0.0
+        gates.append([berth['centre'][0] + x * math.cos(turn) - y * math.sin(turn),
+                      berth['centre'][1] + x * math.sin(turn) + y * math.cos(turn), z,
+                      berth['heading_deg'] + swung, 1.0])
+    region.groups.append(('ferry-boarding-gate', True, gates))
     for key, prefix, landing in (('hidamari', 'HD', 'Jetty'), ('brinecove', 'BC', 'Landing')):
         terminal = terminals['terminals'][key]
         offset = (0.0, 0.0) if terminal['frame'] == 'world' else site[key]['origin_m']

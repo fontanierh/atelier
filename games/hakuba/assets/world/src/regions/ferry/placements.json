@@ -6,7 +6,7 @@
 {"model":"props/ferry-rails","afar":true,"instances":[[855.2325,-145.0,5.8765,180.0,1.0]]},
 {"model":"props/ferry-masts","afar":true,"instances":[[849.2,-145.0,8.5529,180.0,1.0]]},
 {"model":"props/ferry-fittings","afar":true,"instances":[[855.14,-145.0,5.8995,180.0,1.0]]},
-{"model":"props/ferry-boarding-gate","afar":true,"instances":[[854.0165,-145.0,0.11,180.0,1.0]]},
+{"model":"props/ferry-boarding-gate","afar":true,"instances":[[840.8,-138.4165,7.049,90.0,1.0],[839.8165,-150.6,7.049,180.0,1.0]]},
 {"model":"props/ferry-hidamari-jetty","afar":true,"instances":[[839.8,-133.5157,-3.99,0.0,1.0]]},
 {"model":"props/ferry-hidamari-stage","afar":true,"instances":[[839.8,-133.9701,2.435,0.0,1.0]]},
 {"model":"props/ferry-hidamari-brow","afar":false,"instances":[[839.8,-139.34,6.819,0.0,1.0]]},
