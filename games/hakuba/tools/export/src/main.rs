@@ -119,7 +119,8 @@ const CHECKSUM: &str = "inputs_sha256";
 const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
 
 /// The exporter's files that every kind is built from, relative to the exporter: the command, the glTF reader and
-/// writer, the KTX2 writer, the shapes meshes are built from, and the crate and Rust versions.
+/// writer, the KTX2 writer, the shapes meshes are built from, and the crate and Rust versions. Of the lockfile only
+/// the exporter's own locked dependencies count ([`exporter_lock`]), so a crate added to the game rebuilds nothing.
 const SHARED_CODE: [&str; 7] = [
     "src/main.rs",
     "src/glb.rs",
@@ -153,9 +154,50 @@ fn add_files(digest: &mut Sha256, base: &Path, files: &[PathBuf]) -> Result<()> 
     for file in files {
         digest.update(file.strip_prefix(base)?.to_string_lossy().as_bytes());
         digest.update([0]);
-        digest.update(Sha256::digest(fs::read(file).with_context(|| format!("reading {}", file.display()))?));
+        let contents = fs::read(file).with_context(|| format!("reading {}", file.display()))?;
+        if file.ends_with("Cargo.lock") {
+            let lock = String::from_utf8(contents).context("reading Cargo.lock")?;
+            digest.update(Sha256::digest(exporter_lock(&lock).context("reading Cargo.lock")?));
+        } else {
+            digest.update(Sha256::digest(contents));
+        }
     }
     Ok(())
+}
+
+/// The packages the lockfile `lock` locks for the exporter: `hakuba_export` and every package it depends on, directly
+/// or not, one line each, in order.
+fn exporter_lock(lock: &str) -> Result<String> {
+    let lock: DocumentMut = lock.parse()?;
+    let packages = lock.get("package").and_then(|p| p.as_array_of_tables()).context("no packages")?;
+    fn field<'a>(package: &'a toml_edit::Table, key: &str) -> &'a str {
+        package.get(key).and_then(|v| v.as_str()).unwrap_or("")
+    }
+    let mut reached = std::collections::BTreeMap::new();
+    let mut wanted = vec!["hakuba_export".to_owned()];
+    while let Some(dependency) = wanted.pop() {
+        // A dependency is its name, with its version when several are locked, and its source when that is ambiguous.
+        let mut parts = dependency.split(' ');
+        let (name, version) = (parts.next().unwrap_or(""), parts.next());
+        let package = packages
+            .iter()
+            .find(|p| field(p, "name") == name && version.is_none_or(|v| field(p, "version") == v))
+            .with_context(|| format!("{dependency} is not locked"))?;
+        let key = format!("{name} {}", field(package, "version"));
+        if reached.contains_key(&key) {
+            continue;
+        }
+        let dependencies: Vec<String> = package
+            .get("dependencies")
+            .and_then(|d| d.as_array())
+            .map(|d| d.iter().filter_map(|d| d.as_str().map(str::to_owned)).collect())
+            .unwrap_or_default();
+        let line =
+            format!("{key} {} {} {}", field(package, "source"), field(package, "checksum"), dependencies.join(","));
+        wanted.extend(dependencies);
+        reached.insert(key, line);
+    }
+    Ok(reached.into_values().map(|line| line + "\n").collect())
 }
 
 /// The game's `assets/` folder.
@@ -377,6 +419,20 @@ fn export_in_order(mut pending: Vec<Folder>) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A crate the exporter does not use leaves the exporter's lock as it is; a dependency's new version changes it.
+    #[test]
+    fn only_the_exporters_dependencies_count_in_the_lock() {
+        let lock = fs::read_to_string(Path::new(EXPORTER).join("../../Cargo.lock")).unwrap();
+        let ours = exporter_lock(&lock).unwrap();
+        assert!(ours.contains("hakuba_export ") && ours.contains("\nsha2 "));
+        assert!(!ours.contains("\nbevy "), "the game's engine is not the exporter's");
+        let added = lock.clone() + "\n[[package]]\nname = \"hakuba_new\"\nversion = \"0.1.0\"\n";
+        assert_eq!(exporter_lock(&added).unwrap(), ours);
+        let sha2 = lock.find("name = \"sha2\"\nversion = \"").unwrap() + "name = \"sha2\"\nversion = \"".len();
+        let bumped = format!("{}9{}", &lock[..sha2], &lock[sha2..]);
+        assert_ne!(exporter_lock(&bumped).unwrap(), ours);
+    }
 
     #[test]
     fn character_dependencies_follow_the_clip_source() {

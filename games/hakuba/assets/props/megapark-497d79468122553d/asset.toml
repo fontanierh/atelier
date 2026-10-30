@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["megapark-2c70170a001d0133", "megapark-2c70170a001d0135"]
 solid = true
-inputs_sha256 = "5349b77f59cac59c3b4785bbbeb5d5d247a92a4223fe359fd794706718be91f6"
+inputs_sha256 = "2feff2985044474a5c4ba32f02c8211a1558b8fd8b571eee1cc0599dca0d4c04"

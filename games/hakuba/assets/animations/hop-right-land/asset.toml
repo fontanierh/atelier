@@ -5,4 +5,4 @@ source = "src/source.glb"
 clip = "Nml_Lockon_Step_R_Ed"
 rate = 0.8
 frames = [2.0, 12.0]
-inputs_sha256 = "16d9de98b7c6eefbb88c1b3793e1f03dba1921b3263d1a40a5c3d19ca4bf03fb"
+inputs_sha256 = "925f81b0ea2d7c39f93f5b22ede7d9868dcf3b251767ac24e602f25ff66977d0"

@@ -5,4 +5,4 @@ takes = [
     "src/fabric-whoosh.wav",
 ]
 quality = 0.3
-inputs_sha256 = "35889f2deeb6ac9d259adb6793e7eaaa6c72cca720cb7d23fd74870891a71fc2"
+inputs_sha256 = "b99c5326b7563e72d336669dda3568d29bf93580b3cc80c7a800b19ceed4255a"

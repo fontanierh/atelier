@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["railway-blue-panel", "railway-ivory", "railway-roof", "railway-underframe", "railway-walnut"]
 solid = true
-inputs_sha256 = "c4c3203772f1483f970fd2ac676607bb541ccaa491b973cea72c7212f66c4c1e"
+inputs_sha256 = "684ff5de36956a90fda604139fd85c7e1909eb28ef4b4986d0f95a5d5e894d67"

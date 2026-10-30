@@ -7,6 +7,7 @@ use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use hakuba_audio::SoundsPlugin;
 use hakuba_characters::CharactersPlugin;
+use hakuba_dev::DevPlugin;
 use hakuba_glider::GliderPlugin;
 use hakuba_menu::MenuPlugin;
 use hakuba_player::PlayerPlugin;
@@ -55,6 +56,7 @@ fn main() {
             CharactersPlugin,
             GliderPlugin,
             PlayerPlugin,
+            DevPlugin,
             ViewerPlugin,
             SoundsPlugin,
         ))

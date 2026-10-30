@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hippodrome-hd-finish-post"]
 solid = true
-inputs_sha256 = "5445731010ef29b7155d99b48dd0002379c5943fa6c1e8b1c0646ddfdd7507e6"
+inputs_sha256 = "2511882fb9b1ae55e731f816c2572eb504200b4c23b3ce94925798cd958c0efa"

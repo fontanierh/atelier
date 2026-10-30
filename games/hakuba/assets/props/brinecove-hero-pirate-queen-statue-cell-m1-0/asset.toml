@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["brinecove-t-bc-hero-pirate-queen-statue-0", "brinecove-t-bc-hero-pirate-queen-statue-1", "brinecove-t-bc-hero-pirate-queen-statue-10", "brinecove-t-bc-hero-pirate-queen-statue-2", "brinecove-t-bc-hero-pirate-queen-statue-3", "brinecove-t-bc-hero-pirate-queen-statue-4", "brinecove-t-bc-hero-pirate-queen-statue-5", "brinecove-t-bc-hero-pirate-queen-statue-6", "brinecove-t-bc-hero-pirate-queen-statue-7"]
 solid = true
-inputs_sha256 = "397e8efc9ffcfc1cb9917f824952c6ba15b2c3461e7a1c70a0763c3a397b6389"
+inputs_sha256 = "7a47759cb20beb4e4e496a4da0d8abf97a0b5643bb9408b221b4e17643b03162"

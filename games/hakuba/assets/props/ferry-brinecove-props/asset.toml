@@ -1,4 +1,4 @@
 # The props of the ferry terminal at Brinecove.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "74137758a67e4c36bfdbfa5a15de0d36ddfd03de9ace8e1d0b3fb28e675eb0cf"
+inputs_sha256 = "21823e5538239b50571ea1d439344bbbe29dc86120307615f6b281624dd57ca1"

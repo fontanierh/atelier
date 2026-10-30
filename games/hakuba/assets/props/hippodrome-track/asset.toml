@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["hippodrome-t-hd-dirt"]
 solid = true
-inputs_sha256 = "6448791f6353bbe4b8a2efa0c40a4ffaefa7d7ff91f7e92a2851c6a6ec578b2a"
+inputs_sha256 = "4899fde76868590c294cadc63f2c561178be444e93b5588ce138e84bfb1468e5"

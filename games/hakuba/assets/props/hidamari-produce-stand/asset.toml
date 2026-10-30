@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-produce-stand"]
 solid = true
-inputs_sha256 = "ee7225f476aba658cf8faef3103320a6dc89ed23cd4c73417fcc956a82c46dba"
+inputs_sha256 = "86a5ebe2b72065788208981a2d5bd044355c037603a9602a3d93cd6a33801887"

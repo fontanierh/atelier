@@ -11,6 +11,7 @@ impl Plugin for ScreensPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<Screen>()
             .add_sub_state::<Pause>()
+            .add_sub_state::<DevMode>()
             .add_systems(Startup, spawn_fps)
             .add_systems(Update, (back, hover, show_fps))
             .add_systems(OnEnter(Pause::Paused), |mut time: ResMut<Time<Virtual>>| time.pause())
@@ -35,6 +36,16 @@ pub enum Pause {
     #[default]
     Playing,
     Paused,
+}
+
+/// Whether dev mode flies a free camera over the world in place of the player, for exploring it and taking notes
+/// (`hakuba_dev`). The pause screen turns it on and off.
+#[derive(SubStates, Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
+#[source(Screen = Screen::World)]
+pub enum DevMode {
+    #[default]
+    Off,
+    On,
 }
 
 const BUTTON: Color = Color::srgb(0.15, 0.15, 0.17);

@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-postbox"]
 solid = true
-inputs_sha256 = "185f276af575a3d2c777a33cf773fe937ffe133c0134b9cffde7ae420e08339a"
+inputs_sha256 = "c710dfa3065dfbacddce5ce2d561181cefe4e0de319236189ade0e254e2ada3c"

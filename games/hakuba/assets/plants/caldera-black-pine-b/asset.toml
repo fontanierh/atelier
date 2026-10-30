@@ -4,7 +4,7 @@ shadow_distance_m = 80.0
 surface_height_m = 0.0
 source = "src/model.glb"
 textures = ["caldera-black-pine-b", "far-plants"]
-inputs_sha256 = "90e28b2d43e65914f254dce51da6362d6b4a9efea364bacd53cda8dc117a6cb6"
+inputs_sha256 = "121f8d4fb733b1c6acef5f457026c5dd287ae3bac686b089d507572912c8df30"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]
