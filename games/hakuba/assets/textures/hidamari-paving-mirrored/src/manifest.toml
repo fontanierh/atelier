@@ -1,0 +1,4 @@
+# The paving mirrored texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "1e99449b27687362075bc9ca0ba7bf10c79205ea54fa7a3848e3b75bbf2f10d5"
+authoring_texture_sha256 = "1e99449b27687362075bc9ca0ba7bf10c79205ea54fa7a3848e3b75bbf2f10d5"

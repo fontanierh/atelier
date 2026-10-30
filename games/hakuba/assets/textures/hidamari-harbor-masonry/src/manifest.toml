@@ -1,0 +1,4 @@
+# The harbor masonry texture that the hidamari props draw.
+path = "texture.png"
+sha256 = "5aab652d6c2d7868d303fc566a8f72ad4048fdb51a319deae09f99bb0d6434e8"
+authoring_texture_sha256 = "5aab652d6c2d7868d303fc566a8f72ad4048fdb51a319deae09f99bb0d6434e8"

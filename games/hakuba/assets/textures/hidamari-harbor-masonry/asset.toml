@@ -1,0 +1,5 @@
+# The harbor masonry texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "8df5667ca1d94e50cb480e7d2946d28f62db89d5e2a69d6e7cac63386b49f1f0"

@@ -1,0 +1,5 @@
+# The arcade timber texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "6b3281987538bbe3a3be81d7b08cfe469e400821bacb387ac2e74fb929735e58"

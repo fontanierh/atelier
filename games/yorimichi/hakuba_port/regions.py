@@ -175,19 +175,100 @@ def hidamari_surfaces(build):
     return rules
 
 
+# Hidamari's own material maps (`world/regions/hidamari/textures`), which Yorimichi's arcade, plaza and harbour materials
+# sample with mirrored repeats.
+HD_MAPS = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'hidamari' / 'textures'
+# The parents whose palette slot Yorimichi draws with its arcade material (`unreal/Scripts/arcade_material.py`,
+# M_Arcade): the palette colour, its timber faces grained by the timber map.
+HD_ARCADE = ('HD_Arcade', 'HD_Plaza', 'HD_Shop_')  # but the plaza's water, M_PlazaWater
+HD_ARCADE_NAMED = ('HD_ClockHall', 'HD_Square', 'HD_Station', 'HD_Shrine', 'HD_Park', 'HD_Streets', 'HD_CivicGardens')
+HD_PALETTE = 'HidamariPalette'
+
+
+@functools.cache
+def hidamari_map(name, kind, image=None, scale=None, low=None, high=None, mix=None):
+    """A map derived from Hidamari's material map `name`, written under this checkout's `build/hakuba_port/hidamari`:
+    `mirrored`, the map and its three mirror images in two by two, as Unreal's mirrored address mode repeats it; or
+    `grain`, that mirrored map's luminance over `scale`, clamped to [`low`, `high`], mixed into 1 by `mix` and divided
+    by `high`, a shade a rule's gain of `high` brings back, as the arcade and harbour materials grain timber and
+    masonry with it."""
+    import numpy as np
+    from PIL import Image
+    from port import REPO
+    out = REPO / 'build' / 'hakuba_port' / 'hidamari'
+    out.mkdir(parents=True, exist_ok=True)
+    # Unreal draws these maps at 1024 texels at most; mirrored two by two they are 2048 across.
+    source = Image.open(HD_MAPS / f'{name}.png').convert('RGB').resize((1024, 1024), Image.LANCZOS)
+    rgb = np.asarray(source, np.float64) / 255.0
+    rgb = np.concatenate([np.concatenate([rgb, rgb[:, ::-1]], 1), np.concatenate([rgb[::-1], rgb[::-1, ::-1]], 1)], 0)
+    path = out / f'{name}-mirrored.png'
+    if kind == 'grain':
+        linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+        shade = 1 - mix + mix * np.clip(linear @ [0.3, 0.59, 0.11] / scale, low, high)
+        linear = np.repeat((shade / high)[..., None], 3, -1)
+        rgb = np.where(linear <= 0.0031308, linear * 12.92, 1.055 * linear ** (1 / 2.4) - 0.055)
+        path = out / f'{image}.png'
+    Image.fromarray(np.round(np.clip(rgb, 0, 1) * 255).astype(np.uint8)).save(path)
+    return str(path)
+
+
+def hidamari_palette(parent):
+    """The rules, faces tests and default of a parent's palette slot, as Yorimichi's material for that parent draws it
+    (`city_atomic_products.py`'s choice, the materials in `unreal/Scripts`). Returns (slots, faces) or None to leave the
+    vertex colour alone.
+
+    - The plaza's paving (M_PlazaPaving): the paving map over 3.2 m, mirrored, tinted (0.61, 0.49, 0.34) instead of the
+      palette; the arcade's (M_ArcadePaving) over 2.1 m tinted 0.61. Their fallen leaves, faces of saturated colour,
+      keep the palette.
+    - The harbour and its boats (M_Harbor), by the palette's alpha: timber (0.25) grained by the timber map over
+      1/0.7 m; stone (0.5) the paving map over 2.4 m tinted (0.43, 0.35, 0.22) instead of the palette; masonry (0.75)
+      shaded by the paving map.
+    - The arcade's palette pieces (M_Arcade): their timber faces grained by the timber map over 1/0.65 m."""
+    leaf = [{'saturated': 0.07}, f'{HD_PALETTE}-leaf']
+    if parent == 'HD_PlazaFloor':
+        return ({HD_PALETTE: {'sample': hidamari_map('paving', 'mirrored'), 'tile': 6.4, 'rgb': [0.61, 0.49, 0.34]},
+                 f'{HD_PALETTE}-leaf': {'vertex': True}}, {HD_PALETTE: [leaf]})
+    if parent == 'HD_ArcadeFloor':
+        return ({HD_PALETTE: {'sample': hidamari_map('paving', 'mirrored'), 'tile': 4.2, 'rgb': [0.61, 0.61, 0.61]},
+                 f'{HD_PALETTE}-leaf': {'vertex': True}}, {HD_PALETTE: [leaf]})
+    if parent in ('HD_Harbor', 'HD_Boat'):
+        return ({HD_PALETTE: {'vertex': True},
+                 f'{HD_PALETTE}-timber': {'sample': hidamari_map('timber', 'grain', 'harbor-timber', 0.22, 0.72, 1.3, 0.8),
+                                          'tile': 2 / 0.7, 'vertex': True, 'gain': 1.3},
+                 f'{HD_PALETTE}-stone': {'sample': hidamari_map('paving', 'mirrored'), 'tile': 4.8,
+                                         'rgb': [0.43, 0.35, 0.22]},
+                 f'{HD_PALETTE}-masonry': {'sample': hidamari_map('paving', 'grain', 'harbor-masonry', 0.30, 0.8, 1.2, 0.65),
+                                           'tile': 4.8, 'vertex': True, 'gain': 1.2}},
+                {HD_PALETTE: [[{'alpha': [0.25, 0.07]}, f'{HD_PALETTE}-timber'],
+                              [{'alpha': [0.5, 0.07]}, f'{HD_PALETTE}-stone'],
+                              [{'alpha': [0.75, 0.07]}, f'{HD_PALETTE}-masonry']]})
+    if (parent.startswith(HD_ARCADE) and parent != 'HD_PlazaWater') or parent in HD_ARCADE_NAMED:
+        return ({HD_PALETTE: {'vertex': True},
+                 f'{HD_PALETTE}-timber': {'sample': hidamari_map('timber', 'grain', 'arcade-timber', 0.22, 0.72, 1.25, 0.75),
+                                          'tile': 2 / 0.65, 'vertex': True, 'gain': 1.25}},
+                {HD_PALETTE: [[{'wood': True}, f'{HD_PALETTE}-timber']]})
+    return None
+
+
 def hidamari(build):
     """Hidamari, the city east of the coast, with its ground, streets, harbour and the northern mountains behind it.
     Its parents are split into pieces in the parent's own frame; `city.json` stands each parent, and so all its pieces.
     The city's colour is its vertex colour; its textured surfaces (`HDS_<surface>` slots: walls, roofs, streets and
     paths) draw their detail maps over it (`hidamari_surfaces`), but for the terrain, which becomes the ground
-    (`HD_GROUND`), and a street prop samples its own atlas. The city's own poles, street lamps and rocks stand
-    Hakuba's props of the same models (`HD_SHARED`). Plants are left to Hakuba's plants. The city's flat sea is left
-    out: Hakuba draws one sea at sea level under the whole island, and the city's copy lay on it as an off-coloured
-    rectangle seen from the rim."""
+    (`HD_GROUND`), and a street prop samples its own atlas. The plaza's and arcade's paving, the harbour and its boats
+    and the arcade's timber draw Hidamari's own paving and timber maps as their Yorimichi materials do
+    (`hidamari_palette`). The city's own poles, street lamps and rocks stand Hakuba's props of the same models
+    (`HD_SHARED`). Plants are left to Hakuba's plants. The city's flat sea is left out: Hakuba draws one sea at sea
+    level under the whole island, and the city's copy lay on it as an off-coloured rectangle seen from the rim."""
     out = build / 'hidamari'
     instances = json.loads((out / 'city.json').read_text())['instances']
     region = Region('hidamari', 'Hidamari, the city east of the coast, and the northern mountains')
     surfaces = hidamari_surfaces(build)
+    palettes = {}
+    for parent in json.loads((build / 'atomic_regions' / 'hidamari' / 'logical-pieces.json').read_text())['parents']:
+        palette = hidamari_palette(parent)
+        if palette:
+            palettes[parent] = ({**surfaces, **palette[0]}, palette[1])
     skipped = []
     for step, rule_for in (('hidamari', lambda piece: {'vertex': True}),
                            ('hidamari_props', lambda piece: {'sample': str(out / 'props' / f'{piece}.png')})):
@@ -201,8 +282,11 @@ def hidamari(build):
                 name = 'hidamari-' + kebab(piece.removeprefix('HD_P_').removeprefix('HD_'))
                 if name == 'hidamari-sea':
                     continue
-                region.models[name] = Model(export_source(build, step, piece), default=rule_for(piece),
-                                            slots=surfaces if step == 'hidamari' and parent not in HD_GROUND else {})
+                slots, faces = {}, None
+                if step == 'hidamari' and parent not in HD_GROUND:
+                    slots, faces = palettes[parent] if parent in palettes else (surfaces, None)
+                region.models[name] = Model(export_source(build, step, piece), default=rule_for(piece), slots=slots,
+                                            faces=faces)
                 region.groups.append((name, None, placed))
     for source, prop in HD_SHARED.items():
         region.shared.add(prop)

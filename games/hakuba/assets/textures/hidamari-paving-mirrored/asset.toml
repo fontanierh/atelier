@@ -1,0 +1,5 @@
+# The paving mirrored texture that the hidamari props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "b97ae6784f90d0d54e055af5a8de182a12639ffd21307344c46fd4394437b5a8"

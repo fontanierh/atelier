@@ -45,7 +45,8 @@ class Model:
     this way, each standing, and streaming, with its own tile. `ground_owned` names slots whose faces facing up are a
     walking surface the world's ground draws instead (a path over the ground, as a region's `layout.rs` lays it):
     the model keeps only those slots' other faces. `meet` lists segments, [[x, y, z], [x, y, z]] in the source frame,
-    of an edge the model's vertices within a couple of centimetres of it move onto (see `seam.py`)."""
+    of an edge the model's vertices within a couple of centimetres of it move onto (see `seam.py`). `faces` moves a
+    slot's faces whose mean colour passes a test into another slot, by slot: [[test, slot], ...] (see `convert.py`)."""
     source: Path
     slots: dict = field(default_factory=dict)
     default: dict = field(default_factory=dict)
@@ -57,6 +58,7 @@ class Model:
     keep: list = None
     ground_owned: list = None
     meet: list = None
+    faces: dict = None
 
 
 @dataclass
@@ -235,6 +237,8 @@ def jobs(region, scratch):
             job['ground_owned'] = model.ground_owned
         if model.meet:
             job['meet'] = model.meet
+        if model.faces:
+            job['faces'] = model.faces
         result.append(job)
     job_file = scratch / 'jobs.json'
     job_file.write_text(json.dumps(result))
