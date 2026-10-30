@@ -4,6 +4,7 @@
 mod notes;
 mod zip;
 
+use bevy::input::InputSystems;
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -31,6 +32,7 @@ impl Plugin for DevPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<notes::Notes>()
             .add_systems(Update, toggle.run_if(in_state(Pause::Playing)))
+            .add_systems(PreUpdate, notes::type_text.after(InputSystems).run_if(in_state(DevMode::On)))
             .add_systems(OnEnter(DevMode::On), (take_off, show_keys))
             .add_systems(
                 Update,
@@ -162,7 +164,13 @@ fn label_keys(
          speed | drag look\nN note | X export {count} | ` leave",
         at.x, at.y, at.z, flight.speed,
     );
-    if let Some(flash) = &notes.flash {
+    if let Some(note) = &notes.typing {
+        line = format!(
+            "Note {}: {}_\nType what is wrong here. Enter keeps it, Escape drops it.",
+            notes.taken.len() + 1,
+            note.text
+        );
+    } else if let Some(flash) = &notes.flash {
         line = format!("{flash}\n{line}");
     }
     if text.0 != line {

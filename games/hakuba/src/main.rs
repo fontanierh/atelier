@@ -33,7 +33,7 @@ fn main() {
                 })
                 // Load assets without looking for a .meta file next to each: in the browser, the server answers a
                 // missing file with index.html, which Bevy cannot read.
-                .set(AssetPlugin { meta_check: AssetMetaCheck::Never, ..default() })
+                .set(AssetPlugin { file_path: asset_folder(), meta_check: AssetMetaCheck::Never, ..default() })
                 // The world's textures, named by its glTF files, are filtered across their mipmaps and along the view,
                 // so the ground and the road stay sharp as they recede. Anisotropic filtering needs every filter linear.
                 .set(GltfPlugin {
@@ -61,4 +61,12 @@ fn main() {
             SoundsPlugin,
         ))
         .run();
+}
+
+/// Where the assets are, from the folder beside the program: `assets`, but `../Resources/assets` in a macOS app,
+/// which keeps its program in `Contents/MacOS` and everything else in `Contents/Resources`.
+fn asset_folder() -> String {
+    let program = std::env::current_exe().ok();
+    let bundled = program.as_deref().and_then(|program| Some(program.parent()?.parent()?.join("Resources/assets")));
+    if bundled.is_some_and(|folder| folder.is_dir()) { "../Resources/assets".into() } else { "assets".into() }
 }
