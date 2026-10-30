@@ -1,8 +1,10 @@
-//! Notes on the world: N takes one (a screenshot, where the camera is and what it looks at, and the text typed for it)
-//! and X exports them all as a zip.
+//! Notes on the world: N takes one (a screenshot, where the camera is and what it looks at, and the text typed for it
+//! over the game: Enter keeps it, Escape drops it) and X exports them all as a zip.
 
 use std::fmt::Write;
 
+use bevy::input::ButtonState;
+use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, ScreenshotCaptured};
 use hakuba_world::Ground;
@@ -21,6 +23,8 @@ pub struct Notes {
     pub taken: Vec<Note>,
     /// Whether a note's screenshot is on its way, so the keys stay out of it.
     pub taking: bool,
+    /// The note whose text is being typed, with its screenshot.
+    pub typing: Option<Note>,
     /// The last thing a note or an export did, shown over the keys.
     pub flash: Option<String>,
 }
@@ -33,7 +37,7 @@ pub struct Note {
     looking_at: Option<Vec3>,
     /// Where the player could stand to see it: the ground under the camera, or the camera itself.
     start: Vec3,
-    text: String,
+    pub text: String,
     png: Vec<u8>,
 }
 
@@ -47,7 +51,8 @@ pub fn map(at: Vec3) -> Vec3 {
     Vec3::new(at.x, -at.z, at.y)
 }
 
-/// N or a controller's North button: takes a screenshot without the keys over it, then asks for the note's text.
+/// N or a controller's North button: takes a screenshot without the keys over it, then takes the note's text
+/// ([`type_text`]).
 pub fn take(
     mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
@@ -57,7 +62,7 @@ pub fn take(
     camera: Single<&Transform, With<Camera3d>>,
 ) {
     let pressed = keys.just_pressed(KeyCode::KeyN) || gamepads.iter().any(|g| g.just_pressed(GamepadButton::North));
-    if !pressed || notes.taking {
+    if !pressed || notes.taking || notes.typing.is_some() {
         return;
     }
     let ahead = camera.forward();
@@ -76,22 +81,54 @@ pub fn take(
     let mut pending = Some(note);
     // The keys hide this frame, so the screenshot taken as it renders shows the world alone.
     commands.spawn(Screenshot::primary_window()).observe(
-        move |captured: On<ScreenshotCaptured>, mut notes: ResMut<Notes>, mut keys: ResMut<ButtonInput<KeyCode>>| {
+        move |captured: On<ScreenshotCaptured>, mut notes: ResMut<Notes>| {
             let Some(mut note) = pending.take() else { return };
-            notes.taking = false;
-            let asked = ask(notes.taken.len() + 1);
-            // The prompt kept the keys let go meanwhile from the game.
-            keys.reset_all();
-            let Some(text) = asked else {
-                notes.flash = Some("Note dropped".into());
-                return;
-            };
-            note.text = text;
             note.png = png(&captured.image).unwrap_or_default();
-            notes.taken.push(note);
-            notes.flash = Some(format!("Note {} kept", notes.taken.len()));
+            notes.taking = false;
+            notes.typing = Some(note);
         },
     );
+}
+
+/// While a note's text is being typed: the keys type it, and nothing else in the game sees them, not even Escape's
+/// pause. Enter keeps the note, Escape drops it, Backspace takes back a character. Runs as the input is read, before
+/// the game's systems.
+pub fn type_text(
+    mut typed: MessageReader<KeyboardInput>,
+    mut keys: ResMut<ButtonInput<KeyCode>>,
+    mut notes: ResMut<Notes>,
+) {
+    let Some(mut note) = notes.typing.take() else {
+        typed.clear();
+        return;
+    };
+    let mut done = None;
+    for input in typed.read().filter(|input| input.state == ButtonState::Pressed) {
+        match &input.logical_key {
+            Key::Enter => done = Some(true),
+            Key::Escape => done = Some(false),
+            Key::Backspace => {
+                note.text.pop();
+            }
+            _ => {
+                if let Some(text) = &input.text {
+                    note.text.extend(text.chars().filter(|c| !c.is_control()));
+                }
+            }
+        }
+        if done.is_some() {
+            break;
+        }
+    }
+    keys.reset_all();
+    match done {
+        Some(true) => {
+            notes.taken.push(note);
+            notes.flash = Some(format!("Note {} kept", notes.taken.len()));
+        }
+        Some(false) => notes.flash = Some("Note dropped".into()),
+        None => notes.typing = Some(note),
+    }
 }
 
 /// The screenshot as a PNG, halved until it is at most `WIDEST_PX` wide.
@@ -106,19 +143,6 @@ fn png(image: &Image) -> Option<Vec<u8>> {
         .write_image(&shot, shot.width(), shot.height(), image::ExtendedColorType::Rgb8)
         .ok()?;
     Some(png)
-}
-
-/// The text typed for note `number`, or none if it was cancelled.
-#[cfg(target_arch = "wasm32")]
-fn ask(number: usize) -> Option<String> {
-    let window = web_sys::window()?;
-    window.prompt_with_message(&format!("Note {number}: what is wrong here?")).ok().flatten()
-}
-
-/// On the desktop there is nowhere to type: the note keeps its screenshot and place.
-#[cfg(not(target_arch = "wasm32"))]
-fn ask(_number: usize) -> Option<String> {
-    Some(String::new())
 }
 
 /// X: exports every note.
@@ -139,7 +163,11 @@ pub fn export(keys: Res<ButtonInput<KeyCode>>, mut notes: ResMut<Notes>) {
 
 /// `notes.md`, then each note's screenshot.
 fn files(notes: &[Note]) -> Vec<(String, Vec<u8>)> {
-    let mut markdown = String::from("# Hakuba notes\n\nMap metres: x east, y north, z up. Bearings east of north.\n");
+    let mut markdown = String::from(
+        "# Hakuba notes\n\nMap metres: x east, y north, z up. Bearings east of north. To stand where a note was \
+         taken, add its `#start=` to the game's address in the browser, or set `HAKUBA_START` to what follows it on \
+         the desktop.\n",
+    );
     let mut files = Vec::new();
     for (index, note) in notes.iter().enumerate() {
         let number = index + 1;
@@ -170,7 +198,7 @@ fn files(notes: &[Note]) -> Vec<(String, Vec<u8>)> {
 
 /// Downloads the zip, and sends it to `notes/` beside the page.
 #[cfg(target_arch = "wasm32")]
-fn save(zip: &[u8]) -> Result<&'static str, String> {
+fn save(zip: &[u8]) -> Result<String, String> {
     use wasm_bindgen::JsCast;
     let failed = |error: wasm_bindgen::JsValue| format!("{error:?}");
     let window = web_sys::window().ok_or("no window")?;
@@ -191,14 +219,18 @@ fn save(zip: &[u8]) -> Result<&'static str, String> {
     init.set_method("POST");
     init.set_body(&blob);
     let _ = window.fetch_with_str_and_init("notes/", &init);
-    Ok("downloaded hakuba-notes.zip, and sent")
+    Ok("downloaded hakuba-notes.zip, and sent".into())
 }
 
-/// Writes the zip to the current folder.
+/// Writes the zip to the Downloads folder, named for when it was written, or to the current folder without one.
 #[cfg(not(target_arch = "wasm32"))]
-fn save(zip: &[u8]) -> Result<&'static str, String> {
-    std::fs::write("hakuba-notes.zip", zip).map_err(|error| error.to_string())?;
-    Ok("wrote hakuba-notes.zip")
+fn save(zip: &[u8]) -> Result<String, String> {
+    let seconds = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |t| t.as_secs());
+    let folder = std::env::var_os("HOME").map(|home| std::path::Path::new(&home).join("Downloads"));
+    let folder = folder.filter(|folder| folder.is_dir()).unwrap_or_default();
+    let path = folder.join(format!("hakuba-notes-{seconds}.zip"));
+    std::fs::write(&path, zip).map_err(|error| error.to_string())?;
+    Ok(format!("wrote {}", path.display()))
 }
 
 #[cfg(test)]

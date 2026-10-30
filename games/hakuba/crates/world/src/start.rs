@@ -1,6 +1,7 @@
 //! A chosen start instead of the world's spawn: `#start=x,y,z,bearing` after the page's address in the browser, or
 //! `HAKUBA_START=x,y,z,bearing` on the desktop. `x`, `y` and `z` are on the map in metres (x east, y north, z up) and
-//! the bearing is a compass bearing in degrees east of north, as the world's own spawn is given.
+//! the bearing is a compass bearing in degrees east of north, as the world's own spawn is given. The game then opens
+//! straight into the world, there.
 
 use bevy::prelude::*;
 
