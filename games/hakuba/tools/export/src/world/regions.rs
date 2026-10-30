@@ -14,6 +14,8 @@ mod momiji_coast;
 mod momiji_village;
 #[path = "../../../../assets/world/src/regions/roadside-houses/layout.rs"]
 mod roadside_houses;
+#[path = "../../../../assets/world/src/regions/skatepark/layout.rs"]
+mod skatepark;
 #[path = "../../../../assets/world/src/regions/woodland/layout.rs"]
 mod woodland;
 
@@ -93,6 +95,7 @@ pub const REGIONS: &[&dyn Region] = &[
     placed!("sword-camp"),
     placed!("megapark"),
     placed!("kei"),
+    &skatepark::SkatePark,
     placed!("forest"),
     placed!("craterpark"),
     placed!("railway"),

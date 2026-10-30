@@ -1,0 +1,6 @@
+# A piece of Sunset Pier's deck, its terraces and its bowl's shell.
+kind = "prop"
+source = "src/model.glb"
+textures = ["skatepark-concrete-albedo"]
+solid = true
+inputs_sha256 = "c2c92da60e0e905cd17475ee5e80dfd1203b9fb686b102cb0a30b8adbe2dccc1"

@@ -1,0 +1,7 @@
+# A piece of Sunset Pier's benches, pavilion and lamps.
+kind = "prop"
+source = "src/model.glb"
+textures = ["skatepark-basalt-albedo", "skatepark-concrete-albedo"]
+own_textures = ["skatepark-mural-albedo"]
+solid = true
+inputs_sha256 = "c4c5374826501356eb9415c5fc3da513981827665d704f908d396271d75e3ce7"

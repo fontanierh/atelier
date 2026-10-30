@@ -1,0 +1,4 @@
+# The concrete albedo texture that the skatepark props draw.
+path = "texture.png"
+sha256 = "450138055f1dc2b666739f74dccda703597e49c3a2b02f83b92e4b384e88103b"
+authoring_texture_sha256 = "450138055f1dc2b666739f74dccda703597e49c3a2b02f83b92e4b384e88103b"

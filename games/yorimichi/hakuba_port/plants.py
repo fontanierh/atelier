@@ -173,12 +173,16 @@ PLANTS = ('Tree_', 'Bush_Green', 'Bush_Ochre', 'Bush_Flower', 'Grass_', 'Litter'
 NEAR = {'coast-grass-a', 'coast-grass-b', 'coast-litter'}
 # The start regions' rectangle, [west, south, east, north], whose plants Hakuba already has.
 START = (-300.0, -172.0, 300.0, 300.0)
+# Sunset Pier's layout, whose `trees` stand in its stone gardens.
+PIER = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'skatepark' / 'park.json'
 # A plant stands this far into the ground at most, and never above it; where the source ground differs from Hakuba's
 # by more than `MISMATCH_M`, it sinks by `SINK_M`. A small plant sinks by no more than `SINK_SHARE` of its height.
 DEEPEST_M, MISMATCH_M, SINK_M, SINK_SHARE = -0.6, 2.0, -0.3, 0.2
 # A region's plant that its source stands well above Hakuba's ground keeps that height only where a ported prop's
 # surface, as the exported tiles draw it, is within `SEAT_M` under it or over it; over nothing it would float, so it
-# stands on the ground as the island's plants do.
+# stands on the ground as the island's plants do. A plant on a deck (`DECK`) keeps it however low the deck stands over
+# the ground, as long as that surface is raised more than `SEAT_M` above it: under a low deck it would grow through.
+DECK = 'deck'
 SEAT_M = 0.5
 # The steepest ground a plant stands on: the most the ground rises a metre from its foot (about 56°).
 CLIFF = 1.5
@@ -193,8 +197,9 @@ def inside(rows, rectangle):
 
 
 def sources(build):
-    """(source name, rows, kept off the ground) for each plant group in the island's world, cleared as Yorimichi's map
-    clears it, then in Hidamari's city, Belmonte, the Mega Park and Brinecove."""
+    """(source name, rows, kept off the ground: True, or `DECK` on a deck) for each plant group in the island's world,
+    cleared as Yorimichi's map clears it, then in Hidamari's city, Belmonte, the Mega Park, Crater Park, Sunset Pier
+    and Brinecove."""
     island = json.loads((build / 'world.json').read_text())['instances']
     city = json.loads((build / 'hidamari' / 'city.json').read_text())
     cleared = [(300.0, -450.0, 2200.0, 1600.0), tuple(city['north_bounds']), START,
@@ -235,6 +240,17 @@ def sources(build):
             x, y, z, yaw, scale = np.array(rows, float).T
             at = placement.native_to_island(np.column_stack([x, z, y]) / 100)
             yield name, np.column_stack([at, -(turn + yaw), scale]), True
+    # Sunset Pier stands the island's trees in its perimeter stone gardens (`skatepark/park.json` `trees`, each [x, y,
+    # z, yaw, scale] in park-local metres and degrees, the turn counter-clockwise), from the park's origin and turn.
+    park = json.loads(PIER.read_text())
+    turn = math.radians(park['yaw_deg'])
+    (ox, oy, oz) = park['origin']
+    for name, rows in sorted(park['trees'].items()):
+        if name.startswith(PLANTS) and rows:
+            x, y, z, yaw, scale = np.array(rows, float).T
+            yield name, np.column_stack([ox + x * math.cos(turn) - y * math.sin(turn),
+                                         oy + x * math.sin(turn) + y * math.cos(turn), oz + z,
+                                         park['yaw_deg'] + yaw, scale]), DECK
     # So does Brinecove, its plants (`SM_BC_Plant_*`) its own models.
     runtime = json.loads((build / 'brinecove' / 'runtime.json').read_text())
     ox, oy, oz = runtime['origin_cm']
@@ -747,12 +763,14 @@ def seated(z, surface, deepest):
         return np.where(np.isnan(surface), z, surface + np.clip(z - surface, deepest, 0.0))
 
 
-def keeps_height(z, ground, surface):
+def keeps_height(z, ground, surface, deck=False):
     """Which of a region's plants keep their source height `z`: those off Hakuba's ground (`ground` NaN), and those
     standing more than `MISMATCH_M` above it with a ported prop's drawn surface (`surface`, NaN where none) within
-    `SEAT_M` under or over them. Every other plant stands on the ground."""
+    `SEAT_M` under or over them; on a `deck`, also those whose surface is raised more than `SEAT_M` above the ground.
+    Every other plant stands on the ground."""
     with np.errstate(invalid='ignore'):
-        return np.isnan(ground) | ((z - ground > MISMATCH_M) & (np.abs(z - surface) <= SEAT_M))
+        raised = (z - ground > MISMATCH_M) | (deck & (surface - ground > SEAT_M))
+        return np.isnan(ground) | (raised & (np.abs(z - surface) <= SEAT_M))
 
 
 def main():
@@ -795,9 +813,9 @@ def main():
         if kept:
             surface = np.full(len(rows), np.nan)
             with np.errstate(invalid='ignore'):
-                high = ~off & (rows[:, 2] - ground > MISMATCH_M)
+                high = ~off & ((rows[:, 2] - ground > MISMATCH_M) | (kept == DECK))
             surface[high] = drawn.heights(rows[high, 0], rows[high, 1], rows[high, 2])
-            off = keeps_height(rows[:, 2], ground, surface)
+            off = keeps_height(rows[:, 2], ground, surface, deck=kept == DECK)
             rows[off, 2] = seated(rows[off, 2], surface[off], embedding(model, rows[off, 4]))
             groups[model, False].extend([round(x, 3), round(y, 3), round(z, 3), round(yaw % 360.0, 2), round(scale, 4)]
                                         for x, y, z, yaw, scale in rows[off].tolist())

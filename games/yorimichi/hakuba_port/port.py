@@ -39,7 +39,13 @@ class Model:
     """One mesh to convert: its source file, its colour rules (see `convert.py`), whether it is solid, an optional
     separate collision mesh, the Hakuba texture assets its materials draw, and an optional `turn`, a rotation (3 by 3,
     row by row) about its source origin that it takes before converting: a model placed once, tilted out of upright,
-    which a placement's yaw alone cannot stand."""
+    which a placement's yaw alone cannot stand, and an optional `keep`, a rectangle [west, south, east, north] in the
+    source frame (its turn taken): only the faces whose centre lies in it, west and south edges included, so that
+    neighbouring rectangles share every face out once. A mesh far wider than a tile is cut into one model per tile
+    this way, each standing, and streaming, with its own tile. `ground_owned` names slots whose faces facing up are a
+    walking surface the world's ground draws instead (a path over the ground, as a region's `layout.rs` lays it):
+    the model keeps only those slots' other faces. `meet` lists segments, [[x, y, z], [x, y, z]] in the source frame,
+    of an edge the model's vertices within a couple of centimetres of it move onto (see `seam.py`)."""
     source: Path
     slots: dict = field(default_factory=dict)
     default: dict = field(default_factory=dict)
@@ -48,6 +54,9 @@ class Model:
     about: str = ''
     textures: list = field(default_factory=list)
     turn: list = None
+    keep: list = None
+    ground_owned: list = None
+    meet: list = None
 
 
 @dataclass
@@ -211,6 +220,12 @@ def jobs(region, scratch):
             job['collision_source'] = str(model.collision)
         if model.turn is not None:
             job['turn'] = model.turn
+        if model.keep is not None:
+            job['keep'] = model.keep
+        if model.ground_owned:
+            job['ground_owned'] = model.ground_owned
+        if model.meet:
+            job['meet'] = model.meet
         result.append(job)
     job_file = scratch / 'jobs.json'
     job_file.write_text(json.dumps(result))
@@ -296,7 +311,8 @@ def main():
         with tempfile.TemporaryDirectory() as scratch:
             origins = convert(region, Path(scratch))
         for name in set(region.models) - set(origins):
-            # A mesh with nothing left to draw, such as one made only of dropped slots, is left out.
+            # A mesh with nothing left to draw, such as one made only of dropped slots or a cut with no faces in its
+            # rectangle, is left out.
             del region.models[name]
             folder = HAKUBA / 'assets' / 'props' / name
             for path in sorted(folder.rglob('*'), reverse=True):

@@ -1,0 +1,5 @@
+# A piece of Sunset Pier's stone gardens and grasses.
+kind = "prop"
+source = "src/model.glb"
+textures = ["skatepark-concrete-albedo"]
+inputs_sha256 = "c3fe95a8b94fee0f9408045a764d23dd210b89091768ced129a0bb437bf93a7d"

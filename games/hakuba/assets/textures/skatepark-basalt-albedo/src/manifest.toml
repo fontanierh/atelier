@@ -1,0 +1,4 @@
+# The basalt albedo texture that the skatepark props draw.
+path = "texture.png"
+sha256 = "441f1f986934b21229bf62f35523deb91e637752ded273f4988f210225b196ca"
+authoring_texture_sha256 = "441f1f986934b21229bf62f35523deb91e637752ded273f4988f210225b196ca"

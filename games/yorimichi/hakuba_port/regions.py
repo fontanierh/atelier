@@ -444,8 +444,76 @@ def ferry(build):
     return region
 
 
+# Sunset Pier's layout, which places its meshes and trees in park-local metres.
+SKATEPARK = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'skatepark' / 'park.json'
+# Each logical pier mesh and what it is, by its name in `park.json`.
+PIER_PARTS = {
+    'SM_SkatePier': "deck, its terraces and its bowl's shell", 'SM_SkatePierPilings': 'pilings',
+    'SM_SkateParkFeatures': 'skating features: rails, ledges, stairs, banks and transitions',
+    'SM_SkatePath': 'path in from the coast', 'SM_SkateParkFurniture': 'benches, pavilion and lamps',
+    'SM_SkateParkPlanting': 'stone gardens and grasses', 'SM_SkateParkDecals': 'floor paint and mural',
+}
+# The pier's material maps, by the material a slot names (`Pier_<material>`): painted steel draws steel's maps.
+PIER_MAPS = {'painted': 'steel'}
+# The path in from the coast runs over the ground, which owns its walking surface: the region's `layout.rs` lays it
+# from `pier_path.py`'s triangles, and the path's props keep its skirts, edges and railings.
+PIER_GROUND = {'SM_SkatePath': ['Pier_concrete']}
+
+
+def skatepark(build):
+    """Sunset Pier, the skate plaza on the sea south of Hidamari: the pieces `world.skatepark.assembled` exports, each
+    stood at the park's origin from `park.json` (park-local metres east, north and up, turned by its `yaw_deg`), the
+    board left out. A piece reaches across up to 170 m, so it is cut along Hakuba's tile grid into one model per tile
+    it has faces in (`Model.keep`), each standing, and streaming, with its own tile. Its materials draw the pier's own
+    finished albedo maps (`skatepark/textures`) on the meshes' UVs, which already count each map's repeat, as
+    Yorimichi's materials do: the map times twice the linear vertex colour, which carries the palette and the baked
+    shading, and the mural its map alone. The deck, pilings, features, path and furniture are solid, colliding with
+    their own triangles as the source rides them; the planting and the floor paint are not. The path's vertices at
+    the coast road's edge meet it (`seam.py`), as `pier_path.py` moves its walking surface's."""
+    from ground import settings
+    from seam import edge
+    park = json.loads(SKATEPARK.read_text())
+    if park['yaw_deg']:
+        raise ValueError("Sunset Pier's tile cuts assume the park unturned")
+    blocks = {mesh['name']: mesh['blocks'] for mesh in park['meshes']}
+    folder = build / 'atomic_regions' / 'skatepark'
+    textures = build / 'skatepark' / 'textures'
+    maps = json.loads((textures / 'textures.json').read_text())
+    exports = json.loads((folder / 'assets' / 'manifest.json').read_text())['exports']
+    pieces = json.loads((folder / 'logical-pieces.json').read_text())['parents']
+    world = settings()
+    tile = world['tile_steps'] * world['ground_step_m']
+    west, south = (s - o for s, o in zip(world['south_west_m'], park['origin']))
+    region = Region('skatepark', 'Sunset Pier, the skate plaza on the sea south of Hidamari')
+    at = [[*park['origin'], park['yaw_deg'], 1.0]]
+    for parent, keys in pieces.items():
+        for key in keys:
+            row = next(row for row in exports if row['asset'] == key)
+            slots = {}
+            for slot in row['metadata']['slots']:
+                material = slot.removeprefix('Pier_')
+                image = str(textures / maps[PIER_MAPS.get(material, material)]['maps']['albedo'])
+                slots[slot] = ({'sample': image} if material == 'mural' else
+                               {'sample': image, 'vertex': True, 'decode': True, 'gain': 2.0})
+            (x0, y0, _), (x1, y1, _) = row['bounds']
+            meet = None
+            if parent in PIER_GROUND:
+                ox, oy, _ = park['origin']
+                meet = (edge([x0 + ox, y0 + oy, x1 + ox, y1 + oy]) - park['origin']).tolist() or None
+            for i in range(math.floor((x0 - west) / tile), math.floor((x1 - west) / tile) + 1):
+                for j in range(math.floor((y0 - south) / tile), math.floor((y1 - south) / tile) + 1):
+                    name = f"skatepark-{kebab(key.removeprefix('SM_Skate'))}-{i}-{j}"
+                    keep = [west + i * tile, south + j * tile, west + (i + 1) * tile, south + (j + 1) * tile]
+                    region.models[name] = Model(folder / 'assets' / row['primary'], slots=slots,
+                                                solid=blocks[parent], keep=keep, ground_owned=PIER_GROUND.get(parent), meet=meet,
+                                                about=f"A piece of Sunset Pier's {PIER_PARTS[parent]}.")
+                    region.groups.append((name, None, at))
+    return region
+
+
 ADAPTERS = {
     'treehouse': treehouse, 'brinecove': brinecove, 'belmonte': belmonte, 'hidamari': hidamari,
     'southwest': southwest, 'shrines': shrines, 'zeppelin': zeppelin, 'sword-camp': sword_camp,
     'far-hills': far_hills, 'megapark': megapark, 'gondola': gondola, 'ferry': ferry, 'kei': kei,
+    'skatepark': skatepark,
 }

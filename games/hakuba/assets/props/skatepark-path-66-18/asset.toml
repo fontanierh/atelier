@@ -1,0 +1,6 @@
+# A piece of Sunset Pier's path in from the coast.
+kind = "prop"
+source = "src/model.glb"
+textures = ["skatepark-basalt-albedo", "skatepark-concrete-albedo"]
+solid = true
+inputs_sha256 = "ed3dc0970c29650eac50151a0b4089edfd626669853a65a221cd61b1cb636d8a"

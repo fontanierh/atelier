@@ -1,0 +1,5 @@
+# The basalt albedo texture that the skatepark props draw.
+kind = "texture"
+source = "src/texture.png"
+compression = "bc7"
+inputs_sha256 = "88a77f396ddd1009d264f5b4fcd1b3587e73dc54f065e5f5300da027769d3243"
