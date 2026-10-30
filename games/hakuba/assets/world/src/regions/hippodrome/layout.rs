@@ -13,9 +13,10 @@ use crate::world::scenery::{Land, Placement, Scenery};
 /// The platform's grass top, which owns the lane's north edge at `PLATFORM_EDGE_Y`.
 const PLATFORM_TOP_M: f64 = 48.26;
 const PLATFORM_EDGE_Y: f64 = 443.0;
-/// The seam's declared clearance: the lane meets the platform's edge this far under its top, and the ground it levels
-/// past the edge stays this far under the platform.
-const PLATFORM_CLEARANCE_M: f64 = 0.01;
+/// The seam's declared clearance: the lane's ground meets the platform's edge this far under its top, and the ground it
+/// levels past the edge stays this far under the platform. It is the lift an overlay lies at over its ground, so the
+/// dirt meets the platform's top exactly (`dirt_meets_the_platform_top`).
+const PLATFORM_CLEARANCE_M: f64 = 0.06;
 /// The lane's centre line, from the street's north end (x 560, y 343) to `LANDING_M` short of the platform's edge.
 /// The levelled ground stays flat for the strip's half width past the line's end, so it is flat across the 2 m grid
 /// cell the edge lies in, and meets the edge exactly.
@@ -83,6 +84,8 @@ impl Region for Hippodrome {
 mod tests {
     use super::*;
     use crate::world::ground::Ground;
+    use crate::world::surface::Surface;
+    use crate::world::{Detail, Tile};
 
     /// The ground levelled for the lane over a hillside rising north with ridges across it, under the platform's top
     /// as the platform's source keeps it.
@@ -111,20 +114,37 @@ mod tests {
         let at = |x: f64, y: f64| ground.height(DVec2::new(x, y)).unwrap();
         let x = LANE[0][0];
         let seam = PLATFORM_TOP_M - PLATFORM_CLEARANCE_M;
+        // The ground stores its heights as 32-bit floats.
+        let tolerance = 1e-5;
         for k in -40..=40 {
             let across = x + k as f64 * LEVEL_HALF_WIDTH_M / 40.0;
             let height = at(across, PLATFORM_EDGE_Y);
             if (across - x).abs() <= LANE_HALF_WIDTH_M {
-                assert!((height - seam).abs() < 1e-9, "the lane meets the platform at {height} m at x {across}");
+                assert!((height - seam).abs() < tolerance, "the lane meets the platform at {height} m at x {across}");
             }
-            assert!(height <= seam + 1e-9, "the ground at the edge is {height} m at x {across}");
+            assert!(height <= seam + tolerance, "the ground at the edge is {height} m at x {across}");
         }
         for dx in -15..=15 {
             for dy in 0..=40 {
                 let (across, along) = (x + dx as f64, PLATFORM_EDGE_Y + dy as f64 * 0.5);
                 let height = at(across, along);
-                assert!(height <= seam + 1e-9, "the ground under the platform is {height} m at {across}, {along}");
+                assert!(height <= seam + tolerance, "the ground under the platform is {height} m at {across}, {along}");
             }
+        }
+    }
+
+    /// The dirt as the tiles draw it, over the levelled ground, ends at the platform's top along the whole entrance.
+    #[test]
+    fn dirt_meets_the_platform_top() {
+        let ground = levelled();
+        let tile = Tile { columns: (260, 300), rows: (160, 240) };
+        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        let dirt = Hippodrome.overlays().remove(0).mesh(&ground, &drawn);
+        let edge: Vec<_> =
+            dirt.positions.iter().filter(|[_, _, z]| (-z - PLATFORM_EDGE_Y as f32).abs() < 1e-3).collect();
+        assert!(edge.len() >= 2, "the dirt has {} points on the platform's edge", edge.len());
+        for [x, height, _] in edge {
+            assert!((*height as f64 - PLATFORM_TOP_M).abs() < 1e-4, "the dirt ends at {height} m at x {x}");
         }
     }
 
