@@ -44,7 +44,8 @@ class Model:
     neighbouring rectangles share every face out once. A mesh far wider than a tile is cut into one model per tile
     this way, each standing, and streaming, with its own tile. `ground_owned` names slots whose faces facing up are a
     walking surface the world's ground draws instead (a path over the ground, as a region's `layout.rs` lays it):
-    the model keeps only those slots' other faces."""
+    the model keeps only those slots' other faces. `meet` lists segments, [[x, y, z], [x, y, z]] in the source frame,
+    of an edge the model's vertices within a couple of centimetres of it move onto (see `seam.py`)."""
     source: Path
     slots: dict = field(default_factory=dict)
     default: dict = field(default_factory=dict)
@@ -55,6 +56,7 @@ class Model:
     turn: list = None
     keep: list = None
     ground_owned: list = None
+    meet: list = None
 
 
 @dataclass
@@ -222,6 +224,8 @@ def jobs(region, scratch):
             job['keep'] = model.keep
         if model.ground_owned:
             job['ground_owned'] = model.ground_owned
+        if model.meet:
+            job['meet'] = model.meet
         result.append(job)
     job_file = scratch / 'jobs.json'
     job_file.write_text(json.dumps(result))

@@ -468,8 +468,10 @@ def skatepark(build):
     finished albedo maps (`skatepark/textures`) on the meshes' UVs, which already count each map's repeat, as
     Yorimichi's materials do: the map times twice the linear vertex colour, which carries the palette and the baked
     shading, and the mural its map alone. The deck, pilings, features, path and furniture are solid, colliding with
-    their own triangles as the source rides them; the planting and the floor paint are not."""
+    their own triangles as the source rides them; the planting and the floor paint are not. The path's vertices at
+    the coast road's edge meet it (`seam.py`), as `pier_path.py` moves its walking surface's."""
     from ground import settings
+    from seam import edge
     park = json.loads(SKATEPARK.read_text())
     if park['yaw_deg']:
         raise ValueError("Sunset Pier's tile cuts assume the park unturned")
@@ -494,12 +496,16 @@ def skatepark(build):
                 slots[slot] = ({'sample': image} if material == 'mural' else
                                {'sample': image, 'vertex': True, 'decode': True, 'gain': 2.0})
             (x0, y0, _), (x1, y1, _) = row['bounds']
+            meet = None
+            if parent in PIER_GROUND:
+                ox, oy, _ = park['origin']
+                meet = (edge([x0 + ox, y0 + oy, x1 + ox, y1 + oy]) - park['origin']).tolist() or None
             for i in range(math.floor((x0 - west) / tile), math.floor((x1 - west) / tile) + 1):
                 for j in range(math.floor((y0 - south) / tile), math.floor((y1 - south) / tile) + 1):
                     name = f"skatepark-{kebab(key.removeprefix('SM_Skate'))}-{i}-{j}"
                     keep = [west + i * tile, south + j * tile, west + (i + 1) * tile, south + (j + 1) * tile]
                     region.models[name] = Model(folder / 'assets' / row['primary'], slots=slots,
-                                                solid=blocks[parent], keep=keep, ground_owned=PIER_GROUND.get(parent),
+                                                solid=blocks[parent], keep=keep, ground_owned=PIER_GROUND.get(parent), meet=meet,
                                                 about=f"A piece of Sunset Pier's {PIER_PARTS[parent]}.")
                     region.groups.append((name, None, at))
     return region

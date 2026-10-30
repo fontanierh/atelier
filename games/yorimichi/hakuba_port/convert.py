@@ -12,7 +12,8 @@ texture position share one vertex. A job's `turn`, a 3 by 3 rotation row by row,
 hulls about the source origin first. A job's `keep`, a rectangle [west, south, east, north] in the source frame, keeps
 only the visible faces whose centre lies in it, west and south edges included; with none there, the job writes no
 GLB and reports itself `EMPTY`. A job's `ground_owned` slots lose their faces facing up (`UP`), a walking surface the
-world's ground draws instead.
+world's ground draws instead. A job's `meet`, segments in the source frame, is an edge its vertices within a couple of
+centimetres of it move onto, first (`seam.py`).
 """
 import json
 import os
@@ -25,6 +26,7 @@ from mathutils import Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from painted import PAINT, SURFACE, glb  # noqa: E402
+from seam import meet  # noqa: E402
 
 
 def slot_rules(job, names):
@@ -204,6 +206,8 @@ def convert(job):
     if not visible:
         raise RuntimeError(f"{job['source']}: no visible mesh")
     full = join(visible, 'full')
+    if job.get('meet'):
+        print('MEET', job['output'], *meet(full, np.array(job['meet'], float)), flush=True)
     if job.get('ground_owned'):
         ground_owned(full, set(job['ground_owned']))
     if job.get('keep'):

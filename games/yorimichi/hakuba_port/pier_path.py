@@ -7,7 +7,8 @@ the world's ground owns its walking surface: the faces of its concrete slot faci
 region's `path-source.json`, as `layout.rs` reads them: three surfaces, each drawing the pier's concrete map (`uv` as
 glTF reads it), tinted as Yorimichi's material draws a face, twice its linear vertex colour, the paving, its dark edge
 bands and the joints every 3 m, each triangle in the surface of its corners' mean colour. The path's skirts, edge faces
-and railings stay props.
+and railings stay props. First the path's vertices at the coast road's edge meet it (`seam.py`), as `convert.py` moves
+the props' own, so the walking surface and its props still share every vertex.
 """
 import json
 import sys
@@ -15,6 +16,9 @@ from pathlib import Path
 
 import bpy
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from seam import edge, meet  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 PARK = HERE.parents[0] / 'world' / 'regions' / 'skatepark' / 'park.json'
@@ -48,6 +52,15 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.fbx(filepath=str(build / SOURCE))
     (obj,) = [o for o in bpy.context.scene.objects if o.type == 'MESH' and not o.name.startswith('UCX_')]
+    # In the source frame, as `convert.py` joins it.
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    points = np.array([v.co[:] for v in obj.data.vertices]) + origin
+    (x0, y0), (x1, y1) = points[:, :2].min(0), points[:, :2].max(0)
+    moved, added = meet(obj, edge([x0, y0, x1, y1]) - origin)
+    print(f'SUNSET PIER PATH meets the road: {moved} vertices moved, {added} added', flush=True)
     mesh, world = obj.data, obj.matrix_world
     turn = world.to_3x3().inverted().transposed()
     mesh.calc_loop_triangles()

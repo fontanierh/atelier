@@ -11,4 +11,5 @@ Each piece is cut along the tile grid, one prop per tile it reaches, so it strea
 stands each where it was cut from. The path in from the coast road runs over the ground, so the ground owns its
 walking surface: `layout.rs` lays the source's own triangles from `path-source.json` as authored surfaces, the paving
 and its joints, each drawing the pier's concrete map tinted as its source face is, and the path's props keep only its
-skirts, edges and railings.
+skirts, edges and railings. The path's end meets the coast road's edge (`momiji-coast`) exactly, its vertices there on the
+road's own edge, and the ground stays at least 5 cm under the path.
