@@ -540,6 +540,7 @@ def skatepark(build):
                                                 solid=blocks[parent], keep=keep, ground_owned=PIER_GROUND.get(parent), meet=meet,
                                                 about=f"A piece of Sunset Pier's {PIER_PARTS[parent]}.")
                     region.groups.append((name, None, at))
+    return region
 
 
 # Linear colours of the course's untextured surfaces, as `import_hippodrome.py` makes their materials.
