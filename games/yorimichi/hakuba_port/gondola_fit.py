@@ -247,23 +247,13 @@ def export(mesh, folder, mats):
 
 
 def export_world(mesh, folder, mats, G, frame, riding_triangles, limit=50000, seats=()):
-    """`site.export_world`'s gates over Hakuba's ground: closed, within its budget, clear of the riding pieces, without
-    coplanar overlaps, seated and carried by the ground. Returns the file name and the proofs."""
+    """`site.export_world` over Hakuba's ground, sampled first where the mesh stands: its gates (closed, within its
+    budget, clear of the riding pieces, without coplanar overlaps, seated and carried by the ground) and its FBX.
+    Returns the file name and the proofs."""
     xy = S.world_xy(np.asarray(mesh.verts, float)[:, :2], frame)
     G.surface.cover(xy.min(0) - 2, xy.max(0) + 2)
-    proof = solid.closed(mesh)
-    if proof['open_edges'] or proof['misoriented_edges'] or proof['degenerate_faces'] or mesh.tris() > limit:
-        raise ValueError(f'{mesh.name}: invalid or over-budget mesh: {proof}, {mesh.tris()} triangles')
-    S.untouched_riding(mesh, frame, riding_triangles)
-    count, samples = solid._shared.coplanar_overlaps([mesh])
-    area = sum(sample['area_m2'] for sample in samples)
-    seating = solid.seats([mesh], seats)
-    summary, failures = solid._shared.carried_failures([mesh], S.world_ground(mesh, frame, G))
-    if count or failures or any(row['status'] != 'ok' for row in seating):
-        raise ValueError(f'{mesh.name}: coplanar/seating/carried proof failed: {samples}, {seating}, {failures}')
-    name = export(mesh, folder, mats)
-    return name, {'name': mesh.name, 'triangles': mesh.tris(), 'closed': proof,
-                  'coplanar': {'count': count, 'area_m2': area, 'samples': samples}, 'carried': summary}
+    proofs = S.export_world(mesh, folder, mats, limit, frame=frame, G=G, seats=seats, riding=riding_triangles)
+    return f'{mesh.name}.fbx', proofs
 
 
 def stretches(points, name):
