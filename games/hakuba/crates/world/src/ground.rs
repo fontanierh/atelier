@@ -48,6 +48,15 @@ pub enum Surface {
 }
 
 impl Surface {
+    pub(crate) fn skate(self) -> hakuba_world_skate_schema::Surface {
+        use hakuba_world_skate_schema::Surface as SkateSurface;
+        match self {
+            Self::Ground => SkateSurface::Grass,
+            Self::Road => SkateSurface::Asphalt,
+            Self::Built => SkateSurface::Concrete,
+        }
+    }
+
     /// What a tile node named `name` is made of, if its name says.
     fn named(name: &str) -> Option<Self> {
         if name == GROUND {
@@ -62,7 +71,7 @@ impl Surface {
 
 /// A mesh the player stands on and cannot pass through, and what it is made of.
 #[derive(Component)]
-struct Solid(Surface);
+pub(crate) struct Solid(pub(crate) Surface);
 
 /// A solid belonging to a hidden tile until its complete version is activated.
 #[derive(Component)]

@@ -1,0 +1,8 @@
+# Roll sand surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/roll_sand_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "6ecc81751df26fb5d4bba327499c2f9e5e71bc99a35ae1e7853d1747ab471161"

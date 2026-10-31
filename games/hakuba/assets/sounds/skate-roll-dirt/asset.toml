@@ -1,0 +1,8 @@
+# Roll dirt surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/roll_dirt_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "7b6b737a58fac982f34b1185d794496071a0d2357a93ed72cd0742d57fd7695b"

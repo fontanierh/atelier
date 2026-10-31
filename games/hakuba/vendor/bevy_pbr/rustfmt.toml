@@ -1,0 +1,5 @@
+# Retain upstream Bevy formatting so the local patch stays reviewable.
+edition = "2024"
+style_edition = "2021"
+max_width = 100
+use_small_heuristics = "Default"

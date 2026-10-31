@@ -1,0 +1,8 @@
+# Steel trucks grinding on a rail; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/grind_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "2c22ac717c6a6fc18295cb5f6ef94370456e76415450a9fa96c65af67f19fe51"

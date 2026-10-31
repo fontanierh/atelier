@@ -1,0 +1,8 @@
+# The wooden deck sliding on a ledge; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/slide_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "5e64595ee8d40747f0423eb2abaac43bab3a2959f98cc7171836883808794841"

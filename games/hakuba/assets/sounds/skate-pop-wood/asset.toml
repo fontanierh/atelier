@@ -1,0 +1,8 @@
+# Pop wood surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/pop_wood_01.wav", "src/pop_wood_02.wav", "src/pop_wood_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "2ab51a23b2698aec48551bfdf9b960f06e67fd2bfeee998a2e33e3bd2647e119"

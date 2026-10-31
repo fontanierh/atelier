@@ -1,0 +1,8 @@
+# Roll wood surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/roll_wood_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "bbfc79de97ba45a1c9d2a73a09c64e3ae9a3ed5e6179403faf0c6194645164b5"

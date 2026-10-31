@@ -1,0 +1,7 @@
+# Articulated board: every scene is baked into its matching solved bone's local game frame.
+# src/model.glb contains the original laminated deck, two trucks and four urethane wheels;
+# src/provenance.json records the source identity, reference matrices and exact native pivot fits.
+kind = "equipment"
+source = "src/model.glb"
+parts = ["SKATEBOARD_ROOT", "TRUCK_FRONT", "TRUCK_BACK", "RIGHT_WHEELFRONT", "LEFT_WHEELFRONT", "RIGHT_WHEELBACK", "LEFT_WHEELBACK"]
+inputs_sha256 = "9c90a135ac6401d8e2716ccf6099403e4a0e7a0e7d341448ddcdde72637eab05"

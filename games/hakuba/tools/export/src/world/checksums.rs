@@ -35,9 +35,14 @@ pub fn code() -> Result<Vec<u8>> {
 
 fn tile_code(code: Vec<PathBuf>) -> Vec<PathBuf> {
     let schema = Path::new(EXPORTER).join("../../schemas/water");
+    let skate_schema = Path::new(EXPORTER).join("../../schemas/world-skate");
     code.into_iter()
         .filter(|file| {
-            !file.ends_with("src/world/regions.rs") && !file.ends_with("src/main.rs") && !file.starts_with(&schema)
+            !file.ends_with("src/world/regions.rs")
+                && !file.ends_with("src/world/skate.rs")
+                && !file.ends_with("src/main.rs")
+                && !file.starts_with(&schema)
+                && !file.starts_with(&skate_schema)
         })
         .collect()
 }
@@ -202,6 +207,17 @@ pub fn write(tiles: &Path, checksums: &BTreeMap<String, String>) -> Result<()> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn index_only_skating_schema_and_assembly_do_not_invalidate_tiles() {
+        let world = crate::code("src/world").unwrap();
+        let schema = Path::new(EXPORTER).join("../../schemas/world-skate/src/lib.rs");
+        let assembly = Path::new(EXPORTER).join("src/world/skate.rs");
+        assert!(world.contains(&schema));
+        assert!(world.contains(&assembly.to_path_buf()));
+        let tiles = tile_code(world);
+        assert!(!tiles.contains(&schema));
+        assert!(!tiles.contains(&assembly.to_path_buf()));
+    }
     #[test]
     fn water_schema_invalidates_world_input_but_not_tile_code() {
         let world = crate::code("src/world").unwrap();

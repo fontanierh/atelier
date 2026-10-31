@@ -28,7 +28,8 @@ pub(crate) fn steer(players: Query<&Player>, bodies: Query<&Playing>, mut glider
         let Some(mut glider) = gliders.iter_mut().find(|glider| glider.ready_for(player.body)) else { continue };
         let Ok(playing) = bodies.get(player.body) else { continue };
         let motion = &player.motion;
-        glider.held = motion.mode == Mode::Glide || (motion.action == Action::GlideClose && playing.time < PUT_AWAY_S);
+        glider.held = player.owner == crate::MovementOwner::Walking
+            && (motion.mode == Mode::Glide || (motion.action == Action::GlideClose && playing.time < PUT_AWAY_S));
         let most = MOST_BANK_DEG.to_radians();
         glider.bank = (motion.glide_turn() * BANK_PER_TURN).clamp(-most, most);
     }

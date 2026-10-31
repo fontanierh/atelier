@@ -1,0 +1,8 @@
+# Land grass surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/land_grass_01.wav", "src/land_grass_02.wav", "src/land_grass_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "4022f4a7b14117770d365e231b779c7b1db28f9f3033bd065fc758e2c029f687"

@@ -1,9 +1,36 @@
 # Performance
 
-Hakuba holds 60 frames a second in the browser on the reference setting: a 2560 × 1440 window at device scale 2 (a 5K
-display), Resolution 50%, Near shadows, Temporal anti-aliasing and the default settings otherwise. That leaves about
-16 ms of GPU time a frame. `crates/CONTRACTS` holds the rules below as checks for every change; this file says how to
-measure and why the rules are what they are.
+Hakuba targets 60 frames a second in the browser on the reference setting: a 2560 × 1440 CSS viewport at device
+scale 2, Resolution 50%, Near shadows, Temporal anti-aliasing and the default settings otherwise. That leaves about
+16 ms of GPU time a frame. The skating port has not yet met this target: a 30-second idle sample measured 58.5 FPS
+and a separate 30-second mounted sample measured 55.2 FPS, with Nominal thermal pressure throughout. These samples
+used the same browser connection for viewport setup and measurement; the canvas was 2560 × 1440 in both phases.
+The mounted player rolled under normal gravity, so this is not a fixed-camera comparison. `crates/CONTRACTS` holds
+the rules below as checks for every change; this file says how to measure and why the rules are what they are.
+
+## Forward-motion prototype
+
+The explicit `?forward_motion=single` browser mode writes opaque/masked color and motion together, then publishes
+motion and depth to TAA. It keeps shadow rendering unchanged and omits the camera prepass's geometry draws.
+The normal world still uses its original renderer while temporal edge quality is checked.
+
+A clean release-browser sample at the same reference setting measured **60.00 FPS idle and 59.33 FPS mounted**,
+30 seconds each after warm-up, with Nominal thermal pressure. The viewport connection remained open and both
+samples recorded CSS 2560 × 1440, device scale 2 and canvas 2560 × 1440. No capture, CPU profile or GPU-query
+injection ran during measurement. The mounted 99th-percentile frame interval was 32.2 ms: this is an improvement
+over 55.2 FPS, not sustained 60 FPS acceptance.
+
+A separate 29-sample GPU diagnostic verified zero indexed geometry in the camera prepass and both shadow cascades
+still rendering. Main rendering made about 6,496 indexed draws / 27.48 million indexed entries; its median pass interval
+was 14.22 ms. Motion transfer had equal, unresolved timestamps in many samples; positive intervals had one
+0.065536 ms timestamp quantum as their median. TAA remained about 0.131 ms. The earlier geometry prepass was about
+8.19 ms and main about 9.83 ms in a slightly different visible workload. These overlapping pass intervals are not additive frame
+times or a workload-matched A/B. The main pass pays more shading without the prepass's depth rejection.
+
+Main foliage retains its existing depth margin, so its surface winner can differ from the unbiased old prepass
+at intersections. Exact motion-texture publication does not prove identical TAA edge quality. `compare` keeps the
+old displayed TAA input; `publish` retains both geometry passes but feeds TAA from main. These remain explicit
+validation modes, not quality settings or proof that the 60 FPS contract is met.
 
 ## Measuring
 
@@ -17,13 +44,22 @@ profile, whose frame rate is not the reference measurement.
 - **Count frames as the player sees them**: frames a second and the median and 90th percentile frame times from
   `requestAnimationFrame` with vsync on, over at least ten seconds of play after the splash lifts. Without vsync, the
   times between `getCurrentTexture` calls say how fast the CPU queues frames, not how fast the GPU draws them.
-- **Time each pass on the GPU** with Xcode's Metal System Trace of the browser's GPU process. Bevy cannot time passes
-  in WebGPU, which has no timestamps inside a pass. Start Chrome with
+- **Inspect GPU pass intervals** with Xcode's Metal System Trace of the browser's GPU process. Bevy does not enable
+  WebGPU pass timing here. External diagnostics can request the optional `timestamp-query` feature and write pass
+  boundary timestamps, but must report support, quantization and instrumentation overhead. Start Chrome with
   `--enable-dawn-features=use_user_defined_labels_in_backend` so each pass carries Bevy's name for it, wait about ten
   seconds after the splash lifts, then run
   `xcrun xctrace record --template 'Metal System Trace' --attach <GPU process id> --time-limit 3s --output run.trace`.
-  Export the `metal-gpu-intervals` table with `xcrun xctrace export` and add up each label's time per frame, counting
-  only the game's GPU process.
+  Export the `metal-gpu-intervals` table with `xcrun xctrace export`, counting only the verified game's GPU process.
+  Merge overlapping intervals before reporting occupied time. Channels and even different encoders can overlap;
+  do not add their durations as elapsed frame time. A command-buffer frame number is not a displayed game frame.
+  Label an interval average or encoder duration as such unless an independent frame association is established.
+- **Keep viewport setup alive.** CDP device-metrics overrides end when their connection closes. Use the same
+  connection for setup and measurement, and record the actual CSS viewport, device scale and canvas dimensions
+  during every sample. Setup metadata alone is not evidence of the measured dimensions.
+- **Separate diagnostics from frame pacing.** CPU profiling, GPU timestamp queries and draw-call recording add work.
+  Use them to locate costs, not as the clean FPS acceptance run. Equal quantized timestamp pairs are unresolved,
+  not proof that a pass costs nothing.
 - **A fresh browser profile after an export.** The browser caches the game's `.glb` files: after an asset changes,
   load the page with a hard reload (Cmd+Shift+R) or a new profile, or the game runs new code on old files.
 - **Before and after, on the same machine and settings.** A pull request that claims a frame-rate effect gives both,
@@ -31,7 +67,9 @@ profile, whose frame rate is not the reference measurement.
 
 ## Where a frame goes
 
-GPU time per frame on the reference setting, in milliseconds, in October 2026:
+Historical pass/channel estimates from October 2026, in milliseconds, before the skating port. Their exact
+association with displayed frames was not established. These are not current acceptance results, and overlapping
+columns or passes must not be added as elapsed frame time:
 
 | Pass                             | Fragment | Vertex |
 | -------------------------------- | -------- | ------ |
@@ -60,10 +98,10 @@ its wind in the shadow, prepass and main passes.
 - **A post filter's kernel belongs in its shader as constants.** The painterly filter's 21 taps each weighed in all
   eight wedges through a uniform array; written into the shader, leaving out the two thirds of weights that are zero,
   it looks the same and costs 0.7 ms instead of 2.0: with it the reference setting went from about 50 frames a second to
-  a steady 60.
-- **Merge small copies by square, not by tile.** Thousands of grass entities cost more to cull than their vertices cost
-  to draw, so their copies merge, but a merged mesh is culled whole: shadow-casting models use 16 m squares and
-  non-shadow-casting models use 32 m squares. A large model, such as a tree, is never merged; Bevy draws its copies
+  a steady 60, before the skating port.
+- **Balance merged geometry against draw preparation.** Thousands of grass entities cost more to cull than their
+  vertices cost to draw, so their copies merge, but a merged mesh is culled whole: shadow-casting models use 32 m
+  squares and non-shadow-casting models currently merge by tile. A large model, such as a tree, is never merged; Bevy draws its copies
   together anyway. Tile scenery is prepared over multiple updates, then the complete version replaces the old one.
 - **Keep presentation cameras out of 3D visibility work.** The window's 2D camera displays the world image and UI;
   it has no 3D render layers or directional-light shadow view. Rigid GPU-built meshes also use a direct binding path, while

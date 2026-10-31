@@ -1,0 +1,31 @@
+@cc [owner:fontanierh,label:architecture] skate-resources-are-exported-bytes
+The skating Session MUST construct its complete simulation resources from the exported simulation package bytes.
+It MUST NOT read an original animation archive, authoring JSON, private asset root, socket or subprocess.
+Clip tracks and metadata MUST retain binary32 words, bank identity, source offsets and graph binding order.
+
+@cc [owner:fontanierh,label:correctness] skate-one-fixed-tick
+Session::tick MUST advance exactly one native simulation tick from one raw controller packet. Marker hold time MUST
+advance by that simulation period, not render-frame time. The explicit host TRANSFER bit MUST NOT consume the
+native LB modifier used for marker placement and return.
+
+@cc [owner:fontanierh,label:correctness] skate-stow-keeps-native-authority
+Normal stow MUST retain skating ownership until the native rider has remained on-foot and grounded for 0.2 seconds.
+A V toggle before that handback MUST cancel the pending stow: it requests a mount when already on foot,
+and stops further dismount requests when still riding. An already accepted native animation may finish.
+Neither action may invent a physical state.
+
+@cc [owner:fontanierh,label:correctness] skate-retains-rail-topology
+Session construction and collision replacement MUST preserve authored grind-line IDs, point order and closure.
+Only the spline adapter MAY add a last-to-first chord for a closed line that does not already repeat its endpoint.
+
+@cc [owner:fontanierh,label:correctness] skate-hud-observes-native-results
+Trick announcements and their start stance MUST come from the announced native scoring carrier. Pump labels MUST
+count only the native intentional ground pump gain, not coasting, pushes or boost-zone speed. Spin labels MUST measure
+the rider root, not a board shove-it. Retained telemetry MUST advance on simulation ticks without changing score or physics.
+
+@cc [owner:fontanierh,label:correctness] skate-local-bail-recovery
+Local bail recovery MUST preserve the displayed physical body's location and momentum, settle on the actual world
+surface, and rise continuously there. A successful get-up MUST NOT request or pass through the historical checkpoint
+Teleporting path. The existing board/rider assembly remains the only solver; a far or overturned board changes its
+location only while hidden. Intermediate get-up collision shapes MUST retain the lower endpoint world height and
+terrain clearance, including on slopes. Native graphs own the standing target; the host MUST NOT force a clip.

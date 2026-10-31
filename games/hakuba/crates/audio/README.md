@@ -28,3 +28,7 @@ src/
   sound.rs   a sound: its Ogg file and list of takes, and playing one take
   moves.rs   the player's sounds: footsteps, landings, the moves' bursts of air, and the paraglider's wind
 ```
+
+`skate.rs` reads the solved `SkateStatus.audio` frame for surface-specific roll, grind, slide, skid and foot-brake scrape loops. It reads every fixed tick's `AudioEvent` for pop, land and clatter, so two simulation ticks in one host frame cannot hide an attack. Footsteps and glider sounds yield to skating ownership. Board sounds load before the splash lifts.
+
+`soften.rs` implements the board-only sample processor through Bevy's custom audio source interface. The saved skating volume and optional nominal 3 kHz one-pole low-pass affect current and future board voices, without changing the world's other sounds or compounding loop envelopes. The game sets preferences before playback. Tests check sample attenuation, stereo separation, bypass and live gain changes.

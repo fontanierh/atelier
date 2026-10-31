@@ -4,6 +4,8 @@
 //! character carries at its [`Grip`]; [`Hands`] finds both arms' bones, for what it holds in two hands.
 
 mod emission;
+mod pose;
+pub use pose::{Bone, PoseOverride, PoseSystems, Rig, SolvedPose};
 
 pub use emission::{MaterialFailed, MaterialReady};
 
@@ -19,7 +21,7 @@ pub struct CharactersPlugin;
 
 impl Plugin for CharactersPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(emission::EmissionPlugin)
+        app.add_plugins((emission::EmissionPlugin, pose::PosePlugin))
             .add_observer(load_model)
             .add_observer(load_source)
             .add_observer(start_animating)
@@ -234,6 +236,7 @@ fn start_animating(
     children: Query<&Children>,
     players: Query<(), With<AnimationPlayer>>,
     names: Query<(&Name, Option<&GltfExtras>)>,
+    transforms: Query<(&Transform, Option<&ChildOf>)>,
 ) {
     let Ok(mut clips) = characters.get_mut(ready.entity) else { return };
     let mut bones: HashMap<String, Entity> = HashMap::default();
@@ -269,6 +272,9 @@ fn start_animating(
     if let [Some(left), Some(right)] = SIDES.map(arm) {
         commands.entity(ready.entity).insert(Hands { arms: [left, right] });
     }
+    // Capture authored bind locals before the first animation evaluation, not a sampled idle pose.
+    let rig = pose::bind(ready.entity, &bones, &transforms);
+    commands.entity(ready.entity).insert(rig);
     let Some(player) = children.iter_descendants(ready.entity).find(|child| players.contains(*child)) else { return };
     clips.player = Some(player);
     commands.entity(player).insert((AnimationGraphHandle(clips.graph.clone()), AnimationTransitions::new()));
@@ -277,7 +283,7 @@ fn start_animating(
 
 fn play(
     play: On<Play>,
-    mut characters: Query<(&Clips, &mut Playing)>,
+    mut characters: Query<(&Clips, &mut Playing), Without<PoseOverride>>,
     mut players: Query<(&mut AnimationPlayer, Option<&mut AnimationTransitions>)>,
     mut commands: Commands,
 ) {
@@ -317,7 +323,7 @@ fn play(
 /// Uses the same graph and player as single-clip playback. A later Play returns it to single-clip playback.
 fn blend(
     blend: On<Blend>,
-    characters: Query<&Clips>,
+    characters: Query<&Clips, Without<PoseOverride>>,
     mut players: Query<&mut AnimationPlayer>,
     mut commands: Commands,
 ) {

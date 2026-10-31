@@ -1,0 +1,29 @@
+{
+  "description": "a shoe planting and scuffing",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "push_01.wav",
+      "sha256": "e91422ec0095638785060c1f1062920add975e4acf7b3d31afc7e66b913f8211"
+    },
+    {
+      "file": "push_02.wav",
+      "sha256": "d00b29c8b8d776a817274d10fa13f4a8a1f0bdc5c46feec7f4e74f23b0246774"
+    },
+    {
+      "file": "push_03.wav",
+      "sha256": "7066c1455d2cfcf3e59ae67a10e86928fae9e7b798f3a3e47892b1d7d7af8d61"
+    }
+  ]
+}

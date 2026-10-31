@@ -16,6 +16,22 @@ use hakuba_world::{Ground, PushesPlants, Spawn, Unready};
 pub use input::Controls;
 pub use moves::{Action, Mode};
 
+/// Walking systems, ordered so another movement owner can take over before they run.
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlayerSystems {
+    Input,
+    Movement,
+    Camera,
+}
+
+/// Which controller owns the player's root, camera and pose. External owners must return all three together.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum MovementOwner {
+    #[default]
+    Walking,
+    Skating,
+}
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -26,7 +42,12 @@ impl Plugin for PlayerPlugin {
             .add_systems(OnExit(DevMode::On), land_under_camera)
             .add_systems(
                 Update,
-                (input::read, moves::advance, glider::steer, camera::follow)
+                (
+                    input::read.in_set(PlayerSystems::Input),
+                    moves::advance.in_set(PlayerSystems::Movement),
+                    glider::steer,
+                    camera::follow.in_set(PlayerSystems::Camera),
+                )
                     .chain()
                     .run_if(in_state(Pause::Playing))
                     .run_if(in_state(DevMode::Off)),
@@ -40,8 +61,18 @@ impl Plugin for PlayerPlugin {
 pub struct Player {
     /// The character's model.
     pub body: Entity,
+    pub owner: MovementOwner,
     pub camera: camera::Orbit,
     pub motion: moves::Motion,
+}
+
+impl Player {
+    /// Returns movement and camera ownership, preserving the rider's current place and momentum.
+    pub fn resume_walking(&mut self, at: Vec3, yaw: f32, velocity: Vec3, grounded: bool) {
+        self.owner = MovementOwner::Walking;
+        self.motion = moves::Motion::resuming(at, yaw, velocity, grounded);
+        self.camera = camera::Orbit::behind(yaw);
+    }
 }
 
 /// The character's model under the [`Player`].
@@ -64,7 +95,7 @@ fn spawn(mut commands: Commands, start: Option<Res<Spawn>>, players: Query<(), W
         .spawn((
             Name::new("Player"),
             DespawnOnExit(Screen::World),
-            Player { body, camera: camera::Orbit::behind(yaw), motion },
+            Player { body, owner: MovementOwner::Walking, camera: camera::Orbit::behind(yaw), motion },
             Transform::from_translation(start.0.translation).with_rotation(Quat::from_rotation_y(yaw)),
             Visibility::default(),
             Unready,
@@ -104,7 +135,6 @@ fn land_under_camera(
             transform.translation = hit.point;
         }
         transform.rotation = Quat::from_rotation_y(yaw);
-        player.motion = moves::Motion::facing(yaw);
-        player.camera = camera::Orbit::behind(yaw);
+        player.resume_walking(transform.translation, yaw, Vec3::ZERO, true);
     }
 }

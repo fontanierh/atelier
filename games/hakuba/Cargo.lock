@@ -1333,8 +1333,6 @@ checksum = "bff34eb29ff4b8a8688bc7299f14fb6b597461ca80fec03ed7d22939ab33e48f"
 [[package]]
 name = "bevy_pbr"
 version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb760932d1e683e7c00011f5c99e4e1cc893646a3a7b7224da6daf9bfa94853d"
 dependencies = [
  "arrayvec",
  "bevy_app",
@@ -3140,6 +3138,7 @@ dependencies = [
  "hakuba_rendering",
  "hakuba_screens",
  "hakuba_settings",
+ "hakuba_skate",
  "hakuba_viewer",
  "hakuba_world",
 ]
@@ -3152,6 +3151,7 @@ dependencies = [
  "hakuba_player",
  "hakuba_screens",
  "hakuba_settings",
+ "hakuba_skate",
  "hakuba_world",
  "serde",
  "serde_json",
@@ -3187,7 +3187,9 @@ dependencies = [
  "anyhow",
  "geo",
  "glam",
+ "hakuba_skate_schema",
  "hakuba_water_schema",
+ "hakuba_world_skate_schema",
  "hound",
  "image",
  "intel_tex_2",
@@ -3256,6 +3258,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_skate"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_characters",
+ "hakuba_glider",
+ "hakuba_player",
+ "hakuba_screens",
+ "hakuba_settings",
+ "hakuba_skate_schema",
+ "hakuba_world",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "hakuba_skate_schema"
+version = "0.1.0"
+dependencies = [
+ "sha2",
+]
+
+[[package]]
 name = "hakuba_viewer"
 version = "0.1.0"
 dependencies = [
@@ -3278,13 +3303,22 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_characters",
+ "hakuba_rendering",
  "hakuba_screens",
  "hakuba_settings",
  "hakuba_water_schema",
+ "hakuba_world_skate_schema",
  "parry3d",
  "serde",
  "serde_json",
  "web-sys",
+]
+
+[[package]]
+name = "hakuba_world_skate_schema"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

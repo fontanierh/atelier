@@ -1,0 +1,8 @@
+# Roll stone surface variant; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/roll_stone_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "1d0c165cb5f214b90f8bb638b95083d82011859c6cfbc1c8f9f465aeb00c744c"

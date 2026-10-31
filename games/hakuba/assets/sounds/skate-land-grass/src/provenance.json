@@ -1,0 +1,29 @@
+{
+  "description": "land grass surface variant",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "original deterministic synthesis",
+      "license": "Original project-authored sound recipe."
+    }
+  ],
+  "takes": [
+    {
+      "file": "land_grass_01.wav",
+      "sha256": "3392e40c6bb688018422dd6336ff2a2b7bad6af344fa404c8ef8423dec9b814a"
+    },
+    {
+      "file": "land_grass_02.wav",
+      "sha256": "c20121917553f7adad26a1a135a2229d9159fe92579eaea8aafddee94973b770"
+    },
+    {
+      "file": "land_grass_03.wav",
+      "sha256": "57e3f351ab9f262d0163b72e35656410e43698caa19669a429a2a10c90931219"
+    }
+  ]
+}

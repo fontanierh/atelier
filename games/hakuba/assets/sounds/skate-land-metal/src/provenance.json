@@ -1,0 +1,35 @@
+{
+  "description": "land metal surface variant",
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "looped": false,
+  "preparation": "Existing deterministic original sound recipe, unchanged signal processing and fixed seeds; WAV takes are the final local export inputs. No provider calls.",
+  "recipe_sha256": "538011fa2a77af1e3bc3b08b3d4979527e281fa0f8386db173370f5be4dad686",
+  "sources": [
+    {
+      "recording": "audioville_stick_hit_13_wild.wav",
+      "sha256": "623d96e36eff804b4fb3aa50111426065fbdef94e401aff35c92f143d38b7f0b",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    },
+    {
+      "recording": "audioville_wooden_sword_hit_11.wav",
+      "sha256": "2f654f62b4302ea96c2bc70a07f2ab34deabcd2642babb3912c71dba5e23efa1",
+      "license": "Sonniss GDC Game Audio Bundles: royalty-free use and modification in games; not a sound pack or AI input."
+    }
+  ],
+  "takes": [
+    {
+      "file": "land_metal_01.wav",
+      "sha256": "354fbc808e9726393104b61651740107b4a39f2c7f5b9b080f493ddce2220f13"
+    },
+    {
+      "file": "land_metal_02.wav",
+      "sha256": "7d3715ba1dcf8635dc0b72f78fb816ddeb636b1beb443ab432c115e9d3c9b49c"
+    },
+    {
+      "file": "land_metal_03.wav",
+      "sha256": "f21dabf0fc67706e5f199fa33aa68a4a3aca2153f73098a2a927c79b11571a5f"
+    }
+  ]
+}

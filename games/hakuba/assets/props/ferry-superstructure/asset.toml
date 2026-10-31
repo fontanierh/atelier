@@ -1,4 +1,4 @@
 # The passenger ferry's superstructure, docked at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "89ca16e7aa655a56f8712b68ccbd70fe813a5031ead3159974e2b52fb13e8401"
+inputs_sha256 = "ba34d769b1b40f61d35714f77848872dc037cc48637886a422f5379a6d4b5070"

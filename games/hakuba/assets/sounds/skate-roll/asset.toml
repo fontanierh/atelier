@@ -1,0 +1,8 @@
+# Wheels rolling over smooth concrete; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/roll_01.wav"]
+looped = true
+quality = 0.5
+inputs_sha256 = "d3e4348d7b3b2c10d6f764e55faced11758fca0781da8ccba513e9228f7be2c7"

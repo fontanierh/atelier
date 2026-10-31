@@ -474,6 +474,63 @@ mod shadow_motion_tests {
     use super::SourceProfile;
 
     #[test]
+    fn opaque_source_material_disables_motion_without_changing_masked_profiles() {
+        use super::{ShadowFoliage, SourceFoliage, Swaying, SwayingMaterials};
+        use crate::push::Pushers;
+        use bevy::asset::{AssetApp, AssetPlugin, Assets};
+        use bevy::ecs::system::RunSystemOnce;
+        use bevy::prelude::{AlphaMode, App, Handle, MinimalPlugins, StandardMaterial};
+
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, AssetPlugin::default()))
+            .init_asset::<Image>()
+            .init_resource::<Made>()
+            .init_resource::<Assets<StandardMaterial>>()
+            .init_resource::<Assets<Swaying>>()
+            .init_resource::<Assets<SourceFoliage>>()
+            .init_resource::<Assets<ShadowFoliage>>()
+            .insert_resource(Pushers(Handle::default()));
+        let mut handles = Vec::new();
+        for mode in [AlphaMode::Opaque, AlphaMode::Mask(0.5)] {
+            let material = app
+                .world_mut()
+                .resource_mut::<Assets<StandardMaterial>>()
+                .add(StandardMaterial { alpha_mode: mode, ..Default::default() });
+            let profile = SourceProfile {
+                direction_amplitude_shade: [1., 0., 0.2, 0.],
+                slow: [0.; 4],
+                fast: [0.; 4],
+                global_slow: [0.; 4],
+                global_fast: [0.; 4],
+                global_tail: [0.; 4],
+                push_haze: [1., 0., 0., 0.],
+                haze_colour: [0.; 3],
+                wind_scale: 0.7,
+                up_normal: false,
+            };
+            let expected = profile.clone();
+            let handle = app
+                .world_mut()
+                .run_system_once(move |mut materials: SwayingMaterials| {
+                    materials.source_of(&material, &profile).unwrap()
+                })
+                .unwrap();
+            handles.push((handle, mode, expected));
+        }
+        let materials = app.world().resource::<Assets<SourceFoliage>>();
+        for (handle, mode, profile) in handles {
+            let material = materials.get(&handle).unwrap();
+            assert_eq!(material.base.alpha_mode, mode);
+            assert_eq!(
+                material.extension.profile.haze_colour.w,
+                if matches!(mode, AlphaMode::Mask(_)) { 1. } else { 0. }
+            );
+            assert_eq!(material.extension.profile.global_tail.z, profile.wind_scale);
+            assert_eq!(material.extension.profile.direction.to_array(), profile.direction_amplitude_shade);
+        }
+    }
+
+    #[test]
     fn source_shadow_motion_includes_gust_push_and_weight() {
         let profile = SourceProfile {
             direction_amplitude_shade: [1.0, 0.0, 0.2, 0.0],

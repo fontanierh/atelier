@@ -23,5 +23,7 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
             alpha_discard(flags, pbr_input.material.alpha_cutoff, pbr_input.material.base_color);
         out.color = main_pass_post_lighting_processing(pbr_input, apply_pbr_lighting(pbr_input));
     }
+    @if(FORWARD_MOTION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(in.world_position, in.previous_world_position);
     return out;
 }

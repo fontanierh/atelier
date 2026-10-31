@@ -1,0 +1,8 @@
+# A shoe planting and scuffing; prepared original 48 kHz mono takes.
+# src/provenance.json records the original deterministic recipe, sources and take checksums.
+# All takes are committed inputs. The sound exporter only packs and encodes them.
+kind = "sound"
+takes = ["src/push_01.wav", "src/push_02.wav", "src/push_03.wav"]
+looped = false
+quality = 0.5
+inputs_sha256 = "840ac057d6a23f4213a2090021d7160bde20b8318872b203dec01ba32507b077"

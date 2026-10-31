@@ -186,6 +186,13 @@ impl Glb {
         node
     }
 
+    /// Every named scene and the nodes at its root, in source order.
+    pub fn scenes(&self) -> Vec<(String, Vec<usize>)> {
+        items(&self.json, "scenes")
+            .map(|scene| (scene["name"].as_str().unwrap_or("").to_owned(), items(scene, "nodes").map(index).collect()))
+            .collect()
+    }
+
     /// The default scene's root nodes.
     pub fn roots(&self) -> Vec<usize> {
         let scene = self.json["scene"].as_u64().unwrap_or(0) as usize;

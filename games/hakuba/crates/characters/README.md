@@ -17,3 +17,5 @@ upper arm, forearm and hand, and the three bones of each finger but the thumb.
 Playable characters use the shared clips and grip. A model with authored clips keeps its own skeleton and clips;
 its export can also request emission proportional to its vertex-tinted base colour. Models without that profile keep
 their original material.
+
+`pose.rs` publishes `Rig` with parent-ordered bones and authored local/body-frame bind transforms, including non-bone armature scale. `PoseOverride` gives a procedural controller exclusive pose authority. `SolvedPose` supplies a complete finite local pose; it is applied after animation and before transform propagation through `PoseSystems::Apply`. Remove the override to resume clips.

@@ -1,4 +1,4 @@
 # A gondola rim station's machinery.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "fd3ecb2ba9952401f7945f5f5bda37ac901c6bf509c07c8928582e8a5ce21654"
+inputs_sha256 = "6390681f22af8ecd5a7df57585fd6966f54fd4ff3b21a8bd92b223730aad19f9"

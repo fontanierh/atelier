@@ -28,6 +28,7 @@ mod published;
 mod raised;
 mod regions;
 mod scenery;
+mod skate;
 mod surface;
 mod underlay;
 
@@ -343,6 +344,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         serde_json::to_vec(&json!([settings.south_west_m, settings.ground_step_m, settings.tile_steps]))?;
     let mut rebuilt = 0;
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
+    skate::write(&mut index)?;
+    index.add_data("tile grid", json!({ "tile_m": tile_m }));
     if !waters.is_empty() {
         index.add_data("water bodies", json!({ "waters": waters }));
     }
@@ -383,7 +386,12 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             let middle = ground
                 .position((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
             let centre = middle.extend(ground.height(middle).unwrap_or(0.0));
-            index.add_marker(&format!("tile {column} {row}"), game(centre), DQuat::IDENTITY);
+            let name = format!("tile {column} {row}");
+            index.add_marker(&name, game(centre), DQuat::IDENTITY);
+            let low = ground.position(tile.columns.0 as f64, tile.rows.0 as f64);
+            let high = ground.position(tile.columns.1 as f64, tile.rows.1 as f64);
+            let node = index.node(&name)?;
+            index.set_extras(node, json!({ "collision_bounds": [[low.x, -high.y], [high.x, -low.y]] }));
         }
     }
     // Tiles past the ground hold only the models standing there.

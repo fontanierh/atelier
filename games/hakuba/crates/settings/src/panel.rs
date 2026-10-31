@@ -7,11 +7,14 @@ use hakuba_screens::{button, text};
 
 use crate::{AntiAliasing, Detail, FrameRate, Resolution, Settings, Shadows};
 
+#[path = "skate_panel.rs"]
+mod skate_panel;
+
 pub struct PanelPlugin;
 
 impl Plugin for PanelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, show_values);
+        app.add_systems(Update, (show_values, skate_panel::show_pages));
     }
 }
 
@@ -26,6 +29,7 @@ enum Row {
     Detail,
     FrameRate,
     Volume,
+    Skate(skate_panel::Row),
 }
 
 impl Row {
@@ -50,6 +54,7 @@ impl Row {
             Row::Detail => "Detail",
             Row::FrameRate => "Frame rate",
             Row::Volume => "Volume",
+            Row::Skate(row) => row.name(),
         }
     }
 
@@ -86,6 +91,7 @@ impl Row {
             }
             .into(),
             Row::Volume => format!("{:.0} %", settings.volume * 100.0),
+            Row::Skate(row) => row.value(&settings.skate),
         }
     }
 
@@ -106,6 +112,7 @@ impl Row {
                 settings.frame_rate = next(&all, settings.frame_rate, by);
             }
             Row::Volume => settings.volume = stepped(settings.volume, by as f32 * 0.1, 0.0, 1.0),
+            Row::Skate(row) => row.step(&mut settings.skate, by),
         }
     }
 }
@@ -124,13 +131,16 @@ fn next<T: Copy + PartialEq>(all: &[T], now: T, by: i32) -> T {
 /// The text showing a row's value.
 #[derive(Component)]
 struct Value(Row);
+#[derive(Component)]
+struct StepButton(Row);
 
-/// The panel of every setting.
+fn disabled(row: Row, settings: &Settings) -> bool {
+    matches!(row, Row::Skate(row) if settings.skate.mode != crate::SkateMode::Custom && !row.always())
+}
+
+/// General settings and grouped skating pages, shared by the menu and the pause screen.
 pub fn panel() -> impl Bundle {
-    (
-        Node { flex_direction: FlexDirection::Column, row_gap: px(8), ..default() },
-        Children::spawn(SpawnIter(Row::ALL.into_iter().map(row))),
-    )
+    skate_panel::panel()
 }
 
 fn row(row: Row) -> impl Bundle {
@@ -138,22 +148,36 @@ fn row(row: Row) -> impl Bundle {
     (
         Node { align_items: AlignItems::Center, column_gap: px(10), ..default() },
         children![
-            (Node { width: px(170), ..default() }, children![text(row.name(), 20.0)]),
-            (button("<"), observe(step(-1))),
+            (Node { width: px(230), flex_shrink: 1.0, ..default() }, children![text(row.name(), 20.0)]),
+            (StepButton(row), button("<"), observe(step(-1))),
             (
-                Node { width: px(130), justify_content: JustifyContent::Center, ..default() },
+                Node { width: px(130), flex_shrink: 0.0, justify_content: JustifyContent::Center, ..default() },
                 children![(Value(row), text("", 20.0))],
             ),
-            (button(">"), observe(step(1))),
+            (StepButton(row), button(">"), observe(step(1))),
         ],
     )
 }
 
-fn show_values(settings: Res<Settings>, mut values: Query<(&Value, &mut Text)>, added: Query<(), Added<Value>>) {
+fn show_values(
+    mut commands: Commands,
+    settings: Res<Settings>,
+    mut values: Query<(&Value, &mut Text, &mut TextColor)>,
+    buttons: Query<(Entity, &StepButton)>,
+    added: Query<(), Added<Value>>,
+) {
     if !settings.is_changed() && added.is_empty() {
         return;
     }
-    for (Value(row), mut shown) in &mut values {
+    for (Value(row), mut shown, mut color) in &mut values {
         shown.0 = row.value(&settings);
+        color.0 = if disabled(*row, &settings) { Color::srgb(0.45, 0.45, 0.47) } else { Color::srgb(0.92, 0.92, 0.92) };
+    }
+    for (entity, StepButton(row)) in &buttons {
+        if disabled(*row, &settings) {
+            commands.entity(entity).insert(bevy::ui::InteractionDisabled);
+        } else {
+            commands.entity(entity).remove::<bevy::ui::InteractionDisabled>();
+        }
     }
 }

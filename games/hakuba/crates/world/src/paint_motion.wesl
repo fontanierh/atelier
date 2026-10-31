@@ -38,6 +38,11 @@ fn vertex(input: Vertex) -> VertexOutput {
     out.world_position = vec4<f32>(still.xyz + motion(still.xyz, globals.time, v.color.a), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     out.position.z *= 1.0001;
+    @if(FORWARD_MOTION) {
+        let previous = mesh_functions::get_previous_world_from_local(input.instance_index);
+        let before = mesh_functions::mesh_position_local_to_world(previous, vec4<f32>(v.position, 1.0));
+        out.previous_world_position = vec4<f32>(before.xyz + motion(before.xyz, max(globals.time - globals.delta_time, 0.0), v.color.a), 1.0);
+    }
     @if(VERTEX_NORMALS)
     out.world_normal = mesh_functions::mesh_normal_local_to_world(v.normal, input.instance_index);
     @if(VERTEX_UVS_A)

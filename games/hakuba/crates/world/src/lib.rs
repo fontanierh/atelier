@@ -4,6 +4,7 @@
 //! crate moves the camera.
 
 mod actors;
+mod collision;
 mod ground;
 mod loading;
 mod look;
@@ -26,6 +27,7 @@ use hakuba_screens::Screen;
 
 use tiles::Tile;
 
+pub use collision::{CollisionCoverage, CollisionFocus, CollisionSnapshot, CollisionTriangle, WorldCollision};
 pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
 pub use loading::{SceneryLoaded, Unready};
 pub use push::PushesPlants;
@@ -47,6 +49,7 @@ impl Plugin for WorldPlugin {
         app.add_plugins((
             actors::ActorsPlugin,
             ground::GroundPlugin,
+            collision::CollisionPlugin,
             loading::LoadingPlugin,
             look::LookPlugin,
             painterly::PainterlyPlugin,
@@ -95,6 +98,10 @@ fn spawn_world(
 ) {
     commands.insert_resource(Index(assets.load(INDEX)));
     commands.remove_resource::<Spawn>();
+    commands.remove_resource::<collision::SkateMetadata>();
+    commands.remove_resource::<collision::TileGrid>();
+    commands.insert_resource(WorldCollision::default());
+    commands.insert_resource(CollisionFocus::default());
     commands.remove_resource::<WaterBodies>();
     commands.spawn((
         Name::new("Sea"),
@@ -107,14 +114,39 @@ fn spawn_world(
         })),
     ));
     let drawn = pixels::spawn(&mut commands, &mut images);
-    commands.spawn((
-        Name::new("Camera"),
-        WorldCamera,
-        DespawnOnExit(Screen::World),
-        Camera3d::default(),
-        look::camera(&mut images),
-        drawn,
-    ));
+    let camera = commands
+        .spawn((
+            Name::new("Camera"),
+            WorldCamera,
+            DespawnOnExit(Screen::World),
+            Camera3d::default(),
+            look::camera(&mut images),
+            drawn,
+        ))
+        .id();
+    if let Some(mode) = forward_motion_requested() {
+        commands.entity(camera).insert(mode);
+        info!(?mode, "forward motion validation enabled");
+    }
+}
+
+/// Explicit validation only: native environment or browser query, never a stored game setting.
+fn forward_motion_requested() -> Option<hakuba_rendering::ForwardMotionMode> {
+    #[cfg(not(target_arch = "wasm32"))]
+    let requested = std::env::var("HAKUBA_FORWARD_MOTION").ok();
+    #[cfg(target_arch = "wasm32")]
+    let requested = web_sys::window().and_then(|window| window.location().search().ok()).and_then(|query| {
+        query
+            .trim_start_matches('?')
+            .split('&')
+            .find_map(|part| part.strip_prefix("forward_motion=").map(str::to_owned))
+    });
+    match requested.as_deref() {
+        Some("compare") => Some(hakuba_rendering::ForwardMotionMode::Compare),
+        Some("publish") => Some(hakuba_rendering::ForwardMotionMode::Publish),
+        Some("single") => Some(hakuba_rendering::ForwardMotionMode::Single),
+        _ => None,
+    }
 }
 
 /// Once the index has loaded: records the spawn, puts the camera there and adds a [`Tile`] for each tile.
@@ -146,11 +178,53 @@ fn read_index(
             }
         }
     }
+    if let Some(handle) = gltf.named_nodes.get("skate world") {
+        let metadata = nodes
+            .get(handle)
+            .and_then(|n| n.extras.as_ref())
+            .and_then(|e| serde_json::from_str::<hakuba_world_skate_schema::Metadata>(&e.value).ok())
+            .filter(|m| m.validate().is_ok());
+        match metadata {
+            Some(metadata) => commands.insert_resource(collision::SkateMetadata(metadata)),
+            None => {
+                error!("invalid skating metadata in {INDEX}");
+                commands.insert_resource(loading::Missing(INDEX.into()));
+            }
+        }
+    } else {
+        error!("missing skating metadata in {INDEX}");
+        commands.insert_resource(loading::Missing(INDEX.into()));
+    }
+    if let Some(handle) = gltf.named_nodes.get("tile grid") {
+        let grid = nodes
+            .get(handle)
+            .and_then(|n| n.extras.as_ref())
+            .and_then(|e| serde_json::from_str::<collision::TileGrid>(&e.value).ok())
+            .filter(|g| g.tile_m.is_finite() && g.tile_m > 0.0);
+        if let Some(grid) = grid {
+            commands.insert_resource(grid);
+        } else {
+            error!("invalid collision grid in {INDEX}");
+            commands.insert_resource(loading::Missing(INDEX.into()));
+        }
+    } else {
+        error!("missing collision grid in {INDEX}");
+        commands.insert_resource(loading::Missing(INDEX.into()));
+    }
     for (name, node) in &gltf.named_nodes {
         let node = nodes.get(node).expect("a loaded glTF's nodes are loaded");
         if &**name == "spawn" {
             let spawn = start::chosen().unwrap_or(node.transform);
             commands.insert_resource(Spawn(spawn));
+            let mut focus = CollisionFocus::default();
+            focus.request(spawn.translation, Vec3::ZERO);
+            commands.insert_resource(focus);
+            commands.spawn((
+                Name::new("Initial collision coverage"),
+                collision::InitialCoverage,
+                Unready,
+                DespawnOnExit(Screen::World),
+            ));
             **camera = spawn.with_translation(spawn.translation + Vec3::Y * EYE_HEIGHT_M);
         } else if name.starts_with("actor ") {
             if let Some(actor) =
@@ -160,7 +234,13 @@ fn read_index(
             } else {
                 error!("invalid actor declaration: {name}");
             }
-        } else if let Some(tile) = Tile::named(name, node.transform.translation) {
+        } else if let Some(mut tile) = Tile::named(name, node.transform.translation) {
+            tile.collision_bounds = node
+                .extras
+                .as_ref()
+                .and_then(|e| serde_json::from_str::<serde_json::Value>(&e.value).ok())
+                .and_then(|v| serde_json::from_value::<[[f32; 2]; 2]>(v.get("collision_bounds")?.clone()).ok())
+                .map(|b| b.map(Vec2::from_array));
             commands.spawn((
                 Name::new(name.to_string()),
                 DespawnOnExit(Screen::World),

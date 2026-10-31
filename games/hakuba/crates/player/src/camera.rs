@@ -56,6 +56,9 @@ pub fn follow(
     mut camera: Single<&mut Transform, (With<Camera3d>, Without<Player>)>,
 ) {
     let Ok((mut player, at)) = players.single_mut() else { return };
+    if player.owner != crate::MovementOwner::Walking {
+        return;
+    }
     let orbit = &mut player.camera;
     orbit.yaw -= controls.look.x;
     orbit.pitch = (orbit.pitch + controls.look.y).clamp(LOWEST, HIGHEST);
