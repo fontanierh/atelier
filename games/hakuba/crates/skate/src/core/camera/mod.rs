@@ -45,6 +45,8 @@ mod trajectory_query;
 mod vector_tracker;
 
 pub use anchors::{AnchorInputs, AnchorState, Anchors};
+#[cfg(all(not(target_family = "wasm"), panic = "unwind"))]
+pub(crate) use angle_tracker::ExceptionalAngleConversion;
 pub use angle_tracker::{AngleTracker, normalize_angle};
 pub use avoidance::{AvoidancePath, AvoidanceSettings, AvoidanceSubject, RigAvoidance};
 pub use compass::{Compass, CompassInputs, CompassPoseInputs, CompassSettings};
