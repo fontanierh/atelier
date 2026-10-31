@@ -47,6 +47,9 @@ fn tile_removed(_: On<Remove<Tile>>, mut dirty: ResMut<CollisionDirty>) {
     dirty.mark();
 }
 
+/// Holds the splash until the spawn's collision has settled: released once every selected tile has full collision or
+/// failed without any full version shown, and every tile under the spawn has full collision. A failed replacement keeps
+/// the full version a tile already shows; only a tile without one is unavailable, and it never makes the snapshot ready.
 #[derive(Component)]
 pub(crate) struct InitialCoverage;
 
@@ -170,7 +173,7 @@ type SolidData = (
 pub(crate) struct Published {
     focus: Option<CollisionFocus>,
     dirty: u64,
-    signature: Vec<([u32; 2], Option<Entity>, bool, Option<[Vec2; 2]>)>,
+    signature: Vec<([u32; 2], Option<Entity>, bool, Option<[Vec2; 2]>, bool)>,
     meshes: HashSet<AssetId<Mesh>>,
 }
 
@@ -211,13 +214,21 @@ pub(crate) fn publish(
     let mut selected: Vec<_> = tiles
         .iter()
         .map(Tile::collision_state)
-        .filter(|(_, centre, _, _, _)| focus.intersects(*centre, grid.tile_m))
+        .filter(|(_, centre, _, _, _, _)| focus.intersects(*centre, grid.tile_m))
         .collect();
-    selected.sort_by_key(|(tile, _, _, _, _)| *tile);
-    let signature: Vec<_> = selected.iter().map(|(id, _, root, full, bounds)| (*id, *root, *full, *bounds)).collect();
+    selected.sort_by_key(|(tile, _, _, _, _, _)| *tile);
+    let signature: Vec<_> =
+        selected.iter().map(|(id, _, root, full, bounds, failed)| (*id, *root, *full, *bounds, *failed)).collect();
     previous.focus = Some((*focus).clone());
     previous.dirty = dirty.0;
-    if signature == previous.signature && output.generation != 0 && !resources_changed && !mesh_changed {
+    // While the initial hold is up, a moved focus can change which tiles lie under the spawn.
+    let initial_moved = focus_changed && !initial.is_empty();
+    if signature == previous.signature
+        && output.generation != 0
+        && !resources_changed
+        && !mesh_changed
+        && !initial_moved
+    {
         return;
     }
     previous.signature = signature;
@@ -230,76 +241,99 @@ pub(crate) fn publish(
         ..Default::default()
     };
     let mut ordered = Vec::new();
-    for (tile, centre, root, full, bounds) in selected {
-        let Some(root) = root.filter(|_| full) else {
-            snapshot.ready = false;
-            continue;
-        };
-        let mut valid = true;
-        for entity in children.iter_descendants(root) {
-            let Ok((_, solid, mesh, global, source, name)) = solids.get(entity) else { continue };
-            let (Some(mesh), Some(global)) = (mesh, global) else {
-                valid = false;
-                continue;
+    // Every selected tile has finished, completely or by failing; and every tile under the spawn is complete.
+    let mut settled = true;
+    let mut spawn_complete = None::<bool>;
+    let mut unavailable = Vec::new();
+    for (tile, centre, root, full, bounds, failed) in selected {
+        let [min, max] = bounds
+            .unwrap_or([centre.xz() - Vec2::splat(grid.tile_m * 0.5), centre.xz() + Vec2::splat(grid.tile_m * 0.5)]);
+        let under_spawn = focus.position.xz().cmpge(min).all() && focus.position.xz().cmple(max).all();
+        let complete = 'tile: {
+            // A failed replacement keeps the full version it already shows; without one, the tile is unavailable.
+            let Some(root) = root.filter(|_| full) else {
+                if failed {
+                    unavailable.push(tile);
+                } else {
+                    settled = false;
+                }
+                break 'tile false;
             };
-            let handle = source.map_or(&mesh.0, |s| &s.mesh);
-            previous.meshes.insert(handle.id());
-            let Some(mesh) = meshes.get(handle) else {
-                valid = false;
-                continue;
-            };
-            let material = source.map(|s| s.material.clone()).or_else(|| name.map(|n| n.0.clone())).unwrap_or_default();
-            let surface =
-                metadata.0.materials.iter().find(|m| m.material == material).map_or(solid.0.skate(), |m| m.surface)
-                    as u16;
-            let instances = source.map(|s| s.instances.as_slice()).unwrap_or(&[]);
-            let transforms: Vec<_> = if instances.is_empty() {
-                vec![global.affine()]
-            } else {
-                instances.iter().map(|t| global.affine() * t.compute_affine()).collect()
-            };
-            for transform in transforms {
-                let path = handle.path().map(ToString::to_string).unwrap_or_default();
-                let key = (tile, path, transform.to_cols_array().map(f32::to_bits), material.clone());
-                match triangles(mesh, transform, &material, surface) {
-                    Ok(mut triangles) => {
-                        if let Some(source) = source {
-                            for triangle in &mut triangles {
-                                let Some(name) = source.face_materials.get(triangle.source_face) else { continue };
-                                if !name.is_empty() {
-                                    triangle.material = name.clone();
-                                    triangle.surface = metadata
-                                        .0
-                                        .materials
-                                        .iter()
-                                        .find(|m| m.material == *name)
-                                        .map_or(solid.0.skate(), |m| m.surface)
-                                        as u16;
+            let mut valid = true;
+            for entity in children.iter_descendants(root) {
+                let Ok((_, solid, mesh, global, source, name)) = solids.get(entity) else { continue };
+                let (Some(mesh), Some(global)) = (mesh, global) else {
+                    valid = false;
+                    continue;
+                };
+                let handle = source.map_or(&mesh.0, |s| &s.mesh);
+                previous.meshes.insert(handle.id());
+                let Some(mesh) = meshes.get(handle) else {
+                    valid = false;
+                    continue;
+                };
+                let material =
+                    source.map(|s| s.material.clone()).or_else(|| name.map(|n| n.0.clone())).unwrap_or_default();
+                let surface =
+                    metadata.0.materials.iter().find(|m| m.material == material).map_or(solid.0.skate(), |m| m.surface)
+                        as u16;
+                let instances = source.map(|s| s.instances.as_slice()).unwrap_or(&[]);
+                let transforms: Vec<_> = if instances.is_empty() {
+                    vec![global.affine()]
+                } else {
+                    instances.iter().map(|t| global.affine() * t.compute_affine()).collect()
+                };
+                for transform in transforms {
+                    let path = handle.path().map(ToString::to_string).unwrap_or_default();
+                    let key = (tile, path, transform.to_cols_array().map(f32::to_bits), material.clone());
+                    match triangles(mesh, transform, &material, surface) {
+                        Ok(mut triangles) => {
+                            if let Some(source) = source {
+                                for triangle in &mut triangles {
+                                    let Some(name) = source.face_materials.get(triangle.source_face) else { continue };
+                                    if !name.is_empty() {
+                                        triangle.material = name.clone();
+                                        triangle.surface = metadata
+                                            .0
+                                            .materials
+                                            .iter()
+                                            .find(|m| m.material == *name)
+                                            .map_or(solid.0.skate(), |m| m.surface)
+                                            as u16;
+                                    }
                                 }
                             }
+                            ordered.push((key, triangles));
                         }
-                        ordered.push((key, triangles));
-                    }
-                    Err(reason) => {
-                        error!("incomplete world collision: {reason}");
-                        valid = false;
+                        Err(reason) => {
+                            error!("incomplete world collision: {reason}");
+                            valid = false;
+                        }
                     }
                 }
             }
-        }
-        if valid {
-            let [min, max] = bounds.unwrap_or([
-                centre.xz() - Vec2::splat(grid.tile_m * 0.5),
-                centre.xz() + Vec2::splat(grid.tile_m * 0.5),
-            ]);
+            // A mesh still loading or a triangle error is not treated as final: the tile keeps holding.
+            if !valid {
+                settled = false;
+            }
+            valid
+        };
+        if complete {
             snapshot.coverage.push(CollisionCoverage { tile, min, max });
         } else {
             snapshot.ready = false;
         }
+        if under_spawn {
+            spawn_complete = Some(spawn_complete.unwrap_or(true) && complete);
+        }
     }
     ordered.sort_by(|a, b| a.0.cmp(&b.0));
     snapshot.triangles = ordered.into_iter().flat_map(|(_, triangles)| triangles).collect();
-    if snapshot.ready {
+    let release = snapshot.ready || (focus.enabled && settled && spawn_complete == Some(true));
+    if release && !initial.is_empty() {
+        if !snapshot.ready {
+            warn!("skating collision is unavailable near tiles that failed to load: {unavailable:?}");
+        }
         for entity in &initial {
             commands.entity(entity).despawn();
         }

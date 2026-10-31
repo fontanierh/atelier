@@ -9,6 +9,7 @@ use bevy::world_serialization::{WorldAssetRoot, WorldInstanceReady};
 use hakuba_screens::Screen;
 use hakuba_settings::Settings;
 
+use crate::collision::CollisionDirty;
 use crate::ground::{self, PendingSolid};
 use crate::loading::{Loaded, Missing};
 use crate::scenery::{FarMerging, Placed, Placing, Waiting};
@@ -89,13 +90,14 @@ impl Tile {
             queued: false,
         })
     }
-    pub(crate) fn collision_state(&self) -> ([u32; 2], Vec3, Option<Entity>, bool, Option<[Vec2; 2]>) {
+    pub(crate) fn collision_state(&self) -> ([u32; 2], Vec3, Option<Entity>, bool, Option<[Vec2; 2]>, bool) {
         (
             [self.column, self.row],
             self.centre,
             self.showing,
             self.shown_detail == Some(Detail::Full),
             self.collision_bounds,
+            self.failed,
         )
     }
     pub fn shown(&self) -> bool {
@@ -203,6 +205,7 @@ fn give_up(
     assets: Res<AssetServer>,
     spawning: Query<(Entity, &Spawning, &WorldAssetRoot)>,
     mut tiles: Query<&mut Tile>,
+    mut dirty: Option<ResMut<CollisionDirty>>,
 ) {
     for (root, Spawning(owner, _), scene) in &spawning {
         if !matches!(assets.load_state(&scene.0), LoadState::Failed(_)) {
@@ -213,6 +216,9 @@ fn give_up(
         {
             tile.pending = None;
             tile.failed = true;
+            if let Some(dirty) = dirty.as_deref_mut() {
+                dirty.mark();
+            }
         }
         commands.entity(root).despawn();
     }
@@ -224,6 +230,7 @@ fn failed_surface(
     parents: Query<&ChildOf>,
     spawning: Query<(&Spawning, &WorldAssetRoot)>,
     mut tiles: Query<&mut Tile>,
+    mut dirty: Option<ResMut<CollisionDirty>>,
 ) {
     for entity in &failed {
         if let Some((root, owner, scene)) =
@@ -233,6 +240,9 @@ fn failed_surface(
         {
             tile.pending = None;
             tile.failed = true;
+            if let Some(dirty) = dirty.as_deref_mut() {
+                dirty.mark();
+            }
             let name = scene.0.path().map_or_else(|| format!("tile {root}"), |path| path.to_string());
             commands.insert_resource(Missing(name));
             commands.entity(root).despawn();
@@ -491,7 +501,10 @@ mod tests {
             app.update();
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
+        app.init_resource::<CollisionDirty>();
+        app.world_mut().clear_trackers();
         app.world_mut().run_system_once(give_up).unwrap();
+        assert!(app.world().resource_ref::<CollisionDirty>().is_changed(), "a failed tile invalidates collision");
         let tile = app.world().get::<Tile>(owner).unwrap();
         assert!(tile.shown());
         assert_eq!(tile.showing, Some(old));
@@ -518,7 +531,10 @@ mod tests {
             tile.pending = Some(root);
         }
         app.world_mut().run_system_once(crate::vertex_paint::read_surfaces).unwrap();
+        app.init_resource::<CollisionDirty>();
+        app.world_mut().clear_trackers();
         app.world_mut().run_system_once(failed_surface).unwrap();
+        assert!(app.world().resource_ref::<CollisionDirty>().is_changed(), "a failed tile invalidates collision");
         let tile = app.world().get::<Tile>(owner).unwrap();
         assert_eq!(tile.showing, Some(old));
         assert!(tile.failed && tile.pending.is_none());
@@ -588,6 +604,142 @@ mod tests {
         app.update();
         assert!(!app.world().resource::<WorldCollision>().snapshot.ready);
         assert_eq!(retained.triangles.len(), 1, "old snapshots retain their geometry");
+    }
+
+    fn coverage_app() -> App {
+        use crate::collision::{CollisionDirty, CollisionFocus, SkateMetadata, TileGrid, WorldCollision, publish};
+        use bevy::asset::AssetEvent;
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .init_resource::<Assets<Mesh>>()
+            .init_resource::<WorldCollision>()
+            .init_resource::<CollisionFocus>()
+            .init_resource::<CollisionDirty>()
+            .add_message::<AssetEvent<Mesh>>()
+            .insert_resource(TileGrid { tile_m: 64. })
+            .insert_resource(SkateMetadata(hakuba_world_skate_schema::Metadata::default()))
+            .add_systems(Update, publish);
+        app.world_mut().resource_mut::<CollisionFocus>().request(Vec3::ZERO, Vec3::ZERO);
+        app.world_mut().spawn(crate::collision::InitialCoverage);
+        app
+    }
+
+    /// A tile at `centre` wanting its full version: shown, with one solid triangle, when `complete`; else still loading.
+    fn coverage_tile(app: &mut App, name: &str, centre: Vec3, complete: bool) -> Entity {
+        use bevy::mesh::PrimitiveTopology;
+        let owner = app.world_mut().spawn(Tile::named(name, centre).unwrap()).id();
+        app.world_mut().get_mut::<Tile>(owner).unwrap().detail = Some(Detail::Full);
+        if complete {
+            let mut geometry = Mesh::new(PrimitiveTopology::TriangleList, bevy::asset::RenderAssetUsages::MAIN_WORLD);
+            geometry.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0., 0., 0.], [0., 0., 1.], [1., 0., 0.]]);
+            let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(geometry);
+            let root = app.world_mut().spawn((ChildOf(owner), Spawning(owner, Detail::Full), Prepared)).id();
+            app.world_mut().spawn((
+                ChildOf(root),
+                Mesh3d(mesh),
+                GlobalTransform::from_translation(centre),
+                ground::built_solid(),
+            ));
+            app.world_mut().get_mut::<Tile>(owner).unwrap().pending = Some(root);
+            app.world_mut().run_system_once(activate).unwrap();
+        }
+        owner
+    }
+
+    fn fail(app: &mut App, tile: Entity) {
+        let mut tile = app.world_mut().get_mut::<Tile>(tile).unwrap();
+        tile.pending = None;
+        tile.failed = true;
+        app.world_mut().resource_mut::<crate::collision::CollisionDirty>().mark();
+    }
+
+    fn initial_held(app: &mut App) -> bool {
+        let mut held = app.world_mut().query_filtered::<(), With<crate::collision::InitialCoverage>>();
+        held.iter(app.world()).count() > 0
+    }
+
+    #[test]
+    fn failed_neighbour_releases_initial_coverage_but_never_readiness() {
+        let mut app = coverage_app();
+        coverage_tile(&mut app, "tile 10 10", Vec3::ZERO, true);
+        let neighbour = coverage_tile(&mut app, "tile 11 10", Vec3::X * 64., false);
+        app.update();
+        assert!(initial_held(&mut app), "a neighbour still loading holds the splash");
+        fail(&mut app, neighbour);
+        app.update();
+        assert!(!initial_held(&mut app), "a failed neighbour no longer holds the splash");
+        let snapshot = &app.world().resource::<crate::collision::WorldCollision>().snapshot;
+        assert!(!snapshot.ready, "incomplete coverage is never ready");
+        assert!(snapshot.covers(Vec3::ZERO));
+        assert!(!snapshot.covers(Vec3::X * 64.));
+    }
+
+    #[test]
+    fn a_failed_upgrade_keeps_the_full_collision_already_shown() {
+        let mut app = coverage_app();
+        let spawn = coverage_tile(&mut app, "tile 10 10", Vec3::ZERO, true);
+        let neighbour = coverage_tile(&mut app, "tile 11 10", Vec3::X * 64., true);
+        app.update();
+        assert!(app.world().resource::<crate::collision::WorldCollision>().snapshot.ready);
+        fail(&mut app, neighbour);
+        app.update();
+        let snapshot = &app.world().resource::<crate::collision::WorldCollision>().snapshot;
+        assert!(snapshot.ready, "a failed replacement keeps the full version already shown");
+        assert!(snapshot.covers(Vec3::X * 64.));
+        assert_eq!(snapshot.triangles.len(), 2);
+        // A failed tile without a full version shown stays unavailable.
+        app.world_mut().get_mut::<Tile>(spawn).unwrap().shown_detail = Some(Detail::Middle);
+        fail(&mut app, spawn);
+        app.update();
+        assert!(!app.world().resource::<crate::collision::WorldCollision>().snapshot.ready);
+    }
+
+    #[test]
+    fn a_moved_spawn_reevaluates_the_initial_hold_with_unchanged_tiles() {
+        let mut app = coverage_app();
+        coverage_tile(&mut app, "tile 10 10", Vec3::ZERO, true);
+        let failed = coverage_tile(&mut app, "tile 11 10", Vec3::X * 64., false);
+        app.world_mut().get_mut::<Tile>(failed).unwrap().collision_bounds =
+            Some([Vec2::new(10., -10.), Vec2::new(96., 10.)]);
+        fail(&mut app, failed);
+        app.world_mut().resource_mut::<crate::collision::CollisionFocus>().request(Vec3::X * 20., Vec3::ZERO);
+        app.update();
+        assert!(initial_held(&mut app), "the failed tile lies under the spawn");
+        let generation = app.world().resource::<crate::collision::WorldCollision>().generation;
+        app.world_mut().resource_mut::<crate::collision::CollisionFocus>().request(Vec3::X * -20., Vec3::ZERO);
+        app.update();
+        assert!(!initial_held(&mut app), "the same tiles, re-checked under the moved spawn");
+        assert_eq!(app.world().resource::<crate::collision::WorldCollision>().generation, generation + 1);
+        app.world_mut().resource_mut::<crate::collision::CollisionFocus>().request(Vec3::X * -21., Vec3::ZERO);
+        app.update();
+        assert_eq!(
+            app.world().resource::<crate::collision::WorldCollision>().generation,
+            generation + 1,
+            "once released, an unchanged tile set does not republish"
+        );
+    }
+
+    #[test]
+    fn failed_spawn_tile_keeps_holding_the_splash() {
+        let mut app = coverage_app();
+        let spawn = coverage_tile(&mut app, "tile 10 10", Vec3::ZERO, false);
+        coverage_tile(&mut app, "tile 11 10", Vec3::X * 64., true);
+        fail(&mut app, spawn);
+        app.update();
+        assert!(initial_held(&mut app));
+        assert!(!app.world().resource::<crate::collision::WorldCollision>().snapshot.ready);
+    }
+
+    #[test]
+    fn a_failed_tile_overlapping_the_spawn_keeps_holding_the_splash() {
+        let mut app = coverage_app();
+        coverage_tile(&mut app, "tile 10 10", Vec3::ZERO, true);
+        let overlapping = coverage_tile(&mut app, "tile 11 10", Vec3::X * 64., false);
+        app.world_mut().get_mut::<Tile>(overlapping).unwrap().collision_bounds =
+            Some([Vec2::splat(-10.), Vec2::new(96., 10.)]);
+        fail(&mut app, overlapping);
+        app.update();
+        assert!(initial_held(&mut app), "spawn coverage cannot come from beside a failed tile under it");
     }
 
     #[test]
