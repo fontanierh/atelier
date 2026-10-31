@@ -39,10 +39,13 @@ impl Plugin for LoadingPlugin {
         app.insert_resource(pipelines.clone())
             .add_observer(uncull)
             .add_systems(OnEnter(Screen::World), spawn)
-            .add_systems(Update, report.run_if(in_state(Screen::World)))
+            .add_systems(Update, report)
             .add_systems(
                 Update,
-                (lift.after(Placing).run_if(any_with_component::<Splash>), watch.run_if(resource_exists::<Loaded>))
+                (
+                    lift.after(Placing).after(report).run_if(any_with_component::<Splash>),
+                    watch.run_if(resource_exists::<Loaded>),
+                )
                     .run_if(in_state(Screen::World)),
             );
         if let Some(render) = app.get_sub_app_mut(RenderApp) {
@@ -272,7 +275,8 @@ fn watch(pipelines: Res<Pipelines>, mut loaded: ResMut<Loaded>) {
     }
 }
 
-/// Reports each file that fails to load while the world shows: it no longer holds the splash, and is missing.
+/// Reports each file that fails to load, on any screen, so one that failed before the world opened (loaded at startup,
+/// such as the skateboard) is still named on its splash: it no longer holds the splash, and is missing.
 fn report(mut commands: Commands, mut failed: MessageReader<UntypedAssetLoadFailedEvent>) {
     for failed in failed.read() {
         error!("{} failed to load: {}", failed.path, failed.error);
@@ -297,4 +301,32 @@ fn textured(material: &StandardMaterial, images: &Assets<Image>, assets: &AssetS
     .into_iter()
     .flatten()
     .all(|image| images.contains(image) || matches!(assets.load_state(image), LoadState::Failed(_)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::asset::{AssetLoadError, AssetPath, UntypedAssetId};
+    use bevy::state::app::StatesPlugin;
+
+    #[test]
+    fn a_failure_before_the_world_opens_stays_named_for_its_splash() {
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, StatesPlugin))
+            .init_state::<Screen>()
+            .add_message::<UntypedAssetLoadFailedEvent>()
+            .add_plugins(LoadingPlugin);
+        let path = AssetPath::from("skating/board.glb").into_owned();
+        app.world_mut().write_message(UntypedAssetLoadFailedEvent {
+            id: UntypedAssetId::Uuid { type_id: std::any::TypeId::of::<Mesh>(), uuid: Default::default() },
+            path: path.clone(),
+            error: AssetLoadError::EmptyPath(path),
+        });
+        // On the menu, and long after Bevy has dropped the message.
+        for _ in 0..4 {
+            app.update();
+        }
+        assert_eq!(*app.world().resource::<State<Screen>>().get(), Screen::Menu);
+        assert_eq!(app.world().resource::<Missing>().0, "skating/board.glb");
+    }
 }
