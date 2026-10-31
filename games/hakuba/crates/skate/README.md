@@ -25,8 +25,8 @@ The recovered calculations and session were imported from the Rust reconstructio
 whose recorded engine origin is `SK8-ENGINE/skate-3-rust-engine`, commit `cb79689`. The import preserves
 the latest recovered Rust session revision `1536531c6e03c72d3c232614141500419059ca2e`, including explicit
 transfer input and vert departure assistance. Source is Apache-2.0; see `LICENSE-APACHE`.
-This is a reconstruction, not a claim of verified original-console numerical parity. Simulation data has its own
-provenance and rights in its asset folder; the source license does not license that data.
+This is a reconstruction, not a claim of verified original-console numerical parity. Simulation data provenance
+is recorded in its asset folder.
 
 ## Known source gaps
 
@@ -57,7 +57,8 @@ support for every authored graph branch.
   crash diagnostics and host-world collision records.
 The host supplies raw controller packets; the crate does not poll platform devices or load original-format files.
 
-The runtime reads only the committed exported `.skatepack`, not archive-era assets or the local filesystem.
+The runtime reads only the committed exported `.skatepack`, through Bevy's asset loader; it reads no source JSON
+or original-format files.
 Its 60 Hz simulation clock is advanced by the host, independently of rendered frames. Current project-format
 settings, graph, rig, metadata, gesture and clip words are retained, including separate animation-bank identity.
 The 120 Hz flick history uses real timestamped stick observations when available. Ordinary frame-only

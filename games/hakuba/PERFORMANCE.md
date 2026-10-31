@@ -21,7 +21,7 @@ injection ran during measurement. The mounted 99th-percentile frame interval was
 over 55.2 FPS, not sustained 60 FPS acceptance.
 
 A separate 29-sample GPU diagnostic verified zero indexed geometry in the camera prepass and both shadow cascades
-still rendering. Main rendering drew about 6,496 meshes / 27.48 million indexed entries; its median pass interval
+still rendering. Main rendering made about 6,496 indexed draws / 27.48 million indexed entries; its median pass interval
 was 14.22 ms. Motion transfer had equal, unresolved timestamps in many samples; positive intervals had one
 0.065536 ms timestamp quantum as their median. TAA remained about 0.131 ms. The earlier geometry prepass was about
 8.19 ms and main about 9.83 ms in a slightly different visible workload. These overlapping pass intervals are not additive frame
@@ -98,7 +98,7 @@ its wind in the shadow, prepass and main passes.
 - **A post filter's kernel belongs in its shader as constants.** The painterly filter's 21 taps each weighed in all
   eight wedges through a uniform array; written into the shader, leaving out the two thirds of weights that are zero,
   it looks the same and costs 0.7 ms instead of 2.0: with it the reference setting went from about 50 frames a second to
-  a steady 60.
+  a steady 60, before the skating port.
 - **Balance merged geometry against draw preparation.** Thousands of grass entities cost more to cull than their
   vertices cost to draw, so their copies merge, but a merged mesh is culled whole: shadow-casting models use 32 m
   squares and non-shadow-casting models currently merge by tile. A large model, such as a tree, is never merged; Bevy draws its copies

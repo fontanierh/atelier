@@ -84,8 +84,7 @@ fn push_is_delivered_through_constraints_into_all_seven_integrated_bodies() {
         &mut queue,
     );
     let mut tick = BoardStep::default();
-    // The preserved research explicitly characterizes noncoincident anchors
-    // in the constructor pose (TRANSITION_PHYSICS_EVIDENCE.md). Compare the
+    // The constructor pose has noncoincident anchors. Compare the
     // push against that same unforced pose, not an invented settled board.
     BoardStep::default().advance(
         &mut unforced,

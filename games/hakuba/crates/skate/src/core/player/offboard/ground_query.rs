@@ -102,8 +102,8 @@ pub struct GroundAdjustment {
     pub input_up_416: Vector3,
 }
 ///The runtime implements actual authored edge/scene-body queries, never cached
-///observations. Provider ordering, cap40, transforms and context filtering are
-///specified in OFFBOARD_BIPED_GROUND_QUERY_HANDOFF.md.
+///observations, with the source's provider ordering, cap40, transforms and
+///context filtering.
 pub trait GroundQueryScene {
     type Error;
     fn edge_candidates(&mut self, search: &EdgeSearch) -> Result<Vec<Edge>, Self::Error>;

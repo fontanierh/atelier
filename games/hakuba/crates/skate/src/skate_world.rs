@@ -101,7 +101,7 @@ fn retail_collision_world(archive: &[u8], material: RetailContactMaterial) -> Re
         }
         Ok(())
     })?;
-    eprintln!("SKATE_RWCM_READY triangles={count} query_clusters={} source=embedded", meshes.len());
+    info!("SKATE_RWCM_READY triangles={count} query_clusters={} source=embedded", meshes.len());
     BoardWorld::with_query_metadata(
         triangles,
         QueryMetadata { packed_surfaces, meshes, static_edges: vec![], island_flags: 0 },

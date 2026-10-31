@@ -1,5 +1,5 @@
 //! TU3 ground braking and linear drag, using the existing ground-force
-//! direct82D94AE0/82D94A20 exports and SKATE3_MAIN_SKATER_FUNCTIONS.md.
+//! direct82D94AE0/82D94A20 exports.
 //! Cached ground settings are explicit inputs; no replacement tuning defaults.
 use crate::core::{math::Vector3, physics::force_queue::QueuedPointForce};
 

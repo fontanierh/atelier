@@ -875,6 +875,39 @@ mod tests {
         assert!(!should_hand_back(true, 0.19));
         assert!(should_hand_back(true, 0.2));
     }
+    /// Ground distance walked on foot over three seconds with the stick fully forward and `buttons` held.
+    fn walked_on_foot(buttons: u16) -> f32 {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
+        let bytes = std::fs::read(root.join(PACKAGE)).unwrap();
+        let triangles = vec![
+            [[-100., 0., -100.], [-100., 0., 100.], [100., 0., -100.]],
+            [[100., 0., -100.], [-100., 0., 100.], [100., 0., 100.]],
+        ];
+        let resources = crate::PreparedResources::from_bytes(bytes).unwrap();
+        let mut session =
+            Session::from_resources(&resources, triangles, vec![129; 2], vec![], [0., 0.1, 0.], 0.).unwrap();
+        session.activate_on_foot([0., 0.1, 0.], 0.).unwrap();
+        for _ in 0..30 {
+            session.tick(Controls::default()).unwrap();
+        }
+        assert_eq!(session.pose().physical_state, 500);
+        let start = session.pose().ground_point;
+        for _ in 0..180 {
+            session.tick(Controls { buttons, left: [0, 32767], ..Controls::default() }).unwrap();
+        }
+        let end = session.pose().ground_point;
+        assert_eq!(session.pose().physical_state, 500);
+        Vec2::new(end.x - start.x, end.z - start.z).length()
+    }
+    #[test]
+    fn south_alone_sprints_on_foot_and_east_cancels_it() {
+        let walk = walked_on_foot(0);
+        let sprint = walked_on_foot(0x1000);
+        let both = walked_on_foot(0x3000);
+        assert!(walk > 1.0, "walked {walk} m");
+        assert!(sprint > walk * 1.2, "sprinted {sprint} m, walked {walk} m");
+        assert!((both - walk).abs() < walk * 0.05, "South+East {both} m, walked {walk} m");
+    }
     #[test]
     fn committed_session_mounts_pushes_and_dismounts_with_finite_interpolated_board() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");

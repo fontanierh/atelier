@@ -83,10 +83,11 @@ pub fn read(
     let mut right =
         Vec2::new(key(KeyCode::ArrowRight) - key(KeyCode::ArrowLeft), key(KeyCode::ArrowUp) - key(KeyCode::ArrowDown));
     let mut buttons = 0;
-    if keys.pressed(KeyCode::KeyW) {
+    // On foot W/S walk through the left stick instead of pushing and braking.
+    if !status.on_foot && keys.pressed(KeyCode::KeyW) {
         buttons |= 0x1000;
     } // push: South
-    if keys.pressed(KeyCode::KeyS) {
+    if !status.on_foot && keys.pressed(KeyCode::KeyS) {
         buttons |= 0x2000;
     } // footbrake: East
     if keys.pressed(KeyCode::KeyB) {
@@ -159,8 +160,9 @@ pub fn read(
         recover |= pad.just_pressed(GamepadButton::Start);
     }
     if status.on_foot {
-        left.y = (key(KeyCode::KeyW) - key(KeyCode::KeyS)).clamp(-1., 1.);
-        buttons &= !0x3000;
+        if keys.any_pressed([KeyCode::KeyW, KeyCode::KeyS]) {
+            left.y = key(KeyCode::KeyW) - key(KeyCode::KeyS);
+        }
         if keys.pressed(KeyCode::Space) {
             buttons |= 0x4000;
             right.y = 0.;
@@ -291,5 +293,62 @@ mod tests {
         let (half, end) = input.fine_for_tick(1.017, 1.0 / 60.0, input.packet).unwrap();
         assert_eq!(half.right, [19660, -19660]);
         assert_eq!(end.right, input.packet.right);
+    }
+
+    fn press_pad(app: &mut App, pad: Entity, button: GamepadButton) {
+        app.world_mut().get_mut::<Gamepad>(pad).unwrap().digital_mut().press(button);
+    }
+
+    fn on_foot(app: &mut App) {
+        app.world_mut().resource_mut::<super::super::SkateStatus>().on_foot = true;
+    }
+
+    #[test]
+    fn controller_alone_walks_and_sprints_on_foot() {
+        let (mut app, pad) = app();
+        on_foot(&mut app);
+        axis(&mut app, pad, GamepadAxis::LeftStickY, -0.6);
+        press_pad(&mut app, pad, GamepadButton::South);
+        app.update();
+        let packet = app.world().resource::<RideInput>().packet;
+        assert_eq!(packet.left[1], -19660);
+        assert_eq!(packet.buttons & 0x3000, 0x1000);
+    }
+
+    #[test]
+    fn controller_east_reaches_the_packet_on_foot_without_sprint() {
+        let (mut app, pad) = app();
+        on_foot(&mut app);
+        press_pad(&mut app, pad, GamepadButton::East);
+        app.update();
+        assert_eq!(app.world().resource::<RideInput>().packet.buttons & 0x3000, 0x2000);
+    }
+
+    #[test]
+    fn keyboard_walks_on_foot_without_pushing_or_braking() {
+        let (mut app, _) = app();
+        on_foot(&mut app);
+        app.world_mut().resource_mut::<ButtonInput<KeyCode>>().press(KeyCode::KeyS);
+        app.update();
+        let packet = app.world().resource::<RideInput>().packet;
+        assert_eq!(packet.left[1], -32767);
+        assert_eq!(packet.buttons & 0x3000, 0);
+        app.world_mut().resource_mut::<ButtonInput<KeyCode>>().press(KeyCode::ShiftLeft);
+        app.update();
+        assert_eq!(app.world().resource::<RideInput>().packet.buttons & 0x3000, 0x1000);
+    }
+
+    #[test]
+    fn held_walking_keys_override_the_stick_and_keep_controller_buttons() {
+        let (mut app, pad) = app();
+        on_foot(&mut app);
+        axis(&mut app, pad, GamepadAxis::LeftStickX, 0.6);
+        axis(&mut app, pad, GamepadAxis::LeftStickY, -0.6);
+        press_pad(&mut app, pad, GamepadButton::South);
+        app.world_mut().resource_mut::<ButtonInput<KeyCode>>().press(KeyCode::KeyW);
+        app.update();
+        let packet = app.world().resource::<RideInput>().packet;
+        assert_eq!(packet.left, [19660, 32767]);
+        assert_eq!(packet.buttons & 0x3000, 0x1000);
     }
 }

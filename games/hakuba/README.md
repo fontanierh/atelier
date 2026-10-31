@@ -24,7 +24,8 @@ compiled dependencies.
 ```sh
 trunk serve --release        # browser play, at http://127.0.0.1:8080
 trunk serve                  # faster-to-build browser development
-cargo run                    # desktop
+cargo run --release          # desktop play
+cargo run                    # faster-to-build desktop development
 ```
 
 The game opens on a menu: **World** enters the world, **Character viewer** shows each character and plays its clips.
@@ -44,7 +45,8 @@ shoulder button. Off the board, **WASD** moves, **Shift** sprints and **Space** 
 marker, or **M + Up** to return after the native hold delay. A controller uses its two sticks and triggers directly;
 Select gets on or off, and left shoulder plus left stick forward requests a transfer. Left shoulder plus D-pad
 Down/Up places/returns to a marker. The on-screen readout shows the actual simulation state, speed, trick and score.
-Skating waits for the world's full collision around the rider.
+Skating waits for the world's full collision around the rider. Stowing the board needs the keyboard's F: a
+controller has no stow binding yet. Some authored skating branches are unsupported; `crates/skate/README.md` lists them.
 
 The simulation and board assets are exported with the rest of the game. See `crates/skate/README.md` and
 `assets/simulations/skate-simulation/src/README.md` for the runtime and data provenance.

@@ -33,6 +33,7 @@ mod animation_feedback;
 mod animation_feedback_settings;
 mod animation_input;
 mod animation_phase;
+mod biped_air;
 mod biped_ground;
 mod frame;
 mod grind;
@@ -46,6 +47,8 @@ mod ground_exit;
 mod ground_phase;
 mod ground_runtime;
 mod input_phase;
+mod known_air;
+mod landing_on_deck;
 mod landing_quality;
 mod offboard;
 mod player_input;
@@ -60,11 +63,6 @@ mod teleport_state;
 mod transition_pose;
 mod wipeout;
 mod wipeout_states;
-//TEMPORARY opt-in observations for the bottom-up source audit.
-mod biped_air;
-mod known_air;
-mod landing_on_deck;
-mod offboard_audit_trace;
 use crate::core::{
     math::Vector3,
     physics::{
@@ -262,7 +260,7 @@ impl GamePhysics {
         let data = Collections::load(asset_root)?;
         let settings = PhysicsSettings::load(&data)?;
         let animation_profile = animation_phase::AnimationProfile::load(&data, difficulty.key())?;
-        eprintln!("SKATE_PHYSICS_MODE {} index={}", difficulty.key(), animation_profile.physics_mode);
+        info!("SKATE_PHYSICS_MODE {} index={}", difficulty.key(), animation_profile.physics_mode);
         let mut spawn = RetailAffineTransform {
             translation: Vector3::new(
                 0.0,
@@ -292,7 +290,7 @@ impl GamePhysics {
             crate::grind_world::StaticProvider::new(map)?
         });
         if let Some(map) = map {
-            eprintln!("SKATE_GRIND_READY splines={} primitives={}", map.rails.len(), grind_world.primitives().len());
+            info!("SKATE_GRIND_READY splines={} primitives={}", map.rails.len(), grind_world.primitives().len());
         }
         let grind_materials = grind_materials::GrindMaterials::new(&settings);
         //Both authored terrains contain static collision surfaces only, with

@@ -10,9 +10,7 @@
 The Rust encoder rounds JSON decimal numbers through f64 to f32, preserves negative zero and accepts exact lowercase `0x` float words where the source uses them.
 The export must match every payload checksum and all counts in the descriptor. Update the source manifest deliberately if changing a payload.
 
-## Provenance and distribution
+## Provenance
 
 These sources were migrated unchanged from the repository's current readable simulation data at revision `aaa1fdd28251c30c8c89cdfc6d2ec5c371e46991`.
 The source chain identifies EA Skate 3 animation, settings, graph, camera, gesture and skeleton data. Bank metadata retains the original bank names, byte counts and SHA-256 identities.
-The historical data notice described its inclusion for the owner's personal use. Reformatting the data and supplying integrity hashes do not grant a new data license.
-Recovered Rust code licensing does not license this data. Confirm the intended distribution scope with the owner before publishing this asset in a public/browser release.

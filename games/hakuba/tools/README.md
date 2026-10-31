@@ -70,10 +70,10 @@ tools/
 ## Simulation data
 
 The `simulation` kind writes `<asset-name>.skatepack`. Its `descriptor` setting names the integrity descriptor under
-`src/`; the source tree holds `motion/` and `runtime/` JSON plus the descriptor and manifest. The export packs the
-existing binary payloads unchanged with a sorted index and SHA-256 per payload. The normal `--check` verifies the
-archive and its full manifest, so missing, stale or corrupt payloads cannot pass. Source data and its distribution
-notice stay under the asset's `src/`; no source JSON is copied to the browser build.
+`src/`; the source tree holds `motion/` and `runtime/` JSON plus the descriptor and manifest. The export encodes the
+JSON into binary payloads, adds the source manifest, and packs them with a sorted index and SHA-256 per payload. The normal `--check` verifies the
+archive and its full manifest, so missing, stale or corrupt payloads cannot pass. Source data stays under the asset's
+`src/`; no source JSON is copied to the browser build.
 
 ## The rig
 
