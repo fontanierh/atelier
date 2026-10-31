@@ -107,6 +107,12 @@ pub struct Pose {
     pub contacts: [LimbContact; 4],
 }
 impl Session {
+    /// Test-only synthetic fault: the next camera advance reaches the exceptional angle conversion.
+    #[cfg(test)]
+    pub(crate) fn inject_exceptional_camera_angle(&mut self) {
+        self.camera.inject_exceptional_angle = true;
+    }
+
     /// Set native stick conditioning and the local bail-settle delay scale. No host pre-deadzone is applied.
     pub fn set_control_feel(&mut self, dead_zone: f32, reach: f32, get_up_delay: f32) -> Result<(), String> {
         if !dead_zone.is_finite()

@@ -315,3 +315,84 @@ fn exported_host_retries_mount_carry_remount_and_stows_only_after_grounded() {
     assert!(app.world().get::<PoseOverride>(body).is_none());
     assert!(app.world().resource::<Ride>().session.is_none());
 }
+
+fn advance_frame(app: &mut App) {
+    let dt = Duration::from_secs_f64(1. / 60.);
+    app.world_mut().resource_mut::<Time>().advance_by(dt);
+    app.world_mut().resource_mut::<Time<Real>>().advance_by(dt);
+    app.update();
+    app.world_mut().resource_mut::<ButtonInput<KeyCode>>().clear();
+}
+
+fn the_player(app: &mut App) -> Entity {
+    let world = app.world_mut();
+    let mut players = world.query_filtered::<Entity, With<Player>>();
+    players.single(world).unwrap()
+}
+
+#[test]
+fn an_exceptional_camera_angle_hands_back_walking_until_the_world_is_entered_again() {
+    let (mut app, player, body) = app();
+    app.add_systems(OnExit(Screen::World), clear);
+    tap(&mut app, KeyCode::KeyV);
+    until(&mut app, 300, "native initial mount", |w| {
+        w.resource::<Ride>().current.as_ref().is_some_and(|p| p.physical_state == 100)
+    });
+    // Synthetic fault injection through the real Session, camera owner and host; not a reachability claim.
+    let before = app.world().resource::<Ride>().current.as_ref().unwrap().tick;
+    app.world_mut().resource_mut::<Ride>().session.as_mut().unwrap().inject_exceptional_camera_angle();
+    advance_frame(&mut app);
+    let failure = app.world().resource::<SkateStatus>().failure.clone().expect("terminal skating failure");
+    assert!(failure.contains("exceptional angle conversion"), "{failure}");
+    assert!(failure.contains("Pause, then Menu, then World to ride again."), "{failure}");
+    let ride = app.world().resource::<Ride>();
+    assert_eq!(ride.accumulator, 0.);
+    assert_eq!(ride.current.as_ref().unwrap().tick, before, "no pose is published from the failed tick");
+    // The next update hands movement back to walking, drops the Session and keeps the failure shown.
+    advance_frame(&mut app);
+    assert_eq!(app.world().get::<Player>(player).unwrap().owner, MovementOwner::Walking);
+    assert!(app.world().get::<PoseOverride>(body).is_none());
+    assert!(app.world().resource::<Ride>().session.is_none());
+    assert_eq!(app.world().resource::<SkateStatus>().failure.as_ref(), Some(&failure));
+    // The host keeps running with walking in control, and V does not mount while the failure stands. (This fixture's
+    // body has no animation clips, so walking motion itself is not exercised here.)
+    press(&mut app, KeyCode::KeyV);
+    advance_frame(&mut app);
+    release(&mut app, KeyCode::KeyV);
+    for _ in 0..60 {
+        advance_frame(&mut app);
+        assert_eq!(app.world().get::<Player>(player).unwrap().owner, MovementOwner::Walking);
+    }
+    assert!(app.world().resource::<Ride>().session.is_none());
+    assert!(app.world().resource::<SkateStatus>().failure.is_some());
+    // Leaving the world clears the failure; entering it again, V starts a fresh Session.
+    app.world_mut().resource_mut::<NextState<Screen>>().set(Screen::Menu);
+    advance_frame(&mut app);
+    assert!(app.world().resource::<SkateStatus>().failure.is_none());
+    app.world_mut().resource_mut::<NextState<Screen>>().set(Screen::World);
+    advance_frame(&mut app);
+    let player = the_player(&mut app);
+    let body = app.world_mut().spawn(nox()).id();
+    app.world_mut().get_mut::<Player>(player).unwrap().body = body;
+    tap(&mut app, KeyCode::KeyV);
+    until(&mut app, 300, "fresh mount after entering the world again", |w| {
+        w.resource::<Ride>().current.as_ref().is_some_and(|p| p.physical_state == 100)
+    });
+    assert_eq!(app.world().get::<Player>(player).unwrap().owner, MovementOwner::Skating);
+}
+
+#[test]
+fn an_asset_failure_still_blocks_mounting_with_a_valid_grip() {
+    let (mut app, player, _) = app();
+    assert!(app.world().resource::<BoardGrip>().0.is_some());
+    app.world_mut().resource_mut::<SkateStatus>().failure = Some(BOARD.into());
+    press(&mut app, KeyCode::KeyV);
+    advance_frame(&mut app);
+    release(&mut app, KeyCode::KeyV);
+    for _ in 0..30 {
+        advance_frame(&mut app);
+    }
+    assert_eq!(app.world().get::<Player>(player).unwrap().owner, MovementOwner::Walking);
+    assert!(app.world().resource::<Ride>().session.is_none());
+    assert_eq!(app.world().resource::<SkateStatus>().failure.as_deref(), Some(BOARD));
+}

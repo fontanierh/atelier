@@ -39,6 +39,28 @@ pub(crate) struct CameraRuntime {
     /// Native message order, including End followed by Begin in one graph tick.
     /// The simulation schedule drains these after advance.
     pub simulation_rate_requests: Vec<SimulationRateRequest>,
+    /// Test-only synthetic fault: the next advance reaches the exceptional conversion after preparing the manager.
+    #[cfg(test)]
+    pub inject_exceptional_angle: bool,
+}
+
+// Native skating relies on unwinding to stop an exceptional camera conversion without ending the app.
+#[cfg(all(not(target_family = "wasm"), not(panic = "unwind")))]
+compile_error!("native Hakuba must be built with panic = \"unwind\" (the camera's exceptional-angle containment)");
+
+/// Turns a caught exceptional angle conversion into the camera's terminal error; resumes every other panic unchanged.
+#[cfg(all(not(target_family = "wasm"), panic = "unwind"))]
+fn contain_exceptional_angle<T>(caught: std::thread::Result<Result<T, String>>) -> Result<T, String> {
+    match caught {
+        Ok(result) => result,
+        Err(payload) => match payload.downcast::<crate::core::camera::ExceptionalAngleConversion>() {
+            Ok(exceptional) => Err(format!(
+                "camera error (exceptional angle conversion, angle bits {:#010x}). Pause, then Menu, then World to ride again.",
+                exceptional.angle_bits
+            )),
+            Err(other) => std::panic::resume_unwind(other),
+        },
+    }
 }
 
 #[cfg(test)]
@@ -68,6 +90,8 @@ impl CameraRuntime {
             frame: None,
             latest_subject: None,
             simulation_rate_requests: Vec::new(),
+            #[cfg(test)]
+            inject_exceptional_angle: false,
         })
     }
 
@@ -99,6 +123,27 @@ impl CameraRuntime {
         environment: &CameraGraphEnvironment,
         moving: &mut impl MovingObstacleProvider,
     ) -> Result<CameraFrame, String> {
+        #[cfg(all(not(target_family = "wasm"), panic = "unwind"))]
+        {
+            // Unwind safety: a caught exceptional conversion becomes a terminal Session error, and the host never
+            // advances this partly updated camera again. Any other panic is resumed unchanged.
+            contain_exceptional_angle(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.advance_inner(dt, snapshot, world, query_gravity, environment, moving)
+            })))
+        }
+        #[cfg(not(all(not(target_family = "wasm"), panic = "unwind")))]
+        self.advance_inner(dt, snapshot, world, query_gravity, environment, moving)
+    }
+
+    fn advance_inner(
+        &mut self,
+        dt: f32,
+        snapshot: CameraSubjectSnapshot,
+        world: &BoardWorld,
+        query_gravity: [f32; 4],
+        environment: &CameraGraphEnvironment,
+        moving: &mut impl MovingObstacleProvider,
+    ) -> Result<CameraFrame, String> {
         if let Some(previous) = self.latest_subject.as_ref()
             && snapshot.tick <= previous.tick
         {
@@ -110,6 +155,10 @@ impl CameraRuntime {
         self.latest_subject = Some(snapshot);
         let mut subject = self.subject.publish(snapshot, &self.manager, self.compass_settings)?;
         self.manager.prepare(&subject, self.settings);
+        #[cfg(test)]
+        if std::mem::take(&mut self.inject_exceptional_angle) {
+            crate::core::camera::normalize_angle(f32::NAN);
+        }
         let requests = self.graph.update(dt, &mut self.manager, &subject, snapshot.graph, environment, &self.shots)?;
         self.simulation_rate_requests.extend(requests);
         let [a, b, c] = &mut self.trajectories;
