@@ -820,6 +820,13 @@ impl crate::Queue for Queue {
                     std::env::var("HAKUBA_PRESENT_MIN_MS").ok().and_then(|v| v.parse().ok()).unwrap_or(1000.0 / 60.0)
                         / 1000.0
                 });
+                // Hakuba playtest: when each frame actually reached the screen, read by the game's frame log.
+                let presented = block2::RcBlock::new(|drawable: NonNull<ProtocolObject<dyn MTLDrawable>>| {
+                    // SAFETY: Metal passes the drawable this handler was added to, alive for the call.
+                    present_stats::record(unsafe { drawable.as_ref() }.presentedTime());
+                });
+                // SAFETY: Metal copies the block before returning.
+                unsafe { texture.drawable.addPresentedHandler(block2::RcBlock::as_ptr(&presented)) };
                 if minimum > 0.0 {
                     command_buffer.presentDrawable_afterMinimumDuration(&texture.drawable, minimum);
                 } else {
@@ -1419,4 +1426,56 @@ pub enum OsType {
     Ios,
     Tvos,
     VisionOs,
+}
+
+/// Hakuba playtest: the intervals between frames reaching the screen, as the display shows them.
+pub mod present_stats {
+    use std::sync::Mutex;
+
+    struct Stats {
+        last: f64,
+        worst: f64,
+        over: u32,
+        count: u32,
+    }
+    static MISSED: core::sync::atomic::AtomicU32 = core::sync::atomic::AtomicU32::new(0);
+
+    /// How many frames stayed on screen longer than 17.5 ms since the last call.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn hakuba_present_missed() -> u32 {
+        MISSED.swap(0, core::sync::atomic::Ordering::Relaxed)
+    }
+
+    static STATS: Mutex<Stats> = Mutex::new(Stats { last: 0.0, worst: 0.0, over: 0, count: 0 });
+
+    pub(super) fn record(time: f64) {
+        // A frame dropped by the window server reports zero.
+        if time <= 0.0 {
+            return;
+        }
+        let mut stats = STATS.lock().unwrap();
+        if stats.last > 0.0 {
+            let ms = (time - stats.last) * 1000.0;
+            stats.worst = stats.worst.max(ms);
+            stats.over += (ms > 17.5) as u32;
+            MISSED.fetch_add((ms > 17.5) as u32, core::sync::atomic::Ordering::Relaxed);
+            stats.count += 1;
+        }
+        stats.last = time;
+    }
+
+    /// Worst interval in milliseconds, how many exceeded 17.5 ms, and how many there were, since the last call.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn hakuba_present_stats(worst: *mut f64, over: *mut u32, count: *mut u32) {
+        let mut stats = STATS.lock().unwrap();
+        // SAFETY: the caller passes valid pointers.
+        unsafe {
+            *worst = stats.worst;
+            *over = stats.over;
+            *count = stats.count;
+        }
+        stats.worst = 0.0;
+        stats.over = 0;
+        stats.count = 0;
+    }
 }

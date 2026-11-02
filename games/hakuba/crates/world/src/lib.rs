@@ -30,6 +30,7 @@ use tiles::Tile;
 pub use collision::{CollisionCoverage, CollisionFocus, CollisionSnapshot, CollisionTriangle, WorldCollision};
 pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
 pub use loading::{SceneryLoaded, Unready};
+pub use pixels::Riding;
 pub use push::PushesPlants;
 pub use water::WaterBodies;
 

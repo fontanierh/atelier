@@ -134,6 +134,20 @@ fn show_fps(time: Res<Time<Real>>, mut second: Local<Second>, mut shown: Single<
     second.slowest = second.slowest.max(frame);
     if second.elapsed >= 1.0 {
         shown.0 = format!("{} FPS  {:.0} ms", second.frames, second.slowest * 1000.0);
+        // Playtest: the frames as the display showed them, from Metal's present times, rather than the game loop's.
+        #[cfg(target_os = "macos")]
+        {
+            unsafe extern "C" {
+                fn hakuba_present_stats(worst: *mut f64, over: *mut u32, count: *mut u32);
+            }
+            let (mut worst, mut over, mut count) = (0.0, 0, 0);
+            // SAFETY: the vendored Metal backend defines it; the pointers are to locals.
+            unsafe { hakuba_present_stats(&mut worst, &mut over, &mut count) };
+            if count > 0 {
+                shown.0 = format!("{count} FPS  {worst:.0} ms");
+                info!("SHOWN {count} frames, {over} over 17.5 ms, worst {worst:.1} ms");
+            }
+        }
         *second = Second::default();
     }
 }

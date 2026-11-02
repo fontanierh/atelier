@@ -610,8 +610,12 @@ fn simulate(
         let (snapshot, generation, slot) = (collision.snapshot.clone(), collision.generation, ride.built.clone());
         ride.building = Some(generation);
         std::thread::spawn(move || {
+            utility_qos();
+            let started = std::time::Instant::now();
             let (triangles, surfaces, rails) = simulation_collision(&snapshot);
-            *slot.lock().unwrap() = Some((generation, builder.build(triangles, surfaces, rails)));
+            let prepared = builder.build(triangles, surfaces, rails);
+            info!("RIDE_COLLISION built in {:.1?}", started.elapsed());
+            *slot.lock().unwrap() = Some((generation, prepared));
         });
     }
     let built = ride.built.lock().unwrap().take();
@@ -619,7 +623,10 @@ fn simulate(
         if ride.building == Some(generation) {
             ride.building = None;
         }
-        if let Err(error) = prepared.and_then(|prepared| ride.session.as_mut().unwrap().install_collision(prepared)) {
+        let started = std::time::Instant::now();
+        let installed = prepared.and_then(|prepared| ride.session.as_mut().unwrap().install_collision(prepared));
+        info!("RIDE_COLLISION installed in {:.1?}", started.elapsed());
+        if let Err(error) = installed {
             status.failure = Some(error);
             return;
         }
@@ -784,7 +791,9 @@ fn present(
     mut parts: Query<(&BoardPart, &mut Transform), Without<Player>>,
     mut camera: Query<(&mut Transform, &mut Projection), (With<Camera3d>, Without<Player>, Without<BoardPart>)>,
     mut walking_fov: Local<Option<f32>>,
+    mut riding: ResMut<hakuba_world::Riding>,
 ) {
+    riding.set_if_neq(hakuba_world::Riding(status.active));
     if !status.active {
         for (_, mut at) in &mut parts {
             at.scale = Vec3::splat(0.001);
