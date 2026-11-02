@@ -570,7 +570,7 @@ impl TileScenery {
             // A middle tile shows a prop's lighter middle version, which every prop exports.
             let extension = if middle && model.starts_with("props/") { "middle.glb" } else { "glb" };
             let extras = json!({
-                "model": crate::uri_of_asset(model, extension)?,
+                "model": super::from_tile(crate::uri_of_asset(model, extension)?),
                 "detail": if middle { "middle" } else { "full" },
                 "instances": numbers,
             });

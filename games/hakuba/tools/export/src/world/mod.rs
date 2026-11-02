@@ -5,9 +5,10 @@
 //! strips regions level are applied to the heights once, after reading the pages, so the tiles, the overlays and
 //! the scenery all stand on the same ground. Raised planar surfaces may own a footprint over that grid;
 //! their declared clearance keeps the underlying ground below them. Each
-//! tile is written twice under `tiles/`: `<column>_<row>.glb` in full detail, and `<column>_<row>.middle.glb` with a
-//! coarser ground for seeing from afar. The coarse ground keeps every fine point on the tile's edges, so neighbouring tiles meet exactly
-//! whichever version each one shows. `<folder name>.glb` holds one empty node per tile, named
+//! tile is written twice under `tiles/`, in the folder of the ground page it lies in: `<page>_<page>/<column>_<row>.glb`
+//! in full detail, and `<column>_<row>.middle.glb` with a coarser ground for seeing from afar. The coarse ground keeps
+//! every fine point on the tile's edges, so neighbouring tiles meet exactly whichever version each one shows.
+//! `<folder name>.glb` holds one empty node per tile, named
 //! `tile <column> <row>` and placed at the tile's centre, and one named `spawn`, where the player starts.
 //!
 //! An export rewrites only the tiles whose inputs changed since the last one ([`checksums`]), so an edit costs the
@@ -99,6 +100,70 @@ pub struct Settings {
 
 /// How many fine steps one coarse step of a middle tile spans.
 const COARSE: usize = 4;
+
+/// How many tiles wide each folder of `tiles/` is; see [`tile_folder`].
+fn page_tiles(page_steps: usize, tile_steps: usize) -> Result<usize> {
+    if tile_steps == 0 || !page_steps.is_multiple_of(tile_steps) {
+        bail!("a ground page must hold a whole number of tiles");
+    }
+    Ok(page_steps / tile_steps)
+}
+
+/// The folder of `tiles/` holding a tile's files: the ground page the tile lies in, a page wide. It is named as
+/// `src/ground/`'s page holding the same terrain, so a tile's folder is the folder its heights come from, and no
+/// folder holds more than a page's worth of tiles.
+fn tile_folder(tiles: &Path, page_tiles: usize, column: usize, row: usize) -> PathBuf {
+    tiles.join(format!("{}_{}", column / page_tiles, row / page_tiles))
+}
+
+/// Where a tile, in `tiles/<page>/` one folder deeper than other exports, finds what `uri` names from an export two
+/// folders below `assets/` ([`crate::uri_of_asset`]).
+pub(super) fn from_tile(uri: String) -> String {
+    format!("../{uri}")
+}
+
+/// Fails if the tile written at `file` names a texture or model, by an image's `uri` or a node's `model` extra, that
+/// leads into no asset folder from where the tile sits: a path written for another folder breaks silently in game.
+fn check_paths(file: &Path) -> Result<()> {
+    let bytes = fs::read(file)?;
+    let length = u32::from_le_bytes(bytes[12..16].try_into()?) as usize;
+    let json: serde_json::Value = serde_json::from_slice(&bytes[20..20 + length])?;
+    let list = |key: &str| json[key].as_array().cloned().unwrap_or_default();
+    let images = list("images").into_iter().filter_map(|image| image["uri"].as_str().map(str::to_owned));
+    let models = list("nodes").into_iter().filter_map(|node| node["extras"]["model"].as_str().map(str::to_owned));
+    let folder = file.parent().unwrap_or(Path::new("."));
+    for uri in images.chain(models) {
+        if !folder.join(&uri).parent().is_some_and(|asset| asset.join("asset.toml").is_file()) {
+            bail!("{}: {uri} leads to no asset from the tile's folder", file.display());
+        }
+    }
+    Ok(())
+}
+
+/// Removes every file of a tile the export no longer writes, and every folder it leaves empty. The checksums stay.
+fn remove_stale_tiles(tiles: &Path, current: &BTreeMap<String, String>) -> Result<()> {
+    for entry in fs::read_dir(tiles)? {
+        let path = entry?.path();
+        if !path.is_dir() {
+            // A file beside the folders: the checksums, or a tile an older export wrote before the folders.
+            if path.file_name().is_none_or(|name| name != checksums::FILE) {
+                fs::remove_file(&path)?;
+            }
+            continue;
+        }
+        for file in fs::read_dir(&path)? {
+            let file = file?.path();
+            let name = file.file_name().unwrap_or_default().to_string_lossy().into_owned();
+            if !current.contains_key(name.split('.').next().unwrap_or_default()) {
+                fs::remove_file(&file)?;
+            }
+        }
+        if fs::read_dir(&path)?.next().is_none() {
+            fs::remove_dir(&path)?;
+        }
+    }
+    Ok(())
+}
 
 impl Settings {
     fn extent(&self) -> Result<Tile> {
@@ -237,6 +302,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         _ => bail!("a coloured ground needs the ground texture's positive mean colour"),
     }
     let tile_m = settings.tile_steps as f64 * settings.ground_step_m;
+    let page_tiles = page_tiles(settings.page_steps, settings.tile_steps)?;
     let collars = raised.iter().map(|surface| underlay::owner_collar(surface, tile_m)).collect::<Result<Vec<_>>>()?;
     let mut unions: [Vec<underlay::Underlay>; 2] = [Vec::new(), Vec::new()];
     for (surface, &collar) in raised.iter().zip(&collars).filter(|(surface, _)| surface.cut_ground) {
@@ -345,7 +411,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut rebuilt = 0;
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     skate::write(&mut index)?;
-    index.add_data("tile grid", json!({ "tile_m": tile_m }));
+    index.add_data("tile grid", json!({ "tile_m": tile_m, "page_tiles": page_tiles }));
     if !waters.is_empty() {
         index.add_data("water bodies", json!({ "waters": waters }));
     }
@@ -358,9 +424,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 continue;
             }
             let stem = format!("{column}_{row}");
+            let folder = tile_folder(&tiles, page_tiles, column, row);
             let files = [
-                (Detail::Full, tiles.join(format!("{stem}.glb"))),
-                (Detail::Middle, tiles.join(format!("{stem}.middle.glb"))),
+                (Detail::Full, folder.join(format!("{stem}.glb"))),
+                (Detail::Middle, folder.join(format!("{stem}.middle.glb"))),
             ];
             let checksum = tile.checksum(
                 &code,
@@ -370,6 +437,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 (&tile_scenery, &collars),
             );
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
+                fs::create_dir_all(&folder)?;
                 for (detail, file) in &files {
                     tile.write(
                         &ground,
@@ -379,6 +447,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                         *detail,
                         file,
                     )?;
+                    check_paths(file)?;
                 }
                 rebuilt += 1;
             }
@@ -404,7 +473,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 continue;
             };
             let stem = format!("{column}_{row}");
-            let files = [(false, tiles.join(format!("{stem}.glb"))), (true, tiles.join(format!("{stem}.middle.glb")))];
+            let folder = tile_folder(&tiles, page_tiles, column, row);
+            let files =
+                [(false, folder.join(format!("{stem}.glb"))), (true, folder.join(format!("{stem}.middle.glb")))];
             let mut digest = Sha256::new();
             digest.update(&code);
             digest.update(&scenery_settings);
@@ -412,6 +483,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             digest.update(scenery::checksum_bytes(&tile_scenery));
             let checksum = format!("{:x}", digest.finalize());
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
+                fs::create_dir_all(&folder)?;
                 for (middle, file) in &files {
                     // A tile with nothing seen from afar still holds a scene, empty, for the game to load.
                     let mut glb = Glb::from_json(
@@ -419,6 +491,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                     );
                     tile_scenery.write_beyond(&mut glb, *middle, file)?;
                     glb.write(file)?;
+                    check_paths(file)?;
                 }
                 rebuilt += 1;
             }
@@ -450,15 +523,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
 
-    // Files of tiles no longer exported go.
-    for entry in fs::read_dir(&tiles)? {
-        let path = entry?.path();
-        let name = path.file_name().unwrap_or_default().to_string_lossy();
-        let stem = name.split('.').next().unwrap_or_default();
-        if name != checksums::FILE && !current.contains_key(stem) {
-            fs::remove_file(&path)?;
-        }
-    }
+    // Files of tiles no longer exported go, and the folders they leave empty.
+    remove_stale_tiles(&tiles, &current)?;
     checksums::write(&tiles, &current)?;
     println!("{}: rebuilt {rebuilt} of {} tiles", folder.display(), current.len());
     index.write(output)
@@ -637,7 +703,8 @@ impl Tile {
             Some(texture) if ground.wholly_coloured(self.columns, self.rows) => texture,
             _ => &settings.ground_texture,
         };
-        let ground_material = glb.add_material(&Material::textured("ground", &crate::uri_of_texture(texture)?));
+        let ground_material =
+            glb.add_material(&Material::textured("ground", &from_tile(crate::uri_of_texture(texture)?)));
         let texture_steps = settings.ground_texture_m / settings.ground_step_m;
         let ground_mesh = self.ground(
             ground,
@@ -666,8 +733,8 @@ impl Tile {
                 overlay::check_smooth(&mesh)
                     .with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
             }
-            mesh.material =
-                glb.add_material(&Material::textured(&overlay.name, &crate::uri_of_texture(&overlay.texture)?));
+            mesh.material = glb
+                .add_material(&Material::textured(&overlay.name, &from_tile(crate::uri_of_texture(&overlay.texture)?)));
             glb.add_mesh(&overlay.name, &[&mesh]);
         }
         for (surface, source_mesh) in authored.iter().zip(&source_meshes) {
@@ -675,7 +742,7 @@ impl Tile {
                 continue;
             }
             let mut mesh = source_mesh.clone();
-            let texture = surface.texture.map(crate::uri_of_texture).transpose()?;
+            let texture = surface.texture.map(crate::uri_of_texture).transpose()?.map(from_tile);
             mesh.material = glb.add_material(&Material {
                 name: surface.name,
                 texture: texture.as_deref(),
@@ -695,8 +762,10 @@ impl Tile {
             let mut mesh =
                 surface.mesh_prepared(&drawn, &cut, false).with_context(|| format!("writing {}", path.display()))?;
             if !mesh.indices.is_empty() {
-                mesh.material =
-                    glb.add_material(&Material::textured(&surface.name, &crate::uri_of_texture(&surface.texture)?));
+                mesh.material = glb.add_material(&Material::textured(
+                    &surface.name,
+                    &from_tile(crate::uri_of_texture(&surface.texture)?),
+                ));
                 let node = glb.add_mesh(&surface.node_name(), &[&mesh]);
                 if let Some(paint) = &surface.paint {
                     glb.set_extras(node, json!({"surface_paint": paint}));
@@ -804,6 +873,38 @@ impl Tile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_tile_naming_a_path_that_leads_to_no_asset_fails() {
+        let root = std::env::temp_dir().join(format!("hakuba-tile-paths-{}", std::process::id()));
+        let texture = root.join("textures/a");
+        let tiles = root.join("world/tiles/2_1");
+        fs::create_dir_all(&texture).unwrap();
+        fs::create_dir_all(&tiles).unwrap();
+        fs::write(texture.join("asset.toml"), "kind = \"texture\"\n").unwrap();
+        let file = tiles.join("16_8.glb");
+        let names = |uri: &str| {
+            let glb = json!({ "asset": { "version": "2.0" }, "images": [{ "uri": uri }], "nodes": [{ "extras": { "model": uri } }] });
+            Glb::from_json(glb).write(&file).unwrap();
+            check_paths(&file)
+        };
+        assert!(names(&from_tile("../../textures/a/a.ktx2".into())).is_ok(), "from the tile's own folder");
+        assert!(names("../../textures/a/a.ktx2").is_err(), "a path written for a folder one higher");
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn a_tile_lives_in_its_ground_pages_folder() {
+        // The world's pages are 256 steps of 2 m and its tiles 32, so a 512 m page holds 8 tiles a side.
+        assert_eq!(page_tiles(256, 32).unwrap(), 8);
+        assert!(page_tiles(256, 0).is_err(), "a tile of no steps divides no page");
+        assert!(page_tiles(250, 32).is_err(), "a page that holds part of a tile splits no folder cleanly");
+        let tiles = Path::new("tiles");
+        assert_eq!(tile_folder(tiles, 8, 0, 0), tiles.join("0_0"));
+        assert_eq!(tile_folder(tiles, 8, 23, 11), tiles.join("2_1"), "a page's own tiles share its folder");
+        assert_eq!(tile_folder(tiles, 8, 24, 12), tiles.join("3_1"), "the next page's start the next folder");
+        assert_eq!(tile_folder(tiles, 8, 118, 131), tiles.join("14_16"));
+    }
 
     #[test]
     fn a_square_off_the_ground_draws_nothing_and_its_coast_meets_without_a_seam() {

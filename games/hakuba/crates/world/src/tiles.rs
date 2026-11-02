@@ -103,9 +103,11 @@ impl Tile {
     pub fn shown(&self) -> bool {
         self.failed || (!self.queued && self.detail == self.shown_detail && self.pending.is_none())
     }
-    fn path(&self, detail: Detail) -> String {
+    /// The file of this tile's `detail`, in the folder of `page_tiles` tiles a side the export wrote it in.
+    fn path(&self, detail: Detail, page_tiles: u32) -> String {
         let suffix = if detail == Detail::Full { "" } else { ".middle" };
-        format!("{TILES}/{}_{}{suffix}.glb", self.column, self.row)
+        let (column, row) = (self.column, self.row);
+        format!("{TILES}/{}_{}/{column}_{row}{suffix}.glb", column / page_tiles, row / page_tiles)
     }
 }
 
@@ -193,7 +195,9 @@ fn choose(
             continue;
         }
         let detail = detail.unwrap();
-        let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(tile.path(detail)));
+        // The index names the tiles' folders; without it, which only a failed index lacks, no tile loads.
+        let Some(grid) = grid.as_ref() else { continue };
+        let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(tile.path(detail, grid.page_tiles)));
         tile.pending = Some(
             commands.spawn((WorldAssetRoot(scene), Spawning(entity, detail), ChildOf(entity), Visibility::Hidden)).id(),
         );
@@ -340,6 +344,20 @@ mod tests {
     use bevy::ecs::system::RunSystemOnce;
 
     #[test]
+    fn a_tile_loads_from_its_ground_pages_folder() {
+        let tile = Tile::named("tile 23 11", Vec3::ZERO).unwrap();
+        assert_eq!(tile.path(Detail::Full, 8), "world/tiles/2_1/23_11.glb");
+        assert_eq!(tile.path(Detail::Middle, 8), "world/tiles/2_1/23_11.middle.glb");
+        assert_eq!(tile.path(Detail::Far, 8), "world/tiles/2_1/23_11.middle.glb", "a far tile shows the middle file");
+        let next = Tile::named("tile 24 16", Vec3::ZERO).unwrap();
+        assert_eq!(
+            next.path(Detail::Full, 8),
+            "world/tiles/3_2/24_16.glb",
+            "a page's first tile starts the next folder"
+        );
+    }
+
+    #[test]
     fn pending_tile_keeps_old_visible_and_solid_until_complete_swap() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
@@ -424,6 +442,7 @@ mod tests {
         app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
         app.init_asset::<bevy::world_serialization::WorldAsset>();
         app.init_resource::<Settings>();
+        app.insert_resource(crate::collision::TileGrid { tile_m: 64., page_tiles: 8 });
         app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(1000.0, 0.0, 0.0))));
         let tiles: Vec<Entity> = (0..LOADING_UNDER_SPLASH + 8)
             .map(|k| {
@@ -456,6 +475,7 @@ mod tests {
         app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
         app.init_asset::<bevy::world_serialization::WorldAsset>();
         app.init_resource::<Settings>();
+        app.insert_resource(crate::collision::TileGrid { tile_m: 64., page_tiles: 8 });
         app.world_mut().spawn((Camera3d::default(), GlobalTransform::IDENTITY));
         let near = app
             .world_mut()
@@ -471,7 +491,7 @@ mod tests {
             assert_eq!(tile.detail, Some(detail));
             let spawning = app.world().get::<Spawning>(tile.pending.unwrap()).unwrap();
             assert_eq!(spawning.far(), detail == Detail::Far);
-            assert!(tile.path(detail).ends_with(".middle.glb"), "a far tile is the middle version");
+            assert!(tile.path(detail, 8).ends_with(".middle.glb"), "a far tile is the middle version");
         }
     }
 
@@ -556,7 +576,7 @@ mod tests {
             .init_resource::<CollisionFocus>()
             .init_resource::<CollisionDirty>()
             .add_message::<AssetEvent<Mesh>>()
-            .insert_resource(TileGrid { tile_m: 64. })
+            .insert_resource(TileGrid { tile_m: 64., page_tiles: 8 })
             .insert_resource(SkateMetadata(Metadata::default()))
             .add_systems(Update, publish);
         app.world_mut().resource_mut::<CollisionFocus>().request(Vec3::ZERO, Vec3::ZERO);
@@ -616,7 +636,7 @@ mod tests {
             .init_resource::<CollisionFocus>()
             .init_resource::<CollisionDirty>()
             .add_message::<AssetEvent<Mesh>>()
-            .insert_resource(TileGrid { tile_m: 64. })
+            .insert_resource(TileGrid { tile_m: 64., page_tiles: 8 })
             .insert_resource(SkateMetadata(hakuba_world_skate_schema::Metadata::default()))
             .add_systems(Update, publish);
         app.world_mut().resource_mut::<CollisionFocus>().request(Vec3::ZERO, Vec3::ZERO);

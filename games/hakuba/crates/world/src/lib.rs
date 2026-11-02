@@ -200,7 +200,7 @@ fn read_index(
             .get(handle)
             .and_then(|n| n.extras.as_ref())
             .and_then(|e| serde_json::from_str::<collision::TileGrid>(&e.value).ok())
-            .filter(|g| g.tile_m.is_finite() && g.tile_m > 0.0);
+            .filter(|g| g.tile_m.is_finite() && g.tile_m > 0.0 && g.page_tiles > 0);
         if let Some(grid) = grid {
             commands.insert_resource(grid);
         } else {
