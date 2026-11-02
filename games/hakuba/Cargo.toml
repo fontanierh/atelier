@@ -8,6 +8,7 @@ exclude = ["vendor/bevy_pbr"]
 # A project-local opt-in forward-motion comparison patch; provenance and licenses are in vendor/.
 [patch.crates-io]
 bevy_pbr = { path = "vendor/bevy_pbr" }
+wgpu-hal = { path = "vendor/wgpu-hal" }
 
 [workspace.package]
 version = "0.1.0"

@@ -87,7 +87,7 @@ impl Default for Intervals {
 
 /// Once a second: how many frames were under 12 ms, about one 60 Hz frame (12–20 ms), 20–29, 29–40 and over 40 ms,
 /// the worst, and where the camera is and which way it looks.
-fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<&GlobalTransform, With<Camera3d>>) {
+fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<(&GlobalTransform, &Projection), With<Camera3d>>) {
     let now = Instant::now();
     if let Some(last) = intervals.last {
         let ms = (now - last).as_secs_f32() * 1000.0;
@@ -99,8 +99,8 @@ fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<&GlobalTransfo
             _ => 4,
         };
         intervals.buckets[bucket] += 1;
-        if ms > 20.0 {
-            if let Some(t) = cameras.iter().next() {
+        if ms > 17.5 {
+            if let Some((t, _)) = cameras.iter().next() {
                 let (_, rotation, translation) = t.to_scale_rotation_translation();
                 let forward = rotation * Vec3::NEG_Z;
                 info!(
@@ -117,10 +117,20 @@ fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<&GlobalTransfo
     }
     intervals.last = Some(now);
     if now - intervals.started >= Duration::from_secs(1) {
-        let camera = cameras.iter().next().map(|t| {
+        let camera = cameras.iter().next().map(|(t, projection)| {
             let (_, rotation, translation) = t.to_scale_rotation_translation();
             let forward = rotation * Vec3::NEG_Z;
-            format!("cam {:.1},{:.1},{:.1} yaw {:.0}", translation.x, translation.y, translation.z, forward.x.atan2(-forward.z).to_degrees())
+            let fov = match projection {
+                Projection::Perspective(p) => p.fov.to_degrees(),
+                _ => 0.0,
+            };
+            format!(
+                "cam {:.1},{:.1},{:.1} yaw {:.0} fov {fov:.0}",
+                translation.x,
+                translation.y,
+                translation.z,
+                forward.x.atan2(-forward.z).to_degrees()
+            )
         });
         let b = intervals.buckets;
         info!(

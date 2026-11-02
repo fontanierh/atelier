@@ -783,10 +783,17 @@ fn present(
     rigs: Query<&Rig>,
     mut parts: Query<(&BoardPart, &mut Transform), Without<Player>>,
     mut camera: Query<(&mut Transform, &mut Projection), (With<Camera3d>, Without<Player>, Without<BoardPart>)>,
+    mut walking_fov: Local<Option<f32>>,
 ) {
     if !status.active {
         for (_, mut at) in &mut parts {
             at.scale = Vec3::splat(0.001);
+        }
+        // The ride's wider view ends with the ride: the walker sees as before the mount.
+        if let (Some(fov), Ok((_, mut projection))) = (walking_fov.take(), camera.single_mut())
+            && let Projection::Perspective(p) = &mut *projection
+        {
+            p.fov = fov;
         }
         return;
     }
@@ -832,6 +839,7 @@ fn present(
         let up = frame::world_point((a.1 * Vec3::Y).lerp(b.1 * Vec3::Y, alpha)).normalize();
         *at = Transform::from_translation(position).looking_to(forward, up);
         if let Projection::Perspective(p) = &mut *projection {
+            walking_fov.get_or_insert(p.fov);
             p.fov = (a.2 + (b.2 - a.2) * alpha + settings.skate.camera_fov).clamp(25., 110.).to_radians();
         }
     }
