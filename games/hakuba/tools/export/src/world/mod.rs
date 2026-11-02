@@ -340,6 +340,11 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let low = ground.position(whole.columns.0 as f64, whole.rows.0 as f64);
     let high = ground.position(whole.columns.1 as f64, whole.rows.1 as f64);
     let source_meshes: Vec<Mesh> = authored.iter().map(|surface| surface.mesh(low, high)).collect::<Result<_>>()?;
+    // Each authored surface owns its footprint or leaves it to the ground, never lying on it.
+    let ground_only = Surface::new(&whole_mesh);
+    for surface in &authored {
+        surface.check_owned(&ground_only)?;
+    }
     let drawn = Surface::with_crossings(&whole_mesh, &source_meshes);
     for surface in &authored {
         if let Some(texture) = surface.texture {
