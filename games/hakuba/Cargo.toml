@@ -67,3 +67,7 @@ opt-level = 3
 
 [profile.dev.package.hakuba_rendering]
 opt-level = 3
+
+# The DualSense read from its raw reports on macOS (src/dualsense.rs).
+[target.'cfg(target_os = "macos")'.dependencies]
+hidapi = { version = "2", default-features = false, features = ["macos-shared-device"] }

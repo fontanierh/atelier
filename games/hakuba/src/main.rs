@@ -18,8 +18,12 @@ use hakuba_skate::SkatePlugin;
 use hakuba_viewer::ViewerPlugin;
 use hakuba_world::WorldPlugin;
 
+#[cfg(target_os = "macos")]
+mod dualsense;
+
 fn main() {
-    App::new()
+    let mut app = App::new();
+    app
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -61,8 +65,10 @@ fn main() {
             DevPlugin,
             ViewerPlugin,
             SoundsPlugin,
-        ))
-        .run();
+        ));
+    #[cfg(target_os = "macos")]
+    app.add_plugins(dualsense::DualSensePlugin);
+    app.run();
 }
 
 /// Where the assets are, from the folder beside the program: `assets`, but `../Resources/assets` in a macOS app,
