@@ -638,7 +638,10 @@ fn simulate(
     let period = ride.session.as_ref().unwrap().period();
     // Keep a full fixed-step accumulator. A long host hitch pauses instead of inventing a huge solver step.
     ride.accumulator += time.delta_secs().min(0.25);
+    let ticking = std::time::Instant::now();
+    let mut ticks = 0;
     while ride.accumulator >= period {
+        ticks += 1;
         let position = frame::world_point(ride.current.as_ref().unwrap().root.w_axis.truncate());
         let mut assist = 1.0_f32;
         let mut boost = 0.0_f32;
@@ -756,6 +759,9 @@ fn simulate(
         ride.previous = ride.current.take();
         ride.current = Some(solved);
         ride.accumulator -= period;
+    }
+    if ticking.elapsed().as_secs_f32() > 0.004 {
+        info!("RIDE_TICKS {ticks} in {:.1?}", ticking.elapsed());
     }
     let current = ride.current.as_ref().unwrap();
     status.tick = current.tick;

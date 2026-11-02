@@ -29,16 +29,16 @@ pub struct Riding(pub bool);
 const SHARES: [f32; 8] = [1.0, 0.85, 0.72, 0.61, 0.52, 0.44, 0.37, 0.31];
 /// A ride draws at most this step, since its view is far wider than the walker's and turns heavy faster than the
 /// steps can follow.
-const RIDE_STEP: usize = 4;
+const RIDE_STEP: usize = 5;
 /// After a step, frames take this long to show its effect: misses before then do not step again.
-const SETTLE_S: f32 = 0.3;
+const SETTLE_S: f32 = 0.1;
 /// Seconds without a missed frame before trying one step more, at first; doubled each time the step above missed.
 const CALM_S: f32 = 4.0;
 const CALM_MAX_S: f32 = 64.0;
 /// A miss this soon after stepping up blames the step.
 const BLAME_S: f32 = 2.0;
 /// The GPU is short of time when this many frames miss within [`BURST_S`]; a single hitch is not load.
-const BURST: usize = 3;
+const BURST: usize = 2;
 const BURST_S: f32 = 0.5;
 
 /// The GPU's load follows what the camera sees, so the drawn pixels follow it: one step fewer at each frame the
@@ -123,6 +123,8 @@ fn follow_load(
             load.steps[mode] += 1;
             load.since = 0.0;
             load.raised = false;
+            // The misses that asked for this step must not ask again: only misses at the new step count.
+            load.misses.clear();
             info!("PIXELS fewer: now {:.0}% of the setting", 100.0 * SHARES[load.steps[mode]]);
         }
         return;
