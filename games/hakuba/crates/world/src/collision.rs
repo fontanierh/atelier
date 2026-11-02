@@ -58,6 +58,8 @@ pub(crate) struct SkateMetadata(pub Metadata);
 #[derive(Resource, serde::Deserialize)]
 pub(crate) struct TileGrid {
     pub tile_m: f32,
+    /// How many tiles wide each folder of `tiles/` is, as the export wrote them.
+    pub page_tiles: u32,
 }
 
 /// Retains unbatched source instances. Render merge boundaries never change physical triangle order.
@@ -413,7 +415,7 @@ mod tests {
             .init_resource::<CollisionFocus>()
             .init_resource::<CollisionDirty>()
             .add_message::<AssetEvent<Mesh>>()
-            .insert_resource(TileGrid { tile_m: 64. })
+            .insert_resource(TileGrid { tile_m: 64., page_tiles: 8 })
             .insert_resource(SkateMetadata(Metadata::default()));
         app.world_mut().resource_mut::<CollisionFocus>().request(Vec3::ZERO, Vec3::ZERO);
         app.world_mut().spawn(Tile::named("tile 1 1", Vec3::ZERO).unwrap());
@@ -436,7 +438,7 @@ mod tests {
             .add_message::<AssetEvent<Mesh>>()
             .add_observer(tile_added)
             .add_observer(tile_removed)
-            .insert_resource(TileGrid { tile_m: 64. })
+            .insert_resource(TileGrid { tile_m: 64., page_tiles: 8 })
             .insert_resource(SkateMetadata(Metadata::default()))
             .add_systems(Update, publish);
 

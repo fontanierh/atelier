@@ -116,6 +116,30 @@ fn tile_folder(tiles: &Path, page_tiles: usize, column: usize, row: usize) -> Pa
     tiles.join(format!("{}_{}", column / page_tiles, row / page_tiles))
 }
 
+/// Where a tile, in `tiles/<page>/` one folder deeper than other exports, finds what `uri` names from an export two
+/// folders below `assets/` ([`crate::uri_of_asset`]).
+pub(super) fn from_tile(uri: String) -> String {
+    format!("../{uri}")
+}
+
+/// Fails if the tile written at `file` names a texture or model, by an image's `uri` or a node's `model` extra, that
+/// leads into no asset folder from where the tile sits: a path written for another folder breaks silently in game.
+fn check_paths(file: &Path) -> Result<()> {
+    let bytes = fs::read(file)?;
+    let length = u32::from_le_bytes(bytes[12..16].try_into()?) as usize;
+    let json: serde_json::Value = serde_json::from_slice(&bytes[20..20 + length])?;
+    let list = |key: &str| json[key].as_array().cloned().unwrap_or_default();
+    let images = list("images").into_iter().filter_map(|image| image["uri"].as_str().map(str::to_owned));
+    let models = list("nodes").into_iter().filter_map(|node| node["extras"]["model"].as_str().map(str::to_owned));
+    let folder = file.parent().unwrap_or(Path::new("."));
+    for uri in images.chain(models) {
+        if !folder.join(&uri).parent().is_some_and(|asset| asset.join("asset.toml").is_file()) {
+            bail!("{}: {uri} leads to no asset from the tile's folder", file.display());
+        }
+    }
+    Ok(())
+}
+
 /// Removes every file of a tile the export no longer writes, and every folder it leaves empty. The checksums stay.
 fn remove_stale_tiles(tiles: &Path, current: &BTreeMap<String, String>) -> Result<()> {
     for entry in fs::read_dir(tiles)? {
@@ -387,7 +411,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut rebuilt = 0;
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     skate::write(&mut index)?;
-    index.add_data("tile grid", json!({ "tile_m": tile_m }));
+    index.add_data("tile grid", json!({ "tile_m": tile_m, "page_tiles": page_tiles }));
     if !waters.is_empty() {
         index.add_data("water bodies", json!({ "waters": waters }));
     }
@@ -423,6 +447,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                         *detail,
                         file,
                     )?;
+                    check_paths(file)?;
                 }
                 rebuilt += 1;
             }
@@ -466,6 +491,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                     );
                     tile_scenery.write_beyond(&mut glb, *middle, file)?;
                     glb.write(file)?;
+                    check_paths(file)?;
                 }
                 rebuilt += 1;
             }
@@ -677,7 +703,8 @@ impl Tile {
             Some(texture) if ground.wholly_coloured(self.columns, self.rows) => texture,
             _ => &settings.ground_texture,
         };
-        let ground_material = glb.add_material(&Material::textured("ground", &crate::uri_of_texture(texture)?));
+        let ground_material =
+            glb.add_material(&Material::textured("ground", &from_tile(crate::uri_of_texture(texture)?)));
         let texture_steps = settings.ground_texture_m / settings.ground_step_m;
         let ground_mesh = self.ground(
             ground,
@@ -706,8 +733,8 @@ impl Tile {
                 overlay::check_smooth(&mesh)
                     .with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
             }
-            mesh.material =
-                glb.add_material(&Material::textured(&overlay.name, &crate::uri_of_texture(&overlay.texture)?));
+            mesh.material = glb
+                .add_material(&Material::textured(&overlay.name, &from_tile(crate::uri_of_texture(&overlay.texture)?)));
             glb.add_mesh(&overlay.name, &[&mesh]);
         }
         for (surface, source_mesh) in authored.iter().zip(&source_meshes) {
@@ -715,7 +742,7 @@ impl Tile {
                 continue;
             }
             let mut mesh = source_mesh.clone();
-            let texture = surface.texture.map(crate::uri_of_texture).transpose()?;
+            let texture = surface.texture.map(crate::uri_of_texture).transpose()?.map(from_tile);
             mesh.material = glb.add_material(&Material {
                 name: surface.name,
                 texture: texture.as_deref(),
@@ -735,8 +762,10 @@ impl Tile {
             let mut mesh =
                 surface.mesh_prepared(&drawn, &cut, false).with_context(|| format!("writing {}", path.display()))?;
             if !mesh.indices.is_empty() {
-                mesh.material =
-                    glb.add_material(&Material::textured(&surface.name, &crate::uri_of_texture(&surface.texture)?));
+                mesh.material = glb.add_material(&Material::textured(
+                    &surface.name,
+                    &from_tile(crate::uri_of_texture(&surface.texture)?),
+                ));
                 let node = glb.add_mesh(&surface.node_name(), &[&mesh]);
                 if let Some(paint) = &surface.paint {
                     glb.set_extras(node, json!({"surface_paint": paint}));
@@ -844,6 +873,25 @@ impl Tile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_tile_naming_a_path_that_leads_to_no_asset_fails() {
+        let root = std::env::temp_dir().join(format!("hakuba-tile-paths-{}", std::process::id()));
+        let texture = root.join("textures/a");
+        let tiles = root.join("world/tiles/2_1");
+        fs::create_dir_all(&texture).unwrap();
+        fs::create_dir_all(&tiles).unwrap();
+        fs::write(texture.join("asset.toml"), "kind = \"texture\"\n").unwrap();
+        let file = tiles.join("16_8.glb");
+        let names = |uri: &str| {
+            let glb = json!({ "asset": { "version": "2.0" }, "images": [{ "uri": uri }], "nodes": [{ "extras": { "model": uri } }] });
+            Glb::from_json(glb).write(&file).unwrap();
+            check_paths(&file)
+        };
+        assert!(names(&from_tile("../../textures/a/a.ktx2".into())).is_ok(), "from the tile's own folder");
+        assert!(names("../../textures/a/a.ktx2").is_err(), "a path written for a folder one higher");
+        fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn a_tile_lives_in_its_ground_pages_folder() {
