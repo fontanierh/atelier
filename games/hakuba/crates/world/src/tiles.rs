@@ -26,6 +26,17 @@ const LOADING: usize = 16;
 /// The most tiles that load at once under the splash, when nothing is drawn yet; a browser refuses thousands of
 /// fetches at once.
 const LOADING_UNDER_SPLASH: usize = 32;
+fn tuned(name: &str, default: f32) -> f32 {
+    std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
+}
+fn far_m() -> f32 {
+    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *V.get_or_init(|| tuned("HAKUBA_FAR_M", FAR_M))
+}
+fn middle_m() -> f32 {
+    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *V.get_or_init(|| tuned("HAKUBA_MIDDLE_M", MIDDLE_M))
+}
 pub const TILES: &str = "world/tiles";
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -150,10 +161,10 @@ fn choose(
         let detail = match distance {
             _ if pinned => Some(Detail::Full),
             d if d < settings.detail.full_m() => Some(Detail::Full),
-            d if d < FAR_M + if tile.detail == Some(Detail::Middle) { FAR_MARGIN_M } else { -FAR_MARGIN_M } => {
+            d if d < far_m() + if tile.detail == Some(Detail::Middle) { FAR_MARGIN_M } else { -FAR_MARGIN_M } => {
                 Some(Detail::Middle)
             }
-            d if d < MIDDLE_M => Some(Detail::Far),
+            d if d < middle_m() => Some(Detail::Far),
             _ => None,
         };
         loading += usize::from(tile.pending.is_some());

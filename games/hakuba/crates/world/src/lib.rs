@@ -133,7 +133,7 @@ fn spawn_world(
 /// Explicit validation only: native environment or browser query, never a stored game setting.
 fn forward_motion_requested() -> Option<hakuba_rendering::ForwardMotionMode> {
     #[cfg(not(target_arch = "wasm32"))]
-    let requested = std::env::var("HAKUBA_FORWARD_MOTION").ok();
+    let requested = Some(std::env::var("HAKUBA_FORWARD_MOTION").unwrap_or_else(|_| "single".into()));
     #[cfg(target_arch = "wasm32")]
     let requested = web_sys::window().and_then(|window| window.location().search().ok()).and_then(|query| {
         query

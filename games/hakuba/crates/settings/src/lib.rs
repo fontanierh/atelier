@@ -119,7 +119,7 @@ impl Shadows {
     pub fn reach(self) -> Option<(f32, usize)> {
         match self {
             Shadows::Off => None,
-            Shadows::Near => Some((60.0, 2)),
+            Shadows::Near => Some((40.0, 1)),
             Shadows::Far => Some((150.0, 2)),
         }
     }
@@ -147,7 +147,7 @@ impl Detail {
     /// Up to how far from the camera, to the tile's centre, a tile shows its full version, in metres.
     pub fn full_m(self) -> f32 {
         match self {
-            Detail::Near => 100.0,
+            Detail::Near => 70.0,
             Detail::Normal => 160.0,
             Detail::Far => 320.0,
         }
@@ -177,7 +177,7 @@ impl FrameRate {
 /// a cap of 60 or more lets the browser pace the frames: a cap's own timer runs apart from the refreshes, so some
 /// frames waited for a second refresh, and a 60 cap drew 14 and 28 ms frames by turns, or 35 to 45 a second.
 fn hold_frame_rate(settings: Res<Settings>, mut commands: Commands) {
-    let most = settings.frame_rate.most().filter(|&most| !cfg!(target_arch = "wasm32") || most < 60.0);
+    let most = settings.frame_rate.most().filter(|&most| most < 60.0);
     let mode = match most {
         Some(most) => UpdateMode::Reactive {
             wait: Duration::from_secs_f64(1.0 / most),
