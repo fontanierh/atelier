@@ -86,7 +86,15 @@ impl Runtime {
     }
     pub fn load(data: &Collections) -> Result<Self, String> {
         Ok(Self {
-            data: ScoringData::load(data)?,
+            data: {
+                // Reading the tables takes seconds and they never change within a run: read them once.
+                static LOADED: std::sync::Mutex<Option<ScoringData>> = std::sync::Mutex::new(None);
+                let mut loaded = LOADED.lock().unwrap();
+                match &*loaded {
+                    Some(scoring) => scoring.clone(),
+                    None => loaded.insert(ScoringData::load(data)?).clone(),
+                }
+            },
             session: Session::default(),
             collector: Collector::None,
             carriers: std::array::from_fn(|_| None),

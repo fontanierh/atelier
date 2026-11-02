@@ -251,14 +251,29 @@ fn prepare(
 #[derive(Resource, Default)]
 struct Spare(std::sync::Arc<std::sync::Mutex<Option<Result<Session, String>>>>, bool);
 
-fn build_spare(mut spare: ResMut<Spare>, handles: Res<AssetsToLoad>, packages: Res<Assets<Package>>) {
-    if spare.1 {
+fn build_spare(
+    mut spare: ResMut<Spare>,
+    handles: Res<AssetsToLoad>,
+    packages: Res<Assets<Package>>,
+    players: Query<&Player>,
+) {
+    // Never while skating: building takes seconds of a core the ride needs.
+    if spare.1 || players.iter().any(|player| player.owner == MovementOwner::Skating) {
         return;
     }
     let Some(package) = packages.get(&handles.package) else { return };
     let (slot, resources) = (spare.0.clone(), package.0.clone());
     spare.1 = true;
     std::thread::spawn(move || {
+        #[cfg(target_os = "macos")]
+        // SAFETY: lowers this new thread's own scheduling class, so macOS favours the game's threads over it.
+        unsafe {
+            unsafe extern "C" {
+                fn pthread_set_qos_class_self_np(class: u32, priority: i32) -> i32;
+            }
+            // QOS_CLASS_UTILITY
+            pthread_set_qos_class_self_np(0x11, 0);
+        }
         // A small floor stands in for the world until the real collision is installed at mount.
         let floor = vec![[[-8., 0., -8.], [8., 0., -8.], [8., 0., 8.]], [[-8., 0., -8.], [8., 0., 8.], [-8., 0., 8.]]];
         let t = std::time::Instant::now();

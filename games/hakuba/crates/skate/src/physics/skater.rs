@@ -117,8 +117,11 @@ impl SkaterRuntime {
         mode: &str,
         source: Option<std::sync::Arc<crate::skater_animation::AnimationSource>>,
     ) -> Result<Self, String> {
+        let skater_t = std::time::Instant::now();
         let data = Collections::load(asset_root)?;
+        bevy::log::info!("SKATER_T data {:?}", skater_t.elapsed());
         let animation_metadata = asset_root.metadata.clone();
+        bevy::log::info!("SKATER_T animation_metadata {:?}", skater_t.elapsed());
         // The host's current character is a custom skater with no pro selector
         // or equipped physical hat. These are profile choices, not force values.
         let mut animation = match source {
@@ -126,14 +129,18 @@ impl SkaterRuntime {
             None => SkaterAnimation::load(asset_root, &data, graphs, b"")?,
         };
         let initial_hierarchy = animation.evaluate_initial_pose()?;
+        bevy::log::info!("SKATER_T initial_hierarchy {:?}", skater_t.elapsed());
         let mut animated_skeleton = AnimatedSkeleton::load(asset_root, &data, &animation.evaluator.frames, false)?;
+        bevy::log::info!("SKATER_T animated_skeleton {:?}", skater_t.elapsed());
         let initial_parts = map_animation_parts(
             &initial_hierarchy,
             &animated_skeleton.bone_indices,
             &animated_skeleton.physics_frames,
         )?;
         let deck = physics.board.part_transforms()[BodyId::Deck.index()];
+        bevy::log::info!("SKATER_T deck {:?}", skater_t.elapsed());
         let mut spawn = IDENTITY;
+        bevy::log::info!("SKATER_T spawn {:?}", skater_t.elapsed());
         for (column, axis) in deck.basis.columns.iter().enumerate() {
             spawn[column][..3].copy_from_slice(axis);
         }
@@ -158,6 +165,7 @@ impl SkaterRuntime {
         }
         animated_skeleton.board_frames.publish_local_observations(&animated_skeleton.roots, &spawn);
         let animation_input = AnimationInput::load(&data, &animation.evaluator.frames, mode)?;
+        bevy::log::info!("SKATER_T animation_input {:?}", skater_t.elapsed());
         let skeleton_joints = skeleton_body::load_joints(
             asset_root,
             &data,
@@ -186,7 +194,9 @@ impl SkaterRuntime {
             &animated_skeleton.board_frames.lifted_com_frame,
         );
         let foot_ik = FootIk::load(&data, &animation.evaluator.frames, &animated_skeleton)?;
+        bevy::log::info!("SKATER_T foot_ik {:?}", skater_t.elapsed());
         let skeleton_output = SkeletonOutput::load(&data, &animation.evaluator.frames, &animated_skeleton)?;
+        bevy::log::info!("SKATER_T skeleton_output {:?}", skater_t.elapsed());
         // Actor82591448 passes network || ghost for self-pair suppression.
         // This local game has neither networking nor a ghost actor.
         let skeleton_collision =
@@ -194,13 +204,17 @@ impl SkaterRuntime {
         let wipeout_state =
             super::wipeout_states::WipeoutState::load(&data, asset_root, &animation.evaluator.frames.source_sha256)?;
         let respawn = super::respawn::Runtime::load(&data, spawn, animation.checkpoint_stance())?;
+        bevy::log::info!("SKATER_T respawn {:?}", skater_t.elapsed());
         let mut trajectory = super::air_trajectory::AirTrajectoryRuntime::load(&data)?;
+        bevy::log::info!("SKATER_T trajectory {:?}", skater_t.elapsed());
         trajectory.bind_grind_world(std::sync::Arc::clone(&physics.grind_world));
         let mut skeleton_input = SkeletonInputRuntime::load(&data)?;
+        bevy::log::info!("SKATER_T skeleton_input {:?}", skater_t.elapsed());
         skeleton_input.drive_frames = initial_parts;
         skeleton_input.extra_target_positions =
             [initial_targets.com, initial_targets.lifted_com, initial_targets.following_com];
         let mut recovery = super::recovery::Runtime::default();
+        bevy::log::info!("SKATER_T recovery {:?}", skater_t.elapsed());
         recovery.bind(std::sync::Arc::clone(&asset_root.settings));
         Ok(Self {
             respawn,

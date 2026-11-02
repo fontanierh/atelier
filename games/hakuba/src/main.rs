@@ -36,6 +36,12 @@ fn main() {
                         // In the browser the game draws into index.html's canvas and fills the page.
                         canvas: Some("#hakuba".into()),
                         fit_canvas_to_parent: true,
+                        // Playtest: HAKUBA_FULLSCREEN=1 opens borderless fullscreen on the current screen.
+                        mode: if std::env::var("HAKUBA_FULLSCREEN").is_ok() {
+                            bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Current)
+                        } else {
+                            bevy::window::WindowMode::Windowed
+                        },
                         // Playtest: HAKUBA_PRESENT=immediate|mailbox|fifo, HAKUBA_LATENCY=1|2.
                         present_mode: match std::env::var("HAKUBA_PRESENT").as_deref() {
                             Ok("immediate") => bevy::window::PresentMode::Immediate,
