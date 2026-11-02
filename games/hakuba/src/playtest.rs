@@ -99,6 +99,20 @@ fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<&GlobalTransfo
             _ => 4,
         };
         intervals.buckets[bucket] += 1;
+        if ms > 20.0 {
+            if let Some(t) = cameras.iter().next() {
+                let (_, rotation, translation) = t.to_scale_rotation_translation();
+                let forward = rotation * Vec3::NEG_Z;
+                info!(
+                    "SLOW {ms:.1} ms cam {:.1},{:.1},{:.1} yaw {:.0} pitch {:.0}",
+                    translation.x,
+                    translation.y,
+                    translation.z,
+                    forward.x.atan2(-forward.z).to_degrees(),
+                    forward.y.asin().to_degrees()
+                );
+            }
+        }
         intervals.worst = intervals.worst.max(ms);
     }
     intervals.last = Some(now);

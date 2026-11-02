@@ -135,6 +135,42 @@ impl Script {
     }
 }
 
+/// `HAKUBA_RECORD=FILE` writes every change of the pad as a script line (`+SECONDS` from the world loading), so a
+/// session can be played back with `HAKUBA_SCRIPT`.
+#[derive(Resource)]
+struct Record {
+    file: std::io::LineWriter<std::fs::File>,
+    started: std::time::Instant,
+    loaded: Option<std::time::Instant>,
+}
+
+impl Record {
+    fn write(&mut self, pad: &Pad) {
+        use std::io::Write;
+        let names = [
+            "square", "cross", "circle", "triangle", "l1", "r1", "l2", "r2", "create", "options", "l3", "r3", "ps",
+            "up", "right", "down", "left",
+        ];
+        let time = match self.loaded {
+            Some(loaded) => format!("+{:.3}", loaded.elapsed().as_secs_f32()),
+            None => format!("{:.3}", self.started.elapsed().as_secs_f32()),
+        };
+        let mut line = format!("{time} {:.3} {:.3} {:.3} {:.3}", pad.sticks[0], pad.sticks[1], pad.sticks[2], pad.sticks[3]);
+        for (i, name) in names.iter().enumerate() {
+            let pressed = match i {
+                6 => pad.triggers[0] > 0.5,
+                7 => pad.triggers[1] > 0.5,
+                _ => pad.buttons[i],
+            };
+            if pressed {
+                line.push(' ');
+                line.push_str(name);
+            }
+        }
+        let _ = writeln!(self.file, "{line}");
+    }
+}
+
 #[derive(Resource, Default)]
 struct Fed {
     pad: Option<Entity>,
@@ -170,6 +206,9 @@ impl Plugin for DualSensePlugin {
         if let Some(script) = Script::load() {
             app.insert_resource(script);
         }
+        if let Some(file) = std::env::var("HAKUBA_RECORD").ok().and_then(|path| std::fs::File::create(path).ok()) {
+            app.insert_resource(Record { file: std::io::LineWriter::new(file), started: std::time::Instant::now(), loaded: None });
+        }
         app.insert_resource(Reports(Mutex::new(receive))).init_resource::<Fed>().add_systems(PreUpdate, feed.before(bevy::input::InputSystems));
     }
 }
@@ -179,6 +218,7 @@ impl Plugin for DualSensePlugin {
 fn feed(
     reports: Res<Reports>,
     script: Option<ResMut<Script>>,
+    mut record: Option<ResMut<Record>>,
     loaded: Option<Res<hakuba_world::SceneryLoaded>>,
     unready: Query<(), With<hakuba_world::Unready>>,
     mut fed: ResMut<Fed>,
@@ -190,6 +230,12 @@ fn feed(
     mut connections: MessageWriter<GamepadConnectionEvent>,
 ) {
     let reported = reports.0.lock().unwrap().try_iter().last();
+    if let Some(record) = record.as_mut() {
+        if record.loaded.is_none() && loaded.is_some() && unready.is_empty() {
+            info!("pad record: world loaded");
+            record.loaded = Some(std::time::Instant::now());
+        }
+    }
     let Some(pad) = script
         .map(|mut script| {
             if script.loaded.is_none() && loaded.is_some() && unready.is_empty() {
@@ -239,6 +285,11 @@ fn feed(
         if value != was {
             raw.write(RawGamepadButtonChangedEvent::new(target, button, value).into());
             buttons.write(RawGamepadButtonChangedEvent::new(target, button, value));
+        }
+    }
+    if pad != last {
+        if let Some(record) = record.as_mut() {
+            record.write(&pad);
         }
     }
     fed.last = pad;

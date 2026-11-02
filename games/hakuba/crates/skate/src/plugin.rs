@@ -67,7 +67,9 @@ impl Plugin for SkatePlugin {
             )
             .add_systems(OnEnter(DevMode::On), release)
             .init_resource::<Spare>()
-            .add_systems(Update, (prepare, read_holder, build_spare).run_if(in_state(Screen::World)))
+            // From the title on: the first build reads the scoring tables, best done before the world is shown.
+            .add_systems(Update, build_spare)
+            .add_systems(Update, (prepare, read_holder).run_if(in_state(Screen::World)))
             .add_systems(
                 Update,
                 (
