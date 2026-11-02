@@ -27,7 +27,8 @@ pub struct Riding(pub bool);
 
 /// The shares of the setting's pixels the world may draw, most first: each step is about 15% fewer pixels.
 const SHARES: [f32; 8] = [1.0, 0.85, 0.72, 0.61, 0.52, 0.44, 0.37, 0.31];
-/// A ride starts at this step, since its view is far wider than the walker's.
+/// A ride draws at most this step, since its view is far wider than the walker's and turns heavy faster than the
+/// steps can follow.
 const RIDE_STEP: usize = 4;
 /// After a step, frames take this long to show its effect: misses before then do not step again.
 const SETTLE_S: f32 = 0.3;
@@ -131,7 +132,8 @@ fn follow_load(
     }
     load.calm += dt;
     let step = load.steps[mode];
-    if step > 0 && load.calm >= load.wait[step - 1] {
+    let most = if riding.0 { RIDE_STEP } else { 0 };
+    if step > most && load.calm >= load.wait[step - 1] {
         load.steps[mode] -= 1;
         load.since = 0.0;
         load.calm = 0.0;
