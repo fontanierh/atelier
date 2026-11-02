@@ -67,6 +67,7 @@ impl Plugin for SkatePlugin {
             )
             .add_systems(OnEnter(DevMode::On), release)
             .init_resource::<Spare>()
+            .init_resource::<Carry>()
             // From the title on: the first build reads the scoring tables, best done before the world is shown.
             .add_systems(Update, build_spare)
             .add_systems(Update, (prepare, read_holder).run_if(in_state(Screen::World)))
@@ -75,6 +76,7 @@ impl Plugin for SkatePlugin {
                 (
                     ride_input::read,
                     places::read,
+                    keep_collision,
                     transition,
                     apply_preferences,
                     simulate.in_set(SkateSystems::Simulation),
@@ -88,7 +90,8 @@ impl Plugin for SkatePlugin {
             )
             .add_systems(
                 PostUpdate,
-                present
+                (present, carry)
+                    .chain()
                     .after(AnimationSystems)
                     .before(PoseSystems::Apply)
                     .before(TransformSystems::Propagate)
@@ -189,7 +192,7 @@ fn spawn(mut commands: Commands) {
         RideHud,
         DespawnOnExit(Screen::World),
         Node { position_type: PositionType::Absolute, left: px(22), bottom: px(20), ..default() },
-        Text::new("V | skateboard"),
+        Text::new("Triangle / V | skateboard"),
         TextFont { font_size: FontSize::Px(18.), ..default() },
         TextColor(Color::WHITE),
     ));
@@ -251,7 +254,68 @@ fn prepare(
 /// A session built on another thread while the player walks, so mounting the board only swaps in the collision
 /// around them instead of freezing the game for the seconds a fresh session takes to build.
 #[derive(Resource, Default)]
-struct Spare(std::sync::Arc<std::sync::Mutex<Option<Result<Session, String>>>>, bool);
+struct Spare {
+    session: std::sync::Arc<std::sync::Mutex<Option<Result<Session, String>>>>,
+    /// A session is being built, waits in `session`, or rides: never build a second.
+    started: bool,
+    builder: Option<crate::CollisionBuilder>,
+    /// The collision around the walking player, kept current on another thread so a mount only installs it.
+    built: BuiltCollision,
+    building: Option<u64>,
+    prepared: Option<(u64, crate::PreparedCollision)>,
+}
+
+/// While the player walks, keeps the collision around them built for the spare session, so the board can be mounted
+/// on the frame it is asked for.
+fn keep_collision(
+    mut spare: ResMut<Spare>,
+    mut focus: ResMut<CollisionFocus>,
+    collision: Res<WorldCollision>,
+    players: Query<(&Player, &Transform)>,
+) {
+    let Ok((player, at)) = players.single() else { return };
+    if player.owner == MovementOwner::Skating {
+        return;
+    }
+    focus.request(at.translation, player.motion.velocity);
+    if spare.builder.is_none() {
+        let builder = spare.session.lock().unwrap().as_ref().and_then(|s| s.as_ref().ok()).map(|s| s.collision_builder());
+        spare.builder = builder;
+    }
+    let Some(builder) = spare.builder else { return };
+    let landed = spare.built.lock().unwrap().take();
+    if let Some((generation, prepared)) = landed {
+        spare.building = None;
+        match prepared {
+            Ok(prepared) => spare.prepared = Some((generation, prepared)),
+            Err(error) => warn!("the spare ride collision failed: {error}"),
+        }
+    }
+    if spare.building.is_none()
+        && !collision.snapshot.triangles.is_empty()
+        && spare.prepared.as_ref().map(|p| p.0) != Some(collision.generation)
+    {
+        let (snapshot, generation, slot) = (collision.snapshot.clone(), collision.generation, spare.built.clone());
+        spare.building = Some(generation);
+        std::thread::spawn(move || {
+            utility_qos();
+            let (triangles, surfaces, rails) = simulation_collision(&snapshot);
+            *slot.lock().unwrap() = Some((generation, builder.build(triangles, surfaces, rails)));
+        });
+    }
+}
+
+fn utility_qos() {
+    #[cfg(target_os = "macos")]
+    // SAFETY: lowers the calling thread's own scheduling class, so macOS favours the game's threads over it.
+    unsafe {
+        unsafe extern "C" {
+            fn pthread_set_qos_class_self_np(class: u32, priority: i32) -> i32;
+        }
+        // QOS_CLASS_UTILITY
+        pthread_set_qos_class_self_np(0x11, 0);
+    }
+}
 
 fn build_spare(
     mut spare: ResMut<Spare>,
@@ -260,22 +324,14 @@ fn build_spare(
     players: Query<&Player>,
 ) {
     // Never while skating: building takes seconds of a core the ride needs.
-    if spare.1 || players.iter().any(|player| player.owner == MovementOwner::Skating) {
+    if spare.started || players.iter().any(|player| player.owner == MovementOwner::Skating) {
         return;
     }
     let Some(package) = packages.get(&handles.package) else { return };
-    let (slot, resources) = (spare.0.clone(), package.0.clone());
-    spare.1 = true;
+    let (slot, resources) = (spare.session.clone(), package.0.clone());
+    spare.started = true;
     std::thread::spawn(move || {
-        #[cfg(target_os = "macos")]
-        // SAFETY: lowers this new thread's own scheduling class, so macOS favours the game's threads over it.
-        unsafe {
-            unsafe extern "C" {
-                fn pthread_set_qos_class_self_np(class: u32, priority: i32) -> i32;
-            }
-            // QOS_CLASS_UTILITY
-            pthread_set_qos_class_self_np(0x11, 0);
-        }
+        utility_qos();
         // A small floor stands in for the world until the real collision is installed at mount.
         let floor = vec![[[-8., 0., -8.], [8., 0., -8.], [8., 0., 8.]], [[-8., 0., -8.], [8., 0., 8.], [-8., 0., 8.]]];
         let t = std::time::Instant::now();
@@ -288,9 +344,35 @@ fn build_spare(
     });
 }
 
+/// The world collision as the simulation takes it: its triangles turned into the simulation's frame and winding.
+fn simulation_collision(
+    snapshot: &hakuba_world::CollisionSnapshot,
+) -> (Vec<[[f32; 3]; 3]>, Vec<u16>, Vec<crate::CollisionRail>) {
+    let triangles = snapshot
+        .triangles
+        .iter()
+        .map(|t| [t.points[0], t.points[2], t.points[1]].map(|p| frame::simulation_point(p).to_array()))
+        .collect();
+    let rails = snapshot
+        .rails
+        .iter()
+        .map(|r| crate::CollisionRail {
+            id: r.id.clone(),
+            closed: r.closed,
+            points: r.points.iter().map(|p| frame::simulation_point(Vec3::from(*p)).to_array()).collect(),
+        })
+        .collect();
+    (triangles, snapshot.triangles.iter().map(|t| t.surface).collect(), rails)
+}
+
+type BuiltCollision = std::sync::Arc<std::sync::Mutex<Option<(u64, Result<crate::PreparedCollision, String>)>>>;
+
 #[derive(Resource, Default)]
 struct Ride {
     session: Option<Session>,
+    /// The generation of world collision being built on another thread, and where it lands.
+    building: Option<u64>,
+    built: BuiltCollision,
     previous: Option<Pose>,
     current: Option<Pose>,
     retarget: Option<retarget::Retarget>,
@@ -329,11 +411,12 @@ fn transition(
     settings: Res<hakuba_settings::Settings>,
     grip: Res<BoardGrip>,
     mut spare: ResMut<Spare>,
+    mut carry: ResMut<Carry>,
 ) {
     let Ok((mut player, mut at)) = players.single_mut() else { return };
     if player.owner == MovementOwner::Skating && status.failure.is_some() {
         let failure = status.failure.clone();
-        hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground);
+        hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, None);
         status.failure = failure;
         return;
     }
@@ -349,16 +432,10 @@ fn transition(
             return;
         }
         if player.owner == MovementOwner::Skating {
-            if ride.stowing {
-                // V cancels a pending stow before it can return movement authority to walking.
-                ride.stowing = false;
-                ride.toggle_ticks = 0;
-                ride.desired_on_foot = if status.on_foot { Some(false) } else { None };
-            } else {
-                ride.desired_on_foot = Some(!status.on_foot);
-            }
-            ride.toggle_cooldown = 0;
+            // Off the board at once, where the rider is, carrying it, with every move of walking back.
             input.toggle = false;
+            let held = Some(&mut *carry);
+            hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, held);
             return;
         }
         ride.mounting = !ride.mounting;
@@ -372,7 +449,7 @@ fn transition(
         ride.mounting_transition = false;
     }
     if should_hand_back(ride.stowing, ride.offboard_time) {
-        hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground);
+        hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, None);
         return;
     }
     if input.recover && player.owner == MovementOwner::Skating {
@@ -384,7 +461,7 @@ fn transition(
     }
     focus.request(at.translation, player.motion.velocity);
     status.waiting_for_collision = true;
-    if !collision.snapshot.ready || !collision.snapshot.covers(at.translation) {
+    if !collision.snapshot.covers(at.translation) {
         return;
     }
     let (Some(package), Some(_), Ok(rig)) =
@@ -392,52 +469,52 @@ fn transition(
     else {
         return;
     };
-    let triangles = collision
-        .snapshot
-        .triangles
-        .iter()
-        .map(|t| [t.points[0], t.points[2], t.points[1]].map(|p| frame::simulation_point(p).to_array()))
-        .collect();
-    let rails = collision
-        .snapshot
-        .rails
-        .iter()
-        .map(|r| crate::CollisionRail {
-            id: r.id.clone(),
-            closed: r.closed,
-            points: r.points.iter().map(|p| frame::simulation_point(Vec3::from(*p)).to_array()).collect(),
-        })
-        .collect();
     let heading = frame::simulation_point(at.rotation * Vec3::Z);
     let spawn = frame::simulation_point(at.translation).to_array();
+    let mut generation = collision.generation;
     let result = (|| {
         let t = std::time::Instant::now();
-        let surfaces = collision.snapshot.triangles.iter().map(|t| t.surface).collect();
-        let ready = spare.0.lock().unwrap().take();
+        let ready = spare.session.lock().unwrap().take();
         let mut session = match ready {
             Some(Ok(mut session)) => {
-                // Build the next one for the next mount.
-                spare.1 = false;
-                let prepared = session.collision_builder().build(triangles, surfaces, rails)?;
-                info!("MOUNT_TIMING spare build {:?}", t.elapsed());
-                session.install_collision(prepared)?;
+                // The collision kept around the walking player is installed as it is: the ride replaces it on
+                // another thread if the world has moved on since.
+                match spare.prepared.take() {
+                    Some((built, prepared)) => {
+                        generation = built;
+                        session.install_collision(prepared)?;
+                    }
+                    None => {
+                        let (triangles, surfaces, rails) = simulation_collision(&collision.snapshot);
+                        warn!("MOUNT_TIMING no prepared collision: building it now");
+                        session.install_collision(session.collision_builder().build(triangles, surfaces, rails)?)?;
+                    }
+                }
                 info!("MOUNT_TIMING spare install {:?}", t.elapsed());
                 session
             }
             other => {
                 if other.is_some() {
-                    spare.1 = false;
+                    spare.started = false;
                 }
+                warn!("MOUNT_TIMING no spare session: building one now");
+                let (triangles, surfaces, rails) = simulation_collision(&collision.snapshot);
                 Session::from_resources(&package.0, triangles, surfaces, rails, spawn, heading.x.atan2(heading.z))?
             }
         };
         info!("MOUNT_TIMING from_resources {:?}", t.elapsed());
         preferences::apply(&mut session, &settings.skate)?;
         info!("MOUNT_TIMING preferences {:?}", t.elapsed());
-        let pose = session.activate_on_foot(spawn, heading.x.atan2(heading.z))?;
+        let pose = session.activate(spawn, heading.x.atan2(heading.z))?;
         info!("MOUNT_TIMING activate {:?}", t.elapsed());
         places::restore(&mut session, &settings)?;
         session.launch(frame::simulation_point(player.motion.velocity).to_array());
+        info!(
+            "MOUNT_AT walker {:.2} yaw {:.0} rider {:.2}",
+            at.translation,
+            heading.x.atan2(heading.z).to_degrees(),
+            frame::world_point(pose.root.w_axis.truncate())
+        );
         let retarget = retarget::Retarget::bind(rig, &pose.names, &session.reference_pose()?)?;
         info!("MOUNT_TIMING retarget {:?}", t.elapsed());
         Ok::<_, String>((session, pose, retarget))
@@ -449,12 +526,13 @@ fn transition(
             ride.session = Some(session);
             ride.retarget = Some(retarget);
             ride.accumulator = 0.;
-            ride.generation = collision.generation;
+            ride.generation = generation;
             ride.mounting = false;
             ride.bail_time = 0.;
             ride.toggle_ticks = 0;
             ride.offboard_time = 0.;
-            ride.mounting_transition = true;
+            ride.mounting_transition = false;
+            carry.held = false;
             player.owner = MovementOwner::Skating;
             commands.entity(player.body).insert((PoseOverride, SolvedPose::default()));
             status.active = true;
@@ -505,40 +583,39 @@ fn simulate(
     let target = places::target(&places, &settings);
     focus.request(position, velocity);
     focus.destination = target;
-    status.waiting_for_collision = !collision.snapshot.ready
-        || !collision.snapshot.covers(position + velocity * 0.1)
+    let was_waiting = status.waiting_for_collision;
+    // Only the ground the rider is about to reach matters: a tile still loading at the far edge of the focus must not
+    // stop the ride.
+    status.waiting_for_collision = !collision.snapshot.covers(position + velocity * 0.1)
         || target.is_some_and(|target| !collision.snapshot.covers(target));
     if status.waiting_for_collision {
+        if !was_waiting {
+            warn!("RIDE_WAIT the ride stops for collision at {position:.1} moving {velocity:.1}");
+        }
         ride.accumulator = 0.;
         return;
     }
-    if ride.generation != collision.generation {
-        let triangles = collision
-            .snapshot
-            .triangles
-            .iter()
-            .map(|t| [t.points[0], t.points[2], t.points[1]].map(|p| frame::simulation_point(p).to_array()))
-            .collect();
-        let rails = collision
-            .snapshot
-            .rails
-            .iter()
-            .map(|r| crate::CollisionRail {
-                id: r.id.clone(),
-                closed: r.closed,
-                points: r.points.iter().map(|p| frame::simulation_point(Vec3::from(*p)).to_array()).collect(),
-            })
-            .collect();
-        let session = ride.session.as_mut().unwrap();
-        let result = session
-            .collision_builder()
-            .build(triangles, collision.snapshot.triangles.iter().map(|t| t.surface).collect(), rails)
-            .and_then(|prepared| session.install_collision(prepared));
-        if let Err(error) = result {
+    // The ride keeps the collision it has while the next is built on another thread: building it here would stall
+    // the frame for tens of milliseconds each time the area around the rider moves.
+    if ride.generation != collision.generation && ride.building != Some(collision.generation) {
+        let builder = ride.session.as_ref().unwrap().collision_builder();
+        let (snapshot, generation, slot) = (collision.snapshot.clone(), collision.generation, ride.built.clone());
+        ride.building = Some(generation);
+        std::thread::spawn(move || {
+            let (triangles, surfaces, rails) = simulation_collision(&snapshot);
+            *slot.lock().unwrap() = Some((generation, builder.build(triangles, surfaces, rails)));
+        });
+    }
+    let built = ride.built.lock().unwrap().take();
+    if let Some((generation, prepared)) = built {
+        if ride.building == Some(generation) {
+            ride.building = None;
+        }
+        if let Err(error) = prepared.and_then(|prepared| ride.session.as_mut().unwrap().install_collision(prepared)) {
             status.failure = Some(error);
             return;
         }
-        ride.generation = collision.generation;
+        ride.generation = generation;
     }
     if let Ok(window) = windows.single() {
         ride.session.as_mut().unwrap().set_aspect_ratio(window.width() / window.height().max(1.));
@@ -768,7 +845,24 @@ fn hand_back(
     focus: &mut CollisionFocus,
     status: &mut SkateStatus,
     ground: &mut Ground,
+    spare: &mut Spare,
+    carry: Option<&mut Carry>,
 ) {
+    if let Some(carry) = carry {
+        if let Some((parts, deck_up)) = ride.current.as_ref().and_then(carried) {
+            carry.parts = parts;
+            carry.deck_up = deck_up;
+            carry.held = true;
+        }
+    }
+    // The session goes back to wait for the next mount: building another takes seconds.
+    match ride.session.take() {
+        Some(session) if status.failure.is_none() => {
+            session_suspended(&mut *spare.session.lock().unwrap(), session);
+            spare.started = true;
+        }
+        _ => spare.started = false,
+    }
     let velocity = match (ride.previous.as_ref(), ride.current.as_ref(), ride.session.as_ref()) {
         (Some(previous), Some(current), Some(session)) if (500..=502).contains(&current.physical_state) => {
             let ticks = current.tick.saturating_sub(previous.tick).max(1) as f32;
@@ -791,8 +885,114 @@ fn hand_back(
     commands.trigger(Play::looping(player.body, if grounded { "idle" } else { "fall" }).fading(0.15));
     *ride = Ride::default();
     *status = SkateStatus::default();
-    focus.clear();
+    // The walker keeps the focus where it is: clearing it would drop the collision just built and build it again.
+    focus.destination = None;
 }
+
+fn session_suspended(slot: &mut Option<Result<Session, String>>, mut session: Session) {
+    session.suspend_input();
+    *slot = Some(Ok(session));
+}
+
+/// The board held at the walking player's side after they step off it, until a move that needs both hands puts it
+/// away.
+#[derive(Resource, Default)]
+struct Carry {
+    held: bool,
+    /// Each part's place in the deck's frame, as the ride last had them.
+    parts: [Mat4; PARTS.len()],
+    /// The deck's turn into the player's frame when held on their right, and the same on their left.
+    deck_up: [Quat; 2],
+}
+
+/// The board parts' places in the deck's frame, from a ride's pose, and the deck's turn into the player's frame when
+/// held by its upper edge at their side: nose ahead, grip tape against the leg, wheels out.
+fn carried(pose: &Pose) -> Option<([Mat4; PARTS.len()], [Quat; 2])> {
+    let bone = |name: &str| {
+        pose.names.iter().position(|n| n == name).map(|i| frame::world_transform(pose.bones[i]).to_matrix())
+    };
+    let inverse = bone(PARTS[0])?.inverse();
+    let mut parts = [Mat4::IDENTITY; PARTS.len()];
+    for (part, name) in parts.iter_mut().zip(PARTS) {
+        *part = inverse * bone(name)?;
+    }
+    let (front, back) = (parts[1].w_axis.truncate(), parts[2].w_axis.truncate());
+    let along = (front - back).try_normalize()?;
+    let middle = (front + back) / 2.;
+    let top = -(middle - along * middle.dot(along)).try_normalize()?;
+    let deck = Mat3::from_cols(along, top, along.cross(top));
+    // The player faces +Z with +Y up, so their right is -X.
+    let turn = |inward: Vec3| Quat::from_mat3(&(Mat3::from_cols(Vec3::Z, inward, Vec3::Z.cross(inward)) * deck.transpose()));
+    Some((parts, [turn(Vec3::X), turn(Vec3::NEG_X)]))
+}
+
+/// Shows the carried board in the walking player's hand, and puts it away at a sprint, a double jump, a dodge or the
+/// paraglider.
+#[allow(clippy::type_complexity)]
+fn carry(
+    mut carry: ResMut<Carry>,
+    controls: Res<hakuba_player::Controls>,
+    players: Query<(&Player, &Transform)>,
+    hands: Query<&hakuba_characters::Hands>,
+    nodes: Query<(&Transform, Option<&ChildOf>), Without<BoardPart>>,
+    mut parts: Query<(&BoardPart, &mut Transform), (Without<Player>, Without<Camera3d>)>,
+) {
+    if !carry.held {
+        return;
+    }
+    let Ok((player, at)) = players.single() else { return };
+    if player.owner == MovementOwner::Skating {
+        return;
+    }
+    let motion = &player.motion;
+    if (controls.sprint && controls.stick.length() > 0.1)
+        || motion.mode == hakuba_player::Mode::Glide
+        || matches!(
+            motion.action,
+            hakuba_player::Action::Flip
+                | hakuba_player::Action::Backflip
+                | hakuba_player::Action::Hop(_)
+                | hakuba_player::Action::GlideOpen
+        )
+    {
+        carry.held = false;
+        for (_, mut part) in &mut parts {
+            part.scale = Vec3::splat(0.001);
+        }
+        return;
+    }
+    let Ok(hands) = hands.get(player.body) else { return };
+    let world = |mut entity: Entity| {
+        let mut place = bevy::math::Affine3A::IDENTITY;
+        loop {
+            let (local, parent) = nodes.get(entity).ok()?;
+            place = local.compute_affine() * place;
+            match parent {
+                Some(parent) => entity = parent.parent(),
+                None => return Some(Vec3::from(place.translation)),
+            }
+        }
+    };
+    let Some(right) = world(hands.arms[1].hand) else { return };
+    let inverse = at.rotation.inverse();
+    let local = inverse * (right - at.translation);
+    let side = usize::from(local.x > 0.);
+    let outward = Vec3::X * if side == 1 { 1. } else { -1. };
+    let deck = Transform {
+        translation: right + at.rotation * (Vec3::new(0., -CARRY_BELOW_WRIST_M, 0.) + outward * CARRY_OUT_M),
+        rotation: at.rotation * carry.deck_up[side],
+        scale: Vec3::ONE,
+    }
+    .to_matrix();
+    for (part, mut place) in &mut parts {
+        if let Some(index) = PARTS.iter().position(|name| *name == part.0) {
+            *place = Transform::from_matrix(deck * carry.parts[index]);
+        }
+    }
+}
+/// How far below the wrist the carried deck's middle hangs, and how far out from the hand.
+const CARRY_BELOW_WRIST_M: f32 = 0.17;
+const CARRY_OUT_M: f32 = 0.04;
 fn release(
     mut commands: Commands,
     mut ride: ResMut<Ride>,
@@ -801,17 +1001,26 @@ fn release(
     mut players: Query<(&mut Player, &mut Transform)>,
     mut ground: Ground,
     mut parts: Query<&mut Transform, (With<BoardPart>, Without<Player>)>,
+    mut spare: ResMut<Spare>,
+    mut carry: ResMut<Carry>,
 ) {
+    carry.held = false;
     for mut at in &mut parts {
         at.scale = Vec3::splat(0.001);
     }
     if let Ok((mut player, mut at)) = players.single_mut() {
         if player.owner == MovementOwner::Skating {
-            hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground);
+            hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, None);
         }
     }
 }
-fn clear(mut ride: ResMut<Ride>, mut status: ResMut<SkateStatus>, mut focus: ResMut<CollisionFocus>) {
+fn clear(
+    mut ride: ResMut<Ride>,
+    mut status: ResMut<SkateStatus>,
+    mut focus: ResMut<CollisionFocus>,
+    mut carry: ResMut<Carry>,
+) {
+    carry.held = false;
     *ride = Ride::default();
     *status = SkateStatus::default();
     focus.clear();
@@ -830,15 +1039,15 @@ fn hud(status: Res<SkateStatus>, mut text: Query<&mut Text, With<RideHud>>) {
             )
         } else if status.active {
             std::borrow::Cow::Owned(format!(
-                "{}  |  {:.0} km/h  |  {:.0} pts\n{}\nW push | S brake | A/D steer | Space pop | mouse/up/down flick/manual | Q/E grab | R transfer | V carry | F stow{}",
+                "{}  |  {:.0} km/h  |  {:.0} pts\n{}\nW push | S brake | A/D steer | Space pop | mouse/up/down flick/manual | Q/E grab | R transfer | Triangle / V off | F stow{}",
                 status.state,
                 status.speed_mps * 3.6,
                 status.score,
                 status.trick,
-                if status.bailed { " | Enter recover" } else { "" }
+                if status.bailed { " | Cross / Enter recover" } else { "" }
             ))
         } else {
-            std::borrow::Cow::Borrowed("V | skateboard")
+            std::borrow::Cow::Borrowed("Triangle / V | skateboard")
         };
         places::set_hud_text(&mut text, next);
     }

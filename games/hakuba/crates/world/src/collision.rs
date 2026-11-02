@@ -235,6 +235,7 @@ pub(crate) fn publish(
     }
     previous.signature = signature;
     previous.meshes.clear();
+    let started = std::time::Instant::now();
     let mut snapshot = CollisionSnapshot {
         ready: focus.enabled && !selected.is_empty(),
         rails: metadata.0.rails.clone(),
@@ -341,6 +342,7 @@ pub(crate) fn publish(
         }
     }
     output.generation = output.generation.wrapping_add(1);
+    info!("COLLISION_PUBLISH {} triangles in {:?}", snapshot.triangles.len(), started.elapsed());
     output.snapshot = Arc::new(snapshot);
 }
 

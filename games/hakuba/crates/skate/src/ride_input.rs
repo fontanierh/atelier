@@ -137,7 +137,6 @@ pub fn read(
             (GamepadButton::South, 0x1000),
             (GamepadButton::East, 0x2000),
             (GamepadButton::West, 0x4000),
-            (GamepadButton::North, 0x8000),
             (GamepadButton::LeftTrigger, 0x0100),
             (GamepadButton::RightTrigger, 0x0200),
             (GamepadButton::LeftThumb, 0x0040),
@@ -157,8 +156,9 @@ pub fn read(
         if pad.pressed(GamepadButton::LeftTrigger) && input.raw_left.y > 0.5 {
             buttons |= TRANSFER;
         }
-        toggle |= pad.just_pressed(GamepadButton::Select);
-        recover |= pad.just_pressed(GamepadButton::Start);
+        // Triangle steps onto the board and off it at once, so the native step-off (Y) is never sent.
+        toggle |= pad.just_pressed(GamepadButton::North) || pad.just_pressed(GamepadButton::Select);
+        // Options pauses; Cross is the native get-up after a bail, so it needs no binding of its own here.
     }
     if status.on_foot {
         if keys.any_pressed([KeyCode::KeyW, KeyCode::KeyS]) {
