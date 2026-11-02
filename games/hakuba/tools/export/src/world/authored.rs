@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::game;
 use super::raised::SurfacePaint;
-use super::surface::weights;
+use super::surface::{Surface, weights};
 use crate::glb::Mesh;
 
 #[derive(Deserialize, Serialize)]
@@ -28,6 +28,13 @@ pub struct VertexPaint {
     pub haze_length_m: f32,
     pub haze_colour: [f32; 3],
 }
+
+/// How far an authored surface must lie above or below the ground to be the one drawn there. Closer, the two draw the
+/// same pixels and flicker.
+pub const CLEARANCE_M: f64 = 0.02;
+
+/// How finely [`AuthoredSurface::check_owned`] samples each triangle: the steps along each of its sides.
+const OWNED_STEPS: usize = 4;
 
 pub struct AuthoredSurface {
     pub name: &'static str,
@@ -90,6 +97,42 @@ impl AuthoredSurface {
             if cross.z <= 1e-12 || tri.normal.iter().any(|n| DVec3::from_array(*n).dot(cross) <= 0.0) {
                 bail!("authored surface must have nondegenerate upward triangles and normals");
             }
+        }
+        Ok(())
+    }
+
+    /// Every triangle must own its footprint or leave it to the ground: it fails when every point sampled on it lies
+    /// within [`CLEARANCE_M`] of `ground`, the drawn ground alone. A triangle where the surface crosses the ground
+    /// passes, since part of it lies clear of the ground, above or below.
+    pub fn check_owned(&self, ground: &Surface) -> Result<()> {
+        let mut flat = 0;
+        let mut first = None;
+        for triangle in &self.triangles {
+            let xyz = triangle.xyz.map(DVec3::from_array);
+            let (mut sampled, mut near) = (0, 0);
+            for i in 0..=OWNED_STEPS {
+                for j in 0..=OWNED_STEPS - i {
+                    let k = OWNED_STEPS - i - j;
+                    let p = (xyz[0] * i as f64 + xyz[1] * j as f64 + xyz[2] * k as f64) / OWNED_STEPS as f64;
+                    if let Some(height) = ground.ground_height(p.truncate()) {
+                        sampled += 1;
+                        near += usize::from((p.z - height).abs() < CLEARANCE_M);
+                    }
+                }
+            }
+            if sampled > 0 && near == sampled {
+                flat += 1;
+                first.get_or_insert((xyz[0] + xyz[1] + xyz[2]) / 3.0);
+            }
+        }
+        if let Some(at) = first {
+            bail!(
+                "{}: {flat} triangles lie within {CLEARANCE_M} m of the ground over their whole area, the first at \
+                 ({:.1}, {:.1}): the surface and the ground draw the same pixels",
+                self.name,
+                at.x,
+                at.y
+            );
         }
         Ok(())
     }
@@ -235,6 +278,26 @@ mod tests {
         assert!((mesh.colours[index][0] - 0.21404114).abs() < 1e-6);
         assert_eq!(mesh.colours[index][3], 0.0);
     }
+    #[test]
+    fn a_triangle_on_the_ground_fails_and_a_crossing_or_a_clear_one_passes() {
+        let ground = Mesh {
+            positions: vec![[-1.0, 0.0, 1.0], [3.0, 0.0, 1.0], [-1.0, 0.0, -3.0], [3.0, 0.0, -3.0]],
+            indices: vec![0, 1, 2, 2, 1, 3],
+            ..Default::default()
+        };
+        let ground = Surface::new(&ground);
+        let at = |z: [f64; 3]| {
+            let mut surface = source();
+            surface.triangles[0].xyz = [[0.0, 0.0, z[0]], [2.0, 0.0, z[1]], [0.0, 2.0, z[2]]];
+            surface.check_owned(&ground)
+        };
+        assert!(at([0.01, 0.005, 0.01]).is_err());
+        assert!(at([-0.01, 0.0, -0.005]).is_err());
+        assert!(at([-1.0, 1.0, -1.0]).is_ok());
+        assert!(at([0.05, 0.05, 0.05]).is_ok());
+        assert!(at([-0.05, -0.05, -0.05]).is_ok());
+    }
+
     #[test]
     fn explicit_crossing_queries_visible_surface_and_keeps_default_ground() {
         let ground = Mesh {
