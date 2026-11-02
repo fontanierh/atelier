@@ -157,13 +157,19 @@ impl Session {
         heading: f32,
     ) -> Result<Self, String> {
         let resources = prepared.0.as_ref();
+        let t = std::time::Instant::now();
         let graphs = StockGraphs::load(&resources)?;
+        info!("MOUNT_TIMING graphs {:?}", t.elapsed());
         let map = collision_map(triangles, surfaces, rails, spawn, heading)?;
+        info!("MOUNT_TIMING map {:?}", t.elapsed());
         let mut physics = GamePhysics::load_with_map(&resources, Some(&map))?;
         physics.world.enable_imported_floor_seams();
+        info!("MOUNT_TIMING physics {:?}", t.elapsed());
         let mut skater = SkaterRuntime::load(&resources, &graphs, &physics, "easy")?;
         skater.player_state.selector.max_air_frames = 1800;
+        info!("MOUNT_TIMING skater {:?}", t.elapsed());
         let camera = CameraRuntime::load(&resources)?;
+        info!("MOUNT_TIMING camera {:?}", t.elapsed());
         let feel_stock = feel::FeelStock::capture(&skater, &camera);
         Ok(Self {
             feel: Default::default(),

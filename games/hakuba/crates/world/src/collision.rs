@@ -88,7 +88,7 @@ impl Default for CollisionFocus {
             enabled: false,
             position: Vec3::ZERO,
             velocity: Vec3::ZERO,
-            radius_m: 100.,
+            radius_m: 48.,
             lookahead_s: 2.,
             destination: None,
         }

@@ -809,9 +809,9 @@ fn cull_shadows(
         let outside = (camera.translation() - centre).abs() - extent;
         let should_disable = loaded.is_some() && outside.max(Vec3::ZERO).length_squared() > range.distance.powi(2);
         if should_disable && !disabled {
-            commands.entity(entity).insert(NotShadowCaster);
+            commands.entity(entity).try_insert(NotShadowCaster);
         } else if !should_disable && disabled {
-            commands.entity(entity).remove::<NotShadowCaster>();
+            commands.entity(entity).try_remove::<NotShadowCaster>();
         }
     }
 }

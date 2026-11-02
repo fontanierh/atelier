@@ -81,6 +81,14 @@ pub enum Resolution {
     Percent(u32),
 }
 
+/// Playtest: `HAKUBA_AUTO_MP` overrides how many megapixels `Auto` draws.
+fn auto_pixels() -> f32 {
+    static PIXELS: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *PIXELS.get_or_init(|| {
+        std::env::var("HAKUBA_AUTO_MP").ok().and_then(|v| v.parse::<f32>().ok()).map_or(Resolution::AUTO_PIXELS, |mp| mp * 1e6)
+    })
+}
+
 impl Resolution {
     /// The most pixels `Auto` draws.
     pub const AUTO_PIXELS: f32 = 3.0e6;
@@ -97,7 +105,7 @@ impl Resolution {
     /// The size of the image the world draws into a window of `window` pixels.
     pub fn image_size(self, window: Vec2) -> UVec2 {
         let scale = match self {
-            Resolution::Auto => (Self::AUTO_PIXELS / (window.x * window.y)).sqrt().min(1.0),
+            Resolution::Auto => (auto_pixels() / (window.x * window.y)).sqrt().min(1.0),
             Resolution::Percent(percent) => percent as f32 / 100.0,
         };
         (window * scale).round().as_uvec2().max(UVec2::ONE)
@@ -147,7 +155,7 @@ impl Detail {
     /// Up to how far from the camera, to the tile's centre, a tile shows its full version, in metres.
     pub fn full_m(self) -> f32 {
         match self {
-            Detail::Near => 70.0,
+            Detail::Near => 100.0,
             Detail::Normal => 160.0,
             Detail::Far => 320.0,
         }
@@ -177,6 +185,7 @@ impl FrameRate {
 /// a cap of 60 or more lets the browser pace the frames: a cap's own timer runs apart from the refreshes, so some
 /// frames waited for a second refresh, and a 60 cap drew 14 and 28 ms frames by turns, or 35 to 45 a second.
 fn hold_frame_rate(settings: Res<Settings>, mut commands: Commands) {
+    // Native: 60 and over are paced by the playtest pacer (src/playtest.rs) on fixed deadlines.
     let most = settings.frame_rate.most().filter(|&most| most < 60.0);
     let mode = match most {
         Some(most) => UpdateMode::Reactive {

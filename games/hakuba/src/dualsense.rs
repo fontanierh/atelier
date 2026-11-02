@@ -87,6 +87,54 @@ fn decode(report: &[u8]) -> Option<Pad> {
 #[derive(Resource)]
 struct Reports(Mutex<Receiver<Pad>>);
 
+/// `HAKUBA_SCRIPT=FILE` plays a scripted pad instead of the controller: each line is `SECONDS LX LY RX RY BUTTON...`
+/// from the program's start, held until the next line; buttons by name (cross, circle, square, triangle, l1, r1, l2,
+/// r2, create, options, l3, r3, ps, up, right, down, left).
+#[derive(Resource)]
+struct Script {
+    started: std::time::Instant,
+    /// When the world finished loading; times written `+N` count from then.
+    loaded: Option<std::time::Instant>,
+    steps: Vec<(bool, f32, Pad)>,
+}
+
+impl Script {
+    fn load() -> Option<Self> {
+        let text = std::fs::read_to_string(std::env::var("HAKUBA_SCRIPT").ok()?).ok()?;
+        let names = [
+            "square", "cross", "circle", "triangle", "l1", "r1", "l2", "r2", "create", "options", "l3", "r3", "ps",
+            "up", "right", "down", "left",
+        ];
+        let mut steps = Vec::new();
+        for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+            let words: Vec<&str> = line.split_whitespace().collect();
+            let num = |i: usize| words.get(i).and_then(|w| w.trim_start_matches('+').parse::<f32>().ok()).unwrap_or(0.0);
+            let mut pad = Pad { sticks: [num(1), num(2), num(3), num(4)], ..default() };
+            for word in words.iter().skip(5) {
+                if let Some(i) = names.iter().position(|n| n == word) {
+                    pad.buttons[i] = true;
+                    if i == 6 { pad.triggers[0] = 1.0 }
+                    if i == 7 { pad.triggers[1] = 1.0 }
+                }
+            }
+            steps.push((words[0].starts_with('+'), num(0), pad));
+        }
+        info!("playing pad script of {} steps", steps.len());
+        Some(Self { started: std::time::Instant::now(), loaded: None, steps })
+    }
+
+    fn at(&self) -> Pad {
+        let t = self.started.elapsed().as_secs_f32();
+        let since_load = self.loaded.map(|l| l.elapsed().as_secs_f32());
+        self.steps
+            .iter()
+            .take_while(|(relative, start, _)| if *relative { since_load.is_some_and(|s| *start <= s) } else { *start <= t })
+            .last()
+            .map(|(_, _, pad)| *pad)
+            .unwrap_or_default()
+    }
+}
+
 #[derive(Resource, Default)]
 struct Fed {
     pad: Option<Entity>,
@@ -119,6 +167,9 @@ impl Plugin for DualSensePlugin {
                 std::thread::sleep(std::time::Duration::from_secs(1));
             }
         });
+        if let Some(script) = Script::load() {
+            app.insert_resource(script);
+        }
         app.insert_resource(Reports(Mutex::new(receive))).init_resource::<Fed>().add_systems(PreUpdate, feed.before(bevy::input::InputSystems));
     }
 }
@@ -127,6 +178,9 @@ impl Plugin for DualSensePlugin {
 /// which the game reads first) or on one of its own.
 fn feed(
     reports: Res<Reports>,
+    script: Option<ResMut<Script>>,
+    loaded: Option<Res<hakuba_world::SceneryLoaded>>,
+    unready: Query<(), With<hakuba_world::Unready>>,
     mut fed: ResMut<Fed>,
     pads: Query<Entity, With<Gamepad>>,
     mut commands: Commands,
@@ -135,7 +189,19 @@ fn feed(
     mut axes: MessageWriter<RawGamepadAxisChangedEvent>,
     mut connections: MessageWriter<GamepadConnectionEvent>,
 ) {
-    let Some(pad) = reports.0.lock().unwrap().try_iter().last() else { return };
+    let reported = reports.0.lock().unwrap().try_iter().last();
+    let Some(pad) = script
+        .map(|mut script| {
+            if script.loaded.is_none() && loaded.is_some() && unready.is_empty() {
+                info!("pad script: world loaded");
+                script.loaded = Some(std::time::Instant::now());
+            }
+            script.at()
+        })
+        .or(reported)
+    else {
+        return;
+    };
     let target = match pads.iter().min_by_key(|e| e.to_bits()) {
         Some(entity) => entity,
         None => {

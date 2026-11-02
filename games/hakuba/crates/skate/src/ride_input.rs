@@ -67,8 +67,9 @@ pub fn read(
     }
     let axis = |v: f32| (v.clamp(-1.0, 1.0) * 32767.0).round() as i16;
     if input.active_pad.is_some() {
-        let left = input.raw_left.to_array().map(axis);
-        let right = input.raw_right.to_array().map(axis);
+        // The simulation's frame is a mirror of the world's (frame.rs), so the sticks' left and right are mirrored too.
+        let left = Vec2::new(-input.raw_left.x, input.raw_left.y).to_array().map(axis);
+        let right = Vec2::new(-input.raw_right.x, input.raw_right.y).to_array().map(axis);
         input.history.observe(now, now, left, right);
     }
     for reading in fine_readings.read() {
@@ -186,6 +187,7 @@ pub fn read(
     if input.recovery_pending {
         buttons |= 0x1000;
     }
+    let (left, right) = (Vec2::new(-left.x, left.y), Vec2::new(-right.x, right.y));
     input.packet =
         Controls { buttons, triggers, left: [axis(left.x), axis(left.y)], right: [axis(right.x), axis(right.y)] };
     input.toggle = toggle;

@@ -66,7 +66,8 @@ impl Plugin for SkatePlugin {
                     .run_if(in_state(DevMode::Off)),
             )
             .add_systems(OnEnter(DevMode::On), release)
-            .add_systems(Update, (prepare, read_holder).run_if(in_state(Screen::World)))
+            .init_resource::<Spare>()
+            .add_systems(Update, (prepare, read_holder, build_spare).run_if(in_state(Screen::World)))
             .add_systems(
                 Update,
                 (
@@ -245,6 +246,31 @@ fn prepare(
     }
 }
 
+/// A session built on another thread while the player walks, so mounting the board only swaps in the collision
+/// around them instead of freezing the game for the seconds a fresh session takes to build.
+#[derive(Resource, Default)]
+struct Spare(std::sync::Arc<std::sync::Mutex<Option<Result<Session, String>>>>, bool);
+
+fn build_spare(mut spare: ResMut<Spare>, handles: Res<AssetsToLoad>, packages: Res<Assets<Package>>) {
+    if spare.1 {
+        return;
+    }
+    let Some(package) = packages.get(&handles.package) else { return };
+    let (slot, resources) = (spare.0.clone(), package.0.clone());
+    spare.1 = true;
+    std::thread::spawn(move || {
+        // A small floor stands in for the world until the real collision is installed at mount.
+        let floor = vec![[[-8., 0., -8.], [8., 0., -8.], [8., 0., 8.]], [[-8., 0., -8.], [8., 0., 8.], [-8., 0., 8.]]];
+        let t = std::time::Instant::now();
+        let session = Session::from_resources(&resources, floor, vec![1 << 7; 2], Vec::new(), [0.; 3], 0.);
+        match &session {
+            Ok(_) => info!("spare skate session built in {:?}", t.elapsed()),
+            Err(error) => warn!("spare skate session failed: {error}"),
+        }
+        *slot.lock().unwrap() = Some(session);
+    });
+}
+
 #[derive(Resource, Default)]
 struct Ride {
     session: Option<Session>,
@@ -285,6 +311,7 @@ fn transition(
     mut ground: Ground,
     settings: Res<hakuba_settings::Settings>,
     grip: Res<BoardGrip>,
+    mut spare: ResMut<Spare>,
 ) {
     let Ok((mut player, mut at)) = players.single_mut() else { return };
     if player.owner == MovementOwner::Skating && status.failure.is_some() {
@@ -367,19 +394,35 @@ fn transition(
     let heading = frame::simulation_point(at.rotation * Vec3::Z);
     let spawn = frame::simulation_point(at.translation).to_array();
     let result = (|| {
-        let mut session = Session::from_resources(
-            &package.0,
-            triangles,
-            collision.snapshot.triangles.iter().map(|t| t.surface).collect(),
-            rails,
-            spawn,
-            heading.x.atan2(heading.z),
-        )?;
+        let t = std::time::Instant::now();
+        let surfaces = collision.snapshot.triangles.iter().map(|t| t.surface).collect();
+        let ready = spare.0.lock().unwrap().take();
+        let mut session = match ready {
+            Some(Ok(mut session)) => {
+                // Build the next one for the next mount.
+                spare.1 = false;
+                let prepared = session.collision_builder().build(triangles, surfaces, rails)?;
+                info!("MOUNT_TIMING spare build {:?}", t.elapsed());
+                session.install_collision(prepared)?;
+                info!("MOUNT_TIMING spare install {:?}", t.elapsed());
+                session
+            }
+            other => {
+                if other.is_some() {
+                    spare.1 = false;
+                }
+                Session::from_resources(&package.0, triangles, surfaces, rails, spawn, heading.x.atan2(heading.z))?
+            }
+        };
+        info!("MOUNT_TIMING from_resources {:?}", t.elapsed());
         preferences::apply(&mut session, &settings.skate)?;
+        info!("MOUNT_TIMING preferences {:?}", t.elapsed());
         let pose = session.activate_on_foot(spawn, heading.x.atan2(heading.z))?;
+        info!("MOUNT_TIMING activate {:?}", t.elapsed());
         places::restore(&mut session, &settings)?;
         session.launch(frame::simulation_point(player.motion.velocity).to_array());
         let retarget = retarget::Retarget::bind(rig, &pose.names, &session.reference_pose()?)?;
+        info!("MOUNT_TIMING retarget {:?}", t.elapsed());
         Ok::<_, String>((session, pose, retarget))
     })();
     match result {

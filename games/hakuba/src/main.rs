@@ -20,9 +20,13 @@ use hakuba_world::WorldPlugin;
 
 #[cfg(target_os = "macos")]
 mod dualsense;
+#[cfg(not(target_arch = "wasm32"))]
+mod playtest;
 
 fn main() {
     let mut app = App::new();
+    // Playtest: a command on an entity that is already gone warns instead of closing the game.
+    app.set_error_handler(bevy::ecs::error::warn);
     app
         .add_plugins(
             DefaultPlugins
@@ -32,6 +36,17 @@ fn main() {
                         // In the browser the game draws into index.html's canvas and fills the page.
                         canvas: Some("#hakuba".into()),
                         fit_canvas_to_parent: true,
+                        // Playtest: HAKUBA_PRESENT=immediate|mailbox|fifo, HAKUBA_LATENCY=1|2.
+                        present_mode: match std::env::var("HAKUBA_PRESENT").as_deref() {
+                            Ok("immediate") => bevy::window::PresentMode::Immediate,
+                            Ok("mailbox") => bevy::window::PresentMode::Mailbox,
+                            Ok("fifo") => bevy::window::PresentMode::Fifo,
+                            _ => bevy::window::PresentMode::AutoVsync,
+                        },
+                        desired_maximum_frame_latency: std::env::var("HAKUBA_LATENCY")
+                            .ok()
+                            .and_then(|v| v.parse().ok())
+                            .and_then(std::num::NonZeroU32::new),
                         ..default()
                     }),
                     ..default()
@@ -68,6 +83,8 @@ fn main() {
         ));
     #[cfg(target_os = "macos")]
     app.add_plugins(dualsense::DualSensePlugin);
+    #[cfg(not(target_arch = "wasm32"))]
+    app.add_plugins(playtest::PlaytestPlugin);
     app.run();
 }
 
