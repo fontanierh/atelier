@@ -277,7 +277,10 @@ fn keep_collision(
     if player.owner == MovementOwner::Skating {
         return;
     }
-    focus.request(at.translation, player.motion.velocity);
+    // Only the ground under the walker: the ride widens it once mounted. A wide focus would pin far tiles at full
+    // detail and republish collision as the player walks.
+    focus.radius_m = WALK_FOCUS_M;
+    focus.request(at.translation, Vec3::ZERO);
     if spare.builder.is_none() {
         let builder = spare.session.lock().unwrap().as_ref().and_then(|s| s.as_ref().ok()).map(|s| s.collision_builder());
         spare.builder = builder;
@@ -304,6 +307,10 @@ fn keep_collision(
         });
     }
 }
+
+/// How far around the walker collision is kept for a mount, and around the rider once mounted.
+const WALK_FOCUS_M: f32 = 16.;
+const RIDE_FOCUS_M: f32 = 48.;
 
 fn utility_qos() {
     #[cfg(target_os = "macos")]
@@ -581,6 +588,7 @@ fn simulate(
         frame::world_point(current.velocity)
     };
     let target = places::target(&places, &settings);
+    focus.radius_m = RIDE_FOCUS_M;
     focus.request(position, velocity);
     focus.destination = target;
     let was_waiting = status.waiting_for_collision;
