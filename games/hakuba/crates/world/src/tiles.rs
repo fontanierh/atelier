@@ -33,6 +33,10 @@ fn far_m() -> f32 {
     static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
     *V.get_or_init(|| tuned("HAKUBA_FAR_M", FAR_M))
 }
+fn full_m(settings: f32) -> f32 {
+    static V: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
+    V.get_or_init(|| std::env::var("HAKUBA_FULL_M").ok().and_then(|v| v.parse().ok())).unwrap_or(settings)
+}
 fn middle_m() -> f32 {
     static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
     *V.get_or_init(|| tuned("HAKUBA_MIDDLE_M", MIDDLE_M))
@@ -160,7 +164,7 @@ fn choose(
             focus.as_ref().is_some_and(|f| f.intersects(tile.centre, grid.as_ref().map_or(64.0, |g| g.tile_m)));
         let detail = match distance {
             _ if pinned => Some(Detail::Full),
-            d if d < settings.detail.full_m() => Some(Detail::Full),
+            d if d < full_m(settings.detail.full_m()) => Some(Detail::Full),
             d if d < far_m() + if tile.detail == Some(Detail::Middle) { FAR_MARGIN_M } else { -FAR_MARGIN_M } => {
                 Some(Detail::Middle)
             }

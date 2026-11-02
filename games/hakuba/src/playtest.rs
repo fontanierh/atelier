@@ -25,6 +25,9 @@ impl Plugin for PlaytestPlugin {
         app.insert_resource(Pacer { period: (pace > 0.0).then(|| Duration::from_secs_f64(1.0 / pace)), next: None, relative, spin: Duration::from_secs_f64(spin / 1000.0) })
             .init_resource::<Intervals>()
             .add_systems(Last, (log_intervals, pace_frame).chain());
+        // The near shadows cover 40 m in one cascade: 1024 texels is ~4 cm each, and a quarter of the leaf cutouts.
+        let shadow_map = std::env::var("HAKUBA_SHADOW_MAP").ok().and_then(|v| v.parse().ok()).unwrap_or(1024);
+        app.insert_resource(bevy::light::DirectionalLightShadowMap { size: shadow_map });
         if std::env::var("HAKUBA_GPU_CLUSTERING").is_err() {
             app.add_systems(Startup, no_gpu_clustering);
         }
