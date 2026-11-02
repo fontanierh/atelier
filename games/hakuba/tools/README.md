@@ -236,7 +236,7 @@ tubes already, so its middle version is a copy of its export.
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, or the
 region is only data, a `placements.json` of models standing at map positions; `world/regions.rs` lists it. Models
-past the ground stand in tiles that hold only them, within `scenery_tiles`. Each tile is written in full detail and in middle detail, for seeing from afar. A
+past the ground stand in tiles that hold only them, within `scenery_tiles`. Each tile is written in full detail and in middle detail, for seeing from afar, and in the folder of the ground page it lies in: `tiles/<page>_<page>/<column>_<row>.glb` in full detail and `<column>_<row>.middle.glb` from afar, the folder named as the `src/ground/` page holding the same terrain, so a folder holds at most a page's tiles and the tiles of a neighbourhood sit together. A
 page height may be NaN, out at sea: a grid square with such a corner draws no ground, and a tile with no ground and
 nothing standing in it is not exported. A page may have a colour page `src/ground/colours/<column>_<row>.bin`, four
 bytes a point (sRGB and an alpha of 255, or 0 where it gives no colour); the ground's vertices there tint its

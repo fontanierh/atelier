@@ -5,9 +5,10 @@
 //! strips regions level are applied to the heights once, after reading the pages, so the tiles, the overlays and
 //! the scenery all stand on the same ground. Raised planar surfaces may own a footprint over that grid;
 //! their declared clearance keeps the underlying ground below them. Each
-//! tile is written twice under `tiles/`: `<column>_<row>.glb` in full detail, and `<column>_<row>.middle.glb` with a
-//! coarser ground for seeing from afar. The coarse ground keeps every fine point on the tile's edges, so neighbouring tiles meet exactly
-//! whichever version each one shows. `<folder name>.glb` holds one empty node per tile, named
+//! tile is written twice under `tiles/`, in the folder of the ground page it lies in: `<page>_<page>/<column>_<row>.glb`
+//! in full detail, and `<column>_<row>.middle.glb` with a coarser ground for seeing from afar. The coarse ground keeps
+//! every fine point on the tile's edges, so neighbouring tiles meet exactly whichever version each one shows.
+//! `<folder name>.glb` holds one empty node per tile, named
 //! `tile <column> <row>` and placed at the tile's centre, and one named `spawn`, where the player starts.
 //!
 //! An export rewrites only the tiles whose inputs changed since the last one ([`checksums`]), so an edit costs the
@@ -99,6 +100,46 @@ pub struct Settings {
 
 /// How many fine steps one coarse step of a middle tile spans.
 const COARSE: usize = 4;
+
+/// How many tiles wide each folder of `tiles/` is; see [`tile_folder`].
+fn page_tiles(page_steps: usize, tile_steps: usize) -> Result<usize> {
+    if tile_steps == 0 || !page_steps.is_multiple_of(tile_steps) {
+        bail!("a ground page must hold a whole number of tiles");
+    }
+    Ok(page_steps / tile_steps)
+}
+
+/// The folder of `tiles/` holding a tile's files: the ground page the tile lies in, a page wide. It is named as
+/// `src/ground/`'s page holding the same terrain, so a tile's folder is the folder its heights come from, and no
+/// folder holds more than a page's worth of tiles.
+fn tile_folder(tiles: &Path, page_tiles: usize, column: usize, row: usize) -> PathBuf {
+    tiles.join(format!("{}_{}", column / page_tiles, row / page_tiles))
+}
+
+/// Removes every file of a tile the export no longer writes, and every folder it leaves empty. The checksums stay.
+fn remove_stale_tiles(tiles: &Path, current: &BTreeMap<String, String>) -> Result<()> {
+    for entry in fs::read_dir(tiles)? {
+        let path = entry?.path();
+        if !path.is_dir() {
+            // A file beside the folders: the checksums, or a tile an older export wrote before the folders.
+            if path.file_name().is_none_or(|name| name != checksums::FILE) {
+                fs::remove_file(&path)?;
+            }
+            continue;
+        }
+        for file in fs::read_dir(&path)? {
+            let file = file?.path();
+            let name = file.file_name().unwrap_or_default().to_string_lossy().into_owned();
+            if !current.contains_key(name.split('.').next().unwrap_or_default()) {
+                fs::remove_file(&file)?;
+            }
+        }
+        if fs::read_dir(&path)?.next().is_none() {
+            fs::remove_dir(&path)?;
+        }
+    }
+    Ok(())
+}
 
 impl Settings {
     fn extent(&self) -> Result<Tile> {
@@ -237,6 +278,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         _ => bail!("a coloured ground needs the ground texture's positive mean colour"),
     }
     let tile_m = settings.tile_steps as f64 * settings.ground_step_m;
+    let page_tiles = page_tiles(settings.page_steps, settings.tile_steps)?;
     let collars = raised.iter().map(|surface| underlay::owner_collar(surface, tile_m)).collect::<Result<Vec<_>>>()?;
     let mut unions: [Vec<underlay::Underlay>; 2] = [Vec::new(), Vec::new()];
     for (surface, &collar) in raised.iter().zip(&collars).filter(|(surface, _)| surface.cut_ground) {
@@ -358,9 +400,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 continue;
             }
             let stem = format!("{column}_{row}");
+            let folder = tile_folder(&tiles, page_tiles, column, row);
             let files = [
-                (Detail::Full, tiles.join(format!("{stem}.glb"))),
-                (Detail::Middle, tiles.join(format!("{stem}.middle.glb"))),
+                (Detail::Full, folder.join(format!("{stem}.glb"))),
+                (Detail::Middle, folder.join(format!("{stem}.middle.glb"))),
             ];
             let checksum = tile.checksum(
                 &code,
@@ -370,6 +413,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 (&tile_scenery, &collars),
             );
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
+                fs::create_dir_all(&folder)?;
                 for (detail, file) in &files {
                     tile.write(
                         &ground,
@@ -404,7 +448,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 continue;
             };
             let stem = format!("{column}_{row}");
-            let files = [(false, tiles.join(format!("{stem}.glb"))), (true, tiles.join(format!("{stem}.middle.glb")))];
+            let folder = tile_folder(&tiles, page_tiles, column, row);
+            let files =
+                [(false, folder.join(format!("{stem}.glb"))), (true, folder.join(format!("{stem}.middle.glb")))];
             let mut digest = Sha256::new();
             digest.update(&code);
             digest.update(&scenery_settings);
@@ -412,6 +458,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             digest.update(scenery::checksum_bytes(&tile_scenery));
             let checksum = format!("{:x}", digest.finalize());
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
+                fs::create_dir_all(&folder)?;
                 for (middle, file) in &files {
                     // A tile with nothing seen from afar still holds a scene, empty, for the game to load.
                     let mut glb = Glb::from_json(
@@ -450,15 +497,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
 
-    // Files of tiles no longer exported go.
-    for entry in fs::read_dir(&tiles)? {
-        let path = entry?.path();
-        let name = path.file_name().unwrap_or_default().to_string_lossy();
-        let stem = name.split('.').next().unwrap_or_default();
-        if name != checksums::FILE && !current.contains_key(stem) {
-            fs::remove_file(&path)?;
-        }
-    }
+    // Files of tiles no longer exported go, and the folders they leave empty.
+    remove_stale_tiles(&tiles, &current)?;
     checksums::write(&tiles, &current)?;
     println!("{}: rebuilt {rebuilt} of {} tiles", folder.display(), current.len());
     index.write(output)
@@ -804,6 +844,19 @@ impl Tile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_tile_lives_in_its_ground_pages_folder() {
+        // The world's pages are 256 steps of 2 m and its tiles 32, so a 512 m page holds 8 tiles a side.
+        assert_eq!(page_tiles(256, 32).unwrap(), 8);
+        assert!(page_tiles(256, 0).is_err(), "a tile of no steps divides no page");
+        assert!(page_tiles(250, 32).is_err(), "a page that holds part of a tile splits no folder cleanly");
+        let tiles = Path::new("tiles");
+        assert_eq!(tile_folder(tiles, 8, 0, 0), tiles.join("0_0"));
+        assert_eq!(tile_folder(tiles, 8, 23, 11), tiles.join("2_1"), "a page's own tiles share its folder");
+        assert_eq!(tile_folder(tiles, 8, 24, 12), tiles.join("3_1"), "the next page's start the next folder");
+        assert_eq!(tile_folder(tiles, 8, 118, 131), tiles.join("14_16"));
+    }
 
     #[test]
     fn a_square_off_the_ground_draws_nothing_and_its_coast_meets_without_a_seam() {

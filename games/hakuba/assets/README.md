@@ -45,7 +45,8 @@ assets/
   world/                    the world, in tiles
     src/ground/             the ground's heights, in pages 512 m wide
     src/regions/            one folder per region, with its layout code or its `placements.json`
-    tiles/                  each tile in full and middle detail, and `checksums.toml`: what each was made from
+    tiles/                  each tile in full and middle detail, one folder per ground page, and `checksums.toml`
+      <page>_<page>/        the tiles of that page, named as `src/ground` names the page
 ```
 
 ## An asset folder

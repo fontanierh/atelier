@@ -27,6 +27,10 @@ const LOADING: usize = 16;
 /// fetches at once.
 const LOADING_UNDER_SPLASH: usize = 32;
 pub const TILES: &str = "world/tiles";
+/// How many tiles wide a folder of [`TILES`] is: one page of the ground, 8 tiles of 64 m. The exporter writes each
+/// tile into its page's folder, named as the ground page the tile stands on, so the tiles of a neighbourhood sit
+/// together and no folder holds more than a page's worth.
+const PAGE_TILES: u32 = 8;
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct CollisionActivation;
@@ -105,7 +109,13 @@ impl Tile {
     }
     fn path(&self, detail: Detail) -> String {
         let suffix = if detail == Detail::Full { "" } else { ".middle" };
-        format!("{TILES}/{}_{}{suffix}.glb", self.column, self.row)
+        format!(
+            "{TILES}/{}_{}/{}_{}{suffix}.glb",
+            self.column / PAGE_TILES,
+            self.row / PAGE_TILES,
+            self.column,
+            self.row
+        )
     }
 }
 
@@ -338,6 +348,16 @@ mod tests {
     use bevy::asset::AssetApp;
     use bevy::camera::primitives::Aabb;
     use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn a_tile_loads_from_its_ground_pages_folder() {
+        let tile = Tile::named("tile 23 11", Vec3::ZERO).unwrap();
+        assert_eq!(tile.path(Detail::Full), "world/tiles/2_1/23_11.glb");
+        assert_eq!(tile.path(Detail::Middle), "world/tiles/2_1/23_11.middle.glb");
+        assert_eq!(tile.path(Detail::Far), "world/tiles/2_1/23_11.middle.glb", "a far tile shows the middle file");
+        let next = Tile::named("tile 24 16", Vec3::ZERO).unwrap();
+        assert_eq!(next.path(Detail::Full), "world/tiles/3_2/24_16.glb", "a page's first tile starts the next folder");
+    }
 
     #[test]
     fn pending_tile_keeps_old_visible_and_solid_until_complete_swap() {
