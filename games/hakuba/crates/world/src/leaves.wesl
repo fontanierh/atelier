@@ -10,10 +10,16 @@ import bevy_pbr::render::{
 };
 
 // Playtest: under an equal depth test the prepass already dropped every see-through texel, so nothing is discarded.
-@if(DEPTH_EQUAL)
+@if(DEPTH_EQUAL || LEAF_OPAQUE)
 const DISCARDS: bool = false;
-@if(!DEPTH_EQUAL)
+@if(!DEPTH_EQUAL && !LEAF_OPAQUE)
 const DISCARDS: bool = true;
+
+// Playtest: under LEAF_FLAT a leaf shows its colour unlit, to measure what lighting costs.
+@if(LEAF_FLAT)
+fn lit(input: pbr_types::PbrInput) -> vec4<f32> { return input.material.base_color; }
+@if(!LEAF_FLAT)
+fn lit(input: pbr_types::PbrInput) -> vec4<f32> { return apply_pbr_lighting(input); }
 
 @fragment
 fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
@@ -28,7 +34,7 @@ fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> Fragme
     } else {
         pbr_input.material.base_color =
             alpha_discard(flags, pbr_input.material.alpha_cutoff, pbr_input.material.base_color);
-        out.color = main_pass_post_lighting_processing(pbr_input, apply_pbr_lighting(pbr_input));
+        out.color = main_pass_post_lighting_processing(pbr_input, lit(pbr_input));
     }
     @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.motion_vector = bevy_pbr::render::motion_vectors::calculate(in.world_position, in.previous_world_position);

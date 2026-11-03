@@ -3594,6 +3594,12 @@ impl SpecializedMeshPipeline for MeshPipeline {
         if depth_equal {
             shader_defs.push("DEPTH_EQUAL".into());
         }
+        // Hakuba playtest: HAKUBA_LEAF=flat lights no leaf, HAKUBA_LEAF=opaque discards none, to split their cost.
+        match std::env::var("HAKUBA_LEAF").as_deref() {
+            Ok("flat") => shader_defs.push("LEAF_FLAT".into()),
+            Ok("opaque") => shader_defs.push("LEAF_OPAQUE".into()),
+            _ => {}
+        }
         let forward_motion = key.contains(MeshPipelineKey::FORWARD_MOTION) && depth_write_enabled;
         if forward_motion {
             shader_defs.push("FORWARD_MOTION".into());
