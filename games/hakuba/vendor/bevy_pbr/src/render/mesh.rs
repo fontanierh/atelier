@@ -3590,7 +3590,7 @@ impl SpecializedMeshPipeline for MeshPipeline {
         let depth_equal = depth_write_enabled
             && key.contains(MeshPipelineKey::DEPTH_PREPASS)
             && (!crate::prepass::masked_only_prepass() || key.contains(MeshPipelineKey::MAY_DISCARD))
-            && !std::env::var("HAKUBA_DEPTH_EQUAL").is_ok_and(|v| v == "0");
+            && std::env::var("HAKUBA_DEPTH_EQUAL").is_ok_and(|v| v == "1");
         if depth_equal {
             shader_defs.push("DEPTH_EQUAL".into());
         }
