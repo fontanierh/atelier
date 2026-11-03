@@ -256,6 +256,11 @@ fn fetch_directional_shadow(
             );
             shadow = mix(shadow, next_shadow, (-view_z - next_near_bound) / (this_far_bound - next_near_bound));
         }
+    } else {
+        // Hakuba: the last cascade fades out over its last fifth, as Unreal fades its cascaded shadows, so shadows
+        // grow in as the camera nears them rather than appearing at a line.
+        let far_bound = (*light).cascades[cascade_index].far_bound;
+        shadow = mix(shadow, 1.0, smoothstep(0.8 * far_bound, far_bound, -view_z));
     }
     return shadow;
 }

@@ -1502,6 +1502,36 @@ pub(crate) mod pool {
         }
     }
 
+    static COPIES: Mutex<Option<HashMap<String, (u32, u64)>>> = Mutex::new(None);
+    fn counting() -> bool {
+        static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        *ON.get_or_init(|| std::env::var("HAKUBA_COPIES").is_ok_and(|v| v == "1"))
+    }
+
+    /// Counts a buffer copy by its destination's label, when `HAKUBA_COPIES=1`.
+    pub fn copied(dst: &ProtocolObject<dyn MTLBuffer>, bytes: u64) {
+        if !counting() {
+            return;
+        }
+        let label = dst.label().map_or_else(|| "?".to_string(), |l| l.to_string());
+        let mut copies = COPIES.lock();
+        let entry = copies.get_or_insert_default().entry(label).or_default();
+        entry.0 += 1;
+        entry.1 += bytes;
+    }
+
+    /// Logs the most copied-to buffers since the last call, when `HAKUBA_COPIES=1`.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn hakuba_copy_report() {
+        let Some(copies) = COPIES.lock().take() else { return };
+        let mut copies: Vec<_> = copies.into_iter().collect();
+        copies.sort_by_key(|(_, (n, _))| core::cmp::Reverse(*n));
+        let total: u32 = copies.iter().map(|(_, (n, _))| n).sum();
+        let top: Vec<String> =
+            copies.iter().take(12).map(|(label, (n, bytes))| format!("{label}:{n}/{}KB", bytes / 1024)).collect();
+        log::info!("COPIES {total}: {}", top.join(" "));
+    }
+
     /// Buffers made, their megabytes and buffers reused since the last call.
     #[unsafe(no_mangle)]
     pub extern "C" fn hakuba_buffer_stats(created: *mut u64, megabytes: *mut f64, reused: *mut u64) {

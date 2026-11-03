@@ -24,9 +24,10 @@ impl Plugin for PlaytestPlugin {
         }
         app.insert_resource(Pacer { period: (pace > 0.0).then(|| Duration::from_secs_f64(1.0 / pace)), next: None, relative, spin: Duration::from_secs_f64(spin / 1000.0) })
             .init_resource::<Intervals>()
-            .add_systems(Last, (log_intervals, pace_frame).chain());
+            .add_systems(Last, (log_intervals, pace_frame).chain())
+            .add_systems(Update, draw_1440_tall);
         // The near shadows cover 40 m in one cascade: 1024 texels is ~4 cm each, and a quarter of the leaf cutouts.
-        let shadow_map = std::env::var("HAKUBA_SHADOW_MAP").ok().and_then(|v| v.parse().ok()).unwrap_or(1024);
+        let shadow_map = std::env::var("HAKUBA_SHADOW_MAP").ok().and_then(|v| v.parse().ok()).unwrap_or(2048);
         app.insert_resource(bevy::light::DirectionalLightShadowMap { size: shadow_map });
         if std::env::var("HAKUBA_GPU_CLUSTERING").is_err() {
             app.add_systems(Startup, no_gpu_clustering);
@@ -147,6 +148,26 @@ fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<(&GlobalTransf
         intervals.buckets = [0; 5];
         intervals.worst = 0.0;
     }
+}
+
+/// Draws the window `HAKUBA_HEIGHT` pixels tall (default 1440), as Yorimichi drew at native 1440: macOS scales
+/// the drawable to the screen, where a Retina screen would otherwise draw several million pixels more.
+fn draw_1440_tall(
+    mut window: Single<&mut Window, With<bevy::window::PrimaryWindow>>,
+    monitor: Query<&bevy::window::Monitor, With<bevy::window::PrimaryMonitor>>,
+    mut done: Local<bool>,
+) {
+    let height = std::env::var("HAKUBA_HEIGHT").ok().and_then(|v| v.parse::<f64>().ok()).unwrap_or(1440.0);
+    let Ok(monitor) = monitor.single() else { return };
+    if *done || height <= 0.0 || monitor.scale_factor <= 0.0 {
+        return;
+    }
+    // The screen's height in points: the window's size in points stays the same whatever pixels each point draws.
+    let points = monitor.physical_height as f64 / monitor.scale_factor;
+    let scale = (height / points) as f32;
+    info!("window drawn {height} pixels tall: {points} points at {scale:.3} pixels each");
+    window.resolution.set_scale_factor_override(Some(scale));
+    *done = true;
 }
 
 /// The few lights here are clustered on the CPU: GPU clustering adds compute passes and a readback every frame on

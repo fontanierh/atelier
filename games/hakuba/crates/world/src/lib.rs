@@ -262,6 +262,10 @@ fn read_index(
 /// Makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a crossfade's pixels
 /// in screen space, which shimmers under temporal anti-aliasing, so it is never shown.
 fn no_crossfades(mut ranges: Query<(Entity, &mut VisibilityRange), Changed<VisibilityRange>>) {
+    // Playtest: the vendored dither moves every frame, so temporal anti-aliasing smooths crossfades.
+    if cfg!(not(target_arch = "wasm32")) {
+        return;
+    }
     for (entity, mut range) in &mut ranges {
         if range.is_abrupt() {
             continue;

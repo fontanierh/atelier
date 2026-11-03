@@ -16,7 +16,7 @@ use std::collections::VecDeque;
 
 use bevy::asset::{RenderAssetUsages, UntypedAssetId};
 use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::RenderLayers;
+use bevy::camera::visibility::{RenderLayers, VisibilityRange};
 use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
@@ -121,6 +121,19 @@ struct Job {
     cursor: usize,
     /// A non-solid group's geometry while its copies are merged over several updates.
     combined: Option<Mesh>,
+    /// Playtest: the distances at which each copy shows, fading in and out, as Unreal picks a tree's level of
+    /// detail per copy.
+    range: Option<VisibilityRange>,
+}
+
+/// Playtest: how far from the camera a full tile's tree shows its full version before fading to its middle one,
+/// and over how many metres it fades.
+fn tree_lod_m() -> (f32, f32) {
+    static V: std::sync::OnceLock<(f32, f32)> = std::sync::OnceLock::new();
+    *V.get_or_init(|| {
+        let get = |name: &str, default: f32| std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default);
+        (get("HAKUBA_TREE_LOD_M", 80.0), get("HAKUBA_TREE_FADE_M", 12.0))
+    })
 }
 
 /// Copies spawned from their model, which may still be loading its textures.
@@ -285,9 +298,17 @@ fn spawn(
             let Some(main_node) = models.nodes.get(main_handle) else { continue };
             let collision = gltf.named_nodes.contains_key("collision");
             let solid = !collision && model_extras(main_node).is_some_and(|extras| extras.solid);
+            let full_vertices =
+                gltf.named_nodes.get("full").and_then(|n| models.nodes.get(n)).map_or(0, |n| vertices(&models.meshes, &meshes, n));
+            // Playtest: a tree in a full tile shows its full version near the camera and its middle one past
+            // `tree_lod_m`, each copy on its own, crossfading.
+            let per_copy = has_middle && full_vertices >= MERGE_BELOW_VERTICES && tree_lod_m().0 > 0.0;
             let mut versions = match (waiting.middle, has_middle) {
                 _ if far.is_some() => vec![("far", Role::Both)],
                 (true, true) => vec![("middle", Role::Both)],
+                (false, true) if per_copy => {
+                    vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
+                }
                 (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
                 (_, false) => vec![("full", Role::Both)],
             };
@@ -338,7 +359,21 @@ fn spawn(
                         *look = Look::Water(material.clone());
                     }
                 }
-                shown.push((node, parts, role));
+                let (lod, fade) = tree_lod_m();
+                let range = per_copy.then(|| match (name, role) {
+                    ("full", _) => Some(VisibilityRange {
+                        start_margin: 0.0..0.0,
+                        end_margin: lod - fade / 2.0..lod + fade / 2.0,
+                        use_aabb: false,
+                    }),
+                    ("middle", Role::Seen) => Some(VisibilityRange {
+                        start_margin: lod - fade / 2.0..lod + fade / 2.0,
+                        end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                        use_aabb: false,
+                    }),
+                    _ => None,
+                }).flatten();
+                shown.push((node, parts, role, range));
             }
             let transforms: Vec<Transform> = waiting
                 .instances
@@ -351,7 +386,7 @@ fn spawn(
                 })
                 .collect();
             let mut jobs = VecDeque::new();
-            for (node, parts, role) in shown {
+            for (node, parts, role, range) in shown {
                 let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
                 let shadow_distance = match shadow_distance(node) {
                     Ok(distance) => distance,
@@ -368,7 +403,9 @@ fn spawn(
                     continue;
                 }
                 let vertices = vertices(&models.meshes, &meshes, node);
-                let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
+                let merge = range.is_none()
+                    && vertices < MERGE_BELOW_VERTICES
+                    && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
                     let material = node
                         .mesh
@@ -425,6 +462,7 @@ fn spawn(
                                 transforms: square,
                                 cursor: 0,
                                 combined: None,
+                                range: None,
                             });
                         }
                     } else {
@@ -442,6 +480,7 @@ fn spawn(
                             transforms: transforms.clone(),
                             cursor: 0,
                             combined: None,
+                            range: range.clone(),
                         });
                     }
                 }
@@ -653,6 +692,9 @@ fn place(
             part.insert(bounds);
         }
         mark_solid(&mut part, job.solid);
+        if let Some(range) = &job.range {
+            part.insert(range.clone());
+        }
         if !matches!(job.role, Role::Collision) {
             insert_look(&mut part, &job.look);
         }
@@ -1167,6 +1209,7 @@ mod tests {
                 transforms,
                 cursor: 0,
                 combined: None,
+                range: None,
             }]);
             let owner = app.world_mut().spawn(TestJobs(jobs)).id();
             let step = move |mut commands: Commands,
@@ -1227,6 +1270,7 @@ mod tests {
                     transforms,
                     cursor: 0,
                     combined: None,
+                    range: None,
                 }])))
                 .id();
             let step = move |mut commands: Commands,
@@ -1294,6 +1338,7 @@ mod tests {
                 transforms: vec![Transform::IDENTITY, Transform::from_xyz(5.0, 0.0, 0.0)],
                 cursor: 0,
                 combined: None,
+                range: None,
             }])))
             .id();
         let step = move |mut commands: Commands,
@@ -1336,6 +1381,7 @@ mod tests {
                 transforms: vec![Transform::IDENTITY],
                 cursor: 0,
                 combined: None,
+                range: None,
             })
             .collect();
         let owner = app.world_mut().spawn(TestJobs(jobs)).id();
@@ -1451,6 +1497,7 @@ mod tests {
             transforms,
             cursor: 0,
             combined: None,
+            range: None,
         }]);
         let owner = app.world_mut().spawn(TestJobs(jobs)).id();
         let step =
@@ -1500,6 +1547,7 @@ mod tests {
                         transforms: vec![Transform::from_xyz(4.0, 0.0, 0.0)],
                         cursor: 0,
                         combined: None,
+                        range: None,
                     }])),
                 ))
                 .id();

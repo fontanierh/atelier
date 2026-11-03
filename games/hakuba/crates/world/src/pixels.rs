@@ -65,6 +65,11 @@ impl Default for Load {
 
 impl Load {
     fn share(&self, riding: bool) -> f32 {
+        // Playtest: the world draws every pixel unless HAKUBA_ADAPT=1 lets late frames lower it.
+        static ADAPT: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        if !*ADAPT.get_or_init(|| std::env::var("HAKUBA_ADAPT").is_ok_and(|v| v == "1")) {
+            return 1.0;
+        }
         SHARES[self.steps[riding as usize]]
     }
 }

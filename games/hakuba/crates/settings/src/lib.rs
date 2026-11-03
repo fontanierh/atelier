@@ -105,6 +105,8 @@ impl Resolution {
     /// The size of the image the world draws into a window of `window` pixels.
     pub fn image_size(self, window: Vec2) -> UVec2 {
         let scale = match self {
+            // Playtest: HAKUBA_FULL_RES=1 draws the world at the window's own size.
+            Resolution::Auto if std::env::var("HAKUBA_FULL_RES").is_ok_and(|v| v == "1") => 1.0,
             Resolution::Auto => (auto_pixels() / (window.x * window.y)).sqrt().min(1.0),
             Resolution::Percent(percent) => percent as f32 / 100.0,
         };
@@ -127,7 +129,7 @@ impl Shadows {
     pub fn reach(self) -> Option<(f32, usize)> {
         match self {
             Shadows::Off => None,
-            Shadows::Near => Some((40.0, 1)),
+            Shadows::Near => Some((60.0, 2)),
             Shadows::Far => Some((150.0, 2)),
         }
     }

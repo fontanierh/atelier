@@ -20,6 +20,7 @@ import package::{
     ssr::raymarch,
 };
 import package::render::mesh_view_bindings::globals;
+import package::render::mesh_view_bindings as hakuba_view_bindings;
 import package::render::view_transformations::{position_world_to_ndc};
 import bevy_render::maths::{E, powsafe};
 
@@ -87,8 +88,18 @@ fn visibility_range_dither(frag_coord: vec4<f32>, dither: i32) {
         discard;
     }
 
-    // Otherwise, check the dither pattern.
-    let coords = vec2<u32>(floor(frag_coord.xy)) % 4u;
+    // Otherwise, check the dither pattern. Hakuba: the pattern moves every frame through all sixteen of its positions,
+    // as Unreal's dithered LOD transition does, so temporal anti-aliasing blends it into a smooth fade rather than
+    // a fixed screen-space mesh that shimmers as the camera moves. Both versions of a mesh move it alike, so their
+    // patterns still mesh.
+    // The depth pass has no globals, so the frame is told by the camera's anti-aliasing jitter, which every frame
+    // changes and both passes share.
+    let jitter = bitcast<vec2<u32>>(hakuba_view_bindings::view.clip_from_view[2].xy);
+    var hash = jitter.x ^ (jitter.y * 0x9e3779b9u);
+    hash = (hash ^ (hash >> 16u)) * 0x7feb352du;
+    hash = hash ^ (hash >> 15u);
+    let shift = vec2<u32>(hash & 3u, (hash >> 2u) & 3u);
+    let coords = (vec2<u32>(floor(frag_coord.xy)) + shift) % 4u;
     let threshold = i32((DITHER_THRESHOLD_MAP[coords.y] >> (coords.x * 8)) & 0xff);
     if ((dither >= 0 && dither + threshold >= 16) || (dither < 0 && 1 + dither + threshold <= 0)) {
         discard;
