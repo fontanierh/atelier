@@ -123,6 +123,11 @@ impl Tile {
             queued: false,
         })
     }
+    /// Playtest: its cell, centre and shown root while it shows its far version alone.
+    pub(crate) fn far_root(&self) -> Option<(UVec2, Vec3, Entity)> {
+        let root = self.showing.filter(|_| self.shown_detail == Some(Detail::Far))?;
+        Some((UVec2::new(self.column, self.row), self.centre, root))
+    }
     pub(crate) fn collision_state(&self) -> ([u32; 2], Vec3, Option<Entity>, bool, Option<[Vec2; 2]>, bool) {
         (
             [self.column, self.row],

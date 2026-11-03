@@ -523,7 +523,9 @@ fn spawn(
             continue;
         }
         for group in tile.groups.drain(..) {
-            let (Some(anchor), Some(mesh)) = (tile.anchor, group.mesh) else { continue };
+            let (Some(anchor), Some(mut mesh)) = (tile.anchor, group.mesh) else { continue };
+            // Playtest: kept on the CPU too, so the distant blocks can merge it (blocks.rs).
+            mesh.asset_usage = RenderAssetUsages::default();
             let mut part = commands.spawn((Mesh3d(meshes.add(mesh)), Transform::IDENTITY, ChildOf(anchor)));
             insert_look(&mut part, &group.look);
             part.insert(NotShadowCaster);
@@ -808,7 +810,7 @@ fn triangle_keys(mesh: &Mesh) -> Vec<[[u32; 3]; 3]> {
         .collect()
 }
 
-fn insert_look(part: &mut EntityCommands, look: &Look) {
+pub(crate) fn insert_look(part: &mut EntityCommands, look: &Look) {
     match look {
         Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
         Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
@@ -1105,7 +1107,7 @@ fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], 
 
 /// How a part looks: its material as the model has it, or its swaying version.
 #[derive(Clone)]
-enum Look {
+pub(crate) enum Look {
     Still(Handle<StandardMaterial>),
     Swaying(Handle<Swaying>),
     SourceFoliage(Handle<SourceFoliage>, SourceProfile),
@@ -1116,7 +1118,7 @@ enum Look {
 }
 
 impl Look {
-    fn id(&self) -> UntypedAssetId {
+    pub(crate) fn id(&self) -> UntypedAssetId {
         match self {
             Look::Still(material) => material.id().untyped(),
             Look::Swaying(material) => material.id().untyped(),

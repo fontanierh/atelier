@@ -3309,6 +3309,7 @@ dependencies = [
  "hakuba_settings",
  "hakuba_water_schema",
  "hakuba_world_skate_schema",
+ "meshopt",
  "parry3d",
  "serde",
  "serde_json",
