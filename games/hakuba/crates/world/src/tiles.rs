@@ -18,7 +18,7 @@ use crate::vertex_paint::{SurfaceFailed, SurfaceWaiting};
 const MIDDLE_M: f32 = 2500.0;
 /// From how far from the camera, to a tile's centre, a middle tile shows its plants' far versions, merged: there a
 /// tree is a few pixels tall, and the forests on every hill around would otherwise be hundreds of thousands of copies.
-const FAR_M: f32 = 320.0;
+const FAR_M: f32 = 200.0;
 /// How far past [`FAR_M`] a tile keeps its version, so a camera moving to and fro across it does not respawn the tile.
 const FAR_MARGIN_M: f32 = 16.0;
 /// The most tiles that load at once, so the nearest are not kept waiting behind the far.
@@ -464,7 +464,7 @@ mod tests {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
         app.init_resource::<Settings>().init_resource::<Loaded>();
-        app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(250.0, 0.0, 0.0))));
+        app.world_mut().spawn((Camera3d::default(), GlobalTransform::from(Transform::from_xyz(FAR_M, 0.0, 0.0))));
         let owner = app.world_mut().spawn(Tile::named("tile 1 2", Vec3::ZERO).unwrap()).id();
         let old = app.world_mut().spawn((ChildOf(owner), Visibility::Inherited)).id();
         let pending = app.world_mut().spawn((ChildOf(owner), Visibility::Hidden, Spawning(owner, Detail::Full))).id();
@@ -472,7 +472,7 @@ mod tests {
         {
             let mut tile = app.world_mut().get_mut::<Tile>(owner).unwrap();
             tile.detail = Some(Detail::Full);
-            tile.shown_detail = Some(Detail::Middle);
+            tile.shown_detail = Some(Detail::Blend);
             tile.showing = Some(old);
             tile.pending = Some(pending);
         }
@@ -528,18 +528,19 @@ mod tests {
         app.world_mut().spawn((Camera3d::default(), GlobalTransform::IDENTITY));
         let near = app
             .world_mut()
-            .spawn(Tile::named("tile 1 1", Vec3::new(FAR_M - 2.0 * FAR_MARGIN_M, 0.0, 0.0)).unwrap())
+            .spawn(Tile::named("tile 1 1", Vec3::new(FAR_M, 0.0, 0.0)).unwrap())
             .id();
         let far = app
             .world_mut()
-            .spawn(Tile::named("tile 2 1", Vec3::new(FAR_M + 2.0 * FAR_MARGIN_M, 0.0, 0.0)).unwrap())
+            .spawn(Tile::named("tile 2 1", Vec3::new(FAR_M + BLEND_M + 2.0 * FAR_MARGIN_M, 0.0, 0.0)).unwrap())
             .id();
         app.world_mut().run_system_once(choose).unwrap();
-        for (tile, detail) in [(near, Detail::Middle), (far, Detail::Far)] {
+        // Around the far distance a tile blends its plants' middle and far versions; past the blend, only far ones.
+        for (tile, detail) in [(near, Detail::Blend), (far, Detail::Far)] {
             let tile = app.world().get::<Tile>(tile).unwrap();
             assert_eq!(tile.detail, Some(detail));
             let spawning = app.world().get::<Spawning>(tile.pending.unwrap()).unwrap();
-            assert_eq!(spawning.far(), detail == Detail::Far);
+            assert!(spawning.far());
             assert!(tile.path(detail, 8).ends_with(".middle.glb"), "a far tile is the middle version");
         }
     }
