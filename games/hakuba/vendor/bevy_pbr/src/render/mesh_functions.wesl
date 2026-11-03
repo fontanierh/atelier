@@ -53,6 +53,28 @@ fn mesh_position_local_to_world(world_from_local: mat4x4<f32>, vertex_position: 
     return world_from_local * vertex_position;
 }
 
+// A rigid mesh's vertex passes on its instance, with the top bit set when the instance's transform changed since the
+// last frame, rather than where it was: four bytes per vertex instead of sixteen, which on a tiled GPU are written out
+// for every vertex and read back for every fragment.
+@if(!MESHLET_MESH_MATERIAL_PASS)
+fn motion_instance(instance_index: u32) -> u32 {
+    let now = mesh[instance_index].world_from_local;
+    let before = mesh[instance_index].previous_world_from_local;
+    let still = all(now[0] == before[0]) && all(now[1] == before[1]) && all(now[2] == before[2]);
+    return instance_index | select(1u << 31u, 0u, still);
+}
+
+// Where the point at `world_position` of a rigid mesh was in the last frame, from what `motion_instance` passed on.
+@if(!MESHLET_MESH_MATERIAL_PASS)
+fn previous_world_position(world_position: vec4<f32>, motion_instance: u32) -> vec4<f32> {
+    if (motion_instance >> 31u) == 0u {
+        return world_position;
+    }
+    let instance_index = motion_instance & 0x7fffffffu;
+    let local = get_local_from_world(instance_index) * vec4<f32>(world_position.xyz, 1.0);
+    return get_previous_world_from_local(instance_index) * local;
+}
+
 /// NOTE: The intermediate world_position assignment is important
 /// for precision purposes when using the 'equals' depth comparison
 /// function.

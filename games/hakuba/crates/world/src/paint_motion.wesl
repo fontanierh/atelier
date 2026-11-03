@@ -4,7 +4,7 @@ import bevy_pbr::prepass::io::{Vertex, VertexOutput, decompress_vertex};
 @if(PREPASS_PIPELINE)
 import bevy_render::globals::Globals;
 @if(!PREPASS_PIPELINE)
-import bevy_pbr::render::forward_io::{Vertex, VertexOutput, decompress_vertex};
+import bevy_pbr::render::forward_io::{Vertex, VertexOutput, Varyings, decompress_vertex, varyings};
 @if(!PREPASS_PIPELINE)
 import bevy_pbr::render::mesh_view_bindings::globals;
 import bevy_pbr::render::{mesh_functions, view_transformations::position_world_to_clip};
@@ -30,7 +30,12 @@ fn motion(at: vec3<f32>, time: f32, weight: f32) -> vec3<f32> {
 
 @if(!PREPASS_PIPELINE)
 @vertex
-fn vertex(input: Vertex) -> VertexOutput {
+fn vertex(input: Vertex) -> Varyings {
+    return varyings(build_output(input));
+}
+
+@if(!PREPASS_PIPELINE)
+fn build_output(input: Vertex) -> VertexOutput {
     let v = decompress_vertex(input, input.instance_index);
     let transform = mesh_functions::get_world_from_local(input.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(transform, vec4<f32>(v.position, 1.0));
@@ -38,11 +43,14 @@ fn vertex(input: Vertex) -> VertexOutput {
     out.world_position = vec4<f32>(still.xyz + motion(still.xyz, globals.time, v.color.a), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     out.position.z *= 1.0001;
-    @if(FORWARD_MOTION) {
+    // The paint moves on its own, so each vertex passes on where it was (the material sets VERTEX_PREVIOUS_POSITION).
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION) {
         let previous = mesh_functions::get_previous_world_from_local(input.instance_index);
         let before = mesh_functions::mesh_position_local_to_world(previous, vec4<f32>(v.position, 1.0));
         out.previous_world_position = vec4<f32>(before.xyz + motion(before.xyz, max(globals.time - globals.delta_time, 0.0), v.color.a), 1.0);
     }
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_instance = mesh_functions::motion_instance(input.instance_index);
     @if(VERTEX_NORMALS)
     out.world_normal = mesh_functions::mesh_normal_local_to_world(v.normal, input.instance_index);
     @if(VERTEX_UVS_A)

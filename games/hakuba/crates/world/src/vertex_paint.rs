@@ -142,6 +142,24 @@ impl MaterialExtension for MovingPaint {
     fn fragment_shader() -> ShaderRef {
         "embedded://hakuba_world/vertex_paint.wesl".into()
     }
+    /// The paint moves on its own, so each vertex passes on where it was for the main pass's motion.
+    fn specialize(
+        _: &bevy::pbr::MaterialExtensionPipeline,
+        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        _: &bevy::mesh::MeshVertexBufferLayoutRef,
+        _: bevy::pbr::MaterialExtensionKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        let forward = |defs: &[bevy::shader::ShaderDefVal]| {
+            defs.iter().any(|def| matches!(def, bevy::shader::ShaderDefVal::Bool(name, true) if name == "FORWARD_MOTION"))
+        };
+        if forward(&descriptor.vertex.shader_defs) {
+            descriptor.vertex.shader_defs.push("VERTEX_PREVIOUS_POSITION".into());
+            if let Some(fragment) = descriptor.fragment.as_mut() {
+                fragment.shader_defs.push("VERTEX_PREVIOUS_POSITION".into());
+            }
+        }
+        Ok(())
+    }
 }
 
 pub type MovingPainted = ExtendedMaterial<StandardMaterial, MovingPaint>;

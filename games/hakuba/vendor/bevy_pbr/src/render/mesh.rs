@@ -3597,6 +3597,19 @@ impl SpecializedMeshPipeline for MeshPipeline {
         let forward_motion = key.contains(MeshPipelineKey::FORWARD_MOTION) && depth_write_enabled;
         if forward_motion {
             shader_defs.push("FORWARD_MOTION".into());
+            // A skinned or morphed vertex moves on its own, so it passes on where it was; a rigid one passes on only its
+            // instance, and the fragment finds where it was from the instance's two transforms.
+            let deformed = shader_defs.iter().any(|def| {
+                matches!(def, ShaderDefVal::Bool(name, true) if name == "SKINNED" || name == "MORPH_TARGETS")
+            });
+            if deformed {
+                shader_defs.push("VERTEX_PREVIOUS_POSITION".into());
+            }
+            // The fragment finds its world position from its depth rather than having it passed on
+            // (`HAKUBA_WORLD_FROM_DEPTH=0` passes it on, to compare).
+            if !std::env::var("HAKUBA_WORLD_FROM_DEPTH").is_ok_and(|v| v == "0") {
+                shader_defs.push("WORLD_FROM_DEPTH".into());
+            }
         }
 
         if key.contains(MeshPipelineKey::NORMAL_PREPASS) {

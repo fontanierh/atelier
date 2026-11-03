@@ -101,8 +101,11 @@ struct VertexOutput {
     @builtin(position) @invariant position: vec4<f32>,
     @location(0) world_position: vec4<f32>,
     @location(1) world_normal: vec3<f32>,
-    @if(FORWARD_MOTION)
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     @location(8) previous_world_position: vec4<f32>,
+    // A rigid mesh's instance, with the top bit set when its transform changed since the last frame.
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    @location(8) @interpolate(flat) motion_instance: u32,
     @if(VERTEX_UVS_A)
     @location(2) uv: vec2<f32>,
     @if(VERTEX_UVS_B)
@@ -115,6 +118,86 @@ struct VertexOutput {
     @location(6) @interpolate(flat) instance_index: u32,
     @if(VISIBILITY_RANGE_DITHER)
     @location(7) @interpolate(flat) visibility_range_dither: i32,
+}
+
+// What the main pass's vertex stage passes on: `VertexOutput` less the world position under WORLD_FROM_DEPTH, which the
+// fragment finds again from its own depth. A tiled GPU writes every vertex's outputs to memory and reads them back for
+// every fragment, so each one left out is bandwidth saved on every vertex of every leaf card.
+struct Varyings {
+    @builtin(position) @invariant position: vec4<f32>,
+    @if(!WORLD_FROM_DEPTH)
+    @location(0) world_position: vec4<f32>,
+    @location(1) world_normal: vec3<f32>,
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
+    @location(8) previous_world_position: vec4<f32>,
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    @location(8) @interpolate(flat) motion_instance: u32,
+    @if(VERTEX_UVS_A)
+    @location(2) uv: vec2<f32>,
+    @if(VERTEX_UVS_B)
+    @location(3) uv_b: vec2<f32>,
+    @if(VERTEX_TANGENTS)
+    @location(4) world_tangent: vec4<f32>,
+    @if(VERTEX_COLORS)
+    @location(5) color: vec4<f32>,
+    @if(VERTEX_OUTPUT_INSTANCE_INDEX)
+    @location(6) @interpolate(flat) instance_index: u32,
+    @if(VISIBILITY_RANGE_DITHER)
+    @location(7) @interpolate(flat) visibility_range_dither: i32,
+}
+
+fn varyings(out: VertexOutput) -> Varyings {
+    var v: Varyings;
+    v.position = out.position;
+    @if(!WORLD_FROM_DEPTH)
+    v.world_position = out.world_position;
+    v.world_normal = out.world_normal;
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
+    v.previous_world_position = out.previous_world_position;
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    v.motion_instance = out.motion_instance;
+    @if(VERTEX_UVS_A)
+    v.uv = out.uv;
+    @if(VERTEX_UVS_B)
+    v.uv_b = out.uv_b;
+    @if(VERTEX_TANGENTS)
+    v.world_tangent = out.world_tangent;
+    @if(VERTEX_COLORS)
+    v.color = out.color;
+    @if(VERTEX_OUTPUT_INSTANCE_INDEX)
+    v.instance_index = out.instance_index;
+    @if(VISIBILITY_RANGE_DITHER)
+    v.visibility_range_dither = out.visibility_range_dither;
+    return v;
+}
+
+// The fragment's `VertexOutput`, its world position found from its window position and depth where it was left out.
+fn vertex_output(v: Varyings) -> VertexOutput {
+    var out: VertexOutput;
+    out.position = v.position;
+    @if(WORLD_FROM_DEPTH)
+    out.world_position = vec4<f32>(package::render::view_transformations::position_ndc_to_world(
+        package::render::view_transformations::frag_coord_to_ndc(v.position)), 1.0);
+    @if(!WORLD_FROM_DEPTH)
+    out.world_position = v.world_position;
+    out.world_normal = v.world_normal;
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
+    out.previous_world_position = v.previous_world_position;
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_instance = v.motion_instance;
+    @if(VERTEX_UVS_A)
+    out.uv = v.uv;
+    @if(VERTEX_UVS_B)
+    out.uv_b = v.uv_b;
+    @if(VERTEX_TANGENTS)
+    out.world_tangent = v.world_tangent;
+    @if(VERTEX_COLORS)
+    out.color = v.color;
+    @if(VERTEX_OUTPUT_INSTANCE_INDEX)
+    out.instance_index = v.instance_index;
+    @if(VISIBILITY_RANGE_DITHER)
+    out.visibility_range_dither = v.visibility_range_dither;
+    return out;
 }
 
 struct FragmentOutput {

@@ -1,6 +1,6 @@
 // Source foliage colors encode wind and canopy depth, not an albedo tint.
 import bevy_pbr::render::{
-    forward_io::{FragmentOutput, VertexOutput},
+    forward_io::{FragmentOutput, VertexOutput, Varyings, vertex_output},
     mesh_view_bindings::view,
     pbr_fragment::pbr_input_from_standard_material,
     pbr_functions::{alpha_discard, apply_pbr_lighting, main_pass_post_lighting_processing},
@@ -17,7 +17,8 @@ const DISCARDS: bool = false;
 const DISCARDS: bool = true;
 
 @fragment
-fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+    let input = vertex_output(varyings);
     var neutral = input;
     @if(VERTEX_COLORS)
     neutral.color = vec4<f32>(1.0);
@@ -43,7 +44,10 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
         surface.material.emissive = vec4<f32>(profile.haze_colour.xyz * haze, 1.0);
         out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
     }
-    @if(FORWARD_MOTION)
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(
+        input.world_position, bevy_pbr::render::mesh_functions::previous_world_position(input.world_position, input.motion_instance));
     return out;
 }

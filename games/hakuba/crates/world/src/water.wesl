@@ -1,6 +1,6 @@
 // Source-authored opaque water: world-map wavelets remain continuous across tile boundaries.
 import bevy_pbr::render::{
-    forward_io::{VertexOutput, FragmentOutput}, mesh_view_bindings::globals,
+    forward_io::{VertexOutput, FragmentOutput, Varyings, vertex_output}, mesh_view_bindings::globals,
     pbr_fragment::pbr_input_from_standard_material,
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
 };
@@ -17,7 +17,8 @@ fn harmonic(frequency: f32, amplitude: f32, angle: f32) -> f32 {
 }
 
 @fragment
-fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+    let input = vertex_output(varyings);
     let p = vec2<f32>(input.world_position.x, -input.world_position.z);
     let relative = (p - water.bounds.xy) / water.bounds.zw;
     let angle = atan2(relative.y, relative.x);
@@ -52,7 +53,10 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
     surface.N = normalize(vec3<f32>(-slope.x * calm, 1.0, slope.y * calm));
     var out: FragmentOutput;
     out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
-    @if(FORWARD_MOTION)
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(
+        input.world_position, bevy_pbr::render::mesh_functions::previous_world_position(input.world_position, input.motion_instance));
     return out;
 }
