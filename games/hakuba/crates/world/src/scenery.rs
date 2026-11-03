@@ -138,6 +138,16 @@ fn tree_lod_m() -> (f32, f32) {
     })
 }
 
+/// Playtest: where a full tile's small plants fade to their middle versions, and over how many metres, given how far
+/// tiles show their full versions: done before the nearest merged square of a tile turning middle, whose centre is
+/// within half a square's diagonal of the tile's centre, comes that near.
+fn small_lod_m(full_m: f32) -> Option<(f32, f32)> {
+    static FADE: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    let fade = *FADE.get_or_init(|| std::env::var("HAKUBA_SMALL_FADE_M").ok().and_then(|v| v.parse().ok()).unwrap_or(16.0));
+    let lod = full_m - MERGED_SQUARE_M * std::f32::consts::FRAC_1_SQRT_2 - 6.0 - fade / 2.0;
+    (fade > 0.0 && lod > fade).then_some((lod, fade))
+}
+
 /// Copies spawned from their model, which may still be loading its textures.
 #[derive(Component)]
 pub struct Placed(pub Handle<Gltf>);
@@ -277,8 +287,10 @@ fn spawn(
     mut far_tiles: ResMut<FarTiles>,
     roots: Query<(), With<WorldAssetRoot>>,
     loaded: Option<Res<Loaded>>,
+    settings: Res<hakuba_settings::Settings>,
 ) {
     let times = if loaded.is_some() { 1 } else { UNDER_SPLASH };
+    let small_lod = small_lod_m(crate::tiles::full_m(settings.detail.full_m()));
     let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE * times, instances: INSTANCES_PER_UPDATE * times };
     'copies: for (entity, mut waiting) in &mut waiting {
         if waiting.jobs.is_none() {
@@ -311,12 +323,17 @@ fn spawn(
             // `tree_lod_m`, each copy on its own, crossfading.
             let per_copy = has_middle && full_vertices >= MERGE_BELOW_VERTICES && tree_lod_m().0 > 0.0;
             let blend = far.is_some() && waiting.blend && has_middle;
+            // Playtest: a full tile's small plants fade to their middle versions before the tile becomes middle.
+            let small = small_lod.filter(|_| !per_copy && far.is_none() && !waiting.middle && has_middle);
             let mut versions = match (waiting.middle, has_middle) {
                 // Playtest: a blending tile shows both, the middle version fading out where the far fades in.
                 _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
                 _ if far.is_some() => vec![("far", Role::Both)],
                 (true, true) => vec![("middle", Role::Both)],
                 (false, true) if per_copy => {
+                    vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
+                }
+                (false, true) if small.is_some() => {
                     vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
                 }
                 (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
@@ -383,6 +400,22 @@ fn spawn(
                     }),
                     _ => None,
                 }).flatten();
+                let range = range.or_else(|| {
+                    let (lod, fade) = small?;
+                    match (name, role) {
+                        ("full", _) => Some(VisibilityRange {
+                            start_margin: 0.0..0.0,
+                            end_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            use_aabb: true,
+                        }),
+                        ("middle", Role::Seen) => Some(VisibilityRange {
+                            start_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                            use_aabb: true,
+                        }),
+                        _ => None,
+                    }
+                });
                 // A blending tile's merged middle versions fade out around the far distance, by their own centres.
                 let far_m = crate::tiles::far_distance();
                 let half = crate::tiles::BLEND_FADE_M / 2.0;
@@ -463,7 +496,8 @@ fn spawn(
                         continue;
                     }
                     if merge {
-                        let squares: Vec<Vec<Transform>> = if shadows {
+                        // Copies fading by distance merge by square, so each square fades by its own centre.
+                        let squares: Vec<Vec<Transform>> = if shadows || range.is_some() {
                             squares(&transforms, MERGED_SQUARE_M).collect()
                         } else {
                             vec![transforms.clone()]

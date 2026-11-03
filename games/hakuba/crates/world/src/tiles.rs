@@ -33,7 +33,7 @@ fn far_m() -> f32 {
     static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
     *V.get_or_init(|| tuned("HAKUBA_FAR_M", FAR_M))
 }
-fn full_m(settings: f32) -> f32 {
+pub(crate) fn full_m(settings: f32) -> f32 {
     static V: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
     V.get_or_init(|| std::env::var("HAKUBA_FULL_M").ok().and_then(|v| v.parse().ok())).unwrap_or(settings)
 }
