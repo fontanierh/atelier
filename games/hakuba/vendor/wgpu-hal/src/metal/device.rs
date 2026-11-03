@@ -24,7 +24,7 @@ use objc2_metal::{
 };
 use parking_lot::{Condvar, Mutex, RwLock};
 
-use super::{adapter::MAX_BUFFERS, conv, PassthroughShader, ShaderModuleSource};
+use super::{adapter::MAX_BUFFERS, conv, pool, PassthroughShader, ShaderModuleSource};
 use crate::{auxil::map_naga_stage, DropCallback, DropGuard, TlasInstance};
 
 type DeviceResult<T> = Result<T, crate::DeviceError>;
@@ -441,6 +441,7 @@ impl super::Device {
         let shared = super::AdapterShared::new(raw, &capabilities_query);
         super::Device {
             shared: Arc::new(shared),
+            pool: Default::default(),
             features,
             counters: Default::default(),
             limits: limits.clone(),
@@ -451,7 +452,8 @@ impl super::Device {
         raw: Retained<ProtocolObject<dyn MTLBuffer>>,
         size: wgt::BufferAddress,
     ) -> super::Buffer {
-        super::Buffer { raw, size }
+        let options = raw.resourceOptions();
+        super::Buffer { raw, size, options, pooled: false }
     }
 
     pub fn raw_device(&self) -> &Retained<ProtocolObject<dyn MTLDevice>> {
@@ -477,12 +479,21 @@ impl crate::Device for super::Device {
 
         //TODO: HazardTrackingModeUntracked
 
+        let bucket = pool::bucket(desc.size);
+        if let Some(raw) = self.pool.take(bucket, options) {
+            if let Some(label) = desc.label {
+                raw.setLabel(Some(&NSString::from_str(label)));
+            }
+            self.counters.buffers.add(1);
+            return Ok(super::Buffer { raw, size: desc.size, options, pooled: true });
+        }
         autoreleasepool(|_| {
             let raw = self
                 .shared
                 .device
-                .newBufferWithLength_options(desc.size as usize, options)
+                .newBufferWithLength_options(bucket as usize, options)
                 .ok_or(crate::DeviceError::OutOfMemory)?;
+            pool::created(bucket);
             if let Some(label) = desc.label {
                 raw.setLabel(Some(&NSString::from_str(label)));
             }
@@ -490,11 +501,17 @@ impl crate::Device for super::Device {
             Ok(super::Buffer {
                 raw,
                 size: desc.size,
+                options,
+                pooled: true,
             })
         })
     }
-    unsafe fn destroy_buffer(&self, _buffer: super::Buffer) {
+    unsafe fn destroy_buffer(&self, buffer: super::Buffer) {
         self.counters.buffers.sub(1);
+        // wgpu destroys a buffer only once no submitted work uses it, so its memory can be handed out again.
+        if buffer.pooled {
+            self.pool.give(buffer.raw, buffer.options);
+        }
     }
 
     unsafe fn add_raw_buffer(&self, _buffer: &super::Buffer) {

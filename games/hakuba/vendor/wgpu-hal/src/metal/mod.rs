@@ -51,7 +51,7 @@ use objc2_metal::{
     MTLComputeCommandEncoder, MTLComputePipelineState, MTLCounterSampleBuffer, MTLCullMode,
     MTLDepthClipMode, MTLDepthStencilState, MTLDevice, MTLDrawable, MTLIndexType,
     MTLLanguageVersion, MTLLibrary, MTLPrimitiveType, MTLReadWriteTextureTier,
-    MTLRenderCommandEncoder, MTLRenderPipelineState, MTLRenderStages, MTLResource,
+    MTLRenderCommandEncoder, MTLRenderPipelineState, MTLRenderStages, MTLResource, MTLResourceOptions,
     MTLResourceUsage, MTLSamplerState, MTLSharedEvent, MTLSize, MTLTexture, MTLTextureType,
     MTLTriangleFillMode, MTLWinding,
 };
@@ -634,6 +634,7 @@ pub struct QueueShared {
 #[derive(Debug)]
 pub struct Device {
     shared: Arc<AdapterShared>,
+    pool: pool::BufferPool,
     features: wgt::Features,
     counters: Arc<wgt::HalCounters>,
     limits: wgt::Limits,
@@ -863,6 +864,9 @@ impl crate::Queue for Queue {
 pub struct Buffer {
     raw: Retained<ProtocolObject<dyn MTLBuffer>>,
     size: wgt::BufferAddress,
+    options: MTLResourceOptions,
+    /// Made by [`Device::create_buffer`], so its memory may be handed out again once destroyed.
+    pooled: bool,
 }
 
 unsafe impl Send for Buffer {}
@@ -1429,6 +1433,87 @@ pub enum OsType {
 }
 
 /// Hakuba playtest: the intervals between frames reaching the screen, as the display shows them.
+/// Metal buffers kept after wgpu destroys them and handed out again for a new buffer of the same size class, as
+/// Unreal's Metal backend pools them: making a buffer asks the kernel for memory and can stall a frame.
+pub(crate) mod pool {
+    use super::*;
+    use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
+
+    /// The most memory kept unused: a buffer given back past it is released.
+    const KEPT_AT_MOST: u64 = 768 << 20;
+    /// Larger buffers are never kept: they are made rarely, and keeping one holds a lot of memory.
+    const LARGEST: u64 = 64 << 20;
+    static CREATED: AtomicU64 = AtomicU64::new(0);
+    static CREATED_BYTES: AtomicU64 = AtomicU64::new(0);
+    static REUSED: AtomicU64 = AtomicU64::new(0);
+
+    /// The size a buffer is made at: rounded up to a quarter of its power of two, so a buffer wastes at most a
+    /// quarter and buffers that grow a little each time still share a class.
+    pub fn bucket(size: u64) -> u64 {
+        let size = size.max(256);
+        let step = (1u64 << (63 - size.leading_zeros())) / 4;
+        size.div_ceil(step) * step
+    }
+
+    pub fn created(bytes: u64) {
+        CREATED.fetch_add(1, Relaxed);
+        CREATED_BYTES.fetch_add(bytes, Relaxed);
+    }
+
+    #[derive(Default)]
+    pub struct BufferPool {
+        free: Mutex<(HashMap<(u64, usize), Vec<Retained<ProtocolObject<dyn MTLBuffer>>>>, u64)>,
+    }
+
+    // SAFETY: Metal buffers may be used from any thread; the pool hands each out to one owner under its lock.
+    unsafe impl Send for BufferPool {}
+    unsafe impl Sync for BufferPool {}
+
+    impl fmt::Debug for BufferPool {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("BufferPool")
+        }
+    }
+
+    impl BufferPool {
+        pub fn take(&self, bucket: u64, options: MTLResourceOptions) -> Option<Retained<ProtocolObject<dyn MTLBuffer>>> {
+            let mut free = self.free.lock();
+            let raw = free.0.get_mut(&(bucket, options.bits()))?.pop()?;
+            free.1 -= bucket;
+            REUSED.fetch_add(1, Relaxed);
+            Some(raw)
+        }
+
+        pub fn give(&self, raw: Retained<ProtocolObject<dyn MTLBuffer>>, options: MTLResourceOptions) {
+            static OFF: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+            if *OFF.get_or_init(|| std::env::var("HAKUBA_POOL").is_ok_and(|v| v == "0")) {
+                return;
+            }
+            let bucket = raw.length() as u64;
+            if bucket > LARGEST || bucket != self::bucket(bucket) {
+                return;
+            }
+            let mut free = self.free.lock();
+            if free.1 + bucket > KEPT_AT_MOST {
+                return;
+            }
+            free.1 += bucket;
+            free.0.entry((bucket, options.bits())).or_default().push(raw);
+        }
+    }
+
+    /// Buffers made, their megabytes and buffers reused since the last call.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn hakuba_buffer_stats(created: *mut u64, megabytes: *mut f64, reused: *mut u64) {
+        // SAFETY: the caller passes valid pointers.
+        unsafe {
+            *created = CREATED.swap(0, Relaxed);
+            *megabytes = CREATED_BYTES.swap(0, Relaxed) as f64 / (1 << 20) as f64;
+            *reused = REUSED.swap(0, Relaxed);
+        }
+    }
+}
+
 pub mod present_stats {
     use std::sync::Mutex;
 

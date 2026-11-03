@@ -129,6 +129,11 @@ fn spawn_world(
         commands.entity(camera).insert(mode);
         info!(?mode, "forward motion validation enabled");
     }
+    #[cfg(not(target_arch = "wasm32"))]
+    if std::env::var("HAKUBA_OCCLUSION").is_ok_and(|v| v == "1") {
+        commands.entity(camera).insert(bevy::render::occlusion_culling::OcclusionCulling);
+        info!("occlusion culling enabled");
+    }
 }
 
 /// Explicit validation only: native environment or browser query, never a stored game setting.

@@ -139,6 +139,7 @@ fn show_fps(time: Res<Time<Real>>, mut second: Local<Second>, mut shown: Single<
         {
             unsafe extern "C" {
                 fn hakuba_present_stats(worst: *mut f64, over: *mut u32, count: *mut u32);
+                fn hakuba_buffer_stats(created: *mut u64, megabytes: *mut f64, reused: *mut u64);
             }
             let (mut worst, mut over, mut count) = (0.0, 0, 0);
             // SAFETY: the vendored Metal backend defines it; the pointers are to locals.
@@ -147,6 +148,10 @@ fn show_fps(time: Res<Time<Real>>, mut second: Local<Second>, mut shown: Single<
                 shown.0 = format!("{count} FPS  {worst:.0} ms");
                 info!("SHOWN {count} frames, {over} over 17.5 ms, worst {worst:.1} ms");
             }
+            let (mut created, mut megabytes, mut reused) = (0, 0.0, 0);
+            // SAFETY: as above.
+            unsafe { hakuba_buffer_stats(&mut created, &mut megabytes, &mut reused) };
+            info!("BUFFERS made {created} ({megabytes:.1} MB), reused {reused}");
         }
         *second = Second::default();
     }

@@ -107,6 +107,7 @@ impl crate::Adapter for super::Adapter {
             Ok(crate::OpenDevice {
                 device: super::Device {
                     shared: Arc::clone(&self.shared),
+                    pool: Default::default(),
                     features,
                     counters: Default::default(),
                     limits: limits.clone(),
