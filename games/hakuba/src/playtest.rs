@@ -35,6 +35,9 @@ impl Plugin for PlaytestPlugin {
         if std::env::var("HAKUBA_GPU_CLUSTERING").is_err() {
             app.add_systems(Startup, no_gpu_clustering);
         }
+        if let Some(shot) = std::env::var("HAKUBA_SHOT").ok().and_then(|v| Shot::parse(&v)) {
+            app.insert_resource(shot).add_systems(Last, take_shot);
+        }
     }
 }
 
@@ -196,6 +199,8 @@ fn count_triangles(
     *last = time.elapsed_secs();
     const BANDS: [f32; 7] = [40.0, 80.0, 135.0, 260.0, 400.0, 1000.0, f32::MAX];
     let mut drawn = [(0usize, 0u64, 0u64); 7];
+    // Copies of one mesh draw together, so the distinct meshes in each band are about how many draws it costs.
+    let mut distinct = [(); 7].map(|_| std::collections::HashSet::new());
     let (camera, view) = *camera;
     let eye = camera.translation();
     for (mesh, visibility, transform, aabb, no_shadow) in &shown {
@@ -206,6 +211,7 @@ fn count_triangles(
         let centre = transform.transform_point(aabb.map_or(Vec3::ZERO, |aabb| Vec3::from(aabb.center)));
         let band = BANDS.iter().position(|&end| eye.distance(centre) < end).unwrap_or(6);
         drawn[band].0 += 1;
+        distinct[band].insert(mesh.0.id());
         drawn[band].1 += triangles;
         if !no_shadow {
             drawn[band].2 += triangles;
@@ -214,7 +220,10 @@ fn count_triangles(
     let line: Vec<String> = BANDS
         .iter()
         .zip(drawn)
-        .map(|(end, (n, t, s))| format!("<{end:.0}: {n} meshes {}k tris ({}k cast)", t / 1000, s / 1000))
+        .zip(&distinct)
+        .map(|((end, (n, t, s)), d)| {
+            format!("<{end:.0}: {n} meshes ({} distinct) {}k tris ({}k cast)", d.len(), t / 1000, s / 1000)
+        })
         .collect();
     info!(
         "TRIS drawn {:?} window {}x{} | {}",
@@ -223,4 +232,39 @@ fn count_triangles(
         window.physical_height(),
         line.join(" | ")
     );
+}
+
+/// Playtest: `HAKUBA_SHOT=PATH@SECONDS` saves the window's own image to PATH that many seconds after the world has
+/// loaded, whatever covers the window on the desktop.
+#[derive(Resource)]
+struct Shot {
+    path: String,
+    after: Duration,
+    loaded: Option<Instant>,
+}
+
+impl Shot {
+    fn parse(value: &str) -> Option<Self> {
+        let (path, seconds) = value.rsplit_once('@')?;
+        Some(Self { path: path.to_owned(), after: Duration::from_secs_f64(seconds.parse().ok()?), loaded: None })
+    }
+}
+
+fn take_shot(
+    mut commands: Commands,
+    shot: Option<ResMut<Shot>>,
+    loaded: Option<Res<hakuba_world::SceneryLoaded>>,
+    unready: Query<(), With<hakuba_world::Unready>>,
+) {
+    let Some(mut shot) = shot else { return };
+    if shot.loaded.is_none() && loaded.is_some() && unready.is_empty() {
+        shot.loaded = Some(Instant::now());
+    }
+    if shot.loaded.is_some_and(|at| at.elapsed() >= shot.after) {
+        info!("playtest: screenshot to {}", shot.path);
+        commands
+            .spawn(bevy::render::view::screenshot::Screenshot::primary_window())
+            .observe(bevy::render::view::screenshot::save_to_disk(shot.path.clone()));
+        commands.remove_resource::<Shot>();
+    }
 }

@@ -4,6 +4,7 @@ use bevy::asset::{embedded_asset, load_embedded_asset};
 use bevy::camera::{MainPassResolutionOverride, Viewport};
 use bevy::core_pipeline::FullscreenShader;
 use bevy::core_pipeline::core_3d::{AlphaMask3d, Opaque3d, main_opaque_pass_3d, main_transparent_pass_3d};
+use bevy::core_pipeline::prepass::node::early_prepass;
 use bevy::core_pipeline::prepass::{
     BackgroundMotionVectorsBindGroup, BackgroundMotionVectorsPipelineId, DeferredPrepass, MOTION_VECTOR_PREPASS_FORMAT,
     NormalPrepass, PreviousViewUniformOffset, ViewPrepassTextures,
@@ -74,6 +75,15 @@ fn install_comparison_pass(world: &mut World) {
                 .in_set(Core3dSystems::MainPass)
                 .before(main_transparent_pass_3d),
         );
+        // A single-pass view draws nothing in the prepass: its pass would only clear and store targets the main pass
+        // clears again, about a millisecond on a tiled GPU.
+        let removed = schedule
+            .remove_systems_in_set(early_prepass, world, ScheduleCleanupPolicy::RemoveSystemsOnly)
+            .expect("replace the registered early prepass");
+        assert_eq!(removed, 1, "one early prepass must be registered");
+        schedule.add_systems(
+            early_prepass.run_if(not_single_view).in_set(Core3dSystems::Prepass),
+        );
     });
 }
 
@@ -119,6 +129,10 @@ fn init_motion_transfer(
 
 fn ordinary_view(view: ViewQuery<Has<ForwardMotion>>) -> bool {
     !view.into_inner()
+}
+
+fn not_single_view(view: ViewQuery<Option<&ForwardMotionMode>>) -> bool {
+    view.into_inner() != Some(&ForwardMotionMode::Single)
 }
 
 fn prepare_comparison(
@@ -229,8 +243,15 @@ fn draw_comparison(
         return;
     };
     let viewport = Viewport::from_viewport_and_override(camera.viewport.as_ref(), resolution);
+    // A single-pass view writes its motion straight into the texture temporal anti-aliasing reads; the others keep
+    // theirs apart, to compare with the prepass's or to publish it after.
+    let single = mode == Some(&ForwardMotionMode::Single);
+    let target = match (&prepass.motion_vectors, single) {
+        (Some(published), true) => published,
+        _ => &motion.attachment,
+    };
     {
-        let attachments = [Some(color.get_color_attachment()), Some(motion.attachment.get_attachment())];
+        let attachments = [Some(color.get_color_attachment()), Some(target.get_attachment())];
         let mut pass = ctx.begin_tracked_render_pass(RenderPassDescriptor {
             label: Some("main_opaque_pass_3d_forward_motion_comparison"),
             color_attachments: &attachments,
@@ -253,7 +274,7 @@ fn draw_comparison(
     if let (Some(id), Some(group)) = (background_pipeline, background_group)
         && let Some(pipeline) = pipelines.get_render_pipeline(id.0)
     {
-        let attachments = [None, Some(motion.attachment.get_attachment()), None, None];
+        let attachments = [None, Some(target.get_attachment()), None, None];
         let mut pass = ctx.begin_tracked_render_pass(RenderPassDescriptor {
             label: Some("forward_motion_comparison_background"),
             color_attachments: &attachments,
@@ -275,6 +296,14 @@ fn draw_comparison(
         let (Some(destination_motion), Some(destination_depth)) = (&prepass.motion_vectors, &prepass.depth) else {
             return;
         };
+        if single {
+            ctx.command_encoder().copy_texture_to_texture(
+                depth.texture().as_image_copy(),
+                destination_depth.texture.texture.as_image_copy(),
+                prepass.size,
+            );
+            return;
+        }
         let group = ctx.render_device().create_bind_group(
             "forward_motion_transfer",
             &pipelines.get_bind_group_layout(&transfer.layout),
@@ -325,7 +354,7 @@ mod tests {
         let mut world = World::new();
         world.add_schedule(Schedule::new(Core3d));
         world.schedule_scope(Core3d, |_, schedule| {
-            schedule.add_systems((main_opaque_pass_3d, main_transparent_pass_3d).chain());
+            schedule.add_systems((early_prepass, main_opaque_pass_3d, main_transparent_pass_3d).chain());
         });
         world.run_system_once(install_comparison_pass).unwrap();
         world.schedule_scope(Core3d, |world, schedule| {

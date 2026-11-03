@@ -144,7 +144,7 @@ impl From<MeshPipelineKey> for MeshPipelineViewLayoutKey {
         if value.contains(MeshPipelineKey::NORMAL_PREPASS) {
             result |= MeshPipelineViewLayoutKey::NORMAL_PREPASS;
         }
-        if value.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS) {
+        if value.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS) && !value.contains(MeshPipelineKey::FORWARD_MOTION) {
             result |= MeshPipelineViewLayoutKey::MOTION_VECTOR_PREPASS;
         }
         if value.contains(MeshPipelineKey::DEFERRED_PREPASS) {
@@ -780,6 +780,11 @@ pub fn prepare_mesh_view_bind_groups(
                 camera.is_none_or(|camera| !camera.hdr) && tonemapping.is_enabled();
             let mut layout_key = MeshPipelineViewLayoutKey::from(*msaa)
                 | MeshPipelineViewLayoutKey::from(prepass_textures);
+            // A forward-motion view may draw its motion into the prepass motion texture, so its main pass cannot also
+            // read it.
+            if forward_motion {
+                layout_key -= MeshPipelineViewLayoutKey::MOTION_VECTOR_PREPASS;
+            }
             let mut offsets = ArrayVec::from_iter([
                 view_uniform_offset.offset,
                 view_lights_offset.offset,
@@ -905,6 +910,7 @@ pub fn prepare_mesh_view_bind_groups(
                     .map(Option::as_ref)
                     .zip([20, 21, 22, 23])
                     .flat_map(|(b, i)| b.map(|b| (b, i)))
+                    .filter(|(_, i)| !(forward_motion && *i == 22))
                 {
                     entries = entries.extend_with_indices(((index, binding),));
                 }
@@ -1141,7 +1147,8 @@ mod forward_motion_tests {
         assert!(!original.contains(MeshPipelineViewLayoutKey::FORWARD_MOTION));
         assert_eq!(
             comparison,
-            original | MeshPipelineViewLayoutKey::FORWARD_MOTION
+            (original - MeshPipelineViewLayoutKey::MOTION_VECTOR_PREPASS)
+                | MeshPipelineViewLayoutKey::FORWARD_MOTION
         );
     }
 
