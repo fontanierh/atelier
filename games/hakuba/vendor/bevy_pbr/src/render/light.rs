@@ -994,6 +994,37 @@ pub(crate) fn remove_point_and_spot_light_view_entities(
 #[derive(Component, Default, Deref, DerefMut)]
 pub struct PointAndSpotLightViewEntities(Vec<Entity>);
 
+/// Hakuba: cascades kept from an earlier frame, as Unreal caches shadows. With `HAKUBA_SHADOW_CACHE=P0,P1,...` (default 2,2), cascade
+/// `i` redraws only every `Pi` frames (staggered so they take turns) and the frames between sample the map it kept,
+/// through the matrices it was drawn with. The shadow texture is then owned here rather than taken from the cache
+/// every frame, so what was drawn stays.
+#[derive(Default)]
+pub struct KeptShadows {
+    periods: Option<Vec<u32>>,
+    read: bool,
+    frame: u32,
+    texture: Option<(Extent3d, CachedTexture)>,
+    cascades: HashMap<RetainedViewEntity, GpuDirectionalCascade>,
+}
+
+impl KeptShadows {
+    fn periods(&mut self) -> Option<&[u32]> {
+        if !self.read {
+            self.read = true;
+            // Two cascades taking turns halve the shadow cost at no visible lag for still scenery; `1` turns it off.
+            let periods = std::env::var("HAKUBA_SHADOW_CACHE").unwrap_or_else(|_| "2,2".into());
+            self.periods =
+                Some(periods.split(',').filter_map(|p| p.trim().parse::<u32>().ok()).map(|p| p.max(1)).collect());
+            self.periods = self.periods.take().filter(|p: &Vec<u32>| p.iter().any(|&p| p > 1));
+        }
+        self.periods.as_deref()
+    }
+}
+
+/// Marks a cascade view whose map is kept from an earlier frame this frame: its pass draws nothing.
+#[derive(Component)]
+pub struct KeptShadow;
+
 #[derive(Component)]
 pub struct ShadowView {
     pub depth_attachment: DepthStencilViewAttachment,
@@ -1075,11 +1106,13 @@ pub fn prepare_lights(
         mut max_rect_lights_warning_emitted,
         mut max_cascades_per_light_warning_emitted,
         mut live_shadow_mapping_lights,
+        mut kept_shadows,
     ): (
         Local<bool>,
         Local<bool>,
         Local<bool>,
         Local<HashSet<RetainedViewEntity>>,
+        Local<KeptShadows>,
     ),
     (
         mut point_lights,
@@ -1529,8 +1562,7 @@ pub fn prepare_lights(
                 array_layer_count: None,
             });
 
-    let directional_light_depth_texture = texture_cache.get(
-        &render_device,
+    let directional_light_depth_descriptor =
         TextureDescriptor {
             size: Extent3d {
                 width: (directional_light_shadow_map.size as u32)
@@ -1548,8 +1580,20 @@ pub fn prepare_lights(
             label: Some("directional_light_shadow_map_texture"),
             usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
-        },
-    );
+        };
+    let directional_light_depth_texture = if kept_shadows.periods().is_some() {
+        let size = directional_light_depth_descriptor.size;
+        if kept_shadows.texture.as_ref().is_none_or(|(kept, _)| *kept != size) {
+            let texture = render_device.create_texture(&directional_light_depth_descriptor);
+            let default_view = texture.create_view(&TextureViewDescriptor::default());
+            kept_shadows.texture = Some((size, CachedTexture { texture, default_view }));
+            kept_shadows.cascades.clear();
+        }
+        kept_shadows.texture.as_ref().unwrap().1.clone()
+    } else {
+        texture_cache.get(&render_device, directional_light_depth_descriptor)
+    };
+    kept_shadows.frame = kept_shadows.frame.wrapping_add(1);
 
     let directional_light_depth_texture_view =
         directional_light_depth_texture
@@ -1947,12 +1991,38 @@ pub fn prepare_lights(
             for (cascade_index, (((cascade, frustum), bound), view_light_entity)) in
                 iter.zip(light_view_entities.iter().copied()).enumerate()
             {
+                let retained_view_entity = RetainedViewEntity::new(
+                    *light_main_entity,
+                    Some(camera_main_entity.into()),
+                    cascade_index as u32,
+                );
+                let drawn = GpuDirectionalCascade {
+                    clip_from_world: cascade.clip_from_world,
+                    texel_size: cascade.texel_size,
+                    far_bound: *bound,
+                };
+                let frame = kept_shadows.frame;
+                let period = kept_shadows
+                    .periods()
+                    .map(|p| p.get(cascade_index).or(p.last()).copied().unwrap_or(1));
+                let kept = period.and_then(|period| {
+                    let due = (frame + cascade_index as u32) % period == 0;
+                    let kept = kept_shadows.cascades.get(&retained_view_entity).copied();
+                    match kept {
+                        Some(kept) if !due && kept.far_bound == drawn.far_bound => Some(kept),
+                        _ => {
+                            kept_shadows.cascades.insert(retained_view_entity, drawn);
+                            None
+                        }
+                    }
+                });
                 gpu_lights.directional_lights[light_index].cascades[cascade_index] =
-                    GpuDirectionalCascade {
-                        clip_from_world: cascade.clip_from_world,
-                        texel_size: cascade.texel_size,
-                        far_bound: *bound,
-                    };
+                    kept.unwrap_or(drawn);
+                if kept.is_some() {
+                    commands.entity(view_light_entity).insert(KeptShadow);
+                } else {
+                    commands.entity(view_light_entity).remove::<KeptShadow>();
+                }
 
                 let depth_texture_view =
                     directional_light_depth_texture
@@ -1988,12 +2058,6 @@ pub fn prepare_lights(
                     frustum.half_spaces[ViewFrustum::NEAR_PLANE_IDX]
                         .normal()
                         .extend(f32::INFINITY),
-                );
-
-                let retained_view_entity = RetainedViewEntity::new(
-                    *light_main_entity,
-                    Some(camera_main_entity.into()),
-                    cascade_index as u32,
                 );
 
                 commands.entity(view_light_entity).insert((
@@ -3036,6 +3100,9 @@ fn view_shadow_pass<const IS_LATE: bool>(
     ctx: &mut RenderContext,
 ) {
     if IS_LATE && !occlusion_culling {
+        return;
+    }
+    if world.entity(view_light_entity).contains::<KeptShadow>() {
         return;
     }
 
