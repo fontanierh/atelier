@@ -23,9 +23,14 @@ impl Plugin for PlaytestPlugin {
             // QOS_CLASS_USER_INTERACTIVE
             pthread_set_qos_class_self_np(0x21, 0);
         }
-        app.insert_resource(Pacer { period: (pace > 0.0).then(|| Duration::from_secs_f64(1.0 / pace)), next: None, relative, spin: Duration::from_secs_f64(spin / 1000.0) })
-            .init_resource::<Intervals>()
-            .add_systems(Last, (log_intervals, pace_frame).chain());
+        app.insert_resource(Pacer {
+            period: (pace > 0.0).then(|| Duration::from_secs_f64(1.0 / pace)),
+            next: None,
+            relative,
+            spin: Duration::from_secs_f64(spin / 1000.0),
+        })
+        .init_resource::<Intervals>()
+        .add_systems(Last, (log_intervals, pace_frame).chain());
         if std::env::var("HAKUBA_TRIS").is_ok() {
             app.add_systems(Last, count_triangles);
         }
@@ -37,6 +42,11 @@ impl Plugin for PlaytestPlugin {
         }
         if let Some(shot) = std::env::var("HAKUBA_SHOT").ok().and_then(|v| Shot::parse(&v)) {
             app.insert_resource(shot).add_systems(Last, take_shot);
+        }
+        // Playtest: HAKUBA_DEV=SECONDS turns dev mode's free camera on that long after the world loads, so a pad script
+        // can fly it (r2 rises) to views the player only reaches gliding.
+        if let Some(after) = std::env::var("HAKUBA_DEV").ok().and_then(|v| v.parse::<f32>().ok()) {
+            app.insert_resource(DevAfter { after, loaded: None }).add_systems(Last, dev_after);
         }
     }
 }
@@ -247,6 +257,29 @@ impl Shot {
     fn parse(value: &str) -> Option<Self> {
         let (path, seconds) = value.rsplit_once('@')?;
         Some(Self { path: path.to_owned(), after: Duration::from_secs_f64(seconds.parse().ok()?), loaded: None })
+    }
+}
+
+#[derive(Resource)]
+struct DevAfter {
+    after: f32,
+    loaded: Option<Instant>,
+}
+
+fn dev_after(
+    mut commands: Commands,
+    mut dev: ResMut<DevAfter>,
+    mut next: ResMut<NextState<hakuba_screens::DevMode>>,
+    loaded: Option<Res<hakuba_world::SceneryLoaded>>,
+    unready: Query<(), With<hakuba_world::Unready>>,
+) {
+    if dev.loaded.is_none() && loaded.is_some() && unready.is_empty() {
+        dev.loaded = Some(Instant::now());
+    }
+    if dev.loaded.is_some_and(|at| at.elapsed().as_secs_f32() >= dev.after) {
+        info!("playtest: dev mode on");
+        next.set(hakuba_screens::DevMode::On);
+        commands.remove_resource::<DevAfter>();
     }
 }
 
