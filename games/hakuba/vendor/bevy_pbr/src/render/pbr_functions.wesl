@@ -78,6 +78,10 @@ const DITHER_THRESHOLD_MAP: vec4<u32> = vec4(
 /// patterns for different LOD levels of a single mesh to mesh together properly.
 @if(VISIBILITY_RANGE_DITHER)
 fn visibility_range_dither(frag_coord: vec4<f32>, dither: i32) {
+    // Hakuba: under an equal depth test the prepass already dithered; the main pass keeps what it kept.
+    @if(DEPTH_EQUAL) {
+        return;
+    }
     // If `dither` is 0, the object is visible.
     if (dither == 0) {
         return;
@@ -118,7 +122,7 @@ fn alpha_discard(material_flags: u32, alpha_cutoff: f32, output_color: vec4<f32>
         // NOTE: `MAY_DISCARD` is only defined in the alpha to coverage case if MSAA
         // was off. This special situation causes alpha to coverage to fall back to
         // alpha mask.
-        @if(MAY_DISCARD)
+        @if(MAY_DISCARD && !DEPTH_EQUAL)
         if alpha_mode == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK ||
                 alpha_mode == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE {
             if color.a >= alpha_cutoff {

@@ -9,6 +9,12 @@ import bevy_pbr::render::{
     pbr_types,
 };
 
+// Playtest: under an equal depth test the prepass already dropped every see-through texel, so nothing is discarded.
+@if(DEPTH_EQUAL)
+const DISCARDS: bool = false;
+@if(!DEPTH_EQUAL)
+const DISCARDS: bool = true;
+
 @fragment
 fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
     var out: FragmentOutput;
@@ -16,7 +22,7 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
     let flags = pbr_input.material.flags;
     let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
         == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
-    if masked && pbr_input.material.base_color.a < pbr_input.material.alpha_cutoff {
+    if DISCARDS && masked && pbr_input.material.base_color.a < pbr_input.material.alpha_cutoff {
         discard;
     } else {
         pbr_input.material.base_color =

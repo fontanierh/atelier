@@ -10,6 +10,12 @@ import bevy_pbr::render::{
 struct FoliageProfile { direction: vec4<f32>, slow: vec4<f32>, fast: vec4<f32>, global_slow: vec4<f32>, global_fast: vec4<f32>, global_tail: vec4<f32>, push_haze: vec4<f32>, haze_colour: vec4<f32> }
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var<uniform> profile: FoliageProfile;
 
+// Playtest: under an equal depth test the prepass already dropped every see-through texel, so nothing is discarded.
+@if(DEPTH_EQUAL)
+const DISCARDS: bool = false;
+@if(!DEPTH_EQUAL)
+const DISCARDS: bool = true;
+
 @fragment
 fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
     var neutral = input;
@@ -24,7 +30,7 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
     let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
         == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
     var out: FragmentOutput;
-    if masked && surface.material.base_color.a < surface.material.alpha_cutoff {
+    if DISCARDS && masked && surface.material.base_color.a < surface.material.alpha_cutoff {
         discard;
     } else {
         surface.material.base_color = alpha_discard(flags, surface.material.alpha_cutoff, surface.material.base_color);

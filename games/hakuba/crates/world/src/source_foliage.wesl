@@ -25,7 +25,11 @@ struct FoliageProfile { direction: vec4<f32>, slow: vec4<f32>, fast: vec4<f32>, 
 
 // How much nearer the main pass draws a vertex than the prepass, as a share of its depth (depth is reversed: nearer is
 // larger): about 1 mm at 10 m, far above the rounding the two passes may differ by, far below the gap between leaves.
+@if(!DEPTH_EQUAL)
 const DEPTH_MARGIN: f32 = 1.0001;
+// Playtest: under an equal depth test the main pass must land exactly where the prepass did.
+@if(DEPTH_EQUAL)
+const DEPTH_MARGIN: f32 = 1.0;
 
 // Source weights are in COLOR_0.r; spatial coefficients are per metre and material sine uses a one-cycle period.
 fn source_motion(at: vec3<f32>, time: f32, weight: f32, strength: f32) -> vec3<f32> {

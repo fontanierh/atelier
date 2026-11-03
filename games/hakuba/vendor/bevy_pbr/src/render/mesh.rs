@@ -3585,6 +3585,15 @@ impl SpecializedMeshPipeline for MeshPipeline {
             depth_write_enabled = true;
         }
 
+        // Hakuba: as Unreal's base pass after a full depth prepass, an opaque or masked mesh shades only the
+        // fragments the prepass kept, testing for equal depth without writing it, so no hidden fragment is shaded.
+        let depth_equal = depth_write_enabled
+            && key.contains(MeshPipelineKey::DEPTH_PREPASS)
+            && (!crate::prepass::masked_only_prepass() || key.contains(MeshPipelineKey::MAY_DISCARD))
+            && !std::env::var("HAKUBA_DEPTH_EQUAL").is_ok_and(|v| v == "0");
+        if depth_equal {
+            shader_defs.push("DEPTH_EQUAL".into());
+        }
         let forward_motion = key.contains(MeshPipelineKey::FORWARD_MOTION) && depth_write_enabled;
         if forward_motion {
             shader_defs.push("FORWARD_MOTION".into());
@@ -3804,8 +3813,8 @@ impl SpecializedMeshPipeline for MeshPipeline {
             },
             depth_stencil: Some(DepthStencilState {
                 format: CORE_3D_DEPTH_FORMAT,
-                depth_write_enabled: Some(depth_write_enabled),
-                depth_compare: Some(CompareFunction::GreaterEqual),
+                depth_write_enabled: Some(depth_write_enabled && !depth_equal),
+                depth_compare: Some(if depth_equal { CompareFunction::Equal } else { CompareFunction::GreaterEqual }),
                 stencil: StencilState {
                     front: StencilFaceState::IGNORE,
                     back: StencilFaceState::IGNORE,
