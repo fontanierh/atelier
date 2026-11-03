@@ -21,7 +21,7 @@ use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
-use bevy::mesh::{MeshTag, MeshVertexAttributeId, VertexAttributeValues};
+use bevy::mesh::{Indices, MeshTag, MeshVertexAttributeId, VertexAttributeValues};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
@@ -146,6 +146,75 @@ fn small_lod_m(full_m: f32) -> Option<(f32, f32)> {
     let fade = *FADE.get_or_init(|| std::env::var("HAKUBA_SMALL_FADE_M").ok().and_then(|v| v.parse().ok()).unwrap_or(16.0));
     let lod = full_m - MERGED_SQUARE_M * std::f32::consts::FRAC_1_SQRT_2 - 6.0 - fade / 2.0;
     (fade > 0.0 && lod > fade).then_some((lod, fade))
+}
+
+/// Playtest: a tree's thinned version, between its full and middle ones, keeps this share of its full version's leaf
+/// cards, and shows until this far from the camera, if set (`HAKUBA_THIN_M`).
+fn tree_thin() -> Option<(f32, f32)> {
+    static V: std::sync::OnceLock<Option<(f32, f32)>> = std::sync::OnceLock::new();
+    *V.get_or_init(|| {
+        let get = |name: &str, default: f32| std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default);
+        let (keep, until) = (get("HAKUBA_THIN_KEEP", 0.35), get("HAKUBA_THIN_M", 0.0));
+        (keep > 0.0 && keep < 1.0 && until > tree_lod_m().0).then_some((keep, until))
+    })
+}
+
+/// A leaf mesh with fewer cards: of its cards (the triangles joined by shared vertices), it keeps a share spread
+/// evenly by a hash, each grown about its centre so the crown covers as much as before, as SpeedTree and Unreal's
+/// foliage thin a tree's leaves with distance. None for a mesh that is not cards (a trunk), which keeps its detail.
+fn thin(mesh: &Mesh, keep: f32) -> Option<Mesh> {
+    let positions = mesh.attribute(Mesh::ATTRIBUTE_POSITION)?.as_float3()?.to_vec();
+    let indices: Vec<u32> = mesh.indices()?.iter().map(|i| i as u32).collect();
+    let mut parent: Vec<u32> = (0..positions.len() as u32).collect();
+    fn root(parent: &mut [u32], mut x: u32) -> u32 {
+        while parent[x as usize] != x {
+            parent[x as usize] = parent[parent[x as usize] as usize];
+            x = parent[x as usize];
+        }
+        x
+    }
+    for t in indices.chunks_exact(3) {
+        let a = root(&mut parent, t[0]);
+        for &v in &t[1..] {
+            let b = root(&mut parent, v);
+            parent[b as usize] = a;
+        }
+    }
+    let mut cards: HashMap<u32, (usize, Vec3, usize)> = HashMap::new();
+    for t in indices.chunks_exact(3) {
+        let card = root(&mut parent, t[0]);
+        let entry = cards.entry(card).or_insert((0, Vec3::ZERO, 0));
+        entry.0 += 1;
+    }
+    // Only meshes of many small cards are leaves.
+    let small = cards.values().filter(|card| card.0 <= 4).count();
+    if cards.len() < 200 || small * 10 < cards.len() * 9 {
+        return None;
+    }
+    let mut members: HashMap<u32, Vec<u32>> = HashMap::new();
+    for v in 0..positions.len() as u32 {
+        let card = root(&mut parent, v);
+        if cards.contains_key(&card) {
+            members.entry(card).or_default().push(v);
+        }
+    }
+    let grow = (1.0 / keep).sqrt();
+    let kept = |card: u32| (card.wrapping_mul(0x9E37_79B9) >> 8) as f32 / (1u32 << 24) as f32 <= keep;
+    let mut moved = positions.clone();
+    for (&card, vertices) in &members {
+        if !kept(card) {
+            continue;
+        }
+        let centre = vertices.iter().map(|&v| Vec3::from(positions[v as usize])).sum::<Vec3>() / vertices.len() as f32;
+        for &v in vertices {
+            moved[v as usize] = (centre + (Vec3::from(positions[v as usize]) - centre) * grow).into();
+        }
+    }
+    let remaining: Vec<u32> = indices.chunks_exact(3).filter(|t| kept(root(&mut parent, t[0]))).flatten().copied().collect();
+    let mut out = mesh.clone();
+    out.insert_attribute(Mesh::ATTRIBUTE_POSITION, moved);
+    out.insert_indices(Indices::U32(remaining));
+    Some(out)
 }
 
 /// Copies spawned from their model, which may still be loading its textures.
@@ -288,6 +357,7 @@ fn spawn(
     roots: Query<(), With<WorldAssetRoot>>,
     loaded: Option<Res<Loaded>>,
     settings: Res<hakuba_settings::Settings>,
+    mut thinned: Local<HashMap<AssetId<Mesh>, Option<Handle<Mesh>>>>,
 ) {
     let times = if loaded.is_some() { 1 } else { UNDER_SPLASH };
     let small_lod = small_lod_m(crate::tiles::full_m(settings.detail.full_m()));
@@ -330,6 +400,12 @@ fn spawn(
                 _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
                 _ if far.is_some() => vec![("far", Role::Both)],
                 (true, true) => vec![("middle", Role::Both)],
+                (false, true) if per_copy && tree_thin().is_some() => vec![
+                    ("full", Role::Seen),
+                    ("thinned", Role::Seen),
+                    ("middle", Role::Seen),
+                    ("middle", Role::Shadow),
+                ],
                 (false, true) if per_copy => {
                     vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
                 }
@@ -344,7 +420,9 @@ fn spawn(
             }
             let mut shown = Vec::with_capacity(versions.len());
             for (name, role) in versions {
-                let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
+                // Playtest: the thinned version is the full one with fewer, larger leaf cards (`thin`).
+                let source = if name == "thinned" { "full" } else { name };
+                let Some(node) = gltf.named_nodes.get(source).and_then(|node| models.nodes.get(node)) else {
                     warn!("a model has no {name} node");
                     commands.entity(entity).remove::<Waiting>();
                     continue 'copies;
@@ -378,6 +456,22 @@ fn spawn(
                         }
                     }
                 };
+                if name == "thinned"
+                    && let Some((keep, _)) = tree_thin()
+                {
+                    for (mesh, _) in &mut parts {
+                        let thin = thinned
+                            .entry(mesh.id())
+                            .or_insert_with(|| {
+                                let made = meshes.get(&*mesh).and_then(|m| thin(m, keep)).map(|m| meshes.add(m));
+                                debug!("thinned a tree mesh: {}", made.is_some());
+                                made
+                            });
+                        if let Some(thin) = thin {
+                            *mesh = thin.clone();
+                        }
+                    }
+                }
                 if !matches!(role, Role::Collision)
                     && let Some(material) =
                         waiting.model.path().and_then(|path| materials.water.for_model(&path.path().to_string_lossy()))
@@ -387,14 +481,20 @@ fn spawn(
                     }
                 }
                 let (lod, fade) = tree_lod_m();
+                let middle_m = tree_thin().map_or(lod, |(_, until)| until);
                 let range = per_copy.then(|| match (name, role) {
                     ("full", _) => Some(VisibilityRange {
                         start_margin: 0.0..0.0,
                         end_margin: lod - fade / 2.0..lod + fade / 2.0,
                         use_aabb: false,
                     }),
-                    ("middle", Role::Seen) => Some(VisibilityRange {
+                    ("thinned", _) => Some(VisibilityRange {
                         start_margin: lod - fade / 2.0..lod + fade / 2.0,
+                        end_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
+                        use_aabb: false,
+                    }),
+                    ("middle", Role::Seen) => Some(VisibilityRange {
+                        start_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
                         end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
                         use_aabb: false,
                     }),
