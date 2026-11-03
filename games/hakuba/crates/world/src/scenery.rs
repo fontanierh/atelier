@@ -102,6 +102,8 @@ pub struct Waiting {
     middle: bool,
     /// Its tile's root, if the tile shows plants' far versions.
     far: Option<Entity>,
+    /// Whether its tile shows both plants' middle and far versions, crossfading.
+    blend: bool,
     instances: Vec<f32>,
     jobs: Option<VecDeque<Job>>,
 }
@@ -155,6 +157,8 @@ struct FarTiles(HashMap<Entity, FarTile>);
 struct FarTile {
     /// The tile's data nodes, which may hold plants with far versions.
     nodes: Vec<Entity>,
+    /// Whether its far versions fade in past the far distance, beside the middle versions fading out.
+    blend: bool,
     /// The node the merged meshes are spawned under.
     anchor: Option<Entity>,
     groups: Vec<FarGroup>,
@@ -221,12 +225,15 @@ fn read(
         };
         let far = (copies.detail == "middle" && spawning.is_some_and(Spawning::far)).then_some(tile);
         if far.is_some() {
-            far_tiles.0.entry(tile).or_default().nodes.push(entity);
+            let far_tile = far_tiles.0.entry(tile).or_default();
+            far_tile.nodes.push(entity);
+            far_tile.blend |= spawning.is_some_and(Spawning::blend);
         }
         let waiting = Waiting {
             model: assets.load(model),
             middle: copies.detail == "middle",
             far,
+            blend: far.is_some() && spawning.is_some_and(Spawning::blend),
             instances: copies.instances,
             jobs: None,
         };
@@ -303,7 +310,10 @@ fn spawn(
             // Playtest: a tree in a full tile shows its full version near the camera and its middle one past
             // `tree_lod_m`, each copy on its own, crossfading.
             let per_copy = has_middle && full_vertices >= MERGE_BELOW_VERTICES && tree_lod_m().0 > 0.0;
+            let blend = far.is_some() && waiting.blend && has_middle;
             let mut versions = match (waiting.middle, has_middle) {
+                // Playtest: a blending tile shows both, the middle version fading out where the far fades in.
+                _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
                 _ if far.is_some() => vec![("far", Role::Both)],
                 (true, true) => vec![("middle", Role::Both)],
                 (false, true) if per_copy => {
@@ -373,7 +383,17 @@ fn spawn(
                     }),
                     _ => None,
                 }).flatten();
-                shown.push((node, parts, role, range));
+                // A blending tile's merged middle versions fade out around the far distance, by their own centres.
+                let far_m = crate::tiles::far_distance();
+                let half = crate::tiles::BLEND_FADE_M / 2.0;
+                let range = range.or_else(|| {
+                    (blend && name == "middle").then(|| VisibilityRange {
+                        start_margin: 0.0..0.0,
+                        end_margin: far_m - half..far_m + half,
+                        use_aabb: true,
+                    })
+                });
+                shown.push((name, node, parts, role, range));
             }
             let transforms: Vec<Transform> = waiting
                 .instances
@@ -386,7 +406,7 @@ fn spawn(
                 })
                 .collect();
             let mut jobs = VecDeque::new();
-            for (node, parts, role, range) in shown {
+            for (name, node, parts, role, range) in shown {
                 let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
                 let shadow_distance = match shadow_distance(node) {
                     Ok(distance) => distance,
@@ -403,7 +423,7 @@ fn spawn(
                     continue;
                 }
                 let vertices = vertices(&models.meshes, &meshes, node);
-                let merge = range.is_none()
+                let merge = range.as_ref().is_none_or(|range| range.use_aabb)
                     && vertices < MERGE_BELOW_VERTICES
                     && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
@@ -427,6 +447,7 @@ fn spawn(
                     let vertices = source.count_vertices().max(1);
                     // A far tile is seen whole or not at all, so its alike far versions merge as one.
                     if let Some(tile) = far
+                        && name == "far"
                         && merge
                         && !solid
                         && let Some(far_tile) = far_tiles.0.get_mut(&tile)
@@ -462,7 +483,7 @@ fn spawn(
                                 transforms: square,
                                 cursor: 0,
                                 combined: None,
-                                range: None,
+                                range: range.clone(),
                             });
                         }
                     } else {
@@ -506,6 +527,15 @@ fn spawn(
             let mut part = commands.spawn((Mesh3d(meshes.add(mesh)), Transform::IDENTITY, ChildOf(anchor)));
             insert_look(&mut part, &group.look);
             part.insert(NotShadowCaster);
+            if tile.blend {
+                let far_m = crate::tiles::far_distance();
+                let half = crate::tiles::BLEND_FADE_M / 2.0;
+                part.insert(VisibilityRange {
+                    start_margin: far_m - half..far_m + half,
+                    end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                    use_aabb: true,
+                });
+            }
         }
         for &node in &tile.nodes {
             if let Ok(mut node) = commands.get_entity(node) {

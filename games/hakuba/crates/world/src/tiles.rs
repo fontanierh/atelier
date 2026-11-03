@@ -71,6 +71,24 @@ enum Detail {
     Middle,
     /// The middle version, showing its plants' far versions.
     Far,
+    /// Playtest: the middle version showing both its plants' middle and far versions, crossfading by distance, so
+    /// a tile near [`FAR_M`] never swaps one for the other at once.
+    Blend,
+}
+
+/// Playtest: how far either side of [`FAR_M`], to a tile's centre, a tile shows both its plants' middle and far
+/// versions. A merged mesh's centre is within a tile's half diagonal of the tile's, so this exceeds that plus half
+/// the fade.
+const BLEND_M: f32 = 64.0;
+fn blend_m() -> f32 {
+    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *V.get_or_init(|| tuned("HAKUBA_BLEND_M", BLEND_M))
+}
+/// Playtest: over how many metres around [`FAR_M`] a blending tile's plants fade from their middle to far versions.
+pub(crate) const BLEND_FADE_M: f32 = 24.0;
+/// Playtest: the distance from the camera at which a plant's far version replaces its middle one.
+pub(crate) fn far_distance() -> f32 {
+    far_m()
 }
 
 #[derive(Component)]
@@ -132,7 +150,11 @@ pub struct Spawning(Entity, Detail);
 impl Spawning {
     /// Whether this version shows its plants' far versions.
     pub fn far(&self) -> bool {
-        self.1 == Detail::Far
+        matches!(self.1, Detail::Far | Detail::Blend)
+    }
+    /// Whether this version shows its plants' middle and far versions, crossfading.
+    pub fn blend(&self) -> bool {
+        self.1 == Detail::Blend
     }
 }
 #[derive(Component)]
@@ -165,8 +187,13 @@ fn choose(
         let detail = match distance {
             _ if pinned => Some(Detail::Full),
             d if d < full_m(settings.detail.full_m()) => Some(Detail::Full),
-            d if d < far_m() + if tile.detail == Some(Detail::Middle) { FAR_MARGIN_M } else { -FAR_MARGIN_M } => {
+            // A tile keeps its version for a few metres past its band's edge, so a camera moving to and fro there
+            // does not respawn it.
+            d if d < far_m() - blend_m() + if tile.detail == Some(Detail::Middle) { 8.0 } else { -8.0 } => {
                 Some(Detail::Middle)
+            }
+            d if blend_m() > 0.0 && d < far_m() + blend_m() + if tile.detail == Some(Detail::Blend) { 8.0 } else { -8.0 } => {
+                Some(Detail::Blend)
             }
             d if d < middle_m() => Some(Detail::Far),
             _ => None,

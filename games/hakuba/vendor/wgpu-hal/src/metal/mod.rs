@@ -1529,7 +1529,7 @@ pub(crate) mod pool {
         let total: u32 = copies.iter().map(|(_, (n, _))| n).sum();
         let top: Vec<String> =
             copies.iter().take(12).map(|(label, (n, bytes))| format!("{label}:{n}/{}KB", bytes / 1024)).collect();
-        log::info!("COPIES {total}: {}", top.join(" "));
+        eprintln!("COPIES {total}: {}", top.join(" "));
     }
 
     /// Buffers made, their megabytes and buffers reused since the last call.
