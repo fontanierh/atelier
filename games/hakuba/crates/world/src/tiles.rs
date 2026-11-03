@@ -526,10 +526,7 @@ mod tests {
         app.init_resource::<Settings>();
         app.insert_resource(crate::collision::TileGrid { tile_m: 64., page_tiles: 8 });
         app.world_mut().spawn((Camera3d::default(), GlobalTransform::IDENTITY));
-        let near = app
-            .world_mut()
-            .spawn(Tile::named("tile 1 1", Vec3::new(FAR_M, 0.0, 0.0)).unwrap())
-            .id();
+        let near = app.world_mut().spawn(Tile::named("tile 1 1", Vec3::new(FAR_M, 0.0, 0.0)).unwrap()).id();
         let far = app
             .world_mut()
             .spawn(Tile::named("tile 2 1", Vec3::new(FAR_M + BLEND_M + 2.0 * FAR_MARGIN_M, 0.0, 0.0)).unwrap())
