@@ -88,6 +88,14 @@ fn missed_frames() -> u32 {
     0
 }
 
+/// Playtest measurement: `HAKUBA_FIXED_PIXELS=1` keeps the setting's pixels, so GPU timings compare like with like.
+fn fixed_pixels() -> bool {
+    #[cfg(not(target_arch = "wasm32"))]
+    return std::env::var("HAKUBA_FIXED_PIXELS").is_ok_and(|v| v == "1");
+    #[cfg(target_arch = "wasm32")]
+    false
+}
+
 fn follow_load(
     time: Res<Time<Real>>,
     riding: Res<Riding>,
@@ -96,7 +104,7 @@ fn follow_load(
 ) {
     let fresh = missed_frames();
     // The splash hides loading's stalls, and they say nothing about the views to come.
-    if loaded.is_none() {
+    if loaded.is_none() || fixed_pixels() {
         return;
     }
     let dt = time.delta_secs();

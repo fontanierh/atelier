@@ -3,7 +3,7 @@ kind = "plant"
 shadow_distance_m = 80.0
 source = "src/model.glb"
 textures = ["brinecove-leaf-deep", "brinecove-leaf-light", "brinecove-leaf-mid", "brinecove-leaf-sun", "brinecove-leaf-warm"]
-inputs_sha256 = "8319dd35c05e0e549d1cbe3022038c98816b9021fd4ad6ea601c07a2bfecf330"
+inputs_sha256 = "c2858e4b0cb185d7069bd731e3b1847d4b146568057a36ef7395615c2ef10309"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

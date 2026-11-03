@@ -107,6 +107,13 @@ fn export_inner(
         }
     }
     glb.set_extras(full, extras.into());
+    if foliage.is_some() {
+        for level in ["full", "middle"] {
+            if let Some(node) = value["nodes"].as_array().and_then(|nodes| nodes.iter().position(|n| n["name"] == level)) {
+                cut_cards(&mut glb, &value, binary(&bytes), node, folder, level)?;
+            }
+        }
+    }
     for level in ["middle", "far"] {
         if foliage.is_none() || !value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == level))
         {
@@ -137,6 +144,43 @@ fn export_inner(
         let mut extras = value["nodes"][full]["extras"].as_object().cloned().unwrap_or_default();
         extras.remove("solid");
         write_middle(&value, binary(&bytes), full, extras.into(), &middle_path(output))?;
+    }
+    Ok(())
+}
+
+/// Cuts each masked part of a plant version's leaf cards to what its texture shows ([`super::cutout`]), for parts
+/// whose texture has an alpha companion and whose vertices hold only what [`part`] reads.
+fn cut_cards(glb: &mut Glb, value: &Value, binary: &[u8], node: usize, folder: &Path, level: &str) -> Result<()> {
+    let mesh = value["nodes"][node]["mesh"].as_u64().context("a plant version has no mesh")? as usize;
+    let primitives = value["meshes"][mesh]["primitives"].as_array().context("a plant version has no parts")?;
+    let readable = |primitive: &Value| {
+        primitive["attributes"]
+            .as_object()
+            .is_some_and(|a| a.keys().all(|k| matches!(k.as_str(), "POSITION" | "NORMAL" | "TEXCOORD_0" | "COLOR_0")))
+    };
+    if !primitives.iter().all(readable) {
+        return Ok(());
+    }
+    let mut parts = Vec::with_capacity(primitives.len());
+    let (mut cut, mut removed, mut cards) = (0, 0, 0);
+    for (primitive, alpha) in primitives.iter().zip(shadow_alpha_textures(value, node)?.as_array().unwrap()) {
+        let part = part(value, binary, primitive)?;
+        let material = &value["materials"][part.material];
+        let companion = alpha.as_str().map(|relative| folder.join("../..").join(relative));
+        match (companion, material["alphaCutoff"].as_f64()) {
+            (Some(path), Some(cutoff)) if path.exists() => {
+                let alpha = super::cutout::Alpha::read(&path)?;
+                let (out, c, r) = super::cutout::cut(&part, &alpha, cutoff as f32);
+                cards += part.indices.len() / 6;
+                (cut, removed) = (cut + c, removed + r);
+                parts.push(out);
+            }
+            _ => parts.push(part),
+        }
+    }
+    if cut + removed > 0 {
+        eprintln!("{level}: cut {cut} and removed {removed} of about {cards} leaf cards");
+        glb.replace_mesh(node, &parts.iter().collect::<Vec<_>>())?;
     }
     Ok(())
 }
