@@ -5,6 +5,7 @@
 
 use std::time::{Duration, Instant};
 
+use bevy::mesh::Indices;
 use bevy::prelude::*;
 
 pub struct PlaytestPlugin;
@@ -24,8 +25,10 @@ impl Plugin for PlaytestPlugin {
         }
         app.insert_resource(Pacer { period: (pace > 0.0).then(|| Duration::from_secs_f64(1.0 / pace)), next: None, relative, spin: Duration::from_secs_f64(spin / 1000.0) })
             .init_resource::<Intervals>()
-            .add_systems(Last, (log_intervals, pace_frame).chain())
-            .add_systems(Update, draw_1440_tall);
+            .add_systems(Last, (log_intervals, pace_frame).chain());
+        if std::env::var("HAKUBA_TRIS").is_ok() {
+            app.add_systems(Last, count_triangles);
+        }
         // The near shadows cover 40 m in one cascade: 1024 texels is ~4 cm each, and a quarter of the leaf cutouts.
         let shadow_map = std::env::var("HAKUBA_SHADOW_MAP").ok().and_then(|v| v.parse().ok()).unwrap_or(2048);
         app.insert_resource(bevy::light::DirectionalLightShadowMap { size: shadow_map });
@@ -150,26 +153,6 @@ fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<(&GlobalTransf
     }
 }
 
-/// Draws the window `HAKUBA_HEIGHT` pixels tall (default 1440), as Yorimichi drew at native 1440: macOS scales
-/// the drawable to the screen, where a Retina screen would otherwise draw several million pixels more.
-fn draw_1440_tall(
-    mut window: Single<&mut Window, With<bevy::window::PrimaryWindow>>,
-    monitor: Query<&bevy::window::Monitor, With<bevy::window::PrimaryMonitor>>,
-    mut done: Local<bool>,
-) {
-    let height = std::env::var("HAKUBA_HEIGHT").ok().and_then(|v| v.parse::<f64>().ok()).unwrap_or(1440.0);
-    let Ok(monitor) = monitor.single() else { return };
-    if *done || height <= 0.0 || monitor.scale_factor <= 0.0 {
-        return;
-    }
-    // The screen's height in points: the window's size in points stays the same whatever pixels each point draws.
-    let points = monitor.physical_height as f64 / monitor.scale_factor;
-    let scale = (height / points) as f32;
-    info!("window drawn {height} pixels tall: {points} points at {scale:.3} pixels each");
-    window.resolution.set_scale_factor_override(Some(scale));
-    *done = true;
-}
-
 /// The few lights here are clustered on the CPU: GPU clustering adds compute passes and a readback every frame on
 /// Apple GPUs. `HAKUBA_GPU_CLUSTERING=1` keeps it.
 fn no_gpu_clustering(settings: Option<ResMut<bevy::light::cluster::GlobalClusterSettings>>) {
@@ -177,4 +160,67 @@ fn no_gpu_clustering(settings: Option<ResMut<bevy::light::cluster::GlobalCluster
         settings.gpu_clustering = None;
         info!("GPU light clustering off");
     }
+}
+
+/// `HAKUBA_TRIS=1`: every two seconds, logs the triangles of the meshes visible in some view, by distance from the
+/// camera to each mesh's bounds' centre, and how many of them cast shadows.
+fn count_triangles(
+    time: Res<Time>,
+    mut last: Local<f32>,
+    meshes: Res<Assets<Mesh>>,
+    mut added: MessageReader<AssetEvent<Mesh>>,
+    mut counts: Local<std::collections::HashMap<AssetId<Mesh>, u64>>,
+    camera: Single<(&GlobalTransform, &Camera), With<Camera3d>>,
+    window: Single<&Window, With<bevy::window::PrimaryWindow>>,
+    shown: Query<(
+        &Mesh3d,
+        &ViewVisibility,
+        &GlobalTransform,
+        Option<&bevy::camera::primitives::Aabb>,
+        Has<bevy::light::NotShadowCaster>,
+    )>,
+) {
+    // A mesh's data leaves for the GPU once drawn, so each is counted as it arrives.
+    for event in added.read() {
+        if let AssetEvent::Added { id } | AssetEvent::Modified { id } = event
+            && let Some(mesh) = meshes.get(*id)
+            && let Ok(indices) = mesh.try_indices_option()
+        {
+            let corners = indices.map_or_else(|| mesh.count_vertices(), Indices::len);
+            counts.insert(*id, corners as u64 / 3);
+        }
+    }
+    if time.elapsed_secs() - *last < 2.0 {
+        return;
+    }
+    *last = time.elapsed_secs();
+    const BANDS: [f32; 7] = [40.0, 80.0, 135.0, 260.0, 400.0, 1000.0, f32::MAX];
+    let mut drawn = [(0usize, 0u64, 0u64); 7];
+    let (camera, view) = *camera;
+    let eye = camera.translation();
+    for (mesh, visibility, transform, aabb, no_shadow) in &shown {
+        if !visibility.get() {
+            continue;
+        }
+        let Some(&triangles) = counts.get(&mesh.0.id()) else { continue };
+        let centre = transform.transform_point(aabb.map_or(Vec3::ZERO, |aabb| Vec3::from(aabb.center)));
+        let band = BANDS.iter().position(|&end| eye.distance(centre) < end).unwrap_or(6);
+        drawn[band].0 += 1;
+        drawn[band].1 += triangles;
+        if !no_shadow {
+            drawn[band].2 += triangles;
+        }
+    }
+    let line: Vec<String> = BANDS
+        .iter()
+        .zip(drawn)
+        .map(|(end, (n, t, s))| format!("<{end:.0}: {n} meshes {}k tris ({}k cast)", t / 1000, s / 1000))
+        .collect();
+    info!(
+        "TRIS drawn {:?} window {}x{} | {}",
+        view.physical_viewport_size(),
+        window.physical_width(),
+        window.physical_height(),
+        line.join(" | ")
+    );
 }

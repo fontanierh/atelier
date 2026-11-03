@@ -105,8 +105,12 @@ impl Resolution {
     /// The size of the image the world draws into a window of `window` pixels.
     pub fn image_size(self, window: Vec2) -> UVec2 {
         let scale = match self {
-            // Playtest: HAKUBA_FULL_RES=1 draws the world at the window's own size.
-            Resolution::Auto if std::env::var("HAKUBA_FULL_RES").is_ok_and(|v| v == "1") => 1.0,
+            // Playtest: HAKUBA_FULL_RES=1 draws the world `HAKUBA_HEIGHT` pixels tall (default 1440), or the window's
+            // own height if less, whatever pixels the screen's backing store has.
+            Resolution::Auto if std::env::var("HAKUBA_FULL_RES").is_ok_and(|v| v == "1") => {
+                let height = std::env::var("HAKUBA_HEIGHT").ok().and_then(|v| v.parse::<f32>().ok()).unwrap_or(1440.0);
+                (height / window.y).min(1.0)
+            }
             Resolution::Auto => (auto_pixels() / (window.x * window.y)).sqrt().min(1.0),
             Resolution::Percent(percent) => percent as f32 / 100.0,
         };
