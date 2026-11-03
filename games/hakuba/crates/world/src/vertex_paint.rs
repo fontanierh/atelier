@@ -150,7 +150,8 @@ impl MaterialExtension for MovingPaint {
         _: bevy::pbr::MaterialExtensionKey<Self>,
     ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
         let forward = |defs: &[bevy::shader::ShaderDefVal]| {
-            defs.iter().any(|def| matches!(def, bevy::shader::ShaderDefVal::Bool(name, true) if name == "FORWARD_MOTION"))
+            defs.iter()
+                .any(|def| matches!(def, bevy::shader::ShaderDefVal::Bool(name, true) if name == "FORWARD_MOTION"))
         };
         if forward(&descriptor.vertex.shader_defs) {
             descriptor.vertex.shader_defs.push("VERTEX_PREVIOUS_POSITION".into());

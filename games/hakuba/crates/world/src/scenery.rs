@@ -143,7 +143,8 @@ fn tree_lod_m() -> (f32, f32) {
 /// within half a square's diagonal of the tile's centre, comes that near.
 fn small_lod_m(full_m: f32) -> Option<(f32, f32)> {
     static FADE: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    let fade = *FADE.get_or_init(|| std::env::var("HAKUBA_SMALL_FADE_M").ok().and_then(|v| v.parse().ok()).unwrap_or(16.0));
+    let fade =
+        *FADE.get_or_init(|| std::env::var("HAKUBA_SMALL_FADE_M").ok().and_then(|v| v.parse().ok()).unwrap_or(16.0));
     let lod = full_m - MERGED_SQUARE_M * std::f32::consts::FRAC_1_SQRT_2 - 6.0 - fade / 2.0;
     (fade > 0.0 && lod > fade).then_some((lod, fade))
 }
@@ -210,7 +211,8 @@ fn thin(mesh: &Mesh, keep: f32) -> Option<Mesh> {
             moved[v as usize] = (centre + (Vec3::from(positions[v as usize]) - centre) * grow).into();
         }
     }
-    let remaining: Vec<u32> = indices.chunks_exact(3).filter(|t| kept(root(&mut parent, t[0]))).flatten().copied().collect();
+    let remaining: Vec<u32> =
+        indices.chunks_exact(3).filter(|t| kept(root(&mut parent, t[0]))).flatten().copied().collect();
     let mut out = mesh.clone();
     out.insert_attribute(Mesh::ATTRIBUTE_POSITION, moved);
     out.insert_indices(Indices::U32(remaining));
@@ -387,8 +389,11 @@ fn spawn(
             let Some(main_node) = models.nodes.get(main_handle) else { continue };
             let collision = gltf.named_nodes.contains_key("collision");
             let solid = !collision && model_extras(main_node).is_some_and(|extras| extras.solid);
-            let full_vertices =
-                gltf.named_nodes.get("full").and_then(|n| models.nodes.get(n)).map_or(0, |n| vertices(&models.meshes, &meshes, n));
+            let full_vertices = gltf
+                .named_nodes
+                .get("full")
+                .and_then(|n| models.nodes.get(n))
+                .map_or(0, |n| vertices(&models.meshes, &meshes, n));
             // Playtest: a tree in a full tile shows its full version near the camera and its middle one past
             // `tree_lod_m`, each copy on its own, crossfading.
             let per_copy = has_middle && full_vertices >= MERGE_BELOW_VERTICES && tree_lod_m().0 > 0.0;
@@ -460,13 +465,11 @@ fn spawn(
                     && let Some((keep, _)) = tree_thin()
                 {
                     for (mesh, _) in &mut parts {
-                        let thin = thinned
-                            .entry(mesh.id())
-                            .or_insert_with(|| {
-                                let made = meshes.get(&*mesh).and_then(|m| thin(m, keep)).map(|m| meshes.add(m));
-                                debug!("thinned a tree mesh: {}", made.is_some());
-                                made
-                            });
+                        let thin = thinned.entry(mesh.id()).or_insert_with(|| {
+                            let made = meshes.get(&*mesh).and_then(|m| thin(m, keep)).map(|m| meshes.add(m));
+                            debug!("thinned a tree mesh: {}", made.is_some());
+                            made
+                        });
                         if let Some(thin) = thin {
                             *mesh = thin.clone();
                         }
@@ -482,24 +485,26 @@ fn spawn(
                 }
                 let (lod, fade) = tree_lod_m();
                 let middle_m = tree_thin().map_or(lod, |(_, until)| until);
-                let range = per_copy.then(|| match (name, role) {
-                    ("full", _) => Some(VisibilityRange {
-                        start_margin: 0.0..0.0,
-                        end_margin: lod - fade / 2.0..lod + fade / 2.0,
-                        use_aabb: false,
-                    }),
-                    ("thinned", _) => Some(VisibilityRange {
-                        start_margin: lod - fade / 2.0..lod + fade / 2.0,
-                        end_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
-                        use_aabb: false,
-                    }),
-                    ("middle", Role::Seen) => Some(VisibilityRange {
-                        start_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
-                        end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
-                        use_aabb: false,
-                    }),
-                    _ => None,
-                }).flatten();
+                let range = per_copy
+                    .then(|| match (name, role) {
+                        ("full", _) => Some(VisibilityRange {
+                            start_margin: 0.0..0.0,
+                            end_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            use_aabb: false,
+                        }),
+                        ("thinned", _) => Some(VisibilityRange {
+                            start_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            end_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
+                            use_aabb: false,
+                        }),
+                        ("middle", Role::Seen) => Some(VisibilityRange {
+                            start_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
+                            end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                            use_aabb: false,
+                        }),
+                        _ => None,
+                    })
+                    .flatten();
                 let range = range.or_else(|| {
                     let (lod, fade) = small?;
                     match (name, role) {

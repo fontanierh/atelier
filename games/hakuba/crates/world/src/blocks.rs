@@ -134,7 +134,8 @@ fn assign(
         *logged = time.elapsed_secs();
         let far = tiles.iter().filter(|(_, tile)| tile.far_root().is_some()).count();
         let b = blocks.blocks.values();
-        let (members, parts, drawn) = b.fold((0, 0, 0), |(m, p, d), b| (m + b.members.len(), p + b.parts.len(), d + b.drawn.len()));
+        let (members, parts, drawn) =
+            b.fold((0, 0, 0), |(m, p, d), b| (m + b.members.len(), p + b.parts.len(), d + b.drawn.len()));
         info!(
             "BLOCKS {} blocks, {far} far tiles, {members} members, {parts} parts held in {drawn} meshes; looks {:?}, ground triangles {:?}, plan area {:.3?} km²",
             blocks.blocks.len(),
@@ -183,12 +184,7 @@ fn assign(
 }
 
 /// Marks a block to merge again when a mesh appears under one of its tiles: a tile's plants spawn over frames.
-fn notice(
-    mut blocks: ResMut<Blocks>,
-    added: Query<Entity, Added<Mesh3d>>,
-    parents: Query<&ChildOf>,
-    time: Res<Time>,
-) {
+fn notice(mut blocks: ResMut<Blocks>, added: Query<Entity, Added<Mesh3d>>, parents: Query<&ChildOf>, time: Res<Time>) {
     if blocks.roots.is_empty() {
         return;
     }
@@ -325,8 +321,7 @@ fn merge(
                 }
             };
             for (copy, part) in copies.into_iter().zip(held) {
-                let fits =
-                    merged.as_ref().is_none_or(|m| m.count_vertices() + copy.count_vertices() <= MOST_VERTICES);
+                let fits = merged.as_ref().is_none_or(|m| m.count_vertices() + copy.count_vertices() <= MOST_VERTICES);
                 if !fits {
                     flush(&mut merged, &mut holding, &mut commands);
                 }
@@ -366,7 +361,8 @@ fn clustered(mut mesh: Mesh, eye: Vec3, error_per_m: f32) -> Mesh {
 /// The area `mesh`'s triangles cover seen from above, in square kilometres.
 fn plan_area(mesh: &Mesh) -> f64 {
     use bevy::mesh::VertexAttributeValues as V;
-    let (Some(V::Float32x3(p)), Some(Indices::U32(indices))) = (mesh.attribute(Mesh::ATTRIBUTE_POSITION), mesh.indices())
+    let (Some(V::Float32x3(p)), Some(Indices::U32(indices))) =
+        (mesh.attribute(Mesh::ATTRIBUTE_POSITION), mesh.indices())
     else {
         return 0.0;
     };

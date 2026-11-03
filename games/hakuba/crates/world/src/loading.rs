@@ -97,8 +97,24 @@ struct Pipelines {
     waiting: Arc<AtomicUsize>,
 }
 
-fn count(cache: Res<PipelineCache>, pipelines: Res<Pipelines>) {
-    pipelines.all.store(cache.pipelines().count(), Ordering::Relaxed);
+fn count(cache: Res<PipelineCache>, pipelines: Res<Pipelines>, mut named: Local<usize>) {
+    let all = cache.pipelines().count();
+    // Playtest: HAKUBA_PIPELINES=1 names each pipeline as the renderer starts it, to find what a hitch made.
+    if all > *named && std::env::var_os("HAKUBA_PIPELINES").is_some() {
+        use bevy::render::render_resource::PipelineDescriptor;
+        for pipeline in cache.pipelines().skip(*named) {
+            let (label, defs) = match &pipeline.descriptor {
+                PipelineDescriptor::RenderPipelineDescriptor(d) => {
+                    (d.label.clone(), format!("{:?}", d.vertex.shader_defs))
+                }
+                PipelineDescriptor::ComputePipelineDescriptor(d) => (d.label.clone(), format!("{:?}", d.shader_defs)),
+                PipelineDescriptor::MeshPipelineDescriptor(d) => (d.label.clone(), String::new()),
+            };
+            info!("PIPELINE {} {defs}", label.unwrap_or_default());
+        }
+    }
+    *named = all;
+    pipelines.all.store(all, Ordering::Relaxed);
     pipelines.waiting.store(cache.waiting_pipelines().count(), Ordering::Relaxed);
 }
 

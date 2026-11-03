@@ -59,7 +59,15 @@ struct Load {
 
 impl Default for Load {
     fn default() -> Self {
-        Load { steps: [0, RIDE_STEP], since: 0.0, calm: 0.0, wait: [CALM_S; SHARES.len()], raised: false, misses: default(), clock: 0.0 }
+        Load {
+            steps: [0, RIDE_STEP],
+            since: 0.0,
+            calm: 0.0,
+            wait: [CALM_S; SHARES.len()],
+            raised: false,
+            misses: default(),
+            clock: 0.0,
+        }
     }
 }
 

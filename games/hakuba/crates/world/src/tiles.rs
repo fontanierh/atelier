@@ -197,7 +197,9 @@ fn choose(
             d if d < far_m() - blend_m() + if tile.detail == Some(Detail::Middle) { 8.0 } else { -8.0 } => {
                 Some(Detail::Middle)
             }
-            d if blend_m() > 0.0 && d < far_m() + blend_m() + if tile.detail == Some(Detail::Blend) { 8.0 } else { -8.0 } => {
+            d if blend_m() > 0.0
+                && d < far_m() + blend_m() + if tile.detail == Some(Detail::Blend) { 8.0 } else { -8.0 } =>
+            {
                 Some(Detail::Blend)
             }
             d if d < middle_m() => Some(Detail::Far),
