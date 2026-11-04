@@ -176,6 +176,9 @@ pub fn spawn(commands: &mut Commands, images: &mut Assets<Image>) -> impl Bundle
         Name::new("Window camera"),
         DespawnOnExit(Screen::World),
         Camera2d,
+        // The world image is already smoothed and the interface has no edges for multisampling to help: one sample a
+        // pixel, not four, over every pixel of the window.
+        Msaa::Off,
         IsDefaultUiCamera,
         RenderLayers::none(),
     ));
