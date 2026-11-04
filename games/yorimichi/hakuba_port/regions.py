@@ -542,7 +542,7 @@ FAR_FOREST, FAR_ROCK = (0.055, 0.11, 0.035), (0.3, 0.27, 0.24)
 def far_hills(build):
     """The far hills: the island's coarse land between and around the regions, in cells. Cells wholly under the sea
     or south of the island's tiles are left out. Their cells become the ground in their slots' flat colours, which
-    `far_hills_paint.py` then paints as Yorimichi's forest floor and coastal rock draw them."""
+    `ground_paint.py` then paints as Yorimichi's forest floor and coastal rock draw them."""
     hills = json.loads((build / 'terrain' / 'island.json').read_text())['parents']['FarHills']
     region = Region('far-hills', "the island's far hills")
     forest = {'rgb': list(FAR_FOREST)}
