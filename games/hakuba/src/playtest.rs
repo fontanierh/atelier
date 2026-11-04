@@ -45,6 +45,14 @@ impl Plugin for PlaytestPlugin {
         }
         // Playtest: HAKUBA_DEV=SECONDS turns dev mode's free camera on that long after the world loads, so a pad script
         // can fly it (r2 rises) to views the player only reaches gliding.
+        // Playtest: HAKUBA_NO_ENVIRONMENT=1 takes the sky's fill light off the camera, to measure what sampling it costs.
+        if std::env::var_os("HAKUBA_NO_ENVIRONMENT").is_some() {
+            app.add_systems(Last, no_environment);
+        }
+        // Playtest: HAKUBA_HEMISPHERE=0 samples the sky's fill light from its cubemap again, to compare.
+        if std::env::var("HAKUBA_HEMISPHERE").is_ok_and(|v| v == "0") {
+            app.add_systems(Last, sampled_fill);
+        }
         if let Some(after) = std::env::var("HAKUBA_DEV").ok().and_then(|v| v.parse::<f32>().ok()) {
             app.insert_resource(DevAfter { after, loaded: None }).add_systems(Last, dev_after);
         }
@@ -257,6 +265,18 @@ impl Shot {
     fn parse(value: &str) -> Option<Self> {
         let (path, seconds) = value.rsplit_once('@')?;
         Some(Self { path: path.to_owned(), after: Duration::from_secs_f64(seconds.parse().ok()?), loaded: None })
+    }
+}
+
+fn no_environment(mut commands: Commands, cameras: Query<Entity, Added<bevy::light::EnvironmentMapLight>>) {
+    for camera in &cameras {
+        commands.entity(camera).remove::<bevy::light::EnvironmentMapLight>();
+    }
+}
+
+fn sampled_fill(mut commands: Commands, cameras: Query<Entity, Added<bevy::pbr::HemisphereLight>>) {
+    for camera in &cameras {
+        commands.entity(camera).remove::<bevy::pbr::HemisphereLight>();
     }
 }
 

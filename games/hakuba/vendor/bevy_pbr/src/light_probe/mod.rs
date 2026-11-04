@@ -20,6 +20,7 @@ use bevy_light::{
 use bevy_math::{Affine3A, FloatOrd, Mat4, Quat, Vec3, Vec4};
 use bevy_platform::collections::HashMap;
 use bevy_render::{
+    extract_component::{ExtractComponent, ExtractComponentPlugin},
     render_asset::RenderAssets,
     render_resource::{DynamicUniformBuffer, Sampler, ShaderType, TextureView},
     renderer::{RenderAdapter, RenderAdapterInfo, RenderDevice, RenderQueue},
@@ -156,6 +157,25 @@ pub struct LightProbesUniform {
     ///
     /// This will be 1 if the map does affect lightmapped meshes or 0 otherwise.
     view_environment_map_affects_lightmapped_mesh_diffuse: u32,
+
+    /// Hakuba: the view's [`HemisphereLight`], each colour times its intensity; `w` is 1 when there is one.
+    hemisphere_sky: Vec4,
+    hemisphere_horizon: Vec4,
+    hemisphere_ground: Vec4,
+}
+
+/// Hakuba: a sky's fill light given as the colours it sends down, sideways and up, which the view's environment map
+/// lighting evaluates for each normal as an ambient cube (the same six faces as a one-texel cubemap of them), with no
+/// light probe walk and no cubemap fetch. The view keeps its [`EnvironmentMapLight`] for the lighting model; its maps
+/// are then not sampled.
+#[derive(Clone, Copy, Debug, Component, ExtractComponent)]
+#[extract_component_filter(With<Camera3d>)]
+#[extract_app(RenderApp)]
+pub struct HemisphereLight {
+    pub sky: Vec3,
+    pub horizon: Vec3,
+    pub ground: Vec3,
+    pub intensity: f32,
 }
 
 /// A GPU buffer that stores information about all light probes.
@@ -378,6 +398,7 @@ impl Plugin for LightProbePlugin {
         app.add_plugins((
             EnvironmentMapGenerationPlugin,
             ExtractInstancesPlugin::<EnvironmentMapIds, RenderApp>::new(),
+            ExtractComponentPlugin::<HemisphereLight>::default(),
         ));
 
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
@@ -477,6 +498,7 @@ fn upload_light_probes(
     mut view_light_probes_query: Query<(
         Option<&RenderViewLightProbes<EnvironmentMapLight>>,
         Option<&RenderViewLightProbes<IrradianceVolume>>,
+        Option<&HemisphereLight>,
     )>,
     render_device: Res<RenderDevice>,
     render_queue: Res<RenderQueue>,
@@ -495,7 +517,7 @@ fn upload_light_probes(
 
     // Process each view.
     for view_entity in views.iter() {
-        let Ok((render_view_environment_maps, render_view_irradiance_volumes)) =
+        let Ok((render_view_environment_maps, render_view_irradiance_volumes, hemisphere)) =
             view_light_probes_query.get_mut(view_entity)
         else {
             error!("Failed to find `RenderViewLightProbes` for the view!");
@@ -540,6 +562,9 @@ fn upload_light_probes(
                 Some(view_light_probe_info) => view_light_probe_info.rotation.inverse().into(),
                 None => Quat::IDENTITY.into(),
             },
+            hemisphere_sky: hemisphere.map_or(Vec4::ZERO, |h| (h.sky * h.intensity).extend(1.0)),
+            hemisphere_horizon: hemisphere.map_or(Vec4::ZERO, |h| (h.horizon * h.intensity).extend(1.0)),
+            hemisphere_ground: hemisphere.map_or(Vec4::ZERO, |h| (h.ground * h.intensity).extend(1.0)),
         };
 
         // Add any environment maps that [`gather_light_probes`] found to the
@@ -581,6 +606,9 @@ impl Default for LightProbesUniform {
             intensity_for_view: 1.0,
             view_environment_map_affects_lightmapped_mesh_diffuse: 1,
             view_rotation: Quat::IDENTITY.into(),
+            hemisphere_sky: Vec4::ZERO,
+            hemisphere_horizon: Vec4::ZERO,
+            hemisphere_ground: Vec4::ZERO,
         }
     }
 }

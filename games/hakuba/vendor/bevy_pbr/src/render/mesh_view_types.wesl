@@ -181,6 +181,10 @@ struct LightProbes {
     /// Whether the environment map attached to the view affects the diffuse
     /// lighting for lightmapped meshes.
     view_environment_map_affects_lightmapped_mesh_diffuse: u32,
+    /// Hakuba: the view's hemisphere fill light, each colour times its intensity; `w` is 1 when there is one.
+    hemisphere_sky: vec4<f32>,
+    hemisphere_horizon: vec4<f32>,
+    hemisphere_ground: vec4<f32>,
 };
 
 /// Settings for screen space reflections.
