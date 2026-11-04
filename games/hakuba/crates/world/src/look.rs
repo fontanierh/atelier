@@ -81,7 +81,7 @@ pub fn camera(images: &mut Assets<Image>) -> impl Bundle {
             linear(GROUND_LIGHT),
         )
         .with_intensity(FILL_BRIGHTNESS),
-        // The same fill light, evaluated per pixel rather than sampled from that cubemap: 1.4 ms on the hilltop.
+        // The same fill light, evaluated per pixel rather than sampled from that cubemap: 1.1 ms on the hilltop.
         bevy::pbr::HemisphereLight {
             sky: Vec3::from(SKY_LIGHT),
             horizon: Vec3::from(HORIZON_LIGHT),
