@@ -165,6 +165,13 @@ fn follow_load(
     }
 }
 
+/// The render layer only the window camera sees, holding the world image.
+const WINDOW_LAYER: usize = 31;
+
+/// The sprite showing the world image over the window.
+#[derive(Component)]
+struct WorldImage;
+
 /// The image the world camera draws into.
 #[derive(Component)]
 pub struct Drawn(Handle<Image>);
@@ -180,14 +187,16 @@ pub fn spawn(commands: &mut Commands, images: &mut Assets<Image>) -> impl Bundle
         // pixel, not four, over every pixel of the window.
         Msaa::Off,
         IsDefaultUiCamera,
-        RenderLayers::none(),
+        RenderLayers::layer(WINDOW_LAYER),
     ));
+    // A sprite rather than an interface node: the node's shader works out rounded corners and borders at each of the
+    // window's pixels, the sprite's only samples the image.
     commands.spawn((
         Name::new("World image"),
         DespawnOnExit(Screen::World),
-        ImageNode::new(image.clone()),
-        Node { position_type: PositionType::Absolute, width: percent(100), height: percent(100), ..default() },
-        GlobalZIndex(i32::MIN),
+        Sprite::from_image(image.clone()),
+        WorldImage,
+        RenderLayers::layer(WINDOW_LAYER),
     ));
     (Camera { order: -1, ..default() }, RenderTarget::Image(image.clone().into()), Drawn(image))
 }
@@ -200,7 +209,11 @@ fn fit(
     riding: Res<Riding>,
     load: Res<Load>,
     mut images: ResMut<Assets<Image>>,
+    mut sprite: Single<&mut Sprite, With<WorldImage>>,
 ) {
+    if sprite.custom_size != Some(window.size()) {
+        sprite.custom_size = Some(window.size());
+    }
     let size = settings.resolution.image_size(window.physical_size().as_vec2());
     let size = (size.as_vec2() * load.share(riding.0).sqrt()).round().as_uvec2().max(UVec2::ONE);
     if images.get(&drawn.0).is_some_and(|image| image.size() != size) {
