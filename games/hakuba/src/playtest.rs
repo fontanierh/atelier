@@ -33,6 +33,8 @@ impl Plugin for PlaytestPlugin {
             spin: Duration::from_secs_f64(spin / 1000.0),
         })
         .init_resource::<Intervals>()
+        .init_resource::<Phases>()
+        .add_systems(First, start_frame)
         .add_systems(Last, (log_intervals, pace_frame).chain());
         if std::env::var("HAKUBA_TRIS").is_ok() {
             app.add_systems(Last, count_triangles);
@@ -75,8 +77,13 @@ struct Pacer {
 }
 
 /// Sleeps until this frame's deadline; deadlines step by a fixed period, so a slow frame does not shift the next.
-fn pace_frame(mut pacer: ResMut<Pacer>) {
-    let Some(period) = pacer.period else { return };
+fn pace_frame(mut pacer: ResMut<Pacer>, mut phases: ResMut<Phases>) {
+    let started = Instant::now();
+    let Some(period) = pacer.period else {
+        phases.paced = Duration::ZERO;
+        phases.paced_end = Some(started);
+        return;
+    };
     let now = Instant::now();
     let next = match pacer.next {
         Some(last) if pacer.relative => (last + period).max(now),
@@ -97,6 +104,22 @@ fn pace_frame(mut pacer: ResMut<Pacer>) {
     if pacer.relative {
         pacer.next = Some(Instant::now());
     }
+    let ended = Instant::now();
+    phases.paced = ended - started;
+    phases.paced_end = Some(ended);
+}
+
+/// Where the main thread's time went in the last frame: its own schedules, the pacer's sleep before them, and the wait
+/// in between, mostly for the render thread to take the frame, so a slow frame's log names its owner.
+#[derive(Resource, Default)]
+struct Phases {
+    first: Option<Instant>,
+    paced: Duration,
+    paced_end: Option<Instant>,
+}
+
+fn start_frame(mut phases: ResMut<Phases>) {
+    phases.first = Some(Instant::now());
 }
 
 #[derive(Resource)]
@@ -115,7 +138,11 @@ impl Default for Intervals {
 
 /// Once a second: how many frames were under 12 ms, about one 60 Hz frame (12–20 ms), 20–29, 29–40 and over 40 ms,
 /// the worst, and where the camera is and which way it looks.
-fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<(&GlobalTransform, &Projection), With<Camera3d>>) {
+fn log_intervals(
+    mut intervals: ResMut<Intervals>,
+    cameras: Query<(&GlobalTransform, &Projection), With<Camera3d>>,
+    phases: Res<Phases>,
+) {
     let now = Instant::now();
     if let Some(last) = intervals.last {
         let ms = (now - last).as_secs_f32() * 1000.0;
@@ -131,8 +158,15 @@ fn log_intervals(mut intervals: ResMut<Intervals>, cameras: Query<(&GlobalTransf
             if let Some((t, _)) = cameras.iter().next() {
                 let (_, rotation, translation) = t.to_scale_rotation_translation();
                 let forward = rotation * Vec3::NEG_Z;
+                let ms_of = |d: Duration| d.as_secs_f32() * 1000.0;
+                let work = phases.first.map_or(0.0, |first| ms_of(now - first));
+                let waited = match (phases.first, phases.paced_end) {
+                    (Some(first), Some(end)) if first > end => ms_of(first - end),
+                    _ => 0.0,
+                };
                 info!(
-                    "SLOW {ms:.1} ms cam {:.1},{:.1},{:.1} yaw {:.0} pitch {:.0}",
+                    "SLOW {ms:.1} ms (paced {:.1}, waited {waited:.1}, worked {work:.1}) cam {:.1},{:.1},{:.1} yaw {:.0} pitch {:.0}",
+                    ms_of(phases.paced),
                     translation.x,
                     translation.y,
                     translation.z,
@@ -237,7 +271,8 @@ fn count_triangles(
         let band = BANDS.iter().position(|&end| eye.distance(centre) < end).unwrap_or(6);
         if band >= 4 {
             let own = name.map(|n| n.as_str().to_string()).unwrap_or_default();
-            let up = parent.and_then(|p| names.get(p.parent()).ok()).map(|n| n.as_str().to_string()).unwrap_or_default();
+            let up =
+                parent.and_then(|p| names.get(p.parent()).ok()).map(|n| n.as_str().to_string()).unwrap_or_default();
             let key: String = format!("{own}<{up}").chars().filter(|c| !c.is_ascii_digit()).collect();
             let kind = kinds.entry(key).or_default();
             kind.0 += 1;
