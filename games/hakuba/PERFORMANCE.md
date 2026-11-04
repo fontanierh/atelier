@@ -58,6 +58,33 @@ On 2026-11-04, with this build:
 What is left is mostly the first seconds after the splash, while the world's buffers still grow and the start view
 draws the most geometry, and a rare render-thread hitch.
 
+### What Unreal does on the Mac, and what Hakuba does instead
+
+Unreal's renderer is the yardstick for what a Mac game should do for itself. Each of its optimizations that fits a
+small open world drawn by Bevy has its counterpart here:
+
+| Unreal | Hakuba |
+| --- | --- |
+| Pooled Metal buffers (the Metal RHI's buffer pool) | Freed Metal buffers are kept, up to 768 MB, and reused by size (vendor/wgpu-hal) |
+| Async compute | Bevy's preprocess compute passes run as concurrent Metal passes (vendor/wgpu-hal, vendor/bevy_pbr) |
+| Frame pacing with a minimum present duration | Fixed 62 Hz deadlines, each frame on screen at least a 60th (crates/pacing) |
+| Dynamic resolution | The drawn pixels follow the GPU's measured time (crates/world `pixels.rs`) |
+| Forward shading | One forward pass writes color and motion, with no geometry prepass (crates/rendering, the desktop default) |
+| Shadow cascade caching | Each of the two cascades redraws every other frame, the last one fading out (crates/rendering `defaults.rs`) |
+| Mesh LODs with dithered transitions | Trees swap versions at 65 m and small plants fade at 16 m, through a moving dither (crates/world `scenery.rs`) |
+| Hierarchical LODs | Past 450 m the far tiles merge into one mesh per 512 m block (crates/world `blocks.rs`) |
+| Nanite's error-bounded simplification | On the desktop, a block's plants are simplified to stray under a pixel from their shapes (crates/world `blocks.rs`) |
+| Distance-based detail | Plants show their middle version near and their far version past 200 m, showing both within 64 m of it (crates/world `tiles.rs`) |
+| Instanced and merged static meshes | Small models merge by 32 m square or tile; large ones draw instanced |
+| PSO precaching | The splash holds until every pipeline the world needs is made |
+| Thread priorities | The frame loop runs at interactive QoS and the skater's background work at utility QoS (crates/screens) |
+| World Partition streaming | Tiles load and swap versions around the player (crates/world `tiles.rs`) |
+
+Not taken: Bevy has no Lumen or virtual shadow maps, so the sky lights the world through a hemisphere light
+(vendor/bevy_pbr) and the sun through two cascades; Bevy's GPU occlusion culling needs the depth prepass, which the
+single forward pass leaves out; GPU light clustering adds compute passes and a readback a frame for the few lights
+here, so lights cluster on the CPU.
+
 ## Measuring
 
 Measure the reference in the browser, which is slower than the desktop build and differs from it in ways that matter
