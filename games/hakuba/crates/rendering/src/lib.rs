@@ -1,7 +1,9 @@
 //! Shared rendering commands for rigid meshes and 3D shadow views.
 
+mod depth_grid;
 mod forward_motion;
 
+pub use depth_grid::{DepthGrid, GRID as DEPTH_GRID};
 pub use forward_motion::{ForwardMotionComparison, ForwardMotionMode};
 
 use std::ops::Range;
@@ -38,6 +40,7 @@ pub struct RenderingPlugin;
 impl Plugin for RenderingPlugin {
     fn build(&self, app: &mut App) {
         forward_motion::build(app);
+        depth_grid::build(app);
         app.add_systems(
             PostUpdate,
             retain_3d_shadow_views

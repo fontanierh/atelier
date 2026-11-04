@@ -9,12 +9,14 @@
 use std::collections::{HashMap, HashSet};
 
 use bevy::asset::{RenderAssetUsages, UntypedAssetId};
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
 use bevy::light::NotShadowCaster;
 use bevy::mesh::{Indices, MeshVertexAttributeId};
 use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future};
 use bevy::transform::TransformSystems;
+use hakuba_rendering::{DEPTH_GRID, DepthGrid};
 use hakuba_screens::Screen;
 
 use crate::scenery::{Look, insert_look};
@@ -41,6 +43,16 @@ const MOST_VERTICES: usize = 1 << 20;
 const PLANT_ERROR_PX: f32 = 1.0;
 /// How many metres one pixel spans per metre away, 1440 pixels tall in the walker's 68° view.
 const PIXEL_M_PER_M: f32 = 0.00094;
+/// How many grids in a row, about a quarter of a second, must find a block behind nearer things before it hides: a
+/// trunk passing in front would otherwise hide and show it again, and each flip costs the renderer work.
+const COVERED_GRIDS: u8 = 15;
+/// How many degrees one cell of the depth grid spans, about, across the walker's view.
+const CELL_DEG: f32 = 1.4;
+/// The nearest thing that may hide a block, in metres: the camera's move since the grid shifts it on screen by at most
+/// this much over the move.
+const NEAREST_COVER_M: f32 = 4.0;
+/// Beyond this many cells of margin, the grid says too little and every block shows.
+const MOST_MARGIN_CELLS: i32 = 12;
 
 fn plant_error_px() -> f32 {
     static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
@@ -61,7 +73,7 @@ impl Plugin for BlocksPlugin {
         }
         app.init_resource::<Blocks>().add_systems(
             PostUpdate,
-            (hide, assign, notice, merge, swap)
+            (hide, assign, notice, merge, swap, occlude.run_if(occluding))
                 .chain()
                 .after(TransformSystems::Propagate)
                 .before(VisibilitySystems::VisibilityPropagate)
@@ -412,6 +424,7 @@ fn swap(
                 bevy::mesh::MeshTag::new(0),
                 DespawnOnExit(Screen::World),
             ));
+            let mut covered = true;
             look.insert(&mut drawn);
             if matches!(
                 (&look, hide.as_str()),
@@ -420,6 +433,10 @@ fn swap(
                     | (Drawn::Source(_), "trees")
             ) {
                 drawn.insert(Visibility::Hidden);
+                covered = false;
+            }
+            if covered {
+                drawn.insert(Covered::default());
             }
             block.drawn.push(drawn.id());
             for part in parts {
@@ -440,6 +457,104 @@ fn swap(
             );
         }
     }
+}
+
+fn occluding() -> bool {
+    // Playtest: HAKUBA_OCCLUDE=0 draws the blocks hidden behind nearer things too.
+    static V: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *V.get_or_init(|| std::env::var("HAKUBA_OCCLUDE").map_or(true, |v| v != "0"))
+}
+
+/// On a block's merged mesh: how many depth grids in a row found it behind nearer things.
+#[derive(Component, Default)]
+struct Covered(u8);
+
+/// Hides the blocks the last few depth grids found wholly behind nearer things, and shows them again as soon as one
+/// does not. Each block's rectangle grows by as far as the camera's turn and move since the grid can shift nearer
+/// things on screen.
+fn occlude(
+    grid: Res<DepthGrid>,
+    camera: Single<&GlobalTransform, With<Camera3d>>,
+    mut drawn: Query<(&Aabb, &mut Visibility, &mut Covered)>,
+    mut last: Local<u32>,
+    time: Res<Time>,
+    mut logged: Local<(f32, usize, usize)>,
+) {
+    if grid.cells.len() != (DEPTH_GRID.x * DEPTH_GRID.y) as usize {
+        return;
+    }
+    let new = grid.count != *last;
+    *last = grid.count;
+    let (_, rotation, eye) = camera.to_scale_rotation_translation();
+    let shift = rotation.angle_between(grid.rotation) + eye.distance(grid.eye) / NEAREST_COVER_M;
+    let margin = 1 + (shift.to_degrees() / CELL_DEG).ceil() as i32;
+    let mut hiding = 0;
+    for (aabb, mut visibility, mut covered) in &mut drawn {
+        hiding += (*visibility == Visibility::Hidden) as usize;
+        // A shown block hides only behind one more cell than a hidden one needs to stay hidden, so a block at the edge
+        // of its cover does not flip each grid, each flip costing the renderer work.
+        let hidden = *visibility == Visibility::Hidden;
+        let grown = if hidden { margin } else { margin + 1 };
+        if grown <= MOST_MARGIN_CELLS && behind(&grid, aabb, grown) {
+            if new {
+                covered.0 = covered.0.saturating_add(1);
+            }
+            if covered.0 >= COVERED_GRIDS && *visibility != Visibility::Hidden {
+                *visibility = Visibility::Hidden;
+                logged.1 += 1;
+            }
+        } else {
+            covered.0 = 0;
+            if *visibility == Visibility::Hidden {
+                *visibility = Visibility::Inherited;
+                logged.2 += 1;
+            }
+        }
+    }
+    // Playtest: HAKUBA_BLOCK_LOG=1 logs, each second, how many blocks the depth grid hides.
+    if std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") && time.elapsed_secs() - logged.0 > 1.0 {
+        let (_, hid, showed) = std::mem::replace(&mut *logged, (time.elapsed_secs(), 0, 0));
+        let centre = grid.cell(DEPTH_GRID.x / 2, DEPTH_GRID.y / 2);
+        let farthest = grid.cells.iter().copied().fold(1.0f32, f32::min);
+        info!(
+            "OCCLUDE grid {} margin {margin}: {hiding} of {} blocks hidden, {hid} hid and {showed} showed; centre depth {centre:.5}, farthest {farthest:.5}",
+            grid.count,
+            drawn.iter().len()
+        );
+    }
+    if !std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") {
+        logged.1 = 0;
+        logged.2 = 0;
+    }
+}
+
+/// Whether the grid saw nearer things everywhere over the box, its rectangle on screen grown by `margin` cells. A box
+/// reaching behind the camera or wholly off screen is not behind anything.
+fn behind(grid: &DepthGrid, aabb: &Aabb, margin: i32) -> bool {
+    let (min, max) = (Vec3::from(aabb.min()), Vec3::from(aabb.max()));
+    let (mut lo, mut hi, mut nearest) = (Vec2::MAX, Vec2::MIN, 0.0f32);
+    for i in 0..8 {
+        let corner = Vec3::select(BVec3::new(i & 1 != 0, i & 2 != 0, i & 4 != 0), max, min);
+        let clip = grid.clip_from_world * corner.extend(1.0);
+        if clip.w <= 0.1 {
+            return false;
+        }
+        let ndc = clip.truncate() / clip.w;
+        lo = lo.min(ndc.truncate());
+        hi = hi.max(ndc.truncate());
+        // Reversed depth: the box's nearest point is its largest, at a corner since depth is linear across the box.
+        nearest = nearest.max(ndc.z);
+    }
+    let size = DEPTH_GRID.as_vec2();
+    let x0 = ((lo.x * 0.5 + 0.5) * size.x).floor() as i32 - margin;
+    let x1 = ((hi.x * 0.5 + 0.5) * size.x).floor() as i32 + margin;
+    let y0 = ((0.5 - hi.y * 0.5) * size.y).floor() as i32 - margin;
+    let y1 = ((0.5 - lo.y * 0.5) * size.y).floor() as i32 + margin;
+    let (w, h) = (DEPTH_GRID.x as i32, DEPTH_GRID.y as i32);
+    if x1 < 0 || y1 < 0 || x0 >= w || y0 >= h {
+        return false;
+    }
+    (y0.max(0)..=y1.min(h - 1)).all(|y| (x0.max(0)..=x1.min(w - 1)).all(|x| grid.cell(x as u32, y as u32) > nearest))
 }
 
 /// Shows a part a block no longer holds.

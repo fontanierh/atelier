@@ -49,7 +49,7 @@ pub struct ForwardMotionComparison {
 }
 
 #[derive(Resource)]
-struct MotionTransfer {
+pub(super) struct MotionTransfer {
     layout: BindGroupLayoutDescriptor,
     pipeline: CachedRenderPipelineId,
 }
@@ -198,7 +198,7 @@ fn supported_temporal_features(
     !transmission && (mode != Some(&ForwardMotionMode::Single) || (!contact_shadows && !occlusion_culling))
 }
 
-fn draw_comparison(
+pub(super) fn draw_comparison(
     world: &World,
     view: ViewQuery<(
         &ExtractedCamera,
