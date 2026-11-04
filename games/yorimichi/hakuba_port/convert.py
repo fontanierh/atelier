@@ -314,9 +314,12 @@ def convert(job):
                      for t in kinds]
         of_slot = np.array([kinds.index(textures[k]) for k in used])
         colour[:, 3] = 1.0
-        parts = [('full', SURFACE, position, normal, colour, triangles, uv, of_slot[np.searchsorted(used, slot)])]
+        surface = SURFACE
+        if job.get('surface_fill'):
+            surface = {'surface_paint': {**SURFACE['surface_paint'], 'fill': job['surface_fill']}}
+        parts = [('full', surface, position, normal, colour, triangles, uv, of_slot[np.searchsorted(used, slot)])]
     else:
-        parts = [('full', {'vertex_paint': PAINT}, position, normal, colour, triangles)]
+        parts = [('full', {'vertex_paint': job.get('paint', PAINT)}, position, normal, colour, triangles)]
     if hulls and job.get('collision', True):
         collision = join(hulls, 'collision')
         parts.append(('collision', None, *arrays(collision, False)))

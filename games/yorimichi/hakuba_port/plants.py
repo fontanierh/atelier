@@ -124,6 +124,11 @@ SLOTS = {
     **{f'Tree_{tree}_Impostor': impostor(tree) for tree in IMPOSTORS},
     **{model: caldera_texture(model) for model in CALDERA},
 }
+# The slots whose source material tints its texture (`shared_materials.py`), in linear RGB.
+TINTS = {'BarkTuscan': (0.65, 0.55, 0.4), 'LeafGinkgo': (1.0, 0.72, 0.42)}
+# The atlas cells drawn tinted: a far impostor's render as its material tints it (`TINTS` in
+# `forest_impostor_material.py`), and a slot's texture as the slot's material does.
+IMPOSTOR_TINTS = {impostor('Forest_Ginkgo'): (1.0, 0.85, 0.5), SLOTS['LeafGinkgo']: TINTS['LeafGinkgo']}
 # The textures Hakuba lacks: each one's source image in the build folder.
 TEXTURES = {
     'olive-bark': 'textures/T_bark_olive.jpg', 'tuscan-cypress-leaves': 'forest/textures/T_LeafCypress.png',
@@ -479,7 +484,12 @@ def far_atlas(build):
         # Premultiplied, so that the clear texels' colour never darkens the leaves' edges.
         images[texture] = source(texture)
         cell = Image.open(images[texture]).convert('RGBA').convert('RGBa').resize((size, size), Image.LANCZOS)
-        return np.asarray(cell.convert('RGBA'))
+        cell = np.asarray(cell.convert('RGBA'))
+        if texture in IMPOSTOR_TINTS:
+            rgb = cell[..., :3] / 255.0
+            rgb = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4) * IMPOSTOR_TINTS[texture]
+            cell = np.concatenate([np.round(srgb(rgb) * 255).astype(np.uint8), cell[..., 3:]], axis=-1)
+        return cell
 
     for k, texture in enumerate(FAR_TEXTURES):
         if texture in MOSAICS:
@@ -654,23 +664,21 @@ def import_brinecove(build):
 
 
 def write_colour_texture(build, entry, name):
-    """A material's colour times its texture (or the colour alone, a few texels), as an sRGB texture asset."""
+    """A material's texture, or its colour alone (a few texels) where it has none, as an sRGB texture asset: Brinecove's
+    material draws one or the other (`lerp(Colour, tex, UseTex)` in `import_brinecove.py`), never their product."""
     from PIL import Image
     colour = np.array(entry['colour'][:3], np.float32)
     if entry['texture']:
         image = Image.open(build / 'brinecove' / 'textures' / entry['texture']).convert('RGBA')
-        image = np.asarray(image, np.float32) / 255
-        rgb = image[..., :3]
-        linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4) * colour
-        pixels = np.concatenate([srgb(linear), image[..., 3:]], axis=-1)
+        pixels = np.asarray(image, np.float32) / 255
     else:
         pixels = np.concatenate([np.broadcast_to(srgb(colour), (4, 4, 3)), np.ones((4, 4, 1))], axis=-1)
     folder = HAKUBA / 'textures' / name / 'src'
     folder.mkdir(parents=True, exist_ok=True)
     Image.fromarray(np.round(pixels * 255).astype(np.uint8), 'RGBA').save(folder / 'texture.png')
     (folder / 'manifest.toml').write_text(
-        f'# Brinecove\'s {entry["name"].removeprefix("MI_BC_").replace("_", " ")} material, its colour '
-        + ('times its texture' if entry['texture'] else 'alone') + '.\npath = "texture.png"\n'
+        f'# Brinecove\'s {entry["name"].removeprefix("MI_BC_").replace("_", " ")} material, '
+        + ('its texture alone' if entry['texture'] else 'its colour alone') + '.\npath = "texture.png"\n'
         f'sha256 = "{sha256(folder / "texture.png")}"\n'
         + (f'authoring_texture_sha256 = "{sha256(build / "brinecove" / "textures" / entry["texture"])}"\n'
            if entry['texture'] else ''))
@@ -718,6 +726,8 @@ def write_plant_glb(nodes, out):
                  'pbrMetallicRoughness': {'baseColorTexture': {'index': images[texture]}, 'metallicFactor': 0.0,
                                           'roughnessFactor': 1.0},
                  'extensions': {'KHR_materials_specular': {'specularFactor': 0.0}}}
+        if material in TINTS:
+            entry['pbrMetallicRoughness']['baseColorFactor'] = [*TINTS[material], 1.0]
         if masked:
             entry.update(alphaMode='MASK', alphaCutoff=0.4)
         if double:

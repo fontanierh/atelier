@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hippodrome-hd-judges-tower"]
 solid = true
-inputs_sha256 = "bda191a7d8ab0d7590c143c942c5034b81c78e8c1e32282e6cbb0968d2883a0c"
+inputs_sha256 = "fa90f9219ceb05d41b63abdfef28bebaa4acf4b069a9ac50fd2a280a73d8ba7b"

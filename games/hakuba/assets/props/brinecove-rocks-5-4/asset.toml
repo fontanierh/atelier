@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["brinecove-t-bc-coral", "brinecove-t-bc-gold", "brinecove-t-bc-terrain-rock"]
 solid = true
-inputs_sha256 = "ad5629376229542a809c74a297b02139decf297abebf327f910bf327b5044a2b"
+inputs_sha256 = "ad57992466ac357de84f45d933d6ff6bed0edd807cffb1d5a88dd46fd0d63603"

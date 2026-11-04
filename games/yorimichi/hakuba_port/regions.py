@@ -6,6 +6,7 @@ import math
 import sys
 from pathlib import Path
 
+from painted import PAINT
 from port import Model, Region, export_source, kebab
 
 
@@ -39,11 +40,11 @@ def treehouse(build):
 COVER = 5000
 
 
-def runtime_groups(build, region, folder, exports, prefix, rule, collision=None):
+def runtime_groups(build, region, folder, exports, prefix, rule, collision=None, fill=None):
     """A region Yorimichi's game stands from `<folder>/runtime.json`: groups of one mesh each, its material instances
     in slot order and its transforms, in centimetres from the region's origin in Unreal's frame (Y flipped). Meshes
     from other folders (the shared plants) are left out; `rule` turns a material instance's name into a colour rule
-    or None to leave its slot out."""
+    or None to leave its slot out; `fill` is the region's material's self-light, its colour times it as emission."""
     runtime = json.loads((build / folder / 'runtime.json').read_text())
     ox, oy, oz = runtime['origin_cm']
     merged = {}
@@ -65,7 +66,9 @@ def runtime_groups(build, region, folder, exports, prefix, rule, collision=None)
                 slots[slot] = colour if colour is not None else {'drop': True}
             hull = collision(asset) if collision else None
             region.models[name] = Model(source, slots=slots, collision=hull if hull and hull.exists() else None,
-                                        solid=bool(group.get('collision')))
+                                        solid=bool(group.get('collision')),
+                                        paint=None if fill is None else {**PAINT, 'fill': fill},
+                                        surface_fill=fill or 0.0)
         afar = None if group.get('cull_cm', 0) == 0 else group['cull_cm'] >= 30000
         for transform in group['transforms']:
             tx, ty, tz = transform['translation_cm']
@@ -78,9 +81,10 @@ def runtime_groups(build, region, folder, exports, prefix, rule, collision=None)
 
 
 def brinecove(build):
-    """Brinecove, the pirate port on the western coast: its ground, quays, market, ships and buildings. A material's
-    colour is its colour times its texture's mean; terrain uses its rock or meadow layer. Cut-out and see-through
-    materials, such as leaves, flags and water, are left out."""
+    """Brinecove, the pirate port on the western coast: its ground, quays, market, ships and buildings. A material
+    draws its texture or, without one, its colour (`lerp(Colour, tex, UseTex)` in `import_brinecove.py`); terrain
+    draws its rock or meadow layer, rock tinted. Cut-out and see-through materials, such as leaves, flags and water,
+    are left out."""
     report = json.loads((build / 'brinecove' / 'build-report.json').read_text())['materials']
     by_name = {entry['name']: entry for entry in report.values()}
     textures = build / 'brinecove' / 'textures'
@@ -89,23 +93,28 @@ def brinecove(build):
         entry = by_name.get(instance)
         if entry is None or entry['kind'] in ('masked', 'translucent'):
             return None
-        colour = {'rgb': entry['colour'][:3]}
         if entry['kind'] == 'terrain':
             layer = entry['layers']['Rock' if entry['rock_only'] else 'Meadow']
-            colour['mean'] = str(textures / layer)
-        elif entry['texture']:
-            colour['mean'] = str(textures / entry['texture'])
-        return colour
+            return {'rgb': entry['colour'][:3], 'mean': str(textures / layer)}
+        if entry['texture']:
+            return {'mean': str(textures / entry['texture'])}
+        return {'rgb': entry['colour'][:3]}
 
     region = Region('brinecove', 'Brinecove, the pirate port on the western coast')
-    return runtime_groups(build, region, 'brinecove', ['brinecove'], 'SM_BC_', rule)
+    # Brinecove's material lights every opaque surface by its colour times its `Glow` (`import_brinecove.py`).
+    return runtime_groups(build, region, 'brinecove', ['brinecove'], 'SM_BC_', rule, fill=0.045)
+
+
+# Belmonte's material (`M_Belmonte`, `import_belmonte.py`) lights each surface by its colour times this.
+BELMONTE_FILL = 0.045
 
 
 def belmonte(build):
     """Belmonte and the Haras valley: the town, its ground, the hippodrome and the northern hills. A material draws as
     Belmonte's material does (`import_belmonte.py`): its colour, tint and brightness times its texture on the mesh's
     UVs over the material's tile in metres; a detail texture (one that is not an atlas) is neutral grey, so it counts
-    twice. Terrain uses its green layer; water is left out."""
+    twice. Terrain becomes the ground in its green layer, which `ground_paint.py` paints as the valley, its apron and
+    the north country draw; water is left out."""
     report = json.loads((build / 'belmonte' / 'build-report.json').read_text())['materials']
     by_name = {entry['name']: entry for entry in report.values()}
     textures = build / 'belmonte' / 'textures'
@@ -125,7 +134,8 @@ def belmonte(build):
 
     region = Region('belmonte', 'Belmonte and the Haras valley')
     region = runtime_groups(build, region, 'belmonte', ['belmonte_models', 'belmonte_ground', 'belmonte_north'],
-                            'SM_BM_', rule, collision=lambda asset: build / 'belmonte' / 'glb' / f'{asset}_Collision.glb')
+                            'SM_BM_', rule, collision=lambda asset: build / 'belmonte' / 'glb' / f'{asset}_Collision.glb',
+                            fill=BELMONTE_FILL)
     # The valley villages are Belmonte's own backdrop, hundreds of metres up around its map; on the island's map
     # they would hang in the sky over the island and the sea.
     backdrop = {name for name in region.models if name.startswith('belmonte-bvv-village')}
@@ -270,8 +280,12 @@ def hidamari(build):
         if palette:
             palettes[parent] = ({**surfaces, **palette[0]}, palette[1])
     skipped = []
+    # A fitted prop draws its texture at its gain (`city_material.prop_materials`: the material doubles the texture,
+    # its instance halves the gain), which brings the texture's brightness to the prop's target.
+    gains = json.loads((out / 'props' / 'props.json').read_text())
     for step, rule_for in (('hidamari', lambda piece: {'vertex': True}),
-                           ('hidamari_props', lambda piece: {'sample': str(out / 'props' / f'{piece}.png')})):
+                           ('hidamari_props', lambda piece: {'sample': str(out / 'props' / f'{piece}.png'),
+                                                             'gain': gains[piece]['gain']})):
         parents = json.loads((build / 'atomic_regions' / step / 'logical-pieces.json').read_text())['parents']
         for parent, pieces in parents.items():
             placed = [list(map(float, i)) for i in instances.get(parent, [])]
@@ -315,14 +329,31 @@ def southwest(build):
     return region
 
 
+# The vertex paint of a prop whose material adds no light of its own: no fill, no window glow.
+UNLIT_FILL = {**PAINT, 'fill': 0.0, 'glow': 0.0}
+
+
+def flat_tints():
+    """The linear tints of the shared flat materials (`MI_Vermilion`, `MI_Stone`, ...), as `shared_materials.py` makes
+    them: `M_Painted` instances drawing a white texture times the tint, with no vertex colour and no emission."""
+    import ast
+    script = Path(__file__).resolve().parents[1] / 'unreal' / 'Scripts' / 'shared_materials.py'
+    for node in ast.walk(ast.parse(script.read_text())):
+        if isinstance(node, ast.Assign) and [getattr(t, 'id', None) for t in node.targets] == ['flat']:
+            return ast.literal_eval(node.value)
+    raise RuntimeError(f'{script}: no flat material tints')
+
+
 def shrines(build):
-    """The island's torii and stone lanterns, coloured from the shared material list."""
+    """The island's torii and stone lanterns, in the shared flat materials Yorimichi binds their slots to by name
+    (`MI_<slot>`), or a textured slot's texture mean; `material_specs.py`'s colours are only Blender's stand-ins."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
     from material_specs import MATERIALS
     textures = build / 'textures'
+    flat = flat_tints()
     slots = {}
     for slot, spec in MATERIALS.items():
-        rule = {'rgb': list(spec.get('color', (1.0, 1.0, 1.0)))}
+        rule = {'rgb': list(flat.get(slot, (1.0, 1.0, 1.0) if 'texture' in spec else spec.get('color', (1.0, 1.0, 1.0))))}
         if 'texture' in spec and (textures / spec['texture']).exists():
             rule['mean'] = str(textures / spec['texture'])
         slots[slot] = rule
@@ -330,7 +361,7 @@ def shrines(build):
     region = Region('shrines', "the island's torii and stone lanterns")
     for asset in ('Torii', 'Lantern'):
         name = 'shrine-' + kebab(asset)
-        region.models[name] = Model(export_source(build, 'props', asset), slots=slots)
+        region.models[name] = Model(export_source(build, 'props', asset), slots=slots, paint=UNLIT_FILL)
         region.groups.append((name, None, instances[asset]))
     return region
 
@@ -504,13 +535,18 @@ def kei(build):
     return region
 
 
+# The far hills' slots: the forest floor's colour (`FarForest` in `build_terrain.py`) and the coastal rock's.
+FAR_FOREST, FAR_ROCK = (0.055, 0.11, 0.035), (0.3, 0.27, 0.24)
+
+
 def far_hills(build):
     """The far hills: the island's coarse land between and around the regions, in cells. Cells wholly under the sea
-    or south of the island's tiles are left out."""
+    or south of the island's tiles are left out. Their cells become the ground in their slots' flat colours, which
+    `far_hills_paint.py` then paints as Yorimichi's forest floor and coastal rock draw them."""
     hills = json.loads((build / 'terrain' / 'island.json').read_text())['parents']['FarHills']
     region = Region('far-hills', "the island's far hills")
-    forest = {'rgb': [0.11, 0.2, 0.07]}
-    rock = {'rgb': [0.3, 0.27, 0.24]}
+    forest = {'rgb': list(FAR_FOREST)}
+    rock = {'rgb': list(FAR_ROCK)}
     for mesh in hills['meshes']:
         if mesh['max'][2] <= 0.5 or mesh['max'][1] < -1324.0:
             continue
@@ -686,6 +722,7 @@ def hippodrome(build):
     origin, as Yorimichi's `AHippodrome` does: at the origin plus its offset, in map metres, turned by its yaw. The
     course draws its grass and dirt textures, its stone skirts and white rails the colours Yorimichi's import gives them
     (`HIPPODROME_SURFACES`); each structure draws its own image."""
+    from hippodrome import embedded
     out = build / 'hippodrome' / 'region'
     data = json.loads((out / 'hippodrome.json').read_text())
     ox, oy, oz = data['origin']
@@ -699,7 +736,12 @@ def hippodrome(build):
         if mesh['name'] in ('SM_HD_Lane', 'SM_HD_LaneSkirt'):
             continue
         name = 'hippodrome-' + kebab(mesh['name'].removeprefix('SM_HD_'))
-        region.models[name] = Model(out / 'glb' / f"{mesh['name']}.glb", slots=slots)
+        source = out / 'glb' / f"{mesh['name']}.glb"
+        # A structure (its own image, `M_HD_Structure`) lights itself by 0.3 of its image; the course's flat
+        # colours have no light of their own.
+        structure = bool(set(embedded(source)) - set(data['textures']))
+        region.models[name] = Model(source, slots=slots, surface_fill=0.3 if structure else 0.0,
+                                    paint=UNLIT_FILL)
         x, y, z = mesh['at']
         region.groups.append((name, None, [[ox + x, oy + y, oz + z, mesh['yaw'], 1.0]]))
     return region

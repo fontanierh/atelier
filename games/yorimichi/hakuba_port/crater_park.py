@@ -87,7 +87,8 @@ class Materials:
             u = np.where(axis == 0, position[:, 1], position[:, 0])
             v = np.where(axis == 2, -position[:, 1], -position[:, 2])
             uv = np.stack([u, v], axis=1) / spec['metres']
-        shade = 1.0 - CAVITY + CAVITY * linear(np.clip(occlusion, 0.0, 1.0))
+        # The occlusion as Yorimichi's material reads it: linear, its sRGB-encoded copy in the FBX decoded once.
+        shade = 1.0 - CAVITY + CAVITY * np.clip(occlusion, 0.0, 1.0)
         return uv.astype(np.float32), np.hstack([np.repeat(shade[:, None], 3, axis=1),
                                                  np.ones((len(uv), 1))]).astype(np.float32)
 

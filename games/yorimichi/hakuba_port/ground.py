@@ -5,7 +5,8 @@
 Reads each terrain cell in `LAYERS` where its region's `placements.json` stands it, the highest surface where cells
 overlap, and writes for each page `world/src/ground/<column>_<row>.bin`, 257 × 257 little-endian f32 heights 2 m apart, rows
 from the south, NaN where no cell covers a point (the sea), and `world/src/ground/colours/<column>_<row>.bin`, the
-cells' vertex colour at each point as sRGB bytes and an alpha of 255, or 0 where no cell gave one. The start's
+cells' vertex colour at each point (or, for a layer `ground_paint.py` paints, the colour Yorimichi's material draws
+there) as sRGB bytes and an alpha of 255, or 0 where no cell gave one. The start's
 terrain inside `START`, and any ground a page already has, keep their heights: a region sampled later only fills the
 land the pages lack. The cells are then the ground's, so their props and placements are removed: run it once after
 `port.py` brings a region's terrain."""
@@ -63,9 +64,9 @@ def triangles(glb):
     return np.concatenate(corners).astype(np.float64), np.concatenate(colours).astype(np.float64)
 
 
-def rasterise(heights, colours, tris, tri_colours, origin, step):
-    """Writes each triangle's height and colour at every grid point inside it where it is the highest yet, the
-    surface seen and stood on where two cells overlap; both are indexed [north, east]."""
+def rasterise(heights, colours, owners, layer, tris, tri_colours, origin, step):
+    """Writes each triangle's height, colour and `layer` (in `owners`) at every grid point inside it where it is the
+    highest yet, the surface seen and stood on where two cells overlap; all are indexed [north, east]."""
     for (a, b, c), (ca, cb, cc) in zip(tris, tri_colours):
         low = np.floor((np.minimum(np.minimum(a, b), c)[:2] - origin) / step).astype(int)
         high = np.ceil((np.maximum(np.maximum(a, b), c)[:2] - origin) / step).astype(int)
@@ -86,6 +87,20 @@ def rasterise(heights, colours, tris, tri_colours, origin, step):
         inside = (u >= -1e-6) & (v >= -1e-6) & (w >= -1e-6) & (np.isnan(current) | (height > current))
         heights[jj[inside], ii[inside]] = height[inside]
         colours[jj[inside], ii[inside]] = (u[..., None] * ca + v[..., None] * cb + w[..., None] * cc)[inside]
+        owners[jj[inside], ii[inside]] = layer
+
+
+def paint(heights, colours, owners, origin, step):
+    """Gives the points of each layer `ground_paint.PAINTERS` paints the colour Yorimichi's material draws there."""
+    from ground_paint import PAINTERS
+    dy, dx = np.gradient(np.nan_to_num(heights), step)
+    normal_z = 1 / np.sqrt(1 + dx * dx + dy * dy)
+    jj, ii = np.indices(heights.shape)
+    for layer, (_, prefix) in enumerate(LAYERS):
+        sel = (owners == layer) & ~np.isnan(heights)
+        if prefix in PAINTERS and sel.any():
+            colours[sel] = PAINTERS[prefix](origin[0] + ii[sel] * step, origin[1] + jj[sel] * step, heights[sel],
+                                            normal_z[sel], colours[sel])
 
 
 def srgb(linear):
@@ -95,8 +110,9 @@ def srgb(linear):
 
 
 def cells():
-    """Every terrain cell's triangles and corner colours on the map, x east, y north, z up, layer by layer."""
-    for region, prefix in LAYERS:
+    """Every terrain cell's layer (its index in `LAYERS`), triangles and corner colours on the map, x east, y north,
+    z up, layer by layer."""
+    for layer, (region, prefix) in enumerate(LAYERS):
         path = WORLD / 'src' / 'regions' / region / 'placements.json'
         if not path.is_file():
             continue
@@ -110,7 +126,7 @@ def cells():
             for x, y, z, yaw, scale in group['instances']:
                 turn = math.radians(yaw)
                 cos, sin = math.cos(turn), math.sin(turn)
-                yield np.stack([x + scale * (cos * east - sin * north), y + scale * (sin * east + cos * north),
+                yield layer, np.stack([x + scale * (cos * east - sin * north), y + scale * (sin * east + cos * north),
                                 z + scale * up], axis=-1), colours
 
 
@@ -121,7 +137,7 @@ def main():
     page_m = step * page_steps
     south_west = np.array(world['south_west_m'])
     layers = list(cells())
-    corners = np.concatenate([tris[..., :2].reshape(-1, 2) for tris, _ in layers])
+    corners = np.concatenate([tris[..., :2].reshape(-1, 2) for _, tris, _ in layers])
     first = np.floor((corners.min(0) - south_west) / page_m).astype(int)
     last = np.floor((corners.max(0) - south_west) / page_m).astype(int)
     columns, rows = range(first[0], last[0] + 1), range(first[1], last[1] + 1)
@@ -129,8 +145,10 @@ def main():
     size = np.array([len(columns), len(rows)]) * page_steps + 1
     heights = np.full((size[1], size[0]), np.nan)
     colours = np.full((size[1], size[0], 3), np.nan)
-    for tris, tri_colours in layers:
-        rasterise(heights, colours, tris, tri_colours, origin, step)
+    owners = np.full((size[1], size[0]), -1)
+    for layer, tris, tri_colours in layers:
+        rasterise(heights, colours, owners, layer, tris, tri_colours, origin, step)
+    paint(heights, colours, owners, origin, step)
     west, south, east, north = START
     (WORLD / world['ground'] / 'colours').mkdir(exist_ok=True)
     written = 0
