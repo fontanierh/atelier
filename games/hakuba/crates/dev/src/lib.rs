@@ -2,6 +2,7 @@
 //! player waits (`hakuba_player` stops them) and the camera flies wherever it is steered; the tiles load round it.
 
 mod notes;
+mod switches;
 mod zip;
 
 use bevy::input::InputSystems;
@@ -30,6 +31,7 @@ pub struct DevPlugin;
 
 impl Plugin for DevPlugin {
     fn build(&self, app: &mut App) {
+        switches::build(app);
         app.init_resource::<notes::Notes>()
             .add_systems(Update, toggle.run_if(in_state(Pause::Playing)))
             .add_systems(PreUpdate, notes::type_text.after(InputSystems).run_if(in_state(DevMode::On)))

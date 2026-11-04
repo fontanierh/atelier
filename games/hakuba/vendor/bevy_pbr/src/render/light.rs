@@ -994,29 +994,27 @@ pub(crate) fn remove_point_and_spot_light_view_entities(
 #[derive(Component, Default, Deref, DerefMut)]
 pub struct PointAndSpotLightViewEntities(Vec<Entity>);
 
-/// Hakuba: cascades kept from an earlier frame, as Unreal caches shadows. With `HAKUBA_SHADOW_CACHE=P0,P1,...` (default 2,2), cascade
-/// `i` redraws only every `Pi` frames (staggered so they take turns) and the frames between sample the map it kept,
-/// through the matrices it was drawn with. The shadow texture is then owned here rather than taken from the cache
-/// every frame, so what was drawn stays.
+/// Hakuba: how often each directional shadow cascade redraws, opted into by inserting this resource in the render
+/// world. Cascade `i` redraws every `periods[i]` frames (the last period for any further cascade), staggered so they
+/// take turns, and the frames between sample the map it kept through the matrices it was drawn with. Without the
+/// resource, or with every period 1, every cascade redraws every frame, as upstream.
+#[derive(Resource, Clone, Debug, Default)]
+pub struct ShadowCascadeReuse {
+    pub periods: Vec<u32>,
+}
+
+/// The maps and matrices `ShadowCascadeReuse` keeps. The shadow texture is then owned here rather than taken from
+/// the cache every frame, so what was drawn stays.
 #[derive(Default)]
 pub struct KeptShadows {
     periods: Option<Vec<u32>>,
-    read: bool,
     frame: u32,
     texture: Option<(Extent3d, CachedTexture)>,
     cascades: HashMap<RetainedViewEntity, GpuDirectionalCascade>,
 }
 
 impl KeptShadows {
-    fn periods(&mut self) -> Option<&[u32]> {
-        if !self.read {
-            self.read = true;
-            // Two cascades taking turns halve the shadow cost at no visible lag for still scenery; `1` turns it off.
-            let periods = std::env::var("HAKUBA_SHADOW_CACHE").unwrap_or_else(|_| "2,2".into());
-            self.periods =
-                Some(periods.split(',').filter_map(|p| p.trim().parse::<u32>().ok()).map(|p| p.max(1)).collect());
-            self.periods = self.periods.take().filter(|p: &Vec<u32>| p.iter().any(|&p| p > 1));
-        }
+    fn periods(&self) -> Option<&[u32]> {
         self.periods.as_deref()
     }
 }
@@ -1107,12 +1105,14 @@ pub fn prepare_lights(
         mut max_cascades_per_light_warning_emitted,
         mut live_shadow_mapping_lights,
         mut kept_shadows,
+        shadow_cascade_reuse,
     ): (
         Local<bool>,
         Local<bool>,
         Local<bool>,
         Local<HashSet<RetainedViewEntity>>,
         Local<KeptShadows>,
+        Option<Res<ShadowCascadeReuse>>,
     ),
     (
         mut point_lights,
@@ -1581,6 +1581,9 @@ pub fn prepare_lights(
             usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         };
+    kept_shadows.periods = shadow_cascade_reuse
+        .map(|reuse| reuse.periods.iter().map(|&p| p.max(1)).collect::<Vec<_>>())
+        .filter(|periods| periods.iter().any(|&p| p > 1));
     let directional_light_depth_texture = if kept_shadows.periods().is_some() {
         let size = directional_light_depth_descriptor.size;
         if kept_shadows.texture.as_ref().is_none_or(|(kept, _)| *kept != size) {

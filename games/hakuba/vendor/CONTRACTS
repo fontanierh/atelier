@@ -1,9 +1,15 @@
 @cc [owner:fontanierh,label:correctness] local-pbr-patch-is-opt-in
-The Bevy PBR patch MUST preserve unmarked views and retain upstream licenses and source provenance. Forward-motion
-comparison views MUST keep the original prepass and TAA inputs until their motion output and temporal edge quality
-have been validated. Shader output fields, render targets, view bindings and dynamic offsets MUST use one mode key.
+The patched crates MUST retain upstream licenses and source provenance, and mark each local change with a `Hakuba:`
+comment. A change MUST be opt-in by view, camera or resource, unless it is listed in vendor/README.md as changing
+what every view draws (today the last cascade's fade and the moving crossfade dither) or as keeping the same results
+(the concurrent preprocessing passes). Forward-motion comparison views MUST keep the original prepass and TAA inputs
+until their motion output and temporal edge quality have been validated. Shader output fields, render targets, view
+bindings and dynamic offsets MUST use one mode key. The Metal backend MUST present frames as upstream until the game
+sets a shortest time on screen.
 
 @cc [owner:fontanierh,label:architecture] dependency-patch-has-one-copy
-The patched PBR crate MUST be selected through the project-local Cargo patch. Runtime and exporter builds MUST NOT
-read or modify a shared registry source or require a dependency checkout outside this game. Upstream feature-gated
-library and shader files MAY remain together, with their purpose documented in the vendor README.
+Each patched crate (Bevy's PBR renderer, wgpu's HAL) MUST be selected through the project-local Cargo patch. Runtime
+and exporter builds MUST NOT read or modify a shared registry source or require a dependency checkout outside this
+game. Upstream feature-gated library and shader files MAY remain together, with their purpose documented in the
+vendor README. The game MUST reach a patched crate's additions through its Rust API, never through exported C
+symbols.

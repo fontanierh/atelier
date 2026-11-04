@@ -3132,8 +3132,10 @@ dependencies = [
  "hakuba_audio",
  "hakuba_characters",
  "hakuba_dev",
+ "hakuba_gamepad",
  "hakuba_glider",
  "hakuba_menu",
+ "hakuba_pacing",
  "hakuba_player",
  "hakuba_rendering",
  "hakuba_screens",
@@ -3141,7 +3143,6 @@ dependencies = [
  "hakuba_skate",
  "hakuba_viewer",
  "hakuba_world",
- "hidapi",
 ]
 
 [[package]]
@@ -3205,6 +3206,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_gamepad"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_screens",
+ "hakuba_world",
+ "hidapi",
+]
+
+[[package]]
 name = "hakuba_glider"
 version = "0.1.0"
 dependencies = [
@@ -3220,6 +3231,16 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_screens",
+]
+
+[[package]]
+name = "hakuba_pacing"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_screens",
+ "hakuba_settings",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -3245,6 +3266,7 @@ name = "hakuba_screens"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -3314,6 +3336,7 @@ dependencies = [
  "serde",
  "serde_json",
  "web-sys",
+ "wgpu-hal",
 ]
 
 [[package]]

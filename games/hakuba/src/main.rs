@@ -5,11 +5,14 @@ use bevy::asset::AssetMetaCheck;
 use bevy::gltf::GltfPlugin;
 use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
+use bevy::window::{MonitorSelection, WindowMode};
 use hakuba_audio::SoundsPlugin;
 use hakuba_characters::CharactersPlugin;
 use hakuba_dev::DevPlugin;
+use hakuba_gamepad::GamepadPlugin;
 use hakuba_glider::GliderPlugin;
 use hakuba_menu::MenuPlugin;
+use hakuba_pacing::PacingPlugin;
 use hakuba_player::PlayerPlugin;
 use hakuba_rendering::RenderingPlugin;
 use hakuba_screens::ScreensPlugin;
@@ -18,16 +21,10 @@ use hakuba_skate::SkatePlugin;
 use hakuba_viewer::ViewerPlugin;
 use hakuba_world::WorldPlugin;
 
-#[cfg(target_os = "macos")]
-mod dualsense;
-#[cfg(not(target_arch = "wasm32"))]
-mod playtest;
-
 fn main() {
-    let mut app = App::new();
-    // Playtest: a command on an entity that is already gone warns instead of closing the game.
-    app.set_error_handler(bevy::ecs::error::warn);
-    app
+    App::new()
+        // A command on an entity that is already gone warns instead of closing the game.
+        .set_error_handler(bevy::ecs::error::warn)
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -36,23 +33,12 @@ fn main() {
                         // In the browser the game draws into index.html's canvas and fills the page.
                         canvas: Some("#hakuba".into()),
                         fit_canvas_to_parent: true,
-                        // Playtest: HAKUBA_FULLSCREEN=1 opens borderless fullscreen on the current screen.
-                        mode: if std::env::var("HAKUBA_FULLSCREEN").is_ok() {
-                            bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Current)
+                        // HAKUBA_FULLSCREEN opens borderless fullscreen on the current screen (crates/screens).
+                        mode: if hakuba_screens::switch("HAKUBA_FULLSCREEN").is_some() {
+                            WindowMode::BorderlessFullscreen(MonitorSelection::Current)
                         } else {
-                            bevy::window::WindowMode::Windowed
+                            WindowMode::Windowed
                         },
-                        // Playtest: HAKUBA_PRESENT=immediate|mailbox|fifo, HAKUBA_LATENCY=1|2.
-                        present_mode: match std::env::var("HAKUBA_PRESENT").as_deref() {
-                            Ok("immediate") => bevy::window::PresentMode::Immediate,
-                            Ok("mailbox") => bevy::window::PresentMode::Mailbox,
-                            Ok("fifo") => bevy::window::PresentMode::Fifo,
-                            _ => bevy::window::PresentMode::AutoVsync,
-                        },
-                        desired_maximum_frame_latency: std::env::var("HAKUBA_LATENCY")
-                            .ok()
-                            .and_then(|v| v.parse().ok())
-                            .and_then(std::num::NonZeroU32::new),
                         ..default()
                     }),
                     ..default()
@@ -86,12 +72,10 @@ fn main() {
             DevPlugin,
             ViewerPlugin,
             SoundsPlugin,
-        ));
-    #[cfg(target_os = "macos")]
-    app.add_plugins(dualsense::DualSensePlugin);
-    #[cfg(not(target_arch = "wasm32"))]
-    app.add_plugins(playtest::PlaytestPlugin);
-    app.run();
+            PacingPlugin,
+            GamepadPlugin,
+        ))
+        .run();
 }
 
 /// Where the assets are, from the folder beside the program: `assets`, but `../Resources/assets` in a macOS app,

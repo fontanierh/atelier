@@ -48,11 +48,8 @@ fn look(
     // steady. Without it, that would shimmer, so they are blurred instead. The shadow map's own 2x2 comparison costs
     // 0.5 ms less in the densest forest, but in play the character's shadow turns pixelated and its self-shadowing
     // flickers.
-    // Playtest: HAKUBA_SHADOW_FILTER=hardware|gaussian|temporal overrides it, to measure what filtering costs.
-    camera.insert(match (std::env::var("HAKUBA_SHADOW_FILTER").as_deref(), settings.anti_aliasing) {
-        (Ok("hardware"), _) => ShadowFilteringMethod::Hardware2x2,
-        (Ok("gaussian"), _) => ShadowFilteringMethod::Gaussian,
-        (Ok("temporal"), _) | (_, AntiAliasing::Temporal) => ShadowFilteringMethod::Temporal,
+    camera.insert(match settings.anti_aliasing {
+        AntiAliasing::Temporal => ShadowFilteringMethod::Temporal,
         _ => ShadowFilteringMethod::Gaussian,
     });
     light.shadow_maps_enabled = settings.shadows.reach().is_some();

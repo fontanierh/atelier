@@ -109,7 +109,9 @@ fn export_inner(
     glb.set_extras(full, extras.into());
     if foliage.is_some() {
         for level in ["full", "middle"] {
-            if let Some(node) = value["nodes"].as_array().and_then(|nodes| nodes.iter().position(|n| n["name"] == level)) {
+            if let Some(node) =
+                value["nodes"].as_array().and_then(|nodes| nodes.iter().position(|n| n["name"] == level))
+            {
                 cut_cards(&mut glb, &value, binary(&bytes), node, folder, level)?;
             }
         }

@@ -40,7 +40,7 @@ const ROOM_MS: f32 = 13.5;
 const WINDOW_S: f32 = 0.25;
 const CALM_S: f32 = 1.5;
 
-/// The GPU's load follows what the camera sees, so the drawn pixels follow it, as Unreal's dynamic resolution does:
+/// The GPU's load follows what the camera sees, so the drawn pixels follow it, as dynamic resolution does:
 /// fewer as soon as a quarter second's frames take the GPU over [`TARGET_MS`], more once they have had room for a while.
 /// Walking and riding keep separate steps.
 #[derive(Resource, Default)]
@@ -55,11 +55,6 @@ struct Load {
 
 impl Load {
     fn share(&self, riding: bool) -> f32 {
-        // Playtest: HAKUBA_ADAPT=0 always draws the setting's pixels.
-        static ADAPT: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-        if !*ADAPT.get_or_init(|| !std::env::var("HAKUBA_ADAPT").is_ok_and(|v| v == "0")) {
-            return 1.0;
-        }
         SHARES[self.steps[riding as usize]]
     }
 }
@@ -68,22 +63,15 @@ impl Load {
 fn gpu_busy_ms() -> f32 {
     #[cfg(target_os = "macos")]
     {
-        unsafe extern "C" {
-            fn hakuba_gpu_busy_ms() -> f64;
-        }
-        // SAFETY: the vendored Metal backend defines it.
-        unsafe { hakuba_gpu_busy_ms() as f32 }
+        wgpu_hal::metal::frames::gpu_busy_ms() as f32
     }
     #[cfg(not(target_os = "macos"))]
     0.0
 }
 
-/// Playtest measurement: `HAKUBA_FIXED_PIXELS=1` keeps the setting's pixels, so GPU timings compare like with like.
+/// For measuring: `HAKUBA_FIXED_PIXELS=1` keeps the setting's pixels, so GPU timings compare like with like.
 fn fixed_pixels() -> bool {
-    #[cfg(not(target_arch = "wasm32"))]
-    return std::env::var("HAKUBA_FIXED_PIXELS").is_ok_and(|v| v == "1");
-    #[cfg(target_arch = "wasm32")]
-    false
+    hakuba_screens::switched_on("HAKUBA_FIXED_PIXELS")
 }
 
 fn follow_load(

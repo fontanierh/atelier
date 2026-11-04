@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["craterpark-material-027", "craterpark-material-029", "craterpark-ramp-planks"]
 solid = true
-inputs_sha256 = "f7bb604ecb147fe9663583be5cce7969ff61c13da7c9cae8a71f7b392ae672b9"
+inputs_sha256 = "48b4dadc91b17651b1d4a2b6673656d72577e147f4940488798f549a85af347a"

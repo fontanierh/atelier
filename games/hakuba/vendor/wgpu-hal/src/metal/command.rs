@@ -606,7 +606,6 @@ impl crate::CommandEncoder for super::CommandEncoder {
     {
         let encoder = self.enter_blit();
         for copy in regions {
-            super::pool::copied(&dst.raw, copy.size.get());
             unsafe {
                 encoder.copyFromBuffer_sourceOffset_toBuffer_destinationOffset_size(
                     &src.raw,
@@ -1692,7 +1691,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
 
         let raw = self.raw_cmd_buf.as_ref().unwrap();
         // Hakuba: a pass whose label ends in "[concurrent]" holds only independent dispatches, so Metal may run them
-        // side by side rather than each waiting for the last, as Unreal batches its small culling dispatches.
+        // side by side rather than each waiting for the last.
         let concurrent = desc.label.is_some_and(|label| label.ends_with("[concurrent]"));
 
         autoreleasepool(|_| {
@@ -1707,7 +1706,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
             } else {
                 let descriptor = MTLComputePassDescriptor::new();
                 if concurrent {
-                    unsafe { descriptor.setDispatchType(MTLDispatchType::Concurrent) };
+                    descriptor.setDispatchType(MTLDispatchType::Concurrent);
                 }
 
                 let mut sba_index = 0;

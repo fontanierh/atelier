@@ -1,7 +1,7 @@
 //! A coarse picture of how far the world camera sees, read back from the GPU for culling on the CPU: after the main
 //! pass, a compute pass keeps the farthest depth in each of `GRID` cells of the main pass's depth, beside the camera
 //! that drew it. Something whose nearest point lies beyond the farthest depth of every cell it covers is hidden behind
-//! nearer things, as Unreal's hierarchical depth culling finds.
+//! nearer things, as hierarchical depth culling finds.
 
 use bevy::asset::{RenderAssetUsages, embedded_asset, load_embedded_asset};
 use bevy::core_pipeline::core_3d::main_transparent_pass_3d;

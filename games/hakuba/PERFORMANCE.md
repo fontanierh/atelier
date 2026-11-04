@@ -32,9 +32,36 @@ at intersections. Exact motion-texture publication does not prove identical TAA 
 old displayed TAA input; `publish` retains both geometry passes but feeds TAA from main. These remain explicit
 validation modes, not quality settings or proof that the 60 FPS contract is met.
 
+## The desktop build on the Mac
+
+The desktop build is not the reference measurement, but it is how the game is playtested, so it holds 60 frames a
+second on its own terms: an Apple M3 Pro on a 120 Hz display, 1440 lines drawn, the default settings. Frames start on
+fixed 62 Hz deadlines and Metal keeps each on screen at least a 60th of a second (crates/pacing), and the drawn pixels
+follow the GPU's measured time (crates/world `pixels.rs`).
+
+Measure it with a recorded pad session, so every run walks the same route: `HAKUBA_RECORD=FILE` records one and
+`HAKUBA_SCRIPT=FILE` replays it (crates/gamepad), with nothing else using the CPU or GPU. The frame log says each
+second how many game-loop frames fell under 12 ms, about one 60 Hz frame, 20–29, 29–40 and over 40 ms; count a frame
+in the 20–29 bucket or above, after the splash lifts, as late. The counter in the corner reads from when Metal actually
+showed each frame, not the game loop. `HAKUBA_FIXED_PIXELS=1` holds the resolution, so GPU timings compare like with
+like, and Xcode's Metal System Trace of the game itself gives each pass's GPU time.
+
+On 2026-11-04, with this build:
+
+| Route (replayed pad session) | Frames after the splash | Late (over 20.8 ms) | Over 29 ms | Worst |
+| --- | --- | --- | --- | --- |
+| Walk, first run | 1504 | 34 (2.3%) | 5 | 100 ms |
+| Walk, second run | 1623 | 23 (1.4%) | 3 | 54 ms |
+| Skate | 2291 | 23 (1.0%) | 3 | 51 ms |
+| Free-camera rise over the forest | 2297 | 11 (0.5%) | 0 | 28 ms |
+
+What is left is mostly the first seconds after the splash, while the world's buffers still grow and the start view
+draws the most geometry, and a rare render-thread hitch.
+
 ## Measuring
 
-Measure in the browser, which is slower than the desktop build and differs from it in ways that matter (below).
+Measure the reference in the browser, which is slower than the desktop build and differs from it in ways that matter
+(below).
 Use `trunk serve --release` for the reference measurement. Plain `trunk serve` uses the faster-to-build development
 profile, whose frame rate is not the reference measurement.
 

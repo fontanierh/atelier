@@ -28,7 +28,8 @@ use bevy::render::texture::{ColorAttachment, TextureCache};
 use bevy::render::view::{ExtractedView, ViewDepthStencilTexture, ViewTarget, ViewUniformOffset};
 use bevy::render::{Render, RenderApp, RenderStartup, RenderSystems};
 
-/// Explicit validation stages; normal cameras keep Bevy's original renderer.
+/// How a camera draws its motion: `Single` is the desktop world camera's, `Compare` and `Publish` are validation
+/// stages; cameras without it keep Bevy's original renderer.
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq, ExtractComponent)]
 #[extract_app(RenderApp)]
 #[require(ForwardMotion)]

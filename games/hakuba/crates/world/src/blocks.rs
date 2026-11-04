@@ -1,10 +1,8 @@
-//! Playtest: the distant land drawn in blocks, as Unreal's hierarchical levels of detail do. Beyond `BLOCK_M` from
+//! The distant land drawn in blocks, as hierarchical levels of detail do. Beyond `BLOCK_M` from
 //! the camera, the meshes of the far tiles in each block of 8 × 8 tiles (512 m) merge into one mesh per look, so
 //! the GPU draws a few hundred meshes for the land past half a kilometre instead of tens of thousands; the tiles' own meshes hide
 //! meanwhile. A merged mesh holds the very vertices of the meshes it replaces, so nothing changes on screen as a tile
-//! joins or leaves its block.
-//!
-//! `HAKUBA_BLOCK_M=0` turns it off.
+//! joins or leaves its block. Its merges and the blocks the depth grid hides are logged at debug level.
 
 use std::collections::{HashMap, HashSet};
 
@@ -54,26 +52,13 @@ const NEAREST_COVER_M: f32 = 4.0;
 /// Beyond this many cells of margin, the grid says too little and every block shows.
 const MOST_MARGIN_CELLS: i32 = 12;
 
-fn plant_error_px() -> f32 {
-    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    *V.get_or_init(|| std::env::var("HAKUBA_BLOCK_PX").ok().and_then(|v| v.parse().ok()).unwrap_or(PLANT_ERROR_PX))
-}
-
-fn block_m() -> f32 {
-    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    *V.get_or_init(|| std::env::var("HAKUBA_BLOCK_M").ok().and_then(|v| v.parse().ok()).unwrap_or(BLOCK_M))
-}
-
 pub struct BlocksPlugin;
 
 impl Plugin for BlocksPlugin {
     fn build(&self, app: &mut App) {
-        if block_m() <= 0.0 {
-            return;
-        }
         app.init_resource::<Blocks>().add_systems(
             PostUpdate,
-            (hide, assign, notice, merge, swap, occlude.run_if(occluding))
+            (hide, assign, notice, merge, swap, occlude)
                 .chain()
                 .after(TransformSystems::Propagate)
                 .before(VisibilitySystems::VisibilityPropagate)
@@ -199,7 +184,7 @@ fn assign(
         let Some((cell, centre, root)) = tile.far_root() else { continue };
         let block = cell / BLOCK_TILES;
         let member = blocks.blocks.get(&block).and_then(|b| b.members.get(&entity)).copied();
-        let edge = block_m() + if member.is_some() { -HYSTERESIS_M } else { HYSTERESIS_M };
+        let edge = BLOCK_M + if member.is_some() { -HYSTERESIS_M } else { HYSTERESIS_M };
         if centre.xz().distance(eye) < edge {
             continue;
         }
@@ -267,7 +252,7 @@ struct Merged {
 /// The most merges building at once.
 const MOST_PENDING: usize = 2;
 
-/// Gathers the dirty blocks' meshes and merges them on workers, as Unreal builds its level-of-detail proxies off the
+/// Gathers the dirty blocks' meshes and merges them on workers, as level-of-detail proxies are built off the
 /// game thread: a block's merge costs tens of milliseconds. A block keeps its old merged meshes until the new ones
 /// are ready.
 #[allow(clippy::type_complexity)]
@@ -412,8 +397,6 @@ fn swap(
                 show(&mut commands, &mut visibility, part);
             }
         }
-        // Playtest: HAKUBA_BLOCK_HIDE=still, painted or trees hides that look's merged meshes, to measure them.
-        let hide = std::env::var("HAKUBA_BLOCK_HIDE").unwrap_or_default();
         for (look, mesh, parts) in result.meshes {
             let mut drawn = commands.spawn((
                 Name::new("Block"),
@@ -424,20 +407,8 @@ fn swap(
                 bevy::mesh::MeshTag::new(0),
                 DespawnOnExit(Screen::World),
             ));
-            let mut covered = true;
             look.insert(&mut drawn);
-            if matches!(
-                (&look, hide.as_str()),
-                (Drawn::Look(Look::Still(_)), "still")
-                    | (Drawn::Look(Look::Painted(_)), "painted")
-                    | (Drawn::Source(_), "trees")
-            ) {
-                drawn.insert(Visibility::Hidden);
-                covered = false;
-            }
-            if covered {
-                drawn.insert(Covered::default());
-            }
+            drawn.insert(Covered::default());
             block.drawn.push(drawn.id());
             for part in parts {
                 commands.entity(part).try_insert(InBlock);
@@ -445,9 +416,8 @@ fn swap(
                 block.parts.push(part);
             }
         }
-        // Playtest: HAKUBA_BLOCK_LOG=1 logs each merge.
-        if std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") {
-            info!(
+        {
+            debug!(
                 "BLOCK merge {key} urgent {urgent}: {} members, {} parts in {} meshes; main thread {gather_ms:.1} ms gathering, {:.1} ms swapping, worker {:.1} ms",
                 block.members.len(),
                 block.parts.len(),
@@ -457,12 +427,6 @@ fn swap(
             );
         }
     }
-}
-
-fn occluding() -> bool {
-    // Playtest: HAKUBA_OCCLUDE=0 draws the blocks hidden behind nearer things too.
-    static V: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *V.get_or_init(|| std::env::var("HAKUBA_OCCLUDE").map_or(true, |v| v != "0"))
 }
 
 /// On a block's merged mesh: how many depth grids in a row found it behind nearer things.
@@ -511,20 +475,16 @@ fn occlude(
             }
         }
     }
-    // Playtest: HAKUBA_BLOCK_LOG=1 logs, each second, how many blocks the depth grid hides.
-    if std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") && time.elapsed_secs() - logged.0 > 1.0 {
+    // Each second, how many blocks the depth grid hides.
+    if time.elapsed_secs() - logged.0 > 1.0 {
         let (_, hid, showed) = std::mem::replace(&mut *logged, (time.elapsed_secs(), 0, 0));
         let centre = grid.cell(DEPTH_GRID.x / 2, DEPTH_GRID.y / 2);
         let farthest = grid.cells.iter().copied().fold(1.0f32, f32::min);
-        info!(
+        debug!(
             "OCCLUDE grid {} margin {margin}: {hiding} of {} blocks hidden, {hid} hid and {showed} showed; centre depth {centre:.5}, farthest {farthest:.5}",
             grid.count,
             drawn.iter().len()
         );
-    }
-    if !std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") {
-        logged.1 = 0;
-        logged.2 = 0;
     }
 }
 
@@ -589,10 +549,10 @@ fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
         for (mut mesh, held) in chunks {
             // The distant plants are the bulk of the distant land's triangles, most smaller than a pixel, which a GPU
             // rasterises at great cost: nearby plants' vertices cluster together, joining their shapes.
-            if matches!(look, Drawn::Look(Look::Painted(_))) && plant_error_px() > 0.0 {
+            if matches!(look, Drawn::Look(Look::Painted(_))) && PLANT_ERROR_PX > 0.0 {
                 let before = mesh.indices().map_or(0, Indices::len) / 3;
                 let area = plan_area(&mesh);
-                mesh = clustered(mesh, eye, plant_error_px() * PIXEL_M_PER_M);
+                mesh = clustered(mesh, eye, PLANT_ERROR_PX * PIXEL_M_PER_M);
                 out.triangles[0] += before;
                 out.triangles[1] += mesh.indices().map_or(0, Indices::len) / 3;
                 out.areas[0] += area;
@@ -608,13 +568,10 @@ fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
                     mesh = thinned_cards(mesh, keep);
                 }
                 out.thinned[1] += mesh.indices().map_or(0, Indices::len) / 3;
-                // Playtest: HAKUBA_BLOCK_LOG=1 also logs each far-tree mesh's distance and triangles.
-                if std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") {
-                    info!(
-                        "BLOCK trees at {distance:.0} m keep {keep:.3}: {before} to {} triangles",
-                        mesh.indices().map_or(0, Indices::len) / 3
-                    );
-                }
+                debug!(
+                    "BLOCK trees at {distance:.0} m keep {keep:.3}: {before} to {} triangles",
+                    mesh.indices().map_or(0, Indices::len) / 3
+                );
             }
             mesh.asset_usage = RenderAssetUsages::RENDER_WORLD;
             out.meshes.push((look.clone(), mesh, held));
@@ -624,32 +581,22 @@ fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
     out
 }
 
-/// From how far a block's far trees thin, in metres to its nearest point (`HAKUBA_BLOCK_THIN`, 0 for never). From
+/// From how far a block's far trees thin, in metres to its nearest point. From
 /// 450 m, the hilltop's GPU frame drops from 13.2 to 11.1 ms and the island 2 km off looks the same from 200 m up; from
 /// 250 m it drops to 10.5 ms, but the island's crowns turn visibly puffier.
 const THIN_FROM_M: f32 = 450.0;
 /// The smallest share of a block's far trees' cards kept.
 const THIN_LEAST: f32 = 0.125;
 
-fn thin_least() -> f32 {
-    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    *V.get_or_init(|| std::env::var("HAKUBA_BLOCK_LEAST").ok().and_then(|v| v.parse().ok()).unwrap_or(THIN_LEAST))
-}
-
-fn thin_from_m() -> f32 {
-    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    *V.get_or_init(|| std::env::var("HAKUBA_BLOCK_THIN").ok().and_then(|v| v.parse().ok()).unwrap_or(THIN_FROM_M))
-}
-
 /// The share of its far trees' cards a block keeps at `distance`: as many cards per pixel as at [`THIN_FROM_M`], in
 /// halving steps, so a block moving a little nearer or farther keeps the same cards.
 fn thin_keep(distance: f32) -> f32 {
-    let from = thin_from_m();
-    if from <= 0.0 || distance <= from {
+    let from = THIN_FROM_M;
+    if distance <= from {
         return 1.0;
     }
     let halvings = (2.0 * (distance / from).log2()).floor();
-    0.5f32.powf(halvings).max(thin_least())
+    0.5f32.powf(halvings).max(THIN_LEAST)
 }
 
 /// How far `eye` is from the nearest point of `mesh`'s bounds.
@@ -661,7 +608,7 @@ fn nearest(mesh: &Mesh, eye: Vec3) -> f32 {
 }
 
 /// `mesh` keeping a share `keep` of its cards (the triangles joined by shared vertices), each grown about its centre
-/// so the trees cover as much, as SpeedTree and Unreal's foliage thin distant trees. A card is kept by a hash of where
+/// so the trees cover as much, as tree tools thin distant trees. A card is kept by a hash of where
 /// it stands, to a metre, so the cards of one tree, which share a centre, go together, and a block merged again in
 /// another order keeps the same cards.
 fn thinned_cards(mut mesh: Mesh, keep: f32) -> Mesh {
@@ -724,7 +671,14 @@ fn thinned_cards(mut mesh: Mesh, keep: f32) -> Mesh {
 }
 
 /// `mesh` with its vertices clustered, so that its triangles stray at most `error_per_m` metres per metre between
-/// `eye` and the mesh's nearest point (and never nearer than `BLOCK_M`); disjoint shapes may join.
+/// `eye` and the mesh's nearest point (and never nearer than `BLOCK_M`); disjoint shapes may join. In the browser,
+/// where the simplifier does not build, the mesh as it is.
+#[cfg(target_arch = "wasm32")]
+fn clustered(mesh: Mesh, _eye: Vec3, _error_per_m: f32) -> Mesh {
+    mesh
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn clustered(mut mesh: Mesh, eye: Vec3, error_per_m: f32) -> Mesh {
     use bevy::mesh::VertexAttributeValues as V;
     let (Some(V::Float32x3(positions)), Some(Indices::U32(indices))) =
@@ -733,7 +687,7 @@ fn clustered(mut mesh: Mesh, eye: Vec3, error_per_m: f32) -> Mesh {
         return mesh;
     };
     let (low, high) = positions.iter().fold((Vec3::MAX, Vec3::MIN), |(l, h), &p| (l.min(p.into()), h.max(p.into())));
-    let nearest = eye.clamp(low, high).distance(eye).max(block_m());
+    let nearest = eye.clamp(low, high).distance(eye).max(BLOCK_M);
     let extent = (high - low).max_element().max(1.0);
     let Ok(adapter) = meshopt::VertexDataAdapter::new(meshopt::typed_to_bytes(positions), 12, 0) else { return mesh };
     let reduced = meshopt::simplify_sloppy(indices, &adapter, 0, nearest * error_per_m / extent, None);

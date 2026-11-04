@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["treehouse-th-p-barrel"]
 solid = true
-inputs_sha256 = "e7b694ca3cc18674a31f783a692f46af8c25a92e9564650e56e6c65254f5d723"
+inputs_sha256 = "4bca2f14cdece08a7348f44913f31fad79c76047853aed506349155d922222fb"

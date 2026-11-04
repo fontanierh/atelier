@@ -589,9 +589,13 @@ mod tests {
         let result = app
             .world_mut()
             .run_system_once(move |mut painted: PaintedMaterials| {
-                let profile =
-                    SurfaceProfile { fill: 0.0, haze_start_m: 30.0, haze_length_m: 9000.0, haze_colour: [0.1, 0.2, 0.3] }
-                        .profile();
+                let profile = SurfaceProfile {
+                    fill: 0.0,
+                    haze_start_m: 30.0,
+                    haze_length_m: 9000.0,
+                    haze_colour: [0.1, 0.2, 0.3],
+                }
+                .profile();
                 assert!(painted.of(&w, &profile).is_err());
                 (painted.of_surface(&c, &profile).unwrap().unwrap(), painted.of_surface(&w, &profile).unwrap().unwrap())
             })
@@ -632,7 +636,8 @@ mod tests {
                 Mesh3d(mesh),
                 MeshMaterial3d(source.clone()),
                 SurfaceWaiting(
-                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     1,
                 ),
             ))
@@ -678,7 +683,8 @@ mod tests {
                 Mesh3d(mesh),
                 MeshMaterial3d(source.clone()),
                 SurfaceWaiting(
-                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     3,
                 ),
             ))
@@ -721,7 +727,8 @@ mod tests {
                 Mesh3d(mesh),
                 MeshMaterial3d(material),
                 SurfaceWaiting(
-                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     1,
                 ),
             ))
@@ -748,7 +755,8 @@ mod tests {
                 Mesh3d(missing.clone()),
                 MeshMaterial3d(material),
                 SurfaceWaiting(
-                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     1,
                 ),
             ))

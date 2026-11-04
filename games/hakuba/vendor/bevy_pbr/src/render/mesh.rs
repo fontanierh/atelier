@@ -3585,21 +3585,6 @@ impl SpecializedMeshPipeline for MeshPipeline {
             depth_write_enabled = true;
         }
 
-        // Hakuba: as Unreal's base pass after a full depth prepass, an opaque or masked mesh shades only the
-        // fragments the prepass kept, testing for equal depth without writing it, so no hidden fragment is shaded.
-        let depth_equal = depth_write_enabled
-            && key.contains(MeshPipelineKey::DEPTH_PREPASS)
-            && (!crate::prepass::masked_only_prepass() || key.contains(MeshPipelineKey::MAY_DISCARD))
-            && std::env::var("HAKUBA_DEPTH_EQUAL").is_ok_and(|v| v == "1");
-        if depth_equal {
-            shader_defs.push("DEPTH_EQUAL".into());
-        }
-        // Hakuba playtest: HAKUBA_LEAF=flat lights no leaf, HAKUBA_LEAF=opaque discards none, to split their cost.
-        match std::env::var("HAKUBA_LEAF").as_deref() {
-            Ok("flat") => shader_defs.push("LEAF_FLAT".into()),
-            Ok("opaque") => shader_defs.push("LEAF_OPAQUE".into()),
-            _ => {}
-        }
         let forward_motion = key.contains(MeshPipelineKey::FORWARD_MOTION) && depth_write_enabled;
         if forward_motion {
             shader_defs.push("FORWARD_MOTION".into());
@@ -3611,11 +3596,8 @@ impl SpecializedMeshPipeline for MeshPipeline {
             if deformed {
                 shader_defs.push("VERTEX_PREVIOUS_POSITION".into());
             }
-            // The fragment finds its world position from its depth rather than having it passed on
-            // (`HAKUBA_WORLD_FROM_DEPTH=0` passes it on, to compare).
-            if !std::env::var("HAKUBA_WORLD_FROM_DEPTH").is_ok_and(|v| v == "0") {
-                shader_defs.push("WORLD_FROM_DEPTH".into());
-            }
+            // The fragment finds its world position from its depth rather than having it passed on.
+            shader_defs.push("WORLD_FROM_DEPTH".into());
         }
 
         if key.contains(MeshPipelineKey::NORMAL_PREPASS) {
@@ -3832,8 +3814,8 @@ impl SpecializedMeshPipeline for MeshPipeline {
             },
             depth_stencil: Some(DepthStencilState {
                 format: CORE_3D_DEPTH_FORMAT,
-                depth_write_enabled: Some(depth_write_enabled && !depth_equal),
-                depth_compare: Some(if depth_equal { CompareFunction::Equal } else { CompareFunction::GreaterEqual }),
+                depth_write_enabled: Some(depth_write_enabled),
+                depth_compare: Some(CompareFunction::GreaterEqual),
                 stencil: StencilState {
                     front: StencilFaceState::IGNORE,
                     back: StencilFaceState::IGNORE,

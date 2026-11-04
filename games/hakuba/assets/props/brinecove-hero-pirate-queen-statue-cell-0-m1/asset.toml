@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["brinecove-t-bc-hero-pirate-queen-statue-0", "brinecove-t-bc-hero-pirate-queen-statue-1", "brinecove-t-bc-hero-pirate-queen-statue-10", "brinecove-t-bc-hero-pirate-queen-statue-2", "brinecove-t-bc-hero-pirate-queen-statue-3", "brinecove-t-bc-hero-pirate-queen-statue-4", "brinecove-t-bc-hero-pirate-queen-statue-5", "brinecove-t-bc-hero-pirate-queen-statue-6", "brinecove-t-bc-hero-pirate-queen-statue-7"]
 own_textures = ["brinecove-t-bc-hero-pirate-queen-statue-9"]
 solid = true
-inputs_sha256 = "c8f0087149dbeb5e67d135109fe34fcda93292528797534dd670924f791dc620"
+inputs_sha256 = "75a89d19a41b90727fbe2db9442077b62b204e2cffc0f0dc4e48495d5003eb51"

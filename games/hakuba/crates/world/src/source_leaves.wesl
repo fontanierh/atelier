@@ -10,18 +10,6 @@ import bevy_pbr::render::{
 struct FoliageProfile { direction: vec4<f32>, slow: vec4<f32>, fast: vec4<f32>, global_slow: vec4<f32>, global_fast: vec4<f32>, global_tail: vec4<f32>, push_haze: vec4<f32>, haze_colour: vec4<f32> }
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var<uniform> profile: FoliageProfile;
 
-// Playtest: under an equal depth test the prepass already dropped every see-through texel, so nothing is discarded.
-@if(DEPTH_EQUAL || LEAF_OPAQUE)
-const DISCARDS: bool = false;
-@if(!DEPTH_EQUAL && !LEAF_OPAQUE)
-const DISCARDS: bool = true;
-
-// Playtest: under LEAF_FLAT a leaf shows its colour unlit, to measure what lighting costs.
-@if(LEAF_FLAT)
-fn lit(input: pbr_types::PbrInput) -> vec4<f32> { return input.material.base_color; }
-@if(!LEAF_FLAT)
-fn lit(input: pbr_types::PbrInput) -> vec4<f32> { return apply_pbr_lighting(input); }
-
 @fragment
 fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
     let input = vertex_output(varyings);
@@ -37,7 +25,7 @@ fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> Fragme
     let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
         == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
     var out: FragmentOutput;
-    if DISCARDS && masked && surface.material.base_color.a < surface.material.alpha_cutoff {
+    if masked && surface.material.base_color.a < surface.material.alpha_cutoff {
         discard;
     } else {
         surface.material.base_color = alpha_discard(flags, surface.material.alpha_cutoff, surface.material.base_color);
@@ -48,7 +36,7 @@ fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> Fragme
         shade = 1.0 - profile.haze_colour.w * (1.0 - profile.direction.w) * (1.0 - input.color.g);
         surface.material.base_color = vec4<f32>(surface.material.base_color.rgb * (1.0 - haze) * shade, surface.material.base_color.a);
         surface.material.emissive = vec4<f32>(profile.haze_colour.xyz * haze, 1.0);
-        out.color = main_pass_post_lighting_processing(surface, lit(surface));
+        out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
     }
     @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);

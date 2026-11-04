@@ -1,4 +1,4 @@
-//! Cutting a plant's leaf cards to what their texture shows, as SpeedTree's and Unreal's cutout cards do: a masked
+//! Cutting a plant's leaf cards to what their texture shows, as tree tools' cutout cards do: a masked
 //! card's see-through corners still cost the GPU a fragment each, in the main pass and in every shadow cascade, only
 //! to be discarded. Each two-triangle card is shrunk to the rectangle, in texture space, round every texel that any
 //! mip a full-detail card can sample keeps at the material's alpha cutoff, widened by the texel that bilinear
@@ -226,7 +226,8 @@ fn push(out: &mut Mesh, part: &Mesh, weights: &[(u32, f32)]) -> u32 {
         out.uvs.push(weights.iter().map(|&(i, w)| Vec2::from(part.uvs[i as usize]) * w).sum::<Vec2>().to_array());
     }
     if !part.colours.is_empty() {
-        out.colours.push(weights.iter().map(|&(i, w)| Vec4::from(part.colours[i as usize]) * w).sum::<Vec4>().to_array());
+        out.colours
+            .push(weights.iter().map(|&(i, w)| Vec4::from(part.colours[i as usize]) * w).sum::<Vec4>().to_array());
     }
     (out.positions.len() - 1) as u32
 }
@@ -303,11 +304,8 @@ mod tests {
         assert_eq!(cards(&out).len(), 1, "the cut card stays one connected card");
         // Every opaque texel the card shows stays inside the cut card.
         let alpha = disc(12.0);
-        let tris: Vec<[Vec2; 3]> = out
-            .indices
-            .chunks_exact(3)
-            .map(|t| [0, 1, 2].map(|k| Vec2::from(out.uvs[t[k] as usize])))
-            .collect();
+        let tris: Vec<[Vec2; 3]> =
+            out.indices.chunks_exact(3).map(|t| [0, 1, 2].map(|k| Vec2::from(out.uvs[t[k] as usize]))).collect();
         let (w, h, data) = &alpha.mips[0];
         for y in 0..*h {
             for x in 0..*w {
@@ -321,7 +319,10 @@ mod tests {
         assert!(kept < 0.4, "the cut card keeps {kept} of its area");
         // Positions and colours follow the texture coordinates as on the card, and the card faces as it did.
         for k in 0..out.positions.len() {
-            assert!((out.positions[k][0] - out.uvs[k][0]).abs() < 1e-5 && (out.positions[k][2] - out.uvs[k][1]).abs() < 1e-5);
+            assert!(
+                (out.positions[k][0] - out.uvs[k][0]).abs() < 1e-5
+                    && (out.positions[k][2] - out.uvs[k][1]).abs() < 1e-5
+            );
             assert_eq!(out.colours[k], [1.0, 0.5, 0.25, 1.0]);
         }
         for t in tris {

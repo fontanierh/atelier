@@ -1,5 +1,6 @@
 //! Shared rendering commands for rigid meshes and 3D shadow views.
 
+mod defaults;
 mod depth_grid;
 mod forward_motion;
 
@@ -39,6 +40,7 @@ pub struct RenderingPlugin;
 
 impl Plugin for RenderingPlugin {
     fn build(&self, app: &mut App) {
+        defaults::build(app);
         forward_motion::build(app);
         depth_grid::build(app);
         app.add_systems(

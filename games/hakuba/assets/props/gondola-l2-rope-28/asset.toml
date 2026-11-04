@@ -1,4 +1,4 @@
 # A stretch of gondola line L2's haul ropes.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "79859921101accb1079f5120308b5714e4c582b6a047ff6bced2b5dead908d94"
+inputs_sha256 = "96e1bc9e118a51fc7f59e0499849e11cd6e46f32ffe371f3d5791652985a20ba"

@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/roll_stone_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "1d0c165cb5f214b90f8bb638b95083d82011859c6cfbc1c8f9f465aeb00c744c"
+inputs_sha256 = "67179e0b08d3d88aa5e710bf65d4319e4319e40040c9e504ea86465ef6e72306"

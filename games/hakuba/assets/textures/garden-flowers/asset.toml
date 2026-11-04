@@ -4,4 +4,4 @@ alpha_shadow = true
 source = "src/texture.png"
 alpha_cutoff = 0.4
 mip_colour = "average"
-inputs_sha256 = "719f1e76792d6491ac4ac3300e351458f04608ec0968aec03c9deb99bf17983c"
+inputs_sha256 = "f07e9a8acc3923a28b62896d1b32fccf1c061db16d94cdce0120db91a4af21d1"

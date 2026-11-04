@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["skatepark-basalt-albedo", "skatepark-concrete-albedo"]
 own_textures = ["skatepark-mural-albedo"]
 solid = true
-inputs_sha256 = "396cacabb779fded0ff8de6a547f5287bc509d25b4ae77f3dfb6a37661844259"
+inputs_sha256 = "f47a976c751908735ec9a292b207f9d40cde9203a621adafefa69face14adb2a"

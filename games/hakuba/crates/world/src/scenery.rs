@@ -21,7 +21,7 @@ use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
-use bevy::mesh::{Indices, MeshTag, MeshVertexAttributeId, VertexAttributeValues};
+use bevy::mesh::{MeshTag, MeshVertexAttributeId, VertexAttributeValues};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
@@ -125,104 +125,28 @@ struct Job {
     cursor: usize,
     /// A non-solid group's geometry while its copies are merged over several updates.
     combined: Option<Mesh>,
-    /// Playtest: the distances at which each copy shows, fading in and out, as Unreal picks a tree's level of
-    /// detail per copy.
+    /// The distances at which each copy shows, fading in and out, as a tree's level of detail is picked per
+    /// copy.
     range: Option<VisibilityRange>,
     /// Whether its merged meshes stay on the CPU too, so the distant blocks can merge them (blocks.rs): a far tile's.
     kept: bool,
 }
 
-/// Playtest: how far from the camera a full tile's tree shows its full version before fading to its middle one,
-/// and over how many metres it fades. From 65 m rather than 80 m, the open hilltop looks the same and the densest
-/// forest view's GPU frame drops from 17.0 to 16.3 ms; from 50 m it drops to 15.5 ms, but the crowns past 50 m turn
-/// visibly chunkier and close the sky between them.
-fn tree_lod_m() -> (f32, f32) {
-    static V: std::sync::OnceLock<(f32, f32)> = std::sync::OnceLock::new();
-    *V.get_or_init(|| {
-        let get = |name: &str, default: f32| std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default);
-        (get("HAKUBA_TREE_LOD_M", 65.0), get("HAKUBA_TREE_FADE_M", 12.0))
-    })
-}
+/// How far from the camera a full tile's tree shows its full version before fading to its middle one, and over how
+/// many metres it fades. From 65 m rather than 80 m, the open hilltop looks the same and the densest forest view's
+/// GPU frame drops from 17.0 to 16.3 ms; from 50 m it drops to 15.5 ms, but the crowns past 50 m turn visibly chunkier
+/// and close the sky between them.
+const TREE_LOD_M: f32 = 65.0;
+const TREE_FADE_M: f32 = 12.0;
+/// Over how many metres a full tile's small plants fade to their middle versions.
+const SMALL_FADE_M: f32 = 16.0;
 
-/// Playtest: where a full tile's small plants fade to their middle versions, and over how many metres, given how far
-/// tiles show their full versions: done before the nearest merged square of a tile turning middle, whose centre is
-/// within half a square's diagonal of the tile's centre, comes that near.
+/// Where a full tile's small plants fade to their middle versions, and over how many metres, given how far tiles
+/// show their full versions: done before the nearest merged square of a tile turning middle, whose centre is within
+/// half a square's diagonal of the tile's centre, comes that near.
 fn small_lod_m(full_m: f32) -> Option<(f32, f32)> {
-    static FADE: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    let fade =
-        *FADE.get_or_init(|| std::env::var("HAKUBA_SMALL_FADE_M").ok().and_then(|v| v.parse().ok()).unwrap_or(16.0));
-    let lod = full_m - MERGED_SQUARE_M * std::f32::consts::FRAC_1_SQRT_2 - 6.0 - fade / 2.0;
-    (fade > 0.0 && lod > fade).then_some((lod, fade))
-}
-
-/// Playtest: a tree's thinned version, between its full and middle ones, keeps this share of its full version's leaf
-/// cards, and shows until this far from the camera, if set (`HAKUBA_THIN_M`).
-fn tree_thin() -> Option<(f32, f32)> {
-    static V: std::sync::OnceLock<Option<(f32, f32)>> = std::sync::OnceLock::new();
-    *V.get_or_init(|| {
-        let get = |name: &str, default: f32| std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default);
-        let (keep, until) = (get("HAKUBA_THIN_KEEP", 0.35), get("HAKUBA_THIN_M", 0.0));
-        (keep > 0.0 && keep < 1.0 && until > tree_lod_m().0).then_some((keep, until))
-    })
-}
-
-/// A leaf mesh with fewer cards: of its cards (the triangles joined by shared vertices), it keeps a share spread
-/// evenly by a hash, each grown about its centre so the crown covers as much as before, as SpeedTree and Unreal's
-/// foliage thin a tree's leaves with distance. None for a mesh that is not cards (a trunk), which keeps its detail.
-fn thin(mesh: &Mesh, keep: f32) -> Option<Mesh> {
-    let positions = mesh.attribute(Mesh::ATTRIBUTE_POSITION)?.as_float3()?.to_vec();
-    let indices: Vec<u32> = mesh.indices()?.iter().map(|i| i as u32).collect();
-    let mut parent: Vec<u32> = (0..positions.len() as u32).collect();
-    fn root(parent: &mut [u32], mut x: u32) -> u32 {
-        while parent[x as usize] != x {
-            parent[x as usize] = parent[parent[x as usize] as usize];
-            x = parent[x as usize];
-        }
-        x
-    }
-    for t in indices.chunks_exact(3) {
-        let a = root(&mut parent, t[0]);
-        for &v in &t[1..] {
-            let b = root(&mut parent, v);
-            parent[b as usize] = a;
-        }
-    }
-    let mut cards: HashMap<u32, (usize, Vec3, usize)> = HashMap::new();
-    for t in indices.chunks_exact(3) {
-        let card = root(&mut parent, t[0]);
-        let entry = cards.entry(card).or_insert((0, Vec3::ZERO, 0));
-        entry.0 += 1;
-    }
-    // Only meshes of many small cards are leaves.
-    let small = cards.values().filter(|card| card.0 <= 4).count();
-    if cards.len() < 200 || small * 10 < cards.len() * 9 {
-        return None;
-    }
-    let mut members: HashMap<u32, Vec<u32>> = HashMap::new();
-    for v in 0..positions.len() as u32 {
-        let card = root(&mut parent, v);
-        if cards.contains_key(&card) {
-            members.entry(card).or_default().push(v);
-        }
-    }
-    let grow = (1.0 / keep).sqrt();
-    let kept = |card: u32| (card.wrapping_mul(0x9E37_79B9) >> 8) as f32 / (1u32 << 24) as f32 <= keep;
-    let mut moved = positions.clone();
-    for (&card, vertices) in &members {
-        if !kept(card) {
-            continue;
-        }
-        let centre = vertices.iter().map(|&v| Vec3::from(positions[v as usize])).sum::<Vec3>() / vertices.len() as f32;
-        for &v in vertices {
-            moved[v as usize] = (centre + (Vec3::from(positions[v as usize]) - centre) * grow).into();
-        }
-    }
-    let remaining: Vec<u32> =
-        indices.chunks_exact(3).filter(|t| kept(root(&mut parent, t[0]))).flatten().copied().collect();
-    let mut out = mesh.clone();
-    out.insert_attribute(Mesh::ATTRIBUTE_POSITION, moved);
-    out.insert_indices(Indices::U32(remaining));
-    Some(out)
+    let lod = full_m - MERGED_SQUARE_M * std::f32::consts::FRAC_1_SQRT_2 - 6.0 - SMALL_FADE_M / 2.0;
+    (lod > SMALL_FADE_M).then_some((lod, SMALL_FADE_M))
 }
 
 /// Copies spawned from their model, which may still be loading its textures.
@@ -366,10 +290,9 @@ fn spawn(
     roots: Query<(), With<WorldAssetRoot>>,
     loaded: Option<Res<Loaded>>,
     settings: Res<hakuba_settings::Settings>,
-    mut thinned: Local<HashMap<AssetId<Mesh>, Option<Handle<Mesh>>>>,
 ) {
     let times = if loaded.is_some() { 1 } else { UNDER_SPLASH };
-    let small_lod = small_lod_m(crate::tiles::full_m(settings.detail.full_m()));
+    let small_lod = small_lod_m(settings.detail.full_m());
     let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE * times, instances: INSTANCES_PER_UPDATE * times };
     'copies: for (entity, mut waiting) in &mut waiting {
         if waiting.jobs.is_none() {
@@ -402,23 +325,17 @@ fn spawn(
                 .get("full")
                 .and_then(|n| models.nodes.get(n))
                 .map_or(0, |n| vertices(&models.meshes, &meshes, n));
-            // Playtest: a tree in a full tile shows its full version near the camera and its middle one past
-            // `tree_lod_m`, each copy on its own, crossfading.
-            let per_copy = has_middle && full_vertices >= MERGE_BELOW_VERTICES && tree_lod_m().0 > 0.0;
+            // A tree in a full tile shows its full version near the camera and its middle one past `TREE_LOD_M`, each
+            // copy on its own, crossfading, as a tree's level of detail is picked per copy.
+            let per_copy = has_middle && full_vertices >= MERGE_BELOW_VERTICES;
             let blend = far.is_some() && waiting.blend && has_middle;
-            // Playtest: a full tile's small plants fade to their middle versions before the tile becomes middle.
+            // A full tile's small plants fade to their middle versions before the tile becomes middle.
             let small = small_lod.filter(|_| !per_copy && far.is_none() && !waiting.middle && has_middle);
             let mut versions = match (waiting.middle, has_middle) {
-                // Playtest: a blending tile shows both, the middle version fading out where the far fades in.
+                // A blending tile shows both, the middle version fading out where the far fades in.
                 _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
                 _ if far.is_some() => vec![("far", Role::Both)],
                 (true, true) => vec![("middle", Role::Both)],
-                (false, true) if per_copy && tree_thin().is_some() => vec![
-                    ("full", Role::Seen),
-                    ("thinned", Role::Seen),
-                    ("middle", Role::Seen),
-                    ("middle", Role::Shadow),
-                ],
                 (false, true) if per_copy => {
                     vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
                 }
@@ -433,9 +350,7 @@ fn spawn(
             }
             let mut shown = Vec::with_capacity(versions.len());
             for (name, role) in versions {
-                // Playtest: the thinned version is the full one with fewer, larger leaf cards (`thin`).
-                let source = if name == "thinned" { "full" } else { name };
-                let Some(node) = gltf.named_nodes.get(source).and_then(|node| models.nodes.get(node)) else {
+                let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
                     warn!("a model has no {name} node");
                     commands.entity(entity).remove::<Waiting>();
                     continue 'copies;
@@ -469,20 +384,6 @@ fn spawn(
                         }
                     }
                 };
-                if name == "thinned"
-                    && let Some((keep, _)) = tree_thin()
-                {
-                    for (mesh, _) in &mut parts {
-                        let thin = thinned.entry(mesh.id()).or_insert_with(|| {
-                            let made = meshes.get(&*mesh).and_then(|m| thin(m, keep)).map(|m| meshes.add(m));
-                            debug!("thinned a tree mesh: {}", made.is_some());
-                            made
-                        });
-                        if let Some(thin) = thin {
-                            *mesh = thin.clone();
-                        }
-                    }
-                }
                 if !matches!(role, Role::Collision)
                     && let Some(material) =
                         waiting.model.path().and_then(|path| materials.water.for_model(&path.path().to_string_lossy()))
@@ -491,8 +392,7 @@ fn spawn(
                         *look = Look::Water(material.clone());
                     }
                 }
-                let (lod, fade) = tree_lod_m();
-                let middle_m = tree_thin().map_or(lod, |(_, until)| until);
+                let (lod, fade) = (TREE_LOD_M, TREE_FADE_M);
                 let range = per_copy
                     .then(|| match (name, role) {
                         ("full", _) => Some(VisibilityRange {
@@ -500,13 +400,8 @@ fn spawn(
                             end_margin: lod - fade / 2.0..lod + fade / 2.0,
                             use_aabb: false,
                         }),
-                        ("thinned", _) => Some(VisibilityRange {
-                            start_margin: lod - fade / 2.0..lod + fade / 2.0,
-                            end_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
-                            use_aabb: false,
-                        }),
                         ("middle", Role::Seen) => Some(VisibilityRange {
-                            start_margin: middle_m - fade / 2.0..middle_m + fade / 2.0,
+                            start_margin: lod - fade / 2.0..lod + fade / 2.0,
                             end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
                             use_aabb: false,
                         }),
@@ -530,7 +425,7 @@ fn spawn(
                     }
                 });
                 // A blending tile's merged middle versions fade out around the far distance, by their own centres.
-                let far_m = crate::tiles::far_distance();
+                let far_m = crate::tiles::FAR_M;
                 let half = crate::tiles::BLEND_FADE_M / 2.0;
                 let range = range.or_else(|| {
                     (blend && name == "middle").then(|| VisibilityRange {
@@ -673,13 +568,13 @@ fn spawn(
         }
         for group in tile.groups.drain(..) {
             let (Some(anchor), Some(mut mesh)) = (tile.anchor, group.mesh) else { continue };
-            // Playtest: kept on the CPU too, so the distant blocks can merge it (blocks.rs).
+            // Kept on the CPU too, so the distant blocks can merge it (blocks.rs).
             mesh.asset_usage = RenderAssetUsages::default();
             let mut part = commands.spawn((Mesh3d(meshes.add(mesh)), Transform::IDENTITY, ChildOf(anchor)));
             insert_look(&mut part, &group.look);
             part.insert(NotShadowCaster);
             if tile.blend {
-                let far_m = crate::tiles::far_distance();
+                let far_m = crate::tiles::FAR_M;
                 let half = crate::tiles::BLEND_FADE_M / 2.0;
                 part.insert(VisibilityRange {
                     start_margin: far_m - half..far_m + half,

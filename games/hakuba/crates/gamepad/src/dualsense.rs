@@ -1,9 +1,7 @@
-//! A DualSense read straight from its HID reports, on macOS. Over Bluetooth the system switches the controller to its
-//! full report (0x31), which macOS hands over as one opaque vendor field, so gilrs sees it connect but never sees a
-//! button or a stick. A thread reads the reports and this plugin feeds them to Bevy as the gamepad's raw events.
+//! The DualSense read from its HID reports, and the scripted and recorded pad.
 
-use std::sync::mpsc::{Receiver, channel};
 use std::sync::Mutex;
+use std::sync::mpsc::{Receiver, channel};
 
 use bevy::input::gamepad::{
     GamepadConnection, GamepadConnectionEvent, RawGamepadAxisChangedEvent, RawGamepadButtonChangedEvent,
@@ -39,6 +37,12 @@ const BUTTONS: [GamepadButton; 17] = [
     GamepadButton::DPadRight,
     GamepadButton::DPadDown,
     GamepadButton::DPadLeft,
+];
+
+/// The buttons' names in scripts, in the order of [`BUTTONS`].
+const BUTTON_NAMES: [&str; BUTTONS.len()] = [
+    "square", "cross", "circle", "triangle", "l1", "r1", "l2", "r2", "create", "options", "l3", "r3", "ps", "up",
+    "right", "down", "left",
 ];
 
 /// Decodes a report: the full Bluetooth one (0x31) or the simple/USB one (0x01), which share their layout one byte
@@ -100,21 +104,22 @@ struct Script {
 
 impl Script {
     fn load() -> Option<Self> {
-        let text = std::fs::read_to_string(std::env::var("HAKUBA_SCRIPT").ok()?).ok()?;
-        let names = [
-            "square", "cross", "circle", "triangle", "l1", "r1", "l2", "r2", "create", "options", "l3", "r3", "ps",
-            "up", "right", "down", "left",
-        ];
+        let text = std::fs::read_to_string(hakuba_screens::switch("HAKUBA_SCRIPT")?).ok()?;
         let mut steps = Vec::new();
         for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
             let words: Vec<&str> = line.split_whitespace().collect();
-            let num = |i: usize| words.get(i).and_then(|w| w.trim_start_matches('+').parse::<f32>().ok()).unwrap_or(0.0);
+            let num =
+                |i: usize| words.get(i).and_then(|w| w.trim_start_matches('+').parse::<f32>().ok()).unwrap_or(0.0);
             let mut pad = Pad { sticks: [num(1), num(2), num(3), num(4)], ..default() };
             for word in words.iter().skip(5) {
-                if let Some(i) = names.iter().position(|n| n == word) {
+                if let Some(i) = BUTTON_NAMES.iter().position(|n| n == word) {
                     pad.buttons[i] = true;
-                    if i == 6 { pad.triggers[0] = 1.0 }
-                    if i == 7 { pad.triggers[1] = 1.0 }
+                    if i == 6 {
+                        pad.triggers[0] = 1.0
+                    }
+                    if i == 7 {
+                        pad.triggers[1] = 1.0
+                    }
                 }
             }
             steps.push((words[0].starts_with('+'), num(0), pad));
@@ -128,7 +133,9 @@ impl Script {
         let since_load = self.loaded.map(|l| l.elapsed().as_secs_f32());
         self.steps
             .iter()
-            .take_while(|(relative, start, _)| if *relative { since_load.is_some_and(|s| *start <= s) } else { *start <= t })
+            .take_while(
+                |(relative, start, _)| if *relative { since_load.is_some_and(|s| *start <= s) } else { *start <= t },
+            )
             .last()
             .map(|(_, _, pad)| *pad)
             .unwrap_or_default()
@@ -147,16 +154,13 @@ struct Record {
 impl Record {
     fn write(&mut self, pad: &Pad) {
         use std::io::Write;
-        let names = [
-            "square", "cross", "circle", "triangle", "l1", "r1", "l2", "r2", "create", "options", "l3", "r3", "ps",
-            "up", "right", "down", "left",
-        ];
         let time = match self.loaded {
             Some(loaded) => format!("+{:.3}", loaded.elapsed().as_secs_f32()),
             None => format!("{:.3}", self.started.elapsed().as_secs_f32()),
         };
-        let mut line = format!("{time} {:.3} {:.3} {:.3} {:.3}", pad.sticks[0], pad.sticks[1], pad.sticks[2], pad.sticks[3]);
-        for (i, name) in names.iter().enumerate() {
+        let mut line =
+            format!("{time} {:.3} {:.3} {:.3} {:.3}", pad.sticks[0], pad.sticks[1], pad.sticks[2], pad.sticks[3]);
+        for (i, name) in BUTTON_NAMES.iter().enumerate() {
             let pressed = match i {
                 6 => pad.triggers[0] > 0.5,
                 7 => pad.triggers[1] > 0.5,
@@ -177,7 +181,7 @@ struct Fed {
     last: Pad,
 }
 
-pub struct DualSensePlugin;
+pub(crate) struct DualSensePlugin;
 impl Plugin for DualSensePlugin {
     fn build(&self, app: &mut App) {
         let (send, receive) = channel();
@@ -206,10 +210,16 @@ impl Plugin for DualSensePlugin {
         if let Some(script) = Script::load() {
             app.insert_resource(script);
         }
-        if let Some(file) = std::env::var("HAKUBA_RECORD").ok().and_then(|path| std::fs::File::create(path).ok()) {
-            app.insert_resource(Record { file: std::io::LineWriter::new(file), started: std::time::Instant::now(), loaded: None });
+        if let Some(file) = hakuba_screens::switch("HAKUBA_RECORD").and_then(|path| std::fs::File::create(path).ok()) {
+            app.insert_resource(Record {
+                file: std::io::LineWriter::new(file),
+                started: std::time::Instant::now(),
+                loaded: None,
+            });
         }
-        app.insert_resource(Reports(Mutex::new(receive))).init_resource::<Fed>().add_systems(PreUpdate, feed.before(bevy::input::InputSystems));
+        app.insert_resource(Reports(Mutex::new(receive)))
+            .init_resource::<Fed>()
+            .add_systems(PreUpdate, feed.before(bevy::input::InputSystems));
     }
 }
 

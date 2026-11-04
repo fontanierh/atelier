@@ -78,10 +78,6 @@ const DITHER_THRESHOLD_MAP: vec4<u32> = vec4(
 /// patterns for different LOD levels of a single mesh to mesh together properly.
 @if(VISIBILITY_RANGE_DITHER)
 fn visibility_range_dither(frag_coord: vec4<f32>, dither: i32) {
-    // Hakuba: under an equal depth test the prepass already dithered; the main pass keeps what it kept.
-    @if(DEPTH_EQUAL) {
-        return;
-    }
     // If `dither` is 0, the object is visible.
     if (dither == 0) {
         return;
@@ -93,7 +89,7 @@ fn visibility_range_dither(frag_coord: vec4<f32>, dither: i32) {
     }
 
     // Otherwise, check the dither pattern. Hakuba: the pattern moves every frame through all sixteen of its positions,
-    // as Unreal's dithered LOD transition does, so temporal anti-aliasing blends it into a smooth fade rather than
+    // as a dithered level-of-detail transition does, so temporal anti-aliasing blends it into a smooth fade rather than
     // a fixed screen-space mesh that shimmers as the camera moves. Both versions of a mesh move it alike, so their
     // patterns still mesh.
     // The depth pass has no globals, so the frame is told by the camera's anti-aliasing jitter, which every frame
@@ -122,7 +118,7 @@ fn alpha_discard(material_flags: u32, alpha_cutoff: f32, output_color: vec4<f32>
         // NOTE: `MAY_DISCARD` is only defined in the alpha to coverage case if MSAA
         // was off. This special situation causes alpha to coverage to fall back to
         // alpha mask.
-        @if(MAY_DISCARD && !DEPTH_EQUAL)
+        @if(MAY_DISCARD)
         if alpha_mode == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK ||
                 alpha_mode == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE {
             if color.a >= alpha_cutoff {

@@ -131,17 +131,13 @@ fn spawn_world(
         commands.entity(camera).insert(mode);
         info!(?mode, "forward motion validation enabled");
     }
-    #[cfg(not(target_arch = "wasm32"))]
-    if std::env::var("HAKUBA_OCCLUSION").is_ok_and(|v| v == "1") {
-        commands.entity(camera).insert(bevy::render::occlusion_culling::OcclusionCulling);
-        info!("occlusion culling enabled");
-    }
 }
 
-/// Explicit validation only: native environment or browser query, never a stored game setting.
+/// On the desktop the single forward pass by default, which `HAKUBA_FORWARD_MOTION` may change for validation; in the
+/// browser only on request, by the address's query. Never a stored game setting.
 fn forward_motion_requested() -> Option<hakuba_rendering::ForwardMotionMode> {
     #[cfg(not(target_arch = "wasm32"))]
-    let requested = Some(std::env::var("HAKUBA_FORWARD_MOTION").unwrap_or_else(|_| "single".into()));
+    let requested = Some(hakuba_screens::switch("HAKUBA_FORWARD_MOTION").unwrap_or_else(|| "single".into()));
     #[cfg(target_arch = "wasm32")]
     let requested = web_sys::window().and_then(|window| window.location().search().ok()).and_then(|query| {
         query
@@ -261,10 +257,11 @@ fn read_index(
     commands.remove_resource::<Index>();
 }
 
-/// Makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a crossfade's pixels
-/// in screen space, which shimmers under temporal anti-aliasing, so it is never shown.
+/// In the browser, makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a
+/// crossfade's pixels in screen space, which shimmers under temporal anti-aliasing. On the desktop the vendored
+/// renderer moves that dither every frame, so temporal anti-aliasing averages it into a smooth fade, and crossfades
+/// stay (crates/CONTRACTS, `stable-under-temporal-anti-aliasing`).
 fn no_crossfades(mut ranges: Query<(Entity, &mut VisibilityRange), Changed<VisibilityRange>>) {
-    // Playtest: the vendored dither moves every frame, so temporal anti-aliasing smooths crossfades.
     if cfg!(not(target_arch = "wasm32")) {
         return;
     }

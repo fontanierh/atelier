@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-fire-buckets"]
 solid = true
-inputs_sha256 = "fe7961c0b3765d33d0317b5f7bab299fc7949e9cd6ed0003dd0c30dd2628e58a"
+inputs_sha256 = "8186c48cfab0c42f69c63720c706e092eca03c8dc997669b252a2247b22c5a35"

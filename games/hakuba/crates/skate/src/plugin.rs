@@ -282,7 +282,8 @@ fn keep_collision(
     focus.radius_m = WALK_FOCUS_M;
     focus.request(at.translation, Vec3::ZERO);
     if spare.builder.is_none() {
-        let builder = spare.session.lock().unwrap().as_ref().and_then(|s| s.as_ref().ok()).map(|s| s.collision_builder());
+        let builder =
+            spare.session.lock().unwrap().as_ref().and_then(|s| s.as_ref().ok()).map(|s| s.collision_builder());
         spare.builder = builder;
     }
     let Some(builder) = spare.builder else { return };
@@ -301,7 +302,7 @@ fn keep_collision(
         let (snapshot, generation, slot) = (collision.snapshot.clone(), collision.generation, spare.built.clone());
         spare.building = Some(generation);
         std::thread::spawn(move || {
-            utility_qos();
+            hakuba_screens::run_this_thread_as(hakuba_screens::ThreadClass::Utility);
             let (triangles, surfaces, rails) = simulation_collision(&snapshot);
             *slot.lock().unwrap() = Some((generation, builder.build(triangles, surfaces, rails)));
         });
@@ -311,18 +312,6 @@ fn keep_collision(
 /// How far around the walker collision is kept for a mount, and around the rider once mounted.
 const WALK_FOCUS_M: f32 = 16.;
 const RIDE_FOCUS_M: f32 = 48.;
-
-fn utility_qos() {
-    #[cfg(target_os = "macos")]
-    // SAFETY: lowers the calling thread's own scheduling class, so macOS favours the game's threads over it.
-    unsafe {
-        unsafe extern "C" {
-            fn pthread_set_qos_class_self_np(class: u32, priority: i32) -> i32;
-        }
-        // QOS_CLASS_UTILITY
-        pthread_set_qos_class_self_np(0x11, 0);
-    }
-}
 
 fn build_spare(
     mut spare: ResMut<Spare>,
@@ -338,7 +327,7 @@ fn build_spare(
     let (slot, resources) = (spare.session.clone(), package.0.clone());
     spare.started = true;
     std::thread::spawn(move || {
-        utility_qos();
+        hakuba_screens::run_this_thread_as(hakuba_screens::ThreadClass::Utility);
         // A small floor stands in for the world until the real collision is installed at mount.
         let floor = vec![[[-8., 0., -8.], [8., 0., -8.], [8., 0., 8.]], [[-8., 0., -8.], [8., 0., 8.], [-8., 0., 8.]]];
         let t = std::time::Instant::now();
@@ -423,7 +412,17 @@ fn transition(
     let Ok((mut player, mut at)) = players.single_mut() else { return };
     if player.owner == MovementOwner::Skating && status.failure.is_some() {
         let failure = status.failure.clone();
-        hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, None);
+        hand_back(
+            &mut commands,
+            &mut ride,
+            &mut player,
+            &mut at,
+            &mut focus,
+            &mut status,
+            &mut ground,
+            &mut spare,
+            None,
+        );
         status.failure = failure;
         return;
     }
@@ -442,7 +441,17 @@ fn transition(
             // Off the board at once, where the rider is, carrying it, with every move of walking back.
             input.toggle = false;
             let held = Some(&mut *carry);
-            hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, held);
+            hand_back(
+                &mut commands,
+                &mut ride,
+                &mut player,
+                &mut at,
+                &mut focus,
+                &mut status,
+                &mut ground,
+                &mut spare,
+                held,
+            );
             return;
         }
         ride.mounting = !ride.mounting;
@@ -456,7 +465,17 @@ fn transition(
         ride.mounting_transition = false;
     }
     if should_hand_back(ride.stowing, ride.offboard_time) {
-        hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, None);
+        hand_back(
+            &mut commands,
+            &mut ride,
+            &mut player,
+            &mut at,
+            &mut focus,
+            &mut status,
+            &mut ground,
+            &mut spare,
+            None,
+        );
         return;
     }
     if input.recover && player.owner == MovementOwner::Skating {
@@ -497,7 +516,7 @@ fn transition(
                         session.install_collision(session.collision_builder().build(triangles, surfaces, rails)?)?;
                     }
                 }
-                info!("MOUNT_TIMING spare install {:?}", t.elapsed());
+                debug!("MOUNT_TIMING spare install {:?}", t.elapsed());
                 session
             }
             other => {
@@ -509,11 +528,11 @@ fn transition(
                 Session::from_resources(&package.0, triangles, surfaces, rails, spawn, heading.x.atan2(heading.z))?
             }
         };
-        info!("MOUNT_TIMING from_resources {:?}", t.elapsed());
+        debug!("MOUNT_TIMING from_resources {:?}", t.elapsed());
         preferences::apply(&mut session, &settings.skate)?;
-        info!("MOUNT_TIMING preferences {:?}", t.elapsed());
+        debug!("MOUNT_TIMING preferences {:?}", t.elapsed());
         let pose = session.activate(spawn, heading.x.atan2(heading.z))?;
-        info!("MOUNT_TIMING activate {:?}", t.elapsed());
+        debug!("MOUNT_TIMING activate {:?}", t.elapsed());
         places::restore(&mut session, &settings)?;
         session.launch(frame::simulation_point(player.motion.velocity).to_array());
         info!(
@@ -523,7 +542,7 @@ fn transition(
             frame::world_point(pose.root.w_axis.truncate())
         );
         let retarget = retarget::Retarget::bind(rig, &pose.names, &session.reference_pose()?)?;
-        info!("MOUNT_TIMING retarget {:?}", t.elapsed());
+        debug!("MOUNT_TIMING retarget {:?}", t.elapsed());
         Ok::<_, String>((session, pose, retarget))
     })();
     match result {
@@ -610,7 +629,7 @@ fn simulate(
         let (snapshot, generation, slot) = (collision.snapshot.clone(), collision.generation, ride.built.clone());
         ride.building = Some(generation);
         std::thread::spawn(move || {
-            utility_qos();
+            hakuba_screens::run_this_thread_as(hakuba_screens::ThreadClass::Utility);
             let started = std::time::Instant::now();
             let (triangles, surfaces, rails) = simulation_collision(&snapshot);
             let prepared = builder.build(triangles, surfaces, rails);
@@ -953,7 +972,8 @@ fn carried(pose: &Pose) -> Option<([Mat4; PARTS.len()], [Quat; 2])> {
     let top = -(middle - along * middle.dot(along)).try_normalize()?;
     let deck = Mat3::from_cols(along, top, along.cross(top));
     // The player faces +Z with +Y up, so their right is -X.
-    let turn = |inward: Vec3| Quat::from_mat3(&(Mat3::from_cols(Vec3::Z, inward, Vec3::Z.cross(inward)) * deck.transpose()));
+    let turn =
+        |inward: Vec3| Quat::from_mat3(&(Mat3::from_cols(Vec3::Z, inward, Vec3::Z.cross(inward)) * deck.transpose()));
     Some((parts, [turn(Vec3::X), turn(Vec3::NEG_X)]))
 }
 
@@ -1041,7 +1061,17 @@ fn release(
     }
     if let Ok((mut player, mut at)) = players.single_mut() {
         if player.owner == MovementOwner::Skating {
-            hand_back(&mut commands, &mut ride, &mut player, &mut at, &mut focus, &mut status, &mut ground, &mut spare, None);
+            hand_back(
+                &mut commands,
+                &mut ride,
+                &mut player,
+                &mut at,
+                &mut focus,
+                &mut status,
+                &mut ground,
+                &mut spare,
+                None,
+            );
         }
     }
 }

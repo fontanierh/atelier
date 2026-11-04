@@ -99,8 +99,8 @@ struct Pipelines {
 
 fn count(cache: Res<PipelineCache>, pipelines: Res<Pipelines>, mut named: Local<usize>) {
     let all = cache.pipelines().count();
-    // Playtest: HAKUBA_PIPELINES=1 names each pipeline as the renderer starts it, to find what a hitch made.
-    if all > *named && std::env::var_os("HAKUBA_PIPELINES").is_some() {
+    // HAKUBA_PIPELINES names each pipeline as the renderer starts it, to find what a hitch made (crates/screens).
+    if all > *named && hakuba_screens::switch("HAKUBA_PIPELINES").is_some() {
         use bevy::render::render_resource::PipelineDescriptor;
         for pipeline in cache.pipelines().skip(*named) {
             let (label, defs) = match &pipeline.descriptor {

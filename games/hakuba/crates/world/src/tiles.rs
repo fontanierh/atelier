@@ -18,29 +18,12 @@ use crate::vertex_paint::{SurfaceFailed, SurfaceWaiting};
 const MIDDLE_M: f32 = 2500.0;
 /// From how far from the camera, to a tile's centre, a middle tile shows its plants' far versions, merged: there a
 /// tree is a few pixels tall, and the forests on every hill around would otherwise be hundreds of thousands of copies.
-const FAR_M: f32 = 200.0;
-/// How far past [`FAR_M`] a tile keeps its version, so a camera moving to and fro across it does not respawn the tile.
-const FAR_MARGIN_M: f32 = 16.0;
+pub(crate) const FAR_M: f32 = 200.0;
 /// The most tiles that load at once, so the nearest are not kept waiting behind the far.
 const LOADING: usize = 16;
 /// The most tiles that load at once under the splash, when nothing is drawn yet; a browser refuses thousands of
 /// fetches at once.
 const LOADING_UNDER_SPLASH: usize = 32;
-fn tuned(name: &str, default: f32) -> f32 {
-    std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
-}
-fn far_m() -> f32 {
-    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    *V.get_or_init(|| tuned("HAKUBA_FAR_M", FAR_M))
-}
-pub(crate) fn full_m(settings: f32) -> f32 {
-    static V: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
-    V.get_or_init(|| std::env::var("HAKUBA_FULL_M").ok().and_then(|v| v.parse().ok())).unwrap_or(settings)
-}
-fn middle_m() -> f32 {
-    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    *V.get_or_init(|| tuned("HAKUBA_MIDDLE_M", MIDDLE_M))
-}
 pub const TILES: &str = "world/tiles";
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -71,25 +54,18 @@ enum Detail {
     Middle,
     /// The middle version, showing its plants' far versions.
     Far,
-    /// Playtest: the middle version showing both its plants' middle and far versions, crossfading by distance, so
+    /// The middle version showing both its plants' middle and far versions, crossfading by distance, so
     /// a tile near [`FAR_M`] never swaps one for the other at once.
     Blend,
 }
 
-/// Playtest: how far either side of [`FAR_M`], to a tile's centre, a tile shows both its plants' middle and far
-/// versions. A merged mesh's centre is within a tile's half diagonal of the tile's, so this exceeds that plus half
-/// the fade.
+/// How far either side of [`FAR_M`], to a tile's centre, a tile shows both its plants' middle and far versions. A
+/// merged mesh's centre is within a tile's half diagonal of the tile's, so this exceeds that plus half the fade.
 const BLEND_M: f32 = 64.0;
-fn blend_m() -> f32 {
-    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
-    *V.get_or_init(|| tuned("HAKUBA_BLEND_M", BLEND_M))
-}
-/// Playtest: over how many metres around [`FAR_M`] a blending tile's plants fade from their middle to far versions.
+/// Over how many metres around [`FAR_M`] a blending tile's plants fade from their middle to far versions.
 pub(crate) const BLEND_FADE_M: f32 = 24.0;
-/// Playtest: the distance from the camera at which a plant's far version replaces its middle one.
-pub(crate) fn far_distance() -> f32 {
-    far_m()
-}
+/// How far past its band's edge a tile keeps its version, so a camera moving to and fro there does not respawn it.
+const KEEP_MARGIN_M: f32 = 8.0;
 
 #[derive(Component)]
 pub struct Tile {
@@ -123,7 +99,7 @@ impl Tile {
             queued: false,
         })
     }
-    /// Playtest: its cell, centre and shown root while it shows its far version alone.
+    /// Its cell, centre and shown root while it shows its far version alone.
     pub(crate) fn far_root(&self) -> Option<(UVec2, Vec3, Entity)> {
         let root = self.showing.filter(|_| self.shown_detail == Some(Detail::Far))?;
         Some((UVec2::new(self.column, self.row), self.centre, root))
@@ -191,18 +167,19 @@ fn choose(
             focus.as_ref().is_some_and(|f| f.intersects(tile.centre, grid.as_ref().map_or(64.0, |g| g.tile_m)));
         let detail = match distance {
             _ if pinned => Some(Detail::Full),
-            d if d < full_m(settings.detail.full_m()) => Some(Detail::Full),
-            // A tile keeps its version for a few metres past its band's edge, so a camera moving to and fro there
-            // does not respawn it.
-            d if d < far_m() - blend_m() + if tile.detail == Some(Detail::Middle) { 8.0 } else { -8.0 } => {
+            d if d < settings.detail.full_m() => Some(Detail::Full),
+            d if d < FAR_M - BLEND_M
+                + if tile.detail == Some(Detail::Middle) { KEEP_MARGIN_M } else { -KEEP_MARGIN_M } =>
+            {
                 Some(Detail::Middle)
             }
-            d if blend_m() > 0.0
-                && d < far_m() + blend_m() + if tile.detail == Some(Detail::Blend) { 8.0 } else { -8.0 } =>
+            d if d < FAR_M
+                + BLEND_M
+                + if tile.detail == Some(Detail::Blend) { KEEP_MARGIN_M } else { -KEEP_MARGIN_M } =>
             {
                 Some(Detail::Blend)
             }
-            d if d < middle_m() => Some(Detail::Far),
+            d if d < MIDDLE_M => Some(Detail::Far),
             _ => None,
         };
         loading += usize::from(tile.pending.is_some());
@@ -529,7 +506,7 @@ mod tests {
         let near = app.world_mut().spawn(Tile::named("tile 1 1", Vec3::new(FAR_M, 0.0, 0.0)).unwrap()).id();
         let far = app
             .world_mut()
-            .spawn(Tile::named("tile 2 1", Vec3::new(FAR_M + BLEND_M + 2.0 * FAR_MARGIN_M, 0.0, 0.0)).unwrap())
+            .spawn(Tile::named("tile 2 1", Vec3::new(FAR_M + BLEND_M + 2.0 * KEEP_MARGIN_M, 0.0, 0.0)).unwrap())
             .id();
         app.world_mut().run_system_once(choose).unwrap();
         // Around the far distance a tile blends its plants' middle and far versions; past the blend, only far ones.

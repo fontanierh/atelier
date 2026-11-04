@@ -405,10 +405,6 @@ impl PrepassPipeline {
         material_properties: &MaterialProperties,
     ) -> Result<RenderPipelineDescriptor, SpecializedMeshPipelineError> {
         let mut shader_defs = shader_defs;
-        // Playtest: Hakuba's main pass can write motion itself (Unreal's base-pass velocity); the prepass then
-        // stays depth-only and keeps its motion target bound but unwritten.
-        let motion = mesh_key.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS)
-            && !std::env::var("HAKUBA_PREPASS_MOTION").is_ok_and(|v| v == "0");
         let mut bind_group_layouts = vec![
             if mesh_key.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS) {
                 self.view_layout_motion_vectors.clone()
@@ -552,7 +548,9 @@ impl PrepassPipeline {
                 vertex_attributes.push(Mesh::ATTRIBUTE_TANGENT.at_shader_location(4));
             }
         }
-        if motion || mesh_key.contains(MeshPipelineKey::DEFERRED_PREPASS) {
+        if mesh_key
+            .intersects(MeshPipelineKey::MOTION_VECTOR_PREPASS | MeshPipelineKey::DEFERRED_PREPASS)
+        {
             shader_defs.push("MOTION_VECTOR_PREPASS_OR_DEFERRED_PREPASS".into());
         }
         if mesh_key.contains(MeshPipelineKey::DEFERRED_PREPASS) {
@@ -568,7 +566,7 @@ impl PrepassPipeline {
             shader_defs.push("VERTEX_COLORS".into());
             vertex_attributes.push(Mesh::ATTRIBUTE_COLOR.at_shader_location(7));
         }
-        if motion {
+        if mesh_key.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS) {
             shader_defs.push("MOTION_VECTOR_PREPASS".into());
         }
         if mesh_key.contains(MeshPipelineKey::HAS_PREVIOUS_SKIN) {
@@ -582,9 +580,6 @@ impl PrepassPipeline {
         }
         if mesh_key.contains(MeshPipelineKey::VISIBILITY_RANGE_DITHER) {
             shader_defs.push("VISIBILITY_RANGE_DITHER".into());
-        }
-        if !motion && mesh_key.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS) {
-            shader_defs.push("PREPASS_MOTION_UNWRITTEN".into());
         }
         if mesh_key.intersects(
             MeshPipelineKey::NORMAL_PREPASS
@@ -613,11 +608,6 @@ impl PrepassPipeline {
             mesh_key.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS),
             mesh_key.contains(MeshPipelineKey::DEFERRED_PREPASS),
         );
-        if !motion
-            && let Some(Some(target)) = targets.get_mut(1)
-        {
-            target.write_mask = ColorWrites::empty();
-        }
 
         if targets.iter().all(Option::is_none) {
             // if no targets are required then clear the list, so that no fragment shader is required
@@ -1307,13 +1297,6 @@ pub(crate) fn specialize_prepass_material_meshes(
         .retain(|view, _| all_views.contains(view));
 }
 
-/// Hakuba: on a tiled GPU the main pass already removes hidden opaque surfaces, so only masked materials, whose
-/// discards defeat that, go through the camera's depth prepass; the main pass tests them for equal depth.
-pub fn masked_only_prepass() -> bool {
-    static MASKED_ONLY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *MASKED_ONLY.get_or_init(|| std::env::var("HAKUBA_PREPASS_MASKED_ONLY").is_ok_and(|v| v == "1"))
-}
-
 pub fn queue_prepass_material_meshes(
     render_mesh_instances: Res<RenderMeshInstances>,
     render_materials: Res<ErasedRenderAssets<PreparedMaterial>>,
@@ -1456,9 +1439,7 @@ pub fn queue_prepass_material_meshes(
                                 &gpu_preprocessing_support,
                             ),
                         );
-                    } else if let Some(opaque_phase) = opaque_phase.as_mut()
-                        && !masked_only_prepass()
-                    {
+                    } else if let Some(opaque_phase) = opaque_phase.as_mut() {
                         let depth_only_draw_function = material
                             .properties
                             .get_draw_function(PrepassOpaqueDepthOnlyDrawFunction);

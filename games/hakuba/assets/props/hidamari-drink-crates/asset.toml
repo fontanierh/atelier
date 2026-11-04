@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-drink-crates"]
 solid = true
-inputs_sha256 = "1d1611b8b3e5fa64f46bb9b2d1618e6b0fc88577348e79782e0858ece0101f7a"
+inputs_sha256 = "1e3180d18a89dc304d3a60fd94afb5d22c68a4b0c6d8643bd00221f609a6ecd7"

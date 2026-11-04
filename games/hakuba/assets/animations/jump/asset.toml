@@ -3,4 +3,4 @@
 kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Wait_Jump"
-inputs_sha256 = "deb4326d4fdecd38804a1beac6365b5a87abb5baed1568e8d3295f966e849826"
+inputs_sha256 = "a0238f27987f236ae5e54b8a4f0cfd86f07679101eebb83ac4bd3025db740592"

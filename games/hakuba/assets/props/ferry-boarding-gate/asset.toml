@@ -1,4 +1,4 @@
 # The passenger ferry's boarding gate, docked at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "a7dd77644d457bab9d29c304b8f99ec207f6b963cf0c10f9f5245858dab505fe"
+inputs_sha256 = "cb895382ddfd97e5ec681fd556510d8936f5085a7a9da0d5f5a805e6f15fac19"

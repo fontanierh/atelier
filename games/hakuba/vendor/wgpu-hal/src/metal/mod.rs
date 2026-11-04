@@ -783,7 +783,7 @@ impl crate::Queue for Queue {
             };
 
             for cmd_buffer in command_buffers {
-                present_stats::time_gpu(&cmd_buffer.raw);
+                frames::time_gpu(&cmd_buffer.raw);
                 cmd_buffer.raw.commit();
                 // One command buffer per `end_encoding` call moves from the
                 // "created but not yet submitted" bucket into the submitted
@@ -814,21 +814,9 @@ impl crate::Queue for Queue {
 
             // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction?language=objc
             if !texture.present_with_transaction {
-                // Hakuba playtest: each frame stays on screen at least this long, so a 120 Hz display shows a
-                // steady 60 and the window server, not a CPU timer, sets the rhythm. HAKUBA_PRESENT_MIN_MS=0 turns
-                // it off.
-                static MINIMUM: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
-                let minimum = *MINIMUM.get_or_init(|| {
-                    std::env::var("HAKUBA_PRESENT_MIN_MS").ok().and_then(|v| v.parse().ok()).unwrap_or(1000.0 / 60.0)
-                        / 1000.0
-                });
-                // Hakuba playtest: when each frame actually reached the screen, read by the game's frame log.
-                let presented = block2::RcBlock::new(|drawable: NonNull<ProtocolObject<dyn MTLDrawable>>| {
-                    // SAFETY: Metal passes the drawable this handler was added to, alive for the call.
-                    present_stats::record(unsafe { drawable.as_ref() }.presentedTime());
-                });
-                // SAFETY: Metal copies the block before returning.
-                unsafe { texture.drawable.addPresentedHandler(block2::RcBlock::as_ptr(&presented)) };
+                // Hakuba: when each frame reached the screen, and how long it stays there at least.
+                frames::time_presented(&texture.drawable);
+                let minimum = frames::minimum_on_screen();
                 if minimum > 0.0 {
                     command_buffer.presentDrawable_afterMinimumDuration(&texture.drawable, minimum);
                 } else {
@@ -1433,9 +1421,8 @@ pub enum OsType {
     VisionOs,
 }
 
-/// Hakuba playtest: the intervals between frames reaching the screen, as the display shows them.
-/// Metal buffers kept after wgpu destroys them and handed out again for a new buffer of the same size class, as
-/// Unreal's Metal backend pools them: making a buffer asks the kernel for memory and can stall a frame.
+/// Hakuba: Metal buffers kept after wgpu destroys them and handed out again for a new buffer of the same size class:
+/// making a buffer asks the kernel for zeroed memory and can stall a frame.
 pub(crate) mod pool {
     use super::*;
     use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
@@ -1444,9 +1431,9 @@ pub(crate) mod pool {
     const KEPT_AT_MOST: u64 = 768 << 20;
     /// Larger buffers are never kept: they are made rarely, and keeping one holds a lot of memory.
     const LARGEST: u64 = 64 << 20;
-    static CREATED: AtomicU64 = AtomicU64::new(0);
-    static CREATED_BYTES: AtomicU64 = AtomicU64::new(0);
-    static REUSED: AtomicU64 = AtomicU64::new(0);
+    pub(super) static CREATED: AtomicU64 = AtomicU64::new(0);
+    pub(super) static CREATED_BYTES: AtomicU64 = AtomicU64::new(0);
+    pub(super) static REUSED: AtomicU64 = AtomicU64::new(0);
 
     /// The size a buffer is made at: rounded up to a quarter of its power of two, so a buffer wastes at most a
     /// quarter and buffers that grow a little each time still share a class.
@@ -1486,10 +1473,6 @@ pub(crate) mod pool {
         }
 
         pub fn give(&self, raw: Retained<ProtocolObject<dyn MTLBuffer>>, options: MTLResourceOptions) {
-            static OFF: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-            if *OFF.get_or_init(|| std::env::var("HAKUBA_POOL").is_ok_and(|v| v == "0")) {
-                return;
-            }
             let bucket = raw.length() as u64;
             if bucket > LARGEST || bucket != self::bucket(bucket) {
                 return;
@@ -1502,61 +1485,36 @@ pub(crate) mod pool {
             free.0.entry((bucket, options.bits())).or_default().push(raw);
         }
     }
-
-    static COPIES: Mutex<Option<HashMap<String, (u32, u64)>>> = Mutex::new(None);
-    fn counting() -> bool {
-        static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-        *ON.get_or_init(|| std::env::var("HAKUBA_COPIES").is_ok_and(|v| v == "1"))
-    }
-
-    /// Counts a buffer copy by its destination's label, when `HAKUBA_COPIES=1`.
-    pub fn copied(dst: &ProtocolObject<dyn MTLBuffer>, bytes: u64) {
-        if !counting() {
-            return;
-        }
-        let label = dst.label().map_or_else(|| "?".to_string(), |l| l.to_string());
-        let mut copies = COPIES.lock();
-        let entry = copies.get_or_insert_default().entry(label).or_default();
-        entry.0 += 1;
-        entry.1 += bytes;
-    }
-
-    /// Logs the most copied-to buffers since the last call, when `HAKUBA_COPIES=1`.
-    #[unsafe(no_mangle)]
-    pub extern "C" fn hakuba_copy_report() {
-        let Some(copies) = COPIES.lock().take() else { return };
-        let mut copies: Vec<_> = copies.into_iter().collect();
-        copies.sort_by_key(|(_, (n, _))| core::cmp::Reverse(*n));
-        let total: u32 = copies.iter().map(|(_, (n, _))| n).sum();
-        let top: Vec<String> =
-            copies.iter().take(12).map(|(label, (n, bytes))| format!("{label}:{n}/{}KB", bytes / 1024)).collect();
-        eprintln!("COPIES {total}: {}", top.join(" "));
-    }
-
-    /// Buffers made, their megabytes and buffers reused since the last call.
-    #[unsafe(no_mangle)]
-    pub extern "C" fn hakuba_buffer_stats(created: *mut u64, megabytes: *mut f64, reused: *mut u64) {
-        // SAFETY: the caller passes valid pointers.
-        unsafe {
-            *created = CREATED.swap(0, Relaxed);
-            *megabytes = CREATED_BYTES.swap(0, Relaxed) as f64 / (1 << 20) as f64;
-            *reused = REUSED.swap(0, Relaxed);
-        }
-    }
 }
 
-pub mod present_stats {
+/// Hakuba: what the game reads of the frames it draws, and how long each stays on screen.
+pub mod frames {
     use core::ptr::NonNull;
+    use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
     use std::sync::Mutex;
 
     use objc2::runtime::ProtocolObject;
-    use objc2_metal::MTLCommandBuffer;
+    use objc2_metal::{MTLCommandBuffer, MTLDrawable};
 
-    /// The GPU's busy time, in seconds, summed since the last call, and where its last completed work ended. One
+    /// The shortest time a frame stays on screen, in seconds, as `f64` bits; zero, the default, presents each frame
+    /// as soon as it is ready, as upstream.
+    static MINIMUM_ON_SCREEN: AtomicU64 = AtomicU64::new(0);
+
+    /// Each frame stays on screen at least `seconds`: at 1/60, a 120 Hz display shows a steady 60 frames a second,
+    /// timed by the window server rather than by a timer on the CPU.
+    pub fn set_minimum_on_screen(seconds: f64) {
+        MINIMUM_ON_SCREEN.store(seconds.max(0.0).to_bits(), Relaxed);
+    }
+
+    pub(super) fn minimum_on_screen() -> f64 {
+        f64::from_bits(MINIMUM_ON_SCREEN.load(Relaxed))
+    }
+
+    /// The GPU's busy time, in seconds, summed since the last read, and where its last completed work ended. One
     /// queue's command buffers may overlap on the GPU: only the time past the previous one's end counts.
     static GPU: Mutex<(f64, f64)> = Mutex::new((0.0, 0.0));
 
-    /// Adds the time `raw` keeps the GPU busy, once it completes, to [`hakuba_gpu_busy_ms`].
+    /// Adds the time `raw` keeps the GPU busy, once it completes, to [`gpu_busy_ms`].
     pub(super) fn time_gpu(raw: &ProtocolObject<dyn MTLCommandBuffer>) {
         let block = block2::RcBlock::new(|done: NonNull<ProtocolObject<dyn MTLCommandBuffer>>| {
             // SAFETY: Metal passes the completed command buffer, alive for the call.
@@ -1574,55 +1532,53 @@ pub mod present_stats {
     }
 
     /// How many milliseconds the GPU was busy, counting overlapping work once, since the last call.
-    #[unsafe(no_mangle)]
-    pub extern "C" fn hakuba_gpu_busy_ms() -> f64 {
+    pub fn gpu_busy_ms() -> f64 {
         std::mem::take(&mut GPU.lock().unwrap().0) * 1000.0
     }
 
-    struct Stats {
-        last: f64,
-        worst: f64,
-        over: u32,
-        count: u32,
-    }
-    static MISSED: core::sync::atomic::AtomicU32 = core::sync::atomic::AtomicU32::new(0);
-
-    /// How many frames stayed on screen longer than 17.5 ms since the last call.
-    #[unsafe(no_mangle)]
-    pub extern "C" fn hakuba_present_missed() -> u32 {
-        MISSED.swap(0, core::sync::atomic::Ordering::Relaxed)
+    /// The frames that reached the screen since the last read.
+    #[derive(Clone, Copy, Debug, Default)]
+    pub struct Shown {
+        /// The longest a frame stayed on screen, in milliseconds.
+        pub worst_ms: f64,
+        /// How many stayed longer than 17.5 ms, past one 60 Hz frame.
+        pub over: u32,
+        pub count: u32,
     }
 
-    static STATS: Mutex<Stats> = Mutex::new(Stats { last: 0.0, worst: 0.0, over: 0, count: 0 });
+    static SHOWN: Mutex<(f64, Shown)> =
+        Mutex::new((0.0, Shown { worst_ms: 0.0, over: 0, count: 0 }));
 
-    pub(super) fn record(time: f64) {
-        // A frame dropped by the window server reports zero.
-        if time <= 0.0 {
-            return;
-        }
-        let mut stats = STATS.lock().unwrap();
-        if stats.last > 0.0 {
-            let ms = (time - stats.last) * 1000.0;
-            stats.worst = stats.worst.max(ms);
-            stats.over += (ms > 17.5) as u32;
-            MISSED.fetch_add((ms > 17.5) as u32, core::sync::atomic::Ordering::Relaxed);
-            stats.count += 1;
-        }
-        stats.last = time;
+    /// Records when `drawable` reaches the screen.
+    pub(super) fn time_presented(drawable: &ProtocolObject<dyn MTLDrawable>) {
+        let presented = block2::RcBlock::new(|drawable: NonNull<ProtocolObject<dyn MTLDrawable>>| {
+            // SAFETY: Metal passes the drawable this handler was added to, alive for the call.
+            let time = unsafe { drawable.as_ref() }.presentedTime();
+            // A frame dropped by the window server reports zero.
+            if time <= 0.0 {
+                return;
+            }
+            let mut shown = SHOWN.lock().unwrap();
+            if shown.0 > 0.0 {
+                let ms = (time - shown.0) * 1000.0;
+                shown.1.worst_ms = shown.1.worst_ms.max(ms);
+                shown.1.over += (ms > 17.5) as u32;
+                shown.1.count += 1;
+            }
+            shown.0 = time;
+        });
+        // SAFETY: Metal copies the block before returning.
+        unsafe { drawable.addPresentedHandler(block2::RcBlock::as_ptr(&presented)) };
     }
 
-    /// Worst interval in milliseconds, how many exceeded 17.5 ms, and how many there were, since the last call.
-    #[unsafe(no_mangle)]
-    pub extern "C" fn hakuba_present_stats(worst: *mut f64, over: *mut u32, count: *mut u32) {
-        let mut stats = STATS.lock().unwrap();
-        // SAFETY: the caller passes valid pointers.
-        unsafe {
-            *worst = stats.worst;
-            *over = stats.over;
-            *count = stats.count;
-        }
-        stats.worst = 0.0;
-        stats.over = 0;
-        stats.count = 0;
+    /// The frames shown since the last call.
+    pub fn shown() -> Shown {
+        std::mem::take(&mut SHOWN.lock().unwrap().1)
+    }
+
+    /// The buffers made since the last call, their megabytes, and the buffers handed out again from the pool.
+    pub fn buffers() -> (u64, f64, u64) {
+        use super::pool::{CREATED, CREATED_BYTES, REUSED};
+        (CREATED.swap(0, Relaxed), CREATED_BYTES.swap(0, Relaxed) as f64 / (1 << 20) as f64, REUSED.swap(0, Relaxed))
     }
 }

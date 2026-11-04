@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/roll_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "d3e4348d7b3b2c10d6f764e55faced11758fca0781da8ccba513e9228f7be2c7"
+inputs_sha256 = "e133ccda1d86201e0f174c5d0e056869b11d875bfef52a178f3d6ec7cf87c76d"
