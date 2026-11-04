@@ -133,12 +133,14 @@ struct Job {
 }
 
 /// Playtest: how far from the camera a full tile's tree shows its full version before fading to its middle one,
-/// and over how many metres it fades.
+/// and over how many metres it fades. From 65 m rather than 80 m, the open hilltop looks the same and the densest
+/// forest view's GPU frame drops from 17.0 to 16.3 ms; from 50 m it drops to 15.5 ms, but the crowns past 50 m turn
+/// visibly chunkier and close the sky between them.
 fn tree_lod_m() -> (f32, f32) {
     static V: std::sync::OnceLock<(f32, f32)> = std::sync::OnceLock::new();
     *V.get_or_init(|| {
         let get = |name: &str, default: f32| std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default);
-        (get("HAKUBA_TREE_LOD_M", 80.0), get("HAKUBA_TREE_FADE_M", 12.0))
+        (get("HAKUBA_TREE_LOD_M", 65.0), get("HAKUBA_TREE_FADE_M", 12.0))
     })
 }
 
