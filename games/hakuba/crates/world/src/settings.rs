@@ -44,14 +44,15 @@ fn look(
         AntiAliasing::Smaa => camera.remove::<TemporalAntiAliasing>().insert(Smaa::default()),
         AntiAliasing::Off => camera.remove::<(TemporalAntiAliasing, Smaa)>(),
     };
-    // Under temporal anti-aliasing, the shadow map's own 2x2 comparison is enough: the frames' blend already smooths
-    // its edges, the hilltop's shadows look the same as with the jittered filter, and the densest forest view's GPU
-    // frame drops from 16.0 to 15.5 ms. Without it, the edges would stair-step, so they are blurred instead.
+    // Under temporal anti-aliasing, shadows' edges are sampled a little differently each frame and blended: soft and
+    // steady. Without it, that would shimmer, so they are blurred instead. The shadow map's own 2x2 comparison costs
+    // 0.5 ms less in the densest forest, but in play the character's shadow turns pixelated and its self-shadowing
+    // flickers.
     // Playtest: HAKUBA_SHADOW_FILTER=hardware|gaussian|temporal overrides it, to measure what filtering costs.
     camera.insert(match (std::env::var("HAKUBA_SHADOW_FILTER").as_deref(), settings.anti_aliasing) {
+        (Ok("hardware"), _) => ShadowFilteringMethod::Hardware2x2,
         (Ok("gaussian"), _) => ShadowFilteringMethod::Gaussian,
-        (Ok("temporal"), _) => ShadowFilteringMethod::Temporal,
-        (Ok("hardware"), _) | (_, AntiAliasing::Temporal) => ShadowFilteringMethod::Hardware2x2,
+        (Ok("temporal"), _) | (_, AntiAliasing::Temporal) => ShadowFilteringMethod::Temporal,
         _ => ShadowFilteringMethod::Gaussian,
     });
     light.shadow_maps_enabled = settings.shadows.reach().is_some();
