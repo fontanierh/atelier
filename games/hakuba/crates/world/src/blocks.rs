@@ -13,6 +13,7 @@ use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
 use bevy::light::NotShadowCaster;
 use bevy::mesh::{Indices, MeshVertexAttributeId};
 use bevy::prelude::*;
+use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future};
 use bevy::transform::TransformSystems;
 use hakuba_screens::Screen;
 
@@ -60,7 +61,7 @@ impl Plugin for BlocksPlugin {
         }
         app.init_resource::<Blocks>().add_systems(
             PostUpdate,
-            (hide, assign, notice, merge)
+            (hide, assign, notice, merge, swap)
                 .chain()
                 .after(TransformSystems::Propagate)
                 .before(VisibilitySystems::VisibilityPropagate)
@@ -96,6 +97,8 @@ struct Block {
     parts: Vec<Entity>,
     drawn: Vec<Entity>,
     dirty: bool,
+    /// Its merge building on a worker: whether it was urgent, how long gathering took in milliseconds, and the task.
+    pending: Option<(bool, f32, Task<Merged>)>,
     /// When its tiles last changed, in seconds.
     touched: f32,
     /// Whether a tile left it, whose meshes stay hidden until it merges again: it merges at once.
@@ -111,6 +114,7 @@ impl Block {
 
 /// How a merged mesh looks: a look as scenery places it, or a far plant's source foliage, which scenery keys by its
 /// wind as well.
+#[derive(Clone)]
 enum Drawn {
     Look(Look),
     Source(Handle<SourceFoliage>),
@@ -227,11 +231,33 @@ fn notice(mut blocks: ResMut<Blocks>, added: Query<Entity, Added<Mesh3d>>, paren
     }
 }
 
+/// One look's meshes in a block, gathered on the main thread and merged on a worker.
+struct Group {
+    look: Drawn,
+    copies: Vec<(Mesh, Transform)>,
+    parts: Vec<Entity>,
+}
+
+/// A block's merged meshes, built on a worker, with the parts each holds.
+struct Merged {
+    meshes: Vec<(Drawn, Mesh, Vec<Entity>)>,
+    triangles: [usize; 2],
+    areas: [f64; 2],
+    thinned: [usize; 2],
+    /// How long the merge took on its worker, in milliseconds, for the log.
+    ms: f32,
+}
+
+/// The most merges building at once.
+const MOST_PENDING: usize = 2;
+
+/// Gathers the dirty blocks' meshes and merges them on workers, as Unreal builds its level-of-detail proxies off the
+/// game thread: a block's merge costs tens of milliseconds. A block keeps its old merged meshes until the new ones
+/// are ready.
 #[allow(clippy::type_complexity)]
 fn merge(
-    mut commands: Commands,
     mut blocks: ResMut<Blocks>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    meshes: Res<Assets<Mesh>>,
     children: Query<&Children>,
     parts: Query<
         (
@@ -250,37 +276,33 @@ fn merge(
     standard: Res<Assets<StandardMaterial>>,
     camera: Single<&GlobalTransform, With<Camera3d>>,
     time: Res<Time>,
+    mut commands: Commands,
 ) {
     let eye = camera.translation();
     let now = time.elapsed_secs();
-    let Blocks { blocks, to_hide, alike, looks, triangles, areas, thinned, .. } = &mut *blocks;
+    let Blocks { blocks, alike, looks, .. } = &mut *blocks;
+    let pending = blocks.values().filter(|block| block.pending.is_some()).count();
     let mut dirty: Vec<(bool, UVec2)> = blocks
         .iter()
-        .filter(|(_, block)| block.dirty && (block.urgent || now - block.touched >= SETTLE_S))
+        .filter(|(_, block)| {
+            block.pending.is_none() && block.dirty && (block.urgent || now - block.touched >= SETTLE_S)
+        })
         .map(|(&key, block)| (!block.urgent, key))
         .collect();
     // Blocks a tile left first: its meshes are hidden until then.
     dirty.sort_unstable_by_key(|&(settled, _)| settled);
-    let dirty: Vec<UVec2> = dirty.into_iter().take(MERGES_PER_FRAME).map(|(_, key)| key).collect();
-    for key in dirty {
+    let room = MOST_PENDING.saturating_sub(pending).min(MERGES_PER_FRAME);
+    for (_, key) in dirty.into_iter().take(room) {
         let block = blocks.get_mut(&key).expect("a dirty block exists");
         let started = std::time::Instant::now();
         let urgent = block.urgent;
         block.dirty = false;
         block.urgent = false;
-        // The old merged meshes leave next frame, when the new ones show; the parts no longer held show again now.
-        for drawn in block.drawn.drain(..) {
-            commands.entity(drawn).despawn();
-        }
-        for part in block.parts.drain(..) {
-            if let Ok(mut visibility) = visibility.get_mut(part) {
-                *visibility = Visibility::Inherited;
-                commands.entity(part).try_remove::<InBlock>();
-            }
-        }
-        let mut groups: HashMap<Key, (Drawn, Vec<Mesh>, Vec<Entity>)> = HashMap::new();
+        let mut groups: HashMap<Key, Group> = HashMap::new();
+        let mut gathered = HashSet::new();
         for &root in block.members.values() {
             for part in children.iter_descendants(root) {
+                gathered.insert(part);
                 let Ok((mesh, transform, still, painted, moving, swaying, source_foliage)) = parts.get(part) else {
                     looks[7] += usize::from(meshed.contains(part));
                     continue;
@@ -321,93 +343,153 @@ fn merge(
                     continue;
                 };
                 let attributes = source.attributes().map(|(attribute, _)| attribute.id).collect();
-                let mut copy = source.clone().transformed_by(transform.compute_transform());
-                if let Some(Indices::U16(indices)) = copy.indices() {
-                    let wide = indices.iter().map(|&i| i as u32).collect();
-                    copy.insert_indices(Indices::U32(wide));
-                }
-                let group = groups.entry((look.id(), attributes)).or_insert_with(|| (look, Vec::new(), Vec::new()));
-                group.1.push(copy);
-                group.2.push(part);
+                let group = groups.entry((look.id(), attributes)).or_insert_with(|| Group {
+                    look,
+                    copies: Vec::new(),
+                    parts: Vec::new(),
+                });
+                group.copies.push((source.clone(), transform.compute_transform()));
+                group.parts.push(part);
             }
         }
-        for (_, (look, copies, held)) in groups {
-            let mut merged: Option<Mesh> = None;
-            let mut holding = Vec::new();
-            let mut flush = |merged: &mut Option<Mesh>, holding: &mut Vec<Entity>, commands: &mut Commands| {
-                let Some(mut mesh) = merged.take() else { return };
-                // The distant plants are the bulk of the distant land's triangles, most smaller than a pixel, which a
-                // GPU rasterises at great cost: nearby plants' vertices cluster together, joining their shapes.
-                if matches!(look, Drawn::Look(Look::Painted(_))) && plant_error_px() > 0.0 {
-                    let before = mesh.indices().map_or(0, Indices::len) / 3;
-                    let area = plan_area(&mesh);
-                    mesh = clustered(mesh, eye, plant_error_px() * PIXEL_M_PER_M);
-                    triangles[0] += before;
-                    triangles[1] += mesh.indices().map_or(0, Indices::len) / 3;
-                    areas[0] += area;
-                    areas[1] += plan_area(&mesh);
+        // A tile that left shows its own meshes again at once, drawn twice until its block's new meshes replace the
+        // old ones, rather than missing.
+        if urgent {
+            for &part in &block.parts {
+                if !gathered.contains(&part) {
+                    show(&mut commands, &mut visibility, part);
                 }
-                // The far trees' cards are millions of triangles past a kilometre: fewer, larger cards cover as much.
-                if matches!(look, Drawn::Source(_)) {
-                    thinned[0] += mesh.indices().map_or(0, Indices::len) / 3;
-                    let keep = thin_keep(nearest(&mesh, eye));
-                    if keep < 1.0 {
-                        mesh = thinned_cards(mesh, keep);
-                    }
-                    thinned[1] += mesh.indices().map_or(0, Indices::len) / 3;
-                }
-                mesh.asset_usage = RenderAssetUsages::RENDER_WORLD;
-                let mut drawn = commands.spawn((
-                    Name::new("Block"),
-                    Mesh3d(meshes.add(mesh)),
-                    Transform::IDENTITY,
-                    NotShadowCaster,
-                    DespawnOnExit(Screen::World),
-                ));
-                look.insert(&mut drawn);
-                // Playtest: HAKUBA_BLOCK_HIDE=still or painted hides that look's merged meshes, to measure them.
-                let hide = std::env::var("HAKUBA_BLOCK_HIDE").unwrap_or_default();
-                if matches!(
-                    (&look, hide.as_str()),
-                    (Drawn::Look(Look::Still(_)), "still") | (Drawn::Look(Look::Painted(_)), "painted")
-                ) {
-                    drawn.insert(Visibility::Hidden);
-                }
-                block.drawn.push(drawn.id());
-                for part in holding.drain(..) {
-                    commands.entity(part).try_insert(InBlock);
-                    to_hide.push(part);
-                    block.parts.push(part);
-                }
-            };
-            for (copy, part) in copies.into_iter().zip(held) {
-                let fits = merged.as_ref().is_none_or(|m| m.count_vertices() + copy.count_vertices() <= MOST_VERTICES);
-                if !fits {
-                    flush(&mut merged, &mut holding, &mut commands);
-                }
-                match merged.as_mut() {
-                    None => merged = Some(copy),
-                    Some(m) => {
-                        if m.merge(&copy).is_err() {
-                            continue;
-                        }
-                    }
-                }
-                holding.push(part);
             }
-            flush(&mut merged, &mut holding, &mut commands);
+        }
+        let groups: Vec<Group> = groups.into_values().collect();
+        let gather_ms = started.elapsed().as_secs_f32() * 1000.0;
+        block.pending =
+            Some((urgent, gather_ms, AsyncComputeTaskPool::get().spawn(async move { merged(groups, eye) })));
+    }
+}
+
+/// Swaps in each block's merged meshes as its worker finishes: the old ones leave, the parts no longer held show
+/// again, and the newly held ones hide from next frame, when the new meshes show.
+fn swap(
+    mut commands: Commands,
+    mut blocks: ResMut<Blocks>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut visibility: Query<&mut Visibility>,
+) {
+    let Blocks { blocks, to_hide, triangles, areas, thinned, .. } = &mut *blocks;
+    for (key, block) in blocks.iter_mut() {
+        let Some((_, _, task)) = block.pending.as_mut() else { continue };
+        let Some(result) = block_on(future::poll_once(task)) else { continue };
+        let (urgent, gather_ms, _) = block.pending.take().expect("a pending merge");
+        let started = std::time::Instant::now();
+        for i in 0..2 {
+            triangles[i] += result.triangles[i];
+            areas[i] += result.areas[i];
+            thinned[i] += result.thinned[i];
+        }
+        for drawn in block.drawn.drain(..) {
+            commands.entity(drawn).despawn();
+        }
+        let held: HashSet<Entity> = result.meshes.iter().flat_map(|(_, _, parts)| parts.iter().copied()).collect();
+        for part in block.parts.drain(..) {
+            if !held.contains(&part) {
+                show(&mut commands, &mut visibility, part);
+            }
+        }
+        // Playtest: HAKUBA_BLOCK_HIDE=still or painted hides that look's merged meshes, to measure them.
+        let hide = std::env::var("HAKUBA_BLOCK_HIDE").unwrap_or_default();
+        for (look, mesh, parts) in result.meshes {
+            let mut drawn = commands.spawn((
+                Name::new("Block"),
+                Mesh3d(meshes.add(mesh)),
+                Transform::IDENTITY,
+                NotShadowCaster,
+                DespawnOnExit(Screen::World),
+            ));
+            look.insert(&mut drawn);
+            if matches!(
+                (&look, hide.as_str()),
+                (Drawn::Look(Look::Still(_)), "still") | (Drawn::Look(Look::Painted(_)), "painted")
+            ) {
+                drawn.insert(Visibility::Hidden);
+            }
+            block.drawn.push(drawn.id());
+            for part in parts {
+                commands.entity(part).try_insert(InBlock);
+                to_hide.push(part);
+                block.parts.push(part);
+            }
         }
         // Playtest: HAKUBA_BLOCK_LOG=1 logs each merge.
         if std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") {
             info!(
-                "BLOCK merge {key} urgent {urgent}: {} members, {} parts in {} meshes, {:.1} ms",
+                "BLOCK merge {key} urgent {urgent}: {} members, {} parts in {} meshes; main thread {gather_ms:.1} ms gathering, {:.1} ms swapping, worker {:.1} ms",
                 block.members.len(),
                 block.parts.len(),
                 block.drawn.len(),
-                started.elapsed().as_secs_f32() * 1000.0
+                started.elapsed().as_secs_f32() * 1000.0,
+                result.ms
             );
         }
     }
+}
+
+/// Shows a part a block no longer holds.
+fn show(commands: &mut Commands, visibility: &mut Query<&mut Visibility>, part: Entity) {
+    if let Ok(mut visibility) = visibility.get_mut(part) {
+        *visibility = Visibility::Inherited;
+        commands.entity(part).try_remove::<InBlock>();
+    }
+}
+
+/// Merges a block's gathered meshes, on a worker.
+fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
+    let started = std::time::Instant::now();
+    let mut out = Merged { meshes: Vec::new(), triangles: [0; 2], areas: [0.0; 2], thinned: [0; 2], ms: 0.0 };
+    for Group { look, copies, parts } in groups {
+        let mut chunks: Vec<(Mesh, Vec<Entity>)> = Vec::new();
+        for ((source, transform), part) in copies.into_iter().zip(parts) {
+            let mut copy = source.transformed_by(transform);
+            if let Some(Indices::U16(indices)) = copy.indices() {
+                let wide = indices.iter().map(|&i| i as u32).collect();
+                copy.insert_indices(Indices::U32(wide));
+            }
+            match chunks.last_mut() {
+                Some((merged, held)) if merged.count_vertices() + copy.count_vertices() <= MOST_VERTICES => {
+                    if merged.merge(&copy).is_ok() {
+                        held.push(part);
+                    }
+                }
+                _ => chunks.push((copy, vec![part])),
+            }
+        }
+        for (mut mesh, held) in chunks {
+            // The distant plants are the bulk of the distant land's triangles, most smaller than a pixel, which a GPU
+            // rasterises at great cost: nearby plants' vertices cluster together, joining their shapes.
+            if matches!(look, Drawn::Look(Look::Painted(_))) && plant_error_px() > 0.0 {
+                let before = mesh.indices().map_or(0, Indices::len) / 3;
+                let area = plan_area(&mesh);
+                mesh = clustered(mesh, eye, plant_error_px() * PIXEL_M_PER_M);
+                out.triangles[0] += before;
+                out.triangles[1] += mesh.indices().map_or(0, Indices::len) / 3;
+                out.areas[0] += area;
+                out.areas[1] += plan_area(&mesh);
+            }
+            // The far trees' cards are millions of triangles past a kilometre: fewer, larger cards cover as much.
+            if matches!(look, Drawn::Source(_)) {
+                out.thinned[0] += mesh.indices().map_or(0, Indices::len) / 3;
+                let keep = thin_keep(nearest(&mesh, eye));
+                if keep < 1.0 {
+                    mesh = thinned_cards(mesh, keep);
+                }
+                out.thinned[1] += mesh.indices().map_or(0, Indices::len) / 3;
+            }
+            mesh.asset_usage = RenderAssetUsages::RENDER_WORLD;
+            out.meshes.push((look.clone(), mesh, held));
+        }
+    }
+    out.ms = started.elapsed().as_secs_f32() * 1000.0;
+    out
 }
 
 /// Playtest: from how far a block's far trees thin, in metres to its nearest point (`HAKUBA_BLOCK_THIN`, 0 for never,
