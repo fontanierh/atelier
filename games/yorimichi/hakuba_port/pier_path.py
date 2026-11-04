@@ -33,10 +33,6 @@ def walking(normal_z, slot):
     return slot == SLOT and normal_z > UP
 
 
-def linear(c):
-    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-
-
 def kind(mean):
     """Which of the path's three colours a triangle's mean vertex colour is: the dark edge band is bluish, the joint a
     dark warm grey, the paving the light one."""
@@ -95,7 +91,7 @@ def main():
         group = surfaces.get(name, [])
         if not group:
             continue
-        tint = 2.0 * linear(np.concatenate([r['colour'] for r in group])).mean(0)
+        tint = 2.0 * np.concatenate([r['colour'] for r in group]).mean(0)
         out['surfaces'].append({'name': name, 'tint': [round(float(v), 4) for v in tint], 'triangles': [
             {key: [[round(float(v), 4) for v in corner] for corner in r[key]] for key in ('xyz', 'uv', 'normal')}
             for r in group]})

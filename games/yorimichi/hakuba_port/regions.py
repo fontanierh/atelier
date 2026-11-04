@@ -630,7 +630,8 @@ def skatepark(build):
     it has faces in (`Model.keep`), each standing, and streaming, with its own tile. Its materials draw the pier's own
     finished albedo maps (`skatepark/textures`) on the meshes' UVs, which already count each map's repeat, as
     Yorimichi's materials do: the map times twice the linear vertex colour, which carries the palette and the baked
-    shading, and the mural its map alone. The deck, pilings, features, path and furniture are solid, colliding with
+    shading, and the mural its map alone. Blender's import already decodes the source's sRGB vertex colour, as
+    Yorimichi's material does, so the rule does not decode it again. The deck, pilings, features, path and furniture are solid, colliding with
     their own triangles as the source rides them; the planting and the floor paint are not. The path's vertices at
     the coast road's edge meet it (`seam.py`), as `pier_path.py` moves its walking surface's."""
     from ground import settings
@@ -657,7 +658,7 @@ def skatepark(build):
                 material = slot.removeprefix('Pier_')
                 image = str(textures / maps[PIER_MAPS.get(material, material)]['maps']['albedo'])
                 slots[slot] = ({'sample': image} if material == 'mural' else
-                               {'sample': image, 'vertex': True, 'decode': True, 'gain': 2.0})
+                               {'sample': image, 'vertex': True, 'gain': 2.0})
             (x0, y0, _), (x1, y1, _) = row['bounds']
             meet = None
             if parent in PIER_GROUND:
