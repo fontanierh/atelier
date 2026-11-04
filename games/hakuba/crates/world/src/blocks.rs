@@ -142,6 +142,10 @@ impl Drawn {
 #[derive(Component)]
 struct InBlock;
 
+/// On a block's merged mesh: past [`BLOCK_M`] the wind moves a leaf less than a pixel, so its vertices skip the sway.
+#[derive(Component)]
+pub(crate) struct Unswayed;
+
 /// What lets meshes merge: their material and vertex attributes.
 type Key = (UntypedAssetId, Vec<MeshVertexAttributeId>);
 
@@ -404,6 +408,8 @@ fn swap(
                 Mesh3d(meshes.add(mesh)),
                 Transform::IDENTITY,
                 NotShadowCaster,
+                Unswayed,
+                bevy::mesh::MeshTag::new(0),
                 DespawnOnExit(Screen::World),
             ));
             look.insert(&mut drawn);
@@ -480,11 +486,20 @@ fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
             // The far trees' cards are millions of triangles past a kilometre: fewer, larger cards cover as much.
             if matches!(look, Drawn::Source(_)) {
                 out.thinned[0] += mesh.indices().map_or(0, Indices::len) / 3;
-                let keep = thin_keep(nearest(&mesh, eye));
+                let distance = nearest(&mesh, eye);
+                let keep = thin_keep(distance);
+                let before = mesh.indices().map_or(0, Indices::len) / 3;
                 if keep < 1.0 {
                     mesh = thinned_cards(mesh, keep);
                 }
                 out.thinned[1] += mesh.indices().map_or(0, Indices::len) / 3;
+                // Playtest: HAKUBA_BLOCK_LOG=1 also logs each far-tree mesh's distance and triangles.
+                if std::env::var("HAKUBA_BLOCK_LOG").is_ok_and(|v| v == "1") {
+                    info!(
+                        "BLOCK trees at {distance:.0} m keep {keep:.3}: {before} to {} triangles",
+                        mesh.indices().map_or(0, Indices::len) / 3
+                    );
+                }
             }
             mesh.asset_usage = RenderAssetUsages::RENDER_WORLD;
             out.meshes.push((look.clone(), mesh, held));
@@ -501,6 +516,11 @@ const THIN_FROM_M: f32 = 450.0;
 /// The smallest share of a block's far trees' cards kept.
 const THIN_LEAST: f32 = 0.125;
 
+fn thin_least() -> f32 {
+    static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *V.get_or_init(|| std::env::var("HAKUBA_BLOCK_LEAST").ok().and_then(|v| v.parse().ok()).unwrap_or(THIN_LEAST))
+}
+
 fn thin_from_m() -> f32 {
     static V: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
     *V.get_or_init(|| std::env::var("HAKUBA_BLOCK_THIN").ok().and_then(|v| v.parse().ok()).unwrap_or(THIN_FROM_M))
@@ -514,7 +534,7 @@ fn thin_keep(distance: f32) -> f32 {
         return 1.0;
     }
     let halvings = (2.0 * (distance / from).log2()).floor();
-    0.5f32.powf(halvings).max(THIN_LEAST)
+    0.5f32.powf(halvings).max(thin_least())
 }
 
 /// How far `eye` is from the nearest point of `mesh`'s bounds.

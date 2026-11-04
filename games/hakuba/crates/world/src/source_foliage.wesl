@@ -33,7 +33,8 @@ const DEPTH_MARGIN: f32 = 1.0;
 
 // Source weights are in COLOR_0.r; spatial coefficients are per metre and material sine uses a one-cycle period.
 fn source_motion(at: vec3<f32>, time: f32, weight: f32, strength: f32) -> vec3<f32> {
-    if profile.haze_colour.w == 0.0 {
+    // A still vertex, or a mesh the wind does not reach, such as a far block's, skips the sway.
+    if profile.haze_colour.w == 0.0 || weight == 0.0 || strength == 0.0 {
         return vec3<f32>(0.0);
     }
     let x = at.x;

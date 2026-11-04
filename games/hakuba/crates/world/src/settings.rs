@@ -69,10 +69,14 @@ fn look(
     }
 }
 
-type SwayingPlants =
-    Or<(With<MeshMaterial3d<Swaying>>, With<MeshMaterial3d<SourceFoliage>>, With<MeshMaterial3d<ShadowFoliage>>)>;
-type AddedSwayingPlants =
-    Or<(Added<MeshMaterial3d<Swaying>>, Added<MeshMaterial3d<SourceFoliage>>, Added<MeshMaterial3d<ShadowFoliage>>)>;
+type SwayingPlants = (
+    Or<(With<MeshMaterial3d<Swaying>>, With<MeshMaterial3d<SourceFoliage>>, With<MeshMaterial3d<ShadowFoliage>>)>,
+    Without<crate::blocks::Unswayed>,
+);
+type AddedSwayingPlants = (
+    Or<(Added<MeshMaterial3d<Swaying>>, Added<MeshMaterial3d<SourceFoliage>>, Added<MeshMaterial3d<ShadowFoliage>>)>,
+    Without<crate::blocks::Unswayed>,
+);
 
 /// Tells every swaying plant how strongly the wind blows, through its mesh tag, when the setting changes and as plants
 /// spawn.
