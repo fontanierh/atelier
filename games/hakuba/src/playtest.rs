@@ -199,7 +199,10 @@ fn count_triangles(
         &GlobalTransform,
         Option<&bevy::camera::primitives::Aabb>,
         Has<bevy::light::NotShadowCaster>,
+        Option<&Name>,
+        Option<&ChildOf>,
     )>,
+    names: Query<&Name>,
 ) {
     // A mesh's data leaves for the GPU once drawn, so each is counted as it arrives.
     for event in added.read() {
@@ -221,13 +224,22 @@ fn count_triangles(
     let mut distinct = [(); 7].map(|_| std::collections::HashSet::new());
     let (camera, view) = *camera;
     let eye = camera.translation();
-    for (mesh, visibility, transform, aabb, no_shadow) in &shown {
+    let mut kinds = std::collections::HashMap::<String, (usize, u64)>::new();
+    for (mesh, visibility, transform, aabb, no_shadow, name, parent) in &shown {
         if !visibility.get() {
             continue;
         }
         let Some(&triangles) = counts.get(&mesh.0.id()) else { continue };
         let centre = transform.transform_point(aabb.map_or(Vec3::ZERO, |aabb| Vec3::from(aabb.center)));
         let band = BANDS.iter().position(|&end| eye.distance(centre) < end).unwrap_or(6);
+        if band >= 4 {
+            let own = name.map(|n| n.as_str().to_string()).unwrap_or_default();
+            let up = parent.and_then(|p| names.get(p.parent()).ok()).map(|n| n.as_str().to_string()).unwrap_or_default();
+            let key: String = format!("{own}<{up}").chars().filter(|c| !c.is_ascii_digit()).collect();
+            let kind = kinds.entry(key).or_default();
+            kind.0 += 1;
+            kind.1 += triangles;
+        }
         drawn[band].0 += 1;
         distinct[band].insert(mesh.0.id());
         drawn[band].1 += triangles;
@@ -243,6 +255,11 @@ fn count_triangles(
             format!("<{end:.0}: {n} meshes ({} distinct) {}k tris ({}k cast)", d.len(), t / 1000, s / 1000)
         })
         .collect();
+    let mut kinds: Vec<_> = kinds.into_iter().collect();
+    kinds.sort_by_key(|(_, (n, _))| std::cmp::Reverse(*n));
+    for (kind, (n, t)) in kinds.iter().take(12) {
+        info!("TRIS far kind {kind}: {n} meshes {}k tris", t / 1000);
+    }
     info!(
         "TRIS drawn {:?} window {}x{} | {}",
         view.physical_viewport_size(),

@@ -2,13 +2,14 @@
 //! cables, which hang overhead, and what each is made of. Models marked solid in their export use the same rays.
 
 use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::{InheritedVisibility, ViewVisibility};
+use bevy::camera::visibility::{InheritedVisibility, ViewVisibility, VisibilitySystems};
 use bevy::ecs::system::SystemParam;
 use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::picking::mesh_picking::ray_cast::{
     Backfaces, RayCastBackfaces, RayMeshHit, ray_aabb_intersection_3d, ray_mesh_intersection,
 };
 use bevy::prelude::*;
+use bevy::transform::TransformSystems;
 use bevy::world_serialization::WorldInstanceReady;
 use parry3d::{
     math::Pose,
@@ -32,7 +33,51 @@ pub struct GroundPlugin;
 
 impl Plugin for GroundPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(mark);
+        app.add_observer(mark).add_systems(
+            PostUpdate,
+            bound_solids.after(TransformSystems::Propagate).after(VisibilitySystems::CalculateBounds),
+        );
+    }
+}
+
+/// A solid's bounds in the world, and the transform and local bounds they were found from: a ray skips a solid it
+/// cannot reach with a few comparisons, where testing its local bounds takes inverting its transform. The world holds
+/// thousands of solids, most of them distant tiles' ground.
+#[derive(Component, Clone, Copy)]
+pub(crate) struct SolidBounds {
+    low: Vec3,
+    high: Vec3,
+    transform: bevy::math::Affine3A,
+    local: Aabb,
+}
+
+impl SolidBounds {
+    fn new(local: &Aabb, transform: &GlobalTransform) -> Self {
+        let transform = transform.affine();
+        let centre = transform.transform_point3a(local.center);
+        let m = transform.matrix3;
+        let half = bevy::math::Mat3A::from_cols(m.x_axis.abs(), m.y_axis.abs(), m.z_axis.abs()) * local.half_extents;
+        // Padded for rounding, so these bounds never exclude what the exact corners would include.
+        let half = half + bevy::math::Vec3A::splat((centre.abs() + half).max_element().max(1.0) * 1e-4);
+        Self { low: (centre - half).into(), high: (centre + half).into(), transform, local: *local }
+    }
+
+    /// Its world bounds, if found from this transform and these local bounds.
+    fn for_(&self, local: &Aabb, transform: &GlobalTransform) -> Option<(Vec3, Vec3)> {
+        (self.transform == transform.affine() && self.local == *local).then_some((self.low, self.high))
+    }
+}
+
+/// Keeps each solid's world bounds as its transform and bounds change.
+fn bound_solids(
+    mut commands: Commands,
+    solids: Query<
+        (Entity, &Aabb, &GlobalTransform),
+        (With<Solid>, Or<(Changed<GlobalTransform>, Changed<Aabb>, Added<Solid>)>),
+    >,
+) {
+    for (entity, local, transform) in &solids {
+        commands.entity(entity).try_insert(SolidBounds::new(local, transform));
     }
 }
 
@@ -137,7 +182,14 @@ pub struct Hit {
     pub surface: Surface,
 }
 
-type SolidMesh = (&'static Solid, &'static Mesh3d, &'static Aabb, &'static GlobalTransform, Has<RayCastBackfaces>);
+type SolidMesh = (
+    &'static Solid,
+    &'static Mesh3d,
+    &'static Aabb,
+    &'static GlobalTransform,
+    Has<RayCastBackfaces>,
+    Option<&'static SolidBounds>,
+);
 type RayVisible = (With<InheritedVisibility>, With<ViewVisibility>);
 type MaybeSolidMesh = (
     &'static Solid,
@@ -146,6 +198,7 @@ type MaybeSolidMesh = (
     Option<&'static GlobalTransform>,
     Option<&'static InheritedVisibility>,
     Option<&'static ViewVisibility>,
+    Option<&'static SolidBounds>,
 );
 
 /// Casting rays at what is solid.
@@ -191,13 +244,18 @@ impl Ground<'_, '_> {
         let options = ShapeCastOptions { max_time_of_impact: 1.0, stop_at_penetration: false, ..Default::default() };
         let overlaps = |a: Vec3, b: Vec3| a.cmple(high).all() && b.cmpge(low).all();
         let mut best: Option<Hit> = None;
-        for (solid, mesh, bounds, transform, inherited, visible) in &self.sweep_solids {
+        for (solid, mesh, bounds, transform, inherited, visible, world) in &self.sweep_solids {
             let (Some(mesh), Some(bounds), Some(transform), Some(_), Some(_)) =
                 (mesh, bounds, transform, inherited, visible)
             else {
                 return Err("solid missing collision components");
             };
             let affine = transform.affine();
+            if let Some((world_low, world_high)) = world.and_then(|world| world.for_(bounds, transform))
+                && !overlaps(world_low, world_high)
+            {
+                continue;
+            }
             let bounds_low = Vec3::from(bounds.center - bounds.half_extents);
             let bounds_high = Vec3::from(bounds.center + bounds.half_extents);
             let mut world_low = Vec3::splat(f32::INFINITY);
@@ -282,10 +340,20 @@ impl Ground<'_, '_> {
         let ray = Ray3d::new(from, direction);
         // Allow for rounding at the boundary; the final mesh hit still enforces the exact reach.
         let margin = reach.abs().max(1.0) * 1e-5;
+        // The ray's own bounds, against each solid's world bounds where known for its current transform.
+        let end = from + *direction * reach;
+        let reached =
+            end.is_finite().then(|| (from.min(end) - Vec3::splat(margin), from.max(end) + Vec3::splat(margin)));
         let mut candidates: Vec<_> = self
             .solids
             .iter()
-            .filter_map(|(solid, mesh, bounds, transform, backfaces)| {
+            .filter_map(|(solid, mesh, bounds, transform, backfaces, world)| {
+                if let (Some((low, high)), Some((world_low, world_high))) =
+                    (reached, world.and_then(|world| world.for_(bounds, transform)))
+                    && (world_low.cmpgt(high).any() || world_high.cmplt(low).any())
+                {
+                    return None;
+                }
                 let bounds = Aabb3d::new(bounds.center, bounds.half_extents);
                 ray_aabb_intersection_3d(ray, &bounds, &transform.affine())
                     .filter(|distance| *distance <= reach + margin)

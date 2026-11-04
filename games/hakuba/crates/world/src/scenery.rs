@@ -104,6 +104,8 @@ pub struct Waiting {
     far: Option<Entity>,
     /// Whether its tile shows both plants' middle and far versions, crossfading.
     blend: bool,
+    /// Whether its tile shows plants' far versions, whatever this node's detail: the distant blocks merge its meshes.
+    kept: bool,
     instances: Vec<f32>,
     jobs: Option<VecDeque<Job>>,
 }
@@ -126,6 +128,8 @@ struct Job {
     /// Playtest: the distances at which each copy shows, fading in and out, as Unreal picks a tree's level of
     /// detail per copy.
     range: Option<VisibilityRange>,
+    /// Whether its merged meshes stay on the CPU too, so the distant blocks can merge them (blocks.rs): a far tile's.
+    kept: bool,
 }
 
 /// Playtest: how far from the camera a full tile's tree shows its full version before fading to its middle one,
@@ -315,6 +319,7 @@ fn read(
             middle: copies.detail == "middle",
             far,
             blend: far.is_some() && spawning.is_some_and(Spawning::blend),
+            kept: spawning.is_some_and(Spawning::far),
             instances: copies.instances,
             jobs: None,
         };
@@ -373,6 +378,7 @@ fn spawn(
             let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
             let has_middle = gltf.named_nodes.contains_key("middle");
             let far = waiting.far.filter(|_| gltf.named_nodes.contains_key("far"));
+            let kept = waiting.kept;
             // A prop's separate middle version holds only its `middle` node, which a middle tile shows.
             let main = if far.is_some() {
                 "far"
@@ -623,6 +629,7 @@ fn spawn(
                                 cursor: 0,
                                 combined: None,
                                 range: range.clone(),
+                                kept,
                             });
                         }
                     } else {
@@ -641,6 +648,7 @@ fn spawn(
                             cursor: 0,
                             combined: None,
                             range: range.clone(),
+                            kept,
                         });
                     }
                 }
@@ -780,11 +788,14 @@ fn place(
                 break;
             }
             let range = job.cursor..job.cursor + count;
-            let Some(combined) = merged(meshes, &job.mesh, &job.transforms[range], job.solid) else {
+            let Some(mut combined) = merged(meshes, &job.mesh, &job.transforms[range], job.solid) else {
                 job.cursor += count;
                 budget.vertices -= count * job.vertices;
                 continue;
             };
+            if job.kept {
+                combined.asset_usage = RenderAssetUsages::default();
+            }
             budget.vertices -= count * job.vertices;
             // Keep each range-culled caster's existing chunk bounds: joining them could change which shadows it casts.
             let accumulate = !job.solid
@@ -1381,6 +1392,7 @@ mod tests {
                 cursor: 0,
                 combined: None,
                 range: None,
+                kept: false,
             }]);
             let owner = app.world_mut().spawn(TestJobs(jobs)).id();
             let step = move |mut commands: Commands,
@@ -1442,6 +1454,7 @@ mod tests {
                     cursor: 0,
                     combined: None,
                     range: None,
+                    kept: false,
                 }])))
                 .id();
             let step = move |mut commands: Commands,
@@ -1510,6 +1523,7 @@ mod tests {
                 cursor: 0,
                 combined: None,
                 range: None,
+                kept: false,
             }])))
             .id();
         let step = move |mut commands: Commands,
@@ -1553,6 +1567,7 @@ mod tests {
                 cursor: 0,
                 combined: None,
                 range: None,
+                kept: false,
             })
             .collect();
         let owner = app.world_mut().spawn(TestJobs(jobs)).id();
@@ -1669,6 +1684,7 @@ mod tests {
             cursor: 0,
             combined: None,
             range: None,
+            kept: false,
         }]);
         let owner = app.world_mut().spawn(TestJobs(jobs)).id();
         let step =
@@ -1719,6 +1735,7 @@ mod tests {
                         cursor: 0,
                         combined: None,
                         range: None,
+                        kept: false,
                     }])),
                 ))
                 .id();
