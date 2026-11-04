@@ -783,6 +783,7 @@ impl crate::Queue for Queue {
             };
 
             for cmd_buffer in command_buffers {
+                present_stats::time_gpu(&cmd_buffer.raw);
                 cmd_buffer.raw.commit();
                 // One command buffer per `end_encoding` call moves from the
                 // "created but not yet submitted" bucket into the submitted
@@ -1545,7 +1546,38 @@ pub(crate) mod pool {
 }
 
 pub mod present_stats {
+    use core::ptr::NonNull;
     use std::sync::Mutex;
+
+    use objc2::runtime::ProtocolObject;
+    use objc2_metal::MTLCommandBuffer;
+
+    /// The GPU's busy time, in seconds, summed since the last call, and where its last completed work ended. One
+    /// queue's command buffers may overlap on the GPU: only the time past the previous one's end counts.
+    static GPU: Mutex<(f64, f64)> = Mutex::new((0.0, 0.0));
+
+    /// Adds the time `raw` keeps the GPU busy, once it completes, to [`hakuba_gpu_busy_ms`].
+    pub(super) fn time_gpu(raw: &ProtocolObject<dyn MTLCommandBuffer>) {
+        let block = block2::RcBlock::new(|done: NonNull<ProtocolObject<dyn MTLCommandBuffer>>| {
+            // SAFETY: Metal passes the completed command buffer, alive for the call.
+            let done = unsafe { done.as_ref() };
+            let (start, end) = (done.GPUStartTime(), done.GPUEndTime());
+            if end <= start {
+                return;
+            }
+            let mut gpu = GPU.lock().unwrap();
+            gpu.0 += end - start.max(gpu.1).min(end);
+            gpu.1 = gpu.1.max(end);
+        });
+        // SAFETY: Metal copies the block before returning.
+        unsafe { raw.addCompletedHandler(block2::RcBlock::as_ptr(&block)) };
+    }
+
+    /// How many milliseconds the GPU was busy, counting overlapping work once, since the last call.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn hakuba_gpu_busy_ms() -> f64 {
+        std::mem::take(&mut GPU.lock().unwrap().0) * 1000.0
+    }
 
     struct Stats {
         last: f64,

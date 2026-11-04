@@ -21,79 +21,61 @@ impl Plugin for PixelsPlugin {
     }
 }
 
-/// Set while the player rides: the ride's camera sees far wider than the walker's, so it starts with fewer pixels.
+/// Set while the player rides: the ride's camera sees far wider than the walker's, so it may draw fewer pixels.
 #[derive(Resource, Default, PartialEq)]
 pub struct Riding(pub bool);
 
-/// The shares of the setting's pixels the world may draw, most first: each step is about 15% fewer pixels.
-const SHARES: [f32; 8] = [1.0, 0.85, 0.72, 0.61, 0.52, 0.44, 0.37, 0.31];
-/// A ride draws at most this step, since its view is far wider than the walker's and turns heavy faster than the
-/// steps can follow.
-const RIDE_STEP: usize = 5;
-/// After a step, frames take this long to show its effect: misses before then do not step again.
-const SETTLE_S: f32 = 0.1;
-/// Seconds without a missed frame before trying one step more, at first; doubled each time the step above missed.
-const CALM_S: f32 = 4.0;
-const CALM_MAX_S: f32 = 64.0;
-/// A miss this soon after stepping up blames the step.
-const BLAME_S: f32 = 2.0;
-/// The GPU is short of time when this many frames miss within [`BURST_S`]; a single hitch is not load.
-const BURST: usize = 2;
-const BURST_S: f32 = 0.5;
+/// The shares of the setting's pixels the world may draw, most first: each step is 7% fewer pixels, about 3.5% fewer
+/// lines, small enough that temporal anti-aliasing hides the change.
+const SHARES: [f32; 12] = [1.0, 0.93, 0.865, 0.805, 0.75, 0.7, 0.65, 0.6, 0.56, 0.52, 0.48, 0.44];
+/// The fewest pixels walking draws, about 1200 lines of 1440, and riding, whose view is far wider.
+const WALK_LEAST: usize = 5;
+const RIDE_LEAST: usize = 11;
+/// The GPU time a frame aims under, in milliseconds: the 16.7 ms of a 60 Hz frame, less room for a sudden heavier
+/// view while the steps follow.
+const TARGET_MS: f32 = 14.5;
+/// Steps up only once the frame would stay under this with the next step's pixels.
+const ROOM_MS: f32 = 13.5;
+/// How long each measurement averages, and how long the GPU must have had room before stepping up.
+const WINDOW_S: f32 = 0.25;
+const CALM_S: f32 = 1.5;
 
-/// The GPU's load follows what the camera sees, so the drawn pixels follow it: one step fewer at each frame the
-/// display had to show twice, and one more after seconds without one, waiting longer each time the step above failed.
+/// The GPU's load follows what the camera sees, so the drawn pixels follow it, as Unreal's dynamic resolution does:
+/// fewer as soon as a quarter second's frames take the GPU over [`TARGET_MS`], more once they have had room for a while.
 /// Walking and riding keep separate steps.
-#[derive(Resource)]
+#[derive(Resource, Default)]
 struct Load {
     steps: [usize; 2],
-    since: f32,
+    /// The GPU's busy milliseconds, frames and seconds of the current measurement.
+    busy: f32,
+    frames: u32,
+    window: f32,
     calm: f32,
-    /// How long to stay calm before each step up, per step.
-    wait: [f32; SHARES.len()],
-    raised: bool,
-    /// When recent frames missed, in seconds since the splash lifted.
-    misses: std::collections::VecDeque<f32>,
-    clock: f32,
-}
-
-impl Default for Load {
-    fn default() -> Self {
-        Load {
-            steps: [0, RIDE_STEP],
-            since: 0.0,
-            calm: 0.0,
-            wait: [CALM_S; SHARES.len()],
-            raised: false,
-            misses: default(),
-            clock: 0.0,
-        }
-    }
 }
 
 impl Load {
     fn share(&self, riding: bool) -> f32 {
-        // Playtest: the world draws every pixel unless HAKUBA_ADAPT=1 lets late frames lower it.
+        // Playtest: HAKUBA_ADAPT=0 always draws the setting's pixels.
         static ADAPT: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-        if !*ADAPT.get_or_init(|| std::env::var("HAKUBA_ADAPT").is_ok_and(|v| v == "1")) {
+        if !*ADAPT.get_or_init(|| !std::env::var("HAKUBA_ADAPT").is_ok_and(|v| v == "0")) {
             return 1.0;
         }
         SHARES[self.steps[riding as usize]]
     }
 }
 
-/// How many frames stayed on screen longer than one 60 Hz frame since the last call; zero where it is not measured.
-fn missed_frames() -> u32 {
+/// How many milliseconds the GPU was busy since the last call; zero where it is not measured.
+fn gpu_busy_ms() -> f32 {
     #[cfg(target_os = "macos")]
     {
         unsafe extern "C" {
-            fn hakuba_present_missed() -> u32;
+            fn hakuba_gpu_busy_ms() -> f64;
         }
         // SAFETY: the vendored Metal backend defines it.
-        unsafe { hakuba_present_missed() }
+        unsafe { hakuba_gpu_busy_ms() as f32 }
     }
     #[cfg(not(target_os = "macos"))]
-    0
+    0.0
 }
 
 /// Playtest measurement: `HAKUBA_FIXED_PIXELS=1` keeps the setting's pixels, so GPU timings compare like with like.
@@ -110,58 +92,45 @@ fn follow_load(
     loaded: Option<Res<crate::loading::Loaded>>,
     mut load: ResMut<Load>,
 ) {
-    let fresh = missed_frames();
+    let busy = gpu_busy_ms();
     // The splash hides loading's stalls, and they say nothing about the views to come.
     if loaded.is_none() || fixed_pixels() {
         return;
     }
-    let dt = time.delta_secs();
-    load.since += dt;
-    load.clock += dt;
-    let clock = load.clock;
-    for _ in 0..fresh {
-        load.misses.push_back(clock);
-    }
-    while load.misses.front().is_some_and(|&t| clock - t > BURST_S) {
-        load.misses.pop_front();
-    }
-    let short = load.misses.len() >= BURST;
-    let mode = riding.0 as usize;
     if riding.is_changed() {
-        load.since = 0.0;
-        load.calm = 0.0;
-        load.raised = false;
-    }
-    if fresh > 0 {
         load.calm = 0.0;
     }
-    if short {
-        if load.since >= SETTLE_S && load.steps[mode] + 1 < SHARES.len() {
-            let step = load.steps[mode];
-            if load.raised && load.since < BLAME_S {
-                load.wait[step] = (load.wait[step] * 2.0).min(CALM_MAX_S);
-            }
-            load.steps[mode] += 1;
-            load.since = 0.0;
-            load.raised = false;
-            // The misses that asked for this step must not ask again: only misses at the new step count.
-            load.misses.clear();
-            info!("PIXELS fewer: now {:.0}% of the setting", 100.0 * SHARES[load.steps[mode]]);
+    load.busy += busy;
+    load.frames += 1;
+    load.window += time.delta_secs();
+    if load.window < WINDOW_S {
+        return;
+    }
+    let gpu_ms = load.busy / load.frames as f32;
+    let window = std::mem::take(&mut load.window);
+    load.busy = 0.0;
+    load.frames = 0;
+    let mode = riding.0 as usize;
+    let least = if riding.0 { RIDE_LEAST } else { WALK_LEAST };
+    let step = load.steps[mode];
+    if gpu_ms > TARGET_MS {
+        // As many steps fewer as the frame is over, as if all its time were per pixel, at most two at a time: the
+        // next measurement takes another if that was not enough.
+        let wanted = SHARES[step] * TARGET_MS / gpu_ms;
+        let next = (step..=least).find(|&s| SHARES[s] <= wanted).unwrap_or(least).min(step + 2);
+        load.calm = 0.0;
+        if next != step {
+            load.steps[mode] = next;
+            info!("PIXELS fewer: GPU {gpu_ms:.1} ms, now {:.0}% of the setting", 100.0 * SHARES[next]);
         }
         return;
     }
-    if fresh > 0 {
-        return;
-    }
-    load.calm += dt;
-    let step = load.steps[mode];
-    let most = if riding.0 { RIDE_STEP } else { 0 };
-    if step > most && load.calm >= load.wait[step - 1] {
-        load.steps[mode] -= 1;
-        load.since = 0.0;
+    let roomy = step > 0 && gpu_ms * SHARES[step - 1] / SHARES[step] < ROOM_MS;
+    load.calm = if roomy { load.calm + window } else { 0.0 };
+    if load.calm >= CALM_S {
         load.calm = 0.0;
-        load.raised = true;
-        info!("PIXELS more: now {:.0}% of the setting", 100.0 * SHARES[load.steps[mode]]);
+        load.steps[mode] = step - 1;
+        info!("PIXELS more: GPU {gpu_ms:.1} ms, now {:.0}% of the setting", 100.0 * SHARES[step - 1]);
     }
 }
 
