@@ -1,7 +1,10 @@
 //! Playtest helpers for the native build: a frame pacer that keeps to fixed deadlines, so every frame lands on the
 //! same display refresh, and a once-a-second log of how far apart frames really were.
 //!
-//! `HAKUBA_PACE=N` paces at N frames a second (default 60, 0 for no pacing).
+//! `HAKUBA_PACE=N` paces at N frames a second (default 62, 0 for no pacing). A little faster than 60 leaves the 120 Hz
+//! display's own vsync wait to set each frame's phase: paced at exactly 60, the deadlines drift against the display's
+//! ticks and a frame landing a hair late waits a whole extra tick, 25 ms. Over 25 s of the walk, 62 halved those frames
+//! (115 and 107 at 60, 58 and 43 at 62, 69 at 61).
 
 use std::time::{Duration, Instant};
 
@@ -11,7 +14,7 @@ use bevy::prelude::*;
 pub struct PlaytestPlugin;
 impl Plugin for PlaytestPlugin {
     fn build(&self, app: &mut App) {
-        let pace = std::env::var("HAKUBA_PACE").ok().and_then(|v| v.parse::<f64>().ok()).unwrap_or(60.0);
+        let pace = std::env::var("HAKUBA_PACE").ok().and_then(|v| v.parse::<f64>().ok()).unwrap_or(62.0);
         let relative = std::env::var("HAKUBA_PACE_MODE").is_ok_and(|mode| mode == "relative");
         let spin = std::env::var("HAKUBA_SPIN_MS").ok().and_then(|v| v.parse::<f64>().ok()).unwrap_or(4.0);
         #[cfg(target_os = "macos")]
