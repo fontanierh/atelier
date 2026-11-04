@@ -81,9 +81,7 @@ fn install_comparison_pass(world: &mut World) {
             .remove_systems_in_set(early_prepass, world, ScheduleCleanupPolicy::RemoveSystemsOnly)
             .expect("replace the registered early prepass");
         assert_eq!(removed, 1, "one early prepass must be registered");
-        schedule.add_systems(
-            early_prepass.run_if(not_single_view).in_set(Core3dSystems::Prepass),
-        );
+        schedule.add_systems(early_prepass.run_if(not_single_view).in_set(Core3dSystems::Prepass));
     });
 }
 
@@ -270,8 +268,11 @@ fn draw_comparison(
             error!("forward motion masked draw failed: {error:?}");
         }
     }
-    // Reuse Bevy's sky-depth-only motion draw for any pixels not covered by the mesh sky.
-    if let (Some(id), Some(group)) = (background_pipeline, background_group)
+    // Reuse Bevy's sky-depth-only motion draw for any pixels not covered by the mesh sky. The single pass leaves it
+    // out: the world's sky dome surrounds the camera, so no pixel is left to it, and its pass alone loaded and stored
+    // the motion and depth targets again.
+    if !single
+        && let (Some(id), Some(group)) = (background_pipeline, background_group)
         && let Some(pipeline) = pipelines.get_render_pipeline(id.0)
     {
         let attachments = [None, Some(target.get_attachment()), None, None];
