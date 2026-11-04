@@ -396,7 +396,7 @@ fn swap(
                 show(&mut commands, &mut visibility, part);
             }
         }
-        // Playtest: HAKUBA_BLOCK_HIDE=still or painted hides that look's merged meshes, to measure them.
+        // Playtest: HAKUBA_BLOCK_HIDE=still, painted or trees hides that look's merged meshes, to measure them.
         let hide = std::env::var("HAKUBA_BLOCK_HIDE").unwrap_or_default();
         for (look, mesh, parts) in result.meshes {
             let mut drawn = commands.spawn((
@@ -409,7 +409,9 @@ fn swap(
             look.insert(&mut drawn);
             if matches!(
                 (&look, hide.as_str()),
-                (Drawn::Look(Look::Still(_)), "still") | (Drawn::Look(Look::Painted(_)), "painted")
+                (Drawn::Look(Look::Still(_)), "still")
+                    | (Drawn::Look(Look::Painted(_)), "painted")
+                    | (Drawn::Source(_), "trees")
             ) {
                 drawn.insert(Visibility::Hidden);
             }
