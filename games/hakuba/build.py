@@ -12,7 +12,8 @@ CODE = [GAME / 'src', GAME / 'crates', GAME / 'schemas', GAME / 'vendor', GAME /
 
 def steps(ctx):
     return [
-        Step('game.binary', [Cargo(('build', '--release'), workspace=GAME)], inputs=CODE, heavy=True,
+        Step('game.binary', [Cargo(('build', '--release'), workspace=GAME)], inputs=CODE,
+             outputs=[GAME / 'target/release/hakuba'], heavy=True,
              about='the desktop program, target/release/hakuba (cargo keeps its own incremental state in target/)'),
         Step('assets.check', [Cargo(('export', '--check', 'assets'), workspace=GAME)],
              inputs=[GAME / 'tools/export', GAME / 'assets', *CODE], heavy=True,

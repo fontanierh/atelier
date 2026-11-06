@@ -44,13 +44,15 @@ from atelier.build import Cargo, Step
 
 def steps(ctx):
     return [Step('game.binary', [Cargo(('build', '--release'), workspace=GAME)],
-                 inputs=[GAME / 'src', GAME / 'Cargo.toml', GAME / 'Cargo.lock'], heavy=True)]
+                 inputs=[GAME / 'src', GAME / 'Cargo.toml', GAME / 'Cargo.lock'],
+                 outputs=[GAME / 'target/release/my_game'], heavy=True)]
 ```
 
 `Cargo` runs `cargo <args>` in the workspace folder, so the workspace's `.cargo/config.toml` aliases and
 `rust-toolchain.toml` apply exactly as they do by hand. It asks admission for the compile slot, as an Unreal compile
 does, and caps rustc at three workers with `CARGO_BUILD_JOBS`. Cargo keeps its own incremental state in the
-workspace's `target/`. The step's inputs only decide whether the command runs.
+workspace's `target/`. The step's inputs only decide whether the command runs. Its `outputs` name the program,
+so a missing one makes the step run again.
 
 `atelier play` runs the binary under the same guard and memory limit as an Unreal game (`kind='game'`).
 

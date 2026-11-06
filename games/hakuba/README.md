@@ -9,9 +9,7 @@ and in the browser.
 - Every change is reviewed by hand.
 - Every folder and file says what it is for, here, in its own README or in a header comment. Nothing is committed
   that the game or its exports do not use.
-- Hakuba is all Rust and builds with plain `cargo` and `trunk`. `atelier build hakuba` and `atelier play hakuba` run
-  the same cargo build (with the asset check) and the built program under the machine's admission and memory guard,
-  from `game.toml` and `build.py`.
+- Hakuba is all Rust and builds with plain `cargo` and `trunk`.
 - Hakuba's code and assets stay in `games/hakuba`.
 
 ## Run

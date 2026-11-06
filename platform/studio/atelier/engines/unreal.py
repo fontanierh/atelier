@@ -7,7 +7,7 @@ class Unreal(Engine):
     name = 'unreal'
     live = True
     stream = True
-    template = 'sandbox'
+    template = 'game'                 # the repository's template game (`atelier.new.TEMPLATE`)
 
     def checks(self, ctx, data):
         from ..setup import mac_checks

@@ -31,7 +31,7 @@ def main(game_id, title=None, engine='unreal'):
     template = engines.named(engine).template
     if template is None:
         raise SystemExit(f'the {engine} engine has no template for a new game')
-    if template != TEMPLATE:
+    if template != 'game':
         return from_template(TEMPLATES / template, target, game_id, title)
     module = module_name(game_id)
     source = paths.GAMES / TEMPLATE

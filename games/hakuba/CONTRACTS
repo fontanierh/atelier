@@ -13,7 +13,9 @@ Code that would sit in a second home MUST move to its home instead of being copi
 @cc [owner:fontanierh,label:architecture] hakuba-is-self-contained
 Hakuba's code, assets, docs and comments MUST stay in `games/hakuba` and MUST NOT import, read, name or
 describe anything outside it, including other games and the `atelier` command. A clone of the repository
-MUST build, export and run Hakuba with plain `cargo` and `trunk`.
+MUST build, export and run Hakuba with plain `cargo` and `trunk`. Only `game.toml` and `build.py` at its
+root MAY describe Hakuba to the `atelier` command, running those same cargo commands; nothing else in
+Hakuba MAY read or depend on them.
 
 @cc [owner:fontanierh,label:architecture] hakuba-everything-used-and-described
 Every committed file MUST be used by the game or by its exports. A pinned vendored library MAY retain upstream

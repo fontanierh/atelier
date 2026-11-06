@@ -18,7 +18,8 @@ class Engine:
     name = ''
     live = False                 # the live bridge (`atelier live`) answers while the game runs
     stream = False               # `atelier stream` can serve the game to a browser
-    template = None              # the template `atelier new --engine <name>` copies, or None
+    template = None              # what `atelier new --engine <name>` copies: 'game' (the repository's template
+                                 # game), a folder under platform/studio/templates, or None
 
     def checks(self, ctx, data):
         """(ok, message) pairs for `atelier doctor`: the engine's own tools and the game's engine sources."""

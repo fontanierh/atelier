@@ -114,5 +114,13 @@ def test_a_new_bevy_game_is_the_template_named_after_it(monkeypatch, tmp_path):
     assert (data['id'], data['title'], data['engine']) == ('my_game', 'My Game', 'bevy')
     assert data['play']['play']['binary'] == 'target/release/my_game'
     assert 'name = "my_game"' in (game / 'Cargo.toml').read_text()
+    # Its build step names the program as an output, so a missing program makes the step run again.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('new_game_recipe', game / 'build.py')
+    recipe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(recipe)
+    step, = recipe.steps(None)
+    assert step.outputs == [game / 'target/release/my_game']
+    assert not build.outputs_present(step)
     with pytest.raises(SystemExit, match='already exists'):
         new.main('my_game', engine='bevy')
