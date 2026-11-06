@@ -132,6 +132,7 @@ fn spawn_world(
     commands.insert_resource(WorldCollision::default());
     commands.insert_resource(CollisionFocus::default());
     commands.remove_resource::<WaterBodies>();
+    commands.remove_resource::<scenery::NearOnly>();
     commands.spawn((
         Name::new("Sea"),
         DespawnOnExit(Screen::World),
@@ -240,6 +241,20 @@ fn read_index(
     } else {
         error!("missing collision grid in {INDEX}");
         commands.insert_resource(loading::Missing(INDEX.into()));
+    }
+    let near_only = gltf
+        .named_nodes
+        .get("near only")
+        .and_then(|handle| nodes.get(handle))
+        .and_then(|node| node.extras.as_ref())
+        .and_then(|e| serde_json::from_str::<serde_json::Value>(&e.value).ok())
+        .and_then(|v| serde_json::from_value::<std::collections::HashSet<String>>(v.get("models")?.clone()).ok());
+    match near_only {
+        Some(models) => commands.insert_resource(scenery::NearOnly(models)),
+        None => {
+            error!("missing or invalid list of the models only full tiles show in {INDEX}");
+            commands.insert_resource(loading::Missing(INDEX.into()));
+        }
     }
     for (name, node) in &gltf.named_nodes {
         let node = nodes.get(node).expect("a loaded glTF's nodes are loaded");

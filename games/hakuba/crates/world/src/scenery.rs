@@ -15,7 +15,7 @@
 use std::collections::VecDeque;
 
 use bevy::asset::{RenderAssetUsages, UntypedAssetId};
-use bevy::camera::primitives::Aabb;
+use bevy::camera::primitives::{Aabb, MeshAabb};
 use bevy::camera::visibility::{RenderLayers, VisibilityRange};
 use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
@@ -172,6 +172,38 @@ fn small_lod_m(full_m: f32) -> Option<(f32, f32)> {
     (lod > SMALL_FADE_M).then_some((lod, SMALL_FADE_M))
 }
 
+/// The models only full tiles show, by folder under `assets/`, from the world's index (`near only`).
+#[derive(Resource, Default)]
+pub(crate) struct NearOnly(pub std::collections::HashSet<String>);
+
+impl NearOnly {
+    /// Whether `model`, a model's `.glb`, is one only full tiles show.
+    fn holds(&self, model: &Handle<Gltf>) -> bool {
+        model
+            .path()
+            .and_then(|path| path.path().parent())
+            .is_some_and(|folder| self.0.contains(folder.to_string_lossy().as_ref()))
+    }
+}
+
+/// How far a plant can stand across the ground from its tile's centre: half a tile's diagonal, and as far again as a
+/// plant reaches from its foot.
+const OFF_CENTRE_M: f32 = crate::tiles::TILE_M * std::f32::consts::FRAC_1_SQRT_2 + 2.5;
+/// How much deeper than its height a plant middle tiles leave out sinks, for the ground beside it falling away on a
+/// slope, and how much further still.
+const SLOPE_SINK: f32 = 1.25;
+const SINK_MARGIN_M: f32 = 0.3;
+/// Over how many metres a plant middle tiles leave out sinks into the ground.
+const SINK_FADE_M: f32 = 20.0;
+
+/// Between which distances from the camera, across the ground, a plant middle tiles leave out sinks into the ground,
+/// given how far tiles show their full versions: sunk wherever its tile may be about to turn middle, a tile turning as
+/// its centre passes `full_m`.
+pub(crate) fn sink_m(full_m: f32) -> (f32, f32) {
+    let end = (full_m - OFF_CENTRE_M).max(0.0);
+    ((end - SINK_FADE_M).max(0.0), end)
+}
+
 /// Copies spawned from their model, which may still be loading its textures.
 #[derive(Component)]
 pub struct Placed(pub Handle<Gltf>);
@@ -314,6 +346,7 @@ fn spawn(
     roots: Query<(), With<WorldAssetRoot>>,
     loaded: Option<Res<Loaded>>,
     settings: Res<hakuba_settings::Settings>,
+    near_only: Option<Res<NearOnly>>,
 ) {
     let times = if loaded.is_some() { 1 } else { UNDER_SPLASH };
     let small_lod = small_lod_m(settings.detail.full_m());
@@ -367,6 +400,10 @@ fn spawn(
             let per_copy = (has_middle || baked.is_some()) && full_vertices >= MERGE_BELOW_VERTICES;
             // A full tile's small plants fade to their middle versions before the tile becomes middle.
             let small = small_lod.filter(|_| !per_copy && far.is_none() && !waiting.middle && has_middle);
+            // A model only full tiles show sinks out of sight before its tile turns middle, instead of vanishing with it.
+            let near = far.is_none()
+                && !waiting.middle
+                && near_only.as_ref().is_some_and(|near_only| near_only.holds(&waiting.model));
             let mut versions = versions(
                 Holding {
                     middle_tile: waiting.middle,
@@ -502,6 +539,14 @@ fn spawn(
                         .with_scale(Vec3::splat(scale))
                 })
                 .collect();
+            if near {
+                // Sunk by its height and a quarter more, as a slope across its foot can lower the ground beside it.
+                let scale = transforms.iter().map(|t| t.scale.y).fold(0.0, f32::max);
+                let top = full_node.map_or(0.0, |node| top_m(&models.meshes, &meshes, node));
+                commands
+                    .entity(entity)
+                    .insert(crate::wind::FadesOut { depth_m: top * scale * SLOPE_SINK + SINK_MARGIN_M });
+            }
             let mut jobs = VecDeque::new();
             for (name, node, parts, role, range) in shown {
                 let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
@@ -524,6 +569,12 @@ fn spawn(
                     && vertices < MERGE_BELOW_VERTICES
                     && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
+                    if near && !matches!(look, Look::Swaying(_) | Look::SourceFoliage(..) | Look::ShadowFoliage(..)) {
+                        let asset = waiting.model.path().map_or_else(|| "model".to_string(), |p| p.to_string());
+                        warn!(
+                            "{asset} is shown only in full tiles but does not sway, so it cannot sink: it vanishes with its tile"
+                        );
+                    }
                     let material = node
                         .mesh
                         .as_ref()
@@ -1231,6 +1282,16 @@ fn validate_paint(source: &Mesh, motion: bool) -> Result<(), String> {
 fn vertices(gltf_meshes: &Assets<GltfMesh>, meshes: &Assets<Mesh>, node: &GltfNode) -> usize {
     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| gltf_meshes.get(mesh)) else { return 0 };
     mesh.primitives.iter().filter_map(|primitive| meshes.get(&primitive.mesh)).map(Mesh::count_vertices).sum()
+}
+
+/// How high above its foot `node`'s meshes reach, counting those loaded.
+fn top_m(gltf_meshes: &Assets<GltfMesh>, meshes: &Assets<Mesh>, node: &GltfNode) -> f32 {
+    let Some(mesh) = node.mesh.as_ref().and_then(|mesh| gltf_meshes.get(mesh)) else { return 0.0 };
+    mesh.primitives
+        .iter()
+        .filter_map(|primitive| meshes.get(&primitive.mesh)?.get_aabb())
+        .map(|aabb| aabb.max().y)
+        .fold(0.0, f32::max)
 }
 
 /// Groups transforms into squares of the requested side length.
