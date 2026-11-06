@@ -10,6 +10,13 @@ from atelier.build import Call, Python, Step, UnrealCompile, UnrealPackage, Unre
 
 GAME = Path(__file__).resolve().parent
 UNREAL = GAME / 'unreal'
+# Steps that must run every time they are reached (the content check, a named import) report "not done" until
+# they have run in this build process; each build loads this recipe afresh.
+RAN = set()
+
+
+def ran(name):
+    return Call(f'ran {name}', lambda ctx, log: RAN.add(name))
 
 
 def steps(ctx):
@@ -17,7 +24,8 @@ def steps(ctx):
     out = ctx.out
     return [
         # Read-only and quick: it always runs, so a build never trusts a stale stamp for committed bytes.
-        Step('check.content', [Python(GAME / 'tools/content/check.py', ())], verify=lambda: False,
+        Step('check.content', [Python(GAME / 'tools/content/check.py', ()), ran('check.content')],
+             verify=lambda: 'check.content' in RAN,
              inputs=[GAME / 'tools/content'],
              about='every committed package present, hydrated, owned and current; fixes nothing'),
         Step('unreal.compile', [UnrealCompile('YorimichiV2Editor')],
@@ -51,8 +59,10 @@ def import_steps():
             continue        # check.content reports it
         if asset.authority == 'editor':
             continue
-        found.append(Step(f'import.{asset.id}', [UnrealScript(script, 'V2 IMPORT DONE')],
-                          inputs=[script], after=['unreal.compile'], heavy=True, explicit=True, verify=lambda: False,
+        name = f'import.{asset.id}'
+        found.append(Step(name, [UnrealScript(script, 'V2 IMPORT DONE'), ran(name)],
+                          inputs=[script], after=['unreal.compile'], heavy=True, explicit=True,
+                          verify=lambda name=name: name in RAN,
                           about=f'editor import of {asset.id} (use tools/import/run.py)'))
     return found
 

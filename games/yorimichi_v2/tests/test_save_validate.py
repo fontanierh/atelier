@@ -108,7 +108,8 @@ def test_a_deleted_actor_drops_out_of_its_region(game):
 
 
 def test_labels_assign_new_actors_when_the_header_reader_knows_them(game, monkeypatch):
-    monkeypatch.setattr(sv, 'actor_label', lambda path: 'region/b:House_C:root' if path.name == 'HOUSE.uasset' else None)
+    monkeypatch.setattr(sv, 'actor_info', lambda path: ('region/b:House_C:root', None) if path.name == 'HOUSE.uasset'
+                        else (None, None))
     sv.validate(game, 'region/b', echo=quiet)
     assert list(records.load_verified(game / 'world/regions/b/actors.verified.json')['files']) == [
         f'{ACTORS}/0/BB/HOUSE.uasset']
@@ -136,3 +137,18 @@ package = "/Game/X"
     with pytest.raises(sv.ValidationError, match='bootstrap writer'):
         sv.validate(game, 'material/painted', echo=quiet)
     assert not (game / 'assets/materials/painted/verified.json').exists()
+
+
+def test_an_unlabelled_actor_joins_the_region_its_location_falls_in(game, monkeypatch):
+    monkeypatch.setattr(sv, 'actor_info', lambda path: ('Bench', (50.0, 50.0, 0.0)) if path.name == 'BENCH.uasset'
+                        else ('House', (150.0, 50.0, 0.0)))
+    sv.validate(game, 'region/a', echo=quiet)
+    assert list(records.load_verified(game / 'world/regions/a/actors.verified.json')['files']) == [
+        f'{ACTORS}/0/AA/BENCH.uasset']
+
+
+def test_a_region_whose_last_actor_was_deleted_records_an_empty_set(game):
+    sv.validate(game, 'region/a', add=[f'{ACTORS}/0/AA/BENCH.uasset'], echo=quiet)
+    (game / f'{ACTORS}/0/AA/BENCH.uasset').unlink()
+    sv.validate(game, 'region/a', echo=quiet)
+    assert records.load_verified(game / 'world/regions/a/actors.verified.json')['files'] == {}

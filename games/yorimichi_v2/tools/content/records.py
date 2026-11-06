@@ -238,7 +238,7 @@ def load_verified(path: Path) -> dict:
     if data.get('schema') != SCHEMA or data.get('kind') not in VERIFIED_KINDS:
         raise RecordError(f'{path}: verification schema must be {SCHEMA} and kind one of {VERIFIED_KINDS}')
     files = data.get('files')
-    if not isinstance(files, dict) or not files:
+    if not isinstance(files, dict) or (not files and not path.name.startswith('actors.')):
         raise RecordError(f'{path}: `files` must map content-relative paths to sha256')
     for rel, digest in files.items():
         _portable(rel, path, 'files')

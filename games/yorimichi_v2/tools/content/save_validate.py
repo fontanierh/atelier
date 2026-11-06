@@ -7,7 +7,8 @@ Editor-owned content is never imported (plan §5): after its edit is saved, this
 it now has, with hashes, engine identity and the state of the dependencies it references, in `verified.json`
 (assets) or `actors.verified.json` (regions). A region's actors are its current record's packages that still
 exist, plus packages under its maps' `__ExternalActors__`/`__ExternalObjects__` folders whose actor label starts
-with the region ID (`region/<name>:...`, the migration's labels), plus explicit `--add`. A package another region
+with the region ID (`region/<name>:...`, the migration's labels) or, unlabelled by a region, whose saved
+location lies inside the region's bounds, plus explicit `--add`. A package another region
 already owns, or one that no longer exists, is refused or dropped explicitly. No change writes nothing.
 
 It never fixes content and never touches a generated package.
@@ -52,17 +53,23 @@ def authorize(paths: list[str], claim: str | None):
         raise ValidationError(f'no --claim given and ATELIER_AGENT is not the bootstrap writer {BOOTSTRAP_WRITER!r}')
 
 
-def actor_label(path: Path) -> str | None:
-    """The saved actor's label from its package header, when the reader understands this package."""
+def actor_info(path: Path):
+    """(label, location in cm) of a saved actor from its package header, or (None, None) when unreadable."""
     try:
         sys.path.insert(0, str(REPO / 'platform' / 'studio'))
         from atelier import unreal_package_summary as summary
     except ImportError:
-        return None
+        return None, None
     try:
-        return summary.read(path).actor_label
+        actor = summary.read(path).actor
     except Exception:  # noqa: BLE001 — an unreadable header leaves membership to the record and --add
-        return None
+        return None, None
+    return (actor.label, actor.location) if actor else (None, None)
+
+
+def inside(bounds, location) -> bool:
+    """Half-open, so an actor on a shared edge belongs to exactly one region."""
+    return location is not None and bounds[0] <= location[0] < bounds[2] and bounds[1] <= location[1] < bounds[3]
 
 
 def map_actor_dirs(game: Path, map_package: str) -> list[Path]:
@@ -83,8 +90,9 @@ def region_files(game: Path, region, others: dict[str, str], add: list[str], rem
     for rel in sorted(candidates - members):
         if rel in others:
             continue
-        label = actor_label(game / rel)
-        if label and label.startswith(region.id + ':'):
+        label, location = actor_info(game / rel)
+        if (label and label.startswith(region.id + ':')) or (not label or ':' not in label) and \
+                inside(region.bounds_cm, location):
             members.add(rel)
     for rel in add:
         rel = records.content_relative(game, (game / rel) if not Path(rel).is_absolute() else Path(rel))
@@ -143,7 +151,7 @@ def validate(game: Path, subject: str, *, claim=None, add=(), remove=(), echo=pr
                 for rel in records.load_verified(other.actors)['files']:
                     others[rel] = other.id
         files = dict.fromkeys(region_files(game, region, others, list(add), list(remove)))
-        if not files:
+        if not files and not region.actors.is_file():
             raise ValidationError(f'{subject} owns no saved actor packages; add them with --add')
         target, generated = region.actors, {}
         body = {'schema': records.SCHEMA, 'kind': 'editor-saved', 'asset': subject, 'engine': engine}
