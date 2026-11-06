@@ -88,8 +88,9 @@ The saved Slice map's pieces come from the runtime island roster (`terrain/islan
 original island owner places them. The environment actors repeat `build_level`'s settings. `tools/migrate/
 compare.py` compares scene dumps from the two games over the same bounds, and is the parity oracle.
 
-The skate pier (W04) still spawns its meshes at runtime in the slice. Splitting `ASkatePark` into saved scenery
-plus a runtime service is the next scenery step (scene-patch spec, "Skate park").
+The skate pier (W04) splits the same way: `ASkatePark::Initialize(Path, bSpawnScenery)` keeps its look, rails and
+spawns at runtime, and the service `SkatePark.Scenery` saves its meshes and garden trees as one patch of the region
+holding the pier, copied from a park the migration loads with scenery.
 
 ## D08 — Adoption is per top-level donor folder
 

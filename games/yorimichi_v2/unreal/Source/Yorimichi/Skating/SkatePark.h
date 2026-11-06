@@ -13,8 +13,10 @@ class YORIMICHI_API ASkatePark : public AActor
     GENERATED_BODY()
 public:
     ASkatePark();
-    /** Reads park.json; returns false when a required mesh or rail could not be installed. */
-    bool Initialize(const FString& Path);
+    /** Reads park.json; returns false when a required mesh or rail could not be installed. Without bSpawnScenery
+     *  (a V2 map holds the park's meshes and trees as saved patches, V2ScenePatch.h) it installs only the look,
+     *  rails and spawns. */
+    bool Initialize(const FString& Path, bool bSpawnScenery = true);
     /** Vegetation clearance polygons (UE cm, XY) read before the world's instances are built. */
     static TArray<TArray<FVector2D>> LoadClearance(const FString& Path);
     static bool Inside(const TArray<TArray<FVector2D>>& Polygons, const FVector2D& P);

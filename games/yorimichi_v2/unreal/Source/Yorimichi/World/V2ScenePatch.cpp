@@ -1,5 +1,7 @@
 #include "V2ScenePatch.h"
 #include "JapanWorld.h"
+#include "SkatePark.h"
+#include "AtelierData.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -66,7 +68,9 @@ namespace
     {
         // A copy of the component Load made carries every setting Load chose (tags, collision, shadow, cull, custom
         // primitive data, bounds scale): one implementation for the runtime and the saved world.
-        T* Copy = NewObject<T>(Patch, NAME_None, RF_Transactional, const_cast<T*>(Source));
+        // The source's own class (an instanced park tree is a HISM under a UStaticMeshComponent pointer).
+        T* Copy = CastChecked<T>(NewObject<UObject>(Patch, Source->GetClass(), NAME_None, RF_Transactional,
+            const_cast<T*>(Source)));
         Copy->CreationMethod = EComponentCreationMethod::Instance;
         Copy->SetupAttachment(Patch->GetRootComponent());
         Copy->SetRelativeTransform(FTransform::Identity);
@@ -189,6 +193,40 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
     if (Services.Contains(TEXT("Sea")))
         for (UStaticMeshComponent* Sea : Source->SeaPieces)
             Whole(Sea, TEXT("Sea:") + (Sea && Sea->GetStaticMesh() ? Sea->GetStaticMesh()->GetName() : FString()), AV2ScenePatch::RoleSea);
+    // The skate pier's meshes and garden trees (ASkatePark::Initialize with scenery): one patch in the region holding
+    // the park, each component a copy of the park's, at the park's own transform. The runtime park keeps its look,
+    // rails and spawns (Initialize without scenery when the manifest lists SkatePark.Scenery).
+    if (Services.Contains(TEXT("SkatePark.Scenery")))
+    {
+        FActorSpawnParameters ParkParams;
+        ParkParams.ObjectFlags = RF_Transient;
+        ParkParams.bHideFromSceneOutliner = true;
+        ASkatePark* Park = World->SpawnActor<ASkatePark>(FVector::ZeroVector, FRotator::ZeroRotator, ParkParams);
+        if (!Park || !Park->Initialize(AtelierDataPath(TEXT("skatepark/park.json")), true))
+        {
+            if (Park) Park->Destroy();
+            Source->Destroy();
+            Error = TEXT("the skate pier did not load completely (skatepark/park.json and its meshes)");
+            return -1;
+        }
+        FName Owner = ServicesRegion;
+        for (int32 R = 0; R < Regions.Num(); ++R)
+            if (AV2WorldManifest::InsideHalfOpen(BoundsCm[R], FVector2D(Park->GetActorLocation()))) Owner = Regions[R];
+        if (AV2ScenePatch* Made = Patch(Owner, TEXT("SkatePark"), TEXT("scenery"), Park->GetActorLocation(),
+                StableId({TEXT("skatepark"), Owner.ToString()})))
+        {
+            Made->SetActorRotation(Park->GetActorRotation());
+            TArray<UStaticMeshComponent*> Parts;
+            Park->GetComponents(Parts);
+            for (UStaticMeshComponent* From : Parts)
+            {
+                UStaticMeshComponent* C = CopyInto(Made, From);
+                C->SetRelativeTransform(From->GetRelativeTransform());
+                C->RegisterComponent();
+            }
+        }
+        Park->Destroy();
+    }
     Source->Destroy();
     for (AActor* Made : OutCreated) Made->MarkPackageDirty();
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION created %d patches, kept %d, dropped %d floating backdrop trees"),

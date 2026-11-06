@@ -81,7 +81,7 @@ bool ASkatePark::ContainsPlanar(const FVector& Position, float Margin) const
     return FMath::Abs(Local.X) <= DeckHalfSize.X + Margin && FMath::Abs(Local.Y) <= DeckHalfSize.Y + Margin;
 }
 
-bool ASkatePark::Initialize(const FString& Path)
+bool ASkatePark::Initialize(const FString& Path, bool bSpawnScenery)
 {
     const TSharedPtr<FJsonObject> Root = ReadJson(Path);
     if (!Root) { UE_LOG(LogTemp, Warning, TEXT("Skate park: %s not found"), *Path); return false; }
@@ -113,7 +113,7 @@ bool ASkatePark::Initialize(const FString& Path)
     Look->RegisterComponent();
 
     int32 Meshes = 0, Missing = 0;
-    for (const auto& Entry : Root->GetArrayField(TEXT("meshes")))
+    for (const auto& Entry : bSpawnScenery ? Root->GetArrayField(TEXT("meshes")) : TArray<TSharedPtr<FJsonValue>>())
     {
         FString Name; bool bBlocks = true, bIsHidden = false;
         if (Entry->Type == EJson::String) Name = Entry->AsString();
@@ -137,7 +137,7 @@ bool ASkatePark::Initialize(const FString& Path)
     // Reuse the island's detailed trees in the perimeter stone gardens. Their
     // canopies frame the skating; the separate foliage has no riding collision.
     const TSharedPtr<FJsonObject>* Trees = nullptr;
-    if (Root->TryGetObjectField(TEXT("trees"), Trees))
+    if (bSpawnScenery && Root->TryGetObjectField(TEXT("trees"), Trees))
         for (const auto& Pair : (*Trees)->Values)
         {
             const FString Key(Pair.Key);
@@ -186,5 +186,5 @@ bool ASkatePark::Initialize(const FString& Path)
         }
     }
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK loaded: %d meshes, %d rails, spawn %s"), Meshes, RailCount, *ParkSpawn.ToString());
-    return Missing == 0 && Meshes > 0 && Rails && RailCount == Rails->Num() && RailCount > 0;
+    return Missing == 0 && (Meshes > 0 || !bSpawnScenery) && Rails && RailCount == Rails->Num() && RailCount > 0;
 }

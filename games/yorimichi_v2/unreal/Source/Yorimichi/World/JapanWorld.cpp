@@ -852,7 +852,8 @@ void AJapanWorld::Load()
     auto InstallPark = [&](const FString& Path, const TCHAR* Label)
     {
         auto* Park = FPaths::FileExists(Path) ? GetWorld()->SpawnActor<ASkatePark>() : nullptr;
-        if (!Park || !Park->Initialize(Path)) Incomplete.Add(Label);
+        const bool bSaved = Manifest && Manifest->CoversService(TEXT("SkatePark.Scenery"));
+        if (!Park || !Park->Initialize(Path, !bSaved)) Incomplete.Add(Label);
     };
     if (ServiceRuns(TEXT("SkatePark"))) InstallPark(ParkPath, TEXT("skate pier"));
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
