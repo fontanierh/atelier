@@ -18,3 +18,7 @@ args = ["-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440"]
 [play.slice]
 # The P3 slice map: coastal start and the Sunset Pier approach.
 args = ["/Game/V2/Maps/Slice", "-game", "-windowed", "-resx=2560", "-resy=1440"]
+
+[play.test]
+# The minimal World Partition test map, small and offscreen: native checks such as two live sessions (C16).
+args = ["/Game/V2/Maps/TestMinimal", "-game", "-windowed", "-resx=1280", "-resy=720", "-RenderOffscreen"]

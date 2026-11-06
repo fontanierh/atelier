@@ -1,4 +1,5 @@
 #include "JapanGameMode.h"
+#include "LiveLibrary.h"
 #include "JapanSession.h"
 #include "PlayableCharacter.h"
 #include "JapanWorld.h"
@@ -54,6 +55,9 @@ AJapanGameMode::AJapanGameMode()
 void AJapanGameMode::BeginPlay()
 {
     Super::BeginPlay();
+    // V2: the live bridge listens from the start of play on every map, so a map whose world is still loading, has no
+    // player yet or failed to load can be inspected (the player's own start, WandererCharacter, finds it running).
+    AtelierLive::Start(GetWorld());
     AJapanWorld* W = GetWorld()->SpawnActor<AJapanWorld>(FVector::ZeroVector, FRotator::ZeroRotator);
     AWandererCharacter* T = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
     if (T) T->EnterWorld(W);
