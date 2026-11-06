@@ -29,10 +29,11 @@ authority = recipe._authority()
 def writer(monkeypatch):
     monkeypatch.setenv('ATELIER_AGENT', authority.BOOTSTRAP_WRITER)
     monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
-    for name in ('V2_EDITOR_CLAIM', 'V2_EDITOR_PATHS', 'V2_EDITOR_SCOPES', 'V2_SAVE_ALLOW'):
+    for name in ('V2_EDITOR_CLAIM', 'V2_EDITOR_PATHS', 'V2_EDITOR_SCOPES', 'V2_SAVE_ALLOW', 'V2_SAVE_DENY'):
         monkeypatch.delenv(name, raising=False)
     yield
-    os.environ.pop('V2_SAVE_ALLOW', None)   # set by the code under test, not by monkeypatch
+    for name in ('V2_SAVE_ALLOW', 'V2_SAVE_DENY'):   # set by the code under test, not by monkeypatch
+        os.environ.pop(name, None)
 
 
 def bench_record(game):
@@ -144,7 +145,9 @@ def test_the_editor_route_never_writes_generated_packages(tmp_path, monkeypatch,
         recipe._authorize_editor(ctx, io.StringIO())
     for name in ('V2_EDITOR_CLAIM', 'V2_EDITOR_PATHS'):
         monkeypatch.delenv(name)
-    recipe._authorize_editor(ctx, io.StringIO())           # the bootstrap writer, checked after the run
+    recipe._authorize_editor(ctx, io.StringIO())           # the bootstrap writer: refused at the save itself
+    denied = Path(os.environ['V2_SAVE_DENY']).read_text().split()
+    assert any(d.endswith('/unreal/Content/Props/SM_Bench.uasset') for d in denied)
     (game / 'unreal/Content/Props/SM_Bench.uasset').write_bytes(b'resaved in the editor')
     with pytest.raises(RuntimeError, match='wrote generated packages'):
         recipe._check_editor_writes(None, io.StringIO())

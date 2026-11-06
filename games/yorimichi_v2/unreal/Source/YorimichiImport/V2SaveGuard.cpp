@@ -12,7 +12,10 @@ namespace
 {
 bool bActive = false;
 bool bInstalled = false;
+bool bAllowList = false;   // an allow list is in force: only its files may be saved
+bool bListsRead = true;    // false when a named list could not be read: nothing may be saved
 TSet<FString> Allowed;
+TSet<FString> Denied;
 TArray<FString> RefusedFiles;
 FCoreUObjectDelegates::FIsPackageOKToSaveDelegate Previous;
 FDelegateHandle PostInit;
@@ -28,10 +31,11 @@ FString Normalized(const FString& Filename)
 bool IsOKToSave(UPackage* Package, const FString& Filename, FOutputDevice* Error)
 {
     const FString Full = Normalized(Filename);
-    if (!Allowed.Contains(Full))
+    const bool bRefused = !bListsRead || (bAllowList && !Allowed.Contains(Full)) || Denied.Contains(Full);
+    if (bRefused)
     {
         RefusedFiles.AddUnique(Full);
-        UE_LOG(LogTemp, Error, TEXT("V2 save guard: refused %s (not in V2_SAVE_ALLOW)"), *Full);
+        UE_LOG(LogTemp, Error, TEXT("V2 save guard: refused %s (outside V2_SAVE_ALLOW or in V2_SAVE_DENY)"), *Full);
         if (Error)
         {
             Error->Logf(ELogVerbosity::Error, TEXT("V2 save guard: %s is outside this run's authorized write set"), *Full);
@@ -47,30 +51,48 @@ void Install()
     Previous = FCoreUObjectDelegates::IsPackageOKToSaveDelegate;
     FCoreUObjectDelegates::IsPackageOKToSaveDelegate.BindStatic(&IsOKToSave);
     bInstalled = true;
-    UE_LOG(LogTemp, Display, TEXT("V2 save guard active: %d authorized file(s)"), Allowed.Num());
+    UE_LOG(LogTemp, Display, TEXT("V2 save guard active: %s, %d denied file(s)"),
+           bAllowList ? *FString::Printf(TEXT("%d authorized file(s)"), Allowed.Num()) : TEXT("no allow list"),
+           Denied.Num());
+}
+}
+
+namespace
+{
+bool ReadList(const TCHAR* Variable, TSet<FString>& Into)
+{
+    const FString List = FPlatformMisc::GetEnvironmentVariable(Variable);
+    if (List.IsEmpty())
+    {
+        return false;
+    }
+    TArray<FString> Lines;
+    if (!FFileHelper::LoadFileToStringArray(Lines, *List))
+    {
+        bListsRead = false;
+        return true;
+    }
+    for (const FString& Line : Lines)
+    {
+        const FString Trimmed = Line.TrimStartAndEnd();
+        if (!Trimmed.IsEmpty())
+        {
+            Into.Add(Normalized(Trimmed));
+        }
+    }
+    return true;
 }
 }
 
 void UV2SaveGuard::Startup()
 {
-    const FString List = FPlatformMisc::GetEnvironmentVariable(TEXT("V2_SAVE_ALLOW"));
-    if (List.IsEmpty())
+    bAllowList = ReadList(TEXT("V2_SAVE_ALLOW"), Allowed);
+    const bool bDenyList = ReadList(TEXT("V2_SAVE_DENY"), Denied);
+    if (!bAllowList && !bDenyList)
     {
         return;
     }
-    bActive = true;   // from here an unreadable or empty list admits nothing
-    TArray<FString> Lines;
-    if (FFileHelper::LoadFileToStringArray(Lines, *List))
-    {
-        for (const FString& Line : Lines)
-        {
-            const FString Trimmed = Line.TrimStartAndEnd();
-            if (!Trimmed.IsEmpty())
-            {
-                Allowed.Add(Normalized(Trimmed));
-            }
-        }
-    }
+    bActive = true;
     PostInit = FCoreDelegates::OnPostEngineInit.AddStatic(&Install);
 }
 
@@ -87,6 +109,11 @@ void UV2SaveGuard::Shutdown()
 bool UV2SaveGuard::IsActive()
 {
     return bActive && bInstalled;
+}
+
+int32 UV2SaveGuard::DeniedCount()
+{
+    return Denied.Num();
 }
 
 int32 UV2SaveGuard::AllowedCount()

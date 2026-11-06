@@ -134,6 +134,8 @@ def _authorize_editor(ctx, log):
         authority.allow_saves(declared, ctx.out / 'editor-run' / 'save-allow.txt')
     else:
         os.environ.pop('V2_SAVE_ALLOW', None)
+    # Every editor script, the bootstrap writer's included: generated packages are refused at the save itself.
+    authority.deny_saves(authority.generated_paths(GAME), ctx.out / 'editor-run' / 'save-deny.txt')
     EDITOR_BEFORE.clear()
     EDITOR_BEFORE.update(authority.content_snapshot(GAME))
     log.write(f"editor script authorized ({'claim ' + claim if claim else 'bootstrap writer'})\n")
@@ -144,6 +146,7 @@ def _check_editor_writes(ctx, log):
     import os
     authority = _authority()
     os.environ.pop('V2_SAVE_ALLOW', None)
+    os.environ.pop('V2_SAVE_DENY', None)
     changed = sorted('games/yorimichi_v2/' + rel for rel in authority.written(EDITOR_BEFORE, authority.content_snapshot(GAME)))
     log.write(''.join(f'editor script wrote {path}\n' for path in changed) or 'editor script wrote nothing\n')
     generated = sorted(set(changed) & authority.generated_paths(GAME))

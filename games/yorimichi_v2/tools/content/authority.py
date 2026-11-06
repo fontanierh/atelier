@@ -26,6 +26,13 @@ def allow_saves(paths: list[str], list_file: Path, *, repo: Path = REPO) -> None
     os.environ['V2_SAVE_ALLOW'] = str(list_file)
 
 
+def deny_saves(paths, list_file: Path, *, repo: Path = REPO) -> None:
+    """Refuse the next editor's saves of these repository-relative paths (V2SaveGuard, V2_SAVE_DENY)."""
+    list_file.parent.mkdir(parents=True, exist_ok=True)
+    list_file.write_text(''.join(f'{repo / path}\n' for path in sorted(set(paths))))
+    os.environ['V2_SAVE_DENY'] = str(list_file)
+
+
 def content_snapshot(game: Path) -> dict[str, tuple]:
     """(size, mtime, ctime, inode) of every file under unreal/Content, game-relative, to find what a run wrote."""
     content = game / 'unreal' / 'Content'
