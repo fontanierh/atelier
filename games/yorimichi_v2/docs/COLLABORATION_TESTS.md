@@ -25,7 +25,7 @@ machine is reachable from this one, so the two-machine rows wait for a collabora
 | C17 pushed, not merged | unit | PR #732 | claims release only on merge or cancel |
 | C18 push or LFS upload fails | not run | | |
 | C19 shared definition update | not run | | needs adopted content |
-| C20 cancel a guarded build | not run | | |
+| C20 cancel a guarded build | pass (test map) | f1d2b1529a | a guarded `editor.run` holding the editor (`Scripts/hold.py`) was cancelled with SIGTERM 16 s in: the build reported "BUILD INTERRUPTED during editor.run; completed steps stay published", its editor child (UnrealEditor-Cmd) was gone within 1 s, the hold script never finished, another owner's running build (the donor, same machine) kept its PID and kept running, and `git status` was unchanged. The next guarded editor run was admitted at once. |
 
 Unit rows prove the logic; each still needs its run on the slice (plan §13: "a simulation of lock logic does not
 replace actual LFS/server integration tests").
