@@ -1,0 +1,36 @@
+{
+  "crate": "wgpu-hal",
+  "version": "30.0.1",
+  "registry": "https://crates.io/crates/wgpu-hal/30.0.1",
+  "crate_sha256": "b6b7fb58561a792bc237628ba0792e332de418fefe145f13b5ed8201e6d52f58",
+  "upstream_repository": "https://github.com/gfx-rs/wgpu",
+  "upstream_commit": "40f4a34ebaf56f9a046231f54125ad046239d3f3",
+  "upstream_directory": "wgpu-hal",
+  "licenses": [
+    "MIT",
+    "Apache-2.0"
+  ],
+  "copied_files": [
+    "Cargo.toml",
+    "README.md",
+    "LICENSE.APACHE",
+    "LICENSE.MIT",
+    "build.rs",
+    "src/"
+  ],
+  "purpose": "Metal backend: pooled buffers, concurrent compute passes, an opt-in shortest time on screen, and GPU and presentation timings for the game",
+  "upstream_files_sha256": {
+    "Cargo.toml": "d31a0d4da70d9011897483e87a1eebc43fbc112c491756fa0d271d946a42b59c",
+    "src/metal/adapter.rs": "50ae470024e8d0aa4f031f4d503aa73bfa8ecac69c4496f1080a07fdfc8a10c3",
+    "src/metal/command.rs": "291547df7aad7e691f459ec5a8b91fc7126c7723a2c0604a5ad0f2f95b38ea94",
+    "src/metal/device.rs": "a4766b4d735d177ede3a06042452ac1e21530879c8e7a773ec6e3339416cae5f",
+    "src/metal/mod.rs": "94049a6ab36f04a440517c891ee32f3e79fd6225665c93679cc5faae6ca0077b"
+  },
+  "changed_files": [
+    "Cargo.toml",
+    "src/metal/adapter.rs",
+    "src/metal/command.rs",
+    "src/metal/device.rs",
+    "src/metal/mod.rs"
+  ]
+}

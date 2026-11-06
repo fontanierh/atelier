@@ -4,4 +4,4 @@
 kind = "equipment"
 source = "src/model.glb"
 parts = ["SKATEBOARD_ROOT", "TRUCK_FRONT", "TRUCK_BACK", "RIGHT_WHEELFRONT", "LEFT_WHEELFRONT", "RIGHT_WHEELBACK", "LEFT_WHEELBACK"]
-inputs_sha256 = "9c90a135ac6401d8e2716ccf6099403e4a0e7a0e7d341448ddcdde72637eab05"
+inputs_sha256 = "9aa0a3d4118d37f29e7b21f3eaad8e73fe0f19bf07023c2bc76e8fa54e0df17a"

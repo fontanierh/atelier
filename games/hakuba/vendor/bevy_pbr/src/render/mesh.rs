@@ -379,6 +379,7 @@ pub fn check_views_need_specialization(
             Has<MotionVectorPrepass>,
             Has<DeferredPrepass>,
             Has<ForwardMotion>,
+            Has<CameraPrepassSkipped>,
         ),
         Option<&ScreenSpaceTransmission>,
         Has<TemporalJitter>,
@@ -406,7 +407,7 @@ pub fn check_views_need_specialization(
         (tonemapping, dither),
         shadow_filter_method,
         ssao,
-        (normal_prepass, depth_prepass, motion_vector_prepass, deferred_prepass, forward_motion),
+        (normal_prepass, depth_prepass, motion_vector_prepass, deferred_prepass, forward_motion, prepass_skipped),
         transmission,
         temporal_jitter,
         projection,
@@ -426,6 +427,10 @@ pub fn check_views_need_specialization(
 
         if depth_prepass {
             view_key |= MeshPipelineKey::DEPTH_PREPASS;
+        }
+        // Hakuba: a view whose prepass draws its camera's meshes may draw its alpha-masked ones by depth alone.
+        if depth_prepass && !prepass_skipped {
+            view_key |= MeshPipelineKey::PREPASS_DEPTH_EQUAL;
         }
 
         if motion_vector_prepass {
@@ -3138,7 +3143,11 @@ bitflags::bitflags! {
         const PREPASS_READS_MATERIAL            = 1 << 23;
         const CONTACT_SHADOWS                   = 1 << 24;
         const FORWARD_MOTION                    = 1 << 25;
-        const LAST_FLAG                         = Self::FORWARD_MOTION.bits();
+        // Hakuba: an alpha-masked mesh the depth prepass already cut out, so the main pass shades only the pixels
+        // whose depth that pass kept, with no discard: a discarding shader stops a tile-based GPU from shading only
+        // each pixel's nearest surface, and every leaf behind another would be shaded too.
+        const PREPASS_DEPTH_EQUAL               = 1 << 26;
+        const LAST_FLAG                         = Self::PREPASS_DEPTH_EQUAL.bits();
 
         const ALL_PREPASS_BITS                  = Self::DEPTH_PREPASS.bits()
                                                 | Self::NORMAL_PREPASS.bits()
@@ -3585,9 +3594,22 @@ impl SpecializedMeshPipeline for MeshPipeline {
             depth_write_enabled = true;
         }
 
+        // A mesh the prepass cut out has its depth there already: it only tests it, and still writes motion.
+        let depth_equal = key.contains(MeshPipelineKey::PREPASS_DEPTH_EQUAL) && depth_write_enabled;
         let forward_motion = key.contains(MeshPipelineKey::FORWARD_MOTION) && depth_write_enabled;
+        let depth_write_enabled = depth_write_enabled && !depth_equal;
         if forward_motion {
             shader_defs.push("FORWARD_MOTION".into());
+            // A skinned or morphed vertex moves on its own, so it passes on where it was; a rigid one passes on only its
+            // instance, and the fragment finds where it was from the instance's two transforms.
+            let deformed = shader_defs.iter().any(|def| {
+                matches!(def, ShaderDefVal::Bool(name, true) if name == "SKINNED" || name == "MORPH_TARGETS")
+            });
+            if deformed {
+                shader_defs.push("VERTEX_PREVIOUS_POSITION".into());
+            }
+            // The fragment finds its world position from its depth rather than having it passed on.
+            shader_defs.push("WORLD_FROM_DEPTH".into());
         }
 
         if key.contains(MeshPipelineKey::NORMAL_PREPASS) {
@@ -3679,6 +3701,9 @@ impl SpecializedMeshPipeline for MeshPipeline {
 
         if key.contains(MeshPipelineKey::MAY_DISCARD) {
             shader_defs.push("MAY_DISCARD".into());
+        }
+        if key.contains(MeshPipelineKey::PREPASS_DEPTH_EQUAL) {
+            shader_defs.push("PREPASS_DEPTH_EQUAL".into());
         }
 
         if key.contains(MeshPipelineKey::ENVIRONMENT_MAP) {
@@ -3805,7 +3830,7 @@ impl SpecializedMeshPipeline for MeshPipeline {
             depth_stencil: Some(DepthStencilState {
                 format: CORE_3D_DEPTH_FORMAT,
                 depth_write_enabled: Some(depth_write_enabled),
-                depth_compare: Some(CompareFunction::GreaterEqual),
+                depth_compare: Some(if depth_equal { CompareFunction::Equal } else { CompareFunction::GreaterEqual }),
                 stencil: StencilState {
                     front: StencilFaceState::IGNORE,
                     back: StencilFaceState::IGNORE,
@@ -4992,3 +5017,9 @@ mod tests {
         }
     }
 }
+
+/// Hakuba: marks a render-world view whose camera depth prepass is skipped although it has [`DepthPrepass`], as
+/// a single forward pass that writes depth and motion itself does. Its alpha-masked meshes cut themselves out in
+/// the main pass rather than relying on a prepass depth that was never drawn.
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct CameraPrepassSkipped;

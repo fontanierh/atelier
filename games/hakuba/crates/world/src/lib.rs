@@ -4,8 +4,11 @@
 //! crate moves the camera.
 
 mod actors;
+mod blocks;
 mod collision;
+mod detail;
 mod ground;
+mod impostor;
 mod loading;
 mod look;
 mod painterly;
@@ -29,8 +32,33 @@ use tiles::Tile;
 
 pub use collision::{CollisionCoverage, CollisionFocus, CollisionSnapshot, CollisionTriangle, WorldCollision};
 pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
-pub use loading::{SceneryLoaded, Unready};
+pub use loading::{Loaded, SceneryLoaded, Unready};
 pub use push::PushesPlants;
+
+/// What the forest lab (`crates/forest_lab`) draws its forest with: the world's own camera look, sky, sun and plant
+/// materials, so what it proves about drawing trees holds in the game.
+pub mod lab {
+    use bevy::prelude::*;
+
+    pub use crate::impostor::{Baked, Impostor, Impostors};
+    pub use crate::look::{SHADOW_ONLY, camera, sky, sun};
+    pub use crate::wind::{ShadowFoliage, SourceFoliage, SourceProfile, SwayingMaterials, tag};
+
+    /// The plugins the lab's look and plants need: the painterly filter, the plants' wind and what pushes them, and
+    /// the trees' impostors.
+    pub struct LabPlugin;
+
+    impl Plugin for LabPlugin {
+        fn build(&self, app: &mut App) {
+            app.add_plugins((
+                crate::painterly::PainterlyPlugin,
+                crate::push::PushPlugin,
+                crate::wind::WindPlugin,
+                crate::impostor::ImpostorPlugin,
+            ));
+        }
+    }
+}
 pub use water::WaterBodies;
 
 /// The world's index: one node per tile, and the spawn.
@@ -63,6 +91,7 @@ impl Plugin for WorldPlugin {
             water::WaterPlugin,
             wind::WindPlugin,
         ))
+        .add_plugins((blocks::BlocksPlugin, detail::DetailPlugin, impostor::ImpostorPlugin))
         .add_systems(Startup, open_at_chosen_start)
         .add_systems(OnEnter(Screen::World), spawn_world)
         .add_systems(Update, read_index.run_if(in_state(Screen::World)))
@@ -130,10 +159,11 @@ fn spawn_world(
     }
 }
 
-/// Explicit validation only: native environment or browser query, never a stored game setting.
+/// On the desktop the single forward pass by default, which `HAKUBA_FORWARD_MOTION` may change for validation; in the
+/// browser only on request, by the address's query. Never a stored game setting.
 fn forward_motion_requested() -> Option<hakuba_rendering::ForwardMotionMode> {
     #[cfg(not(target_arch = "wasm32"))]
-    let requested = std::env::var("HAKUBA_FORWARD_MOTION").ok();
+    let requested = Some(hakuba_screens::switch("HAKUBA_FORWARD_MOTION").unwrap_or_else(|| "single".into()));
     #[cfg(target_arch = "wasm32")]
     let requested = web_sys::window().and_then(|window| window.location().search().ok()).and_then(|query| {
         query
@@ -200,7 +230,7 @@ fn read_index(
             .get(handle)
             .and_then(|n| n.extras.as_ref())
             .and_then(|e| serde_json::from_str::<collision::TileGrid>(&e.value).ok())
-            .filter(|g| g.tile_m.is_finite() && g.tile_m > 0.0 && g.page_tiles > 0);
+            .filter(|g| g.tile_m == tiles::TILE_M && g.page_tiles > 0);
         if let Some(grid) = grid {
             commands.insert_resource(grid);
         } else {
@@ -253,9 +283,14 @@ fn read_index(
     commands.remove_resource::<Index>();
 }
 
-/// Makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a crossfade's pixels
-/// in screen space, which shimmers under temporal anti-aliasing, so it is never shown.
+/// In the browser, makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a
+/// crossfade's pixels in screen space, which shimmers under temporal anti-aliasing. On the desktop the vendored
+/// renderer moves that dither every frame, so temporal anti-aliasing averages it into a smooth fade, and crossfades
+/// stay (crates/CONTRACTS, `stable-under-temporal-anti-aliasing`).
 fn no_crossfades(mut ranges: Query<(Entity, &mut VisibilityRange), Changed<VisibilityRange>>) {
+    if cfg!(not(target_arch = "wasm32")) {
+        return;
+    }
     for (entity, mut range) in &mut ranges {
         if range.is_abrupt() {
             continue;

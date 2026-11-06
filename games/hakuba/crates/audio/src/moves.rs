@@ -131,7 +131,7 @@ pub fn hear(
     }
     let motion = &player.motion;
     let at = place.translation();
-    let volume = settings.volume;
+    let volume = crate::volume(&settings);
     let mut out = Out { commands: &mut commands, takes: &takes, dice: &mut dice, volume };
 
     // The moves' sounds, as each starts.
@@ -267,7 +267,7 @@ pub fn wind(
     for (Wind(index), mut sink) in &mut takes {
         // Each take is heard most at its own speed and fades into its neighbours, keeping the power even.
         let share = (1.0 - (at - *index as f32).abs()).max(0.0).sqrt();
-        sink.set_volume(Volume::Linear(lerp(WIND_VOLUME, t) * share * *level * settings.volume));
+        sink.set_volume(Volume::Linear(lerp(WIND_VOLUME, t) * share * *level * crate::volume(&settings)));
         sink.set_speed(lerp(WIND_PITCH, t));
     }
 }

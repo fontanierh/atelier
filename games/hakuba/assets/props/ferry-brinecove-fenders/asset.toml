@@ -1,4 +1,4 @@
 # The fenders of the ferry terminal at Brinecove.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "c03b6bfd94dec0f0fa1413c93ebbf2a3a37e16481f762d9cd402e653aa408a20"
+inputs_sha256 = "2d5335253263782eefe171dfc3f89c700444bcae5f4abc17e82c7b26bebf8390"

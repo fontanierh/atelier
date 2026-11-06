@@ -4,6 +4,7 @@ use bevy::asset::{embedded_asset, load_embedded_asset};
 use bevy::camera::{MainPassResolutionOverride, Viewport};
 use bevy::core_pipeline::FullscreenShader;
 use bevy::core_pipeline::core_3d::{AlphaMask3d, Opaque3d, main_opaque_pass_3d, main_transparent_pass_3d};
+use bevy::core_pipeline::prepass::node::early_prepass;
 use bevy::core_pipeline::prepass::{
     BackgroundMotionVectorsBindGroup, BackgroundMotionVectorsPipelineId, DeferredPrepass, MOTION_VECTOR_PREPASS_FORMAT,
     NormalPrepass, PreviousViewUniformOffset, ViewPrepassTextures,
@@ -11,7 +12,7 @@ use bevy::core_pipeline::prepass::{
 use bevy::core_pipeline::schedule::{Core3d, Core3dSystems};
 use bevy::core_pipeline::skybox::SkyboxPipelineId;
 use bevy::ecs::schedule::ScheduleCleanupPolicy;
-use bevy::pbr::{ContactShadows, ForwardMotion, ScreenSpaceTransmission};
+use bevy::pbr::{CameraPrepassSkipped, ContactShadows, ForwardMotion, ScreenSpaceTransmission};
 use bevy::prelude::*;
 use bevy::render::camera::ExtractedCamera;
 use bevy::render::extract_component::{ExtractComponent, ExtractComponentPlugin};
@@ -23,11 +24,13 @@ use bevy::render::render_resource::{
     TextureDescriptor, TextureDimension, TextureSampleType, TextureUsages, binding_types::texture_2d,
 };
 use bevy::render::renderer::{RenderContext, RenderDevice, ViewQuery};
+use bevy::render::sync_world::RenderEntity;
 use bevy::render::texture::{ColorAttachment, TextureCache};
 use bevy::render::view::{ExtractedView, ViewDepthStencilTexture, ViewTarget, ViewUniformOffset};
-use bevy::render::{Render, RenderApp, RenderStartup, RenderSystems};
+use bevy::render::{Extract, ExtractSchedule, Render, RenderApp, RenderStartup, RenderSystems};
 
-/// Explicit validation stages; normal cameras keep Bevy's original renderer.
+/// How a camera draws its motion: `Single` is the desktop world camera's, `Compare` and `Publish` are validation
+/// stages; cameras without it keep Bevy's original renderer.
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq, ExtractComponent)]
 #[extract_app(RenderApp)]
 #[require(ForwardMotion)]
@@ -48,7 +51,7 @@ pub struct ForwardMotionComparison {
 }
 
 #[derive(Resource)]
-struct MotionTransfer {
+pub(super) struct MotionTransfer {
     layout: BindGroupLayoutDescriptor,
     pipeline: CachedRenderPipelineId,
 }
@@ -59,7 +62,20 @@ pub(super) fn build(app: &mut App) {
     if let Some(render_app) = app.get_sub_app_mut(RenderApp) {
         render_app
             .add_systems(RenderStartup, (install_comparison_pass, init_motion_transfer))
-            .add_systems(Render, prepare_comparison.in_set(RenderSystems::PrepareResources));
+            .add_systems(Render, prepare_comparison.in_set(RenderSystems::PrepareResources))
+            .add_systems(ExtractSchedule, mark_skipped_prepass);
+    }
+}
+
+/// Tells the PBR renderer which views skip their camera prepass: their alpha-masked meshes must cut themselves out in
+/// the main pass, as no prepass depth was drawn for them to be drawn by.
+fn mark_skipped_prepass(mut commands: Commands, cameras: Extract<Query<(RenderEntity, &ForwardMotionMode)>>) {
+    for (view, mode) in &cameras {
+        if *mode == ForwardMotionMode::Single {
+            commands.entity(view).insert(CameraPrepassSkipped);
+        } else {
+            commands.entity(view).remove::<CameraPrepassSkipped>();
+        }
     }
 }
 
@@ -74,6 +90,13 @@ fn install_comparison_pass(world: &mut World) {
                 .in_set(Core3dSystems::MainPass)
                 .before(main_transparent_pass_3d),
         );
+        // A single-pass view draws nothing in the prepass: its pass would only clear and store targets the main pass
+        // clears again, about a millisecond on a tiled GPU.
+        let removed = schedule
+            .remove_systems_in_set(early_prepass, world, ScheduleCleanupPolicy::RemoveSystemsOnly)
+            .expect("replace the registered early prepass");
+        assert_eq!(removed, 1, "one early prepass must be registered");
+        schedule.add_systems(early_prepass.run_if(not_single_view).in_set(Core3dSystems::Prepass));
     });
 }
 
@@ -119,6 +142,10 @@ fn init_motion_transfer(
 
 fn ordinary_view(view: ViewQuery<Has<ForwardMotion>>) -> bool {
     !view.into_inner()
+}
+
+fn not_single_view(view: ViewQuery<Option<&ForwardMotionMode>>) -> bool {
+    view.into_inner() != Some(&ForwardMotionMode::Single)
 }
 
 fn prepare_comparison(
@@ -186,7 +213,7 @@ fn supported_temporal_features(
     !transmission && (mode != Some(&ForwardMotionMode::Single) || (!contact_shadows && !occlusion_culling))
 }
 
-fn draw_comparison(
+pub(super) fn draw_comparison(
     world: &World,
     view: ViewQuery<(
         &ExtractedCamera,
@@ -229,8 +256,15 @@ fn draw_comparison(
         return;
     };
     let viewport = Viewport::from_viewport_and_override(camera.viewport.as_ref(), resolution);
+    // A single-pass view writes its motion straight into the texture temporal anti-aliasing reads; the others keep
+    // theirs apart, to compare with the prepass's or to publish it after.
+    let single = mode == Some(&ForwardMotionMode::Single);
+    let target = match (&prepass.motion_vectors, single) {
+        (Some(published), true) => published,
+        _ => &motion.attachment,
+    };
     {
-        let attachments = [Some(color.get_color_attachment()), Some(motion.attachment.get_attachment())];
+        let attachments = [Some(color.get_color_attachment()), Some(target.get_attachment())];
         let mut pass = ctx.begin_tracked_render_pass(RenderPassDescriptor {
             label: Some("main_opaque_pass_3d_forward_motion_comparison"),
             color_attachments: &attachments,
@@ -249,11 +283,14 @@ fn draw_comparison(
             error!("forward motion masked draw failed: {error:?}");
         }
     }
-    // Reuse Bevy's sky-depth-only motion draw for any pixels not covered by the mesh sky.
-    if let (Some(id), Some(group)) = (background_pipeline, background_group)
+    // Reuse Bevy's sky-depth-only motion draw for any pixels not covered by the mesh sky. The single pass leaves it
+    // out: the world's sky dome surrounds the camera, so no pixel is left to it, and its pass alone loaded and stored
+    // the motion and depth targets again.
+    if !single
+        && let (Some(id), Some(group)) = (background_pipeline, background_group)
         && let Some(pipeline) = pipelines.get_render_pipeline(id.0)
     {
-        let attachments = [None, Some(motion.attachment.get_attachment()), None, None];
+        let attachments = [None, Some(target.get_attachment()), None, None];
         let mut pass = ctx.begin_tracked_render_pass(RenderPassDescriptor {
             label: Some("forward_motion_comparison_background"),
             color_attachments: &attachments,
@@ -275,6 +312,14 @@ fn draw_comparison(
         let (Some(destination_motion), Some(destination_depth)) = (&prepass.motion_vectors, &prepass.depth) else {
             return;
         };
+        if single {
+            ctx.command_encoder().copy_texture_to_texture(
+                depth.texture().as_image_copy(),
+                destination_depth.texture.texture.as_image_copy(),
+                prepass.size,
+            );
+            return;
+        }
         let group = ctx.render_device().create_bind_group(
             "forward_motion_transfer",
             &pipelines.get_bind_group_layout(&transfer.layout),
@@ -325,7 +370,7 @@ mod tests {
         let mut world = World::new();
         world.add_schedule(Schedule::new(Core3d));
         world.schedule_scope(Core3d, |_, schedule| {
-            schedule.add_systems((main_opaque_pass_3d, main_transparent_pass_3d).chain());
+            schedule.add_systems((early_prepass, main_opaque_pass_3d, main_transparent_pass_3d).chain());
         });
         world.run_system_once(install_comparison_pass).unwrap();
         world.schedule_scope(Core3d, |world, schedule| {

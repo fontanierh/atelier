@@ -1,4 +1,4 @@
 # The zeppelin line's deck and dock gates.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "67579377254715737f7653da34c9ee929c1f14a095918a8b29cde3cd2785569a"
+inputs_sha256 = "c5204563da16448818b63e5408aa355719a90635dfbb0118ec29682becc7797c"

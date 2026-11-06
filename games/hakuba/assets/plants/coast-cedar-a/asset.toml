@@ -1,9 +1,9 @@
 # Source cedar for the coast.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["garden-bark", "garden-cedar", "far-plants"]
-inputs_sha256 = "66d35b68444a677d519f398d34edf02259530e4f12a9aa2e98c3334b85a8a5aa"
+inputs_sha256 = "6f5b0594b26d372606c1121e4cc0943863553fffb0337fbe62923af3087f6543"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

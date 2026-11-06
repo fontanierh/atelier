@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["hidamari-asphalt", "hidamari-metal", "hidamari-sidewalk", "hidamari-stone"]
 solid = true
-inputs_sha256 = "6da3fa77b457e863efe45baed677a54228f384eab7bfffdb4c0ad6f8ce7d66b4"
+inputs_sha256 = "cc8b553522b1b6eeebc4a072078dc90392b781fe7e363427b8db53ed603cb2ad"

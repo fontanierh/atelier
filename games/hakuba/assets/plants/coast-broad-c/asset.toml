@@ -1,9 +1,9 @@
 # Source foliage: a broadleaf tree of the island forest.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["garden-bark", "garden-leaves", "far-plants"]
-inputs_sha256 = "97b58a879251ee816d279394a6bf9d2efd4c57c8cb2c506e40e6338c342c3d0e"
+inputs_sha256 = "43c3a4f6c476237279b71ddcd5a637dfdb002dc330912664d4de8864afe7ebd1"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

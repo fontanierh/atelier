@@ -65,6 +65,19 @@ impl SourceProfile {
     }
 }
 
+/// A plant publishes its export and, for a tree its full node says has one, its impostor's two atlases.
+pub fn outputs(output: &Path) -> Vec<std::path::PathBuf> {
+    let mut files = vec![output.to_path_buf()];
+    let has_impostor = crate::glb::Glb::read(output)
+        .ok()
+        .and_then(|glb| glb.extras("full").ok().map(|extras| extras.get("impostor").is_some()))
+        .unwrap_or(false);
+    if has_impostor {
+        files.extend([super::impostor::albedo_path(output), super::impostor::normal_path(output)]);
+    }
+    files
+}
+
 pub fn export(settings: &Settings, output: &Path) -> Result<()> {
     if settings.textures.is_empty() {
         bail!("a plant needs declared textures");

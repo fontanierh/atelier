@@ -98,6 +98,8 @@ fn nox() -> Rig {
 fn app() -> (App, Entity, Entity) {
     let mut app = App::new();
     app.init_resource::<Ride>()
+        .init_resource::<Spare>()
+        .init_resource::<Carry>()
         .init_resource::<RideInput>()
         .init_resource::<SkateStatus>()
         .init_resource::<places::Places>()
@@ -193,7 +195,23 @@ fn app() -> (App, Entity, Entity) {
         players.single(world).unwrap()
     };
     app.world_mut().get_mut::<Player>(player).unwrap().body = body;
+    // The player has arrived: the stand-in body carries no paraglider, so lift its hold on the splash here.
+    app.world_mut().entity_mut(player).remove::<hakuba_world::Unready>();
     (app, player, body)
+}
+
+#[test]
+fn the_board_waits_until_the_player_has_arrived() {
+    let (mut app, player, _) = app();
+    app.world_mut().entity_mut(player).insert(hakuba_world::Unready);
+    tap(&mut app, KeyCode::KeyV);
+    for _ in 0..10 {
+        step(&mut app);
+    }
+    assert_eq!(app.world().get::<Player>(player).unwrap().owner, MovementOwner::Walking);
+    app.world_mut().entity_mut(player).remove::<hakuba_world::Unready>();
+    tap(&mut app, KeyCode::KeyV);
+    assert_eq!(app.world().get::<Player>(player).unwrap().owner, MovementOwner::Skating);
 }
 
 fn step(app: &mut App) {

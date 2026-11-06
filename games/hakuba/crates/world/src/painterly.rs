@@ -87,15 +87,22 @@ fn source() -> String {
     source.replace(TAPS_AT, &taps())
 }
 
-/// The shader's lines that read each tap and add it to the wedges it weighs in.
+/// The shader's lines that read each tap and add it to the wedges it weighs in, then weigh the wedges.
 fn taps() -> String {
     let mut lines = String::new();
+    for k in 0..8 {
+        lines += &format!("    var m{k} = vec3(0.0);\n    var s{k} = vec3(0.0);\n");
+    }
     for (offset, weights) in kernel() {
         let (x, y) = (offset.x as f32, offset.y as f32);
         lines += &format!("    c = shown(clamp(uv + vec2({x:?}, {y:?}) * step, vec2(0.0), vec2(1.0)));\n");
         for (k, weight) in weights.iter().enumerate().filter(|(_, weight)| **weight > 0.0) {
-            lines += &format!("    means[{k}] += c * {weight:?};\n    squares[{k}] += c * c * {weight:?};\n");
+            lines += &format!("    m{k} += c * {weight:?};\n    s{k} += c * c * {weight:?};\n");
         }
+    }
+    lines += "    var sum = vec3(0.0);\n    var total = 0.0;\n    var w: f32;\n";
+    for k in 0..8 {
+        lines += &format!("    w = weight(m{k}, s{k});\n    sum += m{k} * w;\n    total += w;\n");
     }
     lines
 }

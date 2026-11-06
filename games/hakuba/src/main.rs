@@ -5,11 +5,14 @@ use bevy::asset::AssetMetaCheck;
 use bevy::gltf::GltfPlugin;
 use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
+use bevy::window::{MonitorSelection, WindowMode};
 use hakuba_audio::SoundsPlugin;
 use hakuba_characters::CharactersPlugin;
 use hakuba_dev::DevPlugin;
+use hakuba_gamepad::GamepadPlugin;
 use hakuba_glider::GliderPlugin;
 use hakuba_menu::MenuPlugin;
+use hakuba_pacing::PacingPlugin;
 use hakuba_player::PlayerPlugin;
 use hakuba_rendering::RenderingPlugin;
 use hakuba_screens::ScreensPlugin;
@@ -20,6 +23,8 @@ use hakuba_world::WorldPlugin;
 
 fn main() {
     App::new()
+        // A command on an entity that is already gone warns instead of closing the game.
+        .set_error_handler(bevy::ecs::error::warn)
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -28,6 +33,15 @@ fn main() {
                         // In the browser the game draws into index.html's canvas and fills the page.
                         canvas: Some("#hakuba".into()),
                         fit_canvas_to_parent: true,
+                        // HAKUBA_FULLSCREEN opens borderless fullscreen on the main screen; with HAKUBA_SCREEN=other the
+                        // window opens and then goes fullscreen on the other screen (crates/screens).
+                        mode: if hakuba_screens::switch("HAKUBA_FULLSCREEN").is_some()
+                            && !hakuba_screens::switch("HAKUBA_SCREEN").is_some_and(|value| value == "other")
+                        {
+                            WindowMode::BorderlessFullscreen(MonitorSelection::Primary)
+                        } else {
+                            WindowMode::Windowed
+                        },
                         ..default()
                     }),
                     ..default()
@@ -48,6 +62,9 @@ fn main() {
                     ..default()
                 }),
         )
+        // A frame that comes late moves the world on by at most a 15th of a second, as Unreal clamps its frame time: the
+        // game slows through a hitch rather than jumping over it, the rider and the camera with it.
+        .insert_resource(Time::<Virtual>::from_max_delta(std::time::Duration::from_secs_f64(1.0 / 15.0)))
         .add_plugins((
             ScreensPlugin,
             SettingsPlugin,
@@ -61,6 +78,8 @@ fn main() {
             DevPlugin,
             ViewerPlugin,
             SoundsPlugin,
+            PacingPlugin,
+            GamepadPlugin,
         ))
         .run();
 }

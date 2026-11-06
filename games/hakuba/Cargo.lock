@@ -3132,8 +3132,10 @@ dependencies = [
  "hakuba_audio",
  "hakuba_characters",
  "hakuba_dev",
+ "hakuba_gamepad",
  "hakuba_glider",
  "hakuba_menu",
+ "hakuba_pacing",
  "hakuba_player",
  "hakuba_rendering",
  "hakuba_screens",
@@ -3204,6 +3206,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_forest_lab"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_rendering",
+ "hakuba_world",
+ "image",
+ "serde_json",
+ "wgpu-hal",
+]
+
+[[package]]
+name = "hakuba_gamepad"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_screens",
+ "hakuba_world",
+ "hidapi",
+]
+
+[[package]]
 name = "hakuba_glider"
 version = "0.1.0"
 dependencies = [
@@ -3219,6 +3243,16 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_screens",
+]
+
+[[package]]
+name = "hakuba_pacing"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_screens",
+ "hakuba_settings",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -3244,6 +3278,7 @@ name = "hakuba_screens"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "wgpu-hal",
 ]
 
 [[package]]
@@ -3308,6 +3343,7 @@ dependencies = [
  "hakuba_settings",
  "hakuba_water_schema",
  "hakuba_world_skate_schema",
+ "meshopt",
  "parry3d",
  "serde",
  "serde_json",
@@ -3423,6 +3459,19 @@ dependencies = [
  "constgebra",
  "glam",
  "tinyvec",
+]
+
+[[package]]
+name = "hidapi"
+version = "2.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "818c0e1d27887aaf76fe737042e27a66b796a7b099e6d2e1a72d106c2dff3fa6"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "libc",
+ "pkg-config",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4619,6 +4668,7 @@ dependencies = [
  "bitflags 2.13.2",
  "block2 0.6.2",
  "objc2 0.6.5",
+ "objc2-core-foundation",
  "objc2-foundation 0.3.2",
 ]
 
@@ -6445,8 +6495,6 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "30.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6b7fb58561a792bc237628ba0792e332de418fefe145f13b5ed8201e6d52f58"
 dependencies = [
  "android_system_properties",
  "arrayvec",

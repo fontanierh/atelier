@@ -1,4 +1,4 @@
 # The zeppelin line's motor pods.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "5bf7858e28f7328e00feb18fcab1a040d2177eb747c89aef49ef3f059d8a61b8"
+inputs_sha256 = "f4b4dd7eef63f6ea4f434e980eb71763eb120feebb7cb09ab3153079f7874f88"

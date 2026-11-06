@@ -46,7 +46,10 @@ class Model:
     walking surface the world's ground draws instead (a path over the ground, as a region's `layout.rs` lays it):
     the model keeps only those slots' other faces. `meet` lists segments, [[x, y, z], [x, y, z]] in the source frame,
     of an edge the model's vertices within a couple of centimetres of it move onto (see `seam.py`). `faces` moves a
-    slot's faces whose mean colour passes a test into another slot, by slot: [[test, slot], ...] (see `convert.py`)."""
+    slot's faces whose mean colour passes a test into another slot, by slot: [[test, slot], ...] (see `convert.py`).
+    `paint` replaces the vertex paint an untextured model takes (`painted.PAINT`, Yorimichi's village material's fill
+    and window glow), for a source whose material has neither; `surface_fill` is a textured model's self-light, its
+    colour times this as emission, as its source material adds it."""
     source: Path
     slots: dict = field(default_factory=dict)
     default: dict = field(default_factory=dict)
@@ -59,6 +62,8 @@ class Model:
     ground_owned: list = None
     meet: list = None
     faces: dict = None
+    paint: dict = None
+    surface_fill: float = 0.0
 
 
 @dataclass
@@ -237,6 +242,10 @@ def jobs(region, scratch):
             job['ground_owned'] = model.ground_owned
         if model.meet:
             job['meet'] = model.meet
+        if model.paint is not None:
+            job['paint'] = model.paint
+        if model.surface_fill:
+            job['surface_fill'] = model.surface_fill
         if model.faces:
             job['faces'] = model.faces
         result.append(job)

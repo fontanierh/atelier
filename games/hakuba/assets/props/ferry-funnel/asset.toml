@@ -1,4 +1,4 @@
 # The passenger ferry's funnel, docked at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "57e93d3c24fddb392b4280dff85a7b97cc7ff765f4b824de535d8e909633d3b9"
+inputs_sha256 = "9dc84a8d8719e6a3a668c6f52c28cefd1613c9bdc712767a522e07ae292c4154"

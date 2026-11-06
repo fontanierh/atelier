@@ -6,7 +6,7 @@ import bevy_pbr::prepass::io::{Vertex, VertexOutput, decompress_vertex};
 @if(PREPASS_PIPELINE)
 import bevy_render::globals::Globals;
 @if(!PREPASS_PIPELINE)
-import bevy_pbr::render::forward_io::{Vertex, VertexOutput, decompress_vertex};
+import bevy_pbr::render::forward_io::{Vertex, VertexOutput, Varyings, decompress_vertex, varyings};
 @if(!PREPASS_PIPELINE)
 import bevy_pbr::render::mesh_view_bindings::globals;
 import bevy_pbr::render::{mesh_functions, view_transformations::position_world_to_clip};
@@ -29,7 +29,8 @@ const DEPTH_MARGIN: f32 = 1.0001;
 
 // Source weights are in COLOR_0.r; spatial coefficients are per metre and material sine uses a one-cycle period.
 fn source_motion(at: vec3<f32>, time: f32, weight: f32, strength: f32) -> vec3<f32> {
-    if profile.haze_colour.w == 0.0 {
+    // A still vertex, or a mesh the wind does not reach, such as a far block's, skips the sway.
+    if profile.haze_colour.w == 0.0 || weight == 0.0 || strength == 0.0 {
         return vec3<f32>(0.0);
     }
     let x = at.x;
@@ -59,7 +60,12 @@ fn blowing(instance_index: u32) -> f32 {
 
 @if(!PREPASS_PIPELINE)
 @vertex
-fn vertex(vertex_in: Vertex) -> VertexOutput {
+fn vertex(vertex_in: Vertex) -> Varyings {
+    return varyings(build_output(vertex_in));
+}
+
+@if(!PREPASS_PIPELINE)
+fn build_output(vertex_in: Vertex) -> VertexOutput {
     var out: VertexOutput;
     let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
@@ -70,12 +76,12 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     // A hair nearer than the prepass put it. The two passes are compiled apart, so a moving vertex may land a rounding
     // error further than the depth the prepass wrote, fail the depth test and leave a hole showing the clear colour for
     // a frame: black leaves flickering in the wind.
+    // Drawn only where the prepass's depth equals its own, it must land exactly there instead.
+    @if(!PREPASS_DEPTH_EQUAL)
     out.position.z *= DEPTH_MARGIN;
-    @if(FORWARD_MOTION) {
-        let previous = mesh_functions::get_previous_world_from_local(vertex_in.instance_index);
-        let before = mesh_functions::mesh_position_local_to_world(previous, vec4<f32>(vertex.position, 1.0));
-        out.previous_world_position = vec4<f32>(before.xyz + motion, 1.0);
-    }
+    // Where the vertex was last frame is found from its instance, moved as it is now (see the prepass).
+    @if(FORWARD_MOTION)
+    out.motion_instance = mesh_functions::motion_instance(vertex_in.instance_index);
     out.world_normal = select(mesh_functions::mesh_normal_local_to_world(vertex.normal, vertex_in.instance_index), vec3<f32>(0.0, 1.0, 0.0), profile.global_tail.w > 0.5);
     @if(VERTEX_UVS_A)
     out.uv = vertex.uv;

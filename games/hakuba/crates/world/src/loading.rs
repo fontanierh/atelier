@@ -25,6 +25,12 @@ use crate::tiles::{Spawning, Tile};
 /// How many frames in a row the renderer must start no new pipeline and wait on none before the splash lifts: what a
 /// frame draws for the first time has its pipelines made over the next few.
 const SETTLED_FRAMES: u32 = 10;
+/// Once settled, the splash still shows until this many frames in a row take at most [`CALM_S`], or for at most
+/// [`WARMING_S`]: the first frames that draw the world as it will be seen (culled, its buffers first used) hitch, and
+/// they hitch under the splash instead of in front of the player.
+const CALM_FRAMES: u32 = 30;
+const CALM_S: f32 = 0.0185;
+const WARMING_S: f32 = 3.0;
 
 const BACKGROUND: Color = Color::srgb(0.07, 0.07, 0.09);
 const TRACK: Color = Color::srgba(1.0, 1.0, 1.0, 0.12);
@@ -63,6 +69,9 @@ struct Splash {
     /// How many pipelines the renderer had last frame, and for how many frames in a row it has started none.
     pipelines: usize,
     settled: u32,
+    /// When it settled, and for how many frames in a row since the renderer has kept the pace.
+    warming: Option<f32>,
+    calm: u32,
 }
 
 /// The splash's bar, which fills as the world loads.
@@ -97,14 +106,30 @@ struct Pipelines {
     waiting: Arc<AtomicUsize>,
 }
 
-fn count(cache: Res<PipelineCache>, pipelines: Res<Pipelines>) {
-    pipelines.all.store(cache.pipelines().count(), Ordering::Relaxed);
+fn count(cache: Res<PipelineCache>, pipelines: Res<Pipelines>, mut named: Local<usize>) {
+    let all = cache.pipelines().count();
+    // HAKUBA_PIPELINES names each pipeline as the renderer starts it, to find what a hitch made (crates/screens).
+    if all > *named && hakuba_screens::switch("HAKUBA_PIPELINES").is_some() {
+        use bevy::render::render_resource::PipelineDescriptor;
+        for pipeline in cache.pipelines().skip(*named) {
+            let (label, defs) = match &pipeline.descriptor {
+                PipelineDescriptor::RenderPipelineDescriptor(d) => {
+                    (d.label.clone(), format!("{:?}", d.vertex.shader_defs))
+                }
+                PipelineDescriptor::ComputePipelineDescriptor(d) => (d.label.clone(), format!("{:?}", d.shader_defs)),
+                PipelineDescriptor::MeshPipelineDescriptor(d) => (d.label.clone(), String::new()),
+            };
+            info!("PIPELINE {} {defs}", label.unwrap_or_default());
+        }
+    }
+    *named = all;
+    pipelines.all.store(all, Ordering::Relaxed);
     pipelines.waiting.store(cache.waiting_pipelines().count(), Ordering::Relaxed);
 }
 
 /// How many pipelines the renderer had made once the world had loaded, and since.
 #[derive(Resource, Default)]
-pub(crate) struct Loaded {
+pub struct Loaded {
     pipelines: usize,
 }
 
@@ -189,7 +214,7 @@ fn lift(
     waiting: Query<(), Unplaced>,
     roots: Query<&WorldAssetRoot>,
     placed: Query<&Placed>,
-    unready: Query<(), With<Unready>>,
+    unready: Query<(Entity, Option<&Name>), With<Unready>>,
     unculled: Query<Entity, With<Unculled>>,
     (time, scenery): (Res<Time>, Option<Res<SceneryLoaded>>),
 ) {
@@ -219,7 +244,7 @@ fn lift(
     if !world && waited > 30.0 && (waited / 10.0).floor() != ((waited - time.delta_secs()) / 10.0).floor() {
         warn!(
             "the world still waits after {waited:.0} s: {} of {} tiles, {} of {} scenes, {} of {} placed models, {} tiles \
-             spawning, {} models waiting, {} unready",
+             spawning, {} models waiting, {} unready: {}",
             tiles.iter().filter(|tile| !tile.shown()).count(),
             tiles.iter().len(),
             roots.iter().filter(|root| !loaded(root.0.id().untyped())).count(),
@@ -229,6 +254,11 @@ fn lift(
             spawning.iter().len(),
             waiting.iter().len(),
             unready.iter().len(),
+            unready
+                .iter()
+                .map(|(entity, name)| name.map_or(format!("{entity}"), |name| name.to_string()))
+                .collect::<Vec<_>>()
+                .join(", "),
         );
     }
     let textured = world && materials.iter().all(|(_, material)| textured(material, &images, &assets));
@@ -255,13 +285,24 @@ fn lift(
         stage.0 = says;
     }
 
-    if splash.settled >= SETTLED_FRAMES {
-        info!("the world loaded in {:.1} s, needing {made} pipelines", time.elapsed_secs() - splash.since);
+    let now = time.elapsed_secs();
+    if splash.warming.is_none() && splash.settled >= SETTLED_FRAMES {
+        splash.warming = Some(now);
+    }
+    let Some(warming) = splash.warming else { return };
+    // The world warms up drawn as it will be seen.
+    for mesh in &unculled {
+        commands.entity(mesh).remove::<(NoFrustumCulling, Unculled)>();
+    }
+    splash.calm = if time.delta_secs() <= CALM_S { splash.calm + 1 } else { 0 };
+    if splash.calm >= CALM_FRAMES || now - warming >= WARMING_S {
+        info!(
+            "the world loaded in {:.1} s, needing {made} pipelines, after warming up for {:.1} s",
+            now - splash.since,
+            now - warming
+        );
         commands.insert_resource(Loaded { pipelines: made });
         commands.entity(entity).despawn();
-        for mesh in &unculled {
-            commands.entity(mesh).remove::<(NoFrustumCulling, Unculled)>();
-        }
     }
 }
 

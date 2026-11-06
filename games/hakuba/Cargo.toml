@@ -3,11 +3,13 @@
 [workspace]
 members = ["crates/*", "schemas/*", "tools/export"]
 resolver = "3"
-exclude = ["vendor/bevy_pbr"]
+exclude = ["vendor/bevy_pbr", "vendor/wgpu-hal"]
 
-# A project-local opt-in forward-motion comparison patch; provenance and licenses are in vendor/.
+# Project-local corrections of two pinned dependencies, Bevy's PBR renderer and wgpu's Metal backend; what each
+# changes, its provenance and licenses are in vendor/.
 [patch.crates-io]
 bevy_pbr = { path = "vendor/bevy_pbr" }
+wgpu-hal = { path = "vendor/wgpu-hal" }
 
 [workspace.package]
 version = "0.1.0"
@@ -19,8 +21,10 @@ bevy = "0.20.0"
 hakuba_audio = { path = "crates/audio" }
 hakuba_characters = { path = "crates/characters" }
 hakuba_dev = { path = "crates/dev" }
+hakuba_gamepad = { path = "crates/gamepad" }
 hakuba_glider = { path = "crates/glider" }
 hakuba_menu = { path = "crates/menu" }
+hakuba_pacing = { path = "crates/pacing" }
 hakuba_player = { path = "crates/player" }
 hakuba_rendering = { path = "crates/rendering" }
 hakuba_screens = { path = "crates/screens" }
@@ -47,8 +51,10 @@ bevy = { workspace = true, features = ["webgpu"] }
 hakuba_audio.workspace = true
 hakuba_characters.workspace = true
 hakuba_dev.workspace = true
+hakuba_gamepad.workspace = true
 hakuba_glider.workspace = true
 hakuba_menu.workspace = true
+hakuba_pacing.workspace = true
 hakuba_player.workspace = true
 hakuba_rendering.workspace = true
 hakuba_screens.workspace = true

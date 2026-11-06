@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["railway-underframe", "railway-walnut"]
 own_textures = ["railway-smokebox-door"]
 solid = true
-inputs_sha256 = "2296cf3f4529de54b5cfac78831587783d1f5b030f712f3eab969f7f949cb6cf"
+inputs_sha256 = "7244c107b7a77c23a489c63da0f7366ba3269e3d1fb4d6ddd46c35570ed3a445"

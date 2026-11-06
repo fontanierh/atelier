@@ -14,7 +14,7 @@ import package::{
 };
 @else
 import package::render::{
-    forward_io::{VertexOutput, FragmentOutput},
+    forward_io::{VertexOutput, FragmentOutput, Varyings},
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
     pbr_types::STANDARD_MATERIAL_FLAGS_UNLIT_BIT,
 };
@@ -35,8 +35,10 @@ import package::decal::forward::get_forward_decal_info;
 fn fragment(
 @if(MESHLET_MESH_MATERIAL_PASS)
     @builtin(position) frag_coord: vec4<f32>,
-@if(!MESHLET_MESH_MATERIAL_PASS)
+@if(!MESHLET_MESH_MATERIAL_PASS && PREPASS_PIPELINE)
     vertex_output: VertexOutput,
+@if(!MESHLET_MESH_MATERIAL_PASS && !PREPASS_PIPELINE)
+    varyings: Varyings,
 @if(!MESHLET_MESH_MATERIAL_PASS)
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
@@ -44,6 +46,8 @@ fn fragment(
     let vertex_output = resolve_vertex_output(frag_coord);
 @if(MESHLET_MESH_MATERIAL_PASS)
     let is_front = true;
+@if(!MESHLET_MESH_MATERIAL_PASS && !PREPASS_PIPELINE)
+    let vertex_output = package::render::forward_io::vertex_output(varyings);
 
     var in = vertex_output;
 
@@ -90,8 +94,11 @@ fn fragment(
     // note this does not include fullscreen postprocessing effects like bloom.
 @if(!PREPASS_PIPELINE)
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
-@if(FORWARD_MOTION)
+@if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.motion_vector = package::render::motion_vectors::calculate(in.world_position, in.previous_world_position);
+@if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_vector = package::render::motion_vectors::calculate(
+        in.world_position, package::render::mesh_functions::previous_world_position(in.world_position, in.motion_instance));
 
 @if(MATERIAL_OIT_ENABLED) {
     let alpha_mode = pbr_input.material.flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS;

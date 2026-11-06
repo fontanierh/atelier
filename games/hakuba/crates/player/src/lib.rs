@@ -22,6 +22,8 @@ pub enum PlayerSystems {
     Input,
     Movement,
     Camera,
+    /// In PostUpdate, after every owner has placed the camera: eases it from one owner's view to the next.
+    CameraHandover,
 }
 
 /// Which controller owns the player's root, camera and pose. External owners must return all three together.
@@ -51,6 +53,14 @@ impl Plugin for PlayerPlugin {
                     .chain()
                     .run_if(in_state(Pause::Playing))
                     .run_if(in_state(DevMode::Off)),
+            )
+            .add_systems(
+                PostUpdate,
+                camera::hand_over
+                    .in_set(PlayerSystems::CameraHandover)
+                    .before(bevy::transform::TransformSystems::Propagate)
+                    .run_if(in_state(Screen::World))
+                    .run_if(in_state(DevMode::Off)),
             );
     }
 }
@@ -71,7 +81,7 @@ impl Player {
     pub fn resume_walking(&mut self, at: Vec3, yaw: f32, velocity: Vec3, grounded: bool) {
         self.owner = MovementOwner::Walking;
         self.motion = moves::Motion::resuming(at, yaw, velocity, grounded);
-        self.camera = camera::Orbit::behind(yaw);
+        self.camera = camera::Orbit::from_view();
     }
 }
 

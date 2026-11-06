@@ -131,6 +131,10 @@ def track_corners(meshes, looks):
             np.array(face))
 
 
+# The tunnel lining's brightness in Yorimichi's material, half its recorded albedo.
+TUNNEL_SOOT = 0.5
+
+
 def track_looks(build):
     """Each track material's look, (name, linear colour, Hakuba texture or None, tile in metres): Belmonte's own for
     its textured `MI_B_*` materials, writing their texture assets where the Belmonte port has not, and the flat
@@ -151,7 +155,9 @@ def track_looks(build):
             rgb = [2.0 * c * t * entry['brightness'] for c, t in zip(entry['colour'][:3], entry['tint'][:3])]
             looks.append((name, rgb, texture, entry['tile_m']))
         else:
-            looks.append((name, list(rgba[:3]), None, 1.0))
+            # The soot: Yorimichi's lining material keeps half its colour (`Brightness`, `import_belmonte_track.py`).
+            soot = TUNNEL_SOOT if name == 'MI_TK_TunnelLining' else 1.0
+            looks.append((name, [c * soot for c in rgba[:3]], None, 1.0))
     return looks
 
 

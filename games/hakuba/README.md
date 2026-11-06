@@ -65,16 +65,21 @@ games/hakuba/
   rust-toolchain.toml       the Rust version and the browser (wasm) target
   src/main.rs               the game program, what runs when the game opens: builds the app and adds the plugins
   crates/                   the game code, one crate per feature, each one Bevy plugin with its own README.md
-    screens/                what every screen shares: which screen is showing, buttons and text
+    screens/                what every screen shares: which screen is showing, buttons, text and desktop switches
     menu/                   the menu the game opens on
     world/                  the world
     characters/             the playable characters: their models and clips
     glider/                 the paraglider, and how a character holds it
     player/                 walking, running, jumping and movement ownership
     skate/                  fixed-step board and rider simulation, input, solved pose and skating camera
-    rendering/              shared rendering commands and 3D shadow views
+    rendering/              shared rendering commands, 3D shadow views and the renderer's settings
+    pacing/                 the desktop frame pacer and frame log
+    gamepad/                a DualSense read from its raw reports on macOS, and the playtests' scripted pad
     viewer/                 the character viewer
+    dev/                    dev mode's free camera and notes, and the playtests' desktop switches
     audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
+  vendor/                   two pinned dependencies corrected for the game, Bevy's PBR renderer and wgpu's Metal
+                            backend, with their licenses and provenance (vendor/README.md)
   schemas/                  data formats shared by the exporter and game, without Bevy dependencies
   index.html                the page the browser build runs in, with the canvas the game draws into
   Trunk.toml                export checks and what the browser build copies next to the game

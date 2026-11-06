@@ -113,6 +113,13 @@ fn compute_radiances(
 
     var radiances: EnvironmentMapRadiances;
 
+    // Hakuba: a hemisphere fill light is evaluated, not walked to and sampled.
+    if (light_probes.hemisphere_sky.w > 0.5) {
+        radiances.irradiance = hemisphere_light(N);
+        radiances.radiance = hemisphere_light(radiance_sample_direction(N, R, roughness));
+        return radiances;
+    }
+
     // Find all reflection probes that contain the fragment. We're going to
     // accumulate all the radiance and irradiance from them in a weighted sum.
     var iterator = light_probe_iterator_new(
@@ -228,6 +235,13 @@ fn compute_radiances(
     let roughness = input.roughness;
 
     var radiances: EnvironmentMapRadiances;
+
+    // Hakuba: a hemisphere fill light is evaluated, not walked to and sampled.
+    if (light_probes.hemisphere_sky.w > 0.5) {
+        radiances.irradiance = hemisphere_light(N);
+        radiances.radiance = hemisphere_light(radiance_sample_direction(N, R, roughness));
+        return radiances;
+    }
 
     // If we have no light probe, bail.
     if (light_probes.view_cubemap_index < 0) {
@@ -396,6 +410,24 @@ fn environment_map_light(
     );
 
     return out;
+}
+
+/// Hakuba: the view's hemisphere fill light seen along `direction`, as a cubemap of one texel a face samples it with
+/// seamless filtering: the four side faces send the horizon's colour, the top and bottom the sky's and the ground's,
+/// and across each face the colour blends bilinearly toward the faces beside it, half way at their shared edge.
+fn hemisphere_light(direction: vec3<f32>) -> vec3<f32> {
+    let a = abs(direction);
+    let horizon = light_probes.hemisphere_horizon.rgb;
+    let vertical = select(light_probes.hemisphere_ground.rgb, light_probes.hemisphere_sky.rgb, direction.y > 0.0);
+    let corner = (vertical + 2.0 * horizon) / 3.0;
+    if (a.y >= max(a.x, a.z)) {
+        let w = 0.5 * vec2(a.x, a.z) / max(a.y, 1e-6);
+        return vertical * (1.0 - w.x) * (1.0 - w.y) + horizon * (w.x * (1.0 - w.y) + w.y * (1.0 - w.x))
+            + corner * w.x * w.y;
+    }
+    let side = max(a.x, a.z);
+    let w = 0.5 * vec2(min(a.x, a.z), a.y) / side;
+    return horizon * (1.0 - w.y) + vertical * (1.0 - w.x) * w.y + corner * w.x * w.y;
 }
 
 /// "Moving Frostbite to Physically Based Rendering 3.0", listing 22

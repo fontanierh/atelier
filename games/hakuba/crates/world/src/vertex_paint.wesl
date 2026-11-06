@@ -1,7 +1,7 @@
 // The colour attribute is linear in the asset. Encode at the vertices so interpolation follows the source's packed
 // colour channel, then decode in the fragment before applying its painted material response.
 import bevy_pbr::render::{
-    forward_io::{Vertex, VertexOutput, FragmentOutput, decompress_vertex},
+    forward_io::{Vertex, VertexOutput, Varyings, FragmentOutput, decompress_vertex, varyings, vertex_output},
     mesh_functions,
     mesh_view_bindings::view,
     view_transformations::position_world_to_clip,
@@ -20,15 +20,21 @@ fn decode(c: vec3<f32>) -> vec3<f32> {
 }
 
 @vertex
-fn vertex(input: Vertex) -> VertexOutput {
+fn vertex(input: Vertex) -> Varyings {
+    return varyings(build_output(input));
+}
+
+fn build_output(input: Vertex) -> VertexOutput {
     let v = decompress_vertex(input, input.instance_index);
     let transform = mesh_functions::get_world_from_local(input.instance_index);
     var out: VertexOutput;
     out.world_position = mesh_functions::mesh_position_local_to_world(transform, vec4<f32>(v.position, 1.0));
     out.position = position_world_to_clip(out.world_position.xyz);
-    @if(FORWARD_MOTION)
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.previous_world_position = mesh_functions::mesh_position_local_to_world(
         mesh_functions::get_previous_world_from_local(input.instance_index), vec4<f32>(v.position, 1.0));
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_instance = mesh_functions::motion_instance(input.instance_index);
     @if(VERTEX_NORMALS)
     out.world_normal = mesh_functions::mesh_normal_local_to_world(v.normal, input.instance_index);
     @if(VERTEX_UVS_A)
@@ -47,7 +53,8 @@ fn vertex(input: Vertex) -> VertexOutput {
 }
 
 @fragment
-fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+    let input = vertex_output(varyings);
     var decoded = input;
     @if(VERTEX_COLORS)
     decoded.color = vec4<f32>(decode(input.color.rgb), 1.0);
@@ -61,7 +68,10 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
     surface.material.emissive = vec4<f32>(color * (paint.lower.w + glow * paint.upper.w) * (1.0 - haze) + paint.colour.xyz * haze, 1.0);
     var out: FragmentOutput;
     out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
-    @if(FORWARD_MOTION)
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(
+        input.world_position, bevy_pbr::render::mesh_functions::previous_world_position(input.world_position, input.motion_instance));
     return out;
 }

@@ -81,6 +81,13 @@ pub fn camera(images: &mut Assets<Image>) -> impl Bundle {
             linear(GROUND_LIGHT),
         )
         .with_intensity(FILL_BRIGHTNESS),
+        // The same fill light, evaluated per pixel rather than sampled from that cubemap: 1.1 ms on the hilltop.
+        bevy::pbr::HemisphereLight {
+            sky: Vec3::from(SKY_LIGHT),
+            horizon: Vec3::from(HORIZON_LIGHT),
+            ground: Vec3::from(GROUND_LIGHT),
+            intensity: FILL_BRIGHTNESS,
+        },
         DistanceFog {
             color: Color::linear_rgb(HAZE[0], HAZE[1], HAZE[2]),
             falloff: FogFalloff::Exponential { density: HAZE_DENSITY },
@@ -99,10 +106,14 @@ fn spawn_sky_and_sun(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.spawn((
+    commands.spawn((Sky, DespawnOnExit(Screen::World), sky(&assets, &mut meshes, &mut materials)));
+    commands.spawn((DespawnOnExit(Screen::World), sun()));
+}
+
+/// The sky dome, to keep centred on the camera.
+pub fn sky(assets: &AssetServer, meshes: &mut Assets<Mesh>, materials: &mut Assets<StandardMaterial>) -> impl Bundle {
+    (
         Name::new("Sky"),
-        Sky,
-        DespawnOnExit(Screen::World),
         Mesh3d(meshes.add(Sphere::new(1.0).mesh().uv(64, 32))),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::linear_rgb(SKY_BRIGHTNESS, SKY_BRIGHTNESS, SKY_BRIGHTNESS),
@@ -115,13 +126,16 @@ fn spawn_sky_and_sun(
         // A UV sphere's poles are on its Z axis: turned so its first row, the zenith, is straight up.
         Transform::from_scale(Vec3::splat(SKY_RADIUS_M)).with_rotation(Quat::from_rotation_x(-FRAC_PI_2)),
         bevy::light::NotShadowCaster,
-    ));
+    )
+}
+
+/// The sun, casting the shadows the Shadows setting reaches.
+pub fn sun() -> impl Bundle {
     let (elevation, bearing) = (SUN_ELEVATION_DEG.to_radians(), SUN_BEARING_DEG.to_radians());
     // East is +X and north is -Z; the light shines downward.
     let shining = Vec3::new(elevation.cos() * bearing.sin(), -elevation.sin(), -elevation.cos() * bearing.cos());
-    commands.spawn((
+    (
         Name::new("Sun"),
-        DespawnOnExit(Screen::World),
         DirectionalLight {
             illuminance: SUN_LUX,
             color: Color::linear_rgb(SUN_COLOUR[0], SUN_COLOUR[1], SUN_COLOUR[2]),
@@ -129,7 +143,7 @@ fn spawn_sky_and_sun(
         },
         Transform::default().looking_to(shining, Vec3::Y),
         RenderLayers::from_layers(&[0, SHADOW_ONLY]),
-    ));
+    )
 }
 
 fn follow_camera(

@@ -88,7 +88,7 @@ impl Default for CollisionFocus {
             enabled: false,
             position: Vec3::ZERO,
             velocity: Vec3::ZERO,
-            radius_m: 100.,
+            radius_m: 48.,
             lookahead_s: 2.,
             destination: None,
         }
@@ -235,6 +235,7 @@ pub(crate) fn publish(
     }
     previous.signature = signature;
     previous.meshes.clear();
+    let started = std::time::Instant::now();
     let mut snapshot = CollisionSnapshot {
         ready: focus.enabled && !selected.is_empty(),
         rails: metadata.0.rails.clone(),
@@ -341,6 +342,7 @@ pub(crate) fn publish(
         }
     }
     output.generation = output.generation.wrapping_add(1);
+    info!("COLLISION_PUBLISH {} triangles in {:?}", snapshot.triangles.len(), started.elapsed());
     output.snapshot = Arc::new(snapshot);
 }
 
@@ -492,12 +494,13 @@ mod tests {
         focus.request(Vec3::ZERO, Vec3::X * 20.);
         focus.destination = Some(Vec3::X * 2000.);
         assert!(focus.intersects(Vec3::ZERO, 64.));
-        assert!(focus.intersects(Vec3::X * 2100., 64.));
+        let beyond = Vec3::X * (2000. + focus.radius_m + 16.);
+        assert!(focus.intersects(beyond, 64.));
         assert!(!focus.intersects(Vec3::X * 1000., 64.));
         focus.request(Vec3::X * 10., Vec3::ZERO);
         assert!(focus.destination.is_some(), "ordinary corridor updates retain the pending destination");
         focus.destination = None;
-        assert!(!focus.intersects(Vec3::X * 2100., 64.));
+        assert!(!focus.intersects(beyond, 64.));
         focus.destination = Some(Vec3::X * 2000.);
         focus.clear();
         assert!(focus.destination.is_none());
@@ -508,8 +511,9 @@ mod tests {
     fn predictive_focus_pins_a_fast_landing_beyond_the_camera() {
         let mut focus = CollisionFocus::default();
         focus.request(Vec3::ZERO, Vec3::X * 50.);
-        assert!(focus.intersects(Vec3::X * 190., 64.));
-        assert!(!focus.intersects(Vec3::X * 250., 64.));
+        let landing = 50. * focus.lookahead_s;
+        assert!(focus.intersects(Vec3::X * (landing + focus.radius_m + 16.), 64.));
+        assert!(!focus.intersects(Vec3::X * (landing + focus.radius_m + 48.), 64.));
         focus.clear();
         assert!(!focus.intersects(Vec3::ZERO, 64.));
     }

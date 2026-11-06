@@ -44,8 +44,12 @@ impl Profile {
     }
 }
 
+/// A textured surface's response: its haze and, where its source material lights itself, `fill`, its colour times
+/// this as emission (none by default).
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct SurfaceProfile {
+    #[serde(default)]
+    pub fill: f32,
     pub haze_start_m: f32,
     pub haze_length_m: f32,
     pub haze_colour: [f32; 3],
@@ -54,7 +58,7 @@ pub struct SurfaceProfile {
 impl SurfaceProfile {
     pub(crate) fn profile(&self) -> Profile {
         Profile {
-            fill: 0.0,
+            fill: self.fill,
             glow: 0.0,
             glow_min: [0.0; 3],
             glow_max: [0.0; 3],
@@ -141,6 +145,25 @@ impl MaterialExtension for MovingPaint {
     }
     fn fragment_shader() -> ShaderRef {
         "embedded://hakuba_world/vertex_paint.wesl".into()
+    }
+    /// The paint moves on its own, so each vertex passes on where it was for the main pass's motion.
+    fn specialize(
+        _: &bevy::pbr::MaterialExtensionPipeline,
+        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        _: &bevy::mesh::MeshVertexBufferLayoutRef,
+        _: bevy::pbr::MaterialExtensionKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        let forward = |defs: &[bevy::shader::ShaderDefVal]| {
+            defs.iter()
+                .any(|def| matches!(def, bevy::shader::ShaderDefVal::Bool(name, true) if name == "FORWARD_MOTION"))
+        };
+        if forward(&descriptor.vertex.shader_defs) {
+            descriptor.vertex.shader_defs.push("VERTEX_PREVIOUS_POSITION".into());
+            if let Some(fragment) = descriptor.fragment.as_mut() {
+                fragment.shader_defs.push("VERTEX_PREVIOUS_POSITION".into());
+            }
+        }
+        Ok(())
     }
 }
 
@@ -458,6 +481,17 @@ mod tests {
     use bevy::ecs::system::RunSystemOnce;
 
     #[test]
+    fn a_surface_lights_itself_only_by_its_declared_fill() {
+        let haze = r#""haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.1, 0.2, 0.3]"#;
+        let plain: SurfaceProfile = serde_json::from_str(&format!("{{{haze}}}")).unwrap();
+        let lit: SurfaceProfile = serde_json::from_str(&format!(r#"{{"fill": 0.3, {haze}}}"#)).unwrap();
+        assert_eq!(plain.profile().fill, 0.0);
+        assert_eq!(lit.profile().fill, 0.3);
+        assert!(lit.profile().valid());
+        assert_eq!((lit.profile().glow, lit.profile().haze_length_m), (0.0, 9000.0));
+    }
+
+    #[test]
     fn vertex_painted_tile_prepares_static_colours_and_rejects_motion_weights() {
         use bevy::asset::RenderAssetUsages;
         use bevy::mesh::PrimitiveTopology;
@@ -555,9 +589,13 @@ mod tests {
         let result = app
             .world_mut()
             .run_system_once(move |mut painted: PaintedMaterials| {
-                let profile =
-                    SurfaceProfile { haze_start_m: 30.0, haze_length_m: 9000.0, haze_colour: [0.1, 0.2, 0.3] }
-                        .profile();
+                let profile = SurfaceProfile {
+                    fill: 0.0,
+                    haze_start_m: 30.0,
+                    haze_length_m: 9000.0,
+                    haze_colour: [0.1, 0.2, 0.3],
+                }
+                .profile();
                 assert!(painted.of(&w, &profile).is_err());
                 (painted.of_surface(&c, &profile).unwrap().unwrap(), painted.of_surface(&w, &profile).unwrap().unwrap())
             })
@@ -598,7 +636,8 @@ mod tests {
                 Mesh3d(mesh),
                 MeshMaterial3d(source.clone()),
                 SurfaceWaiting(
-                    SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     1,
                 ),
             ))
@@ -644,7 +683,8 @@ mod tests {
                 Mesh3d(mesh),
                 MeshMaterial3d(source.clone()),
                 SurfaceWaiting(
-                    SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     3,
                 ),
             ))
@@ -687,7 +727,8 @@ mod tests {
                 Mesh3d(mesh),
                 MeshMaterial3d(material),
                 SurfaceWaiting(
-                    SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     1,
                 ),
             ))
@@ -714,7 +755,8 @@ mod tests {
                 Mesh3d(missing.clone()),
                 MeshMaterial3d(material),
                 SurfaceWaiting(
-                    SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    SurfaceProfile { fill: 0.0, haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }
+                        .profile(),
                     1,
                 ),
             ))

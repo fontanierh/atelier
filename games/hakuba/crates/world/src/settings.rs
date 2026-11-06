@@ -45,14 +45,17 @@ fn look(
         AntiAliasing::Off => camera.remove::<(TemporalAntiAliasing, Smaa)>(),
     };
     // Under temporal anti-aliasing, shadows' edges are sampled a little differently each frame and blended: soft and
-    // steady. Without it, that would shimmer, so they are blurred instead.
+    // steady. Without it, that would shimmer, so they are blurred instead. The shadow map's own 2x2 comparison costs
+    // 0.5 ms less in the densest forest, but in play the character's shadow turns pixelated and its self-shadowing
+    // flickers.
     camera.insert(match settings.anti_aliasing {
         AntiAliasing::Temporal => ShadowFilteringMethod::Temporal,
         _ => ShadowFilteringMethod::Gaussian,
     });
     light.shadow_maps_enabled = settings.shadows.reach().is_some();
     if let Some((reach, cascades)) = settings.shadows.reach() {
-        let first = if cascades == 1 { reach } else { reach / 3.0 };
+        // The nearest cascade stays 20 m deep however far the shadows reach, so shadows near the player stay sharp.
+        let first = if cascades == 1 { reach } else { (reach / 3.0).min(20.0) };
         commands.entity(*sun).insert(
             CascadeShadowConfigBuilder {
                 num_cascades: cascades,
@@ -65,10 +68,14 @@ fn look(
     }
 }
 
-type SwayingPlants =
-    Or<(With<MeshMaterial3d<Swaying>>, With<MeshMaterial3d<SourceFoliage>>, With<MeshMaterial3d<ShadowFoliage>>)>;
-type AddedSwayingPlants =
-    Or<(Added<MeshMaterial3d<Swaying>>, Added<MeshMaterial3d<SourceFoliage>>, Added<MeshMaterial3d<ShadowFoliage>>)>;
+type SwayingPlants = (
+    Or<(With<MeshMaterial3d<Swaying>>, With<MeshMaterial3d<SourceFoliage>>, With<MeshMaterial3d<ShadowFoliage>>)>,
+    Without<crate::blocks::Unswayed>,
+);
+type AddedSwayingPlants = (
+    Or<(Added<MeshMaterial3d<Swaying>>, Added<MeshMaterial3d<SourceFoliage>>, Added<MeshMaterial3d<ShadowFoliage>>)>,
+    Without<crate::blocks::Unswayed>,
+);
 
 /// Tells every swaying plant how strongly the wind blows, through its mesh tag, when the setting changes and as plants
 /// spawn.

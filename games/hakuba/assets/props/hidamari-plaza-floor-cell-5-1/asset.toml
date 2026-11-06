@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 textures = ["hidamari-paving-mirrored"]
 solid = true
-inputs_sha256 = "082e9f95f9c62055742e2e340e07e2b736feeb3d8e6d9a45a41cb8140ccb3a7c"
+inputs_sha256 = "3aa77a8a1c652687d11ce36386ac0aacb07b7dc6184564e647ca1eb7a1314176"

@@ -389,6 +389,14 @@ impl Glb {
         node
     }
 
+    /// Replaces the parts of the mesh `node` shows with `parts`.
+    pub fn replace_mesh(&mut self, node: usize, parts: &[&Mesh]) -> Result<()> {
+        let mesh = self.json["nodes"][node]["mesh"].as_u64().context("the node shows no mesh")? as usize;
+        let primitives: Vec<Value> = parts.iter().map(|part| self.add_primitive(part)).collect();
+        self.json["meshes"][mesh]["primitives"] = Value::Array(primitives);
+        Ok(())
+    }
+
     /// Gives `node` `extras`, data for the game.
     pub fn set_extras(&mut self, node: usize, extras: Value) {
         self.json["nodes"][node]["extras"] = extras;

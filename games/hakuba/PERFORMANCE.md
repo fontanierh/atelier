@@ -32,9 +32,62 @@ at intersections. Exact motion-texture publication does not prove identical TAA 
 old displayed TAA input; `publish` retains both geometry passes but feeds TAA from main. These remain explicit
 validation modes, not quality settings or proof that the 60 FPS contract is met.
 
+## The desktop build on the Mac
+
+The desktop build is not the reference measurement, but it is how the game is playtested, so it holds 60 frames a
+second on its own terms: an Apple M3 Pro on a 120 Hz display, 1440 lines drawn, the default settings. Frames start on
+fixed 62 Hz deadlines and Metal keeps each on screen at least a 60th of a second (crates/pacing).
+
+Measure it with a recorded pad session, so every run walks the same route: `HAKUBA_RECORD=FILE` records one and
+`HAKUBA_SCRIPT=FILE` replays it (crates/gamepad), with nothing else using the CPU or GPU. The frame log says each
+second how many game-loop frames fell under 12 ms, about one 60 Hz frame, 20–29, 29–40 and over 40 ms; count a frame
+in the 20–29 bucket or above, after the splash lifts, as late. The counter in the corner reads from when Metal actually
+showed each frame, not the game loop; `gpu` is the GPU's work per frame that second. Xcode's Metal System Trace of
+the game itself gives each pass's GPU time.
+
+On 2026-11-04, with this build, the screen not recorded and nothing else heavy running:
+
+| Route (replayed pad session) | Frames after the splash | Late (over 20.8 ms) | Over 29 ms | Worst |
+| --- | --- | --- | --- | --- |
+| Walk | 1761 | 45 to 90 (2.6–5%) over four runs | 35 to 57 | 70 ms |
+| Skate | 1812 | 15 (0.8%) | 2 | 33 ms |
+| Paraglider glide down the hill | 2362 | 6 (0.3%) | 0 | 28 ms |
+| Free-camera rise over the forest | 2049 | 19 (0.9%) | 7 | 34 ms |
+
+The walk's late frames are one view: up the slope near the skate start, facing north over the forest, where the main
+pass's vertex and fragment work each double and a frame's GPU work reaches 18 ms (95th percentile). How many of them
+there are follows what else the machine runs.
+
+### What Unreal does on the Mac, and what Hakuba does instead
+
+Unreal's renderer is the yardstick for what a Mac game should do for itself. Each of its optimizations that fits a
+small open world drawn by Bevy has its counterpart here:
+
+| Unreal | Hakuba |
+| --- | --- |
+| Pooled Metal buffers (the Metal RHI's buffer pool) | Freed Metal buffers are kept, up to 768 MB, and reused by size (vendor/wgpu-hal) |
+| Async compute | Bevy's preprocess compute passes run as concurrent Metal passes (vendor/wgpu-hal, vendor/bevy_pbr) |
+| Frame pacing with a minimum present duration | Fixed 62 Hz deadlines, each frame on screen at least a 60th (crates/pacing) |
+| Forward shading | One forward pass writes color and motion, with no geometry prepass (crates/rendering, the desktop default) |
+| Shadow cascade caching | Each of the two cascades redraws every other frame, the last one fading out (crates/rendering `defaults.rs`) |
+| Mesh LODs with dithered transitions | Trees swap versions at 65 m and small plants fade at 16 m, through a moving dither (crates/world `scenery.rs`) |
+| Hierarchical LODs | A 512 m block whose nearest tile is past 300 m merges its far tiles into one mesh per look, switching whole, as HLOD clusters do; blocks at the 2.5 km horizon load and leave whole (crates/world `blocks.rs`, `tiles.rs`) |
+| Nanite's error-bounded simplification | On the desktop, a block's plants are simplified to stray under a pixel from their shapes (crates/world `blocks.rs`) |
+| Distance-based detail | Plants show their middle version near and their far version past 200 m, showing both within 64 m of it (crates/world `tiles.rs`) |
+| Instanced and merged static meshes | Small models merge by 32 m square or tile; large ones draw instanced |
+| PSO precaching | The splash holds until every pipeline the world needs is made |
+| Thread priorities | The frame loop runs at interactive QoS and the skater's background work at utility QoS (crates/screens) |
+| World Partition streaming | Tiles load and swap versions around the player (crates/world `tiles.rs`) |
+
+Not taken: Bevy has no Lumen or virtual shadow maps, so the sky lights the world through a hemisphere light
+(vendor/bevy_pbr) and the sun through two cascades; Bevy's GPU occlusion culling needs the depth prepass, which the
+single forward pass leaves out; GPU light clustering adds compute passes and a readback a frame for the few lights
+here, so lights cluster on the CPU.
+
 ## Measuring
 
-Measure in the browser, which is slower than the desktop build and differs from it in ways that matter (below).
+Measure the reference in the browser, which is slower than the desktop build and differs from it in ways that matter
+(below).
 Use `trunk serve --release` for the reference measurement. Plain `trunk serve` uses the faster-to-build development
 profile, whose frame rate is not the reference measurement.
 
@@ -120,5 +173,36 @@ its wind in the shadow, prepass and main passes.
   intersections. At the reference setting, walking rose from about 57 to 60 frames a second.
 - **Let the browser pace 60.** A frame cap's timer runs apart from the display's refreshes, so a 60 cap in the browser
   drew 14 and 28 ms frames by turns. In the browser a cap of 60 or more leaves the pacing to `requestAnimationFrame`.
-- **What did not pay**: hardware 2 × 2 shadow filtering (no gain), a 1024 shadow map (1.7 ms, visibly softer shadows).
+- **Switch blocks whole.** Far tiles joined their block one by one as each crossed a ring around the camera, and
+  left it one by one at the horizon: a glide merged a block every 50 ms, each a few milliseconds of main-thread work,
+  an upload, a stalled frame and the block's trees reshaped. Blocks now merge and leave whole, as Unreal's HLOD
+  clusters do, and simplify for their distance in √2 steps: the glide's merges fell from 304 to 11 and the ride's from
+  147 to 3, and the late frames of both by about half.
+- **Prove a tree's level of detail in the forest lab first** (crates/forest_lab). It flies and walks a fixed path
+  through a forest drawn as the game draws it and counts the squares of the screen that jump between frames against
+  an all-full reference. An impostor from 90 m, as the game had, reshaped trees; from 150 m over a 12 m fade it still
+  did in 17 frames of 238, over 40 m in 4, and from 200 m over 40 m in none. The width of the fade mattered more than
+  the impostor's detail: lighting the impostor deeper in its crown made it worse. On the forest flight a 200 m swap
+  costs 14.7 ms of GPU time a frame against 11.4 at 150 m and 9.7 at 90 m.
+- **Fewer, larger trees.** A placed region's tree groups may share a thinning (tools/export/src/world/placed.rs): the
+  forest keeps its trees 11 m apart and grows each kept one by 1.2, 67,413 of 197,810. The source keeps every tree.
+  With every tree an impostor the flight's frame fell from 9.0 to 7.6 ms; with full trees to 200 m it did not move,
+  as the near crowns still fill the screen.
+- **Leaf cards cost by their overlap, not their count.** Testing a cut-out texel turns off the Apple GPU's hidden
+  surface removal, so every card layer over a pixel is tested. A depth prepass of only the leaves took the main pass's
+  fragment work from 6.4 to 2.4 ms, but its own alpha test cost 4.4 ms and 2.6 ms of vertex work. Opaque leaf
+  outlines need about 57 vertices a card for the clustered leaf textures, and 8-point hulls doubled the vertices and
+  ran slower (18.1 against 14.1 ms in the lab) while reshaping the crowns.
+- **The GPU's clock follows its load.** macOS lowers the GPU's performance state when a frame is light, so a cheaper
+  setting can read as slower: in one Metal System Trace the full trees ran at the maximum state and impostors at the
+  minimum, every unchanged pass taking about twice as long. Compare passes between traces whose
+  `gpu-performance-state-intervals` show the same state, or scale by a pass whose work does not change, such as the
+  painterly filter.
+- **Measure without recording the screen.** Recording the screen at the same time tripled a ride's late frames (56
+  against 13 and 17 in 32 s): count late frames with nothing else drawing, and record only to look.
+- **What did not pay**: hardware 2 × 2 shadow filtering (no gain), a 1024 shadow map (1.7 ms, visibly softer shadows),
+  dynamic resolution (the same replayed ride had 122 late frames with it and 66 without, a glide 139 and 43: 65% of
+  the pixels took the GPU as long, held by geometry, while each new size made a new image and restarted
+  anti-aliasing), and Bevy's contrast-adaptive sharpening (it showed rare untonemapped pale frames, the white
+  flashes of a playtest).
   Shadow map sizes must be powers of two.

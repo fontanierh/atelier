@@ -88,7 +88,7 @@ fn begin(mut commands: Commands, settings: Res<Settings>, preferences: Res<Voice
     // Set the shared processor before any loop or one-shot decoder can start.
     preferences.set(settings.skate.soften, settings.skate.volume);
     commands.insert_resource(Pending);
-    commands.spawn((Preparing, hakuba_world::Unready, DespawnOnExit(Screen::World)));
+    commands.spawn((Name::new("Skating sounds"), Preparing, hakuba_world::Unready, DespawnOnExit(Screen::World)));
 }
 #[allow(clippy::too_many_arguments)]
 fn loops(
@@ -151,7 +151,7 @@ fn hear(
         let (target, pitch) = levels[marker.kind];
         let rate = if target > marker.envelope { 30. } else { 10. };
         marker.envelope += (target - marker.envelope) * (time.delta_secs() * rate).min(1.);
-        sink.set_volume(Volume::Linear(marker.envelope * settings.volume));
+        sink.set_volume(Volume::Linear(marker.envelope * crate::volume(&settings)));
         sink.set_speed(pitch);
     }
     // Always drain messages while paused or unloaded, so an old attack cannot play on resume.
@@ -165,7 +165,7 @@ fn hear(
             AudioEventKind::Land => (&mut sounds.land[surface], 0.8),
             AudioEventKind::Clatter => (&mut sounds.clatter, 0.9),
         };
-        sound.play(&mut commands, &takes, &mut dice, gain * settings.volume, 1.);
+        sound.play(&mut commands, &takes, &mut dice, gain * crate::volume(&settings), 1.);
     }
 }
 fn surface_index(surface: u16) -> usize {

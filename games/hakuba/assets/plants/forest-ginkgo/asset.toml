@@ -1,9 +1,9 @@
 # Source foliage: a ginkgo of the mountain forest around Hidamari.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["garden-bark", "coast-ginkgo-leaves", "far-plants"]
-inputs_sha256 = "593dd4c839c77f66c801773acbd4c3df842470262ebba6cc44eb83da78311fe5"
+inputs_sha256 = "9c99fe4db85dcf716dfe4b4546c065266d1745140830b9e75bace0f5069470d3"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

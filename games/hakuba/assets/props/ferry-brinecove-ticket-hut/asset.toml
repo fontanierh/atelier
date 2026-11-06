@@ -1,4 +1,4 @@
 # The ticket hut of the ferry terminal at Brinecove.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "340330e5d4c061c6bec3264d66e507bd999551264de81c1d510e38164431fc2d"
+inputs_sha256 = "c7bbc0c93a44745da06efa93517d55bb926f6c0d563190d1428ab09ac3a136f0"

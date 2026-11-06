@@ -4,7 +4,7 @@ import package::render::{
     previous_position,
     skinning,
     morph::{morph_position, morph_normal, morph_tangent},
-    forward_io::{Vertex, UncompressedVertex, VertexOutput, decompress_vertex},
+    forward_io::{Vertex, UncompressedVertex, VertexOutput, Varyings, decompress_vertex, varyings},
     view_transformations::position_world_to_clip,
 };
 
@@ -33,7 +33,11 @@ fn morph_vertex(vertex_in: UncompressedVertex, instance_index: u32) -> Uncompres
 }
 
 @vertex
-fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
+fn vertex(vertex_no_morph: Vertex) -> Varyings {
+    return varyings(build_output(vertex_no_morph));
+}
+
+fn build_output(vertex_no_morph: Vertex) -> VertexOutput {
     var out: VertexOutput;
     let uncompressed_vertex_no_morph = decompress_vertex(vertex_no_morph, vertex_no_morph.instance_index);
 @if(MORPH_TARGETS)
@@ -69,7 +73,9 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 @if(VERTEX_POSITIONS)
     out.position = position_world_to_clip(out.world_position.xyz);
 
-@if(FORWARD_MOTION) {
+@if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_instance = mesh_functions::motion_instance(vertex_no_morph.instance_index);
+@if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION) {
     var previous = uncompressed_vertex_no_morph.position;
     @if(MORPH_TARGETS && HAS_PREVIOUS_MORPH)
     previous = previous_position::morph_position(previous, uncompressed_vertex_no_morph.index, vertex_no_morph.instance_index);
@@ -111,7 +117,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 
 @fragment
 fn fragment(
-    mesh: VertexOutput,
+    mesh: Varyings,
 ) -> @location(0) vec4<f32> {
 @if(VERTEX_COLORS)
     return mesh.color;

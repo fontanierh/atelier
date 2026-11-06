@@ -1,4 +1,4 @@
 # The waiting house of the ferry terminal at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "bf7c92ccf2acbd7c3bc76348ff8436f8765d275b96a778c5e1ccf36f14eeaf12"
+inputs_sha256 = "3682be0bf25271c0d3ff50633150493c5370cc330b4e4bbc58616ba08d945595"

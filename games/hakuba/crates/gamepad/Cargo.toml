@@ -1,0 +1,14 @@
+# A DualSense read from its HID reports on macOS, and the playtests' scripted pad. See README.md.
+[package]
+name = "hakuba_gamepad"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+bevy.workspace = true
+hakuba_screens.workspace = true
+hakuba_world.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+hidapi = { version = "2", default-features = false, features = ["macos-shared-device"] }

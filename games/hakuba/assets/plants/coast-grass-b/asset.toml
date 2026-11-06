@@ -2,7 +2,7 @@
 kind = "plant"
 source = "src/model.glb"
 textures = ["coast-grass-blades"]
-inputs_sha256 = "b364c64545f2a949212fcc5d73e7459bdfb6e9827fcb5d5809e27ebe5ba16147"
+inputs_sha256 = "70e38d22da3b77faaff1b4e581fe1dedf665120ad4b51d14787b162dc8eb2556"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

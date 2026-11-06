@@ -16,7 +16,7 @@ use std::collections::VecDeque;
 
 use bevy::asset::{RenderAssetUsages, UntypedAssetId};
 use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::RenderLayers;
+use bevy::camera::visibility::{RenderLayers, VisibilityRange};
 use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
@@ -28,7 +28,9 @@ use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
 use crate::collision::CollisionSource;
+use crate::detail::Detail;
 use crate::ground::built_solid;
+use crate::impostor::{Baked, Impostor, Impostors};
 use crate::loading::{Loaded, Missing};
 use crate::look::SHADOW_ONLY;
 use crate::tiles::{Spawning, TILES};
@@ -102,6 +104,10 @@ pub struct Waiting {
     middle: bool,
     /// Its tile's root, if the tile shows plants' far versions.
     far: Option<Entity>,
+    /// Whether its tile shows both plants' middle and far versions, crossfading.
+    blend: bool,
+    /// Whether its tile shows plants' far versions, whatever this node's detail: the distant blocks merge its meshes.
+    kept: bool,
     instances: Vec<f32>,
     jobs: Option<VecDeque<Job>>,
 }
@@ -121,6 +127,49 @@ struct Job {
     cursor: usize,
     /// A non-solid group's geometry while its copies are merged over several updates.
     combined: Option<Mesh>,
+    /// The distances at which each copy shows, fading in and out, as a tree's level of detail is picked per
+    /// copy.
+    range: Option<Ranged>,
+    /// Whether its merged meshes stay on the CPU too, so the distant blocks can merge them (blocks.rs): a far tile's.
+    kept: bool,
+}
+
+/// The distances at which a part shows, and whether they pick between versions of one thing, so that they scale with
+/// how big the camera shows things ([`Detail`]).
+#[derive(Clone)]
+struct Ranged {
+    range: VisibilityRange,
+    detail: bool,
+}
+
+/// How far from the camera a tree shows its full version before fading to its impostor (impostor.rs), or to its
+/// middle version for a tree with none, and over how many metres it fades. In the forest lab (crates/forest_lab), from
+/// the air, a swap at 150 m over 12 m changed trees' shapes in 17 frames of 238, over 40 m in 4, and at 200 m over 40 m
+/// in none; on the forest flight that cost 14.8 ms of GPU time a frame, against 11.4 at 150 m over 12 m.
+const TREE_LOD_M: f32 = 200.0;
+const TREE_FADE_M: f32 = 40.0;
+/// Where a tree's shadow has faded out, by the tree's distance from the camera, and over how many metres before it fades:
+/// within the nearest a tree in a far tile can be, which casts no shadow, so no shadow appears at once as a far tile
+/// turns blending.
+const CASTER_END_M: f32 = crate::tiles::FAR_M + crate::tiles::BLEND_M
+    - crate::tiles::KEEP_MARGIN_M
+    - crate::tiles::TILE_M * std::f32::consts::SQRT_2 / 2.0;
+const CASTER_FADE_M: f32 = 30.0;
+/// Over how many metres a full tile's small plants fade to their middle versions.
+const SMALL_FADE_M: f32 = 16.0;
+
+/// The version a tree drawn as its impostor casts its shadow with, of those its model `has`: its lowest, the middle
+/// version, else the far one, else the full one. The exporter names that version's alpha textures (model/source.rs).
+fn caster(has: impl Fn(&str) -> bool) -> &'static str {
+    ["middle", "far"].into_iter().find(|name| has(name)).unwrap_or("full")
+}
+
+/// Where a full tile's small plants fade to their middle versions, and over how many metres, given how far tiles
+/// show their full versions: done before the nearest merged square of a tile turning middle, whose centre is within
+/// half a square's diagonal of the tile's centre, comes that near.
+fn small_lod_m(full_m: f32) -> Option<(f32, f32)> {
+    let lod = full_m - MERGED_SQUARE_M * std::f32::consts::FRAC_1_SQRT_2 - 6.0 - SMALL_FADE_M / 2.0;
+    (lod > SMALL_FADE_M).then_some((lod, SMALL_FADE_M))
 }
 
 /// Copies spawned from their model, which may still be loading its textures.
@@ -142,6 +191,8 @@ struct FarTiles(HashMap<Entity, FarTile>);
 struct FarTile {
     /// The tile's data nodes, which may hold plants with far versions.
     nodes: Vec<Entity>,
+    /// Whether its far versions fade in past the far distance, beside the middle versions fading out.
+    blend: bool,
     /// The node the merged meshes are spawned under.
     anchor: Option<Entity>,
     groups: Vec<FarGroup>,
@@ -208,12 +259,16 @@ fn read(
         };
         let far = (copies.detail == "middle" && spawning.is_some_and(Spawning::far)).then_some(tile);
         if far.is_some() {
-            far_tiles.0.entry(tile).or_default().nodes.push(entity);
+            let far_tile = far_tiles.0.entry(tile).or_default();
+            far_tile.nodes.push(entity);
+            far_tile.blend |= spawning.is_some_and(Spawning::blend);
         }
         let waiting = Waiting {
             model: assets.load(model),
             middle: copies.detail == "middle",
             far,
+            blend: far.is_some() && spawning.is_some_and(Spawning::blend),
+            kept: spawning.is_some_and(Spawning::far),
             instances: copies.instances,
             jobs: None,
         };
@@ -232,6 +287,7 @@ struct Models<'w> {
 #[derive(SystemParam)]
 struct Materials<'w> {
     swaying: SwayingMaterials<'w>,
+    impostors: Impostors<'w>,
     painted: PaintedMaterials<'w>,
     moving: MovingPaintedMaterials<'w>,
     water: WaterMaterials<'w>,
@@ -257,8 +313,10 @@ fn spawn(
     mut far_tiles: ResMut<FarTiles>,
     roots: Query<(), With<WorldAssetRoot>>,
     loaded: Option<Res<Loaded>>,
+    settings: Res<hakuba_settings::Settings>,
 ) {
     let times = if loaded.is_some() { 1 } else { UNDER_SPLASH };
+    let small_lod = small_lod_m(settings.detail.full_m());
     let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE * times, instances: INSTANCES_PER_UPDATE * times };
     'copies: for (entity, mut waiting) in &mut waiting {
         if waiting.jobs.is_none() {
@@ -269,6 +327,7 @@ fn spawn(
             let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
             let has_middle = gltf.named_nodes.contains_key("middle");
             let far = waiting.far.filter(|_| gltf.named_nodes.contains_key("far"));
+            let kept = waiting.kept;
             // A prop's separate middle version holds only its `middle` node, which a middle tile shows.
             let main = if far.is_some() {
                 "far"
@@ -285,23 +344,61 @@ fn spawn(
             let Some(main_node) = models.nodes.get(main_handle) else { continue };
             let collision = gltf.named_nodes.contains_key("collision");
             let solid = !collision && model_extras(main_node).is_some_and(|extras| extras.solid);
-            let mut versions = match (waiting.middle, has_middle) {
-                _ if far.is_some() => vec![("far", Role::Both)],
-                (true, true) => vec![("middle", Role::Both)],
-                (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
-                (_, false) => vec![("full", Role::Both)],
-            };
+            let full_vertices = gltf
+                .named_nodes
+                .get("full")
+                .and_then(|n| models.nodes.get(n))
+                .map_or(0, |n| vertices(&models.meshes, &meshes, n));
+            // A tree with an impostor shows it past `TREE_LOD_M` in every tile, near or far, and casts its shadow with
+            // its lowest version.
+            let full_node = gltf.named_nodes.get("full").and_then(|n| models.nodes.get(n));
+            let baked = full_node
+                .and_then(|node| node.extras.as_ref())
+                .and_then(|extras| serde_json::from_str::<serde_json::Value>(&extras.value).ok())
+                .and_then(|extras| {
+                    Some((
+                        Baked::of(&extras)?,
+                        serde_json::from_value::<SourceProfile>(extras.get("source_foliage")?.clone()).ok()?,
+                    ))
+                })
+                .filter(|_| full_vertices >= MERGE_BELOW_VERTICES);
+            // A tree in a full tile shows its full version near the camera and its middle one, or its impostor, past
+            // `TREE_LOD_M`, each copy on its own, crossfading, as a tree's level of detail is picked per copy.
+            let per_copy = (has_middle || baked.is_some()) && full_vertices >= MERGE_BELOW_VERTICES;
+            // A full tile's small plants fade to their middle versions before the tile becomes middle.
+            let small = small_lod.filter(|_| !per_copy && far.is_none() && !waiting.middle && has_middle);
+            let mut versions = versions(
+                Holding {
+                    middle_tile: waiting.middle,
+                    far_tile: waiting.far.is_some(),
+                    blend_tile: waiting.blend,
+                    has_middle,
+                    has_far: gltf.named_nodes.contains_key("far"),
+                    impostor: baked.is_some(),
+                    per_copy,
+                    small: small.is_some(),
+                },
+                caster(|name| gltf.named_nodes.contains_key(name)),
+            );
+            let blend = far.is_some() && waiting.blend && has_middle;
             if collision {
                 versions.push(("collision", Role::Collision));
             }
             let mut shown = Vec::with_capacity(versions.len());
             for (name, role) in versions {
-                let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
+                let looked_up = if name == "impostor" { "full" } else { name };
+                let Some(node) = gltf.named_nodes.get(looked_up).and_then(|node| models.nodes.get(node)) else {
                     warn!("a model has no {name} node");
                     commands.entity(entity).remove::<Waiting>();
                     continue 'copies;
                 };
-                let mut parts = if matches!(role, Role::Collision) {
+                let mut parts = if name == "impostor" {
+                    let (baked, profile) = baked.as_ref().expect("an impostor version has its bake");
+                    let Some(path) = waiting.model.path() else { continue 'copies };
+                    let (material, quad) =
+                        materials.impostors.of(&path.path().to_string_lossy(), baked, profile, &mut meshes);
+                    vec![(quad, Look::Impostor(material, baked.clone()))]
+                } else if matches!(role, Role::Collision) {
                     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else {
                         continue 'copies;
                     };
@@ -338,7 +435,62 @@ fn spawn(
                         *look = Look::Water(material.clone());
                     }
                 }
-                shown.push((node, parts, role));
+                let (lod, fade) = (TREE_LOD_M, TREE_FADE_M);
+                let detail = |range| Some(Ranged { range, detail: true });
+                let range = per_copy
+                    .then(|| match (name, role) {
+                        ("full", Role::Seen | Role::Both) => detail(VisibilityRange {
+                            start_margin: 0.0..0.0,
+                            end_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            use_aabb: false,
+                        }),
+                        ("middle" | "impostor", Role::Seen) => detail(VisibilityRange {
+                            start_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                            use_aabb: false,
+                        }),
+                        // A shadow's reach follows the tiles' streaming distances, not the view.
+                        (_, Role::Shadow) => Some(Ranged {
+                            range: VisibilityRange {
+                                start_margin: 0.0..0.0,
+                                end_margin: CASTER_END_M - CASTER_FADE_M..CASTER_END_M,
+                                use_aabb: false,
+                            },
+                            detail: false,
+                        }),
+                        _ => None,
+                    })
+                    .flatten();
+                let range = range.or_else(|| {
+                    let (lod, fade) = small?;
+                    match (name, role) {
+                        ("full", _) => detail(VisibilityRange {
+                            start_margin: 0.0..0.0,
+                            end_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            use_aabb: true,
+                        }),
+                        ("middle", Role::Seen) => detail(VisibilityRange {
+                            start_margin: lod - fade / 2.0..lod + fade / 2.0,
+                            end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                            use_aabb: true,
+                        }),
+                        _ => None,
+                    }
+                });
+                // A blending tile's merged middle versions fade out around the far distance, by their own centres.
+                let far_m = crate::tiles::FAR_M;
+                let half = crate::tiles::BLEND_FADE_M / 2.0;
+                let range = range.or_else(|| {
+                    (blend && name == "middle").then(|| Ranged {
+                        range: VisibilityRange {
+                            start_margin: 0.0..0.0,
+                            end_margin: far_m - half..far_m + half,
+                            use_aabb: true,
+                        },
+                        detail: false,
+                    })
+                });
+                shown.push((name, node, parts, role, range));
             }
             let transforms: Vec<Transform> = waiting
                 .instances
@@ -351,7 +503,7 @@ fn spawn(
                 })
                 .collect();
             let mut jobs = VecDeque::new();
-            for (node, parts, role) in shown {
+            for (name, node, parts, role, range) in shown {
                 let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
                 let shadow_distance = match shadow_distance(node) {
                     Ok(distance) => distance,
@@ -367,8 +519,10 @@ fn spawn(
                 if matches!(role, Role::Shadow) && !shadows {
                     continue;
                 }
-                let vertices = vertices(&models.meshes, &meshes, node);
-                let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
+                let vertices = if name == "impostor" { 4 } else { vertices(&models.meshes, &meshes, node) };
+                let merge = range.as_ref().is_none_or(|ranged| ranged.range.use_aabb)
+                    && vertices < MERGE_BELOW_VERTICES
+                    && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
                     let material = node
                         .mesh
@@ -390,6 +544,7 @@ fn spawn(
                     let vertices = source.count_vertices().max(1);
                     // A far tile is seen whole or not at all, so its alike far versions merge as one.
                     if let Some(tile) = far
+                        && (name == "far" || (name == "impostor" && !blend))
                         && merge
                         && !solid
                         && let Some(far_tile) = far_tiles.0.get_mut(&tile)
@@ -405,7 +560,8 @@ fn spawn(
                         continue;
                     }
                     if merge {
-                        let squares: Vec<Vec<Transform>> = if shadows {
+                        // Copies fading by distance merge by square, so each square fades by its own centre.
+                        let squares: Vec<Vec<Transform>> = if shadows || range.is_some() {
                             squares(&transforms, MERGED_SQUARE_M).collect()
                         } else {
                             vec![transforms.clone()]
@@ -425,6 +581,8 @@ fn spawn(
                                 transforms: square,
                                 cursor: 0,
                                 combined: None,
+                                range: range.clone(),
+                                kept,
                             });
                         }
                     } else {
@@ -442,6 +600,8 @@ fn spawn(
                             transforms: transforms.clone(),
                             cursor: 0,
                             combined: None,
+                            range: range.clone(),
+                            kept,
                         });
                     }
                 }
@@ -463,10 +623,21 @@ fn spawn(
             continue;
         }
         for group in tile.groups.drain(..) {
-            let (Some(anchor), Some(mesh)) = (tile.anchor, group.mesh) else { continue };
+            let (Some(anchor), Some(mut mesh)) = (tile.anchor, group.mesh) else { continue };
+            // Kept on the CPU too, so the distant blocks can merge it (blocks.rs).
+            mesh.asset_usage = RenderAssetUsages::default();
             let mut part = commands.spawn((Mesh3d(meshes.add(mesh)), Transform::IDENTITY, ChildOf(anchor)));
             insert_look(&mut part, &group.look);
             part.insert(NotShadowCaster);
+            if tile.blend {
+                let far_m = crate::tiles::FAR_M;
+                let half = crate::tiles::BLEND_FADE_M / 2.0;
+                part.insert(VisibilityRange {
+                    start_margin: far_m - half..far_m + half,
+                    end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                    use_aabb: true,
+                });
+            }
         }
         for &node in &tile.nodes {
             if let Ok(mut node) = commands.get_entity(node) {
@@ -514,7 +685,9 @@ impl FarTile {
                 let range = copies.cursor..copies.cursor + count;
                 copies.cursor += count;
                 budget.vertices -= count * copies.vertices;
-                let Some(chunk) = merged(meshes, &copies.mesh, &copies.transforms[range], false) else { continue };
+                let Some(chunk) = merged(meshes, &copies.mesh, &group.look, &copies.transforms[range], false) else {
+                    continue;
+                };
                 match &mut group.mesh {
                     Some(mesh) => {
                         if let Err(error) = mesh.merge(&chunk) {
@@ -570,11 +743,14 @@ fn place(
                 break;
             }
             let range = job.cursor..job.cursor + count;
-            let Some(combined) = merged(meshes, &job.mesh, &job.transforms[range], job.solid) else {
+            let Some(mut combined) = merged(meshes, &job.mesh, &job.look, &job.transforms[range], job.solid) else {
                 job.cursor += count;
                 budget.vertices -= count * job.vertices;
                 continue;
             };
+            if job.kept {
+                combined.asset_usage = RenderAssetUsages::default();
+            }
             budget.vertices -= count * job.vertices;
             // Keep each range-culled caster's existing chunk bounds: joining them could change which shadows it casts.
             let accumulate = !job.solid
@@ -619,7 +795,7 @@ fn place(
                             let weight = colours.iter().map(|c| c[0].abs()).fold(0.0, f32::max);
                             Some(profile.shadow_motion_bound(weight))
                         }
-                        Look::Still(_) | Look::Painted(_) | Look::Water(_) => Some((0.0, 0.0)),
+                        Look::Still(_) | Look::Painted(_) | Look::Water(_) | Look::Impostor(..) => Some((0.0, 0.0)),
                         // Unbounded motion cannot safely be range-culled.
                         Look::Swaying(_) | Look::MovingPainted(_) => return None,
                     },
@@ -653,6 +829,12 @@ fn place(
             part.insert(bounds);
         }
         mark_solid(&mut part, job.solid);
+        if let Some(Ranged { range, detail }) = &job.range {
+            part.insert(range.clone());
+            if *detail {
+                part.insert(Detail(range.clone()));
+            }
+        }
         if !matches!(job.role, Role::Collision) {
             insert_look(&mut part, &job.look);
         }
@@ -736,7 +918,7 @@ fn triangle_keys(mesh: &Mesh) -> Vec<[[u32; 3]; 3]> {
         .collect()
 }
 
-fn insert_look(part: &mut EntityCommands, look: &Look) {
+pub(crate) fn insert_look(part: &mut EntityCommands, look: &Look) {
     match look {
         Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
         Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
@@ -745,6 +927,7 @@ fn insert_look(part: &mut EntityCommands, look: &Look) {
         Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
         Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
         Look::Water(material) => part.insert(MeshMaterial3d(material.clone())),
+        Look::Impostor(material, _) => part.insert(MeshMaterial3d(material.clone())),
     };
 }
 
@@ -809,9 +992,9 @@ fn cull_shadows(
         let outside = (camera.translation() - centre).abs() - extent;
         let should_disable = loaded.is_some() && outside.max(Vec3::ZERO).length_squared() > range.distance.powi(2);
         if should_disable && !disabled {
-            commands.entity(entity).insert(NotShadowCaster);
+            commands.entity(entity).try_insert(NotShadowCaster);
         } else if !should_disable && disabled {
-            commands.entity(entity).remove::<NotShadowCaster>();
+            commands.entity(entity).try_remove::<NotShadowCaster>();
         }
     }
 }
@@ -822,8 +1005,48 @@ fn mark_solid(part: &mut EntityCommands, solid: bool) {
     }
 }
 
+/// What a tile holds a model's copies as, and which versions the model has.
+#[derive(Clone, Copy, Debug)]
+struct Holding {
+    middle_tile: bool,
+    far_tile: bool,
+    blend_tile: bool,
+    has_middle: bool,
+    has_far: bool,
+    impostor: bool,
+    /// Each copy picks its own version by its distance (a tree).
+    per_copy: bool,
+    /// A full tile's small plant, fading to its middle version.
+    small: bool,
+}
+
+/// The versions a tile shows of a model, and what for. A tree with an impostor shows its full version out to
+/// `TREE_LOD_M` whichever tile holds it, a middle or blending one too: every tile within that reach is one of these. An
+/// impostor looks the same at every distance, so a blending tile has nothing else to blend, and a far tile shows only
+/// it. Its shadow is cast by `caster`, its lowest version.
+fn versions(holding: Holding, caster: &'static str) -> Vec<(&'static str, Role)> {
+    let Holding { middle_tile, far_tile, blend_tile, has_middle, has_far, impostor, per_copy, small } = holding;
+    let far = far_tile && has_far;
+    let blend = far && blend_tile && has_middle;
+    match (middle_tile, has_middle) {
+        _ if impostor && (blend_tile || !far_tile) => {
+            vec![("full", Role::Seen), ("impostor", Role::Seen), (caster, Role::Shadow)]
+        }
+        _ if impostor => vec![("impostor", Role::Seen)],
+        // A blending tile shows both, the middle version fading out where the far fades in.
+        _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
+        _ if far => vec![("far", Role::Both)],
+        (true, true) => vec![("middle", Role::Both)],
+        (false, true) if per_copy || small => {
+            vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
+        }
+        (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
+        (_, false) => vec![("full", Role::Both)],
+    }
+}
+
 /// What a version of a model is spawned for.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Role {
     /// To be seen and, if the model's extras let it, to cast its shadow.
     Both,
@@ -1021,7 +1244,17 @@ fn squares(transforms: &[Transform], side: f32) -> impl Iterator<Item = Vec<Tran
 }
 
 /// One mesh holding `mesh` once per transform. Solid meshes also stay on the CPU for raycasts.
-fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], solid: bool) -> Option<Mesh> {
+fn merged(
+    meshes: &Assets<Mesh>,
+    mesh: &Handle<Mesh>,
+    look: &Look,
+    transforms: &[Transform],
+    solid: bool,
+) -> Option<Mesh> {
+    // An impostor's quads carry each tree's placement in their vertices, which moving a quad would not change.
+    if let Look::Impostor(_, baked) = look {
+        return Some(crate::impostor::quads(baked, transforms, RenderAssetUsages::RENDER_WORLD));
+    }
     let mesh = meshes.get(mesh)?;
     let mut merged = mesh.clone().transformed_by(*transforms.first()?);
     for &transform in &transforms[1..] {
@@ -1033,7 +1266,7 @@ fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], 
 
 /// How a part looks: its material as the model has it, or its swaying version.
 #[derive(Clone)]
-enum Look {
+pub(crate) enum Look {
     Still(Handle<StandardMaterial>),
     Swaying(Handle<Swaying>),
     SourceFoliage(Handle<SourceFoliage>, SourceProfile),
@@ -1041,10 +1274,11 @@ enum Look {
     Painted(Handle<Painted>),
     MovingPainted(Handle<MovingPainted>),
     Water(Handle<WaterMaterial>),
+    Impostor(Handle<Impostor>, Baked),
 }
 
 impl Look {
-    fn id(&self) -> UntypedAssetId {
+    pub(crate) fn id(&self) -> UntypedAssetId {
         match self {
             Look::Still(material) => material.id().untyped(),
             Look::Swaying(material) => material.id().untyped(),
@@ -1053,6 +1287,7 @@ impl Look {
             Look::Painted(material) => material.id().untyped(),
             Look::MovingPainted(material) => material.id().untyped(),
             Look::Water(material) => material.id().untyped(),
+            Look::Impostor(material, _) => material.id().untyped(),
         }
     }
 }
@@ -1067,6 +1302,58 @@ fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMa
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_tree_with_an_impostor_shows_only_it_or_its_full_version_in_every_tile() {
+        for bits in 0..64u32 {
+            let bit = |i: u32| bits & (1 << i) != 0;
+            let holding = Holding {
+                middle_tile: bit(0),
+                far_tile: bit(1),
+                blend_tile: bit(1) && bit(2),
+                has_middle: bit(3),
+                has_far: bit(4),
+                impostor: true,
+                per_copy: true,
+                small: bit(5),
+            };
+            let caster = caster(|name| (name == "middle" && holding.has_middle) || (name == "far" && holding.has_far));
+            let shown = versions(holding, caster);
+            for &(name, role) in &shown {
+                assert!(
+                    !matches!(role, Role::Seen | Role::Both) || matches!(name, "full" | "impostor"),
+                    "{holding:?} shows its {name}"
+                );
+            }
+            assert!(shown.contains(&("impostor", Role::Seen)), "{holding:?} shows no impostor");
+            assert_eq!(
+                shown.contains(&("full", Role::Seen)),
+                !holding.far_tile || holding.blend_tile,
+                "{holding:?}: a full version in every tile within its reach, and none past"
+            );
+        }
+        assert_eq!(caster(|_| false), "full");
+        assert_eq!(caster(|name| name == "far"), "far");
+        assert_eq!(caster(|_| true), "middle");
+    }
+
+    #[test]
+    fn every_tree_shadow_fades_out_before_a_far_tile_could_hold_it() {
+        // A far tile turns blending once its centre is within this, and its nearest tree is a half diagonal nearer.
+        let nearest_far_tree = crate::tiles::FAR_M + crate::tiles::BLEND_M
+            - crate::tiles::KEEP_MARGIN_M
+            - crate::tiles::TILE_M * std::f32::consts::SQRT_2 / 2.0;
+        assert!(CASTER_END_M <= nearest_far_tree);
+        assert!(CASTER_END_M - CASTER_FADE_M >= TREE_LOD_M + TREE_FADE_M / 2.0, "a tree casts in full while full");
+    }
+
+    #[test]
+    fn no_tree_within_full_reach_stands_in_a_far_tile() {
+        // A far tile shows only impostors, so every tile holding a tree still fading from its full version is middle
+        // or blending: its centre at most half a tile's diagonal farther than the tree, with the tiles' 64 m grid.
+        let reach = TREE_LOD_M + TREE_FADE_M / 2.0 + crate::tiles::TILE_M * std::f32::consts::SQRT_2 / 2.0;
+        assert!(reach <= crate::tiles::FAR_M + crate::tiles::BLEND_M - crate::tiles::KEEP_MARGIN_M);
+    }
 
     #[test]
     fn collision_material_keys_match_reordered_drawn_faces_not_nearby_layers() {
@@ -1152,7 +1439,14 @@ mod tests {
             let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
             let vertices = app.world().resource::<Assets<Mesh>>().get(&mesh).unwrap().count_vertices();
             let transforms: Vec<_> = (0..1200).map(|x| Transform::from_xyz(x as f32, 0.0, 0.0)).collect();
-            let expected = merged(app.world().resource::<Assets<Mesh>>(), &mesh, &transforms, true).unwrap();
+            let expected = merged(
+                app.world().resource::<Assets<Mesh>>(),
+                &mesh,
+                &Look::Still(Handle::default()),
+                &transforms,
+                true,
+            )
+            .unwrap();
             let jobs = VecDeque::from([Job {
                 mesh,
                 material: String::new(),
@@ -1167,6 +1461,8 @@ mod tests {
                 transforms,
                 cursor: 0,
                 combined: None,
+                range: None,
+                kept: false,
             }]);
             let owner = app.world_mut().spawn(TestJobs(jobs)).id();
             let step = move |mut commands: Commands,
@@ -1210,7 +1506,14 @@ mod tests {
                         .with_scale(Vec3::splat(0.5 + x as f32 * 0.1))
                 })
                 .collect();
-            let expected = merged(app.world().resource::<Assets<Mesh>>(), &mesh, &transforms, false).unwrap();
+            let expected = merged(
+                app.world().resource::<Assets<Mesh>>(),
+                &mesh,
+                &Look::Still(Handle::default()),
+                &transforms,
+                false,
+            )
+            .unwrap();
             let owner = app
                 .world_mut()
                 .spawn(TestJobs(VecDeque::from([Job {
@@ -1227,6 +1530,8 @@ mod tests {
                     transforms,
                     cursor: 0,
                     combined: None,
+                    range: None,
+                    kept: false,
                 }])))
                 .id();
             let step = move |mut commands: Commands,
@@ -1294,6 +1599,8 @@ mod tests {
                 transforms: vec![Transform::IDENTITY, Transform::from_xyz(5.0, 0.0, 0.0)],
                 cursor: 0,
                 combined: None,
+                range: None,
+                kept: false,
             }])))
             .id();
         let step = move |mut commands: Commands,
@@ -1336,6 +1643,8 @@ mod tests {
                 transforms: vec![Transform::IDENTITY],
                 cursor: 0,
                 combined: None,
+                range: None,
+                kept: false,
             })
             .collect();
         let owner = app.world_mut().spawn(TestJobs(jobs)).id();
@@ -1451,6 +1760,8 @@ mod tests {
             transforms,
             cursor: 0,
             combined: None,
+            range: None,
+            kept: false,
         }]);
         let owner = app.world_mut().spawn(TestJobs(jobs)).id();
         let step =
@@ -1500,6 +1811,8 @@ mod tests {
                         transforms: vec![Transform::from_xyz(4.0, 0.0, 0.0)],
                         cursor: 0,
                         combined: None,
+                        range: None,
+                        kept: false,
                     }])),
                 ))
                 .id();
@@ -1559,7 +1872,7 @@ mod tests {
             let mut meshes = app.world_mut().resource_mut::<Assets<Mesh>>();
             let cube = meshes.add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
             let copies = [Transform::from_xyz(4.0, 0.0, 0.0), Transform::from_xyz(6.0, 0.0, 0.0)];
-            let combined = merged(&meshes, &cube, &copies, true).unwrap();
+            let combined = merged(&meshes, &cube, &Look::Still(Handle::default()), &copies, true).unwrap();
             assert!(combined.asset_usage.contains(RenderAssetUsages::MAIN_WORLD));
             (cube, meshes.add(combined))
         };

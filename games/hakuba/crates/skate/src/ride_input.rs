@@ -67,8 +67,9 @@ pub fn read(
     }
     let axis = |v: f32| (v.clamp(-1.0, 1.0) * 32767.0).round() as i16;
     if input.active_pad.is_some() {
-        let left = input.raw_left.to_array().map(axis);
-        let right = input.raw_right.to_array().map(axis);
+        // The simulation's frame is a mirror of the world's (frame.rs), so the sticks' left and right are mirrored too.
+        let left = Vec2::new(-input.raw_left.x, input.raw_left.y).to_array().map(axis);
+        let right = Vec2::new(-input.raw_right.x, input.raw_right.y).to_array().map(axis);
         input.history.observe(now, now, left, right);
     }
     for reading in fine_readings.read() {
@@ -136,7 +137,6 @@ pub fn read(
             (GamepadButton::South, 0x1000),
             (GamepadButton::East, 0x2000),
             (GamepadButton::West, 0x4000),
-            (GamepadButton::North, 0x8000),
             (GamepadButton::LeftTrigger, 0x0100),
             (GamepadButton::RightTrigger, 0x0200),
             (GamepadButton::LeftThumb, 0x0040),
@@ -156,8 +156,9 @@ pub fn read(
         if pad.pressed(GamepadButton::LeftTrigger) && input.raw_left.y > 0.5 {
             buttons |= TRANSFER;
         }
-        toggle |= pad.just_pressed(GamepadButton::Select);
-        recover |= pad.just_pressed(GamepadButton::Start);
+        // Triangle steps onto the board and off it at once, so the native step-off (Y) is never sent.
+        toggle |= pad.just_pressed(GamepadButton::North) || pad.just_pressed(GamepadButton::Select);
+        // Options pauses; Cross is the native get-up after a bail, so it needs no binding of its own here.
     }
     if status.on_foot {
         if keys.any_pressed([KeyCode::KeyW, KeyCode::KeyS]) {
@@ -186,6 +187,7 @@ pub fn read(
     if input.recovery_pending {
         buttons |= 0x1000;
     }
+    let (left, right) = (Vec2::new(-left.x, left.y), Vec2::new(-right.x, right.y));
     input.packet =
         Controls { buttons, triggers, left: [axis(left.x), axis(left.y)], right: [axis(right.x), axis(right.y)] };
     input.toggle = toggle;

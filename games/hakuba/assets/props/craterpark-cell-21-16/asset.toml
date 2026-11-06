@@ -4,4 +4,4 @@ source = "src/model.glb"
 textures = ["craterpark-concrete", "craterpark-material-023", "craterpark-prado-magenta", "craterpark-prado-navy", "craterpark-prado-orange", "craterpark-prado-teal", "craterpark-prado-yellow"]
 own_textures = ["craterpark-prado-letters"]
 solid = true
-inputs_sha256 = "7efb68380c000822a105de5511f4ee3087ae2b438100d7761d09f7ef11ce8de1"
+inputs_sha256 = "a745f9dc61fcd643ce04fd9cee48d32fbb33afefdce1137a4bb61ba3553f13f7"

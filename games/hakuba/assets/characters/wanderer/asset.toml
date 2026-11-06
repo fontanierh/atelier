@@ -7,4 +7,4 @@ vertex_emission = 0.25
 authored_clips = ["idle", "walk", "interact"]
 authored_pelvis = "pelvis"
 authored_speeds = { walk = 0.90 }
-inputs_sha256 = "cd4a11fe776b4731af5009bddd3e70bec84ddb73ccbb208cdabe1e8c9f2dbab0"
+inputs_sha256 = "b55c8da87b7a5e578069729912bb84e9cc0b5a91723c42526b86e092ad6eb3a6"

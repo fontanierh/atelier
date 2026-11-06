@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/clatter_01.wav", "src/clatter_02.wav", "src/clatter_03.wav"]
 looped = false
 quality = 0.5
-inputs_sha256 = "2ef11e295c99fee8fe86afb09ff555093f826bb9a511122702d6cce3d19ecf0f"
+inputs_sha256 = "2ca0c22d9f266084675520ffbf4fb44bd9b13bbfe57f1797fe402ddd4d883e50"

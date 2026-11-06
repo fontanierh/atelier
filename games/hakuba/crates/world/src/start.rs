@@ -27,7 +27,7 @@ fn given() -> Option<String> {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn given() -> Option<String> {
-    std::env::var("HAKUBA_START").ok()
+    hakuba_screens::switch("HAKUBA_START")
 }
 
 #[cfg(test)]

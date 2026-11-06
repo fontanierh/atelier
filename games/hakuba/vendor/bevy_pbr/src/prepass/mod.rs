@@ -618,8 +618,11 @@ impl PrepassPipeline {
         // The fragment shader is only used when the normal prepass or motion vectors prepass
         // is enabled, the material uses alpha cutoff values and doesn't rely on the standard
         // prepass shader, or we are emulating unclipped depth in the fragment shader.
+        // Hakuba: a caster fading by its visibility range dithers in the shadow pass too, so its shadow fades rather than
+        // appearing at once.
         let fragment_required = !targets.is_empty()
             || emulate_unclipped_depth
+            || mesh_key.contains(MeshPipelineKey::VISIBILITY_RANGE_DITHER)
             || (mesh_key.contains(MeshPipelineKey::MAY_DISCARD)
                 && material_properties
                     .get_shader(PrepassFragmentShader)

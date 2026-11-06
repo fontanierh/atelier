@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/land_metal_01.wav", "src/land_metal_02.wav", "src/land_metal_03.wav"]
 looped = false
 quality = 0.5
-inputs_sha256 = "f45086680bd028986820f595834329c5fe53402d658f2113e065fcff95029e3e"
+inputs_sha256 = "1b7bbbef6d0be9d8195a525789f3811cbeb2f5162a4c576602c85fca8b1c8bcb"

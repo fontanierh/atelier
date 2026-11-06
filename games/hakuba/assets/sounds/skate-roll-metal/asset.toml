@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/roll_metal_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "6700ec966f76b70c3943667025a6467e44f331a5748276b175dbc43d4ce46ee5"
+inputs_sha256 = "84e5bbe1bd30da841f1ecc2e31412719186bd00f7881c3969b554ed7755eab57"

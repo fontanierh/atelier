@@ -1,0 +1,25 @@
+# The forest lab: a small, repeatable forest for building and proving the trees' rendering. See README.md.
+[package]
+name = "hakuba_forest_lab"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "forest-lab"
+path = "src/main.rs"
+
+[[bin]]
+name = "lab-compare"
+path = "src/compare.rs"
+
+[dependencies]
+bevy.workspace = true
+hakuba_rendering.workspace = true
+hakuba_world.workspace = true
+serde_json.workspace = true
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+
+# The vendored Metal backend times the GPU's work. See vendor/README.md.
+[target.'cfg(target_os = "macos")'.dependencies]
+wgpu-hal = "30"

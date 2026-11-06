@@ -1,6 +1,6 @@
 // Source foliage colors encode wind and canopy depth, not an albedo tint.
 import bevy_pbr::render::{
-    forward_io::{FragmentOutput, VertexOutput},
+    forward_io::{FragmentOutput, VertexOutput, Varyings, vertex_output},
     mesh_view_bindings::view,
     pbr_fragment::pbr_input_from_standard_material,
     pbr_functions::{alpha_discard, apply_pbr_lighting, main_pass_post_lighting_processing},
@@ -11,7 +11,11 @@ struct FoliageProfile { direction: vec4<f32>, slow: vec4<f32>, fast: vec4<f32>, 
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var<uniform> profile: FoliageProfile;
 
 @fragment
-fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+    let input = vertex_output(varyings);
+    // A level of detail fading in or out by distance dithers its pixels away, as Bevy's own fragment shader does.
+    @if(VISIBILITY_RANGE_DITHER)
+    bevy_pbr::render::pbr_functions::visibility_range_dither(input.position, input.visibility_range_dither);
     var neutral = input;
     @if(VERTEX_COLORS)
     neutral.color = vec4<f32>(1.0);
@@ -24,9 +28,12 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
     let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
         == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
     var out: FragmentOutput;
+    // Without `MAY_DISCARD` the depth prepass has cut the leaves out already, and the main pass draws only there.
+    @if(MAY_DISCARD)
     if masked && surface.material.base_color.a < surface.material.alpha_cutoff {
         discard;
-    } else {
+    }
+    {
         surface.material.base_color = alpha_discard(flags, surface.material.alpha_cutoff, surface.material.base_color);
         let depth = max(-(view.view_from_world * input.world_position).z, 0.0);
         let haze = 1.0 - exp(-max(depth - profile.push_haze.z, 0.0) / profile.push_haze.w);
@@ -37,7 +44,10 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
         surface.material.emissive = vec4<f32>(profile.haze_colour.xyz * haze, 1.0);
         out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
     }
-    @if(FORWARD_MOTION)
+    @if(FORWARD_MOTION && VERTEX_PREVIOUS_POSITION)
     out.motion_vector = bevy_pbr::render::motion_vectors::calculate(input.world_position, input.previous_world_position);
+    @if(FORWARD_MOTION && !VERTEX_PREVIOUS_POSITION)
+    out.motion_vector = bevy_pbr::render::motion_vectors::calculate(
+        input.world_position, bevy_pbr::render::mesh_functions::previous_world_position(input.world_position, input.motion_instance));
     return out;
 }

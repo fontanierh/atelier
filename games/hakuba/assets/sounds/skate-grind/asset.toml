@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/grind_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "2c22ac717c6a6fc18295cb5f6ef94370456e76415450a9fa96c65af67f19fe51"
+inputs_sha256 = "5d6abdc278cf64389379a594d41d95669330da7fb3e96c02ceb6b57f9ef999df"

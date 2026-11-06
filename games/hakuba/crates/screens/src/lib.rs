@@ -13,7 +13,7 @@ impl Plugin for ScreensPlugin {
             .add_sub_state::<Pause>()
             .add_sub_state::<DevMode>()
             .add_systems(Startup, spawn_fps)
-            .add_systems(Update, (back, hover, show_fps))
+            .add_systems(Update, (back, hover, show_fps, choose_screen.run_if(not(resource_exists::<GameScreen>))))
             .add_systems(OnEnter(Pause::Paused), |mut time: ResMut<Time<Virtual>>| time.pause())
             .add_systems(OnExit(Pause::Paused), |mut time: ResMut<Time<Virtual>>| time.unpause());
     }
@@ -105,6 +105,79 @@ fn hover(mut buttons: Query<(&Hovered, &mut BackgroundColor), HoverChanged>) {
     }
 }
 
+/// A desktop switch for playtests and measurements: the value of the environment variable `name` (by convention
+/// `HAKUBA_…`), or None if it is unset. Never in the browser, and never a stored setting: the game plays the same
+/// without any.
+pub fn switch(name: &str) -> Option<String> {
+    #[cfg(not(target_arch = "wasm32"))]
+    return std::env::var(name).ok();
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = name;
+        None
+    }
+}
+
+/// How urgently macOS should run a thread: `Interactive` for the frame loop, which it then wakes on time, `Utility`
+/// for work in the background, which it then never favours over the game's own threads.
+#[derive(Clone, Copy)]
+pub enum ThreadClass {
+    Interactive,
+    Utility,
+}
+
+/// Runs the calling thread at `class` on macOS; elsewhere does nothing.
+pub fn run_this_thread_as(class: ThreadClass) {
+    #[cfg(target_os = "macos")]
+    // SAFETY: sets only the calling thread's own scheduling class.
+    unsafe {
+        unsafe extern "C" {
+            fn pthread_set_qos_class_self_np(class: u32, priority: i32) -> i32;
+        }
+        // QOS_CLASS_USER_INTERACTIVE and QOS_CLASS_UTILITY.
+        pthread_set_qos_class_self_np(
+            match class {
+                ThreadClass::Interactive => 0x21,
+                ThreadClass::Utility => 0x11,
+            },
+            0,
+        );
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = class;
+}
+
+/// The screen the game plays on, whose refresh rate paces its frames: the main screen, or with `HAKUBA_SCREEN=other`
+/// the first other screen (a laptop's own beside an external one), where the game opens fullscreen (src/main.rs), so a
+/// measurement can run on one screen while the other stays free. macOS names no screen usefully: winit calls each
+/// "Monitor #N". The screens are known only once the window is open, and a fullscreen window asked for another screen
+/// leaves fullscreen instead of moving, so with `other` the window opens windowed and goes fullscreen here.
+#[derive(Resource, Clone, Copy)]
+pub struct GameScreen(pub Entity);
+
+fn choose_screen(
+    mut commands: Commands,
+    screens: Query<(Entity, &bevy::window::Monitor, Has<bevy::window::PrimaryMonitor>)>,
+    mut window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+) {
+    let other = switch("HAKUBA_SCREEN").is_some_and(|value| value == "other");
+    let Some((entity, screen, _)) = screens.iter().find(|(_, _, primary)| *primary != other) else { return };
+    info!(
+        "SCREEN {} at {} Hz",
+        if other { "other" } else { "main" },
+        screen.refresh_rate_millihertz.map_or(0, |mhz| mhz / 1000)
+    );
+    if other && let Ok(mut window) = window.single_mut() {
+        window.mode = bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Entity(entity));
+    }
+    commands.insert_resource(GameScreen(entity));
+}
+
+/// Whether the desktop switch `name` is set to `1`.
+pub fn switched_on(name: &str) -> bool {
+    switch(name).is_some_and(|value| value == "1")
+}
+
 /// The frame rate, shown small in the top right corner of every screen, above what the screen puts there: how many
 /// frames the last whole second drew, and how long the slowest of them took, since a hitch shows only in the slowest.
 #[derive(Component)]
@@ -134,6 +207,18 @@ fn show_fps(time: Res<Time<Real>>, mut second: Local<Second>, mut shown: Single<
     second.slowest = second.slowest.max(frame);
     if second.elapsed >= 1.0 {
         shown.0 = format!("{} FPS  {:.0} ms", second.frames, second.slowest * 1000.0);
+        // On the Mac, the frames as the display showed them, from Metal's present times, rather than the game loop's.
+        #[cfg(target_os = "macos")]
+        {
+            let shown_frames = wgpu_hal::metal::frames::shown();
+            if shown_frames.count > 0 {
+                let (count, worst) = (shown_frames.count, shown_frames.worst_ms);
+                shown.0 = format!("{count} FPS  {worst:.0} ms");
+                info!("SHOWN {count} frames, {} over 17.5 ms, worst {worst:.1} ms", shown_frames.over);
+            }
+            let (created, megabytes, reused) = wgpu_hal::metal::frames::buffers();
+            info!("BUFFERS made {created} ({megabytes:.1} MB), reused {reused}");
+        }
         *second = Second::default();
     }
 }

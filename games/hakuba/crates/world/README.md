@@ -9,7 +9,8 @@ player with it and moves the camera. The settings change it as they change, and 
 ```text
 src/
   lib.rs         the plugin: spawns the sea and the camera, then reads the world's index for the spawn and tiles;
-                 makes any crossfading visibility range abrupt, since its dither shimmers
+                 in the browser makes any crossfading visibility range abrupt, since its fixed dither shimmers (on
+                 the desktop the vendored renderer moves the dither every frame, and crossfades stay)
   ground.rs      marks tile and scenery collision pending until a version activates, and casts rays at active solids
   collision.rs   publishes owned, ordered triangle snapshots with materials, grind lines and zones; a rider's
                  predictive focus pins complete full-detail tiles and reports installed coverage
@@ -19,10 +20,17 @@ src/
   painterly.rs   the painterly filter over the finished image
   painterly.wgsl its shader
   pixels.rs      draws the world into an image of the resolution the settings ask and stretches it over the window
-  tiles.rs       prepares each new detail version hidden, then swaps its visibility and collision together
+  blocks.rs      the distant land in blocks: once a block of 8 × 8 tiles is past 300 m its far tiles merge into one
+                 mesh per look, built on workers, the whole block at once and simplified for its distance in √2 steps,
+                 its far trees' cards thinned with distance; a block hidden behind nearer
+                 things in the last frame's depth grid (crates/rendering) is not drawn
+  tiles.rs       prepares each new detail version hidden, then swaps its visibility and collision together; around
+                 the far distance a tile shows both its plants' middle and far versions, crossfading
   scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models
                  per 32 m square when they cast shadows or whole tile otherwise; preparation is spread across updates.
-                 A tree or bush in a full tile shows its full version and casts its middle version's shadow;
+                 A tree or bush in a full tile shows its full version and casts its middle version's shadow; on the
+                 desktop a large tree crossfades, copy by copy, to its middle version past 65 m, and small plants
+                 before their tile turns middle;
                  model exports can mark their visible meshes solid
   vertex_paint.rs an opaque static vertex-colour material with asset-owned fill, glow bounds and haze
   vertex_paint.wesl its colour, emission and aerial-perspective shaders

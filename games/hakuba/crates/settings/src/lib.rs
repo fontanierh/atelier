@@ -108,9 +108,10 @@ impl Resolution {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum Shadows {
     Off,
-    /// Over 60 m, in two cascades: sharp within 20 m, then the trees and bushes along the road.
+    /// Over 300 m, in four cascades: sharp within 20 m, then fading out over the last fifth, far enough that a tree's
+    /// shadow is there long before the player reaches it.
     Near,
-    /// Over 150 m, in two cascades.
+    /// Over 500 m, in four cascades.
     Far,
 }
 
@@ -119,8 +120,8 @@ impl Shadows {
     pub fn reach(self) -> Option<(f32, usize)> {
         match self {
             Shadows::Off => None,
-            Shadows::Near => Some((60.0, 2)),
-            Shadows::Far => Some((150.0, 2)),
+            Shadows::Near => Some((300.0, 4)),
+            Shadows::Far => Some((500.0, 4)),
         }
     }
 }
@@ -177,7 +178,8 @@ impl FrameRate {
 /// a cap of 60 or more lets the browser pace the frames: a cap's own timer runs apart from the refreshes, so some
 /// frames waited for a second refresh, and a 60 cap drew 14 and 28 ms frames by turns, or 35 to 45 a second.
 fn hold_frame_rate(settings: Res<Settings>, mut commands: Commands) {
-    let most = settings.frame_rate.most().filter(|&most| !cfg!(target_arch = "wasm32") || most < 60.0);
+    // Native: 60 and over are paced on fixed deadlines by crates/pacing.
+    let most = settings.frame_rate.most().filter(|&most| most < 60.0);
     let mode = match most {
         Some(most) => UpdateMode::Reactive {
             wait: Duration::from_secs_f64(1.0 / most),

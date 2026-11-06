@@ -21,4 +21,8 @@ zip is written to the Downloads folder as `hakuba-notes-<seconds>.zip`.
 
 - `lib.rs` turns dev mode on and off, flies the camera and shows the keys.
 - `notes.rs` takes the notes and exports them.
+- `switches.rs` holds the desktop switches for playtests and measurements: `HAKUBA_DEV=SECONDS` turns dev mode on
+  that long after the world has loaded, so a scripted pad (crates/gamepad) can fly the camera to views the player only
+  reaches gliding; `HAKUBA_SHOT=PATH@SECONDS` saves the window's image that long after; `HAKUBA_TRIS=1` logs, every
+  two seconds, the triangles of the meshes in view by distance.
 - `zip.rs` writes the zip.

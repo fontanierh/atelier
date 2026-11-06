@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/pop_grass_01.wav", "src/pop_grass_02.wav", "src/pop_grass_03.wav"]
 looped = false
 quality = 0.5
-inputs_sha256 = "75380b8f78efaff36ea59c38c194118e26224d6dda6d847c355ba1502772724d"
+inputs_sha256 = "b8260dc9bb5c0d0ad39020b9f6b4b895114c49b28ae3f874109fe18c4e7fdf27"
