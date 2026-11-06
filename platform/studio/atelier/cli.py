@@ -1,16 +1,16 @@
 """The `atelier` command.
 
-    atelier new <game> [--title T]     start a new game from the sandbox (module, classes, project and paths renamed)
-    atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
-    atelier setup [--headless]         check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
+    atelier new <game> [--title T] [--engine unreal|bevy]   start a new game from its engine's template
+    atelier doctor <game>              check the game's engine tools (Unreal or cargo), ffmpeg, Python packages, sources
+    atelier setup [--headless]         Unreal: check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
     atelier pool publish|restore|status|abandon <game> <step>   share explicitly owned portable outputs (docs/ARTIFACT_POOL.md)
     atelier cache status|gc|pin|unpin|forget   inspect and prune automatic local product reuse
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    restore checkpoints and build changed tasks; --plan --explain
-    atelier play <game> [--profile P] [--memory-gib N] [-- unreal args]   launch the game under the render lock and memory guard
+    atelier play <game> [--profile P] [--memory-gib N] [-- game args]   launch the game under the render lock and memory guard
     atelier playtest <game> [--tag T] [--download-only] [-- launcher args]   play the latest GitHub release, downloading it if needed
-    atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
-    atelier live state|py|shot         talk to the running game through the live bridge
+    atelier stream <game> start|stop|status|build-web   Unreal: stream the game to a phone, a handheld or a browser
+    atelier live state|py|shot         Unreal: talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
     atelier board post|read|thread|task|supervise|retire|wait|status|serve ...   coordinate machine-local agents (docs/AGENT_BOARD.md)
     atelier pr-media push <key> FILE... [--remote R] [--dry-run]   publish PR screenshots/films under refs/pr-media/<key>, outside default clones
@@ -30,24 +30,24 @@ def _ok(flag, text):
 
 
 def doctor(game):
+    from . import engines
     ctx = Context(game)
     data = manifest.game(game)
-    print(f'{data.get("title", game)}: {ctx.game_dir}')
+    engine = engines.named(engines.name_of(data, ctx.game_dir))
+    print(f'{data.get("title", game)}: {ctx.game_dir} ({engine.name})')
     good = True
-    good &= _ok(ctx.unreal_cmd.exists(), f'Unreal Engine at {ctx.unreal_root} (set UE_ROOT to move it)')
-    blender = shutil.which(ctx.blender) or (ctx.blender if Path(ctx.blender).exists() else None)
-    version = ''
-    if blender:
-        result = subprocess.run([blender, '--version'], capture_output=True, text=True)
-        version = (result.stdout.splitlines() or [''])[0]
-    good &= _ok(bool(blender), f'Blender ({version or "not found; put blender on PATH or set BLENDER"})')
-    good &= _ok(bool(shutil.which('ffmpeg')), 'ffmpeg on PATH')
-    from .setup import mac_checks
-    for ok, message in mac_checks():
+    for ok, message in engine.checks(ctx, data):
         good &= _ok(ok, message)
+    if engine.name == 'unreal' or data.get('blender', False):   # Blender: Unreal games' imports, or a game that asks
+        blender = shutil.which(ctx.blender) or (ctx.blender if Path(ctx.blender).exists() else None)
+        version = ''
+        if blender:
+            result = subprocess.run([blender, '--version'], capture_output=True, text=True)
+            version = (result.stdout.splitlines() or [''])[0]
+        good &= _ok(bool(blender), f'Blender ({version or "not found; put blender on PATH or set BLENDER"})')
+    good &= _ok(bool(shutil.which('ffmpeg')), 'ffmpeg on PATH')
     for module in ('numpy', 'PIL', 'fontTools'):
         good &= _ok(importlib.util.find_spec(module) is not None, f'Python package {module} ({sys.executable})')
-    good &= _ok(ctx.uproject is not None and ctx.uproject.exists(), f'Unreal project {ctx.uproject}')
     for fetch in data.get('fetch', {}).get('needs', []):
         folder = paths.cache_dir(*fetch.split('/'))
         good &= _ok(any(folder.rglob('*.wav')), f'downloaded {fetch} in {folder} (run `atelier fetch {game}`)')
@@ -93,15 +93,13 @@ def play(game, profile, settings, extra, memory_gib=None):
         if settings:
             command += ['--settings', settings]
         return subprocess.call(command, env=ctx.env())
-    args = [a.replace('{run}', str(folder)) for a in spec.get('args', [])]   # {run}: this run's log folder (review output)
-    command = [str(ctx.unreal_app), str(ctx.uproject), *args, '-stdout', f'-abslog={folder / "game.log"}', *extra]
-    if settings:
-        command.append(f'-set={settings}')
+    from . import engines
+    command, env = engines.named(engines.name_of(data, ctx.game_dir)).launch(ctx, data, profile, spec, folder, settings, extra)
     from atelier.harness.safety import guarded
-    print(f'playing {game} ({profile}); log {folder / "game.log"}')
+    print(f'playing {game} ({profile}); logs in {folder}')
     if limit != GAME_GIB:
         print(f'memory guard limit {limit:g} GiB for this session')
-    return guarded.run(command, folder, timeout=float(spec.get('timeout', 0)), purpose=f'atelier play {game}', env=ctx.env(),
+    return guarded.run(command, folder, timeout=float(spec.get('timeout', 0)), purpose=f'atelier play {game}', env=ctx.env(env),
                        kind='game', limit_gib=limit)
 
 
@@ -163,6 +161,7 @@ def make_parser():
     from . import cache_admin
     cache_admin.configure(sub)
     p = sub.add_parser('new'); p.add_argument('game'); p.add_argument('--title')
+    p.add_argument('--engine', default='unreal', help='the engine the new game runs on: unreal (default) or bevy')
     p = sub.add_parser('doctor'); p.add_argument('game')
     p = sub.add_parser('setup'); p.add_argument('--headless', action='store_true')
     p.add_argument('--workers', type=int, default=3, help='headless compiler parallelism (default: 3)')
@@ -200,7 +199,7 @@ def make_parser():
     p.add_argument('--set', default='', help='settings overrides, key=value;key=value')
     p.add_argument('--memory-gib', type=float, default=None,
                    help='memory guard limit for this session, 10 (the default) to 24 GiB; full broker admission still required')
-    p.add_argument('extra', nargs='*', help='Unreal arguments, after --')
+    p.add_argument('extra', nargs='*', help='game arguments, after --')
     p = sub.add_parser('playtest'); p.add_argument('game')
     p.add_argument('--tag', help='this release instead of the latest')
     p.add_argument('--download-only', action='store_true', help='download and unpack it, without playing')
@@ -252,7 +251,7 @@ def main(argv=None):
         return board.main(args)
     if args.command == 'new':
         from . import new
-        return new.main(args.game, args.title)
+        return new.main(args.game, args.title, args.engine)
     if args.command == 'doctor':
         return doctor(args.game)
     if args.command == 'setup':

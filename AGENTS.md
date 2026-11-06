@@ -1,6 +1,6 @@
 # Working rules
 
-Atelier builds 3D games with Unreal Engine 5.8 and Blender from scripts and AI tools. [README.md](README.md) says what
+Atelier builds 3D games with Unreal Engine 5.8 or Bevy (Rust), and Blender, from scripts and AI tools. [README.md](README.md) says what
 is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the parts fit.
 
 ## Layout
@@ -8,12 +8,13 @@ is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the par
 - `platform/`: `studio/` (the `atelier` command, Python), `harness/` (agent board, session delivery, capacity/admission and guards), `engine/Plugins/` (Unreal plugins), `web/` (stream pages,
   motion helpers), `conventions/` (units, bone contract, clip roles,
   sound cues). Platform files never name a game.
-- `games/<game>/`: `game.toml` (play profiles, fetches, stream), `build.py` (build steps), `unreal/`, `world/`,
-  `assets/`, `scenarios/`, `docs/`. `yorimichi` is the full game; `sandbox` is the template for `atelier new`.
-- `games/hakuba/` is different: a Bevy game, all Rust, built with `cargo` and `trunk` and never through the
-  `atelier` command. It has no `game.toml` or `build.py`, and the Unreal, Blender, render-lock and build-cache rules
-  below do not apply to it. Follow [its README](games/hakuba/README.md) and its `CONTRACTS` files; the repository,
-  lint, commit and board rules still apply.
+- `games/<game>/`: `game.toml` (its `engine`, play profiles, fetches, stream), `build.py` (build steps), `unreal/`,
+  `world/`, `assets/`, `scenarios/`, `docs/`. `yorimichi` is the full game; `sandbox` is the Unreal template for
+  `atelier new`. A game runs on Unreal or on Bevy: [engines](docs/ENGINES.md) says what differs.
+- `games/hakuba/` is a Bevy game, all Rust. `atelier build hakuba` runs its cargo build and asset check under
+  admission, and `atelier play hakuba` runs the built program; plain `cargo` and `trunk` still work in its folder. The
+  Unreal and Blender rules below do not apply to it. Follow [its README](games/hakuba/README.md) and its `CONTRACTS`
+  files; the repository, lint, commit, board and admission rules still apply.
 
 ```sh
 uv run atelier build <game> [step ...]   # incremental; --list shows the steps

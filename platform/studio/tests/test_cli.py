@@ -1,4 +1,4 @@
-"""Argument parsing of `atelier play`: Unreal arguments after `--` reach the game wherever the options sit.
+"""Argument parsing of `atelier play`: game arguments after `--` reach the game wherever the options sit.
 
     uv run pytest platform/studio/tests/test_cli.py
 
@@ -58,9 +58,10 @@ def test_direct_play_passes_selected_or_default_ceiling_to_guard(monkeypatch, tm
     from types import SimpleNamespace
     from atelier import cli
     from atelier.harness.safety import guarded
-    ctx = SimpleNamespace(out=tmp_path, unreal_app=tmp_path / 'Editor', uproject=tmp_path / 'Game.uproject', env=lambda: {})
+    ctx = SimpleNamespace(out=tmp_path, game_dir=tmp_path, unreal_app=tmp_path / 'Editor', uproject=tmp_path / 'Game.uproject',
+                          env=lambda extra=(): {})
     monkeypatch.setattr(cli, 'Context', lambda game: ctx)
-    monkeypatch.setattr(cli.manifest, 'game', lambda game: {'play': {'play': {'args': ['-game']}}})
+    monkeypatch.setattr(cli.manifest, 'game', lambda game: {'engine': 'unreal', 'play': {'play': {'args': ['-game']}}})
     calls = []
     monkeypatch.setattr(guarded, 'run', lambda command, folder, **kwargs: calls.append(kwargs) or 0)
     assert cli.play('sandbox', 'play', '', [], gib) == 0

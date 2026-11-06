@@ -47,6 +47,10 @@ class Game:
         self.id = game
         self.dir = paths.game_dir(game)
         self.manifest = tomllib.loads((self.dir / 'game.toml').read_text())
+        from . import engines
+        engine = engines.named(engines.name_of(self.manifest, self.dir))
+        if not engine.stream:
+            raise engine.unsupported('Browser streaming')
         self.config = self.manifest.get('stream', {})
         self.title = self.manifest.get('title', game)
         # ATELIER_STREAM_OUTPUT isolates a second stream in the same checkout (process state, credentials, logs, pages).
