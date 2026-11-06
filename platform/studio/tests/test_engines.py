@@ -93,6 +93,12 @@ def test_the_cargo_fingerprint_names_its_arguments_and_workspace_only(tmp_path):
     assert repr(Cargo(('build',), workspace=tmp_path)) == f"Cargo(args=('build',), workspace={tmp_path!r}, jobs=3, timeout=7200, progress=25.0)"
 
 
+def test_the_cargo_launcher_and_adapter_enter_the_steps_inputs(tmp_path):
+    step = build.Step('binary', [Cargo(('build',), workspace=tmp_path)], heavy=True)
+    assert {Path(build.__file__).with_name(name) for name in ('build_cargo.py', 'run_in.py')} <= set(
+        build.required_inputs(step))
+
+
 def test_run_in_runs_the_command_in_the_folder_as_this_process(tmp_path):
     root = Path(__file__).resolve().parents[1]
     result = subprocess.run([sys.executable, '-m', 'atelier.run_in', str(tmp_path), 'pwd'], cwd=root,

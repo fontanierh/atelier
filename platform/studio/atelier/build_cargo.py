@@ -31,5 +31,9 @@ class Cargo:
     def env(self):
         return (('CARGO_BUILD_JOBS', str(self.jobs)),)
 
+    def runs(self):
+        """Files the command runs besides the step's inputs: this adapter and the folder launcher."""
+        return [Path(__file__), Path(__file__).with_name('run_in.py')]
+
     def argv(self, ctx):
         return [sys.executable, '-m', 'atelier.run_in', str(self.workspace), 'cargo', *self.args]
