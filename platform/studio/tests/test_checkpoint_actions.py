@@ -1,6 +1,7 @@
 """Action reuse and failure boundaries with real files; no Unreal or Blender launches."""
 import json
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -190,11 +191,25 @@ def test_snapshot_rechecks_newly_tracked_files(fixture, monkeypatch):
     ctx, steps = fixture.checkout('producer')
     fixture.produce(ctx, steps)
     sources = set()
-    monkeypatch.setattr(actions, 'tracked_paths', lambda: sources.copy())
+    monkeypatch.setattr(actions, 'tracked_scope_names', lambda: {str(p) for p in actions.source_scopes(sources)})
     actions.snapshot(ctx, steps[0], fixture.store, save_blobs=False)
     sources.add(steps[0].outputs[0])
     with pytest.raises(cp.CheckpointError, match='tracked source'):
         actions.snapshot(ctx, steps[0], fixture.store, save_blobs=False)
+
+
+def test_tracked_scope_names_match_source_scopes(tmp_path, monkeypatch):
+    repo = tmp_path.resolve()
+    subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+    for name in ('top.txt', 'a/b/c.txt', 'a/b/d.txt', 'a/e.txt', 'z z/f g.txt'):
+        (repo / name).parent.mkdir(parents=True, exist_ok=True)
+        (repo / name).write_text(name)
+    subprocess.run(['git', '-C', str(repo), 'add', '.'], check=True)
+    monkeypatch.setattr(paths, 'REPO', repo)
+    assert actions.tracked_scope_names() == {str(p) for p in actions.source_scopes(cp.tracked_paths())}
+    (repo / 'a/new.txt').write_text('new')
+    subprocess.run(['git', '-C', str(repo), 'add', 'a/new.txt'], check=True)
+    assert str(repo / 'a/new.txt') in actions.tracked_scope_names()  # read fresh per check
 
 
 def test_compile_receipt_requires_every_declared_plugin_binary(tmp_path, monkeypatch):
@@ -271,6 +286,7 @@ def test_tracked_source_cannot_become_an_action_output(fixture, monkeypatch):
     ctx, steps = fixture.checkout('producer')
     fixture.produce(ctx, steps)
     monkeypatch.setattr(actions, 'tracked_paths', lambda: {steps[0].outputs[0]})
+    monkeypatch.setattr(actions, 'tracked_scope_names', lambda: {str(p) for p in actions.source_scopes({steps[0].outputs[0]})})
     stamp = cp.read_json(ctx.stamps / 'tree.json')
     with pytest.raises(cp.CheckpointError, match='tracked source'):
         actions.publish(ctx, steps[0], stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)

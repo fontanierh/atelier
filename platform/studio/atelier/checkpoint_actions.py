@@ -81,6 +81,25 @@ def source_scopes(sources):
     return result
 
 
+def tracked_scope_names():
+    """source_scopes(tracked_paths()) as path strings: the same lexical membership, read fresh per check,
+    without building a Path object and hash for each of the tracked files and their parents."""
+    import subprocess
+    if not (paths.REPO / '.git').exists():
+        return set()
+    listing = subprocess.run(['git', '-C', str(paths.REPO), 'ls-files', '-z'], check=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15).stdout
+    base, result = str(paths.REPO), set()
+    for name in listing.split(b'\0'):
+        if not name:
+            continue
+        source = str(paths.REPO / os.fsdecode(name)) if b'//' in name or name.startswith(b'./') else base + '/' + os.fsdecode(name)
+        while source not in result:
+            result.add(source)
+            source = os.path.dirname(source)
+    return result
+
+
 def compile_outputs(ctx, step):
     project = getattr(ctx, 'uproject', None)
     if project is None:
@@ -254,11 +273,11 @@ def load(store, action_key):
 def snapshot(ctx, step, store, *, save_blobs, observations=None, scope=None):
     """Declared roots, or for a package-owned result exactly the files in scope."""
     declarations, files = [], {}
-    sources = source_scopes(tracked_paths())
+    sources = tracked_scope_names()
     outputs = declared(ctx, step) if scope is None else list(scope)
     for root in outputs:
         name = label(ctx, root)
-        if root in sources:
+        if str(root) in sources:
             raise CheckpointError('Task output scope contains tracked source')
         if root.is_symlink():
             raise CheckpointError('Task cache root must not be linked')

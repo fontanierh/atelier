@@ -28,12 +28,11 @@ only as a recovery reference until P6.
 ## D03 — Development hosts (P0.5)
 
 - **Primary:** this machine, an Apple-silicon Mac running the pinned Unreal 5.8 (see [TOOLCHAIN.md](TOOLCHAIN.md)).
-- **Collaborator ("the brother"):** the tailnet lists one macOS machine for a second account, and a Windows device
-  that has been offline for 29 days. The working assumption is a **macOS** collaborator. The Windows route is:
+- **Collaborator:** the known collaborator machines are one Mac and one Windows device that is rarely online. The
+  working assumption is a **macOS** collaborator. The Windows route is:
   **Windows workers do code and review only. All Unreal work uses owned workspaces on a supported Mac.** A
   Windows launch/admission adapter is out of scope unless a Windows host is actually assigned.
-- **Second machine for C02/C06/P3.4/P6.4/P7.3:** none is reachable from this session. The second Mac is offline,
-  and the owner's laptop refuses SSH. These checks stay **blocked**, not substituted. A fresh clone on the same
+- **Second machine for C02/C06/P3.4/P6.4/P7.3:** none is reachable from this session. These checks stay **blocked**, not substituted. A fresh clone on the same
   machine does not count as a second machine (plan §12, P3 stop rule).
 
 ## D04 — Bootstrap binary-content writer (§9)
