@@ -21,6 +21,7 @@ scope.
 | `tools/content/` | records library and the read-only content check |
 | `tools/import/` | the targeted importer |
 | `tools/review/` | the change-set report for reviews |
+| `tools/migrate/` | one-time migration: donor adoption, the world migration runner, scene dumps and their parity compare |
 | `unreal/` | `YorimichiV2.uproject`, `Config/`, `Source/` (by feature), `Plugins/HorseRacing`, `Scripts/` (editor scripts), **`Content/` (committed)** |
 | `tests/` | Python checks for these tools |
 
@@ -31,6 +32,7 @@ Requirements and the pinned engine are listed in [docs/TOOLCHAIN.md](docs/TOOLCH
 before a push.
 
 ```sh
+git lfs install --local                               # once per clone: without the LFS filter, a pull skips everything
 git lfs pull --include="games/yorimichi_v2/**"        # the committed content
 uv run python games/yorimichi_v2/tools/content/check.py   # is every package present, current and owned?
 ```
@@ -45,9 +47,19 @@ uv run python games/yorimichi_v2/tools/content/check.py [--full] [--json]   # re
 uv run atelier build yorimichi_v2 --list
 uv run pytest games/yorimichi_v2/tests -q
 uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID --plan        # what a targeted import would write
-ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2           # (pending) check + compile
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2           # check + compile (cold ~17 min, warm 1 s)
+V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/open_close.py \
+  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # one guarded editor script (here: open a map, save nothing)
+uv run python games/yorimichi_v2/tools/content/save_validate.py ID [--claim TASK]   # record an editor-owned asset or region after a save
 ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID   # (pending) targeted import
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # (pending) one-time donor adoption
+uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # (pending) one-time world migration
+uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
 ```
+
+`/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
+from a fresh checkout without donor content. Collaboration test results are kept in
+[docs/COLLABORATION_TESTS.md](docs/COLLABORATION_TESTS.md).
 
 ## How content is owned and changed
 

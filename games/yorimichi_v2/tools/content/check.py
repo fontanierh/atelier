@@ -14,6 +14,7 @@ everything, for integration and suspected corruption.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import sys
@@ -27,6 +28,19 @@ from records import RecordError  # noqa: E402
 GAME = Path(__file__).resolve().parents[2]
 INDEX = Path('unreal/Saved/AssetCheck/index.json')
 ACTOR_ROOTS = ('__ExternalActors__', '__ExternalObjects__')
+
+
+@functools.lru_cache(maxsize=1)
+def lfs_setup() -> str:
+    """`git lfs install --local && ` when this clone has no LFS filter yet: a fresh clone's `git lfs pull` then skips
+    every object ("Git LFS is not installed for this repository"), so the pull alone would not fix the problem."""
+    import subprocess
+    try:
+        found = subprocess.run(['git', 'config', '--get', 'filter.lfs.process'], cwd=Path(__file__).resolve().parent,
+                               capture_output=True, text=True).stdout.strip()
+    except OSError:
+        return ''
+    return '' if found else 'git lfs install --local && '
 
 
 @dataclass(frozen=True)
@@ -90,7 +104,7 @@ def _file(game, rel, subject, problems, hasher, *, missing_action):
         return None
     if records.is_lfs_pointer(path):
         problems.append(Problem('NOT_HYDRATED', subject, f'{rel} is a Git LFS pointer, not its content',
-                                f'git lfs pull --include="games/yorimichi_v2/{rel}"'))
+                                f'{lfs_setup()}git lfs pull --include="games/yorimichi_v2/{rel}"'))
         return None
     return hasher(path)
 
