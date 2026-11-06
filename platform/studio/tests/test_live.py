@@ -38,6 +38,7 @@ def test_request_wraps_only_python_bodies(monkeypatch):
         def __exit__(self, *a): return False
         def read(self): return b'{"ok": true}'
     monkeypatch.setattr(live.urllib.request, 'urlopen', lambda req, timeout: sent.append(req.data) or Response())
+    monkeypatch.setattr(live, 'URL', 'http://127.0.0.1:1')   # an explicit target: no session selection
     live.request('/python', 'print(1)')
     live.request('/state')
     assert sent[0] == live.python_body('print(1)').encode() and sent[1] is None

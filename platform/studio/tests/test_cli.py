@@ -67,3 +67,21 @@ def test_direct_play_passes_selected_or_default_ceiling_to_guard(monkeypatch, tm
     assert cli.play('sandbox', 'play', '', [], gib) == 0
     assert calls[0]['limit_gib'] == (10. if gib is None else gib)
     assert calls[0]['kind'] == 'game'
+
+
+def test_direct_play_gives_the_game_its_own_live_session_until_it_exits(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from atelier import cli, live_sessions
+    from atelier.harness.safety import guarded
+    ctx = SimpleNamespace(out=tmp_path, game_dir=tmp_path, unreal_app=tmp_path / 'Editor', uproject=tmp_path / 'Game.uproject',
+                          env=lambda extra=(): {})
+    monkeypatch.setattr(cli, 'Context', lambda game: ctx)
+    monkeypatch.setattr(cli.manifest, 'game', lambda game: {'engine': 'unreal', 'play': {'play': {'args': ['-game']}}})
+    seen = []
+    monkeypatch.setattr(guarded, 'run', lambda command, folder, **kwargs: seen.append((command, live_sessions.records())) or 0)
+    assert cli.play('sandbox', 'play', '', [], None) == 0
+    command, during = seen[0]
+    [record] = during
+    assert command[-2:] == live_sessions.launch_args(record) and record['port'] != live_sessions.LEGACY_PORT
+    assert record['game'] == 'sandbox' and record['project_name'] == 'Game'
+    assert live_sessions.records() == []

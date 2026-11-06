@@ -10,13 +10,13 @@
     atelier play <game> [--profile P] [--memory-gib N] [-- game args]   launch the game under the render lock and memory guard
     atelier playtest <game> [--tag T] [--download-only] [-- launcher args]   play the latest GitHub release, downloading it if needed
     atelier stream <game> start|stop|status|build-web   Unreal: stream the game to a phone, a handheld or a browser
-    atelier live state|py|shot         Unreal: talk to the running game through the live bridge
-    atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
+    atelier live [--session ID] state|py|shot|sessions   Unreal: talk to a running game through its live bridge
+    atelier qa [--session ID] <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
     atelier board post|read|thread|task|supervise|retire|wait|status|serve ...   coordinate machine-local agents (docs/AGENT_BOARD.md)
     atelier pr-media push <key> FILE... [--remote R] [--dry-run]   publish PR screenshots/films under refs/pr-media/<key>, outside default clones
     atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
 """
-import argparse, datetime, importlib.util, os, re, shutil, subprocess, sys
+import argparse, contextlib, datetime, importlib.util, os, re, shutil, subprocess, sys
 from pathlib import Path
 
 from . import manifest, paths
@@ -86,6 +86,23 @@ def play(game, profile, settings, extra, memory_gib=None):
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     folder = ctx.out / 'logs' / f'play-{profile}-{stamp}'
     folder.mkdir(parents=True, exist_ok=True)
+    from . import engines, live_sessions
+    # A game with the live bridge gets its own session: a record, a free loopback port and an ID it must answer with.
+    uproject = getattr(ctx, 'uproject', None)
+    bridge = uproject is not None and engines.named(engines.name_of(data, ctx.game_dir)).live
+    session = (live_sessions.launched(game, uproject, extra, task=f'atelier play {game} --profile {profile}')
+               if bridge else contextlib.nullcontext((list(extra), None)))
+    try:
+        with session as (extra, record):
+            if record is not None:
+                print(f'live session {record["session"]} on loopback port {record["port"]} '
+                      f'(atelier live --session {record["session"][:12]} ...)', flush=True)
+            return _launch(ctx, data, game, profile, spec, folder, settings, extra, limit)
+    except live_sessions.SessionError as error:
+        raise SystemExit(f'live session: {error}') from None
+
+
+def _launch(ctx, data, game, profile, spec, folder, settings, extra, limit):
     if 'script' in spec:   # a game-specific launcher (for example the desktop profile)
         script_args = [a.replace('{run}', str(folder)).replace('{memory_gib}', f'{limit:g}')
                        for a in spec.get('args', [])]
@@ -227,7 +244,9 @@ def make_parser():
     p = sub.add_parser('contracts', help='check code contract syntax and owners')
     p.add_argument('action', choices=['check'])
     p = sub.add_parser('live'); p.add_argument('rest', nargs=argparse.REMAINDER)
-    p = sub.add_parser('qa'); p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
+    p = sub.add_parser('qa')
+    p.add_argument('--session', help='the live session the scenario talks to (default: the one of this game in this checkout)')
+    p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
     return parser
 
 
@@ -236,6 +255,8 @@ def parse_args(argv=None):
     argparse alone rejects it when an option follows the game (`play <game> --profile P -- -RenderOffscreen`): `extra`
     has already been matched, empty, right after the game."""
     argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ['live']:   # its options (--session ...) come before its command: atelier.live parses them
+        return argparse.Namespace(command='live', rest=argv[1:])
     if argv[:1] in (['play'], ['playtest']) and '--' in argv:
         cut = argv.index('--')
         args = make_parser().parse_args(argv[:cut])
@@ -371,7 +392,16 @@ def main(argv=None):
         script = paths.game_dir(args.game) / 'scenarios' / f'{args.scenario}.py'
         if not script.exists():
             raise SystemExit(f'no scenario {script}')
-        return subprocess.call([sys.executable, str(script), *args.rest])
+        # The scenario's `atelier.live` requests go to this game's session (or the named one), verified like `atelier live`.
+        env = dict(os.environ, ATELIER_LIVE_GAME=args.game)
+        if args.session:
+            from . import live
+            try:
+                live.select(args.session, args.game)
+            except live.SessionError as error:
+                raise SystemExit(f'live: {error}') from None
+            env['ATELIER_LIVE_SESSION'] = args.session
+        return subprocess.call([sys.executable, str(script), *args.rest], env=env)
     if args.command == 'live':
         from . import live
         return live.main(args.rest)

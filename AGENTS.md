@@ -20,7 +20,7 @@ is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the par
 uv run atelier build <game> [step ...]   # incremental; --list shows the steps
 uv run atelier play <game> [--profile P]
 uv run atelier qa <game> <scenario>      # scripted checks against the running game
-uv run atelier live state|py "..."|shot  # talk to the running game
+uv run atelier live state|py "..."|shot  # talk to the running game (--session ID; `live sessions` lists them)
 uv run atelier lint                      # public-repository checks
 uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs on CI
 ```
@@ -299,7 +299,7 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   agent's helpers by name.
 - Machines still using legacy slots follow the [operator reference](docs/CAPACITY_ADMIN.md#legacy-slot-mode).
   Do not add legacy slots or fitting lanes alongside full capacity admission, or change machine modes during a task.
-- The live bridge (Unreal plugin, port 8830) stays loopback-only.
+- The live bridge (Unreal plugin, one loopback port per live session) stays loopback-only.
 - Every machine has its own `~/.cache/atelier/render-board.md`. Read current incident/maintenance instructions
   before heavy work. In full mode, normal build/play submits resources and ownership directly: no manual
   Waiting/Holding entry, per-step post or coordinator handshake. For legacy mode or an explicitly coordinated
@@ -311,8 +311,11 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   `memory-health.json` before retrying or diagnosing a stall. When installed, the machine's resource log is
   `~/.cache/atelier/render-supervisor/latest.json` with history in `telemetry.jsonl`. Add the command, exit status
   and evidence paths to the board's Log for an incident or explicitly coordinated turn. Quit test games promptly
-  and use only your own live bridge port. `atelier live` targets port 8830. A game launched with `-liveport=N` needs a client explicitly
-  configured for that loopback port; the CLI currently has no port option.
+  and use only your own live session. `atelier play` gives each game a session record, a free loopback port and an
+  ID the bridge must answer with; `atelier live`, screenshots and `atelier qa` verify it before any command and target
+  the one live session of this checkout, or `--session ID` (`atelier live sessions` lists them; `--prune` removes
+  records whose launcher is gone). A mismatch or stale record is an error; `--port N` is the explicit legacy route
+  for a game started without a record.
 
 ## Reusing builds
 
