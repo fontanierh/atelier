@@ -94,23 +94,24 @@ fn push(at: vec3<f32>, phase: f32) -> vec3<f32> {
 
 // How strongly the wind blows on this mesh, its tag in thousandths: 1 is the usual wind.
 fn blowing(instance_index: u32) -> f32 {
-    return f32(mesh_functions::get_tag(instance_index) & (FADES - 1u)) / 1000.0;
+    return f32(mesh_functions::get_tag(instance_index) & WIND_MASK) / 1000.0;
 }
 
-// A plant middle tiles leave out carries this bit in its mesh tag: it sinks into the ground as the main camera leaves
-// it behind, done before its tile can turn middle and drop it (wind.rs, `FadesOut`). Sinking moves no pixel to the
-// discard a dither would need, so the GPU still hides what is behind the plant.
-const FADES: u32 = 1048576u;
-// How far a faded plant has sunk: below the tallest of them, and the ground it stands on hides it.
-const SINK_M: f32 = 2.0;
+// The low bits of a mesh tag hold the wind's strength (wind.rs, `WIND_BITS`). Those above hold how deep, in decimetres,
+// a plant middle tiles leave out sinks into the ground as the main camera leaves it behind, done before its tile can
+// turn middle and drop it (`FadesOut`). Sinking moves no pixel to the discard a dither would need, so the GPU still
+// hides what is behind the plant.
+const WIND_BITS: u32 = 20u;
+const WIND_MASK: u32 = 1048575u;
 // How far a vertex at `at` of the mesh drawn as `instance_index` has sunk, as a move: the buffer's last row is where
 // the main camera is across the ground, and between which distances from it plants sink.
 fn sunk(at: vec3<f32>, instance_index: u32) -> vec3<f32> {
-    if (mesh_functions::get_tag(instance_index) & FADES) == 0u {
+    let depth = f32(mesh_functions::get_tag(instance_index) >> WIND_BITS) / 10.0;
+    if depth == 0.0 {
         return vec3<f32>(0.0);
     }
     let fade = pushers[9];
-    return vec3<f32>(0.0, -SINK_M * smoothstep(fade.z, fade.w, length(at.xz - fade.xy)), 0.0);
+    return vec3<f32>(0.0, -depth * smoothstep(fade.z, fade.w, length(at.xz - fade.xy)), 0.0);
 }
 
 @if(!PREPASS_PIPELINE)

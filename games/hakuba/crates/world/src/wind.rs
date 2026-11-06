@@ -23,16 +23,26 @@ use crate::push::Pushers;
 
 /// The mesh tag that tells the shader the wind blows `strength` times as strongly as usual.
 pub fn tag(strength: f32) -> u32 {
-    (strength.max(0.0) * 1000.0).round() as u32 & (FADES - 1)
+    ((strength.max(0.0) * 1000.0).round() as u32).min(WIND_MASK)
 }
 
-/// The bit of a plant's mesh tag that sinks it into the ground before its tile turns middle (`sunk` in the shaders).
-pub const FADES: u32 = 1 << 20;
+/// The bits of a plant's mesh tag holding the wind's strength; those above hold how deep, in decimetres, the plant
+/// sinks into the ground before its tile turns middle (`sunk` in the shaders).
+const WIND_BITS: u32 = 20;
+const WIND_MASK: u32 = (1 << WIND_BITS) - 1;
 
-/// On a data node whose plants middle tiles leave out: its swaying parts fade out by sinking, so none vanishes at once
-/// with its tile.
+/// The mesh tag of a plant the wind blows `strength` times as strongly as usual and that sinks `depth_m` deep.
+pub fn sinking_tag(strength: f32, depth_m: f32) -> u32 {
+    let decimetres = ((depth_m.max(0.0) * 10.0).ceil() as u32).min(u32::MAX >> WIND_BITS);
+    tag(strength) | decimetres << WIND_BITS
+}
+
+/// On a data node whose plants middle tiles leave out: its swaying parts fade out by sinking `depth_m`, so none
+/// vanishes at once with its tile.
 #[derive(Component)]
-pub struct FadesOut;
+pub struct FadesOut {
+    pub depth_m: f32,
+}
 
 /// A plant's material, swaying.
 pub type Swaying = ExtendedMaterial<StandardMaterial, Wind>;
@@ -555,5 +565,13 @@ mod shadow_motion_tests {
         let (wind, push) = profile.shadow_motion_bound(0.5);
         assert!((wind - 0.532).abs() < 1e-6);
         assert!((push - 0.7).abs() < 1e-6);
+    }
+
+    #[test]
+    fn a_sinking_tag_keeps_the_wind_in_its_low_bits_and_the_depth_in_decimetres_above() {
+        let tag = super::sinking_tag(1.5, 6.93);
+        assert_eq!(tag & super::WIND_MASK, 1500);
+        assert_eq!(tag >> super::WIND_BITS, 70);
+        assert_eq!(super::sinking_tag(1.0, 0.0), super::tag(1.0));
     }
 }
