@@ -2,4 +2,4 @@
 kind = "prop"
 source = "src/model.glb"
 textures = ["gondola-wood-grain"]
-inputs_sha256 = "74ab1391570330dfbd3b9368658cc509fd6bd89145b5dd7c782fe8fbc3b0826f"
+inputs_sha256 = "dae036dd3d88f0bb48e2af40e052152672c84796911f56a1fc2e214f900ac716"

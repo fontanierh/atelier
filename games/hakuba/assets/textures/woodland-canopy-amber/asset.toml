@@ -1,6 +1,7 @@
 # Original amber canopy foliage texture.
 kind = "texture"
 source = "src/texture.png"
+alpha_shadow = true
 alpha_cutoff = 0.4
 mip_colour = "average"
-inputs_sha256 = "2f192b9de7badd8960b3516217376f1992a30b8724a6254e4c80eb265ef86c07"
+inputs_sha256 = "356e6a54e128750df02870944116b0cd9fd1f237bddf70470794ec5f6774c0b4"

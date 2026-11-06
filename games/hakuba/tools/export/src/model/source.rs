@@ -106,6 +106,13 @@ fn export_inner(
             extras.insert("shadow_distance_m".into(), json!(distance));
         }
     }
+    // A plant's shadow is cast by its lowest version, which names the alpha textures its masked parts are cut by: its
+    // middle version, else its far one, else its full one (the game's `caster`, scenery.rs).
+    let has = |level: &str| value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == level));
+    let caster = ["middle", "far"].into_iter().find(|level| has(level)).unwrap_or("full");
+    if foliage.is_some() && caster == "full" {
+        extras.insert("shadow_alpha_textures".into(), shadow_alpha_textures(&value, full)?);
+    }
     glb.set_extras(full, extras.into());
     if foliage.is_some() {
         for level in ["full", "middle"] {
@@ -125,8 +132,7 @@ fn export_inner(
         let mut extras = value["nodes"][node]["extras"].as_object().cloned().unwrap_or_default();
         let settings = profile.as_ref().context("missing foliage profile")?;
         extras.insert("source_foliage".into(), settings.profile.clone());
-        // Only a full tile casts the middle version's shadow; a far version is seen and casts its own.
-        if level == "middle" {
+        if level == caster {
             extras.insert("shadow_alpha_textures".into(), shadow_alpha_textures(&value, node)?);
         }
         if let Some(distance) = settings.shadow_distance {

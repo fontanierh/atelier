@@ -1,5 +1,6 @@
 # Source leaf litter texture.
 kind = "texture"
 source = "src/texture.png"
+alpha_shadow = true
 alpha_cutoff = 0.4
-inputs_sha256 = "7db71b5c09a9ee3077db47d59231f2668d9819c68b0afb3aaf700abeaa627d17"
+inputs_sha256 = "8e697e1292bdb4d2471ce71c59f6af7a23985f24507b2bbd17d1328eab41a736"

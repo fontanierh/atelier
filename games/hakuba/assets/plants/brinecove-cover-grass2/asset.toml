@@ -3,7 +3,7 @@ kind = "plant"
 surface_height_m = 0.0
 source = "src/model.glb"
 textures = ["brinecove-cover-grass"]
-inputs_sha256 = "dd276b7c5d2e3b7bf542fa68ae0db63077e33ad3a71e01cbd740276a1b95ad98"
+inputs_sha256 = "51322aff1f55984c520cb8f11aba03780f2b6388d433c18a1b1036f317c81f81"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

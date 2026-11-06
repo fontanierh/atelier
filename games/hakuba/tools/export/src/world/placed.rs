@@ -188,6 +188,27 @@ mod tests {
         }
         assert_eq!(all.iter().filter(|p| p.model == "c").map(|p| p.scale).collect::<Vec<_>>(), [1.0]);
     }
+    /// A tree with an impostor shows in middle tiles too: past its full version it is one quad, and a tree gone at a
+    /// tile's edge is a tree that changed shape.
+    #[test]
+    fn every_region_shows_its_impostor_trees_afar() {
+        let regions = std::path::Path::new(crate::ASSETS).join("world/src/regions");
+        let mut hidden = Vec::new();
+        for region in std::fs::read_dir(&regions).unwrap() {
+            let path = region.unwrap().path().join("placements.json");
+            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            let file: Placements = serde_json::from_str(&text).unwrap();
+            for group in file.groups.iter().filter(|group| !group.afar) {
+                let name = group.model.rsplit('/').next().unwrap();
+                let export = std::path::Path::new(crate::ASSETS).join(group.model).join(format!("{name}.glb"));
+                let Ok(glb) = crate::glb::Glb::read(&export) else { continue };
+                if glb.extras("full").is_ok_and(|extras| extras.get("impostor").is_some()) {
+                    hidden.push(format!("{} in {}", group.model, path.display()));
+                }
+            }
+        }
+        assert!(hidden.is_empty(), "impostor trees shown only near: {hidden:?}");
+    }
     #[test]
     fn placed_skating_metadata_is_valid_and_keeps_whole_lines() {
         let source = r#"{"groups":[],"skate":{"rails":[{"id":"lip","points":[[0,1,0],[64,1,0],[128,1,0]],"closed":false,"kind":"coping","surface":"metal"}]}}"#;

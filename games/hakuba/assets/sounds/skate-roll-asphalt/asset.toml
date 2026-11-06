@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/roll_asphalt_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "4ff075a944b260d5594c2ef1aecc7cefbcaf836b02bc0fd8948901c7500c6e59"
+inputs_sha256 = "607819eebf94fe286759789ecaf2bff98c3467c9412d105c81b0cc432195252a"

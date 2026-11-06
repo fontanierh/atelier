@@ -1,4 +1,4 @@
 # The passenger ferry's lifeboats, docked at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "53afaa4932f0972365e561a5362452e2f9eaa1954a52691ccacff611a4152d71"
+inputs_sha256 = "238c2cccaf87349fa7d13f33db8c9d206c14c05e91fc28e66b3185c8867235b0"

@@ -422,6 +422,7 @@ fn plant(
                     n.strip_suffix("-light")
                         .or_else(|| n.strip_suffix("-prune"))
                         .or_else(|| n.strip_suffix("-hull"))
+                        .or_else(|| n.strip_suffix("-order"))
                         .unwrap_or(n)
                 });
                 Some(impostors.of(&format!("plants/{plant}/{plant}.glb"), &baked, &profile, &mut meshes))

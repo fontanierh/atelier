@@ -139,8 +139,21 @@ struct Job {
 /// in none; on the forest flight that cost 14.8 ms of GPU time a frame, against 11.4 at 150 m over 12 m.
 const TREE_LOD_M: f32 = 200.0;
 const TREE_FADE_M: f32 = 40.0;
+/// Where a tree's shadow has faded out, by the tree's distance from the camera, and over how many metres before it fades:
+/// within the nearest a tree in a far tile can be, which casts no shadow, so no shadow appears at once as a far tile
+/// turns blending.
+const CASTER_END_M: f32 = crate::tiles::FAR_M + crate::tiles::BLEND_M
+    - crate::tiles::KEEP_MARGIN_M
+    - crate::tiles::TILE_M * std::f32::consts::SQRT_2 / 2.0;
+const CASTER_FADE_M: f32 = 30.0;
 /// Over how many metres a full tile's small plants fade to their middle versions.
 const SMALL_FADE_M: f32 = 16.0;
+
+/// The version a tree drawn as its impostor casts its shadow with, of those its model `has`: its lowest, the middle
+/// version, else the far one, else the full one. The exporter names that version's alpha textures (model/source.rs).
+fn caster(has: impl Fn(&str) -> bool) -> &'static str {
+    ["middle", "far"].into_iter().find(|name| has(name)).unwrap_or("full")
+}
 
 /// Where a full tile's small plants fade to their middle versions, and over how many metres, given how far tiles
 /// show their full versions: done before the nearest merged square of a tile turning middle, whose centre is within
@@ -327,13 +340,8 @@ fn spawn(
                 .get("full")
                 .and_then(|n| models.nodes.get(n))
                 .map_or(0, |n| vertices(&models.meshes, &meshes, n));
-            // A tree in a full tile shows its full version near the camera and its middle one past `TREE_LOD_M`, each
-            // copy on its own, crossfading, as a tree's level of detail is picked per copy.
-            let per_copy = has_middle && full_vertices >= MERGE_BELOW_VERTICES;
-            let blend = far.is_some() && waiting.blend && has_middle;
-            // A full tile's small plants fade to their middle versions before the tile becomes middle.
-            let small = small_lod.filter(|_| !per_copy && far.is_none() && !waiting.middle && has_middle);
-            // A tree with an impostor shows it wherever it would show its middle version, which only casts its shadow.
+            // A tree with an impostor shows it past `TREE_LOD_M` in every tile, near or far, and casts its shadow with
+            // its lowest version.
             let full_node = gltf.named_nodes.get("full").and_then(|n| models.nodes.get(n));
             let baked = full_node
                 .and_then(|node| node.extras.as_ref())
@@ -344,32 +352,26 @@ fn spawn(
                         serde_json::from_value::<SourceProfile>(extras.get("source_foliage")?.clone()).ok()?,
                     ))
                 })
-                .filter(|_| has_middle && full_vertices >= MERGE_BELOW_VERTICES);
-            let mut versions = match (waiting.middle, has_middle) {
-                // A tree with an impostor shows its full version out to `TREE_LOD_M` whichever tile holds it, a middle
-                // or blending one too: every tile within that reach is one of these. An impostor looks the same at
-                // every distance, so a blending tile has nothing else to blend.
-                _ if (blend || far.is_none()) && per_copy && baked.is_some() => {
-                    vec![("full", Role::Seen), ("impostor", Role::Seen), ("middle", Role::Shadow)]
-                }
-                _ if blend && baked.is_some() => vec![("impostor", Role::Seen), ("middle", Role::Shadow)],
-                _ if far.is_some() && baked.is_some() => vec![("impostor", Role::Seen)],
-                (true, true) if far.is_none() && baked.is_some() => {
-                    vec![("impostor", Role::Seen), ("middle", Role::Shadow)]
-                }
-                // A blending tile shows both, the middle version fading out where the far fades in.
-                _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
-                _ if far.is_some() => vec![("far", Role::Both)],
-                (true, true) => vec![("middle", Role::Both)],
-                (false, true) if per_copy => {
-                    vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
-                }
-                (false, true) if small.is_some() => {
-                    vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
-                }
-                (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
-                (_, false) => vec![("full", Role::Both)],
-            };
+                .filter(|_| full_vertices >= MERGE_BELOW_VERTICES);
+            // A tree in a full tile shows its full version near the camera and its middle one, or its impostor, past
+            // `TREE_LOD_M`, each copy on its own, crossfading, as a tree's level of detail is picked per copy.
+            let per_copy = (has_middle || baked.is_some()) && full_vertices >= MERGE_BELOW_VERTICES;
+            // A full tile's small plants fade to their middle versions before the tile becomes middle.
+            let small = small_lod.filter(|_| !per_copy && far.is_none() && !waiting.middle && has_middle);
+            let mut versions = versions(
+                Holding {
+                    middle_tile: waiting.middle,
+                    far_tile: waiting.far.is_some(),
+                    blend_tile: waiting.blend,
+                    has_middle,
+                    has_far: gltf.named_nodes.contains_key("far"),
+                    impostor: baked.is_some(),
+                    per_copy,
+                    small: small.is_some(),
+                },
+                caster(|name| gltf.named_nodes.contains_key(name)),
+            );
+            let blend = far.is_some() && waiting.blend && has_middle;
             if collision {
                 versions.push(("collision", Role::Collision));
             }
@@ -427,7 +429,7 @@ fn spawn(
                 let (lod, fade) = (TREE_LOD_M, TREE_FADE_M);
                 let range = per_copy
                     .then(|| match (name, role) {
-                        ("full", _) => Some(VisibilityRange {
+                        ("full", Role::Seen | Role::Both) => Some(VisibilityRange {
                             start_margin: 0.0..0.0,
                             end_margin: lod - fade / 2.0..lod + fade / 2.0,
                             use_aabb: false,
@@ -435,6 +437,11 @@ fn spawn(
                         ("middle" | "impostor", Role::Seen) => Some(VisibilityRange {
                             start_margin: lod - fade / 2.0..lod + fade / 2.0,
                             end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
+                            use_aabb: false,
+                        }),
+                        (_, Role::Shadow) => Some(VisibilityRange {
+                            start_margin: 0.0..0.0,
+                            end_margin: CASTER_END_M - CASTER_FADE_M..CASTER_END_M,
                             use_aabb: false,
                         }),
                         _ => None,
@@ -978,8 +985,48 @@ fn mark_solid(part: &mut EntityCommands, solid: bool) {
     }
 }
 
+/// What a tile holds a model's copies as, and which versions the model has.
+#[derive(Clone, Copy, Debug)]
+struct Holding {
+    middle_tile: bool,
+    far_tile: bool,
+    blend_tile: bool,
+    has_middle: bool,
+    has_far: bool,
+    impostor: bool,
+    /// Each copy picks its own version by its distance (a tree).
+    per_copy: bool,
+    /// A full tile's small plant, fading to its middle version.
+    small: bool,
+}
+
+/// The versions a tile shows of a model, and what for. A tree with an impostor shows its full version out to
+/// `TREE_LOD_M` whichever tile holds it, a middle or blending one too: every tile within that reach is one of these. An
+/// impostor looks the same at every distance, so a blending tile has nothing else to blend, and a far tile shows only
+/// it. Its shadow is cast by `caster`, its lowest version.
+fn versions(holding: Holding, caster: &'static str) -> Vec<(&'static str, Role)> {
+    let Holding { middle_tile, far_tile, blend_tile, has_middle, has_far, impostor, per_copy, small } = holding;
+    let far = far_tile && has_far;
+    let blend = far && blend_tile && has_middle;
+    match (middle_tile, has_middle) {
+        _ if impostor && (blend_tile || !far_tile) => {
+            vec![("full", Role::Seen), ("impostor", Role::Seen), (caster, Role::Shadow)]
+        }
+        _ if impostor => vec![("impostor", Role::Seen)],
+        // A blending tile shows both, the middle version fading out where the far fades in.
+        _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
+        _ if far => vec![("far", Role::Both)],
+        (true, true) => vec![("middle", Role::Both)],
+        (false, true) if per_copy || small => {
+            vec![("full", Role::Seen), ("middle", Role::Seen), ("middle", Role::Shadow)]
+        }
+        (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
+        (_, false) => vec![("full", Role::Both)],
+    }
+}
+
 /// What a version of a model is spawned for.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Role {
     /// To be seen and, if the model's extras let it, to cast its shadow.
     Both,
@@ -1237,10 +1284,54 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_tree_with_an_impostor_shows_only_it_or_its_full_version_in_every_tile() {
+        for bits in 0..64u32 {
+            let bit = |i: u32| bits & (1 << i) != 0;
+            let holding = Holding {
+                middle_tile: bit(0),
+                far_tile: bit(1),
+                blend_tile: bit(1) && bit(2),
+                has_middle: bit(3),
+                has_far: bit(4),
+                impostor: true,
+                per_copy: true,
+                small: bit(5),
+            };
+            let caster = caster(|name| (name == "middle" && holding.has_middle) || (name == "far" && holding.has_far));
+            let shown = versions(holding, caster);
+            for &(name, role) in &shown {
+                assert!(
+                    !matches!(role, Role::Seen | Role::Both) || matches!(name, "full" | "impostor"),
+                    "{holding:?} shows its {name}"
+                );
+            }
+            assert!(shown.contains(&("impostor", Role::Seen)), "{holding:?} shows no impostor");
+            assert_eq!(
+                shown.contains(&("full", Role::Seen)),
+                !holding.far_tile || holding.blend_tile,
+                "{holding:?}: a full version in every tile within its reach, and none past"
+            );
+        }
+        assert_eq!(caster(|_| false), "full");
+        assert_eq!(caster(|name| name == "far"), "far");
+        assert_eq!(caster(|_| true), "middle");
+    }
+
+    #[test]
+    fn every_tree_shadow_fades_out_before_a_far_tile_could_hold_it() {
+        // A far tile turns blending once its centre is within this, and its nearest tree is a half diagonal nearer.
+        let nearest_far_tree = crate::tiles::FAR_M + crate::tiles::BLEND_M
+            - crate::tiles::KEEP_MARGIN_M
+            - crate::tiles::TILE_M * std::f32::consts::SQRT_2 / 2.0;
+        assert!(CASTER_END_M <= nearest_far_tree);
+        assert!(CASTER_END_M - CASTER_FADE_M >= TREE_LOD_M + TREE_FADE_M / 2.0, "a tree casts in full while full");
+    }
+
+    #[test]
     fn no_tree_within_full_reach_stands_in_a_far_tile() {
         // A far tile shows only impostors, so every tile holding a tree still fading from its full version is middle
         // or blending: its centre at most half a tile's diagonal farther than the tree, with the tiles' 64 m grid.
-        let reach = TREE_LOD_M + TREE_FADE_M / 2.0 + 64.0 * std::f32::consts::SQRT_2 / 2.0;
+        let reach = TREE_LOD_M + TREE_FADE_M / 2.0 + crate::tiles::TILE_M * std::f32::consts::SQRT_2 / 2.0;
         assert!(reach <= crate::tiles::FAR_M + crate::tiles::BLEND_M - crate::tiles::KEEP_MARGIN_M);
     }
 

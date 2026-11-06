@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/catch_01.wav", "src/catch_02.wav", "src/catch_03.wav"]
 looped = false
 quality = 0.5
-inputs_sha256 = "8ec6062627b480d8368213b95d9adaa3405d5f3b1e6cc5b584b69204be05464b"
+inputs_sha256 = "a8abb6f797925ab60e54c48110b3b5721221a14675eb7874609396e95a4f8c26"

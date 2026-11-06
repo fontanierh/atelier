@@ -1,13 +1,16 @@
 // Shadow-only foliage samples the original alpha from a single-channel texture at every mip.
 import bevy_pbr::{
     prepass::io::{VertexOutput, FragmentOutput},
-    render::{pbr_bindings, pbr_types, mesh_bindings::mesh, mesh_view_bindings::view},
+    render::{pbr_bindings, pbr_functions, pbr_types, mesh_bindings::mesh, mesh_view_bindings::view},
 };
 import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d};
 @if(BINDLESS)
 import bevy_pbr::render::pbr_bindings::material_indices;
 
 fn alpha_discard(in: VertexOutput) {
+    // A caster crossfading by its visibility range fades its shadow as it would fade when seen.
+@if(VISIBILITY_RANGE_DITHER)
+    pbr_functions::visibility_range_dither(in.position, in.visibility_range_dither);
 @if(MAY_DISCARD) {
 @if(BINDLESS) {
     let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;

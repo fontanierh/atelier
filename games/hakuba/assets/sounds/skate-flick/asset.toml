@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/flick_01.wav", "src/flick_02.wav", "src/flick_03.wav"]
 looped = false
 quality = 0.5
-inputs_sha256 = "425e5c51eaae06e01ab205ec135cdf95864da6f0297f36a9966db45e5064b8e4"
+inputs_sha256 = "71f63602c0ef35f927aaf38aaec928a5f76e1d6284fd67d626858caddbf2498b"

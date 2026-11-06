@@ -1,4 +1,4 @@
 # The passenger ferry's rails, docked at Hidamari.
 kind = "prop"
 source = "src/model.glb"
-inputs_sha256 = "20d5141a856b1047d19714d4a817174c030badbe1133e163f948474af174d0e3"
+inputs_sha256 = "dd85e56feb1f809ad634e9f05cef29d734212442e89987603a85c33a614cf08a"

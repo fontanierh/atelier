@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/roll_grass_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "6fcb4616302720276771c5acb1e235c2c54ee1bb16ea53c9c4de0aa0aeb08624"
+inputs_sha256 = "97f2855cd3960078ce53d64e9c3f6f3c68cdcf12275bfd5cb7fb9c6cf78dad48"

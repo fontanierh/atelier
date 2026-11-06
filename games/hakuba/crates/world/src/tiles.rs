@@ -60,6 +60,9 @@ enum Detail {
     Blend,
 }
 
+/// The side of a tile, in metres, which the distances here and in scenery.rs are drawn for. The world's index says it;
+/// a world of other tiles is refused (lib.rs).
+pub(crate) const TILE_M: f32 = 64.0;
 /// How far either side of [`FAR_M`], to a tile's centre, a tile shows both its plants' middle and far versions. A
 /// merged mesh's centre is within a tile's half diagonal of the tile's, so this exceeds that plus half the fade.
 pub(crate) const BLEND_M: f32 = 64.0;

@@ -44,16 +44,16 @@ pub(crate) fn normal_path(output: &Path) -> PathBuf {
 }
 
 /// Bakes the impostor of the plant exported at `output`, its textures' sources under `assets`, and writes its atlases
-/// beside it, returning what its full node's extras say of it: `{ grid, frame, radius, centre }`. A plant with no
-/// middle version or too few vertices to want one has none, and any atlases left from before are removed.
+/// beside it, returning what its full node's extras say of it: `{ grid, frame, radius, centre }`. A plant with too few
+/// vertices to want one has none, and any atlases left from before are removed. A tree with no middle version has one
+/// too: the game shows every tree that has an impostor at every distance, past its full version, as the same image.
 pub(super) fn write(output: &Path, assets: &Path) -> Result<Option<Value>> {
     let bytes = std::fs::read(output)?;
     let length = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
     let value: Value = serde_json::from_slice(&bytes[20..20 + length])?;
-    let has_middle = value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == "middle"));
     let parts = parts(&value, super::source::binary(&bytes), assets)?;
     let vertices: usize = parts.iter().map(|(mesh, _)| mesh.positions.len()).sum();
-    if !has_middle || vertices < AT_LEAST_VERTICES {
+    if vertices < AT_LEAST_VERTICES {
         for path in [albedo_path(output), normal_path(output)] {
             if path.exists() {
                 std::fs::remove_file(path)?;

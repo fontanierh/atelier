@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/skid_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "1b20425d9f16a4f27d2889389d312892c9a679da172b965ac3b1bac1f44f6faf"
+inputs_sha256 = "4bec944a138e3d9705e32abfa3ae48a390bedad413e389406d8bf84ab027faca"

@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/land_01.wav", "src/land_02.wav", "src/land_03.wav"]
 looped = false
 quality = 0.5
-inputs_sha256 = "201019c5a43c39fef43d8ba450dda35142692bf44ec1240ad611cb678d11bdb4"
+inputs_sha256 = "39d6e834dc54862d90ddd7dee7852e555350f9fb486c66eb15f8c07573652a7f"

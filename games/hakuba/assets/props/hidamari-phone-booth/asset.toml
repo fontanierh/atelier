@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-phone-booth"]
 solid = true
-inputs_sha256 = "159664fc4aaa73c9ae95802c3a3b5ca482cc7fc710febfebffdecab683e1811d"
+inputs_sha256 = "f2127e57360318226d8ad6d4ede676faee01d9c3002bb59023ba560cb6927ee3"

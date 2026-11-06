@@ -2,4 +2,4 @@
 kind = "prop"
 source = "src/model.glb"
 textures = ["brinecove-t-bc-water-mid"]
-inputs_sha256 = "b2d2efc96e95d175a133b4229776c00bb87f0e4900646e64d5e88dfd06aae75d"
+inputs_sha256 = "5beefdd5fdbace244983fe83c6648a5b2e1df670bd31b3f94a77c23aa9b7adbc"

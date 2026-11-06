@@ -152,5 +152,8 @@ fn fragment(
 @else
 @fragment
 fn fragment(in: prepass_io::VertexOutput) {
+    // Hakuba: a shadow caster crossfading by its visibility range dithers as it does when seen.
+@if(VISIBILITY_RANGE_DITHER)
+    pbr_functions::visibility_range_dither(in.position, in.visibility_range_dither);
     pbr_prepass_functions::prepass_sample_color_and_alpha_discard(in);
 }

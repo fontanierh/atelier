@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/scrape_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "01e015fe01852c2109b9002659da8e068db97d3922118d75f3ab45867fe83407"
+inputs_sha256 = "a3439f88939b67d465239db6498673bf8cabf9e777017e0cb333d92f2de0f3ff"

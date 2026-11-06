@@ -1,4 +1,4 @@
 # Compact immutable simulation resources, exported from every JSON source under src/.
 kind = "simulation"
 descriptor = "bundle.json"
-inputs_sha256 = "175dc2193c18fc9eaa9671e739de66f2f3d5ff6458e988cbd07efb7db939ce98"
+inputs_sha256 = "c3681027b44c99ed56f5707b07bb8b7c15286f3b1badbcb46620e6e394ae8737"

@@ -57,7 +57,14 @@ pub fn spawn(commands: &mut Commands, images: &mut Assets<Image>) -> impl Bundle
         WorldImage,
         RenderLayers::layer(WINDOW_LAYER),
     ));
-    (Camera { order: -1, ..default() }, RenderTarget::Image(image.clone().into()), Drawn(image))
+    // Shadows pick each caster's level of detail by its distance from the world camera, as the world does, not from the
+    // window camera, which Bevy takes otherwise and which stands still at the world's origin.
+    (
+        Camera { order: -1, ..default() },
+        RenderTarget::Image(image.clone().into()),
+        Drawn(image),
+        bevy::camera::ShadowLodOrigin,
+    )
 }
 
 /// Keeps the image the window's shape, with the Resolution setting's pixels. A new size

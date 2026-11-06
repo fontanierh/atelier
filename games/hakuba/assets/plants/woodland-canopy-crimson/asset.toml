@@ -2,7 +2,7 @@
 kind = "plant"
 source = "src/model.glb"
 textures = ["garden-bark", "woodland-canopy-crimson"]
-inputs_sha256 = "5330e89a1a8b81eecad5cb810865d3c1c905177821103aa764f9d0c1303c7198"
+inputs_sha256 = "1c4a4bd51dfed662793bda70618a419238cff531a485c23e890eec2896d9f8a5"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

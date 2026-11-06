@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-taxi"]
 solid = true
-inputs_sha256 = "2131f658f8bc525fe331a1e7da840b64b86a49b790092aeef54df28ebf868c27"
+inputs_sha256 = "54ed6bee65e5e8f683b1632155152cc11250f1cb6cc3869df5cbd2b0b8ea322b"

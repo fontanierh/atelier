@@ -5,4 +5,4 @@ kind = "sound"
 takes = ["src/slide_01.wav"]
 looped = true
 quality = 0.5
-inputs_sha256 = "613a2525caeaf8d44552c8cc86245ad9b6cc1203d44440569df12b336d45659c"
+inputs_sha256 = "d327844cf8c64fa50a680ab16210e1afbe6221480bd5706400d1a6199e37cf4f"

@@ -3,4 +3,4 @@ kind = "prop"
 source = "src/model.glb"
 own_textures = ["hidamari-hd-p-garbage-station"]
 solid = true
-inputs_sha256 = "83f38a4a38e059bb9b972cc76f8d62fab2714dfc1baa1ac85bace98551c7f1f1"
+inputs_sha256 = "0b816d3106c693c716a35b5d50e500a889945c2873ea68a7704452b40dfc8a47"

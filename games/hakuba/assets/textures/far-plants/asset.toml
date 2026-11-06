@@ -1,6 +1,7 @@
 # Source texture for the plants' far versions.
 kind = "texture"
 source = "src/texture.png"
+alpha_shadow = true
 alpha_cutoff = 0.4
 mip_colour = "average"
-inputs_sha256 = "c88e81843da60886f9bf7866614a6a5475186832a861cb47e9a3286509801b49"
+inputs_sha256 = "4b24236a169aa711d4b520579596dc93adc206456313add250a52348bc1fb098"
