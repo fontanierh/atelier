@@ -178,14 +178,14 @@ unreal.MegaParkValidation.review_camera(loc, at, 40.0)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--port', type=int, default=8830)
+    parser.add_argument('--port', type=int, help='a game without a live session on loopback port N (default: the session atelier qa selects)')
     parser.add_argument('--riders', default='Cairo,Nox,Modori')
     parser.add_argument('--grabs', default='grab_right,grab_left')
     parser.add_argument('--sticks', default=','.join(STICKS))
     parser.add_argument('--stick', choices=('right', 'left'), default='right', help='the stick held with the trigger')
     parser.add_argument('--dist', type=float, default=230.)
     args = parser.parse_args()
-    qa.bridge.URL = f'http://127.0.0.1:{args.port}'
+    qa.bridge.use_port(args.port)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
     out = qa.yori.OUT / 'skateqa' / 'grabs'; out.mkdir(parents=True, exist_ok=True)
     path = out / 'grabs.json'

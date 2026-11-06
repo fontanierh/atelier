@@ -6,9 +6,11 @@ A record names the session (a random ID the game gets as `-livesession=ID`), the
 checkout and its revision, the loopback port the bridge listens on (`-liveport=N`, a free port distinct from every other
 live session), the launcher process (PID and start time) and the owning agent (`ATELIER_AGENT`).
 
-Before any command the client asks the bridge's `GET /identity` and checks it against the record: the same session ID,
-a process descending from the recorded launcher, the same project file in the same checkout. Any mismatch, a stale
-launcher, or nothing answering is an error; nothing falls back to another game or to the old fixed port 8830.
+Before every command the client asks the bridge's `GET /identity` and checks it against the record: the same session
+ID, a process descending from the recorded launcher, the same project file in the same checkout. The check repeats
+before each request, so a game that exits mid-scenario and leaves its port to another process stops the scenario. Any
+mismatch, a stale launcher, or nothing answering is an error; nothing falls back to another game or to the old fixed
+port 8830.
 
 Records hold machine-local paths and stay in the cache; they are never committed.
 """
@@ -23,6 +25,11 @@ LEGACY_PORT = 8830   # the bridge's configured default; a session never allocate
 
 class SessionError(RuntimeError):
     """A live command has no verified target. The message says why and what to pass instead."""
+
+
+class Unreachable(SessionError, ConnectionError):
+    """Nothing answers on the target's port. Also a ConnectionError, so a scenario that retries while its game starts
+    or reloads (catching OSError, as a refused request raised before verification) keeps retrying."""
 
 
 def directory(create=True):
@@ -231,20 +238,23 @@ def identity(port, timeout=2.):
         raise SessionError(f'loopback port {port} answers without a live identity (HTTP {error.code}): '
                            'a game from before live sessions, or not a game') from None
     except (OSError, ValueError) as error:
-        raise SessionError(f'nothing answers on loopback port {port}: {error}') from None
+        raise Unreachable(f'nothing answers on loopback port {port}: {error}') from None
     if not isinstance(value, dict):
         raise SessionError(f'loopback port {port} answered a malformed identity')
     return value
 
 
-def verify(record, timeout=2.):
+def verify(record, timeout=2., verified=None):
     """@cc [owner:fontanierh,label:safety] live-session-target
     A live command MUST reach only a process whose /identity carries the record's session ID, descends from the
     record's still-live launcher (PID and start time) and runs the record's project file in the record's checkout.
     Any mismatch, missing identity or stale launcher MUST be an error, never a fallback to another session or port.
+    A client sending several commands to one record MUST repeat this check before each command.
     Pruning MUST remove only records whose launcher is provably gone and MUST NOT signal any process.
 
-    Prove that the process on the record's port is the game the record describes; return its identity."""
+    Prove that the process on the record's port is the game the record describes; return its identity. `verified` is
+    the identity an earlier verify of this record returned: when the bridge still reports that same process, the
+    ancestry walk is not repeated (the launcher, session, PID and project are all checked again)."""
     session, port = record['session'], record['port']
     state = launcher_state(record)
     if state != 'live':
@@ -254,14 +264,15 @@ def verify(record, timeout=2.):
     try:
         found = identity(port, timeout)
     except SessionError as error:
-        raise SessionError(f'session {session}: {error}') from None
+        raise type(error)(f'session {session}: {error}') from None
     if found.get('session') != session:
         raise SessionError(f'session {session}: loopback port {port} is held by another process '
                            f'(session {found.get("session") or "none"}, PID {found.get("pid")})')
     pid = found.get('pid')
     if type(pid) is float and pid.is_integer():
         pid = int(pid)
-    if type(pid) is not int or not descends(pid, record['launcher']['pid']):
+    same = verified is not None and pid == verified.get('pid') and found.get('session') == verified.get('session')
+    if type(pid) is not int or not (same or descends(pid, record['launcher']['pid'])):
         raise SessionError(f'session {session}: the process on port {port} (PID {pid}) was not started by the '
                            f'recorded launcher (PID {record["launcher"]["pid"]})')
     expected = (Path(record['checkout']) / record['project']).resolve()

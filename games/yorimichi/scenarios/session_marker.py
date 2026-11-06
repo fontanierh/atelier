@@ -1,6 +1,6 @@
 """Check several named markers and safe returns in a guarded Cairo game using an isolated -markersave file.
 
-    atelier qa yorimichi session_marker --port 8830 --save-file build/yorimichi/marker-test.json
+    atelier qa yorimichi session_marker --save-file build/yorimichi/marker-test.json
 
 The first run requires an empty review save. Restart the guarded game with the same -markersave=FILE and run with
 --reload to check disk persistence. Never uses the player's normal save. The caller owns the lock and memory guard.
@@ -70,12 +70,12 @@ def travel(point, yaw=0):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=8830)
+    parser.add_argument('--port', type=int, help='a game without a live session on loopback port N (default: the session atelier qa selects)')
     parser.add_argument('--reload', action='store_true')
     parser.add_argument('--save-file', type=Path, required=True)
     parser.add_argument('--out', type=Path, default=paths.build_root()/'yorimichi/session-marker/review')
     args = parser.parse_args()
-    live.URL = f'http://127.0.0.1:{args.port}'
+    live.use_port(args.port)
     args.out.mkdir(parents=True, exist_ok=True)
     save = args.save_file.resolve()
     launch = value('unreal.SystemLibrary.get_command_line()')

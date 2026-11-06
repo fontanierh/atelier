@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """In-game checks for the complete skating session (requires the normal game build).
 
-atelier qa yorimichi skate_runtime --port 8830
+atelier qa yorimichi skate_runtime
 """
 import argparse
 import json
@@ -15,9 +15,9 @@ def position(row):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=8830)
+    parser.add_argument('--port', type=int, help='a game without a live session on loopback port N (default: the session atelier qa selects)')
     args = parser.parse_args()
-    qa.bridge.URL = f'http://127.0.0.1:{args.port}'
+    qa.bridge.use_port(args.port)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
     qa.py('live.L.skate_goofy(False); live.skate_park(); live.skate_input()')
     for _ in range(60):

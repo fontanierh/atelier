@@ -1,5 +1,5 @@
 """Live-session selection without Unreal: fake bridges on loopback answer /identity, /state and /python."""
-import json, os, socket, subprocess, sys, threading
+import json, os, re, socket, subprocess, sys, threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -15,6 +15,7 @@ def isolated(tmp_path, monkeypatch):
     for name in ('ATELIER_LIVE_SESSION', 'ATELIER_LIVE_GAME', 'ATELIER_LIVE_CHECKOUT', 'ATELIER_LIVE_PORT'):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(live, 'URL', None)
+    monkeypatch.setattr(live, 'PORT', None)
     monkeypatch.setattr(live, '_selected', None)
     monkeypatch.setattr(live_sessions, 'revision', lambda root: 'f' * 40)
 
@@ -238,3 +239,95 @@ def test_qa_environment_selects_the_named_session(tmp_path, monkeypatch, bridges
     monkeypatch.setenv('ATELIER_LIVE_SESSION', second['session'])
     assert live.request('/state') == {'fps': 60}
     assert two.received == ['state'] and one.received == []
+
+
+def test_every_request_verifies_the_session_again(tmp_path, monkeypatch, bridges):
+    record, root = session(tmp_path, monkeypatch)
+    monkeypatch.setattr(paths, 'REPO', root)
+    game = bridges(record)
+    assert live.request('/state') == {'fps': 60}
+    asked, real = [], live_sessions.identity
+    monkeypatch.setattr(live_sessions, 'identity', lambda port, timeout=2.: asked.append(port) or real(port, timeout))
+    monkeypatch.setattr(live_sessions, 'descends', lambda *a: pytest.fail('the verified process is not walked again'))
+    live.request('/state'); live.request('/python', 'x = 1')
+    assert asked == [record['port']] * 2 and game.received == ['state', 'state', live.python_body('x = 1')]
+    # The game exits mid-scenario and another process takes its port: the next command never reaches it.
+    identity = dict(game.identity)
+    game.close()
+    impostor = Bridge(record['port'], dict(identity, session='0' * 32))
+    try:
+        with pytest.raises(SessionError, match='held by another process'):
+            live.request('/python', 'x = 2')
+        impostor.identity = dict(identity, pid=1)   # the session's ID, but not a process of its launcher
+        monkeypatch.setattr(live_sessions, 'descends', lambda pid, ancestor, limit=32: False)
+        with pytest.raises(SessionError, match='not started by the recorded launcher'):
+            live.request('/state')
+        impostor.identity = dict(identity, project_file=str(tmp_path / 'Other.uproject'))
+        with pytest.raises(SessionError, match='runs project'):
+            live.request('/state')
+        assert impostor.received == []
+    finally:
+        impostor.close()
+    # Nothing answers (a reload, or the game quit): an error a retrying scenario still sees as a ConnectionError.
+    with pytest.raises(ConnectionError, match='nothing answers'):
+        live.request('/state')
+    monkeypatch.setattr(live_sessions, 'launcher_state', lambda r: 'gone')
+    with pytest.raises(SessionError, match='stale'):
+        live.request('/state')
+
+
+def test_an_explicit_port_never_overrides_the_selected_session(tmp_path, monkeypatch, bridges):
+    chosen, root = session(tmp_path, monkeypatch)
+    other, _ = session(tmp_path, monkeypatch)
+    one, two = bridges(chosen), bridges(other)
+    legacy = Bridge(live_sessions.free_port(), None)
+    monkeypatch.setattr(paths, 'REPO', root)
+    monkeypatch.setenv('ATELIER_LIVE_GAME', 'alpha')
+    monkeypatch.setenv('ATELIER_LIVE_SESSION', chosen['session'])   # as `atelier qa --session ID` passes it
+    try:
+        for port in (other['port'], legacy.server.server_address[1], live_sessions.LEGACY_PORT):
+            live.use_port(port)   # a scenario's --port N
+            with pytest.raises(SessionError, match='not the port of session'):
+                live.request('/state')
+        live.use_port(None)
+        monkeypatch.setattr(live, 'URL', f'http://127.0.0.1:{live_sessions.LEGACY_PORT}')   # a script's own URL
+        with pytest.raises(SessionError, match='not the port of session'):
+            live.request('/state')
+        monkeypatch.setattr(live, 'URL', None)
+        assert live.request('/state') == {'fps': 60}   # no --port: the selected session
+        live.use_port(chosen['port'])                   # its own port: the same verified session
+        assert live.request('/state') == {'fps': 60}
+        assert one.received == ['state', 'state'] and two.received == [] and legacy.received == []
+    finally:
+        legacy.close()
+
+
+def test_a_scenario_port_is_the_explicit_route_and_verified_when_a_record_owns_it(tmp_path, monkeypatch, bridges):
+    record, root = session(tmp_path, monkeypatch)
+    monkeypatch.setattr(paths, 'REPO', root)
+    monkeypatch.setenv('ATELIER_LIVE_GAME', 'alpha')   # `atelier qa` without --session
+    legacy = Bridge(live_sessions.free_port(), None)
+    port = legacy.server.server_address[1]
+    try:
+        live.use_port(port)   # an old game without a session record
+        assert live.request('/state') == {'fps': 60} and legacy.received == ['state']
+        # A launch that records that port later: the next request verifies it, and the unverified game is refused.
+        session(tmp_path, monkeypatch, name='a', port=port)
+        with pytest.raises(SessionError, match='without a live identity'):
+            live.request('/state')
+        assert legacy.received == ['state']
+    finally:
+        legacy.close()
+    impostor = bridges(record, session='0' * 32)
+    live.use_port(record['port'])
+    with pytest.raises(SessionError, match='held by another process'):
+        live.request('/state')
+    assert impostor.received == []
+
+
+def test_no_scenario_pins_the_bridge_url_or_the_default_port():
+    """Scenarios reach the game through session selection (`live.use_port` for an explicit --port), never a fixed URL
+    or the bridge's default port, which would bypass the session `atelier qa` selects."""
+    offenders = [str(path.relative_to(paths.REPO)) for path in sorted(paths.REPO.glob('games/*/scenarios/**/*.py'))
+                 if re.search(r'\.URL\s*=|\b8830\b', path.read_text())]
+    assert offenders == []

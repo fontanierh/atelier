@@ -31,7 +31,11 @@ def test_python_body_tracebacks_name_the_sent_code():
         raise AssertionError('the code did not run')
 
 
-def test_request_wraps_only_python_bodies(monkeypatch):
+def test_request_wraps_only_python_bodies(monkeypatch, tmp_path):
+    monkeypatch.setenv('ATELIER_CACHE', str(tmp_path))   # no session record owns the port
+    for name in ('ATELIER_LIVE_SESSION', 'ATELIER_LIVE_GAME', 'ATELIER_LIVE_CHECKOUT', 'ATELIER_LIVE_PORT'):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(live, '_selected', None)
     sent = []
     class Response:
         def __enter__(self): return self
