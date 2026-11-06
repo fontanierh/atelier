@@ -21,6 +21,7 @@ scope.
 | `tools/content/` | records library and the read-only content check |
 | `tools/import/` | the targeted importer |
 | `tools/review/` | the change-set report for reviews |
+| `tools/test/` | the native automation test runner |
 | `tools/migrate/` | one-time migration: donor adoption, the world migration runner, scene dumps and their parity compare |
 | `unreal/` | `YorimichiV2.uproject`, `Config/`, `Source/` (by feature), `Plugins/HorseRacing`, `Scripts/` (editor scripts), **`Content/` (committed)** |
 | `tests/` | Python checks for these tools |
@@ -55,6 +56,7 @@ ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_I
 uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # (pending) one-time donor adoption
 uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # (pending) one-time world migration
 uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
+ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
 ```
 
 `/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
