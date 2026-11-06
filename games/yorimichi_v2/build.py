@@ -104,6 +104,10 @@ def _authorize_editor(ctx, log):
     if claim and not declared:
         raise RuntimeError('V2_EDITOR_CLAIM needs V2_EDITOR_PATHS: the repository paths the script may write')
     authority.authorize(declared, claim, f"editor script {os.environ.get('V2_EDITOR_SCRIPT', '?')}")
+    if claim:   # the save boundary: the editor refuses any other package save
+        authority.allow_saves(declared, ctx.out / 'editor-run' / 'save-allow.txt')
+    else:
+        os.environ.pop('V2_SAVE_ALLOW', None)
     EDITOR_BEFORE.clear()
     EDITOR_BEFORE.update(authority.content_snapshot(GAME))
     log.write(f"editor script authorized ({'claim ' + claim if claim else 'bootstrap writer'})\n")
@@ -113,6 +117,7 @@ def _check_editor_writes(ctx, log):
     """A claimed script must have written only its declared paths; every write is listed for save validation."""
     import os
     authority = _authority()
+    os.environ.pop('V2_SAVE_ALLOW', None)
     changed = sorted('games/yorimichi_v2/' + rel for rel in authority.written(EDITOR_BEFORE, authority.content_snapshot(GAME)))
     log.write(''.join(f'editor script wrote {path}\n' for path in changed) or 'editor script wrote nothing\n')
     if os.environ.get('V2_EDITOR_CLAIM'):
@@ -132,8 +137,19 @@ def _authorize_import(ctx, log):
     """Re-check the import plan's claim at the write boundary, so selecting import.<id> directly is not a bypass."""
     import json
     import os
-    plan = json.loads(Path(os.environ['V2_IMPORT_PLAN']).read_text())
-    _authority().authorize(plan['write_paths'], plan.get('claim'), f"import of {plan['asset']}")
+    authority = _authority()
+    plan_file = Path(os.environ['V2_IMPORT_PLAN'])
+    plan = json.loads(plan_file.read_text())
+    # The destinations come from the planned packages themselves, never only from the plan's own path list.
+    import records
+    destinations = set()
+    for package in plan['packages']:
+        stem = records.package_files(GAME, package)[0].with_suffix('')
+        destinations |= {'games/yorimichi_v2/' + records.content_relative(GAME, stem.with_suffix(ext))
+                         for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
+    paths = sorted(destinations | set(plan.get('write_paths', ())))
+    authority.authorize(paths, plan.get('claim'), f"import of {plan['asset']}")
+    authority.allow_saves(sorted(destinations), plan_file.with_name('save-allow.txt'))
 
 
 def _check_package_inputs(ctx, log):

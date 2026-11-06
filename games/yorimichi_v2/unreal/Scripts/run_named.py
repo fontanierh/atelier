@@ -10,6 +10,8 @@ from pathlib import Path
 
 import unreal
 
+if os.environ.get('V2_SAVE_ALLOW') and not unreal.V2SaveGuard.is_active():
+    raise RuntimeError('V2_SAVE_ALLOW is set but the V2 save guard is not active; refusing to run')
 script = Path(os.environ['V2_EDITOR_SCRIPT']).resolve()
 if Path(__file__).resolve().parent not in script.parents:
     raise RuntimeError(f'{script} is not a V2 editor script (unreal/Scripts)')

@@ -18,6 +18,13 @@ class Unauthorized(RuntimeError):
     pass
 
 
+def allow_saves(paths: list[str], list_file: Path, *, repo: Path = REPO) -> None:
+    """Limit the next editor's package saves to these repository-relative paths (V2SaveGuard, V2_SAVE_ALLOW)."""
+    list_file.parent.mkdir(parents=True, exist_ok=True)
+    list_file.write_text(''.join(f'{repo / path}\n' for path in sorted(set(paths))))
+    os.environ['V2_SAVE_ALLOW'] = str(list_file)
+
+
 def content_snapshot(game: Path) -> dict[str, tuple]:
     """(size, mtime, ctime, inode) of every file under unreal/Content, game-relative, to find what a run wrote."""
     content = game / 'unreal' / 'Content'
@@ -48,9 +55,11 @@ def checkout_task(repo: Path = REPO) -> str | None:
 def authorize(paths: list[str], claim: str | None, what: str, *, repo: Path = REPO) -> None:
     """Raise Unauthorized unless this write of repository-relative `paths` is allowed."""
     if claim:
+        if not paths:
+            raise Unauthorized(f'{what}: a claimed write must name the paths it writes')
         command = ['uv', 'run', 'atelier', 'claims', 'check', '--stage', 'publish', '--task', claim,
                    '--paths', *paths]
-        if paths and subprocess.run(command, cwd=repo).returncode:
+        if subprocess.run(command, cwd=repo).returncode:
             raise Unauthorized(f'{what}: claim {claim} does not exactly cover these paths with verified locks; '
                                'extend and acquire it first')
         return

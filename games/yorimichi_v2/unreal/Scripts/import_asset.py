@@ -48,6 +48,10 @@ def _import(source, package, options):
     if options is not None:
         task.set_editor_property('options', options)
     TOOLS.import_asset_tasks([task])
+    # An existing destination still loads after a failed reimport, so only the task's own result counts.
+    imported = {str(path).split('.', 1)[0] for path in task.get_editor_property('imported_object_paths')}
+    if package not in imported:
+        raise RuntimeError(f'import of {source} did not produce {package} (task imported {sorted(imported)})')
     asset = EAL.load_asset(package)
     if asset is None:
         raise RuntimeError(f'import of {source} produced no asset at {package}')
@@ -81,6 +85,8 @@ def _apply_material_slots(asset, plan):
 
 
 def main():
+    if not U.V2SaveGuard.is_active():
+        raise RuntimeError('the V2 save guard is not active (V2_SAVE_ALLOW); an import runs only through its build step')
     plan = json.loads(open(os.environ['V2_IMPORT_PLAN']).read())
     settings = plan['settings']
     if len(plan['sources']) != len(plan['packages']):
