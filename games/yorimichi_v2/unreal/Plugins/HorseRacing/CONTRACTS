@@ -1,0 +1,42 @@
+@cc [owner:fontanierh,label:correctness] deterministic-racing-draws
+Valid draws MUST be stateless, depend only on seed/tag/range, and retain the reference
+UTF-16 hash and JSON-string key semantics. Draws MUST use rejection sampling rather than
+biased modulo alone (except HRVisual::Draw, which retains the reference mobile visual-genome
+modulo reduction and fails explicitly on Max < 1). Checked APIs MUST reject nonpositive or oversized bounds, negative
+weights and overflowing/zero weight sums without changing the output. Internal checked
+convenience calls MUST fail explicitly on invalid arguments in every build, never hang
+or produce a fallback draw. Untrusted values MUST use the nonfatal checked APIs.
+
+@cc [owner:fontanierh,label:architecture] racing-rules-boundary
+Yorimichi MUST own the racing plugin, its rules and build inputs under its game directory.
+Rules MUST remain independent of actors, UI and rendering assets; presentation, authored venue
+data, runtime authority and persistence admission remain separate game-owned concerns.
+
+@cc [owner:fontanierh,label:correctness] racing-clock-boundaries
+The calendar MUST retain the reference two-hour days, twelve-day seasons, horse-age
+clock and Grand Prix dates. Schedule phases MUST use half-open boundaries and select
+the last slot whose computed start is not later than the query. External schedule
+admission MUST reject nonfinite/out-of-range times and negative counts without changing
+output. Searching a schedule MUST NOT perform work proportional to an untrusted count.
+
+@cc [owner:fontanierh,label:correctness] racing-value-arithmetic
+Horse value structures MUST NOT be treated as admitted external state. Their arithmetic
+helpers MUST widen before addition so malformed int32 values cannot cause signed overflow.
+Gene-pair indexing MUST reject indices outside 0/1 rather than silently choosing an allele.
+Public reflected data structures MUST be exported for consumers in other modules.
+
+@cc [owner:fontanierh,label:correctness] racing-breed-inheritance
+Breed expression and inheritance MUST retain the four-allele dominance table and
+semantic founder/inheritance draw tags. Checked APIs MUST reject either malformed
+parent allele or output alias to any parent gene before changing their output.
+Missing genes MUST retain the reference Standard phenotype or per-side founder draw,
+and parents MUST remain unchanged.
+
+@cc [owner:fontanierh,label:correctness] racing-save-and-economy-invariants
+HRSave::FromJson and HRSave::Validate MUST verify schema/rules versions, required fields,
+duplicate JSON keys, collection bounds, unique IDs, cross-references and numeric/allele
+ranges before mutating the output world state. Coin balances MUST saturate in 0..MaxCoins
+with int64 pool sums, SettleRace MUST skip declared races and settle refunds before
+winner payouts so odds are order-independent, and AdvanceTo catch-up MUST ignore nonfinite
+times and bound catch-up to at most MaxCatchUpDays per call.
+Replicated client snapshots MUST NOT expose FHRWorldState::Seed or a derivation of it.

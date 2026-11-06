@@ -1,0 +1,183 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "JapanBikeState.h"
+#include "JapanSkateClock.h"
+#include "BikeComponent.generated.h"
+class UBikeMeshComponent; class AWandererCharacter; class UStaticMeshComponent; class USceneComponent; class UAnimSequence; class UAudioComponent; class USoundWave; class USoundAttenuation; class UPhysicsAsset;
+
+/** Cairo's teal mamachari (assets/vehicles/bike, docs/BIKE.md). Summoned beside him, mounted, ridden with walking
+ *  physics (floors, slopes and walls stay the movement component's), parked on its stand or crashed. Every rider move
+ *  is a clip authored on the bike (assets/vehicles/bike/rider.py); the clip's per-frame bike channels (crank, stand,
+ *  lift, pitch, lean, yaw, steer) pose the parts here, on the same clock the animation instance plays the clip on. */
+UCLASS()
+class YORIMICHI_API UBikeComponent : public UActorComponent
+{
+ GENERATED_BODY()
+public:
+ enum class EState : uint8 { Off, Mounting, Riding, Dismounting, Parking, Crashing };
+ UBikeComponent();
+ void Initialize(AWandererCharacter*);
+ /** V / hold Y: summon and mount, or (stopped) step off and park. False with the reason in GetStatus(). */
+ bool Toggle();
+ void StowImmediately();
+ /** Intent: X steers, Y pedals (+) or brakes (-). Lean: the rider's weight, back (-) lifts the front into a wheelie. */
+ void SetInput(FVector2D Intent,float Lean,bool bMenuOpen);
+ /** Sprint (Shift, left stick press): pedal hard until pressed again, or until he stops pedalling, brakes, skids or
+  *  gets off. False when he is not riding. */
+ bool ToggleSprint();
+ bool IsSprinting() const { return bSprint; }
+ bool Hop(); bool Skid(); bool Bell(); bool Wave();
+ virtual void TickComponent(float,ELevelTick,FActorComponentTickFunction*) override;
+ /** Online simulation advances with CMC in bounded substeps inside each saved move. No presentation or parking side effects. */
+ void RefreshTickOrder();
+ void SimulateNetwork(float Dt,FVector2D Stick,float RiderLean,bool Menu);
+ FJapanBikeState CaptureNetworkState() const;
+ bool ApplyNetworkActivity(const FJapanBikeState& Snapshot);
+ bool ApplyNetworkState(const FJapanBikeState& Snapshot,bool RestoreFacing=true);
+ void ReceiveNetworkPresentation(uint32 Epoch,double Stamp,const FJapanBikeState& Snapshot);
+ bool NeedsNetworkPark() const { return bTerminal; }
+ /** Host activity handoff only; never call from movement simulation or correction replay. */
+ bool CommitNetworkPark();
+ bool ForceNetworkPark(FJapanBikeState& ParkedPose);
+ bool ShowNetworkParked(const FJapanBikeState& Pose,const FTransform& Transform);
+ void HideNetworkParked();
+ bool IsAvailable() const { return bAssetsReady; }
+ /** He is on (or getting on or off) the bike: the bike owns his movement and his animation. */
+ bool IsEquipped() const { return State!=EState::Off; }
+ bool IsRiding() const { return State==EState::Riding; }
+ EState GetState() const { return State; }
+ float GetSpeed() const { return Speed; }
+ float GetSteering() const { return Steering; }
+ /** Seconds into a drift, signed by its side (+ right); zero when not drifting. */
+ float GetDrift() const { return Drift; }
+ /** Front wheel lift in degrees (a wheelie). */
+ float GetWheelie() const { return Wheelie; }
+ /** Seconds off the ground on the bike (a hop, a ramp's lip or a drop). */
+ float GetAirTime() const { return Air; }
+ /** The ground's slope along his heading (degrees, up positive) at his last grounded step. */
+ float GetSlope() const { return Slope; }
+ uint32 GetSerial() const { return Serial; }
+ UAnimSequence* GetSequence() const;
+ FName GetClip() const { return Clip; }
+ float GetClipTime() const { return ClipTime; }
+ /** Authored visual hop lift in centimetres; does not imply ballistic CMC movement. */
+ float GetAuthoredLift() const;
+ /** Where the animation should be in the clip: the clock wrapped for loops, held at the end for one-shots. */
+ float GetPoseTime() const;
+ FString GetStatus() const { return Hint; }
+ /** Per hand (0 left, 1 right): contact weight, the live grip's offset from the authored one and the bars' extra turn,
+  *  in the mesh's component space. */
+ void GetGrip(int32 Side,float& Weight,FVector& Offset,FQuat& Turn) const;
+ /** The bike's assembled world transform and its parts, for QA and reviews. */
+ FTransform GetBikeTransform() const;
+ bool IsParked() const { return bParked; }
+ /** Minimum mesh-support gap to ground under each wheel (cm; negative: sunk in), front then rear.
+  * Unavailable CPU geometry or ground returns a large invalid value, never zero. */
+ FVector2D GetWheelGaps() const;
+ FIntPoint GetWheelSupportCounts() const { return FIntPoint(WheelSupport[0].Num(),WheelSupport[1].Num()); }
+ double GetWheelSupportBuildMs() const { return WheelSupportBuildMs; }
+ double GetWheelSupportQueryMs() const { return WheelSupportQueryMs; }
+ /** The pitch (degrees, nose up) the bike and he take from the ground under the wheels. */
+ float GetGroundPitch() const { return GroundPitch; }
+ /** Each loop's "volume pitch" (tyre, tyre_wood, tyre_stone, tyre_dirt, tyre_grass, freewheel, chain, wind, skid,
+  *  skid_dirt), for mixing filmed takes offline (scenarios/bike_live.py). */
+ FString GetLoopState() const;
+private:
+ struct FClip { float Duration=0; bool bLoop=false; TArray<TArray<float>> Frames; TArray<FVector2D> Contacts[4]; FVector2D EndOffset=FVector2D::ZeroVector; bool bEndOffset=false; };
+ UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
+ UPROPERTY() TObjectPtr<USceneComponent> BikeRoot;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> Frame;
+ UPROPERTY() TObjectPtr<USceneComponent> Steer;
+ UPROPERTY() TArray<TObjectPtr<UBikeMeshComponent>> SteeringParts;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelFront;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelRear;
+ mutable TArray<FVector> WheelSupport[2];
+ mutable bool bWheelSupportLoaded=false;
+ mutable double WheelSupportBuildMs=0.,WheelSupportQueryMs=0.;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> Crank;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> PedalL;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> PedalR;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> Kickstand;
+ UPROPERTY() TObjectPtr<UStaticMeshComponent> RackBoard;
+ /** A rider's cloth (Modori's coat) collides with the bike while he rides it: the rack and its board, the rear wheel. */
+ UPROPERTY() TObjectPtr<UPhysicsAsset> ClothBodies;
+ bool bClothCollidersOn=false;
+ void ClothColliders(bool bOn);
+ UPROPERTY() TMap<FName,TObjectPtr<UAnimSequence>> Sequences;
+ TMap<FName,FClip> Clips;
+ int32 Fps=60;
+ // From the bike's manifest, in centimetres in the mesh's frame (Unreal axes: +Y is the bike's right).
+ FVector HeadPivot,SteerAxis,FrontAxle,RearAxle,BottomBracket,StandPivot,Grip[2],RearContact,Beside;
+ float WheelRadius=23.f,CrankLength=12.f,PedalOffset=8.f,StowedDegrees=96.f;
+ FQuat SteerRest=FQuat::Identity;
+ EState State=EState::Off;
+ FName Clip,Resume;
+ float ClipTime=0,Speed=0,Steering=0,Lean=0,WheelAngle=0,StillTime=0,AppliedYaw=0,CrankAngle=0;
+ FVector2D Input=FVector2D::ZeroVector;
+ float LeanIn=0.f;
+ bool bSprint=false,bMenu=false,bAssetsReady=false,bParked=false;
+ bool bTickModeSet=false,bNetworkTickOrder=false;
+ bool QueueNetworkAction(FName Button,bool& Accepted);
+ float SimCrank=0.f; bool bTerminal=false,bNetworkPedalling=false;
+ uint32 PresentedSerial=0,PresentedEpoch=0;
+ uint32 PresentationBufferEpoch=0;
+ struct FNetworkPose { double At; FJapanBikeState State; };
+ TArray<FNetworkPose> NetworkPoses;
+ FJapanSkatePlayout NetworkPlayout;
+ double LastPresentationStamp=-1.;
+ void SampleNetworkPresentation();
+ TSet<uint64> PlayedNetworkCues;
+ TArray<uint64> NetworkCueOrder;
+ bool AdvanceSimulation(float Dt,bool& Pedal,float& Cadence);
+ void PresentNetwork(float Dt);
+ void PresentParts(float Dt,TArray<float>& Channels,bool Pedal,float Cadence);
+ float Coast=0;   // s since he last pedalled, for ending the sprint
+ // The fun layer (docs/BIKE.md, "Riding for fun"): simulation state, carried by FJapanBikeState.
+ float Drift=0;                    // s into a drift, signed by its side (+ right); zero when not drifting
+ float Wheelie=0,WheelieRate=0;    // front wheel lift, degrees and degrees/s
+ float Rise=0;                     // cm/s the ground carried him up at his last grounded step
+ float Air=0,AirFall=0;            // s off the ground; fastest fall in that time, cm/s
+ float Slope=0;                    // degrees, up positive, along his heading (derived from the floor each step)
+ // Presentation only: the bike's swing out of line in a drift, the landing's dip, the trick line on the HUD.
+ float DriftYaw=0,LandDip=0,WheelieTime=0,TrickTime=0; FString Trick;
+ void ShowTrick(const FString& Text){Trick=Text;TrickTime=1.6f;}
+ void EndDrift(bool bBoost);
+ void AdvanceFun(float Dt,bool bPedal);
+ // The ground under the wheels: he and the bike pitch to it and sit on it between them (cm), snapped on getting on.
+ float GroundPitch=0,GroundOffset=0,WheelGround[2]={0,0},WheelFall[2]={0,0}; bool bSnapGround=false;   // front, rear: cm, cm/s
+ void FollowGround(float Dt);
+ /** M_Bike's shaders are made (editor builds; bFinish: wait for them). */
+ bool MaterialsReady(bool bFinish) const;
+ uint32 Serial=0;
+ // The channels last posed, and what is left of the blend from them into a new clip (the rider's own clip blend).
+ TArray<float> Displayed,BlendFrom; float BlendLeft=0;
+ FString Hint=TEXT("V bike");
+ float SavedFriction=0,SavedBraking=0;
+ float Recoil=0;   // cm the crash backs off from what he hit, over CrashRecoil s
+ FVector MeshLocation=FVector::ZeroVector; FRotator MeshRotation=FRotator::ZeroRotator;
+ // Sounds (/Game/Audio/Bike, assets/audio/bike/make.py): loops on the bike, one-shot banks played at the bike.
+ UPROPERTY() TArray<TObjectPtr<UAudioComponent>> Loops;
+ UPROPERTY() TArray<TObjectPtr<USoundWave>> Waves;
+ UPROPERTY() TObjectPtr<USoundAttenuation> Attenuation;
+ TMap<FName,FIntPoint> CueRange; TArray<float> LoopVolume; int32 LastVariant=-1;
+ uint8 Ground=0;   // ESkateSurface under the wheels
+ float GroundCheck=0,CueClock=-1,Airborne=0,FallSpeed=0,RattleWait=0;
+ void LoadSounds();
+ void PlayCue(FName Cue,float Volume=1.f,float Pitch=1.f);
+ void ClipCues();
+ void UpdateAudio(float Dt,bool bPedal,float Cadence);
+ bool LoadData();
+ /** The rider's rig, naming its bike clips and data: "Cairo" or "Modori" (rider.py --character). */
+ FString RiderRig() const;
+ void Play(FName Name,FName Then=NAME_None);
+ const TArray<float>* Channels(TArray<float>& Out) const;
+ float ContactWeight(int32 Limb) const;
+ void BeginRide();
+ void EndClip();
+ void Park();
+ bool ClearFor(const FVector& Origin,float Yaw) const;
+ void Pose(const TArray<float>& C);
+ FTransform BikeMatrix(const TArray<float>& C) const;
+ FQuat SteerQuat(float Degrees) const;
+};

@@ -1,0 +1,161 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "JapanMarkers.h"
+#include "JapanAtlasNames.h"
+class FJsonObject;
+#include "JapanWorld.generated.h"
+
+class UHierarchicalInstancedStaticMeshComponent;
+class UStaticMeshComponent;
+
+/** The volumetric fog's look, from the settings menu (UJapanPreferences, docs/VOLUMETRIC_FOG.md). */
+struct FVolumetricFogLook
+{
+    float Density = .07f;       // the height fog's density at sea level, in the countryside
+    float Reach = 3000.f;       // the froxel grid's view distance (cm)
+    float Falloff = .12f;       // the height fog's falloff: the density halves every 1000 / Falloff cm up
+    float Scattering = .5f;     // the phase function's anisotropy: 0 even, toward 0.9 a glow toward the sun
+    float Shafts = 1.f;         // the sun's volumetric scattering intensity
+    float Town = 0.f;           // the share of the density left when the view holds Hidamari
+    bool bPerformance = false;  // the Graphics setting (only the grid's resolution, set by console variables)
+    bool operator==(const FVolumetricFogLook&) const = default;
+};
+
+/** A tree house room for the camera see-through's hole mode (docs/CAMERA.md): Unreal centre (cm), half size (cm; a
+ *  round room has its radius on every axis), yaw (radians). */
+struct FSeeThroughRoom
+{
+    FVector Center = FVector::ZeroVector;
+    FVector Extent = FVector::ZeroVector;
+    float Yaw = 0.f;
+    bool bRound = false;
+};
+
+USTRUCT()
+struct FWorldShot
+{
+    GENERATED_BODY()
+    FVector Location = FVector::ZeroVector;
+    FRotator Rotation = FRotator::ZeroRotator;
+};
+
+/** Spawns the generated world (Content/Data/world.json): instanced props, sky dome, sea. Positions in the json are
+ *  Blender metres (X east, Y north, Z up); Unreal is centimetres with Y flipped, yaw negated. */
+UCLASS()
+class YORIMICHI_API AJapanWorld : public AActor
+{
+    GENERATED_BODY()
+public:
+    AJapanWorld();
+    virtual void BeginPlay() override;
+
+    static FVector ToUE(double X, double Y, double Z) { return FVector(X * 100.0, -Y * 100.0, Z * 100.0); }
+
+    UPROPERTY() TObjectPtr<class AZeppelinService> Zeppelin;
+    TSharedPtr<FJsonObject> ZeppelinRecord;
+    FTransform PlayerStart;
+    /** Named player locations loaded from the save, shared across character switches. */
+    FJapanMarkers Markers;
+    FJapanAtlasNames AtlasNames;
+    TArray<FWorldShot> Shots;
+    bool bLoaded = false;
+    /** Completed all synchronous region/collision and rail bootstrap, not just the terrain. */
+    bool bGameplayReady = false;
+    FString BootstrapError;
+    /** Momiji Hamlet's record in world.json (offset, buildings, residents), for what lives there (ASwordTrainer). */
+    TSharedPtr<FJsonObject> VillageRecord;
+    bool bHidamariLoaded = false;
+    int32 TotalInstances = 0;
+    bool bForestLakeLoaded = false;
+    FVector ForestLakeCenter = FVector::ZeroVector;
+    FVector2D ForestLakeRadii = FVector2D::ZeroVector;
+    FVector ForestLakeSafeShore = FVector::ZeroVector;
+
+    UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> Groups;
+    // The far-hill backdrop subset, kept separately so its cull distance can be set on its own.
+    UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> BackdropGroups;
+    /** Each in-map tree group's shadow: the same instances, hidden, casting the shadow the visible group no longer casts,
+     *  culled per instance at the menu's tree shadow distance from the camera. */
+    UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> ShadowTwins;
+    UPROPERTY() UStaticMeshComponent* SkyDome = nullptr;
+    UPROPERTY() TArray<UStaticMeshComponent*> SeaPieces;
+    UPROPERTY() class UMaterialParameterCollection* WindMPC = nullptr;
+
+    // wind (Unreal frame, cm/s): a steady direction with slow gusts
+    FVector WindDir = FVector(0.3, -0.95, 0); float WindSpeed = 350.f;
+    float WindStrength(const FVector& P, float T) const;
+    FVector WindAt(const FVector& P, float T) const { return WindDir * WindSpeed * WindStrength(P, T); }
+    virtual void Tick(float Dt) override;
+    // Cosmetic particles sample the generated ground directly; gameplay still uses collision.
+    bool SampleGroundHeight(const FVector& Position, float& Height) const;
+    /** The menu's Graphics mode (grass reach), tree sway distance in metres (trees and bushes beyond it stand still) and
+     *  forest detail, the forest trees' LOD distance scale (below 1 their simpler models come nearer). */
+    void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres);
+    /** The menu's city-tree optimization: unchanged close trees and collision, lighter distant leaf outlines. */
+    bool ApplyTreeOptimization(bool bEnabled, int32 LODMode = 0, float DistanceScale = 1.5f);
+    /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
+     *  by the sun and the sky, inside the froxel grid around the camera. Off restores the level's fog and sun as built. */
+    void ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look);
+    // Diagnosis only: honours japan.HideGroups so one foliage family can be priced at a time.
+    void ApplyGroupDiagnostics();
+    /** japan.ScreenSizeCull: every static mesh and instanced group in the world stops drawing at that multiple of its
+     *  largest instance's bounds radius (a few pixels), keeping any nearer cull its current distances have; 0 restores
+     *  the current uncapped distances. */
+    void ApplyScreenSizeCull();
+    /** An owner rewrote Component's cull distances: take them as its new uncapped base on the next pass. */
+    void ForgetScreenSizeCull(UStaticMeshComponent* Component);
+
+    // Camera see-through (SeeThrough.h, docs/CAMERA.md): the tree house's instance groups (tagged
+    // JapanSeeThrough::Tag) and its rooms from treehouse/runtime.json.
+    UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> SeeThroughGroups;
+    TArray<FSeeThroughRoom> SeeThroughRooms;
+    /** Whether P (Unreal cm) is inside room Index grown by Margin cm (negative: shrunk). False for no room. */
+    bool IsInSeeThroughRoom(int32 Index, const FVector& P, float Margin) const;
+    /** The first room P is inside (grown by Margin cm), or INDEX_NONE. */
+    int32 FindSeeThroughRoom(const FVector& P, float Margin) const;
+    /** true (hole mode, japan.SeeThroughHole 1): the chase camera's probe passes the tree house, which the hole cuts
+     *  instead; false (the default): it stops there like any solid thing (UJapanCameraArm reads this). */
+    void SetSeeThroughProbe(bool bIgnore);
+    bool IsSeeThroughProbeIgnored() const { return bSeeThroughProbeIgnored; }
+
+private:
+    TArray<float> GroundHeights;
+    int32 GroundResolution = 0;
+    float GroundSize = 0.f;
+    FString AppliedHideGroups;
+    float AppliedBackdropCull = 0.f;
+    float AppliedScreenSizeCull = 0.f;
+    double NextScreenSizeCullScan = 0.;
+    bool bScreenSizeCullDirty = false;
+    // Per component under japan.ScreenSizeCull: its uncapped cull distances (start and end; a plain mesh has only the
+    // end), what the cap last wrote, and its largest instance's mesh radius for the instance count it was measured at.
+    struct FScreenSizeCullState { FIntPoint Base; FIntPoint Written; float Radius = 0.f; int32 Instances = 0; };
+    TMap<TWeakObjectPtr<UStaticMeshComponent>, FScreenSizeCullState> ScreenSizeCullStates;
+    int32 AppliedPerformanceMode = -1;
+    float AppliedTreeSway = -1.f;
+    float AppliedForestDetail = -1.f;
+    float AppliedTreeShadow = -1.f;
+    int32 AppliedTreeOptimization = -1;
+    int32 AppliedTreeLODMode = -1;
+    float AppliedTreeDistanceScale = -1.f;
+    // The level's height fog and sun before the volumetric look (setup_project.py builds the fog with no density), and
+    // the look applied (unset: off).
+    struct FFogBase { float Density = 0.f, Falloff = 0.f, Cutoff = 0.f, Distance = 0.f, Shafts = 1.f; bool bVolumetric = false; };
+    TOptional<FFogBase> FogBase;
+    TOptional<FVolumetricFogLook> AppliedFog;
+    bool bFogApplied = false;
+    // The mist's density as applied, Hidamari's bounds (Unreal cm) and how much of the town the view holds, eased
+    // (UpdateFogDensity: Dt 0 snaps).
+    float AppliedFogDensity = -1.f, TownView = 0.f;
+    FBox2D TownBounds = FBox2D(ForceInit);
+    void UpdateFogDensity(float Dt);
+    UPROPERTY() class UPostProcessComponent* NorthAerialGrade = nullptr;
+    UPROPERTY() class UPostProcessComponent* NorthHighGrade = nullptr;
+    FVector NorthGradeCamera = FVector::ZeroVector;
+    float NorthGradeTraceElapsed = 0.f, NorthGradeClearance = 0.f;
+    bool bNorthGradeHasCamera = false;
+    void UpdateNorthAerialGrade(float Dt);
+    bool bSeeThroughProbeIgnored = false;
+    void Load();
+};
