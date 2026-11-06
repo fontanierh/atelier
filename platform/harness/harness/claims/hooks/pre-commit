@@ -1,0 +1,8 @@
+#!/bin/sh
+# Cooperative claims check before a commit: protected staged changes (including deletions and both sides of a
+# rename) must be covered by this checkout's task's active claim. Bypassable with --no-verify: it helps
+# cooperative workers and is not a security boundary. Acts only in checkouts that ran `atelier claims use-task`.
+[ -f "$(git rev-parse --absolute-git-dir)/atelier-claims-task" ] || exit 0
+ROOT="$(git rev-parse --show-toplevel)"
+PY="${ATELIER_PYTHON:-$(command -v python3)}"
+PYTHONPATH="$ROOT/platform/studio" exec "$PY" -m atelier.cli claims check --staged --stage commit

@@ -2,8 +2,14 @@
 # Upload the Git LFS objects of the pushed commits before the commits themselves (games/hakuba and games/yorimichi_v2
 # keep their binaries in LFS). Without git-lfs those binaries cannot be committed or pushed correctly (no pointers,
 # no uploads), so the push fails rather than silently skipping the upload.
-if command -v git-lfs >/dev/null 2>&1; then
-  exec git lfs pre-push "$@"
+# Checkouts that set a claims task (`atelier claims use-task`) first check the pushed changes against it.
+input=$(cat)
+ROOT="$(git rev-parse --show-toplevel)"
+if [ -f "$(git rev-parse --absolute-git-dir)/atelier-claims-task" ]; then
+  printf '%s\n' "$input" | "$ROOT/platform/harness/harness/claims/hooks/pre-push" "$@" || exit 1
 fi
-echo "pre-push: git-lfs is not installed; install it (brew install git-lfs) before pushing" >&2
-exit 1
+if ! command -v git-lfs >/dev/null 2>&1; then
+  echo "pre-push: git-lfs is not installed; install it (brew install git-lfs) before pushing" >&2
+  exit 1
+fi
+if [ -n "$input" ]; then printf '%s\n' "$input"; fi | git lfs pre-push "$@"

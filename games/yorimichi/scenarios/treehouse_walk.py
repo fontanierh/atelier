@@ -17,6 +17,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import importlib.util, json, math, os, shutil, subprocess, sys, time, urllib.request
 from pathlib import Path
 import numpy as np
+from atelier import live
 from atelier.engine import unreal_app
 
 HERE = Path(__file__).resolve().parent
@@ -25,7 +26,7 @@ WALK = yori.OUT/'treehouse'/'walk'
 STEP = .25                    # route spacing (m)
 UNREAL = unreal_app()
 PROJECT = REPO/'games/yorimichi/unreal'
-BRIDGE = 'http://127.0.0.1:8830'
+BRIDGE = None                 # the bridge of the game film() launches, on a free loopback port of its own
 
 
 def unit(a):
@@ -223,12 +224,15 @@ def film(take, rehearse):
     if out.exists(): shutil.rmtree(out)
     out.mkdir(parents=True)
     if not (WALK/'route.json').exists(): plan()
+    global BRIDGE
+    port = live.free_port(); BRIDGE = f'http://127.0.0.1:{port}'   # never the default port another game may hold
     settings = PROJECT/'Saved/settings.txt'; saved = out/'settings.before.txt'
     if settings.exists(): shutil.copy(settings, saved)
     cmd = [sys.executable, '-m', 'atelier.harness.safety.guarded', '--report', str(out/'guard'), '--timeout', '5400', '--purpose', f'Tree house walk {take}',
            '--', str(UNREAL), str(PROJECT/'Yorimichi.uproject'), '-game', '-RenderOffscreen', '-ForceRes', '-resx=1920', '-resy=1080', '-nofox',
            '-unattended', '-nosplash', '-stdout', '-noshaderworker', '-set='+views.SETTINGS+';show_fps=0;stamina_rings=5;cam_dist=330',
-           '-ExecCmds='+views.COMMANDS, '-abslog='+str(out/'game.log')]
+           '-ExecCmds='+views.COMMANDS, '-abslog='+str(out/'game.log'),
+           f'-liveport={port}', '-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost']
     env = dict(os.environ, PYTHONPATH=str(REPO/'platform/studio'))
     game = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     try:

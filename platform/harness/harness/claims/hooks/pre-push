@@ -1,0 +1,16 @@
+#!/bin/sh
+# Cooperative claims check before publication: every pushed commit range is checked at the publish stage
+# (exact paths, verified LFS locks). Reads git's pre-push lines on stdin. Bypassable with --no-verify.
+# Acts only in checkouts that ran `atelier claims use-task`.
+[ -f "$(git rev-parse --absolute-git-dir)/atelier-claims-task" ] || { cat >/dev/null; exit 0; }
+ROOT="$(git rev-parse --show-toplevel)"
+PY="${ATELIER_PYTHON:-$(command -v python3)}"
+zero=0000000000000000000000000000000000000000
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_sha" ] || [ "$local_sha" = "$zero" ] && continue
+  base=$remote_sha
+  if [ "$base" = "$zero" ]; then
+    base=$(git merge-base "$local_sha" "${ATELIER_CLAIMS_TARGET:-origin/main}") || exit 1
+  fi
+  PYTHONPATH="$ROOT/platform/studio" "$PY" -m atelier.cli claims check --range "$base...$local_sha" --stage publish || exit 1
+done

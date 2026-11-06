@@ -24,6 +24,7 @@
 #include "ImageUtils.h"
 #include "UnrealClient.h"
 #include "HAL/FileManager.h"
+#include "HAL/PlatformProcess.h"
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Parse.h"
@@ -449,6 +450,19 @@ namespace
         Out->SetNumberField(TEXT("fps"), 1. / FMath::Max(1e-4, FApp::GetDeltaTime()));
         Done(Json(Out)); return true;
     }
+
+    /** Who answers on this port: the session ID the launcher passed (-livesession=ID, empty without one), this process
+     *  and its project file. The client checks it against the launcher's session record before any command. */
+    bool HandleIdentity(const FHttpServerRequest&, const FHttpResultCallback& Done)
+    {
+        TSharedRef<FJsonObject> Out = MakeShared<FJsonObject>();
+        FString Session; FParse::Value(FCommandLine::Get(), TEXT("livesession="), Session);
+        Out->SetStringField(TEXT("session"), Session);
+        Out->SetNumberField(TEXT("pid"), FPlatformProcess::GetCurrentProcessId());
+        Out->SetStringField(TEXT("project"), FApp::GetProjectName());
+        Out->SetStringField(TEXT("project_file"), FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()));
+        Done(Json(Out)); return true;
+    }
 }
 
 /** The bridge runs agent code, so it only ever listens on loopback: the game's DefaultEngine.ini must bind its port
@@ -497,8 +511,9 @@ void AtelierLive::Start(UWorld* World)
     {
         Routes.Add(Router->BindRoute(FHttpPath(TEXT("/python")), EHttpServerRequestVerbs::VERB_POST, FHttpRequestHandler::CreateStatic(&HandlePython)));
         Routes.Add(Router->BindRoute(FHttpPath(TEXT("/state")), EHttpServerRequestVerbs::VERB_GET, FHttpRequestHandler::CreateStatic(&HandleState)));
+        Routes.Add(Router->BindRoute(FHttpPath(TEXT("/identity")), EHttpServerRequestVerbs::VERB_GET, FHttpRequestHandler::CreateStatic(&HandleIdentity)));
         Http.StartAllListeners();
-        UE_LOG(LogTemp, Display, TEXT("LIVE bridge listening on localhost:%d (POST /python, GET /state)"), Port);
+        UE_LOG(LogTemp, Display, TEXT("LIVE bridge listening on localhost:%d (POST /python, GET /state, GET /identity)"), Port);
     }
     else UE_LOG(LogTemp, Warning, TEXT("LIVE bridge: port %d unavailable (another game running?)"), Port);
 #if WITH_EDITOR

@@ -91,12 +91,12 @@ def analog(key, amount):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=8830)
+    parser.add_argument('--port', type=int, help='a game without a live session on loopback port N (default: the session atelier qa selects)')
     parser.add_argument('--save-file', type=Path, required=True)
     parser.add_argument('--names-file', type=Path, required=True)
     parser.add_argument('--out', type=Path, default=paths.build_dir('yorimichi')/'atlas-review')
     args = parser.parse_args()
-    live.URL = f'http://127.0.0.1:{args.port}'
+    live.use_port(args.port)
     args.out.mkdir(parents=True, exist_ok=True)
     launch = value('unreal.SystemLibrary.get_command_line()')
     for key, file in [('markersave', args.save_file), ('atlasnamesfile', args.names_file)]:

@@ -42,7 +42,8 @@ loads every overlay.
 
 `-nolive` on the Unreal command line turns the bridge off. `-liveport=N` moves it, for a second game running beside the
 first; add `-ini:Engine:[HTTPServer.Listeners]:DefaultBindAddress=localhost` so the new port is loopback too (as
-`tools/review_megapark.py` does). `atelier live` always talks to port 8830.
+`tools/review_megapark.py` does). `atelier play` gives each game its own port and live session; `atelier live` and
+`atelier qa` talk only to a verified session, and `--port N` reaches a game launched without one.
 
 The bridge's settings are in `DefaultGame.ini` under `[/Script/AtelierLive.AtelierLiveSettings]`:
 

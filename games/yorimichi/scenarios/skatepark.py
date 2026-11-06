@@ -9,8 +9,8 @@ import skate as qa
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port',type=int,default=8830);args=parser.parse_args()
-    qa.bridge.URL=f'http://127.0.0.1:{args.port}'
+    parser.add_argument('--port',type=int);args=parser.parse_args()
+    qa.bridge.use_port(args.port)
     qa.py((qa.GAME/'scenarios/skate_live_skate.py').read_text())
     qa.py('live.skate_park(); live.skate_input()')
     for _ in range(60):

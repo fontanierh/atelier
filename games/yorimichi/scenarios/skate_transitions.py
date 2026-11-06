@@ -304,11 +304,11 @@ def line(seen):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=8830)
+    parser.add_argument('--port', type=int, help='a game without a live session on loopback port N (default: the session atelier qa selects)')
     parser.add_argument('--only', default='', help='comma-separated check names (prefixes) to run')
     parser.add_argument('--film', action='store_true', help='film the checks in close-up (fixed 60 Hz step)')
     args = parser.parse_args()
-    qa.bridge.URL = f'http://127.0.0.1:{args.port}'
+    qa.bridge.use_port(args.port)
     only = [o for o in args.only.split(',') if o]
     wanted = lambda name: not only or any(name.startswith(o) for o in only)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
