@@ -93,7 +93,9 @@ def _import_action(asset):
 
 
 def _save_action(subject):
-    return f'save validation: uv run python games/yorimichi_v2/tools/content/save_validate.py {subject}'
+    # Never just "record it": an unexplained change or loss is restored, and only a claimed edit is recorded.
+    return ('save validation, only for a claimed edit: uv run python games/yorimichi_v2/tools/content/save_validate.py '
+            f'{subject} --claim TASK; otherwise restore the committed bytes (git checkout -- PATH && git lfs pull)')
 
 
 def _file(game, rel, subject, problems, hasher, *, missing_action):
