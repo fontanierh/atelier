@@ -127,7 +127,7 @@ def authorize(game, asset, claim):
     """Protected writes need the claim's exact paths with verified locks, or the recorded bootstrap writer."""
     paths = [f'games/yorimichi_v2/{records.content_relative(game, f)}' for f in generated_files(game, asset)]
     try:
-        authority.authorize(paths, claim, f'import of {asset.id}')
+        authority.authorize(paths, claim, f'import of {asset.id}', scopes={authority.scope_of(asset.id)})
     except authority.Unauthorized as error:
         raise ImportError_(str(error)) from None
 
@@ -243,9 +243,15 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
             if path.is_file():
                 files[records.content_relative(game, path)] = records.sha256_file(path)
         if asset.authority == 'split' and asset.verified.is_file():
-            # The editor-owned part keeps its own saved hashes.
+            # The editor-owned part keeps its own saved hashes; a generated file the import no longer wrote
+            # (such as a dropped .ubulk) is gone from the record, never carried over.
+            editor_files = {records.content_relative(game, p.with_suffix(ext))
+                            for o in asset.outputs if o.writer == 'editor'
+                            for p in records.package_files(game, o.package)[:1]
+                            for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
             for rel, digest in records.load_verified(asset.verified)['files'].items():
-                files.setdefault(rel, digest)
+                if rel in editor_files:
+                    files.setdefault(rel, digest)
     except BaseException:
         restored = journal.restore()
         echo(f'failed     {asset.id}: restored {len(restored)} file(s); no record written')

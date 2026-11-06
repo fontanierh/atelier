@@ -103,7 +103,13 @@ def _authorize_editor(ctx, log):
     declared = os.environ.get('V2_EDITOR_PATHS', '').split()
     if claim and not declared:
         raise RuntimeError('V2_EDITOR_CLAIM needs V2_EDITOR_PATHS: the repository paths the script may write')
-    authority.authorize(declared, claim, f"editor script {os.environ.get('V2_EDITOR_SCRIPT', '?')}")
+    # Existing packages bring their owners' scopes; new ones are owned by the scopes the run declares.
+    scopes, unowned = authority.owning_scopes(GAME, declared) if claim else (set(), [])
+    named = set(os.environ.get('V2_EDITOR_SCOPES', '').split())
+    if claim and unowned and not named:
+        raise RuntimeError('new packages need V2_EDITOR_SCOPES: the claim scopes that will own them')
+    authority.authorize(declared, claim, f"editor script {os.environ.get('V2_EDITOR_SCRIPT', '?')}",
+                        scopes=scopes | named)
     if claim:   # the save boundary: the editor refuses any other package save
         authority.allow_saves(declared, ctx.out / 'editor-run' / 'save-allow.txt')
     else:
@@ -148,7 +154,8 @@ def _authorize_import(ctx, log):
         destinations |= {'games/yorimichi_v2/' + records.content_relative(GAME, stem.with_suffix(ext))
                          for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
     paths = sorted(destinations | set(plan.get('write_paths', ())))
-    authority.authorize(paths, plan.get('claim'), f"import of {plan['asset']}")
+    authority.authorize(paths, plan.get('claim'), f"import of {plan['asset']}",
+                        scopes={authority.scope_of(plan['asset'])})
     authority.allow_saves(sorted(destinations), plan_file.with_name('save-allow.txt'))
 
 

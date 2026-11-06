@@ -42,9 +42,10 @@ def engine_identity() -> str:
     return f'{data["MajorVersion"]}.{data["MinorVersion"]}.{data["PatchVersion"]}-{data["Changelist"]}'
 
 
-def authorize(paths: list[str], claim: str | None):
+def authorize(paths: list[str], claim: str | None, subject: str):
     try:
-        authority.authorize([f'games/yorimichi_v2/{p}' for p in paths], claim, 'save validation')
+        authority.authorize([f'games/yorimichi_v2/{p}' for p in paths], claim, f'save validation of {subject}',
+                            scopes={authority.scope_of(subject)})
     except authority.Unauthorized as error:
         raise ValidationError(str(error)) from None
 
@@ -159,7 +160,7 @@ def validate(game: Path, subject: str, *, claim=None, add=(), remove=(), echo=pr
     previous_files = records.load_verified(target)['files'] if target.is_file() else {}
     changed = sorted(set(files) ^ set(previous_files) | {r for r in files if previous_files.get(r) != files[r]})
     if changed:
-        authorize(changed, claim)
+        authorize(changed, claim, subject)
     body['files'] = {**generated, **files}
     if records.write_json(target, body):
         echo(f'recorded {subject}: {len(files)} package file(s), {len(changed)} changed')

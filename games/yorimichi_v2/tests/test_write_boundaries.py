@@ -9,6 +9,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from claims_fake import FakeClaims  # noqa: E402
 
 
 def load(name, rel):
@@ -27,7 +29,7 @@ authority = recipe._authority()
 def writer(monkeypatch):
     monkeypatch.setenv('ATELIER_AGENT', authority.BOOTSTRAP_WRITER)
     monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
-    for name in ('V2_EDITOR_CLAIM', 'V2_EDITOR_PATHS', 'V2_SAVE_ALLOW'):
+    for name in ('V2_EDITOR_CLAIM', 'V2_EDITOR_PATHS', 'V2_EDITOR_SCOPES', 'V2_SAVE_ALLOW'):
         monkeypatch.delenv(name, raising=False)
     yield
     os.environ.pop('V2_SAVE_ALLOW', None)   # set by the code under test, not by monkeypatch
@@ -41,14 +43,16 @@ def test_a_directly_selected_import_rechecks_its_plan(tmp_path, monkeypatch, wri
     recipe._authorize_import(None, io.StringIO())
     allowed = Path(os.environ['V2_SAVE_ALLOW']).read_text().split()
     assert any(a.endswith('games/yorimichi_v2/unreal/Content/Props/SM_Bench.uasset') for a in allowed)
-    seen = []
-    monkeypatch.setattr(authority.subprocess, 'run', lambda command, **_: seen.append(command)
-                        or type('R', (), {'returncode': 1})())
+    fake = FakeClaims(scopes=['asset/prop'], covers=False)
+    monkeypatch.setattr(authority.subprocess, 'run', fake)
     plan.write_text(json.dumps({'asset': 'prop/bench', 'claim': 'T3', 'packages': ['/Game/Props/SM_Bench'],
                                 'write_paths': []}))
     with pytest.raises(authority.Unauthorized, match='does not exactly cover'):
         recipe._authorize_import(None, io.StringIO())
-    assert 'games/yorimichi_v2/unreal/Content/Props/SM_Bench.uasset' in seen[0]   # derived, not trusted
+    assert 'games/yorimichi_v2/unreal/Content/Props/SM_Bench.uasset' in fake.checks[0]   # derived, not trusted
+    fake.scopes, fake.covers = ['asset/prop/other'], True
+    with pytest.raises(authority.Unauthorized, match='no active scope covering asset/prop/bench'):
+        recipe._authorize_import(None, io.StringIO())
     monkeypatch.setenv('ATELIER_AGENT', 'someone-else')
     plan.write_text(json.dumps({'asset': 'prop/bench', 'claim': None, 'packages': ['/Game/Props/SM_Bench']}))
     with pytest.raises(authority.Unauthorized, match='not the bootstrap writer'):
@@ -66,10 +70,13 @@ def test_a_claimed_editor_script_must_stay_inside_its_paths(tmp_path, monkeypatc
     game = tmp_path / 'game'
     (game / 'unreal/Content/V2').mkdir(parents=True)
     monkeypatch.setattr(recipe, 'GAME', game)
-    monkeypatch.setattr(authority.subprocess, 'run', lambda command, **_: type('R', (), {'returncode': 0})())
+    monkeypatch.setattr(authority.subprocess, 'run', FakeClaims(scopes=['region/w01-start']))
     monkeypatch.setenv('V2_EDITOR_CLAIM', 'T9')
     monkeypatch.setenv('V2_EDITOR_PATHS', 'games/yorimichi_v2/unreal/Content/V2/A.uasset')
     ctx = type('Ctx', (), {'out': tmp_path / 'out'})()
+    with pytest.raises(RuntimeError, match='need V2_EDITOR_SCOPES'):
+        recipe._authorize_editor(ctx, io.StringIO())
+    monkeypatch.setenv('V2_EDITOR_SCOPES', 'region/w01-start')
     recipe._authorize_editor(ctx, io.StringIO())
     assert Path(os.environ['V2_SAVE_ALLOW']).read_text().strip().endswith('games/yorimichi_v2/unreal/Content/V2/A.uasset')
     (game / 'unreal/Content/V2/A.uasset').write_bytes(b'a')
@@ -91,3 +98,9 @@ def test_a_claimed_editor_script_must_declare_its_paths(monkeypatch, writer):
 def test_a_claim_must_name_its_paths(writer):
     with pytest.raises(authority.Unauthorized, match='must name the paths'):
         authority.authorize([], 'T1', 'probe')
+
+
+def test_a_held_scope_covers_its_descendants_only():
+    assert authority.covered('asset/prop/bench', ['asset/prop'])
+    assert authority.covered('region/w01-start', ['region/W01-START'])
+    assert not authority.covered('asset/prop/bench', ['asset/prop/bench-02', 'region/prop'])

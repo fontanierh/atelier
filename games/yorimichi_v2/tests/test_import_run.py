@@ -163,3 +163,38 @@ package = "/Game/M"
 ''')
     with pytest.raises(run.ImportError_, match='editor-owned'):
         run.plan(game, ['material/m'])
+
+
+def test_a_split_reimport_drops_a_generated_companion_it_no_longer_wrote(game):
+    folder = game / 'assets/props/split'
+    write(folder / 'src/model.glb', b'glb v1')
+    write(folder / 'asset.toml', f'''schema = 1
+id = "prop/split"
+kind = "static-mesh"
+authority = "split"
+owner = "region/w04-skatepark"
+[[sources]]
+path = "src/model.glb"
+sha256 = "{sha(b'glb v1')}"
+[recipe]
+importer = "static-mesh"
+version = 1
+[[outputs]]
+package = "/Game/Props/SM_Split"
+writer = "generated"
+[[outputs]]
+package = "/Game/Props/MI_Split"
+writer = "editor"
+''')
+    do(game, ['prop/split'], FakeEditor())
+    verified = folder / 'verified.json'
+    record = records.load_verified(verified)
+    # As if the previous import also wrote a .ubulk, and the editor saved the material instance.
+    record['files']['unreal/Content/Props/SM_Split.ubulk'] = sha(b'old bulk')
+    record['files']['unreal/Content/Props/MI_Split.uasset'] = sha(b'editor saved')
+    verified.write_text(json.dumps(record))
+    write(folder / 'src/model.glb', b'glb v2')
+    assert do(game, ['prop/split'], FakeEditor()) == [True]
+    files = records.load_verified(verified)['files']
+    assert 'unreal/Content/Props/SM_Split.ubulk' not in files
+    assert files['unreal/Content/Props/MI_Split.uasset'] == sha(b'editor saved')

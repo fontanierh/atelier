@@ -8,7 +8,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools' / 'content'))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import records  # noqa: E402
+from claims_fake import FakeClaims  # noqa: E402
 
 
 def load(name, rel):
@@ -94,13 +96,15 @@ def test_writes_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):
     with pytest.raises(adopt.AdoptError, match='not the bootstrap writer'):
         adopt.adopt(game, content, ['Japan'], [], 'x', echo=lambda *_: None)
     assert not (game / 'unreal/Content/Japan').exists()
-    seen = []
-    monkeypatch.setattr(adopt.authority.subprocess, 'run', lambda command, **_: seen.append(command)
-                        or type('R', (), {'returncode': 1})())
+    fake = FakeClaims(scopes=['asset/adopted/japan'], covers=False)
+    monkeypatch.setattr(adopt.authority.subprocess, 'run', fake)
     with pytest.raises(adopt.AdoptError, match='does not exactly cover'):
         adopt.adopt(game, content, ['Japan'], [], 'x', claim='T7', echo=lambda *_: None)
-    assert seen[0][:9] == ['uv', 'run', 'atelier', 'claims', 'check', '--stage', 'publish', '--task', 'T7']
-    assert 'games/yorimichi_v2/unreal/Content/Japan/Assets/House_A.uasset' in seen[0]
+    assert fake.checks[0][:9] == ['uv', 'run', 'atelier', 'claims', 'check', '--stage', 'publish', '--task', 'T7']
+    assert 'games/yorimichi_v2/unreal/Content/Japan/Assets/House_A.uasset' in fake.checks[0]
+    fake.scopes, fake.covers = ['asset/adopted/skatepark'], True
+    with pytest.raises(adopt.AdoptError, match='no active scope covering asset/adopted/japan'):
+        adopt.adopt(game, content, ['Japan'], [], 'x', claim='T7', echo=lambda *_: None)
     assert not (game / 'unreal/Content/Japan').exists()
 
 

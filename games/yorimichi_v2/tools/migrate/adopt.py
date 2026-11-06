@@ -138,7 +138,7 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
     writes = [dest for _, dest in copies] + [game / 'assets' / a / 'asset.toml' for a, _, _ in plan.values()]
     try:
         authority.authorize([f'games/yorimichi_v2/{w.relative_to(game).as_posix()}' for w in writes], claim,
-                            'adoption')
+                            'adoption', scopes={authority.scope_of(a) for a, _, _ in plan.values()})
     except authority.Unauthorized as error:
         raise AdoptError(str(error)) from None
     for path, dest in copies:
