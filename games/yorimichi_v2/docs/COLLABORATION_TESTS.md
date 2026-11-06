@@ -23,7 +23,7 @@ machine is reachable from this one, so the two-machine rows wait for a collabora
 | C15 missing payload, stale source, corrupt output | unit | | `test_content_check.py` (NOT_HYDRATED, SOURCE_CHANGED, OUTPUT_CHANGED) |
 | C16 two live sessions plus stale record | unit | PR #733 | `test_live_sessions.py` with two fake bridges; native check pending |
 | C17 pushed, not merged | unit | PR #732 | claims release only on merge or cancel |
-| C18 push or LFS upload fails | not run | | |
+| C18 push or LFS upload fails | partial pass | f1d2b1529a | in a scratch clone with `.githooks`, a commit carrying a new LFS package was pushed with LFS pointed at an unreachable endpoint: `git lfs pre-push` failed the batch upload ("connection refused"), the push exited 1, `git ls-remote` shows the branch never reached origin, and the commit and the 4 KB local package stayed. Claim retention on failure is the claims service rule (release only on merge or cancel, PR #732). Not yet run: the retry that reconciles before pushing again (needs a sandbox remote, not the public repository). |
 | C19 shared definition update | not run | | needs adopted content |
 | C20 cancel a guarded build | pass (test map) | f1d2b1529a | a guarded `editor.run` holding the editor (`Scripts/hold.py`) was cancelled with SIGTERM 16 s in: the build reported "BUILD INTERRUPTED during editor.run; completed steps stay published", its editor child (UnrealEditor-Cmd) was gone within 1 s, the hold script never finished, another owner's running build (the donor, same machine) kept its PID and kept running, and `git status` was unchanged. The next guarded editor run was admitted at once. |
 
