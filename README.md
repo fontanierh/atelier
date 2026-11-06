@@ -295,7 +295,9 @@ and browser review workflow.
 
 The **live bridge** is how agents work on a running game. `atelier live py` runs Python inside it: spawn and move
 props, teleport, press buttons, put a line on screen, take screenshots. `atelier live state` reports where the player
-and the camera are. It only listens on your own machine.
+and the camera are. It only listens on your own machine. Each game `atelier play` starts gets its own live session
+(a loopback port and an ID the game must answer with), so several games can run side by side: `atelier live` and
+`atelier qa` reach the one of this checkout, or the one `--session ID` names (`atelier live sessions` lists them).
 
 ```sh
 uv run atelier live state                              # where the player and the camera are

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Re-shoot the operator's playtest notes from their recorded camera poses.
 
-    uv run atelier qa yorimichi notes_revisit --notes PATH [--out DIR] [--port 8830]
+    uv run atelier qa yorimichi notes_revisit --notes PATH [--out DIR] [--port N]
 
 Each note records the free camera that the operator used (location, pitch, yaw, fov) and the player's position. The
 scenario teleports the player to that position, restores the review camera at the recorded pose, waits for the frame
@@ -289,9 +289,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--notes', required=True, type=Path, help='the notes.json written by the operator notes tool')
     parser.add_argument('--out', type=Path, help='capture folder (default: build/yorimichi/notes_revisit/<notes folder>)')
-    parser.add_argument('--port', type=int, default=8830)
+    parser.add_argument('--port', type=int, help='a game without a live session on loopback port N (default: the session atelier qa selects)')
     args = parser.parse_args(argv)
-    qa.bridge.URL = f'http://127.0.0.1:{args.port}'
+    qa.bridge.use_port(args.port)
     out = args.out or qa.yori.OUT / 'notes_revisit' / args.notes.resolve().parent.name
     return capture(args.notes, out)
 

@@ -81,7 +81,7 @@ _grips_held()
 
 
 def main(args):
-    qa.bridge.URL = f'http://127.0.0.1:{args.port}'
+    qa.bridge.use_port(args.port)
     code = HELD if args.held else MOMENTS
     end = time.time() + args.seconds
     with args.out.open('w') as out:

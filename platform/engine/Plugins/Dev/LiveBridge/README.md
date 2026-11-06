@@ -1,14 +1,16 @@
 # LiveBridge (dev)
 
 Lets an agent or a tool change the running game without a rebuild. Loopback HTTP on port 8830 (`-liveport=N`,
-`-nolive`):
+`-livesession=ID`, `-nolive`):
 
 The bridge is standalone-only. Packaged games require `-live`; Python execution remains available only
-in uncooked sessions. `atelier live` uses port 8830, so another `-liveport=N` needs an explicitly configured client.
+in uncooked sessions. `atelier play` starts each game on its own free port with a session ID, and `atelier live`
+checks `GET /identity` against that session's record before any command (`platform/studio/atelier/live_sessions.py`).
 
 - `POST /python` runs Python in the game's shared namespace (uncooked editor-binary sessions only), where the game's
   helper module is imported as `live`.
 - `GET /state` returns the player and camera transforms, the aim point, the live props and the frame rate.
+- `GET /identity` returns the `-livesession` ID (empty without one), the process ID and the project name and file.
 
 `ULiveLibrary` (Python: `unreal.LiveLibrary`) has the game-independent verbs: world and player queries, ground and aim
 traces, GLB props built at runtime (`SpawnModel`, cached per file), simulated input (`InputKey`), a fixed simulation
@@ -35,5 +37,5 @@ sets none. A game's module starts with `from atelier_live import *` and puts its
 - Optionally, its own verbs in its own function library (a `UBlueprintFunctionLibrary`) and its own helper module,
   and a HUD that draws `ULiveLibrary::CurrentMessage`.
 
-The CLI side is `atelier live state|py|shot` (`platform/studio/atelier/live.py`). The bridge has no authentication:
+The CLI side is `atelier live [--session ID] state|py|shot|sessions` (`platform/studio/atelier/live.py`). The bridge has no authentication:
 it only listens on loopback (checked at start), and must stay that way.

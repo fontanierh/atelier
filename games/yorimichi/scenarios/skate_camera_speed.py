@@ -148,7 +148,7 @@ def summarize(rows, low, high, skip=0.):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--port', type=int, default=8830)
+    parser.add_argument('--port', type=int, help='a game without a live session on loopback port N (default: the session atelier qa selects)')
     parser.add_argument('--label', default='run')
     parser.add_argument('--at', default='', help='start, Unreal cm "x,y" (default: the Crater Park floor straight)')
     parser.add_argument('--yaw', type=float, default=None, help='heading, Unreal yaw degrees')
@@ -169,7 +169,7 @@ def main():
         saved['summary'] = summarize(saved['frames'], args.low, args.high, args.skip); saved['skip'] = args.skip
         open(args.from_json, 'w').write(json.dumps(saved) + '\n')
         print(json.dumps(saved['summary'], indent=1)); return 0
-    qa.bridge.URL = f'http://127.0.0.1:{args.port}'
+    qa.bridge.use_port(args.port)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
     x, y = (float(v) for v in args.at.split(',')) if args.at else (0., 0.)
     yaw = args.yaw if args.yaw is not None else 0.

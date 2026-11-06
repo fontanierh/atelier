@@ -31,13 +31,18 @@ def test_python_body_tracebacks_name_the_sent_code():
         raise AssertionError('the code did not run')
 
 
-def test_request_wraps_only_python_bodies(monkeypatch):
+def test_request_wraps_only_python_bodies(monkeypatch, tmp_path):
+    monkeypatch.setenv('ATELIER_CACHE', str(tmp_path))   # no session record owns the port
+    for name in ('ATELIER_LIVE_SESSION', 'ATELIER_LIVE_GAME', 'ATELIER_LIVE_CHECKOUT', 'ATELIER_LIVE_PORT'):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(live, '_selected', None)
     sent = []
     class Response:
         def __enter__(self): return self
         def __exit__(self, *a): return False
         def read(self): return b'{"ok": true}'
     monkeypatch.setattr(live.urllib.request, 'urlopen', lambda req, timeout: sent.append(req.data) or Response())
+    monkeypatch.setattr(live, 'URL', 'http://127.0.0.1:1')   # an explicit target: no session selection
     live.request('/python', 'print(1)')
     live.request('/state')
     assert sent[0] == live.python_body('print(1)').encode() and sent[1] is None
