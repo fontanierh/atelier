@@ -125,3 +125,26 @@ def test_a_held_scope_covers_its_descendants_only():
     assert authority.covered('asset/prop/bench', ['asset/prop'])
     assert authority.covered('region/w01-start', ['region/W01-START'])
     assert not authority.covered('asset/prop/bench', ['asset/prop/bench-02', 'region/prop'])
+
+
+def test_the_editor_route_never_writes_generated_packages(tmp_path, monkeypatch, writer):
+    game = tmp_path / 'game'
+    bench_record(game)
+    (game / 'unreal/Content/Props').mkdir(parents=True)
+    monkeypatch.setattr(recipe, 'GAME', game)
+    ctx = type('Ctx', (), {'out': tmp_path / 'out'})()
+    monkeypatch.setenv('V2_EDITOR_SCRIPT', str(ROOT / 'unreal/Scripts/import_asset.py'))
+    with pytest.raises(RuntimeError, match='only through its import'):
+        recipe._authorize_editor(ctx, io.StringIO())
+    monkeypatch.setenv('V2_EDITOR_SCRIPT', str(ROOT / 'unreal/Scripts/open_close.py'))
+    monkeypatch.setattr(authority.subprocess, 'run', FakeClaims(scopes=['asset/prop/bench']))
+    monkeypatch.setenv('V2_EDITOR_CLAIM', 'T9')
+    monkeypatch.setenv('V2_EDITOR_PATHS', 'games/yorimichi_v2/unreal/Content/Props/SM_Bench.uasset')
+    with pytest.raises(RuntimeError, match='written only by their importer'):
+        recipe._authorize_editor(ctx, io.StringIO())
+    for name in ('V2_EDITOR_CLAIM', 'V2_EDITOR_PATHS'):
+        monkeypatch.delenv(name)
+    recipe._authorize_editor(ctx, io.StringIO())           # the bootstrap writer, checked after the run
+    (game / 'unreal/Content/Props/SM_Bench.uasset').write_bytes(b'resaved in the editor')
+    with pytest.raises(RuntimeError, match='wrote generated packages'):
+        recipe._check_editor_writes(None, io.StringIO())

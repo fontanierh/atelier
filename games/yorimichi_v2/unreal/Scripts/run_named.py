@@ -15,5 +15,7 @@ if os.environ.get('V2_SAVE_ALLOW') and not unreal.V2SaveGuard.is_active():
 script = Path(os.environ['V2_EDITOR_SCRIPT']).resolve()
 if Path(__file__).resolve().parent not in script.parents:
     raise RuntimeError(f'{script} is not a V2 editor script (unreal/Scripts)')
+if script.name == 'import_asset.py':
+    raise RuntimeError('import_asset.py runs only through its import.<id> step (tools/import/run.py)')
 runpy.run_path(str(script), run_name='__main__')
 unreal.log('V2 EDITOR SCRIPT DONE')

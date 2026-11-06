@@ -114,7 +114,13 @@ def _authorize_editor(ctx, log):
     import os
     authority = _authority()
     claim = os.environ.get('V2_EDITOR_CLAIM') or None
+    script = Path(os.environ.get('V2_EDITOR_SCRIPT', '')).name
+    if script == 'import_asset.py':
+        raise RuntimeError('import_asset.py runs only through its import.<id> step (tools/import/run.py)')
     declared = _editor_paths()
+    generated = sorted(set(declared) & authority.generated_paths(GAME))
+    if generated:
+        raise RuntimeError(f'generated packages are written only by their importer: {", ".join(generated[:5])}')
     if claim and not declared:
         raise RuntimeError('V2_EDITOR_CLAIM needs V2_EDITOR_PATHS: the repository paths the script may write')
     # Existing packages bring their owners' scopes; new ones are owned by the scopes the run declares.
@@ -140,6 +146,10 @@ def _check_editor_writes(ctx, log):
     os.environ.pop('V2_SAVE_ALLOW', None)
     changed = sorted('games/yorimichi_v2/' + rel for rel in authority.written(EDITOR_BEFORE, authority.content_snapshot(GAME)))
     log.write(''.join(f'editor script wrote {path}\n' for path in changed) or 'editor script wrote nothing\n')
+    generated = sorted(set(changed) & authority.generated_paths(GAME))
+    if generated:   # the bootstrap writer included: a generated package belongs to its importer
+        raise RuntimeError(f'the editor script wrote generated packages: {", ".join(generated[:8])}; '
+                           'reimport them with tools/import/run.py')
     if os.environ.get('V2_EDITOR_CLAIM'):
         outside = [path for path in changed if path not in set(_editor_paths())]
         if outside:

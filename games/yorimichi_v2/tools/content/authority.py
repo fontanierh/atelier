@@ -75,6 +75,20 @@ def owning_scopes(game: Path, paths: list[str]) -> tuple[set[str], list[str]]:
     return {owner[p] for p in paths if p in owner}, [p for p in paths if p not in owner]
 
 
+def generated_paths(game: Path) -> set[str]:
+    """Repository paths of every generated package and its companions: only their recorded importer writes them."""
+    import records
+    found = set()
+    for asset in records.discover(game)[0]:
+        for output in asset.outputs:
+            if output.writer != 'generated':
+                continue
+            stem = records.package_files(game, output.package)[0].with_suffix('')
+            found |= {f'games/yorimichi_v2/{stem.with_suffix(ext).relative_to(game).as_posix()}'
+                      for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
+    return found
+
+
 def claimed_scopes(claim: str, *, repo: Path = REPO) -> list[str]:
     """The scope items of the task's active claims, read from the claim service."""
     result = subprocess.run(['uv', 'run', 'atelier', 'claims', 'task', 'show', claim], cwd=repo,
