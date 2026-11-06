@@ -41,3 +41,34 @@ only as a recovery reference until P6.
 Until P2-B's claim service passes and adopts or releases every bootstrap lock, the **only** V2 binary-content
 writer on all machines is the owner `jim-macbook-5`, in workspace `atelier-yv2`. Other workers may change text
 code only. This record is the task record visible to every worker.
+
+## D05 — Asset rights before public upload (§4, P0 pass/stop)
+
+The repository is public and Git LFS is not private storage. No source in the repository carries a license
+field, and there is no LICENSE file. The inventory (inventory/world.md §5) sorts V2 content into three groups:
+
+1. **Public LFS allowed:** packages derived from sources the owner has **already published in this repository**
+   with recorded provenance (owner-made or AI-generated with a provenance record). This covers terrain, houses,
+   props, foliage, the skate pier, the characters, effects and fonts (OFL). Committing the Unreal form of
+   content that is already public does not widen what is published. Raw Mixamo clips are already committed;
+   their derived animation packages follow the same rule. **Owner review is still recommended**, because Mixamo's
+   terms forbid redistributing raw clips as such.
+2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters. Their license forbids sharing them
+   as a sound pack of their own, and the masters are fetched, not committed. These SoundWave packages go to
+   authorized restricted storage, with pinned hashes and a documented fetch. The music library stays the
+   existing pinned external release (plan §14).
+3. **Blocked pending the owner:** **Super Ultra Mega Park** (`assets/megapark`, W11, F26, F31). Its data carries
+   retail material identifiers, a decoded vertex codec and baked lightmaps. Its provenance as "Atelier's own asset
+   library" is unverified. Until the owner settles its rights, V2 does not upload its packages. Crater Park's
+   source (`fontanierh/crater-skate-park`) is very likely the owner's own, but V2 records its license before
+   upload.
+
+Import metadata inside packages must not keep the donor's absolute paths. The staged-package lint scan and the
+content check enforce this.
+
+## D06 — Hidamari stable stays as at baseline
+
+At the baseline, `AHidamariStable::bEnabled = false`: the stable exists in source but does not run. The owner
+earlier asked to leave the Hidamari stable out of a port. V2 migrates W14's static dressing with the region, and
+keeps the service disabled exactly as at baseline. It does not invent a working stable. Reopen this only on owner
+instruction.
