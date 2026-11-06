@@ -170,6 +170,8 @@ def make_parser():
     p = sub.add_parser('fetch'); p.add_argument('game')
     from atelier.harness import capacity_cli
     capacity_cli.configure(sub)
+    from atelier.harness.claims import cli as claims_cli
+    claims_cli.configure(sub)
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true')
     p.add_argument('--rebuild-reason', action='append', metavar='[STEP=]REASON',
@@ -268,6 +270,9 @@ def main(argv=None):
     if args.command == 'capacity':
         from atelier.harness import capacity_cli
         return capacity_cli.main(args)
+    if args.command == 'claims':
+        from atelier.harness.claims import cli as claims_cli
+        return claims_cli.main(args)
     if args.command == 'build':
         cook_memory = {}
         if args.cook_memory_gib is not None:

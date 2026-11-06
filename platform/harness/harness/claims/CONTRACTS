@@ -1,0 +1,23 @@
+@cc [owner:fontanierh,label:correctness] one-active-writer
+At most one claim in a holding state (pending, active, releasing, uncertain) MAY contain overlapping items:
+scopes overlap with ancestors and descendants, paths and prefixes when one contains the other. The overlap
+check and the reservation MUST happen in one database transaction of the single service process.
+
+@cc [owner:fontanierh,label:correctness] verified-lfs-binding
+A claim MUST become active only after the service read every declared LFS lock on the remote with the
+recorded path, ID and the claimant's registered account, and re-checked the base against the target branch.
+Ownership MUST come from the claim, never from an LFS account match.
+
+@cc [owner:fontanierh,label:safety] fail-closed
+An unreachable or unverifiable service, LFS server or Git remote MUST refuse grants, activation and protected
+checks. A restarted service MUST refuse grants until a reconcile pass completed. Unprotected changes MAY pass.
+
+@cc [owner:fontanierh,label:safety] proven-own-unlock
+Only locks proven created by the claim's own attempt (reported created, or absent from its intent snapshot
+and owned by the claimant) MAY be marked for unlock. Unknown outcomes MUST stay uncertain and keep the
+reservation. A pre-existing lock MUST NOT be unlocked because its account matches.
+
+@cc [owner:fontanierh,label:correctness] release-only-on-merge-or-cancel
+A claim MUST be released only by a merge whose revision is reachable from the target branch, an explicit
+owner cancellation recording preserved or discarded changes, an aborted acquisition, or a recorded
+coordinator recovery. Pushes, failed pushes and expired heartbeats MUST NOT release or transfer a claim.

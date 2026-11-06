@@ -10,6 +10,7 @@ Normal builds and play sessions request admission themselves; routine work needs
 |---|---|
 | `harness/board*.py` | Durable SQLite messages, threads, tasks, attachments, session adapters and supervised listeners |
 | `harness/capacity*.py` | Resource requests, queueing, broker/client protocol, ownership history and machine compatibility |
+| `harness/claims/` | Cross-machine task/scope claims bound to verified Git LFS locks ([invocations](harness/claims/README.md)) |
 | `harness/safety/` | Guarded launch, actual-child and aggregate memory observation, cleanup and legacy locking |
 | `harness/board_web_assets/` | Committed browser assets served without a Node build at startup |
 | `web/app/` | React/TypeScript board, API types, focused frontend tests and mock screenshot capture |
@@ -29,6 +30,7 @@ The public command stays `atelier`:
 ```sh
 uv run atelier board --help
 uv run atelier capacity --help
+uv run atelier claims --help
 ```
 
 - [Board setup and session delivery](../../docs/AGENT_BOARD.md)

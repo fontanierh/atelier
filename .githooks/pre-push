@@ -1,6 +1,12 @@
 #!/bin/sh
 # Upload the Git LFS objects of the pushed commits before the commits themselves (games/hakuba keeps its binaries
 # in LFS). Without git-lfs a clone cannot make LFS pointers, so there is nothing to upload.
+# Checkouts that set a claims task (`atelier claims use-task`) first check the pushed changes against it.
+input=$(cat)
+ROOT="$(git rev-parse --show-toplevel)"
+if [ -f "$(git rev-parse --absolute-git-dir)/atelier-claims-task" ]; then
+  printf '%s\n' "$input" | "$ROOT/platform/harness/harness/claims/hooks/pre-push" "$@" || exit 1
+fi
 if command -v git-lfs >/dev/null 2>&1; then
-  exec git lfs pre-push "$@"
+  if [ -n "$input" ]; then printf '%s\n' "$input"; fi | git lfs pre-push "$@"
 fi
