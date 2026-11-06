@@ -6,6 +6,7 @@
 mod actors;
 mod blocks;
 mod collision;
+mod detail;
 mod ground;
 mod impostor;
 mod loading;
@@ -90,7 +91,7 @@ impl Plugin for WorldPlugin {
             water::WaterPlugin,
             wind::WindPlugin,
         ))
-        .add_plugins((blocks::BlocksPlugin, impostor::ImpostorPlugin))
+        .add_plugins((blocks::BlocksPlugin, detail::DetailPlugin, impostor::ImpostorPlugin))
         .add_systems(Startup, open_at_chosen_start)
         .add_systems(OnEnter(Screen::World), spawn_world)
         .add_systems(Update, read_index.run_if(in_state(Screen::World)))

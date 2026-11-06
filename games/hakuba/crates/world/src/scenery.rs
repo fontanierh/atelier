@@ -28,6 +28,7 @@ use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
 use crate::collision::CollisionSource;
+use crate::detail::Detail;
 use crate::ground::built_solid;
 use crate::impostor::{Baked, Impostor, Impostors};
 use crate::loading::{Loaded, Missing};
@@ -128,9 +129,17 @@ struct Job {
     combined: Option<Mesh>,
     /// The distances at which each copy shows, fading in and out, as a tree's level of detail is picked per
     /// copy.
-    range: Option<VisibilityRange>,
+    range: Option<Ranged>,
     /// Whether its merged meshes stay on the CPU too, so the distant blocks can merge them (blocks.rs): a far tile's.
     kept: bool,
+}
+
+/// The distances at which a part shows, and whether they pick between versions of one thing, so that they scale with
+/// how big the camera shows things ([`Detail`]).
+#[derive(Clone)]
+struct Ranged {
+    range: VisibilityRange,
+    detail: bool,
 }
 
 /// How far from the camera a tree shows its full version before fading to its impostor (impostor.rs), or to its
@@ -427,22 +436,27 @@ fn spawn(
                     }
                 }
                 let (lod, fade) = (TREE_LOD_M, TREE_FADE_M);
+                let detail = |range| Some(Ranged { range, detail: true });
                 let range = per_copy
                     .then(|| match (name, role) {
-                        ("full", Role::Seen | Role::Both) => Some(VisibilityRange {
+                        ("full", Role::Seen | Role::Both) => detail(VisibilityRange {
                             start_margin: 0.0..0.0,
                             end_margin: lod - fade / 2.0..lod + fade / 2.0,
                             use_aabb: false,
                         }),
-                        ("middle" | "impostor", Role::Seen) => Some(VisibilityRange {
+                        ("middle" | "impostor", Role::Seen) => detail(VisibilityRange {
                             start_margin: lod - fade / 2.0..lod + fade / 2.0,
                             end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
                             use_aabb: false,
                         }),
-                        (_, Role::Shadow) => Some(VisibilityRange {
-                            start_margin: 0.0..0.0,
-                            end_margin: CASTER_END_M - CASTER_FADE_M..CASTER_END_M,
-                            use_aabb: false,
+                        // A shadow's reach follows the tiles' streaming distances, not the view.
+                        (_, Role::Shadow) => Some(Ranged {
+                            range: VisibilityRange {
+                                start_margin: 0.0..0.0,
+                                end_margin: CASTER_END_M - CASTER_FADE_M..CASTER_END_M,
+                                use_aabb: false,
+                            },
+                            detail: false,
                         }),
                         _ => None,
                     })
@@ -450,12 +464,12 @@ fn spawn(
                 let range = range.or_else(|| {
                     let (lod, fade) = small?;
                     match (name, role) {
-                        ("full", _) => Some(VisibilityRange {
+                        ("full", _) => detail(VisibilityRange {
                             start_margin: 0.0..0.0,
                             end_margin: lod - fade / 2.0..lod + fade / 2.0,
                             use_aabb: true,
                         }),
-                        ("middle", Role::Seen) => Some(VisibilityRange {
+                        ("middle", Role::Seen) => detail(VisibilityRange {
                             start_margin: lod - fade / 2.0..lod + fade / 2.0,
                             end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
                             use_aabb: true,
@@ -467,10 +481,13 @@ fn spawn(
                 let far_m = crate::tiles::FAR_M;
                 let half = crate::tiles::BLEND_FADE_M / 2.0;
                 let range = range.or_else(|| {
-                    (blend && name == "middle").then(|| VisibilityRange {
-                        start_margin: 0.0..0.0,
-                        end_margin: far_m - half..far_m + half,
-                        use_aabb: true,
+                    (blend && name == "middle").then(|| Ranged {
+                        range: VisibilityRange {
+                            start_margin: 0.0..0.0,
+                            end_margin: far_m - half..far_m + half,
+                            use_aabb: true,
+                        },
+                        detail: false,
                     })
                 });
                 shown.push((name, node, parts, role, range));
@@ -503,7 +520,7 @@ fn spawn(
                     continue;
                 }
                 let vertices = if name == "impostor" { 4 } else { vertices(&models.meshes, &meshes, node) };
-                let merge = range.as_ref().is_none_or(|range| range.use_aabb)
+                let merge = range.as_ref().is_none_or(|ranged| ranged.range.use_aabb)
                     && vertices < MERGE_BELOW_VERTICES
                     && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
@@ -812,8 +829,11 @@ fn place(
             part.insert(bounds);
         }
         mark_solid(&mut part, job.solid);
-        if let Some(range) = &job.range {
+        if let Some(Ranged { range, detail }) = &job.range {
             part.insert(range.clone());
+            if *detail {
+                part.insert(Detail(range.clone()));
+            }
         }
         if !matches!(job.role, Role::Collision) {
             insert_look(&mut part, &job.look);
