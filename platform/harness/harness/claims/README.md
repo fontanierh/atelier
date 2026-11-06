@@ -36,7 +36,10 @@ is known dead. An abandoned attempt's late lock is still recognised by `reconcil
 claim holds the path by then, the ended claim stays ended and only that proven lock is released. For the same
 reason a retry (`acquire` again) never replaces an unsettled attempt: unless it finds the earlier attempt's lock,
 `lock-intent` is refused (`unsettled`) until the same interval has passed with no lock, so a failed retry cannot
-abort the claim while the first request may still land.
+abort the claim while the first request may still land. Every lock row carries a revision that changes on each
+update; `reconcile`, `lock-intent`, `activate`, `unlocked`, `resolve` and the protected checks read the remote
+outside the service lock and apply what they learned only if the row's revision is unchanged, so a listing taken
+before a fresh attempt never settles that attempt.
 
 After every start the service is **reconciling** and refuses grants and protected checks until `reconcile`
 has compared every recorded lock with the remote.

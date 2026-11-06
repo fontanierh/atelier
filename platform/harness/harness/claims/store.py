@@ -31,9 +31,15 @@ CREATE TABLE IF NOT EXISTS claims (id INTEGER PRIMARY KEY AUTOINCREMENT, task TE
 CREATE TABLE IF NOT EXISTS items (claim INTEGER NOT NULL, kind TEXT NOT NULL, value TEXT NOT NULL,
   lfs INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (claim, kind, value));
 CREATE TABLE IF NOT EXISTS locks (claim INTEGER NOT NULL, path TEXT NOT NULL, state TEXT NOT NULL, lock_id TEXT,
-  owner TEXT, prior TEXT, detail TEXT, updated REAL NOT NULL, PRIMARY KEY (claim, path));
+  owner TEXT, prior TEXT, detail TEXT, updated REAL NOT NULL, rev INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (claim, path));
 CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, at REAL NOT NULL, kind TEXT NOT NULL,
   actor TEXT NOT NULL, task TEXT, claim INTEGER, data TEXT NOT NULL);
+"""
+# Every change to a lock row bumps its revision, so a decision made from a remote read taken outside the lock is
+# applied only if the row is still the one that was read (compare-and-set in the writing transaction).
+REVISION = """
+CREATE TRIGGER IF NOT EXISTS locks_revision AFTER UPDATE ON locks WHEN NEW.rev = OLD.rev
+BEGIN UPDATE locks SET rev = OLD.rev + 1 WHERE claim = NEW.claim AND path = NEW.path; END;
 """
 # Lock rows: needed -> requested (intent) -> created (reported) -> verified (remote confirmed).
 # requested/unknown -> uncertain; created/verified -> releasing -> released; exists/failed -> refused.
@@ -97,6 +103,9 @@ class Store:
         self.db.execute('PRAGMA journal_mode=WAL')
         self.db.execute('PRAGMA synchronous=FULL')
         self.db.executescript(SCHEMA)
+        if 'rev' not in {r['name'] for r in self.db.execute('PRAGMA table_info(locks)')}:
+            self.db.execute('ALTER TABLE locks ADD COLUMN rev INTEGER NOT NULL DEFAULT 0')
+        self.db.executescript(REVISION)
         self.lock = threading.RLock()
         # A restarted service may have missed lock changes and lost in-flight replies: no grants until reconciled.
         self.ready = False
@@ -440,7 +449,7 @@ class Store:
             if before['state'] in UNRESOLVED else []
         with self.tx() as db:
             current = self._lock_row(db, claim, path)
-            if (current['state'], current['prior']) != (before['state'], before['prior']):
+            if current['rev'] != before['rev']:
                 refuse('lock_state', f'{path!r} changed while its intent was recorded; retry')
             resumed = [l for l in candidates if not self._others_could_own(db, claim, path, l)]
             if len(candidates) != len(resumed):
@@ -514,6 +523,8 @@ class Store:
             current = self._claim(db, claim)
             if (current['state'], current['principal']) != (row['state'], row['principal']):
                 refuse('not_holder', f'claim {claim} changed while it was verified')
+            if any(self._lock_row(db, claim, l['path'])['rev'] != l['rev'] for l in locks):
+                refuse('lock_state', f'a lock of claim {claim} changed while it was verified; retry')
             for lock in locks:
                 db.execute("UPDATE locks SET state='verified', owner=?, updated=? WHERE claim=? AND path=? AND lock_id=?",
                            (account, self.clock(), claim, lock['path'], lock['lock_id']))
@@ -656,6 +667,8 @@ class Store:
         if still:
             refuse('still_locked', f'lock {lock["lock_id"]} on {path!r} is still on the remote')
         with self.tx() as db:
+            if self._lock_row(db, claim, path)['rev'] != lock['rev']:
+                refuse('lock_state', f'{path!r} changed while its unlock was verified; retry')
             db.execute("UPDATE locks SET state='released', updated=? WHERE claim=? AND path=? AND state='releasing'",
                        (self.clock(), claim, path))
             self._event(db, 'lock.released', actor, row['task'], claim, {'path': path, 'lock_id': lock['lock_id']})
@@ -729,7 +742,7 @@ class Store:
             if len(remote) != 1 or remote[0].path != path or remote[0].owner != account:
                 refuse('lock_unverified', f'lock {lock_id} on {path!r} is not held by {account!r} on the remote')
         with self.tx() as db:
-            if self._lock_row(db, claim, path)['state'] != lock['state']:
+            if self._lock_row(db, claim, path)['rev'] != lock['rev']:
                 refuse('lock_state', f'{path!r} changed while it was resolved')
             if decision == 'adopt' and self._others_could_own(db, claim, path, remote[0]):
                 refuse('ambiguous', f'lock {lock_id} may belong to another claim\'s attempt on {path!r}')
@@ -763,9 +776,8 @@ class Store:
         changes = []
         with self.tx() as db:
             for r in rows:
-                current = self._lock_row(db, r['claim'], r['path'])
-                if current['state'] != r['state'] or current['lock_id'] != r['lock_id']:
-                    continue
+                if self._lock_row(db, r['claim'], r['path'])['rev'] != r['rev']:
+                    continue  # changed since it was listed (for example a fresh attempt): the listing is stale
                 here = [l for l in remote[r['path']] if l.path == r['path']]
                 account = accounts.get(r['principal'])
                 new = None
@@ -819,6 +831,7 @@ class Store:
             claims = [c for c in view['claims'] if c['state'] in HOLDING]
             accounts = {c['id']: self._principal(self.db, c['principal'])['git_account'] for c in claims}
             reads = [tuple(r) for r in view['reads']]
+            revs = self._revisions(self.db, [c['id'] for c in claims])
         result = {'service': 'ready' if ready else 'reconciling', 'task': task, 'status': view['status'], 'claims': claims}
         if not ready:
             return result
@@ -834,7 +847,19 @@ class Store:
                     raise
                 problems.append({'base': error.message})
             c['verified'], c['problems'] = not problems, problems
+        with self.lock:  # a claim or lock that changed while it was verified is not verified
+            changed = self._revisions(self.db, [c['id'] for c in claims]) != revs
+        for c in claims:
+            if changed and c.get('verified'):
+                c['verified'], c['problems'] = False, [{'changed': 'the claim changed while it was verified; retry'}]
         return result
+
+    @staticmethod
+    def _revisions(db, claims):
+        marks = ','.join('?' * len(claims))
+        return ([tuple(r) for r in db.execute(f'SELECT id, state, updated FROM claims WHERE id IN ({marks}) ORDER BY id', claims)],
+                [tuple(r) for r in db.execute(f'SELECT claim, path, rev FROM locks WHERE claim IN ({marks}) '
+                                              'ORDER BY claim, path', claims)])
 
     def events(self, after=0, limit=500):
         limit = max(1, min(int(limit), 1000))

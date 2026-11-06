@@ -730,3 +730,57 @@ def test_retry_never_discards_an_earlier_unsettled_attempt(world):
     world.clock.now += world.store.uncertain_settle + 1
     assert acquire(a, claim['id'], a.locker)['state'] == 'active'
     assert acquire(a, other['id'], a.locker)['state'] == 'active'
+
+
+class Interleaved:
+    """An LFS verifier that runs ``during`` right after its first listing returns, before the caller applies it."""
+
+    def __init__(self, inner, during):
+        self.inner, self.during = inner, during
+
+    def locks(self, path=None, lock_id=None):
+        found = self.inner.locks(path=path, lock_id=lock_id)
+        during, self.during = self.during, None
+        if during:
+            during()
+        return found
+
+
+def test_reconcile_discards_a_listing_that_a_fresh_attempt_made_stale(world):
+    a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})
+    a.call('POST', f'/claims/{claim["id"]}/lock-result', {'path': SEA, 'outcome': 'unknown'})
+    world.clock.now += world.store.uncertain_settle + 1  # the first attempt is old enough to settle
+
+    def retry():  # a permitted retry starts, its request times out, and the claim is aborted
+        a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})
+        a.call('POST', f'/claims/{claim["id"]}/lock-result', {'path': SEA, 'outcome': 'unknown'})
+        a.call('POST', f'/claims/{claim["id"]}/abort', {'reason': 'lock outcome unknown'})
+
+    world.store.lfs = Interleaved(world.store.lfs, retry)
+    result = world.store.reconcile('lead')  # listed before the retry, applied after it
+    assert result['changes'] == []
+    view = a.call('GET', f'/claims/{claim["id"]}')
+    assert view['state'] == 'uncertain' and view['locks'][0]['state'] == 'uncertain'
+    refused('overlap', world.request, b, 'tb', lock_paths=[SEA])  # the fresh request may still land
+
+
+def test_resolution_and_unlock_discard_stale_listings(world):
+    a = world.agent('a', 'alice')
+    lead = world.client('lead')
+    world.task(a, 'ta')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})
+    a.call('POST', f'/claims/{claim["id"]}/lock-result', {'path': SEA, 'outcome': 'unknown'})
+    late = world.lfs.add(SEA, 'alice')
+    world.clock.now += world.store.uncertain_settle + 1
+
+    def retry():  # the attempt is replaced (resumed onto the late lock) while the coordinator's read is in flight
+        a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})
+
+    world.store.lfs = Interleaved(world.store.lfs, retry)
+    body = {'action': 'resolve', 'path': SEA, 'decision': 'adopt', 'lock_id': late, 'reason': 'late lock'}
+    refused('lock_state', lead.call, 'POST', f'/claims/{claim["id"]}/recover', body)
+    assert a.call('GET', f'/claims/{claim["id"]}')['locks'][0]['state'] == 'created'
