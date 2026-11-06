@@ -23,8 +23,16 @@ use crate::push::Pushers;
 
 /// The mesh tag that tells the shader the wind blows `strength` times as strongly as usual.
 pub fn tag(strength: f32) -> u32 {
-    (strength.max(0.0) * 1000.0).round() as u32
+    (strength.max(0.0) * 1000.0).round() as u32 & (FADES - 1)
 }
+
+/// The bit of a plant's mesh tag that sinks it into the ground before its tile turns middle (`sunk` in the shaders).
+pub const FADES: u32 = 1 << 20;
+
+/// On a data node whose plants middle tiles leave out: its swaying parts fade out by sinking, so none vanishes at once
+/// with its tile.
+#[derive(Component)]
+pub struct FadesOut;
 
 /// A plant's material, swaying.
 pub type Swaying = ExtendedMaterial<StandardMaterial, Wind>;

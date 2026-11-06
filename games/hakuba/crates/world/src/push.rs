@@ -40,8 +40,9 @@ impl Plugin for PushPlugin {
 #[derive(Resource, Clone)]
 pub struct Pushers(pub Handle<ShaderBuffer>);
 
-/// The buffer's rows.
-const ROWS: usize = 1 + 2 * MOST;
+/// The buffer's rows: the count, two for each pusher, and last where the main camera is across the ground and between
+/// which distances from it the plants middle tiles leave out sink (`sunk` in the shaders).
+const ROWS: usize = 2 + 2 * MOST;
 
 fn make(mut commands: Commands, mut buffers: ResMut<Assets<ShaderBuffer>>) {
     commands.insert_resource(Pushers(buffers.add(ShaderBuffer::from(vec![[0.0f32; 4]; ROWS]))));
@@ -53,6 +54,7 @@ fn feed(
     mut buffers: ResMut<Assets<ShaderBuffer>>,
     all: Query<(&GlobalTransform, &PushesPlants)>,
     camera: Query<&GlobalTransform, With<Camera3d>>,
+    settings: Option<Res<hakuba_settings::Settings>>,
 ) {
     let eye = camera.iter().next().map_or(Vec3::ZERO, GlobalTransform::translation);
     let mut near: Vec<(Vec3, PushesPlants)> = all.iter().map(|(at, pushes)| (at.translation(), *pushes)).collect();
@@ -66,6 +68,8 @@ fn feed(
         rows[1 + 2 * i] = [at.x, at.y, at.z, pushes.radius_m.max(0.01)];
         rows[2 + 2 * i] = [pushes.height_m, 0.0, 0.0, 0.0];
     }
+    let (start, end) = settings.map_or((f32::MAX, f32::MAX), |s| crate::scenery::sink_m(s.detail.full_m()));
+    rows[ROWS - 1] = [eye.x, eye.z, start, end];
     if buffers.get(&pushers.0).and_then(|buffer| buffer.cast_slice::<[f32; 4]>()) == Some(&rows[..]) {
         return;
     }

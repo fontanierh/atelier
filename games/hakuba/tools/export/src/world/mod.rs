@@ -417,6 +417,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     skate::write(&mut index)?;
     index.add_data("tile grid", json!({ "tile_m": tile_m, "page_tiles": page_tiles }));
+    // The models middle tiles leave out, by folder, so the game fades them out before their tile turns middle.
+    let near_only = scenery::near_only(scenery.values().flat_map(TileScenery::shown_afar))?;
+    index.add_data("near only", json!({ "models": near_only }));
     if !waters.is_empty() {
         index.add_data("water bodies", json!({ "waters": waters }));
     }

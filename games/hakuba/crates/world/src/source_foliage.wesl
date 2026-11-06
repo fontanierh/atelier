@@ -19,7 +19,7 @@ const TAU: f32 = 6.2831853;
 
 // What pushes plants aside, as push.rs writes it: how many there are, then for each where its feet are and its radius,
 // then its height.
-@group(constants::MATERIAL_BIND_GROUP) @binding(100) var<storage, read> pushers: array<vec4<f32>, 9>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(100) var<storage, read> pushers: array<vec4<f32>, 10>;
 struct FoliageProfile { direction: vec4<f32>, slow: vec4<f32>, fast: vec4<f32>, global_slow: vec4<f32>, global_fast: vec4<f32>, global_tail: vec4<f32>, push_haze: vec4<f32>, haze_colour: vec4<f32> }
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var<uniform> profile: FoliageProfile;
 
@@ -55,7 +55,23 @@ fn source_motion(at: vec3<f32>, time: f32, weight: f32, strength: f32) -> vec3<f
 
 // How strongly the wind blows on this mesh, its tag in thousandths: 1 is the usual wind.
 fn blowing(instance_index: u32) -> f32 {
-    return f32(mesh_functions::get_tag(instance_index)) / 1000.0;
+    return f32(mesh_functions::get_tag(instance_index) & (FADES - 1u)) / 1000.0;
+}
+
+// A plant middle tiles leave out carries this bit in its mesh tag: it sinks into the ground as the main camera leaves
+// it behind, done before its tile can turn middle and drop it (wind.rs, `FadesOut`). Sinking moves no pixel to the
+// discard a dither would need, so the GPU still hides what is behind the plant.
+const FADES: u32 = 1048576u;
+// How far a faded plant has sunk: below the tallest of them, and the ground it stands on hides it.
+const SINK_M: f32 = 2.0;
+// How far a vertex at `at` of the mesh drawn as `instance_index` has sunk, as a move: the buffer's last row is where
+// the main camera is across the ground, and between which distances from it plants sink.
+fn sunk(at: vec3<f32>, instance_index: u32) -> vec3<f32> {
+    if (mesh_functions::get_tag(instance_index) & FADES) == 0u {
+        return vec3<f32>(0.0);
+    }
+    let fade = pushers[9];
+    return vec3<f32>(0.0, -SINK_M * smoothstep(fade.z, fade.w, length(at.xz - fade.xy)), 0.0);
 }
 
 @if(!PREPASS_PIPELINE)
@@ -71,7 +87,7 @@ fn build_output(vertex_in: Vertex) -> VertexOutput {
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
     let motion = source_motion(still.xyz, globals.time, vertex.color.r, blowing(vertex_in.instance_index));
-    out.world_position = vec4<f32>(still.xyz + motion, 1.0);
+    out.world_position = vec4<f32>(still.xyz + motion + sunk(still.xyz, vertex_in.instance_index), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     // A hair nearer than the prepass put it. The two passes are compiled apart, so a moving vertex may land a rounding
     // error further than the depth the prepass wrote, fail the depth test and leave a hole showing the clear colour for
@@ -108,7 +124,7 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
     let motion = source_motion(still.xyz, globals.time, vertex.color.r, blowing(vertex_in.instance_index));
-    out.world_position = vec4<f32>(still.xyz + motion, 1.0);
+    out.world_position = vec4<f32>(still.xyz + motion + sunk(still.xyz, vertex_in.instance_index), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     @if(UNCLIPPED_DEPTH_ORTHO_EMULATION) {
         out.unclipped_depth = out.position.z;
@@ -132,7 +148,7 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     @if(MOTION_VECTOR_PREPASS) {
         let previous_from_local = mesh_functions::get_previous_world_from_local(vertex_in.instance_index);
         let before = mesh_functions::mesh_position_local_to_world(previous_from_local, vec4<f32>(vertex.position, 1.0));
-        out.previous_world_position = vec4<f32>(before.xyz + motion, 1.0);
+        out.previous_world_position = vec4<f32>(before.xyz + motion + sunk(still.xyz, vertex_in.instance_index), 1.0);
     }
     @if(VERTEX_OUTPUT_INSTANCE_INDEX)
     out.instance_index = vertex_in.instance_index;

@@ -177,6 +177,26 @@ impl TileScenery {
     pub fn is_empty(&self) -> bool {
         self.models.is_empty() && self.cables.is_empty() && self.rails.is_empty() && self.posts.is_empty()
     }
+
+    /// Each model standing in the tile, and whether each of its copies here shows afar.
+    pub fn shown_afar(&self) -> impl Iterator<Item = (&'static str, bool)> + '_ {
+        self.models.iter().flat_map(|(&model, copies)| copies.iter().map(move |copy| (model, copy.3)))
+    }
+}
+
+/// The models only full tiles show, which the game fades out before a tile turns middle, from each model's copies and
+/// whether each shows afar. A model shown afar in one place and not in another fails: the game picks how a model fades
+/// by the model alone.
+pub fn near_only<'a>(copies: impl IntoIterator<Item = (&'a str, bool)>) -> Result<Vec<&'a str>> {
+    let mut afar: BTreeMap<&str, (bool, bool)> = BTreeMap::new();
+    for (model, shown) in copies {
+        let seen = afar.entry(model).or_default();
+        if shown { seen.0 = true } else { seen.1 = true }
+    }
+    if let Some((model, _)) = afar.iter().find(|&(_, &(yes, no))| yes && no) {
+        bail!("{model} shows afar in some places and not in others");
+    }
+    Ok(afar.into_iter().filter(|(_, (yes, _))| !yes).map(|(model, _)| model).collect())
 }
 
 /// The world's tiles, as the scenery needs them: where the first starts on the map, and their side in metres.
@@ -688,6 +708,13 @@ pub fn checksum_bytes(scenery: &TileScenery) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_models_only_full_tiles_show_are_those_never_shown_afar_and_a_mixed_one_fails() {
+        let copies = [("plants/fern", false), ("plants/fern", false), ("trees/maple", true), ("props/car", false)];
+        assert_eq!(near_only(copies).unwrap(), ["plants/fern", "props/car"]);
+        assert!(near_only([("props/car", false), ("props/car", true)]).is_err());
+    }
 
     #[test]
     fn cable_faces_wind_outward() {

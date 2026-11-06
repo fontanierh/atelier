@@ -82,13 +82,16 @@ type AddedSwayingPlants = (
 fn blow(
     mut commands: Commands,
     settings: Res<Settings>,
-    all: Query<Entity, SwayingPlants>,
-    added: Query<Entity, AddedSwayingPlants>,
+    all: Query<(Entity, Option<&ChildOf>), SwayingPlants>,
+    added: Query<(Entity, Option<&ChildOf>), AddedSwayingPlants>,
+    fading: Query<(), With<wind::FadesOut>>,
 ) {
     let plants: Vec<_> = if settings.is_changed() { all.iter().collect() } else { added.iter().collect() };
-    for plant in plants {
+    for (plant, parent) in plants {
+        let fades = parent.is_some_and(|parent| fading.contains(parent.parent()));
+        let tag = wind::tag(settings.wind) | if fades { wind::FADES } else { 0 };
         // A streamed tile may despawn this plant before the deferred wind update is applied.
-        commands.entity(plant).try_insert(MeshTag::new(wind::tag(settings.wind)));
+        commands.entity(plant).try_insert(MeshTag::new(tag));
     }
 }
 
