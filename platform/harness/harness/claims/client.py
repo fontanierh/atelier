@@ -59,7 +59,13 @@ def acquire(client, claim_id, locker, ref=None):
         if lock['state'] not in ('needed', 'refused', 'requested', 'uncertain', 'abandoned'):
             continue
         path = lock['path']
-        intent = client.call('POST', f'/claims/{claim_id}/lock-intent', {'path': path})  # Unreachable: nothing locked
+        try:
+            intent = client.call('POST', f'/claims/{claim_id}/lock-intent', {'path': path})  # Unreachable: nothing locked
+        except Refused as error:
+            if error.code != 'unsettled':
+                raise
+            # An earlier attempt's request may still land: keep the reservation, do not abort.
+            raise AcquireFailed(f'{error}; claim {claim_id} stays reserved', view) from None
         if intent.get('resumed'):
             continue  # an earlier interrupted attempt made this lock; the service recorded it
         result = locker.lock(path, ref=ref)

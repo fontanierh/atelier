@@ -20,7 +20,8 @@ Only locks proven created by the claim's own attempt (reported created, or absen
 owned by the claimant and not attributable to another claim's attempt by the same account) MAY be marked for
 unlock; a coordinator MAY hand a pre-existing lock only to a live claim that never attempted that path. Unknown
 outcomes MUST stay uncertain and keep the reservation until the lock is seen or the settle interval (longer than
-a lock request can stay in flight) passed with no lock, or a coordinator resolves it. A lock in the intent
+a lock request can stay in flight) passed with no lock, or a coordinator resolves it; a retry MUST NOT replace
+an unsettled attempt before then. A lock in the intent
 snapshot MUST NOT be adopted or unlocked, whatever its account.
 
 @cc [owner:fontanierh,label:correctness] release-only-on-merge-or-cancel

@@ -699,3 +699,34 @@ def holding(world, path):
         rows = world.store.db.execute('SELECT c.id, i.kind, i.value FROM claims c JOIN items i ON i.claim=c.id '
                                       f'WHERE c.state IN ({",".join("?" * len(HOLDING))})', HOLDING).fetchall()
     return sorted({r['id'] for r in rows if overlaps(('path', path), (r['kind'], r['value']))})
+
+
+class Failing(LfsHttp):
+    """A lock request that certainly made no lock (for example a 403)."""
+
+    def lock(self, path, ref=None):
+        from atelier.harness.claims.remote import LockResult
+        return LockResult('failed', detail='403: denied')
+
+
+def test_retry_never_discards_an_earlier_unsettled_attempt(world):
+    a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    # The first attempt recorded its intent and the client was interrupted: its lock request may still land.
+    a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})
+    # A retry whose own request certainly fails must not abort the claim and free the path.
+    with pytest.raises(AcquireFailed, match='unsettled'):
+        acquire(a, claim['id'], Failing(world.lfs.url, {'Authorization': basic('alice')}))
+    view = a.call('GET', f'/claims/{claim["id"]}')
+    assert view['state'] == 'pending' and view['locks'][0]['state'] == 'requested'
+    refused('overlap', world.request, b, 'tb', lock_paths=[SEA])
+    # Same for an attempt reported unknown on a claim that was not aborted.
+    other = world.request(a, 'ta', lock_paths=[BENCH])
+    a.call('POST', f'/claims/{other["id"]}/lock-intent', {'path': BENCH})
+    a.call('POST', f'/claims/{other["id"]}/lock-result', {'path': BENCH, 'outcome': 'unknown'})
+    refused('unsettled', a.call, 'POST', f'/claims/{other["id"]}/lock-intent', {'path': BENCH})
+    # Once the settle interval passed with no lock on the remote, the retry proceeds.
+    world.clock.now += world.store.uncertain_settle + 1
+    assert acquire(a, claim['id'], a.locker)['state'] == 'active'
+    assert acquire(a, other['id'], a.locker)['state'] == 'active'

@@ -417,7 +417,10 @@ class Store:
         """Record that the client is about to lock a path, with the remote's locks on it beforehand.
         That snapshot is what later proves whether an unreported lock was created by this attempt.
         Retrying an unresolved attempt first looks for the lock it may already have made: a lock absent from
-        the earlier snapshot and owned by the claimant is that attempt's, and is recorded instead of re-locking."""
+        the earlier snapshot and owned by the claimant is that attempt's, and is recorded instead of re-locking.
+        With no such lock, an unsettled (requested/uncertain) attempt is never replaced: its request may still
+        land, so the retry is refused until a listing at least the settle interval after the attempt's last step
+        shows none (or a coordinator resolves it). Replacing it earlier would let a failed retry free the path."""
         self._require_ready()
         with self.lock:
             row = self._claim(self.db, claim)
@@ -427,6 +430,7 @@ class Store:
             if before['state'] not in RETRYABLE:
                 refuse('lock_state', f'{path!r} is already {before["state"]} for claim {claim}')
             account = self._principal(self.db, actor)['git_account']
+        listed_at = self.clock()  # the listing below is at least this recent
         try:
             remote = [l for l in self.lfs.locks(path=path) if l.path == path]
         except Unavailable as error:
@@ -449,6 +453,10 @@ class Store:
                 return {'path': path, 'resumed': resumed[0].id}
             if resumed:
                 refuse('lock_state', f'{path!r} has several candidate locks; a coordinator must resolve it')
+            if current['state'] in ('requested', 'uncertain') and listed_at - current['updated'] < self.uncertain_settle:
+                wait = self.uncertain_settle - (listed_at - current['updated'])
+                refuse('unsettled', f'the earlier lock request on {path!r} may still create its lock; retry in '
+                       f'{wait:.0f} s or have a coordinator resolve it', retry_after=round(wait))
             prior = sorted(l.id for l in remote)
             db.execute("UPDATE locks SET state='requested', prior=?, lock_id=NULL, owner=NULL, detail=NULL, updated=? "
                        'WHERE claim=? AND path=?', (json.dumps(prior), self.clock(), claim, path))

@@ -33,7 +33,10 @@ uncertain lock that nobody has seen is settled **abandoned** (the claim then end
 reconcile at least `serve --uncertain-settle` seconds (default 3600) after the attempt's last recorded step; set it
 well above the clients' lock timeout. A coordinator can settle it sooner with `--decision foreign` once the request
 is known dead. An abandoned attempt's late lock is still recognised by `reconcile` and marked for unlock; if another
-claim holds the path by then, the ended claim stays ended and only that proven lock is released.
+claim holds the path by then, the ended claim stays ended and only that proven lock is released. For the same
+reason a retry (`acquire` again) never replaces an unsettled attempt: unless it finds the earlier attempt's lock,
+`lock-intent` is refused (`unsettled`) until the same interval has passed with no lock, so a failed retry cannot
+abort the claim while the first request may still land.
 
 After every start the service is **reconciling** and refuses grants and protected checks until `reconcile`
 has compared every recorded lock with the remote.
