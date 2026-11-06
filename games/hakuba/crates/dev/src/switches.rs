@@ -132,11 +132,13 @@ struct DevAfter {
 
 fn dev_after(
     mut commands: Commands,
-    mut dev: ResMut<DevAfter>,
+    dev: Option<ResMut<DevAfter>>,
     mut next: ResMut<NextState<DevMode>>,
     loaded: Option<Res<hakuba_world::SceneryLoaded>>,
     unready: Query<(), With<hakuba_world::Unready>>,
 ) {
+    // Gone once it has turned dev mode on: a required resource would fail, and log, every frame after.
+    let Some(mut dev) = dev else { return };
     if dev.loaded.is_none() && loaded.is_some() && unready.is_empty() {
         dev.loaded = Some(Instant::now());
     }
