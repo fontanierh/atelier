@@ -30,6 +30,9 @@ def configure(sub):
     s.add_argument('--port', type=int, default=8840)
     s.add_argument('--coordinator', action='append', default=[], help='principal allowed to recover/resolve (repeatable)')
     s.add_argument('--heartbeat-timeout', type=float, default=300.0)
+    s.add_argument('--uncertain-settle', type=float, default=3600.0,
+                   help='seconds an unseen lock with an unknown request outcome stays reserved before reconcile '
+                   'settles it as abandoned; must exceed the lock timeout plus any server delay (default 3600)')
 
     s = a.add_parser('register-principal'); s.add_argument('name'); s.add_argument('--kind', choices=['agent', 'human'], required=True)
     s.add_argument('--git-account', help='LFS lock owner name of this principal')
@@ -159,7 +162,7 @@ def serve(args):
     else:
         lfs = GitLfsCli(args.lfs_repo)
     store = Store(args.db, GitCli(args.git_repo, args.git_remote), lfs, coordinators=args.coordinator,
-                  heartbeat_timeout=args.heartbeat_timeout)
+                  heartbeat_timeout=args.heartbeat_timeout, uncertain_settle=args.uncertain_settle)
     service = Service(store, token, args.bind, args.port)
     print(f'claims service listening on {service.url} (reconciling: run `atelier claims reconcile`)', flush=True)
     try:

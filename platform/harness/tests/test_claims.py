@@ -527,3 +527,175 @@ def test_repository_hooks_skip_without_task_and_fail_closed_with_one(world):
     world.write('Source/Skate.cpp', 'text edit')
     git(repo, 'add', 'Source/Skate.cpp')
     assert run().returncode == 0
+
+
+class Unanswered(LfsHttp):
+    """A lock request whose reply never came and which made no lock (yet): the outcome is unknown."""
+
+    def lock(self, path, ref=None):
+        from atelier.harness.claims.remote import LockResult
+        return LockResult('unknown', detail='timed out')
+
+
+def test_protected_checks_reverify_locks_and_base_live(world):
+    a = world.agent('a', 'alice')
+    world.task(a, 'ta')
+    claim = world.request(a, 'ta', lock_paths=[BENCH])
+    acquire(a, claim['id'], a.locker)
+    repo = world.seed
+    for stage in ('commit', 'publish'):
+        assert check(a, repo, 'ta', [Change('M', BENCH)], stage=stage) == []
+    # LFS unreachable after activation: the stored coverage is not enough.
+    world.lfs.down = True
+    for stage in ('commit', 'publish'):
+        problems = check(a, repo, 'ta', [Change('M', BENCH)], stage=stage)
+        assert problems and 'lfs_unavailable' in problems[0], problems
+    world.lfs.down = False
+    # Git remote unreachable.
+    moved = world.origin.with_name('origin-away.git')
+    world.origin.rename(moved)
+    try:
+        for stage in ('commit', 'publish'):
+            problems = check(a, repo, 'ta', [Change('M', BENCH)], stage=stage)
+            assert problems and 'git_unavailable' in problems[0], problems
+    finally:
+        moved.rename(world.origin)
+    assert check(a, repo, 'ta', [Change('M', BENCH)]) == []
+    # The lock vanished from the remote (no reconcile ran): the claim no longer authorizes the write.
+    world.lfs.locks.clear()
+    problems = check(a, repo, 'ta', [Change('M', BENCH)])
+    assert problems and 'live verification' in problems[0], problems
+    assert check(a, repo, 'ta', [Change('M', 'Source/Skate.cpp')]) == []  # unprotected text still passes
+
+
+def test_unseen_uncertain_lock_keeps_its_reservation_until_settled(world):
+    a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    with pytest.raises(AcquireFailed):
+        acquire(a, claim['id'], Unanswered(world.lfs.url, {'Authorization': basic('alice')}))
+    assert a.call('GET', f'/claims/{claim["id"]}')['state'] == 'uncertain'
+    # No lock is listed yet, but the timed-out request may still create it: stay uncertain and reserved.
+    world.client('lead').call('POST', '/reconcile')
+    view = a.call('GET', f'/claims/{claim["id"]}')
+    assert view['state'] == 'uncertain' and view['locks'][0]['state'] == 'uncertain'
+    refused('overlap', world.request, b, 'tb', lock_paths=[SEA])
+    # The late lock lands: reconcile proves it is the attempt's and releases it.
+    late = world.lfs.add(SEA, 'alice')
+    result = world.client('lead').call('POST', '/reconcile')
+    assert [c['to'] for c in result['changes']] == ['releasing']
+    view = release_locks(a, a.call('GET', f'/claims/{claim["id"]}'), a.locker)
+    assert view['state'] == 'failed' and world.lfs.at(SEA) == [] and late
+    assert world.request(b, 'tb', lock_paths=[SEA])['state'] == 'pending'
+
+
+def test_unseen_uncertain_lock_settles_only_after_the_settle_interval(world):
+    a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    with pytest.raises(AcquireFailed):
+        acquire(a, claim['id'], Unanswered(world.lfs.url, {'Authorization': basic('alice')}))
+    world.clock.now += world.store.uncertain_settle - 1
+    world.client('lead').call('POST', '/reconcile')
+    assert a.call('GET', f'/claims/{claim["id"]}')['state'] == 'uncertain'
+    world.clock.now += 2
+    world.client('lead').call('POST', '/reconcile')
+    view = a.call('GET', f'/claims/{claim["id"]}')
+    assert view['state'] == 'failed' and view['locks'][0]['state'] == 'abandoned'
+    other = world.request(b, 'tb', lock_paths=[SEA])
+    # Against every bound, A's request lands after B reserved the path. Reconcile proves the lock is A's (A's
+    # account, absent from A's snapshot, no other attempt by that account) and has A unlock it, while A stays
+    # ended and B alone holds the path.
+    world.lfs.add(SEA, 'alice')
+    world.client('lead').call('POST', '/reconcile')
+    view = a.call('GET', f'/claims/{claim["id"]}')
+    assert view['state'] == 'failed' and view['locks'][0]['state'] == 'releasing'
+    assert holding(world, SEA) == [other['id']]
+    release_locks(a, view, a.locker)
+    assert world.lfs.at(SEA) == []
+    assert acquire(b, other['id'], b.locker)['state'] == 'active'
+
+
+def test_adoption_never_takes_a_lock_from_the_intent_snapshot(world):
+    a = world.agent('a', 'team')
+    lead = world.client('lead')
+    bootstrap = world.lfs.add(SEA, 'team')  # another writer's lock under the same account
+    world.task(a, 'ta')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    assert a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})['prior'] == [bootstrap]
+    a.call('POST', f'/claims/{claim["id"]}/lock-result', {'path': SEA, 'outcome': 'unknown'})
+    a.call('POST', f'/claims/{claim["id"]}/abort', {'reason': 'lock outcome unknown'})
+    body = {'action': 'resolve', 'path': SEA, 'decision': 'adopt', 'lock_id': bootstrap, 'reason': 'looks like ours'}
+    refused('pre_existing', lead.call, 'POST', f'/claims/{claim["id"]}/recover', body)
+    view = release_locks(a, a.call('GET', f'/claims/{claim["id"]}'), a.locker)
+    assert view['locks'][0]['state'] == 'uncertain'
+    assert [l['id'] for l in world.lfs.at(SEA)] == [bootstrap]
+    # The explicit bootstrap handover still works: a live claim that never attempted the path adopts it.
+    world.task(a, 'tb')
+    handover = world.request(a, 'tb', lock_paths=[BENCH])
+    held = world.lfs.add(BENCH, 'team')
+    lead.call('POST', f'/claims/{handover["id"]}/recover', {**body, 'path': BENCH, 'lock_id': held})
+    assert acquire(a, handover['id'], a.locker)['state'] == 'active'
+
+
+def test_resolution_never_revives_an_ended_claim_whose_path_another_claim_holds(world):
+    a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
+    lead = world.client('lead')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})
+    a.call('POST', f'/claims/{claim["id"]}/lock-result', {'path': SEA, 'outcome': 'unknown'})
+    a.call('POST', f'/claims/{claim["id"]}/abort', {'reason': 'lock outcome unknown'})
+    lead.call('POST', f'/claims/{claim["id"]}/recover', {'action': 'resolve', 'path': SEA, 'decision': 'foreign',
+                                                          'reason': 'request confirmed dead'})
+    assert a.call('GET', f'/claims/{claim["id"]}')['state'] == 'failed'
+    other = world.request(b, 'tb', lock_paths=[SEA])
+    late = world.lfs.add(SEA, 'alice')  # A's request lands after all
+    body = {'action': 'resolve', 'path': SEA, 'decision': 'adopt', 'lock_id': late, 'reason': 'late lock'}
+    refused('lock_state', lead.call, 'POST', f'/claims/{claim["id"]}/recover', body)  # refused: no lock was made
+    # Same story, but the attempt was left unresolved (uncertain), so the late lock is provably A's.
+    world.lfs.locks.clear()
+    b.call('POST', f'/claims/{other["id"]}/cancel', {'disposition': 'discarded'})
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    a.call('POST', f'/claims/{claim["id"]}/lock-intent', {'path': SEA})
+    a.call('POST', f'/claims/{claim["id"]}/lock-result', {'path': SEA, 'outcome': 'unknown'})
+    a.call('POST', f'/claims/{claim["id"]}/abort', {'reason': 'lock outcome unknown'})
+    world.clock.now += world.store.uncertain_settle + 1
+    lead.call('POST', '/reconcile')
+    assert a.call('GET', f'/claims/{claim["id"]}')['state'] == 'failed'
+    other = world.request(b, 'tb', lock_paths=[SEA])
+    late = world.lfs.add(SEA, 'alice')
+    view = lead.call('POST', f'/claims/{claim["id"]}/recover', {**body, 'lock_id': late})
+    assert view['state'] == 'failed' and view['locks'][0]['state'] == 'releasing'
+    assert holding(world, SEA) == [other['id']]
+    release_locks(a, view, a.locker)
+    assert world.lfs.at(SEA) == [] and acquire(b, other['id'], b.locker)['state'] == 'active'
+
+
+def test_late_lock_is_not_proven_when_another_attempt_by_the_same_account_could_own_it(world):
+    a, b = world.agent('a', 'team'), world.agent('b', 'team')
+    lead = world.client('lead')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    with pytest.raises(AcquireFailed):
+        acquire(a, claim['id'], Unanswered(world.lfs.url, {'Authorization': basic('team')}))
+    world.clock.now += world.store.uncertain_settle + 1
+    lead.call('POST', '/reconcile')
+    other = world.request(b, 'tb', lock_paths=[SEA])
+    b.call('POST', f'/claims/{other["id"]}/lock-intent', {'path': SEA})
+    late = world.lfs.add(SEA, 'team')  # A's late lock, or B's own: the account cannot tell
+    body = {'action': 'resolve', 'path': SEA, 'decision': 'adopt', 'lock_id': late, 'reason': 'late lock'}
+    refused('ambiguous', lead.call, 'POST', f'/claims/{claim["id"]}/recover', body)
+    lead.call('POST', '/reconcile')
+    assert a.call('GET', f'/claims/{claim["id"]}')['locks'][0]['state'] == 'abandoned'
+    assert b.call('GET', f'/claims/{other["id"]}')['locks'][0]['state'] == 'requested'
+    assert [l['id'] for l in world.lfs.at(SEA)] == [late]
+
+
+def holding(world, path):
+    """IDs of claims in a holding state with an item overlapping the path (the one-active-writer invariant)."""
+    from atelier.harness.claims.store import HOLDING
+    with world.store.lock:
+        rows = world.store.db.execute('SELECT c.id, i.kind, i.value FROM claims c JOIN items i ON i.claim=c.id '
+                                      f'WHERE c.state IN ({",".join("?" * len(HOLDING))})', HOLDING).fetchall()
+    return sorted({r['id'] for r in rows if overlaps(('path', path), (r['kind'], r['value']))})

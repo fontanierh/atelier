@@ -24,11 +24,23 @@ append-only event history. It is not a scheduler, a chat channel or a replacemen
 3. `activate` verifies every lock on the remote and the base again; only then is the claim **active**.
 4. On failure the attempt is aborted: only locks this attempt proved it created are unlocked. A lock whose
    result is unknown stays **uncertain** and keeps the reservation until `reconcile` proves whose it is
-   (a lock ID absent from the intent snapshot and owned by the claimant was created by the attempt) or a
-   coordinator resolves it. A pre-existing lock is never unlocked because its account matches.
+   (a lock ID absent from the intent snapshot, owned by the claimant, and not possibly made by another claim's
+   unresolved attempt under the same account, was created by the attempt) or a coordinator resolves it.
+   A pre-existing lock is never unlocked because its account matches.
+
+A timed-out lock request may still create its lock later, so an empty listing proves nothing by itself. An
+uncertain lock that nobody has seen is settled **abandoned** (the claim then ends and frees the path) only by a
+reconcile at least `serve --uncertain-settle` seconds (default 3600) after the attempt's last recorded step; set it
+well above the clients' lock timeout. A coordinator can settle it sooner with `--decision foreign` once the request
+is known dead. An abandoned attempt's late lock is still recognised by `reconcile` and marked for unlock; if another
+claim holds the path by then, the ended claim stays ended and only that proven lock is released.
 
 After every start the service is **reconciling** and refuses grants and protected checks until `reconcile`
 has compared every recorded lock with the remote.
+
+Coordinator `resolve --decision adopt` takes only a lock proven the attempt's (absent from its intent snapshot,
+owned by the claimant's account, not attributable to another claim), or hands a pre-existing (bootstrap) lock to a
+**live** claim that never attempted the path: request without `--acquire`, adopt, then `acquire`.
 
 ## Invocations
 
@@ -97,7 +109,9 @@ atelier claims --actor lead recover 7 --action resolve --path Content/Props/Benc
 `check` lists the changed files (with `--staged` or `--range`, including deletions and both sides of renames)
 and finds protected ones: files with the Git LFS `lockable` attribute in `.gitattributes`, plus globs from
 `--protect` or `git config --add atelier.claims.protect 'Content/**'`. Each protected path must be covered by
-an **active** claim of the task. `--stage publish` (pre-push, pre-merge) also requires exact paths, with a
+an **active** claim of the task, which the service re-verifies live for every check: each LFS lock (path,
+ID, owner) on the remote and the base against the target branch. If either remote cannot be asked, protected
+changes are refused. `--stage publish` (pre-push, pre-merge) also requires exact paths, with a
 verified LFS lock for lockable files: add new files found under a prefix with `extend` first.
 
 `atelier claims use-task T42` sets this checkout's task. The repository's `.githooks/pre-commit` and

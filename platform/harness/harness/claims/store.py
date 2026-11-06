@@ -37,7 +37,12 @@ CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, at REA
 """
 # Lock rows: needed -> requested (intent) -> created (reported) -> verified (remote confirmed).
 # requested/unknown -> uncertain; created/verified -> releasing -> released; exists/failed -> refused.
+# uncertain -> abandoned when no lock appeared within the settle interval (or a coordinator says foreign -> refused);
+# an abandoned attempt's late lock is still recognised and released when it is proven the attempt's.
 OWNED = ('created', 'verified')
+# Attempts whose request may have made (or may still make) a lock nobody has recorded.
+UNRESOLVED = ('requested', 'uncertain', 'abandoned')
+RETRYABLE = ('needed', 'refused') + UNRESOLVED
 
 
 class ClaimError(Exception):
@@ -70,11 +75,15 @@ def _list(value, name):
 
 
 class Store:
-    def __init__(self, path, git, lfs, coordinators=(), heartbeat_timeout=300.0, clock=time.time):
+    def __init__(self, path, git, lfs, coordinators=(), heartbeat_timeout=300.0, uncertain_settle=3600.0,
+                 clock=time.time):
         self.path = Path(path)
         self.git, self.lfs, self.clock = git, lfs, clock
         self.coordinators = frozenset(coordinators)
         self.heartbeat_timeout = heartbeat_timeout
+        # How long a lock request whose outcome is unknown may still create its lock. It must exceed the
+        # client's lock timeout plus any server-side delay; only after it may an unseen lock be settled.
+        self.uncertain_settle = float(uncertain_settle)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         # Only the service opens the database: a second service on the same file refuses to start.
         self._owner = open(str(self.path) + '.owner', 'a')
@@ -415,7 +424,7 @@ class Store:
             if row['principal'] != actor or row['state'] not in ('pending', 'active'):
                 refuse('not_holder', f'claim {claim} is {row["state"]} and held by {row["principal"]!r}', 403)
             before = self._lock_row(self.db, claim, path)
-            if before['state'] not in ('needed', 'refused', 'requested', 'uncertain'):
+            if before['state'] not in RETRYABLE:
                 refuse('lock_state', f'{path!r} is already {before["state"]} for claim {claim}')
             account = self._principal(self.db, actor)['git_account']
         try:
@@ -423,12 +432,16 @@ class Store:
         except Unavailable as error:
             refuse('lfs_unavailable', f'cannot read LFS locks before locking: {error}', 503)
         earlier = set(json.loads(before['prior'] or '[]'))
-        resumed = [l for l in remote if l.id not in earlier and l.owner == account] \
-            if before['state'] in ('requested', 'uncertain') else []
+        candidates = [l for l in remote if l.id not in earlier and l.owner == account] \
+            if before['state'] in UNRESOLVED else []
         with self.tx() as db:
             current = self._lock_row(db, claim, path)
             if (current['state'], current['prior']) != (before['state'], before['prior']):
                 refuse('lock_state', f'{path!r} changed while its intent was recorded; retry')
+            resumed = [l for l in candidates if not self._others_could_own(db, claim, path, l)]
+            if len(candidates) != len(resumed):
+                refuse('ambiguous', f'a lock on {path!r} may belong to another attempt by the same account; '
+                       'a coordinator must resolve it')
             if len(resumed) == 1:
                 db.execute("UPDATE locks SET state='created', lock_id=?, owner=?, updated=? WHERE claim=? AND path=?",
                            (resumed[0].id, account, self.clock(), claim, path))
@@ -482,15 +495,7 @@ class Store:
         missing = [lock['path'] for lock in locks if lock['state'] not in OWNED]
         if missing:
             refuse('locks_missing', f'{len(missing)} LFS locks are not reported as created', paths=missing)
-        problems = []
-        try:
-            for lock in locks:
-                remote = [l for l in self.lfs.locks(path=lock['path']) if l.id == lock['lock_id']]
-                if len(remote) != 1 or remote[0].path != lock['path'] or remote[0].owner != account:
-                    problems.append({'path': lock['path'], 'lock_id': lock['lock_id'],
-                                     'remote': [vars(l) for l in remote], 'expected_owner': account})
-        except Unavailable as error:
-            refuse('lfs_unavailable', f'cannot verify LFS locks: {error}', 503)
+        problems = self._lock_problems(locks, account)
         if problems:
             with self.tx() as db:
                 self._event(db, 'claim.verify_failed', actor, row['task'], claim, {'problems': problems})
@@ -511,6 +516,41 @@ class Store:
                         row['task'], claim, {'target_head': head, 'locks': {l['path']: l['lock_id'] for l in locks}})
             return self._claim_view(db, claim)
 
+    def _lock_problems(self, locks, account):
+        """Remote read: each recorded lock must be on the remote with its path, ID and the claimant's account.
+        Raises (fail closed) when the LFS server cannot be asked."""
+        problems = []
+        try:
+            for lock in locks:
+                remote = [l for l in self.lfs.locks(path=lock['path']) if l.id == lock['lock_id']] \
+                    if lock['lock_id'] else []
+                if len(remote) != 1 or remote[0].path != lock['path'] or remote[0].owner != account:
+                    problems.append({'path': lock['path'], 'lock_id': lock['lock_id'],
+                                     'remote': [vars(l) for l in remote], 'expected_owner': account})
+        except Unavailable as error:
+            refuse('lfs_unavailable', f'cannot verify LFS locks: {error}', 503)
+        return problems
+
+    def _others_could_own(self, db, claim, path, lock):
+        """Whether another claim recorded this lock, or another unresolved attempt on the path by the same LFS
+        account could have created it. Then the lock is not proven this claim's, whatever its account."""
+        rows = db.execute('SELECT l.state, l.lock_id, l.prior, p.git_account FROM locks l JOIN claims c ON c.id=l.claim '
+                          'JOIN principals p ON p.name=c.principal WHERE lower(l.path)=lower(?) AND l.claim!=?',
+                          (path, claim))
+        for r in rows:
+            if r['lock_id'] == lock.id:
+                return True
+            if r['state'] in UNRESOLVED and r['prior'] is not None and r['git_account'] == lock.owner \
+                    and lock.id not in json.loads(r['prior']):
+                return True
+        return False
+
+    def _proven_own(self, db, claim, path, prior, account, lock):
+        """A lock is this attempt's only when it is on the path, owned by the claimant's account, absent from the
+        attempt's intent snapshot, and no other attempt could have made it."""
+        return (lock.path == path and lock.owner == account and lock.id not in prior
+                and not self._others_could_own(db, claim, path, lock))
+
     def _end(self, db, claim, ending):
         """Stop holding a claim's grant: proven-own locks become releasing, unknown ones uncertain."""
         db.execute("UPDATE locks SET state='releasing', updated=? WHERE claim=? AND state IN ('created','verified')",
@@ -527,6 +567,10 @@ class Store:
         states = {r['state'] for r in db.execute('SELECT state FROM locks WHERE claim=?', (claim,))}
         state = ('uncertain' if states & {'uncertain', 'requested'} else 'releasing' if 'releasing' in states
                  else 'failed' if row['ending'] == 'aborted' else 'released')
+        if state in HOLDING and row['state'] not in HOLDING and self._conflicts(db, self._items(db, claim), claim):
+            # An ended claim whose items another claim now holds is never revived: one writer per path. A late
+            # lock proven its own is still unlocked from its releasing row, without re-granting the path.
+            return
         if state != row['state']:
             db.execute('UPDATE claims SET state=?, updated=? WHERE id=?', (state, self.clock(), claim))
             self._event(db, 'claim.' + state, 'service', row['task'], claim, {'ending': row['ending']})
@@ -657,10 +701,19 @@ class Store:
             row = self._claim(self.db, claim)
             lock = self._lock_row(self.db, claim, path)
             account = self._principal(self.db, row['principal'])['git_account']
-        if lock['state'] not in ('needed', 'requested', 'uncertain', 'refused'):
+        if lock['state'] not in RETRYABLE:
             refuse('lock_state', f'{path!r} is {lock["state"]}; only an unresolved lock can be resolved')
+        prior = None if lock['prior'] is None else set(json.loads(lock['prior']))
         if decision == 'adopt':
             lock_id = _text(lock_id, 'lock_id')
+            if prior is None and (row['state'] not in ('pending', 'active') or row['ending']):
+                # Handing a pre-existing (bootstrap) lock over is only for a live claim that never attempted it.
+                refuse('lock_state', f'claim {claim} is {row["state"]} and never attempted {path!r}; '
+                       'only a live claim may take over a pre-existing lock')
+            if prior is not None and lock['state'] == 'refused':
+                refuse('lock_state', f'the attempt on {path!r} was refused or resolved foreign; it made no lock')
+            if prior is not None and lock_id in prior:
+                refuse('pre_existing', f'lock {lock_id} existed before the attempt on {path!r}; it is not this claim\'s')
             try:
                 remote = [l for l in self.lfs.locks(path=path) if l.id == lock_id]
             except Unavailable as error:
@@ -670,6 +723,8 @@ class Store:
         with self.tx() as db:
             if self._lock_row(db, claim, path)['state'] != lock['state']:
                 refuse('lock_state', f'{path!r} changed while it was resolved')
+            if decision == 'adopt' and self._others_could_own(db, claim, path, remote[0]):
+                refuse('ambiguous', f'lock {lock_id} may belong to another claim\'s attempt on {path!r}')
             ending = self._claim(db, claim)['ending']
             state = ('refused' if decision == 'foreign' else 'releasing' if ending else 'created')
             db.execute('UPDATE locks SET state=?, lock_id=?, owner=?, updated=? WHERE claim=? AND path=?',
@@ -688,8 +743,9 @@ class Store:
             self._principal(self.db, actor)
             rows = [dict(r) for r in self.db.execute(
                 'SELECT l.*, c.principal, c.ending, c.task FROM locks l JOIN claims c ON c.id=l.claim '
-                "WHERE l.state IN ('requested','uncertain','created','verified','releasing')")]
+                "WHERE l.state IN ('requested','uncertain','abandoned','created','verified','releasing')")]
             accounts = {r['name']: r['git_account'] for r in self.db.execute('SELECT name, git_account FROM principals')}
+        listed_at = self.clock()  # every listing below is at least this recent
         try:
             remote = {}
             for path in {r['path'] for r in rows}:
@@ -705,14 +761,19 @@ class Store:
                 here = [l for l in remote[r['path']] if l.path == r['path']]
                 account = accounts.get(r['principal'])
                 new = None
-                if r['state'] in ('requested', 'uncertain'):
+                if r['state'] in UNRESOLVED:
                     prior = set(json.loads(r['prior'] or '[]'))
-                    created = [l for l in here if l.id not in prior and l.owner == account]
-                    if len(created) == 1:
-                        new = ('releasing' if r['ending'] else 'created', created[0].id)
-                    elif not created and r['state'] == 'uncertain':
-                        new = ('refused', None)
-                    elif not created:
+                    candidates = [l for l in here if l.id not in prior and l.owner == account]
+                    proven = [l for l in candidates if self._proven_own(db, r['claim'], r['path'], prior, account, l)]
+                    if len(candidates) == 1 and len(proven) == 1:
+                        new = ('releasing' if r['ending'] else 'created', proven[0].id)
+                    elif candidates:
+                        new = None  # several or ambiguous candidates: a coordinator resolves
+                    elif r['state'] == 'uncertain' and listed_at - r['updated'] >= self.uncertain_settle:
+                        # No lock appeared long after the request could still land: settle without a lock. A later
+                        # lock proven this attempt's is still found and released from the abandoned row.
+                        new = ('abandoned', None)
+                    elif r['state'] == 'requested':
                         new = ('uncertain', None) if r['ending'] else None
                 elif r['state'] in ('created', 'verified'):
                     if not any(l.id == r['lock_id'] for l in here):
@@ -741,11 +802,31 @@ class Store:
     # ------------------------------------------------------------------ reads
 
     def coverage(self, task):
-        """What a client check needs: the task's held claims, with items and lock states, and service readiness."""
+        """What a protected check needs: the task's held claims with items and lock states, each active claim
+        re-verified live (every LFS lock's path, ID and owner on the remote, and the base against the target
+        branch). An unreachable LFS server or Git remote refuses the check (fail closed)."""
         with self.lock:
             view = self._task_view(self.db, task)
-            return {'service': 'ready' if self.ready else 'reconciling', 'task': task, 'status': view['status'],
-                    'claims': [c for c in view['claims'] if c['state'] in HOLDING]}
+            ready = self.ready
+            claims = [c for c in view['claims'] if c['state'] in HOLDING]
+            accounts = {c['id']: self._principal(self.db, c['principal'])['git_account'] for c in claims}
+            reads = [tuple(r) for r in view['reads']]
+        result = {'service': 'ready' if ready else 'reconciling', 'task': task, 'status': view['status'], 'claims': claims}
+        if not ready:
+            return result
+        for c in claims:
+            if c['state'] != 'active':
+                continue
+            problems = self._lock_problems(c['locks'], accounts[c['id']])
+            items = [(i['kind'], i['value']) for i in c['items'] if i['kind'] != 'scope']
+            try:
+                self._base_check(view['target_branch'], c['base_revision'], items + reads)
+            except ClaimError as error:
+                if error.code != 'stale_base':
+                    raise
+                problems.append({'base': error.message})
+            c['verified'], c['problems'] = not problems, problems
+        return result
 
     def events(self, after=0, limit=500):
         limit = max(1, min(int(limit), 1000))

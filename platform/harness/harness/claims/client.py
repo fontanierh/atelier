@@ -56,7 +56,7 @@ def acquire(client, claim_id, locker, ref=None):
     view = client.call('GET', f'/claims/{claim_id}')
     failure = None
     for lock in view['locks']:
-        if lock['state'] not in ('needed', 'refused', 'requested', 'uncertain'):
+        if lock['state'] not in ('needed', 'refused', 'requested', 'uncertain', 'abandoned'):
             continue
         path = lock['path']
         intent = client.call('POST', f'/claims/{claim_id}/lock-intent', {'path': path})  # Unreachable: nothing locked
@@ -155,8 +155,9 @@ def protected(repo, paths, patterns=(), cached=False):
 
 def evaluate(changes, guarded, coverage, stage='commit'):
     """Return problems: every changed protected path (both sides of a rename, deletions included) must be
-    covered by an ACTIVE claim of the task. Publication additionally requires exact paths, with verified LFS
-    locks for lockable files; new files under a region prefix must be added to the claim first."""
+    covered by an ACTIVE claim of the task that the service re-verified live for this check (its LFS locks on
+    the remote and its base against the target branch). Publication additionally requires exact paths, with
+    verified LFS locks for lockable files; new files under a region prefix must be added to the claim first."""
     touched = sorted({p for change in changes for p in change.paths() if p in guarded})
     if not touched:
         return []
@@ -164,7 +165,8 @@ def evaluate(changes, guarded, coverage, stage='commit'):
         return [f'{path}: protected and no task is set' for path in touched]
     if coverage.get('service') != 'ready':
         return [f'claims service is {coverage.get("service")}; protected writes wait for reconciliation']
-    active = [c for c in coverage['claims'] if c['state'] == 'active']
+    # Only a live verification counts: a coverage answer without one (stored state alone) authorizes nothing.
+    active = [c for c in coverage['claims'] if c['state'] == 'active' and c.get('verified') is True]
     items = [(i['kind'], i['value']) for c in active for i in c['items'] if i['kind'] != 'scope']
     exact = {i['value'].casefold(): i['lfs'] for c in active for i in c['items'] if i['kind'] == 'path'}
     locked = {l['path'].casefold() for c in active for l in c['locks'] if l['state'] == 'verified'}
@@ -174,7 +176,12 @@ def evaluate(changes, guarded, coverage, stage='commit'):
         if not scopes.covers(items, path):
             held = [c['id'] for c in coverage['claims'] if scopes.covers(
                 [(i['kind'], i['value']) for i in c['items']], path)]
-            why = f'claim {held[0]} is not active yet' if held else 'not declared by any active claim of this task'
+            unverified = [c for c in coverage['claims'] if c['id'] in held and c['state'] == 'active']
+            if unverified:
+                why = (f'claim {unverified[0]["id"]} failed live verification against the remote: '
+                       f'{json.dumps(unverified[0].get("problems", "not verified"), sort_keys=True)[:300]}')
+            else:
+                why = f'claim {held[0]} is not active yet' if held else 'not declared by any active claim of this task'
             problems.append(f'{path}: {why}')
         elif stage == 'publish' and key not in exact:
             problems.append(f'{path}: covered only by a prefix; add the exact path (and its LFS lock) before publishing')
@@ -184,7 +191,9 @@ def evaluate(changes, guarded, coverage, stage='commit'):
 
 
 def check(client, repo, task, changes, patterns=(), stage='commit', cached=False):
-    """Fail-closed check. Unprotected changes pass without contacting the service; protected ones need it."""
+    """Fail-closed check. Unprotected changes pass without contacting the service; protected ones need it, and
+    the service re-verifies the task's active claims against the LFS and Git remotes for every check (it refuses
+    when either cannot be asked)."""
     names = sorted({p for change in changes for p in change.paths()})
     guarded = protected(repo, names, patterns, cached=cached)
     if not any(p in guarded for p in names):
