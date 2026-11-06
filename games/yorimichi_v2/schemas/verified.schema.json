@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "yorimichi_v2/verified.schema.json",
+  "title": "verified.json / actors.verified.json: the exact package bytes a route produced or saved",
+  "type": "object",
+  "required": [
+    "schema",
+    "kind",
+    "asset",
+    "engine",
+    "files"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "imported",
+        "editor-saved"
+      ]
+    },
+    "asset": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9._-]*)+$"
+    },
+    "engine": {
+      "type": "string",
+      "description": "engine build identity, e.g. 5.8.0-<changelist>"
+    },
+    "tool": {
+      "type": "string",
+      "description": "importer@version for imported records"
+    },
+    "input_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "required for imported records"
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "description": "game-relative path -> sha256"
+    },
+    "actors": {
+      "type": "object",
+      "description": "actors.verified.json only: package path -> {label, class, guid}"
+    },
+    "dependencies": {
+      "type": "object",
+      "description": "asset ID -> state fingerprint read when this record was made"
+    }
+  },
+  "description": "Portable: no absolute paths, hostnames or times."
+}

@@ -31,12 +31,14 @@ paving and kerbs, platforms and their skirts, bridges and abutments, and modules
 Their shared edges MUST come from one plan or shared coordinates, not from separately tuned offsets: no
 open gap, floating slab, daylight under a step or nosing, or coplanar overlap that flickers. A piece that
 stands on the ground MUST reach below the ground it stands on, wherever that ground is lower.
+In games/yorimichi_v2, editor-authored joins MAY instead be placed by hand: there an automated gap and
+overlap check of the saved actors, not construction, accepts the join (yorimichi-v2-joins-checked).
 
 @cc [owner:fontanierh,label:correctness] walkable-routes-traversable
 Every route the player is meant to walk (stairs, ramps, paths, landings and their joins to streets, terraces
 and doors) MUST be traversable by the character on foot, in both directions, without jumping. Skate-only
 features such as bowls and ramps are not walking routes. Risers MUST be at most 0.3 m, against the
-character's 0.45 m step (UE MaxStepHeight, train/collision.py STEP_UP). Treads MUST be at least a footstep
+character's 0.45 m step (UE MaxStepHeight; Yorimichi's train/collision.py STEP_UP). Treads MUST be at least a footstep
 deep. Slopes MUST stay under the walkable floor angle. There MUST be no gap or lip at either end. A new or
 geometrically changed route MUST be validated by driving the character over it both ways in a guarded game:
 a committed scenario or a recorded drive through the live bridge (live.drive, UYorimichiLive::Drive), bound
@@ -55,14 +57,17 @@ A shared world mechanism MUST have one implementation that every region reuses r
 covers terrain products and queries, seam stitching, grounding, mesh builders and their closed primitives,
 stairs and paving, foliage placement and LOD export. Existing region-local copies MUST be consolidated when
 they are next changed. A region MUST keep its own data, layout and generators in its own region directory
-(Yorimichi: games/yorimichi/world/regions/<region>/). It MUST change another region's output only through
+(Yorimichi: games/yorimichi/world/regions/<region>/; Yorimichi V2 regions are ownership scopes, see
+yorimichi-v2-single-writer). It MUST change another region's output only through
 that region's published products or declared boundary APIs, never by patching its code paths, meshes,
 materials or placements from outside. A ground function MUST serve every consumer of that ground (mesh,
 collision and placement). A check MAY recompute independently as an oracle, but MUST NOT replace the
 shared function.
 
 @cc [owner:fontanierh,label:performance] edits-rebuild-locally
-An edit to one region, asset or feature MUST rebuild only the products that actually read it. Steps MUST
+An edit to one region, asset or feature MUST rebuild only the products that actually read it. This rule
+governs generating build graphs; it does not apply to games/yorimichi_v2, whose normal build generates
+nothing (yorimichi-v2-targeted-authoring). Steps MUST
 declare their own code, the shared modules and products they read, and spatial queries for neighbour reads,
 following docs/WORLD_BUILD_PRACTICES.md. They MUST NOT declare whole directories, other regions' code or
 global catalogues they do not consume. Terrain consumers MUST read published terrain products or narrow

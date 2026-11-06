@@ -4,8 +4,8 @@ exceptions. Provider credentials are loaded from the ignored environment or CI s
 
 @cc [owner:fontanierh,label:safety] guarded-native-work
 Unreal and Blender work MUST use Atelier's existing lock and actual-child memory guard. No code
-may bypass admission, signal another owner's process or share mutable generated folders between
-checkouts. A capacity plan is advisory until a separately validated admission service replaces it.
+may bypass admission, signal another owner's process or share mutable project folders (Content,
+Binaries, Intermediate, Saved) or generated outputs between checkouts. A capacity plan is advisory until a separately validated admission service replaces it.
 
 @cc [owner:fontanierh,label:correctness] paid-call-provenance
 Every paid operation MUST have an exclusive ledger record before submission and a terminal or
@@ -22,6 +22,8 @@ overwritten in place by carving or baking scripts or duplicated into shadow back
 Derived meshes and materials MUST be produced under build/<game>/ or unreal/Content/ by the
 owning build steps with bounded triangle counts and LODs, and runtime consumers MUST share
 existing domain tables and authored placement transforms rather than duplicating them in C++.
+For games/yorimichi_v2, Unreal packages are committed sources: a derived package is written once by
+its asset's recorded targeted importer (asset.toml, verified.json), never by the normal build.
 
 @cc [owner:fontanierh,label:correctness] contract-review-before-merge
 Every PR MUST check contract syntax/owners and review applicable contracts on its final code.

@@ -24,6 +24,8 @@ games/*/unreal/Build/Mac/Resources/Sandbox.Server.entitlements
 games/*/unreal/Samples/PixelStreaming2/WebServers/get_ps_servers.bat
 games/*/unreal/Samples/PixelStreaming2/WebServers/get_ps_servers.sh
 games/*/unreal/Content/
+# Yorimichi V2 commits its editable Unreal content (Git LFS, games/yorimichi_v2/.gitattributes).
+!games/yorimichi_v2/unreal/Content/
 games/*/unreal/*.xcworkspace
 games/*/unreal/.vscode/
 games/*/unreal/Plugins/**/Binaries/
