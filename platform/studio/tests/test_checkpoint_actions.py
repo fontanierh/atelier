@@ -191,7 +191,7 @@ def test_snapshot_rechecks_newly_tracked_files(fixture, monkeypatch):
     ctx, steps = fixture.checkout('producer')
     fixture.produce(ctx, steps)
     sources = set()
-    monkeypatch.setattr(actions, 'tracked_scope_names', lambda: {str(p) for p in actions.source_scopes(sources)})
+    monkeypatch.setattr(actions, 'tracked_scope_names', lambda roots=None: {str(p) for p in actions.source_scopes(sources)})
     actions.snapshot(ctx, steps[0], fixture.store, save_blobs=False)
     sources.add(steps[0].outputs[0])
     with pytest.raises(cp.CheckpointError, match='tracked source'):
@@ -210,6 +210,13 @@ def test_tracked_scope_names_match_source_scopes(tmp_path, monkeypatch):
     (repo / 'a/new.txt').write_text('new')
     subprocess.run(['git', '-C', str(repo), 'add', 'a/new.txt'], check=True)
     assert str(repo / 'a/new.txt') in actions.tracked_scope_names()  # read fresh per check
+    full = actions.tracked_scope_names()
+    probes = [repo / 'a', repo / 'a/b', repo / 'a/b/c.txt', repo / 'a/b/c', repo / 'a/bc', repo / 'A/b/c.txt',
+              repo / 'z z', repo / 'z z/f g.txt', repo / 'a/../top.txt', repo / 'build/out', repo / '*',
+              repo, repo.parent, Path('/'), Path('a/b'), repo.parent / 'elsewhere']
+    for probe in probes:
+        assert actions.tracked_scope_names([probe]) == ({str(probe)} & full), probe
+    assert actions.tracked_scope_names(probes) == {str(p) for p in probes} & full
 
 
 def test_compile_receipt_requires_every_declared_plugin_binary(tmp_path, monkeypatch):
@@ -286,7 +293,7 @@ def test_tracked_source_cannot_become_an_action_output(fixture, monkeypatch):
     ctx, steps = fixture.checkout('producer')
     fixture.produce(ctx, steps)
     monkeypatch.setattr(actions, 'tracked_paths', lambda: {steps[0].outputs[0]})
-    monkeypatch.setattr(actions, 'tracked_scope_names', lambda: {str(p) for p in actions.source_scopes({steps[0].outputs[0]})})
+    monkeypatch.setattr(actions, 'tracked_scope_names', lambda roots=None: {str(p) for p in actions.source_scopes({steps[0].outputs[0]})})
     stamp = cp.read_json(ctx.stamps / 'tree.json')
     with pytest.raises(cp.CheckpointError, match='tracked source'):
         actions.publish(ctx, steps[0], stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
