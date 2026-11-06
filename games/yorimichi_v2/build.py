@@ -140,22 +140,33 @@ def _authorize_migration(ctx, log):
 
 
 def _authorize_import(ctx, log):
-    """Re-check the import plan's claim at the write boundary, so selecting import.<id> directly is not a bypass."""
+    """Re-check the import plan at the write boundary, so selecting import.<id> directly is not a bypass: the plan
+    must be exactly its asset record's recorded import, and no other record may own a destination."""
     import json
     import os
     authority = _authority()
+    import records
     plan_file = Path(os.environ['V2_IMPORT_PLAN'])
     plan = json.loads(plan_file.read_text())
-    # The destinations come from the planned packages themselves, never only from the plan's own path list.
-    import records
+    by_id = {a.id: a for a in records.discover(GAME)[0]}
+    asset = by_id.get(plan['asset'])
+    if asset is None or asset.authority not in ('generated', 'split'):
+        raise RuntimeError(f"import plan names {plan['asset']!r}, which has no generated outputs")
+    expected = [o.package for o in asset.outputs if o.writer == 'generated']
+    if (plan['packages'] != expected or plan.get('importer') != asset.recipe.get('importer')
+            or plan.get('version') != asset.recipe.get('version')):
+        raise RuntimeError(f"import plan for {asset.id} does not match its record (packages {expected}, "
+                           f"importer {asset.recipe.get('importer')!r})")
     destinations = set()
-    for package in plan['packages']:
+    for package in expected:
         stem = records.package_files(GAME, package)[0].with_suffix('')
         destinations |= {'games/yorimichi_v2/' + records.content_relative(GAME, stem.with_suffix(ext))
                          for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
+    owners, _ = authority.owning_scopes(GAME, sorted(destinations))
+    if owners - {authority.scope_of(asset.id)}:
+        raise RuntimeError(f'{asset.id}: a destination is owned by {sorted(owners - {authority.scope_of(asset.id)})}')
     paths = sorted(destinations | set(plan.get('write_paths', ())))
-    authority.authorize(paths, plan.get('claim'), f"import of {plan['asset']}",
-                        scopes={authority.scope_of(plan['asset'])})
+    authority.authorize(paths, plan.get('claim'), f'import of {asset.id}', scopes={authority.scope_of(asset.id)})
     authority.allow_saves(sorted(destinations), plan_file.with_name('save-allow.txt'))
 
 

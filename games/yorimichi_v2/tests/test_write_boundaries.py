@@ -35,26 +35,44 @@ def writer(monkeypatch):
     os.environ.pop('V2_SAVE_ALLOW', None)   # set by the code under test, not by monkeypatch
 
 
+def bench_record(game):
+    folder = game / 'assets/props/bench'
+    folder.mkdir(parents=True)
+    (folder / 'src').mkdir()
+    (folder / 'src/bench.glb').write_bytes(b'mesh')
+    (folder / 'asset.toml').write_text(
+        'schema = 1\nid = "prop/bench"\nkind = "static-mesh"\nauthority = "generated"\n'
+        'owner = "region/w04-skatepark"\nlicense = "original"\n'
+        '[[sources]]\npath = "src/bench.glb"\nsha256 = "' + '0' * 64 + '"\n'
+        '[recipe]\nimporter = "static-mesh"\nversion = 1\n[[outputs]]\npackage = "/Game/Props/SM_Bench"\n')
+
+
 def test_a_directly_selected_import_rechecks_its_plan(tmp_path, monkeypatch, writer):
+    game = tmp_path / 'game'
+    bench_record(game)
+    monkeypatch.setattr(recipe, 'GAME', game)
     plan = tmp_path / 'plan.json'
-    plan.write_text(json.dumps({'asset': 'prop/bench', 'claim': None, 'packages': ['/Game/Props/SM_Bench'],
-                                'write_paths': []}))
+    good = {'asset': 'prop/bench', 'importer': 'static-mesh', 'version': 1, 'claim': None, 'packages': ['/Game/Props/SM_Bench'],
+            'write_paths': []}
+    plan.write_text(json.dumps(good))
     monkeypatch.setenv('V2_IMPORT_PLAN', str(plan))
     recipe._authorize_import(None, io.StringIO())
     allowed = Path(os.environ['V2_SAVE_ALLOW']).read_text().split()
-    assert any(a.endswith('games/yorimichi_v2/unreal/Content/Props/SM_Bench.uasset') for a in allowed)
+    assert any(a.endswith('/unreal/Content/Props/SM_Bench.uasset') for a in allowed)
+    plan.write_text(json.dumps({**good, 'packages': ['/Game/Other/SM_Other']}))   # another record's package
+    with pytest.raises(RuntimeError, match='does not match its record'):
+        recipe._authorize_import(None, io.StringIO())
     fake = FakeClaims(scopes=['asset/prop'], covers=False)
     monkeypatch.setattr(authority.subprocess, 'run', fake)
-    plan.write_text(json.dumps({'asset': 'prop/bench', 'claim': 'T3', 'packages': ['/Game/Props/SM_Bench'],
-                                'write_paths': []}))
+    plan.write_text(json.dumps({**good, 'claim': 'T3'}))
     with pytest.raises(authority.Unauthorized, match='does not exactly cover'):
         recipe._authorize_import(None, io.StringIO())
-    assert 'games/yorimichi_v2/unreal/Content/Props/SM_Bench.uasset' in fake.checks[0]   # derived, not trusted
+    assert any(p.endswith('/unreal/Content/Props/SM_Bench.uasset') for p in fake.checks[0])   # derived, not trusted
     fake.scopes, fake.covers = ['asset/prop/other'], True
     with pytest.raises(authority.Unauthorized, match='no active scope covering asset/prop/bench'):
         recipe._authorize_import(None, io.StringIO())
     monkeypatch.setenv('ATELIER_AGENT', 'someone-else')
-    plan.write_text(json.dumps({'asset': 'prop/bench', 'claim': None, 'packages': ['/Game/Props/SM_Bench']}))
+    plan.write_text(json.dumps(good))
     with pytest.raises(authority.Unauthorized, match='not the bootstrap writer'):
         recipe._authorize_import(None, io.StringIO())
 
