@@ -96,8 +96,11 @@ def test_a_claimed_editor_script_must_stay_inside_its_paths(tmp_path, monkeypatc
         recipe._authorize_editor(ctx, io.StringIO())
     monkeypatch.setenv('V2_EDITOR_SCOPES', 'region/w01-start')
     recipe._authorize_editor(ctx, io.StringIO())
-    assert Path(os.environ['V2_SAVE_ALLOW']).read_text().strip().endswith('games/yorimichi_v2/unreal/Content/V2/A.uasset')
+    allowed = Path(os.environ['V2_SAVE_ALLOW']).read_text().split()
+    for ext in ('.uasset', '.uexp', '.ubulk'):   # a package's companions are admitted with it
+        assert any(a.endswith(f'games/yorimichi_v2/unreal/Content/V2/A{ext}') for a in allowed)
     (game / 'unreal/Content/V2/A.uasset').write_bytes(b'a')
+    (game / 'unreal/Content/V2/A.uexp').write_bytes(b'a')
     log = io.StringIO()
     recipe._check_editor_writes(None, log)
     assert 'wrote games/yorimichi_v2/unreal/Content/V2/A.uasset' in log.getvalue()

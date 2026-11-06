@@ -198,3 +198,14 @@ writer = "editor"
     files = records.load_verified(verified)['files']
     assert 'unreal/Content/Props/SM_Split.ubulk' not in files
     assert files['unreal/Content/Props/MI_Split.uasset'] == sha(b'editor saved')
+
+
+def test_recovery_restores_only_files_the_current_import_may_write(game):
+    asset = records.discover(game)[0][0]
+    journal = run.Journal(game, asset)
+    journal.begin([game / 'unreal/Content/Other/SM_Other.uasset'])   # left by an older record's import
+    write(game / 'unreal/Content/Other/SM_Other.uasset', b'half written')
+    write(game / 'assets/props/bench/src/model.glb', b'glb v2')
+    with pytest.raises(run.ImportError_, match='outside its current outputs'):
+        do(game, ['prop/bench'], FakeEditor())
+    assert (game / 'unreal/Content/Other/SM_Other.uasset').read_bytes() == b'half written'   # untouched

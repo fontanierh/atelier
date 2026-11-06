@@ -156,6 +156,10 @@ class Journal:
         self.manifest.write_text(json.dumps({'asset': self.asset.id, 'files': entries}, indent=2))
         return entries
 
+    def pending(self) -> set[str]:
+        """The game-relative files an interrupted import's journal would restore."""
+        return set(json.loads(self.manifest.read_text())['files']) if self.manifest.is_file() else set()
+
     def restore(self):
         """Put every journaled file back exactly as it was; remove the ones that did not exist."""
         if not self.manifest.is_file():
@@ -208,8 +212,14 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
         raise ImportError_(f'{asset.id}: no importer {asset.recipe.get("importer")}@{asset.recipe.get("version")} '
                            f'for kind {asset.kind}')
     journal = Journal(game, asset)
-    journal.restore()                                    # a previous crash left this asset's files half-written
     write_set = generated_files(game, asset)
+    # Recovery writes too: it may restore only files this authorized import may write. A journal left from an
+    # older record (other outputs) is outside that and is resolved by hand, never restored under this claim.
+    outside = sorted(journal.pending() - {records.content_relative(game, f) for f in write_set})
+    if outside:
+        raise ImportError_(f'{asset.id}: an interrupted import journal would restore files outside its current '
+                           f'outputs ({", ".join(outside[:5])}); resolve {journal.dir} by hand')
+    journal.restore()                                    # a previous crash left this asset's files half-written
     journal.begin(write_set)
     allowed = {records.content_relative(game, f) for f in write_set}
     before = content_snapshot(game)

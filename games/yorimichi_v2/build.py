@@ -94,13 +94,27 @@ def _authority():
 EDITOR_BEFORE = {}
 
 
+def _editor_paths():
+    """V2_EDITOR_PATHS with each package's complete file set: saving a .uasset or .umap may also write its
+    companions (.uexp, .ubulk, ...), so they are claimed, locked and admitted by the save guard together."""
+    import os
+    import records
+    paths = set()
+    for path in os.environ.get('V2_EDITOR_PATHS', '').split():
+        paths.add(path)
+        stem, ext = os.path.splitext(path)
+        if ext in records.PACKAGE_EXTENSIONS:
+            paths |= {stem + other for other in records.COMPANION_EXTENSIONS}
+    return sorted(paths)
+
+
 def _authorize_editor(ctx, log):
     """An editor script may save packages, so it runs under a claim covering its declared paths or as the D04
     bootstrap writer (CONTRACTS yorimichi-v2-single-writer); afterwards its actual writes are checked."""
     import os
     authority = _authority()
     claim = os.environ.get('V2_EDITOR_CLAIM') or None
-    declared = os.environ.get('V2_EDITOR_PATHS', '').split()
+    declared = _editor_paths()
     if claim and not declared:
         raise RuntimeError('V2_EDITOR_CLAIM needs V2_EDITOR_PATHS: the repository paths the script may write')
     # Existing packages bring their owners' scopes; new ones are owned by the scopes the run declares.
@@ -127,7 +141,7 @@ def _check_editor_writes(ctx, log):
     changed = sorted('games/yorimichi_v2/' + rel for rel in authority.written(EDITOR_BEFORE, authority.content_snapshot(GAME)))
     log.write(''.join(f'editor script wrote {path}\n' for path in changed) or 'editor script wrote nothing\n')
     if os.environ.get('V2_EDITOR_CLAIM'):
-        outside = [path for path in changed if path not in set(os.environ.get('V2_EDITOR_PATHS', '').split())]
+        outside = [path for path in changed if path not in set(_editor_paths())]
         if outside:
             raise RuntimeError(f'the editor script wrote outside its claimed paths: {", ".join(outside[:8])}')
     if changed:
