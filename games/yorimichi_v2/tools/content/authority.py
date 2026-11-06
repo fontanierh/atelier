@@ -18,6 +18,24 @@ class Unauthorized(RuntimeError):
     pass
 
 
+def content_snapshot(game: Path) -> dict[str, tuple]:
+    """(size, mtime, ctime, inode) of every file under unreal/Content, game-relative, to find what a run wrote."""
+    content = game / 'unreal' / 'Content'
+    found = {}
+    if content.is_dir():
+        for root, _, names in os.walk(content):
+            for name in names:
+                path = Path(root) / name
+                st = path.lstat()
+                found[path.relative_to(game).as_posix()] = (st.st_size, st.st_mtime_ns, st.st_ctime_ns, st.st_ino)
+    return found
+
+
+def written(before: dict[str, tuple], after: dict[str, tuple]) -> set[str]:
+    """Game-relative files created, changed or deleted between two snapshots."""
+    return {rel for rel in set(before) | set(after) if before.get(rel) != after.get(rel)}
+
+
 def checkout_task(repo: Path = REPO) -> str | None:
     """The claims task this checkout works under (ATELIER_CLAIMS_TASK or `atelier claims use-task`), if any."""
     if os.environ.get('ATELIER_CLAIMS_TASK'):

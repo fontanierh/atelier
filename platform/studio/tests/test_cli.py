@@ -69,6 +69,27 @@ def test_direct_play_passes_selected_or_default_ceiling_to_guard(monkeypatch, tm
     assert calls[0]['kind'] == 'game'
 
 
+@pytest.mark.parametrize('code', [0, 1])
+def test_play_check_refuses_to_launch_when_the_content_check_fails(monkeypatch, tmp_path, code):
+    from types import SimpleNamespace
+    from atelier import cli
+    from atelier.harness.safety import guarded
+    (tmp_path / 'check.py').write_text(f'raise SystemExit({code})\n')
+    ctx = SimpleNamespace(out=tmp_path, game_dir=tmp_path, unreal_app=tmp_path / 'Editor', uproject=tmp_path / 'Game.uproject',
+                          env=lambda extra=(): {})
+    monkeypatch.setattr(cli, 'Context', lambda game: ctx)
+    monkeypatch.setattr(cli.manifest, 'game', lambda game: {'engine': 'unreal', 'play_check': 'check.py',
+                                                            'play': {'play': {'args': ['-game']}}})
+    launched = []
+    monkeypatch.setattr(guarded, 'run', lambda command, folder, **kwargs: launched.append(command) or 0)
+    if code:
+        with pytest.raises(SystemExit, match='check.py failed'):
+            cli.play('sandbox', 'play', '', [], None)
+        assert launched == []
+    else:
+        assert cli.play('sandbox', 'play', '', [], None) == 0 and len(launched) == 1
+
+
 def test_direct_play_gives_the_game_its_own_live_session_until_it_exits(monkeypatch, tmp_path):
     from types import SimpleNamespace
     from atelier import cli, live_sessions

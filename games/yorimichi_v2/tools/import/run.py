@@ -96,7 +96,9 @@ def current_source_hashes(asset):
 
 
 def fingerprint_with_sources(asset, hashes, deps):
-    current = records.Asset(**{**asset.__dict__, 'sources': [records.Source(p, h) for p, h in sorted(hashes.items())]})
+    # Record order, as the importer pairs sources with packages (records.input_fingerprint 'mapping').
+    current = records.Asset(**{**asset.__dict__,
+                               'sources': [records.Source(s.path, hashes[s.path]) for s in asset.sources]})
     return records.input_fingerprint(current, deps)
 
 
@@ -178,17 +180,7 @@ class Journal:
         shutil.rmtree(self.dir, ignore_errors=True)
 
 
-def content_snapshot(game: Path) -> dict[str, tuple]:
-    """(size, mtime, ctime, inode) of every package-like file, to find writes outside the declared set."""
-    content = game / 'unreal' / 'Content'
-    found = {}
-    if content.is_dir():
-        for root, _, names in os.walk(content):
-            for name in names:
-                path = Path(root) / name
-                st = path.stat()
-                found[records.content_relative(game, path)] = (st.st_size, st.st_mtime_ns, st.st_ctime_ns, st.st_ino)
-    return found
+content_snapshot = authority.content_snapshot   # what an import wrote, checked against its packages
 
 
 def native_import(game, asset, plan_file: Path):
@@ -230,6 +222,8 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
                              for s in asset.sources],
         'packages': [o.package for o in asset.outputs if o.writer == 'generated'],
         'references': {dep: [o.package for o in by_id[dep].outputs] for dep in asset.references + asset.input_dependencies},
+        'claim': claim,
+        'write_paths': sorted(f'games/yorimichi_v2/{rel}' for rel in allowed),
     }, indent=2))
     try:
         importer(game, asset, plan_file)

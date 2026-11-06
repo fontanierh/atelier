@@ -83,6 +83,11 @@ def play(game, profile, settings, extra, memory_gib=None):
     if profile not in profiles:
         raise SystemExit(f'no play profile {profile!r}; {game} has {sorted(profiles)}')
     spec = profiles[profile]
+    check = data.get('play_check')
+    if check:
+        # A game whose committed packages are the source of truth refuses to play missing or stale content.
+        if subprocess.call([sys.executable, str(ctx.game_dir / check)], env=ctx.env()):
+            raise SystemExit(f'{game}: {check} failed; fix the reported content before playing')
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     folder = ctx.out / 'logs' / f'play-{profile}-{stamp}'
     folder.mkdir(parents=True, exist_ok=True)

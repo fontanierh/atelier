@@ -41,13 +41,15 @@ def steps(ctx):
              needs=['unreal.compile'], heavy=True, explicit=True, outputs=[out / 'package' / 'archive'],
              about='explicit: cook and package the committed content for macOS (integration milestones, releases)'),
         # Explicit: the one-time static-world migration, run only by tools/migrate/run.py with its plan.
-        Step('migrate.map', [UnrealScript(UNREAL / 'Scripts/migrate_map.py', 'V2 MIGRATE DONE'), ran('migrate.map')],
+        Step('migrate.map', [Call('authorize migration', _authorize_migration),
+                             UnrealScript(UNREAL / 'Scripts/migrate_map.py', 'V2 MIGRATE DONE'), ran('migrate.map')],
              inputs=[UNREAL / 'Scripts/migrate_map.py'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'migrate.map' in RAN,
              about='one-time migration of regions into a World Partition map (use tools/migrate/run.py)'),
         # Explicit: one named bootstrap-writer editor script (unreal/Scripts), guarded like every editor write.
         Step('editor.run', [Call('authorize editor script', _authorize_editor),
-                            UnrealScript(UNREAL / 'Scripts/run_named.py', 'V2 EDITOR SCRIPT DONE'), ran('editor.run')],
+                            UnrealScript(UNREAL / 'Scripts/run_named.py', 'V2 EDITOR SCRIPT DONE'),
+                            Call('check editor writes', _check_editor_writes), ran('editor.run')],
              inputs=[UNREAL / 'Scripts'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'editor.run' in RAN,
              about='one named editor script (V2_EDITOR_SCRIPT, V2_EDITOR_CLAIM + V2_EDITOR_PATHS for a claimed write)'),
@@ -73,26 +75,65 @@ def import_steps():
         if asset.authority == 'editor':
             continue
         name = f'import.{asset.id}'
-        found.append(Step(name, [UnrealScript(script, 'V2 IMPORT DONE'), ran(name)],
+        found.append(Step(name, [Call(f'authorize {name}', _authorize_import), UnrealScript(script, 'V2 IMPORT DONE'),
+                                 ran(name)],
                           inputs=[script], after=['unreal.compile'], heavy=True, explicit=True,
                           verify=lambda name=name: name in RAN,
                           about=f'editor import of {asset.id} (use tools/import/run.py)'))
     return found
 
 
-def _authorize_editor(ctx, log):
-    """An editor script may save packages, so it runs under a claim covering its declared paths or as the D04
-    bootstrap writer (CONTRACTS yorimichi-v2-single-writer); save validation then checks what it actually wrote."""
-    import os
+def _authority():
     import sys
     sys.path.insert(0, str(GAME / 'tools/content'))
     import authority
+    return authority
+
+
+# What unreal/Content held before the running editor script, to verify its writes afterwards.
+EDITOR_BEFORE = {}
+
+
+def _authorize_editor(ctx, log):
+    """An editor script may save packages, so it runs under a claim covering its declared paths or as the D04
+    bootstrap writer (CONTRACTS yorimichi-v2-single-writer); afterwards its actual writes are checked."""
+    import os
+    authority = _authority()
     claim = os.environ.get('V2_EDITOR_CLAIM') or None
     declared = os.environ.get('V2_EDITOR_PATHS', '').split()
     if claim and not declared:
         raise RuntimeError('V2_EDITOR_CLAIM needs V2_EDITOR_PATHS: the repository paths the script may write')
     authority.authorize(declared, claim, f"editor script {os.environ.get('V2_EDITOR_SCRIPT', '?')}")
+    EDITOR_BEFORE.clear()
+    EDITOR_BEFORE.update(authority.content_snapshot(GAME))
     log.write(f"editor script authorized ({'claim ' + claim if claim else 'bootstrap writer'})\n")
+
+
+def _check_editor_writes(ctx, log):
+    """A claimed script must have written only its declared paths; every write is listed for save validation."""
+    import os
+    authority = _authority()
+    changed = sorted('games/yorimichi_v2/' + rel for rel in authority.written(EDITOR_BEFORE, authority.content_snapshot(GAME)))
+    log.write(''.join(f'editor script wrote {path}\n' for path in changed) or 'editor script wrote nothing\n')
+    if os.environ.get('V2_EDITOR_CLAIM'):
+        outside = [path for path in changed if path not in set(os.environ.get('V2_EDITOR_PATHS', '').split())]
+        if outside:
+            raise RuntimeError(f'the editor script wrote outside its claimed paths: {", ".join(outside[:8])}')
+    if changed:
+        log.write('record these packages with tools/content/save_validate.py before committing\n')
+
+
+def _authorize_migration(ctx, log):
+    """The one-time migration is a D04 bootstrap write (tools/migrate/run.py); selecting the step directly is too."""
+    _authority().authorize([], None, 'map migration')
+
+
+def _authorize_import(ctx, log):
+    """Re-check the import plan's claim at the write boundary, so selecting import.<id> directly is not a bypass."""
+    import json
+    import os
+    plan = json.loads(Path(os.environ['V2_IMPORT_PLAN']).read_text())
+    _authority().authorize(plan['write_paths'], plan.get('claim'), f"import of {plan['asset']}")
 
 
 def _check_package_inputs(ctx, log):

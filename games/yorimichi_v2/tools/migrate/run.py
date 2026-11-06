@@ -23,6 +23,7 @@ HERE = Path(__file__).resolve().parent
 GAME = HERE.parents[1]
 REPO = GAME.parents[1]
 sys.path.insert(0, str(GAME / 'tools/content'))
+import authority  # noqa: E402
 import records  # noqa: E402
 import save_validate  # noqa: E402
 
@@ -64,13 +65,16 @@ def main(argv=None) -> int:
     parser.add_argument('--only-migrated', action='store_true', help='slice map: no runtime instance scenery')
     parser.add_argument('--runtime-service', nargs='*', default=[], help='with --only-migrated: services that run')
     parser.add_argument('--patch-m', type=float, default=32.0)
-    parser.add_argument('--claim', help='the active claim covering these regions')
+    parser.add_argument('--claim', help='refused: the one-time migration is a D04 bootstrap write')
     args = parser.parse_args(argv)
     try:
         plan = make_plan(GAME, args.regions, args.environment, args.services, args.only_migrated,
                          args.runtime_service, args.patch_m)
-        save_validate.authorize([f'world/regions/{i.split("/", 1)[1]}' for i in args.regions + [args.environment]],
-                                args.claim)
+        # The one-time migration is a D04 bootstrap write: World Partition names its actor packages only when it
+        # saves them, so no claim can list them in advance. Save validation then records exactly what it wrote.
+        if args.claim:
+            raise MigrationError('the one-time migration runs only as the D04 bootstrap writer, without a claim')
+        authority.authorize([], None, 'map migration')
         out = REPO / 'build/yorimichi_v2/migrate'
         out.mkdir(parents=True, exist_ok=True)
         plan_file = out / 'plan.json'
@@ -80,7 +84,7 @@ def main(argv=None) -> int:
         print(f'{len(made)} actor package(s) created')
         for region in args.regions + [args.environment]:
             save_validate.validate(GAME, region, claim=args.claim)
-    except (MigrationError, save_validate.ValidationError, records.RecordError) as error:
+    except (MigrationError, authority.Unauthorized, save_validate.ValidationError, records.RecordError) as error:
         print(f'migration failed: {error}', file=sys.stderr)
         return 1
     return 0

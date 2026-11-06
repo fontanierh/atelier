@@ -7,6 +7,7 @@ engine = "unreal"
 unreal_project = "unreal/YorimichiV2.uproject"
 editor_target = "YorimichiV2Editor"
 build = "build.py"                      # `atelier build yorimichi_v2 --list`
+play_check = "tools/content/check.py"   # play refuses missing, unhydrated or changed packages
 
 [play.play]
 # The original desktop defaults: native 1440 window, forward renderer (unreal/Config/DefaultEngine.ini).
