@@ -88,7 +88,7 @@ fn begin(mut commands: Commands, settings: Res<Settings>, preferences: Res<Voice
     // Set the shared processor before any loop or one-shot decoder can start.
     preferences.set(settings.skate.soften, settings.skate.volume);
     commands.insert_resource(Pending);
-    commands.spawn((Preparing, hakuba_world::Unready, DespawnOnExit(Screen::World)));
+    commands.spawn((Name::new("Skating sounds"), Preparing, hakuba_world::Unready, DespawnOnExit(Screen::World)));
 }
 #[allow(clippy::too_many_arguments)]
 fn loops(

@@ -214,7 +214,7 @@ fn lift(
     waiting: Query<(), Unplaced>,
     roots: Query<&WorldAssetRoot>,
     placed: Query<&Placed>,
-    unready: Query<(), With<Unready>>,
+    unready: Query<(Entity, Option<&Name>), With<Unready>>,
     unculled: Query<Entity, With<Unculled>>,
     (time, scenery): (Res<Time>, Option<Res<SceneryLoaded>>),
 ) {
@@ -244,7 +244,7 @@ fn lift(
     if !world && waited > 30.0 && (waited / 10.0).floor() != ((waited - time.delta_secs()) / 10.0).floor() {
         warn!(
             "the world still waits after {waited:.0} s: {} of {} tiles, {} of {} scenes, {} of {} placed models, {} tiles \
-             spawning, {} models waiting, {} unready",
+             spawning, {} models waiting, {} unready: {}",
             tiles.iter().filter(|tile| !tile.shown()).count(),
             tiles.iter().len(),
             roots.iter().filter(|root| !loaded(root.0.id().untyped())).count(),
@@ -254,6 +254,11 @@ fn lift(
             spawning.iter().len(),
             waiting.iter().len(),
             unready.iter().len(),
+            unready
+                .iter()
+                .map(|(entity, name)| name.map_or(format!("{entity}"), |name| name.to_string()))
+                .collect::<Vec<_>>()
+                .join(", "),
         );
     }
     let textured = world && materials.iter().all(|(_, material)| textured(material, &images, &assets));

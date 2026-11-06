@@ -402,7 +402,7 @@ fn transition(
     handles: Res<AssetsToLoad>,
     packages: Res<Assets<Package>>,
     models: Res<Assets<Gltf>>,
-    mut players: Query<(&mut Player, &mut Transform)>,
+    mut players: Query<(&mut Player, &mut Transform, Has<Unready>)>,
     rigs: Query<&Rig>,
     mut ground: Ground,
     settings: Res<hakuba_settings::Settings>,
@@ -410,7 +410,14 @@ fn transition(
     mut spare: ResMut<Spare>,
     mut carry: ResMut<Carry>,
 ) {
-    let Ok((mut player, mut at)) = players.single_mut() else { return };
+    let Ok((mut player, mut at, arriving)) = players.single_mut() else { return };
+    // Until the walker has landed and lifted the splash, the board stays put: taking the player over then would leave
+    // them arriving for ever, and the splash up with them.
+    if arriving {
+        input.toggle = false;
+        ride.mounting = false;
+        return;
+    }
     if player.owner == MovementOwner::Skating && status.failure.is_some() {
         let failure = status.failure.clone();
         hand_back(
