@@ -34,7 +34,7 @@ from .paths import build_root
 
 URL = None        # an explicit loopback target ('http://127.0.0.1:N'), set by a script that launched its own game
 PORT = None       # an explicit loopback port, set by use_port (a scenario's --port N)
-_selected = None  # (url, record or None, its verified identity, the (URL, PORT) it was chosen for, fresh)
+_selected = None  # (url, record or None, its last verified identity, the (URL, PORT) it was chosen for)
 
 
 def python_body(code):
@@ -69,7 +69,7 @@ def select(session=None, game=None, checkout=None, port=None):
                                'pass the session or the port, not both')
     found = live_sessions.verify(record) if record is not None else None
     url = f'http://127.0.0.1:{record["port"] if record is not None else port}'
-    _selected = (url, record, found, (URL, PORT), True)
+    _selected = (url, record, found, (URL, PORT))
     return url
 
 
@@ -96,23 +96,21 @@ def _explicit_port():
 def target():
     """The URL the next request goes to, verified for that request. The selection is made once (an explicit URL or
     use_port, else this process's select, else the one the environment names: ATELIER_LIVE_SESSION / _GAME / _CHECKOUT /
-    _PORT, as `atelier qa` passes them) and made again when URL or PORT changes. Before every later request the selected
-    record is verified again; an unrecorded port is checked again for a record that now owns it."""
+    _PORT, as `atelier qa` passes them) and made again when URL or PORT changes. Selection's own check only reports
+    early errors: the check that authorizes a request is always made here, immediately before it is sent (`live py -`
+    may block on stdin between the two), and an unrecorded port is checked here for a record that now owns it."""
     global _selected
     if _selected is None or _selected[3] != (URL, PORT):
         env = os.environ.get
         select(env('ATELIER_LIVE_SESSION') or None, env('ATELIER_LIVE_GAME') or None,
                env('ATELIER_LIVE_CHECKOUT') or None, _explicit_port())
-    url, record, found, key, fresh = _selected
-    if fresh:   # verified by select just now
-        _selected = (url, record, found, key, False)
-    elif record is not None:
-        _selected = (url, record, live_sessions.verify(record, verified=found), key, False)
+    url, record, found, key = _selected
+    if record is not None:
+        _selected = (url, record, live_sessions.verify(record, verified=found), key)
     elif _owner(urllib.parse.urlsplit(url).port) is not None:   # a game with a record took the unrecorded port
         env = os.environ.get
         select(env('ATELIER_LIVE_SESSION') or None, env('ATELIER_LIVE_GAME') or None,
                env('ATELIER_LIVE_CHECKOUT') or None, urllib.parse.urlsplit(url).port)
-        _selected = _selected[:4] + (False,)
     return url
 
 

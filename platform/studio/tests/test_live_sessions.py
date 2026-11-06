@@ -331,3 +331,26 @@ def test_no_scenario_pins_the_bridge_url_or_the_default_port():
     offenders = [str(path.relative_to(paths.REPO)) for path in sorted(paths.REPO.glob('games/*/scenarios/**/*.py'))
                  if re.search(r'\.URL\s*=|\b8830\b', path.read_text())]
     assert offenders == []
+
+
+def test_the_first_request_after_a_blocking_wait_verifies_again(tmp_path, monkeypatch, bridges):
+    """`atelier live py -` selects (and verifies), then blocks reading stdin: a process that took the game's port during
+    that wait never receives the code."""
+    record, root = session(tmp_path, monkeypatch)
+    monkeypatch.setattr(paths, 'REPO', root)
+    game = bridges(record)
+    identity = dict(game.identity)
+
+    class Stdin:
+        def read(self):   # the game exits and another process takes its port while the code is being typed
+            game.close()
+            replacement.append(Bridge(record['port'], dict(identity, session='0' * 32)))
+            return 'x = 1'
+    replacement = []
+    monkeypatch.setattr(sys, 'stdin', Stdin())
+    try:
+        assert live.main(['--session', record['session'], 'py', '-']) == 1
+        assert replacement[0].received == [] and game.received == []
+    finally:
+        for bridge in replacement:
+            bridge.close()
