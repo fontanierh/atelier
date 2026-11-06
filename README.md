@@ -56,7 +56,7 @@ including the game itself while it plays.
 | Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio |
 | ffmpeg | 7+ on `PATH` | sound slicing, films, review sheets |
 | Node / npm | 24.16+ / 11.11+ for contracts | contract checks; Node also serves streaming pages and AI scripts |
-| Rust / Cargo | current stable (optional) | the agent board server (`atelier board serve`) |
+| Rust / Cargo | current stable (optional) | Bevy games, and the agent board server (`atelier board serve`) |
 | coturn, Tailscale | (optional) | streaming to other devices (`brew install coturn`) |
 
 Install full Xcode and its Metal toolchain first: [Setting up a Mac](docs/SETUP.md) has the commands, and the extra
@@ -83,6 +83,9 @@ uv run atelier new moon_garden --title "Moon Garden"  # a new game, copied from 
 uv run atelier build moon_garden                      # compiles it and makes its level
 uv run atelier play moon_garden                       # WASD or a controller
 ```
+
+A game runs on Unreal or on Bevy. `atelier new moon_garden --engine bevy` starts a Rust game from the Bevy template
+instead, and the same `build` and `play` commands run it. [Engines](docs/ENGINES.md) says what differs.
 
 [Incremental builds](docs/INCREMENTAL_BUILDS.md) explains rebuild reasons, verified worktree reuse and cache use.
 Keep generated outputs between builds; normal commands request capacity automatically.

@@ -1,11 +1,13 @@
 # Architecture
 
-Atelier is the shared part of every game made here. Games use it; it never uses a game.
+Atelier is the shared part of every game made here. Games use it; it never uses a game. A game runs on Unreal
+Engine 5.8 or on Bevy; the `atelier` command is the same for both, and [engines](docs/ENGINES.md) says what differs.
 
 ```
 games/            each game: world, characters, look, sounds, tuning, its own C++ module
   yorimichi/      the full game
-  sandbox/        a plain game made only of platform parts, and the template for `atelier new`
+  sandbox/        a plain game made only of platform parts, and the Unreal template for `atelier new`
+  hakuba/         a Bevy game, all Rust
 platform/
   studio/         the `atelier` command and Python package: build, play, live, QA, AI helpers, review
   engine/Plugins/ Unreal plugins any game can switch on
@@ -20,6 +22,7 @@ build/            ignored: everything a build generates, per game
 | Piece | Where | What |
 |---|---|---|
 | Studio | `platform/studio/atelier` | The `atelier` CLI, incremental builds/products, verified reuse, game launch, live QA and releases |
+| Engines | `platform/studio/atelier/engines`, `platform/studio/templates` | What differs per engine: doctor checks, play launch, live/stream support, `atelier new` templates |
 | Harness | `platform/harness` | Durable board messages, session delivery, resource admission and process guards (`atelier.harness`) |
 | AI and review tools | `platform/studio/atelier/{ai,review,blender}`, `platform/studio/node` | Tripo, Sunburst, H3 and Seedance helpers, the paid-call ledger, the UniMate and Kimodo runners, contact sheets, glTF previews |
 | Conventions | `platform/conventions` | units and axes, humanoid bones, clip roles, sound cues, naming |

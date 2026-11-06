@@ -1,0 +1,13 @@
+# __Title__: the game program, on Bevy.
+[package]
+name = "__game__"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+bevy = "0.20.0"
+
+# Dependencies compile optimised even in a debug build, so a debug run keeps its frame rate.
+[profile.dev.package."*"]
+opt-level = 3

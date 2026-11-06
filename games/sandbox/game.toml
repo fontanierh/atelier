@@ -3,6 +3,7 @@
 id = "sandbox"
 title = "Sandbox"
 atelier = "0.1"
+engine = "unreal"
 unreal_project = "unreal/Sandbox.uproject"
 editor_target = "SandboxEditor"
 build = "build.py"

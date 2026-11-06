@@ -20,11 +20,13 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 from functools import lru_cache
 from pathlib import Path
+from typing import ClassVar
 
 from . import engine, paths
 from . import build_inputs, build_products, build_source, source_imports
 from .build_hashes import signature as _stat_signature
 from .build_source import Python, Blender
+from .build_cargo import Cargo
 from .build_products import Product
 from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
@@ -319,6 +321,7 @@ class UnrealScript:
 class UnrealCompile:
     """Compile the game's editor target (C++ module and any project plugins)."""
     target: str
+    admission_kind: ClassVar[str] = 'compile'
 
     def argv(self, ctx):
         return [str(ctx.unreal_root / 'Engine/Build/BatchFiles/Mac/Build.sh'), self.target, 'Mac', 'Development',
@@ -359,6 +362,7 @@ class UnrealPackage:
     progress: float = 25.               # quiet UAT phases still print at least every 30 s
     cook_mode: CookMode = CookMode.DEFAULT
     skip_build: bool = False            # the game binary is its own cached step; BuildCookRun must not rebuild it
+    admission_kind: ClassVar[str] = 'compile'
 
     def __post_init__(self):
         self.cook_mode = CookMode(self.cook_mode)
@@ -810,7 +814,7 @@ def slot_request(ctx, step):
     """How a heavy step asks for a render slot: (kind, expected peak in GiB). A compile always takes the big slot (and
     holds the small one); a step with no completed peak has no expected peak and takes the big one. render_lock decides
     the rest (the 3 GiB bound, the switch, free memory)."""
-    if any(isinstance(c, (UnrealCompile, UnrealPackage)) for c in step.commands):
+    if any(getattr(c, 'admission_kind', 'job') == 'compile' for c in step.commands):
         return 'compile', None
     return 'job', expected_peak_gib(ctx.logs / f'{step.name}.guard')
 

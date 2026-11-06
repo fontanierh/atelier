@@ -1,0 +1,13 @@
+# __Title__: a new game on Atelier, on the Bevy engine.
+id = "__game__"
+title = "__Title__"
+atelier = "0.1"
+engine = "bevy"
+build = "build.py"
+
+[bevy]
+workspace = "."
+
+[play.play]
+binary = "target/release/__game__"
+env = { BEVY_ASSET_ROOT = "{workspace}" }

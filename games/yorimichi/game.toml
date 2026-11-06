@@ -2,6 +2,7 @@
 id = "yorimichi"
 title = "Yorimichi"
 atelier = "0.1"
+engine = "unreal"
 unreal_project = "unreal/Yorimichi.uproject"
 editor_target = "YorimichiEditor"
 player = "assets/characters/cairo"

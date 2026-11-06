@@ -1,0 +1,19 @@
+# Hakuba, on Bevy: how `atelier` builds and plays it (README.md says what the game is). Plain `cargo` and `trunk`
+# still work from this folder; `atelier` runs the same cargo commands under the machine's admission and memory guard.
+id = "hakuba"
+title = "Hakuba"
+atelier = "0.1"
+engine = "bevy"
+build = "build.py"
+
+[bevy]
+workspace = "."
+
+[play.play]
+# The desktop game, windowed on the main screen. Bevy finds `assets/` under BEVY_ASSET_ROOT.
+binary = "target/release/hakuba"
+env = { BEVY_ASSET_ROOT = "{workspace}" }
+
+[play.fullscreen]
+binary = "target/release/hakuba"
+env = { BEVY_ASSET_ROOT = "{workspace}", HAKUBA_SCREEN = "main", HAKUBA_FULLSCREEN = "1" }

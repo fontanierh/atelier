@@ -242,6 +242,10 @@ pidfile={g.out}/turn.pid
 
 
 def main(game, action, local=False, install=False):
+    from . import engines
+    engine = engines.of(game)
+    if not engine.stream:
+        raise engine.unsupported('Browser streaming')
     if action == 'start':
         refuse_unmanaged('Browser streaming')
     g = Game(game)

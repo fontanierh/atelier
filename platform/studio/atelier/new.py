@@ -1,8 +1,10 @@
-"""Start a new game: `atelier new <id> [--title "My Game"]`.
+"""Start a new game: `atelier new <id> [--title "My Game"] [--engine unreal|bevy]`.
 
-Copies the sandbox (games/sandbox: a capsule character on a flat test ground, the live bridge, streaming) into
-games/<id>, renaming the Unreal module, its classes, the project, config and content paths, and giving the project its
-own ID. `atelier build <id>` then compiles it and makes its level; `atelier play <id>` runs it.
+On Unreal (the default), copies the sandbox (games/sandbox: a capsule character on a flat test ground, the live
+bridge, streaming) into games/<id>, renaming the Unreal module, its classes, the project, config and content paths,
+and giving the project its own ID. On Bevy, copies the engine's template (platform/studio/templates/bevy: a Cargo
+package with a lit scene), naming the package and its binary after the game. `atelier build <id>` then builds it;
+`atelier play <id>` runs it.
 """
 import re, subprocess, uuid
 from pathlib import Path
@@ -10,6 +12,7 @@ from pathlib import Path
 from . import paths
 
 TEMPLATE = 'sandbox'
+TEMPLATES = paths.STUDIO / 'templates'
 
 
 def module_name(game_id):
@@ -17,14 +20,20 @@ def module_name(game_id):
     return ''.join(part[:1].upper() + part[1:] for part in re.split(r'[_-]+', game_id) if part)
 
 
-def main(game_id, title=None):
+def main(game_id, title=None, engine='unreal'):
     if not re.fullmatch(r'[a-z][a-z0-9_]{1,31}', game_id):
         raise SystemExit('a game id is lowercase letters, digits and underscores, starting with a letter (my_game)')
     target = paths.GAMES / game_id
     if target.exists():
         raise SystemExit(f'{target} already exists')
-    module = module_name(game_id)
     title = title or ' '.join(part.capitalize() for part in game_id.split('_'))
+    from . import engines
+    template = engines.named(engine).template
+    if template is None:
+        raise SystemExit(f'the {engine} engine has no template for a new game')
+    if template != TEMPLATE:
+        return from_template(TEMPLATES / template, target, game_id, title)
+    module = module_name(game_id)
     source = paths.GAMES / TEMPLATE
     files = subprocess.run(['git', 'ls-files', '--', str(source)], cwd=paths.REPO, capture_output=True, text=True,
                            check=True).stdout.split()
@@ -57,6 +66,23 @@ def main(game_id, title=None):
           f'  atelier build {game_id}      # compile and make the level (about a minute)\n'
           f'  atelier play {game_id}\n'
           f'  atelier live state          # while it runs: the live bridge answers')
+    return 0
+
+
+def from_template(source, target, game_id, title):
+    """Copies the engine template `source` into `target`, naming the game `game_id` (`__game__`) and `title`
+    (`__Title__`) in every file."""
+    files = sorted(path for path in source.rglob('*') if path.is_file())
+    if not files:
+        raise SystemExit(f'no template in {source}')
+    for src in files:
+        dst = target / src.relative_to(source)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(src.read_text().replace('__game__', game_id).replace('__Title__', title))
+    print(f'{title}: games/{game_id}. Next:\n'
+          f'  atelier doctor {game_id}\n'
+          f'  atelier build {game_id}\n'
+          f'  atelier play {game_id}')
     return 0
 
 
