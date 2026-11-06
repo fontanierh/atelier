@@ -72,3 +72,32 @@ At the baseline, `AHidamariStable::bEnabled = false`: the stable exists in sourc
 earlier asked to leave the Hidamari stable out of a port. V2 migrates W14's static dressing with the region, and
 keeps the service disabled exactly as at baseline. It does not invent a working stable. Reopen this only on owner
 instruction.
+
+## D07 — Static scenery is migrated by the code that builds it
+
+The original island is almost entirely spawned at runtime by `AJapanWorld::Load` and its region services
+(inventory §0). V2 does not re-describe that scenery in a migration script. A transient, migration-mode
+`AJapanWorld` builds it in the editor exactly as the game does: same clearances, collision, shadows, cull
+distances, custom data and tags. `UV2Migration::MigrateStaticScenery` then copies each instance group into saved
+`AV2ScenePatch` actors, one per group and patch cell inside each region's half-open bounds, with stable IDs.
+Each map's `AV2WorldManifest` tells the runtime which instances and services that map holds saved; `Load` skips
+them, then registers the patches into the same runtime lists. The menu settings, screen-size cull and see-through
+therefore keep working unchanged. A slice map is `bOnlyMigrated` and runs only its listed services.
+
+The saved Slice map's pieces come from the runtime island roster (`terrain/island.json`), placed the way the
+original island owner places them. The environment actors repeat `build_level`'s settings. `tools/migrate/
+compare.py` compares scene dumps from the two games over the same bounds, and is the parity oracle.
+
+The skate pier (W04) still spawns its meshes at runtime in the slice. Splitting `ASkatePark` into saved scenery
+plus a runtime service is the next scenery step (scene-patch spec, "Skate park").
+
+## D08 — Adoption is per top-level donor folder
+
+Donor packages enter V2 once, through `tools/migrate/adopt.py`, keeping their package paths. Each top-level
+`/Game` folder becomes one editor-owned `adopted/<folder>` record that lists every package it brought. Save
+validation records the record's bytes. A later edit is an ordinary claimed editor edit of that record, and a
+finer record (a prop, a region's map) may take packages over explicitly. Adoption refuses packages another
+record owns, reports every hard reference that resolves to nothing in V2, and reports packages whose bytes name
+a home folder or private host. Those need the editor scrub before commit. Runtime data (`Content/Data`) is
+copied from the donor's staged data and committed as runtime data. The rights groups of D05 decide which
+folders are adopted publicly.

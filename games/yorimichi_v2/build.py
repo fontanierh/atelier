@@ -43,6 +43,11 @@ def steps(ctx):
              inputs=[UNREAL / 'Scripts/migrate_map.py'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'migrate.map' in RAN,
              about='one-time migration of regions into a World Partition map (use tools/migrate/run.py)'),
+        # Explicit: one named bootstrap-writer editor script (unreal/Scripts), guarded like every editor write.
+        Step('editor.run', [UnrealScript(UNREAL / 'Scripts/run_named.py', 'V2 EDITOR SCRIPT DONE'), ran('editor.run')],
+             inputs=[UNREAL / 'Scripts'], after=['unreal.compile'], heavy=True, explicit=True,
+             verify=lambda: 'editor.run' in RAN,
+             about='one named editor script (V2_EDITOR_SCRIPT), e.g. Scripts/new_test_map.py'),
     ] + import_steps()
 
 
