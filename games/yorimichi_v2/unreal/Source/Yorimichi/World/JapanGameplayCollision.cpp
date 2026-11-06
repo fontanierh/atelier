@@ -6,6 +6,7 @@
 #include "SuperUltraMegaPark.h"
 #include "Hippodrome.h"
 #include "HidamariStable.h"
+#include "V2ScenePatch.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -19,7 +20,8 @@ bool JapanGameplayCollision::IsFixed(const AActor* Actor)
 {
     if (!Actor || Actor->ActorHasTag(TEXT("LiveTest"))) return false;
     if (Actor->IsA<AJapanWorld>() || Actor->IsA<ASkatePark>() || Actor->IsA<AMegaRamp>() ||
-        Actor->IsA<ASuperUltraMegaPark>() || Actor->IsA<AHippodrome>() || Actor->IsA<AHidamariStable>()) return true;
+        Actor->IsA<ASuperUltraMegaPark>() || Actor->IsA<AHippodrome>() || Actor->IsA<AHidamariStable>() ||
+        Actor->IsA<AV2ScenePatch>()) return true;
     // Map-authored static actors, not movable LiveTest boxes or dynamic vehicle parts.
     const auto* MeshActor = Cast<AStaticMeshActor>(Actor);
     return MeshActor && MeshActor->GetRootComponent() &&

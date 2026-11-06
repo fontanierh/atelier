@@ -8,6 +8,7 @@ class FJsonObject;
 
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMeshComponent;
+class AV2ScenePatch;
 
 /** The volumetric fog's look, from the settings menu (UJapanPreferences, docs/VOLUMETRIC_FOG.md). */
 struct FVolumetricFogLook
@@ -119,6 +120,19 @@ public:
     void SetSeeThroughProbe(bool bIgnore);
     bool IsSeeThroughProbeIgnored() const { return bSeeThroughProbeIgnored; }
 
+    // V2 saved scenery (V2ScenePatch.h). A map's AV2WorldManifest says which instances and services it holds as saved
+    // AV2ScenePatch actors; Load skips those and registers the patches into the lists above by their role tags.
+    /** Instances Load skipped because this map holds them saved. */
+    int32 MigratedInstances = 0;
+    void RegisterScenePatch(AV2ScenePatch* Patch);
+    void UnregisterScenePatch(AV2ScenePatch* Patch);
+    /** The editor migration's transient world (UV2Migration): Load builds only the static scenery, ignores any
+     *  manifest, and remembers each group's world.json key and shadow twin for the copy. */
+    bool bMigrationBuild = false;
+    void LoadForMigration() { Load(); }
+    TMap<UHierarchicalInstancedStaticMeshComponent*, FString> MigrationKeys;
+    TMap<UHierarchicalInstancedStaticMeshComponent*, UHierarchicalInstancedStaticMeshComponent*> MigrationTwins;
+
 private:
     TArray<float> GroundHeights;
     int32 GroundResolution = 0;
@@ -157,5 +171,6 @@ private:
     bool bNorthGradeHasCamera = false;
     void UpdateNorthAerialGrade(float Dt);
     bool bSeeThroughProbeIgnored = false;
+    TSet<TWeakObjectPtr<AV2ScenePatch>> ScenePatches;
     void Load();
 };

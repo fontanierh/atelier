@@ -38,6 +38,11 @@ def steps(ctx):
                      UNREAL / 'Content', ctx.unreal_root / 'Engine/Build/Build.version'],
              needs=['unreal.compile'], heavy=True, explicit=True, outputs=[out / 'package' / 'archive'],
              about='explicit: cook and package the committed content for macOS (integration milestones, releases)'),
+        # Explicit: the one-time static-world migration, run only by tools/migrate/run.py with its plan.
+        Step('migrate.map', [UnrealScript(UNREAL / 'Scripts/migrate_map.py', 'V2 MIGRATE DONE'), ran('migrate.map')],
+             inputs=[UNREAL / 'Scripts/migrate_map.py'], after=['unreal.compile'], heavy=True, explicit=True,
+             verify=lambda: 'migrate.map' in RAN,
+             about='one-time migration of regions into a World Partition map (use tools/migrate/run.py)'),
     ] + import_steps()
 
 

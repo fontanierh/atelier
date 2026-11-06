@@ -50,6 +50,7 @@
 #include "FerryService.h"
 #include "GondolaService.h"
 #include "RacingBroadcast.h"
+#include "V2ScenePatch.h"
 #include "RacingService.h"
 #include "BelmonteTrack.h"
 #include "SeeThrough.h"
@@ -78,6 +79,10 @@ void AJapanWorld::Load()
 {
     const double Started = FPlatformTime::Seconds();
     TArray<FString> Incomplete;
+    // V2: what this map holds as saved actors instead (none in the migration's own build).
+    const AV2WorldManifest* Manifest = bMigrationBuild ? nullptr : AV2WorldManifest::Find(GetWorld());
+    const bool bAllMigrated = Manifest && Manifest->bOnlyMigrated;
+    auto ServiceRuns = [&](const TCHAR* Service) { return !Manifest || Manifest->Runs(FName(Service)); };
     const FString JsonPath = AtelierDataPath(TEXT("world.json"));
     FString Text;
     if (!FFileHelper::LoadFileToString(Text, *JsonPath)) { UE_LOG(LogTemp, Error, TEXT("world.json not found at %s"), *JsonPath); return; }
@@ -420,7 +425,7 @@ void AJapanWorld::Load()
         AtelierReadJson(AtelierDataPath(TEXT("treehouse/surfaces.json"))),TreehouseSurfaces,&TreehouseLogicalBounds);
     if(!TreehouseSurfacesReady || !DressingReady || TreehouseSurfaces.FindChecked(TEXT("TH_Dressing"))!=DressingPieces)
         Incomplete.Add(TEXT("complete consistent Treehouse surface pieces"));
-    if (Root->TryGetObjectField(TEXT("instances"), Inst))
+    if (!bAllMigrated && Root->TryGetObjectField(TEXT("instances"), Inst))
     {
         for (const auto& Pair : (*Inst)->Values)
         {
@@ -503,6 +508,7 @@ void AJapanWorld::Load()
                     const double Sc = A[4]->AsNumber();
                     const FVector Position = ToUE(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber());
                     if (!ParkClearance.IsEmpty() && (bTree || bBush || bGrass || bLitter || Key.StartsWith(TEXT("Rock"))) && ASkatePark::Inside(ParkClearance, FVector2D(Position))) { ++Cleared; continue; }
+                    if (Manifest && Manifest->CoversInstance(FVector2D(Position))) { ++MigratedInstances; continue; }
                     // The far-hill backdrop is outside the playable square. Keep its
                     // silhouettes, but do not build thousands of useless physics bodies.
                     const bool bCityTree=City.IsValid() && Position.X>30000 && Position.X<142000 && Position.Y>-50000 && Position.Y<30000;
@@ -592,6 +598,7 @@ void AJapanWorld::Load()
                     H->BuildTreeIfOutdated(true, true);
                     H->bAutoRebuildTreeOnInstanceChanges = true;
                     TotalInstances += Xs.Num(); Groups.Add(H);
+                    if (bMigrationBuild) MigrationKeys.Add(H, Key);
                     if (bBackdrop) BackdropGroups.Add(H);
                     // Every in-map tree is one instanced group per species across the whole map, so the engine cannot leave
                     // distant trees out of the shadow pass on its own: they made the forest's shadows its largest cost. A
@@ -618,13 +625,14 @@ void AJapanWorld::Load()
                         // tree's field once.
                         H->SetCastShadow(false); H->bAffectDistanceFieldLighting = false;
                         ShadowTwins.Add(S);
+                        if (bMigrationBuild) MigrationTwins.Add(H, S);
                     }
                 };
                 AddGroup(Near, false); AddGroup(Distant, true);
             }
         }
     }
-    if (PiecesReady)
+    if (PiecesReady && !bAllMigrated)
     {
         int32 ExpectedPieces=0,PreparedPieces=0;
         for (const auto& Group:CityPieces) PreparedPieces+=Group.Value.Num();
@@ -637,32 +645,33 @@ void AJapanWorld::Load()
         }
         else Incomplete.Add(TEXT("loaded production city pieces"));
     }
-    if (DressingReady && LoadedDressingPieces.Num()!=DressingPieces.Num())
+    if (!bAllMigrated && DressingReady && LoadedDressingPieces.Num()!=DressingPieces.Num())
         Incomplete.Add(TEXT("loaded treehouse dressing pieces"));
-    if(TreehouseSurfacesReady && LoadedStructurePieces.Num()!=TreehouseSurfaces.FindChecked(TEXT("TH_Structure")).Num())
+    if(!bAllMigrated && TreehouseSurfacesReady && LoadedStructurePieces.Num()!=TreehouseSurfaces.FindChecked(TEXT("TH_Structure")).Num())
         Incomplete.Add(TEXT("loaded Treehouse structure pieces"));
-    if(SouthwestReady)
+    if(SouthwestReady && !bAllMigrated)
     {
         int32 Expected=0;
         for(const FString& Parent:PlacedSouthwestParents)
             if(const auto* Paths=SouthwestPieces.Find(Parent))Expected+=Paths->Num();
         if(LoadedSouthwestPieces.Num()!=Expected)Incomplete.Add(TEXT("loaded Southwest pieces"));
     }
-    if(LakeReady)
+    if(LakeReady && !bAllMigrated)
     {
         int32 Expected=0;
         for(const FString& Parent:PlacedLakeParents)
             if(const auto* Paths=LakePieces.Find(Parent))Expected+=Paths->Num();
         if(LoadedLakePieces.Num()!=Expected)Incomplete.Add(TEXT("loaded lake pieces"));
     }
-    if(VillageReady)
+    if(VillageReady && !bAllMigrated)
     {
         int32 Expected=0;
         for(const FString& Parent:PlacedVillageParents)
             if(const auto* Paths=VillagePieces.Find(Parent))Expected+=Paths->Num();
         if(LoadedVillagePieces.Num()!=Expected)Incomplete.Add(TEXT("loaded Village pieces"));
     }
-    if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
+    UStaticMesh* Dome = Manifest && Manifest->CoversService(TEXT("SkyDome")) ? nullptr : LoadMesh(TEXT("SkyDome"));
+    if (Dome)
     {
         SkyDome = NewObject<UStaticMeshComponent>(this, TEXT("SkyDome"));
         SkyDome->SetStaticMesh(Dome); SkyDome->SetupAttachment(RootComponent);
@@ -674,7 +683,7 @@ void AJapanWorld::Load()
     TMap<FString,TArray<FString>> IslandPieces;
     if(!JapanIslandPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("terrain/island.json"))),IslandPieces))
         Incomplete.Add(TEXT("complete island pieces"));
-    else for(const FString& Path:IslandPieces.FindChecked(TEXT("Sea")))
+    else if (!(Manifest && Manifest->CoversService(TEXT("Sea")))) for(const FString& Path:IslandPieces.FindChecked(TEXT("Sea")))
     {
         UStaticMesh* SeaMesh=LoadMesh(Path);
         if(!SeaMesh){Incomplete.Add(TEXT("island Sea piece ")+Path);continue;}
@@ -688,6 +697,7 @@ void AJapanWorld::Load()
         SeaPieces.Add(Sea);
     }
     bLoaded = true;
+    if (bMigrationBuild) return;           // the editor migration copies only the static scenery built so far
     // The tree house (world/regions/treehouse): warm lantern and room lights, [x, y, z, lumens, radius m, shadows],
     // a local golden grade inside its box (layout.py) and a dimmer look inside each room (build.py, runtime.json).
     const TSharedPtr<FJsonObject>* House=nullptr;
@@ -810,7 +820,7 @@ void AJapanWorld::Load()
     if (Root->TryGetObjectField(TEXT("village"),Village))
     {
         VillageRecord=*Village;
-        if (GetNetMode()!=NM_DedicatedServer) if (auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,*Village);
+        if (GetNetMode()!=NM_DedicatedServer && ServiceRuns(TEXT("Village"))) if (auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,*Village);
     }
     const TSharedPtr<FJsonObject>* Lake=nullptr;
     if(Root->TryGetObjectField(TEXT("forest_lake"),Lake))
@@ -827,11 +837,12 @@ void AJapanWorld::Load()
     if(Root->TryGetObjectField(TEXT("zeppelin"),ZeppelinData))
     {
         ZeppelinRecord = *ZeppelinData;
-        if (GetNetMode() != NM_Client)
+        if (GetNetMode() != NM_Client && ServiceRuns(TEXT("Zeppelin")))
         { Zeppelin=GetWorld()->SpawnActor<AZeppelinService>();if(Zeppelin)Zeppelin->Initialize(ZeppelinRecord); }
     }
     const TSharedPtr<FJsonObject>* Mega=nullptr;
-    if(Root->TryGetObjectField(TEXT("mega"),Mega))
+    if (!ServiceRuns(TEXT("MegaRamp"))) {}
+    else if(Root->TryGetObjectField(TEXT("mega"),Mega))
     {
         auto* Ramp=GetWorld()->SpawnActor<AMegaRamp>();
         if (Ramp) Ramp->Initialize(*Mega);
@@ -843,42 +854,57 @@ void AJapanWorld::Load()
         auto* Park = FPaths::FileExists(Path) ? GetWorld()->SpawnActor<ASkatePark>() : nullptr;
         if (!Park || !Park->Initialize(Path)) Incomplete.Add(Label);
     };
-    InstallPark(ParkPath, TEXT("skate pier"));
+    if (ServiceRuns(TEXT("SkatePark"))) InstallPark(ParkPath, TEXT("skate pier"));
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
-    const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
-    if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));
+    if (ServiceRuns(TEXT("MegaPark")))
+    {
+        const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
+        if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));
+    }
     // Crater Park on the volcano's caldera floor, placed by the same actor (docs/CRATERPARK.md).
-    const auto* CraterPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/park.json")));
-    if (!CraterPark || !CraterPark->bGameplayReady) Incomplete.Add(TEXT("crater park"));
+    if (ServiceRuns(TEXT("CraterPark")))
+    {
+        const auto* CraterPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/park.json")));
+        if (!CraterPark || !CraterPark->bGameplayReady) Incomplete.Add(TEXT("crater park"));
+    }
     // Its lenticular cap cloud (docs/CRATERPARK.md, "Cap cloud"): dense from afar so the ramps do not show from Belmonte,
     // a thin blurring veil while riding inside. Scenery only, so it never holds the island back and no server draws it.
-    if (GetNetMode() != NM_DedicatedServer) ACraterCloud::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/cloud.json")));
-    const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
-    if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
-    if (AHidamariStable::bEnabled && FPaths::FileExists(StablePath))
+    if (GetNetMode() != NM_DedicatedServer && ServiceRuns(TEXT("CraterCloud"))) ACraterCloud::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/cloud.json")));
+    if (ServiceRuns(TEXT("Hippodrome")))
+    {
+        const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
+        if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
+    }
+    if (AHidamariStable::bEnabled && FPaths::FileExists(StablePath) && ServiceRuns(TEXT("Stable")))
     {
         const auto* Stable = AHidamariStable::Spawn(GetWorld(), StablePath);
         if (!Stable || !Stable->bGameplayReady) Incomplete.Add(TEXT("hidamari stable"));
     }
-    const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));
-    if (!Belmonte || !Belmonte->bGameplayReady) Incomplete.Add(TEXT("belmonte"));
+    if (ServiceRuns(TEXT("Belmonte")))
+    {
+        const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));
+        if (!Belmonte || !Belmonte->bGameplayReady) Incomplete.Add(TEXT("belmonte"));
+    }
     // The pirate port in the western reach (docs/WORLD_MAP.md), placed from the same runtime schema.
-    const auto* Brinecove = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("brinecove/runtime.json")), TEXT("brinecove"));
-    if (!Brinecove || !Brinecove->bGameplayReady) Incomplete.Add(TEXT("brinecove"));
-    if (ABelmonteTrainService::IsEnabled())
+    if (ServiceRuns(TEXT("Brinecove")))
+    {
+        const auto* Brinecove = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("brinecove/runtime.json")), TEXT("brinecove"));
+        if (!Brinecove || !Brinecove->bGameplayReady) Incomplete.Add(TEXT("brinecove"));
+    }
+    if (ABelmonteTrainService::IsEnabled() && ServiceRuns(TEXT("Train")))
     {
         ABelmonteTrack::Spawn(GetWorld(), AtelierDataPath(TEXT("belmonte_track/track.json")));
         if (GetNetMode() != NM_Client)
             ABelmonteTrainService::Spawn(GetWorld(), AtelierDataPath(TEXT("belmonte_train/service.json")));
     }
-    if (GetNetMode() != NM_Client && !AFerryService::Spawn(GetWorld(), AtelierDataPath(TEXT("ferry/service/service.json"))))
+    if (GetNetMode() != NM_Client && ServiceRuns(TEXT("Ferry")) && !AFerryService::Spawn(GetWorld(), AtelierDataPath(TEXT("ferry/service/service.json"))))
         Incomplete.Add(TEXT("ferry"));
-    if (GetNetMode() != NM_Client && !AGondolaService::Spawn(GetWorld(), AtelierDataPath(TEXT("gondola/runtime.json"))))
+    if (GetNetMode() != NM_Client && ServiceRuns(TEXT("Gondola")) && !AGondolaService::Spawn(GetWorld(), AtelierDataPath(TEXT("gondola/runtime.json"))))
         Incomplete.Add(TEXT("gondola"));
     // The racing world (docs/RACING.md): the host owns it; clients receive the replicated service.
-    if (GetNetMode() != NM_Client) ARacingService::Spawn(GetWorld());
+    if (GetNetMode() != NM_Client && ServiceRuns(TEXT("Racing"))) ARacingService::Spawn(GetWorld());
     // Its TVs in Belmonte's osteria and Salon (docs/RACING.md, "TVs"): drawn on every machine that renders, never replicated.
-    if (GetNetMode() != NM_DedicatedServer) ARacingBroadcast::Spawn(GetWorld());
+    if (GetNetMode() != NM_DedicatedServer && ServiceRuns(TEXT("Racing"))) ARacingBroadcast::Spawn(GetWorld());
     // The far hills' trees stand on the hills' original heights, but the northern
     // surface and the Mega Park approach lowered that ground. Once every region's
     // ground is in place, drop each backdrop tree with no ground under its base.
@@ -923,21 +949,77 @@ void AJapanWorld::Load()
                 Rails->Add(MoveTemp(Rail));
             }
     }
-    if(City.IsValid() && GetNetMode()!=NM_DedicatedServer)
+    if(City.IsValid() && GetNetMode()!=NM_DedicatedServer && ServiceRuns(TEXT("Residents")))
         for(const auto& Group:City->GetArrayField(TEXT("resident_groups")))
             if(auto* Life=GetWorld()->SpawnActor<AVillageLife>()) Life->Initialize(this,Group->AsObject());
     WindMPC = LoadObject<UMaterialParameterCollection>(nullptr, TEXT("/Game/Japan/Materials/MPC_Wind.MPC_Wind"));
-    if (GetNetMode()!=NM_DedicatedServer) GetWorld()->SpawnActor<ALeafStorm>(FVector::ZeroVector, FRotator::ZeroRotator);
+    if (GetNetMode()!=NM_DedicatedServer && ServiceRuns(TEXT("LeafStorm"))) GetWorld()->SpawnActor<ALeafStorm>(FVector::ZeroVector, FRotator::ZeroRotator);
     // gulls over the sea, a little off the middle of the road
-    AGullFlock* Flock = GetNetMode()==NM_DedicatedServer ? nullptr : GetWorld()->SpawnActor<AGullFlock>(ToUE(20, -170, 45), FRotator::ZeroRotator);
+    AGullFlock* Flock = GetNetMode()==NM_DedicatedServer || !ServiceRuns(TEXT("Gulls")) ? nullptr : GetWorld()->SpawnActor<AGullFlock>(ToUE(20, -170, 45), FRotator::ZeroRotator);
     if (!City.IsValid()) Incomplete.Add(TEXT("Hidamari data"));
     if (HouseLayout && !HouseRuntime.IsValid()) Incomplete.Add(TEXT("tree house data"));
+    // V2: the saved scenery this map holds joins the same lists (patches streamed in later join on their BeginPlay).
+    for (TActorIterator<AV2ScenePatch> It(GetWorld()); It; ++It) RegisterScenePatch(*It);
+    if (Manifest) UE_LOG(LogTemp, Display, TEXT("V2 SCENERY %d instances saved in this map, %d patches%s"),
+        MigratedInstances, ScenePatches.Num(), bAllMigrated ? TEXT(" (only migrated scenery)") : TEXT(""));
     if (TotalInstances == 0) Incomplete.Add(TEXT("world geometry"));
     JapanGameplayCollision::Install(GetWorld());
     BootstrapError = FString::Join(Incomplete, TEXT(", "));
     bGameplayReady = bLoaded && Incomplete.IsEmpty();
     if (!bGameplayReady) UE_LOG(LogTemp, Warning, TEXT("NETWORK world incomplete: %s"), *BootstrapError);
     UE_LOG(LogTemp, Log, TEXT("world loaded: %d groups, %d instances, %d shots, flock %d, %.1f ms"), Groups.Num(), TotalInstances, Shots.Num(), Flock ? 1 : 0, (FPlatformTime::Seconds() - Started) * 1000.0);
+}
+
+void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
+{
+    if (!Patch || ScenePatches.Contains(Patch)) return;
+    ScenePatches.Add(Patch);
+    TArray<UStaticMeshComponent*> Components;
+    Patch->GetComponents(Components);
+    for (UStaticMeshComponent* C : Components)
+    {
+        auto* H = Cast<UHierarchicalInstancedStaticMeshComponent>(C);
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleGroup)) { Groups.AddUnique(H); TotalInstances += H->GetInstanceCount(); }
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleBackdrop)) BackdropGroups.AddUnique(H);
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleShadowTwin)) ShadowTwins.AddUnique(H);
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleSeeThrough)) SeeThroughGroups.AddUnique(H);
+        if (C->ComponentHasTag(AV2ScenePatch::RoleSea)) SeaPieces.AddUnique(C);
+        if (C->ComponentHasTag(AV2ScenePatch::RoleSkyDome)) SkyDome = C;
+    }
+    // The menu's settings already applied reach the newcomers: forget what was applied and apply it again.
+    if (AppliedPerformanceMode >= 0)
+    {
+        const bool bPerformance = AppliedPerformanceMode != 0;
+        AppliedPerformanceMode = -1;
+        ApplyPerformanceSettings(bPerformance, AppliedTreeSway, AppliedForestDetail, AppliedTreeShadow);
+    }
+    if (AppliedTreeOptimization >= 0)
+    {
+        const bool bEnabled = AppliedTreeOptimization != 0;
+        AppliedTreeOptimization = -1;
+        ApplyTreeOptimization(bEnabled, AppliedTreeLODMode, AppliedTreeDistanceScale);
+    }
+    AppliedBackdropCull = -1.f;
+    AppliedHideGroups.Reset();
+    bScreenSizeCullDirty = true;
+}
+
+void AJapanWorld::UnregisterScenePatch(AV2ScenePatch* Patch)
+{
+    if (!Patch || !ScenePatches.Remove(Patch)) return;
+    TArray<UStaticMeshComponent*> Components;
+    Patch->GetComponents(Components);
+    for (UStaticMeshComponent* C : Components)
+    {
+        if (auto* H = Cast<UHierarchicalInstancedStaticMeshComponent>(C))
+        {
+            if (Groups.Remove(H)) TotalInstances -= H->GetInstanceCount();
+            BackdropGroups.Remove(H); ShadowTwins.Remove(H); SeeThroughGroups.Remove(H);
+        }
+        SeaPieces.Remove(C);
+        if (SkyDome == C) SkyDome = nullptr;
+        ScreenSizeCullStates.Remove(C);
+    }
 }
 
 bool AJapanWorld::IsInSeeThroughRoom(int32 Index, const FVector& P, float Margin) const
