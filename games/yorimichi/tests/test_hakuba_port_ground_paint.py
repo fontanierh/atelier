@@ -11,8 +11,15 @@ import numpy as np
 
 PORT = Path(__file__).resolve().parents[1] / 'hakuba_port'
 sys.path.insert(0, str(PORT))
+# Yorimichi's `world/regions/` package and the port's `regions.py` share a name in one test process: the port's
+# modules import with the port's `regions`, and whatever was cached before is put back for the tests that use it.
+_before = sys.modules.pop('regions', None)
 import ground  # noqa: E402
 import ground_paint  # noqa: E402
+if _before is not None:
+    sys.modules['regions'] = _before
+else:
+    sys.modules.pop('regions', None)
 
 
 def test_every_painter_names_a_layer():
