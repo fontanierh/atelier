@@ -1,9 +1,9 @@
 # Source foliage: a cypress of Belmonte's hills.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["olive-bark", "tuscan-cypress-leaves", "far-plants"]
-inputs_sha256 = "80d15054129303d5f592c29603cd0172652d55019679694b52eb5678d8ef8b4f"
+inputs_sha256 = "13fdd68a1dbfefbc21e48dbcffd826fd86eb1c3c2656b7a35ceced865afcc5e6"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

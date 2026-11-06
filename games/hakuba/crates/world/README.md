@@ -19,11 +19,10 @@ src/
   look.rs        the sky dome, the sun, the haze, and the camera's colour grade
   painterly.rs   the painterly filter over the finished image
   painterly.wgsl its shader
-  pixels.rs      draws the world into an image of the resolution the settings ask and stretches it over the window;
-                 on the Mac the share drawn follows the GPU's measured load (dynamic resolution), in small steps
-                 temporal anti-aliasing hides, unless `HAKUBA_FIXED_PIXELS=1`
-  blocks.rs      the distant land in blocks: past 450 m the far tiles of each 8 × 8 block merge into one mesh per
-                 look, built on workers, their far trees' cards thinned with distance; a block hidden behind nearer
+  pixels.rs      draws the world into an image of the resolution the settings ask and stretches it over the window
+  blocks.rs      the distant land in blocks: once a block of 8 × 8 tiles is past 300 m its far tiles merge into one
+                 mesh per look, built on workers, the whole block at once and simplified for its distance in √2 steps,
+                 its far trees' cards thinned with distance; a block hidden behind nearer
                  things in the last frame's depth grid (crates/rendering) is not drawn
   tiles.rs       prepares each new detail version hidden, then swaps its visibility and collision together; around
                  the far distance a tile shows both its plants' middle and far versions, crossfading

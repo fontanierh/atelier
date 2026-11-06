@@ -106,8 +106,9 @@ fn decompress_vertex(vertex_in: Vertex, instance_index: u32) -> UncompressedVert
 
 struct VertexOutput {
     /// This is `clip position` when the struct is used as a vertex stage output
-    /// and `frag coord` when used as a fragment stage input
-    @builtin(position) position: vec4<f32>,
+    /// and `frag coord` when used as a fragment stage input. Hakuba: invariant, as the main pass's, so a fragment
+    /// the prepass kept has exactly the depth the main pass tests it for.
+    @builtin(position) @invariant position: vec4<f32>,
 
     @if(VERTEX_UVS_A)
     @location(0) uv: vec2<f32>,

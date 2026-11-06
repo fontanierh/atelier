@@ -3206,6 +3206,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_forest_lab"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_rendering",
+ "hakuba_world",
+ "image",
+ "serde_json",
+ "wgpu-hal",
+]
+
+[[package]]
 name = "hakuba_gamepad"
 version = "0.1.0"
 dependencies = [
@@ -3336,7 +3348,6 @@ dependencies = [
  "serde",
  "serde_json",
  "web-sys",
- "wgpu-hal",
 ]
 
 [[package]]

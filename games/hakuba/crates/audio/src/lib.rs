@@ -78,9 +78,15 @@ fn spawn_loops(mut commands: Commands, pending: Option<Res<Pending>>, sounds: Re
     commands.remove_resource::<Pending>();
 }
 
+/// The settings' volume, or silence with the desktop switch `HAKUBA_MUTE=1`, so measurements play without sound.
+pub(crate) fn volume(settings: &Settings) -> f32 {
+    static MUTED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    if *MUTED.get_or_init(|| hakuba_screens::switched_on("HAKUBA_MUTE")) { 0.0 } else { settings.volume }
+}
+
 /// Keeps the countryside at its volume, times the settings' volume.
 fn play_countryside(settings: Res<Settings>, mut sinks: Query<&mut AudioSink, With<Countryside>>) {
     for mut sink in &mut sinks {
-        sink.set_volume(Volume::Linear(COUNTRYSIDE_VOLUME * settings.volume));
+        sink.set_volume(Volume::Linear(COUNTRYSIDE_VOLUME * volume(&settings)));
     }
 }

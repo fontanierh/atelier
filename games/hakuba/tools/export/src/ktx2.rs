@@ -104,6 +104,13 @@ pub fn bc7_ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
     encode_ktx2(width, height, Format::BC7_SRGB_BLOCK, &bytes)
 }
 
+/// As [`bc7_ktx2`], for data rather than colour, such as normals: the same blocks, read without sRGB decoding.
+pub fn bc7_linear_ktx2(width: u32, height: u32, levels: &[Level]) -> Result<Vec<u8>> {
+    let blocks: Vec<Vec<u8>> = levels.iter().map(bc7).collect();
+    let bytes: Vec<&[u8]> = blocks.iter().map(Vec::as_slice).collect();
+    encode_ktx2(width, height, Format::BC7_UNORM_BLOCK, &bytes)
+}
+
 fn bc7(level: &Level) -> Vec<u8> {
     let (width, height) = (level.width.next_multiple_of(4), level.height.next_multiple_of(4));
     let mut rgba = Vec::with_capacity((width * height * 4) as usize);

@@ -18,7 +18,8 @@ use crate::vertex_paint::{SurfaceFailed, SurfaceWaiting};
 const MIDDLE_M: f32 = 2500.0;
 /// From how far from the camera, to a tile's centre, a middle tile shows its plants' far versions, merged: there a
 /// tree is a few pixels tall, and the forests on every hill around would otherwise be hundreds of thousands of copies.
-pub(crate) const FAR_M: f32 = 200.0;
+/// Every tile within a tree's full reach (`TREE_LOD_M`, scenery.rs) is nearer than this less [`BLEND_M`], or blending.
+pub(crate) const FAR_M: f32 = 240.0;
 /// The most tiles that load at once, so the nearest are not kept waiting behind the far.
 const LOADING: usize = 16;
 /// The most tiles that load at once under the splash, when nothing is drawn yet; a browser refuses thousands of
@@ -61,11 +62,11 @@ enum Detail {
 
 /// How far either side of [`FAR_M`], to a tile's centre, a tile shows both its plants' middle and far versions. A
 /// merged mesh's centre is within a tile's half diagonal of the tile's, so this exceeds that plus half the fade.
-const BLEND_M: f32 = 64.0;
+pub(crate) const BLEND_M: f32 = 64.0;
 /// Over how many metres around [`FAR_M`] a blending tile's plants fade from their middle to far versions.
 pub(crate) const BLEND_FADE_M: f32 = 24.0;
 /// How far past its band's edge a tile keeps its version, so a camera moving to and fro there does not respawn it.
-const KEEP_MARGIN_M: f32 = 8.0;
+pub(crate) const KEEP_MARGIN_M: f32 = 8.0;
 
 #[derive(Component)]
 pub struct Tile {
@@ -102,7 +103,12 @@ impl Tile {
     /// Its cell, centre and shown root while it shows its far version alone.
     pub(crate) fn far_root(&self) -> Option<(UVec2, Vec3, Entity)> {
         let root = self.showing.filter(|_| self.shown_detail == Some(Detail::Far))?;
-        Some((UVec2::new(self.column, self.row), self.centre, root))
+        let (cell, centre) = self.cell();
+        Some((cell, centre, root))
+    }
+    /// Its column and row, and its centre.
+    pub(crate) fn cell(&self) -> (UVec2, Vec3) {
+        (UVec2::new(self.column, self.row), self.centre)
     }
     pub(crate) fn collision_state(&self) -> ([u32; 2], Vec3, Option<Entity>, bool, Option<[Vec2; 2]>, bool) {
         (
@@ -144,7 +150,9 @@ struct SceneReady(u32);
 struct Prepared;
 
 /// Picks each tile's version by its distance from the camera: full detail near, middle detail out to [`MIDDLE_M`]
-/// (from [`FAR_M`] with its plants' far versions), nothing beyond, the nearest first, at most
+/// (from [`FAR_M`] with its plants' far versions), nothing beyond. A far tile stays while its block's nearest tile is
+/// within [`MIDDLE_M`], so the blocks at the horizon arrive and leave whole, each merging once rather than at each
+/// tile, the nearest first, at most
 /// [`LOADING_UNDER_SPLASH`] at once until the world has loaded and [`LOADING`] afterwards. A tile waiting its turn is
 /// queued, so the splash holds until all it shows is ready. A tile leaving every version is dropped at once.
 fn choose(
@@ -159,6 +167,7 @@ fn choose(
     mut tiles: Query<(Entity, &mut Tile)>,
 ) {
     let eye = camera.translation();
+    let blocks = crate::blocks::block_distances(tiles.iter().map(|(_, tile)| tile), eye.xz());
     let mut wanted = Vec::new();
     let mut loading = 0;
     for (entity, mut tile) in &mut tiles {
@@ -179,7 +188,11 @@ fn choose(
             {
                 Some(Detail::Blend)
             }
-            d if d < MIDDLE_M => Some(Detail::Far),
+            _ if blocks[&crate::blocks::block_of(tile.cell().0)]
+                < MIDDLE_M + if tile.detail == Some(Detail::Far) { KEEP_MARGIN_M } else { -KEEP_MARGIN_M } =>
+            {
+                Some(Detail::Far)
+            }
             _ => None,
         };
         loading += usize::from(tile.pending.is_some());
@@ -353,6 +366,7 @@ fn activate(
             commands.entity(old).despawn();
         }
         tile.pending = None;
+        debug!("TILE {} {} shows {detail:?}, was {:?}", tile.column, tile.row, tile.shown_detail);
         tile.shown_detail = Some(*detail);
         if let Some(dirty) = collision_dirty.as_deref_mut() {
             dirty.mark();
@@ -516,6 +530,30 @@ mod tests {
             let spawning = app.world().get::<Spawning>(tile.pending.unwrap()).unwrap();
             assert!(spawning.far());
             assert!(tile.path(detail, 8).ends_with(".middle.glb"), "a far tile is the middle version");
+        }
+    }
+
+    #[test]
+    fn the_blocks_at_the_horizon_arrive_and_leave_whole() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<bevy::world_serialization::WorldAsset>();
+        app.init_resource::<Settings>();
+        app.init_resource::<Loaded>();
+        let camera = app.world_mut().spawn((Camera3d::default(), GlobalTransform::IDENTITY)).id();
+        // Two tiles of one block of 8 × 8, one inside the horizon and one 400 m past it.
+        let inside = app.world_mut().spawn(Tile::named("tile 0 0", Vec3::X * (MIDDLE_M - 100.0)).unwrap()).id();
+        let past = app.world_mut().spawn(Tile::named("tile 7 0", Vec3::X * (MIDDLE_M + 300.0)).unwrap()).id();
+        app.world_mut().run_system_once(choose).unwrap();
+        for tile in [inside, past] {
+            assert_eq!(app.world().get::<Tile>(tile).unwrap().detail, Some(Detail::Far), "the whole block loads");
+        }
+        // The camera backs off until the block's nearest tile is past the horizon: the whole block goes.
+        *app.world_mut().get_mut::<GlobalTransform>(camera).unwrap() =
+            GlobalTransform::from_translation(Vec3::X * -(100.0 + 2.0 * KEEP_MARGIN_M));
+        app.world_mut().run_system_once(choose).unwrap();
+        for tile in [inside, past] {
+            assert_eq!(app.world().get::<Tile>(tile).unwrap().detail, None, "the whole block leaves");
         }
     }
 

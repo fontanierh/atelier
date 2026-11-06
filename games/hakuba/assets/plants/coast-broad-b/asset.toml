@@ -1,9 +1,9 @@
 # Source foliage for the coast.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["garden-bark", "garden-leaves", "far-plants"]
-inputs_sha256 = "9438bc0d8a80090b4a45b318cbe2ca0198f9d35169dfad9f15ebe99e1f92227e"
+inputs_sha256 = "15301bdcfc34594f5eb0f9d0f16ec7c12dfa33ab16965cc7c43e0bd313992aca"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

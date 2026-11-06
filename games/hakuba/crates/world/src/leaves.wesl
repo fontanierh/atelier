@@ -12,14 +12,20 @@ import bevy_pbr::render::{
 @fragment
 fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
     let in = vertex_output(varyings);
+    // A level of detail fading in or out by distance dithers its pixels away, as Bevy's own fragment shader does.
+    @if(VISIBILITY_RANGE_DITHER)
+    bevy_pbr::render::pbr_functions::visibility_range_dither(in.position, in.visibility_range_dither);
     var out: FragmentOutput;
     var pbr_input = pbr_input_from_standard_material(in, is_front);
     let flags = pbr_input.material.flags;
     let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
         == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
+    // Without `MAY_DISCARD` the depth prepass has cut the leaves out already, and the main pass draws only there.
+    @if(MAY_DISCARD)
     if masked && pbr_input.material.base_color.a < pbr_input.material.alpha_cutoff {
         discard;
-    } else {
+    }
+    {
         pbr_input.material.base_color =
             alpha_discard(flags, pbr_input.material.alpha_cutoff, pbr_input.material.base_color);
         out.color = main_pass_post_lighting_processing(pbr_input, apply_pbr_lighting(pbr_input));

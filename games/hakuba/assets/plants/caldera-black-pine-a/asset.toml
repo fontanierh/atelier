@@ -1,10 +1,10 @@
 # Source foliage: a Japanese black pine of the caldera round Crater Park.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 surface_height_m = 0.0
 source = "src/model.glb"
 textures = ["caldera-black-pine-a", "far-plants"]
-inputs_sha256 = "59de80b81086548fde423fa4f9bae4d19f3a1e402369d7302730d91bc2100785"
+inputs_sha256 = "1f2d46cb9ef2602157bd7a33a36ffa39b8bb3a1e56f7dfeeb3489a95b1777643"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

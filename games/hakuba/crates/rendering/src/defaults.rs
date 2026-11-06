@@ -5,10 +5,11 @@ use bevy::prelude::*;
 use bevy::render::RenderApp;
 
 pub(crate) fn build(app: &mut App) {
-    // Each of the two sun shadow cascades redraws every other frame, taking turns, and the frame between samples the
-    // map it kept: half the shadow cost, with no lag visible on still scenery (the vendored PBR renderer, vendor/).
+    // The far sun shadow cascade redraws every other frame and the frame between samples the map it kept (the vendored
+    // PBR renderer, vendor/). The near one redraws every frame: it holds the player's shadow, which lags its body
+    // visibly when kept.
     if let Some(render_app) = app.get_sub_app_mut(RenderApp) {
-        render_app.insert_resource(ShadowCascadeReuse { periods: vec![2, 2] });
+        render_app.insert_resource(ShadowCascadeReuse { periods: vec![1, 2] });
     }
     #[cfg(not(target_arch = "wasm32"))]
     {

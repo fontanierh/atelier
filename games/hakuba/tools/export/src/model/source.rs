@@ -142,6 +142,15 @@ fn export_inner(
         glb.add_marker(&format!("anchor {k}"), y_up(DVec3::from_array(anchor)), DQuat::IDENTITY);
     }
     glb.write(output)?;
+    // A tree's impostor is baked from the full version as written, its leaf cards already cut.
+    if foliage.is_some()
+        && let Some(impostor) = super::impostor::write(output, &folder.join("../.."))?
+    {
+        let mut extras = glb.extras("full")?.as_object().cloned().unwrap_or_default();
+        extras.insert("impostor".into(), impostor);
+        glb.set_extras(full, extras.into());
+        glb.write(output)?;
+    }
     if foliage.is_none() {
         let mut extras = value["nodes"][full]["extras"].as_object().cloned().unwrap_or_default();
         extras.remove("solid");
@@ -236,7 +245,7 @@ fn write_middle(value: &Value, binary: &[u8], full: usize, extras: Value, path: 
 }
 
 /// A validated source primitive's vertices and triangles.
-fn part(value: &Value, binary: &[u8], primitive: &Value) -> Result<Mesh> {
+pub(super) fn part(value: &Value, binary: &[u8], primitive: &Value) -> Result<Mesh> {
     let floats = |key: &str| -> Result<Option<(Vec<f32>, &str)>> {
         let Some(index) = primitive["attributes"][key].as_u64() else { return Ok(None) };
         let (data, _, (_, kind)) = accessor(value, binary, index as usize)?;
@@ -299,7 +308,7 @@ fn simplify(part: &Mesh, triangles: usize) -> Mesh {
 }
 
 /// A validated source GLB's binary chunk.
-fn binary(bytes: &[u8]) -> &[u8] {
+pub(super) fn binary(bytes: &[u8]) -> &[u8] {
     let json_len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
     &bytes[20 + json_len + 8..]
 }

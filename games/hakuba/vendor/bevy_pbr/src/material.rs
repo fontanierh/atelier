@@ -1128,6 +1128,18 @@ pub(crate) fn specialize_material_meshes(
                     mesh_key |= MeshPipelineKey::VISIBILITY_RANGE_DITHER;
                 }
 
+                // Hakuba: an alpha-masked mesh the view's depth prepass draws, and so cuts out and dithers, is drawn
+                // by the main pass only where that depth is, with no discard (`PREPASS_DEPTH_EQUAL`).
+                mesh_key.remove(MeshPipelineKey::PREPASS_DEPTH_EQUAL);
+                if view_key.contains(MeshPipelineKey::PREPASS_DEPTH_EQUAL)
+                    && material.properties.prepass_enabled
+                    && mesh_key.contains(MeshPipelineKey::MAY_DISCARD)
+                    && mesh_key.intersection(MeshPipelineKey::BLEND_RESERVED_BITS) == MeshPipelineKey::BLEND_OPAQUE
+                {
+                    mesh_key.remove(MeshPipelineKey::MAY_DISCARD | MeshPipelineKey::VISIBILITY_RANGE_DITHER);
+                    mesh_key |= MeshPipelineKey::PREPASS_DEPTH_EQUAL;
+                }
+
                 if view_key.contains(MeshPipelineKey::MOTION_VECTOR_PREPASS) {
                     if mesh_instance
                         .flags()

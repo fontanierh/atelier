@@ -33,9 +33,12 @@ fn main() {
                         // In the browser the game draws into index.html's canvas and fills the page.
                         canvas: Some("#hakuba".into()),
                         fit_canvas_to_parent: true,
-                        // HAKUBA_FULLSCREEN opens borderless fullscreen on the current screen (crates/screens).
-                        mode: if hakuba_screens::switch("HAKUBA_FULLSCREEN").is_some() {
-                            WindowMode::BorderlessFullscreen(MonitorSelection::Current)
+                        // HAKUBA_FULLSCREEN opens borderless fullscreen on the main screen; with HAKUBA_SCREEN=other the
+                        // window opens and then goes fullscreen on the other screen (crates/screens).
+                        mode: if hakuba_screens::switch("HAKUBA_FULLSCREEN").is_some()
+                            && !hakuba_screens::switch("HAKUBA_SCREEN").is_some_and(|value| value == "other")
+                        {
+                            WindowMode::BorderlessFullscreen(MonitorSelection::Primary)
                         } else {
                             WindowMode::Windowed
                         },
@@ -59,6 +62,9 @@ fn main() {
                     ..default()
                 }),
         )
+        // A frame that comes late moves the world on by at most a 15th of a second, as Unreal clamps its frame time: the
+        // game slows through a hitch rather than jumping over it, the rider and the camera with it.
+        .insert_resource(Time::<Virtual>::from_max_delta(std::time::Duration::from_secs_f64(1.0 / 15.0)))
         .add_plugins((
             ScreensPlugin,
             SettingsPlugin,

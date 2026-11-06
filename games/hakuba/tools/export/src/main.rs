@@ -96,6 +96,7 @@ impl Asset {
             Asset::Texture(settings) => settings.outputs(output),
             Asset::Sound(_) => vec![output.to_path_buf(), sound::takes_file(output)],
             Asset::Prop(settings) => settings.outputs(output),
+            Asset::Plant(_) => model::plant::outputs(output),
             _ => vec![output.to_path_buf()],
         }
     }

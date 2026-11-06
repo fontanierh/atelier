@@ -1,9 +1,9 @@
 # Source foliage: a plant of Brinecove's hills.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["brinecove-leaf-deep", "brinecove-leaf-gold", "brinecove-leaf-mid", "brinecove-leaf-rust", "brinecove-leaf-warm", "brinecove-wood-dark"]
-inputs_sha256 = "589539123cd84386defe314510a6bb5596f6b0a9c7dd3f3707aff482070e1391"
+inputs_sha256 = "c9ae4c1d67fbc74886cbf1a221a500c2448e271e60ad86887b2d3d5e3aced8a6"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

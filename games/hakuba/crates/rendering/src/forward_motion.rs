@@ -12,7 +12,7 @@ use bevy::core_pipeline::prepass::{
 use bevy::core_pipeline::schedule::{Core3d, Core3dSystems};
 use bevy::core_pipeline::skybox::SkyboxPipelineId;
 use bevy::ecs::schedule::ScheduleCleanupPolicy;
-use bevy::pbr::{ContactShadows, ForwardMotion, ScreenSpaceTransmission};
+use bevy::pbr::{CameraPrepassSkipped, ContactShadows, ForwardMotion, ScreenSpaceTransmission};
 use bevy::prelude::*;
 use bevy::render::camera::ExtractedCamera;
 use bevy::render::extract_component::{ExtractComponent, ExtractComponentPlugin};
@@ -24,9 +24,10 @@ use bevy::render::render_resource::{
     TextureDescriptor, TextureDimension, TextureSampleType, TextureUsages, binding_types::texture_2d,
 };
 use bevy::render::renderer::{RenderContext, RenderDevice, ViewQuery};
+use bevy::render::sync_world::RenderEntity;
 use bevy::render::texture::{ColorAttachment, TextureCache};
 use bevy::render::view::{ExtractedView, ViewDepthStencilTexture, ViewTarget, ViewUniformOffset};
-use bevy::render::{Render, RenderApp, RenderStartup, RenderSystems};
+use bevy::render::{Extract, ExtractSchedule, Render, RenderApp, RenderStartup, RenderSystems};
 
 /// How a camera draws its motion: `Single` is the desktop world camera's, `Compare` and `Publish` are validation
 /// stages; cameras without it keep Bevy's original renderer.
@@ -61,7 +62,20 @@ pub(super) fn build(app: &mut App) {
     if let Some(render_app) = app.get_sub_app_mut(RenderApp) {
         render_app
             .add_systems(RenderStartup, (install_comparison_pass, init_motion_transfer))
-            .add_systems(Render, prepare_comparison.in_set(RenderSystems::PrepareResources));
+            .add_systems(Render, prepare_comparison.in_set(RenderSystems::PrepareResources))
+            .add_systems(ExtractSchedule, mark_skipped_prepass);
+    }
+}
+
+/// Tells the PBR renderer which views skip their camera prepass: their alpha-masked meshes must cut themselves out in
+/// the main pass, as no prepass depth was drawn for them to be drawn by.
+fn mark_skipped_prepass(mut commands: Commands, cameras: Extract<Query<(RenderEntity, &ForwardMotionMode)>>) {
+    for (view, mode) in &cameras {
+        if *mode == ForwardMotionMode::Single {
+            commands.entity(view).insert(CameraPrepassSkipped);
+        } else {
+            commands.entity(view).remove::<CameraPrepassSkipped>();
+        }
     }
 }
 

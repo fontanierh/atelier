@@ -1,9 +1,9 @@
 # Source foliage: an oak of Belmonte's hills.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["olive-bark", "tuscan-oak-leaves", "far-plants"]
-inputs_sha256 = "4367efe5fc7091301222816c3f6fda8b32f974e093e10f714a874418e3e1a86f"
+inputs_sha256 = "b4542effcabdd41644e50f23ab709781ae35868ccab35ef1bce57968cd50d349"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

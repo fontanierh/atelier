@@ -10,6 +10,7 @@ bevy.workspace = true
 hakuba_screens.workspace = true
 hakuba_settings.workspace = true
 
-# The vendored Metal backend keeps each frame on screen at least a 60th of a second. See vendor/README.md.
+# The vendored Metal backend keeps each frame on screen at least a 60th of a second, and times the GPU's work.
+# See vendor/README.md.
 [target.'cfg(target_os = "macos")'.dependencies]
 wgpu-hal = "30"

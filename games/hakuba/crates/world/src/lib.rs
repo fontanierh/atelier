@@ -7,6 +7,7 @@ mod actors;
 mod blocks;
 mod collision;
 mod ground;
+mod impostor;
 mod loading;
 mod look;
 mod painterly;
@@ -30,9 +31,33 @@ use tiles::Tile;
 
 pub use collision::{CollisionCoverage, CollisionFocus, CollisionSnapshot, CollisionTriangle, WorldCollision};
 pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
-pub use loading::{SceneryLoaded, Unready};
-pub use pixels::Riding;
+pub use loading::{Loaded, SceneryLoaded, Unready};
 pub use push::PushesPlants;
+
+/// What the forest lab (`crates/forest_lab`) draws its forest with: the world's own camera look, sky, sun and plant
+/// materials, so what it proves about drawing trees holds in the game.
+pub mod lab {
+    use bevy::prelude::*;
+
+    pub use crate::impostor::{Baked, Impostor, Impostors};
+    pub use crate::look::{SHADOW_ONLY, camera, sky, sun};
+    pub use crate::wind::{ShadowFoliage, SourceFoliage, SourceProfile, SwayingMaterials, tag};
+
+    /// The plugins the lab's look and plants need: the painterly filter, the plants' wind and what pushes them, and
+    /// the trees' impostors.
+    pub struct LabPlugin;
+
+    impl Plugin for LabPlugin {
+        fn build(&self, app: &mut App) {
+            app.add_plugins((
+                crate::painterly::PainterlyPlugin,
+                crate::push::PushPlugin,
+                crate::wind::WindPlugin,
+                crate::impostor::ImpostorPlugin,
+            ));
+        }
+    }
+}
 pub use water::WaterBodies;
 
 /// The world's index: one node per tile, and the spawn.
@@ -65,7 +90,7 @@ impl Plugin for WorldPlugin {
             water::WaterPlugin,
             wind::WindPlugin,
         ))
-        .add_plugins(blocks::BlocksPlugin)
+        .add_plugins((blocks::BlocksPlugin, impostor::ImpostorPlugin))
         .add_systems(Startup, open_at_chosen_start)
         .add_systems(OnEnter(Screen::World), spawn_world)
         .add_systems(Update, read_index.run_if(in_state(Screen::World)))

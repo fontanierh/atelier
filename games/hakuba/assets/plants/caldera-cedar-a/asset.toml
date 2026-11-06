@@ -1,10 +1,10 @@
 # Source foliage: a sugi cedar of the caldera round Crater Park.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 surface_height_m = 0.0
 source = "src/model.glb"
 textures = ["caldera-cedar-a", "far-plants"]
-inputs_sha256 = "fe569d4f70e07c06230c161228fac498feef15b137838b9bd9dc8ee349000b7a"
+inputs_sha256 = "1119412a8df03c8f61a5f3f2bf028e863f8261dc361c6530692615f0772e757c"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

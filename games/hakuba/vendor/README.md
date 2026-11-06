@@ -42,5 +42,5 @@ The wgpu-hal 30.0.1 crate, of which only the Metal backend is changed:
   run them together.
 - **Frames on screen** (`wgpu_hal::metal::frames`). `set_minimum_on_screen` keeps each frame on screen at least that
   long (crates/pacing sets a 60th of a second); `shown` reports when frames actually reached the screen; `gpu_busy_ms`
-  how long the GPU worked, which the drawn pixels follow (crates/world `pixels.rs`); `buffers` how many buffers were
+  how long the GPU worked, logged each second per frame (crates/pacing); `buffers` how many buffers were
   made and reused. Without a call to `set_minimum_on_screen` frames present as upstream.

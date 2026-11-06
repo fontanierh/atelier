@@ -29,6 +29,7 @@ use serde::Deserialize;
 
 use crate::collision::CollisionSource;
 use crate::ground::built_solid;
+use crate::impostor::{Baked, Impostor, Impostors};
 use crate::loading::{Loaded, Missing};
 use crate::look::SHADOW_ONLY;
 use crate::tiles::{Spawning, TILES};
@@ -132,12 +133,12 @@ struct Job {
     kept: bool,
 }
 
-/// How far from the camera a full tile's tree shows its full version before fading to its middle one, and over how
-/// many metres it fades. From 65 m rather than 80 m, the open hilltop looks the same and the densest forest view's
-/// GPU frame drops from 17.0 to 16.3 ms; from 50 m it drops to 15.5 ms, but the crowns past 50 m turn visibly chunkier
-/// and close the sky between them.
-const TREE_LOD_M: f32 = 65.0;
-const TREE_FADE_M: f32 = 12.0;
+/// How far from the camera a tree shows its full version before fading to its impostor (impostor.rs), or to its
+/// middle version for a tree with none, and over how many metres it fades. In the forest lab (crates/forest_lab), from
+/// the air, a swap at 150 m over 12 m changed trees' shapes in 17 frames of 238, over 40 m in 4, and at 200 m over 40 m
+/// in none; on the forest flight that cost 14.8 ms of GPU time a frame, against 11.4 at 150 m over 12 m.
+const TREE_LOD_M: f32 = 200.0;
+const TREE_FADE_M: f32 = 40.0;
 /// Over how many metres a full tile's small plants fade to their middle versions.
 const SMALL_FADE_M: f32 = 16.0;
 
@@ -264,6 +265,7 @@ struct Models<'w> {
 #[derive(SystemParam)]
 struct Materials<'w> {
     swaying: SwayingMaterials<'w>,
+    impostors: Impostors<'w>,
     painted: PaintedMaterials<'w>,
     moving: MovingPaintedMaterials<'w>,
     water: WaterMaterials<'w>,
@@ -331,7 +333,30 @@ fn spawn(
             let blend = far.is_some() && waiting.blend && has_middle;
             // A full tile's small plants fade to their middle versions before the tile becomes middle.
             let small = small_lod.filter(|_| !per_copy && far.is_none() && !waiting.middle && has_middle);
+            // A tree with an impostor shows it wherever it would show its middle version, which only casts its shadow.
+            let full_node = gltf.named_nodes.get("full").and_then(|n| models.nodes.get(n));
+            let baked = full_node
+                .and_then(|node| node.extras.as_ref())
+                .and_then(|extras| serde_json::from_str::<serde_json::Value>(&extras.value).ok())
+                .and_then(|extras| {
+                    Some((
+                        Baked::of(&extras)?,
+                        serde_json::from_value::<SourceProfile>(extras.get("source_foliage")?.clone()).ok()?,
+                    ))
+                })
+                .filter(|_| has_middle && full_vertices >= MERGE_BELOW_VERTICES);
             let mut versions = match (waiting.middle, has_middle) {
+                // A tree with an impostor shows its full version out to `TREE_LOD_M` whichever tile holds it, a middle
+                // or blending one too: every tile within that reach is one of these. An impostor looks the same at
+                // every distance, so a blending tile has nothing else to blend.
+                _ if (blend || far.is_none()) && per_copy && baked.is_some() => {
+                    vec![("full", Role::Seen), ("impostor", Role::Seen), ("middle", Role::Shadow)]
+                }
+                _ if blend && baked.is_some() => vec![("impostor", Role::Seen), ("middle", Role::Shadow)],
+                _ if far.is_some() && baked.is_some() => vec![("impostor", Role::Seen)],
+                (true, true) if far.is_none() && baked.is_some() => {
+                    vec![("impostor", Role::Seen), ("middle", Role::Shadow)]
+                }
                 // A blending tile shows both, the middle version fading out where the far fades in.
                 _ if blend => vec![("middle", Role::Both), ("far", Role::Both)],
                 _ if far.is_some() => vec![("far", Role::Both)],
@@ -350,12 +375,19 @@ fn spawn(
             }
             let mut shown = Vec::with_capacity(versions.len());
             for (name, role) in versions {
-                let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
+                let looked_up = if name == "impostor" { "full" } else { name };
+                let Some(node) = gltf.named_nodes.get(looked_up).and_then(|node| models.nodes.get(node)) else {
                     warn!("a model has no {name} node");
                     commands.entity(entity).remove::<Waiting>();
                     continue 'copies;
                 };
-                let mut parts = if matches!(role, Role::Collision) {
+                let mut parts = if name == "impostor" {
+                    let (baked, profile) = baked.as_ref().expect("an impostor version has its bake");
+                    let Some(path) = waiting.model.path() else { continue 'copies };
+                    let (material, quad) =
+                        materials.impostors.of(&path.path().to_string_lossy(), baked, profile, &mut meshes);
+                    vec![(quad, Look::Impostor(material, baked.clone()))]
+                } else if matches!(role, Role::Collision) {
                     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else {
                         continue 'copies;
                     };
@@ -400,7 +432,7 @@ fn spawn(
                             end_margin: lod - fade / 2.0..lod + fade / 2.0,
                             use_aabb: false,
                         }),
-                        ("middle", Role::Seen) => Some(VisibilityRange {
+                        ("middle" | "impostor", Role::Seen) => Some(VisibilityRange {
                             start_margin: lod - fade / 2.0..lod + fade / 2.0,
                             end_margin: f32::MAX / 2.0..f32::MAX / 2.0,
                             use_aabb: false,
@@ -463,7 +495,7 @@ fn spawn(
                 if matches!(role, Role::Shadow) && !shadows {
                     continue;
                 }
-                let vertices = vertices(&models.meshes, &meshes, node);
+                let vertices = if name == "impostor" { 4 } else { vertices(&models.meshes, &meshes, node) };
                 let merge = range.as_ref().is_none_or(|range| range.use_aabb)
                     && vertices < MERGE_BELOW_VERTICES
                     && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
@@ -488,7 +520,7 @@ fn spawn(
                     let vertices = source.count_vertices().max(1);
                     // A far tile is seen whole or not at all, so its alike far versions merge as one.
                     if let Some(tile) = far
-                        && name == "far"
+                        && (name == "far" || (name == "impostor" && !blend))
                         && merge
                         && !solid
                         && let Some(far_tile) = far_tiles.0.get_mut(&tile)
@@ -629,7 +661,9 @@ impl FarTile {
                 let range = copies.cursor..copies.cursor + count;
                 copies.cursor += count;
                 budget.vertices -= count * copies.vertices;
-                let Some(chunk) = merged(meshes, &copies.mesh, &copies.transforms[range], false) else { continue };
+                let Some(chunk) = merged(meshes, &copies.mesh, &group.look, &copies.transforms[range], false) else {
+                    continue;
+                };
                 match &mut group.mesh {
                     Some(mesh) => {
                         if let Err(error) = mesh.merge(&chunk) {
@@ -685,7 +719,7 @@ fn place(
                 break;
             }
             let range = job.cursor..job.cursor + count;
-            let Some(mut combined) = merged(meshes, &job.mesh, &job.transforms[range], job.solid) else {
+            let Some(mut combined) = merged(meshes, &job.mesh, &job.look, &job.transforms[range], job.solid) else {
                 job.cursor += count;
                 budget.vertices -= count * job.vertices;
                 continue;
@@ -737,7 +771,7 @@ fn place(
                             let weight = colours.iter().map(|c| c[0].abs()).fold(0.0, f32::max);
                             Some(profile.shadow_motion_bound(weight))
                         }
-                        Look::Still(_) | Look::Painted(_) | Look::Water(_) => Some((0.0, 0.0)),
+                        Look::Still(_) | Look::Painted(_) | Look::Water(_) | Look::Impostor(..) => Some((0.0, 0.0)),
                         // Unbounded motion cannot safely be range-culled.
                         Look::Swaying(_) | Look::MovingPainted(_) => return None,
                     },
@@ -866,6 +900,7 @@ pub(crate) fn insert_look(part: &mut EntityCommands, look: &Look) {
         Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
         Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
         Look::Water(material) => part.insert(MeshMaterial3d(material.clone())),
+        Look::Impostor(material, _) => part.insert(MeshMaterial3d(material.clone())),
     };
 }
 
@@ -1142,7 +1177,17 @@ fn squares(transforms: &[Transform], side: f32) -> impl Iterator<Item = Vec<Tran
 }
 
 /// One mesh holding `mesh` once per transform. Solid meshes also stay on the CPU for raycasts.
-fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], solid: bool) -> Option<Mesh> {
+fn merged(
+    meshes: &Assets<Mesh>,
+    mesh: &Handle<Mesh>,
+    look: &Look,
+    transforms: &[Transform],
+    solid: bool,
+) -> Option<Mesh> {
+    // An impostor's quads carry each tree's placement in their vertices, which moving a quad would not change.
+    if let Look::Impostor(_, baked) = look {
+        return Some(crate::impostor::quads(baked, transforms, RenderAssetUsages::RENDER_WORLD));
+    }
     let mesh = meshes.get(mesh)?;
     let mut merged = mesh.clone().transformed_by(*transforms.first()?);
     for &transform in &transforms[1..] {
@@ -1162,6 +1207,7 @@ pub(crate) enum Look {
     Painted(Handle<Painted>),
     MovingPainted(Handle<MovingPainted>),
     Water(Handle<WaterMaterial>),
+    Impostor(Handle<Impostor>, Baked),
 }
 
 impl Look {
@@ -1174,6 +1220,7 @@ impl Look {
             Look::Painted(material) => material.id().untyped(),
             Look::MovingPainted(material) => material.id().untyped(),
             Look::Water(material) => material.id().untyped(),
+            Look::Impostor(material, _) => material.id().untyped(),
         }
     }
 }
@@ -1188,6 +1235,14 @@ fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMa
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn no_tree_within_full_reach_stands_in_a_far_tile() {
+        // A far tile shows only impostors, so every tile holding a tree still fading from its full version is middle
+        // or blending: its centre at most half a tile's diagonal farther than the tree, with the tiles' 64 m grid.
+        let reach = TREE_LOD_M + TREE_FADE_M / 2.0 + 64.0 * std::f32::consts::SQRT_2 / 2.0;
+        assert!(reach <= crate::tiles::FAR_M + crate::tiles::BLEND_M - crate::tiles::KEEP_MARGIN_M);
+    }
 
     #[test]
     fn collision_material_keys_match_reordered_drawn_faces_not_nearby_layers() {
@@ -1273,7 +1328,14 @@ mod tests {
             let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
             let vertices = app.world().resource::<Assets<Mesh>>().get(&mesh).unwrap().count_vertices();
             let transforms: Vec<_> = (0..1200).map(|x| Transform::from_xyz(x as f32, 0.0, 0.0)).collect();
-            let expected = merged(app.world().resource::<Assets<Mesh>>(), &mesh, &transforms, true).unwrap();
+            let expected = merged(
+                app.world().resource::<Assets<Mesh>>(),
+                &mesh,
+                &Look::Still(Handle::default()),
+                &transforms,
+                true,
+            )
+            .unwrap();
             let jobs = VecDeque::from([Job {
                 mesh,
                 material: String::new(),
@@ -1333,7 +1395,14 @@ mod tests {
                         .with_scale(Vec3::splat(0.5 + x as f32 * 0.1))
                 })
                 .collect();
-            let expected = merged(app.world().resource::<Assets<Mesh>>(), &mesh, &transforms, false).unwrap();
+            let expected = merged(
+                app.world().resource::<Assets<Mesh>>(),
+                &mesh,
+                &Look::Still(Handle::default()),
+                &transforms,
+                false,
+            )
+            .unwrap();
             let owner = app
                 .world_mut()
                 .spawn(TestJobs(VecDeque::from([Job {
@@ -1692,7 +1761,7 @@ mod tests {
             let mut meshes = app.world_mut().resource_mut::<Assets<Mesh>>();
             let cube = meshes.add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
             let copies = [Transform::from_xyz(4.0, 0.0, 0.0), Transform::from_xyz(6.0, 0.0, 0.0)];
-            let combined = merged(&meshes, &cube, &copies, true).unwrap();
+            let combined = merged(&meshes, &cube, &Look::Still(Handle::default()), &copies, true).unwrap();
             assert!(combined.asset_usage.contains(RenderAssetUsages::MAIN_WORLD));
             (cube, meshes.add(combined))
         };

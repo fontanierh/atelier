@@ -13,7 +13,7 @@ impl Plugin for ScreensPlugin {
             .add_sub_state::<Pause>()
             .add_sub_state::<DevMode>()
             .add_systems(Startup, spawn_fps)
-            .add_systems(Update, (back, hover, show_fps))
+            .add_systems(Update, (back, hover, show_fps, choose_screen.run_if(not(resource_exists::<GameScreen>))))
             .add_systems(OnEnter(Pause::Paused), |mut time: ResMut<Time<Virtual>>| time.pause())
             .add_systems(OnExit(Pause::Paused), |mut time: ResMut<Time<Virtual>>| time.unpause());
     }
@@ -145,6 +145,32 @@ pub fn run_this_thread_as(class: ThreadClass) {
     }
     #[cfg(not(target_os = "macos"))]
     let _ = class;
+}
+
+/// The screen the game plays on, whose refresh rate paces its frames: the main screen, or with `HAKUBA_SCREEN=other`
+/// the first other screen (a laptop's own beside an external one), where the game opens fullscreen (src/main.rs), so a
+/// measurement can run on one screen while the other stays free. macOS names no screen usefully: winit calls each
+/// "Monitor #N". The screens are known only once the window is open, and a fullscreen window asked for another screen
+/// leaves fullscreen instead of moving, so with `other` the window opens windowed and goes fullscreen here.
+#[derive(Resource, Clone, Copy)]
+pub struct GameScreen(pub Entity);
+
+fn choose_screen(
+    mut commands: Commands,
+    screens: Query<(Entity, &bevy::window::Monitor, Has<bevy::window::PrimaryMonitor>)>,
+    mut window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+) {
+    let other = switch("HAKUBA_SCREEN").is_some_and(|value| value == "other");
+    let Some((entity, screen, _)) = screens.iter().find(|(_, _, primary)| *primary != other) else { return };
+    info!(
+        "SCREEN {} at {} Hz",
+        if other { "other" } else { "main" },
+        screen.refresh_rate_millihertz.map_or(0, |mhz| mhz / 1000)
+    );
+    if other && let Ok(mut window) = window.single_mut() {
+        window.mode = bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Entity(entity));
+    }
+    commands.insert_resource(GameScreen(entity));
 }
 
 /// Whether the desktop switch `name` is set to `1`.

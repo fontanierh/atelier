@@ -108,9 +108,10 @@ impl Resolution {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum Shadows {
     Off,
-    /// Over 60 m, in two cascades: sharp within 20 m, then the trees and bushes along the road.
+    /// Over 300 m, in four cascades: sharp within 20 m, then fading out over the last fifth, far enough that a tree's
+    /// shadow is there long before the player reaches it.
     Near,
-    /// Over 150 m, in two cascades.
+    /// Over 500 m, in four cascades.
     Far,
 }
 
@@ -119,8 +120,8 @@ impl Shadows {
     pub fn reach(self) -> Option<(f32, usize)> {
         match self {
             Shadows::Off => None,
-            Shadows::Near => Some((60.0, 2)),
-            Shadows::Far => Some((150.0, 2)),
+            Shadows::Near => Some((300.0, 4)),
+            Shadows::Far => Some((500.0, 4)),
         }
     }
 }

@@ -116,6 +116,8 @@ fn build_output(vertex_in: Vertex) -> VertexOutput {
     // A hair nearer than the prepass put it. The two passes are compiled apart, so a moving vertex may land a rounding
     // error further than the depth the prepass wrote, fail the depth test and leave a hole showing the clear colour for
     // a frame: black leaves flickering in the wind.
+    // Drawn only where the prepass's depth equals its own, it must land exactly there instead.
+    @if(!PREPASS_DEPTH_EQUAL)
     out.position.z *= DEPTH_MARGIN;
     // Where the vertex was last frame is found from its instance, swayed and pushed as it is now (see the prepass).
     @if(FORWARD_MOTION)

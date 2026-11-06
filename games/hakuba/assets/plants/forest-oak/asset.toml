@@ -1,9 +1,9 @@
 # Source foliage: an oak of the mountain forest around Hidamari.
 kind = "plant"
-shadow_distance_m = 80.0
+shadow_distance_m = 520.0
 source = "src/model.glb"
 textures = ["garden-bark", "garden-leaves", "far-plants"]
-inputs_sha256 = "1a603d1825998903b64f65567f425a0585f8a6c343cea1d80cc5991ce86e5a5a"
+inputs_sha256 = "e6cf828b2feb8dfbd5b468bd7009c91cadf8047847956763227ea51d316e38f0"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

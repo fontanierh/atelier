@@ -25,6 +25,12 @@ use crate::tiles::{Spawning, Tile};
 /// How many frames in a row the renderer must start no new pipeline and wait on none before the splash lifts: what a
 /// frame draws for the first time has its pipelines made over the next few.
 const SETTLED_FRAMES: u32 = 10;
+/// Once settled, the splash still shows until this many frames in a row take at most [`CALM_S`], or for at most
+/// [`WARMING_S`]: the first frames that draw the world as it will be seen (culled, its buffers first used) hitch, and
+/// they hitch under the splash instead of in front of the player.
+const CALM_FRAMES: u32 = 30;
+const CALM_S: f32 = 0.0185;
+const WARMING_S: f32 = 3.0;
 
 const BACKGROUND: Color = Color::srgb(0.07, 0.07, 0.09);
 const TRACK: Color = Color::srgba(1.0, 1.0, 1.0, 0.12);
@@ -63,6 +69,9 @@ struct Splash {
     /// How many pipelines the renderer had last frame, and for how many frames in a row it has started none.
     pipelines: usize,
     settled: u32,
+    /// When it settled, and for how many frames in a row since the renderer has kept the pace.
+    warming: Option<f32>,
+    calm: u32,
 }
 
 /// The splash's bar, which fills as the world loads.
@@ -120,7 +129,7 @@ fn count(cache: Res<PipelineCache>, pipelines: Res<Pipelines>, mut named: Local<
 
 /// How many pipelines the renderer had made once the world had loaded, and since.
 #[derive(Resource, Default)]
-pub(crate) struct Loaded {
+pub struct Loaded {
     pipelines: usize,
 }
 
@@ -271,13 +280,24 @@ fn lift(
         stage.0 = says;
     }
 
-    if splash.settled >= SETTLED_FRAMES {
-        info!("the world loaded in {:.1} s, needing {made} pipelines", time.elapsed_secs() - splash.since);
+    let now = time.elapsed_secs();
+    if splash.warming.is_none() && splash.settled >= SETTLED_FRAMES {
+        splash.warming = Some(now);
+    }
+    let Some(warming) = splash.warming else { return };
+    // The world warms up drawn as it will be seen.
+    for mesh in &unculled {
+        commands.entity(mesh).remove::<(NoFrustumCulling, Unculled)>();
+    }
+    splash.calm = if time.delta_secs() <= CALM_S { splash.calm + 1 } else { 0 };
+    if splash.calm >= CALM_FRAMES || now - warming >= WARMING_S {
+        info!(
+            "the world loaded in {:.1} s, needing {made} pipelines, after warming up for {:.1} s",
+            now - splash.since,
+            now - warming
+        );
         commands.insert_resource(Loaded { pipelines: made });
         commands.entity(entity).despawn();
-        for mesh in &unculled {
-            commands.entity(mesh).remove::<(NoFrustumCulling, Unculled)>();
-        }
     }
 }
 

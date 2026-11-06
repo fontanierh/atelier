@@ -13,9 +13,12 @@ What every screen shares.
   backend, vendor/wgpu-hal), and logged each second with the buffers the backend made.
 - `switch` and `switched_on`, the desktop switches: environment variables, named `HAKUBA_…`, that playtests and
   measurements set. They are read the same way everywhere, never in the browser, and the game plays the same without
-  any. The ones there are: `HAKUBA_START` (world), `HAKUBA_FORWARD_MOTION`, `HAKUBA_FIXED_PIXELS` and
+  any. The ones there are: `HAKUBA_START` (world), `HAKUBA_FORWARD_MOTION` and
   `HAKUBA_PIPELINES` (world), `HAKUBA_SCRIPT` and `HAKUBA_RECORD` (gamepad), `HAKUBA_DEV`, `HAKUBA_SHOT` and
-  `HAKUBA_TRIS` (dev), and `HAKUBA_FULLSCREEN` (the program).
+  `HAKUBA_TRIS` (dev), `HAKUBA_MUTE` (audio), `HAKUBA_SCREEN` (here) and `HAKUBA_FULLSCREEN` (the program).
+- `GameScreen`, the screen the game plays on, whose refresh rate paces its frames (crates/pacing): the main screen,
+  or with `HAKUBA_SCREEN=other` the first other screen (a laptop's own beside an external one), borderless
+  fullscreen there.
 - `run_this_thread_as`, which sets how urgently macOS runs the calling thread: the frame loop interactive, work in
   the background (the skate session built ahead) at utility.
 

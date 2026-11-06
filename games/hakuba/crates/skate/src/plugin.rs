@@ -95,6 +95,7 @@ impl Plugin for SkatePlugin {
                     .after(AnimationSystems)
                     .before(PoseSystems::Apply)
                     .before(TransformSystems::Propagate)
+                    .before(PlayerSystems::CameraHandover)
                     .run_if(in_state(Screen::World))
                     .run_if(in_state(DevMode::Off)),
             )
@@ -655,7 +656,8 @@ fn simulate(
         ride.session.as_mut().unwrap().set_aspect_ratio(window.width() / window.height().max(1.));
     }
     let period = ride.session.as_ref().unwrap().period();
-    // Keep a full fixed-step accumulator. A long host hitch pauses instead of inventing a huge solver step.
+    // Keep a full fixed-step accumulator. A long host hitch pauses instead of inventing a huge solver step: the game's
+    // clock already moves at most a 15th of a second a frame (src/main.rs).
     ride.accumulator += time.delta_secs().min(0.25);
     let ticking = std::time::Instant::now();
     let mut ticks = 0;
@@ -816,9 +818,7 @@ fn present(
     mut parts: Query<(&BoardPart, &mut Transform), Without<Player>>,
     mut camera: Query<(&mut Transform, &mut Projection), (With<Camera3d>, Without<Player>, Without<BoardPart>)>,
     mut walking_fov: Local<Option<f32>>,
-    mut riding: ResMut<hakuba_world::Riding>,
 ) {
-    riding.set_if_neq(hakuba_world::Riding(status.active));
     if !status.active {
         for (_, mut at) in &mut parts {
             at.scale = Vec3::splat(0.001);

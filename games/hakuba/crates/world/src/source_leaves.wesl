@@ -13,6 +13,9 @@ struct FoliageProfile { direction: vec4<f32>, slow: vec4<f32>, fast: vec4<f32>, 
 @fragment
 fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> FragmentOutput {
     let input = vertex_output(varyings);
+    // A level of detail fading in or out by distance dithers its pixels away, as Bevy's own fragment shader does.
+    @if(VISIBILITY_RANGE_DITHER)
+    bevy_pbr::render::pbr_functions::visibility_range_dither(input.position, input.visibility_range_dither);
     var neutral = input;
     @if(VERTEX_COLORS)
     neutral.color = vec4<f32>(1.0);
@@ -25,9 +28,12 @@ fn fragment(varyings: Varyings, @builtin(front_facing) is_front: bool) -> Fragme
     let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
         == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
     var out: FragmentOutput;
+    // Without `MAY_DISCARD` the depth prepass has cut the leaves out already, and the main pass draws only there.
+    @if(MAY_DISCARD)
     if masked && surface.material.base_color.a < surface.material.alpha_cutoff {
         discard;
-    } else {
+    }
+    {
         surface.material.base_color = alpha_discard(flags, surface.material.alpha_cutoff, surface.material.base_color);
         let depth = max(-(view.view_from_world * input.world_position).z, 0.0);
         let haze = 1.0 - exp(-max(depth - profile.push_haze.z, 0.0) / profile.push_haze.w);

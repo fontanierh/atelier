@@ -229,8 +229,7 @@ fn feed(
     reports: Res<Reports>,
     script: Option<ResMut<Script>>,
     mut record: Option<ResMut<Record>>,
-    loaded: Option<Res<hakuba_world::SceneryLoaded>>,
-    unready: Query<(), With<hakuba_world::Unready>>,
+    loaded: Option<Res<hakuba_world::Loaded>>,
     mut fed: ResMut<Fed>,
     pads: Query<Entity, With<Gamepad>>,
     mut commands: Commands,
@@ -241,14 +240,14 @@ fn feed(
 ) {
     let reported = reports.0.lock().unwrap().try_iter().last();
     if let Some(record) = record.as_mut() {
-        if record.loaded.is_none() && loaded.is_some() && unready.is_empty() {
+        if record.loaded.is_none() && loaded.is_some() {
             info!("pad record: world loaded");
             record.loaded = Some(std::time::Instant::now());
         }
     }
     let Some(pad) = script
         .map(|mut script| {
-            if script.loaded.is_none() && loaded.is_some() && unready.is_empty() {
+            if script.loaded.is_none() && loaded.is_some() {
                 info!("pad script: world loaded");
                 script.loaded = Some(std::time::Instant::now());
             }

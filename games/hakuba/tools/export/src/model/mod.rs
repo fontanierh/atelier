@@ -12,6 +12,7 @@
 //! exports the textures only it shows (`own_textures`) beside its own file, as BC7.
 
 mod cutout;
+pub(crate) mod impostor;
 pub mod plant;
 pub mod prop;
 mod source;

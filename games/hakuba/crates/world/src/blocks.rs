@@ -1,8 +1,9 @@
-//! The distant land drawn in blocks, as hierarchical levels of detail do. Beyond `BLOCK_M` from
-//! the camera, the meshes of the far tiles in each block of 8 × 8 tiles (512 m) merge into one mesh per look, so
-//! the GPU draws a few hundred meshes for the land past half a kilometre instead of tens of thousands; the tiles' own meshes hide
-//! meanwhile. A merged mesh holds the very vertices of the meshes it replaces, so nothing changes on screen as a tile
-//! joins or leaves its block. Its merges and the blocks the depth grid hides are logged at debug level.
+//! The distant land drawn in blocks, as hierarchical levels of detail do. Once a block of 8 × 8 tiles (512 m) is all
+//! beyond `BLOCK_M` from the camera, the meshes of its far tiles merge into one mesh per look, so the GPU draws a few
+//! hundred meshes for the distant land instead of tens of thousands; the tiles' own meshes hide meanwhile. A block
+//! switches whole, as Unreal's HLOD clusters do, and its merged meshes depend only on its distance in √2 steps: the
+//! same block merges again only as its tiles stream in or its distance passes a step, not as each tile crosses a ring
+//! around the moving camera. Its merges and the blocks the depth grid hides are logged at debug level.
 
 use std::collections::{HashMap, HashSet};
 
@@ -17,19 +18,38 @@ use bevy::transform::TransformSystems;
 use hakuba_rendering::{DEPTH_GRID, DepthGrid};
 use hakuba_screens::Screen;
 
+use crate::impostor::Impostor;
 use crate::scenery::{Look, insert_look};
 use crate::tiles::Tile;
 use crate::vertex_paint::{MovingPainted, Painted};
 use crate::wind::{SourceFoliage, Swaying};
 
-/// How far from the camera, to a tile's centre, a far tile joins its block. From 900 m, the far tiles between 400 m
-/// and 900 m were still 5,000 meshes, holding a 68° view over the valley under 60 frames a second.
-const BLOCK_M: f32 = 450.0;
+/// How far from the camera, to its nearest tile's centre, a block merges. Tiles joining one by one at 450 m, as the
+/// camera glided at 12 m/s, merged a block every 50 ms: half a frame's work gathering, an upload and a GPU stall a
+/// little later, and the block's trees reshaped each time. From 900 m, the far tiles between 400 m and 900 m were still
+/// 5,000 meshes, holding a 68° view over the valley under 60 frames a second.
+const BLOCK_M: f32 = 300.0;
 /// A block's side, in tiles.
 const BLOCK_TILES: u32 = 8;
-/// A tile stays in or out of its block for this many metres past `BLOCK_M`, so a camera moving to and fro there
-/// does not rebuild the block each frame.
-const HYSTERESIS_M: f32 = 8.0;
+
+/// How far each block's nearest tile's centre is from `eye`, seen from above, by block.
+pub(crate) fn block_distances<'a>(tiles: impl Iterator<Item = &'a Tile>, eye: Vec2) -> HashMap<UVec2, f32> {
+    let mut nearest = HashMap::new();
+    for tile in tiles {
+        let (cell, centre) = tile.cell();
+        let distance = nearest.entry(block_of(cell)).or_insert(f32::MAX);
+        *distance = distance.min(centre.xz().distance(eye));
+    }
+    nearest
+}
+
+/// The block holding the tile at `cell`.
+pub(crate) fn block_of(cell: UVec2) -> UVec2 {
+    cell / BLOCK_TILES
+}
+/// A block stays merged or apart for this many metres past `BLOCK_M`, and at its step for this many past the next, so
+/// a camera moving to and fro there does not rebuild it each frame.
+const HYSTERESIS_M: f32 = 16.0;
 /// The most blocks merged in one frame.
 const MERGES_PER_FRAME: usize = 1;
 /// A block merges again only once its tiles have stopped changing for this long: they stream their plants in over
@@ -74,6 +94,9 @@ struct Blocks {
     roots: HashMap<Entity, UVec2>,
     /// Parts to hide next frame, once the merged meshes holding them show.
     to_hide: Vec<Entity>,
+    /// A block's old merged meshes, to remove next frame, once its new ones show: removed at once, they would leave
+    /// the distant land missing for a frame, the sky flashing through it.
+    to_despawn: Vec<Entity>,
     /// One material for each alike set: every tile's file loads its own copy of the same material.
     alike: HashMap<String, Handle<StandardMaterial>>,
     /// How many parts of each look the last merges saw, for the log.
@@ -100,6 +123,9 @@ struct Block {
     touched: f32,
     /// Whether a tile left it, whose meshes stay hidden until it merges again: it merges at once.
     urgent: bool,
+    /// How far its nearest tile's centre is from the camera, and the step its merged meshes were simplified for.
+    distance: f32,
+    step: Option<f32>,
 }
 
 impl Block {
@@ -115,6 +141,9 @@ impl Block {
 enum Drawn {
     Look(Look),
     Source(Handle<SourceFoliage>),
+    /// Trees' impostor quads, which merge whole: a block moves them only by its tiles' translations, which their
+    /// placements in their vertices do not depend on.
+    Impostor(Handle<Impostor>),
 }
 
 impl Drawn {
@@ -122,6 +151,7 @@ impl Drawn {
         match self {
             Drawn::Look(look) => look.id(),
             Drawn::Source(material) => material.id().untyped(),
+            Drawn::Impostor(material) => material.id().untyped(),
         }
     }
 
@@ -129,6 +159,9 @@ impl Drawn {
         match self {
             Drawn::Look(look) => insert_look(part, look),
             Drawn::Source(material) => {
+                part.insert(MeshMaterial3d(material.clone()));
+            }
+            Drawn::Impostor(material) => {
                 part.insert(MeshMaterial3d(material.clone()));
             }
         }
@@ -147,7 +180,10 @@ pub(crate) struct Unswayed;
 type Key = (UntypedAssetId, Vec<MeshVertexAttributeId>);
 
 /// Hides the parts whose merged meshes were spawned last frame, and so show from this one.
-fn hide(mut blocks: ResMut<Blocks>, mut visibility: Query<&mut Visibility, With<InBlock>>) {
+fn hide(mut commands: Commands, mut blocks: ResMut<Blocks>, mut visibility: Query<&mut Visibility, With<InBlock>>) {
+    for drawn in std::mem::take(&mut blocks.to_despawn) {
+        commands.entity(drawn).try_despawn();
+    }
     for part in std::mem::take(&mut blocks.to_hide) {
         if let Ok(mut visibility) = visibility.get_mut(part) {
             *visibility = Visibility::Hidden;
@@ -155,12 +191,15 @@ fn hide(mut blocks: ResMut<Blocks>, mut visibility: Query<&mut Visibility, With<
     }
 }
 
-/// Puts each far tile past `BLOCK_M` in its block, and takes out the others.
+/// Puts all the far tiles of each block past `BLOCK_M` in it, and takes a nearer block apart: its tiles show their own
+/// meshes again, with nothing to merge.
 fn assign(
+    mut commands: Commands,
     mut blocks: ResMut<Blocks>,
     tiles: Query<(Entity, &Tile)>,
     camera: Single<&GlobalTransform, With<Camera3d>>,
     time: Res<Time>,
+    mut visibility: Query<&mut Visibility>,
     mut logged: Local<f32>,
 ) {
     if time.elapsed_secs() - *logged > 2.0 {
@@ -179,28 +218,31 @@ fn assign(
         );
     }
     let eye = camera.translation().xz();
+    let now = time.elapsed_secs();
+    let nearest = block_distances(tiles.iter().map(|(_, tile)| tile), eye);
+    let Blocks { blocks, roots, to_despawn, .. } = &mut *blocks;
     let mut seen = HashSet::new();
     for (entity, tile) in &tiles {
-        let Some((cell, centre, root)) = tile.far_root() else { continue };
-        let block = cell / BLOCK_TILES;
-        let member = blocks.blocks.get(&block).and_then(|b| b.members.get(&entity)).copied();
-        let edge = BLOCK_M + if member.is_some() { -HYSTERESIS_M } else { HYSTERESIS_M };
-        if centre.xz().distance(eye) < edge {
+        let Some((cell, _, root)) = tile.far_root() else { continue };
+        let key = block_of(cell);
+        let distance = nearest[&key];
+        let merged = blocks.get(&key).is_some_and(|b| !b.members.is_empty());
+        if distance < BLOCK_M + if merged { -HYSTERESIS_M } else { HYSTERESIS_M } {
             continue;
         }
         seen.insert(entity);
+        let block = blocks.entry(key).or_default();
+        block.distance = distance;
+        let member = block.members.get(&entity).copied();
         if member != Some(root) {
             if let Some(old) = member {
-                blocks.roots.remove(&old);
+                roots.remove(&old);
             }
-            blocks.roots.insert(root, block);
-            let b = blocks.blocks.entry(block).or_default();
-            b.members.insert(entity, root);
-            b.touch(time.elapsed_secs());
+            roots.insert(root, key);
+            block.members.insert(entity, root);
+            block.touch(now);
         }
     }
-    let now = time.elapsed_secs();
-    let Blocks { blocks, roots, .. } = &mut *blocks;
     for block in blocks.values_mut() {
         let before = block.members.len();
         block.members.retain(|tile, root| {
@@ -210,9 +252,30 @@ fn assign(
             }
             keep
         });
+        if block.members.is_empty() {
+            // Taken apart whole: its tiles show their own meshes, and its merged ones leave next frame.
+            if before > 0 || block.pending.is_some() {
+                debug!("BLOCK apart at {:.0} m: {} parts shown again", block.distance, block.parts.len());
+                for part in block.parts.drain(..) {
+                    show(&mut commands, &mut visibility, part);
+                }
+                to_despawn.append(&mut block.drawn);
+                block.pending = None;
+                block.dirty = false;
+                block.urgent = false;
+                block.step = None;
+            }
+            continue;
+        }
         if block.members.len() != before {
             block.touch(now);
             block.urgent = true;
+        }
+        // Simplified again only once its distance is well past another step.
+        let step = stepped(block.distance);
+        let settled = stepped(block.distance - HYSTERESIS_M) == step && stepped(block.distance + HYSTERESIS_M) == step;
+        if block.step.is_some_and(|merged| merged != step) && settled && !block.dirty {
+            block.touch(now);
         }
     }
 }
@@ -269,17 +332,16 @@ fn merge(
             Option<&MeshMaterial3d<MovingPainted>>,
             Option<&MeshMaterial3d<Swaying>>,
             Option<&MeshMaterial3d<SourceFoliage>>,
+            Option<&MeshMaterial3d<Impostor>>,
         ),
         Without<VisibilityRange>,
     >,
     mut visibility: Query<&mut Visibility>,
     meshed: Query<(), With<Mesh3d>>,
     standard: Res<Assets<StandardMaterial>>,
-    camera: Single<&GlobalTransform, With<Camera3d>>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    let eye = camera.translation();
     let now = time.elapsed_secs();
     let Blocks { blocks, alike, looks, .. } = &mut *blocks;
     let pending = blocks.values().filter(|block| block.pending.is_some()).count();
@@ -304,11 +366,16 @@ fn merge(
         for &root in block.members.values() {
             for part in children.iter_descendants(root) {
                 gathered.insert(part);
-                let Ok((mesh, transform, still, painted, moving, swaying, source_foliage)) = parts.get(part) else {
+                let Ok((mesh, transform, still, painted, moving, swaying, source_foliage, impostor)) = parts.get(part)
+                else {
                     looks[7] += usize::from(meshed.contains(part));
                     continue;
                 };
                 let look = match (still, painted, moving, swaying, source_foliage) {
+                    _ if let Some(m) = impostor => {
+                        looks[4] += 1;
+                        Drawn::Impostor(m.0.clone())
+                    }
                     (Some(m), ..) => {
                         looks[0] += 1;
                         let Some(material) = standard.get(&m.0) else { continue };
@@ -364,8 +431,10 @@ fn merge(
         }
         let groups: Vec<Group> = groups.into_values().collect();
         let gather_ms = started.elapsed().as_secs_f32() * 1000.0;
+        let step = stepped(block.distance);
+        block.step = Some(step);
         block.pending =
-            Some((urgent, gather_ms, AsyncComputeTaskPool::get().spawn(async move { merged(groups, eye) })));
+            Some((urgent, gather_ms, AsyncComputeTaskPool::get().spawn(async move { merged(groups, step) })));
     }
 }
 
@@ -377,7 +446,7 @@ fn swap(
     mut meshes: ResMut<Assets<Mesh>>,
     mut visibility: Query<&mut Visibility>,
 ) {
-    let Blocks { blocks, to_hide, triangles, areas, thinned, .. } = &mut *blocks;
+    let Blocks { blocks, to_hide, to_despawn, triangles, areas, thinned, .. } = &mut *blocks;
     for (key, block) in blocks.iter_mut() {
         let Some((_, _, task)) = block.pending.as_mut() else { continue };
         let Some(result) = block_on(future::poll_once(task)) else { continue };
@@ -388,9 +457,7 @@ fn swap(
             areas[i] += result.areas[i];
             thinned[i] += result.thinned[i];
         }
-        for drawn in block.drawn.drain(..) {
-            commands.entity(drawn).despawn();
-        }
+        to_despawn.append(&mut block.drawn);
         let held: HashSet<Entity> = result.meshes.iter().flat_map(|(_, _, parts)| parts.iter().copied()).collect();
         for part in block.parts.drain(..) {
             if !held.contains(&part) {
@@ -418,7 +485,8 @@ fn swap(
         }
         {
             debug!(
-                "BLOCK merge {key} urgent {urgent}: {} members, {} parts in {} meshes; main thread {gather_ms:.1} ms gathering, {:.1} ms swapping, worker {:.1} ms",
+                "BLOCK merge {key} at {:.0} m urgent {urgent}: {} members, {} parts in {} meshes; main thread {gather_ms:.1} ms gathering, {:.1} ms swapping, worker {:.1} ms",
+                block.distance,
                 block.members.len(),
                 block.parts.len(),
                 block.drawn.len(),
@@ -525,8 +593,8 @@ fn show(commands: &mut Commands, visibility: &mut Query<&mut Visibility>, part: 
     }
 }
 
-/// Merges a block's gathered meshes, on a worker.
-fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
+/// Merges a block's gathered meshes, on a worker, simplified for `step`, its distance in steps.
+fn merged(groups: Vec<Group>, step: f32) -> Merged {
     let started = std::time::Instant::now();
     let mut out = Merged { meshes: Vec::new(), triangles: [0; 2], areas: [0.0; 2], thinned: [0; 2], ms: 0.0 };
     for Group { look, copies, parts } in groups {
@@ -552,7 +620,7 @@ fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
             if matches!(look, Drawn::Look(Look::Painted(_))) && PLANT_ERROR_PX > 0.0 {
                 let before = mesh.indices().map_or(0, Indices::len) / 3;
                 let area = plan_area(&mesh);
-                mesh = clustered(mesh, eye, PLANT_ERROR_PX * PIXEL_M_PER_M);
+                mesh = clustered(mesh, step * PLANT_ERROR_PX * PIXEL_M_PER_M);
                 out.triangles[0] += before;
                 out.triangles[1] += mesh.indices().map_or(0, Indices::len) / 3;
                 out.areas[0] += area;
@@ -561,15 +629,14 @@ fn merged(groups: Vec<Group>, eye: Vec3) -> Merged {
             // The far trees' cards are millions of triangles past a kilometre: fewer, larger cards cover as much.
             if matches!(look, Drawn::Source(_)) {
                 out.thinned[0] += mesh.indices().map_or(0, Indices::len) / 3;
-                let distance = nearest(&mesh, eye);
-                let keep = thin_keep(distance);
+                let keep = thin_keep(step);
                 let before = mesh.indices().map_or(0, Indices::len) / 3;
                 if keep < 1.0 {
                     mesh = thinned_cards(mesh, keep);
                 }
                 out.thinned[1] += mesh.indices().map_or(0, Indices::len) / 3;
                 debug!(
-                    "BLOCK trees at {distance:.0} m keep {keep:.3}: {before} to {} triangles",
+                    "BLOCK trees at {step:.0} m keep {keep:.3}: {before} to {} triangles",
                     mesh.indices().map_or(0, Indices::len) / 3
                 );
             }
@@ -599,12 +666,12 @@ fn thin_keep(distance: f32) -> f32 {
     0.5f32.powf(halvings).max(THIN_LEAST)
 }
 
-/// How far `eye` is from the nearest point of `mesh`'s bounds.
-fn nearest(mesh: &Mesh, eye: Vec3) -> f32 {
-    use bevy::mesh::VertexAttributeValues as V;
-    let Some(V::Float32x3(positions)) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) else { return 0.0 };
-    let (low, high) = positions.iter().fold((Vec3::MAX, Vec3::MIN), |(l, h), &p| (l.min(p.into()), h.max(p.into())));
-    eye.clamp(low, high).distance(eye)
+/// `distance`, from `BLOCK_M`, rounded down to a step of √2 times the last. A block merges again as its tiles stream
+/// in: simplified for its distance to the metre, its plants would change shape at each merge, which shows on the
+/// skyline.
+fn stepped(distance: f32) -> f32 {
+    let steps = (2.0 * (distance / BLOCK_M).log2()).floor().max(0.0);
+    BLOCK_M * 2f32.powf(steps / 2.0)
 }
 
 /// `mesh` keeping a share `keep` of its cards (the triangles joined by shared vertices), each grown about its centre
@@ -670,16 +737,15 @@ fn thinned_cards(mut mesh: Mesh, keep: f32) -> Mesh {
     mesh
 }
 
-/// `mesh` with its vertices clustered, so that its triangles stray at most `error_per_m` metres per metre between
-/// `eye` and the mesh's nearest point (and never nearer than `BLOCK_M`); disjoint shapes may join. In the browser,
-/// where the simplifier does not build, the mesh as it is.
+/// `mesh` with its vertices clustered, so that its triangles stray at most `error_m` metres; disjoint shapes may join.
+/// In the browser, where the simplifier does not build, the mesh as it is.
 #[cfg(target_arch = "wasm32")]
-fn clustered(mesh: Mesh, _eye: Vec3, _error_per_m: f32) -> Mesh {
+fn clustered(mesh: Mesh, _error_m: f32) -> Mesh {
     mesh
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn clustered(mut mesh: Mesh, eye: Vec3, error_per_m: f32) -> Mesh {
+fn clustered(mut mesh: Mesh, error_m: f32) -> Mesh {
     use bevy::mesh::VertexAttributeValues as V;
     let (Some(V::Float32x3(positions)), Some(Indices::U32(indices))) =
         (mesh.attribute(Mesh::ATTRIBUTE_POSITION), mesh.indices())
@@ -687,10 +753,9 @@ fn clustered(mut mesh: Mesh, eye: Vec3, error_per_m: f32) -> Mesh {
         return mesh;
     };
     let (low, high) = positions.iter().fold((Vec3::MAX, Vec3::MIN), |(l, h), &p| (l.min(p.into()), h.max(p.into())));
-    let nearest = eye.clamp(low, high).distance(eye).max(BLOCK_M);
     let extent = (high - low).max_element().max(1.0);
     let Ok(adapter) = meshopt::VertexDataAdapter::new(meshopt::typed_to_bytes(positions), 12, 0) else { return mesh };
-    let reduced = meshopt::simplify_sloppy(indices, &adapter, 0, nearest * error_per_m / extent, None);
+    let reduced = meshopt::simplify_sloppy(indices, &adapter, 0, error_m / extent, None);
     mesh.insert_indices(Indices::U32(reduced));
     mesh
 }
@@ -712,4 +777,21 @@ fn plan_area(mesh: &Mesh) -> f64 {
         })
         .sum();
     area / 1e6
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_block_merged_a_little_nearer_or_farther_simplifies_the_same() {
+        assert_eq!(stepped(BLOCK_M * 0.7), BLOCK_M);
+        for step in 0..8 {
+            let from = BLOCK_M * 2f32.powf(step as f32 / 2.0);
+            let (near, far) = (from * 1.02, from * 1.38);
+            assert_eq!(stepped(near), stepped(far), "blocks {near} m and {far} m off simplify alike");
+            assert!(stepped(near) <= near);
+        }
+        assert!(stepped(1000.0) < stepped(1500.0));
+    }
 }
