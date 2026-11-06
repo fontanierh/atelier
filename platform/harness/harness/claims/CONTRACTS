@@ -1,0 +1,30 @@
+@cc [owner:fontanierh,label:correctness] one-active-writer
+At most one claim in a holding state (pending, active, releasing, uncertain) MAY contain overlapping items:
+scopes overlap with ancestors and descendants, paths and prefixes when one contains the other. The overlap
+check and the reservation MUST happen in one database transaction of the single service process. Resolving or
+reconciling an ended claim MUST NOT return it to a holding state while another claim holds an overlapping item.
+
+@cc [owner:fontanierh,label:correctness] verified-lfs-binding
+A claim MUST become active only after the service read every declared LFS lock on the remote with the
+recorded path, ID and the claimant's registered account, and re-checked the base against the target branch.
+Ownership MUST come from the claim, never from an LFS account match.
+
+@cc [owner:fontanierh,label:safety] fail-closed
+An unreachable or unverifiable service, LFS server or Git remote MUST refuse grants, activation and protected
+checks. Every protected check MUST re-verify the task's active claims live (each LFS lock's path, ID and owner on
+the remote, and the base against the target branch); stored state alone MUST NOT pass it. A restarted service
+MUST refuse grants until a reconcile pass completed. Unprotected changes MAY pass.
+
+@cc [owner:fontanierh,label:safety] proven-own-unlock
+Only locks proven created by the claim's own attempt (reported created, or absent from its intent snapshot,
+owned by the claimant and not attributable to another claim's attempt by the same account) MAY be marked for
+unlock; a coordinator MAY hand a pre-existing lock only to a live claim that never attempted that path. Unknown
+outcomes MUST stay uncertain and keep the reservation until the lock is seen or the settle interval (longer than
+a lock request can stay in flight) passed with no lock, or a coordinator resolves it; a retry MUST NOT replace
+an unsettled attempt before then. A lock in the intent
+snapshot MUST NOT be adopted or unlocked, whatever its account.
+
+@cc [owner:fontanierh,label:correctness] release-only-on-merge-or-cancel
+A claim MUST be released only by a merge whose revision is reachable from the target branch, an explicit
+owner cancellation recording preserved or discarded changes, an aborted acquisition, or a recorded
+coordinator recovery. Pushes, failed pushes and expired heartbeats MUST NOT release or transfer a claim.

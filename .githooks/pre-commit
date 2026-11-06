@@ -7,3 +7,5 @@ PYTHONPATH="$ROOT/platform/studio" "$PY" -m atelier.cli lint --staged || {
   echo "atelier lint failed: fix the lines above (or unstage them) before committing." >&2
   exit 1
 }
+# Checkouts that set a claims task (`atelier claims use-task`) also check protected changes against its claim.
+"$ROOT/platform/harness/harness/claims/hooks/pre-commit" || exit 1
