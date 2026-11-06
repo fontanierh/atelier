@@ -1,9 +1,11 @@
 """Opt-in: the claim sequence against a real Git remote and its real Git LFS lock API.
 
-Set ``ATELIER_CLAIMS_LFS_REMOTE`` to a scratch repository URL whose LFS server supports locking and for which
+Set ``CLAIMS_TEST_LFS_REMOTE`` to a scratch repository URL whose LFS server supports locking and for which
 this machine's Git credentials can push and lock (for example a private test repository). The test locks and
 unlocks one unique path under ``atelier-claims-test/`` and leaves no lock behind. Optionally set
-``ATELIER_CLAIMS_LFS_BRANCH`` (default ``main``).
+``CLAIMS_TEST_LFS_BRANCH`` (default ``main``), and ``CLAIMS_TEST_LFS_CHECKOUT`` to an existing clone of that remote to
+skip the clone. Pytest gives tests a private HOME, so point Git at the real credentials with
+``GIT_CONFIG_GLOBAL`` (and ``GH_CONFIG_DIR`` when the GitHub CLI is the credential helper).
 """
 import os
 import subprocess
@@ -16,16 +18,20 @@ from atelier.harness.claims.remote import GitCli, GitLfsCli
 from atelier.harness.claims.service import Service
 from atelier.harness.claims.store import Store
 
-REMOTE = os.environ.get('ATELIER_CLAIMS_LFS_REMOTE')
-pytestmark = pytest.mark.skipif(not REMOTE, reason='set ATELIER_CLAIMS_LFS_REMOTE to run against a real LFS remote')
+REMOTE = os.environ.get('CLAIMS_TEST_LFS_REMOTE')
+pytestmark = pytest.mark.skipif(not REMOTE, reason='set CLAIMS_TEST_LFS_REMOTE to run against a real LFS remote')
 TOKEN = 'integration-token-0123456789'
 
 
 def test_real_lfs_lock_is_verified_bound_and_released(tmp_path):
-    branch = os.environ.get('ATELIER_CLAIMS_LFS_BRANCH', 'main')
-    work = tmp_path / 'work'
-    subprocess.run(['git', 'clone', '-q', '--depth', '50', '--branch', branch, REMOTE, str(work)], check=True,
-                   timeout=300, env={**os.environ, 'GIT_LFS_SKIP_SMUDGE': '1', 'GIT_TERMINAL_PROMPT': '0'})
+    branch = os.environ.get('CLAIMS_TEST_LFS_BRANCH', 'main')
+    existing = os.environ.get('CLAIMS_TEST_LFS_CHECKOUT')
+    if existing:
+        work = existing                     # an existing clone of REMOTE: only its remote and credentials are used
+    else:
+        work = tmp_path / 'work'
+        subprocess.run(['git', 'clone', '-q', '--depth', '50', '--branch', branch, REMOTE, str(work)], check=True,
+                       timeout=900, env={**os.environ, 'GIT_LFS_SKIP_SMUDGE': '1', 'GIT_TERMINAL_PROMPT': '0'})
     lfs = GitLfsCli(work)
     path = f'atelier-claims-test/{uuid.uuid4().hex}.bin'
     store = Store(tmp_path / 'claims.sqlite', GitCli(work), lfs, coordinators=['lead'])
@@ -44,7 +50,8 @@ def test_real_lfs_lock_is_verified_bound_and_released(tmp_path):
         c.call('POST', '/machines', {'id': 'integration'})
         c.call('POST', '/workspaces', {'id': 'ws', 'principal': 'agent', 'machine': 'integration'})
         Client(service.url, TOKEN, 'lead').call('POST', '/reconcile')
-        head = subprocess.run(['git', '-C', str(work), 'rev-parse', 'HEAD'], capture_output=True, text=True,
+        subprocess.run(['git', '-C', str(work), 'fetch', '-q', 'origin', branch], check=True, timeout=300)
+        head = subprocess.run(['git', '-C', str(work), 'rev-parse', f'origin/{branch}'], capture_output=True, text=True,
                               check=True).stdout.strip()
         c.call('POST', '/tasks', {'id': 't', 'title': 'integration', 'workspace': 'ws', 'target_branch': branch,
                                   'base_revision': head})

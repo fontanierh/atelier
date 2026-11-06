@@ -146,9 +146,18 @@ class GitLfsCli:
             try:
                 made = json.loads(result.stdout)
                 made = made[0] if isinstance(made, list) and len(made) == 1 else made
-                return LockResult('created', _lock(made))
+                lock = _lock(made)
             except (ValueError, Unavailable) as error:
                 return LockResult('unknown', detail=f'unreadable git lfs lock output: {error}')
+            if not lock.owner:
+                # GitHub's `git lfs lock --json` prints [{id, path, locked_at}] without the owner: read it back.
+                try:
+                    listed = [l for l in self.locks(lock_id=lock.id) if l.id == lock.id]
+                except Unavailable:
+                    listed = []
+                if listed:
+                    lock = listed[0]
+            return LockResult('created', lock)
         text = (result.stderr + result.stdout).strip()
         if 'already locked' in text.lower() or 'lock exists' in text.lower() or 'already created' in text.lower():
             return LockResult('exists', detail=text[-500:])
