@@ -22,12 +22,13 @@ import sys
 from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import authority  # noqa: E402
 import records  # noqa: E402
 from records import RecordError  # noqa: E402
 
 GAME = Path(__file__).resolve().parents[2]
 REPO = GAME.parents[1]
-BOOTSTRAP_WRITER = 'jim-macbook-5'          # DECISIONS D04
+BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
 ACTOR_ROOTS = ('__ExternalActors__', '__ExternalObjects__')
 
 
@@ -42,15 +43,10 @@ def engine_identity() -> str:
 
 
 def authorize(paths: list[str], claim: str | None):
-    if claim:
-        import subprocess
-        command = ['uv', 'run', 'atelier', 'claims', 'check', '--task', claim, '--paths',
-                   *[f'games/yorimichi_v2/{p}' for p in paths]]
-        if subprocess.run(command, cwd=REPO).returncode:
-            raise ValidationError(f'claim {claim} does not cover these packages')
-        return
-    if os.environ.get('ATELIER_AGENT') != BOOTSTRAP_WRITER:
-        raise ValidationError(f'no --claim given and ATELIER_AGENT is not the bootstrap writer {BOOTSTRAP_WRITER!r}')
+    try:
+        authority.authorize([f'games/yorimichi_v2/{p}' for p in paths], claim, 'save validation')
+    except authority.Unauthorized as error:
+        raise ValidationError(str(error)) from None
 
 
 def actor_info(path: Path):

@@ -8,9 +8,11 @@ lists every package it brought; its `verified.json` is written by save validatio
 ordinary editor-owned content: a later edit is claimed, saved in the editor and validated, and a finer record
 may take packages over. Nothing is imported or resaved here: the bytes are the donor's.
 
-It refuses to overwrite a different existing package another record owns, and reports, without copying past
-it, every hard reference of an adopted package that resolves to no package in V2 (the closure must be complete)
-and every package whose bytes name a home folder or private host (they need the editor scrub before commit).
+It writes only under a claim covering every written path, or as the D04 bootstrap writer. It never overwrites an
+existing package with different bytes (an edited package belongs to its owner's route) and refuses a package
+another record owns. It reports, without copying past it, every hard reference of an adopted package that resolves
+to no package in V2 (the closure must be complete) and every package whose bytes name a home folder or private
+host (they need the editor scrub before commit).
 `--data` copies the donor's staged runtime data (`Content/Data`) as committed runtime data.
 """
 from __future__ import annotations
@@ -26,6 +28,7 @@ GAME = HERE.parents[1]
 REPO = GAME.parents[1]
 sys.path.insert(0, str(GAME / 'tools/content'))
 sys.path.insert(0, str(REPO / 'platform/studio'))
+import authority  # noqa: E402
 import records  # noqa: E402
 
 PACKAGE_SUFFIXES = records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS
@@ -88,7 +91,7 @@ def record_text(asset_id: str, folder: str, packages: list[str], license_text: s
 
 
 def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], license_text: str, *,
-          check_only=False, echo=print) -> dict:
+          check_only=False, claim: str | None = None, echo=print) -> dict:
     target = game / 'unreal' / 'Content'
     owned = owners(game)
     plan, problems = {}, []
@@ -116,17 +119,32 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
                 private.append(package_name(content, path))
     report = {'folders': {f: len(p[2]) for f, p in plan.items()}, 'missing_references': missing,
               'private_bytes': sorted(private), 'conflicts': problems}
+    # Adoption only ever adds the donor's bytes: an existing package that differs was edited (or adopted from
+    # another donor) and belongs to its owner's route, never to a rerun of adoption.
+    copies = []
+    for folder, (asset_id, files, packages) in plan.items():
+        for path in files:
+            dest = target / path.relative_to(content)
+            if not dest.is_file():
+                copies.append((path, dest))
+            elif records.sha256_file(dest) != records.sha256_file(path):
+                problems.append(f'{dest.relative_to(game).as_posix()} exists with different bytes; adoption never '
+                                'overwrites (change it through its owner route)')
+    report['conflicts'] = problems
     if problems:
         raise AdoptError('; '.join(problems[:5]))
     if check_only:
         return report
+    writes = [dest for _, dest in copies] + [game / 'assets' / a / 'asset.toml' for a, _, _ in plan.values()]
+    try:
+        authority.authorize([f'games/yorimichi_v2/{w.relative_to(game).as_posix()}' for w in writes], claim,
+                            'adoption')
+    except authority.Unauthorized as error:
+        raise AdoptError(str(error)) from None
+    for path, dest in copies:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, dest)
     for folder, (asset_id, files, packages) in plan.items():
-        for path in files:
-            dest = target / path.relative_to(content)
-            if dest.is_file() and records.sha256_file(dest) == records.sha256_file(path):
-                continue
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, dest)
         record = game / 'assets' / asset_id / 'asset.toml'
         record.parent.mkdir(parents=True, exist_ok=True)
         text = record_text(asset_id, folder, packages, license_text)
@@ -164,10 +182,12 @@ def main(argv=None) -> int:
     parser.add_argument('--license', default='owner-published (docs/DECISIONS.md D05 group 1)')
     parser.add_argument('--data', action='store_true', help='also copy the staged runtime data')
     parser.add_argument('--check-only', action='store_true', help='report closure and privacy problems only')
+    parser.add_argument('--claim', help='claims task covering every written path (else the D04 bootstrap writer)')
     args = parser.parse_args(argv)
     content = args.donor_content.resolve()
     try:
-        report = adopt(GAME, content, args.folder, args.exclude, args.license, check_only=args.check_only)
+        report = adopt(GAME, content, args.folder, args.exclude, args.license, check_only=args.check_only,
+                       claim=args.claim)
         if args.data and not args.check_only:
             copy_data(GAME, content)
     except (AdoptError, records.RecordError) as error:

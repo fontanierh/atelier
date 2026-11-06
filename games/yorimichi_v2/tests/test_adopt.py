@@ -39,6 +39,8 @@ def donor(tmp_path, monkeypatch):
     monkeypatch.setattr(adopt, 'references', lambda path: refs[path.stem])
     game = tmp_path / 'game'
     (game / 'unreal/Content').mkdir(parents=True)
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
     return game, content
 
 
@@ -74,6 +76,32 @@ def test_refuses_packages_another_record_owns(donor):
         '[[outputs]]\npackage = "/Game/Japan/Assets/House_A"\n')
     with pytest.raises(adopt.AdoptError, match='already owned by prop/house'):
         adopt.adopt(game, content, ['Japan'], [], 'x')
+
+
+def test_never_overwrites_a_changed_package(donor):
+    game, content = donor
+    adopt.adopt(game, content, ['Japan'], [], 'x', echo=lambda *_: None)
+    edited = game / 'unreal/Content/Japan/Assets/House_A.uasset'
+    edited.write_bytes(b'edited in the editor')
+    with pytest.raises(adopt.AdoptError, match='never overwrites'):
+        adopt.adopt(game, content, ['Japan'], [], 'x', echo=lambda *_: None)
+    assert edited.read_bytes() == b'edited in the editor'
+
+
+def test_writes_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):
+    game, content = donor
+    monkeypatch.setenv('ATELIER_AGENT', 'someone-else')
+    with pytest.raises(adopt.AdoptError, match='not the bootstrap writer'):
+        adopt.adopt(game, content, ['Japan'], [], 'x', echo=lambda *_: None)
+    assert not (game / 'unreal/Content/Japan').exists()
+    seen = []
+    monkeypatch.setattr(adopt.authority.subprocess, 'run', lambda command, **_: seen.append(command)
+                        or type('R', (), {'returncode': 1})())
+    with pytest.raises(adopt.AdoptError, match='does not exactly cover'):
+        adopt.adopt(game, content, ['Japan'], [], 'x', claim='T7', echo=lambda *_: None)
+    assert seen[0][:9] == ['uv', 'run', 'atelier', 'claims', 'check', '--stage', 'publish', '--task', 'T7']
+    assert 'games/yorimichi_v2/unreal/Content/Japan/Assets/House_A.uasset' in seen[0]
+    assert not (game / 'unreal/Content/Japan').exists()
 
 
 def test_runtime_data_copies_regular_files(donor):

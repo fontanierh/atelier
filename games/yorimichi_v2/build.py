@@ -29,8 +29,10 @@ def steps(ctx):
              inputs=[GAME / 'tools/content'],
              about='every committed package present, hydrated, owned and current; fixes nothing'),
         Step('unreal.compile', [UnrealCompile('YorimichiV2Editor')],
+             # No edge to check.content: a named import or editor script compiles without the content gate, so
+             # the route that repairs missing or stale content is never blocked by the check that reports it.
              inputs=[UNREAL / 'Source', UNREAL / 'Plugins', ctx.uproject, UNREAL / 'Config', paths.ENGINE_PLUGINS],
-             after=['check.content'], heavy=True,
+             heavy=True,
              about='the V2 editor target: Yorimichi, YorimichiAssets, YorimichiImport and enabled plugins'),
         Step('unreal.package', [Call('check_package_inputs', _check_package_inputs),
                                 UnrealPackage('YorimichiV2', out / 'package' / 'archive')],
@@ -44,10 +46,11 @@ def steps(ctx):
              verify=lambda: 'migrate.map' in RAN,
              about='one-time migration of regions into a World Partition map (use tools/migrate/run.py)'),
         # Explicit: one named bootstrap-writer editor script (unreal/Scripts), guarded like every editor write.
-        Step('editor.run', [UnrealScript(UNREAL / 'Scripts/run_named.py', 'V2 EDITOR SCRIPT DONE'), ran('editor.run')],
+        Step('editor.run', [Call('authorize editor script', _authorize_editor),
+                            UnrealScript(UNREAL / 'Scripts/run_named.py', 'V2 EDITOR SCRIPT DONE'), ran('editor.run')],
              inputs=[UNREAL / 'Scripts'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'editor.run' in RAN,
-             about='one named editor script (V2_EDITOR_SCRIPT), e.g. Scripts/new_test_map.py'),
+             about='one named editor script (V2_EDITOR_SCRIPT, V2_EDITOR_CLAIM + V2_EDITOR_PATHS for a claimed write)'),
     ] + import_steps()
 
 
@@ -75,6 +78,21 @@ def import_steps():
                           verify=lambda name=name: name in RAN,
                           about=f'editor import of {asset.id} (use tools/import/run.py)'))
     return found
+
+
+def _authorize_editor(ctx, log):
+    """An editor script may save packages, so it runs under a claim covering its declared paths or as the D04
+    bootstrap writer (CONTRACTS yorimichi-v2-single-writer); save validation then checks what it actually wrote."""
+    import os
+    import sys
+    sys.path.insert(0, str(GAME / 'tools/content'))
+    import authority
+    claim = os.environ.get('V2_EDITOR_CLAIM') or None
+    declared = os.environ.get('V2_EDITOR_PATHS', '').split()
+    if claim and not declared:
+        raise RuntimeError('V2_EDITOR_CLAIM needs V2_EDITOR_PATHS: the repository paths the script may write')
+    authority.authorize(declared, claim, f"editor script {os.environ.get('V2_EDITOR_SCRIPT', '?')}")
+    log.write(f"editor script authorized ({'claim ' + claim if claim else 'bootstrap writer'})\n")
 
 
 def _check_package_inputs(ctx, log):

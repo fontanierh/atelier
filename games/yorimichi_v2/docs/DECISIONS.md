@@ -41,6 +41,11 @@ Until P2-B's claim service passes and adopts or releases every bootstrap lock, t
 writer on all machines is the owner `jim-macbook-5`, in workspace `atelier-yv2`. Other workers may change text
 code only. This record is the task record visible to every worker.
 
+Enforcement: `tools/content/authority.py` is the one rule every write route calls (import, `editor.run`, save
+validation, adoption). A claimed write is checked with `atelier claims check --stage publish` (exact paths,
+verified LFS locks); without a claim only the bootstrap writer passes, and not in a checkout that has a claims
+task. **Closes** once the slice's adopted content is merged: from then on every binary write needs a claim.
+
 ## D05 — Asset rights before public upload (§4, P0 pass/stop)
 
 The repository is public and Git LFS is not private storage. No source in the repository carries a license

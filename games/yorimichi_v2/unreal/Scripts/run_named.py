@@ -1,7 +1,8 @@
 """Run one named editor script inside the guarded, admitted editor (build step `editor.run`).
 
-The bootstrap writer's one-off editor writes (a test map, a scrub) go through this step so they get the same lock
-and memory guard as every import: V2_EDITOR_SCRIPT names the script, which must live under unreal/Scripts.
+One-off editor writes (a test map, a scrub) go through this step so they get the same lock and memory guard as
+every import: V2_EDITOR_SCRIPT names the script, which must live under unreal/Scripts. The step authorizes the
+write before the editor starts: V2_EDITOR_CLAIM with V2_EDITOR_PATHS, or the D04 bootstrap writer.
 """
 import os
 import runpy

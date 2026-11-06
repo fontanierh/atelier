@@ -10,8 +10,12 @@ External and AI-generated sources are committed, pinned inputs recorded through 
 Every committed V2 package MUST have exactly one owning record: an asset's asset.toml output or a region's
 actors.verified.json. Only that owner's route writes it: a generated package only through its importer, an
 editor-owned package only through a claimed editor save and its save validation. A protected write MUST hold
-an active claim covering the package's scope and path, and the LFS lock that claim recorded; a task's
-changed-file set MUST stay inside its claim, including companions, deletions and moves between regions.
+an active claim covering the package's scope and exact path, and the LFS lock that claim recorded, verified
+when the write is authorized; a task's changed-file set MUST stay inside its claim, including companions,
+deletions and moves between regions. The only exception is DECISIONS D04: until D04 is closed, the recorded
+bootstrap writer, in a checkout with no claims task, is the single binary writer and writes without a claim.
+Every write route (import, editor script, save validation, adoption) MUST enforce the same rule, and adoption
+MUST NOT overwrite an existing package whose bytes differ.
 
 @cc [owner:fontanierh,label:security] yorimichi-v2-portable-records
 Asset, region and verification records MUST be portable: repository-relative paths, hashes, engine identity

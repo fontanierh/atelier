@@ -267,13 +267,17 @@ def write_json(path: Path, data: dict) -> bool:
 def input_fingerprint(asset: Asset, dependency_fingerprints: dict[str, str]) -> str:
     """What a generated asset's packages are made from: sources, recipe and input dependencies' verified states.
 
-    Paths are relative and sorted, so the same inputs give the same fingerprint on every machine and checkout.
+    Paths are relative and sorted (the source-to-package pairing keeps record order), so the same inputs give the
+    same fingerprint on every machine and checkout.
     """
     body = {
         'id': asset.id, 'kind': asset.kind, 'schema': SCHEMA,
         'sources': sorted([s.path, s.sha256] for s in asset.sources),
         'recipe': asset.recipe,
         'outputs': sorted([o.package, o.writer] for o in asset.outputs if o.writer == 'generated'),
+        # The importer pairs sources with generated packages in record order, so the pairing is an input too.
+        'mapping': [[s.path, o.package] for s, o in
+                    zip(asset.sources, [o for o in asset.outputs if o.writer == 'generated'])],
         'input_dependencies': {dep: dependency_fingerprints.get(dep, 'missing')
                                for dep in sorted(asset.input_dependencies)},
     }

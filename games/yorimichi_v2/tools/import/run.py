@@ -29,6 +29,7 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS / 'content'))
+import authority  # noqa: E402
 import records  # noqa: E402
 from records import RecordError  # noqa: E402
 
@@ -39,7 +40,7 @@ IMPORTERS = {   # asset kind -> importer name and version understood by unreal/S
     'static-mesh': ('static-mesh', 1),
     'texture': ('texture', 1),
 }
-BOOTSTRAP_WRITER = 'jim-macbook-5'   # DECISIONS D04, until the claim service adopts protected writes
+BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
 
 
 class ImportError_(RuntimeError):
@@ -121,18 +122,12 @@ def up_to_date(game, asset, fingerprint) -> bool:
 
 
 def authorize(game, asset, claim):
-    """Protected writes need an active claim covering the packages, or the recorded bootstrap writer."""
-    paths = [records.content_relative(game, f) for f in generated_files(game, asset)]
-    if claim:
-        command = ['uv', 'run', 'atelier', 'claims', 'check', '--task', claim, '--paths',
-                   *[f'games/yorimichi_v2/{p}' for p in paths]]
-        if subprocess.run(command, cwd=REPO).returncode:
-            raise ImportError_(f'claim {claim} does not cover {asset.id}; acquire its scope first')
-        return
-    owner = os.environ.get('ATELIER_AGENT')
-    if owner != BOOTSTRAP_WRITER:
-        raise ImportError_(f'{asset.id}: no --claim given and ATELIER_AGENT={owner!r} is not the bootstrap writer '
-                           f'{BOOTSTRAP_WRITER!r} (DECISIONS D04)')
+    """Protected writes need the claim's exact paths with verified locks, or the recorded bootstrap writer."""
+    paths = [f'games/yorimichi_v2/{records.content_relative(game, f)}' for f in generated_files(game, asset)]
+    try:
+        authority.authorize(paths, claim, f'import of {asset.id}')
+    except authority.Unauthorized as error:
+        raise ImportError_(str(error)) from None
 
 
 class Journal:

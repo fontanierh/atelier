@@ -262,3 +262,16 @@ def test_published_schemas_match_the_validator():
     assert set(region_schema['properties']) == records.REGION_KEYS
     assert asset['properties']['kind']['enum'] == list(records.KINDS)
     assert asset['properties']['authority']['enum'] == list(records.AUTHORITIES)
+
+
+def test_reordering_sources_against_their_packages_changes_the_fingerprint(tmp_path):
+    """The importer pairs sources with generated packages in record order, so swapping them is a stale import."""
+    def fingerprint(order):
+        folder = tmp_path / '-'.join(order)
+        rows = ''.join(f'[[sources]]\npath = "{n}.glb"\nsha256 = "{sha(n.encode())}"\n' for n in order)
+        write(folder / 'asset.toml', 'schema = 1\nid = "prop/pair"\nkind = "static-mesh"\nauthority = "generated"\n'
+              'owner = "region/w04-skatepark"\nlicense = "original"\n' + rows +
+              '[recipe]\nimporter = "static-mesh"\nversion = 1\n'
+              '[[outputs]]\npackage = "/Game/V2/A"\n[[outputs]]\npackage = "/Game/V2/B"\n')
+        return records.input_fingerprint(records.load_asset(folder / 'asset.toml'), {})
+    assert fingerprint(['a', 'b']) != fingerprint(['b', 'a'])
