@@ -144,6 +144,20 @@ def test_a_journal_left_by_a_killed_run_is_restored_before_the_next_import(game)
     assert b'imported prop/bench' in (game / 'unreal/Content/Props/SM_Bench.uasset').read_bytes()
 
 
+def test_the_next_import_reports_what_it_recovered_from_a_killed_run(game):
+    do(game, ['prop/bench'], FakeEditor())
+    asset = records.load_asset(game / 'assets/props/bench/asset.toml')
+    run.Journal(game, asset).begin(run.generated_files(game, asset))
+    write(game / 'unreal/Content/Props/SM_Bench.uasset', b'half written')     # the controller was killed here
+    write(game / 'assets/props/bench/src/model.glb', b'glb v2')               # its source edit is still pending
+    said = []
+    by_id = {a.id: a for a in records.discover(game)[0]}
+    assert run.import_one(game, by_id['prop/bench'], by_id, engine='5.8.2-1', claim=None, importer=FakeEditor(),
+                          echo=said.append)
+    assert said[0] == 'recovered  prop/bench: restored 1 file(s) an interrupted import left'
+    assert not run.Journal(game, asset).pending()
+
+
 def test_an_unauthorized_writer_is_refused_before_any_write(game, monkeypatch):
     monkeypatch.setenv('ATELIER_AGENT', 'someone-else')
     editor = FakeEditor()

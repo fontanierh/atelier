@@ -53,7 +53,8 @@ def steps(ctx):
                             Call('check editor writes', _check_editor_writes), ran('editor.run')],
              inputs=[UNREAL / 'Scripts'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'editor.run' in RAN,
-             about='one named editor script (V2_EDITOR_SCRIPT, V2_EDITOR_CLAIM + V2_EDITOR_PATHS for a claimed write)'),
+             about='one named editor script (V2_EDITOR_SCRIPT; V2_EDITOR_CLAIM + V2_EDITOR_PATHS for a claimed write, '
+                   'V2_EDITOR_READ_ONLY=1 to save nothing)'),
     ] + import_steps()
 
 
@@ -122,6 +123,16 @@ def _authorize_editor(ctx, log):
     if script == 'import_asset.py':
         raise RuntimeError('import_asset.py runs only through its import.<id> step (tools/import/run.py)')
     declared = _editor_paths()
+    if os.environ.get('V2_EDITOR_READ_ONLY'):
+        # A script that only reads (C05's open and close) needs no claim: the editor refuses every save.
+        if claim or declared:
+            raise RuntimeError('V2_EDITOR_READ_ONLY runs without V2_EDITOR_CLAIM or V2_EDITOR_PATHS')
+        authority.allow_saves([], ctx.out / 'editor-run' / 'save-allow.txt')
+        authority.deny_saves(authority.generated_paths(GAME), ctx.out / 'editor-run' / 'save-deny.txt')
+        EDITOR_BEFORE.clear()
+        EDITOR_BEFORE.update(authority.content_snapshot(GAME))
+        log.write('editor script authorized read-only: every save is refused\n')
+        return
     generated = sorted(set(declared) & authority.generated_paths(GAME))
     if generated:
         raise RuntimeError(f'generated packages are written only by their importer: {", ".join(generated[:5])}')
@@ -157,6 +168,8 @@ def _check_editor_writes(ctx, log):
     if generated:   # the bootstrap writer included: a generated package belongs to its importer
         raise RuntimeError(f'the editor script wrote generated packages: {", ".join(generated[:8])}; '
                            'reimport them with tools/import/run.py')
+    if os.environ.get('V2_EDITOR_READ_ONLY') and changed:
+        raise RuntimeError(f'the read-only editor script changed files: {", ".join(changed[:8])}')
     if os.environ.get('V2_EDITOR_CLAIM'):
         outside = [path for path in changed if path not in set(_editor_paths())]
         if outside:

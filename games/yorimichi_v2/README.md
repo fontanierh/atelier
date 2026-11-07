@@ -55,6 +55,15 @@ Without it these packages are absent locally, and the content check (so every bu
 "fetch required". `--allow-restricted-absent` only notes it, for checkouts without restricted access that do not
 build or play. A fetch never overwrites a local file that differs from its pin.
 
+### Workspaces on one machine
+
+Keep compiled workspaces and reuse them for later tasks. A new Git worktree pays a full editor compile (17 and
+32 minutes in the C01 run) and about 18 GB of build output; a copy-on-write clone of another workspace's build
+folders did not help. In the C04 handoff, an already compiled receiving workspace was ready 5.5 s after the
+transfer. So each workspace has one writer at a time and moves to its next task's branch only after its Unreal
+work has stopped. This is the proven one-machine workflow. Several machines are a separate gate (DECISIONS D03),
+not yet proven.
+
 ## Everyday commands
 
 Each command below has been run as written. A command marked *(pending)* exists but has not yet been proven on
@@ -88,11 +97,12 @@ V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/move_actor.py V2_MOVE_AC
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # move one saved actor, save only its package (31 s)
 uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen                # the slice game; prints its live session ID
 uv run python games/yorimichi_v2/tools/test/route.py --session ID --out DIR     # walk + skate route in that game, report.json
+uv run python games/yorimichi_v2/tools/test/budgets.py open --out DIR           # a plan §15 budget: warm-up + 5 runs, receipt
 ```
 
 `/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
 from a fresh checkout without donor content. Collaboration test results are kept in
-[docs/COLLABORATION_TESTS.md](docs/COLLABORATION_TESTS.md).
+[docs/COLLABORATION_TESTS.md](docs/COLLABORATION_TESTS.md), the slice budgets in [docs/BUDGETS.md](docs/BUDGETS.md).
 
 ## How content is owned and changed
 
