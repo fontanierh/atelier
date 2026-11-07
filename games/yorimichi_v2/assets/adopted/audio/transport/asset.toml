@@ -1,0 +1,147 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Audio/Transport
+schema = 1
+id = "adopted/audio/transport"
+kind = "adopted"
+authority = "editor"
+owner = "shared/audio/transport"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_brow_close_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_brow_close_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_brow_close_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_brow_open_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_brow_open_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_brow_open_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_engine_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_engine_idle_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_fender_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_fender_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_fender_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_horn_arrive_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_horn_depart_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_moorings_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_thruster_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/ferry_wash_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_cabin_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_chime_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_door_close_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_door_close_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_door_open_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_door_open_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_grip_attach_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_grip_attach_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_grip_attach_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_grip_release_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_grip_release_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_grip_release_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_sheave_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_sheave_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_sheave_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/gondola_station_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_bell_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_bell_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_engine_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_engine_idle_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_envelope_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_gate_close_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_gate_close_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_gate_close_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_gate_open_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_gate_open_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_gate_open_03"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_moor_01"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_moor_02"
+
+[[outputs]]
+package = "/Game/Audio/Transport/zeppelin_moor_03"

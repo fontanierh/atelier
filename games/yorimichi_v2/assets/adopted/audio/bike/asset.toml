@@ -1,0 +1,111 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Audio/Bike
+schema = 1
+id = "adopted/audio/bike"
+kind = "adopted"
+authority = "editor"
+owner = "shared/audio/bike"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Audio/Bike/bell_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/bell_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/bell_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/chain_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/crash_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/crash_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/crash_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/creak_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/creak_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/creak_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/fall_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/fall_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/fall_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/freewheel_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/land_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/land_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/land_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/rattle_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/rattle_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/rattle_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/skid_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/skid_dirt_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/stand_down_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/stand_down_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/stand_down_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/stand_up_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/stand_up_02"
+
+[[outputs]]
+package = "/Game/Audio/Bike/stand_up_03"
+
+[[outputs]]
+package = "/Game/Audio/Bike/tyre_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/tyre_dirt_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/tyre_grass_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/tyre_stone_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/tyre_wood_01"
+
+[[outputs]]
+package = "/Game/Audio/Bike/wind_01"

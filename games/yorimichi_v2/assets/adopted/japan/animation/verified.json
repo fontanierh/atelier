@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/animation",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Animation/CharacterCompression.uasset": "ee4c0efea0380b56dd82b2d288758dc8502494a75a70614972b08e2e1a4621c6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

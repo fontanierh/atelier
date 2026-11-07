@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/Audio/Footsteps/stone
+schema = 1
+id = "adopted/japan/audio/footsteps/stone"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/audio/footsteps/stone"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_06"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_07"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_08"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/stone/stone_tovusound_rocks_jump_land_09"

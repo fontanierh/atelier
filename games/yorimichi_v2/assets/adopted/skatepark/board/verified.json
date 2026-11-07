@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skatepark/board",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Board/M_BoardDissolve.uasset": "71406f768a983bd906010a82f0d4f57acf9f2c18aa82e5892a218c92c0d0caa2",
+    "unreal/Content/SkatePark/Board/SM_SkateDeck.uasset": "8f9dfb556f6525657f5286254d9e0afea286bce4336437a8e74dbc781e522bc4",
+    "unreal/Content/SkatePark/Board/SM_SkateTruck.uasset": "be24831f236da5b47d3262eed2c8000431239cdaf9a3fbed09e2ec215a6ed76d",
+    "unreal/Content/SkatePark/Board/SM_SkateWheel.uasset": "a829f5ca89e325dd7cbe22ea3b510bf178b32548356d971390c1c9f476665a84"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

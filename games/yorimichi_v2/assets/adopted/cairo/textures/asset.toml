@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Cairo/Textures
+schema = 1
+id = "adopted/cairo/textures"
+kind = "adopted"
+authority = "editor"
+owner = "shared/cairo/textures"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Cairo/Textures/T_Clean_body_matte_skin_and_fitting_suit"
+
+[[outputs]]
+package = "/Game/Cairo/Textures/T_Outfit_Tripo_skate_r01"

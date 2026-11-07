@@ -1,0 +1,72 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/Audio/Footsteps/mud_water
+schema = 1
+id = "adopted/japan/audio/footsteps/mud-water"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/audio/footsteps/mud-water"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_06"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_07"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_08"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_09"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_10"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_11"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_12"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_13"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_14"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_15"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_16"

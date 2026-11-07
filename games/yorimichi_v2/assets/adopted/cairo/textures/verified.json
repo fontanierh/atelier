@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/cairo/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Cairo/Textures/T_Clean_body_matte_skin_and_fitting_suit.uasset": "174802e98a2dee916f82b5cf8a7ad9c0d59aca26b0b6e0c6972eeb4441847fdb",
+    "unreal/Content/Cairo/Textures/T_Outfit_Tripo_skate_r01.uasset": "ae8679fe96c739cb2b03411a9ca284b35290a41a63e6ff1b97e583a519ee526c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

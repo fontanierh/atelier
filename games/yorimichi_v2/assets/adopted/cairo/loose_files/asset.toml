@@ -1,0 +1,66 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/Cairo
+schema = 1
+id = "adopted/cairo/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/cairo/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Cairo/A_DoubleJump"
+
+[[outputs]]
+package = "/Game/Cairo/A_Interact"
+
+[[outputs]]
+package = "/Game/Cairo/A_SitDown"
+
+[[outputs]]
+package = "/Game/Cairo/A_SitIdle"
+
+[[outputs]]
+package = "/Game/Cairo/A_StandUp"
+
+[[outputs]]
+package = "/Game/Cairo/A_SwordIdle"
+
+[[outputs]]
+package = "/Game/Cairo/A_SwordParry"
+
+[[outputs]]
+package = "/Game/Cairo/A_SwordParryHit"
+
+[[outputs]]
+package = "/Game/Cairo/A_Wave"
+
+[[outputs]]
+package = "/Game/Cairo/BP_Cairo"
+
+[[outputs]]
+package = "/Game/Cairo/DA_CairoBase"
+
+[[outputs]]
+package = "/Game/Cairo/M_Cairo_Clean_body_matte_skin_and_fitting_suit"
+
+[[outputs]]
+package = "/Game/Cairo/M_Cairo_Clean_brows_dark_brown"
+
+[[outputs]]
+package = "/Game/Cairo/M_Cairo_Clean_eyes_soft_charcoal"
+
+[[outputs]]
+package = "/Game/Cairo/M_Cairo_Clean_hair_warm_dark_brown"
+
+[[outputs]]
+package = "/Game/Cairo/M_Cairo_Clean_skin_matte_warm_peach"
+
+[[outputs]]
+package = "/Game/Cairo/M_Cairo_Outfit_Tripo_skate_r01"
+
+[[outputs]]
+package = "/Game/Cairo/SK_Cairo"
+
+[[outputs]]
+package = "/Game/Cairo/SK_Cairo_Skeleton"

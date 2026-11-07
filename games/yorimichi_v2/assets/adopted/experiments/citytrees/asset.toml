@@ -1,0 +1,117 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Experiments/CityTrees
+schema = 1
+id = "adopted/experiments/citytrees"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/citytrees"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_-1_-1_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_-1_0_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_0_-1_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_0_0_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_-1_-1_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_-1_0_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_0_-1_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_0_0_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_-1_-1_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_-1_0_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_0_-1_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_0_0_v4"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_0_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_0_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_0_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_0_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_0_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_0_0"

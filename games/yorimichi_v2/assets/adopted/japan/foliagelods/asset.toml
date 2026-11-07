@@ -1,0 +1,357 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/FoliageLODs
+schema = 1
+id = "adopted/japan/foliagelods"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Flower_A/Bush_Flower_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Flower_A/Bush_Flower_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Flower_B/Bush_Flower_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Flower_B/Bush_Flower_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Green_A/Bush_Green_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Green_A/Bush_Green_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Green_B/Bush_Green_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Green_B/Bush_Green_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_A/Grass_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_A/Grass_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_B/Grass_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_B/Grass_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Forest_Ginkgo_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Forest_Maple_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Forest_Oak_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Forest_Pine_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Cypress_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Oak_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Olive_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Pine_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/MI_Tree_Broad_A_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_B/MI_Tree_Broad_B_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_C/MI_Tree_Broad_C_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_A/MI_Tree_Cedar_A_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_B/MI_Tree_Cedar_B_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Ginkgo/MI_Tree_Ginkgo_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_A/MI_Tree_Maple_A_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/MI_Tree_Maple_B_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_A/MI_Tree_Pine_A_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_B/MI_Tree_Pine_B_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD5"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD4"

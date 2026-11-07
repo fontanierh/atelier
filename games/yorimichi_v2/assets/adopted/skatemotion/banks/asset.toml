@@ -1,0 +1,87 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/SkateMotion/Banks
+schema = 1
+id = "adopted/skatemotion/banks"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skatemotion/banks"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_000"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_001"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_002"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_003"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_004"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_005"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_006"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_007"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_008"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_009"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_010"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_011"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_012"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_013"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_014"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_015"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_016"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_017"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_018"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_019"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_020"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_021"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_022"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_023"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_024"
+
+[[outputs]]
+package = "/Game/SkateMotion/Banks/Bank_025"
