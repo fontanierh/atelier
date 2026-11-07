@@ -160,7 +160,7 @@ def test_a_tracked_restricted_path_is_an_error(game):
     assert ('RESTRICTED_TRACKED', f'unreal/Content/{ROLL}') in found
 
 
-def test_adoption_treats_pinned_or_donor_restricted_references_as_satisfied(tmp_path, game, monkeypatch):
+def test_adoption_treats_only_pinned_restricted_references_as_satisfied(tmp_path, game, monkeypatch):
     adopt = load('v2_restricted_adopt', 'tools/migrate/adopt.py')
     fetch.pin(game, echo=lambda *_: None)
     shutil.rmtree(game / 'unreal/Content/Audio')
@@ -170,7 +170,8 @@ def test_adoption_treats_pinned_or_donor_restricted_references_as_satisfied(tmp_
     refs = ['/Game/Audio/Skate/A_Roll', '/Game/Japan/Audio/DA_Footsteps', '/Game/Audio/Combat/A_Gone']
     monkeypatch.setattr(adopt, 'references', lambda path: refs)
     report = adopt.adopt(game, donor, ['Skate'], [], 'owner-published', check_only=True)
-    assert report['missing_references'] == {'/Game/Audio/Combat/A_Gone': '/Game/Skate/BP_Board'}
+    assert report['missing_references'] == {'/Game/Japan/Audio/DA_Footsteps': '/Game/Skate/BP_Board',   # neither adopted nor pinned
+                                            '/Game/Audio/Combat/A_Gone': '/Game/Skate/BP_Board'}
 
 
 def test_this_game_ignores_and_never_tracks_its_restricted_roots():
