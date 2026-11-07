@@ -1,15 +1,22 @@
 # The forest lab: a small, repeatable forest for building and proving the trees' rendering. See README.md.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_forest_lab"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
 
 [[bin]]
+test = false
+bench = false
 name = "forest-lab"
 path = "src/main.rs"
 
 [[bin]]
+test = false
+bench = false
 name = "lab-compare"
 path = "src/compare.rs"
 

@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! Complete fixed-step skating simulation and its Bevy presentation.
 mod core;
 mod data;

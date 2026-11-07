@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! One real guarded validation window for C5b/C7 (not a test; run by hand under normal admission).
 //!
 //! `guarded_window --python PATH --out DIR` runs a disposable Python worker with one descendant

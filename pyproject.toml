@@ -37,6 +37,7 @@ only-include = ["platform/studio/atelier", "platform/harness/harness"]
 dev-dependencies = ["pytest>=8"]
 
 [tool.pytest.ini_options]
+# Root conftest.py excludes retired experiments, including explicit requests for their tests.
 testpaths = ["platform/studio/tests", "platform/harness/tests", "games"]
 python_files = ["test_*.py"]
 # Committed Unreal content (games/yorimichi_v2) holds no tests; do not walk its thousands of package folders.

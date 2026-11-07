@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The sounds: the player's footsteps on what each foot lands on, the landings, the bursts
 //! of air of the double jump, the dodges and the paraglider opening, the wind while gliding, and the countryside
 //! around the world. Every sound is from `assets/sounds`, at the volume the settings choose.

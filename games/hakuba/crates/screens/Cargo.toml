@@ -1,5 +1,8 @@
 # What every screen shares. See README.md.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_screens"
 version.workspace = true
 edition.workspace = true
@@ -11,3 +14,9 @@ bevy.workspace = true
 # The vendored Metal backend's presentation timings, which the frame rate shows. See vendor/README.md.
 [target.'cfg(target_os = "macos")'.dependencies]
 wgpu-hal = "30"
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

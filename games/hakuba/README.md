@@ -1,5 +1,9 @@
 # Hakuba
 
+> **Retired experiment (owner 2026-11-07).** Tests and benchmarks are disabled. Do not run or restore
+> the historical test commands below. Source and assets remain available as reference; new tests
+> belong with the active implementation. This retirement is not a passing test result.
+
 Hakuba is a 3D game built on [Bevy](https://bevyengine.org), a Rust engine where the whole game is code. Bevy
 loads the committed glTF files directly, so a checkout runs after a Rust compile. Hakuba runs as a Mac desktop app
 and in the browser.

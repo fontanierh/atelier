@@ -3,7 +3,7 @@
 #include "HRTestUtil.h"
 #include "Misc/AutomationTest.h"
 
-#if WITH_DEV_AUTOMATION_TESTS
+#if 0 && WITH_DEV_AUTOMATION_TESTS // Retired V1 tests (owner 2026-11-07).
 
 // Same seeds as the reference implementation give the same numbers (hash, draws, genomes, abilities, zones, names).
 // Ages are re-based on the horse clock: a reference month is HRClock::LifeMonth race days here.

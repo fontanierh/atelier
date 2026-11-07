@@ -1,5 +1,8 @@
 # Dev mode: a free camera for exploring the world and taking notes on it. See README.md.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_dev"
 version.workspace = true
 edition.workspace = true
@@ -29,3 +32,9 @@ web-sys = { version = "0.3.106", features = [
   "Url",
   "Window",
 ] }
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

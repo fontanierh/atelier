@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The forest lab: one dense forest of the game's own trees on a hill, seen along fixed camera paths at a fixed step
 //! per frame, so two runs see the same frames. A run draws its trees one way (the knobs below), logs the GPU's time for
 //! each frame, and may save every few frames to compare against another run (`lab-compare`): the reference run draws

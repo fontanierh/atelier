@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! Dev mode: a free camera for exploring the world and taking notes on what is wrong with it. While it is on, the
 //! player waits (`hakuba_player` stops them) and the camera flies wherever it is steered; the tiles load round it.
 

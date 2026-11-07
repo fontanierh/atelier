@@ -1,5 +1,8 @@
 # Rendering commands. See README.md.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_rendering"
 version.workspace = true
 edition.workspace = true
@@ -7,3 +10,9 @@ publish.workspace = true
 
 [dependencies]
 bevy.workspace = true
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

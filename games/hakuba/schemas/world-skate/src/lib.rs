@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! Ordered grind lines, contact materials and bounded skating zones in Y-up world metres.
 use serde::{Deserialize, Serialize};
 

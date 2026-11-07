@@ -1,5 +1,8 @@
 # The desktop game's frame pacer and frame log. See README.md.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_pacing"
 version.workspace = true
 edition.workspace = true
@@ -14,3 +17,9 @@ hakuba_settings.workspace = true
 # See vendor/README.md.
 [target.'cfg(target_os = "macos")'.dependencies]
 wgpu-hal = "30"
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

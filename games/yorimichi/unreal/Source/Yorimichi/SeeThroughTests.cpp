@@ -1,5 +1,5 @@
 #include "SeeThrough.h"
-#if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
+#if 0 && WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR // Retired V1 tests (owner 2026-11-07).
 #include "Misc/AutomationTest.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/StrongObjectPtr.h"

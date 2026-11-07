@@ -1,6 +1,6 @@
 #include "JapanDefenceTimeline.h"
 #include "JapanDefenceClock.h"
-#if WITH_DEV_AUTOMATION_TESTS
+#if 0 && WITH_DEV_AUTOMATION_TESTS // Retired V1 tests (owner 2026-11-07).
 #include "Misc/AutomationTest.h"
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanDefenceTimelineTest, "Yorimichi.Network.DefenceTimeline",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)

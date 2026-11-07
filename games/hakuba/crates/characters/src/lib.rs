@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The playable characters. An entity given a [`Character`] gets that character's model and plays its idle in a loop;
 //! [`Clips`] then lists every clip the model has and how fast each carries it, [`Play`] switches to one, fading from
 //! the last, and [`Playing`] says which is playing and whether it has finished. The model's right hand holds what the

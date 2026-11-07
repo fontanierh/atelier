@@ -9,12 +9,10 @@ is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the par
   motion helpers), `conventions/` (units, bone contract, clip roles,
   sound cues). Platform files never name a game.
 - `games/<game>/`: `game.toml` (its `engine`, play profiles, fetches, stream), `build.py` (build steps), `unreal/`,
-  `world/`, `assets/`, `scenarios/`, `docs/`. `yorimichi` is the full game; `sandbox` is the Unreal template for
+  `world/`, `assets/`, `scenarios/`, `docs/`. `yorimichi_v2` is the active game; `sandbox` is the Unreal template for
   `atelier new`. A game runs on Unreal or on Bevy: [engines](docs/ENGINES.md) says what differs.
-- `games/hakuba/` is a Bevy game, all Rust. `atelier build hakuba` runs its cargo build and asset check under
-  admission, and `atelier play hakuba` runs the built program; plain `cargo` and `trunk` still work in its folder. The
-  Unreal and Blender rules below do not apply to it. Follow [its README](games/hakuba/README.md) and its `CONTRACTS`
-  files; the repository, lint, commit, board and admission rules still apply.
+- `games/hakuba/` (Bevy) and `games/yorimichi/` (Unreal V1) are retired experiments kept as reference.
+  Their test instructions are obsolete; do not run their suites. The active game is `games/yorimichi_v2/`.
 - `games/yorimichi_v2/` is the Unreal port of Yorimichi with **committed** editable content in Git LFS
   ([plan](docs/YORIMICHI_V2_PLAN.md), [its README](games/yorimichi_v2/README.md)). Its normal build validates and
   compiles only; imports are explicit and targeted, and binary edits need a claim. The generated-Content and
@@ -52,11 +50,17 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   That declaration applies only to that head; never use it to exempt behavior changes. See
   [the review guide](docs/CODE_CONTRACTS.md#requesting-a-paid-review) for scope and notice behavior.
   The Python suite runs in three isolated jobs (board, other studio, games). The macOS-only board job is
-  deferred to final validation (owner 2026-10-23), so CI runs `quality` and the three Linux test jobs
-  (studio, games 1/2, games 2/2) under the `Studio Python / Linux (macOS deferred)` check; that aggregate
+  deferred to final validation (owner 2026-10-23), so CI runs `quality` and the two Linux test jobs
+  (studio, games) under the `Studio Python / Linux (macOS deferred)` check; that aggregate
   fails unless they pass. New tests are partitioned automatically; no per-file CI list needs updating.
-  PRs that change only `games/hakuba/` skip Studio Python; their `Hakuba` workflow (current exports, lint) must
-  pass instead.
+  **Retired tests stay disabled (owner 2026-11-07).** Do not run tests for `games/hakuba`,
+  `games/yorimichi` (V1), or the unused `platform/build-v2` experiment and its Python workers.
+  Root `conftest.py` excludes their Python tests and refuses explicit requests; their dedicated CI
+  workflows are removed. Retired Rust test/doctest code and V1's C++ automation registrations are
+  disabled at source; their `atelier qa` scenarios are disabled too. Do not override those settings.
+  Old instructions to run them are obsolete. Keep V2, the sandbox template and shared tools used by V2
+  covered. Add a test to its active owner when porting behavior; do not re-enable a retired suite.
+  Reference assets and donor code may still be used for the port.
   Before merging, run `uv run atelier lint` and `uv run atelier contracts check`, verify a successful
   `Studio Python / Linux (macOS deferred)` CI run on the exact final PR head, put the results in the review
   request, and get one other agent's approval on the

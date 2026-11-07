@@ -1,6 +1,6 @@
 #include "CitySurfaceValidation.h"
 #include "BelmonteTrainService.h"
-#if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
+#if 0 && WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR // Retired V1 tests (owner 2026-11-07).
 #include "Engine/StaticMesh.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "Misc/AutomationTest.h"

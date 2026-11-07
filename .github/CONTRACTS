@@ -9,7 +9,9 @@ incomplete output MUST NOT be reported as a completed review. Findings MUST rema
 agents MAY resolve false positives with an explanation. A completed review is not semantic approval.
 
 @cc [owner:fontanierh,label:correctness] complete-python-ci
-Python CI groups MUST cover normal pytest collection exactly once, except that while macOS CI is
+Python CI groups MUST cover normal active pytest collection exactly once. Retired experiment suites
+MUST remain excluded from collection and CI (owner 2026-11-07); exclusion MUST NOT be reported as a pass.
+Shared tooling and active game coverage MUST remain enabled. While macOS CI is
 deferred (owner 2026-10-23, TASKS MAC1) the macOS-only board group is disabled and its coverage is
 deferred, not passed. The aggregate merge check MUST fail when any enabled group fails, is cancelled
 or is skipped. Re-enabling macOS CI (MAC1) MUST restore the board group to the aggregate. Cached

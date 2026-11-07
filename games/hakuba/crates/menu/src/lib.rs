@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The menu the game opens on: go into the world, into the character viewer or to the settings. A controller's South
 //! button goes into the world.
 

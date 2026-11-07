@@ -14,10 +14,12 @@ def snapshot(tmp_path, monkeypatch):
     project = repo / 'games/standin/unreal/Standin.uproject'
     project.parent.mkdir(parents=True)
     project.write_text('{}')
+    (project.parent.parent / 'game.toml').write_text('id = "standin"\n')
     journal = repo / 'build/standin' / build_snapshot.JOURNAL
     journal.parent.mkdir(parents=True)
     journal.write_text('{}')
     monkeypatch.setattr(paths, 'REPO', repo)
+    monkeypatch.setattr(paths, 'GAMES', repo / 'games')
     monkeypatch.setattr(paths, 'build_root', lambda: alternate)
     monkeypatch.setenv('ATELIER_BUILD_ROOT', str(alternate))
     ctx = SimpleNamespace(game='standin', out=out)

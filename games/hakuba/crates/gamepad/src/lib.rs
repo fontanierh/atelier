@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! A DualSense read straight from its HID reports, on macOS. Over Bluetooth the system switches the controller to its
 //! full report (0x31), which macOS hands over as one opaque vendor field, so gilrs sees it connect but never sees a
 //! button or a stick. A thread reads the reports and this plugin feeds them to Bevy as the gamepad's raw events.
