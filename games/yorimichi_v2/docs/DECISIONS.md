@@ -46,6 +46,25 @@ validation, adoption). A claimed write is checked with `atelier claims check --s
 verified LFS locks); without a claim only the bootstrap writer passes, and not in a checkout that has a claims
 task. **Closes** once the slice's adopted content is merged: from then on every binary write needs a claim.
 
+The switch is committed state, not a convention: `governance.toml` `[d04]` names the writer and `closed`
+(`false` until the slice merges). `authority.authorize` reads it on every unclaimed write; when closed, or
+when the file is missing or malformed, nobody is exempt on any route (import, editor script, save validation,
+adoption, migration). Closing D04 is a reviewed one-line commit.
+
+New actor packages under a claim (the migration after D04): World Partition names a One File Per Actor package
+(`__ExternalActors__/<map>/…/<hash>.uasset`) only when it saves it, so no claim can list it beforehand.
+**Chosen: claimed creation, bound after the save.** A run whose claim holds every touched region's scope
+(`region/<name>`, exclusive in the claim service) may create files in those regions' maps' actor folders
+(`Region.actor_folders`). The `migrate.map` step denies saving every existing package the claim does not list
+exactly; after the editor, `authority.bind_created` compares content snapshots taken before and after: a created
+file must have been absent, unrecorded and inside those folders, or the run is refused; changed or deleted
+existing files must be exactly claimed. The created files are then added to the claim with their LFS locks
+(`atelier claims extend ID --lock-path … --acquire`, the claim service's documented route for new files under a
+region) and pass the same publish check before save validation records them; each must end in a touched
+region's record. Nothing unbound reaches a commit. *Rejected: reserving actor paths before saving.* It needs an
+editor dry run to predict the hashed names and fails whenever the editor names a package differently; the
+created set measured from the disk is exact by construction.
+
 ## D05 — Asset rights before public upload (§4, P0 pass/stop)
 
 The repository is public and Git LFS is not private storage. No source in the repository carries a license

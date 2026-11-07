@@ -33,6 +33,7 @@ HEX64 = re.compile(r'^[0-9a-f]{64}$')
 PACKAGE_EXTENSIONS = ('.uasset', '.umap')
 # Uncooked companions an editor package may carry; the importer records the ones it actually wrote.
 COMPANION_EXTENSIONS = ('.ubulk', '.uexp', '.uptnl')
+ACTOR_ROOTS = ('__ExternalActors__', '__ExternalObjects__')   # a World Partition map's One File Per Actor folders
 
 
 class RecordError(ValueError):
@@ -88,6 +89,13 @@ class Region:
     @property
     def actors(self) -> Path:
         return self.folder / 'actors.verified.json'
+
+    @property
+    def actor_folders(self) -> list[str]:
+        """Game-relative folders its maps' actor packages live in (`unreal/Content/__ExternalActors__/<map>`, and
+        `__ExternalObjects__`). Regions on one map share them; save validation's label and bounds rule splits them."""
+        return [f'unreal/Content/{root}/{PurePosixPath(m).relative_to("/Game")}'
+                for m in self.maps for root in ACTOR_ROOTS]
 
 
 def sha256_file(path: Path) -> str:

@@ -100,7 +100,10 @@ nobody owns.
 - **Split** assets name the writer of each output.
 
 Before changing a binary package, claim its scope (`atelier claims`). Until the claim service has adopted V2's
-protected writes, one bootstrap writer does all binary work (DECISIONS D04).
+protected writes, one bootstrap writer does all binary work (DECISIONS D04); `governance.toml` holds that switch,
+and once it is closed every write needs a claim. A claimed migration (`tools/migrate/run.py --claim TASK`) may
+create new actor packages in its claimed regions; they are bound to the claim with their LFS locks before they
+are recorded.
 
 The normal build and play never generate, import, resave or cook. Packaging is explicit and runs a full-hash
 content check first.
