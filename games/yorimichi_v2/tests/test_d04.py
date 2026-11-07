@@ -285,3 +285,11 @@ def test_a_created_actor_no_touched_region_records_fails_the_run(tmp_path, game,
     with pytest.raises(migration.MigrationError, match='1 created file'):
         migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, files), out=tmp_path / 'm',
                           echo=lambda *_: None)
+
+
+def test_a_region_owns_its_actor_packages_companions(game):
+    """An editor save of a region's actor may write its .uexp/.ubulk/.uptnl: the region owns those paths too, so a
+    claimed move declares no extra scopes for them (C01's native placement edit was refused for lack of this)."""
+    stem = repo_path(OLD)[:-len('.uasset')]
+    scopes, unowned = authority.owning_scopes(game, [stem + ext for ext in ('.uasset', '.uexp', '.ubulk', '.uptnl')])
+    assert scopes == {'region/w01'} and unowned == []

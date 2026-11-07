@@ -54,6 +54,7 @@ def test_missing_phases_and_low_frame_rates_fail():
 def test_the_report_names_the_launch_commit_and_refuses_a_moved_checkout():
     head = subprocess.run(['git', '-C', str(route.REPO), 'rev-parse', 'HEAD'], capture_output=True, text=True,
                           check=True).stdout.strip()
-    assert route.revision(head)['commit'] == head
+    bound = route.revision(route.REPO, head, 'session')
+    assert bound['commit'] == head and bound['launch'] == 'session'
     with pytest.raises(ValueError, match='launched at'):
-        route.revision('0' * 40)
+        route.revision(route.REPO, '0' * 40, 'session')

@@ -27,6 +27,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
+sys.path.insert(0, str(HERE))
+from launch import launch_revision, revision  # noqa: E402
 WALK_MIN_M, WALK_MIN_SPEED, SKATE_MIN_SPEED, SKATE_MAX_DZ, MIN_FPS = 12, 250, 600, 50, 20
 
 
@@ -71,25 +73,6 @@ def evaluate(rows):
     return failures, measured
 
 
-def revision(launched: str) -> dict:
-    """This checkout's commit and dirty state, refused when it is not `launched`, the live session's launch commit."""
-    def git(*argv):
-        return subprocess.run(['git', '-C', str(REPO), *argv], capture_output=True, text=True, check=True).stdout
-    commit = git('rev-parse', 'HEAD').strip()
-    if launched != commit:
-        raise ValueError(f'the game was launched at {launched[:10] or "an unknown revision"}, but this checkout is now '
-                         f'at {commit[:10]}: relaunch it')
-    return {'commit': commit, 'dirty': bool(git('status', '--porcelain').strip()), 'launch': 'session'}
-
-
-def launch_revision(session: str) -> str:
-    """The revision recorded when this checkout launched the live session (verified against the running process)."""
-    from atelier import live_sessions
-    record = live_sessions.select(session, checkout=REPO)
-    live_sessions.verify(record)
-    return record.get('revision') or ''
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--session', required=True, help='live session ID of the running slice game')
@@ -100,8 +83,8 @@ def main(argv=None):
     for stale in ('route.jsonl', 'done.json', 'report.json'):
         (out / stale).unlink(missing_ok=True)
     try:
-        launched = launch_revision(args.session)
-        revision(launched)  # refuse a moved checkout before driving the game
+        launched = launch_revision(args.session, REPO)
+        revision(REPO, launched, 'session')  # refuse a moved checkout before driving the game
     except (OSError, ValueError, RuntimeError) as error:
         print(f'cannot bind the route to its game: {error}', file=sys.stderr)
         return 2
@@ -123,7 +106,7 @@ def main(argv=None):
     if 'error' in done:
         failures.insert(0, f'game: {done["error"]}')
     try:
-        rev = revision(launched)
+        rev = revision(REPO, launched, 'session')
     except ValueError as error:
         failures.insert(0, str(error))
         rev = None

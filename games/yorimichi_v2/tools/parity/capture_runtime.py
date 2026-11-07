@@ -29,6 +29,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
+sys.path.insert(0, str(HERE.parent / 'test'))
+from launch import git, launch_revision, revision  # noqa: E402
 DEFAULT_POSES = HERE / 'poses.json'
 
 
@@ -54,28 +56,6 @@ def camera_glb(path: Path) -> Path:
     chunks = struct.pack('<II', len(text), 0x4E4F534A) + text + struct.pack('<II', len(vertices), 0x004E4942) + vertices
     path.write_bytes(struct.pack('<III', 0x46546C67, 2, 12 + len(chunks)) + chunks)
     return path
-
-
-def git(checkout: Path, *argv) -> str:
-    return subprocess.run(['git', '-C', str(checkout), *argv], capture_output=True, text=True, check=True).stdout
-
-
-def revision(checkout: Path, launched: str, how: str) -> dict:
-    """The checkout's commit and dirty state, refused unless it is `launched`, the commit the running game was proven
-    to start from (`how`: its live session record, or the process start check for a game without one)."""
-    commit = git(checkout, 'rev-parse', 'HEAD').strip()
-    if launched != commit:
-        raise ValueError(f'the game was launched at {launched[:10] or "an unknown revision"}, but {checkout} is now at '
-                         f'{commit[:10]}: relaunch the game from this checkout')
-    return {'commit': commit, 'dirty': bool(git(checkout, 'status', '--porcelain').strip()), 'launch': how}
-
-
-def launch_revision(session: str, checkout: Path) -> str:
-    """The revision recorded when this live session was launched; the session must have started from `checkout`."""
-    from atelier import live_sessions
-    record = live_sessions.select(session, checkout=checkout)
-    live_sessions.verify(record)
-    return record.get('revision') or ''
 
 
 def head_moved(checkout: Path) -> int:
