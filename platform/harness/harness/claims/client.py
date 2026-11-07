@@ -3,6 +3,7 @@ import fnmatch
 import json
 import subprocess
 import threading
+import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -52,6 +53,7 @@ class AcquireFailed(Exception):
 
 
 LOCK_WORKERS = 8   # paths locked at once: each path is three remote round trips, and paths are independent
+UNKNOWN_RETRY_S = (2.0, 5.0)   # an unanswered lock request is asked again: a dropped reply rarely means a lock
 
 
 def _workers(locker, workers, count):
@@ -86,6 +88,17 @@ def acquire(client, claim_id, locker, ref=None, workers=LOCK_WORKERS):
             if intent.get('resumed'):
                 return None  # an earlier interrupted attempt made this lock; the service recorded it
             result = locker.lock(path, ref=ref)
+            for wait in UNKNOWN_RETRY_S:
+                if result.outcome != 'unknown':
+                    break
+                # Asking again settles a dropped reply now, not after the settle interval: a new lock (201) proves
+                # the first request made none, and if that one lands later the remote refuses it as a duplicate.
+                # Any other answer (the path is already locked, perhaps by the first request) stays unknown.
+                time.sleep(wait)
+                again = locker.lock(path, ref=ref)
+                if again.outcome != 'unknown':
+                    result = again if again.outcome == 'created' else result
+                    break
             body = {'path': path, 'outcome': result.outcome, 'detail': result.detail}
             if result.outcome == 'created':
                 body.update(lock_id=result.lock.id, owner=result.lock.owner)
