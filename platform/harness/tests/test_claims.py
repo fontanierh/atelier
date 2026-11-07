@@ -789,8 +789,8 @@ def test_resolution_and_unlock_discard_stale_listings(world):
 class TrackingLocker:
     """Wraps a locker and records how many lock requests were in flight at once."""
 
-    def __init__(self, inner):
-        self.inner, self.now, self.peak, self.guard = inner, 0, 0, threading.Lock()
+    def __init__(self, inner, concurrent=True):
+        self.inner, self.concurrent, self.now, self.peak, self.guard = inner, concurrent, 0, 0, threading.Lock()
 
     def lock(self, path, ref=None):
         with self.guard:
@@ -836,6 +836,17 @@ def test_a_failure_among_concurrent_locks_releases_only_this_attempt_s_locks(wor
     assert [l['id'] for l in world.lfs.at(paths[13])] == [other]          # the pre-existing one: untouched
 
 
+def test_a_locker_not_safe_to_run_concurrently_locks_one_path_at_a_time(world):
+    # A request queued after its intent was recorded could create its lock after reconciliation released the path.
+    a = world.agent('a', 'alice')
+    world.task(a, 'ta')
+    paths = [f'{HARBOUR}Actor{i:02}.uasset' for i in range(10)]
+    claim = world.request(a, 'ta', lock_paths=paths)
+    locker = TrackingLocker(a.locker, concurrent=False)
+    assert acquire(a, claim['id'], locker)['state'] == 'active'
+    assert locker.peak == 1
+
+
 def test_many_locks_are_released_concurrently(world):
     a = world.agent('a', 'alice')
     world.task(a, 'ta')
@@ -859,6 +870,7 @@ def test_many_locks_are_released_concurrently(world):
             with guard:
                 peak['now'] -= 1
     a.locker.unlock = unlock
+    a.locker.concurrent = True
     view = release_locks(a, view, a.locker)
     assert len(unlocks) == 30 and 1 < peak['max'] <= 8
     assert all(world.lfs.at(p) == [] for p in paths)

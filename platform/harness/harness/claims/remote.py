@@ -54,6 +54,8 @@ def _lock(data):
 class LfsHttp:
     """The Git LFS locking API over HTTP (docs/api/locking.md in git-lfs). Serves as both verifier and locker."""
 
+    concurrent = True   # independent requests: clients may lock and unlock several paths at once
+
     def __init__(self, url, headers=None, timeout=20):
         self.url, self.headers, self.timeout = url.rstrip('/'), dict(headers or {}), timeout
 
@@ -117,8 +119,9 @@ class GitLfsCli:
     """``git lfs locks/lock/unlock --json`` in a checkout, using that checkout's configured credentials.
 
     git-lfs keeps one lock cache per repository (shared by its worktrees) and concurrent lock/unlock commands corrupt
-    it, so this runs them one at a time in a process."""
+    it, so this runs them one at a time in a process, and clients do not run it concurrently (``concurrent``)."""
 
+    concurrent = False
     _cache = threading.Lock()
 
     def __init__(self, repo, remote=None, timeout=60):

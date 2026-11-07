@@ -54,13 +54,18 @@ class AcquireFailed(Exception):
 LOCK_WORKERS = 8   # paths locked at once: each path is three remote round trips, and paths are independent
 
 
+def _workers(locker, workers, count):
+    return max(1, min(workers if getattr(locker, 'concurrent', False) else 1, count))
+
+
 def acquire(client, claim_id, locker, ref=None, workers=LOCK_WORKERS):
     """Lock every needed LFS path of a pending (or extended active) claim with this client's own credentials,
     then have the service verify and activate it. On failure abort the attempt: the service lists only the
     locks this attempt proved it created, and this client unlocks exactly those.
 
-    Paths are locked `workers` at a time. Each path still records its intent before its lock request and its
-    result after it. After the first failure or error, no new path starts; the requests already started finish
+    Paths are locked `workers` at a time when the locker is safe to run concurrently (`locker.concurrent`), else
+    one at a time, so no request waits behind another after its intent is recorded. Each path still records its
+    intent right before its lock request and its result after it. After the first failure or error, no new path starts; the requests already started finish
     and report before the attempt is aborted or the error is raised."""
     view = client.call('GET', f'/claims/{claim_id}')
     paths = [lock['path'] for lock in view['locks']
@@ -98,7 +103,7 @@ def acquire(client, claim_id, locker, ref=None, workers=LOCK_WORKERS):
         return None
 
     failure, error = None, None
-    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(paths)))) as pool:
+    with ThreadPoolExecutor(max_workers=_workers(locker, workers, len(paths))) as pool:
         for future in [pool.submit(lock_one, path) for path in paths]:   # in path order: the first problem wins
             try:
                 outcome = future.result()
@@ -135,7 +140,7 @@ def release_locks(client, view, locker, ref=None, workers=LOCK_WORKERS):
 
     if not releasing:
         return view
-    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(releasing)))) as pool:
+    with ThreadPoolExecutor(max_workers=_workers(locker, workers, len(releasing))) as pool:
         list(pool.map(release, releasing))   # re-raises the first error once every started unlock reported
     return client.call('GET', f'/claims/{view["id"]}')
 
