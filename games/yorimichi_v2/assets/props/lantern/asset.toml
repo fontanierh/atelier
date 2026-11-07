@@ -8,7 +8,7 @@ owner = "shared/japan/assets"
 
 [[sources]]
 path = "src/Lantern.fbx"
-sha256 = "bb158afb9dfa46548acdff508f8627ee2e999b212bf5abcbb858c44102a6bb91"
+sha256 = "97a4b908cd45ef37b4943ce6a7919198706f72493089a8adf8cc78654c29fe2f"
 
 [recipe]
 importer = "static-mesh"
