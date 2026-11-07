@@ -1,5 +1,6 @@
 #include "V2ScenePatch.h"
 #include "JapanWorld.h"
+#include "JapanGameplayCollisionWorld.h"
 #include "SkatePark.h"
 #include "AtelierData.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -47,6 +48,9 @@ AV2ScenePatch::AV2ScenePatch()
 void AV2ScenePatch::BeginPlay()
 {
     Super::BeginPlay();
+    // Bike and horse probes trace the gameplay channel: a streamed patch is certified fixed like the startup world.
+    if (auto* Collision = GetWorld() ? GetWorld()->GetSubsystem<UJapanGameplayCollisionWorld>() : nullptr)
+        Collision->InstallFixed(this);
     // A patch streamed in after the world loaded joins its lists now; one there before is taken by Load.
     for (TActorIterator<AJapanWorld> It(GetWorld()); It; ++It)
         if (It->bLoaded) It->RegisterScenePatch(this);

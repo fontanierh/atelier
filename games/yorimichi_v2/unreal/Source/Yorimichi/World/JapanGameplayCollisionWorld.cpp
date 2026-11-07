@@ -64,6 +64,20 @@ void UJapanGameplayCollisionWorld::Install()
     }
     Rebuild();
 }
+void UJapanGameplayCollisionWorld::InstallFixed(AActor* Actor)
+{
+    if (!Actor || !JapanGameplayCollision::IsFixed(Actor)) return;
+    InstalledOwners.Add(Actor); DynamicOwners.Remove(Actor);
+    TArray<UPrimitiveComponent*> Parts; Actor->GetComponents(Parts);
+    for (auto* Part : Parts)
+    {
+        const bool Fixed = JapanGameplayCollision::IsFixed(Part);
+        if (!Fixed) ExcludedParts.AddUnique(Part);
+        Part->SetCollisionResponseToChannel(JapanGameplayCollision::Channel,
+            Fixed && Part->GetCollisionResponseToChannel(ECC_Visibility) == ECR_Block ? ECR_Block : ECR_Ignore);
+    }
+    Rebuild();
+}
 FCollisionQueryParams UJapanGameplayCollisionWorld::Query(FName Tag, const TStatId& Stat, bool Complex) const
 {
     FCollisionQueryParams Result = Cached;

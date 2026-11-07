@@ -14,6 +14,9 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
     void Install();
+    /** Certify one fixed actor that arrived after Install (a streamed World Partition scene patch is loaded, not
+     *  spawned): its authored parts block the gameplay channel and the cached query stops ignoring it. */
+    void InstallFixed(AActor* Actor);
     FCollisionQueryParams Query(FName Tag, const TStatId& Stat, bool Complex) const;
 protected:
     virtual bool DoesSupportWorldType(const EWorldType::Type Type) const override
