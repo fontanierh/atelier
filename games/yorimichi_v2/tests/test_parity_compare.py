@@ -1,4 +1,6 @@
-"""Visual parity compare: identical captures pass, shifts and noise move the metrics the right way, thresholds gate."""
+"""Visual parity compare: identical captures pass, shifts and noise move the metrics the right way, thresholds gate,
+and the gate fails closed on missing or stray captures and missing or mismatched receipts."""
+import hashlib
 import importlib.util
 import json
 import sys
@@ -32,12 +34,39 @@ def save(folder, name, img):
     Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8)).save(folder / f'{name}.png')
 
 
-def run(tmp_path, donor, v2, *extra):
+def write_poses(path, names):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({'schema': 1, 'poses': [{'name': n} for n in names]}))
+    return path
+
+
+def write_receipt(folder, poses, **fields):
+    """capture.json as capture_poses.py writes it, with `fields` overriding the defaults."""
+    folder.mkdir(parents=True, exist_ok=True)
+    receipt = {'schema': 1, 'source': 'v2', 'revision': {'commit': 'abc123', 'dirty': False},
+               'map': '/Game/V2/Maps/Slice', 'size': [64, 64], 'warmup': 8, 'load_radius_m': 500.0,
+               'poses_sha256': hashlib.sha256(poses.read_bytes()).hexdigest(), 'captured_utc': '2026-11-07T00:00:00Z',
+               'engine_version': '5.7.0', **fields}
+    (folder / 'capture.json').write_text(json.dumps(receipt))
+    return receipt
+
+
+DONOR = {'source': 'donor-runtime'}
+
+
+def run(tmp_path, donor, v2, *extra, names=None, receipts=None, default_poses=False):
+    """Write both capture sets with receipts (`receipts`: side -> field overrides, None for no receipt) and compare."""
     for name, img in donor.items():
         save(tmp_path / 'donor', name, img)
     for name, img in v2.items():
         save(tmp_path / 'v2', name, img)
-    code = compare.main([str(tmp_path / 'donor'), str(tmp_path / 'v2'), '--out', str(tmp_path / 'out'), *extra])
+    poses = compare.DEFAULT_POSES if default_poses else \
+        write_poses(tmp_path / 'poses.json', names or sorted({*donor, *v2}))
+    for side, fields in (receipts or {'donor': DONOR, 'v2': {}}).items():
+        if fields is not None:
+            write_receipt(tmp_path / side, poses, **fields)
+    args = [str(tmp_path / 'donor'), str(tmp_path / 'v2'), '--out', str(tmp_path / 'out'), *extra]
+    code = compare.main(args if default_poses else [*args, '--poses', str(poses)])
     report = json.loads((tmp_path / 'out' / 'report.json').read_text())
     return code, {row['name']: row for row in report['poses']}, report
 
@@ -45,7 +74,8 @@ def run(tmp_path, donor, v2, *extra):
 def test_identical_captures_pass(tmp_path):
     img = scene()
     code, rows, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.99', '--max-mad', '0')
-    assert code == 0 and report['passed']
+    assert code == 0 and report['passed'] and report['errors'] == []
+    assert report['receipts']['donor']['source'] == 'donor-runtime' and report['receipts']['v2']['source'] == 'v2'
     assert rows['coast']['mad'] == 0 and rows['coast']['ssim'] > 0.9999
     assert (tmp_path / 'out' / 'coast_side.png').is_file() and (tmp_path / 'out' / 'coast_diff.png').is_file()
     assert Image.open(tmp_path / 'out' / 'coast_side.png').width == 2 * 64 + 12
@@ -80,15 +110,61 @@ def test_threshold_sets_the_exit_code(tmp_path):
 
 
 def test_missing_or_resized_captures_fail(tmp_path):
-    poses = tmp_path / 'poses.json'
-    poses.write_text(json.dumps({'schema': 1, 'poses': [{'name': 'coast'}, {'name': 'pier'}, {'name': 'road'}]}))
     img = scene()
     code, rows, _ = run(tmp_path, {'coast': img, 'pier': img}, {'coast': img, 'pier': scene(80)},
-                        '--min-ssim', '0.5', '--poses', str(poses))
+                        '--min-ssim', '0.5', names=['coast', 'pier', 'road'])
     assert code == 1
     assert rows['coast']['passed']
     assert 'size differs' in rows['pier']['reason']
     assert rows['road']['reason'] == 'no capture in donor, v2'
+
+
+def test_omitted_poses_requires_every_pose_of_the_real_poses_file(tmp_path):
+    assert compare.DEFAULT_POSES == ROOT / 'tools/parity/poses.json'
+    names = [p['name'] for p in json.loads(compare.DEFAULT_POSES.read_text())['poses']]
+    img = scene()
+    code, rows, report = run(tmp_path, {'coast_start': img}, {'coast_start': img}, '--min-ssim', '0.5',
+                             default_poses=True)
+    assert code == 1 and not report['passed'] and report['poses_file'] == str(compare.DEFAULT_POSES)
+    assert list(rows) == names and rows['coast_start']['passed']
+    assert all(rows[n]['reason'] == 'no capture in donor, v2' for n in names if n != 'coast_start')
+
+
+def test_unexpected_capture_fails(tmp_path):
+    img = scene()
+    code, rows, report = run(tmp_path, {'coast': img, 'old_view': img}, {'coast': img}, '--min-ssim', '0.5',
+                             names=['coast'])
+    assert code == 1 and rows['coast']['passed'] and list(rows) == ['coast']
+    assert report['errors'] == ['donor: unexpected capture old_view.png (not a pose in the poses file)']
+
+
+def test_missing_receipt_fails(tmp_path):
+    img = scene()
+    code, rows, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                             receipts={'donor': DONOR, 'v2': None})
+    assert code == 1 and rows['coast']['passed'] and report['receipts']['v2'] is None
+    assert len(report['errors']) == 1 and report['errors'][0].startswith('v2: no readable capture.json')
+
+
+def test_receipt_of_another_poses_file_fails(tmp_path):
+    img = scene()
+    code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                          receipts={'donor': DONOR, 'v2': {'poses_sha256': '0' * 64}})
+    assert code == 1 and len(report['errors']) == 1 and report['errors'][0].startswith('v2: receipt poses_sha256 000')
+
+
+def test_receipt_capture_size_mismatch_fails(tmp_path):
+    img = scene()
+    code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                          receipts={'donor': DONOR, 'v2': {'size': [80, 80]}})
+    assert code == 1 and report['errors'] == ['capture size differs: donor receipt [64, 64], V2 receipt [80, 80]']
+
+
+def test_v2_capture_as_donor_fails(tmp_path):
+    img = scene()
+    code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                          receipts={'donor': {}, 'v2': {}})
+    assert code == 1 and len(report['errors']) == 1 and report['errors'][0].startswith('donor: receipt source is "v2"')
 
 
 def test_real_poses_file_is_well_formed():

@@ -74,8 +74,10 @@ uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --fo
 uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # (pending) one-time world migration
 uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/capture_poses.py V2_CAPTURE_DIR=DIR \
-  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # (pending) one PNG per parity pose, saves nothing
-uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim S   # visual parity of two capture sets
+  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # (pending) into an empty DIR: one PNG per parity pose + capture.json receipt, saves nothing
+uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim S   # visual parity of two receipted capture sets (all poses in poses.json)
+# (pending) donor baseline capture from the running donor game: capture_poses.py on an editor map does NOT spawn the
+# donor's runtime scenery, so it is no donor baseline; compare.py rejects a donor receipt whose source is "v2"
 ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
 ```
 

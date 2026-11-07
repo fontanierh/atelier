@@ -3,16 +3,25 @@
     uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim 0.8 \
         [--max-mad 0.05] [--poses games/yorimichi_v2/tools/parity/poses.json]
 
-Each folder holds one `<pose>.png` per pose (unreal/Scripts/capture_poses.py writes them). For every pose it measures
-the mean absolute difference of the RGB values (MAD, 0..1) and the structural similarity of their luma (SSIM, 11-tap
-Gaussian window, sigma 1.5), and writes OUT/report.json, OUT/<pose>_side.png (donor left, V2 right) and
-OUT/<pose>_diff.png (the absolute difference, amplified by --gain). --poses names the expected poses; otherwise every
-PNG in either folder is one. A pose missing from a folder, or captured at another size, fails. Exit 0 only when every
-pose has SSIM >= --min-ssim and, when given, MAD <= --max-mad.
+Each folder holds one `<pose>.png` per pose and the capture receipt `capture.json` (unreal/Scripts/capture_poses.py
+writes both). The expected poses always come from --poses (default: poses.json next to this script). For every pose
+it measures the mean absolute difference of the RGB values (MAD, 0..1) and the structural similarity of their luma
+(SSIM, 11-tap Gaussian window, sigma 1.5), and writes OUT/report.json (with both receipts), OUT/<pose>_side.png
+(donor left, V2 right) and OUT/<pose>_diff.png (the absolute difference, amplified by --gain).
+
+It fails closed: a pose missing from a folder or captured at another size, a PNG that is not an expected pose, a
+missing or unreadable receipt, a receipt made from another poses file (sha256), receipts of different capture sizes
+and a donor receipt whose source is "v2" all fail. Exit 0 only when none of these happen and every pose has
+SSIM >= --min-ssim and, when given, MAD <= --max-mad.
+
+The donor baseline must come from a real initialized donor scene (the running game). The donor island's scenery is
+spawned at runtime, so capture_poses.py opening the donor's editor map does NOT show it and is no donor baseline.
+That donor-runtime capture route is pending: no script for it exists yet.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -24,6 +33,8 @@ SIGMA, RADIUS = 1.5, 5
 C1, C2 = 0.01 ** 2, 0.03 ** 2   # SSIM's stabilisers for a dynamic range of 1
 LUMA = np.array([0.299, 0.587, 0.114], dtype=np.float32)
 PANEL_WIDTH = 1280               # side-by-side panels are scaled down to this width at most
+DEFAULT_POSES = Path(__file__).resolve().parent / 'poses.json'
+RECEIPT = 'capture.json'
 
 
 def load(path):
@@ -92,10 +103,33 @@ def compare_pose(name, donor_dir, v2_dir, out, min_ssim, max_mad, gain):
     return row
 
 
-def pose_names(donor_dir, v2_dir, poses):
-    if poses:
-        return [p['name'] for p in json.loads(poses.read_text())['poses']]
-    return sorted({p.stem for d in (donor_dir, v2_dir) for p in d.glob('*.png')})
+def pose_names(poses):
+    return [p['name'] for p in json.loads(poses.read_text())['poses']]
+
+
+def read_receipt(folder):
+    try:
+        receipt = json.loads((folder / RECEIPT).read_text())
+    except (OSError, ValueError):
+        return None
+    return receipt if isinstance(receipt, dict) else None
+
+
+def check(dirs, receipts, names, poses_sha):
+    """What fails the run whatever the metrics: stray captures, missing or mismatched receipts."""
+    errors = [f'{side}: unexpected capture {p.name} (not a pose in the poses file)'
+              for side, d in dirs.items() for p in sorted(d.glob('*.png')) if p.stem not in names]
+    for side, r in receipts.items():
+        if r is None:
+            errors.append(f'{side}: no readable {RECEIPT} in {dirs[side]}')
+        elif r.get('poses_sha256') != poses_sha:
+            errors.append(f'{side}: receipt poses_sha256 {r.get("poses_sha256")} is not the compared poses file\'s')
+    donor, v2 = receipts['donor'], receipts['v2']
+    if donor is not None and donor.get('source') == 'v2':
+        errors.append('donor: receipt source is "v2", a V2 capture is no donor baseline')
+    if donor is not None and v2 is not None and donor.get('size') != v2.get('size'):
+        errors.append(f'capture size differs: donor receipt {donor.get("size")}, V2 receipt {v2.get("size")}')
+    return errors
 
 
 def main(argv=None) -> int:
@@ -105,24 +139,32 @@ def main(argv=None) -> int:
     parser.add_argument('--out', type=Path, required=True, help='folder for report.json and the review images')
     parser.add_argument('--min-ssim', type=float, required=True, help='lowest SSIM a pose may have (0..1)')
     parser.add_argument('--max-mad', type=float, help='highest mean absolute difference a pose may have (0..1)')
-    parser.add_argument('--poses', type=Path, help='poses.json: the poses that must be present')
+    parser.add_argument('--poses', type=Path, default=DEFAULT_POSES,
+                        help='poses.json: the poses that must be present (default: the one next to this script)')
     parser.add_argument('--gain', type=float, default=4., help='amplification of the difference image')
     args = parser.parse_args(argv)
-    names = pose_names(args.donor, args.v2, args.poses)
+    names = pose_names(args.poses)
     if not names:
-        print(f'no captures in {args.donor} or {args.v2}', file=sys.stderr)
+        print(f'no poses in {args.poses}', file=sys.stderr)
         return 2
+    dirs = {'donor': args.donor, 'v2': args.v2}
+    receipts = {side: read_receipt(d) for side, d in dirs.items()}
+    errors = check(dirs, receipts, set(names), hashlib.sha256(args.poses.read_bytes()).hexdigest())
     args.out.mkdir(parents=True, exist_ok=True)
     rows = [compare_pose(n, args.donor, args.v2, args.out, args.min_ssim, args.max_mad, args.gain) for n in names]
-    passed = all(r['passed'] for r in rows)
-    report = {'schema': 1, 'donor': str(args.donor), 'v2': str(args.v2), 'passed': passed,
+    passed = not errors and all(r['passed'] for r in rows)
+    report = {'schema': 1, 'donor': str(args.donor), 'v2': str(args.v2), 'poses_file': str(args.poses),
+              'passed': passed, 'errors': errors, 'receipts': receipts,
               'thresholds': {'min_ssim': args.min_ssim, 'max_mad': args.max_mad}, 'poses': rows}
     (args.out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     for r in rows:
         metrics = f'SSIM {r["ssim"]:.4f}, MAD {r["mad"]:.4f}' if 'ssim' in r else ''
         print(f'  {"pass" if r["passed"] else "FAIL"} {r["name"]}: {metrics}{"  " if metrics and not r["passed"] else ""}'
               f'{r.get("reason", "")}')
-    print(f'{sum(r["passed"] for r in rows)}/{len(rows)} poses pass; report {args.out / "report.json"}')
+    for e in errors:
+        print(f'  FAIL {e}')
+    print(f'{sum(r["passed"] for r in rows)}/{len(rows)} poses pass, {len(errors)} other failures; '
+          f'report {args.out / "report.json"}')
     return 0 if passed else 1
 
 
