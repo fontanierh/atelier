@@ -17,7 +17,10 @@ bootstrap writer, in a checkout with no claims task, is the single binary writer
 One creation exception: World Partition names a new actor package only when it saves it, so a migration whose
 active claim holds every touched region's scope MAY create new packages in those regions' actor folders before
 their paths are claimed; it MUST then bind each to the claim with its acquired LFS lock and verify them before
-publication, and any refused or failed bind MUST delete every file it created. Existing files stay exact-claimed.
+publication. A refused bind MUST delete every file it created. When the claim service itself fails (unreachable,
+timed out, unsettled, remote unavailable) after the created files passed their own checks, they MUST all move out
+of the content tree (build/yorimichi_v2/migrate/pending) for a resumed bind, which re-checks them first and follows
+the same rule; no new migration runs while they wait. Existing files stay exact-claimed.
 Every write route (import, editor script, save validation, adoption) MUST enforce the same rule, and adoption
 MUST NOT overwrite an existing package whose bytes differ.
 

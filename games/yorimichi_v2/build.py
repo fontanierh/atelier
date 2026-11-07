@@ -197,6 +197,9 @@ def _authorize_migration(ctx, log):
     authority = _authority()
     plan = _migration_plan()
     MIGRATE_BEFORE.clear()
+    if authority.PENDING.exists():
+        raise RuntimeError(f'{authority.PENDING} holds the created files of a failed bind: resume them '
+                           '(tools/migrate/run.py --resume) or delete them before a new migration')
     if not plan.get('claim'):
         authority.authorize([], None, 'map migration')
         return
