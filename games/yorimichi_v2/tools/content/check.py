@@ -9,7 +9,11 @@ The quick mode reuses a hash only when a file's size, modification time, change 
 local index (in the ignored `unreal/Saved`); a changed byte always changes the change time. `--full` rehashes
 everything, for integration and suspected corruption.
 
-    uv run python games/yorimichi_v2/tools/content/check.py [--full] [--json]
+Restricted content (`restricted.toml`, DECISIONS D05 group 2) is never committed: an absent restricted file is a
+notice ("fetch required"), not a failure, unless `--require-restricted` (packaging). A restricted path Git tracks, a
+present restricted file that is unpinned or differs from `restricted.lock.json`, or a recorded one with no pin fails.
+
+    uv run python games/yorimichi_v2/tools/content/check.py [--full] [--json] [--require-restricted]
 """
 from __future__ import annotations
 
@@ -98,9 +102,21 @@ def _save_action(subject):
             f'{subject} --claim TASK; otherwise restore the committed bytes (git checkout -- PATH && git lfs pull)')
 
 
-def _file(game, rel, subject, problems, hasher, *, missing_action):
-    """The sha256 of one committed file, or None after recording why it cannot be read."""
+FETCH = 'uv run python games/yorimichi_v2/tools/restricted/fetch.py'
+
+
+def _file(game, rel, subject, problems, hasher, *, missing_action, restricted=None, pinned=None, absent=None):
+    """The sha256 of one committed file, or None after recording why it cannot be read. An absent restricted file
+    is only collected in `absent` (fetched, never committed) when the lock pins it."""
     path = game / rel
+    pin = restricted.content_rel(rel) if restricted else None
+    if pin is not None and not path.is_file():
+        if pin in pinned:
+            absent.add(pin)
+        else:
+            problems.append(Problem('RESTRICTED_UNPINNED', subject, f'{rel} is restricted and absent, and no pin '
+                                    'can fetch it', f'pin it where it exists: {FETCH} pin'))
+        return None
     if not path.is_file():
         problems.append(Problem('MISSING', subject, f'{rel} does not exist', missing_action))
         return None
@@ -111,9 +127,19 @@ def _file(game, rel, subject, problems, hasher, *, missing_action):
     return hasher(path)
 
 
-def check(game: Path = GAME, *, full: bool = False, write_index: bool = True) -> tuple[list[Problem], dict]:
+def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
+          require_restricted: bool = False) -> tuple[list[Problem], dict]:
+    """(fatal problems, stats); `stats['notices']` holds the non-fatal ones (restricted files to fetch)."""
     problems: list[Problem] = []
     hasher = Hasher(game, full)
+    try:
+        restricted = records.load_restricted(game)
+        pinned = records.load_lock(restricted)
+    except RecordError as error:
+        problems.append(Problem('SCHEMA', 'restricted', str(error), 'fix restricted.toml or its lock'))
+        restricted, pinned = records.Restricted((), game / 'restricted.lock.json', ''), {}
+    absent: set[str] = set()
+    pins = dict(restricted=restricted, pinned=pinned, absent=absent)
     assets, regions = [], []
     for path in sorted((game / 'assets').glob('**/asset.toml')):
         try:
@@ -189,7 +215,7 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True) ->
             recorded_packages.add(output.package)
             owner_of[rel] = asset.id
             action = _import_action(asset) if output.writer == 'generated' else _save_action(asset.id)
-            actual = _file(game, rel, asset.id, problems, hasher, missing_action=action)
+            actual = _file(game, rel, asset.id, problems, hasher, missing_action=action, **pins)
             if actual is not None and actual != digest:
                 problems.append(Problem('OUTPUT_CHANGED', asset.id, f'{rel} differs from its verified bytes', action))
         for output in asset.outputs:
@@ -234,7 +260,7 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True) ->
                 problems.append(Problem('OWNERSHIP', rel, f'owned by both {owner_of[rel]} and {region.id}',
                                         'an actor belongs to exactly one region'))
             owner_of[rel] = region.id
-            actual = _file(game, rel, region.id, problems, hasher, missing_action=_save_action(region.id))
+            actual = _file(game, rel, region.id, problems, hasher, missing_action=_save_action(region.id), **pins)
             if actual is not None and actual != digest:
                 problems.append(Problem('OUTPUT_CHANGED', region.id, f'{rel} differs from its verified bytes',
                                         _save_action(region.id)))
@@ -252,9 +278,36 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True) ->
                     problems.append(Problem('UNOWNED', rel, 'no asset or region record owns this package',
                                             'add it to its owner record through the owning route, or delete it'))
 
+    # Restricted roots: never tracked, and every present file is exactly its pin.
+    for rel in records.restricted_tracked(game, restricted):
+        problems.append(Problem('RESTRICTED_TRACKED', rel, 'restricted content is tracked by Git (D05: never public LFS)',
+                                f'git rm --cached "{rel}"; if it was pushed, its LFS object must be purged too'))
+    for folder in restricted.folders:
+        for root, dirs, files in os.walk(content / folder):
+            dirs.sort()
+            for name in sorted(files):
+                if not name.endswith(records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS):
+                    continue
+                path = Path(root) / name
+                rel = path.relative_to(content).as_posix()
+                if rel not in pinned:
+                    problems.append(Problem('RESTRICTED_UNPINNED', rel, 'restricted file is not in restricted.lock.json',
+                                            f'after adoption or a claimed, validated edit: {FETCH} pin'))
+                elif hasher(path) != pinned[rel]['sha256']:
+                    problems.append(Problem('RESTRICTED_CHANGED', rel, 'differs from its pinned hash',
+                                            f'restore it (delete it, then {FETCH} fetch), or pin a claimed edit'))
+    absent |= {rel for rel in pinned if not (content / rel).is_file()}
+    notices = []
+    if absent:
+        notice = Problem('RESTRICTED_ABSENT', 'restricted', f'{len(absent)} pinned restricted file(s) absent, for '
+                         f'example {min(absent)}: fetch required',
+                         f'{restricted.source_env}=DIR {FETCH} fetch   (DIR: the authorized restricted storage)')
+        (problems if require_restricted else notices).append(notice)
+
     if write_index:
         hasher.save()
-    stats = {'assets': len(assets), 'regions': len(regions), 'files': len(owner_of), 'hashed': hasher.hashed}
+    stats = {'assets': len(assets), 'regions': len(regions), 'files': len(owner_of), 'hashed': hasher.hashed,
+             'restricted_absent': len(absent), 'notices': [asdict(n) for n in notices]}
     return problems, stats
 
 
@@ -262,14 +315,18 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--full', action='store_true', help='rehash every file instead of trusting the local index')
     parser.add_argument('--json', action='store_true', help='machine-readable report')
+    parser.add_argument('--require-restricted', action='store_true',
+                        help='fail when a pinned restricted file is absent (packaging needs every byte)')
     parser.add_argument('--game', type=Path, default=GAME, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    problems, stats = check(args.game.resolve(), full=args.full)
+    problems, stats = check(args.game.resolve(), full=args.full, require_restricted=args.require_restricted)
     if args.json:
         print(json.dumps({'ok': not problems, 'stats': stats, 'problems': [asdict(p) for p in problems]}, indent=2))
     else:
         for problem in problems:
             print(problem)
+        for notice in stats['notices']:
+            print(f'note: {Problem(**notice)}')
         print(f'{"FAIL" if problems else "OK"}: {stats["assets"]} assets, {stats["regions"]} regions, '
               f'{stats["files"]} files ({stats["hashed"]} hashed), {len(problems)} problem(s)')
     return 1 if problems else 0

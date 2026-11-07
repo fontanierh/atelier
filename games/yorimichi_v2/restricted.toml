@@ -1,0 +1,10 @@
+# Restricted content (docs/DECISIONS.md D05 group 2): packages cut from licensed sound masters never go to public
+# Git LFS. Every file under these roots is ignored by Git (.gitignore lists the same folders), pinned by hash in the
+# lock and copied in by `tools/restricted/fetch.py fetch`. Narrowing a root is an edit here and in .gitignore.
+schema = 1
+roots = ["/Game/Audio", "/Game/Japan/Audio"]
+lock = "restricted.lock.json"
+
+[source]
+env = "V2_RESTRICTED_SOURCE"
+about = "authorized restricted storage, mounted or synced as a directory laid out like unreal/Content; the fetch reads the directory this environment variable names"
