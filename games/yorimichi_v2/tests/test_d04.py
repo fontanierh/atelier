@@ -123,7 +123,7 @@ def test_the_switch_fails_closed(tmp_path):
     assert authority.d04(tmp_path / 'missing.toml') == (None, True)
     (tmp_path / 'bad.toml').write_text('[d04]\nwriter = "x"\nclosed = "no"\n')
     assert authority.d04(tmp_path / 'bad.toml')[1] is True
-    assert authority.d04()[0] == authority.BOOTSTRAP_WRITER == 'jim-macbook-5'   # the committed record
+    assert authority.d04(authority.GAME / 'governance.toml') == ('jim-macbook-5', True)   # the committed record: closed
 
 
 def test_closed_d04_refuses_the_bootstrap_writer_on_every_route(tmp_path, game, env):

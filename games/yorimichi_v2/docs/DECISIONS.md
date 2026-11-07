@@ -51,6 +51,11 @@ The switch is committed state, not a convention: `governance.toml` `[d04]` names
 when the file is missing or malformed, nobody is exempt on any route (import, editor script, save validation,
 adoption, migration). Closing D04 is a reviewed one-line commit.
 
+**Closed 2026-11-07**, after the slice's adopted and migrated content merged (#738, #740) and the claims service
+passed C21 on GitHub LFS locks (#739). No bootstrap lock remained: the only V2 locks on the remote were held by active
+claims. `governance.toml` has `closed = true`, so every binary write now needs a claim, the former writer's included.
+The tests pin their own open or closed switch (`tests/conftest.py`), never the committed one.
+
 New actor packages under a claim (the migration after D04): World Partition names a One File Per Actor package
 (`__ExternalActors__/<map>/…/<hash>.uasset`) only when it saves it, so no claim can list it beforehand.
 **Chosen: claimed creation, bound after the save.** A run whose claim holds every touched region's scope
