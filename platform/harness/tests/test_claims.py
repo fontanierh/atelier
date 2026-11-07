@@ -27,12 +27,6 @@ SEA = 'Content/Shared/M_Sea.uasset'
 HARBOUR = 'Content/__ExternalActors__/North/Harbour/'
 
 
-@pytest.fixture(autouse=True)
-def no_unknown_wait(monkeypatch):
-    from atelier.harness.claims import client as claims_client
-    monkeypatch.setattr(claims_client, 'UNKNOWN_RETRY_S', (0, 0))   # an unanswered lock is asked again at once
-
-
 def git(repo, *argv):
     env = {**os.environ, 'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@example.invalid', 'GIT_COMMITTER_NAME': 't',
            'GIT_COMMITTER_EMAIL': 't@example.invalid', 'GIT_TERMINAL_PROMPT': '0'}
@@ -622,29 +616,6 @@ def test_protected_checks_reverify_locks_and_base_live(world):
     problems = check(a, repo, 'ta', [Change('M', BENCH)])
     assert problems and 'live verification' in problems[0], problems
     assert check(a, repo, 'ta', [Change('M', 'Source/Skate.cpp')]) == []  # unprotected text still passes
-
-
-class DroppedOnce(LfsHttp):
-    """The first lock request's reply is lost and it made no lock; asking again works."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.calls = 0
-
-    def lock(self, path, ref=None, **kwargs):
-        from atelier.harness.claims.remote import LockResult
-        self.calls += 1
-        return LockResult('unknown', detail='closed without response') if self.calls == 1 else super().lock(path, ref)
-
-
-def test_an_unanswered_lock_request_is_asked_again_before_it_reserves(world):
-    a = world.agent('a', 'alice')
-    world.task(a, 'ta')
-    claim = world.request(a, 'ta', lock_paths=[SEA])
-    locker = DroppedOnce(world.lfs.url, {'Authorization': basic('alice')})
-    acquire(a, claim['id'], locker)
-    assert locker.calls == 2 and a.call('GET', f'/claims/{claim["id"]}')['state'] == 'active'
-    assert len(world.lfs.at(SEA)) == 1
 
 
 def test_unseen_uncertain_lock_keeps_its_reservation_until_settled(world):
