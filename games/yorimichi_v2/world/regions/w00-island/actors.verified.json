@@ -1,0 +1,22 @@
+{
+  "asset": "region/w00-island",
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/ND/6C2XCQCT9T4D1ZK28BL8T1.uasset": "e3f3ad5033749e713598094e2c091c7abe70b5e7d6ef5da78c6380e517a88407",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/4M/QIIZPSU847KY2NUQPHLS69.uasset": "801ed810863ae52a051fef48246554ab1a5670e67a71d5af55dd2c8e64ea68a3",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/PL/ZP2213BWHIOXLA670L32RA.uasset": "53a11290f602788661aea94084a985ef74973ba328f467a306096feba6c4f52c",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/34/226V0KK5Q9Q6R0YHAJF3J8.uasset": "3feafe7f10fd423a6176583afe02002495d21d3927faa905db6c92e6730eddd2",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/2M/Q774933BSFZEZAAV88NV23.uasset": "2c997ac36287209209721f823908f8e43659e291bc1f2f0839b41cfbced8a2ba",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/X7/22LJIRQU0EIC3ZHE4H29NM.uasset": "a36bd0c2740a68dfcad99063ebeef3570a1e79034094ca1aafce4ebdb66a1152",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/B7/AWD1CJD6O85IL6NNJK0SYE.uasset": "9a06afa82db018e9c65bd8c70eaa4f4127ec51277276b9c8ec18743713a9dc0b",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/4C/KP9NBVII9R5HOBLPO26OJU.uasset": "cc15051612faa86e27c60cbdb2935e11a4af433d226f1e7dadb773d5c7113b22",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/D1/UNG9YYDL5VOQDWP78YKOI8.uasset": "e1ed11e1a85bc5dd5adf81363a2eae7acd5f72aa7e0d785b6a2c0fce9375fad3",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/6I/2LWOMM2D0A5TTLX7B1LKLD.uasset": "9b4e90691284b0a8e9839c6d8f164685af3e5edc105447aa1f16c68be14d44ef",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/L6/1D7UYSGAJWTWEWQLMJN4NZ.uasset": "53f9cf49baf497048a2692f610a29beb00d218bcca3c70c1099f6dea01386961",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/FH/XYUYCG687YGBW3082J63CX.uasset": "2fe6671dc38ed009b9d1b5b55c79ab0f4839529063a479c56c53a599e44279cd",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/BB/EQLXD8T6Z09QJ1SH24ER0A.uasset": "0ca964181bb191d0a1093ea6bdb3d5ce51c21de0921b98df19ad7e9632f4ddd4",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/D0/O1HN06X7OL1GX5JZB35VNK.uasset": "3050cc38b7581dfa92169716b70ec8af83249762f4c84dd8762c2b9b158f10e5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

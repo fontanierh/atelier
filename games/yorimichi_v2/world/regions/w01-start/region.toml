@@ -1,0 +1,9 @@
+# W01 start and coastal road, first slice section: terrain cell -2_-1 (source x -256..-128 m, y -128..0 m).
+# Unreal = (100 x, -100 y) cm (inventory/world.md §1). Its east edge meets w04-pier-approach at X = -12800 cm.
+schema = 1
+id = "region/w01-start"
+about = "Spawn, House_A/B and their lots, the coastal road with poles and lamps, the top of the pier path"
+bounds_cm = [-25600, 0, -12800, 12800]
+neighbours = ["region/w04-pier-approach"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/road-set"]

@@ -84,13 +84,23 @@ def place(cls, region, name, sid, location=U.Vector(0, 0, 0), spatial=True):
     return actor
 
 
+def box2d(b):
+    """A valid Box2D of [min x, min y, max x, max y]: the constructor takes (min, max) only."""
+    box = U.Box2D(U.Vector2D(b[0], b[1]), U.Vector2D(b[2], b[3]))
+    box.is_valid = True
+    return box
+
+
 def inside(bounds, x, y):
     return bounds[0] <= x < bounds[2] and bounds[1] <= y < bounds[3]
 
 
 def region_of(name):
     """The region holding a `<Parent>_cell_<i>_<j>[_PieceN]` island piece: the one whose bounds hold its cell's
-    centre (source cell i covers x 128 i .. 128 (i + 1) m; Unreal is (100 x, -100 y) cm)."""
+    centre (source cell i covers x 128 i .. 128 (i + 1) m; Unreal is (100 x, -100 y) cm). A piece the donor did
+    not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island: the environment owns it."""
+    if '_cell_' not in name:
+        return plan['environment']
     parts = name.split('_cell_', 1)[1].split('_')
     i, j = int(parts[0]), int(parts[1])
     x, y = (i + .5) * CELL_M * 100, -(j + .5) * CELL_M * 100
@@ -203,7 +213,7 @@ def manifest(region):
     boxes = list(actor.get_editor_property('migrated_bounds_cm'))
     for item in plan['regions']:
         b = item['bounds_cm']
-        box = U.Box2D(min=U.Vector2D(b[0], b[1]), max=U.Vector2D(b[2], b[3]), is_valid=True)
+        box = box2d(b)
         if not any((x.min.x, x.min.y, x.max.x, x.max.y) == tuple(b) for x in boxes):
             boxes.append(box)
     actor.set_editor_property('migrated_bounds_cm', boxes)
@@ -214,7 +224,7 @@ def manifest(region):
 
 def scenery(world, env):
     """Every region's runtime scenery from one AJapanWorld::Load, plus the listed whole-world services as env's."""
-    boxes = [U.Box2D(min=U.Vector2D(b[0], b[1]), max=U.Vector2D(b[2], b[3]), is_valid=True)
+    boxes = [box2d(b)
              for b in (item['bounds_cm'] for item in plan['regions'])]
     count, actors, reused, error = U.V2Migration.migrate_static_scenery(
         world, [U.Name(item['id']) for item in plan['regions']], boxes, float(plan.get('patch_m', 32)) * 100.0,
