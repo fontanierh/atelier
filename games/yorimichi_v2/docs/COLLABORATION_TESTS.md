@@ -154,3 +154,17 @@ scratch worktree, and every claim, task and lock was released afterwards (`git l
 | C13 delete/rename/move | A staged delete of A's locked actor passed `--stage publish`; renaming it to an unclaimed path was refused |
 | C14 undeclared scope | Staging the lantern package (outside A's region claim) was refused |
 | C17 pushed, not merged | In the C01 run, `claims task push` recorded each branch and kept its locks. Only `claims task merged` (after the squash merge on main) released them. Until then the locks stayed verified on the remote |
+
+## Unrelated edits no longer share a record (after #747)
+
+Before #747, a bike part and a maple were both owned by `adopted/japan/assets` (131 mixed packages), so two
+agents editing them needed the same scope. At main 216ba854a6, with the records split by what their packages are:
+
+| Step | Result |
+|---|---|
+| Agent `jim5-c21` claims `asset/adopted/japan/assets/bike`, with a lock on `BK_Frame`; at the same time, `jim5-c21b` claims `asset/adopted/japan/assets/tree-maple`, with a lock on `Tree_Maple_A` | both active |
+| A third agent asks for the old whole-record scope `asset/adopted/japan/assets` | refused: `overlap` |
+| The write route's own check (`authority.authorize`, as used by `editor.run` and save validation) for each agent's package | authorized: each package is owned by its record (`asset/adopted/japan/assets/bike`, `…/tree-maple`) |
+| Each agent tries the other's package | refused: "claim OWN-A holds no active scope covering asset/adopted/japan/assets/tree-maple …" |
+
+Both claims were released afterwards.
