@@ -209,3 +209,10 @@ def test_recovery_restores_only_files_the_current_import_may_write(game):
     with pytest.raises(run.ImportError_, match='outside its current outputs'):
         do(game, ['prop/bench'], FakeEditor())
     assert (game / 'unreal/Content/Other/SM_Other.uasset').read_bytes() == b'half written'   # untouched
+
+
+def test_an_editor_owned_change_in_a_split_asset_does_not_reimport(game):
+    test_a_split_reimport_drops_a_generated_companion_it_no_longer_wrote(game)
+    write(game / 'unreal/Content/Props/MI_Split.uasset', b'edited again in the editor')
+    editor = FakeEditor()
+    assert do(game, ['prop/split'], editor) == [False] and editor.calls == []

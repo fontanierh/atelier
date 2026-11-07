@@ -119,8 +119,11 @@ def up_to_date(game, asset, fingerprint) -> bool:
     verified = records.load_verified(asset.verified)
     if verified.get('input_fingerprint') != fingerprint:
         return False
+    # Only generated files decide: a split asset's editor-owned outputs change through save validation, never
+    # through a reimport of unchanged sources.
+    generated = {records.content_relative(game, f) for f in generated_files(game, asset)}
     return all((game / rel).is_file() and records.sha256_file(game / rel) == digest
-               for rel, digest in verified['files'].items())
+               for rel, digest in verified['files'].items() if rel in generated)
 
 
 def authorize(game, asset, claim):
