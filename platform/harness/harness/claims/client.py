@@ -120,16 +120,24 @@ def acquire(client, claim_id, locker, ref=None, workers=LOCK_WORKERS):
     raise AcquireFailed(f'claim {claim_id} not granted: {failure}', released)
 
 
-def release_locks(client, view, locker, ref=None):
-    """Unlock the claim's locks the service marked releasing (proven ours), reporting each one."""
-    for lock in view['locks']:
-        if lock['state'] == 'releasing' and lock['lock_id']:
-            try:
-                locker.unlock(lock['lock_id'], ref=ref)
-            except Unavailable:
-                continue  # stays releasing; retry with `atelier claims unlock`
-            view = client.call('POST', f'/claims/{view["id"]}/unlocked', {'path': lock['path']})
-    return view
+def release_locks(client, view, locker, ref=None, workers=LOCK_WORKERS):
+    """Unlock the claim's locks the service marked releasing (proven ours), reporting each one, `workers` at a
+    time. A lock the LFS server cannot unlock now stays releasing (retry with `atelier claims unlock`)."""
+    releasing = [lock for lock in view['locks'] if lock['state'] == 'releasing' and lock['lock_id']]
+
+    def release(lock):
+        try:
+            locker.unlock(lock['lock_id'], ref=ref)
+        except Unavailable:
+            return False
+        client.call('POST', f'/claims/{view["id"]}/unlocked', {'path': lock['path']})
+        return True
+
+    if not releasing:
+        return view
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(releasing)))) as pool:
+        list(pool.map(release, releasing))   # re-raises the first error once every started unlock reported
+    return client.call('GET', f'/claims/{view["id"]}')
 
 
 # ---------------------------------------------------------------------------- change-set check
