@@ -697,7 +697,7 @@ void AJapanWorld::Load()
         SeaPieces.Add(Sea);
     }
     bLoaded = true;
-    if (bMigrationBuild) return;           // the editor migration copies only the static scenery built so far
+    if (bMigrationBuild) { MigrationIncomplete = Incomplete; return; }   // the editor migration copies the static scenery built so far
     // The tree house (world/regions/treehouse): warm lantern and room lights, [x, y, z, lumens, radius m, shadows],
     // a local golden grade inside its box (layout.py) and a dimmer look inside each room (build.py, runtime.json).
     const TSharedPtr<FJsonObject>* House=nullptr;
@@ -966,6 +966,7 @@ void AJapanWorld::Load()
     if (TotalInstances == 0) Incomplete.Add(TEXT("world geometry"));
     JapanGameplayCollision::Install(GetWorld());
     BootstrapError = FString::Join(Incomplete, TEXT(", "));
+    if (!BrokenScenePatches.IsEmpty()) Incomplete.Add(TEXT("saved scene patches matching their migration"));
     bGameplayReady = bLoaded && Incomplete.IsEmpty();
     if (!bGameplayReady) UE_LOG(LogTemp, Warning, TEXT("NETWORK world incomplete: %s"), *BootstrapError);
     UE_LOG(LogTemp, Log, TEXT("world loaded: %d groups, %d instances, %d shots, flock %d, %.1f ms"), Groups.Num(), TotalInstances, Shots.Num(), Flock ? 1 : 0, (FPlatformTime::Seconds() - Started) * 1000.0);
@@ -975,6 +976,14 @@ void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
 {
     if (!Patch || ScenePatches.Contains(Patch)) return;
     ScenePatches.Add(Patch);
+    // A saved patch stands in for a roster check that no longer runs: its members must be what migration saved.
+    if (Patch->Members() != Patch->ExpectedMembers)
+    {
+        BrokenScenePatches.Add(Patch->V2Id);
+        bGameplayReady = false;
+        UE_LOG(LogTemp, Error, TEXT("V2 scene patch %s (%s) does not hold what its migration saved; world not ready"),
+            *Patch->V2Id, *Patch->SourceKey);
+    }
     TArray<UStaticMeshComponent*> Components;
     Patch->GetComponents(Components);
     for (UStaticMeshComponent* C : Components)

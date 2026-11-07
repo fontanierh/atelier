@@ -19,6 +19,24 @@ const FName AV2ScenePatch::RoleSeeThrough(TEXT("V2Role:SeeThrough"));
 const FName AV2ScenePatch::RoleSkyDome(TEXT("V2Role:SkyDome"));
 const FName AV2ScenePatch::RoleSea(TEXT("V2Role:Sea"));
 
+TArray<FString> AV2ScenePatch::Members() const
+{
+    TArray<FString> Found;
+    TArray<UStaticMeshComponent*> Components;
+    GetComponents(Components);
+    for (const UStaticMeshComponent* C : Components)
+    {
+        TArray<FString> Tags;
+        for (const FName& Tag : C->ComponentTags) Tags.Add(Tag.ToString());
+        Tags.Sort();
+        const auto* H = Cast<UInstancedStaticMeshComponent>(C);
+        Found.Add(FString::Printf(TEXT("%s|%s|%d"), C->GetStaticMesh() ? *C->GetStaticMesh()->GetPathName() : TEXT("none"),
+            *FString::Join(Tags, TEXT(",")), H ? H->GetInstanceCount() : 1));
+    }
+    Found.Sort();
+    return Found;
+}
+
 AV2ScenePatch::AV2ScenePatch()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -105,6 +123,14 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
     Source->bMigrationBuild = true;
     Source->LoadForMigration();
     if (!Source->bLoaded) { Source->Destroy(); Error = TEXT("AJapanWorld::Load failed (world.json missing or unreadable)"); return -1; }
+    // The roster checks a migrated map no longer runs at play time run here, on the world being copied: an
+    // incomplete piece set (city, dressing, structure, southwest, lake, village...) is never saved as complete.
+    if (!Source->MigrationIncomplete.IsEmpty())
+    {
+        Error = TEXT("the source world is incomplete: ") + FString::Join(Source->MigrationIncomplete, TEXT(", "));
+        Source->Destroy();
+        return -1;
+    }
     // A mesh still compiling has no collision yet: the ground trace below needs this map's ground finished.
     FStaticMeshCompilingManager::Get().FinishAllCompilation();
 
@@ -228,7 +254,12 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
         Park->Destroy();
     }
     Source->Destroy();
-    for (AActor* Made : OutCreated) Made->MarkPackageDirty();
+    for (AActor* Made : OutCreated)
+    {
+        AV2ScenePatch* Saved = CastChecked<AV2ScenePatch>(Made);
+        Saved->ExpectedMembers = Saved->Members();
+        Made->MarkPackageDirty();
+    }
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION created %d patches, kept %d, dropped %d floating backdrop trees"),
         OutCreated.Num(), OutKept, Floating);
     return OutCreated.Num();

@@ -129,6 +129,10 @@ public:
     /** The editor migration's transient world (UV2Migration): Load builds only the static scenery, ignores any
      *  manifest, and remembers each group's world.json key and shadow twin for the copy. */
     bool bMigrationBuild = false;
+    /** What the migration build's Load found incomplete (the roster checks); migration refuses to save over it. */
+    TArray<FString> MigrationIncomplete;
+    /** Saved scene patches whose members differ from what their migration recorded: the world is not ready. */
+    TSet<FString> BrokenScenePatches;
     void LoadForMigration() { Load(); }
     TMap<UHierarchicalInstancedStaticMeshComponent*, FString> MigrationKeys;
     TMap<UHierarchicalInstancedStaticMeshComponent*, UHierarchicalInstancedStaticMeshComponent*> MigrationTwins;
