@@ -7,4 +7,4 @@ schema = 1
 # slice's adopted content is merged: from then on no route (import, editor script, save validation, adoption,
 # migration) exempts anyone, and every binary write needs a claim.
 writer = "jim-macbook-5"
-closed = false
+closed = true
