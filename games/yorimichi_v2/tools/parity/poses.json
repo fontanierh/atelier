@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "doc": "Visual parity viewpoints for the P3 slice (plan P3.6). Unreal units: location in cm (x east, y south, z up), rotation in degrees, fov horizontal in degrees. Island metres (x east, y north) map to cm as (100x, -100y, 100z); a source eye -> look-at becomes pitch/yaw. Captured by unreal/Scripts/capture_poses.py, compared by tools/parity/compare.py.",
+  "maps": {"donor": "/Game/Japan/Maps/Slice", "v2": "/Game/V2/Maps/Slice"},
+  "poses": [
+    {
+      "name": "coast_start",
+      "location": [-23600.0, 16000.0, 420.0],
+      "rotation": {"pitch": -3.28, "yaw": 32.01, "roll": 0.0},
+      "fov": 60.0,
+      "source": "games/yorimichi/scenarios/fog_film.py VIEWS['coast']: eye (-236, -160, 4.2) -> (-196, -185, 1.5) island metres"
+    },
+    {
+      "name": "start_road",
+      "location": [-24830.0, 10000.0, 1080.0],
+      "rotation": {"pitch": -2.72, "yaw": 2.73, "roll": 0.0},
+      "fov": 60.0,
+      "source": "games/yorimichi/scenarios/fog_film.py VIEWS['village_road']: eye (-248.3, -100, 10.8) -> (-200, -102.3, 8.5) island metres"
+    },
+    {
+      "name": "pier_path_top",
+      "location": [-15420.7, 8680.3, 1093.0],
+      "rotation": {"pitch": -4.0, "yaw": 79.19, "roll": 0.0},
+      "fov": 60.0,
+      "source": "games/yorimichi/world/regions/skatepark/park.json spawns.path_top (-154.207, -86.803, 9.23) m, yaw_deg -79.19 (UE yaw = -yaw_deg); eye 1.7 m up and pitch -4 as the road shots in games/yorimichi/world/gen_world.py"
+    },
+    {
+      "name": "pier_arrival",
+      "location": [-200.0, 36200.0, 6380.0],
+      "rotation": {"pitch": -20.07, "yaw": -130.16, "roll": 0.0},
+      "fov": 55.0,
+      "source": "games/yorimichi/scenarios/pier_part.py SHOTS 'arrival' sweep end (108, -128, 62) -> (0, 0, 0.8) park-local, fov 55; park origin (-110, -234, 1.8) from games/yorimichi/world/regions/skatepark/park.json"
+    }
+  ]
+}
