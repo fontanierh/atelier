@@ -9,8 +9,10 @@ The donor's island scenery is spawned at run time, so its baseline must come fro
 V2 the same way (a runtime viewport screenshot, not an editor scene capture) keeps both sides on one render path.
 Through the game's live bridge, capture_runtime_game.py travels the player below each pose, hides it and the HUD,
 views from a hidden prop at the pose (the pose FOV on the camera manager), settles, and screenshots the viewport. Then this writes the receipt
-capture.json (schema, source, the checkout's revision, map, size, settle time as warmup, poses and their sha256,
-UTC time, engine version, render settings) that compare.py requires. OUT must hold no PNG and no receipt yet.
+capture.json (schema, source, revision, map, size, settle time as warmup, poses and their sha256, UTC time, engine
+version, render settings) that compare.py requires. With --session the revision is the session's launch commit, and a
+checkout that has moved since the launch is refused; a game without a session record (the donor) is marked
+`launch_verified: false`. OUT must hold no PNG and no receipt yet.
 """
 import argparse
 import datetime
@@ -52,16 +54,30 @@ def camera_glb(path: Path) -> Path:
     return path
 
 
-def revision(checkout: Path) -> dict:
+def revision(checkout: Path, launched: str | None = None) -> dict:
+    """The checkout's commit and dirty state. `launched` is the commit the verified live session recorded at launch: a
+    checkout that has moved since then is refused, so the receipt cannot name a revision the game does not run."""
     def git(*argv):
         return subprocess.run(['git', '-C', str(checkout), *argv], capture_output=True, text=True, check=True).stdout
-    return {'commit': git('rev-parse', 'HEAD').strip(), 'dirty': bool(git('status', '--porcelain').strip())}
+    commit = git('rev-parse', 'HEAD').strip()
+    if launched is not None and launched != commit:
+        raise ValueError(f'the game was launched at {launched[:10] or "an unknown revision"}, but {checkout} is now at '
+                         f'{commit[:10]}: relaunch the game from this checkout')
+    return {'commit': commit, 'dirty': bool(git('status', '--porcelain').strip()), 'launch_verified': launched is not None}
 
 
-def receipt(source, checkout, done, poses_file, names, sizes, settle):
+def launch_revision(session: str, checkout: Path) -> str:
+    """The revision recorded when this live session was launched; the session must have started from `checkout`."""
+    from atelier import live_sessions
+    record = live_sessions.select(session, checkout=checkout)
+    live_sessions.verify(record)
+    return record.get('revision') or ''
+
+
+def receipt(source, checkout, done, poses_file, names, sizes, settle, launched=None):
     if len(set(map(tuple, sizes))) != 1:
         raise ValueError(f'the captures have different sizes: {sizes}')
-    return {'schema': 1, 'source': source, 'revision': revision(checkout), 'map': done['map'], 'size': sizes[0],
+    return {'schema': 1, 'source': source, 'revision': revision(checkout, launched), 'map': done['map'], 'size': sizes[0],
             'warmup': int(round(settle)), 'poses_sha256': hashlib.sha256(poses_file.read_bytes()).hexdigest(),
             'poses': names, 'captured_utc': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             'engine_version': done['engine_version'], 'render': done['render']}
@@ -86,6 +102,14 @@ def main(argv=None) -> int:
     if stale:
         print(f'{out} already holds {", ".join(stale[:5])}: capture into an empty folder', file=sys.stderr)
         return 2
+    launched = None
+    if args.session:
+        try:
+            launched = launch_revision(args.session, args.checkout)
+            revision(args.checkout, launched)  # refuse a moved checkout before capturing anything
+        except (OSError, ValueError, RuntimeError) as error:
+            print(f'cannot bind the capture to its game: {error}', file=sys.stderr)
+            return 2
     poses = json.loads(args.poses.read_text())['poses']
     names = [p['name'] for p in poses]
     glb = camera_glb(Path(tempfile.mkdtemp(prefix='parity-camera-')) / 'camera.glb')
@@ -110,7 +134,7 @@ def main(argv=None) -> int:
         print(f'capture failed in the game: {done["error"]}', file=sys.stderr)
         return 1
     sizes = [png_size(out / f'{n}.png') for n in names]
-    data = receipt(args.source, args.checkout, done, args.poses, names, sizes, args.settle)
+    data = receipt(args.source, args.checkout, done, args.poses, names, sizes, args.settle, launched)
     (out / 'capture.json').write_text(json.dumps(data, indent=2) + '\n')
     print(f'{len(names)} captures in {out}, {data["size"][0]}x{data["size"][1]}, receipt capture.json')
     return 0

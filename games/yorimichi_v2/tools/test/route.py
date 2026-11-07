@@ -71,10 +71,23 @@ def evaluate(rows):
     return failures, measured
 
 
-def revision() -> dict:
+def revision(launched: str) -> dict:
+    """This checkout's commit and dirty state, refused when it is not `launched`, the live session's launch commit."""
     def git(*argv):
         return subprocess.run(['git', '-C', str(REPO), *argv], capture_output=True, text=True, check=True).stdout
-    return {'commit': git('rev-parse', 'HEAD').strip(), 'dirty': bool(git('status', '--porcelain').strip())}
+    commit = git('rev-parse', 'HEAD').strip()
+    if launched != commit:
+        raise ValueError(f'the game was launched at {launched[:10] or "an unknown revision"}, but this checkout is now '
+                         f'at {commit[:10]}: relaunch it')
+    return {'commit': commit, 'dirty': bool(git('status', '--porcelain').strip())}
+
+
+def launch_revision(session: str) -> str:
+    """The revision recorded when this checkout launched the live session (verified against the running process)."""
+    from atelier import live_sessions
+    record = live_sessions.select(session, checkout=REPO)
+    live_sessions.verify(record)
+    return record.get('revision') or ''
 
 
 def main(argv=None):
@@ -86,6 +99,12 @@ def main(argv=None):
     out = args.out.resolve()
     for stale in ('route.jsonl', 'done.json', 'report.json'):
         (out / stale).unlink(missing_ok=True)
+    try:
+        launched = launch_revision(args.session)
+        revision(launched)  # refuse a moved checkout before driving the game
+    except (OSError, ValueError, RuntimeError) as error:
+        print(f'cannot bind the route to its game: {error}', file=sys.stderr)
+        return 2
     code = f'PARAMS = {json.dumps({"out": str(out)})}\n' + (HERE / 'route_game.py').read_text()
     result = subprocess.run(['uv', 'run', 'atelier', 'live', '--session', args.session, 'py', '-'], cwd=REPO,
                             input=code, text=True)
@@ -103,8 +122,13 @@ def main(argv=None):
     failures, measured = evaluate(rows)
     if 'error' in done:
         failures.insert(0, f'game: {done["error"]}')
+    try:
+        rev = revision(launched)
+    except ValueError as error:
+        failures.insert(0, str(error))
+        rev = None
     report = {'schema': 1, 'passed': not failures, 'failures': failures, 'measured': measured, 'samples': len(rows),
-              'session': args.session, 'revision': revision()}
+              'session': args.session, 'revision': rev}
     (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(measured))
     for failure in failures:

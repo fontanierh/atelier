@@ -51,6 +51,7 @@ def test_a_runtime_receipt_passes_compare_s_receipt_checks(tmp_path, checkout):
     sha = compare.hashlib.sha256(poses.read_bytes()).hexdigest()
     assert compare.receipt_errors('donor', receipt, names, sha, tmp_path / 'donor') == []
     assert receipt['revision']['dirty'] is False and len(receipt['revision']['commit']) == 40
+    assert receipt['revision']['launch_verified'] is False
 
 
 def test_captures_of_different_sizes_fail(tmp_path, checkout):
@@ -58,3 +59,16 @@ def test_captures_of_different_sizes_fail(tmp_path, checkout):
     poses.write_text(json.dumps({'schema': 1, 'poses': [{'name': 'a'}, {'name': 'b'}]}))
     with pytest.raises(ValueError, match='different sizes'):
         capture.receipt('v2', checkout, DONE, poses, ['a', 'b'], [[64, 36], [32, 18]], 8.)
+
+
+def test_a_session_receipt_names_the_launch_commit_and_refuses_a_moved_checkout(tmp_path, checkout):
+    poses = tmp_path / 'poses.json'
+    poses.write_text(json.dumps({'schema': 1, 'poses': [{'name': 'a'}]}))
+    head = subprocess.run(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], capture_output=True, text=True,
+                          check=True).stdout.strip()
+    bound = capture.receipt('v2', checkout, DONE, poses, ['a'], [[64, 36]], 8., launched=head)
+    assert bound['revision'] == {'commit': head, 'dirty': False, 'launch_verified': True}
+    subprocess.run(['git', '-C', str(checkout), '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit',
+                    '-q', '--allow-empty', '-m', 'advance'], check=True)
+    with pytest.raises(ValueError, match='launched at'):
+        capture.receipt('v2', checkout, DONE, poses, ['a'], [[64, 36]], 8., launched=head)

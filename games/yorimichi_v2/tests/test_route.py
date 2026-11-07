@@ -1,8 +1,11 @@
 """The slice route check (tools/test/route.py): a recorded walk and skate run passes only when Cairo walked the road,
 rode the pier at speed on a flat deck and the frame rate held."""
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('v2_route', ROOT / 'tools/test/route.py')
@@ -46,3 +49,11 @@ def test_missing_phases_and_low_frame_rates_fail():
     assert route.evaluate(rows)[0] == ['frame: a sampled frame at 12.0 fps < 20']
     teleport = {**rows[0], 'phase': 'skate_place', 'fps': 2.5}   # a teleport's streaming frame is no play
     assert route.evaluate(walk() + [teleport] + skate())[0] == []
+
+
+def test_the_report_names_the_launch_commit_and_refuses_a_moved_checkout():
+    head = subprocess.run(['git', '-C', str(route.REPO), 'rev-parse', 'HEAD'], capture_output=True, text=True,
+                          check=True).stdout.strip()
+    assert route.revision(head)['commit'] == head
+    with pytest.raises(ValueError, match='launched at'):
+        route.revision('0' * 40)
