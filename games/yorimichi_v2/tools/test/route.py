@@ -10,7 +10,10 @@ OUT/report.json and exits 0 only when every check holds:
 
   walk   every sample walks on the ground (MOVE_WALKING); Cairo covers >= 12 m at >= 2.5 m/s
   skate  every sample rides the board (board=ride); top speed >= 6 m/s; the deck height varies < 0.5 m
-  frame  no walking or skating sample under 20 fps (the teleports' streaming frames are not play)
+  frame  no walking or skating sample under 20 fps (the teleports' streaming frames are not play). The game samples
+         one frame every 0.5 s, so this is the lowest sampled fps, not the minimum over every frame
+
+The report records the live session and the checkout's revision, so a later run cannot pass as this one.
 
 It saves nothing and leaves Cairo on foot at the end of the pier run.
 """
@@ -61,10 +64,17 @@ def evaluate(rows):
             failures.append(f'skate: the rider height varies {dz:.0f} cm on a flat deck')
     played = walk + skate   # the teleports' frames stream a new area in and are no play
     if played:
-        measured['min_fps'] = min(r['fps'] for r in played)
-        if measured['min_fps'] < MIN_FPS:
-            failures.append(f'frame: {measured["min_fps"]} fps < {MIN_FPS}')
+        measured['min_sampled_fps'] = min(r['fps'] for r in played)   # one frame every 0.5 s
+        measured['sampled_frames'] = len(played)
+        if measured['min_sampled_fps'] < MIN_FPS:
+            failures.append(f'frame: a sampled frame at {measured["min_sampled_fps"]} fps < {MIN_FPS}')
     return failures, measured
+
+
+def revision() -> dict:
+    def git(*argv):
+        return subprocess.run(['git', '-C', str(REPO), *argv], capture_output=True, text=True, check=True).stdout
+    return {'commit': git('rev-parse', 'HEAD').strip(), 'dirty': bool(git('status', '--porcelain').strip())}
 
 
 def main(argv=None):
@@ -93,7 +103,8 @@ def main(argv=None):
     failures, measured = evaluate(rows)
     if 'error' in done:
         failures.insert(0, f'game: {done["error"]}')
-    report = {'schema': 1, 'passed': not failures, 'failures': failures, 'measured': measured, 'samples': len(rows)}
+    report = {'schema': 1, 'passed': not failures, 'failures': failures, 'measured': measured, 'samples': len(rows),
+              'session': args.session, 'revision': revision()}
     (out / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(measured))
     for failure in failures:

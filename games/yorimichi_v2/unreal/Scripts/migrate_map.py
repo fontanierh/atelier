@@ -55,6 +55,13 @@ def open_map(path):
 
 
 def existing():
+    """Every actor already in the map by its stable ID. World Partition loads only the always-loaded actors with the
+    map, so every actor is loaded first: an unloaded one would be placed again (a duplicate, or its package
+    overwritten and a later edit to it lost)."""
+    wpl = U.WorldPartitionBlueprintLibrary
+    guids = [d.get_editor_property('guid') for d in wpl.get_actor_descs() or []]
+    if guids:
+        wpl.load_actors(guids)
     found = {}
     for actor in EAS.get_all_level_actors():
         for tag in actor.tags:
@@ -98,7 +105,8 @@ def inside(bounds, x, y):
 def region_of(name):
     """The region holding a `<Parent>_cell_<i>_<j>[_PieceN]` island piece: the one whose bounds hold its cell's
     centre (source cell i covers x 128 i .. 128 (i + 1) m; Unreal is (100 x, -100 y) cm). A piece the donor did
-    not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island: the environment owns it."""
+    not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island, and a cell no migrated
+    region holds is the island foundation's: the environment owns both, so the island has no holes."""
     if '_cell_' not in name:
         return plan['environment']
     parts = name.split('_cell_', 1)[1].split('_')
@@ -107,7 +115,7 @@ def region_of(name):
     for region in plan['regions']:
         if inside(region['bounds_cm'], x, y):
             return region['id']
-    return None
+    return plan['environment']
 
 
 def island_pieces():

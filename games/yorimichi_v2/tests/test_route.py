@@ -25,7 +25,7 @@ def skate(n=10, top=850., board='ride', dz=0.):
 def test_a_good_route_passes():
     failures, measured = route.evaluate(walk() + skate())
     assert failures == []
-    assert measured['walk_m'] == 17.5 and measured['skate_top_speed'] == 850. and measured['min_fps'] == 60.
+    assert measured['walk_m'] == 17.5 and measured['skate_top_speed'] == 850. and measured['min_sampled_fps'] == 60.
 
 
 def test_swimming_or_a_short_walk_fails():
@@ -43,6 +43,6 @@ def test_missing_phases_and_low_frame_rates_fail():
     assert route.evaluate(skate())[0] == ['walk: 0 samples']
     rows = walk() + skate()
     rows[3]['fps'] = 12.
-    assert route.evaluate(rows)[0] == ['frame: 12.0 fps < 20']
+    assert route.evaluate(rows)[0] == ['frame: a sampled frame at 12.0 fps < 20']
     teleport = {**rows[0], 'phase': 'skate_place', 'fps': 2.5}   # a teleport's streaming frame is no play
     assert route.evaluate(walk() + [teleport] + skate())[0] == []
