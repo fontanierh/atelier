@@ -784,3 +784,53 @@ def test_resolution_and_unlock_discard_stale_listings(world):
     body = {'action': 'resolve', 'path': SEA, 'decision': 'adopt', 'lock_id': late, 'reason': 'late lock'}
     refused('lock_state', lead.call, 'POST', f'/claims/{claim["id"]}/recover', body)
     assert a.call('GET', f'/claims/{claim["id"]}')['locks'][0]['state'] == 'created'
+
+
+class TrackingLocker:
+    """Wraps a locker and records how many lock requests were in flight at once."""
+
+    def __init__(self, inner):
+        self.inner, self.now, self.peak, self.guard = inner, 0, 0, threading.Lock()
+
+    def lock(self, path, ref=None):
+        with self.guard:
+            self.now += 1
+            self.peak = max(self.peak, self.now)
+        try:
+            threading.Event().wait(0.02)   # a remote round trip
+            return self.inner.lock(path, ref=ref)
+        finally:
+            with self.guard:
+                self.now -= 1
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+
+def test_many_locks_are_acquired_concurrently_and_verified_against_one_listing(world):
+    a = world.agent('a', 'alice')
+    world.task(a, 'ta')
+    paths = [f'{HARBOUR}Actor{i:02}.uasset' for i in range(30)]
+    claim = world.request(a, 'ta', lock_paths=paths)
+    listed, real = [], world.store.lfs.locks
+    world.store.lfs.locks = lambda path=None, lock_id=None: listed.append(path) or real(path=path, lock_id=lock_id)
+    locker = TrackingLocker(a.locker)
+    view = acquire(a, claim['id'], locker)
+    assert view['state'] == 'active' and {l['state'] for l in view['locks']} == {'verified'}
+    assert all(len(world.lfs.at(p)) == 1 for p in paths)
+    assert 1 < locker.peak <= 8                      # concurrent, bounded by LOCK_WORKERS
+    assert sorted(p for p in listed if p) == sorted(paths)   # one intent snapshot per path
+    assert listed.count(None) == 1                    # activation: one listing for all 30 locks
+
+
+def test_a_failure_among_concurrent_locks_releases_only_this_attempt_s_locks(world):
+    a = world.agent('a', 'team')
+    paths = [f'{HARBOUR}Actor{i:02}.uasset' for i in range(30)]
+    other = world.lfs.add(paths[13], 'team')   # another writer's lock of the same account, mid-list
+    world.task(a, 'ta')
+    claim = world.request(a, 'ta', lock_paths=paths)
+    with pytest.raises(AcquireFailed) as failure:
+        acquire(a, claim['id'], TrackingLocker(a.locker))
+    assert failure.value.claim['state'] == 'failed'
+    assert all(world.lfs.at(p) == [] for p in paths if p != paths[13])   # every lock this attempt made: released
+    assert [l['id'] for l in world.lfs.at(paths[13])] == [other]          # the pre-existing one: untouched

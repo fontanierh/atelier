@@ -20,8 +20,11 @@ append-only event history. It is not a scheduler, a chat channel or a replacemen
 1. `request` atomically reserves the items as **pending** after checking overlap and the base revision
    against the target branch (refused if a claimed or read path changed since the base: update first).
 2. For each LFS path the client records an intent (the service snapshots the remote locks on that path),
-   runs `git lfs lock --json` with **its own** credentials and reports the result.
-3. `activate` verifies every lock on the remote and the base again; only then is the claim **active**.
+   runs `git lfs lock --json` with **its own** credentials and reports the result. Up to 8 paths are in
+   flight at once (`client.LOCK_WORKERS`). After the first failure no new path starts, and the started ones
+   report before the attempt is aborted.
+3. `activate` verifies every lock on the remote and the base again; only then is the claim **active**. A
+   claim with more than 20 locks is checked against one listing of the remote's locks, not one request per lock.
 4. On failure the attempt is aborted: only locks this attempt proved it created are unlocked. A lock whose
    result is unknown stays **uncertain** and keeps the reservation until `reconcile` proves whose it is
    (a lock ID absent from the intent snapshot, owned by the claimant, and not possibly made by another claim's

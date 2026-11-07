@@ -15,6 +15,8 @@ from pathlib import Path
 from . import scopes
 from .remote import Unavailable
 
+LIST_ALL_LOCKS_ABOVE = 20   # a claim with more locks is verified against one listing of all remote locks
+
 HOLDING = ('pending', 'active', 'releasing', 'uncertain')
 TASK_STATES = ('open', 'in_progress', 'review', 'merged', 'cancelled')
 SCHEMA = """
@@ -540,9 +542,12 @@ class Store:
         Raises (fail closed) when the LFS server cannot be asked."""
         problems = []
         try:
+            # Many locks: one listing of the remote's locks (paginated), not one request per lock. Either way each
+            # recorded lock is read from the remote now.
+            listed = self.lfs.locks() if len(locks) > LIST_ALL_LOCKS_ABOVE else None
             for lock in locks:
-                remote = [l for l in self.lfs.locks(path=lock['path']) if l.id == lock['lock_id']] \
-                    if lock['lock_id'] else []
+                found = listed if listed is not None else self.lfs.locks(path=lock['path']) if lock['lock_id'] else []
+                remote = [l for l in found if l.id == lock['lock_id']] if lock['lock_id'] else []
                 if len(remote) != 1 or remote[0].path != lock['path'] or remote[0].owner != account:
                     problems.append({'path': lock['path'], 'lock_id': lock['lock_id'],
                                      'remote': [vars(l) for l in remote], 'expected_owner': account})
