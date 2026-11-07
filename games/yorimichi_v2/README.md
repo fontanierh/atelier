@@ -51,8 +51,9 @@ V2_RESTRICTED_SOURCE=DIR uv run python games/yorimichi_v2/tools/restricted/fetch
 uv run python games/yorimichi_v2/tools/restricted/fetch.py pin   # after adoption or a claimed edit; then upload the same bytes
 ```
 
-Without it these packages are absent locally; the content check notes "fetch required" and passes, but
-packaging (`--require-restricted`) fails. A fetch never overwrites a local file that differs from its pin.
+Without it these packages are absent locally, and the content check (so every build, play and package) fails with
+"fetch required". `--allow-restricted-absent` only notes it, for checkouts without restricted access that do not
+build or play. A fetch never overwrites a local file that differs from its pin.
 
 ## Everyday commands
 

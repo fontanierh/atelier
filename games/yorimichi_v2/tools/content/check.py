@@ -9,11 +9,12 @@ The quick mode reuses a hash only when a file's size, modification time, change 
 local index (in the ignored `unreal/Saved`); a changed byte always changes the change time. `--full` rehashes
 everything, for integration and suspected corruption.
 
-Restricted content (`restricted.toml`, DECISIONS D05 group 2) is never committed: an absent restricted file is a
-notice ("fetch required"), not a failure, unless `--require-restricted` (packaging). A restricted path Git tracks, a
+Restricted content (`restricted.toml`, DECISIONS D05 group 2) is never committed: an absent pinned restricted file is
+missing content and fails ("fetch required"), like any other. Only `--allow-restricted-absent`, for checkouts without
+access to the restricted storage that do not build or play, downgrades it to a notice. A restricted path Git tracks, a
 present restricted file that is unpinned or differs from `restricted.lock.json`, or a recorded one with no pin fails.
 
-    uv run python games/yorimichi_v2/tools/content/check.py [--full] [--json] [--require-restricted]
+    uv run python games/yorimichi_v2/tools/content/check.py [--full] [--json] [--allow-restricted-absent]
 """
 from __future__ import annotations
 
@@ -128,8 +129,8 @@ def _file(game, rel, subject, problems, hasher, *, missing_action, restricted=No
 
 
 def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
-          require_restricted: bool = False) -> tuple[list[Problem], dict]:
-    """(fatal problems, stats); `stats['notices']` holds the non-fatal ones (restricted files to fetch)."""
+          allow_restricted_absent: bool = False) -> tuple[list[Problem], dict]:
+    """(fatal problems, stats); `stats['notices']` holds the non-fatal ones (absent restricted files, when allowed)."""
     problems: list[Problem] = []
     hasher = Hasher(game, full)
     try:
@@ -302,7 +303,7 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
         notice = Problem('RESTRICTED_ABSENT', 'restricted', f'{len(absent)} pinned restricted file(s) absent, for '
                          f'example {min(absent)}: fetch required',
                          f'{restricted.source_env}=DIR {FETCH} fetch   (DIR: the authorized restricted storage)')
-        (problems if require_restricted else notices).append(notice)
+        (notices if allow_restricted_absent else problems).append(notice)
 
     if write_index:
         hasher.save()
@@ -315,11 +316,11 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--full', action='store_true', help='rehash every file instead of trusting the local index')
     parser.add_argument('--json', action='store_true', help='machine-readable report')
-    parser.add_argument('--require-restricted', action='store_true',
-                        help='fail when a pinned restricted file is absent (packaging needs every byte)')
+    parser.add_argument('--allow-restricted-absent', action='store_true',
+                        help='only note absent pinned restricted files (no restricted access; never for build or play)')
     parser.add_argument('--game', type=Path, default=GAME, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    problems, stats = check(args.game.resolve(), full=args.full, require_restricted=args.require_restricted)
+    problems, stats = check(args.game.resolve(), full=args.full, allow_restricted_absent=args.allow_restricted_absent)
     if args.json:
         print(json.dumps({'ok': not problems, 'stats': stats, 'problems': [asdict(p) for p in problems]}, indent=2))
     else:

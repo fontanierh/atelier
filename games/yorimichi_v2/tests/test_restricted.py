@@ -120,14 +120,15 @@ def audio_record(game, files: dict[str, bytes]):
         'files': {f'unreal/Content/{rel}': sha(data) for rel, data in files.items()}})
 
 
-def test_an_absent_restricted_package_is_a_notice_not_a_failure(tmp_path, game, storage):
+def test_an_absent_restricted_package_fails_unless_explicitly_allowed(tmp_path, game, storage):
     audio_record(game, {ROLL: b'roll v1', STEP: b'step v1'})
     problems, stats = check.check(game, full=True)
+    assert [p.code for p in problems] == ['RESTRICTED_ABSENT'] and 'fetch required' in problems[0].detail
+    assert check.main(['--game', str(game)]) == 1
+    problems, stats = check.check(game, full=True, allow_restricted_absent=True)
     assert problems == []
     assert stats['restricted_absent'] == 2 and [n['code'] for n in stats['notices']] == ['RESTRICTED_ABSENT']
-    assert 'fetch required' in stats['notices'][0]['detail']
-    assert [p.code for p in check.check(game, full=True, require_restricted=True)[0]] == ['RESTRICTED_ABSENT']
-    assert check.main(['--game', str(game)]) == 0
+    assert check.main(['--game', str(game), '--allow-restricted-absent']) == 0
     quiet_fetch(game, storage)
     problems, stats = check.check(game, full=True)
     assert problems == [] and stats['restricted_absent'] == 0 and stats['notices'] == []
