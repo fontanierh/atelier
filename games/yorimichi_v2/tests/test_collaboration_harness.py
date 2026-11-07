@@ -280,7 +280,8 @@ def test_c01_writes_outside_a_claim_are_refused(team):
     with pytest.raises(sv.ValidationError, match='no active scope covering asset/material/painted'):
         a.validate('material/painted')
     c.write('assets/props/bench/src/model.glb', 'prop/bench by the region agent')
-    with pytest.raises(run.ImportError_, match='no active scope covering asset/prop/bench'):
+    # The region claim covers its own prop by scope (the record's owner), but holds no locks on its packages.
+    with pytest.raises(run.ImportError_, match='does not exactly cover these paths'):
         c.import_('prop/bench')
     assert (c.game / BENCH).read_bytes() == (team.game / BENCH).read_bytes()
     with pytest.raises(sv.ValidationError, match='belongs to region/w05-harbour'):
