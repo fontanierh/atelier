@@ -222,7 +222,9 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
     if outside:
         raise ImportError_(f'{asset.id}: an interrupted import journal would restore files outside its current '
                            f'outputs ({", ".join(outside[:5])}); resolve {journal.dir} by hand')
-    journal.restore()                                    # a previous crash left this asset's files half-written
+    recovered = journal.restore()                        # a previous crash left this asset's files half-written
+    if recovered:
+        echo(f'recovered  {asset.id}: restored {len(recovered)} file(s) an interrupted import left')
     journal.begin(write_set)
     allowed = {records.content_relative(game, f) for f in write_set}
     before = content_snapshot(game)
