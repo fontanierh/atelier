@@ -99,6 +99,16 @@ def test_plan_uses_record_bounds_and_one_map(tmp_path):
         run.make_plan(tmp_path, ['region/w09'], 'region/w00', [], False, [], 32.0)
 
 
+def test_plan_refuses_overlapping_regions_of_one_map(tmp_path):
+    region(tmp_path, 'w00', '[-1000, -1000, 1000, 1000]')
+    region(tmp_path, 'w01', '[-200, 0, -100, 100]')
+    region(tmp_path, 'w02', '[-100, 0, 0, 100]')          # shares only an edge: half-open, so disjoint
+    assert len(run.make_plan(tmp_path, ['region/w01', 'region/w02'], 'region/w00', [], False, [], 32.0)['regions']) == 2
+    region(tmp_path, 'w03', '[-150, 50, -50, 150]')
+    with pytest.raises(run.MigrationError, match='region/w01 and region/w03 overlap'):
+        run.make_plan(tmp_path, ['region/w03'], 'region/w00', [], False, [], 32.0)
+
+
 def test_migration_rosters_merge_per_region(tmp_path):
     (tmp_path / 'world/regions/w01-start').mkdir(parents=True)
     run.record_rosters(tmp_path, [('/Game/__ExternalActors__/V2/Maps/Slice/0/AB/X1',

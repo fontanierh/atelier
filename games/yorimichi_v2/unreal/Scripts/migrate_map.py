@@ -32,6 +32,7 @@ LES = U.get_editor_subsystem(U.LevelEditorSubsystem)
 EAS = U.get_editor_subsystem(U.EditorActorSubsystem)
 EAL = U.EditorAssetLibrary
 CELL_M = 128.0
+CELL_METRES = {'FarHills': 512.0}   # the donor's wider backdrop cells (world/plan_terrain.py CELL_METRES)
 created, kept = [], 0
 
 
@@ -104,14 +105,16 @@ def inside(bounds, x, y):
 
 def region_of(name):
     """The region holding a `<Parent>_cell_<i>_<j>[_PieceN]` island piece: the one whose bounds hold its cell's
-    centre (source cell i covers x 128 i .. 128 (i + 1) m; Unreal is (100 x, -100 y) cm). A piece the donor did
+    centre (source cell i covers x c i .. c (i + 1) m, c = 128 m, 512 m for FarHills; Unreal is (100 x, -100 y) cm). A piece the donor did
     not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island, and a cell no migrated
     region holds is the island foundation's: the environment owns both, so the island has no holes."""
     if '_cell_' not in name:
         return plan['environment']
-    parts = name.split('_cell_', 1)[1].split('_')
+    parent, rest = name.split('_cell_', 1)
+    parts = rest.split('_')
     i, j = int(parts[0]), int(parts[1])
-    x, y = (i + .5) * CELL_M * 100, -(j + .5) * CELL_M * 100
+    cell = CELL_METRES.get(parent, CELL_M)
+    x, y = (i + .5) * cell * 100, -(j + .5) * cell * 100
     for region in plan['regions']:
         if inside(region['bounds_cm'], x, y):
             return region['id']

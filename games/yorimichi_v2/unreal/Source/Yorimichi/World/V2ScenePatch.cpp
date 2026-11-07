@@ -174,7 +174,10 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
         {
             FTransform X;
             Group->GetInstanceTransform(I, X, true);
-            const FVector2D P(X.GetLocation());
+            FVector2D P(X.GetLocation());
+            // A world-space piece (its parent placed at the origin, its geometry in world coordinates: the lake, the
+            // village ground, Hidamari's surfaces, the volcano) belongs to the region holding its geometry's centre.
+            if (P.IsZero()) P = FVector2D(X.TransformPosition(Group->GetStaticMesh()->GetBounds().Origin));
             if (!AV2WorldManifest::InsideHalfOpen(BoundsCm[R], P)) continue;
             FHitResult Hit;
             if (bTraceGround && !World->LineTraceSingleByChannel(Hit, X.GetLocation() + FVector(0, 0, 300),

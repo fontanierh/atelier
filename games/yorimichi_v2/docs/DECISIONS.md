@@ -84,7 +84,10 @@ field, and there is no LICENSE file. The inventory (inventory/world.md §5) sort
    skate rider (`/Game/Cairo`, `/Game/CairoAdventure`, `/Game/Modori`, `/Game/Nox`, `/Game/Paul`, `/Game/SkateRide`,
    `/Game/SkateMotion`; their clips are Mixamo-derived or of
    unrecorded origin) therefore take the group 2 route until each source's permission is recorded; then a root is
-   removed from `restricted.toml` and `.gitignore` in a reviewed commit.
+   removed from `restricted.toml` and `.gitignore` in a reviewed commit. The full port (2026-11-07) adds the same
+   way the mounts and their riders (`/Game/Horses`, `/Game/{Cairo,Modori,Nox,Paul}{Bike,Horse}`), the combat
+   characters (`/Game/FoxHunter`, `/Game/SwordTrainer`, `/Game/Wanderer`), whose animation origin is not recorded, and
+   Crater Park (`/Game/CraterPark`, group 3 below) until its license is recorded.
 2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters (and, until cleared, the group 1
    animation roots). Their license forbids sharing them
    as a sound pack of their own, and the masters are fetched, not committed. These SoundWave packages go to
@@ -96,7 +99,7 @@ field, and there is no LICENSE file. The inventory (inventory/world.md §5) sort
    retail material identifiers, a decoded vertex codec and baked lightmaps. Its provenance as "Atelier's own asset
    library" is unverified. Until the owner settles its rights, V2 does not upload its packages. Crater Park's
    source (`fontanierh/crater-skate-park`) is very likely the owner's own, but V2 records its license before
-   upload.
+   upload; until then its packages are restricted (group 2 storage), so the port plays it without uploading it.
 
 Import metadata inside packages must not keep the donor's absolute paths. The staged-package lint scan and the
 content check enforce this.
