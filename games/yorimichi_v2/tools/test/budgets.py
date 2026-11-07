@@ -31,6 +31,7 @@ import re
 import statistics
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -103,15 +104,14 @@ def play_until_playable(log, timeout=600):
     started = time.monotonic()
     game = subprocess.Popen(PLAY, cwd=REPO, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     output, session, ready = [], None, None
-    os.set_blocking(game.stdout.fileno(), False)
+    reader = threading.Thread(target=lambda: output.extend(game.stdout), daemon=True)   # lines as the game prints
+    reader.start()
     try:
         while time.monotonic() - started < timeout and game.poll() is None:
-            output.append(game.stdout.read() or '')
-            if session is None:
-                found = re.search(r'live session (\S+) on loopback', ''.join(output))
-                session = found and found.group(1)
-                if session in known:
-                    session = None
+            if session is None:   # this launch's record: new since the start, for this checkout
+                fresh = [r['session'] for r in live_sessions.records()
+                         if r['session'] not in known and Path(r.get('checkout', '')) == REPO]
+                session = fresh[0] if len(fresh) == 1 else None
             if session and 'V2 PLAYABLE' in live(session, PLAYABLE):
                 ready = time.monotonic() - started
                 break
@@ -120,8 +120,8 @@ def play_until_playable(log, timeout=600):
         if session and game.poll() is None:
             live(session, QUIT)   # never signal the guarded game: it quits through its own bridge
         try:
-            rest, _ = game.communicate(timeout=120)
-            output.append(rest or '')
+            game.wait(timeout=120)
+            reader.join(timeout=10)
         except subprocess.TimeoutExpired:
             log.write(f'$ {" ".join(PLAY)}\n{"".join(output)}\n')
             raise CleanupError(f'the game (launcher pid {game.pid}, session {session}) did not quit within 120 s of '
