@@ -70,8 +70,10 @@ def test_a_directly_selected_import_rechecks_its_plan(tmp_path, monkeypatch, wri
         recipe._authorize_import(None, io.StringIO())
     assert any(p.endswith('/unreal/Content/Props/SM_Bench.uasset') for p in fake.checks[0])   # derived, not trusted
     fake.scopes, fake.covers = ['asset/prop/other'], True
-    with pytest.raises(authority.Unauthorized, match='no active scope covering asset/prop/bench'):
+    with pytest.raises(authority.Unauthorized, match='no active scope covering asset/prop/bench or region/w04-skatepark'):
         recipe._authorize_import(None, io.StringIO())
+    fake.scopes = ['region/w04-skatepark']   # the record's owner scope covers it, as in the change-set report
+    recipe._authorize_import(None, io.StringIO())
     monkeypatch.setenv('ATELIER_AGENT', 'someone-else')
     plan.write_text(json.dumps(good))
     with pytest.raises(authority.Unauthorized, match='not the bootstrap writer'):

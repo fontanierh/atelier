@@ -65,6 +65,20 @@ def scope_of(subject: str) -> str:
     return subject if subject.startswith('region/') else f'asset/{subject}'
 
 
+def asset_scope(asset) -> tuple[str, str]:
+    """Either scope covers an asset: `asset/<id>` or its record's `owner` (the change-set report's rule)."""
+    return f'asset/{asset.id}', asset.owner
+
+
+def subject_scope(game: Path, subject: str):
+    """The scope of a region ID, or of an asset ID through its record (scope_of when no record exists yet)."""
+    import records
+    if subject.startswith('region/'):
+        return subject
+    asset = next((a for a in records.discover(game)[0] if a.id == subject), None)
+    return asset_scope(asset) if asset else scope_of(subject)
+
+
 def owning_scopes(game: Path, paths: list[str]) -> tuple[set[str], list[str]]:
     """The scopes of the records owning these repository paths, and the paths no record owns yet."""
     import records
@@ -74,7 +88,7 @@ def owning_scopes(game: Path, paths: list[str]) -> tuple[set[str], list[str]]:
         for output in asset.outputs:
             stem = records.package_files(game, output.package)[0].with_suffix('')
             for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS:
-                owner[f'games/yorimichi_v2/{stem.with_suffix(ext).relative_to(game).as_posix()}'] = scope_of(asset.id)
+                owner[f'games/yorimichi_v2/{stem.with_suffix(ext).relative_to(game).as_posix()}'] = asset_scope(asset)
     for region in regions:
         if region.actors.is_file():
             for rel in records.load_verified(region.actors)['files']:
@@ -107,8 +121,10 @@ def claimed_scopes(claim: str, *, repo: Path = REPO) -> list[str]:
             for item in c.get('items', []) if item.get('kind') == 'scope']
 
 
-def covered(scope: str, held: list[str]) -> bool:
-    """A held scope covers itself and its descendants (claims/scopes.py)."""
+def covered(scope, held: list[str]) -> bool:
+    """A held scope covers itself and its descendants (claims/scopes.py); a tuple is covered by any of its scopes."""
+    if isinstance(scope, tuple):
+        return any(covered(s, held) for s in scope)
     parts = scope.casefold().split('/')
     return any(parts[:len(h.split('/'))] == h.casefold().split('/') for h in held)
 
@@ -121,7 +137,7 @@ def authorize(paths: list[str], claim: str | None, what: str, *, scopes=(), repo
         if not scopes:
             raise Unauthorized(f'{what}: a claimed write must name the scopes that own its paths')
         held = claimed_scopes(claim, repo=repo)
-        missing = sorted(s for s in scopes if not covered(s, held))
+        missing = sorted(' or '.join(s) if isinstance(s, tuple) else s for s in scopes if not covered(s, held))
         if missing:
             raise Unauthorized(f'{what}: claim {claim} holds no active scope covering {", ".join(missing)}')
         command = ['uv', 'run', 'atelier', 'claims', 'check', '--stage', 'publish', '--task', claim,
