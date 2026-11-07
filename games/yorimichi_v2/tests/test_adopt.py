@@ -118,6 +118,23 @@ def test_runtime_data_copies_regular_files(donor):
     assert adopt.copy_data(game, content, echo=lambda *_: None) == 0
     assert not (game / 'unreal/Content/Data/megapark').exists()
     assert tomllib  # stdlib only
+    lock = adopt.records.load_data_lock(game)                 # every copied file is pinned
+    assert set(lock) == set(adopt.records.data_files(game)) and len(lock) == 1
+
+
+def test_runtime_data_writes_and_pins_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):
+    game, content = donor
+    adopt.copy_data(game, content, echo=lambda *_: None)
+    data = next((game / 'unreal/Content/Data').rglob('*.json'))
+    data.write_text('{"edited": true}')
+    monkeypatch.setenv('ATELIER_AGENT', 'someone-else')
+    with pytest.raises(adopt.AdoptError, match='not the bootstrap writer'):
+        adopt.pin_data(game, echo=lambda *_: None)
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    assert adopt.pin_data(game, echo=lambda *_: None) == 1
+    assert adopt.records.load_data_lock(game)[data.relative_to(game / 'unreal/Content').as_posix()] == \
+        adopt.records.sha256_file(data)
+    assert adopt.pin_data(game, echo=lambda *_: None) == 0   # unchanged: nothing to pin
 
 
 # Ownership units: one record per unit, prefix-free, capped; package paths never change.

@@ -20,7 +20,9 @@ to no package in V2 (the closure must be complete) and every package whose bytes
 host (they need the editor scrub before commit). Packages under a restricted root (`restricted.toml`, D05 group 2) are
 copied like any other but Git ignores them; pin them afterwards (`tools/restricted/fetch.py pin`). A reference into a
 restricted root is satisfied when this run adopts it or the lock pins it, since a checkout fetches rather than commits it.
-`--data` copies the donor's staged runtime data (`Content/Data`) as committed runtime data.
+`--data` copies the donor's staged runtime data (`Content/Data`) as committed runtime data and pins every file in
+`runtime-data.lock.json`; `--pin-data` re-pins it after a deliberate, claimed change. The content check requires
+exactly the pinned files, hydrated and with their bytes.
 """
 from __future__ import annotations
 
@@ -343,11 +345,15 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
 BLOCKED_DATA = ('megapark',)   # DECISIONS D05 group 3: not uploaded until the owner settles its rights
 
 
-def copy_data(game: Path, content: Path, echo=print) -> int:
+DATA_SCOPE = 'shared/runtime-data'   # the claim scope of unreal/Content/Data and runtime-data.lock.json
+
+
+def copy_data(game: Path, content: Path, claim: str | None = None, echo=print) -> int:
+    """Copy the donor's staged runtime data (authorized like adoption), then pin every data file."""
     source, dest = content / 'Data', game / 'unreal' / 'Content' / 'Data'
     if not source.is_dir():
         raise AdoptError(f'{source} holds no staged runtime data; build the donor first')
-    copied = 0
+    copies = []
     for path in sorted(source.rglob('*')):
         if path.relative_to(source).parts[0] in BLOCKED_DATA:
             continue
@@ -356,13 +362,30 @@ def copy_data(game: Path, content: Path, echo=print) -> int:
         if not path.is_file():
             continue
         out = dest / path.relative_to(source)
-        if out.is_file() and records.sha256_file(out) == records.sha256_file(path):
-            continue
+        if not (out.is_file() and records.sha256_file(out) == records.sha256_file(path)):
+            copies.append((path, out))
+    _authorize(game, [out for _, out in copies], claim, 'runtime data adoption', {DATA_SCOPE})
+    for path, out in copies:
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, out)
-        copied += 1
-    echo(f'runtime data: {copied} file(s) copied')
-    return copied
+    echo(f'runtime data: {len(copies)} file(s) copied, {records.write_data_lock(game)} pinned')
+    return len(copies)
+
+
+def pin_data(game: Path, claim: str | None = None, echo=print) -> int:
+    """Pin the runtime data as it is now, after a deliberate change: the changed, added or removed files must be
+    covered by the claim (or the D04 bootstrap writer). Returns how many files changed."""
+    lock = records.load_data_lock(game) or {}
+    present = records.data_files(game)
+    content = game / 'unreal' / 'Content'
+    changed = sorted({rel for rel in present if lock.get(rel) != records.sha256_file(content / rel)} |
+                     {rel for rel in lock if rel not in present})
+    if not changed and records.load_data_lock(game) is not None:
+        echo('runtime data: unchanged')
+        return 0
+    _authorize(game, [content / rel for rel in changed], claim, 'runtime data pin', {DATA_SCOPE})
+    echo(f'runtime data: {len(changed)} file(s) changed, {records.write_data_lock(game)} pinned')
+    return len(changed)
 
 
 def main(argv=None) -> int:
@@ -371,7 +394,9 @@ def main(argv=None) -> int:
     parser.add_argument('--folder', action='append', default=[], help='/Game folder to adopt, e.g. Japan')
     parser.add_argument('--exclude', action='append', default=[], help='Content-relative folder to leave out')
     parser.add_argument('--license', default='owner-published (docs/DECISIONS.md D05 group 1)')
-    parser.add_argument('--data', action='store_true', help='also copy the staged runtime data')
+    parser.add_argument('--data', action='store_true', help='also copy the staged runtime data, and pin it')
+    parser.add_argument('--pin-data', action='store_true',
+                        help='pin unreal/Content/Data as it is now in runtime-data.lock.json (no donor needed)')
     parser.add_argument('--check-only', action='store_true', help='report closure and privacy problems only')
     parser.add_argument('--claim', help='claims task covering every written path (else the D04 bootstrap writer)')
     parser.add_argument('--repartition', action='store_true',
@@ -379,6 +404,13 @@ def main(argv=None) -> int:
     parser.add_argument('--depth', type=int, default=DEPTH, help='folder depth below /Game of an ownership unit')
     parser.add_argument('--cap', type=int, default=CAP, help='most packages in one adopted record')
     args = parser.parse_args(argv)
+    if args.pin_data:
+        try:
+            pin_data(GAME, claim=args.claim)
+        except (AdoptError, records.RecordError) as error:
+            print(f'data pin failed: {error}', file=sys.stderr)
+            return 1
+        return 0
     if args.repartition:
         try:
             report = repartition(GAME, depth=args.depth, cap=args.cap, check_only=args.check_only, claim=args.claim)
@@ -395,7 +427,7 @@ def main(argv=None) -> int:
         report = adopt(GAME, content, args.folder, args.exclude, args.license, check_only=args.check_only,
                        claim=args.claim, depth=args.depth, cap=args.cap)
         if args.data and not args.check_only:
-            copy_data(GAME, content)
+            copy_data(GAME, content, claim=args.claim)
     except (AdoptError, records.RecordError) as error:
         print(f'adoption failed: {error}', file=sys.stderr)
         return 1

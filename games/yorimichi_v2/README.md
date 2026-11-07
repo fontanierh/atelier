@@ -72,6 +72,7 @@ uv run python games/yorimichi_v2/tools/content/save_validate.py ID [--claim TASK
 ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID   # targeted import (prop/lantern: 30 s, 1 package; unchanged rerun 1 s, no Unreal)
 uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # one-time donor adoption, one record per ownership unit (D08)
 uv run python games/yorimichi_v2/tools/migrate/adopt.py --repartition --check-only   # split older per-folder adopted records into units
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --pin-data [--claim TASK]   # pin unreal/Content/Data in runtime-data.lock.json after a claimed change
 uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # one-time world migration (the slice: 526 actors)
 uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/capture_poses.py V2_CAPTURE_DIR=DIR \

@@ -316,6 +316,48 @@ def load_restricted(game: Path) -> Restricted:
     return Restricted(tuple(roots), game / lock, _need(source, 'env', path))
 
 
+DATA_ROOT = 'Data'                    # unreal/Content/Data: files the game reads at run time (AtelierDataPath)
+DATA_LOCK = 'runtime-data.lock.json'  # every runtime data file with its sha256
+
+
+def data_files(game: Path) -> list[str]:
+    """Content-relative paths of every file under unreal/Content/Data."""
+    root = game / 'unreal' / 'Content' / DATA_ROOT
+    if not root.is_dir():
+        return []
+    return sorted(p.relative_to(root.parent).as_posix() for p in root.rglob('*') if p.is_file() or p.is_symlink())
+
+
+def load_data_lock(game: Path) -> dict[str, str] | None:
+    """Content-relative path -> sha256 of every pinned runtime data file; None when there is no lock."""
+    path = game / DATA_LOCK
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as error:
+        raise RecordError(f'{path}: {error}') from None
+    files = data.get('files') if isinstance(data, dict) else None
+    if not isinstance(data, dict) or data.get('schema') != SCHEMA or not isinstance(files, dict):
+        raise RecordError(f'{path}: a data lock is {{"schema": {SCHEMA}, "files": {{PATH: SHA256}}}}')
+    for rel, digest in files.items():
+        _portable(rel, path, 'files')
+        if not rel.startswith(DATA_ROOT + '/') or not isinstance(digest, str) or not HEX64.match(digest):
+            raise RecordError(f'{path}: {rel} must be a file under {DATA_ROOT}/ with a sha256')
+    return dict(files)
+
+
+def write_data_lock(game: Path) -> int:
+    """Pin every runtime data file as it is now; returns how many."""
+    files = {rel: sha256_file(game / 'unreal' / 'Content' / rel) for rel in data_files(game)}
+    (game / DATA_LOCK).write_text(json.dumps({
+        'schema': SCHEMA,
+        'about': 'Runtime data under unreal/Content/Data (tools/migrate/adopt.py --data or --pin-data); '
+                 'tools/content/check.py requires every file here, hydrated and with these bytes, and nothing else.',
+        'files': files}, indent=2, sort_keys=True) + '\n')
+    return len(files)
+
+
 def load_lock(restricted: Restricted) -> dict[str, dict]:
     """Content-relative path -> {sha256, size} for every pinned restricted file; empty when there is no lock yet."""
     path = restricted.lock

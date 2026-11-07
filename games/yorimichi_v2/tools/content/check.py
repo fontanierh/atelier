@@ -128,6 +128,9 @@ def _file(game, rel, subject, problems, hasher, *, missing_action, restricted=No
     return hasher(path)
 
 
+PIN_DATA = 'uv run python games/yorimichi_v2/tools/migrate/adopt.py --pin-data [--claim TASK]'
+
+
 def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
           allow_restricted_absent: bool = False) -> tuple[list[Problem], dict]:
     """(fatal problems, stats); `stats['notices']` holds the non-fatal ones (absent restricted files, when allowed)."""
@@ -298,6 +301,29 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
                     problems.append(Problem('RESTRICTED_CHANGED', rel, 'differs from its pinned hash',
                                             f'restore it (delete it, then {FETCH} fetch), or pin a claimed edit'))
     absent |= {rel for rel in pinned if not (content / rel).is_file()}
+
+    # Runtime data: files AJapanWorld and the features read at run time, each pinned in runtime-data.lock.json.
+    try:
+        data_lock = records.load_data_lock(game)
+    except RecordError as error:
+        problems.append(Problem('SCHEMA', records.DATA_LOCK, str(error), 'fix the data lock'))
+        data_lock = {}
+    present = records.data_files(game)
+    if data_lock is None:
+        if present:
+            problems.append(Problem('DATA_UNPINNED', records.DATA_LOCK, f'{len(present)} runtime data file(s) and no lock',
+                                    f'pin them: {PIN_DATA}'))
+        data_lock = {}
+    for rel, digest in sorted(data_lock.items()):
+        restore = f'git checkout -- "games/yorimichi_v2/unreal/Content/{rel}"'
+        actual = _file(game, f'unreal/Content/{rel}', rel, problems, hasher, missing_action=restore)
+        if actual is not None and actual != digest:
+            problems.append(Problem('DATA_CHANGED', rel, 'differs from its pinned sha256',
+                                    f'restore it ({restore}); a deliberate change is pinned with {PIN_DATA}'))
+    for rel in present:
+        if rel not in data_lock:
+            problems.append(Problem('DATA_UNPINNED', rel, f'runtime data not in {records.DATA_LOCK}',
+                                    f'delete it, or pin it: {PIN_DATA}'))
     notices = []
     if absent:
         notice = Problem('RESTRICTED_ABSENT', 'restricted', f'{len(absent)} pinned restricted file(s) absent, for '
