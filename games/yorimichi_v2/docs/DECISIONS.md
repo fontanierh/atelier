@@ -98,10 +98,14 @@ The skate pier (W04) splits the same way: `ASkatePark::Initialize(Path, bSpawnSc
 spawns at runtime, and the service `SkatePark.Scenery` saves its meshes and garden trees as one patch of the region
 holding the pier, copied from a park the migration loads with scenery.
 
-## D08 — Adoption is per top-level donor folder
+## D08 — Adoption is per ownership unit, package paths unchanged
 
-Donor packages enter V2 once, through `tools/migrate/adopt.py`, keeping their package paths. Each top-level
-`/Game` folder becomes one editor-owned `adopted/<folder>` record that lists every package it brought. Save
+Donor packages enter V2 once, through `tools/migrate/adopt.py`, keeping their package paths. Only ownership is
+split: each adopted folder's packages become editor-owned records of one ownership unit each, by default one per
+folder two levels below `/Game` (`adopted/japan/hidamari`, owner `shared/japan/hidamari`), split by subfolder and
+then into sorted chunks so no record lists more than 200 packages. Units are prefix-free, so separate edits claim
+separate units instead of contending on one folder-wide record (C01, C19). `adopt.py --repartition` rewrites the
+earlier one-record-per-folder records into these units with identical membership. Save
 validation records the record's bytes. A later edit is an ordinary claimed editor edit of that record, and a
 finer record (a prop, a region's map) may take packages over explicitly. Adoption refuses packages another
 record owns, reports every hard reference that resolves to nothing in V2, and reports packages whose bytes name

@@ -70,7 +70,8 @@ V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/open_close.py \
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # one guarded editor script (here: open a map, save nothing)
 uv run python games/yorimichi_v2/tools/content/save_validate.py ID [--claim TASK]   # record an editor-owned asset or region after a save
 ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID   # (pending) targeted import
-uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # (pending) one-time donor adoption
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # (pending) one-time donor adoption, one record per ownership unit (D08)
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --repartition --check-only   # split older per-folder adopted records into units
 uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # (pending) one-time world migration
 uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/capture_poses.py V2_CAPTURE_DIR=DIR \

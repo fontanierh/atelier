@@ -22,7 +22,8 @@ SCHEMA = 1
 AUTHORITIES = ('generated', 'editor', 'split')
 KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'material-instance', 'texture',
          'audio', 'map', 'blueprint', 'data', 'level-instance', 'foliage', 'physics',
-         # A donor folder's packages taken once as they are (tools/migrate/adopt.py), editor-owned from then on.
+         # One ownership unit of donor packages taken once as they are (tools/migrate/adopt.py, nested IDs such as
+         # adopted/japan/hidamari), editor-owned from then on.
          'adopted')
 VERIFIED_KINDS = ('imported', 'editor-saved')
 LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
