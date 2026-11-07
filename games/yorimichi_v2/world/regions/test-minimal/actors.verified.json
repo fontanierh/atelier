@@ -1,0 +1,12 @@
+{
+  "asset": "region/test-minimal",
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/TestMinimal/2/GT/B1UG2NL351G31HA8YV0XIY.uasset": "754bea223031c7621f6f0b48ba2508b6d1639eee6b37b15dcf10dba53d282346",
+    "unreal/Content/__ExternalActors__/V2/Maps/TestMinimal/7/0K/5B3W587H5G5JXC5P7OBO6A.uasset": "c9cdc7fe68b83e1b5decb65428f17a30bd628225c68562b6461665cbe85d92e3",
+    "unreal/Content/__ExternalActors__/V2/Maps/TestMinimal/7/PX/2RXNJJ83JSJARESE9RGPLV.uasset": "13812365afbf2a9676f3dadbcffb60f88b397d9f4223db5993e170f49b4521d8",
+    "unreal/Content/__ExternalActors__/V2/Maps/TestMinimal/C/BE/KBTR6XUEJYHWLIYGJA7Z43.uasset": "53a369817adfbd572fa2e20d43b6f1990d833a7a371e88c360017de2ef478a94"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

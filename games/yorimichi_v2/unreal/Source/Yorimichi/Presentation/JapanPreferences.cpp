@@ -1,0 +1,1370 @@
+#include "JapanPreferences.h"
+#include "JapanAudioPreferences.h"
+#include "JapanMusic.h"
+#include "JapanCharacterSelect.h"
+#include "DevNotes.h"
+#include "AtelierSettings.h"
+#include "JapanHUD.h"
+#include "JapanNetwork.h"
+#include "CraterParkTower.h"
+#include "JapanSession.h"
+#include "PlayableCharacter.h"
+#include "SkateComponent.h"
+#include "WandererCharacter.h"
+#include "WandererDefinition.h"
+#include "JapanWorld.h"
+#include "Engine/Engine.h"
+#include "AudioDevice.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/PostProcessVolume.h"
+#include "Engine/DirectionalLight.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Engine/SkyLight.h"
+#include "Components/SkyLightComponent.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Components/ExponentialHeightFogComponent.h"
+#include "EngineUtils.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/Paths.h"
+#include "Misc/CommandLine.h"
+#include "Misc/FileHelper.h"
+#include "HAL/IConsoleManager.h"
+#include "HAL/PlatformMisc.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SBox.h"
+#include "Widgets/Layout/SScrollBox.h"
+#include "Widgets/Layout/SWrapBox.h"
+#include "TimerManager.h"
+#include "ComponentRecreateRenderStateContext.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/Input/SSlider.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Text/STextBlock.h"
+
+// The menu's Light section, in its order. Raising LightVersion gives every saved file the defaults of these keys once.
+static const TCHAR* const LightKeys[] = {TEXT("exposure"),TEXT("saturation"),TEXT("sun_height"),TEXT("sun_yaw"),
+    TEXT("sun_warmth"),TEXT("sun_strength"),TEXT("sky_fill"),TEXT("bounce")};
+static constexpr int32 LightVersion = 3;
+
+namespace
+{
+FString RendererRestartRequest()
+{
+    FString Request;
+    if (FParse::Param(FCommandLine::Get(),TEXT("renderrestart")))
+        FParse::Value(FCommandLine::Get(),TEXT("renderrestartrequest="),Request);
+    return Request;
+}
+const TCHAR* RendererName(int32 Renderer) { return Renderer ? TEXT("Lumen") : TEXT("Forward"); }
+// A packaged game is cooked for forward shading only (the shader compiler fixes FORWARD_SHADING for the target), so it
+// has no Lumen shaders to switch to. The editor keeps both.
+constexpr bool bLumenAvailable = WITH_EDITOR != 0;
+const TCHAR* const LumenUnavailable = TEXT("Lumen is not available in this build: it is packaged for forward lighting only.");
+// The Skate feel page (docs/SKATE.md, "Skate feel menu"): every value that changes how the board rides, saved as
+// skate_<name>. The mode picks Easy, Normal or Hardcore as made, or Custom, where every value below is tuned on a base
+// difficulty; the stick, mouse, tight and 120 Hz flicks, bowl boost and camera (bAlways) apply in every mode. A knob without a
+// field is a choice: the mode (0 easy, 1 normal, 2 hardcore, 3 custom), the base difficulty (0 easy, 1 normal,
+// 2 hardcore), tight flicks and 120 Hz flicks (0 off, 1 on) or a switch (0 the difficulty's own, 1 off, 2 on).
+struct FSkateKnob { const TCHAR* Key; const TCHAR* Label; const TCHAR* Hint; float Minimum, Maximum, Step; float FSkateFeel::* Field; bool bAlways = false; };
+struct FSkateGroup { const TCHAR* Name; TArray<FSkateKnob> Knobs; };
+const TArray<FSkateGroup>& SkateGroups()
+{
+    static const TArray<FSkateGroup> Groups = {
+        {TEXT("Mode"), {
+            {TEXT("skate_mode"), TEXT("Skating mode"), TEXT("Easy, Normal or Hardcore as made, or Custom to tune every value."), 0, 3, 1, nullptr, true}}},
+        {TEXT("Custom base"), {
+            {TEXT("skate_difficulty"), TEXT("Base difficulty"), TEXT("The difficulty every custom multiplier scales: easy is forgiving, hardcore strict."), 0, 2, 1, nullptr},
+            {TEXT("skate_trucks"), TEXT("Truck tightness"), TEXT("0 loose, quick to turn; 1 tight and stable."), 0, 1, .05f, &FSkateFeel::TruckTightness}}},
+        {TEXT("Flick-It"), {
+            {TEXT("skate_flick_radius"), TEXT("Flick tolerance"), TEXT("How far a flick may stray from a trick's shape. Higher reads sloppy flicks as tricks."), .5f, 2, .05f, &FSkateFeel::FlickRadius},
+            {TEXT("skate_flick_window"), TEXT("Flick time window"), TEXT("How long a flick may take from start to finish. Higher accepts slower flicks."), .5f, 3, .05f, &FSkateFeel::FlickWindow},
+            {TEXT("skate_flick_pace"), TEXT("Flick speed for full pop"), TEXT("How fast a flick must be to pop at full height. Lower pops high with gentler flicks."), .5f, 2, .05f, &FSkateFeel::FlickPace}}},
+        {TEXT("Air"), {
+            {TEXT("skate_pop"), TEXT("Ollie pop"), TEXT("Ollie and nollie height."), .5f, 2, .05f, &FSkateFeel::Pop},
+            {TEXT("skate_boneless"), TEXT("Boneless height"), TEXT("Height of a boneless."), .5f, 3, .05f, &FSkateFeel::Boneless},
+            {TEXT("skate_hippy"), TEXT("Hippy jump height"), TEXT("Height of a hippy jump."), .5f, 3, .05f, &FSkateFeel::Hippy},
+            {TEXT("skate_gravity"), TEXT("Gravity"), TEXT("Lower floats, higher drops. Jumps keep their height; the time in the air changes."), .5f, 1.5f, .05f, &FSkateFeel::Gravity},
+            {TEXT("skate_spin"), TEXT("Spin speed"), TEXT("How fast the body spins in the air."), .5f, 3, .05f, &FSkateFeel::Spin},
+            {TEXT("skate_assisted_air"), TEXT("Assisted spins and flips"), TEXT("Body spins and flips completed for you."), 0, 2, 1, nullptr},
+            {TEXT("skate_vert_assist"), TEXT("Vert assist"), TEXT("Sends straight airs back into quarter pipes that are short of vertical."), 0, 1, .05f, &FSkateFeel::VertAssist}}},
+        {TEXT("Rails"), {
+            {TEXT("skate_rail_magnetism"), TEXT("Rail magnetism"), TEXT("How far, how sharply and how fast a jump is pulled onto a rail or ledge."), .25f, 3, .05f, &FSkateFeel::RailMagnetism},
+            {TEXT("skate_grind_pop"), TEXT("Grind pop"), TEXT("Height of an ollie out of a grind."), .5f, 2, .05f, &FSkateFeel::GrindPop},
+            {TEXT("skate_grind_friction"), TEXT("Grind friction"), TEXT("How fast grinds and slides slow down. 0 never slows."), 0, 3, .05f, &FSkateFeel::GrindFriction},
+            {TEXT("skate_grind_tolerance"), TEXT("Grind balance"), TEXT("How much knocking and twisting a grind takes before you bail. A slam onto the rail or sideways into it still bails."), .5f, 3, .05f, &FSkateFeel::GrindTolerance}}},
+        {TEXT("Pushing and rolling"), {
+            {TEXT("skate_push_speed"), TEXT("Top push speed"), TEXT("The speed pushing reaches."), .5f, 2, .05f, &FSkateFeel::PushSpeed},
+            {TEXT("skate_push_power"), TEXT("Push strength"), TEXT("Speed gained with each push."), .5f, 3, .05f, &FSkateFeel::PushPower},
+            {TEXT("skate_auto_push"), TEXT("Auto push"), TEXT("Keeps you rolling without pushing."), 0, 2, 1, nullptr},
+            {TEXT("skate_pump"), TEXT("Pumping"), TEXT("Speed gained by pumping through transitions."), 0, 3, .05f, &FSkateFeel::Pump},
+            {TEXT("skate_bowl_boost"), TEXT("Bowl boost"), TEXT("Extra speed from pumping and powersliding on the walls of boost bowls (Crater Park's orange flow bowl and U-turns). 0 is off."), 0, 2, .05f, &FSkateFeel::BowlBoost, true},
+            {TEXT("skate_rolling_friction"), TEXT("Rolling resistance"), TEXT("How fast speed above cruising bleeds off on the flat. 0 keeps every bit of speed."), 0, 3, .05f, &FSkateFeel::RollingFriction},
+            {TEXT("skate_hill_speed"), TEXT("Hill speed"), TEXT("How hard slopes pull the board down."), 0, 2, .05f, &FSkateFeel::HillSpeed},
+            {TEXT("skate_braking"), TEXT("Braking"), TEXT("How hard the foot brake stops."), .25f, 3, .05f, &FSkateFeel::Braking}}},
+        {TEXT("Turning"), {
+            {TEXT("skate_steering"), TEXT("Steering"), TEXT("How much the stick turns the board."), .5f, 2, .05f, &FSkateFeel::Steering},
+            {TEXT("skate_carve"), TEXT("Carve"), TEXT("How hard a leaning board turns."), .5f, 2, .05f, &FSkateFeel::Carve},
+            {TEXT("skate_grip"), TEXT("Wheel grip"), TEXT("How well the wheels hold a turn before sliding out."), .5f, 2, .05f, &FSkateFeel::Grip},
+            {TEXT("skate_powerslide"), TEXT("Powerslide bite"), TEXT("How hard a powerslide slows the board."), .25f, 3, .05f, &FSkateFeel::Powerslide},
+            {TEXT("skate_powerslide_turn"), TEXT("Powerslide turn"), TEXT("How far a powerslide kicks the board across the way you go."), .25f, 1.5f, .05f, &FSkateFeel::PowerslideTurn}}},
+        {TEXT("Balance"), {
+            {TEXT("skate_wobble"), TEXT("Speed wobble"), TEXT("How much the board shakes at speed. 0 never wobbles."), 0, 3, .05f, &FSkateFeel::Wobble},
+            {TEXT("skate_wobble_onset"), TEXT("Wobble starts at"), TEXT("The speed the wobble starts at, as a multiple of the difficulty's."), .5f, 3, .05f, &FSkateFeel::WobbleOnset},
+            {TEXT("skate_manual_drift"), TEXT("Manual drift"), TEXT("How much a manual tips off balance by itself. 0 holds still."), 0, 3, .05f, &FSkateFeel::ManualDrift}}},
+        {TEXT("Bails"), {
+            {TEXT("skate_landing"), TEXT("Landing forgiveness"), TEXT("How crooked and how hard a landing may be before you bail."), .5f, 3, .05f, &FSkateFeel::Landing},
+            {TEXT("skate_impact"), TEXT("Impact toughness"), TEXT("How hard a knock you ride through."), .5f, 3, .05f, &FSkateFeel::Impact},
+            {TEXT("skate_get_up"), TEXT("Time down after a bail"), TEXT("How long the body lies before getting up."), .25f, 2, .05f, &FSkateFeel::GetUpDelay}}},
+        {TEXT("Controls and camera · every mode"), {
+            {TEXT("skate_dead_zone"), TEXT("Stick dead zone"), TEXT("Stick travel ignored around the centre. Raise it for a worn stick."), .25f, .6f, .01f, &FSkateFeel::StickDeadZone, true},
+            {TEXT("skate_stick_reach"), TEXT("Stick full tilt at"), TEXT("Stick travel that counts as fully pushed. Lower reaches the edge sooner."), .6f, 1, .01f, &FSkateFeel::StickReach, true},
+            {TEXT("skate_mouse_flick"), TEXT("Mouse flick strength"), TEXT("How far a mouse movement moves the trick stick, beside look sensitivity."), .25f, 4, .05f, &FSkateFeel::MouseFlick, true},
+            {TEXT("skate_tight_flicks"), TEXT("Tight hardflips and inwards"), TEXT("Also reads a hardflip or inward heelflip flicked close to straight down then up, as newer skate games do, beside the wide arc."), 0, 1, 1, nullptr, true},
+            {TEXT("skate_drift_powerslide"), TEXT("Drift powerslides"), TEXT("The left stick straight down powerslides too, from half tilt, gripping as far as it is pulled down. Let go, the board comes back round under you and you keep your speed and line."), 0, 1, 1, nullptr, true},
+            {TEXT("skate_flick_120hz"), TEXT("120 Hz flick reading"), TEXT("Reads the trick stick twice a tick, between frames too, so a quick flick such as a hardflip keeps every point of its shape. The flick window and pace keep their times."), 0, 1, 1, nullptr, true},
+            {TEXT("skate_cam_dist"), TEXT("Skate camera distance"), TEXT("Nearer or farther than the skate camera's own."), .6f, 1.6f, .05f, &FSkateFeel::CameraDistance, true},
+            {TEXT("skate_cam_fov"), TEXT("Skate camera field of view"), TEXT("Degrees added to the skate camera's view."), -20, 20, 1, &FSkateFeel::CameraFOV, true},
+            {TEXT("skate_cam_pullback"), TEXT("Camera pull-back at speed"), TEXT("How much farther the camera drifts back when you go fast. 0 keeps it at the same distance."), 0, 1.5f, .05f, &FSkateFeel::CameraPullback, true}}}};
+    return Groups;
+}
+const TCHAR* const SkateDifficulties[] = {TEXT("easy"), TEXT("normal"), TEXT("hardcore")};
+const TCHAR* const SkateModes[] = {TEXT("Easy"), TEXT("Normal"), TEXT("Hardcore"), TEXT("Custom")};
+constexpr int32 SkateCustom = 3;
+FString SkateChoice(const FString& Key, int32 Choice)
+{
+    if (Key == TEXT("skate_mode")) return SkateModes[FMath::Clamp(Choice, 0, SkateCustom)];
+    if (Key == TEXT("skate_difficulty"))
+        return Choice == 0 ? TEXT("Easy · forgiving") : Choice == 2 ? TEXT("Hardcore · strict") : TEXT("Normal");
+    if (Key == TEXT("skate_tight_flicks") || Key == TEXT("skate_flick_120hz") || Key == TEXT("skate_drift_powerslide")) return Choice == 1 ? TEXT("On") : TEXT("Off");
+    return Choice == 1 ? TEXT("Off") : Choice == 2 ? TEXT("On") : TEXT("As the difficulty has it");
+}
+// The value a knob starts at: the game's DefaultGame.ini for the settings it had, the stock feel for the rest.
+float SkateDefault(const FSkateKnob& Knob, const FSkateFeel& Defaults)
+{
+    if (Knob.Field) return Defaults.*Knob.Field;
+    if (FCString::Strcmp(Knob.Key, TEXT("skate_difficulty")) == 0 || FCString::Strcmp(Knob.Key, TEXT("skate_mode")) == 0)
+    {
+        for (int32 I = 0; I < 3; ++I) if (Defaults.Difficulty.Equals(SkateDifficulties[I], ESearchCase::IgnoreCase)) return float(I);
+        return 1.f;
+    }
+    if (FCString::Strcmp(Knob.Key, TEXT("skate_tight_flicks")) == 0) return float(Defaults.TightFlicks);
+    if (FCString::Strcmp(Knob.Key, TEXT("skate_flick_120hz")) == 0) return float(Defaults.Flick120Hz);
+    if (FCString::Strcmp(Knob.Key, TEXT("skate_drift_powerslide")) == 0) return float(Defaults.DriftPowerslide);
+    return float((FCString::Strcmp(Knob.Key, TEXT("skate_auto_push")) == 0 ? Defaults.AutoPush : Defaults.AssistedAir) + 1);
+}
+}
+// Whether Key is a Skate feel page value. Membership, not the skate_ prefix: skate_volume is an audio setting on the
+// main page. External linkage for JapanSkatePreferencesTests.cpp.
+bool IsSkateFeelKey(const FString& Key)
+{
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (Key == Knob.Key) return true;
+    return false;
+}
+
+// The release defaults (operator preset, 2026-10-20, Telegram 393): every supported value a fresh install starts
+// from, also what a missing key and the menus' resets come back to. A saved value still wins. The preset's other keys
+// are not preferences: light_version (3) is kept by its own code at that value already, and cairo_botw, moveset,
+// shield and soundbank are retired settings (Cairo's BotW moves gave way to the merged move set; the shield is now the
+// character's network loadout, off; Original is the only soundbank, operator 494), unavailable here and left out on
+// purpose. tests/fixtures holds the
+// preset as given; test_release_defaults.py and JapanReleaseDefaultsTests.cpp check this table against it exactly.
+const TArray<TPair<const TCHAR*, float>>& JapanReleaseDefaults()
+{
+    static const TArray<TPair<const TCHAR*, float>> Preset = {
+        {TEXT("bounce"), 1.9f}, {TEXT("cam_dist"), 420.f}, {TEXT("exposure"), .95f}, {TEXT("fog"), 1.f},
+        {TEXT("fog_density"), .03f}, {TEXT("fog_falloff"), .12f}, {TEXT("fog_glow"), .5f}, {TEXT("fog_reach"), 30.f},
+        {TEXT("fog_shafts"), 1.f}, {TEXT("fog_town"), 0.f}, {TEXT("footstep_volume"), 1.f},
+        {TEXT("forest_detail"), .4f}, {TEXT("fov"), 70.f}, {TEXT("goofy"), 1.f}, {TEXT("laptop"), 0.f},
+        {TEXT("leaf_motion"), 0.f}, {TEXT("mouse"), .4f}, {TEXT("music"), 1.f}, {TEXT("music_volume"), .6f},
+        {TEXT("outline"), 0.f}, {TEXT("paint_radius"), 2.f}, {TEXT("painterly"), .35f}, {TEXT("performance"), 1.f},
+        {TEXT("render_scale"), 100.f}, {TEXT("renderer"), 0.f}, {TEXT("saturation"), 1.f}, {TEXT("show_fps"), 1.f},
+        {TEXT("skate_assisted_air"), 1.f}, {TEXT("skate_auto_push"), 0.f}, {TEXT("skate_boneless"), 1.f},
+        {TEXT("skate_bowl_boost"), 1.2f}, {TEXT("skate_braking"), 1.f}, {TEXT("skate_cam_dist"), 1.f},
+        {TEXT("skate_cam_fov"), -1.f}, {TEXT("skate_cam_pullback"), .8f}, {TEXT("skate_carve"), 1.f},
+        {TEXT("skate_dead_zone"), .25f}, {TEXT("skate_difficulty"), 0.f}, {TEXT("skate_drift_powerslide"), 1.f},
+        {TEXT("skate_flick_120hz"), 1.f}, {TEXT("skate_flick_pace"), 1.f}, {TEXT("skate_flick_radius"), 1.f},
+        {TEXT("skate_flick_window"), 1.f}, {TEXT("skate_get_up"), 1.f}, {TEXT("skate_gravity"), 1.f},
+        {TEXT("skate_grind_friction"), .55f}, {TEXT("skate_grind_pop"), .9f}, {TEXT("skate_grind_tolerance"), 2.f},
+        {TEXT("skate_grip"), 1.f}, {TEXT("skate_hill_speed"), 1.f}, {TEXT("skate_hippy"), 1.f},
+        {TEXT("skate_impact"), 1.f}, {TEXT("skate_landing"), 1.f}, {TEXT("skate_manual_drift"), .7f},
+        {TEXT("skate_mode"), 3.f}, {TEXT("skate_mouse_flick"), 1.f}, {TEXT("skate_pop"), 1.f},
+        {TEXT("skate_powerslide"), .5f}, {TEXT("skate_powerslide_turn"), 1.f}, {TEXT("skate_pump"), 1.f},
+        {TEXT("skate_push_power"), 1.f}, {TEXT("skate_push_speed"), 1.f}, {TEXT("skate_rail_magnetism"), 1.f},
+        {TEXT("skate_rolling_friction"), 1.f}, {TEXT("skate_spin"), 1.2f}, {TEXT("skate_steering"), 1.f},
+        {TEXT("skate_stick_reach"), .95f}, {TEXT("skate_tight_flicks"), 0.f}, {TEXT("skate_trucks"), .5f},
+        {TEXT("skate_vert_assist"), .9f}, {TEXT("skate_volume"), .5f}, {TEXT("skate_wobble"), 1.f},
+        {TEXT("skate_wobble_onset"), 1.f}, {TEXT("sky_fill"), 2.3f}, {TEXT("soften_footsteps"), 1.f},
+        {TEXT("soften_skate"), 1.f}, {TEXT("stamina_rings"), 5.f}, {TEXT("sun_height"), 26.f},
+        {TEXT("sun_strength"), 11.f}, {TEXT("sun_warmth"), .9f}, {TEXT("sun_yaw"), -30.f}, {TEXT("toon"), 0.f},
+        {TEXT("toon_bands"), 7.f}, {TEXT("toon_soft"), .45f}, {TEXT("tree_lod_distance"), 1.5f},
+        {TEXT("tree_lod_mode"), 2.f}, {TEXT("tree_optimization"), 1.f}, {TEXT("tree_shadow"), 80.f},
+        {TEXT("tree_sway"), 60.f}, {TEXT("volume"), .3f}, {TEXT("wind"), 3.5f}
+    };
+    return Preset;
+}
+// The preferences table: built-in defaults and limits, the Skate feel knobs, then the release defaults over them.
+// A release default that names no preference or leaves its range is refused, never clamped, and reported in Errors
+// (the table keeps its built-in value for it). The rest apply exactly as given: a slider's step is not used to round them.
+TArray<FJapanPreference> JapanDefaultPreferences(TArray<FString>* Errors)
+{
+    TArray<FJapanPreference> Values = {
+        {TEXT("performance"),TEXT("Graphics"),1.f,0.f,1.f},
+        {TEXT("renderer"),TEXT("Lighting"),0.f,0.f,1.f},
+        {TEXT("tree_optimization"),TEXT("Tree optimization"),1.f,0.f,1.f},
+        {TEXT("tree_lod_mode"),TEXT("Tree detail comparison"),0.f,0.f,3.f,1.f},
+        {TEXT("tree_lod_distance"),TEXT("Keep tree detail farther (x)"),1.5f,.5f,3.f,.1f},
+        {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
+        {TEXT("fog"),TEXT("Volumetric fog"),1.f,0.f,1.f},
+        {TEXT("leaf_motion"),TEXT("Swaying leaves"),0.f,0.f,1.f},
+        {TEXT("laptop"),TEXT("Laptop mode"),0.f,0.f,1.f},
+        // The fog's look (AJapanWorld::ApplyVolumetricFog, docs/VOLUMETRIC_FOG.md); the defaults are FVolumetricFogLook's.
+        {TEXT("fog_density"),TEXT("Fog density"),.07f,0.f,.2f,.005f},
+        {TEXT("fog_reach"),TEXT("Fog reach (m)"),30.f,10.f,120.f,5.f},
+        {TEXT("fog_falloff"),TEXT("Fog height falloff"),.12f,.02f,.5f,.01f},
+        {TEXT("fog_glow"),TEXT("Fog glow toward the sun"),.5f,0.f,.9f,.05f},
+        {TEXT("fog_shafts"),TEXT("Light shafts"),1.f,0.f,4.f,.1f},
+        {TEXT("fog_town"),TEXT("Fog in Hidamari"),0.f,0.f,1.f,.05f},
+        {TEXT("volume"),TEXT("Volume"),1.f,0.f,1.f},
+        {TEXT("music"),TEXT("Music"),1.f,0.f,1.f},
+        {TEXT("music_volume"),TEXT("Music volume"),.6f,0.f,1.f,.05f},
+        {TEXT("soften_footsteps"),TEXT("Soften footsteps"),0.f,0.f,1.f},
+        {TEXT("footstep_volume"),TEXT("Footstep volume"),1.f,0.f,1.f,.05f},
+        {TEXT("soften_skate"),TEXT("Soften skate sounds"),0.f,0.f,1.f},
+        {TEXT("skate_volume"),TEXT("Skate volume"),1.f,0.f,1.f,.05f},
+        {TEXT("goofy"),TEXT("Skate stance"),0.f,0.f,1.f},
+        {TEXT("stamina_rings"),TEXT("Stamina rings"),2.f,1.f,5.f},
+        {TEXT("mouse"),TEXT("Look sensitivity"),.4f,.04f,.8f},
+        {TEXT("cam_dist"),TEXT("Camera distance"),420.f,200.f,800.f},
+        {TEXT("fov"),TEXT("Field of view"),70.f,50.f,100.f},
+        {TEXT("render_scale"),TEXT("Resolution limit (%)"),100.f,50.f,100.f},
+        {TEXT("painterly"),TEXT("Paint strength"),.35f,0.f,1.f},
+        {TEXT("paint_radius"),TEXT("Brush radius"),2.f,1.f,8.f},
+        {TEXT("toon"),TEXT("Toon strength"),0.f,0.f,1.f},
+        {TEXT("toon_bands"),TEXT("Toon bands"),7.f,2.f,10.f},
+        {TEXT("toon_soft"),TEXT("Toon softness"),.45f,0.f,1.f},
+        {TEXT("outline"),TEXT("Outlines"),0.f,0.f,1.f},
+        {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
+        {TEXT("tree_sway"),TEXT("Tree sway distance (m)"),60.f,0.f,180.f,5.f},
+        {TEXT("forest_detail"),TEXT("Forest detail distance (x)"),.4f,.25f,2.f,.05f},
+        {TEXT("tree_shadow"),TEXT("Tree shadow distance (m)"),80.f,20.f,300.f,5.f},
+        // The light (the menu's Light section, LightKeys): the map's sun, sky light and unbound volume
+        // (setup_project.py build_level) as the player tunes them. The defaults are a low, warm afternoon sun
+        // with long shadows, chosen in a live trial of five looks (build/yorimichi/scout/hidamari-light1). Its
+        // direction (yaw -30: from the west-south-west, so the south-facing fronts and the city seen from the sea are
+        // in sun and the east-west streets get diagonal shadows) won a trial of five (build/yorimichi/scout/hidamari-v14).
+        {TEXT("exposure"),TEXT("Exposure"),.95f,.4f,2.2f},
+        {TEXT("saturation"),TEXT("Saturation"),1.f,.6f,1.6f},
+        {TEXT("sun_height"),TEXT("Sun elevation"),26.f,5.f,80.f},
+        {TEXT("sun_yaw"),TEXT("Sun direction"),-30.f,-180.f,180.f},
+        {TEXT("sun_warmth"),TEXT("Sun warmth"),.9f,0.f,1.f},
+        {TEXT("sun_strength"),TEXT("Sun strength (lux)"),11.f,2.f,16.f},
+        {TEXT("sky_fill"),TEXT("Sky fill"),2.3f,0.f,6.f},
+        {TEXT("bounce"),TEXT("Bounce light"),1.9f,0.f,4.f}};
+    {
+        const FSkateFeel Defaults = FSkateFeel::Defaults();
+        for (const FSkateGroup& Group : SkateGroups())
+            for (const FSkateKnob& Knob : Group.Knobs)
+                Values.Add({Knob.Key, Knob.Label, SkateDefault(Knob, Defaults), Knob.Minimum, Knob.Maximum, Knob.Step});
+    }
+    for (const TPair<const TCHAR*, float>& Default : JapanReleaseDefaults())
+    {
+        FJapanPreference* V = Values.FindByPredicate([&](const FJapanPreference& P) { return P.Key == Default.Key; });
+        FString Problem;
+        if (!V) Problem = TEXT("is not a preference");
+        else if (!FMath::IsFinite(Default.Value) || Default.Value < V->Minimum || Default.Value > V->Maximum)
+            Problem = FString::Printf(TEXT("%g is outside %g..%g"), Default.Value, V->Minimum, V->Maximum);
+        if (!Problem.IsEmpty())
+        {
+            UE_LOG(LogTemp, Error, TEXT("PREFERENCES release default %s %s"), Default.Key, *Problem);
+            if (Errors) Errors->Add(FString(Default.Key) + TEXT(" ") + Problem);
+            continue;
+        }
+        V->Value = Default.Value;
+    }
+    return Values;
+}
+
+// A saved file's values over the defaults (in range; tree detail on its steps). Keys that are not preferences, such as
+// the retired soundbank, change nothing: Original is the only soundbank (operator 494).
+void JapanApplySaved(TArray<FJapanPreference>& Values, const TMap<FString,FString>& Saved)
+{
+    for (FJapanPreference& V : Values)
+        if (const FString* Text = Saved.Find(V.Key))
+        {
+            float Number = 0;
+            if (LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
+        }
+    for (FJapanPreference& V : Values)
+        if (V.Key==TEXT("tree_lod_mode") || V.Key==TEXT("tree_lod_distance"))
+            V.Value=FMath::Clamp(V.Minimum+FMath::RoundToFloat((V.Value-V.Minimum)/V.Step)*V.Step,V.Minimum,V.Maximum);
+}
+// What Save writes: the file's other keys kept, every preference's value, session-only keys left out, and the retired
+// soundbank choice dropped.
+TMap<FString,FString> JapanValuesToSave(const TMap<FString,FString>& Saved, const TArray<FJapanPreference>& Values)
+{
+    TMap<FString,FString> Next = Saved;
+    for (const FJapanPreference& V : Values)
+    {
+        if (UJapanPreferences::IsSessionOnly(V.Key)) { Next.Remove(V.Key); continue; }
+        Next.Add(V.Key,FString::SanitizeFloat(V.Value));
+    }
+    Next.Remove(TEXT("soundbank"));
+    return Next;
+}
+
+void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
+{
+    Owner = Pawn;
+    Values = JapanDefaultPreferences(nullptr);   // a refused release default is logged there
+    DefaultValues.Reset();
+    for (const FJapanPreference& V : Values) DefaultValues.Add(V.Key,V.Value);
+    SettingsFile=FilePath();
+    UE_LOG(LogTemp,Display,TEXT("PREFERENCES file=%s"),*SettingsFile);
+    SavedValues=ReadSaved();
+    JapanApplySaved(Values,SavedValues);
+    // A skating engine saved by an older menu no longer applies.
+    SavedValues.Remove(TEXT("skate_engine"));
+    for (TActorIterator<APostProcessVolume> It(Owner->GetWorld()); It; ++It)
+        for (FWeightedBlendable& Blend : It->Settings.WeightedBlendables.Array)
+            if (UMaterialInterface* Source = Cast<UMaterialInterface>(Blend.Object))
+            {
+                // After a character switch the volume holds the previous character's instances: start from their source.
+                if (const auto* Previous = Cast<UMaterialInstanceDynamic>(Source); Previous && Previous->GetOuter()->IsA<UJapanPreferences>()) Source = Previous->Parent;
+                auto* Material = UMaterialInstanceDynamic::Create(Source,this);
+                Blend.Object = Material; Materials.Add(Material);
+            }
+    Apply();
+}
+FString UJapanPreferences::FilePath()
+{
+    // Desktop previews keep menu edits in their own file (-preferencesfile=); ordinary play
+    // keeps the existing shared path. The launcher seeds a separate copy.
+    return AtelierSettings::FilePath();
+}
+TMap<FString,FString> UJapanPreferences::ReadSaved()
+{
+    TMap<FString,FString> Result = AtelierSettings::ReadFile(FilePath());
+    // Launch-only and retired keys (desktop, haze, supersample) in the file are ignored.
+    for (auto It = Result.CreateIterator(); It; ++It) if (IsSessionOnly(It.Key())) It.RemoveCurrent();
+    // A file saved before the current default light keeps every light value it wrote, the old defaults
+    // among them: let it take the new light once. Command-line overrides below still apply.
+    if (float Version = 0; !Result.Contains(TEXT("light_version")) || !LexTryParseString(Version,*Result[TEXT("light_version")]) || Version < LightVersion)
+    {
+        for (const TCHAR* Key : LightKeys) Result.Remove(Key);
+        Result.Add(TEXT("light_version"),FString::FromInt(LightVersion));
+    }
+    Result.Append(AtelierSettings::Overrides());
+    return Result;
+}
+float UJapanPreferences::Saved(const FString& Key, float Default)
+{
+    const TMap<FString,FString> Read = ReadSaved();
+    float Number = Default;
+    if (const FString* Text = Read.Find(Key); Text && LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) return Number;
+    return Default;
+}
+bool UJapanPreferences::MusicReady() const
+{
+    const auto* Music = Owner ? Owner->GetWorld()->GetSubsystem<UJapanMusic>() : nullptr;
+    return Music && Music->HasLibrary();
+}
+bool UJapanPreferences::IsToggle(const FString& Key)
+{
+    return Key == TEXT("performance") || Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
+        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("leaf_motion") || Key == TEXT("laptop") || Key == TEXT("goofy") ||
+        Key == TEXT("music") || Key == TEXT("soften_footsteps") || Key == TEXT("soften_skate");
+}
+float UJapanPreferences::Get(const TCHAR* Key) const
+{
+    for (const auto& V : Values) if (V.Key == Key) return V.Value;
+    return 0;
+}
+bool UJapanPreferences::SetValue(const FString& Key, float Number)
+{
+    GraphicsError.Reset();
+    if (!FMath::IsFinite(Number)) return false;
+    if (Key == TEXT("renderer") && Number > .5f && !bLumenAvailable)
+    {
+        GraphicsError = LumenUnavailable;   // refused before anything is changed or saved
+        return false;
+    }
+    if (Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
+        Key == TEXT("tree_lod_mode") || Key == TEXT("tree_lod_distance")) return SetGraphicsChoice(Key,Number);
+    // Custom from a preset, with nothing tuned yet, starts on that preset's difficulty (the menu and the live bridge alike).
+    if (Key == TEXT("skate_mode") && FMath::RoundToInt(Number) == SkateCustom && IsSkateCustomStock())
+    {
+        const int32 Was = FMath::RoundToInt(Get(TEXT("skate_mode")));
+        if (Was != SkateCustom) for (FJapanPreference& V : Values) if (V.Key == TEXT("skate_difficulty")) V.Value = float(FMath::Clamp(Was, 0, 2));
+    }
+    for (auto& V : Values) if (V.Key == Key)
+    {
+        V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
+        if (V.Step > 0.f) V.Value = FMath::Clamp(V.Minimum+FMath::RoundToFloat((V.Value-V.Minimum)/V.Step)*V.Step,V.Minimum,V.Maximum);
+        if (IsToggle(Key)) V.Value = V.Value > .5f ? 1.f : 0.f;
+        if (Key == TEXT("stamina_rings")) V.Value=FMath::RoundToFloat(V.Value);
+        Apply(); Save(); return true;
+    }
+    return false;
+}
+bool UJapanPreferences::CanRestartRenderer() { return !RendererRestartRequest().IsEmpty(); }
+int32 UJapanPreferences::CurrentRenderer()
+{
+    const auto* Forward = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForwardShading"));
+    return Forward && Forward->GetInt() == 0 ? 1 : 0;
+}
+bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
+{
+    for (FJapanPreference& Value : Values) if (Value.Key == Key)
+    {
+        const float Before = Value.Value;
+        Number=FMath::Clamp(Number,Value.Minimum,Value.Maximum);
+        if (Value.Step>0.f) Number=FMath::Clamp(Value.Minimum+FMath::RoundToFloat((Number-Value.Minimum)/Value.Step)*Value.Step,Value.Minimum,Value.Maximum);
+        if (IsToggle(Key)) Number=Number>.5f?1.f:0.f;
+        const bool bTree=Key==TEXT("tree_optimization") || Key==TEXT("tree_lod_mode") || Key==TEXT("tree_lod_distance");
+        const bool BeforeEnabled=Get(TEXT("tree_optimization"))>.5f;
+        const int32 BeforeMode=FMath::RoundToInt(Get(TEXT("tree_lod_mode")));
+        const float BeforeDistance=Get(TEXT("tree_lod_distance"));
+        const bool NextEnabled=Key==TEXT("tree_optimization")?Number>.5f:BeforeEnabled;
+        const int32 NextMode=Key==TEXT("tree_lod_mode")?FMath::RoundToInt(Number):BeforeMode;
+        const float NextDistance=Key==TEXT("tree_lod_distance")?Number:BeforeDistance;
+        TArray<AJapanWorld*> ChangedWorlds;
+        const auto RestoreTrees = [&]()
+        {
+            bool bRestored = true;
+            for (AJapanWorld* World : ChangedWorlds)
+                if (!World->ApplyTreeOptimization(BeforeEnabled,BeforeMode,BeforeDistance)) bRestored = false;
+            return bRestored;
+        };
+        if (bTree && Owner && Owner->GetWorld())
+            for (TActorIterator<AJapanWorld> It(Owner->GetWorld());It;++It) if (It->bLoaded)
+            {
+                ChangedWorlds.Add(*It);
+                if (!It->ApplyTreeOptimization(NextEnabled,NextMode,NextDistance))
+                {
+                    GraphicsError = RestoreTrees()
+                        ? TEXT("Tree detail could not be changed. Your previous setting is kept. Check that the game's tree assets are built.")
+                        : TEXT("Tree detail could not be changed or restored. Restart the game before changing tree detail again.");
+                    return false;
+                }
+            }
+        Value.Value = Number;
+        if (!Save())
+        {
+            Value.Value = Before;
+            GraphicsError = RestoreTrees()
+                ? TEXT("Settings could not be saved. The game has not restarted. Try again after checking storage access.")
+                : TEXT("Settings could not be saved and the previous tree detail could not be restored. Restart the game before changing tree detail again.");
+            return false;
+        }
+        const FString Request = RendererRestartRequest();
+        if (Key == TEXT("renderer") && CurrentRenderer() != int32(Value.Value) && !Request.IsEmpty())
+        {
+            // macOS's generic RequestExitWithStatus ignores a requested return code.
+            // The launcher consumes this attempt-specific request after a clean exit.
+            if (!FFileHelper::SaveStringToFile(FString::Printf(TEXT("renderer=%d\n"),int32(Value.Value)),*Request,
+                FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+            {
+                GraphicsError = TEXT("Your setting is saved, but the restart could not be requested. The game is still running; try again or relaunch later.");
+                return false;
+            }
+            UE_LOG(LogTemp,Display,TEXT("GRAPHICS RESTART renderer=%s request=%s"),RendererName(int32(Value.Value)),*Request);
+            FPlatformMisc::RequestExit(false);
+        }
+        else Apply();
+        return true;
+    }
+    return false;
+}
+void UJapanPreferences::Apply()
+{
+    if (!Owner || !Owner->IsLocallyControlled()) return;
+    if (!JapanNetwork::IsOnline(Owner->GetWorld())) Owner->SetStaminaRings(FMath::RoundToInt(Get(TEXT("stamina_rings"))));
+    if (USkateComponent* Skate = Owner->GetSkate())
+    {
+        Skate->SetGoofy(Get(TEXT("goofy")) > .5f);
+        // At once, mid-ride too; an unchanged feel leaves the session alone.
+        FString Error;
+        if (!Skate->SetFeel(JapanNetwork::IsOnline(Owner->GetWorld()) ? FSkateFeel::Defaults() : GetSkateFeel(), Error)) UE_LOG(LogTemp, Warning, TEXT("PREFERENCES skate feel refused: %s"), *Error);
+    }
+    // Laptop mode (a MacBook Air) implies the Performance profile and caps the forest's costliest settings below.
+    const bool Laptop = Get(TEXT("laptop")) > .5f;
+    const int32 PerformanceMode = Laptop || Get(TEXT("performance")) > .5f ? 1 : 0;
+    // V2 is desktop only: the measured desktop profile is always on.
+    const bool LightFrame = Laptop || PerformanceMode;
+    const auto Set = [](const TCHAR* Name, float Value)
+    {
+        if (auto* CVar = IConsoleManager::Get().FindConsoleVariable(Name))
+            CVar->Set(Value,ECVF_SetByCode);
+    };
+    // Static trees and bushes sway through world position offset. With motion vectors for that sway, forward
+    // shading draws each of them again in a separate velocity pass (2.3-2.8 ms of a 16 ms forest frame on an
+    // M1 Max). Proxies read the setting when created, so a change rebuilds them.
+    if (auto* LeafMotion = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Velocity.EnableVertexDeformation")))
+    {
+        const int32 Wanted = Get(TEXT("leaf_motion")) > .5f ? 1 : 0;
+        if (LeafMotion->GetInt() != Wanted)
+        {
+            LeafMotion->Set(Wanted,ECVF_SetByCode);
+            if (LeafMotion->GetInt() == Wanted) { FGlobalComponentRecreateRenderStateContext Recreate; }
+        }
+    }
+    // Saved Unreal GameUserSettings can override the ini cap with zero.
+    // Explicit console overrides still allow the benchmark to run uncapped.
+    Set(TEXT("t.MaxFPS"),60.f);
+    // Cull instances the depth buffer already hides: paired captures save 6.5-7.3 ms in settled spawn pairs.
+    Set(TEXT("r.InstanceCulling.OcclusionCull"),1.f);
+    // The harbor's second directional light needs no CSMs when every receiver
+    // is beyond cascade range.
+    Set(TEXT("japan.HarborFillAuto"),1.f);
+    // R11G11B10 retains HDR at half the scene-color bandwidth. Paired native
+    // 1440p tests save ~1 ms in forest/harbor, with original resolution and TAA.
+    // Keep FloatRGBA for full-quality mode; no saved setting changes.
+    Set(TEXT("r.SceneColorFormat"),LightFrame ? 2.f : 4.f);
+    // The light frame's TAA uses the engine's medium filter: the operator view's
+    // paired uncapped captures save a further 0.25 ms over the lighter input
+    // filter (3), which itself saved ~0.3 ms at native 1440p over 2.
+    Set(TEXT("r.TemporalAA.Quality"),LightFrame ? 1.f : 2.f);
+    const int32 ShadowProfile = PerformanceMode + (Laptop ? 1 : 0);
+    if (AppliedPerformanceMode != ShadowProfile)
+    {
+        // Use the engine's original medium irradiance-volume lighting in the
+        // performance profile. The user reverted the screen-probe lighting change.
+        Set(TEXT("sg.GlobalIlluminationQuality"),PerformanceMode ? 1.f : 3.f);
+        // One cascade over the performance profile's halved shadow distance: 0.5 ms at the operator view.
+        // Laptops keep their single cascade in every profile.
+        Set(TEXT("r.Shadow.CSM.MaxCascades"),Laptop || PerformanceMode ? 1.f : 10.f);
+        Set(TEXT("r.Shadow.MaxCSMResolution"),PerformanceMode ? 1024.f : 2048.f);
+        Set(TEXT("r.Shadow.DistanceScale"),PerformanceMode ? .5f : 1.5f);
+        Set(TEXT("r.DistanceFieldShadowing"),PerformanceMode ? 0.f : 1.f);
+        Set(TEXT("foliage.LODDistanceScale"),PerformanceMode ? .75f : 1.f);
+        AppliedPerformanceMode = ShadowProfile;
+    }
+    // Keep character edges near native resolution. The cheaper grass LODs leave
+    // room for a higher floor; still respect a manually chosen lower ceiling.
+    // The desktop performance profile may drop to 75% (1.4 ms at the operator view) before missing 60 fps.
+    Set(TEXT("r.DynamicRes.MinScreenPercentage"),FMath::Min(Laptop ? 50.f : PerformanceMode ? 75.f : 85.f,Get(TEXT("render_scale"))));
+    Set(TEXT("r.DynamicRes.MaxScreenPercentage"),Get(TEXT("render_scale")));
+    Set(TEXT("r.DynamicRes.FrameTimeBudget"),1000.f/60.f);
+    Set(TEXT("r.DynamicRes.TargetedGPUHeadRoomPercentage"),10.f);
+    Set(TEXT("r.DynamicRes.OperationMode"),PerformanceMode ? 2.f : 0.f);
+    Owner->ApplyCameraPreferences(Get(TEXT("mouse")),Get(TEXT("cam_dist")),Get(TEXT("fov")));
+    // Every sound in the game (the audio device's primary volume).
+    if (FAudioDeviceHandle Audio = Owner->GetWorld()->GetAudioDevice(); Audio.IsValid()) Audio->SetTransientPrimaryVolume(Get(TEXT("volume")));
+    // The soundtrack (this client only), under the overall volume.
+    if (Owner->IsLocallyControlled()) if (auto* Music = Owner->GetWorld()->GetSubsystem<UJapanMusic>()) Music->SetPreferences(Get(TEXT("music")) > .5f, Get(TEXT("music_volume")));
+    if(auto* Audio=Owner->GetWorld()->GetSubsystem<UJapanAudioPreferences>())
+    {
+        Audio->SetFootstepPreferences(Get(TEXT("soften_footsteps"))>.5f,Get(TEXT("footstep_volume")));
+        Audio->SetSkatePreferences(Get(TEXT("soften_skate"))>.5f,Get(TEXT("skate_volume")));
+    }
+    for (const auto& Material : Materials)
+        for (const auto& Pair : TArray<TPair<FName,const TCHAR*>>{
+            {TEXT("Strength"),TEXT("painterly")},{TEXT("Radius"),TEXT("paint_radius")},{TEXT("Toon"),TEXT("toon")},
+            {TEXT("Bands"),TEXT("toon_bands")},{TEXT("Soft"),TEXT("toon_soft")},{TEXT("Outline"),TEXT("outline")}})
+            Material->SetScalarParameterValue(Pair.Key,Get(Pair.Value));
+    for (TActorIterator<APostProcessVolume> It(Owner->GetWorld()); It; ++It)
+    {
+        It->Settings.bOverride_AutoExposureBias = true;
+        It->Settings.AutoExposureBias = Get(TEXT("exposure"));
+        It->Settings.bOverride_ColorSaturation = true;
+        It->Settings.ColorSaturation = FVector4(Get(TEXT("saturation")),Get(TEXT("saturation")),Get(TEXT("saturation")),1.f);
+        for (auto& Blend : It->Settings.WeightedBlendables.Array)
+            if (Materials.Contains(Cast<UMaterialInstanceDynamic>(Blend.Object)))
+                Blend.Weight = Get(TEXT("painterly"))+Get(TEXT("toon"))+Get(TEXT("outline"))>.001f ? 1.f : 0.f;
+    }
+    // Volumetric fog (docs/VOLUMETRIC_FOG.md): the froxel grid at the engine's Epic scalability in Quality (8 px, 128
+    // slices) and its High one in Performance (16 px, 64 slices); off skips the passes entirely.
+    const bool Fog = Get(TEXT("fog")) > .5f;
+    Set(TEXT("r.VolumetricFog"),Fog ? 1.f : 0.f);
+    Set(TEXT("r.VolumetricFog.GridPixelSize"),PerformanceMode ? 16.f : 8.f);
+    Set(TEXT("r.VolumetricFog.GridSizeZ"),PerformanceMode ? 64.f : 128.f);
+    FVolumetricFogLook FogLook;
+    FogLook.Density = Get(TEXT("fog_density")); FogLook.Reach = Get(TEXT("fog_reach"))*100.f;
+    FogLook.Falloff = Get(TEXT("fog_falloff")); FogLook.Scattering = Get(TEXT("fog_glow"));
+    FogLook.Shafts = Get(TEXT("fog_shafts")); FogLook.Town = Get(TEXT("fog_town"));
+    FogLook.bPerformance = PerformanceMode != 0;
+    for (TActorIterator<AJapanWorld> It(Owner->GetWorld()); It; ++It)
+    {
+        It->WindSpeed = Get(TEXT("wind"))*100.f;
+        It->ApplyPerformanceSettings(PerformanceMode != 0,
+            Laptop ? FMath::Min(Get(TEXT("tree_sway")),20.f) : Get(TEXT("tree_sway")),
+            Laptop ? FMath::Min(Get(TEXT("forest_detail")),.25f) : Get(TEXT("forest_detail")),
+            Laptop ? FMath::Min(Get(TEXT("tree_shadow")),40.f) : Get(TEXT("tree_shadow")));
+        if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f,
+            FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),Get(TEXT("tree_lod_distance"))) && It->bLoaded)
+            GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
+        It->ApplyVolumetricFog(Fog,FogLook);
+    }
+    // The sun: warmth 0 is a white noon sun, .5 the map's own (1, .90, .76), 1 a golden afternoon.
+    const float Warmth = Get(TEXT("sun_warmth"));
+    const FLinearColor SunColour = Warmth < .5f
+        ? FMath::Lerp(FLinearColor(1.f,.97f,.92f),FLinearColor(1.f,.90f,.76f),Warmth*2.f)
+        : FMath::Lerp(FLinearColor(1.f,.90f,.76f),FLinearColor(1.f,.72f,.48f),Warmth*2.f-1.f);
+    for (TActorIterator<ADirectionalLight> It(Owner->GetWorld()); It; ++It)
+    {
+        It->SetActorRotation(FRotator(-Get(TEXT("sun_height")),Get(TEXT("sun_yaw")),0));
+        if (auto* Light = Cast<UDirectionalLightComponent>(It->GetLightComponent()))
+        {
+            Light->SetIntensity(Get(TEXT("sun_strength")));
+            Light->SetLightColor(SunColour);
+        }
+    }
+    // The shadows' fill: the sky light, bluer as the sun warms (the map's (.95, .96, 1) at warmth .5 and below),
+    // and Lumen's bounce on the unbound volume; bounded looks (the harbor's) keep their own.
+    const FLinearColor SkyColour = FMath::Lerp(FLinearColor(.95f,.96f,1.f),FLinearColor(.84f,.89f,1.f),FMath::Max(0.f,Warmth*2.f-1.f));
+    for (TActorIterator<ASkyLight> It(Owner->GetWorld()); It; ++It)
+        if (USkyLightComponent* Sky = It->GetLightComponent())
+        {
+            Sky->SetIntensity(Get(TEXT("sky_fill")));
+            Sky->SetLightColor(SkyColour);
+        }
+    for (TActorIterator<APostProcessVolume> It(Owner->GetWorld()); It; ++It)
+        if (It->bUnbound)
+        {
+            It->Settings.bOverride_IndirectLightingIntensity = true;
+            It->Settings.IndirectLightingIntensity = Get(TEXT("bounce"));
+        }
+    if (auto* Scale = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenPercentage"))) Scale->Set(Get(TEXT("render_scale")),ECVF_SetByCode);
+    ReportProfile();
+}
+
+FSkateFeel UJapanPreferences::GetSkateFeel() const
+{
+    // Easy, Normal and Hardcore are the difficulty as made; Custom tunes every value on its base difficulty. The stick,
+    // mouse, tight flicks, drift powerslides, 120 Hz flicks, bowl boost and camera apply in every mode. Custom values stay saved while a preset is played.
+    FSkateFeel Feel = FSkateFeel::Defaults();
+    const int32 Mode = FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))), 0, SkateCustom);
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (Knob.Field && (Knob.bAlways || Mode == SkateCustom)) Feel.*Knob.Field = Get(Knob.Key);
+    Feel.TightFlicks = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_tight_flicks"))), 0, 1));
+    Feel.Flick120Hz = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_flick_120hz"))), 0, 1));
+    Feel.DriftPowerslide = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_drift_powerslide"))), 0, 1));
+    if (Mode != SkateCustom) Feel.Difficulty = SkateDifficulties[Mode];
+    else
+    {
+        Feel.Difficulty = SkateDifficulties[FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_difficulty"))), 0, 2)];
+        Feel.AutoPush = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_auto_push"))), 0, 2) - 1);
+        Feel.AssistedAir = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_assisted_air"))), 0, 2) - 1);
+    }
+    // Full tilt stays clear of the dead zone (FSkateFeel::Validate).
+    Feel.StickReach = FMath::Min(1.f, FMath::Max(Feel.StickReach, Feel.StickDeadZone + .2f));
+    return Feel;
+}
+void UJapanPreferences::ResetSkate(bool bCustom)
+{
+    // Back to the release defaults (JapanReleaseDefaults), the values a fresh install starts from.
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (Knob.bAlways != bCustom && FCString::Strcmp(Knob.Key, TEXT("skate_mode")) != 0)
+                for (FJapanPreference& V : Values) if (V.Key == Knob.Key) V.Value = DefaultValues.FindRef(V.Key);
+    Apply(); Save();
+}
+bool UJapanPreferences::IsSkateCustomStock() const
+{
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (!Knob.bAlways && FCString::Strcmp(Knob.Key, TEXT("skate_difficulty")) != 0 && !FMath::IsNearlyEqual(Get(Knob.Key), DefaultValues.FindRef(Knob.Key), 1e-4f))
+                return false;
+    return true;
+}
+
+void UJapanPreferences::ReportProfile() const
+{
+    // Read the values back rather than logging what we intended to set: a saved GameUserSettings, a
+    // command line -ExecCmds or a later scalability change can win, and a ledger row that records an
+    // intention instead of the effective value is worthless. Harnesses parse this line as JSON.
+    const auto Number = [](const TCHAR* Name) -> FString
+    {
+        if (const auto* CVar = IConsoleManager::Get().FindConsoleVariable(Name))
+            return FString::SanitizeFloat(CVar->GetFloat());
+        return TEXT("null");
+    };
+    FString Fog = TEXT("null"), FogFalloff = TEXT("null"), FogVolumetric = TEXT("null"), Contact = TEXT("null");
+    if (Owner && Owner->GetWorld())
+    {
+        for (TActorIterator<AExponentialHeightFog> It(Owner->GetWorld()); It; ++It)
+            if (const auto* Component = It->GetComponent())
+            {
+                Fog = FString::SanitizeFloat(Component->FogDensity);
+                FogFalloff = FString::SanitizeFloat(Component->FogHeightFalloff);
+                FogVolumetric = Component->bEnableVolumetricFog ? TEXT("1") : TEXT("0");
+                break;
+            }
+        for (TActorIterator<ADirectionalLight> It(Owner->GetWorld()); It; ++It)
+            if (const auto* Light = Cast<UDirectionalLightComponent>(It->GetLightComponent()))
+            {
+                Contact = FString::SanitizeFloat(Light->ContactShadowLength);
+                break;
+            }
+    }
+    UE_LOG(LogTemp,Display,TEXT("PROFILE {\"desktop\": %.0f, \"haze\": %.3f, \"supersample\": %.3f, ")
+        TEXT("\"forward_shading\": %s, \"renderer_requested\": %.0f, \"tree_optimization_requested\": %.0f, ")
+        TEXT("\"performance\": %.0f, \"render_scale\": %.1f, \"painterly\": %.3f, ")
+        TEXT("\"gi_quality\": %s, \"gi_gather\": %s, \"gi_probe_resolution\": %s, \"gi_probe_budget\": %s, ")
+        TEXT("\"gi_irradiance_format\": %s, \"gi_stochastic\": %s, ")
+        TEXT("\"occlusion_cull\": %s, \"contact_shadows\": %s, \"contact_length\": %s, ")
+        TEXT("\"short_range_ao\": %s, \"fog_density\": %s, \"fog_falloff\": %s, ")
+        TEXT("\"volumetric_fog\": %s, \"volumetric_fog_cvar\": %s, \"volumetric_fog_grid\": %s, ")
+        TEXT("\"dynres_mode\": %s, \"dynres_min\": %s, \"dynres_max\": %s, \"dynres_headroom\": %s, ")
+        TEXT("\"dynres_budget\": %s, \"screen_percentage\": %s, \"aa_method\": %s, \"max_fps\": %s}"),
+        1.f,0.f,1.f,
+        *Number(TEXT("r.ForwardShading")),Get(TEXT("renderer")),Get(TEXT("tree_optimization")),
+        Get(TEXT("performance")),Get(TEXT("render_scale")),Get(TEXT("painterly")),
+        *Number(TEXT("sg.GlobalIlluminationQuality")),*Number(TEXT("r.Lumen.FinalGatherMethod")),
+        *Number(TEXT("r.Lumen.ScreenProbeGather.RadianceCache.ProbeResolution")),
+        *Number(TEXT("r.Lumen.ScreenProbeGather.RadianceCache.NumProbesToTraceBudget")),
+        *Number(TEXT("r.Lumen.ScreenProbeGather.IrradianceFormat")),
+        *Number(TEXT("r.Lumen.ScreenProbeGather.StochasticInterpolation")),
+        *Number(TEXT("r.InstanceCulling.OcclusionCull")),*Number(TEXT("r.ContactShadows")),*Contact,
+        *Number(TEXT("r.Lumen.ScreenProbeGather.ShortRangeAO")),*Fog,*FogFalloff,
+        *FogVolumetric,*Number(TEXT("r.VolumetricFog")),*Number(TEXT("r.VolumetricFog.GridPixelSize")),
+        *Number(TEXT("r.DynamicRes.OperationMode")),*Number(TEXT("r.DynamicRes.MinScreenPercentage")),
+        *Number(TEXT("r.DynamicRes.MaxScreenPercentage")),*Number(TEXT("r.DynamicRes.TargetedGPUHeadRoomPercentage")),
+        *Number(TEXT("r.DynamicRes.FrameTimeBudget")),*Number(TEXT("r.ScreenPercentage")),
+        *Number(TEXT("r.AntiAliasingMethod")),*Number(TEXT("t.MaxFPS")));
+}
+bool UJapanPreferences::IsSessionOnly(const FString& Key)
+{
+    // The retired desktop, haze and supersample launch keys stay excluded so old files and launch
+    // flags cannot leak into saves (V2 always runs the desktop profile).
+    return Key == TEXT("desktop") || Key == TEXT("haze") || Key == TEXT("supersample");
+}
+
+bool UJapanPreferences::Save()
+{
+    TMap<FString,FString> NextValues = JapanValuesToSave(SavedValues,Values);
+    const bool Saved = AtelierSettings::WriteFile(SettingsFile,NextValues);
+    if (Saved) SavedValues = MoveTemp(NextValues);
+    else
+    {
+        UE_LOG(LogTemp,Error,TEXT("PREFERENCES could not save %s; previous file preserved"),*SettingsFile);
+    }
+    return Saved;
+}
+void UJapanPreferences::ResetLight()
+{
+    for (auto& V : Values)
+        for (const TCHAR* Key : LightKeys)
+            if (V.Key == Key) V.Value = DefaultValues.FindRef(V.Key);
+    Apply(); Save();
+}
+namespace
+{
+const FSlateBrush* White() { return FCoreStyle::Get().GetBrush("WhiteBrush"); }
+
+/** A button that is a value: Left and Right step through its choices, as a press does. */
+class SChoiceButton : public SButton
+{
+public:
+    TFunction<void(int32)> Step;
+    virtual FNavigationReply OnNavigation(const FGeometry& Geometry, const FNavigationEvent& Event) override
+    {
+        const EUINavigation Way = Event.GetNavigationType();
+        if (Step && IsEnabled() && (Way == EUINavigation::Left || Way == EUINavigation::Right))
+        {
+            Step(Way == EUINavigation::Right ? 1 : -1);
+            return FNavigationReply::Stop();
+        }
+        return SButton::OnNavigation(Geometry, Event);
+    }
+};
+
+/** What a main-page setting does, shown under the page while it is focused. */
+FString MainHint(const FString& Key)
+{
+    static const TMap<FString,FString> Hints = {
+        {TEXT("performance"),TEXT("Performance keeps shadows light for a steady 60 fps. Quality draws sharper, farther shadows: in the forest they take about 21 ms instead of 6.5, roughly doubling the frame time (1080p, M1 Max, moving through the forest).")},
+        {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. About 0.15 ms a frame; off saves it.")},
+        {TEXT("laptop"),TEXT("For a MacBook Air or another light GPU: forest detail at most 0.25x, tree shadows at most 40 m, tree sway at most 20 m, one shadow cascade, the lighter scene format and anti-aliasing, and a resolution that may drop to 50% to hold 60 fps. Your sliders keep their own values for when it is off.")},
+        {TEXT("leaf_motion"),TEXT("Fast lets anti-aliasing ignore the wind sway, so leaf edges soften slightly in wind. Precise draws every swaying tree again to follow its leaves exactly: about 2.5 ms more a frame in the forest, up to 4 ms on a hot machine.")},
+        {TEXT("show_fps"),TEXT("The frame rate in a corner of the screen.")},
+        {TEXT("tree_shadow"),TEXT("How far from the camera trees cast shadows; beyond it they cast none. Looking across the forest, tree shadows are the largest cost in the game: shorter is faster, longer darkens far forest floors. Shadows of everything else keep their own range.")},
+        {TEXT("forest_detail"),TEXT("How far forest trees keep their full leaf detail before their simpler crowns take over, as a multiple of their own distances. The forest is the biggest cost in the game: against 1x, 0.6x saves about 3 ms a frame and 0.4x about 4.5 ms (1080p, M1 Max, spawn view). Trees near the road look the same; higher sharpens distant crowns.")},
+        {TEXT("tree_sway"),TEXT("How far from the camera trees and bushes sway in the wind; beyond it they stand still. Cheap: 0 m and 180 m differ by about 0.5 ms a frame.")},
+        {TEXT("goofy"),TEXT("Which foot leads on the skateboard: Regular is the left foot, Goofy the right.")},
+        {TEXT("tree_lod_distance"),TEXT("How far detailed city trees reach, with Automatic tree detail. Farther costs more GPU time in Hidamari's streets.")},
+        {TEXT("fog_density"),TEXT("How thick the volumetric fog is.")},
+        {TEXT("fog_reach"),TEXT("How far the volumetric fog reaches from the camera, in metres.")},
+        {TEXT("fog_falloff"),TEXT("How quickly the fog thins with height. Higher keeps it low in the valleys.")},
+        {TEXT("fog_glow"),TEXT("How much the fog brightens looking toward the sun.")},
+        {TEXT("fog_shafts"),TEXT("How strong the shafts of light through the fog are.")},
+        {TEXT("fog_town"),TEXT("How much fog stays in the streets of Hidamari.")},
+        {TEXT("volume"),TEXT("The game's overall sound volume.")},
+        {TEXT("music"),TEXT("The soundtrack: calm cues while exploring, livelier ones skating, fight music in a fight, with silence between. Off fades it out.")},
+        {TEXT("music_volume"),TEXT("How loud the soundtrack plays. It always sits under the sound effects.")},
+        {TEXT("soften_footsteps"),TEXT("Round off sharp higher frequencies in footsteps and foot landings on this device.")},
+        {TEXT("footstep_volume"),TEXT("Footsteps and foot landings only. Horse hooves, skateboard sounds and music keep their own volume.")},
+        {TEXT("soften_skate"),TEXT("Round off sharp higher frequencies in skateboard rolls, grinds, slides, pops and landings on this device.")},
+        {TEXT("skate_volume"),TEXT("Skateboard sounds only. Footsteps, horse hooves and music keep their own volume.")},
+        {TEXT("stamina_rings"),TEXT("How many stamina rings you have.")},
+        {TEXT("mouse"),TEXT("How fast the mouse turns the camera.")},
+        {TEXT("cam_dist"),TEXT("How far the camera follows behind you.")},
+        {TEXT("fov"),TEXT("The camera's field of view, in degrees.")},
+        {TEXT("render_scale"),TEXT("The highest resolution the game renders at, as a percentage of the screen. Lower is softer. In the forest the GPU is busy with trees, not pixels: 50% saved almost nothing there.")},
+        {TEXT("painterly"),TEXT("How strongly the painted look brushes over the image. It shares one pass with toon shading and outlines, about 0.5 ms a frame; with all three at 0 the pass is skipped.")},
+        {TEXT("paint_radius"),TEXT("The size of the painted look's brush strokes.")},
+        {TEXT("toon"),TEXT("How strongly the shading is drawn in flat bands. Shares the painted look's pass (about 0.5 ms, skipped when paint, toon and outlines are all 0).")},
+        {TEXT("toon_bands"),TEXT("How many bands the toon shading uses.")},
+        {TEXT("toon_soft"),TEXT("How softly the toon bands blend into each other.")},
+        {TEXT("outline"),TEXT("Ink outlines around shapes. Shares the painted look's pass (about 0.5 ms, skipped when paint, toon and outlines are all 0).")},
+        {TEXT("wind"),TEXT("The wind in the trees and grass, in metres per second.")},
+        {TEXT("exposure"),TEXT("The overall brightness of the image.")},
+        {TEXT("saturation"),TEXT("How rich the colours are.")},
+        {TEXT("sun_height"),TEXT("How high the sun stands, in degrees. Lower makes long shadows.")},
+        {TEXT("sun_yaw"),TEXT("Where the sun shines from, in degrees around the compass.")},
+        {TEXT("sun_warmth"),TEXT("How warm the sunlight's colour is.")},
+        {TEXT("sun_strength"),TEXT("How bright the sun is, in lux.")},
+        {TEXT("sky_fill"),TEXT("How much the sky lights the shadows.")},
+        {TEXT("bounce"),TEXT("How much light bounces off the ground and walls into the shade.")}};
+    const FString* Hint = Hints.Find(Key);
+    return Hint ? *Hint : FString();
+}
+
+/** A d-pad press on a slider, as a fraction of its range: the value's own step, a few at a time when it has more than
+ *  60, or a fiftieth of the range when it is continuous. */
+float PadStep(const FJapanPreference& V)
+{
+    const float Range = V.Maximum - V.Minimum;
+    if (Range <= 0.f) return 1.f;
+    if (V.Step <= 0.f) return .02f;
+    const int32 Steps = FMath::Max(1, FMath::RoundToInt(Range / V.Step));
+    return FMath::DivideAndRoundUp(Steps, 60) * V.Step / Range;
+}
+}
+
+/** The menu's frame, made for a controller as much as for a mouse. Each control is added with its row: the focused row
+ *  is lit and its hint shows under the page, the page scrolls to follow focus, and focus comes back to the menu
+ *  whenever it strays, so the pad always has a control. Sliders and choices change with Left and Right at once, with
+ *  no press to grab them. The right face button (Escape on a keyboard is the game's Menu action) goes back a page or
+ *  closes, the shoulders (Page Up and Down) jump a section, and every other pad button, stick and trigger is kept from
+ *  the game behind the menu; Menu and View still reach it, and Menu closes the menu. */
+class SPreferencesPanel : public SCompoundWidget
+{
+public:
+    SLATE_BEGIN_ARGS(SPreferencesPanel) : _Scrolls(true), _BackCloses(true) {}
+        SLATE_ARGUMENT(bool, Scrolls)
+        SLATE_ARGUMENT(bool, BackCloses)
+        SLATE_EVENT(FSimpleDelegate, OnBack)
+    SLATE_END_ARGS()
+    void Construct(const FArguments& In, const TSharedRef<SVerticalBox>& Rows)
+    {
+        OnBack = In._OnBack; bBackCloses = In._BackCloses;
+        PadStyle = AJapanHUD::CurrentControllerStyle(); bPad = PadStyle != 0;
+        TSharedRef<SWidget> Page = Rows;
+        if (In._Scrolls)
+            Page = SAssignNew(Scroll, SScrollBox).NavigationScrollPadding(96.f).ScrollWhenFocusChanges(EScrollWhenFocusChanges::AnimatedScroll)
+                + SScrollBox::Slot()[Rows];
+        TSharedRef<SVerticalBox> Frame = SNew(SVerticalBox);
+        if (In._Scrolls) Frame->AddSlot().FillHeight(1.f)[Page]; else Frame->AddSlot().AutoHeight()[Page];
+        Frame->AddSlot().AutoHeight().Padding(0,14,0,8)[SNew(SBox).HeightOverride(1)[SNew(SBorder).BorderImage(White()).BorderBackgroundColor(FLinearColor(1,1,1,.12f))]];
+        Frame->AddSlot().AutoHeight()[SNew(SBox).MinDesiredHeight(40)[SNew(STextBlock).AutoWrapText(true)
+            .Font(FCoreStyle::GetDefaultFontStyle("Regular",13)).ColorAndOpacity(FLinearColor(.8f,.84f,.82f))
+            .Text_Lambda([this] { const FEntry* E = Focused(); return FText::FromString(E ? E->Hint : FString()); })]];
+        Frame->AddSlot().AutoHeight().Padding(0,6,0,0)[SNew(STextBlock).AutoWrapText(true)
+            .Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor(1,.9f,.6f,1))
+            .Text_Lambda([this] { return FText::FromString(Legend()); })];
+        ChildSlot[SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(White()).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
+            [SNew(SBox).WidthOverride(660).MaxDesiredHeight(In._Scrolls ? FOptionalSize(860.f) : FOptionalSize())
+                [SNew(SBorder).Padding(28).BorderImage(White()).BorderBackgroundColor(FLinearColor(.025f,.032f,.028f,1))[Frame]]]];
+    }
+    /** A control and the row it sits in (the control alone by default), lit while the control has focus. Key names it
+     *  for focus and the live bridge; the hint shows under the page while it is focused. */
+    TSharedRef<SWidget> Add(const TSharedRef<SWidget>& Control, const FString& Key, const FString& Hint = FString(), TSharedPtr<SWidget> Row = nullptr)
+    {
+        Entries.Add({Control, Key, Hint, bNextSection}); bNextSection = false;
+        const TWeakPtr<SWidget> Weak = Control;
+        return SNew(SBorder).Padding(FMargin(0,3,8,3)).BorderImage(White())
+            .BorderBackgroundColor_Lambda([this,Weak] { return FSlateColor(Lit(Weak) ? FLinearColor(.95f,.72f,.3f,.2f) : FLinearColor::Transparent); })
+            [SNew(SHorizontalBox)
+                + SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(4)[SNew(SBorder).BorderImage(White())
+                    .BorderBackgroundColor_Lambda([this,Weak] { return FSlateColor(Lit(Weak) ? FLinearColor(1,.78f,.35f,1) : FLinearColor::Transparent); })]]
+                + SHorizontalBox::Slot().FillWidth(1.f).Padding(8,0,0,0)[Row ? Row.ToSharedRef() : Control]];
+    }
+    /** The keys of the controls on this page, in order. */
+    TArray<FString> Keys() const { TArray<FString> Out; for (const FEntry& E : Entries) Out.Add(E.Key); return Out; }
+    /** The next control added starts a section (the shoulders jump between them). */
+    void Section() { bNextSection = true; }
+    /** Focus the control added under Key, or the first one. */
+    void Focus(const FString& Key)
+    {
+        const FEntry* Found = Entries.FindByPredicate([&Key](const FEntry& E) { return !Key.IsEmpty() && E.Key == Key && E.Control.IsValid() && E.Control.Pin()->IsEnabled(); });
+        if (!Found) Found = Entries.FindByPredicate([](const FEntry& E) { return E.Control.IsValid() && E.Control.Pin()->IsEnabled(); });
+        if (Found) FSlateApplication::Get().SetUserFocus(0, Found->Control.Pin(), EFocusCause::Navigation);
+    }
+    FString FocusedKey() const { const FEntry* E = Focused(); return E ? E->Key : FString(); }
+    /** Take the input kind (pad, keys or mouse) from the page this one replaces, so the legend keeps it. */
+    void Follow(const TSharedPtr<SWidget>& Before)
+    {
+        if (const TSharedPtr<SPreferencesPanel> Panel = StaticCastSharedPtr<SPreferencesPanel>(Before)) { bPad = Panel->bPad; bNavigating = Panel->bNavigating; }
+    }
+    virtual bool SupportsKeyboardFocus() const override { return false; }
+    virtual void Tick(const FGeometry& Geometry, const double Now, const float Dt) override
+    {
+        SCompoundWidget::Tick(Geometry, Now, Dt);
+        // Focus left on the game behind (a click beside the controls, say) comes back; a console or another window keeps it.
+        if (const FEntry* E = Focused()) LastFocused = E->Key;
+        else if (FSlateApplication::Get().GetActiveTopLevelWindow().IsValid())
+        {
+            const TSharedPtr<SWidget> Holder = FSlateApplication::Get().GetUserFocusedWidget(0);
+            if (!Holder || Holder->GetType() == TEXT("SViewport") || Holder->GetType() == TEXT("SWindow")) Focus(LastFocused);
+        }
+    }
+    virtual FReply OnPreviewKeyDown(const FGeometry&, const FKeyEvent& E) override
+    {
+        bNavigating = true; bPad = E.GetKey().IsGamepadKey();
+        return FReply::Unhandled();
+    }
+    virtual FReply OnPreviewMouseButtonDown(const FGeometry&, const FPointerEvent&) override
+    {
+        bNavigating = false; bPad = false;
+        return FReply::Unhandled();
+    }
+    virtual FReply OnAnalogValueChanged(const FGeometry&, const FAnalogInputEvent& E) override
+    {
+        if (FMath::Abs(E.GetAnalogValue()) > .5f) { bNavigating = true; bPad = true; }
+        // The focused control has already turned a pushed left stick into navigation; what is left (the right stick,
+        // the triggers) must not reach the game behind the menu.
+        return E.GetKey().IsGamepadKey() ? FReply::Handled() : FReply::Unhandled();
+    }
+    virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent& E) override
+    {
+        const FKey K = E.GetKey();
+        if (K == EKeys::Gamepad_FaceButton_Right) { if (!E.IsRepeat()) OnBack.ExecuteIfBound(); return FReply::Handled(); }
+        if (K == EKeys::Gamepad_LeftShoulder || K == EKeys::PageUp) { Jump(-1); return FReply::Handled(); }
+        if (K == EKeys::Gamepad_RightShoulder || K == EKeys::PageDown) { Jump(1); return FReply::Handled(); }
+        if (K.IsGamepadKey() && K != EKeys::Gamepad_Special_Left && K != EKeys::Gamepad_Special_Right) return FReply::Handled();
+        return FReply::Unhandled();
+    }
+    virtual FReply OnKeyUp(const FGeometry&, const FKeyEvent& E) override
+    {
+        const FKey K = E.GetKey();
+        return K.IsGamepadKey() && K != EKeys::Gamepad_Special_Left && K != EKeys::Gamepad_Special_Right ? FReply::Handled() : FReply::Unhandled();
+    }
+private:
+    struct FEntry { TWeakPtr<SWidget> Control; FString Key, Hint; bool bSection = false; };
+    TArray<FEntry> Entries;
+    TSharedPtr<SScrollBox> Scroll;
+    FSimpleDelegate OnBack;
+    FString LastFocused;
+    int32 PadStyle = 0;
+    bool bPad = false, bNavigating = true, bNextSection = true, bBackCloses = true;
+    bool Lit(const TWeakPtr<SWidget>& Weak) const
+    {
+        const TSharedPtr<SWidget> W = Weak.Pin();
+        return bNavigating && W && W->HasAnyUserFocus().IsSet();
+    }
+    const FEntry* Focused() const
+    {
+        return Entries.FindByPredicate([](const FEntry& E) { const TSharedPtr<SWidget> W = E.Control.Pin(); return W && W->HasAnyUserFocus().IsSet(); });
+    }
+    bool Usable(int32 I) const { const TSharedPtr<SWidget> W = Entries[I].Control.Pin(); return W && W->IsEnabled(); }
+    /** To the next section, or back to the start of this one (then the one before). A section starts at its first
+     *  enabled control, so a disabled one at its head (Reset custom values, outside Custom) is passed. Past the last
+     *  section RB goes to the last control. */
+    void Jump(int32 Way)
+    {
+        TArray<int32> Starts;
+        for (int32 I = 0; I < Entries.Num(); ++I)
+            if (Entries[I].bSection)
+                for (int32 J = I; J < Entries.Num() && (J == I || !Entries[J].bSection); ++J)
+                    if (Usable(J)) { Starts.Add(J); break; }
+        const FEntry* Current = Focused();
+        const int32 From = Current ? int32(Current - Entries.GetData()) : 0;
+        int32 To = INDEX_NONE;
+        if (Way > 0)
+        {
+            for (int32 S : Starts) if (S > From) { To = S; break; }
+            for (int32 I = Entries.Num()-1; To == INDEX_NONE && I > From; --I) if (Usable(I)) To = I;
+        }
+        else
+        {
+            for (int32 S : Starts) if (S < From) To = S;
+            if (To == INDEX_NONE && Starts.Num()) To = Starts[0];
+        }
+        if (To != INDEX_NONE && To != From) FSlateApplication::Get().SetUserFocus(0, Entries[To].Control.Pin(), EFocusCause::Navigation);
+    }
+    FString Legend() const
+    {
+        if (!bPad) return TEXT("Arrows choose and change  ·  Enter select  ·  Page Up / Down section  ·  Esc close");
+        const TCHAR *Accept, *Cancel, *Shoulders;
+        switch (PadStyle)
+        {
+            case 1: Accept = TEXT("A"); Cancel = TEXT("B"); Shoulders = TEXT("LB / RB"); break;
+            case 2: Accept = TEXT("Cross"); Cancel = TEXT("Circle"); Shoulders = TEXT("L1 / R1"); break;
+            case 3: Accept = TEXT("B"); Cancel = TEXT("A"); Shoulders = TEXT("L / R"); break;
+            default: Accept = TEXT("Bottom button"); Cancel = TEXT("Right button"); Shoulders = TEXT("Shoulders"); break;
+        }
+        return FString::Printf(TEXT("D-pad choose, Left / Right change  ·  %s select  ·  %s section  ·  %s %s"), Accept, Shoulders, Cancel,
+            bBackCloses ? TEXT("close") : TEXT("back"));
+    }
+};
+
+void UJapanPreferences::ToggleMenu()
+{
+    if (Menu) { CloseMenu(); return; }
+    OpenMenu(false);
+}
+void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
+{
+    if (!GEngine || !GEngine->GameViewport) return;
+    const TSharedPtr<SWidget> Before = Menu;
+    if (Menu) { GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef()); Menu.Reset(); }
+    TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
+    // Another page, out of the click that asked for it, with focus on the control named FocusOn.
+    const auto ShowPage = [this](bool bToSkate, const FString& FocusOn)
+    {
+        if (AWandererCharacter* Pawn = Owner)
+            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,bToSkate,FocusOn] { if (Menu) OpenMenu(bToSkate,FocusOn); }));
+    };
+    // The right face button: from Skate feel back to its button on the main page; from the main page, out of the menu.
+    TSharedRef<SPreferencesPanel> Page = SNew(SPreferencesPanel, Rows).BackCloses(!bSkate)
+        .OnBack_Lambda([this,bSkate,ShowPage] { if (bSkate) ShowPage(false,TEXT("skate_feel")); else CloseMenu(); });
+    Page->Follow(Before);
+    // A value's slider row: its label, the slider and the value with as many decimals as its step shows. Left and Right
+    // move it at once (no press to grab it), by its step or a fiftieth of its range.
+    const auto AddSlider = [this,&Rows,&Page](int32 I, TFunction<bool()> Enabled, const FString& Hint)
+    {
+        TSharedRef<SSlider> Slider = SNew(SSlider)
+            .RequiresControllerLock(false)
+            .StepSize(PadStep(Values[I]))
+            .IsEnabled_Lambda([Enabled] { return !Enabled || Enabled(); })
+            .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
+            .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });
+        TSharedRef<SWidget> Row = SNew(SHorizontalBox).ToolTipText(FText::FromString(Hint))
+            + SHorizontalBox::Slot().FillWidth(.48f).VAlign(VAlign_Center)[SNew(STextBlock).Text(FText::FromString(Values[I].Label)).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White)]
+            + SHorizontalBox::Slot().FillWidth(.38f).VAlign(VAlign_Center)[Slider]
+            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0).VAlign(VAlign_Center)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I]
+            {
+                // As many decimals as the slider's step shows (fog density moves by 0.005).
+                const float Step = Values[I].Step;
+                const int32 Digits = Step <= 0.f ? 2 : Step >= 1.f ? 0 : FMath::Clamp(FMath::CeilToInt(-FMath::LogX(10.f,Step)-1e-3f),1,3);
+                FNumberFormattingOptions Format; Format.SetUseGrouping(false).SetMinimumFractionalDigits(Digits).SetMaximumFractionalDigits(Digits);
+                return FText::AsNumber(Values[I].Value,&Format);
+            })];
+        Rows->AddSlot().AutoHeight().Padding(0,3)[Page->Add(Slider,Values[I].Key,Hint,Row)];
+    };
+    // A setting's button: a press acts, and so do Left and Right (Step, given the way; a press by default).
+    const auto Setting = [](TFunction<FText()> Text, TFunction<void()> Press, TFunction<void(int32)> Step = nullptr)
+    {
+        TSharedRef<SChoiceButton> Button = SNew(SChoiceButton).Text_Lambda(MoveTemp(Text))
+            .OnClicked_Lambda([Press] { Press(); return FReply::Handled(); });
+        Button->Step = Step ? MoveTemp(Step) : TFunction<void(int32)>([Press](int32) { Press(); });
+        return Button;
+    };
+    FString Focus = FocusKey;
+    const auto Finish = [this,&Page,&Focus]
+    {
+        Menu = Page;
+        GEngine->GameViewport->AddViewportWidgetContent(Menu.ToSharedRef(),20);
+        Owner->SetMenuOpen(true);
+        GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+        Page->Focus(Focus);
+    };
+    if (bSkate)
+    {
+        // The Skate feel page: the mode (a preset difficulty or Custom), then every custom value by what it changes,
+        // greyed out unless Custom is picked, then the stick, mouse and camera for every mode. Changes apply at once,
+        // mid-ride too, and are saved like the rest.
+        const auto IsCustom = [this] { return FMath::RoundToInt(Get(TEXT("skate_mode"))) == SkateCustom; };
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text(FText::FromString(TEXT("Skate feel"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
+        // The mode: four buttons, the current one lit.
+        TSharedRef<SHorizontalBox> Modes = SNew(SHorizontalBox);
+        for (int32 M = 0; M <= SkateCustom; ++M)
+        {
+            TSharedRef<SButton> Button = SNew(SButton).HAlign(HAlign_Center).Text(FText::FromString(SkateModes[M]))
+                .ToolTipText(FText::FromString(M == SkateCustom ? TEXT("Tune every value below on a base difficulty.") : TEXT("This difficulty as made.")))
+                .ButtonColorAndOpacity_Lambda([this,M] { return FSlateColor(FMath::RoundToInt(Get(TEXT("skate_mode"))) == M ? FLinearColor(.35f,.75f,.55f) : FLinearColor(.45f,.45f,.45f)); })
+                .OnClicked_Lambda([this,M] { SetValue(TEXT("skate_mode"), float(M)); return FReply::Handled(); });
+            Modes->AddSlot().FillWidth(1.f).Padding(M ? 2 : 0,0,0,0)[Page->Add(Button,FString::Printf(TEXT("skate_mode:%d"),M),
+                M == SkateCustom ? TEXT("Custom: tune every value below on a base difficulty.") : FString::Printf(TEXT("%s, as made."),SkateModes[M]))];
+        }
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Modes];
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor(.8f,.84f,.82f))
+            .Text_Lambda([this,IsCustom] { return FText::FromString(IsCustom()
+                ? TEXT("Custom: multipliers on the base difficulty's own values. Changes take effect at once, even mid-ride; Reset custom values puts each back to the game's own.")
+                : FString::Printf(TEXT("%s, as made. Pick Custom to tune the values below; your custom values are kept while you play a preset."), SkateModes[FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))),0,2)])); })];
+        for (const FSkateGroup& Group : SkateGroups())
+        {
+            if (FCString::Strcmp(Group.Name, TEXT("Mode")) == 0) continue;
+            const bool bAlways = Group.Knobs.Num() && Group.Knobs[0].bAlways;
+            Page->Section();
+            if (bAlways)
+                Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Reset custom values to stock")))
+                    .IsEnabled_Lambda(IsCustom).OnClicked_Lambda([this] { ResetSkate(true); return FReply::Handled(); }),TEXT("reset_custom"),
+                    TEXT("Every custom value back to the game's own."))];
+            Rows->AddSlot().AutoHeight().Padding(0,14,0,4)[SNew(STextBlock).Text(FText::FromString(Group.Name)).Font(FCoreStyle::GetDefaultFontStyle("Bold",16))
+                .ColorAndOpacity_Lambda([IsCustom,bAlways] { return FSlateColor(bAlways || IsCustom() ? FLinearColor::White : FLinearColor(.5f,.52f,.5f)); })];
+            for (const FSkateKnob& Knob : Group.Knobs)
+            {
+                const int32 I = Values.IndexOfByPredicate([&Knob](const FJapanPreference& V) { return V.Key == Knob.Key; });
+                if (I == INDEX_NONE) continue;
+                const TFunction<bool()> Enabled = Knob.bAlways ? TFunction<bool()>() : TFunction<bool()>(IsCustom);
+                if (Knob.Field) { AddSlider(I, Enabled, Knob.Hint); continue; }
+                const FString Key = Knob.Key, Label = Knob.Label;
+                const int32 Choices = FMath::RoundToInt(Knob.Maximum) + 1;
+                TSharedRef<SChoiceButton> Button = Setting(
+                    [this,Key,Label] { return FText::FromString(Label+TEXT(": ")+SkateChoice(Key,FMath::RoundToInt(Get(*Key)))); },
+                    [this,Key,Choices] { SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%Choices)); },
+                    [this,Key,Choices](int32 Way) { SetValue(Key,float((FMath::RoundToInt(Get(*Key))+Way+Choices)%Choices)); });
+                Button->SetToolTipText(FText::FromString(Knob.Hint));
+                Button->SetEnabled(TAttribute<bool>::CreateLambda([Enabled] { return !Enabled || Enabled(); }));
+                Rows->AddSlot().AutoHeight().Padding(0,2)[Page->Add(Button,Key,Knob.Hint)];
+            }
+        }
+        Page->Section();
+        Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Reset controls and camera")))
+            .OnClicked_Lambda([this] { ResetSkate(false); return FReply::Handled(); }),TEXT("reset_controls"),TEXT("The stick, mouse and camera values back to the game's own."))];
+        Rows->AddSlot().AutoHeight().Padding(0,10,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Back")))
+            .OnClicked_Lambda([ShowPage] { ShowPage(false,TEXT("skate_feel")); return FReply::Handled(); }),TEXT("back"))];
+        if (Focus.IsEmpty()) Focus = FString::Printf(TEXT("skate_mode:%d"),FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))),0,SkateCustom));
+        Finish();
+        return;
+    }
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(STextBlock).Text(FText::FromString(TEXT("Yorimichi — settings"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true)
+        .Text_Lambda([this] { return FText::FromString(Get(TEXT("performance")) > .5f
+            ? TEXT("Performance uses lighter shadows and distant detail to keep movement smooth.")
+            : TEXT("Quality increases shadow detail at the selected resolution.")); })];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text_Lambda([this] { return FText::FromString(GraphicsError); })
+        .AutoWrapText(true).ColorAndOpacity(FLinearColor(1.f,.5f,.4f))];
+    // A confirmation page for a costly graphics choice, out of the press that asked for it.
+    const auto Warn = [this](const FString& Key)
+    {
+        Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,Key] { if (Menu) OpenGraphicsWarning(Key); }));
+    };
+    // Renderer selection is persisted, but forward/deferred shaders are chosen before the process starts.
+    // Never try to turn r.ForwardShading into a runtime console toggle.
+    // It stays focusable (it is the menu's first control); in a packaged build it explains instead of switching.
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this]
+        {
+            if (!bLumenAvailable) return FText::FromString(TEXT("Lighting: Forward · Lumen is not in this build"));
+            const int32 Choice = Get(TEXT("renderer")) > .5f ? 1 : 0;
+            return FText::FromString(FString::Printf(TEXT("Lighting: %s%s"),RendererName(Choice),
+                Choice == CurrentRenderer() ? TEXT("") : TEXT(" · saved, restart pending")));
+        },
+        [this,Warn]
+        {
+            GraphicsError.Reset();
+            if (!bLumenAvailable) { GraphicsError = LumenUnavailable; return; }
+            Warn(TEXT("renderer"));
+        }),TEXT("renderer"),TEXT("Forward lighting, or Lumen where the build has it. Lumen costs much more GPU time."))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this]
+        { return FText::FromString(Get(TEXT("tree_optimization")) > .5f
+            ? TEXT("Tree optimization: on · lighter distant leaves") : TEXT("Tree optimization: off · full detail at every distance")); },
+        [this,Warn]
+        {
+            if (Get(TEXT("tree_optimization")) < .5f) SetValue(TEXT("tree_optimization"),1.f);
+            else { GraphicsError.Reset(); Warn(TEXT("tree_optimization")); }
+        }),TEXT("tree_optimization"),TEXT("Automatic changes distant leaf outlines only. Turning optimization off restores original full-detail trees immediately."))];
+    {
+        const auto StepDetail = [this,Warn](int32 Way)
+        {
+            const int32 Next=(FMath::RoundToInt(Get(TEXT("tree_lod_mode")))+Way+4)%4;
+            if (Next==1) Warn(TEXT("tree_lod_mode"));
+            else SetValue(TEXT("tree_lod_mode"),float(Next));
+        };
+        TSharedRef<SChoiceButton> Detail = Setting([this]
+            {
+                const TCHAR* Names[]={TEXT("Automatic · nearby trees retain full detail"),TEXT("Full detail · higher GPU cost"),
+                    TEXT("Intermediate detail · comparison at every distance"),TEXT("Distant detail · comparison at every distance")};
+                return FText::FromString(FString(TEXT("Tree detail: "))+Names[FMath::Clamp(FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),0,3)]);
+            },
+            [StepDetail] { StepDetail(1); }, StepDetail);
+        Detail->SetEnabled(TAttribute<bool>::CreateLambda([this] { return Get(TEXT("tree_optimization"))>.5f; }));
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Detail,TEXT("tree_lod_mode"),
+            TEXT("Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default."))];
+    }
+    // Crater Park's tower (docs/CRATERPARK.md, "Tower"): back to a line's roll-in crest, out of the menu's click.
+    if (const TArray<FCraterParkStart>& Starts = CraterParkTower::Starts(); Starts.Num())
+    {
+        TSharedRef<SWrapBox> Tower = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(2,2));
+        Page->Section();
+        for (int32 I = 0; I < Starts.Num(); ++I)
+            Tower->AddSlot()[Page->Add(SNew(SButton).Text(FText::FromString(Starts[I].Name))
+                .OnClicked_Lambda([this,I]
+                {
+                    CloseMenu();
+                    if (AWandererCharacter* Pawn = Owner)
+                        Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,I] { CraterParkTower::Return(Pawn,I); }));
+                    return FReply::Handled();
+                }),TEXT("tower:")+Starts[I].Key,
+                FString::Printf(TEXT("Back to the top of %s, standing on the tower deck facing down the line (F7 repeats the last one)."),*Starts[I].Name))];
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Crater Park tower"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Tower];
+    }
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
+        .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); }),
+        TEXT("friends"),TEXT("Host a shared game or join one."))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(SNew(SButton)
+        .Text_Lambda([] { return FText::FromString(DevNotes::IsOn() ? TEXT("Dev mode: on · leave it") : TEXT("Dev mode: fly and take notes")); })
+        .OnClicked_Lambda([this] { CloseMenu(); DevNotes::Toggle(Owner ? Owner->GetWorld() : nullptr, this); return FReply::Handled(); }),
+        TEXT("dev_mode"),TEXT("Fly anywhere without gravity. N or Y: a note with a screenshot and the camera's position. X or View: export every note as a zip (Finder opens it)."))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Page->Add(SNew(SButton).IsEnabled_Lambda([] { return DevNotes::Count() > 0; })
+        .Text_Lambda([] { return FText::FromString(FString::Printf(TEXT("Export dev notes (%d) as a zip"), DevNotes::Count())); })
+        .OnClicked_Lambda([this] { CloseMenu(); DevNotes::Export(); return FReply::Handled(); }),
+        TEXT("dev_export"),TEXT("Every note, its screenshot and camera as one zip, shown in Finder; the notes are also copied as text."))];
+    // The character switch waits for the next tick, out of the menu's click. Each character uses its merged move set.
+    const auto Switch = [this](const FString& Name)
+    {
+        CloseMenu();
+        if (AWandererCharacter* Pawn = Owner)
+            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,Name] { FPlayableCharacter::SwitchPlayer(Pawn,Name); }));
+    };
+    const FString Playing = FPlayableCharacter::NameOf(Owner);
+    const FPlayableCharacter& Default = FPlayableCharacter::Default();
+    if (const TArray<FString> Riders = FPlayableCharacter::Available(); Riders.Num())
+    {
+        TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(2,2));
+        TArray<FString> Names = {Default.Name}; Names.Append(Riders);
+        Page->Section();
+        for (const FString& Name : Names)
+        {
+            const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
+            Characters->AddSlot()[Page->Add(SNew(SButton).IsEnabled(Name != Playing && Character && Character->Built())
+                .Text(FText::FromString(FPlayableCharacter::Label(Name)))
+                .OnClicked_Lambda([Switch,Name] { Switch(Name); return FReply::Handled(); }),TEXT("character:")+Name,
+                FString::Printf(TEXT("Play as %s."),*FPlayableCharacter::Label(Name)))];
+        }
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
+        if (!JapanNetwork::IsOnline(Owner->GetWorld()))
+        {
+            Characters->AddSlot()[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Character gallery...")))
+                .OnClicked_Lambda([this]
+                {
+                    CloseMenu();
+                    if (AWandererCharacter* Pawn = Owner)
+                        Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn] { FJapanCharacterSelect::Open(Pawn,false); }));
+                    return FReply::Handled();
+                }),TEXT("character_select"),TEXT("Open the character selection screen with portrait cards."))];
+        }
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
+    }
+    if (JapanNetwork::IsOnline(Owner->GetWorld()))
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
+            .Text(FText::FromString(TEXT("You can change characters during the session. Shared games use two stamina rings and default skate physics.")))];
+    TArray<FString> Toggles = {TEXT("performance"),TEXT("laptop"),TEXT("fog"),TEXT("leaf_motion"),TEXT("show_fps"),TEXT("goofy"),TEXT("music"),TEXT("soften_footsteps"),TEXT("soften_skate")};
+    Page->Section();
+    for (const FString& Key : Toggles)
+    {
+        const auto Flip = [this,Key] { SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f); };
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this,Key]
+            {
+                const bool Enabled = Get(*Key) > .5f;
+                if (Key == TEXT("music")) return FText::FromString(!Enabled ? TEXT("Music: off")
+                    : (MusicReady() ? TEXT("Music: on · fades in and out with what you're doing") : TEXT("Music: on · no music library on this machine")));
+                if(Key==TEXT("soften_footsteps")) return FText::FromString(Enabled
+                    ? TEXT("Soften footsteps: on") : TEXT("Soften footsteps: off"));
+                if(Key==TEXT("soften_skate")) return FText::FromString(Enabled
+                    ? TEXT("Soften skate sounds: on") : TEXT("Soften skate sounds: off"));
+                if (Key == TEXT("goofy")) return FText::FromString(Enabled
+                    ? TEXT("Skate stance: Goofy · right foot forward")
+                    : TEXT("Skate stance: Regular · left foot forward"));
+                if (Key == TEXT("fog")) return FText::FromString(Enabled
+                    ? TEXT("Volumetric fog: on · valley mist and light shafts")
+                    : TEXT("Volumetric fog: off"));
+                if (Key == TEXT("laptop")) return FText::FromString(Enabled
+                    ? TEXT("Laptop mode: on · lighter forest, shadows and resolution for a MacBook Air")
+                    : TEXT("Laptop mode: off"));
+                if (Key == TEXT("leaf_motion")) return FText::FromString(Enabled
+                    ? TEXT("Swaying leaves: Precise · motion-matched edges")
+                    : TEXT("Swaying leaves: Fast"));
+                return FText::FromString(Key == TEXT("performance")
+                    ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
+                    : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
+            }, Flip),Key,MainHint(Key))];
+    }
+    // Every way the board rides, on a page of its own.
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Page->Add(SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld())).Text(FText::FromString(TEXT("Skate feel · pop, flicks, rails, speed, bails...")))
+        .OnClicked_Lambda([ShowPage] { ShowPage(true,FString()); return FReply::Handled(); }),TEXT("skate_feel"),TEXT("Difficulty presets, or every value of the board's feel."))];
+    Page->Section();
+    for (int32 I = 0; I < Values.Num(); ++I)
+    {
+        // Session-only keys are retired launch flags, not player settings, so they stay out of the menu.
+        if (IsSessionOnly(Values[I].Key)) continue;
+        if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("tree_lod_mode")) continue;   // a button above
+        if (IsSkateFeelKey(Values[I].Key)) continue;                                  // the Skate feel page
+        if (Values[I].Key == LightKeys[0])
+        {
+            Page->Section();
+            Rows->AddSlot().AutoHeight().Padding(0,16,0,4)[SNew(STextBlock).Text(FText::FromString(TEXT("Light"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
+        }
+        if (Values[I].Key == TEXT("stamina_rings") && JapanNetwork::IsOnline(Owner->GetWorld())) continue;
+        const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
+        if (Values[I].Key==TEXT("tree_lod_distance"))
+        { AddSlider(I,[this] { return Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },MainHint(Values[I].Key));continue; }
+        if (Values[I].Key == TEXT("music_volume"))
+        { AddSlider(I,[this] { return Get(TEXT("music")) > .5f && MusicReady(); },MainHint(Values[I].Key)); continue; }
+        AddSlider(I, bFogDetail ? TFunction<bool()>([this] { return Get(TEXT("fog")) > .5f; }) : TFunction<bool()>(), MainHint(Values[I].Key));
+    }
+    Rows->AddSlot().AutoHeight().Padding(0,8,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Reset the light")))
+        .OnClicked_Lambda([this] { ResetLight(); return FReply::Handled(); }),TEXT("reset_light"),TEXT("Every Light value back to its default."))];
+    Page->Section();
+    Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Resume"))).OnClicked_Lambda([this] { CloseMenu(); return FReply::Handled(); }),TEXT("resume"))];
+    Finish();
+}
+void UJapanPreferences::OpenGraphicsWarning(const FString& Key)
+{
+    if (!Owner || !GEngine || !GEngine->GameViewport) return;
+    const bool bRenderer = Key == TEXT("renderer");
+    const bool bFullComparison=Key==TEXT("tree_lod_mode");
+    const float Choice = Get(*Key) > .5f ? 0.f : 1.f;
+    const bool bRestart = bRenderer && CurrentRenderer() != int32(Choice);
+    const bool bLauncherRestart = CanRestartRenderer();
+    const FString Title = bRenderer ? FString::Printf(TEXT("Switch to %s?"),RendererName(int32(Choice)))
+        : bFullComparison ? TEXT("Compare full-detail trees?") : TEXT("Turn off tree optimization?");
+    FString Warning = bRenderer
+        ? (Choice > .5f ? TEXT("Lumen is a resource hog: it uses substantially more GPU time and memory, and can lower the frame rate. Forward is the recommended default for smooth play.")
+            : TEXT("Forward uses lighter lighting and is the recommended default for smooth play."))
+        : TEXT("Full-detail trees at every distance use more GPU time and can lower the frame rate. Optimization preserves close trees, materials and collision, while simplifying distant leaf outlines. This change applies immediately.");
+    if (bRestart) Warning += bLauncherRestart
+        ? TEXT("\n\nThe game must restart to change lighting. Your settings will be saved; your position in the current session will be lost.")
+        : TEXT("\n\nLighting changes take effect on the next launch through the game launcher. Your current lighting stays active until then.");
+    if (Menu) GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef());
+    TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
+    // Back to the main page, on the setting that asked.
+    const auto Return = [this,Key]
+    {
+        Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,Key] { if (Menu) OpenMenu(false,Key); }));
+    };
+    TSharedRef<SPreferencesPanel> Page = SNew(SPreferencesPanel, Rows).Scrolls(false).BackCloses(false).OnBack_Lambda(Return);
+    Page->Follow(Menu);
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,16)[SNew(STextBlock).Text(FText::FromString(Title))
+        .Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(STextBlock).Text(FText::FromString(Warning)).AutoWrapText(true)
+        .ColorAndOpacity(FLinearColor(.9f,.85f,.7f))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text_Lambda([this] { return FText::FromString(GraphicsError); })
+        .AutoWrapText(true).ColorAndOpacity(FLinearColor(1.f,.5f,.4f))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Cancel")))
+        .OnClicked_Lambda([Return] { Return(); return FReply::Handled(); }),TEXT("cancel"))];
+    Rows->AddSlot().AutoHeight()[Page->Add(SNew(SButton).Text(FText::FromString(bRestart && bLauncherRestart ? TEXT("Save and restart")
+        : bRestart ? TEXT("Save for next launch") : TEXT("Confirm")))
+        .OnClicked_Lambda([this,Key,Choice,bRestart,bLauncherRestart,Return]
+        {
+            if (!SetValue(Key,Choice)) return FReply::Handled();
+            if (!bRestart || !bLauncherRestart) Return();
+            return FReply::Handled();
+        }),TEXT("confirm"))];
+    Menu = Page;
+    GEngine->GameViewport->AddViewportWidgetContent(Menu.ToSharedRef(),20);
+    Owner->SetMenuOpen(true);
+    GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+    Page->Focus(TEXT("cancel"));
+}
+void UJapanPreferences::CloseMenu()
+{
+    if (Menu && GEngine && GEngine->GameViewport) GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef());
+    Menu.Reset();
+    if (Owner) Owner->SetMenuOpen(false);
+}
+TArray<FString> UJapanPreferences::MenuControlKeys() const
+{
+    return Menu ? StaticCastSharedPtr<SPreferencesPanel>(Menu)->Keys() : TArray<FString>();   // every page is a panel
+}
+FString UJapanPreferences::FocusedControl() const
+{
+    return Menu ? StaticCastSharedPtr<SPreferencesPanel>(Menu)->FocusedKey() : FString();   // every page is a panel
+}

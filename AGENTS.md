@@ -15,6 +15,10 @@ is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the par
   admission, and `atelier play hakuba` runs the built program; plain `cargo` and `trunk` still work in its folder. The
   Unreal and Blender rules below do not apply to it. Follow [its README](games/hakuba/README.md) and its `CONTRACTS`
   files; the repository, lint, commit, board and admission rules still apply.
+- `games/yorimichi_v2/` is the Unreal port of Yorimichi with **committed** editable content in Git LFS
+  ([plan](docs/YORIMICHI_V2_PLAN.md), [its README](games/yorimichi_v2/README.md)). Its normal build validates and
+  compiles only; imports are explicit and targeted, and binary edits need a claim. The generated-Content and
+  build-reuse rules below do not apply to it; the repository, credentials, board and admission rules do.
 
 ```sh
 uv run atelier build <game> [step ...]   # incremental; --list shows the steps
@@ -77,7 +81,8 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   normal build and packaging dependency graph. Do not retain prototype-only opt-ins or silent fallbacks that ship
   unoptimized assets. Keep diagnostic renders and authoring experiments explicit; required production work is
   incremental and must fail on missing, stale or invalid outputs.
-- Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources.
+- Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. Yorimichi V2
+  commits its `unreal/Content/`; its temporary outputs go in `build/yorimichi_v2/` or the ignored `Saved/`.
 - Commit every GLB source a game consumes under its `assets/` library. Record its local path and checksum in the
   source manifest; fresh checkouts must use the committed model without a private fetch or personal cache.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
@@ -318,6 +323,9 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   for a game started without a record.
 
 ## Reusing builds
+
+This section applies to games that generate their Unreal content (yorimichi, sandbox). Yorimichi V2's content
+arrives through Git LFS; only its separate-worktree rule below applies to it.
 
 - Concurrent agents use separate Git worktrees for code changes. Share the machine's render board, lock and
   installed engine, while each agent owns its source checkout, generated assets and live game session.

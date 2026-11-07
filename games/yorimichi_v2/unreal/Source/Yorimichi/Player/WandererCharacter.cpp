@@ -1,0 +1,1811 @@
+#include "WandererCharacter.h"
+#include "BelmonteTrainService.h"
+#include "GondolaService.h"
+#include "CraterParkTower.h"
+#include "AtelierExit.h"
+#include "JapanCombatResolver.h"
+#include "JapanNetwork.h"
+#include "JapanSkateNetwork.h"
+#include "JapanSession.h"
+#include "Net/UnrealNetwork.h"
+#include "AtelierData.h"
+#include "YorimichiCombatFX.h"
+#include "LiveLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundWave.h"
+#include "JapanFootsteps.h"
+#include "WandererSword.h"
+#include "AdventureMoveSet.h"
+#include "Algo/Find.h"
+#include "Misc/App.h"
+#include "WandererDefinition.h"
+#include "WandererAnimInstance.h"
+#include "SwordTrainer.h"
+#include "SkateComponent.h"
+#include "SailboatComponent.h"
+#include "BikeComponent.h"
+#include "HorseComponent.h"
+#include "JapanCharacterMovement.h"
+#include "JapanWorld.h"
+#include "EngineUtils.h"
+#include "JapanCameraArm.h"
+#include "SeeThrough.h"
+#include "ZeppelinService.h"
+#include "JapanPreferences.h"
+#include "JapanCharacterSelect.h"
+#include "JapanMap.h"
+#include "TimerManager.h"
+#include "Animation/AnimSequence.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "InputKeyEventArgs.h"
+#include "GameFramework/RootMotionSource.h"
+#include "Curves/CurveFloat.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
+#include "InputAction.h"
+#include "InputModifiers.h"
+#include "InputTriggers.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
+#include "HighResScreenshot.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "HAL/FileManager.h"
+#include "Framework/Application/SlateApplication.h"
+
+float AWandererCharacter::GetSprintSpeed() const
+{
+    if (!Definition) return 0.f;
+    return Definition->UseAuthoredMovement ? Definition->SprintSpeed*SprintSpeedMultiplier : Definition->RunSpeed*2.5f;
+}
+
+float AWandererCharacter::GetPresentationActionSourceTime() const
+{
+    const auto* Movement = Cast<UJapanCharacterMovement>(GetCharacterMovement());
+    return GetActionSourceTime() + (Movement ? Movement->GetPresentationExtrapolation() * ActionPlayRate : 0.f);
+}
+
+AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer.SetDefaultSubobjectClass<UJapanCharacterMovement>(ACharacter::CharacterMovementComponentName))
+{
+    PrimaryActorTick.bCanEverTick = true;
+    SkateRide = CreateDefaultSubobject<USkateComponent>(TEXT("Skate"));
+    Sailboat = CreateDefaultSubobject<USailboatComponent>(TEXT("EquippedSailboat"));
+    Bike = CreateDefaultSubobject<UBikeComponent>(TEXT("BikeRide"));   // "Bike" is the input action's name
+    Horse = CreateDefaultSubobject<UHorseComponent>(TEXT("HorseRide"));
+    Footsteps = CreateDefaultSubobject<UJapanFootstepComponent>(TEXT("Footsteps"));
+    Sword = CreateDefaultSubobject<UWandererSwordComponent>(TEXT("Sword"));
+    GetCapsuleComponent()->InitCapsuleSize(22.f, 75.5f);
+    bUseControllerRotationYaw = false;
+    UCharacterMovementComponent* Movement = GetCharacterMovement();
+    Movement->bOrientRotationToMovement = true;
+    Movement->RotationRate = FRotator(0, 540, 0);
+    Movement->MaxWalkSpeed = 300.f;
+    Movement->MaxWalkSpeedCrouched = 50.f;
+    Movement->MaxAcceleration = 1400.f;
+    Movement->BrakingDecelerationWalking = 1600.f;
+    Movement->GroundFriction = 7.f;
+    Movement->JumpZVelocity = 490.f;
+    Movement->GravityScale = 1.5f;
+    Movement->AirControl = .32f;
+    Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
+    Movement->SetCrouchedHalfHeight(65.5f);
+    JumpMaxHoldTime = 0.f;
+    GetMesh()->SetRelativeLocation(FVector(0,0,-76.15f));
+    GetMesh()->SetRelativeRotation(FRotator(0,-90,0));
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    GetMesh()->SetRenderCustomDepth(true);
+    GetMesh()->SetCustomDepthStencilValue(1);
+    // The player's own shadow map: performance mode's 1024 two-cascade sun gives about 8 cm texels near the camera,
+    // which smear the rider's shadow and make it swim frame to frame while skating (docs/DESKTOP_PERFORMANCE.md).
+    // Things attached to the mesh (sword, props, bike) share it; the skateboard hangs off the capsule and does not.
+    GetMesh()->bCastInsetShadow = true;
+    GetMesh()->bLightAttachmentsAsGroup = true;
+    GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+    GetMesh()->bEnableUpdateRateOptimizations = false;
+    // The arm stops on solid things only, pulls in fast and eases back out; thin things fade whole (docs/CAMERA.md).
+    CameraArm = CreateDefaultSubobject<UJapanCameraArm>(TEXT("FollowArm"));
+    CameraArm->SetupAttachment(GetRootComponent());
+    CameraArm->TargetOffset = FVector(0,0,35);
+    CameraArm->TargetArmLength = 420.f;
+    CameraArm->bUsePawnControlRotation = true;
+    CameraArm->bEnableCameraLag = true;
+    CameraArm->CameraLagSpeed = 14.f;
+    CameraArm->CameraLagMaxDistance = 40.f;
+    CameraArm->bUseCameraLagSubstepping = true;
+    CameraArm->CameraLagMaxTimeStep = 1.f/120.f;
+    CameraArm->bEnableCameraRotationLag = false;
+    CameraArm->AddTickPrerequisiteComponent(Movement);
+    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+    FollowCamera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
+    FollowCamera->FieldOfView = PreferredFOV;
+    SeeThrough = CreateDefaultSubobject<USeeThroughComponent>(TEXT("SeeThrough"));
+    NetworkSkate = CreateDefaultSubobject<UJapanSkateNetwork>(TEXT("NetworkSkate"));
+}
+
+void AWandererCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    Definition = LoadObject<UWandererDefinition>(nullptr,*DefinitionAssetPath);
+    if (Definition && Definition->Mesh && Definition->Locomotion && Definition->Crouching)
+    {
+        GetCharacterMovement()->MaxWalkSpeedCrouched = Definition->CrouchSpeed;
+        CameraArm->TargetOffset.Z = Definition->CameraHeight;
+        GetMesh()->SetSkeletalMeshAsset(Definition->Mesh);
+        GetMesh()->SetAnimInstanceClass(UWandererAnimInstance::StaticClass());
+        UE_LOG(LogTemp,Display,TEXT("Character ready: %s, skeletal mesh and %d actions"),*DefinitionAssetPath,Definition->Actions.Num());
+        Sword->Initialize(this);
+    }
+    else UE_LOG(LogTemp,Error,TEXT("Character assets incomplete: %s. Run the matching character importer after building."),*DefinitionAssetPath);
+    if (IsNpc())
+    {
+        // The rest is the person's: the board, settings, map, ambience, reviews and the camera.
+        SkateRide->SetComponentTickEnabled(false);
+        CameraArm->SetComponentTickEnabled(false);
+        FollowCamera->Deactivate();
+        return;
+    }
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        JapanNetwork::ConfigurePlayerCollision(GetCapsuleComponent());
+        NetUpdateFrequency = 30.f;
+        MinNetUpdateFrequency = 10.f;
+        if (!IsLocallyControlled())
+        {
+            SkateRide->SetComponentTickEnabled(false);
+            CameraArm->SetComponentTickEnabled(false);
+            SeeThrough->SetComponentTickEnabled(false);
+            FollowCamera->Deactivate();
+        }
+    }
+    InitializeLocalPlayer();
+}
+
+void AWandererCharacter::DisablePlayerMovement()
+{
+    bMoveSetUnavailable = true;
+    bReady = false;
+    GetCharacterMovement()->DisableMovement();
+}
+
+void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkRiderName, COND_InitialOnly);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, bSwitchedIn, COND_InitialOnly);
+    DOREPLIFETIME(AWandererCharacter, bNetworkShield);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkAvatar, COND_SimulatedOnly);
+    DOREPLIFETIME(AWandererCharacter, NetworkHealth);
+    DOREPLIFETIME(AWandererCharacter, NetworkHitsTaken);
+    DOREPLIFETIME(AWandererCharacter, NetworkGuardPressure);
+    DOREPLIFETIME(AWandererCharacter, NetworkActivity);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, bNetworkMovementReady, COND_OwnerOnly);
+    DOREPLIFETIME(AWandererCharacter, NetworkParkedBike);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkBikePresentation, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkSailPresentation, COND_SimulatedOnly);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkHorsePresentation, COND_SimulatedOnly);
+    DOREPLIFETIME(AWandererCharacter, NetworkHorseAppearance);
+}
+void AWandererCharacter::OnRep_NetworkAvatar() { bNetworkAvatarReceived = true; }
+void AWandererCharacter::OnRep_NetworkHealth() { if (Sword) Sword->ApplyNetworkHealth(NetworkHealth, NetworkHitsTaken); }
+
+void AWandererCharacter::ConfigureNetworkRider(const FString& Name, bool bShield)
+{
+    bAlwaysRelevant = true; // Live player map pins remain available across the shared world.
+    NetworkRiderName = Name;
+    bNetworkShield = bShield;
+    OnRep_NetworkLoadout();
+}
+void AWandererCharacter::OnRep_NetworkLoadout()
+{
+    if (Moves) { Moves->SetShield(bNetworkShield); }
+}
+void AWandererCharacter::PawnClientRestart()
+{
+    Super::PawnClientRestart();
+    TrainView = FTrainPassengerView();
+    InitializeLocalPlayer();
+    if (NetworkActivity.bCharacterReplacement)
+    {
+        // Replicated activity can arrive while the new pawn still has proxy roles.
+        // Apply it again once possession and local readiness have completed.
+        AppliedActivityEpoch = 0;
+        ReadyTime = 2.f;
+    }
+}
+void AWandererCharacter::UnPossessed()
+{
+    TrainView = FTrainPassengerView();
+    Super::UnPossessed();
+}
+void AWandererCharacter::InitializeLocalPlayer()
+{
+    if (bLocalPlayerInitialized || IsNpc() || !Definition || !IsLocallyControlled() || GetNetMode() == NM_DedicatedServer) return;
+    bLocalPlayerInitialized = true;
+    if (auto* PC = Cast<APlayerController>(Controller)) InputOwner = PC->GetLocalPlayer();
+    // A replicated pawn can tick as a presentation proxy before possession arrives.
+    // Its proxy-ready flag must not bypass the owner's prediction startup gate.
+    if (JapanNetwork::IsOnline(GetWorld())) bReady = false;
+    SkateRide->SetComponentTickEnabled(true);
+    CameraArm->SetComponentTickEnabled(true);
+    SeeThrough->SetComponentTickEnabled(true);
+    FollowCamera->Activate();
+    if (FParse::Param(FCommandLine::Get(),TEXT("controllertrace")))
+    {
+#if WITH_EDITOR
+        FSlateApplication::Get().OnApplicationPreInputKeyDownListener().AddWeakLambda(this,[](const FKeyEvent& Event)
+        {
+            if (Event.GetKey().IsGamepadKey() || Event.GetKey()==EKeys::Escape)
+                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE slate key=%s repeat=%d device=%d"),*Event.GetKey().ToString(),Event.IsRepeat(),Event.GetInputDeviceId().GetId());
+        });
+#endif
+        GetWorld()->GetGameViewport()->OnInputKey().AddWeakLambda(this,[](const FInputKeyEventArgs& Event)
+        {
+            if (Event.Key.IsGamepadKey() || Event.Key==EKeys::Escape)
+                UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE viewport key=%s event=%d value=%.2f device=%d"),*Event.Key.ToString(),int32(Event.Event),Event.AmountDepressed,Event.InputDevice.GetId());
+        });
+    }
+    SkateRide->Initialize(this);
+    Preferences = NewObject<UJapanPreferences>(this);
+    Preferences->Initialize(this);
+    Map = NewObject<UJapanMap>(this);
+    Map->Initialize(this);
+    bMapReview = FParse::Param(FCommandLine::Get(),TEXT("mapqa"));
+    // Countryside ambience under everything (birdsong, breeze, a distant sea); combat sounds sit on top of it. It
+    // outlives the character, so a switched-in one keeps it and is ready almost at once.
+    if (bSwitchedIn) ReadyTime = 1.3f;
+    else if (USoundWave* Ambience = LoadObject<USoundWave>(nullptr, TEXT("/Game/Audio/Combat/ambience_countryside_01.ambience_countryside_01"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+        UGameplayStatics::SpawnSound2D(this, Ambience, .5f);
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+    {
+        PC->PlayerCameraManager->ViewPitchMin = -65.f;
+        PC->PlayerCameraManager->ViewPitchMax = 45.f;
+    }
+    bSailboatReview=FParse::Param(FCommandLine::Get(),TEXT("sailboatqa"));
+    bFixedView = FParse::Param(FCommandLine::Get(),TEXT("fixedview"));
+    FParse::Value(FCommandLine::Get(),TEXT("benchmarkview="),BenchmarkView);
+    FParse::Value(FCommandLine::Get(),TEXT("trailershot="),TrailerSpecPath);
+    FParse::Value(FCommandLine::Get(),TEXT("buildingreview="),BuildingReviewSpecPath);
+    // Explicit capture clock: command-line -FPS alone does not set fixed delta.
+    if (!TrailerSpecPath.IsEmpty())
+    { FApp::SetFixedDeltaTime(1.0/60.0);FApp::SetUseFixedTimeStep(true); }
+    FParse::Value(FCommandLine::Get(),TEXT("benchmarkdir="),BenchmarkDirectory);
+    FParse::Value(FCommandLine::Get(),TEXT("benchmarkseconds="),BenchmarkSeconds);
+    // Up to half an hour so a capped soak can run in the same harness as a 20 s capture.
+    BenchmarkSeconds = FMath::Clamp(BenchmarkSeconds,10.f,1800.f);
+    if (!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty())
+    {
+        bFixedView = true;
+        DisableInput(Cast<APlayerController>(Controller));
+    }
+    if (bMapReview || !TrailerSpecPath.IsEmpty())
+    {
+        FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory);
+        if (ReviewDirectory.IsEmpty()) ReviewDirectory = FPaths::ProjectSavedDir()/TEXT("Screenshots/Wanderer")/FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"));
+        IFileManager::Get().MakeDirectory(*ReviewDirectory,true);
+    }
+    SetMouseReleased(!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty());
+    if (Landscape && Landscape->bGameplayReady)
+    {
+        if (JapanNetwork::IsOnline(GetWorld()))
+        { Sailboat->Initialize(this,Landscape); Bike->Initialize(this); Horse->Initialize(this); }
+        if (Preferences) Preferences->Apply();
+    }
+}
+
+void AWandererCharacter::EndPlay(const EEndPlayReason::Type Reason)
+{
+    UGameViewportClient::OnScreenshotCaptured().RemoveAll(this);   // review and trailer frame capture
+    if (FJapanCharacterSelect::IsOpen()) FJapanCharacterSelect::Close(this);
+    if (Preferences) Preferences->CloseMenu();
+    if (Map) Map->Close();
+    if (ULocalPlayer* LP = InputOwner.Get())
+            if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+                Subsystem->RemoveMappingContext(Mapping);
+    Super::EndPlay(Reason);
+}
+
+void AWandererCharacter::EnterWorld(AJapanWorld* World)
+{
+    Landscape = World;
+    if (!World || !World->bLoaded || IsNpc()) return;
+    Bike->Initialize(this);
+    Horse->Initialize(this);
+    Sailboat->Initialize(this,World);
+    if (!bSwitchedIn && !JapanNetwork::IsOnline(GetWorld()))
+    {
+        SetActorLocation(World->PlayerStart.GetLocation()+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),false,nullptr,ETeleportType::TeleportPhysics);
+        SetActorRotation(World->PlayerStart.Rotator());
+        if (Controller) Controller->SetControlRotation(FRotator(-8,World->PlayerStart.Rotator().Yaw,0));
+    }
+    ReviewForward = GetActorForwardVector();
+    if (Preferences) Preferences->Apply();
+    if (!bSwitchedIn && FParse::Param(FCommandLine::Get(),TEXT("sworddummy"))) SpawnSwordDummy();
+}
+
+void AWandererCharacter::Leave()
+{
+    if (FJapanCharacterSelect::IsOpen()) FJapanCharacterSelect::Close(this);
+    if (Preferences) Preferences->CloseMenu();
+    if (Map) Map->Close();
+    if (Moves) Moves->Reset();
+    SkateRide->StowImmediately();
+    Sailboat->StowImmediately();
+    Bike->StowImmediately();
+    Horse->StowImmediately();
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+        if (ULocalPlayer* LP = PC->GetLocalPlayer())
+            if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+                Subsystem->RemoveMappingContext(Mapping);
+}
+
+void AWandererCharacter::ReturnToSpawn()
+{
+    if (!bReady || !Landscape || !Landscape->bLoaded) return;
+    TravelTo(Landscape->PlayerStart.GetLocation(),Landscape->PlayerStart.Rotator().Yaw,TEXT("spawn"));
+    UE_LOG(LogTemp,Display,TEXT("Returned to spawn"));
+}
+
+bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason, float Above)
+{
+    if (bMoveSetUnavailable || !bReady || !Landscape || !Landscape->bLoaded || !FMath::IsFinite(Above) || Above < 0.f || Above > 6000.f) return false;
+    if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority())
+    {
+        if (IsLocallyControlled() && !bNetworkActivityPending && !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsExecutingMove() &&
+            !CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->IsReplaying())
+        {
+            bNetworkActivityPending = true;
+            NetworkActivityRequestTime = GetWorld()->GetTimeSeconds();
+            ServerTravelTo(Target, Yaw, NetworkActivity.Epoch, Above);
+        }
+        return false; // The map closes when the authoritative handoff arrives.
+    }
+    if (JapanNetwork::IsOnline(GetWorld())) GetWorld()->GetSubsystem<UJapanCombatResolver>()->Flush(this);
+    if(GetZeppelin())GetZeppelin()->Cancel(this);
+    if(auto* Train = ABelmonteTrainService::Find(this)) Train->Cancel(this);
+    auto* Movement = GetCharacterMovement();
+    // Leave custom ramp physics before restoring the ordinary character pose.
+    Movement->SetMovementMode(MOVE_Falling);
+    SkateRide->StowImmediately();
+    Sailboat->StowImmediately();
+    Bike->StowImmediately();
+    Horse->StowImmediately();
+    MoveIntent = FVector2D::ZeroVector;
+    bJog = bWalk = bSprintHeld = false;
+    JumpBuffer = FallSpeed = SinceGrounded = DashCooldown = RollCooldown = RollBuffer = 0.f; bPendingTakeoff = bGroundJumped = bAirJumpUsed = bAirDashUsed = false;
+    if (Sword) Sword->CancelForInterrupt(false);
+    StopJumping(); UnCrouch(); SetAction(NAME_None);
+    Movement->StopMovementImmediately();
+    Movement->ClearAccumulatedForces();
+    Movement->CurrentRootMotion.Clear();
+    // Land on whatever is actually built there (paving, sand, the island stair, a quay), not on the recorded height.
+    FHitResult Hit;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(MapTeleport),false,this);
+    if (GetWorld()->LineTraceSingleByChannel(Hit,Target+FVector(0,0,Above),Target-FVector(0,0,2500),ECC_Visibility,Params)) Target.Z = Hit.ImpactPoint.Z;
+    else { float Ground = 0.f; if (Landscape->SampleGroundHeight(Target,Ground)) Target.Z = Ground; }
+    SetActorLocationAndRotation(Target+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
+    Movement->bForceNextFloorCheck = true;
+    if (Moves) Moves->Reset();   // after the move, so a fall is measured from the new place
+    bHasSafeCityLocation = bHasSafeCoastLocation = false;
+    if (Controller) Controller->SetControlRotation(FRotator(-8,Yaw,0));
+    if (JapanNetwork::IsOnline(GetWorld())) BeginNetworkActivity(EJapanActivity::OnFoot, true);
+    UE_LOG(LogTemp,Display,TEXT("Travelled to %s: (%.0f, %.0f, %.0f) yaw %.0f%s"),Reason,Target.X,Target.Y,Target.Z,Yaw,Hit.bBlockingHit ? TEXT("") : TEXT(" (no ground hit)"));
+    return true;
+}
+
+void AWandererCharacter::BuildInput()
+{
+    Mapping = NewObject<UInputMappingContext>(this);
+    auto Axis = [&](FName Name, EInputActionValueType Type)
+    {
+        UInputAction* A = NewObject<UInputAction>(this,Name); A->ValueType = Type; Inputs.Add(Name,A); return A;
+    };
+    auto Key = [&](UInputAction* Action,FKey K,bool Negate=false,bool YAxis=false)
+    {
+        FEnhancedActionKeyMapping& M = Mapping->MapKey(Action,K);
+        if (Negate) M.Modifiers.Add(NewObject<UInputModifierNegate>(Mapping));
+        if (YAxis) { auto* Swizzle = NewObject<UInputModifierSwizzleAxis>(Mapping); Swizzle->Order = EInputAxisSwizzle::YXZ; M.Modifiers.Add(Swizzle); }
+    };
+    UInputAction* MoveAxis = Axis(TEXT("Move"),EInputActionValueType::Axis2D);
+    Key(MoveAxis,EKeys::W,false,true); Key(MoveAxis,EKeys::S,true,true);
+    Key(MoveAxis,EKeys::A,true); Key(MoveAxis,EKeys::D);
+    Key(MoveAxis,EKeys::Up,false,true); Key(MoveAxis,EKeys::Down,true,true);
+    Key(MoveAxis,EKeys::Left,true); Key(MoveAxis,EKeys::Right);
+    auto& LeftStick = Mapping->MapKey(MoveAxis,EKeys::Gamepad_Left2D);
+    LeftStick.Modifiers.Add(NewObject<UInputModifierDeadZone>(Mapping));
+    // On the bike the triggers (or W / S) pedal and brake, and the stick's forward axis (or the arrows) leans him, so he
+    // can pedal through a wheelie. Steering stays on Move.
+    UInputAction* Throttle = Axis(TEXT("BikeThrottle"),EInputActionValueType::Axis1D);
+    Key(Throttle,EKeys::W); Key(Throttle,EKeys::S,true);
+    Key(Throttle,EKeys::Gamepad_RightTriggerAxis); Key(Throttle,EKeys::Gamepad_LeftTriggerAxis,true);
+    UInputAction* BikeLean = Axis(TEXT("BikeLean"),EInputActionValueType::Axis1D);
+    Key(BikeLean,EKeys::Up); Key(BikeLean,EKeys::Down,true);
+    Mapping->MapKey(BikeLean,EKeys::Gamepad_LeftY).Modifiers.Add(NewObject<UInputModifierDeadZone>(Mapping));
+    UInputAction* Mouse = Axis(TEXT("Mouse"),EInputActionValueType::Axis2D);
+    Key(Mouse,EKeys::MouseX); Key(Mouse,EKeys::MouseY,false,true);
+    auto& RightStick = Mapping->MapKey(Axis(TEXT("Stick"),EInputActionValueType::Axis2D),EKeys::Gamepad_Right2D);
+    RightStick.Modifiers.Add(NewObject<UInputModifierDeadZone>(Mapping));
+    for (const auto& Pair : TArray<TPair<FName,FKey>>{
+        {TEXT("Jog"),EKeys::J},{TEXT("Sprint"),EKeys::LeftShift},{TEXT("Walk"),EKeys::LeftAlt},{TEXT("Jump"),EKeys::SpaceBar},
+        {TEXT("Crouch"),EKeys::C},{TEXT("Dodge"),EKeys::LeftControl},{TEXT("Wave"),EKeys::Q},
+        {TEXT("Interact"),EKeys::E},{TEXT("Skateboard"),EKeys::B},{TEXT("Dash"),EKeys::F},{TEXT("Sailboat"),EKeys::K},{TEXT("Bike"),EKeys::V},
+        {TEXT("Horse"),EKeys::H},{TEXT("HorseRandom"),EKeys::N},{TEXT("HorseBreed"),EKeys::U},{TEXT("HorseTack"),EKeys::I},{TEXT("HorseCoat"),EKeys::O},
+        {TEXT("Map"),EKeys::M},{TEXT("Menu"),EKeys::Escape},{TEXT("MouseRelease"),EKeys::Tab},{TEXT("Screenshot"),EKeys::F12},
+        {TEXT("SetMarker"),EKeys::F5},{TEXT("ReturnMarker"),EKeys::F9},{TEXT("TowerReturn"),EKeys::F7},
+        {TEXT("FlightSlower"),EKeys::LeftBracket},{TEXT("FlightFaster"),EKeys::RightBracket},
+        {TEXT("Attack"),EKeys::LeftMouseButton},{TEXT("Parry"),EKeys::RightMouseButton},{TEXT("Weapon"),EKeys::R}})
+        Key(Axis(Pair.Key,EInputActionValueType::Boolean),Pair.Value);
+    // The top face button always mounts/steps off; interaction uses D-pad Down.
+    Key(Inputs[TEXT("Attack")],EKeys::Gamepad_RightTrigger);
+    Key(Inputs[TEXT("Parry")],EKeys::Gamepad_LeftTrigger);
+    Key(Inputs[TEXT("Weapon")],EKeys::Gamepad_DPad_Left);
+    Key(Inputs[TEXT("Dash")],EKeys::Gamepad_FaceButton_Left);
+    Key(Inputs[TEXT("Interact")],EKeys::Gamepad_DPad_Down);
+    Key(Inputs[TEXT("Jump")],EKeys::Gamepad_FaceButton_Bottom);
+    Key(Inputs[TEXT("Sprint")],EKeys::Gamepad_LeftThumbstick);
+    Key(Inputs[TEXT("Dodge")],EKeys::Gamepad_FaceButton_Right);
+    Key(Inputs[TEXT("Crouch")],EKeys::Gamepad_RightThumbstick);
+    Key(Inputs[TEXT("Menu")],EKeys::Gamepad_Special_Right);
+    Key(Inputs[TEXT("Sailboat")],EKeys::Gamepad_DPad_Up);
+    // The top face button: a tap mounts or steps off the board, a 0.4 s hold gets the bike out or parks it.
+    {
+        FEnhancedActionKeyMapping& Tap = Mapping->MapKey(Axis(TEXT("SkateboardPad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Top);
+        auto* TapTrigger = NewObject<UInputTriggerTap>(Mapping); TapTrigger->TapReleaseTimeThreshold = .35f; Tap.Triggers.Add(TapTrigger);
+        FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("BikePad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Top);
+        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
+    }
+    // View: a tap opens or closes the map, a 0.4 s hold opens the saved-places bar over the game (UJapanMap::OpenMarkerBar).
+    {
+        FEnhancedActionKeyMapping& Tap = Mapping->MapKey(Axis(TEXT("MapPad"),EInputActionValueType::Boolean),EKeys::Gamepad_Special_Left);
+        auto* TapTrigger = NewObject<UInputTriggerTap>(Mapping); TapTrigger->TapReleaseTimeThreshold = .35f; Tap.Triggers.Add(TapTrigger);
+        FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("MarkersPad"),EInputActionValueType::Boolean),EKeys::Gamepad_Special_Left);
+        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
+    }
+    // The horse: a 0.4 s hold of the right shoulder summons and mounts it, or (once stopped) gets off. Riding, the left
+    // face button and the D-pad's Up, Right and Left change its look; on the horse those buttons have nothing else to do.
+    {
+        FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("HorsePad"),EInputActionValueType::Boolean),EKeys::Gamepad_RightShoulder);
+        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
+    }
+    Key(Axis(TEXT("HorseRandomPad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Left);
+    Key(Axis(TEXT("HorseBreedPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Up);
+    Key(Axis(TEXT("HorseTackPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Right);
+    Key(Axis(TEXT("HorseCoatPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Left);
+    // The board button on foot: a board to the hand, or put away (Ride's carry).
+    Key(Axis(TEXT("SkateboardHand"),EInputActionValueType::Boolean),EKeys::G);
+    Key(Inputs[TEXT("SkateboardHand")],EKeys::Gamepad_DPad_Right);
+    Key(Inputs[TEXT("FlightSlower")],EKeys::Gamepad_LeftShoulder);
+    Key(Axis(TEXT("TrainView"),EInputActionValueType::Boolean),EKeys::P);
+    Key(Inputs[TEXT("TrainView")],EKeys::Gamepad_LeftShoulder);
+    Key(Inputs[TEXT("FlightFaster")],EKeys::Gamepad_RightShoulder);
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+        if (ULocalPlayer* LP = PC->GetLocalPlayer())
+            if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>()) Subsystem->AddMappingContext(Mapping,0);
+}
+
+void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
+{
+    Super::SetupPlayerInputComponent(Input); BuildInput();
+    if (auto* E = Cast<UEnhancedInputComponent>(Input))
+    {
+        for (const auto& Binding : TArray<TPair<FName,void(AWandererCharacter::*)(const FInputActionValue&)>>{
+            {TEXT("Move"),&AWandererCharacter::Move},{TEXT("Mouse"),&AWandererCharacter::MouseLook},
+            {TEXT("Stick"),&AWandererCharacter::StickLook},{TEXT("Sprint"),&AWandererCharacter::Sprint},{TEXT("Jog"),&AWandererCharacter::Jog},{TEXT("Walk"),&AWandererCharacter::Walk}})
+        {
+            E->BindAction(Inputs[Binding.Key],ETriggerEvent::Triggered,this,Binding.Value);
+            E->BindAction(Inputs[Binding.Key],ETriggerEvent::Completed,this,Binding.Value);
+            E->BindAction(Inputs[Binding.Key],ETriggerEvent::Canceled,this,Binding.Value);
+        }
+        for (ETriggerEvent Event : {ETriggerEvent::Triggered,ETriggerEvent::Completed,ETriggerEvent::Canceled})
+        {
+            E->BindActionValueLambda(Inputs[TEXT("BikeThrottle")],Event,[this](const FInputActionValue& V)
+            { BikeThrottleInput = (bMenuOpen || bFixedView) ? 0.f : V.Get<float>(); });
+            E->BindActionValueLambda(Inputs[TEXT("BikeLean")],Event,[this](const FInputActionValue& V)
+            { BikeLeanInput = (bMenuOpen || bFixedView) ? 0.f : V.Get<float>(); });
+        }
+        for (const auto& Binding : TArray<TPair<FName,void(AWandererCharacter::*)(const FInputActionValue&)>>{
+            {TEXT("Jump"),&AWandererCharacter::RequestJump},{TEXT("Crouch"),&AWandererCharacter::ToggleCrouch},
+            {TEXT("Dodge"),&AWandererCharacter::Dodge},{TEXT("Wave"),&AWandererCharacter::Wave},{TEXT("Interact"),&AWandererCharacter::Interact},
+            {TEXT("Skateboard"),&AWandererCharacter::ToggleSkateboard},{TEXT("Dash"),&AWandererCharacter::Dash},{TEXT("Sailboat"),&AWandererCharacter::ToggleSailboat},{TEXT("Bike"),&AWandererCharacter::ToggleBike},
+            {TEXT("Horse"),&AWandererCharacter::ToggleHorse},{TEXT("HorseRandom"),&AWandererCharacter::RandomizeHorse},{TEXT("HorseBreed"),&AWandererCharacter::CycleHorseBreed},{TEXT("HorseTack"),&AWandererCharacter::CycleHorseTack},{TEXT("HorseCoat"),&AWandererCharacter::CycleHorseCoat},
+            {TEXT("Map"),&AWandererCharacter::ToggleMap},{TEXT("Menu"),&AWandererCharacter::ToggleMenu},{TEXT("MouseRelease"),&AWandererCharacter::ToggleMouse},{TEXT("Screenshot"),&AWandererCharacter::Screenshot},
+            {TEXT("FlightSlower"),&AWandererCharacter::FlightSlower},{TEXT("FlightFaster"),&AWandererCharacter::FlightFaster},
+            {TEXT("Attack"),&AWandererCharacter::AttackPressed},{TEXT("Parry"),&AWandererCharacter::ParryPressed},{TEXT("Weapon"),&AWandererCharacter::ToggleWeapon}})
+            E->BindAction(Inputs[Binding.Key],ETriggerEvent::Started,this,Binding.Value);
+        E->BindActionValueLambda(Inputs[TEXT("SetMarker")],ETriggerEvent::Started,[this](const FInputActionValue&)
+        { if (bReady && !bMenuOpen && Map) Map->SetMarker(); });
+        E->BindActionValueLambda(Inputs[TEXT("ReturnMarker")],ETriggerEvent::Started,[this](const FInputActionValue&)
+        { if (bReady && !bMenuOpen && Map) Map->ReturnToMarker(); });
+        // Back to the top of the Crater Park line chosen last (the menu's Crater Park tower buttons; docs/CRATERPARK.md).
+        E->BindActionValueLambda(Inputs[TEXT("TowerReturn")],ETriggerEvent::Started,[this](const FInputActionValue&)
+        { if (bReady && !bMenuOpen) CraterParkTower::Return(this,CraterParkTower::LastStart()); });
+        E->BindAction(Inputs[TEXT("MapPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleMap);
+        // The bar opens on the next tick, outside Enhanced Input's evaluation. Its focus change flushes the held View
+        // key, and a flush inside this callback is forgotten before the next tick, so the hold trigger never sees View
+        // come up and swallows the following hold.
+        E->BindActionValueLambda(Inputs[TEXT("MarkersPad")],ETriggerEvent::Triggered,[this](const FInputActionValue&)
+        {
+            GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this]
+            { if (bReady && !bMenuOpen && !bCinematic && Map) Map->OpenMarkerBar(); }));
+        });
+        E->BindAction(Inputs[TEXT("SkateboardHand")],ETriggerEvent::Started,this,&AWandererCharacter::SkateboardHand);
+        E->BindAction(Inputs[TEXT("TrainView")],ETriggerEvent::Started,this,&AWandererCharacter::ToggleTrainView);
+        E->BindAction(Inputs[TEXT("SkateboardPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleSkateboard);
+        E->BindAction(Inputs[TEXT("BikePad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleBike);
+        E->BindAction(Inputs[TEXT("HorsePad")],ETriggerEvent::Triggered,this,&AWandererCharacter::HorsePad);
+        for (const auto& Binding : TArray<TPair<FName,void(AWandererCharacter::*)(const FInputActionValue&)>>{
+            {TEXT("HorseRandomPad"),&AWandererCharacter::RandomizeHorse},{TEXT("HorseBreedPad"),&AWandererCharacter::CycleHorseBreed},
+            {TEXT("HorseTackPad"),&AWandererCharacter::CycleHorseTack},{TEXT("HorseCoatPad"),&AWandererCharacter::CycleHorseCoat}})
+            E->BindActionValueLambda(Inputs[Binding.Key],ETriggerEvent::Started,[this,Handler=Binding.Value](const FInputActionValue& V)
+            { if (Horse->IsEquipped()) (this->*Handler)(V); });   // only on the horse: on foot these buttons are the dash and the D-pad's
+        E->BindAction(Inputs[TEXT("Jump")],ETriggerEvent::Completed,this,&AWandererCharacter::ReleaseJump);
+        E->BindAction(Inputs[TEXT("Attack")],ETriggerEvent::Completed,this,&AWandererCharacter::AttackReleased);
+        E->BindAction(Inputs[TEXT("Attack")],ETriggerEvent::Canceled,this,&AWandererCharacter::AttackReleased);
+        E->BindAction(Inputs[TEXT("Parry")],ETriggerEvent::Completed,this,&AWandererCharacter::ParryReleased);
+        E->BindAction(Inputs[TEXT("Parry")],ETriggerEvent::Canceled,this,&AWandererCharacter::ParryReleased);
+        if (FParse::Param(FCommandLine::Get(),TEXT("controllertrace")))
+            for (const auto& Pair : Inputs)
+                if (Pair.Value->ValueType==EInputActionValueType::Boolean)
+                    for (ETriggerEvent Event : {ETriggerEvent::Started,ETriggerEvent::Completed})
+                        E->BindActionValueLambda(Pair.Value,Event,[this,Name=Pair.Key,Event](const FInputActionValue& Value)
+                        {
+                            UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE action=%s event=%d value=%d ready=%d menu=%d locked=%d"),*Name.ToString(),int32(Event),Value.Get<bool>(),bReady,bMenuOpen,MovementLocked());
+                        });
+    }
+}
+
+void AWandererCharacter::Move(const FInputActionValue& V) { MoveIntent = InputMove = (bMenuOpen || bFixedView) ? FVector2D::ZeroVector : V.Get<FVector2D>(); }
+FVector2D AWandererCharacter::GetBikeIntent() const
+{
+    // The Move action's forward axis is the bike's lean. A MoveIntent written by anything else (the live bridge, a
+    // review) pedals with its forward axis; one a menu cleared pedals with nothing.
+    const double Scripted = MoveIntent == InputMove ? 0. : MoveIntent.Y;
+    return FVector2D(MoveIntent.X, FMath::Clamp(Scripted + BikeThrottleInput, -1., 1.));
+}
+void AWandererCharacter::MouseLook(const FInputActionValue& V)
+{
+    if (!bReady || bMenuOpen || bMouseReleased || bFixedView) return;
+    // Riding: holding the left button turns the mouse into the right stick (Flick-It), not the camera.
+    if (SkateRide->IsRiding()) if (const APlayerController* PC = Cast<APlayerController>(Controller); PC && PC->IsInputKeyDown(EKeys::LeftMouseButton)) return;
+    const FVector2D Delta = V.Get<FVector2D>()*MouseSensitivity;
+    // MouseY is positive upward. Legacy pitch scaling is explicitly disabled in config.
+    if(!Delta.IsNearlyZero())LookGrace=2.f;
+    AddControllerYawInput(Delta.X); AddControllerPitchInput(Delta.Y);
+}
+void AWandererCharacter::StickLook(const FInputActionValue& V)
+{
+    if (!bReady || bMenuOpen || bFixedView || SkateRide->IsRiding()) return;   // riding: the right stick is Flick-It
+    const FVector2D Delta = V.Get<FVector2D>()*145.f*GetWorld()->GetDeltaSeconds();
+    if(!Delta.IsNearlyZero())LookGrace=2.f;
+    // SceneViewport negates Gamepad_RightY. Restore up-is-look-up with legacy scales disabled.
+    AddControllerYawInput(Delta.X); AddControllerPitchInput(-Delta.Y);
+}
+void AWandererCharacter::Sprint(const FInputActionValue& V)
+{
+    // A sprint pressed on foot with the skateboard takes over from it on the ground, as soon as the skate component lets
+    // it while the button is held (only the press: a board taken while sprinting stays in hand).
+    const bool bHeld = V.Get<bool>();
+    // On the bike a press toggles pedalling hard, on the horse its sprint (no holding the stick down while steering with it).
+    if (bHeld && !bSprintHeld && Bike->IsRiding()) { bSprintHeld = true; if (bReady && !bMenuOpen) Bike->ToggleSprint(); return; }
+    if (bHeld && !bSprintHeld && Horse->IsRiding()) { bSprintHeld = true; if (bReady && !bMenuOpen) Horse->ToggleSprint(); return; }
+    if (bHeld && !bSprintHeld) bSprintTakeOver = true;
+    bSprintHeld = bHeld;
+    if (bSprintTakeOver && (!bHeld || (bReady && !bMenuOpen && GetCharacterMovement()->IsMovingOnGround() && TakeOverFromSkate(false))))
+        bSprintTakeOver = false;
+}
+void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>(); }
+void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
+bool AWandererCharacter::IsSkateInputBlocked() const { return bMenuOpen || (Map && Map->IsOpen()); }
+FName AWandererCharacter::GetSkateBone(FName Contract) const
+{
+    const FName* Bone = Definition ? Definition->SkateBones.Find(Contract) : nullptr;
+    return Bone ? *Bone : Contract;
+}
+float AWandererCharacter::GetSkateBoardScale() const { return Definition ? Definition->SkateBoardScale : 1.f; }
+void AWandererCharacter::PrepareToSkate()
+{
+    if (Sword && Sword->IsArmed()) Sword->SetArmed(false);
+    if (Moves) Moves->Reset();
+    SetAction(NAME_None);
+}
+bool AWandererCharacter::CanAct(bool bOverBoard) const { return bReady && !bMenuOpen && (!SkateRide->IsRiding() || (bOverBoard && SkateRide->CanYieldToCharacter())) && !OnVehicle() && GetCharacterMovement()->IsMovingOnGround() && !MovementLocked() && !bPendingTakeoff; }
+bool AWandererCharacter::TakeOverFromSkate(bool bOwnVelocity)
+{
+    // The skate component ends a clip where it is and puts a board in hand away; the game's action left from before the
+    // clip (a landing the clip played instead) is dropped.
+    const bool bClip = SkateRide->IsRiding();
+    if (!SkateRide->YieldToCharacter(bOwnVelocity)) return false;
+    if (bClip) SetAction(NAME_None);
+    return true;
+}
+bool AWandererCharacter::StandForAction()
+{
+    UnCrouch();
+    // Only a crouched character stands up: CharacterMovement's UnCrouch gives back the class default capsule whenever
+    // the capsule differs from it, crouched or not, which would undo a fitted one (an adventure rider's).
+    if (bIsCrouched) GetCharacterMovement()->UnCrouch(); // Checks overhead clearance before a standing clip.
+    return !bIsCrouched;
+}
+bool AWandererCharacter::MovementLocked() const
+{
+    return IsZeppelinPassenger() || (Sword && Sword->LocksMovement()) || (Moves && Moves->LocksMovement()) || AnimationAction == TEXT("Dodge") ||
+        (AnimationAction == TEXT("Roll") && !IsRollRecovering()) || AnimationAction == TEXT("HardLand") ||
+        AnimationAction == TEXT("DashGround") || AnimationAction == TEXT("DashAir");
+}
+bool AWandererCharacter::IsRollRecovering() const
+{
+    // The approved dive-roll has completed its rotation and planted its feet
+    // by source second .94. The remaining rise is visual, not a movement lock.
+    return AnimationAction==TEXT("Roll") && Definition && Definition->RollDiveTouchdown>0.f &&
+        GetActionSourceTime()>=.94f && GetCharacterMovement()->IsMovingOnGround();
+}
+void AWandererCharacter::RequestJump(const FInputActionValue&)
+{
+    // Space loads and pops the board (read by the skate component); on foot the jump with the board in hand is the
+    // skate component's too, and a double jump takes over from it.
+    const bool bSkating = SkateRide->IsRiding();
+    if (bSkating && !(GetCharacterMovement()->IsFalling() && SkateRide->CanYieldToCharacter())) return;
+    if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Hop(); return; }
+    if (Horse->IsEquipped()) { if (bReady && !bMenuOpen) Horse->Jump(); return; }
+    if (Sailboat->IsEquipped() || bTrainAboard) return;
+    if (Moves) { PressMove(TEXT("jump")); return; }
+    if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;   // a draw, sheathe or deflection finishes first
+    if (!bReady || bMenuOpen || MovementLocked() || bPendingTakeoff) return;
+    UCharacterMovementComponent* M = GetCharacterMovement();
+    if (M->IsFalling() && (bGroundJumped || SinceGrounded >= .10f))
+    {
+        if (bAirJumpUsed || !Definition || !Definition->FindAction(TEXT("DoubleJump")) || !TakeOverFromSkate(true)) return;
+        bAirJumpUsed = true;
+        JumpBuffer = FallSpeed = 0.f;
+        StopJumping();
+        FVector LaunchVelocity=M->Velocity;
+        if(!MoveIntent.IsNearlyZero())
+        {
+            const FRotationMatrix Basis(FRotator(0,GetControlRotation().Yaw,0));
+            const FVector Direction=(Basis.GetUnitAxis(EAxis::X)*MoveIntent.Y+Basis.GetUnitAxis(EAxis::Y)*MoveIntent.X).GetSafeNormal();
+            // Redirect existing speed once at the second press, including a
+            // full reversal. Diagonal input adds no speed; neutral keeps XY.
+            LaunchVelocity=Direction*LaunchVelocity.Size2D();
+            SetActorRotation(Direction.Rotation()); // Face the flip without rotating the camera.
+        }
+        LaunchVelocity.Z=650.f;
+        LaunchCharacter(LaunchVelocity,true,true);
+        SetAction(TEXT("DoubleJump"),false,.05f);
+        return;
+    }
+    if (bSkating) return;
+    if (!bGroundJumped && !bAirJumpUsed) JumpBuffer = .16f;
+}
+void AWandererCharacter::ReleaseJump(const FInputActionValue&) { StopJumping(); if (Moves) Moves->Press(TEXT("jump_release")); }
+bool AWandererCharacter::PressMove(FName Button)
+{
+    if (JapanNetwork::IsOnline(GetWorld()) && NetworkActivity.Kind == EJapanActivity::Bike)
+        return bReady && !bMenuOpen && CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->QueueMoveButton(Button);
+    return Moves && bReady && !bMenuOpen && !SkateRide->IsRiding() && !OnVehicle() && !IsZeppelinPassenger() && Moves->Press(Button);
+}
+void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
+{
+    if (!Sailboat->IsEquipped() && RefuseVehicleOnTrain()) return;
+    if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkSail(); return; } // Enabled by the vehicle prediction layer.
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Horse->IsEquipped()) return;
+    if (Sailboat->IsEquipped()) { Sailboat->Toggle(); return; }
+    if (Sword && !Sword->CancelForInterrupt(true)) return;
+    if (CanAct() && StandForAction() && Sailboat->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+}
+bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped() || Horse->IsEquipped(); }
+void AWandererCharacter::ToggleBike(const FInputActionValue&)
+{
+    if (!Bike->IsEquipped() && RefuseVehicleOnTrain()) return;
+    if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkBike(); return; } // Enabled by the vehicle prediction layer.
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || Horse->IsEquipped()) return;
+    if (Bike->IsEquipped()) { Bike->Toggle(); return; }
+    if (Sword && !Sword->CancelForInterrupt(true)) return;
+    if (CanAct() && StandForAction() && Bike->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+}
+void AWandererCharacter::ToggleHorse(const FInputActionValue&)
+{
+    if (!Horse->IsEquipped() && RefuseVehicleOnTrain()) return;
+    if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkHorse(); return; } // Enabled by the vehicle prediction layer.
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || Bike->IsEquipped()) return;
+    if (Horse->IsEquipped()) { Horse->Toggle(); return; }
+    if (Sword && !Sword->CancelForInterrupt(true)) return;
+    if (CanAct() && StandForAction() && Horse->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+}
+// The pad's hold: beside a docked zeppelin and aboard one the shoulders choose its stop or flight speed, so the hold
+// leaves the horse alone there (online it would otherwise ask the host and be refused).
+void AWandererCharacter::HorsePad(const FInputActionValue& V)
+{
+    if (IsZeppelinPassenger() || (GetZeppelin() && GetZeppelin()->CanChooseStop(this))) return;
+    ToggleHorse(V);
+}
+// The horse's look: offline it changes at once; a shared game asks the host, which replicates it to everyone.
+void AWandererCharacter::RandomizeHorse(const FInputActionValue&)
+{
+    if (bReady && !bMenuOpen && Horse->IsAvailable()) RequestHorseAppearance(Horse->RandomAppearance());
+}
+void AWandererCharacter::CycleHorseBreed(const FInputActionValue&)
+{
+    if (bReady && !bMenuOpen && Horse->IsAvailable()) RequestHorseAppearance(Horse->NextBreed(1));
+}
+void AWandererCharacter::CycleHorseTack(const FInputActionValue&)
+{
+    if (bReady && !bMenuOpen && Horse->IsAvailable()) RequestHorseAppearance(Horse->NextTack(1));
+}
+void AWandererCharacter::CycleHorseCoat(const FInputActionValue&)
+{
+    if (bReady && !bMenuOpen && Horse->IsAvailable()) RequestHorseAppearance(Horse->NextCoat(1));
+}
+void AWandererCharacter::ToggleSkateboard(const FInputActionValue&)
+{
+    if (!SkateRide->IsRiding() && !bApplyingNetworkActivity && RefuseVehicleOnTrain()) return;
+    if (JapanNetwork::IsOnline(GetWorld()) && !bApplyingNetworkActivity && RequestNetworkSkate()) return;
+    if (SkateRide->IsAvailable())
+    {
+        if (!bReady || bMenuOpen || IsZeppelinPassenger() || OnVehicle()) return;
+        if (SkateRide->IsRiding()) { SkateRide->Toggle(); return; }
+        if (Sword && !Sword->CancelForInterrupt(true)) return;
+        if (CanAct() && StandForAction() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+        // Mid-jump the board goes under the feet (Ride: a caveman).
+        else if (bReady && !bMenuOpen && GetCharacterMovement()->IsFalling() && !MovementLocked() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; StopJumping(); }
+    }
+}
+void AWandererCharacter::SkateboardHand(const FInputActionValue&)
+{
+    if (RefuseVehicleOnTrain()) return;
+    if (bReady && !bMenuOpen && SkateRide->IsAvailable() && !SkateRide->IsRiding()) SkateRide->RecallBoard();
+}
+bool AWandererCharacter::CanCarrySkateBoard() const
+{
+    // The hands are needed: the sword out, the sail, the zeppelin's rail, swimming, an interaction or a wave.
+    return !IsOnTrain() && !(Sword && Sword->IsArmed()) && !OnVehicle() && !IsZeppelinPassenger() && !GetCharacterMovement()->IsSwimming() &&
+        AnimationAction != TEXT("Interact") && AnimationAction != TEXT("Wave");
+}
+bool AWandererCharacter::RefuseVehicleOnTrain()
+{
+    if (!IsOnTrain()) return false;
+    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Gondola ? TEXT("Not aboard the gondola") :
+        bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Not aboard the ferry") : TEXT("Not aboard the train");
+    if (IsLocallyControlled()) ULiveLibrary::Say(Message, 2.f);
+    else if (HasAuthority()) ClientActivityRejected(Message);
+    return true;
+}
+void AWandererCharacter::ToggleCrouch(const FInputActionValue&)
+{
+    if (JapanNetwork::IsOnline(GetWorld())) { PressMove(TEXT("crouch")); return; }
+    if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Skid(); return; }   // on the bike: a skid stop
+    if (Horse->IsEquipped()) return;   // in the saddle: no crouch (online PressMove refuses it on any vehicle)
+    if (PressMove(TEXT("crouch"))) return;   // gliding, climbing, swimming or busy: no crouch
+    if (CanAct()) { if (bIsCrouched) UnCrouch(); else Crouch(); SetAction(NAME_None); }
+}
+FName AWandererCharacter::GetAnimationClip() const
+{
+    static const FName WithArmedCopy[] = { TEXT("Roll"), TEXT("DoubleJump"), TEXT("JumpStart"), TEXT("JumpRise"), TEXT("Fall"), TEXT("Land"), TEXT("HardLand"), TEXT("DashAir"), TEXT("DashGround"),
+        TEXT("SitDown"), TEXT("SitIdle"), TEXT("StandUp") };
+    if (Sword && Sword->IsArmed() && Definition && Algo::Find(WithArmedCopy, AnimationAction))
+    {
+        const FName Armed(*(TEXT("Sword") + AnimationAction.ToString()));
+        if (Definition->FindAction(Armed)) return Armed;
+    }
+    return AnimationAction;
+}
+
+bool AWandererCharacter::Live_Press(FName Button)
+{
+    if (Button == TEXT("jump")) RequestJump(FInputActionValue(true));
+    else if (Button == TEXT("jump_release")) ReleaseJump(FInputActionValue(false));
+    else if (Button == TEXT("roll")) Dodge(FInputActionValue(true));
+    else if (Button == TEXT("crouch")) ToggleCrouch(FInputActionValue(true));
+    else if (Button == TEXT("interact")) Interact(FInputActionValue(true));
+    else if (Button == TEXT("stop_previous")) ZeppelinStep(-1);
+    else if (Button == TEXT("stop_next")) ZeppelinStep(1);
+    else if (Button == TEXT("dodge")) Dodge(FInputActionValue(true));
+    else if (Button == TEXT("dash")) Dash(FInputActionValue(true));
+    else if (Button == TEXT("attack")) AttackPressed(FInputActionValue(true));
+    else if (Button == TEXT("attack_release")) AttackReleased(FInputActionValue(false));
+    else if (Button == TEXT("guard")) ParryPressed(FInputActionValue(true));
+    else if (Button == TEXT("guard_release")) ParryReleased(FInputActionValue(false));
+    else if (Button == TEXT("weapon")) ToggleWeapon(FInputActionValue(true));
+    else if (Button == TEXT("menu")) { if (!Preferences) return false; ToggleMenu(FInputActionValue(true)); }   // the settings menu (closing the map first)
+    else if (Button == TEXT("character_select")) { return FJapanCharacterSelect::Open(this, false); }
+    else if (Button == TEXT("skate_feel")) { if (!Preferences) return false; Preferences->OpenSkateMenu(); }   // the menu's Skate feel page
+    else if (Button == TEXT("bike")) ToggleBike(FInputActionValue(true));
+    else if (Button == TEXT("horse")) ToggleHorse(FInputActionValue(true));
+    else if (Button == TEXT("horse_random")) RandomizeHorse(FInputActionValue(true));
+    else if (Button == TEXT("horse_breed")) CycleHorseBreed(FInputActionValue(true));
+    else if (Button == TEXT("horse_tack")) CycleHorseTack(FInputActionValue(true));
+    else if (Button == TEXT("horse_coat")) CycleHorseCoat(FInputActionValue(true));
+    else if (Button == TEXT("skateboard")) ToggleSkateboard(FInputActionValue(true));
+    else if (Button == TEXT("sailboat")) ToggleSailboat(FInputActionValue(true));
+    else if (Button == TEXT("sprint")) { Sprint(FInputActionValue(true)); Sprint(FInputActionValue(false)); }   // a tap (the bike's and the horse's toggle)
+    else if (Button == TEXT("wave")) Wave(FInputActionValue(true));
+    else return false;
+    return true;
+}
+
+void AWandererCharacter::Dodge(const FInputActionValue&)
+{
+    if (SkateRide->IsRiding() && !SkateRide->CanYieldToCharacter()) return;   // on foot the roll takes over from the board
+    if (Moves) { if (SkateRide->IsRiding() && !TakeOverFromSkate(true)) return; PressMove(TEXT("dodge")); return; }   // the side hop or backflip
+    // With an armed roll (game-r16) the sword stays in hand; without one, rolling tucks it away and the next attack draws it.
+    if(bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(!(Definition && Definition->FindAction(TEXT("SwordRoll"))))) return;
+    if(!CanAct(true))
+    {
+        // A press near the end of the tuck can chain at the first supported
+        // frame. Earlier presses expire rather than queuing an eventual roll.
+        if(bReady && !bMenuOpen && AnimationAction==TEXT("Roll") && Definition && Definition->RollDiveTouchdown>0.f)
+            RollBuffer=.18f;
+        return;
+    }
+    if (RollCooldown>0.f || !StandForAction() || !TakeOverFromSkate(true)) return;
+    RollBuffer=0.f;
+    const bool bRoll=Definition && Definition->FindAction(TEXT("Roll")) && !Definition->RollProfile.IsEmpty();
+    const bool bChaining=bRoll && IsRollRecovering();
+    auto* Movement=GetCharacterMovement();
+    const float EntrySpeed=Movement->Velocity.Size2D();
+    const bool bMovingRoll=bRoll && EntrySpeed>40.f;
+    const FRotationMatrix Basis(FRotator(0,GetControlRotation().Yaw,0));
+    DodgeDirection = (Basis.GetUnitAxis(EAxis::X)*MoveIntent.Y+Basis.GetUnitAxis(EAxis::Y)*MoveIntent.X).GetSafeNormal();
+    if (DodgeDirection.IsNearlyZero()) DodgeDirection = GetActorForwardVector();
+    JumpBuffer=0.f;
+    if(bChaining)Movement->RemoveRootMotionSource(TEXT("GroundRoll"));
+    SetActorRotation(DodgeDirection.Rotation()); SetAction(bRoll?TEXT("Roll"):TEXT("Dodge"),false,bMovingRoll?.035f:.045f,bChaining);
+    if(bRoll && Definition->RollDiveTouchdown>0.f)
+    {
+        ActionPlayRate=1.15f;
+        ActionDuration/=ActionPlayRate;
+    }
+    if(bMovingRoll && Definition->RollDiveTouchdown<=0.f)
+    {
+        // Enter the existing clothed clip at its compression pose. A runner
+        // already has forward momentum and does not need the standing wind-up.
+        const float SourceDuration=ActionDuration;
+        ActionSourceStartTime=SourceDuration*(.10f/.85f);
+        ActionPlayRate=1.4f;
+        ActionDuration=(SourceDuration*(.80f/.85f)-ActionSourceStartTime)/ActionPlayRate;
+    }
+    // Current dive rolls can repeat as soon as their movement lock releases.
+    if(bRoll)RollCooldown=Definition->RollDiveTouchdown>0.f?0.f:ActionDuration+.15f;
+    TSharedPtr<FRootMotionSource_ConstantForce> Source = MakeShared<FRootMotionSource_ConstantForce>();
+    Source->InstanceName = bRoll?TEXT("GroundRoll"):TEXT("DodgeStep"); Source->Priority = 500;
+    Source->AccumulateMode = ERootMotionAccumulateMode::Override;
+    Source->Force = DodgeDirection*(bRoll?1.f:420.f); Source->Duration = ActionDuration;
+    Source->StrengthOverTime = NewObject<UCurveFloat>(this);
+    if(bRoll)
+    {
+        if(bMovingRoll || ActionPlayRate!=1.f)
+        {
+            FRichCurve AuthoredSpeed;
+            for(const FVector2D& Key:Definition->RollProfile)AuthoredSpeed.AddKey(Key.X,Key.Y);
+            const int32 Samples=FMath::CeilToInt(ActionDuration*60.f);
+            for(int32 I=0;I<=Samples;++I)
+            {
+                const float U=float(I)/Samples;
+                const float Time=ActionSourceStartTime+U*ActionDuration*ActionPlayRate;
+                const float Speed=FMath::Max(bMovingRoll?EntrySpeed:0.f,AuthoredSpeed.Eval(Time)*ActionPlayRate);
+                Source->StrengthOverTime->FloatCurve.AddKey(U,Speed);
+            }
+        }
+        else for(const FVector2D& Key:Definition->RollProfile)
+            Source->StrengthOverTime->FloatCurve.AddKey(Key.X/ActionDuration,Key.Y);
+        // A roll that leaves a ledge must continue falling normally.
+        Source->Settings.SetFlag(ERootMotionSourceSettingsFlags::IgnoreZAccumulate);
+    }
+    else for (int32 I = 0; I <= 16; ++I) Source->StrengthOverTime->FloatCurve.AddKey(I/16.f,FMath::Sin(PI*I/16.f));
+    Source->FinishVelocityParams.Mode = bMovingRoll?ERootMotionFinishVelocityMode::MaintainLastRootMotionVelocity:ERootMotionFinishVelocityMode::ClampVelocity;
+    Source->FinishVelocityParams.ClampVelocity = bRoll?20.f:80.f;
+    GetCharacterMovement()->ApplyRootMotionSource(Source);
+    if(AYorimichiCombatFX* FX=AYorimichiCombatFX::Get(this))
+    {
+        const FVector Ground=GetActorLocation()-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+        FX->Dust(Ground,.8f,-DodgeDirection*.4f); FX->Play(TEXT("dash"),Ground,.75f,.06f);
+    }
+}
+void AWandererCharacter::Review_Dodge() { Dodge(FInputActionValue(true)); }
+void AWandererCharacter::Dash(const FInputActionValue&)
+{
+    if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Bell(); return; }   // the pad's bell (X), the triggers being the pedals
+    if (SkateRide->IsRiding() && !SkateRide->CanYieldToCharacter()) return;   // on foot the dash takes over from the board
+    if (Moves) { if (SkateRide->IsRiding() && !TakeOverFromSkate(true)) return; PressMove(TEXT("dash")); return; }   // no air dash; the swimming dash
+    if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;
+    if (!bReady || bMenuOpen || !Definition || MovementLocked() || bPendingTakeoff || OnVehicle() || DashCooldown>0.f) return;
+    auto* M=GetCharacterMovement();
+    const bool Air=M->IsFalling();
+    if ((!Air && !M->IsMovingOnGround()) || (Air && bAirDashUsed) ||
+        (AnimationAction==TEXT("DoubleJump") && ActionTime<.6f)) return;
+    const auto& Profile=Air?Definition->AirDashProfile:Definition->GroundDashProfile;
+    const FName Name=Air?TEXT("DashAir"):TEXT("DashGround");
+    if (Profile.IsEmpty() || !Definition->FindAction(Name) || !StandForAction() || !TakeOverFromSkate(true)) return;
+    if (Air) bAirDashUsed=true;
+    DashCooldown=1.f;
+    SetAction(Name,false,.025f);
+    if(AYorimichiCombatFX* FX=AYorimichiCombatFX::Get(this))
+    {
+        const FVector Ground=GetActorLocation()-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+        if(!Air) FX->Dust(Ground,.7f,-GetActorForwardVector()*.5f);
+        FX->Play(TEXT("dash"),GetActorLocation(),.8f,.06f);
+    }
+    // Profiles are in cm/s. The root stays in place in the animation; the
+    // movement component sweeps the capsule against actual world collision.
+    TSharedPtr<FRootMotionSource> Source;
+    if (Air)
+    {
+        auto Burst=MakeShared<FRootMotionSource_ConstantForce>();
+        Burst->Force=GetActorForwardVector();
+        Burst->StrengthOverTime=NewObject<UCurveFloat>(this);
+        for (const FVector2D& Key : Profile)
+            Burst->StrengthOverTime->FloatCurve.AddKey(Key.X/ActionDuration,Key.Y);
+        Source=Burst;
+    }
+    else
+    {
+        // A real capsule leap, rather than grounded strides or a pelvis-only
+        // lift. JumpForce sweeps world collision and supplies both X and Z.
+        auto Leap=MakeShared<FRootMotionSource_JumpForce>();
+        Leap->Rotation=GetActorRotation(); Leap->Height=32.f;
+        FRichCurve Speed;
+        for (const FVector2D& Key : Profile)Speed.AddKey(Key.X,Key.Y);
+        Leap->TimeMappingCurve=NewObject<UCurveFloat>(this);
+        constexpr int32 Samples=84;
+        float Distance=0.f;TArray<float> Travel;Travel.Add(0.f);
+        const float Step=ActionDuration/Samples;
+        for(int32 I=1;I<=Samples;++I)
+        {
+            Distance+=(Speed.Eval((I-1)*Step)+Speed.Eval(I*Step))*.5f*Step;
+            Travel.Add(Distance);
+        }
+        Leap->Distance=Distance;
+        for(int32 I=0;I<=Samples;++I)
+            Leap->TimeMappingCurve->FloatCurve.AddKey(float(I)/Samples,Travel[I]/Distance);
+        Source=Leap;
+        M->SetMovementMode(MOVE_Falling);
+        bGroundJumped=true;
+    }
+    Source->InstanceName=TEXT("ForwardDash"); Source->Priority=600;
+    Source->AccumulateMode=ERootMotionAccumulateMode::Override;
+    Source->Duration=ActionDuration;
+    Source->FinishVelocityParams.Mode=ERootMotionFinishVelocityMode::SetVelocity;
+    Source->FinishVelocityParams.SetVelocity=GetActorForwardVector()*Definition->RunSpeed;
+    M->ApplyRootMotionSource(Source);
+    // Neither dash consumes nor restores the separate double-jump allowance.
+}
+void AWandererCharacter::Wave(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) { PressMove(TEXT("wave")); return; } if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Wave(); return; } if (Horse->IsEquipped() || SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
+void AWandererCharacter::AttackPressed(const FInputActionValue&)
+{
+    // Before the move set, which is idle on the bike. The right trigger pedals there; the mouse button still rings.
+    if (Bike->IsEquipped())
+    {
+        const APlayerController* PC = Cast<APlayerController>(Controller);
+        if (bReady && !bMenuOpen && !(PC && PC->IsInputKeyDown(EKeys::Gamepad_RightTrigger))) Bike->Bell();
+        return;
+    }
+    if (Horse->IsEquipped()) return;   // no fighting from the saddle; the right trigger rides on
+    if (Moves) { PressMove(TEXT("attack")); return; }
+    if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed();
+}
+void AWandererCharacter::AttackReleased(const FInputActionValue&) { if (Moves) Moves->Press(TEXT("attack_release")); else if (Sword) Sword->AttackReleased(); }
+void AWandererCharacter::ParryPressed(const FInputActionValue&)
+{
+    if (Moves) { PressMove(TEXT("guard")); return; }   // the shield guard and the lock-on, held
+    if (Sword && !SkateRide->IsRiding() && !OnVehicle() && !IsZeppelinPassenger()) Sword->ParryPressed();
+}
+void AWandererCharacter::ParryReleased(const FInputActionValue&) { if (Moves) Moves->Press(TEXT("guard_release")); }
+void AWandererCharacter::ToggleWeapon(const FInputActionValue&)
+{
+    if (Moves) { PressMove(TEXT("weapon")); return; }
+    if (Sword && !SkateRide->IsRiding() && !OnVehicle() && !IsZeppelinPassenger()) Sword->ToggleWeapon();
+}
+void AWandererCharacter::FlightSlower(const FInputActionValue&) { ZeppelinStep(-1); }
+void AWandererCharacter::FlightFaster(const FInputActionValue&) { ZeppelinStep(1); }
+// Aboard, the two flight buttons change the ride's speed; at a docked ship they choose its next stop.
+void AWandererCharacter::ZeppelinStep(int32 Direction)
+{
+    if (bTrainAboard || bTrainDriving) return;
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        auto* Ship = GetZeppelin();
+        if (IsLocallyControlled() && bReady && !bMenuOpen && Ship &&
+            (Ship->IsPassenger(this) || Ship->CanChooseStop(this))) ServerZeppelinInput(NetworkActivity.Epoch,Direction);
+        return;
+    }
+    if(!GetZeppelin())return;
+    if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
+    else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
+}
+void AWandererCharacter::Interact(const FInputActionValue&) {
+ if (JapanNetwork::IsOnline(GetWorld()))
+ {
+  if (IsLocallyControlled() && bReady && !bMenuOpen && !SkateRide->IsRiding() && !OnVehicle() && !IsZeppelinPassenger() && ABelmonteTrainService::CanInteract(this))
+  { ServerTrainInteract(NetworkActivity.Epoch); return; }
+  auto* Ship=GetZeppelin();
+  if(IsLocallyControlled()&&bReady&&!bMenuOpen&&Ship&&(Ship->IsPassenger(this)||Ship->CanReach(this)))ServerZeppelinInput(NetworkActivity.Epoch,0);
+  return;
+ }
+ if(bReady&&!bMenuOpen&&IsLocallyControlled()&&!SkateRide->IsRiding()&&!OnVehicle()&&!IsZeppelinPassenger()&&ABelmonteTrainService::TryInteract(this))return;
+ if(bReady&&!bMenuOpen&&IsLocallyControlled()&&!SkateRide->IsRiding()&&!OnVehicle()&&!IsZeppelinPassenger()&&AGondolaService::TryInteract(this))return;
+ // In the saddle nothing is used (online the host refuses boarding off foot, ServerZeppelinInput).
+ if(SkateRide->IsRiding()||Horse->IsEquipped()||!bReady||bMenuOpen)return;
+ if(!OnVehicle()&&!IsZeppelinPassenger()&&CraterParkTower::TryInteract(this))return;
+ auto* Ship=GetZeppelin();
+ const bool bZeppelinReach=Ship&&(Ship->IsPassenger(this)||Ship->CanReach(this));
+ const ASwordTrainer* Trainer=ASwordTrainer::Find(this);
+ const bool bTrainerReach=Trainer&&Trainer->CanTalk(this);
+ if(!bZeppelinReach&&!bTrainerReach)return;
+ if(Sword&&!Sword->CancelForInterrupt(true))return;
+ if(bZeppelinReach&&Ship->TryInteract(this))return;
+ ASwordTrainer::TryInteract(this);
+}
+void AWandererCharacter::ToggleMenu(const FInputActionValue&)
+{
+    if (!bReady) return;
+    if (FJapanCharacterSelect::IsOpen()) { FJapanCharacterSelect::Close(); return; }
+    if (Map && Map->IsOpen()) { Map->Close(); return; }
+    if (Preferences) Preferences->ToggleMenu();
+}
+void AWandererCharacter::ToggleMap(const FInputActionValue&)
+{
+    if (!bReady || !Map || bCinematic) return;
+    if (Map->IsOpen()) Map->Close();
+    else if (!bMenuOpen) Map->Open();     // not over the settings menu
+}
+void AWandererCharacter::ToggleMouse(const FInputActionValue&) { if (!bMenuOpen) SetMouseReleased(!bMouseReleased); }
+void AWandererCharacter::Screenshot(const FInputActionValue&)
+{
+    const FString File = FPaths::ProjectSavedDir()/TEXT("Screenshots")/(TEXT("Wanderer_")+FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"))+TEXT(".png"));
+    FScreenshotRequest::RequestScreenshot(File,false,false);
+}
+void AWandererCharacter::SetControlsSuspended(bool bSuspended)
+{
+    if (bControlsSuspended == bSuspended) return;
+    bControlsSuspended = bSuspended;
+    MoveIntent = FVector2D::ZeroVector; bJog = bWalk = bSprintHeld = false;
+    if (Moves) Moves->DropHolds();
+    if (Sword) { Sword->CancelForInterrupt(false); Sword->DropAttackHold(); }
+    JumpBuffer = RollBuffer = 0.f;
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+        if (ULocalPlayer* LP = PC->GetLocalPlayer())
+            if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+            {
+                if (bSuspended) Subsystem->RemoveMappingContext(Mapping);
+                else Subsystem->AddMappingContext(Mapping, 0);
+            }
+}
+
+void AWandererCharacter::SetMenuOpen(bool bOpen)
+{
+    bMenuOpen = bOpen; MoveIntent = FVector2D::ZeroVector; bJog = bWalk = bSprintHeld = false;
+    if (bOpen)
+    {
+        if (Sword) { Sword->CancelForInterrupt(false); Sword->DropAttackHold(); }   // a held charge must not survive the menu, and must not fire
+        if (Moves) Moves->DropHolds();
+        JumpBuffer = RollBuffer = 0.f;
+        if (bPendingTakeoff) { bPendingTakeoff = false; SetAction(NAME_None); }
+    }
+    SetMouseReleased(bOpen);
+}
+void AWandererCharacter::SetMouseReleased(bool bReleased)
+{
+    bMouseReleased = bReleased;
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+    {
+        // An offscreen run never captures or locks the mouse (see Yorimichi.cpp).
+        if (FParse::Param(FCommandLine::Get(), TEXT("RenderOffscreen")))
+        {
+            PC->bShowMouseCursor = false;
+            FInputModeGameAndUI Mode; Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock); Mode.SetHideCursorDuringCapture(false);
+            PC->SetInputMode(Mode);
+            if (GEngine && GEngine->GameViewport) GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+            return;
+        }
+        PC->bShowMouseCursor = bReleased;
+        if (bReleased) { FInputModeGameAndUI Mode; Mode.SetHideCursorDuringCapture(false); PC->SetInputMode(Mode); }
+        else { FInputModeGameOnly Mode; Mode.SetConsumeCaptureMouseDown(false); PC->SetInputMode(Mode); }
+    }
+}
+void AWandererCharacter::ApplyCameraPreferences(float Sensitivity,float Distance,float FieldOfView)
+{
+    MouseSensitivity = Sensitivity; PreferredArmLength = Distance; PreferredFOV = FieldOfView;
+    CameraArm->TargetArmLength = Distance;
+    // A replicated pawn can receive its local preferences before EnterWorld initializes its boat.
+    if (Sailboat && Sailboat->IsEquipped()) Sailboat->SetCameraDistance(Distance);
+    if (IsZeppelinPassenger()) GetZeppelin()->SetPassengerCameraDistance(Distance);
+}
+
+void AWandererCharacter::SetAction(FName Action,bool bLoop,float BlendSeconds,bool bRestart)
+{
+    if (Action == AnimationAction && !bRestart) return;
+    if (!Action.IsNone() && (!Definition || !Definition->FindAction(Action))) return;
+    AnimationAction = Action; bActionLoops = bLoop; ActionTime = 0; ActionBlendTime = BlendSeconds; ++ActionSerial;
+    ActionSourceStartTime=0.f;ActionPlayRate=1.f;
+    if(Action!=TEXT("Roll"))RollBuffer=0.f;
+    ActionDuration = Action.IsNone() ? 0.f : Definition->FindAction(Action)->GetPlayLength();
+    UE_LOG(LogTemp,Verbose,TEXT("Wanderer action %s"),*Action.ToString());
+}
+void AWandererCharacter::AdvanceAction(float Dt)
+{
+    UCharacterMovementComponent* M = GetCharacterMovement();
+    DashCooldown=FMath::Max(0.f,DashCooldown-Dt);
+    RollCooldown=FMath::Max(0.f,RollCooldown-Dt);
+    RollBuffer=FMath::Max(0.f,RollBuffer-Dt);
+    SinceGrounded = M->IsMovingOnGround() ? 0.f : SinceGrounded+Dt;
+    if (JumpBuffer > 0 && SinceGrounded < .10f && !MovementLocked() && !bPendingTakeoff && !bGroundJumped && !bAirJumpUsed)
+    {
+        JumpBuffer = 0;
+        if (StandForAction()) { SetAction(TEXT("JumpStart"),false,.07f); bPendingTakeoff = true; }
+    }
+    JumpBuffer = FMath::Max(0.f,JumpBuffer-Dt);
+    const float PreviousSourceTime=GetActionSourceTime();
+    ActionTime += Dt;
+    // Release the direction-forcing source as well as the input lock. Merely
+    // unlocking input would still push the character along the old heading.
+    if(IsRollRecovering())
+    {
+        if(RollBuffer>0.f)
+        {
+            Dodge(FInputActionValue(true));
+            // A same-action restart resets the source clock. Do not process
+            // the old roll's markers or erase the new motion source below.
+            if(ActionTime==0.f)return;
+        }
+        M->RemoveRootMotionSource(TEXT("GroundRoll"));
+        if(MoveIntent.IsNearlyZero())M->StopMovementImmediately();
+    }
+    if(AnimationAction==TEXT("Roll") && Definition->RollDiveTouchdown>Definition->RollDiveTakeoff &&
+        PreviousSourceTime<Definition->RollDiveTakeoff && GetActionSourceTime()>=Definition->RollDiveTakeoff && M->IsMovingOnGround())
+    {
+        // A shallow ballistic dive; the horizontal override sweeps collision
+        // independently and does not suppress gravity. The same clip continues
+        // across touchdown into its shoulder/back roll.
+        const float Flight=(Definition->RollDiveTouchdown-Definition->RollDiveTakeoff)/ActionPlayRate;
+        LaunchCharacter(FVector(0,0,-M->GetGravityZ()*Flight*.5f),false,true);
+        bGroundJumped=true;
+    }
+    if (AnimationAction == TEXT("JumpStart") && bPendingTakeoff && ActionTime >= (Definition->UseAuthoredMovement?ActionDuration:.06f))
+    {
+        bPendingTakeoff = false; bGroundJumped = true;
+        // Launch after a short anticipation without stopping movement. A short grace window also works at a ledge.
+        LaunchCharacter(FVector(0,0,M->JumpZVelocity),false,true);
+        SetAction(TEXT("JumpRise"),false,.09f);
+    }
+    else if (M->IsFalling() && AnimationAction != TEXT("JumpStart"))
+    {
+        if(AnimationAction==TEXT("Roll") && GetActionSourceTime()>Definition->RollDiveTouchdown+.10f)
+        {
+            M->RemoveRootMotionSource(TEXT("GroundRoll"));
+            if(Definition->RollDiveTouchdown>0.f)SetAction(TEXT("Fall"),true,.12f);
+        }
+        FallSpeed = M->Velocity.Z > 0.f ? 0.f : FMath::Max(FallSpeed,-M->Velocity.Z);
+        // Do not replace the somersault at its apex; it opens upright before ending.
+        if ((AnimationAction != TEXT("DoubleJump") && AnimationAction != TEXT("DashAir") && AnimationAction != TEXT("DashGround") && AnimationAction != TEXT("Roll")) || ActionTime >= ActionDuration)
+        {
+            if (M->Velocity.Z <= 0) SetAction(TEXT("Fall"),true,.12f);
+            else if (AnimationAction != TEXT("JumpRise")) SetAction(TEXT("JumpRise"));
+        }
+    }
+    else if (!AnimationAction.IsNone() && !bActionLoops && ActionTime >= ActionDuration && !(Sword && Sword->OwnsAction(AnimationAction)))
+        SetAction(NAME_None,false,AnimationAction==TEXT("Roll")?.10f:.16f);
+    if ((AnimationAction == TEXT("Wave") || AnimationAction == TEXT("Interact") || AnimationAction == TEXT("Land")) && !MoveIntent.IsNearlyZero()) SetAction(NAME_None);
+}
+/** Opt-in native regression scenario. Runs real boat ticks at 60 Hz; no settings are saved.
+ * Covers launch, motion, stopping, deep-water exit refusal, a blocking hull fixture,
+ * a real shoreline landing and forced teleport cleanup. */
+void AWandererCharacter::AdvanceSailboatReview(float Dt)
+{
+    auto Check=[&](bool Pass,const FString& Name)
+    {
+        ++SailboatReviewChecks;
+        UE_LOG(LogTemp,Display,TEXT("SAILBOAT QA %s: %s"),Pass?TEXT("PASS"):TEXT("FAIL"),*Name);
+        if(!Pass)SailboatReviewErrors.Add(Name);
+    };
+    if(SailboatReviewStep<0)
+    {
+        SailboatReviewStep=0;
+        SailboatReviewInitialMesh=GetMesh()->GetRelativeTransform();
+        if(ReviewDirectory.IsEmpty())FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory);
+        if(ReviewDirectory.IsEmpty())ReviewDirectory=FPaths::ProjectSavedDir()/TEXT("Screenshots/SailboatQA");
+        IFileManager::Get().MakeDirectory(*ReviewDirectory,true);
+        FApp::SetFixedDeltaTime(1./60.);FApp::SetUseFixedTimeStep(true);
+        FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+        SailboatTelemetry=TEXT("time,step,equipped,speed,sail,x,y,z,yaw,right_wrist_target_cm,status\n");
+        UE_LOG(LogTemp,Display,TEXT("SAILBOAT QA START"));
+    }
+    static const float Durations[]={2,2,6,2,3,1,3,2,2,2,2,1,4,1,1,2,2,2,3,2,1,3,3};
+    const bool Enter=!bSailboatReviewEntered;
+    if(Enter){bSailboatReviewEntered=true;SailboatReviewAnchor=GetActorLocation();SailboatReviewYaw=GetActorRotation().Yaw;}
+    MoveIntent=FVector2D::ZeroVector;
+    switch(SailboatReviewStep)
+    {
+    case 0:
+        if(Enter)Check(TravelTo(AJapanWorld::ToUE(-216,-169,1.6),80,TEXT("sailboat QA shore")),TEXT("shore setup"));
+        break;
+    case 1:
+        if(Enter)
+        {
+            Check(GetCharacterMovement()->IsMovingOnGround(),TEXT("grounded before launch"));
+            ToggleSailboat(FInputActionValue(true));
+            Check(Sailboat->IsEquipped(),TEXT("launch from mainland beach"));
+            SailboatReviewLaunch=GetActorLocation();SailboatReviewLaunchYaw=GetActorRotation().Yaw;
+        }
+        break;
+    case 2:MoveIntent.Y=1;break;
+    case 3:MoveIntent.X=-1;break;
+    case 4:MoveIntent.X=1;break;
+    case 5:break; // releasing Raise keeps the sail up
+    case 6:MoveIntent.Y=-1;break;
+    case 7:
+        if(Enter)
+        {
+            Sailboat->EmergencyStop();
+            SetActorLocationAndRotation(AJapanWorld::ToUE(-104,-258,0)+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),FRotator(0,90,0),false,nullptr,ETeleportType::TeleportPhysics);
+            // Update the attachment before querying potential landing points.
+            Sailboat->TickComponent(0,LEVELTICK_All,nullptr);
+            Check(!Sailboat->Toggle()&&Sailboat->IsEquipped(),TEXT("deep-water disembark rejected"));
+        }
+        MoveIntent.Y=1;break;
+    case 8:if(Enter)SetMenuOpen(true);break;
+    case 9:if(Enter)SetMenuOpen(false);MoveIntent.Y=1;break;
+    case 10:
+        if(Enter){ToggleMap(FInputActionValue(true));Check(Map&&Map->IsOpen(),TEXT("map opened while sailing"));}
+        break;
+    case 11:
+        if(Enter){if(Map&&Map->IsOpen())Map->Close();Sailboat->EmergencyStop();Check(Sailboat->GetSpeed()<.01&&Sailboat->GetRideVelocity().IsNearlyZero(),TEXT("emergency stop clears propulsion"));}
+        break;
+    case 12:
+        if(Enter)
+        {
+            // An isolated test-only wall exercises swept HULL collision, wider than the rider capsule.
+            SailboatReviewObstacle=GetWorld()->SpawnActor<AActor>();
+            auto* Box=NewObject<UBoxComponent>(SailboatReviewObstacle,TEXT("SailboatQAWall"));
+            SailboatReviewObstacle->SetRootComponent(Box);Box->SetBoxExtent(FVector(20,450,200));
+            Box->SetCollisionProfileName(TEXT("BlockAll"));Box->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);Box->RegisterComponent();
+            const FVector Center=GetActorLocation()+GetActorForwardVector()*115-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+            SailboatReviewObstacle->SetActorLocationAndRotation(Center+GetActorForwardVector()*550+FVector(0,0,100),GetActorRotation());
+        }
+        MoveIntent.Y=1;break;
+    case 13:
+        if(Enter)
+        {
+            if(SailboatReviewObstacle){SailboatReviewObstacle->Destroy();SailboatReviewObstacle=nullptr;}
+            Sailboat->EmergencyStop();
+            SetActorLocationAndRotation(SailboatReviewLaunch,FRotator(0,SailboatReviewLaunchYaw,0),false,nullptr,ETeleportType::TeleportPhysics);
+            Sailboat->TickComponent(0,LEVELTICK_All,nullptr);
+            Check(Sailboat->Toggle()&&!Sailboat->IsEquipped(),TEXT("disembark onto original shoreline"));
+        }
+        break;
+    case 14:break;
+    case 15:
+        if(Enter){ToggleSailboat(FInputActionValue(true));Check(Sailboat->IsEquipped(),TEXT("relaunch after disembarking"));}
+        MoveIntent.Y=1;break;
+    case 16:
+        if(Enter)
+        {
+            ReturnToSpawn();Check(!Sailboat->IsEquipped()&&Sailboat->GetSpeed()<.01,TEXT("spawn forces boat stow"));
+            Check(GetCharacterMovement()->Velocity.IsNearlyZero(),TEXT("spawn clears momentum"));
+            Check(GetMesh()->GetRelativeTransform().Equals(SailboatReviewInitialMesh,.1),TEXT("spawn restores initial character mesh transform"));
+        }
+        break;
+    case 17:case 19:
+        if(Enter)
+        {
+            TravelTo(AJapanWorld::ToUE(-216,-169,1.6),80,TEXT("recovery QA shore"));
+            Check(!bHasSafeCoastLocation&&!bHasSafeCityLocation,TEXT("travel invalidates both water checkpoints"));
+        }
+        break;
+    case 20:
+        if(Enter){ToggleSkateboard(FInputActionValue(true));Check(SkateRide->IsRiding(),TEXT("skate equipped for water recovery"));}
+        break;
+    case 18:case 21:case 22:
+        if(Enter)
+        {
+            if(SailboatReviewStep==22)
+            {
+                // Explicit no-checkpoint fixture exercises the first-fall fallback, on foot (step 21 ends back on the board).
+                SkateRide->StowImmediately();
+                bHasSafeCoastLocation=bHasSafeCityLocation=false;
+                SailboatReviewRecoveryTarget=Landscape->PlayerStart.GetLocation();
+            }
+            else
+            {
+                Check(bHasSafeCoastLocation,TEXT("shore checkpoint recorded before water fall"));
+                SailboatReviewRecoveryTarget=LastSafeCoastLocation;
+            }
+            // Start ABOVE the actual non-colliding water. Let ordinary gravity cross the threshold.
+            bSailboatReviewObservedFall=false;
+            if(SailboatReviewStep==21&&SkateRide->IsRiding())
+            {
+                // The board owns the rider's position: set it down above the water and let it roll off into the sea.
+                SkateRide->PlaceAt(AJapanWorld::ToUE(-104,-258,2.0),80.f);SkateRide->Launch(FVector(130,40,0));
+            }
+            else
+            {
+                SetActorLocation(AJapanWorld::ToUE(-104,-258,2.0)+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),false,nullptr,ETeleportType::TeleportPhysics);
+                GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+                GetCharacterMovement()->Velocity=FVector(130,40,0);
+            }
+            FallSpeed=1400;JumpBuffer=.2f;
+            if(SailboatReviewStep==18)
+            {
+                auto Force=MakeShared<FRootMotionSource_ConstantForce>();Force->InstanceName=TEXT("RecoveryQAForce");Force->Duration=10;Force->Force=FVector(60,0,0);
+                // Default Override replaces Z with zero and suspends the pawn above water.
+                // An additive horizontal fixture preserves gravity while still requiring cleanup.
+                Force->AccumulateMode=ERootMotionAccumulateMode::Additive;
+                GetCharacterMovement()->ApplyRootMotionSource(Force);
+            }
+        }
+        break;
+    }
+    SailboatReviewTime+=Dt;SailboatReviewElapsed+=Dt;
+    const FVector P=GetActorLocation();
+    if((SailboatReviewStep==18||SailboatReviewStep==21||SailboatReviewStep==22)
+        &&FVector::Dist2D(P,AJapanWorld::ToUE(-104,-258,0))<2000
+        &&P.Z-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()<0
+        &&GetCharacterMovement()->Velocity.Z<0)bSailboatReviewObservedFall=true;
+    SailboatTelemetry+=FString::Printf(TEXT("%.3f,%d,%d,%.2f,%.3f,%.2f,%.2f,%.2f,%.2f,%.3f,%s\n"),SailboatReviewTime,SailboatReviewStep,Sailboat->IsEquipped(),Sailboat->GetSpeed(),Sailboat->GetSailAmount(),P.X,P.Y,P.Z,GetActorRotation().Yaw,Sailboat->IsEquipped()?FVector::Dist(GetMesh()->GetSocketLocation(TEXT("hand_R")),Sailboat->HandPoint(1)):0.,*Sailboat->GetStatus());
+    // Actual gameplay pose, rear chase and unobscured side views. No generated image edits.
+    const bool Side=SailboatReviewStep==3||SailboatReviewStep==5||SailboatReviewStep==6;
+    const bool Helm=SailboatReviewStep==4||SailboatReviewStep==5;
+    const FVector Aim=Sailboat->IsEquipped()?Sailboat->PosePoint(Helm?FVector(-110,0,75):FVector(0,0,160)):P+FVector(0,0,45);
+    // Opposite side of the boom, close enough to judge both hands, thighs and seat contact.
+    const FVector Eye=Aim+GetActorForwardVector()*(Helm?190:Side?-120:-720)+GetActorRightVector()*(Helm?-330:Side?850:400)+FVector(0,0,Helm?115:230);
+    FollowCamera->SetWorldLocationAndRotation(Eye,(Aim-Eye).Rotation());
+    if(!bSailboatReviewShot&&SailboatReviewElapsed>Durations[SailboatReviewStep]-.35f)
+    {
+        bSailboatReviewShot=true;
+        if(SailboatReviewStep==1||SailboatReviewStep==2||SailboatReviewStep==3||SailboatReviewStep==4||SailboatReviewStep==5||SailboatReviewStep==6||SailboatReviewStep==13)
+            FScreenshotRequest::RequestScreenshot(ReviewDirectory/FString::Printf(TEXT("sailboat_%02d_%s.png"),SailboatReviewStep,Helm?TEXT("helm"):Side?TEXT("side"):TEXT("rear")),false,false);
+    }
+    if(SailboatReviewElapsed<Durations[SailboatReviewStep])return;
+    switch(SailboatReviewStep)
+    {
+    case 1:Check(Sailboat->GetSpeed()<.1,TEXT("launch starts stopped"));break;
+    case 2:Check(Sailboat->GetSpeed()>550,TEXT("raise accelerates to cruising speed"));Check(FVector::Dist2D(P,SailboatReviewAnchor)>1300,TEXT("boat advances over water"));break;
+    case 3:Check(FRotator::NormalizeAxis(GetActorRotation().Yaw-SailboatReviewYaw)<-25,TEXT("left steering changes heading"));break;
+    case 4:Check(FRotator::NormalizeAxis(GetActorRotation().Yaw-SailboatReviewYaw)>35,TEXT("right steering changes heading"));break;
+    case 5:Check(Sailboat->GetSpeed()>500,TEXT("released raise retains sail propulsion"));break;
+    case 6:Check(Sailboat->GetSpeed()<.1&&Sailboat->GetSailAmount()<.01,TEXT("lower sail stops boat"));break;
+    case 8:Check(Sailboat->GetSpeed()<.1&&FVector::Dist2D(P,SailboatReviewAnchor)<15,TEXT("menu stops translation"));break;
+    case 9:Check(Sailboat->GetSpeed()>150,TEXT("sailing resumes after menu"));break;
+    case 10:Check(Sailboat->GetSpeed()<.1&&FVector::Dist2D(P,SailboatReviewAnchor)<15,TEXT("map stops translation"));break;
+    case 11:Check(Sailboat->GetSpeed()<.1&&FVector::Dist2D(P,SailboatReviewAnchor)<2,TEXT("emergency stop remains stopped"));break;
+    case 12:Check(Sailboat->GetSpeed()<5,TEXT("hull collision stops propulsion"));Check(FVector::Dist2D(P,SailboatReviewAnchor)>150&&FVector::Dist2D(P,SailboatReviewAnchor)<345,TEXT("hull sweep stops before wall"));break;
+    case 14:Check(!Sailboat->IsEquipped()&&GetCharacterMovement()->IsMovingOnGround(),TEXT("shore exit settles grounded"));break;
+    case 16:Check(GetCharacterMovement()->IsMovingOnGround(),TEXT("spawn settles grounded"));break;
+    case 17:case 19:Check(GetCharacterMovement()->IsMovingOnGround()&&bHasSafeCoastLocation,TEXT("recovery shoreline settled and cached"));break;
+    case 18:case 21:case 22:
+        {
+            const FString Mode=SailboatReviewStep==18?TEXT("on foot"):SailboatReviewStep==21?TEXT("skating"):TEXT("without checkpoint");
+            Check(bSailboatReviewObservedFall,TEXT("water fall crosses sea surface under gravity: ")+Mode);
+            Check(FVector::Dist2D(P,SailboatReviewRecoveryTarget)<100,TEXT("water recovery returns safely: ")+Mode);
+            // Riding into the sea puts the rider back on the board at the last dry spot (the board's own movement mode).
+            if(SailboatReviewStep==21)Check(SkateRide->IsRiding()&&SkateRide->GetMode()==ESkateMode::Ground,TEXT("water recovery puts the rider back on the board: ")+Mode);
+            else Check(GetCharacterMovement()->IsMovingOnGround(),TEXT("water recovery grounded: ")+Mode);
+            Check(!Sailboat->IsEquipped(),TEXT("water recovery stows equipment: ")+Mode);
+            Check(GetCharacterMovement()->Velocity.Size2D()<.1&&FallSpeed<.1&&JumpBuffer<.01&&!bPendingTakeoff,TEXT("water recovery clears momentum and fall state: ")+Mode);
+            Check(!GetCharacterMovement()->CurrentRootMotion.HasActiveRootMotionSources(),TEXT("water recovery clears root motion: ")+Mode);
+            if(SailboatReviewStep!=21)Check(GetMesh()->GetRelativeTransform().Equals(SailboatReviewInitialMesh,.1),TEXT("water recovery restores mesh: ")+Mode);
+        }
+        break;
+    }
+    ++SailboatReviewStep;SailboatReviewElapsed=0;bSailboatReviewEntered=false;bSailboatReviewShot=false;
+    if(SailboatReviewStep<UE_ARRAY_COUNT(Durations))return;
+    MoveIntent=FVector2D::ZeroVector;
+    auto Result=MakeShared<FJsonObject>();Result->SetBoolField(TEXT("passed"),SailboatReviewErrors.IsEmpty());Result->SetNumberField(TEXT("checks"),SailboatReviewChecks);Result->SetNumberField(TEXT("seconds"),SailboatReviewTime);
+    TArray<TSharedPtr<FJsonValue>> Errors;for(const FString& E:SailboatReviewErrors)Errors.Add(MakeShared<FJsonValueString>(E));Result->SetArrayField(TEXT("errors"),Errors);
+    FString JSON;auto Writer=TJsonWriterFactory<>::Create(&JSON);FJsonSerializer::Serialize(Result,Writer);
+    FFileHelper::SaveStringToFile(JSON,*(ReviewDirectory/TEXT("results.json")));
+    FFileHelper::SaveStringToFile(SailboatTelemetry,*(ReviewDirectory/TEXT("telemetry.csv")));
+    UE_LOG(LogTemp,Display,TEXT("SAILBOAT QA COMPLETE: %d checks, %d failures"),SailboatReviewChecks,SailboatReviewErrors.Num());
+    bSailboatReview=false;FPlatformMisc::RequestExit(false);
+}
+/** Ground demo: spawn, road, the lane through the fishing village, a wave at the coconut stand, the sailboat crossing with
+ *  to the island landing, a cut to the last stretch of the stairway, the temple, a slow orbit. */
+/** Flyover: a detached camera along keyframes with look targets, easing per segment. */
+void AWandererCharacter::Landed(const FHitResult& Hit)
+{
+    Super::Landed(Hit);
+    if (SkateRide->GetMode() != ESkateMode::Off) { FallSpeed = 0.f; return; }   // a bail: the skate component plays the fall
+    bPendingTakeoff = bGroundJumped = bAirJumpUsed = bAirDashUsed = false;
+    GetCharacterMovement()->RemoveRootMotionSource(TEXT("ForwardDash"));
+    SinceGrounded = 0.f;
+    if (OnVehicle()) { FallSpeed = 0.f; return; }
+    if (Moves) { Moves->Landed(Hit); FallSpeed = 0.f; return; }   // the move set plays the landing and the footsteps
+    // The drop decides how hard the landing reads, before FallSpeed is cleared below.
+    if (Footsteps) Footsteps->Land(Hit,FMath::GetMappedRangeValueClamped(FVector2f(200.f,1100.f),FVector2f(.55f,1.4f),FallSpeed));
+    if (AnimationAction==TEXT("Roll") && ActionTime<ActionDuration) { FallSpeed=0.f; return; }
+    SetAction(FallSpeed > 900.f ? TEXT("HardLand") : TEXT("Land"),false,.07f);
+    FallSpeed = 0;
+}
+void AWandererCharacter::Tick(float Dt)
+{
+    Super::Tick(Dt);
+    if (bMoveSetUnavailable) return;
+    InitializeLocalPlayer();
+    if (!Landscape && JapanNetwork::IsOnline(GetWorld()))
+        if (AJapanWorld* World = JapanNetwork::FindWorld(GetWorld()); World && World->bGameplayReady) EnterWorld(World);
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        TickNetworkActivity();
+        if (NetworkActivity.Kind == EJapanActivity::Skate && !IsLocallyControlled())
+        {
+            bReady = Moves && Landscape && Landscape->bGameplayReady;
+            return;
+        }
+        if (!HasAuthority() && !IsLocallyControlled())
+        {
+            bReady = true;
+            // A full-body stream may still cover a board transition on foot.
+            // Equipment attachments and guard layers must keep consuming their
+            // presentation even while that stream supplies the skeleton.
+            if (NetworkActivity.Kind == EJapanActivity::OnFoot && Moves && bNetworkAvatarReceived && !ABelmonteTrainService::IsDrivingRider(this)) Moves->ApplyPresentation(NetworkAvatar, Dt);
+            return;
+        }
+        if (HasAuthority())
+        {
+            if (Sword) { NetworkHealth = Sword->GetHealth(); NetworkHitsTaken = Sword->HitsTaken(); }
+            if (Moves) NetworkGuardPressure = FMath::RoundToFloat(Moves->GuardPressure() * 100.f) / 100.f;
+            if (Moves && NetworkActivity.Kind == EJapanActivity::OnFoot && GetWorld()->GetTimeSeconds() - LastAvatarPublication >= .05f)
+            {
+                NetworkAvatar = Moves->CapturePresentation();
+                LastAvatarPublication = GetWorld()->GetTimeSeconds();
+            }
+        }
+    }
+    if (!Landscape || !Landscape->bLoaded)
+    {
+        // A standalone game can start its pawn before the world actor's BeginPlay has handed the world over; the pawn
+        // would then never become ready, and the live bridge (and the character's whole simulation) never starts.
+        TActorIterator<AJapanWorld> It(GetWorld());
+        if (It && It->bLoaded) EnterWorld(*It);
+    }
+    if (!Definition || !Landscape || !Landscape->bLoaded) return;
+    if(!BuildingReviewSpecPath.IsEmpty())
+    {
+        ReadyTime+=Dt;if(ReadyTime>1.5f){bReady=true;AdvanceBuildingReview(Dt);}return;
+    }
+    if(Landscape->bForestLakeLoaded && !Sailboat->IsEquipped() && !Moves)
+    {
+        const FVector Relative=GetActorLocation()-Landscape->ForestLakeCenter;
+        const double X=Relative.X/Landscape->ForestLakeRadii.X;
+        const double Y=-Relative.Y/Landscape->ForestLakeRadii.Y;
+        const double Angle=FMath::Atan2(Y,X);
+        const double Shore=1.+.045*FMath::Sin(3.*Angle)+.035*FMath::Cos(5.*Angle);
+        const double Feet=GetActorLocation().Z-GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+        if(X*X+Y*Y<Shore*Shore && Feet<Landscape->ForestLakeCenter.Z-45.)
+        {
+            TravelTo(Landscape->ForestLakeSafeShore,GetActorRotation().Yaw,TEXT("woodland lake shore"));
+            UE_LOG(LogTemp,Display,TEXT("Woodland lake water recovery"));
+        }
+    }
+    if(!Sailboat->IsEquipped() && GetActorLocation().X<=30000. && (!Moves || SkateRide->IsRiding()))
+    {
+        const FVector Here=GetActorLocation();
+        const float Feet=Here.Z-GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+        if(Feet<-100.f && Here.Y>4000.f)
+        {
+            // Riding into the sea (off the skate pier) puts him back on the board at the last dry spot.
+            const bool bWasSkating=SkateRide->IsRiding();
+            if(bHasSafeCoastLocation)
+                TravelTo(LastSafeCoastLocation-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),GetActorRotation().Yaw,TEXT("coastal water recovery"));
+            else ReturnToSpawn();
+            if(bWasSkating)bRemountSkate=true;
+            UE_LOG(LogTemp,Display,TEXT("Coastal water recovery"));
+        }
+        else if(Feet>5.f && (GetCharacterMovement()->IsMovingOnGround() || (SkateRide->GetMode()==ESkateMode::Ground && SkateRide->GetSpeed()<900.f)))
+        {LastSafeCoastLocation=Here-FVector(0,0,SkateRide->IsRiding()?20.f:0.f);bHasSafeCoastLocation=true;}
+    }
+    if(!Sailboat->IsEquipped() && Landscape->bHidamariLoaded && GetActorLocation().X>30000.)
+    {
+        const FVector Here=GetActorLocation();
+        const double X=Here.X/100.,Y=-Here.Y/100.;
+        const double Feet=Here.Z-GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+        const bool Pond=FMath::Square((X-1030.)/46.)+FMath::Square((Y-284.)/32.)<1.;
+        // Match the lower street profile at the canal; the bridge remains well
+        // above this threshold and does not trigger recovery.
+        const bool Canal=FMath::Abs(X-848.)<7.8 && Y>-130. && Y<-5.;
+        const double CanalBank=Y<-98.?2.4+(Y+133.)*.8/35.:Y<-82.?3.2:3.2+(Y+82.)*6.8/89.;
+        const bool Water=(Pond && Feet<2880.) || (Canal && Feet<(CanalBank-1.7)*100.) || Feet<-100.;
+        if(Water)
+        {
+            // Recorded checkpoints are capsule centres; TravelTo accepts a floor point.
+            const FVector Safe=bHasSafeCityLocation?LastSafeCityLocation-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()):AJapanWorld::ToUE(410,140,21.);
+            TravelTo(Safe,GetActorRotation().Yaw,TEXT("Hidamari water recovery"));
+            UE_LOG(LogTemp,Display,TEXT("Hidamari water recovery"));
+        }
+        else if(GetCharacterMovement()->IsMovingOnGround())
+        {LastSafeCityLocation=Here;bHasSafeCityLocation=true;}
+    }
+    if (bRemountSkate && GetCharacterMovement()->IsMovingOnGround() &&
+        (!JapanNetwork::IsOnline(GetWorld()) || (!bNetworkActivityPending && !MovementLocked())))
+    {
+        bRemountSkate = false;
+        if (!SkateRide->IsRiding())
+        {
+            if (JapanNetwork::IsOnline(GetWorld())) RequestNetworkSkate();
+            else SkateRide->Toggle();
+        }
+    }
+    ReadyTime += Dt;
+    if (!bReady)
+    {
+        // Start owner prediction only after both local setup and the host pawn are
+        // ready. World admission alone precedes character initialization.
+        APlayerController* PC = Cast<APlayerController>(Controller);
+        const bool NeedsAck = JapanNetwork::IsOnline(GetWorld()) && HasAuthority() && !IsNpc() &&
+            (!PC || (!PC->IsLocalController() && PC->AcknowledgedPawn != this));
+        // SafeRetry has its own rate limit. Retry even while the owner sends no
+        // moves, otherwise a lost initial restart would leave both sides waiting.
+        if (NeedsAck && PC) PC->SafeRetryClientRestart();
+        bReady = ReadyTime > 1.5f && !NeedsAck && (!JapanNetwork::IsOnline(GetWorld()) || HasAuthority() || bNetworkMovementReady);
+        if (bReady && HasAuthority() && JapanNetwork::IsOnline(GetWorld()))
+        { bNetworkMovementReady = true; ForceNetUpdate(); }
+        if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
+        {
+            // Live bridge teleports go through the game's own travel (stows the board or boat, settles the camera).
+            AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
+            { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
+            AtelierLive::Start(GetWorld());
+            if (!IsNpc() && Cast<APlayerController>(Controller) && !bSwitchedIn && FJapanCharacterSelect::ShouldOpenAtStartup(GetWorld()) && !FJapanCharacterSelect::HasOpenedForWorld(GetWorld()))
+                FJapanCharacterSelect::Open(this, true);
+        }
+        return;
+    }
+    // The bridge must start even when readiness and possession settle on different frames: the old placement only ran
+    // inside the not-ready branch, so a pawn that became ready before it was locally controlled never listened.
+    if (!bLiveStarted && !IsNpc() && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
+    {
+        bLiveStarted = true;
+        AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
+        { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
+        AtelierLive::Start(GetWorld());
+    }
+    if (bSailboatReview) AdvanceSailboatReview(Dt);
+    if (bMapReview && IsLocallyControlled()) AdvanceMapReview(Dt);
+    if (!BenchmarkView.IsEmpty()) AdvanceBenchmark(Dt);
+    if (!TrailerSpecPath.IsEmpty()) AdvanceTrailer(Dt);
+    if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
+    if (!JapanNetwork::IsOnline(GetWorld())) Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
+    if (!JapanNetwork::IsOnline(GetWorld())) Bike->SetInput(GetBikeIntent(),GetBikeLean(),bMenuOpen || (Map && Map->IsOpen()));
+    if (!JapanNetwork::IsOnline(GetWorld()))
+    {
+        // The horse rides on the bike's controls (triggers or W / S, the stick steering); Alt and J hold it to a walk or trot.
+        FHorseInput HorseInput;
+        HorseInput.Stick = GetBikeIntent(); HorseInput.bWalk = bWalk; HorseInput.bJog = bJog; HorseInput.bMenu = bMenuOpen || (Map && Map->IsOpen());
+        Horse->SetInput(HorseInput);
+    }
+    const bool bPredictedMoves = CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->PredictsMoves();
+    if (!bPredictedMoves && !OnVehicle() && !SkateRide->IsRiding())   // offline moves advance in actor Tick
+    {
+        if (Moves) Moves->Advance(Dt);
+        else { if (Sword) Sword->Advance(Dt); AdvanceAction(Dt); }
+    }
+    UCharacterMovementComponent* M = GetCharacterMovement();
+    LookGrace=FMath::Max(0.f,LookGrace-Dt);
+    // Skating: the camera swings in behind the line of travel unless the player looked around in the last two seconds.
+    float SkateYaw=0.f;
+    // Riding, the camera comes lower and a little closer behind the board (skate. framing), higher and further back on
+    // the horse. Written only while blending in or out, so the last write restores the walking framing. The sailboat
+    // keeps and restores the arm itself: while it is out the blends wait, then finish. The bike leaves the arm alone, so
+    // a framing still blending out when he gets on it finishes there.
+    if(!Sailboat->IsEquipped())
+    {
+        const float PreviousSkateCamera=SkateCameraBlend,PreviousHorseCamera=HorseCameraBlend;
+        SkateCameraBlend=FMath::FInterpTo(SkateCameraBlend,SkateRide->IsRiding()&&SkateRide->IsOnBoard()?1.f:0.f,Dt,3.f);
+        if(SkateCameraBlend<.002f)SkateCameraBlend=0.f;
+        HorseCameraBlend=FMath::FInterpTo(HorseCameraBlend,Horse->IsEquipped()?1.f:0.f,Dt,3.f);
+        if(HorseCameraBlend<.002f)HorseCameraBlend=0.f;
+        if((SkateCameraBlend>0.f||PreviousSkateCamera>0.f||HorseCameraBlend>0.f||PreviousHorseCamera>0.f)&&Definition)
+        {
+            CameraArm->TargetOffset.Z=Definition->CameraHeight-20.f*SkateCameraBlend+45.f*HorseCameraBlend;
+            if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend+.35f*HorseCameraBlend);
+        }
+    }
+    // Riding the bike or horse, the camera settles in behind him the same way.
+    if(IsLocallyControlled()&&((Bike->IsRiding()&&Bike->GetSpeed()>80.f)||(Horse->IsRiding()&&Horse->GetSpeed()>80.f))&&Controller&&!bMenuOpen&&LookGrace<=0)
+    {
+        const FRotator Now=Controller->GetControlRotation();
+        Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-10.f,GetActorRotation().Yaw,0),Dt,1.6f));
+    }
+    if(IsLocallyControlled()&&SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
+    {
+        const FRotator Now=Controller->GetControlRotation();
+        Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-8.f,SkateYaw,0),Dt,2.4f));
+    }
+    if (!bPredictedMoves)
+    {
+    const bool CanSprint=!bNoSprint&&!bWalk&&!bJog&&!bIsCrouched&&!MovementLocked()&&!SkateRide->IsRiding()&&!OnVehicle()&&!MoveIntent.IsNearlyZero()&&M->Velocity.Size2D()>40.f&&(!Moves||Moves->CanSprint());
+    // A move set spends stamina itself (climbing, gliding, swimming, a charge) and refills it only on foot.
+    Stamina.Tick(Dt,bSprintHeld,CanSprint,bMenuOpen||(Moves&&Moves->HoldsStamina()));
+    M->MaxWalkSpeed = Definition->UseAuthoredMovement
+        ? ((bWalk || bJog) ? Definition->WalkSpeed : Stamina.Sprinting ? GetSprintSpeed() : Definition->RunSpeed)
+        : bWalk ? Definition->WalkSpeed : Definition->RunSpeed*(bJog?1.f:Stamina.Sprinting?2.5f:2.f);
+    if (Moves) M->MaxWalkSpeed = Moves->GetMaxWalkSpeed(M->MaxWalkSpeed);   // lock-on strafing
+    if (!bMenuOpen && !MovementLocked() && !OnVehicle() && !SkateRide->IsRiding())
+    {
+        const FRotationMatrix Basis(FRotator(0,GetControlRotation().Yaw,0));
+        if (!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty()) AddMovementInput(ReviewForward,MoveIntent.Y);
+        else
+        {
+            AddMovementInput(Basis.GetUnitAxis(EAxis::X),MoveIntent.Y);
+            AddMovementInput(Basis.GetUnitAxis(EAxis::Y),MoveIntent.X);
+        }
+    }
+    }
+    // Riding fast widens the view a little (up to 9 degrees at 45 km/h on the board). On the bike, from pedalling hard on: up to 10 degrees at 65 km/h down a hill;
+    // on the horse, from a canter: up to 10 degrees at a 43 km/h gallop.
+    const float SkateFOV=SkateRide->IsRiding()?9.f*FMath::Clamp((SkateRide->GetSpeed()-500.f)/750.f,0.f,1.f):0.f;
+    const float BikeFOV=Bike->IsRiding()?10.f*FMath::Clamp((Bike->GetSpeed()-700.f)/1100.f,0.f,1.f):0.f;
+    const float HorseFOV=Horse->IsRiding()?10.f*FMath::Clamp((Horse->GetSpeed()-600.f)/600.f,0.f,1.f):0.f;
+    FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,PreferredFOV+SkateFOV+BikeFOV+HorseFOV+(!bWalk && !bJog && !SkateRide->IsRiding() && M->Velocity.Size2D()>Definition->JogSpeed+30.f ? 3.f : 0.f),Dt,5.f));
+    // Combat camera shake: smooth noise scaled by trauma squared, decaying in real time (hit-stop freezes this actor's clock).
+    {
+        const float Real=FApp::GetDeltaTime();
+        ShakeTrauma=FMath::Max(0.f,ShakeTrauma-1.9f*Real); DamageFlash=FMath::Max(0.f,DamageFlash-2.6f*Real); ShakeClock+=Real;
+        if(FollowCamera->GetAttachParent()==CameraArm)
+        {
+            FVector Offset; FRotator Rotation; SampleShake(Offset,Rotation);
+            FollowCamera->SetRelativeLocation(Offset); FollowCamera->SetRelativeRotation(Rotation);
+        }
+    }
+}
+
+void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
+{
+    Super::CalcCamera(DeltaTime,OutResult);
+    FTransform Camera; float FOV=0;
+    const bool bBoard=SkateRide && SkateRide->GetSimulationCamera(Camera,FOV);
+    if (bBoard)
+    {
+        BoardCamera.Location=Camera.GetLocation(); BoardCamera.Rotation=Camera.Rotator();
+        // Session publishes the vertical FOV used by its Bevy host. UE expects horizontal FOV.
+        int32 Width=16,Height=9;
+        if (APlayerController* PC=Cast<APlayerController>(Controller)) PC->GetViewportSize(Width,Height);
+        const float Aspect=Height>0?float(Width)/Height:16.f/9.f;
+        BoardCamera.FOV=FMath::RadiansToDegrees(2.f*FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FOV)*.5f)*Aspect));
+    }
+    // Ease between the follow camera and the skating camera over about 0.6 s when mounting, stepping off,
+    // or looking around with the right stick, instead of cutting between them.
+    const bool bWantBoard=bBoard && !bFixedView && LookGrace<=0;
+    BoardCameraBlend=bFixedView?0.f:FMath::FInterpConstantTo(BoardCameraBlend,bWantBoard?1.f:0.f,DeltaTime,1.7f);
+    if (BoardCameraBlend>0.f)
+    {
+        const float A=FMath::SmoothStep(0.f,1.f,BoardCameraBlend);
+        OutResult.Location=FMath::Lerp(OutResult.Location,BoardCamera.Location,A);
+        OutResult.Rotation=FQuat::Slerp(OutResult.Rotation.Quaternion(),BoardCamera.Rotation.Quaternion(),A).Rotator();
+        OutResult.FOV=FMath::Lerp(OutResult.FOV,BoardCamera.FOV,A);
+    }
+    if (auto* PC = Cast<AJapanPlayerController>(Controller); PC && IsLocallyControlled())
+    {
+        // A fixed or cinematic view takes over immediately, without a residual first-person blend.
+        // The controller preference is retained and reapplied when the passenger camera resumes.
+        if (bFixedView || bCinematic) TrainView = FTrainPassengerView();
+        else
+        {
+            const bool bGondolaFP = IsGondolaSeated();
+            const bool bSlowBlend = bGondolaFP || AboardVehicle == ETransportVehicle::Gondola;
+            TrainView.Update(IsTrainPassenger() || bGondolaFP, bGondolaFP ? true : PC->bPreferTrainFirstPerson, DeltaTime, bSlowBlend ? 2.5f : 4.f);
+            TrainView.Apply(*this, DeltaTime, OutResult);
+        }
+    }
+}
+
+bool AWandererCharacter::IsTrainPassenger() const
+{
+    return bTrainAboard && AboardVehicle == ETransportVehicle::Train && !ABelmonteTrainService::IsBoardingRider(this);
+}
+
+void AWandererCharacter::ToggleTrainView(const FInputActionValue&)
+{
+    if (!bReady || IsSkateInputBlocked() || !IsLocallyControlled() || bFixedView || bCinematic || AreControlsSuspended()) return;
+    if (auto* PC = Cast<AJapanPlayerController>(Controller)) TrainView.Toggle(IsTrainPassenger(), PC->bPreferTrainFirstPerson);
+}
+
+void AWandererCharacter::SampleShake(FVector& Offset,FRotator& Rotation) const
+{
+    const float A=ShakeTrauma*ShakeTrauma,F=23.f;
+    Offset=FVector(0.f,FMath::PerlinNoise1D(ShakeClock*F)*9.f,FMath::PerlinNoise1D(ShakeClock*F+41.3f)*7.f)*A;
+    Rotation=FRotator(FMath::PerlinNoise1D(ShakeClock*F+7.1f)*2.2f,FMath::PerlinNoise1D(ShakeClock*F+19.7f)*2.2f,FMath::PerlinNoise1D(ShakeClock*F+3.3f)*3.f)*A;
+}
+
+
+void AWandererCharacter::AdvanceMapReview(float Dt)
+{
+    if (!Map || !Map->IsLoaded()) { UE_LOG(LogTemp,Error,TEXT("MAP QA: map not loaded")); AtelierRequestExit(1); return; }
+    TArray<FJapanMapZone> Zones = Map->GetZones();
+    FString OnlyZone;
+    if (FParse::Value(FCommandLine::Get(), TEXT("mapqazone="), OnlyZone))
+    {
+        Zones.RemoveAll([&](const FJapanMapZone& Zone) { return Zone.Key != OnlyZone; });
+        if (Zones.Num() != 1) { UE_LOG(LogTemp, Error, TEXT("MAP QA: selected zone unavailable")); AtelierRequestExit(1); return; }
+    }
+    const float StepSeconds = 2.5f;
+    MapReviewTime += Dt;
+    const int32 Step = FMath::FloorToInt(MapReviewTime/StepSeconds);
+    const float InStep = MapReviewTime-Step*StepSeconds;
+    if (Step != MapReviewStep)
+    {
+        // Settle the previous zone: where did we actually end up, and are we standing?
+        if (MapReviewStep >= 0 && MapReviewStep < Zones.Num())
+        {
+            const auto& Z = Zones[MapReviewStep];
+            const FVector P = GetActorLocation()-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+            const UCapsuleComponent* Capsule = GetCapsuleComponent();
+            FCollisionQueryParams Query(SCENE_QUERY_STAT(MapLandingQA), false, this);
+            FHitResult Floor;
+            const bool Walkable = GetWorld()->LineTraceSingleByChannel(Floor, P + FVector(0,0,5),
+                P - FVector(0,0,50), ECC_Visibility, Query) && GetCharacterMovement()->IsWalkable(Floor);
+            const UCapsuleComponent* Standing = GetClass()->GetDefaultObject<AWandererCharacter>()->GetCapsuleComponent();
+            const float StandingHalf = Standing->GetUnscaledCapsuleHalfHeight() * Capsule->GetShapeScale();
+            const float StandingRadius = Standing->GetUnscaledCapsuleRadius() * Capsule->GetShapeScale();
+            const bool Clear = !bIsCrouched && !GetWorld()->OverlapBlockingTestByChannel(P + FVector(0,0,StandingHalf), FQuat::Identity,
+                Capsule->GetCollisionObjectType(), FCollisionShape::MakeCapsule(StandingRadius, StandingHalf),
+                Query, FCollisionResponseParams(Capsule->GetCollisionResponseToChannels()));
+            auto Row = MakeShared<FJsonObject>();
+            auto Vector = [](const FVector& V)
+            { return TArray<TSharedPtr<FJsonValue>>{MakeShared<FJsonValueNumber>(V.X), MakeShared<FJsonValueNumber>(V.Y), MakeShared<FJsonValueNumber>(V.Z)}; };
+            Row->SetStringField(TEXT("zone"), Z.Key); Row->SetStringField(TEXT("name"), Z.Name);
+            Row->SetArrayField(TEXT("target"), Vector(Z.Location)); Row->SetArrayField(TEXT("landed"), Vector(P));
+            Row->SetNumberField(TEXT("target_yaw"), Z.Yaw); Row->SetNumberField(TEXT("yaw"), GetActorRotation().Yaw);
+            Row->SetNumberField(TEXT("above_cm"), Z.Above);
+            Row->SetNumberField(TEXT("drift_cm"), FVector::Dist2D(P,Z.Location)); Row->SetNumberField(TEXT("drop_cm"), Z.Location.Z-P.Z);
+            Row->SetBoolField(TEXT("on_ground"), GetCharacterMovement()->IsMovingOnGround());
+            Row->SetBoolField(TEXT("walkable"), Walkable); Row->SetBoolField(TEXT("capsule_clear"), Clear);
+            Row->SetBoolField(TEXT("crouched"), bIsCrouched);
+            Row->SetBoolField(TEXT("authority"), HasAuthority()); Row->SetNumberField(TEXT("net_mode"), int32(GetNetMode()));
+            Row->SetNumberField(TEXT("speed"), GetVelocity().Size());
+            FString JSON; FJsonSerializer::Serialize(Row, TJsonWriterFactory<>::Create(&JSON));
+            MapTelemetry += JSON + TEXT(",\n");
+        }
+        MapReviewStep = Step;
+        if (Step < Zones.Num()) Map->TeleportToZone(Zones[Step].Key);
+        else if (Step == Zones.Num()) { Map->TeleportToZone(TEXT("hamlet")); Map->Open(); }
+        else
+        {
+            Map->Close();
+            FString Json = TEXT("[\n")+MapTelemetry; Json.RemoveFromEnd(TEXT(",\n")); Json += TEXT("\n]\n");
+            const FVector EndFeet = GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+            auto End = MakeShared<FJsonObject>(); End->SetStringField(TEXT("zone"), OnlyZone);
+            End->SetArrayField(TEXT("feet"), {MakeShared<FJsonValueNumber>(EndFeet.X), MakeShared<FJsonValueNumber>(EndFeet.Y), MakeShared<FJsonValueNumber>(EndFeet.Z)});
+            End->SetNumberField(TEXT("net_mode"), int32(GetNetMode()));
+            FString EndJson; FJsonSerializer::Serialize(End, TJsonWriterFactory<>::Create(&EndJson));
+            auto Publish = [&](const FString& Name, const FString& Text)
+            {
+                const FString Path = ReviewDirectory / Name, Temp = Path + TEXT(".tmp");
+                return FFileHelper::SaveStringToFile(Text, *Temp, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM) &&
+                    IFileManager::Get().Move(*Path, *Temp, true, true);
+            };
+            if (!Publish(TEXT("map_qa_end.json"), EndJson) || !Publish(TEXT("map_qa.json"), Json))
+            { UE_LOG(LogTemp, Error, TEXT("MAP QA: telemetry publication failed")); AtelierRequestExit(1); return; }
+            UE_LOG(LogTemp,Display,TEXT("MAP QA COMPLETE: %d zones -> %s"),Zones.Num(),*ReviewDirectory);
+            bMapReview = false;
+            float KeepAlive = 0.f;
+            FParse::Value(FCommandLine::Get(), TEXT("mapqakeepalive="), KeepAlive);
+            // Only an explicitly bounded diagnostic listen-host may wait for its guest tour.
+            if (GetNetMode() == NM_ListenServer && FMath::IsFinite(KeepAlive) && KeepAlive > 0.f && KeepAlive <= 120.f)
+            {
+                FTimerHandle ExitTimer;
+                GetWorldTimerManager().SetTimer(ExitTimer, FTimerDelegate::CreateLambda([] { AtelierRequestExit(0); }), KeepAlive, false);
+            }
+            else FPlatformMisc::RequestExit(false);
+        }
+    }
+    if (InStep >= 1.6f && InStep-Dt < 1.6f)
+    {
+        if (Step < Zones.Num()) FScreenshotRequest::RequestScreenshot(ReviewDirectory/FString::Printf(TEXT("map_%02d_%s.png"),Step,*Zones[Step].Key),false,false);
+        else if (Step == Zones.Num()) FScreenshotRequest::RequestScreenshot(ReviewDirectory/TEXT("map_overlay.png"),true,false);
+    }
+}
+
+AZeppelinService* AWandererCharacter::GetZeppelin() const { return NetworkActivity.Zeppelin?NetworkActivity.Zeppelin.Get():Landscape?Landscape->Zeppelin.Get():nullptr; }
+bool AWandererCharacter::IsZeppelinPassenger() const { return GetZeppelin()&&GetZeppelin()->IsPassenger(this); }

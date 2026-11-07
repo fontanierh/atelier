@@ -1,0 +1,92 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "",
+  "Description": "Yorimichi V2: the painterly Japanese island with committed editable content. See games/yorimichi_v2/README.md.",
+  "Modules": [
+    {
+      "Name": "Yorimichi",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": [
+        "Engine",
+        "EnhancedInput"
+      ]
+    },
+    {
+      "Name": "YorimichiAssets",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "YorimichiImport",
+      "Type": "UncookedOnly",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "AdditionalPluginDirectories": [
+    "../../../platform/engine/Plugins"
+  ],
+  "Plugins": [
+    {
+      "Name": "HorseRacing",
+      "Enabled": true
+    },
+    {
+      "Name": "EnhancedInput",
+      "Enabled": true
+    },
+    {
+      "Name": "PythonScriptPlugin",
+      "Enabled": true
+    },
+    {
+      "Name": "EditorScriptingUtilities",
+      "Enabled": true
+    },
+    {
+      "Name": "Interchange",
+      "Enabled": true
+    },
+    {
+      "Name": "AndroidFileServer",
+      "Enabled": false
+    },
+    {
+      "Name": "AtelierCore",
+      "Enabled": true
+    },
+    {
+      "Name": "AtelierAnimation",
+      "Enabled": true
+    },
+    {
+      "Name": "LiveBridge",
+      "Enabled": true
+    },
+    {
+      "Name": "AtelierFX",
+      "Enabled": true
+    },
+    {
+      "Name": "Skate",
+      "Enabled": true
+    },
+    {
+      "Name": "ElectraPlayer",
+      "Enabled": true
+    },
+    {
+      "Name": "Driving",
+      "Enabled": false
+    },
+    {
+      "Name": "AtelierStream",
+      "Enabled": false
+    },
+    {
+      "Name": "PixelStreaming2",
+      "Enabled": false
+    }
+  ]
+}

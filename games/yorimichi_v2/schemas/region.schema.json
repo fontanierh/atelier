@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "yorimichi_v2/region.schema.json",
+  "title": "region.toml: one authored world region (an ownership scope, not a World Partition cell)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "bounds_cm",
+    "maps"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^region/[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*$"
+    },
+    "about": {
+      "type": "string"
+    },
+    "bounds_cm": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "[min_x, min_y, max_x, max_y], Unreal centimetres"
+    },
+    "neighbours": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "maps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^/Game(/[A-Za-z0-9_.-]+)+$"
+      },
+      "description": "maps whose external actors this region may own"
+    },
+    "shared": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "shared scopes it reads (sky, sea material); reading needs no claim"
+    }
+  }
+}

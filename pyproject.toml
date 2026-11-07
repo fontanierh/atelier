@@ -39,6 +39,8 @@ dev-dependencies = ["pytest>=8"]
 [tool.pytest.ini_options]
 testpaths = ["platform/studio/tests", "platform/harness/tests", "games"]
 python_files = ["test_*.py"]
+# Committed Unreal content (games/yorimichi_v2) holds no tests; do not walk its thousands of package folders.
+norecursedirs = [".*", "*.egg", "build", "node_modules", "venv", "Content", "Saved", "Intermediate", "Binaries", "DerivedDataCache"]
 markers = [
   "macos_only: needs a macOS runner; the CI board group is the one that runs there",
 ]

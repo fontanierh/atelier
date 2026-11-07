@@ -1,0 +1,70 @@
+#include "JapanGameMode.h"
+#include "LiveLibrary.h"
+#include "JapanSession.h"
+#include "PlayableCharacter.h"
+#include "JapanWorld.h"
+#include "WandererCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "JapanHUD.h"
+#include "FoxHunter.h"
+#include "SwordTrainer.h"
+#include "Components/CapsuleComponent.h"
+#include "CollisionQueryParams.h"
+#include "Engine/World.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
+
+bool AJapanGameMode::IsScriptedSession()
+{
+    const TCHAR* Cmd = FCommandLine::Get();
+    for (const TCHAR* Key : { TEXT("qa"), TEXT("benchmark"), TEXT("trailershot"), TEXT("buildingreview") })
+        if (FCString::Stristr(Cmd, Key)) return true;
+    return false;
+}
+
+/** The fox-masked hunter waits 12 m up the road from the start, a little off to the left, standing on whatever ground is built there. */
+void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
+{
+    if (!W || !W->bLoaded || FParse::Param(FCommandLine::Get(), TEXT("nofox"))) return;
+    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("foxhunter"))) return;
+    const FRotator Facing = W->PlayerStart.Rotator();
+    FVector Where = W->PlayerStart.GetLocation() + Facing.Vector() * 1200.f + FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * -350.f;
+    FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(FoxSpawn), false, Player);
+    const float HalfHeight = 86.f;
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Where + FVector(0, 0, 400), Where - FVector(0, 0, 800), ECC_Visibility, Params)) Where.Z = Hit.ImpactPoint.Z + HalfHeight + 2.f;
+    else Where.Z = W->PlayerStart.GetLocation().Z + HalfHeight + 3.f;
+    FActorSpawnParameters Spawn; Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    AFoxHunter* Fox = GetWorld()->SpawnActor<AFoxHunter>(Where, FRotator(0, Facing.Yaw + 180.f, 0), Spawn);
+    UE_LOG(LogTemp, Display, TEXT("Fox hunter %s at %s (ground %s)"), Fox ? TEXT("spawned") : TEXT("NOT spawned"), *Where.ToString(), Hit.bBlockingHit ? TEXT("traced") : TEXT("assumed"));
+}
+
+UClass* AJapanGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
+{
+    if (UClass* Rider = FPlayableCharacter::PawnOverride()) return Rider;
+    // Resolved here, not in the constructor: the characters register from their records once the game is running.
+    if (UClass* Player = FPlayableCharacter::Default().Class()) return Player;
+    return Super::GetDefaultPawnClassForController_Implementation(Controller);
+}
+
+AJapanGameMode::AJapanGameMode()
+{
+    HUDClass = AJapanHUD::StaticClass();
+    PlayerControllerClass = AJapanPlayerController::StaticClass();
+}
+
+void AJapanGameMode::BeginPlay()
+{
+    Super::BeginPlay();
+    // V2: the live bridge listens from the start of play on every map, so a map whose world is still loading, has no
+    // player yet or failed to load can be inspected (the player's own start, WandererCharacter, finds it running).
+    AtelierLive::Start(GetWorld());
+    AJapanWorld* W = GetWorld()->SpawnActor<AJapanWorld>(FVector::ZeroVector, FRotator::ZeroRotator);
+    AWandererCharacter* T = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+    if (T) T->EnterWorld(W);
+    SpawnFoxHunter(W, T);
+    if (W && W->bLoaded)
+    {
+        ASwordTrainer::SpawnInVillage(W, W->VillageRecord);
+        ASwordTrainer::SpawnRoninCamp(W);
+    }
+}

@@ -1,0 +1,21 @@
+# Yorimichi V2 keeps its editable Unreal content and large binary sources in Git LFS. Every binary is `lockable`:
+# Git LFS checks it out read-only until its task holds the LFS lock that its claim recorded (README, "Claims").
+# Text configuration, manifests and records stay ordinary mergeable text.
+*.uasset filter=lfs diff=lfs merge=lfs -text lockable
+*.umap filter=lfs diff=lfs merge=lfs -text lockable
+*.ubulk filter=lfs diff=lfs merge=lfs -text lockable
+*.uexp filter=lfs diff=lfs merge=lfs -text lockable
+*.uptnl filter=lfs diff=lfs merge=lfs -text lockable
+*.glb filter=lfs diff=lfs merge=lfs -text lockable
+*.gltf filter=lfs diff=lfs merge=lfs -text lockable
+*.bin filter=lfs diff=lfs merge=lfs -text lockable
+*.fbx filter=lfs diff=lfs merge=lfs -text lockable
+*.blend filter=lfs diff=lfs merge=lfs -text lockable
+*.png filter=lfs diff=lfs merge=lfs -text lockable
+*.jpg filter=lfs diff=lfs merge=lfs -text lockable
+*.tga filter=lfs diff=lfs merge=lfs -text lockable
+*.exr filter=lfs diff=lfs merge=lfs -text lockable
+*.ktx2 filter=lfs diff=lfs merge=lfs -text lockable
+*.wav filter=lfs diff=lfs merge=lfs -text lockable
+*.ogg filter=lfs diff=lfs merge=lfs -text lockable
+*.skatepack filter=lfs diff=lfs merge=lfs -text lockable

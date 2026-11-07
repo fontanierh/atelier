@@ -1,0 +1,435 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "InputActionValue.h"
+#include "SprintStamina.h"
+#include "AtelierFX.h"
+#include "SkateRider.h"
+#include "JapanAvatarState.h"
+#include "JapanActivityState.h"
+#include "JapanParkedBikeState.h"
+#include "JapanBikePresentation.h"
+#include "JapanSailPresentation.h"
+#include "JapanHorsePresentation.h"
+#include "JapanHorseAppearance.h"
+#include "TrainPassengerView.h"
+#include "TransportRiders.h"
+#include "WandererCharacter.generated.h"
+
+class UWandererDefinition;
+class USpringArmComponent;
+class UCameraComponent;
+class UInputAction;
+class UInputMappingContext;
+class AJapanWorld;
+class UJapanPreferences;
+class USkateComponent;
+class USailboatComponent;
+class UBikeComponent;
+class UHorseComponent;
+class FJsonObject;
+class UJapanMap;
+class UJapanFootstepComponent;
+class UWandererSwordComponent;
+class ASwordDummy;
+class USeeThroughComponent;
+class UAdventureMoveSet;
+
+/** A skinned adventurer driven by CharacterMovement and the native animation graph. */
+UCLASS()
+class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTarget, public ISkateRider
+{
+    GENERATED_BODY()
+public:
+    AWandererCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+    virtual void BeginPlay() override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    virtual void PawnClientRestart() override;
+    virtual void UnPossessed() override;
+    virtual void ConfigureNetworkRider(const FString& Name, bool bShield);
+    const FString& GetNetworkRiderName() const { return NetworkRiderName; }
+    bool GetNetworkShield() const { return bNetworkShield; }
+    virtual void EndPlay(const EEndPlayReason::Type Reason) override;
+    virtual void Tick(float DeltaSeconds) override;
+    virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult) override;
+    virtual void SetupPlayerInputComponent(UInputComponent* Input) override;
+    virtual void Landed(const FHitResult& Hit) override;
+    void EnterWorld(AJapanWorld* World);
+    /** A character the game drives (ASwordTrainer), not a person: no camera, menus, map or ambience, and EnterWorld
+     *  leaves it where it was placed. */
+    virtual bool IsNpc() const { return false; }
+    /** A sparring bout with Other is under way (ASwordTrainer): the move set's blade, lock-on and soft lock take Other as
+     *  a target, and its strikes reach Other's guard, parry and dodges. */
+    virtual bool IsSparringWith(const AActor* Other) const { return false; }
+    /** The health a sparring blow of this strength (1 a cut, 2 a charged or finishing one, 3 full power) takes from
+     *  the partner: a full-power blow knocks down (the move set's HeavyDamage, 25). */
+    virtual float SparringDamage(int32 Power) const { return Power >= 3 ? 28.f : Power == 2 ? 18.f : 10.f; }
+    float GetNetworkGuardPressure() const { return NetworkGuardPressure; }
+    /** Its name as -rider= and the character switch know it (FPlayableCharacter); empty: the default character's. */
+    virtual FString GetPlayableName() const { return FString(); }
+    /** Whose bike clips it rides with (/Game/<Rig>Bike, Content/Data/<rig>/bike); empty: the default character's. */
+    virtual FString GetBikeRig() const { return FString(); }
+    /** The animation graph plants its feet on the ground where it stands (foot IK). */
+    virtual bool PlantsFeet() const { return false; }
+    /** How far the sailboat's seat stretches its fitted stance, from its leg length (cm); 1 keeps it as fitted. */
+    virtual float SailboatReach(float LegLength) const { return 1.f; }
+    AJapanWorld* GetLandscape() const { return Landscape; }
+    /** The character switch (FPlayableCharacter::SwitchPlayer) sets this on the new character before it finishes spawning: it
+     *  starts where the old one stood (EnterWorld leaves it in place), with no second ambience and no settling wait. */
+    UPROPERTY(Replicated) bool bSwitchedIn = false;
+    /** The character switch, before the player moves to another character: closes the menus, stows the board and the
+     *  sailboat, and gives up the input mapping. */
+    void Leave();
+    UWandererDefinition* GetDefinition() const { return Definition; }
+    FName GetAnimationAction() const { return AnimationAction; }
+    /** The clip that shows the current action. With the sword out, jumps, falls, landings, dashes, the double jump and the
+     *  roll and the knock-down play their armed versions ("Sword" + action, game-r16): the clip's own arm movement with the
+     *  sword in the hand. */
+    FName GetAnimationClip() const;
+    uint32 GetActionSerial() const { return ActionSerial; }
+    float GetActionBlendTime() const { return ActionBlendTime; }
+    float GetActionSourceStartTime() const { return ActionSourceStartTime; }
+    float GetActionPlayRate() const { return ActionPlayRate; }
+    float GetActionTime() const { return ActionTime; }
+    float GetActionSourceTime() const { return ActionSourceStartTime+ActionTime*ActionPlayRate; }
+    /** Render-time phase for the listen host's remote player; simulation and combat keep their own clock. */
+    float GetPresentationActionSourceTime() const;
+    bool HasMovementIntent() const { return !MoveIntent.IsNearlyZero(); }
+    bool DoesActionLoop() const { return bActionLoops; }
+    bool IsReady() const { return bReady; }
+    /** Current action or vehicle prevents ordinary movement/input. Read-only for native probes. */
+    bool MovementLocked() const;
+    bool bVehicleBrakeIntent = false;
+    bool IsMouseReleased() const { return bMouseReleased; }
+    /** skate.-style skateboarding (docs/SKATE.md; the platform's Skate plugin). */
+    USkateComponent* GetSkate() const { return SkateRide; }
+    // ISkateRider: stop actions on mounting; menus take the board's input.
+    virtual void PrepareToSkate() override;
+    virtual bool IsSkateInputBlocked() const override;
+    virtual bool IsSkateMouseFree() const override { return bMouseReleased; }
+    virtual float GetSkateMouseSensitivity() const override { return MouseSensitivity; }
+    virtual FName GetSkateBone(FName Contract) const override;
+    virtual float GetSkateBoardScale() const override;
+    virtual bool CanCarrySkateBoard() const override;
+    FVector2D GetMoveIntent() const { return MoveIntent; }
+    /** The bike's own controls: X steers as on foot; Y pedals (right trigger, W) or brakes (left trigger, S). A
+     *  scripted intent (live bridge, reviews) still pedals with its forward axis. */
+    FVector2D GetBikeIntent() const;
+    /** Rider lean, -1 back (wheelie) .. 1 forward: left stick up/down or the arrow keys. */
+    float GetBikeLean() const { return FMath::Clamp(BikeLeanInput + ScriptedBikeLean, -1.f, 1.f); }
+    float GetMouseSensitivity() const { return MouseSensitivity; }
+    UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
+    UWandererSwordComponent* GetSword() const { return Sword; }
+    /** An adventure move set (UAdventureMoveSet), for a character whose roster entry has one; null otherwise. */
+    UAdventureMoveSet* GetMoves() const { return Moves; }
+    ASwordDummy* GetSwordDummy() const { return SwordDummy; }
+    USailboatComponent* GetSailboat() const { return Sailboat; }
+    UBikeComponent* GetBike() const { return Bike; }
+    UHorseComponent* GetHorse() const { return Horse; }
+    /** On the sailboat, the bike, or the horse: the vehicle owns his movement, his animation and his buttons. */
+    bool OnVehicle() const;
+    UJapanPreferences* GetPreferences() const { return Preferences; }
+    UFUNCTION(BlueprintPure, Category = "Map")
+    UJapanMap* GetMap() const { return Map; }
+    /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there
+     *  (the highest surface from Above cm over the position down). Above is finite, 0–6000 cm, and preserved on host travel. */
+    bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
+    uint32 GetActivityEpoch() const { return NetworkActivity.Epoch; }
+    EJapanActivity GetNetworkActivity() const { return NetworkActivity.Kind; }
+    void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false, uint8 ClockCorrection = 0,
+        TFunction<void()> FootReaction = {});
+    /** Host-only supported park/stow followed by one foot epoch; clock resets also discard vehicle momentum. */
+    bool ExitNetworkVehicle(uint8 ClockCorrection = 0, TFunction<void()> FootReaction = {});
+    UFUNCTION(Server, Reliable) void ServerTravelTo(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch, float Above);
+    UFUNCTION(Client, Reliable) void ClientPlayerTravelled();
+    UFUNCTION(Server, Reliable) void ServerTravelToPlayer(const FString& SessionPlayerId, uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerRequestSkate(uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerZeppelinInput(uint32 Epoch, int32 Direction);
+    UFUNCTION(Server, Reliable) void ServerTrainInteract(uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerFinishSkate(uint32 Epoch, FVector_NetQuantize100 Location,
+        FRotator Rotation, FVector_NetQuantize100 Velocity, bool bFalling);
+    UFUNCTION(Client, Reliable) void ClientActivityRejected(const FString& Reason);
+    UFUNCTION(Client, Reliable) void ClientReceiveMovementReaction(const TArray<uint8>& Encoded);
+    UFUNCTION(Server, Reliable) void ServerRecoverMovementReactions(uint32 Epoch);
+    bool RequestNetworkSkate();
+    /** Online: ask the host for this horse look (roster indices); every machine shows it once the host has accepted it.
+     *  Offline it applies at once. False when it cannot be asked now. */
+    bool RequestHorseAppearance(const FJapanHorseAppearance& Appearance);
+    void TickNetworkActivity();
+    bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
+    void SetMenuOpen(bool bOpen);
+    /** A minigame that reads the keys itself takes the character's input mapping away until it hands it back. */
+    void SetControlsSuspended(bool bSuspended);
+    bool AreControlsSuspended() const { return bControlsSuspended; }
+    void SetStaminaRings(int Rings) { Stamina.SetCapacity(Rings); }
+    const FSprintStamina& GetStamina() const { return Stamina; }
+    float GetSprintSpeed() const;
+    void ApplyCameraPreferences(float Sensitivity, float Distance, float FieldOfView);
+    /** Combat feedback: camera trauma (0..1, decays; the shake grows with its square) and the red damage flash the HUD draws. */
+    virtual void AddCameraShake(float Trauma) override { ShakeTrauma = FMath::Min(1.f, ShakeTrauma + Trauma); }
+    void FlashDamage(float Amount) { DamageFlash = FMath::Max(DamageFlash, Amount); }
+    float GetDamageFlash() const { return DamageFlash; }
+    /** The current shake as a camera-space offset (cm) and rotation (degrees). */
+    void SampleShake(FVector& Offset, FRotator& Rotation) const;
+    UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+    USpringArmComponent* GetCameraArm() const { return CameraArm; }
+    /** A fixed review or trailer view (-fixedview, benchmarkview=, trailershot=): the camera does not follow Cairo. */
+    bool IsFixedView() const { return bFixedView; }
+    void Review_Move(FVector2D Intent) { MoveIntent = Intent; }
+    /** Live bridge: hold a movement intent (camera-relative, like the stick) at a gait: 0 walk, 1 run, 2 sprint. Input replaces it. */
+    /** Live bridge: press a button through the real input handler: "jump", "jump_release", "roll", "crouch", "interact",
+        the zeppelin's "stop_previous" and "stop_next", and the combat buttons "dodge", "dash", "attack", "attack_release",
+        "guard", "guard_release" and "weapon". */
+    bool Live_Press(FName Button);
+    /** Live bridge: leave the camera where it is (no automatic follow) for Seconds. */
+    void Live_HoldCamera(float Seconds) { LookGrace = Seconds; }
+    void Live_Drive(FVector2D Intent, int32 Gait) { MoveIntent = Intent; bWalk = Gait == 0; bJog = false; bSprintHeld = Gait == 2; }
+    void Live_BikeLean(float Lean) { ScriptedBikeLean = FMath::Clamp(Lean, -1.f, 1.f); }
+    void Review_Dodge();
+
+protected:
+    FString DefinitionAssetPath = TEXT("/Game/Wanderer/DA_Wanderer.DA_Wanderer");
+    // Gameplay tuning; the definition keeps the clip's authored stride speed.
+    float SprintSpeedMultiplier = 1.f;
+    UPROPERTY() TObjectPtr<UAdventureMoveSet> Moves;
+    /** A playable character whose required move set failed to load cannot use generic movement instead. */
+    void DisablePlayerMovement();
+    /** A one-off clip outside the move set (an NPC's bow or a word), and its end. */
+    void PlayGesture(FName Action, float BlendSeconds = .25f) { SetAction(Action, false, BlendSeconds, true); }
+    void StopGesture(float BlendSeconds = .3f) { SetAction(NAME_None, false, BlendSeconds); }
+
+private:
+    friend class FRemoteVehiclePresentationTest;
+    friend class FTrainVehicleAdmissionTest;
+    void InitializeLocalPlayer();
+    TWeakObjectPtr<ULocalPlayer> InputOwner;
+    bool RequestNetworkBike();
+    bool RequestNetworkSail();
+    void TickNetworkSail();
+    UFUNCTION(Server,Reliable) void ServerRequestSail(uint32 Epoch);
+    UFUNCTION() void OnRep_NetworkSailPresentation();
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkSailPresentation) FJapanSailPresentation NetworkSailPresentation;
+    double LastSailPublication=-1.;
+    void TickNetworkBike();
+    UFUNCTION(Server, Reliable) void ServerRequestBike(uint32 Epoch);
+    UFUNCTION() void OnRep_NetworkParkedBike();
+    UFUNCTION() void OnRep_NetworkBikePresentation();
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkBikePresentation) FJapanBikePresentation NetworkBikePresentation;
+    double LastBikePublication=-1.;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkParkedBike) FJapanParkedBikeState NetworkParkedBike;
+    bool RequestNetworkHorse();
+    void TickNetworkHorse();
+    UFUNCTION(Server, Reliable) void ServerRequestHorse(uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerSetHorseAppearance(const FJapanHorseAppearance& Appearance);
+    UFUNCTION() void OnRep_NetworkHorsePresentation();
+    UFUNCTION() void OnRep_NetworkHorseAppearance();
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHorsePresentation) FJapanHorsePresentation NetworkHorsePresentation;
+    /** The host's accepted look for this player's horse, outside the activity epoch (the owner waits for it too). */
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHorseAppearance) FJapanHorseAppearance NetworkHorseAppearance;
+    double LastHorsePublication=-1., LastHorseAppearanceAt=-1.;
+
+    UFUNCTION() void OnRep_NetworkLoadout();
+    UPROPERTY(Replicated) FString NetworkRiderName;
+    UPROPERTY(Replicated) bool bNetworkMovementReady = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkLoadout) bool bNetworkShield = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkActivity) FJapanActivityState NetworkActivity;
+    UFUNCTION() void OnRep_NetworkActivity();
+    uint32 AppliedActivityEpoch = 1;
+    bool bApplyingNetworkActivity = false, bNetworkSkateObserved = false, bNetworkActivityPending = false;
+    double LastNetworkTravel = -10., NetworkActivityRequestTime = 0.;
+    UPROPERTY() TObjectPtr<class UJapanSkateNetwork> NetworkSkate;
+    bool bLocalPlayerInitialized = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkAvatar) FJapanAvatarState NetworkAvatar;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) float NetworkHealth = 100.f;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) int32 NetworkHitsTaken = 0;
+    UPROPERTY(Replicated) float NetworkGuardPressure = 0.f;
+    UFUNCTION() void OnRep_NetworkAvatar();
+    UFUNCTION() void OnRep_NetworkHealth();
+    bool bNetworkAvatarReceived = false;
+    float LastAvatarPublication = -1.f;
+    friend class FJapanReactionTransportTest;
+    friend class FSwordCombatContactTest;
+    friend class FJapanCheckpointTest;
+    friend class FJapanHorseWaterTest;
+    bool PerformNetworkTravel(FVector Location, float Yaw, uint32 Epoch, float Above);
+    friend class AJapanPlayerController;
+    friend class UWandererSwordComponent;
+    friend class AZeppelinService;
+    friend class ABelmonteTrainService;
+    friend class AGondolaService;
+    friend struct FTransportRiders;
+    friend class UAdventureMoveSet;
+    friend class UJapanCharacterMovement;
+    friend struct FAdventureNetworkState;
+    friend struct FJapanVehicleQAAccess;
+    float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
+    bool bLiveStarted=false;
+    // Share of the skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
+    float BoardCameraBlend=0.f;
+    FMinimalViewInfo BoardCamera;
+    bool bRemountSkate=false;
+    UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
+    UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
+    UPROPERTY() TObjectPtr<UBikeComponent> Bike;
+    UPROPERTY() TObjectPtr<UHorseComponent> Horse;
+    UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
+    UPROPERTY() TObjectPtr<UWandererSwordComponent> Sword;
+    UPROPERTY() TObjectPtr<ASwordDummy> SwordDummy;
+    void SpawnSwordDummy();
+    UPROPERTY() TObjectPtr<UWandererDefinition> Definition;
+    UPROPERTY() TObjectPtr<USpringArmComponent> CameraArm;
+    UPROPERTY() TObjectPtr<UCameraComponent> FollowCamera;
+    // Camera see-through: dithers away what hides Cairo, opens his tree house room, parts the noren (docs/CAMERA.md).
+    UPROPERTY() TObjectPtr<USeeThroughComponent> SeeThrough;
+    UPROPERTY() TObjectPtr<UInputMappingContext> Mapping;
+    UPROPERTY() TMap<FName,TObjectPtr<UInputAction>> Inputs;
+    UPROPERTY() TObjectPtr<UJapanPreferences> Preferences;
+    UPROPERTY() TObjectPtr<UJapanMap> Map;
+    UPROPERTY() TObjectPtr<AJapanWorld> Landscape;
+    FVector2D MoveIntent = FVector2D::ZeroVector;
+    // What the Move action last wrote into MoveIntent, so the bike can swap its forward axis for the triggers.
+    FVector2D InputMove = FVector2D::ZeroVector;
+    float BikeThrottleInput = 0.f, BikeLeanInput = 0.f, ScriptedBikeLean = 0.f;
+    FName AnimationAction;
+    uint32 ActionSerial = 0;
+    float ActionBlendTime = .16f, ActionTime = 0.f, ActionDuration = 0.f;
+    float ActionSourceStartTime = 0.f, ActionPlayRate = 1.f;
+    FSprintStamina Stamina;
+    bool bSprintHeld=false;
+    bool bSprintTakeOver=false;   // a sprint press still to take over from the skateboard on foot
+    float MouseSensitivity = .4f, PreferredFOV = 70.f, ReadyTime = 0.f;
+    float ShakeTrauma = 0.f, ShakeClock = 0.f, DamageFlash = 0.f;
+    bool bActionLoops = false, bJog = false, bWalk = false;
+    bool bReady = false, bMouseReleased = false, bMenuOpen = false;
+    bool bMoveSetUnavailable = false;
+    bool bControlsSuspended = false;
+    bool bPendingTakeoff = false, bGroundJumped = false, bAirJumpUsed = false;
+    float JumpBuffer = 0.f, SinceGrounded = 0.f, FallSpeed = 0.f;
+    FVector DodgeDirection = FVector::ZeroVector;
+    bool bAirDashUsed = false;
+    float DashCooldown = 0.f;
+    float RollCooldown = 0.f;
+    float RollBuffer = 0.f;
+    bool bFixedView = false;
+    FVector ReviewForward = FVector::ForwardVector;
+    FString ReviewDirectory;
+    FString BenchmarkView, BenchmarkDirectory;
+    FString BenchmarkCompareBefore, BenchmarkCompareAfter;
+    int32 BenchmarkComparePhase=0, BenchmarkCompareScreenshot=-1;
+    float BenchmarkTime = 0.f, BenchmarkSeconds = 25.f, BenchmarkCaptureStart = 8.f;
+    bool bBenchmarkCapturing = false, bBenchmarkFinished = false, bBenchmarkBoarding = false, bBenchmarkStillTaken = false;
+    FVector BenchmarkLastPosition = FVector::ZeroVector;
+    void AdvanceBenchmark(float Dt);
+    bool AdvanceZeppelinBenchmark();
+    void AdvanceSailboatReview(float Dt);
+    bool bCinematic=false;
+public:
+    bool IsCinematic() const { return bCinematic; }
+    class AZeppelinService* GetZeppelin() const;
+    bool IsZeppelinPassenger() const;
+    /** Inside a no-sprint volume (aboard the Belmonte train): sprint is unavailable. */
+    bool bNoSprint = false, bTrainAboard = false, bTrainDriving = false, bGondolaSeated = false;
+    ETransportVehicle AboardVehicle = ETransportVehicle::None;
+    bool IsTrainPassenger() const;
+    bool IsGondolaSeated() const { return bTrainAboard && AboardVehicle == ETransportVehicle::Gondola && bGondolaSeated; }
+    bool IsTrainFirstPerson() const { return TrainView.IsFirstPerson(); }
+    bool HidesTrainBody() const { return !bFixedView && !bCinematic && TrainView.HidesBody(); }
+    float GetTrainViewBlend() const { return TrainView.GetBlend(); }
+    /** Standing, seated or stepping through a train door. */
+    bool IsOnTrain() const { return bTrainAboard || bTrainDriving; }
+    /** Refuse deploying a vehicle on the train through the same local/owner message. Stowing bypasses this gate. */
+    bool RefuseVehicleOnTrain();
+    /** The flight buttons: aboard, ride speed; at the docked ship, its next stop. -1 or +1. */
+    void ZeppelinStep(int32 Direction);
+private:
+    bool bSailboatReview=false; float SailboatReviewTime=0.f; int32 SailboatReviewStep=-1; FString SailboatTelemetry;
+    float SailboatReviewElapsed=0.f, SailboatReviewYaw=0.f;
+    bool bSailboatReviewEntered=false, bSailboatReviewShot=false;
+    int32 SailboatReviewChecks=0;
+    FVector SailboatReviewAnchor=FVector::ZeroVector, SailboatReviewLaunch=FVector::ZeroVector;
+    float SailboatReviewLaunchYaw=0.f;
+    FTransform SailboatReviewInitialMesh;
+    FVector SailboatReviewRecoveryTarget=FVector::ZeroVector;
+    bool bSailboatReviewObservedFall=false;
+    TArray<FString> SailboatReviewErrors;
+    UPROPERTY() TObjectPtr<AActor> SailboatReviewObstacle;
+    // Opt-in cinematic capture. Does not run in ordinary play.
+    FVector LastSafeCoastLocation=FVector::ZeroVector;
+    bool bHasSafeCoastLocation=false;
+    FVector LastSafeCityLocation=FVector::ZeroVector;
+    bool bHasSafeCityLocation=false;
+    FString BuildingReviewSpecPath;
+    TSharedPtr<struct FBuildingReviewState> BuildingReview;
+    void AdvanceBuildingReview(float Dt);
+    FString TrailerSpecPath;
+    TSharedPtr<FJsonObject> TrailerSpec;
+    int32 TrailerFrame = -180;
+    float TrailerHeading = 0.f;
+    FString TrailerTelemetry = TEXT("frame,speed,x,y,z,falling,skating,clip,camera_x,camera_y,camera_z,action,sprinting,sailing,sail,zeppelin_stage,propeller_angle\n");
+    void AdvanceTrailer(float Dt);
+    void SaveTrailerFilmFrame(int32 Width,int32 Height,const TArray<FColor>& Pixels);
+    int32 TrailerPending=-1;
+    void BuildInput();
+    void Move(const FInputActionValue& Value);
+    void MouseLook(const FInputActionValue& Value);
+    void StickLook(const FInputActionValue& Value);
+    void Jog(const FInputActionValue& Value);
+    void Sprint(const FInputActionValue& Value);
+    void Walk(const FInputActionValue& Value);
+    void RequestJump(const FInputActionValue& Value);
+    void Dash(const FInputActionValue& Value);
+    void ReleaseJump(const FInputActionValue& Value);
+    void ToggleSkateboard(const FInputActionValue& Value);
+    void ToggleTrainView(const FInputActionValue& Value);
+    FTrainPassengerView TrainView;
+    void SkateboardHand(const FInputActionValue& Value);
+    void ReturnToSpawn();
+    void ToggleSailboat(const FInputActionValue& Value);
+    void ToggleBike(const FInputActionValue& Value);
+    void ToggleHorse(const FInputActionValue& Value);
+    void HorsePad(const FInputActionValue& Value);
+    void RandomizeHorse(const FInputActionValue& Value);
+    void CycleHorseBreed(const FInputActionValue& Value);
+    void CycleHorseTack(const FInputActionValue& Value);
+    void CycleHorseCoat(const FInputActionValue& Value);
+    void ToggleCrouch(const FInputActionValue& Value);
+    void Dodge(const FInputActionValue& Value);
+    void Wave(const FInputActionValue& Value);
+    void Interact(const FInputActionValue& Value);
+    void AttackPressed(const FInputActionValue& Value);
+    void AttackReleased(const FInputActionValue& Value);
+    void ParryPressed(const FInputActionValue& Value);
+    void ParryReleased(const FInputActionValue& Value);
+    void ToggleWeapon(const FInputActionValue& Value);
+    /** Slow the zeppelin ride down or speed it up while aboard; ignored on foot. */
+    void FlightSlower(const FInputActionValue& Value);
+    void FlightFaster(const FInputActionValue& Value);
+    void ToggleMenu(const FInputActionValue& Value);
+    void ToggleMap(const FInputActionValue& Value);
+    // -mapqa: travel to every map zone in turn, screenshot each, then the open map; writes map_qa.json
+    bool bMapReview = false; float MapReviewTime = 0.f; int32 MapReviewStep = -1; FString MapTelemetry;
+    void AdvanceMapReview(float Dt);
+    void ToggleMouse(const FInputActionValue& Value);
+    void Screenshot(const FInputActionValue& Value);
+    /** bOverBoard: a move that takes over from the skateboard on foot (TakeOverFromSkate) once the skate component lets it. */
+    bool CanAct(bool bOverBoard = false) const;
+    /** On foot with the skateboard, the character's own move takes over from it (USkateComponent::YieldToCharacter). */
+    bool TakeOverFromSkate(bool bOwnVelocity);
+    /** A button for the move set, when there is one and nothing else (a menu, the board, the boat) has the input. */
+    bool PressMove(FName Button);
+    bool StandForAction();
+    bool IsRollRecovering() const;
+    void SetAction(FName Action, bool bLoop = false, float BlendSeconds = .16f, bool bRestart = false);
+    void SetMouseReleased(bool bReleased);
+    void AdvanceAction(float Dt);
+    float GetRoadSteering();
+    TArray<FVector> SkateReviewRoad;
+    // Review routes are open paths, not loops: the scripted rider patrols them so a long traversal
+    // keeps moving instead of parking on the last waypoint. Progress is logged as evidence.
+    int32 SkateReviewDirection = 1;
+    int32 SkateReviewIndex = 0;
+    int32 SkateReviewTurns = 0;
+    int32 SkateReviewRecoveries = 0;
+    FVector SkateReviewStuckAt = FVector::ZeroVector;
+    double SkateReviewStuckSince = -1.;
+};

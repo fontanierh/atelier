@@ -1,0 +1,2509 @@
+{
+ "hashes": {
+  "": 1947474976,
+  "abc": 2319914504,
+  "[\"s\",\"t\",0]": 1462672135,
+  "Écurie du Pont Clair": 1916566790
+ },
+ "draws": [
+  {
+   "s": "seed",
+   "t": "tag",
+   "n": 6,
+   "v": 4
+  },
+  {
+   "s": "haras-1",
+   "t": "world:coins:riv_aulnes",
+   "n": 81,
+   "v": 22
+  },
+  {
+   "s": "x",
+   "t": "y",
+   "n": 1000003,
+   "v": 345669
+  }
+ ],
+ "horses": [
+  {
+   "id": "riv_aulnes:founder:0",
+   "sex": "stallion",
+   "birthT": -20,
+   "readyT": -8,
+   "ret": 76,
+   "abilities": {
+    "acceleration": 8,
+    "speed": 8,
+    "endurance": 7,
+    "composure": 8
+   },
+   "ceilings": {
+    "acceleration": 8,
+    "speed": 8,
+    "endurance": 7,
+    "composure": 8
+   },
+   "response": {
+    "acceleration": 1.35,
+    "speed": 1,
+    "endurance": 1,
+    "composure": 0.7
+   },
+   "trait": "quiet",
+   "favorite": "firm",
+   "difficult": "soft",
+   "stress": 4,
+   "coat": "#696663",
+   "zones": [
+    [
+     395000,
+     140000,
+     70000,
+     5000,
+     3
+    ],
+    [
+     395000,
+     140000,
+     70000,
+     5000,
+     5
+    ],
+    [
+     420000,
+     142500,
+     70000,
+     5000,
+     6
+    ],
+    [
+     400000,
+     137500,
+     70000,
+     5000,
+     2
+    ]
+   ],
+   "genome": {
+    "ceiling.acceleration": [
+     2,
+     4
+    ],
+    "response.acceleration": [
+     3,
+     3
+    ],
+    "ceiling.speed": [
+     2,
+     4
+    ],
+    "response.speed": [
+     1,
+     3
+    ],
+    "ceiling.endurance": [
+     2,
+     3
+    ],
+    "response.endurance": [
+     2,
+     2
+    ],
+    "ceiling.composure": [
+     4,
+     2
+    ],
+    "response.composure": [
+     1,
+     0
+    ],
+    "structureA.0": [
+     4,
+     4
+    ],
+    "structureB.0": [
+     3,
+     3
+    ],
+    "acute.0": [
+     4,
+     4
+    ],
+    "adapt.0": [
+     1,
+     2
+    ],
+    "recovery.0": [
+     4,
+     3
+    ],
+    "inflammation.0": [
+     1,
+     2
+    ],
+    "structureA.1": [
+     3,
+     3
+    ],
+    "structureB.1": [
+     4,
+     4
+    ],
+    "acute.1": [
+     4,
+     4
+    ],
+    "adapt.1": [
+     4,
+     0
+    ],
+    "recovery.1": [
+     4,
+     2
+    ],
+    "inflammation.1": [
+     4,
+     1
+    ],
+    "structureA.2": [
+     4,
+     4
+    ],
+    "structureB.2": [
+     3,
+     4
+    ],
+    "acute.2": [
+     4,
+     4
+    ],
+    "adapt.2": [
+     2,
+     2
+    ],
+    "recovery.2": [
+     4,
+     3
+    ],
+    "inflammation.2": [
+     2,
+     4
+    ],
+    "structureA.3": [
+     4,
+     4
+    ],
+    "structureB.3": [
+     2,
+     4
+    ],
+    "acute.3": [
+     4,
+     4
+    ],
+    "adapt.3": [
+     2,
+     3
+    ],
+    "recovery.3": [
+     4,
+     2
+    ],
+    "inflammation.3": [
+     1,
+     1
+    ],
+    "maturity": [
+     2,
+     0
+    ],
+    "longevity": [
+     1,
+     3
+    ],
+    "stress": [
+     2,
+     2
+    ],
+    "stifleRisk": [
+     1,
+     0
+    ],
+    "signature": [
+     2,
+     3
+    ],
+    "surface": [
+     0,
+     2
+    ],
+    "surfaceFlex": [
+     1,
+     1
+    ],
+    "visual.family": [
+     2,
+     4
+    ],
+    "visual.coat": [
+     2,
+     3
+    ],
+    "visual.marking": [
+     2,
+     1
+    ],
+    "visual.height": [
+     2,
+     3
+    ],
+    "visual.bulk": [
+     2,
+     2
+    ],
+    "visual.legs": [
+     3,
+     2
+    ],
+    "visual.head": [
+     4,
+     2
+    ],
+    "visual.hair": [
+     2,
+     3
+    ],
+    "body.barrel": [
+     0,
+     1
+    ],
+    "body.boneSubstance": [
+     1,
+     2
+    ],
+    "body.chest": [
+     2,
+     3
+    ],
+    "body.height": [
+     2,
+     0
+    ],
+    "body.hindquarter": [
+     3,
+     3
+    ],
+    "body.leg": [
+     3,
+     2
+    ],
+    "body.length": [
+     1,
+     1
+    ],
+    "coat.agouti": [
+     1,
+     0
+    ],
+    "coat.cream": [
+     0,
+     0
+    ],
+    "coat.dun": [
+     0,
+     0
+    ],
+    "coat.extension": [
+     0,
+     0
+    ],
+    "coat.flaxen": [
+     0,
+     0
+    ],
+    "coat.gray": [
+     0,
+     0
+    ],
+    "coat.pattern": [
+     0,
+     0
+    ],
+    "coat.roan": [
+     0,
+     0
+    ],
+    "extent.body": [
+     0,
+     1
+    ],
+    "extent.face": [
+     0,
+     4
+    ],
+    "extent.leftFore": [
+     4,
+     0
+    ],
+    "extent.leftHind": [
+     3,
+     4
+    ],
+    "extent.rightFore": [
+     0,
+     3
+    ],
+    "extent.rightHind": [
+     2,
+     3
+    ],
+    "family.Balanced.a": [
+     0,
+     0
+    ],
+    "family.Balanced.b": [
+     0,
+     1
+    ],
+    "family.Endurance.a": [
+     1,
+     1
+    ],
+    "family.Endurance.b": [
+     0,
+     0
+    ],
+    "family.Light.a": [
+     1,
+     0
+    ],
+    "family.Light.b": [
+     1,
+     0
+    ],
+    "family.Powerful.a": [
+     0,
+     1
+    ],
+    "family.Powerful.b": [
+     0,
+     1
+    ],
+    "family.Runner.a": [
+     3,
+     3
+    ],
+    "family.Runner.b": [
+     4,
+     3
+    ],
+    "hair.forelock": [
+     0,
+     2
+    ],
+    "hair.mane": [
+     0,
+     4
+    ],
+    "hair.maneLength": [
+     3,
+     3
+    ],
+    "hair.side": [
+     2,
+     2
+    ],
+    "hair.tail": [
+     0,
+     0
+    ],
+    "hair.tailFullness": [
+     0,
+     2
+    ],
+    "hair.tailLength": [
+     2,
+     0
+    ],
+    "hair.wave": [
+     3,
+     4
+    ],
+    "head.earLength": [
+     3,
+     1
+    ],
+    "head.earSpread": [
+     3,
+     0
+    ],
+    "head.eyeHeight": [
+     2,
+     1
+    ],
+    "head.eyeSpacing": [
+     1,
+     3
+    ],
+    "head.forehead": [
+     0,
+     1
+    ],
+    "head.jaw": [
+     3,
+     0
+    ],
+    "head.length": [
+     3,
+     1
+    ],
+    "head.muzzle": [
+     1,
+     2
+    ],
+    "head.profile": [
+     0,
+     2
+    ],
+    "individual.eye": [
+     0,
+     0
+    ],
+    "individual.temperament": [
+     0,
+     1
+    ],
+    "mask.body": [
+     9,
+     1
+    ],
+    "mask.face": [
+     0,
+     8
+    ],
+    "mask.leftFore": [
+     3,
+     4
+    ],
+    "mask.leftHind": [
+     5,
+     2
+    ],
+    "mask.overlay": [
+     1,
+     5
+    ],
+    "mask.rightFore": [
+     2,
+     1
+    ],
+    "mask.rightHind": [
+     5,
+     5
+    ],
+    "neck.arch": [
+     1,
+     1
+    ],
+    "neck.carriage": [
+     1,
+     3
+    ],
+    "neck.length": [
+     3,
+     2
+    ],
+    "neck.thickness": [
+     0,
+     4
+    ]
+   }
+  },
+  {
+   "id": "riv_x:founder:1",
+   "sex": "stallion",
+   "birthT": -30,
+   "readyT": -18,
+   "ret": 66,
+   "abilities": {
+    "acceleration": 6,
+    "speed": 7,
+    "endurance": 7,
+    "composure": 6
+   },
+   "ceilings": {
+    "acceleration": 7,
+    "speed": 8,
+    "endurance": 8,
+    "composure": 7
+   },
+   "response": {
+    "acceleration": 0.7,
+    "speed": 1,
+    "endurance": 1,
+    "composure": 1
+   },
+   "trait": "solar",
+   "favorite": "firm",
+   "difficult": "firm",
+   "stress": 7,
+   "coat": "#696663",
+   "zones": [
+    [
+     400000,
+     142500,
+     70000,
+     5000,
+     5
+    ],
+    [
+     400000,
+     137500,
+     70000,
+     5000,
+     4
+    ],
+    [
+     420000,
+     137500,
+     70000,
+     2500,
+     5
+    ],
+    [
+     405000,
+     137500,
+     70000,
+     5000,
+     3
+    ]
+   ],
+   "genome": {
+    "ceiling.acceleration": [
+     1,
+     4
+    ],
+    "response.acceleration": [
+     2,
+     0
+    ],
+    "ceiling.speed": [
+     2,
+     4
+    ],
+    "response.speed": [
+     2,
+     2
+    ],
+    "ceiling.endurance": [
+     4,
+     2
+    ],
+    "response.endurance": [
+     3,
+     2
+    ],
+    "ceiling.composure": [
+     2,
+     3
+    ],
+    "response.composure": [
+     1,
+     2
+    ],
+    "structureA.0": [
+     3,
+     4
+    ],
+    "structureB.0": [
+     3,
+     4
+    ],
+    "acute.0": [
+     4,
+     4
+    ],
+    "adapt.0": [
+     1,
+     3
+    ],
+    "recovery.0": [
+     3,
+     3
+    ],
+    "inflammation.0": [
+     3,
+     2
+    ],
+    "structureA.1": [
+     4,
+     3
+    ],
+    "structureB.1": [
+     4,
+     3
+    ],
+    "acute.1": [
+     4,
+     4
+    ],
+    "adapt.1": [
+     0,
+     4
+    ],
+    "recovery.1": [
+     3,
+     3
+    ],
+    "inflammation.1": [
+     2,
+     2
+    ],
+    "structureA.2": [
+     4,
+     3
+    ],
+    "structureB.2": [
+     4,
+     4
+    ],
+    "acute.2": [
+     4,
+     4
+    ],
+    "adapt.2": [
+     0,
+     2
+    ],
+    "recovery.2": [
+     4,
+     2
+    ],
+    "inflammation.2": [
+     3,
+     2
+    ],
+    "structureA.3": [
+     4,
+     3
+    ],
+    "structureB.3": [
+     3,
+     4
+    ],
+    "acute.3": [
+     4,
+     4
+    ],
+    "adapt.3": [
+     2,
+     1
+    ],
+    "recovery.3": [
+     3,
+     4
+    ],
+    "inflammation.3": [
+     1,
+     2
+    ],
+    "maturity": [
+     2,
+     2
+    ],
+    "longevity": [
+     3,
+     1
+    ],
+    "stress": [
+     4,
+     3
+    ],
+    "stifleRisk": [
+     0,
+     0
+    ],
+    "signature": [
+     1,
+     0
+    ],
+    "surface": [
+     0,
+     2
+    ],
+    "surfaceFlex": [
+     0,
+     0
+    ],
+    "visual.family": [
+     2,
+     3
+    ],
+    "visual.coat": [
+     3,
+     2
+    ],
+    "visual.marking": [
+     0,
+     2
+    ],
+    "visual.height": [
+     2,
+     2
+    ],
+    "visual.bulk": [
+     1,
+     2
+    ],
+    "visual.legs": [
+     3,
+     3
+    ],
+    "visual.head": [
+     4,
+     3
+    ],
+    "visual.hair": [
+     1,
+     4
+    ],
+    "body.barrel": [
+     2,
+     3
+    ],
+    "body.boneSubstance": [
+     2,
+     0
+    ],
+    "body.chest": [
+     2,
+     1
+    ],
+    "body.height": [
+     2,
+     2
+    ],
+    "body.hindquarter": [
+     0,
+     2
+    ],
+    "body.leg": [
+     1,
+     1
+    ],
+    "body.length": [
+     1,
+     3
+    ],
+    "coat.agouti": [
+     1,
+     1
+    ],
+    "coat.cream": [
+     0,
+     0
+    ],
+    "coat.dun": [
+     0,
+     0
+    ],
+    "coat.extension": [
+     1,
+     0
+    ],
+    "coat.flaxen": [
+     0,
+     0
+    ],
+    "coat.gray": [
+     0,
+     0
+    ],
+    "coat.pattern": [
+     1,
+     0
+    ],
+    "coat.roan": [
+     0,
+     1
+    ],
+    "extent.body": [
+     3,
+     2
+    ],
+    "extent.face": [
+     1,
+     2
+    ],
+    "extent.leftFore": [
+     2,
+     3
+    ],
+    "extent.leftHind": [
+     4,
+     2
+    ],
+    "extent.rightFore": [
+     3,
+     2
+    ],
+    "extent.rightHind": [
+     3,
+     2
+    ],
+    "family.Balanced.a": [
+     0,
+     0
+    ],
+    "family.Balanced.b": [
+     1,
+     0
+    ],
+    "family.Endurance.a": [
+     0,
+     0
+    ],
+    "family.Endurance.b": [
+     1,
+     1
+    ],
+    "family.Light.a": [
+     1,
+     0
+    ],
+    "family.Light.b": [
+     1,
+     0
+    ],
+    "family.Powerful.a": [
+     4,
+     3
+    ],
+    "family.Powerful.b": [
+     4,
+     4
+    ],
+    "family.Runner.a": [
+     0,
+     1
+    ],
+    "family.Runner.b": [
+     1,
+     1
+    ],
+    "hair.forelock": [
+     1,
+     1
+    ],
+    "hair.mane": [
+     0,
+     1
+    ],
+    "hair.maneLength": [
+     3,
+     1
+    ],
+    "hair.side": [
+     0,
+     2
+    ],
+    "hair.tail": [
+     2,
+     1
+    ],
+    "hair.tailFullness": [
+     3,
+     4
+    ],
+    "hair.tailLength": [
+     0,
+     2
+    ],
+    "hair.wave": [
+     4,
+     3
+    ],
+    "head.earLength": [
+     3,
+     2
+    ],
+    "head.earSpread": [
+     0,
+     3
+    ],
+    "head.eyeHeight": [
+     1,
+     3
+    ],
+    "head.eyeSpacing": [
+     2,
+     1
+    ],
+    "head.forehead": [
+     3,
+     3
+    ],
+    "head.jaw": [
+     2,
+     1
+    ],
+    "head.length": [
+     2,
+     2
+    ],
+    "head.muzzle": [
+     3,
+     2
+    ],
+    "head.profile": [
+     2,
+     1
+    ],
+    "individual.eye": [
+     0,
+     2
+    ],
+    "individual.temperament": [
+     1,
+     4
+    ],
+    "mask.body": [
+     8,
+     0
+    ],
+    "mask.face": [
+     3,
+     4
+    ],
+    "mask.leftFore": [
+     4,
+     7
+    ],
+    "mask.leftHind": [
+     2,
+     0
+    ],
+    "mask.overlay": [
+     5,
+     1
+    ],
+    "mask.rightFore": [
+     1,
+     3
+    ],
+    "mask.rightHind": [
+     6,
+     6
+    ],
+    "neck.arch": [
+     0,
+     2
+    ],
+    "neck.carriage": [
+     2,
+     3
+    ],
+    "neck.length": [
+     3,
+     4
+    ],
+    "neck.thickness": [
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "riv_x:foal:5",
+   "sex": "mare",
+   "birthT": 5,
+   "readyT": 17,
+   "ret": 89,
+   "abilities": {
+    "acceleration": 4,
+    "speed": 5,
+    "endurance": 5,
+    "composure": 4
+   },
+   "ceilings": {
+    "acceleration": 7,
+    "speed": 8,
+    "endurance": 8,
+    "composure": 7
+   },
+   "response": {
+    "acceleration": 1,
+    "speed": 1,
+    "endurance": 1,
+    "composure": 1
+   },
+   "trait": "quiet",
+   "favorite": "sand",
+   "difficult": "sand",
+   "stress": 5,
+   "coat": "#696663",
+   "zones": [
+    [
+     420000,
+     137500,
+     70000,
+     5000,
+     4
+    ],
+    [
+     415000,
+     142500,
+     50000,
+     5000,
+     3
+    ],
+    [
+     445000,
+     140000,
+     70000,
+     2500,
+     6
+    ],
+    [
+     420000,
+     137500,
+     70000,
+     5000,
+     3
+    ]
+   ],
+   "genome": {
+    "ceiling.acceleration": [
+     1,
+     4
+    ],
+    "response.acceleration": [
+     2,
+     3
+    ],
+    "ceiling.speed": [
+     2,
+     4
+    ],
+    "response.speed": [
+     2,
+     3
+    ],
+    "ceiling.endurance": [
+     4,
+     2
+    ],
+    "response.endurance": [
+     2,
+     2
+    ],
+    "ceiling.composure": [
+     3,
+     2
+    ],
+    "response.composure": [
+     2,
+     1
+    ],
+    "structureA.0": [
+     4,
+     4
+    ],
+    "structureB.0": [
+     4,
+     3
+    ],
+    "acute.0": [
+     4,
+     4
+    ],
+    "adapt.0": [
+     3,
+     2
+    ],
+    "recovery.0": [
+     3,
+     4
+    ],
+    "inflammation.0": [
+     2,
+     2
+    ],
+    "structureA.1": [
+     4,
+     3
+    ],
+    "structureB.1": [
+     4,
+     4
+    ],
+    "acute.1": [
+     4,
+     4
+    ],
+    "adapt.1": [
+     4,
+     0
+    ],
+    "recovery.1": [
+     3,
+     2
+    ],
+    "inflammation.1": [
+     2,
+     1
+    ],
+    "structureA.2": [
+     4,
+     4
+    ],
+    "structureB.2": [
+     4,
+     4
+    ],
+    "acute.2": [
+     4,
+     4
+    ],
+    "adapt.2": [
+     0,
+     2
+    ],
+    "recovery.2": [
+     4,
+     4
+    ],
+    "inflammation.2": [
+     2,
+     4
+    ],
+    "structureA.3": [
+     3,
+     4
+    ],
+    "structureB.3": [
+     4,
+     4
+    ],
+    "acute.3": [
+     4,
+     4
+    ],
+    "adapt.3": [
+     2,
+     3
+    ],
+    "recovery.3": [
+     4,
+     4
+    ],
+    "inflammation.3": [
+     2,
+     1
+    ],
+    "maturity": [
+     2,
+     0
+    ],
+    "longevity": [
+     1,
+     1
+    ],
+    "stress": [
+     3,
+     2
+    ],
+    "stifleRisk": [
+     0,
+     1
+    ],
+    "signature": [
+     1,
+     3
+    ],
+    "surface": [
+     2,
+     2
+    ],
+    "surfaceFlex": [
+     0,
+     1
+    ],
+    "visual.family": [
+     2,
+     4
+    ],
+    "visual.coat": [
+     2,
+     3
+    ],
+    "visual.marking": [
+     2,
+     1
+    ],
+    "visual.height": [
+     2,
+     2
+    ],
+    "visual.bulk": [
+     2,
+     2
+    ],
+    "visual.legs": [
+     3,
+     3
+    ],
+    "visual.head": [
+     3,
+     4
+    ],
+    "visual.hair": [
+     1,
+     3
+    ],
+    "body.barrel": [
+     3,
+     1
+    ],
+    "body.boneSubstance": [
+     2,
+     1
+    ],
+    "body.chest": [
+     2,
+     3
+    ],
+    "body.height": [
+     2,
+     0
+    ],
+    "body.hindquarter": [
+     0,
+     3
+    ],
+    "body.leg": [
+     1,
+     2
+    ],
+    "body.length": [
+     3,
+     1
+    ],
+    "coat.agouti": [
+     1,
+     0
+    ],
+    "coat.cream": [
+     0,
+     0
+    ],
+    "coat.dun": [
+     0,
+     0
+    ],
+    "coat.extension": [
+     0,
+     0
+    ],
+    "coat.flaxen": [
+     0,
+     0
+    ],
+    "coat.gray": [
+     0,
+     0
+    ],
+    "coat.pattern": [
+     1,
+     0
+    ],
+    "coat.roan": [
+     0,
+     0
+    ],
+    "extent.body": [
+     3,
+     0
+    ],
+    "extent.face": [
+     1,
+     4
+    ],
+    "extent.leftFore": [
+     2,
+     4
+    ],
+    "extent.leftHind": [
+     2,
+     4
+    ],
+    "extent.rightFore": [
+     2,
+     3
+    ],
+    "extent.rightHind": [
+     2,
+     2
+    ],
+    "family.Balanced.a": [
+     0,
+     0
+    ],
+    "family.Balanced.b": [
+     0,
+     0
+    ],
+    "family.Endurance.a": [
+     0,
+     1
+    ],
+    "family.Endurance.b": [
+     1,
+     0
+    ],
+    "family.Light.a": [
+     1,
+     0
+    ],
+    "family.Light.b": [
+     1,
+     1
+    ],
+    "family.Powerful.a": [
+     3,
+     1
+    ],
+    "family.Powerful.b": [
+     4,
+     1
+    ],
+    "family.Runner.a": [
+     0,
+     3
+    ],
+    "family.Runner.b": [
+     1,
+     4
+    ],
+    "hair.forelock": [
+     1,
+     2
+    ],
+    "hair.mane": [
+     0,
+     0
+    ],
+    "hair.maneLength": [
+     3,
+     3
+    ],
+    "hair.side": [
+     2,
+     2
+    ],
+    "hair.tail": [
+     2,
+     0
+    ],
+    "hair.tailFullness": [
+     4,
+     2
+    ],
+    "hair.tailLength": [
+     2,
+     0
+    ],
+    "hair.wave": [
+     4,
+     3
+    ],
+    "head.earLength": [
+     3,
+     3
+    ],
+    "head.earSpread": [
+     0,
+     0
+    ],
+    "head.eyeHeight": [
+     1,
+     1
+    ],
+    "head.eyeSpacing": [
+     1,
+     3
+    ],
+    "head.forehead": [
+     3,
+     0
+    ],
+    "head.jaw": [
+     1,
+     3
+    ],
+    "head.length": [
+     2,
+     1
+    ],
+    "head.muzzle": [
+     2,
+     2
+    ],
+    "head.profile": [
+     1,
+     0
+    ],
+    "individual.eye": [
+     0,
+     0
+    ],
+    "individual.temperament": [
+     1,
+     1
+    ],
+    "mask.body": [
+     0,
+     9
+    ],
+    "mask.face": [
+     4,
+     8
+    ],
+    "mask.leftFore": [
+     4,
+     4
+    ],
+    "mask.leftHind": [
+     0,
+     5
+    ],
+    "mask.overlay": [
+     1,
+     5
+    ],
+    "mask.rightFore": [
+     1,
+     2
+    ],
+    "mask.rightHind": [
+     6,
+     5
+    ],
+    "neck.arch": [
+     2,
+     1
+    ],
+    "neck.carriage": [
+     3,
+     1
+    ],
+    "neck.length": [
+     4,
+     2
+    ],
+    "neck.thickness": [
+     3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "m:board:3:1",
+   "sex": "stallion",
+   "birthT": -21,
+   "readyT": -9,
+   "ret": 75,
+   "abilities": {
+    "acceleration": 4,
+    "speed": 6,
+    "endurance": 4,
+    "composure": 4
+   },
+   "ceilings": {
+    "acceleration": 5,
+    "speed": 8,
+    "endurance": 6,
+    "composure": 6
+   },
+   "response": {
+    "acceleration": 1.35,
+    "speed": 1.35,
+    "endurance": 0.7,
+    "composure": 1.35
+   },
+   "trait": "clear",
+   "favorite": "sand",
+   "difficult": "sand",
+   "stress": 4,
+   "coat": "#b08a5e",
+   "zones": [
+    [
+     205000,
+     112500,
+     50000,
+     2500,
+     2
+    ],
+    [
+     260000,
+     110000,
+     70000,
+     2500,
+     2
+    ],
+    [
+     255000,
+     122500,
+     50000,
+     5000,
+     4
+    ],
+    [
+     265000,
+     107500,
+     70000,
+     5000,
+     4
+    ]
+   ],
+   "genome": {
+    "ceiling.acceleration": [
+     1,
+     2
+    ],
+    "response.acceleration": [
+     2,
+     4
+    ],
+    "ceiling.speed": [
+     4,
+     2
+    ],
+    "response.speed": [
+     2,
+     4
+    ],
+    "ceiling.endurance": [
+     2,
+     2
+    ],
+    "response.endurance": [
+     2,
+     0
+    ],
+    "ceiling.composure": [
+     0,
+     4
+    ],
+    "response.composure": [
+     3,
+     3
+    ],
+    "structureA.0": [
+     1,
+     0
+    ],
+    "structureB.0": [
+     3,
+     0
+    ],
+    "acute.0": [
+     2,
+     3
+    ],
+    "adapt.0": [
+     0,
+     1
+    ],
+    "recovery.0": [
+     2,
+     2
+    ],
+    "inflammation.0": [
+     1,
+     1
+    ],
+    "structureA.1": [
+     0,
+     2
+    ],
+    "structureB.1": [
+     3,
+     2
+    ],
+    "acute.1": [
+     4,
+     1
+    ],
+    "adapt.1": [
+     1,
+     1
+    ],
+    "recovery.1": [
+     4,
+     2
+    ],
+    "inflammation.1": [
+     1,
+     1
+    ],
+    "structureA.2": [
+     2,
+     2
+    ],
+    "structureB.2": [
+     2,
+     1
+    ],
+    "acute.2": [
+     4,
+     2
+    ],
+    "adapt.2": [
+     1,
+     2
+    ],
+    "recovery.2": [
+     2,
+     2
+    ],
+    "inflammation.2": [
+     2,
+     2
+    ],
+    "structureA.3": [
+     3,
+     1
+    ],
+    "structureB.3": [
+     1,
+     2
+    ],
+    "acute.3": [
+     3,
+     2
+    ],
+    "adapt.3": [
+     1,
+     4
+    ],
+    "recovery.3": [
+     4,
+     3
+    ],
+    "inflammation.3": [
+     3,
+     1
+    ],
+    "maturity": [
+     3,
+     3
+    ],
+    "longevity": [
+     2,
+     2
+    ],
+    "stress": [
+     1,
+     3
+    ],
+    "stifleRisk": [
+     0,
+     0
+    ],
+    "signature": [
+     1,
+     4
+    ],
+    "surface": [
+     2,
+     2
+    ],
+    "surfaceFlex": [
+     1,
+     0
+    ],
+    "visual.family": [
+     0,
+     2
+    ],
+    "visual.coat": [
+     2,
+     1
+    ],
+    "visual.marking": [
+     0,
+     4
+    ],
+    "visual.height": [
+     4,
+     0
+    ],
+    "visual.bulk": [
+     3,
+     2
+    ],
+    "visual.legs": [
+     0,
+     1
+    ],
+    "visual.head": [
+     2,
+     2
+    ],
+    "visual.hair": [
+     2,
+     3
+    ],
+    "body.barrel": [
+     3,
+     3
+    ],
+    "body.boneSubstance": [
+     4,
+     4
+    ],
+    "body.chest": [
+     2,
+     3
+    ],
+    "body.height": [
+     1,
+     4
+    ],
+    "body.hindquarter": [
+     2,
+     1
+    ],
+    "body.leg": [
+     3,
+     2
+    ],
+    "body.length": [
+     3,
+     2
+    ],
+    "coat.agouti": [
+     0,
+     1
+    ],
+    "coat.cream": [
+     0,
+     0
+    ],
+    "coat.dun": [
+     0,
+     0
+    ],
+    "coat.extension": [
+     1,
+     0
+    ],
+    "coat.flaxen": [
+     0,
+     1
+    ],
+    "coat.gray": [
+     0,
+     0
+    ],
+    "coat.pattern": [
+     0,
+     0
+    ],
+    "coat.roan": [
+     0,
+     1
+    ],
+    "extent.body": [
+     3,
+     2
+    ],
+    "extent.face": [
+     3,
+     1
+    ],
+    "extent.leftFore": [
+     1,
+     2
+    ],
+    "extent.leftHind": [
+     1,
+     1
+    ],
+    "extent.rightFore": [
+     2,
+     2
+    ],
+    "extent.rightHind": [
+     4,
+     1
+    ],
+    "family.Balanced.a": [
+     0,
+     1
+    ],
+    "family.Balanced.b": [
+     1,
+     1
+    ],
+    "family.Endurance.a": [
+     0,
+     0
+    ],
+    "family.Endurance.b": [
+     1,
+     0
+    ],
+    "family.Light.a": [
+     4,
+     4
+    ],
+    "family.Light.b": [
+     3,
+     4
+    ],
+    "family.Powerful.a": [
+     0,
+     1
+    ],
+    "family.Powerful.b": [
+     0,
+     1
+    ],
+    "family.Runner.a": [
+     1,
+     0
+    ],
+    "family.Runner.b": [
+     0,
+     1
+    ],
+    "hair.forelock": [
+     0,
+     0
+    ],
+    "hair.mane": [
+     4,
+     0
+    ],
+    "hair.maneLength": [
+     4,
+     0
+    ],
+    "hair.side": [
+     0,
+     1
+    ],
+    "hair.tail": [
+     5,
+     4
+    ],
+    "hair.tailFullness": [
+     3,
+     1
+    ],
+    "hair.tailLength": [
+     4,
+     4
+    ],
+    "hair.wave": [
+     2,
+     2
+    ],
+    "head.earLength": [
+     2,
+     0
+    ],
+    "head.earSpread": [
+     3,
+     4
+    ],
+    "head.eyeHeight": [
+     2,
+     1
+    ],
+    "head.eyeSpacing": [
+     2,
+     2
+    ],
+    "head.forehead": [
+     2,
+     2
+    ],
+    "head.jaw": [
+     1,
+     1
+    ],
+    "head.length": [
+     1,
+     2
+    ],
+    "head.muzzle": [
+     2,
+     2
+    ],
+    "head.profile": [
+     2,
+     2
+    ],
+    "individual.eye": [
+     0,
+     0
+    ],
+    "individual.temperament": [
+     2,
+     2
+    ],
+    "mask.body": [
+     1,
+     0
+    ],
+    "mask.face": [
+     5,
+     11
+    ],
+    "mask.leftFore": [
+     5,
+     6
+    ],
+    "mask.leftHind": [
+     7,
+     2
+    ],
+    "mask.overlay": [
+     0,
+     5
+    ],
+    "mask.rightFore": [
+     4,
+     3
+    ],
+    "mask.rightHind": [
+     4,
+     0
+    ],
+    "neck.arch": [
+     1,
+     0
+    ],
+    "neck.carriage": [
+     4,
+     1
+    ],
+    "neck.length": [
+     2,
+     4
+    ],
+    "neck.thickness": [
+     2,
+     2
+    ]
+   }
+  },
+  {
+   "id": "m:recovery:3",
+   "sex": "mare",
+   "birthT": -21,
+   "readyT": -9,
+   "ret": 75,
+   "abilities": {
+    "acceleration": 4,
+    "speed": 4,
+    "endurance": 4,
+    "composure": 4
+   },
+   "ceilings": {
+    "acceleration": 5,
+    "speed": 5,
+    "endurance": 5,
+    "composure": 5
+   },
+   "response": {
+    "acceleration": 0.7,
+    "speed": 1,
+    "endurance": 1,
+    "composure": 0.7
+   },
+   "trait": "gate",
+   "favorite": "sand",
+   "difficult": "sand",
+   "stress": 7,
+   "coat": "#7f4127",
+   "zones": [
+    [
+     395000,
+     140000,
+     70000,
+     5000,
+     4
+    ],
+    [
+     400000,
+     140000,
+     70000,
+     5000,
+     4
+    ],
+    [
+     395000,
+     137500,
+     70000,
+     2500,
+     5
+    ],
+    [
+     425000,
+     142500,
+     70000,
+     5000,
+     3
+    ]
+   ],
+   "genome": {
+    "ceiling.acceleration": [
+     1,
+     2
+    ],
+    "response.acceleration": [
+     1,
+     1
+    ],
+    "ceiling.speed": [
+     1,
+     2
+    ],
+    "response.speed": [
+     2,
+     2
+    ],
+    "ceiling.endurance": [
+     0,
+     3
+    ],
+    "response.endurance": [
+     2,
+     3
+    ],
+    "ceiling.composure": [
+     1,
+     2
+    ],
+    "response.composure": [
+     2,
+     0
+    ],
+    "structureA.0": [
+     3,
+     4
+    ],
+    "structureB.0": [
+     4,
+     3
+    ],
+    "acute.0": [
+     4,
+     4
+    ],
+    "adapt.0": [
+     2,
+     3
+    ],
+    "recovery.0": [
+     4,
+     2
+    ],
+    "inflammation.0": [
+     3,
+     1
+    ],
+    "structureA.1": [
+     3,
+     3
+    ],
+    "structureB.1": [
+     4,
+     4
+    ],
+    "acute.1": [
+     4,
+     4
+    ],
+    "adapt.1": [
+     2,
+     3
+    ],
+    "recovery.1": [
+     2,
+     4
+    ],
+    "inflammation.1": [
+     3,
+     1
+    ],
+    "structureA.2": [
+     3,
+     4
+    ],
+    "structureB.2": [
+     4,
+     3
+    ],
+    "acute.2": [
+     4,
+     4
+    ],
+    "adapt.2": [
+     1,
+     1
+    ],
+    "recovery.2": [
+     4,
+     2
+    ],
+    "inflammation.2": [
+     3,
+     2
+    ],
+    "structureA.3": [
+     4,
+     3
+    ],
+    "structureB.3": [
+     4,
+     4
+    ],
+    "acute.3": [
+     4,
+     4
+    ],
+    "adapt.3": [
+     1,
+     2
+    ],
+    "recovery.3": [
+     4,
+     2
+    ],
+    "inflammation.3": [
+     1,
+     2
+    ],
+    "maturity": [
+     3,
+     1
+    ],
+    "longevity": [
+     1,
+     3
+    ],
+    "stress": [
+     3,
+     4
+    ],
+    "stifleRisk": [
+     0,
+     0
+    ],
+    "signature": [
+     1,
+     2
+    ],
+    "surface": [
+     2,
+     2
+    ],
+    "surfaceFlex": [
+     0,
+     1
+    ],
+    "visual.family": [
+     3,
+     2
+    ],
+    "visual.coat": [
+     4,
+     2
+    ],
+    "visual.marking": [
+     3,
+     2
+    ],
+    "visual.height": [
+     2,
+     3
+    ],
+    "visual.bulk": [
+     3,
+     3
+    ],
+    "visual.legs": [
+     3,
+     1
+    ],
+    "visual.head": [
+     0,
+     1
+    ],
+    "visual.hair": [
+     4,
+     2
+    ],
+    "body.barrel": [
+     3,
+     4
+    ],
+    "body.boneSubstance": [
+     3,
+     3
+    ],
+    "body.chest": [
+     1,
+     3
+    ],
+    "body.height": [
+     0,
+     2
+    ],
+    "body.hindquarter": [
+     0,
+     0
+    ],
+    "body.leg": [
+     0,
+     2
+    ],
+    "body.length": [
+     2,
+     1
+    ],
+    "coat.agouti": [
+     0,
+     0
+    ],
+    "coat.cream": [
+     0,
+     0
+    ],
+    "coat.dun": [
+     0,
+     0
+    ],
+    "coat.extension": [
+     0,
+     0
+    ],
+    "coat.flaxen": [
+     0,
+     0
+    ],
+    "coat.gray": [
+     0,
+     0
+    ],
+    "coat.pattern": [
+     0,
+     0
+    ],
+    "coat.roan": [
+     0,
+     0
+    ],
+    "extent.body": [
+     4,
+     3
+    ],
+    "extent.face": [
+     0,
+     3
+    ],
+    "extent.leftFore": [
+     2,
+     1
+    ],
+    "extent.leftHind": [
+     3,
+     1
+    ],
+    "extent.rightFore": [
+     2,
+     3
+    ],
+    "extent.rightHind": [
+     3,
+     1
+    ],
+    "family.Balanced.a": [
+     1,
+     0
+    ],
+    "family.Balanced.b": [
+     1,
+     1
+    ],
+    "family.Endurance.a": [
+     1,
+     1
+    ],
+    "family.Endurance.b": [
+     1,
+     1
+    ],
+    "family.Light.a": [
+     1,
+     1
+    ],
+    "family.Light.b": [
+     1,
+     0
+    ],
+    "family.Powerful.a": [
+     4,
+     3
+    ],
+    "family.Powerful.b": [
+     4,
+     3
+    ],
+    "family.Runner.a": [
+     0,
+     1
+    ],
+    "family.Runner.b": [
+     1,
+     0
+    ],
+    "hair.forelock": [
+     0,
+     0
+    ],
+    "hair.mane": [
+     4,
+     5
+    ],
+    "hair.maneLength": [
+     2,
+     0
+    ],
+    "hair.side": [
+     0,
+     1
+    ],
+    "hair.tail": [
+     5,
+     3
+    ],
+    "hair.tailFullness": [
+     2,
+     1
+    ],
+    "hair.tailLength": [
+     1,
+     2
+    ],
+    "hair.wave": [
+     1,
+     4
+    ],
+    "head.earLength": [
+     2,
+     1
+    ],
+    "head.earSpread": [
+     2,
+     2
+    ],
+    "head.eyeHeight": [
+     4,
+     4
+    ],
+    "head.eyeSpacing": [
+     4,
+     3
+    ],
+    "head.forehead": [
+     2,
+     2
+    ],
+    "head.jaw": [
+     1,
+     1
+    ],
+    "head.length": [
+     4,
+     4
+    ],
+    "head.muzzle": [
+     3,
+     1
+    ],
+    "head.profile": [
+     1,
+     2
+    ],
+    "individual.eye": [
+     0,
+     2
+    ],
+    "individual.temperament": [
+     3,
+     4
+    ],
+    "mask.body": [
+     5,
+     0
+    ],
+    "mask.face": [
+     0,
+     1
+    ],
+    "mask.leftFore": [
+     2,
+     4
+    ],
+    "mask.leftHind": [
+     4,
+     0
+    ],
+    "mask.overlay": [
+     2,
+     5
+    ],
+    "mask.rightFore": [
+     2,
+     6
+    ],
+    "mask.rightHind": [
+     7,
+     4
+    ],
+    "neck.arch": [
+     3,
+     1
+    ],
+    "neck.carriage": [
+     1,
+     3
+    ],
+    "neck.length": [
+     0,
+     2
+    ],
+    "neck.thickness": [
+     3,
+     2
+    ]
+   }
+  }
+ ],
+ "names": [
+  "Song of Mist",
+  "Nougat",
+  "Karma"
+ ],
+ "poolSize": 45979,
+ "pool0": "Acapella",
+ "poolLast": "Zinnia of the Wind",
+ "order": "ba"
+}

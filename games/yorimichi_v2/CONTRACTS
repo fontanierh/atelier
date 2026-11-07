@@ -1,0 +1,36 @@
+@cc [owner:fontanierh,label:correctness] yorimichi-v2-targeted-authoring
+A normal V2 build or play MUST NOT prepare, generate, import, resave or cook content. It validates, compiles
+and checks committed packages. Preparation and import run only when explicitly asked, for the selected assets
+and their declared dependents, through each asset's recorded route. An unchanged input MUST NOT launch Blender
+or an Unreal import, and a no-op run MUST NOT rewrite any tracked file. Missing or stale content MUST fail with
+the exact problem and its owner route, never be fixed silently, stamped as current or regenerated wholesale.
+External and AI-generated sources are committed, pinned inputs recorded through atelier.ai.ledger.
+
+@cc [owner:fontanierh,label:correctness] yorimichi-v2-single-writer
+Every committed V2 package MUST have exactly one owning record: an asset's asset.toml output or a region's
+actors.verified.json. Only that owner's route writes it: a generated package only through its importer, an
+editor-owned package only through a claimed editor save and its save validation. A protected write MUST hold
+an active claim covering the package's scope and exact path, and the LFS lock that claim recorded, verified
+when the write is authorized; a task's changed-file set MUST stay inside its claim, including companions,
+deletions and moves between regions. The only exception is DECISIONS D04: until D04 is closed, the recorded
+bootstrap writer, in a checkout with no claims task, is the single binary writer and writes without a claim.
+Every write route (import, editor script, save validation, adoption) MUST enforce the same rule, and adoption
+MUST NOT overwrite an existing package whose bytes differ.
+
+@cc [owner:fontanierh,label:security] yorimichi-v2-portable-records
+Asset, region and verification records MUST be portable: repository-relative paths, hashes, engine identity
+and versions only, never absolute paths, hostnames, user names or times used as evidence. Package bytes
+committed to Git LFS MUST NOT carry absolute donor or home paths in their import metadata; the repository is
+public and LFS is not private storage. Asset licenses and redistribution rights MUST be settled before bytes
+are uploaded.
+
+@cc [owner:fontanierh,label:correctness] yorimichi-v2-joins-checked
+Editor-authored joins between saved actors (stairs, paving, decks, region borders) MUST be accepted by an
+automated gap and overlap check over the saved actors, in addition to the inherited ground, seam, closure and
+walkability rules.
+
+@cc [owner:fontanierh,label:architecture] yorimichi-v2-excluded-features
+V2 MUST NOT load, register or link phone streaming (PixelStreaming2, AtelierStream, touch pages) or go-kart
+driving (the Driving plugin, kart assets, kart UI). Shared input, audio, menu and travel code stays when an
+included feature uses it; an excluded dependency is removed cleanly, leaving no missing class, asset load or
+dead menu entry. V2 runtime code MUST NOT import or load files from games/yorimichi.

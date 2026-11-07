@@ -1,0 +1,6 @@
+# The minimal test map's actors: an engine cube and a player start (unreal/Scripts/new_test_map.py).
+schema = 1
+id = "region/test-minimal"
+about = "Minimal World Partition test map"
+bounds_cm = [-1000, -1000, 1000, 1000]
+maps = ["/Game/V2/Maps/TestMinimal"]

@@ -83,6 +83,11 @@ def play(game, profile, settings, extra, memory_gib=None):
     if profile not in profiles:
         raise SystemExit(f'no play profile {profile!r}; {game} has {sorted(profiles)}')
     spec = profiles[profile]
+    check = data.get('play_check')
+    if check:
+        # A game whose committed packages are the source of truth refuses to play missing or stale content.
+        if subprocess.call([sys.executable, str(ctx.game_dir / check)], env=ctx.env()):
+            raise SystemExit(f'{game}: {check} failed; fix the reported content before playing')
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     folder = ctx.out / 'logs' / f'play-{profile}-{stamp}'
     folder.mkdir(parents=True, exist_ok=True)
@@ -130,11 +135,38 @@ PERSONAL = [
 ]
 
 
+PACKAGE_SUFFIXES = ('.uasset', '.umap', '.ubulk', '.uexp')
+
+
+def package_problems(rel, data):
+    """Personal paths and hostnames inside committed Unreal package bytes, such as import metadata naming a donor's
+    home folder. Packages store strings as Latin-1 or UTF-16; a Git LFS pointer (the staged blob of an LFS file) is
+    checked through the content it names when that content is available locally."""
+    if data.startswith(b'version https://git-lfs.github.com/spec/v1'):
+        oid = re.search(rb'oid sha256:([0-9a-f]{64})', data)
+        local = paths.REPO / '.git' / 'lfs' / 'objects'
+        if oid:
+            digest = oid.group(1).decode()
+            found = subprocess.run(['git', 'rev-parse', '--git-common-dir'], cwd=paths.REPO, capture_output=True, text=True)
+            if found.returncode == 0:
+                local = (paths.REPO / found.stdout.strip()).resolve() / 'lfs' / 'objects'
+            blob = local / digest[:2] / digest[2:4] / digest
+            if not blob.is_file():
+                return []
+            data = blob.read_bytes()
+    problems = []
+    texts = [data.decode('latin-1'), data.decode('utf-16-le', errors='ignore'), data[1:].decode('utf-16-le', errors='ignore')]
+    for pattern, what, literals in PERSONAL[:2]:
+        if any(pattern.search(text) for text in texts):
+            problems.append(f'{rel}: {what} inside the package bytes')
+    return problems
+
+
 def lint(staged=False):
     """Checks for the public repository and for the platform's independence from games. `staged` checks the files
     about to be committed (the pre-commit hook), reading their staged content."""
-    listing = ['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR'] if staged else ['git', 'ls-files']
-    tracked = subprocess.run(listing, cwd=paths.REPO, capture_output=True, text=True).stdout.split()
+    listing = ['git', 'diff', '--cached', '--name-only', '-z', '--diff-filter=ACMR'] if staged else ['git', 'ls-files', '-z']
+    tracked = [rel for rel in subprocess.run(listing, cwd=paths.REPO, capture_output=True, text=True).stdout.split('\0') if rel]
     problems = []
     from .mesh_export_contract import violations
     games = sorted(p.name for p in paths.GAMES.iterdir() if p.is_dir())
@@ -142,6 +174,10 @@ def lint(staged=False):
         path = paths.REPO / rel
         if rel == '.env' or rel.startswith('.env.') and rel != '.env.example':
             problems.append(f'{rel}: credentials file is tracked')
+        if staged and path.suffix.lower() in PACKAGE_SUFFIXES:
+            problems.extend(package_problems(rel, subprocess.run(['git', 'show', f':{rel}'], cwd=paths.REPO,
+                                                                 capture_output=True).stdout))
+            continue
         if path.suffix.lower() not in ('.py', '.md', '.toml', '.json', '.ini', '.cpp', '.h', '.cs', '.txt', '.mjs', '.js',
                                        '.cjs', '.html', '.css', '.sh', '.uproject', '.uplugin', '.yml', '.yaml', ''):
             continue

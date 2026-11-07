@@ -1,0 +1,18 @@
+# The minimal World Partition test map (unreal/Scripts/new_test_map.py): proves maps, One File Per Actor packages
+# and Git LFS without donor content. Its actors belong to region/test-minimal.
+schema = 1
+id = "map/test-minimal"
+kind = "map"
+authority = "editor"
+owner = "region/test-minimal"
+provenance = "made in the V2 editor from engine basic shapes"
+license = "owner-made"
+
+[[outputs]]
+package = "/Game/V2/Maps/TestMinimal"
+
+[[outputs]]
+package = "/Game/V2/Maps/TestMinimal_HLODLayer_Instanced"
+
+[[outputs]]
+package = "/Game/V2/Maps/TestMinimal_HLODLayer_Merged"

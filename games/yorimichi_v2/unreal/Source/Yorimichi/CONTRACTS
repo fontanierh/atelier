@@ -1,0 +1,200 @@
+@cc [owner:fontanierh,label:correctness] shared-transport-moving-base
+Shared rider carry MUST skip its manual movement only when the character is already based on the exact
+target moving body. A station floor or another vehicle with the same service owner MUST NOT suppress
+the target body's carry and rebasing. An already based rider MUST NOT receive the same movement twice.
+
+@cc [owner:fontanierh,label:correctness] map-landing-trace
+A map zone's optional above_m MUST be converted from metres to centimetres; absent or invalid
+values MUST retain the 25 m outdoor default. Accepted heights MUST be finite and within 0–60 m.
+Travel MUST preserve the chosen height through the client request and authoritative landing,
+with the existing epoch, encounter, pending-hit and rate-limit checks intact.
+
+@cc [owner:fontanierh,label:correctness] local-footstep-original-pools
+Original is the only footstep sound set (operator 494): footsteps MUST draw from its pools only, with one
+shuffle state per surface shared by feet and horse hoof stand-ins, so no sample repeats back to back.
+Bone-plant timing, replay suppression, material/canopy detection, speed/landing gain and pitch, and
+Original attenuation MUST be preserved. Hoof stand-ins MUST keep their plain playback, untouched by the
+human footstep preferences.
+
+@cc [owner:fontanierh,label:correctness] local-audio-preferences-routing
+With softening off and full footstep and skate volume, Original MUST keep its existing cue, shuffle, attenuation
+and mix; the softening and volume preferences, release defaults included, adjust only per-voice filter and gain on
+top of it. The local world's preferences MUST reach its current and late audio-ready local and remote emitters
+without replicating them or changing simulation, plant timing, replay or network authority. A retired saved
+soundbank choice MUST be ignored and dropped on the next save.
+
+@cc [owner:fontanierh,label:correctness] local-footstep-preferences
+Footstep softening and footstep volume MUST default to their release defaults (JapanReleaseDefaults: on, one).
+These client-local controls MUST update current and future human footstep/landing
+voices, using per-voice filtering and gain without changing
+shared waves, plant timing, replay, attenuation or pitch. Hoof stand-ins, skate,
+music and master volume MUST remain unaffected. Finished voices MUST auto-destroy;
+world/component teardown MUST stop and release only the owned human footstep voices.
+
+@cc [owner:fontanierh,label:correctness] local-skate-preferences
+Skate softening and skate volume MUST default to their release defaults (JapanReleaseDefaults: on, one half). These client-local
+controls MUST reach current and late audio-ready skate emitters in this world, and MUST leave footsteps, hoof stand-ins, music and master volume unaffected.
+Both controls MUST be reachable from the Esc menu's main page; the Skate feel page owns only its own knobs.
+
+@cc [owner:fontanierh,label:performance] horse-appearance-residency
+An accepted appearance change on a locally controlled horse that replaces breed, tack, coat or mask
+assets MUST release the old component references and request deferred engine collection with incremental
+purging, so trying looks does not wait for the periodic pass. Appearance loading and movement prediction
+MUST NOT collect inline. Remote horses, unchanged looks and colour-only changes MUST NOT request collection.
+
+@cc [owner:fontanierh,label:correctness] horse-pivot-clock
+Stationary grounded steering MUST animate stepping in its turn direction, with rotation and animation phase
+scaled by the same steering magnitude. Pivot presentation MUST derive from existing checkpointed state without
+adding wire role IDs. When pivot clips are absent, the horse MAY use its walk clip as a stepping fallback.
+
+@cc [owner:fontanierh,label:correctness] sword-contact-defence
+Sword contact MUST resolve at most once per target per swing and MUST observe active windows crossed
+between simulation samples. A perfect parry MUST face the contact, last at most 120 ms of the authored
+guard window, and deflect at most one contact per attempt, locally and in server defence history.
+Guard pressure MUST change only on resolved contacts and decay with the authority world clock;
+movement replay MUST NOT reapply pressure, damage or contact counters. NPC hit immunity MUST allow
+separate combo cuts while retaining player recovery protection. Projectile damage MUST resolve only
+on authority through the shared defence resolver; flight MUST stop at cover and MUST NOT home after release.
+
+@cc [owner:fontanierh,label:correctness] regional-atlas-travel
+Every registered teleport and saved marker MUST remain reachable through its existing travel resolver.
+Regional filtering MUST NOT mutate the destination registry or infer travel coordinates from artwork.
+Artwork and all overlays MUST share their declared world frame. Opening the atlas MUST choose the
+player's mapped region, falling back to the world overview outside regional artwork coverage.
+Stable names MUST be editable live labels, never baked into paintings. A failed name save MUST preserve
+the previous file and in-memory names; pawn switches MUST share the local world's saved names.
+
+@cc [owner:fontanierh,label:correctness] regional-atlas-controller
+Every on-sheet destination MUST remain individually selectable with a controller, including coincident
+pins. Controller camera pan MUST retain the screen-space reticle away from sheet boundaries. Map focus
+MUST consume controller movement instead of driving gameplay. Back MUST return from region to world,
+then close the world view; selection MUST use the destination's existing travel resolver.
+
+@cc [owner:fontanierh,label:correctness] remote-vehicle-presentation
+Releasing a remote skate pose, including repeated stow or travel after its bone buffer is empty,
+MUST restore capsule-relative mesh placement without changing the authoritative capsule. A new activity
+epoch MUST discard the previous streamed mesh frame. Listen-host horse visual interpolation MUST NOT
+change the authoritative horse checkpoint. Zeppelin passengers MUST follow the rendered ship without
+an additional character smoothing offset.
+
+@cc [owner:fontanierh,label:correctness] live-player-map-travel
+Online player map targets MUST use session player identity, follow the current pawn, and disappear
+when that player leaves. Travel MUST resolve the identity on the host at request time and retain epoch,
+encounter, pending-contact and rate admission. A destination MUST have walkable ground and standing
+capsule clearance; the chosen floor MUST NOT be replaced by an overhead bridge or roof.
+
+@cc [owner:fontanierh,label:correctness] native-map-tour-diagnostics
+Map-tour diagnostics MUST act only on the locally controlled pawn, use ordinary map travel,
+and record settled runtime facing, walkable floor and standing capsule clearance without
+forcing the accepted position. A requested single zone MUST fail if absent or ambiguous.
+Keeping a diagnostic listen-host alive after its tour MUST be explicitly bounded to at most
+120 seconds and MUST NOT change normal gameplay or normal tour completion.
+
+@cc [owner:fontanierh,label:correctness] train-vehicle-admission
+Deploying a skateboard, carried board, bike, horse or sailboat MUST be refused while
+standing or seated aboard a train or during its boarding walk, locally and on the host.
+The train gate MUST NOT block stowing an existing vehicle or bypass activity epochs,
+pending-contact checks, encounter admission or movement replay protections. Merely
+holding a board MUST NOT be advertised or presented as available while on the train.
+Owner board, pose and bail-body transport MUST NOT introduce visible boards aboard;
+valid hide/stow packets MUST retain existing sequence and rate admission. Retained
+board/pose/bail presentation MUST be masked while aboard even without an owner hide packet.
+
+@cc [owner:fontanierh,label:correctness] train-passenger-camera
+The train first-person view MUST be local to the viewing player and available only to
+standing or seated passengers, never during the boarding walk. Its preference MUST belong
+to the local controller and survive pawn replacement without affecting another player.
+Body and attached equipment hiding MUST affect only that player's current view, preserve
+existing component visibility/ownership, and include attachments added while viewing.
+Leaving or losing possession MUST release the train camera; map/menu input MUST NOT toggle
+it, and its controller bumper MUST NOT also operate a nearby zeppelin.
+Fixed and cinematic views MUST take over immediately without a residual train-camera blend
+or hidden passenger body. Suspended controls MUST NOT change the camera preference.
+
+@cc [owner:fontanierh,label:correctness] train-boarding-admission-recovery
+Train passenger admission MUST be granted only by completing a station boarding walk on authority,
+replicated in the passenger snapshot, preserved across seats, gangway grace and pawn replacement,
+and revoked on alighting, cancellation, respawn, map travel, disconnect or expiry outside the train.
+Clients MUST NOT grant or revoke admission locally. Unadmitted players carried by a moving or
+departing coach MUST be recovered only to verified walkable non-train ground with standing capsule
+clearance and a swept floor, never beside a coach in a tunnel or on a viaduct and never via an
+unverified fallback teleport. Platform bystanders intersected by a passing coach MUST NOT be relocated.
+
+@cc [owner:fontanierh,label:correctness] racing-service-and-broadcasts
+ARacingService MUST own FHRWorldState only on authority, persist world saves atomically
+with unreadable/invalid save quarantine rather than silent overwrite, register only the
+local host player until guest identity persistence exists, and replicate only the compact
+FRacingNetState snapshot (never FHRWorldState::Seed). RacingMotion::Distance, RacingGround::Pick
+hit selection and RacingTv::Direct camera selection from the snapshot, shared clock and
+spectator positions MUST be deterministic, with zero per-frame network traffic and no silent breed/coat/clip
+stand-ins when required assets are missing. Runner gait thresholds, play rates and seat contacts
+MUST share UHorseComponent's definitions, and Belmonte TV placements MUST follow the region's
+authored building transforms from runtime.json without falling back to hardcoded coordinates.
+
+@cc [owner:fontanierh,label:correctness] release-default-preferences
+A fresh install's preferences, a missing saved key and the menus' resets MUST all take the release defaults
+(JapanReleaseDefaults, the operator's preset exactly). A saved value MUST still win, except light values that the existing
+light_version migration retires from a file saved before the current light. A release default that names no
+preference or leaves its range MUST be refused and reported, never clamped or rounded; preferences it does not list
+keep their built-in defaults.
+
+@cc [owner:fontanierh,label:correctness] offline-interact-reachability
+AWandererCharacter::Interact MUST be a no-op, offline as online, unless a train, zeppelin or sword trainer is in
+reach: it MUST NOT set an Interact action or animation state, and it MUST check zeppelin (IsPassenger/CanReach)
+and trainer (CanTalk) reachability before Sword->CancelForInterrupt, so a press with nothing in reach never stows
+an armed blade or leaves the walker pose stuck.
+
+@cc [owner:fontanierh,label:correctness] transport-audio-from-state
+Transport sound (UTransportAudioComponent and its zeppelin, ferry and gondola components) MUST be presentation that
+each machine derives from the vehicle's replicated or deterministic state; the zeppelin's comes from the phase, RPM,
+gate and landing it already derives from FZeppelinNetworkState or the offline ride. It MUST NOT replicate or change
+simulation, timing or authority, and it MUST stay silent without the imported bank or on a dedicated server. Loops
+MUST fade towards state-set targets and stop only once inaudible; one-shots MUST fire once per state transition and
+never for the state first observed (a late joiner). There is one transport bank, with no alternate soundbanks.
+
+@cc [owner:fontanierh,label:correctness] racing-hud-venue
+The race HUD banner MUST be English and MUST appear only inside a venue's grounds near track height.
+The broad runner-rendering proximity radius MUST NOT enable the HUD banner.
+
+@cc [owner:fontanierh,label:correctness] city-tile-material-ownership
+City surface tile components MUST retain their own mesh material table. Parent material slot indices
+MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
+
+@cc [owner:fontanierh,label:correctness;performance] production-city-pieces-own-the-whole-surface
+Every source in the shared CitySurfaceParents.h roster MUST load only its complete validated bounded
+piece set. Their original logical keys MUST retain placements, visibility, camera,
+shadow and collision policies. Every source face MUST have one rendered piece owner;
+every authored whole collision hull MUST have one component owner, while every piece
+retains its exact complex query surface. A hidden monolithic collision parent MUST NOT
+remain loaded. Missing membership MUST fail readiness rather than load a parent.
+The complete prepared roster MUST remain mandatory, while only logical sources
+with actual nonempty placements load native pieces. An unused definition MUST NOT
+be instantiated or counted as a missing runtime placement.
+Canonical terrain-only diagnostic queries MUST inspect the complete tagged terrain
+piece union, preserving their original trace semantics.
+Park shore-footing diagnostics MUST likewise trace the complete tagged park piece
+union, select the nearest hit along the original ray, and retain the original
+height comparison and eight-centimetre acceptance bound.
+Harbor pieces MUST retain the final ferry rail opening, the sole M_Harbor material
+binding and their logical parent's channel-0/channel-1 lighting policy.
+Whole-instance fading MUST use the original logical parent's local bounds on every
+child, never each child's smaller bounds. The override MUST preserve fade mode at
+custom primitive float 0 and use the same declared fields in native setup and the
+material shader. Unpartitioned owners MUST retain their existing default bounds.
+
+@cc [owner:fontanierh,label:correctness;performance] bounded-city-tree-lod-ownership
+The three optimized logical city trees MUST retain complete current per-piece base
+and lower-level ownership. LOD0, source materials, instance transforms, authored
+whole collision and logical fade bounds MUST survive toggling optimization.
+Runtime swapping MUST use exact current child identities, never reopen a retired
+whole parent or match an unrelated same-prefix asset. Every lower level MUST retain
+CPU-readback geometry for the existing current LOD0/normal/scale validation, with
+the existing screen sizes and saved user preference semantics.
+
+@cc [owner:fontanierh,label:correctness;performance] bounded-treehouse-dressing
+TH_Dressing MUST load only its complete bounded render piece membership, never
+the superseded whole parent. Its logical placement, material/fade grouping,
+five original baked UV channels, shadow policy and curtain bounds expansion
+MUST survive subdivision. Dressing MUST remain nonblocking; Frame and other
+treehouse collision owners MUST remain unchanged. Missing or partial dressing
+membership MUST fail readiness instead of loading a parent fallback.

@@ -1,0 +1,12 @@
+{
+  "asset": "map/test-minimal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/V2/Maps/TestMinimal.umap": "2cf406418dcf59e2b86ec651982bc52275f8ea073be58fa0cc5b7412c4bd9ada",
+    "unreal/Content/V2/Maps/TestMinimal_HLODLayer_Instanced.uasset": "628d95d79fbf9b30426e915db7b21cdef4da106524ebf942e1387f7d06d26b43",
+    "unreal/Content/V2/Maps/TestMinimal_HLODLayer_Merged.uasset": "8bc8a15316df2a7d0a18f3c07842c8cedb2565e1c25db9407d97133dc467e6ff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

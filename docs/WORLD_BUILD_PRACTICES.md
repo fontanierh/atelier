@@ -1,5 +1,8 @@
 # World build practices
 
+> Generator and build-graph practice for games that generate their world (yorimichi). Yorimichi V2 follows
+> [its plan](YORIMICHI_V2_PLAN.md) instead; the geometry rules here (ground, seams, closure) remain useful reference.
+
 This guide has two halves. [Keep the world whole](#keep-the-world-whole) covers how regions, terrain and
 built pieces must fit together so playtests stop finding holes, gaps, floating objects and invisible faces.
 The rest covers how a world is structured for small rebuilds. The enforceable form of both is

@@ -1,0 +1,83 @@
+# Yorimichi V2
+
+The original Yorimichi island, rebuilt as an Unreal 5.8 project whose **editable content is committed** to Git LFS.
+A fresh checkout opens the game without Blender, an import job or anyone's private cache. Work is split into
+small owned parts, so several people and agents can change different things at once. The migration follows
+[the V2 plan](../../docs/YORIMICHI_V2_PLAN.md). Status is in [docs/INVENTORY.md](docs/INVENTORY.md), choices are in
+[docs/DECISIONS.md](docs/DECISIONS.md), and the pinned engine and tools are in [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md).
+The original game in `games/yorimichi` stays as the reference until V2 passes acceptance.
+
+Excluded from this version: phone streaming and the go-kart (`Driving`). Everything else in the original game is in
+scope.
+
+## Layout
+
+| Path | What |
+| --- | --- |
+| `game.toml`, `build.py` | identity and play profiles; the build validates and compiles only (`--list` shows the steps) |
+| `assets/<kind>/<asset>/` | one asset record each: `asset.toml` (identity, owner, sources, recipe, outputs), `src/` and `prepared/` inputs when it is generated, `verified.json` (the exact package bytes it produced) |
+| `world/regions/<region>/` | `region.toml` (bounds, neighbours, maps) and `actors.verified.json` (the saved actors it owns) |
+| `schemas/` | the JSON schemas of those records |
+| `tools/content/` | records library and the read-only content check |
+| `tools/import/` | the targeted importer |
+| `tools/review/` | the change-set report for reviews |
+| `tools/test/` | the native automation test runner |
+| `tools/migrate/` | one-time migration: donor adoption, the world migration runner, scene dumps and their parity compare |
+| `unreal/` | `YorimichiV2.uproject`, `Config/`, `Source/` (by feature), `Plugins/HorseRacing`, `Scripts/` (editor scripts), **`Content/` (committed)** |
+| `tests/` | Python checks for these tools |
+
+## Setup
+
+Requirements and the pinned engine are listed in [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md). Git LFS must be installed
+(`git lfs version`). The repository's hooks apply LFS's read-only flags to lockable files, and upload LFS objects
+before a push.
+
+```sh
+git lfs install --local                               # once per clone: without the LFS filter, a pull skips everything
+git lfs pull --include="games/yorimichi_v2/**"        # the committed content
+uv run python games/yorimichi_v2/tools/content/check.py   # is every package present, current and owned?
+```
+
+## Everyday commands
+
+Each command below has been run as written. A command marked *(pending)* exists but has not yet been proven on
+real content; it must not be relied on until that mark is gone.
+
+```sh
+uv run python games/yorimichi_v2/tools/content/check.py [--full] [--json]   # read-only; exit 1 lists each problem and its fix
+uv run atelier build yorimichi_v2 --list
+uv run pytest games/yorimichi_v2/tests -q
+uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID --plan        # what a targeted import would write
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2           # check + compile (cold ~17 min, warm 1 s)
+V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/open_close.py \
+  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # one guarded editor script (here: open a map, save nothing)
+uv run python games/yorimichi_v2/tools/content/save_validate.py ID [--claim TASK]   # record an editor-owned asset or region after a save
+ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID   # (pending) targeted import
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # (pending) one-time donor adoption
+uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # (pending) one-time world migration
+uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
+ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
+```
+
+`/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
+from a fresh checkout without donor content. Collaboration test results are kept in
+[docs/COLLABORATION_TESTS.md](docs/COLLABORATION_TESTS.md).
+
+## How content is owned and changed
+
+Every package under `unreal/Content` belongs to exactly one record. The content check fails on a package that
+nobody owns.
+
+- **Generated asset** (`authority = "generated"`): its sources and recipe are authoritative, and only its importer
+  writes its packages. Change a source and run the targeted import for that asset ID. The importer skips unchanged
+  inputs without starting Unreal and writes only the declared packages. If anything goes wrong it restores them
+  exactly.
+- **Editor-owned asset or saved actors** (`authority = "editor"`, region actor records): the saved package is the
+  source. Save the edit in the editor, then record it with save validation. Never reimport it.
+- **Split** assets name the writer of each output.
+
+Before changing a binary package, claim its scope (`atelier claims`). Until the claim service has adopted V2's
+protected writes, one bootstrap writer does all binary work (DECISIONS D04).
+
+The normal build and play never generate, import, resave or cook. Packaging is explicit and runs a full-hash
+content check first.

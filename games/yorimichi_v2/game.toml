@@ -1,0 +1,25 @@
+# Yorimichi V2: the original painterly island rebuilt as a committed Unreal project (docs/YORIMICHI_V2_PLAN.md).
+# Editable content lives in Git LFS; a normal build validates and compiles, it never generates, imports or cooks.
+id = "yorimichi_v2"
+title = "Yorimichi V2"
+atelier = "0.1"
+engine = "unreal"
+unreal_project = "unreal/YorimichiV2.uproject"
+editor_target = "YorimichiV2Editor"
+build = "build.py"                      # `atelier build yorimichi_v2 --list`
+play_check = "tools/content/check.py"   # play refuses missing, unhydrated or changed packages
+
+[play.play]
+# The original desktop defaults: native 1440 window, forward renderer (unreal/Config/DefaultEngine.ini).
+args = ["-game", "-windowed", "-resx=2560", "-resy=1440"]
+
+[play.fullscreen]
+args = ["-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440"]
+
+[play.slice]
+# The P3 slice map: coastal start and the Sunset Pier approach.
+args = ["/Game/V2/Maps/Slice", "-game", "-windowed", "-resx=2560", "-resy=1440"]
+
+[play.test]
+# The minimal World Partition test map, small and offscreen: native checks such as two live sessions (C16).
+args = ["/Game/V2/Maps/TestMinimal", "-game", "-windowed", "-resx=1280", "-resy=720", "-RenderOffscreen"]

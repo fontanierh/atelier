@@ -1,0 +1,11 @@
+# Temporary outputs only. Editable Unreal content under unreal/Content is committed (root .gitignore re-includes it).
+unreal/Binaries/
+unreal/Intermediate/
+unreal/Saved/
+unreal/DerivedDataCache/
+unreal/Plugins/**/Binaries/
+unreal/Plugins/**/Intermediate/
+unreal/*.xcworkspace
+unreal/.vscode/
+unreal/*_????????.uproject
+*.tmp

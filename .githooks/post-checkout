@@ -1,0 +1,5 @@
+#!/bin/sh
+# Git LFS: apply `lockable` read-only flags and refresh lock state (games/yorimichi_v2). Harmless without lockable files.
+if command -v git-lfs >/dev/null 2>&1; then
+  exec git lfs post-checkout "$@"
+fi
