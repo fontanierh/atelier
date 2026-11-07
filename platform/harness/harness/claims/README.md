@@ -78,6 +78,11 @@ address to serve other machines; keep addresses out of the repository.
 **Every client** sets `ATELIER_CLAIMS_URL` (default `http://127.0.0.1:8840`), the token, and its principal
 (`--actor`, `ATELIER_CLAIMS_ACTOR` or `ATELIER_AGENT`):
 
+Reconciliation uses one paginated remote listing for more than 20 distinct paths. It waits up to five minutes
+by default; `atelier claims reconcile --timeout 900` allows a slower server more time. A client timeout does
+not cancel the service's pass: check `claims events` for `service.reconciled` before starting another. A failed
+listing leaves recorded ownership intact, and reconciliation can be retried after connectivity returns.
+
 ```sh
 atelier claims reconcile                                    # after every service start
 atelier claims register-principal agent-a --kind agent --git-account <lfs-lock-owner-name>

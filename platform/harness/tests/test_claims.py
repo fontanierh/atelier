@@ -15,7 +15,7 @@ import pytest
 from atelier.harness.claims import cli as claims_cli
 from atelier.harness.claims.client import (AcquireFailed, Change, Client, Refused, Unreachable, acquire, check,
                                            evaluate, release_locks, staged_changes)
-from atelier.harness.claims.remote import GitCli, GitLfsCli, LfsHttp
+from atelier.harness.claims.remote import GitCli, GitLfsCli, LfsHttp, Unavailable
 from atelier.harness.claims.scopes import overlaps, scope
 from atelier.harness.claims.service import Service
 from atelier.harness.claims.store import Store
@@ -485,6 +485,31 @@ def claims_cli_args(*argv):
     return make_parser().parse_args(['claims', *argv])
 
 
+@pytest.mark.parametrize('command, seconds', [(['reconcile'], 300), (['reconcile', '--timeout', '900'], 900),
+                                              (['status'], 30)])
+def test_reconcile_timeout_reaches_the_transport_without_changing_other_commands(monkeypatch, command, seconds):
+    import io
+    from atelier.harness.claims import client as claims_client
+
+    seen = []
+
+    def respond(request, timeout):
+        seen.append((request.full_url, timeout))
+        return io.BytesIO(b'{"state": "ready"}')
+
+    monkeypatch.setenv('ATELIER_CLAIMS_TOKEN', TOKEN)
+    monkeypatch.setattr(claims_client.urllib.request, 'urlopen', respond)
+    args = claims_cli_args('--url', 'http://127.0.0.1:8840', '--actor', 'lead', *command)
+    assert claims_cli.main(args) == 0
+    assert seen == [(args.url + '/' + command[0], seconds)]
+
+
+@pytest.mark.parametrize('seconds', ['0', '-1', 'nan', 'inf'])
+def test_reconcile_timeout_must_be_finite_and_positive(seconds):
+    with pytest.raises(SystemExit):
+        claims_cli_args('reconcile', '--timeout', seconds)
+
+
 @pytest.mark.skipif(shutil.which('git-lfs') is None, reason='git-lfs is not installed')
 def test_cli_acquire_uses_git_lfs_with_its_own_credentials(world, monkeypatch, capsys):
     a = world.agent('a', 'alice')
@@ -750,7 +775,9 @@ class Interleaved:
         return found
 
 
-def test_reconcile_discards_a_listing_that_a_fresh_attempt_made_stale(world):
+@pytest.mark.parametrize('bulk', [False, True])
+def test_reconcile_discards_a_listing_that_a_fresh_attempt_made_stale(world, monkeypatch, bulk):
+    monkeypatch.setattr('atelier.harness.claims.store.LIST_ALL_LOCKS_ABOVE', 0 if bulk else 20)
     a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
     world.task(a, 'ta'), world.task(b, 'tb')
     claim = world.request(a, 'ta', lock_paths=[SEA])
@@ -809,6 +836,60 @@ class TrackingLocker:
 
     def __getattr__(self, name):
         return getattr(self.inner, name)
+
+
+def test_reconcile_uses_all_pages_and_keeps_unrelated_locks(world, monkeypatch):
+    a = world.agent('a', 'alice')
+    world.task(a, 'ta')
+    paths = [f'{HARBOUR}Actor{i:02}.uasset' for i in range(30)]
+    # Put other owners' locks on the early pages: reconciliation must finish the listing, not infer absence.
+    unrelated = [world.lfs.add(f'Other/Actor{i}.uasset', 'bob') for i in range(205)]
+    claim = world.request(a, 'ta', lock_paths=paths)
+    view = acquire(a, claim['id'], a.locker)
+    a.locker.unlock(view['locks'][0]['lock_id'])
+    requested, real = [], world.store.lfs._call
+
+    def listing(method, path, body=None, query=None):
+        requested.append(query)
+        return real(method, path, body, query)
+
+    monkeypatch.setattr(world.store.lfs, '_call', listing)
+    result = world.store.reconcile('lead')
+    assert result['checked'] == 30
+    assert len(result['changes']) == 1 and result['changes'][0]['to'] == 'lost'
+    assert [q.get('cursor') for q in requested] == [None, '100', '200']
+    assert all('path' not in q for q in requested)   # three pages, not thirty path queries
+    assert all(lock_id in world.lfs.locks for lock_id in unrelated)
+    current = a.call('GET', f'/claims/{claim["id"]}')
+    assert current['state'] == 'pending'
+    assert sum(l['state'] == 'verified' for l in current['locks']) == 29
+
+
+def test_failed_bulk_reconcile_preserves_state_and_can_be_retried(world, monkeypatch):
+    a = world.agent('a', 'alice')
+    world.task(a, 'ta')
+    paths = [f'{HARBOUR}Actor{i:02}.uasset' for i in range(30)]
+    claim = world.request(a, 'ta', lock_paths=paths)
+    acquire(a, claim['id'], a.locker)
+    for i in range(100):
+        world.lfs.add(f'Other/Actor{i}.uasset', 'bob')
+    world.stop()
+    world.start(reconcile=False)
+    before = a.call('GET', f'/claims/{claim["id"]}')
+    real = world.store.lfs._call
+
+    def fail_later_page(method, path, body=None, query=None):
+        if query and query.get('cursor'):
+            raise Unavailable('temporary failure after the first page')
+        return real(method, path, body, query)
+
+    monkeypatch.setattr(world.store.lfs, '_call', fail_later_page)
+    refused('lfs_unavailable', world.client('lead').call, 'POST', '/reconcile')
+    assert not world.store.ready
+    assert a.call('GET', f'/claims/{claim["id"]}') == before
+    monkeypatch.setattr(world.store.lfs, '_call', real)
+    assert world.client('lead').call('POST', '/reconcile')['state'] == 'ready'
+    assert a.call('GET', f'/claims/{claim["id"]}') == before
 
 
 def test_many_locks_are_acquired_concurrently_and_verified_against_one_listing(world):
