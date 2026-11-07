@@ -57,6 +57,25 @@ def native_migrate(plan_file: Path):
         raise MigrationError(f'the editor migration failed (exit {result.returncode}); see {LOG}')
 
 
+def record_rosters(game: Path, made: list[tuple[str, str]]) -> None:
+    """Add each created patch to its region's committed roster (world/regions/<name>/patches.json): the scene
+    patches the region must keep, so one deleted outright fails the content check instead of passing readiness."""
+    rosters = {}
+    for package, label in made:
+        parts = label.split(':')
+        if len(parts) < 4 or not parts[0].startswith('region/'):
+            continue
+        region, patch_id, key = parts[0], parts[-1], ':'.join(parts[1:-2])
+        rel = 'unreal/Content/' + package[len('/Game/'):] + '.uasset'
+        rosters.setdefault(region, {})[patch_id] = {'key': key, 'package': rel}
+    for region, patches in rosters.items():
+        path = game / 'world' / 'regions' / region.split('/', 1)[1] / 'patches.json'
+        roster = json.loads(path.read_text())['patches'] if path.is_file() else {}
+        roster.update(patches)
+        records.write_json(path, {'schema': records.SCHEMA, 'region': region,
+                                  'patches': dict(sorted(roster.items()))})
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('regions', nargs='+', help='region IDs whose scenery and island pieces to migrate')
@@ -82,6 +101,7 @@ def main(argv=None) -> int:
         native_migrate(plan_file)
         made = MIGRATED.findall(LOG.read_text(errors='replace')) if LOG.is_file() else []
         print(f'{len(made)} actor package(s) created')
+        record_rosters(GAME, made)
         for region in args.regions + [args.environment]:
             save_validate.validate(GAME, region, claim=args.claim)
     except (MigrationError, authority.Unauthorized, save_validate.ValidationError, records.RecordError) as error:

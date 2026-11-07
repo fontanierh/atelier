@@ -97,3 +97,14 @@ def test_plan_uses_record_bounds_and_one_map(tmp_path):
         run.make_plan(tmp_path, ['region/w01', 'region/w02'], 'region/w00', [], False, [], 32.0)
     with pytest.raises(run.MigrationError, match='no region record'):
         run.make_plan(tmp_path, ['region/w09'], 'region/w00', [], False, [], 32.0)
+
+
+def test_migration_rosters_merge_per_region(tmp_path):
+    (tmp_path / 'world/regions/w01-start').mkdir(parents=True)
+    run.record_rosters(tmp_path, [('/Game/__ExternalActors__/V2/Maps/Slice/0/AB/X1',
+                                   'region/w01-start:Sea:SM_Sea:whole:id1')])
+    run.record_rosters(tmp_path, [('/Game/__ExternalActors__/V2/Maps/Slice/0/CD/X2',
+                                   'region/w01-start:HD_Bench:near:id2')])
+    roster = json.loads((tmp_path / 'world/regions/w01-start/patches.json').read_text())['patches']
+    assert roster == {'id1': {'key': 'Sea:SM_Sea', 'package': 'unreal/Content/__ExternalActors__/V2/Maps/Slice/0/AB/X1.uasset'},
+                      'id2': {'key': 'HD_Bench', 'package': 'unreal/Content/__ExternalActors__/V2/Maps/Slice/0/CD/X2.uasset'}}

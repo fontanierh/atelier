@@ -275,3 +275,14 @@ def test_reordering_sources_against_their_packages_changes_the_fingerprint(tmp_p
               '[[outputs]]\npackage = "/Game/V2/A"\n[[outputs]]\npackage = "/Game/V2/B"\n')
         return records.input_fingerprint(records.load_asset(folder / 'asset.toml'), {})
     assert fingerprint(['a', 'b']) != fingerprint(['b', 'a'])
+
+
+def test_a_scene_patch_deleted_outright_fails_against_its_region_roster(game):
+    folder = game / 'world/regions/w04-skatepark'
+    kept = 'unreal/Content/__ExternalActors__/Maps/Island/0/AB/BENCH01.uasset'
+    gone = 'unreal/Content/__ExternalActors__/Maps/Island/0/AB/TREES07.uasset'
+    records.write_json(folder / 'patches.json', {'schema': 1, 'region': 'region/w04-skatepark', 'patches': {
+        'a1': {'key': 'HD_Bench', 'package': kept}, 'b2': {'key': 'TH_Dressing', 'package': gone}}})
+    found, problems = codes(game)
+    assert found == ['PATCH_MISSING']
+    assert 'b2 (TH_Dressing)' in problems[0].detail

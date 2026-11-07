@@ -215,6 +215,16 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True) ->
         except (RecordError, ValueError) as error:
             problems.append(Problem('SCHEMA', region.id, str(error), _save_action(region.id)))
             continue
+        roster = region.folder / 'patches.json'
+        if roster.is_file():
+            # Migration's roster of this region's scene patches: one deleted outright (with its record entry)
+            # would otherwise leave the surviving patches to pass readiness with missing geometry.
+            for patch_id, patch in sorted(json.loads(roster.read_text()).get('patches', {}).items()):
+                if patch.get('package') not in record['files']:
+                    problems.append(Problem('PATCH_MISSING', region.id,
+                                            f'scene patch {patch_id} ({patch.get("key")}) is gone: {patch.get("package")}',
+                                            'restore it (git checkout -- PATH && git lfs pull) or rerun the migration; '
+                                            'retiring a patch is a reviewed edit of patches.json'))
         for rel, digest in sorted(record['files'].items()):
             if not any(f'/{root}/' in f'/{rel}' for root in ACTOR_ROOTS):
                 problems.append(Problem('UNDECLARED', region.id, f'{rel} is not an external actor/object package',
