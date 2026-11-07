@@ -121,7 +121,7 @@ atelier claims --actor lead recover 7 --action resolve --path Content/Props/Benc
 `check` lists the changed files (with `--staged` or `--range`, including deletions and both sides of renames)
 and finds protected ones: files with the Git LFS `lockable` attribute in `.gitattributes`, plus globs from
 `--protect` or `git config --add atelier.claims.protect 'Content/**'`. Each protected path must be covered by
-an **active** claim of the task, which the service re-verifies live for every check: each LFS lock (path,
+an **active** claim of the task held by the principal checking (after a transfer, only the new holder passes), which the service re-verifies live for every check: each LFS lock (path,
 ID, owner) on the remote and the base against the target branch. If either remote cannot be asked, protected
 changes are refused. `--stage publish` (pre-push, pre-merge) also requires exact paths, with a
 verified LFS lock for lockable files: add new files found under a prefix with `extend` first.

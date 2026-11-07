@@ -349,6 +349,10 @@ def test_c11_claims_survive_restart_heartbeat_expiry_and_need_explicit_recovery(
     moved = world.client('lead').call('POST', f'/claims/{claim["id"]}/recover',
                                       {**body, 'old_writer_stopped': True, 'preserved': 'branch a/wip'})
     assert (moved['principal'], moved['workspace'], moved['state']) == ('a2', 'a2-ws', 'active')
+    # The previous holder's checks stop passing: the task's claim now authorizes only its new principal (C04).
+    [stale] = check(a, world.seed, 'ta', [Change('M', BENCH)], stage='publish')
+    assert stale == f'{BENCH}: claim {claim["id"]} is held by a2, not a'
+    assert check(a2, world.seed, 'ta', [Change('M', BENCH)], stage='publish') == []
     events = a.call('GET', '/events?after=0&limit=1000')['events']
     recovery = [e for e in events if e['kind'] == 'claim.recovered'][-1]
     assert recovery['actor'] == 'lead' and recovery['data']['reason'] == 'a crashed'
