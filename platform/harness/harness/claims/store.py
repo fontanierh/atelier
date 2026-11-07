@@ -15,7 +15,7 @@ from pathlib import Path
 from . import scopes
 from .remote import Unavailable
 
-LIST_ALL_LOCKS_ABOVE = 20   # a claim with more locks is verified against one listing of all remote locks
+LIST_ALL_LOCKS_ABOVE = 20   # larger checks use one paginated listing, not a remote request for each path
 
 HOLDING = ('pending', 'active', 'releasing', 'uncertain')
 TASK_STATES = ('open', 'in_progress', 'review', 'merged', 'cancelled')
@@ -764,7 +764,10 @@ class Store:
     def reconcile(self, actor):
         """Compare every recorded lock with the remote, resolve what the evidence proves, then allow grants.
         A lock whose ID was absent before the intent and now belongs to the claimant was created by that attempt;
-        a lock that existed before the intent, or belongs to another account, is never ours."""
+        a lock that existed before the intent, or belongs to another account, is never ours.
+
+        Large migrations use a complete paginated listing, indexed by path. No state is changed until that
+        listing finishes; each row's revision still rejects evidence superseded by another attempt."""
         with self.lock:
             self._principal(self.db, actor)
             rows = [dict(r) for r in self.db.execute(
@@ -773,9 +776,14 @@ class Store:
             accounts = {r['name']: r['git_account'] for r in self.db.execute('SELECT name, git_account FROM principals')}
         listed_at = self.clock()  # every listing below is at least this recent
         try:
-            remote = {}
-            for path in {r['path'] for r in rows}:
-                remote[path] = self.lfs.locks(path=path)
+            paths = {r['path'] for r in rows}
+            if len(paths) > LIST_ALL_LOCKS_ABOVE:
+                remote = {path: [] for path in paths}
+                for lock in self.lfs.locks():
+                    if lock.path in remote:
+                        remote[lock.path].append(lock)
+            else:
+                remote = {path: self.lfs.locks(path=path) for path in paths}
         except Unavailable as error:
             refuse('lfs_unavailable', f'reconcile needs the LFS remote: {error}', 503)
         changes = []

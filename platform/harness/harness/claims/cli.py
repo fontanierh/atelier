@@ -1,11 +1,20 @@
 """``atelier claims ...``: run the service, or act on it as one principal."""
+import argparse
 import json
+import math
 import os
 import subprocess
 import sys
 from pathlib import Path
 
 DEFAULT_URL = 'http://127.0.0.1:8840'
+
+
+def _positive_seconds(value):
+    seconds = float(value)
+    if not math.isfinite(seconds) or seconds <= 0:
+        raise argparse.ArgumentTypeError('must be a finite number of seconds greater than zero')
+    return seconds
 
 
 def configure(sub):
@@ -76,7 +85,9 @@ def configure(sub):
     s.add_argument('--preserved', help='where the old writer\'s work was preserved (branch, commit or archive)')
     s.add_argument('--to-workspace'); s.add_argument('--path'); s.add_argument('--decision', choices=['adopt', 'foreign'])
     s.add_argument('--lock-id')
-    a.add_parser('reconcile', help='compare recorded locks with the remote; required after every service start')
+    s = a.add_parser('reconcile', help='compare recorded locks with the remote; required after every service start')
+    s.add_argument('--timeout', type=_positive_seconds, default=300.0,
+                   help='seconds to wait for the service response (default: 300); expiry does not cancel the service pass')
     s = a.add_parser('events'); s.add_argument('--after', type=int, default=0); s.add_argument('--limit', type=int, default=100)
     a.add_parser('status')
 
@@ -105,7 +116,7 @@ def _client(args):
     from .client import Client
     if not args.actor:
         raise SystemExit('claims: set --actor, ATELIER_CLAIMS_ACTOR or ATELIER_AGENT')
-    return Client(args.url, _token(args), args.actor)
+    return Client(args.url, _token(args), args.actor, timeout=getattr(args, 'timeout', 30))
 
 
 class _Offline:
