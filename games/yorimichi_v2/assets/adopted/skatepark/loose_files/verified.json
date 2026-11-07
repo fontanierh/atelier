@@ -1,0 +1,26 @@
+{
+  "asset": "adopted/skatepark/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/SM_SkateParkDecals.uasset": "60d8db36e2e121262576bbf9699eda1d9e6f413a07d56596e6a079c6e29d5c34",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piece950cf888b3474602.uasset": "338f179a1ec14f059a413f3854e109661ba9e290621faad544c6b41be2afe8f5",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piece971a82d94a995696.uasset": "caee85f945d09bb124afc990823a742a5e39e9267992c32193fd47f6b5cf6cbc",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piecec24187871c53d9be.uasset": "d4fdb7456e244a023b75f877ad1cba1fc3a34d7f929f0a6cde71b6c34fee7306",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piececc8d0ff98be9477a.uasset": "b451ad2164b2ce25f693b86515c5859e799471b7121fc2b5ee3822e1c4097f44",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Pieced3acce5cb1ec6427.uasset": "d81d5b2ef5254645cb90897302a6c2e76f3961a52804315e547c1661faebbcc4",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piecedf883a6e8f7c7b66.uasset": "13e5d19bc8a43bc195707cc8ada88beabd83de0b16219759bdd9f9ef00e867d4",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piecee27af474601aada7.uasset": "c348e1118284f477cf4107dd3773904c52e970563fc39e6612ae215f0451a9dc",
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piecefa03a0dfce6ed909.uasset": "f518ee3b71a7dd0a49c823cb053c918bed5f34e8111e7833002975fa22f3e4fb",
+    "unreal/Content/SkatePark/SM_SkateParkFurniture.uasset": "3d894a30f590396e1e662e9925ab58968fa7e6aa9f7cb422b96a55430e00e19d",
+    "unreal/Content/SkatePark/SM_SkateParkPlanting.uasset": "491b4baff347a5a556bdbd33c099f0c9ac5ffe85e5a0ea027c5fbd78e02f7c4b",
+    "unreal/Content/SkatePark/SM_SkatePath.uasset": "8d2122d8c7fabb0c201fa2e5b02281ac9287ecb64898a0cd6c4233e59bfe73fa",
+    "unreal/Content/SkatePark/SM_SkatePierPilings.uasset": "7ec4b943566628b12399ad60acf773d0adb7a149c1b8d78a7c7c3a986756099c",
+    "unreal/Content/SkatePark/SM_SkatePier_Piece4b95388381a8f337.uasset": "a9eb0cf731ea4b5e784349dd39258502ef91317a8cc44ff07db7dbc2ec4bc7a3",
+    "unreal/Content/SkatePark/SM_SkatePier_Piece971a82d94a995696.uasset": "3a50f6b549f34dc35241afecd6ef487f2e64f23c744e57bd85d9a06b197fe6d5",
+    "unreal/Content/SkatePark/SM_SkatePier_Piececc8d0ff98be9477a.uasset": "b300ac2ece643f3af192760b0c9165f276294117806cf063fd3e923ce07e1717",
+    "unreal/Content/SkatePark/SM_SkatePier_Pieced3acce5cb1ec6427.uasset": "71c39c550cf51cdb7c7aebda5ee9f0ba6ebdd7cec9389c0d8851e66b2d01738a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

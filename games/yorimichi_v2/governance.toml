@@ -1,0 +1,10 @@
+# Write-governance switches the tools enforce (docs/DECISIONS.md). Change them only in a reviewed commit.
+schema = 1
+
+[d04]
+# DECISIONS D04, the bootstrap binary writer (tools/content/authority.py). While open, this writer alone writes
+# binary packages without a claim, and only in a checkout with no claims task. Set `closed = true` once the
+# slice's adopted content is merged: from then on no route (import, editor script, save validation, adoption,
+# migration) exempts anyone, and every binary write needs a claim.
+writer = "jim-macbook-5"
+closed = false

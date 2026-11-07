@@ -46,22 +46,46 @@ validation, adoption). A claimed write is checked with `atelier claims check --s
 verified LFS locks); without a claim only the bootstrap writer passes, and not in a checkout that has a claims
 task. **Closes** once the slice's adopted content is merged: from then on every binary write needs a claim.
 
+The switch is committed state, not a convention: `governance.toml` `[d04]` names the writer and `closed`
+(`false` until the slice merges). `authority.authorize` reads it on every unclaimed write; when closed, or
+when the file is missing or malformed, nobody is exempt on any route (import, editor script, save validation,
+adoption, migration). Closing D04 is a reviewed one-line commit.
+
+New actor packages under a claim (the migration after D04): World Partition names a One File Per Actor package
+(`__ExternalActors__/<map>/…/<hash>.uasset`) only when it saves it, so no claim can list it beforehand.
+**Chosen: claimed creation, bound after the save.** A run whose claim holds every touched region's scope
+(`region/<name>`, exclusive in the claim service) may create files in those regions' maps' actor folders
+(`Region.actor_folders`). The `migrate.map` step denies saving every existing package the claim does not list
+exactly; after the editor, `authority.bind_created` compares content snapshots taken before and after: a created
+file must have been absent, unrecorded and inside those folders, or the run is refused; changed or deleted
+existing files must be exactly claimed. The created files are then added to the claim with their LFS locks
+(`atelier claims extend ID --lock-path … --acquire`, the claim service's documented route for new files under a
+region) and pass the same publish check before save validation records them; each must end in a touched
+region's record. Nothing unbound reaches a commit. *Rejected: reserving actor paths before saving.* It needs an
+editor dry run to predict the hashed names and fails whenever the editor names a package differently; the
+created set measured from the disk is exact by construction.
+
 ## D05 — Asset rights before public upload (§4, P0 pass/stop)
 
 The repository is public and Git LFS is not private storage. No source in the repository carries a license
 field, and there is no LICENSE file. The inventory (inventory/world.md §5) sorts V2 content into three groups:
 
-1. **Public LFS allowed:** packages derived from sources the owner has **already published in this repository**
-   with recorded provenance (owner-made or AI-generated with a provenance record). This covers terrain, houses,
-   props, foliage, the skate pier, the characters, effects and fonts (OFL). Committing the Unreal form of
-   content that is already public does not widen what is published. Raw Mixamo clips are already committed;
-   their derived animation packages follow the same rule. **Owner review is still recommended**, because Mixamo's
-   terms forbid redistributing raw clips as such.
-2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters. Their license forbids sharing them
+1. **Public LFS allowed, per source:** a package goes to public LFS only when its own source has a recorded
+   permission for redistributing it in editable form: owner-made, AI-generated with a provenance record, or a
+   third-party license that allows it (fonts under OFL). That a source is already published in this repository is
+   not that permission, since nobody recorded checking its terms. This covers terrain, houses, props, foliage, the
+   skate pier, effects and fonts. **Third-party animation is not cleared yet:** Mixamo's terms allow its clips in a
+   game but not distributing them as files, and an editable animation package is such a file. The characters and
+   skate rider (`/Game/Cairo`, `/Game/CairoAdventure`, `/Game/Modori`, `/Game/Nox`, `/Game/Paul`, `/Game/SkateRide`,
+   `/Game/SkateMotion`; their clips are Mixamo-derived or of
+   unrecorded origin) therefore take the group 2 route until each source's permission is recorded; then a root is
+   removed from `restricted.toml` and `.gitignore` in a reviewed commit.
+2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters (and, until cleared, the group 1
+   animation roots). Their license forbids sharing them
    as a sound pack of their own, and the masters are fetched, not committed. These SoundWave packages go to
    authorized restricted storage, with pinned hashes and a documented fetch. The music library stays the
    existing pinned external release (plan §14). Mechanism: `restricted.toml` declares the roots (`/Game/Audio`,
-   `/Game/Japan/Audio`, Git-ignored), `restricted.lock.json` pins each file, `tools/restricted/fetch.py` pins and
+   `/Game/Japan/Audio` and the group 1 animation roots, Git-ignored), `restricted.lock.json` pins each file, `tools/restricted/fetch.py` pins and
    fetches, and the content check fails on a tracked or unpinned restricted file (README, "Restricted audio").
 3. **Blocked pending the owner:** **Super Ultra Mega Park** (`assets/megapark`, W11, F26, F31). Its data carries
    retail material identifiers, a decoded vertex codec and baked lightmaps. Its provenance as "Atelier's own asset
@@ -98,10 +122,14 @@ The skate pier (W04) splits the same way: `ASkatePark::Initialize(Path, bSpawnSc
 spawns at runtime, and the service `SkatePark.Scenery` saves its meshes and garden trees as one patch of the region
 holding the pier, copied from a park the migration loads with scenery.
 
-## D08 — Adoption is per top-level donor folder
+## D08 — Adoption is per ownership unit, package paths unchanged
 
-Donor packages enter V2 once, through `tools/migrate/adopt.py`, keeping their package paths. Each top-level
-`/Game` folder becomes one editor-owned `adopted/<folder>` record that lists every package it brought. Save
+Donor packages enter V2 once, through `tools/migrate/adopt.py`, keeping their package paths. Only ownership is
+split: each adopted folder's packages become editor-owned records of one ownership unit each, by default one per
+folder two levels below `/Game` (`adopted/japan/hidamari`, owner `shared/japan/hidamari`), split by subfolder and
+then into sorted chunks so no record lists more than 200 packages. Units are prefix-free, so separate edits claim
+separate units instead of contending on one folder-wide record (C01, C19). `adopt.py --repartition` rewrites the
+earlier one-record-per-folder records into these units with identical membership. Save
 validation records the record's bytes. A later edit is an ordinary claimed editor edit of that record, and a
 finer record (a prop, a region's map) may take packages over explicitly. Adoption refuses packages another
 record owns, reports every hard reference that resolves to nothing in V2, and reports packages whose bytes name

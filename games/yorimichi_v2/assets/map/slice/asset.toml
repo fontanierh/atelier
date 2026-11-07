@@ -1,0 +1,18 @@
+# The P3 slice World Partition map (tools/migrate/run.py creates it): the map package and its HLOD layers. Its
+# actors belong to the regions migrated into it (w00-island, w01-start, w04-pier-approach).
+schema = 1
+id = "map/slice"
+kind = "map"
+authority = "editor"
+owner = "region/w00-island"
+provenance = "made in the V2 editor by the one-time static-world migration"
+license = "owner-made"
+
+[[outputs]]
+package = "/Game/V2/Maps/Slice"
+
+[[outputs]]
+package = "/Game/V2/Maps/Slice_HLODLayer_Instanced"
+
+[[outputs]]
+package = "/Game/V2/Maps/Slice_HLODLayer_Merged"

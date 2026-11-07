@@ -42,7 +42,8 @@ def steps(ctx):
              about='explicit: cook and package the committed content for macOS (integration milestones, releases)'),
         # Explicit: the one-time static-world migration, run only by tools/migrate/run.py with its plan.
         Step('migrate.map', [Call('authorize migration', _authorize_migration),
-                             UnrealScript(UNREAL / 'Scripts/migrate_map.py', 'V2 MIGRATE DONE'), ran('migrate.map')],
+                             UnrealScript(UNREAL / 'Scripts/migrate_map.py', 'V2 MIGRATE DONE'),
+                             Call('check migration writes', _check_migration_writes), ran('migrate.map')],
              inputs=[UNREAL / 'Scripts/migrate_map.py'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'migrate.map' in RAN,
              about='one-time migration of regions into a World Partition map (use tools/migrate/run.py)'),
@@ -74,7 +75,9 @@ def import_steps():
             continue        # check.content reports it
         if asset.authority == 'editor':
             continue
-        name = f'import.{asset.id}'
+        name = records.import_step(asset.id)
+        if any(step.name == name for step in found):
+            raise RuntimeError(f'{asset.id}: its import step {name} is another asset\'s too; rename one of them')
         found.append(Step(name, [Call(f'authorize {name}', _authorize_import), UnrealScript(script, 'V2 IMPORT DONE'),
                                  ran(name)],
                           inputs=[script], after=['unreal.compile'], heavy=True, explicit=True,
@@ -92,6 +95,7 @@ def _authority():
 
 # What unreal/Content held before the running editor script, to verify its writes afterwards.
 EDITOR_BEFORE = {}
+MIGRATE_BEFORE = {}
 
 
 def _editor_paths():
@@ -161,9 +165,54 @@ def _check_editor_writes(ctx, log):
         log.write('record these packages with tools/content/save_validate.py before committing\n')
 
 
+def _migration_plan():
+    import json
+    import os
+    plan = os.environ.get('V2_MIGRATE_PLAN')
+    return json.loads(Path(plan).read_text()) if plan else {}
+
+
+def _migration_regions(plan):
+    return [r['id'] for r in plan.get('regions', [])] + ([plan['environment']] if plan.get('environment') else [])
+
+
 def _authorize_migration(ctx, log):
-    """The one-time migration is a D04 bootstrap write (tools/migrate/run.py); selecting the step directly is too."""
-    _authority().authorize([], None, 'map migration')
+    """The migration (tools/migrate/run.py; selecting the step directly is checked the same way) writes as the D04
+    bootstrap writer, or under the plan's claim holding every region it touches. A claimed run may create actor
+    packages, checked and bound after the editor (_check_migration_writes); the editor refuses to save any existing
+    package the claim does not list exactly."""
+    authority = _authority()
+    plan = _migration_plan()
+    MIGRATE_BEFORE.clear()
+    if not plan.get('claim'):
+        authority.authorize([], None, 'map migration')
+        return
+    held = authority.creation_claim(plan['claim'], _migration_regions(plan), 'map migration')
+    MIGRATE_BEFORE.update(authority.content_snapshot(GAME))
+    claimed = set(authority.items_of(held, 'path'))
+    # The existing files the editor may save are authorized now, with their live LFS locks verified: a listed path
+    # whose lock is missing must refuse before anything is written, not only when the created files are bound.
+    existing = sorted(p for p in claimed if p.removeprefix('games/yorimichi_v2/') in MIGRATE_BEFORE)
+    if existing:
+        owners, _ = authority.owning_scopes(GAME, existing)
+        authority.authorize(existing, plan['claim'], 'map migration',
+                            scopes=owners or set(_migration_regions(plan)))
+    unclaimed = sorted(p for p in (f'games/yorimichi_v2/{rel}' for rel in MIGRATE_BEFORE) if p not in claimed)
+    authority.deny_saves(unclaimed, ctx.out / 'migrate' / 'save-deny.txt', repo=GAME.parents[1])
+    log.write(f"migration authorized (claim {plan['claim']}, {len(unclaimed)} existing file(s) denied)\n")
+
+
+def _check_migration_writes(ctx, log):
+    """A claimed migration: refuse what it wrote outside its rule, bind the actor packages it created to the claim."""
+    import os
+    os.environ.pop('V2_SAVE_DENY', None)
+    plan = _migration_plan()
+    if not plan.get('claim'):
+        return   # the bootstrap writer: save validation records what it wrote
+    authority = _authority()
+    created = authority.bind_created(plan['claim'], _migration_regions(plan), MIGRATE_BEFORE,
+                                     authority.content_snapshot(GAME), 'map migration', game=GAME)
+    log.write(''.join(f'migration created and claimed {path}\n' for path in created) or 'migration created nothing\n')
 
 
 def _authorize_import(ctx, log):

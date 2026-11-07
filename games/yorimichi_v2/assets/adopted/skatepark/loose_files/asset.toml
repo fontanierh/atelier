@@ -1,0 +1,60 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/SkatePark
+schema = 1
+id = "adopted/skatepark/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skatepark/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkDecals"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Piece950cf888b3474602"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Piece971a82d94a995696"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Piecec24187871c53d9be"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Piececc8d0ff98be9477a"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Pieced3acce5cb1ec6427"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Piecedf883a6e8f7c7b66"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Piecee27af474601aada7"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFeatures_Piecefa03a0dfce6ed909"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFurniture"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkPlanting"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkatePath"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkatePierPilings"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkatePier_Piece4b95388381a8f337"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkatePier_Piece971a82d94a995696"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkatePier_Piececc8d0ff98be9477a"
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkatePier_Pieced3acce5cb1ec6427"

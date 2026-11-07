@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "doc": "Visual parity viewpoints for the P3 slice (plan P3.6). Unreal units: location in cm (x east, y south, z up), rotation in degrees, fov horizontal in degrees. Island metres (x east, y north) map to cm as (100x, -100y, 100z); a source eye -> look-at becomes pitch/yaw. Captured by unreal/Scripts/capture_poses.py, compared by tools/parity/compare.py.",
+  "doc": "Visual parity viewpoints for the P3 slice (plan P3.6). Unreal units: location in cm (x east, y south, z up), rotation in degrees, fov horizontal in degrees. Island metres (x east, y north) map to cm as (100x, -100y, 100z); a source eye -> look-at becomes pitch/yaw. Captured by unreal/Scripts/capture_poses.py, compared by tools/parity/compare.py, which requires every pose here. maps.donor opened in the editor does not spawn the donor's runtime scenery: the donor baseline must be captured from the running donor game (route pending).",
   "maps": {"donor": "/Game/Japan/Maps/Slice", "v2": "/Game/V2/Maps/Slice"},
   "poses": [
     {

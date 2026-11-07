@@ -26,6 +26,30 @@ machine is reachable from this one, so the two-machine rows wait for a collabora
 | C18 push or LFS upload fails | partial pass | f1d2b1529a | in a scratch clone with `.githooks`, a commit carrying a new LFS package was pushed with LFS pointed at an unreachable endpoint: `git lfs pre-push` failed the batch upload ("connection refused"), the push exited 1, `git ls-remote` shows the branch never reached origin, and the commit and the 4 KB local package stayed. Claim retention on failure is the claims service rule (release only on merge or cancel, PR #732). Not yet run: the retry that reconciles before pushing again (needs a sandbox remote, not the public repository). |
 | C19 shared definition update | harness (no Unreal) | | `tests/test_collaboration_harness.py`: a claimed save of a shared material makes the check report exactly its direct `input_dependencies` dependents STALE_IMPORT and the import plan add the transitive one, nothing else; two dependent owners reimport under their own claims and main checks clean, with unrelated records and packages byte-identical. Rerun on adopted content. |
 | C20 cancel a guarded build | pass (test map) | f1d2b1529a | a guarded `editor.run` holding the editor (`Scripts/hold.py`) was cancelled with SIGTERM 16 s in: the build reported "BUILD INTERRUPTED during editor.run; completed steps stay published", its editor child (UnrealEditor-Cmd) was gone within 1 s, the hold script never finished, another owner's running build (the donor, same machine) kept its PID and kept running, and `git status` was unchanged. The next guarded editor run was admitted at once. |
+| C21 claimed new actors after D04 closes | pending (native); unit pass | | Unit: `tests/test_d04.py` (closed switch refuses the bootstrap writer on all seven routes; a claimed migration creates, binds with `--lock-path … --acquire` and records its regions' actors; creation in another map's actor folder or outside actor folders, and an unclaimed existing write, are refused with nothing bound). Native plan, needs Unreal and the real service: in a scratch branch set `governance.toml` `closed = true`; as a non-bootstrap agent, request a claim with `region/test-minimal` scope plus the TestMinimal map's existing actor paths, acquire it, and run `tools/migrate/run.py region/test-minimal --environment region/test-minimal --claim TASK` with a plan that adds one new labelled actor. Expect: the bootstrap writer without `--claim` refused before the editor starts; the editor's save of an unclaimed existing package refused by V2SaveGuard; exactly the new OFPA file(s) bound to the claim with LFS locks held on the remote (`git lfs locks`), including a path not yet on the remote; `claims check --stage publish` and the content check pass; the change-set report is clean. Then the same with a second agent holding another region: its creation in this region's map folder is refused. |
 
 Unit rows prove the logic; each still needs its run on the slice (plan §13: "a simulation of lock logic does not
 replace actual LFS/server integration tests").
+
+## P3 targeted edits on the slice (plan P3 step 2)
+
+These are measured on the reference Mac, with a warm editor build. Each edit is guarded and admitted. Each was
+checked with `git status`: nothing outside its write set changed.
+
+| Edit | Command | Wall time | Written |
+|---|---|---|---|
+| Mesh import: `prop/lantern` from its committed FBX (`assets/props/lantern/src/Lantern.fbx`) | `tools/import/run.py prop/lantern` | 30 s (editor 28.5 s) | `Japan/Assets/Lantern.uasset` and its record. Import data keeps only the repo-relative source path |
+| Same import again, unchanged | same | 1 s, no Unreal | nothing |
+| Actor placement: one `w01-start` lantern patch moved 30 cm east | `editor.run` with `Scripts/move_actor.py` | 31 s (editor 29.9 s) | that actor's OFPA package; then `save_validate.py region/w01-start` (1 changed) |
+| C++ feature: `UYorimichiLive::Travel` (the game's travel, which leaves swim/ride states) | the `unreal.compile` build step | 27 s incremental | the editor module binaries (not committed) |
+
+These first edits ran as the D04 bootstrap writer. The claimed versions belong to C01, C03 and C21.
+
+`tools/test/route.py` passed again after the C++ edit, now starting through `Travel` (falling, then walking).
+At that point, the running slice game's static scenery was all saved: 510 `V2ScenePatch` and 9 `StaticMeshActor`
+OFPA actors, and `JapanWorld` spawned no meshes. Feature actors are still spawned at runtime: the `SkatePark`
+(the skate pier, from `skatepark/park.json`, 20 mesh components), 3 `SwordTrainer`s and the `FoxHunter`. They
+become saved, placed actors with the gameplay features in P4.
+
+The first real import found that `import.<id>` was no valid build step name (`/` is not allowed). Import steps are
+now named `import.` plus the ID with `.` for `/` (`records.import_step`), and a collision fails the build.

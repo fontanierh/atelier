@@ -22,7 +22,8 @@ SCHEMA = 1
 AUTHORITIES = ('generated', 'editor', 'split')
 KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'material-instance', 'texture',
          'audio', 'map', 'blueprint', 'data', 'level-instance', 'foliage', 'physics',
-         # A donor folder's packages taken once as they are (tools/migrate/adopt.py), editor-owned from then on.
+         # One ownership unit of donor packages taken once as they are (tools/migrate/adopt.py, nested IDs such as
+         # adopted/japan/hidamari), editor-owned from then on.
          'adopted')
 VERIFIED_KINDS = ('imported', 'editor-saved')
 LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
@@ -32,6 +33,7 @@ HEX64 = re.compile(r'^[0-9a-f]{64}$')
 PACKAGE_EXTENSIONS = ('.uasset', '.umap')
 # Uncooked companions an editor package may carry; the importer records the ones it actually wrote.
 COMPANION_EXTENSIONS = ('.ubulk', '.uexp', '.uptnl')
+ACTOR_ROOTS = ('__ExternalActors__', '__ExternalObjects__')   # a World Partition map's One File Per Actor folders
 
 
 class RecordError(ValueError):
@@ -87,6 +89,18 @@ class Region:
     @property
     def actors(self) -> Path:
         return self.folder / 'actors.verified.json'
+
+    @property
+    def actor_folders(self) -> list[str]:
+        """Game-relative folders its maps' actor packages live in (`unreal/Content/__ExternalActors__/<map>`, and
+        `__ExternalObjects__`). Regions on one map share them; save validation's label and bounds rule splits them."""
+        return [f'unreal/Content/{root}/{PurePosixPath(m).relative_to("/Game")}'
+                for m in self.maps for root in ACTOR_ROOTS]
+
+
+def import_step(asset_id: str) -> str:
+    """The build step that imports a generated asset: `import.` and its ID with "/" as "." (step names allow no "/")."""
+    return 'import.' + asset_id.replace('/', '.')
 
 
 def sha256_file(path: Path) -> str:
@@ -300,6 +314,48 @@ def load_restricted(game: Path) -> Restricted:
     source = _need(data, 'source', path, dict)
     _known(source, {'env', 'about'}, path, '[source]')
     return Restricted(tuple(roots), game / lock, _need(source, 'env', path))
+
+
+DATA_ROOT = 'Data'                    # unreal/Content/Data: files the game reads at run time (AtelierDataPath)
+DATA_LOCK = 'runtime-data.lock.json'  # every runtime data file with its sha256
+
+
+def data_files(game: Path) -> list[str]:
+    """Content-relative paths of every file under unreal/Content/Data."""
+    root = game / 'unreal' / 'Content' / DATA_ROOT
+    if not root.is_dir():
+        return []
+    return sorted(p.relative_to(root.parent).as_posix() for p in root.rglob('*') if p.is_file() or p.is_symlink())
+
+
+def load_data_lock(game: Path) -> dict[str, str] | None:
+    """Content-relative path -> sha256 of every pinned runtime data file; None when there is no lock."""
+    path = game / DATA_LOCK
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as error:
+        raise RecordError(f'{path}: {error}') from None
+    files = data.get('files') if isinstance(data, dict) else None
+    if not isinstance(data, dict) or data.get('schema') != SCHEMA or not isinstance(files, dict):
+        raise RecordError(f'{path}: a data lock is {{"schema": {SCHEMA}, "files": {{PATH: SHA256}}}}')
+    for rel, digest in files.items():
+        _portable(rel, path, 'files')
+        if not rel.startswith(DATA_ROOT + '/') or not isinstance(digest, str) or not HEX64.match(digest):
+            raise RecordError(f'{path}: {rel} must be a file under {DATA_ROOT}/ with a sha256')
+    return dict(files)
+
+
+def write_data_lock(game: Path) -> int:
+    """Pin every runtime data file as it is now; returns how many."""
+    files = {rel: sha256_file(game / 'unreal' / 'Content' / rel) for rel in data_files(game)}
+    (game / DATA_LOCK).write_text(json.dumps({
+        'schema': SCHEMA,
+        'about': 'Runtime data under unreal/Content/Data (tools/migrate/adopt.py --data or --pin-data); '
+                 'tools/content/check.py requires every file here, hydrated and with these bytes, and nothing else.',
+        'files': files}, indent=2, sort_keys=True) + '\n')
+    return len(files)
 
 
 def load_lock(restricted: Restricted) -> dict[str, dict]:

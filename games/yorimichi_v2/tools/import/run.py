@@ -8,7 +8,7 @@ For each selected asset and its declared dependents (assets whose `input_depende
 2. skips an asset whose input fingerprint and verified package bytes already match, without starting Unreal;
 3. checks that the caller may write those packages (an active claim, or the bootstrap writer, DECISIONS D04);
 4. records the intended write set and the existing bytes in a local journal before anything is written;
-5. runs the asset kind's importer once, through `atelier build yorimichi_v2 import.<id>` (guarded and admitted);
+5. runs the asset kind's importer once, through `atelier build yorimichi_v2 import.<id, "/" as ".">` (guarded, admitted);
 6. accepts the result only if every declared package exists and no file outside the write set changed, then writes
    the asset's source hashes and `verified.json`;
 7. on any failure, or at the start of the next run after a crash, restores the journal's files exactly and writes no
@@ -193,7 +193,7 @@ content_snapshot = authority.content_snapshot   # what an import wrote, checked 
 def native_import(game, asset, plan_file: Path):
     """Run the guarded editor import for one asset; the plan file tells the editor script what to write."""
     env = {**os.environ, 'V2_IMPORT_PLAN': str(plan_file)}
-    command = ['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2', f'import.{asset.id}']
+    command = ['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2', records.import_step(asset.id)]
     result = subprocess.run(command, cwd=REPO, env=env)
     if result.returncode:
         raise ImportError_(f'{asset.id}: the editor import failed (exit {result.returncode}); see build/yorimichi_v2/logs')

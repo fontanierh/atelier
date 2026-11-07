@@ -69,14 +69,22 @@ ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2           # che
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/open_close.py \
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # one guarded editor script (here: open a map, save nothing)
 uv run python games/yorimichi_v2/tools/content/save_validate.py ID [--claim TASK]   # record an editor-owned asset or region after a save
-ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID   # (pending) targeted import
-uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # (pending) one-time donor adoption
-uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # (pending) one-time world migration
+ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_ID   # targeted import (prop/lantern: 30 s, 1 package; unchanged rerun 1 s, no Unreal)
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # one-time donor adoption, one record per ownership unit (D08)
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --repartition --check-only   # split older per-folder adopted records into units
+uv run python games/yorimichi_v2/tools/migrate/adopt.py --pin-data [--claim TASK]   # pin unreal/Content/Data in runtime-data.lock.json after a claimed change
+uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # one-time world migration (the slice: 526 actors)
 uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/capture_poses.py V2_CAPTURE_DIR=DIR \
-  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # (pending) one PNG per parity pose, saves nothing
-uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim S   # visual parity of two capture sets
+  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # (pending) into an empty DIR: one PNG per parity pose + capture.json receipt, saves nothing
+uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim S   # visual parity of two receipted capture sets (all poses in poses.json)
+# (pending) donor baseline capture from the running donor game: capture_poses.py on an editor map does NOT spawn the
+# donor's runtime scenery, so it is no donor baseline; compare.py rejects a donor receipt whose source is "v2"
 ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
+V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/move_actor.py V2_MOVE_ACTOR=/Game/__ExternalActors__/... V2_MOVE_BY_CM="X Y Z" \
+  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # move one saved actor, save only its package (31 s)
+uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen                # the slice game; prints its live session ID
+uv run python games/yorimichi_v2/tools/test/route.py --session ID --out DIR     # walk + skate route in that game, report.json
 ```
 
 `/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
@@ -97,7 +105,10 @@ nobody owns.
 - **Split** assets name the writer of each output.
 
 Before changing a binary package, claim its scope (`atelier claims`). Until the claim service has adopted V2's
-protected writes, one bootstrap writer does all binary work (DECISIONS D04).
+protected writes, one bootstrap writer does all binary work (DECISIONS D04); `governance.toml` holds that switch,
+and once it is closed every write needs a claim. A claimed migration (`tools/migrate/run.py --claim TASK`) may
+create new actor packages in its claimed regions; they are bound to the claim with their LFS locks before they
+are recorded.
 
 The normal build and play never generate, import, resave or cook. Packaging is explicit and runs a full-hash
 content check first.

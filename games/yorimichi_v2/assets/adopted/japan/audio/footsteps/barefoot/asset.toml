@@ -1,0 +1,159 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/Audio/Footsteps/barefoot
+schema = 1
+id = "adopted/japan/audio/footsteps/barefoot"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/audio/footsteps/barefoot"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_06"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_07"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_08"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_09"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_10"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_11"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_12"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_13"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_14"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_15"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_16"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_17"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_18"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_19"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_20"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_21"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_22"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_23"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_24"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_25"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_26"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_27"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_28"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_29"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_30"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_31"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_32"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_33"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_34"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_35"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_36"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_37"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_38"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_39"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_40"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_41"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_42"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_43"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_44"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_45"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_46"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_47"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_48"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_49"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/barefoot/barefoot_jr_barefoot_hardwood_walk_L_50"

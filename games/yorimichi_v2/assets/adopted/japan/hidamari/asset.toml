@@ -1,0 +1,381 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/Hidamari
+schema = 1
+id = "adopted/japan/hidamari"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_ac_unit"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle_shelter"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bonsai_shelf"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_curve_mirror"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_drink_crates"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_fire_buckets"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_garbage_station"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_hokora"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_jizo"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_car"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_truck"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_komainu"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_lantern_sign"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_laundry_stand"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_phone_booth"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_planter_box"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_postbox"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_potted_plants"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_produce_stand"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_propane_tanks"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_sake_barrels"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_scooter"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_stone_lantern"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_street_bench"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_tanuki"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_taxi"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_town_bus"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_vending_machine"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_water_basin"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_yatai"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_blockwall"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_brick"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_concrete"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_drystone"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_earth"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_flagstone"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_flat"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_grass"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_gravel"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_metal"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_moss"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_paint"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_plaster"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_rice"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_roof"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_sidewalk"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_siding"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_stone"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_timber"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_A"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_B"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_A"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_B"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/M_HDCity"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_A/Tree_Caldera_BlackPine_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_A/Tree_Caldera_BlackPine_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_A/Tree_Caldera_BlackPine_A_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_A/Tree_Caldera_Cedar_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_A/Tree_Caldera_Cedar_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_A/Tree_Caldera_Cedar_A_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_ac_unit"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bicycle"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bicycle_shelter"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bonsai_shelf"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bus_stop"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_curve_mirror"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_drink_crates"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_fire_buckets"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_garbage_station"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_hokora"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_jizo"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_kei_car"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_kei_truck"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_komainu"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_lantern_sign"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_laundry_stand"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_phone_booth"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_planter_box"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_postbox"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_potted_plants"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_produce_stand"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_propane_tanks"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_sake_barrels"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_scooter"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_stone_lantern"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_street_bench"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_tanuki"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_taxi"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_town_bus"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_vending_machine"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_water_basin"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_yatai"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_asphalt"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_blockwall"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_brick"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_concrete"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_drystone"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_earth"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_flagstone"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_grass"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_gravel"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_metal"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_moss"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_paint"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_plaster"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_rice"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_roof"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_sidewalk"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_siding"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_stone"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_timber"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_BlackPine_A"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_BlackPine_B"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_Cedar_A"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_Cedar_B"

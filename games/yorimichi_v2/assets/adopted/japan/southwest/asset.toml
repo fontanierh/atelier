@@ -1,0 +1,102 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/Southwest
+schema = 1
+id = "adopted/japan/southwest"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/southwest"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Boat"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_BoatShed"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Boulder_A"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Boulder_B"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Boulder_C"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_CoconutStand"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Dock"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_DryingRack"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_FisherHouseA"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_FisherHouseB"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-1_-2"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-1_1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-2_-1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-2_-2"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-2_0"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_-2_1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_0_-2"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_0_0"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_0_1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_1_-1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_1_-2"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_1_0"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_1_1"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_StoneStairs"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_StoneWall"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Temple"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/Tree_PineLean_A"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/Tree_PineLean_B"

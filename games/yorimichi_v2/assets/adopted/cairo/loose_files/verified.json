@@ -1,0 +1,28 @@
+{
+  "asset": "adopted/cairo/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Cairo/A_DoubleJump.uasset": "23ef4f650cd105f46a9d3888474d39611b2933be8862e926edc94ed87db04e37",
+    "unreal/Content/Cairo/A_Interact.uasset": "c5e25dc39481ef62352d5fcd99079eecab419ea859b56c5645070ea95e435081",
+    "unreal/Content/Cairo/A_SitDown.uasset": "9fbd32f72468ca7a4f9bb5af24c65761dd1578962d56756fbe98f141ffb61ffa",
+    "unreal/Content/Cairo/A_SitIdle.uasset": "dfa266169a42dd8aa46fe8b328c193fdc7856b9fbb67a1064d829bd93c93578d",
+    "unreal/Content/Cairo/A_StandUp.uasset": "1e5a371b5275fdc9f643dfcb4de94b44b443a09ace4519ff626226f3334a9249",
+    "unreal/Content/Cairo/A_SwordIdle.uasset": "d6a89c5078f5bf5771826fa9dbf1bbd65889c5078660faa0d85fd179c9a3f16e",
+    "unreal/Content/Cairo/A_SwordParry.uasset": "be7de4680735e685ee9f9cacb927f89f384f84e3ba812686524e78b145193660",
+    "unreal/Content/Cairo/A_SwordParryHit.uasset": "2f7b504300cfb666e76df5b1f56a91b1f20fa1eb01056bb1419cf2dca6484ef2",
+    "unreal/Content/Cairo/A_Wave.uasset": "80a0acdc00e13aad1515f2d9df79d7b7790168830d0099b903b121a5fb51e1f0",
+    "unreal/Content/Cairo/BP_Cairo.uasset": "d74aebb5f82cd812a4d33b16822faa4b1a4a33561b4b3e1f38074a4316c687d2",
+    "unreal/Content/Cairo/DA_CairoBase.uasset": "c9f04fc3a89257585239fea82d8eed3e9689e97cc8f3e48429a5c5ebb5085f44",
+    "unreal/Content/Cairo/M_Cairo_Clean_body_matte_skin_and_fitting_suit.uasset": "3fd00f95eb30f0f8e24b65eab4ee8a1cf7eef9e566350e40a5f872c0ae4daf0d",
+    "unreal/Content/Cairo/M_Cairo_Clean_brows_dark_brown.uasset": "46fc857c0fe4e36a503a176190a9370996d64ae3e185d6c280328a494452448f",
+    "unreal/Content/Cairo/M_Cairo_Clean_eyes_soft_charcoal.uasset": "e8e235129c64caaae11c2db0e28dfb5fc77100dd17bfa4acf997d203a7c9ae52",
+    "unreal/Content/Cairo/M_Cairo_Clean_hair_warm_dark_brown.uasset": "871ccd4521306236bea1f4134613afbcad2576cd4727bf66f93dcedbcedac024",
+    "unreal/Content/Cairo/M_Cairo_Clean_skin_matte_warm_peach.uasset": "5632274ef0a958d9527ace4d02a2b3995e48d34ae29141fb06478340fb65b41a",
+    "unreal/Content/Cairo/M_Cairo_Outfit_Tripo_skate_r01.uasset": "9073c6f27d356419014a7b69442c28263eebfa16d5e918b83d63e63602dca821",
+    "unreal/Content/Cairo/SK_Cairo.uasset": "37018bd7c6846fcf91a509feb0e34b650090470df3a235fd6e2b682c8b783cac",
+    "unreal/Content/Cairo/SK_Cairo_Skeleton.uasset": "7c3f1c0249689bc9e226df834dca63320b34d859f9027b396b8cc82815b6b141"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

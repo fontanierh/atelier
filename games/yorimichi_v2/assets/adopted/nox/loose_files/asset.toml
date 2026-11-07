@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/Nox
+schema = 1
+id = "adopted/nox/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/nox/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Nox/BP_Nox"
+
+[[outputs]]
+package = "/Game/Nox/DA_Nox"
+
+[[outputs]]
+package = "/Game/Nox/DA_NoxBase"
+
+[[outputs]]
+package = "/Game/Nox/M_Nox_Body"
+
+[[outputs]]
+package = "/Game/Nox/M_Nox_Head"
+
+[[outputs]]
+package = "/Game/Nox/SK_Nox"
+
+[[outputs]]
+package = "/Game/Nox/SK_Nox_Skeleton"

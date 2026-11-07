@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/fx/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/Textures/T_FX_Dust.uasset": "bb4f4cff816fb8fe53344f5bb9cda9d107e09ecec0595c7f51e9ca7f2ca5b5aa",
+    "unreal/Content/FX/Textures/T_FX_Glow.uasset": "d8cc99fe4228c68b7d0fc659b117c89184e11bf90ff5d249fb4271ec01ba37cd",
+    "unreal/Content/FX/Textures/T_FX_Ring.uasset": "cc7a9fcd6cda7325cc8eacc49a108f89d87bfb2b75d17fe6ce50ab2716d0d202",
+    "unreal/Content/FX/Textures/T_FX_Spark.uasset": "1dd1e6d8d30197414be01e6e1d1b5c60c966736c0c035c6f49bd76028792dcbc",
+    "unreal/Content/FX/Textures/T_FX_Trail.uasset": "e0b2911a023c7be2fb21cdb3d592cfd7f4d7aa0837e569ab652cbfbcf246ea5c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

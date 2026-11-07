@@ -286,3 +286,39 @@ def test_a_scene_patch_deleted_outright_fails_against_its_region_roster(game):
     found, problems = codes(game)
     assert found == ['PATCH_MISSING']
     assert 'b2 (TH_Dressing)' in problems[0].detail
+
+
+def runtime_data(game, files=None):
+    for rel, data in (files or {'Data/world.json': b'{"size": 600}', 'Data/skatepark/park.json': b'{}'}).items():
+        write(game / 'unreal/Content' / rel, data)
+    records.write_data_lock(game)
+
+
+def test_pinned_runtime_data_passes(game):
+    runtime_data(game)
+    assert codes(game)[0] == []
+
+
+def test_deleted_or_unhydrated_runtime_data_fails_with_its_restore_route(game):
+    runtime_data(game)
+    (game / 'unreal/Content/Data/world.json').unlink()
+    found, problems = codes(game)
+    assert found == ['MISSING'] and 'git checkout -- "games/yorimichi_v2/unreal/Content/Data/world.json"' in problems[0].action
+    write(game / 'unreal/Content/Data/world.json',
+          'version https://git-lfs.github.com/spec/v1\noid sha256:' + '0' * 64 + '\nsize 9\n')
+    found, problems = codes(game)
+    assert found == ['NOT_HYDRATED'] and problems[0].action.startswith('git lfs pull')
+
+
+def test_changed_or_unpinned_runtime_data_fails(game):
+    runtime_data(game)
+    write(game / 'unreal/Content/Data/world.json', b'{"size": 601}')
+    write(game / 'unreal/Content/Data/extra.json', b'{}')
+    found, problems = codes(game)
+    assert found == ['DATA_CHANGED', 'DATA_UNPINNED']
+    assert all('--pin-data' in p.action for p in problems)
+
+
+def test_runtime_data_without_a_lock_fails(game):
+    write(game / 'unreal/Content/Data/world.json', b'{}')
+    assert codes(game)[0] == ['DATA_UNPINNED']

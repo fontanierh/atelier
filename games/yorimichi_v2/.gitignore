@@ -13,3 +13,10 @@ unreal/*_????????.uproject
 # A nested .gitignore takes precedence, so these win over the root re-include of unreal/Content.
 unreal/Content/Audio/
 unreal/Content/Japan/Audio/
+unreal/Content/Cairo/
+unreal/Content/CairoAdventure/
+unreal/Content/Modori/
+unreal/Content/Nox/
+unreal/Content/Paul/
+unreal/Content/SkateRide/
+unreal/Content/SkateMotion/

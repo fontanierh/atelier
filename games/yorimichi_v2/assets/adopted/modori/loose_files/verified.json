@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/modori/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Modori/BP_Modori.uasset": "0c3b04a0ec11910e9e53593ab49a153876aa88d131266af20d6f6f4af96ace3f",
+    "unreal/Content/Modori/DA_Modori.uasset": "e33444f756b10016bc2be5381d212666067f031353995b67b4523d23b5a7404e",
+    "unreal/Content/Modori/DA_ModoriBase.uasset": "b7ce3d8d4d68a1cb2b9ada7b3f98391ab11d914647f38e1835a695db8572ad60",
+    "unreal/Content/Modori/M_Modori_Body.uasset": "75b0dae70cdd42e14f3bf60fcb651baf9b4a3743d72a0ebb0a2a16a7783e7740",
+    "unreal/Content/Modori/M_Modori_Coat.uasset": "2cc2885acb2951dbde201fdb4941b2d7f5373690fe8ab4c327c6df0b417b3b7a",
+    "unreal/Content/Modori/PA_Modori_Cloth.uasset": "037980c8f178d6e0e9099df895a1024b666287906ddbed424b3ccc739e0aacde",
+    "unreal/Content/Modori/SK_Modori.uasset": "38fe60d087b0d5f83114528e6b737ac945200222da456b8ee8efeb8c46d457d1",
+    "unreal/Content/Modori/SK_Modori_Skeleton.uasset": "a6fa48269f4df1f18e944c11995cf18570844bf1830b2302f5866cb5df2b88d4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

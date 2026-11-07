@@ -216,3 +216,10 @@ def test_an_editor_owned_change_in_a_split_asset_does_not_reimport(game):
     write(game / 'unreal/Content/Props/MI_Split.uasset', b'edited again in the editor')
     editor = FakeEditor()
     assert do(game, ['prop/split'], editor) == [False] and editor.calls == []
+
+
+def test_the_import_step_of_an_asset_id_is_a_valid_build_step_name():
+    import re
+    name = records.import_step('prop/lantern')
+    assert name == 'import.prop.lantern'
+    assert re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', name)   # atelier.build_products' step name rule

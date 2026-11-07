@@ -1,0 +1,609 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/SkateRide/Clips/B0 (part 5 of 14)
+schema = 1
+id = "adopted/skateride/clips/b0/loose_files_05"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/loose_files_05"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_BS_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_BS_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_BS_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_BS_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_BS_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_BS_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BF_FS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_BS_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_BS_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_BS_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_GRAB_BS_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_GRAB_BS_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_GRAB_BS_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_CROOKS_FS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_DOUBLE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_DOUBLE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_DOUBLE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_NOSE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_NOSE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_NOSE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_B_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_DOUBLE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_DOUBLE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_DOUBLE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_NOSE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_NOSE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_NOSE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_FS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_FS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_FS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_FS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_FS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_DS_FS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_FS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_FS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_FS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_FS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_FS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BF_FS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_FS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_FS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_FS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_FS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_FS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_FEEBLE_FS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_BOTH_CR_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_BOTH_CR_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_BOTH_CR_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_BOTH_N_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_BOTH_N_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_BOTH_N_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_LEFT_CR_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_LEFT_CR_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_LEFT_CR_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_LEFT_N_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_LEFT_N_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_LEFT_N_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_RIGHT_CR_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_RIGHT_CR_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_RIGHT_CR_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_RIGHT_N_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_RIGHT_N_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_FISTS_RIGHT_N_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_CR_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_CR_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_CR_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_N_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_N_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_N_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_CR_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_CR_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_CR_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_N_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_N_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_N_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_CR_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_CR_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_CR_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_N_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_N_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_N_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_WIPEOUT_CANNONBALL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_WIPEOUT_JUMPKICK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_WIPEOUT_SWAN_DIVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_GSTR_WIPEOUT_TORPEDO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_FS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_FS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_FS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_FS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_FS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_LIPSLIDE_FS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NBLUNT_FS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_GRAB_BS_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_GRAB_BS_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_GRAB_BS_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BF_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BS_HI_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BS_HI_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BS_HI_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BS_LOW_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BS_LOW_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_BS_LOW_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_BS_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_BS_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_BS_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NSLIDE_BS_GRAB_TAIL_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NSLIDE_BS_GRAB_TAIL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NSLIDE_BS_GRAB_TAIL_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_NSLIDE_BS_HI_0_CYC"

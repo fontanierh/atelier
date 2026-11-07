@@ -36,6 +36,12 @@ bool UYorimichiLive::Drive(FVector2D Intent, int32 Gait)
     P->Live_Drive(Intent.GetClampedToMaxSize(1.f), FMath::Clamp(Gait, 0, 2)); return true;
 }
 
+bool UYorimichiLive::Travel(FVector Location, float Yaw)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    return P && P->TravelTo(Location, Yaw, TEXT("live"));
+}
+
 bool UYorimichiLive::BikeLean(float Lean)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); if (!P) return false;

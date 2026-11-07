@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/SkateRide
+schema = 1
+id = "adopted/skateride/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/ACL_SkateRideExact"
+
+[[outputs]]
+package = "/Game/SkateRide/CC_SkateRideExact"
+
+[[outputs]]
+package = "/Game/SkateRide/MDT_SkateRider"
+
+[[outputs]]
+package = "/Game/SkateRide/M_SkateRider_Board"
+
+[[outputs]]
+package = "/Game/SkateRide/M_SkateRider_Body"
+
+[[outputs]]
+package = "/Game/SkateRide/SKEL_SkateRider"
+
+[[outputs]]
+package = "/Game/SkateRide/SK_SkateRider"

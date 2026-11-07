@@ -2,21 +2,42 @@
 
 A claimed write is checked at the `publish` stage: every path exactly claimed by the task's active claim, with
 its recorded Git LFS lock verified live on the remote. Without a claim, only the D04 bootstrap writer may write,
-and only in a checkout that has no claims task set; this exception ends when D04 is closed.
+and only in a checkout that has no claims task set; this exception ends when `governance.toml` closes D04.
+
+A write that creates actor packages World Partition names only when it saves them (the migration) runs under a
+claim holding each region it touches: it may create new files in those regions' actor folders, which are then
+bound to the claim with their LFS locks before publication (`creation_claim`, `bind_created`).
 """
 from __future__ import annotations
 
 import json
 import os
 import subprocess
+import tomllib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]
-BOOTSTRAP_WRITER = 'jim-macbook-5'   # DECISIONS D04, until the claim service adopts protected writes
+GAME = Path(__file__).resolve().parents[2]
+GOVERNANCE = GAME / 'governance.toml'   # the committed D04 switch
 
 
 class Unauthorized(RuntimeError):
     pass
+
+
+def d04(path: Path | None = None) -> tuple[str | None, bool]:
+    """(bootstrap writer, closed) from the committed switch; a missing or malformed switch is closed (fail closed)."""
+    try:
+        section = tomllib.loads((path or GOVERNANCE).read_text()).get('d04', {})
+    except (OSError, tomllib.TOMLDecodeError):
+        return None, True
+    writer, closed = section.get('writer'), section.get('closed')
+    if not isinstance(writer, str) or closed is not False:
+        return (writer if isinstance(writer, str) else None), True
+    return writer, False
+
+
+BOOTSTRAP_WRITER = d04()[0]   # DECISIONS D04: the writer named in governance.toml, exempt only while D04 is open
 
 
 def allow_saves(paths: list[str], list_file: Path, *, repo: Path = REPO) -> None:
@@ -110,15 +131,22 @@ def generated_paths(game: Path) -> set[str]:
     return found
 
 
-def claimed_scopes(claim: str, *, repo: Path = REPO) -> list[str]:
-    """The scope items of the task's active claims, read from the claim service."""
+def active_claims(claim: str, *, repo: Path = REPO) -> list[dict]:
+    """The task's active claims (id, principal, items), read from the claim service."""
     result = subprocess.run(['uv', 'run', 'atelier', 'claims', 'task', 'show', claim], cwd=repo,
                             capture_output=True, text=True)
     if result.returncode:
         raise Unauthorized(f'claim service: cannot read task {claim}: {result.stderr.strip()[-300:]}')
-    task = json.loads(result.stdout)
-    return [item['value'] for c in task.get('claims', []) if c.get('state') == 'active'
-            for item in c.get('items', []) if item.get('kind') == 'scope']
+    return [c for c in json.loads(result.stdout).get('claims', []) if c.get('state') == 'active']
+
+
+def items_of(claim: dict, kind: str) -> list[str]:
+    return [item['value'] for item in claim.get('items', []) if item.get('kind') == kind]
+
+
+def claimed_scopes(claim: str, *, repo: Path = REPO) -> list[str]:
+    """The scope items of the task's active claims, read from the claim service."""
+    return [scope for c in active_claims(claim, repo=repo) for scope in items_of(c, 'scope')]
 
 
 def covered(scope, held: list[str]) -> bool:
@@ -146,10 +174,77 @@ def authorize(paths: list[str], claim: str | None, what: str, *, scopes=(), repo
             raise Unauthorized(f'{what}: claim {claim} does not exactly cover these paths with verified locks; '
                                'extend and acquire it first')
         return
+    writer, closed = d04()
+    if closed:
+        raise Unauthorized(f'{what}: no --claim given, and DECISIONS D04 is closed ({GOVERNANCE.name}): every binary '
+                           'write needs a claim, the bootstrap writer\'s included')
     owner = os.environ.get('ATELIER_AGENT')
-    if owner != BOOTSTRAP_WRITER:
+    if owner != writer:
         raise Unauthorized(f'{what}: no --claim given and ATELIER_AGENT={owner!r} is not the bootstrap writer '
-                           f'{BOOTSTRAP_WRITER!r} (DECISIONS D04)')
+                           f'{writer!r} (DECISIONS D04)')
     task = checkout_task(repo)
     if task:
         raise Unauthorized(f'{what}: this checkout works under claims task {task!r}; pass --claim {task}')
+
+
+def creation_claim(claim: str, regions: list[str], what: str, *, repo: Path = REPO) -> dict:
+    """The task's active claim, held by this actor, whose region scopes cover every region a creating write touches
+    (scopes are exclusive in the claim service); the files the write creates are bound to it."""
+    if not regions or not all(r.startswith('region/') for r in regions):
+        raise Unauthorized(f'{what}: only region writes may create actor packages, not {regions}')
+    actor = os.environ.get('ATELIER_CLAIMS_ACTOR') or os.environ.get('ATELIER_AGENT')
+    for held in active_claims(claim, repo=repo):
+        if held.get('principal') == actor and all(covered(r, items_of(held, 'scope')) for r in regions):
+            return held
+    raise Unauthorized(f'{what}: task {claim} has no active claim held by {actor!r} whose scopes cover '
+                       f'{", ".join(regions)}; request one with each region scope')
+
+
+def bind_created(claim: str, regions: list[str], before: dict, after: dict, what: str, *, game: Path = GAME,
+                 repo: Path = REPO) -> list[str]:
+    """Check a claimed creating write from content snapshots taken around it and bind what it created; returns the
+    created repository paths. A created file is one absent before the write, unrecorded, under the actor folders
+    of the claim's regions; any other created file is refused. Changed or deleted existing files must be exactly
+    claimed, as for every write. The created files are added to the claim with their LFS locks (`atelier claims
+    extend ID --lock-path ... --acquire`) and then checked like any claimed path, so nothing unbound is published."""
+    import records
+    changed = written(before, after)
+    created = sorted(rel for rel in changed if rel not in before and rel in after)
+    try:
+        held = creation_claim(claim, regions, what, repo=repo)
+        by_id = {r.id: r for r in records.discover(game)[1]}
+        unknown = [r for r in regions if r not in by_id]
+        if unknown:
+            raise Unauthorized(f'{what}: no region record for {", ".join(unknown)}')
+        folders = [folder + '/' for r in regions for folder in by_id[r].actor_folders]
+        outside = [rel for rel in created if not rel.startswith(tuple(folders))]
+        if outside:
+            raise Unauthorized(f'{what}: created {", ".join(outside[:8])} outside the actor folders of '
+                               f'{", ".join(regions)}; delete them (a claimed write creates only its regions\' actors)')
+        paths = [f'games/yorimichi_v2/{rel}' for rel in created]
+        owned, _ = owning_scopes(game, paths)
+        if owned:
+            raise Unauthorized(f'{what}: created files a record already lists ({", ".join(sorted(map(str, owned)))}); '
+                               'a new file must not have existed before the write')
+        existing = [f'games/yorimichi_v2/{rel}' for rel in sorted(changed - set(created))]
+        if existing:
+            scopes, _ = owning_scopes(game, existing)
+            authorize(existing, claim, what, scopes=scopes | set(regions), repo=repo)
+        for start in range(0, len(paths), 500):   # bounded command lines for a large migration
+            batch = paths[start:start + 500]
+            command = ['uv', 'run', 'atelier', 'claims', 'extend', str(held['id']),
+                       *(arg for path in batch for arg in ('--lock-path', path)), '--acquire']
+            result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+            if result.returncode:
+                raise Unauthorized(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
+                                   f'{claim}: {result.stderr.strip()[-300:]}')
+        if paths:
+            authorize(paths, claim, what, scopes=set(regions), repo=repo)
+    except BaseException:
+        # Created files exist before their paths can be claimed (World Partition names them at save). Unbound,
+        # they are unauthorized writes: remove every one, so any refusal or failure (the claim service unavailable
+        # or unreadable included) leaves nothing behind. Existing files and claims are left as they were.
+        for rel in created:
+            (game / rel).unlink(missing_ok=True)
+        raise
+    return paths

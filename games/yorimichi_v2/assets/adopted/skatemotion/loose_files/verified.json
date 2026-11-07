@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skatemotion/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateMotion/MotionData.uasset": "432288b30938fe206b1758ea9abf526d707bfeeb3c1e3957abbf2fd6ea2cd91a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

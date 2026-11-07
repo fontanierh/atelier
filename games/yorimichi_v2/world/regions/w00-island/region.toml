@@ -1,0 +1,10 @@
+# W00 Island foundation: the map-wide actors (sun, sky light, fog, post process, player start, the AV2WorldManifest),
+# the sky dome and sea, and the island pieces (terrain, road, lane, guardrail, wires, far hills) of cells no other
+# region owns. Its bounds are the whole map; every actor it owns is labelled `region/w00-island:`.
+schema = 1
+id = "region/w00-island"
+about = "Island foundation and the map-wide environment"
+bounds_cm = [-2000000, -2000000, 2000000, 2000000]
+neighbours = ["region/w01-start", "region/w04-pier-approach"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

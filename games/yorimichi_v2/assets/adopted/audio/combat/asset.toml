@@ -1,0 +1,126 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Audio/Combat
+schema = 1
+id = "adopted/audio/combat"
+kind = "adopted"
+authority = "editor"
+owner = "shared/audio/combat"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Audio/Combat/ambience_countryside_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/body_fall_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/body_fall_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/charge_ready_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/claw_swipe_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/claw_swipe_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/claw_swipe_03"
+
+[[outputs]]
+package = "/Game/Audio/Combat/dash_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/dash_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/fox_alert_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/fox_death_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/fox_hurt_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/fox_hurt_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/fox_hurt_03"
+
+[[outputs]]
+package = "/Game/Audio/Combat/hit_body_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/hit_body_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/hit_body_03"
+
+[[outputs]]
+package = "/Game/Audio/Combat/hit_body_04"
+
+[[outputs]]
+package = "/Game/Audio/Combat/hit_heavy_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/hit_heavy_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/kick_swing_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/kick_swing_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/parry_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/parry_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/parry_03"
+
+[[outputs]]
+package = "/Game/Audio/Combat/player_hurt_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/player_hurt_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/player_hurt_03"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_charge_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_draw_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_draw_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_sheathe_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_sheathe_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_swing_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_swing_02"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_swing_03"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_swing_04"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_swing_heavy_01"
+
+[[outputs]]
+package = "/Game/Audio/Combat/sword_swing_heavy_02"

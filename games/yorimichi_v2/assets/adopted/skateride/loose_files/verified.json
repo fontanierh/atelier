@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/skateride/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/ACL_SkateRideExact.uasset": "f05d41b172511f352380b22fba7d4a29b3820beb571db656c50d1389634d6455",
+    "unreal/Content/SkateRide/CC_SkateRideExact.uasset": "b520372f2c582204ff7afe7ae125c12bf310c99f3026cb54a5d28a467cc270ad",
+    "unreal/Content/SkateRide/MDT_SkateRider.uasset": "ac1b02dbe8d50a0dd9c110610ab07af29a273fbec8ec590b5f92daa702bf9489",
+    "unreal/Content/SkateRide/M_SkateRider_Board.uasset": "118679a53dd4e7438c4e809e76c9987b2156f3e9d8663cbf903ef922757ea5c7",
+    "unreal/Content/SkateRide/M_SkateRider_Body.uasset": "c4095c567aba8f22f76873a73a14bbece9c7f5f9257a5b1d73d5f82767b6b363",
+    "unreal/Content/SkateRide/SKEL_SkateRider.uasset": "a6f370384a877bda2154440370bcb502441b958cf655e650ed58d9c292055726",
+    "unreal/Content/SkateRide/SK_SkateRider.uasset": "302ef8a5bceb47c98002054343369ee57ba672e42cc99d984e81e9d2e7fa328b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

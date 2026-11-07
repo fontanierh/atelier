@@ -1,0 +1,12 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/Animation
+schema = 1
+id = "adopted/japan/animation"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/animation"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Animation/CharacterCompression"

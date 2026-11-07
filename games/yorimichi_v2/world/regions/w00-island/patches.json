@@ -1,0 +1,14 @@
+{
+  "patches": {
+    "552804c6a72b3a8a": {
+      "key": "Sea:Sea",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/34/226V0KK5Q9Q6R0YHAJF3J8.uasset"
+    },
+    "b6c393bc7a5abe43": {
+      "key": "SkyDome",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/D0/O1HN06X7OL1GX5JZB35VNK.uasset"
+    }
+  },
+  "region": "region/w00-island",
+  "schema": 1
+}

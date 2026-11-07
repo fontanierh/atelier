@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/audio/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Audio/A_Footstep.uasset": "510b217dfaf6b2bae2d0b61c2f5fd8a2792b7e29d23bd1ec43d84fe7bf748afe",
+    "unreal/Content/Japan/Audio/DA_Footsteps.uasset": "3f6367176f96288d97ecb00915a998fb0a043f43c3587a9d1367a36f790ec81c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -29,7 +29,7 @@ from records import RecordError  # noqa: E402
 GAME = Path(__file__).resolve().parents[2]
 REPO = GAME.parents[1]
 BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
-ACTOR_ROOTS = ('__ExternalActors__', '__ExternalObjects__')
+ACTOR_ROOTS = records.ACTOR_ROOTS
 
 
 class ValidationError(RuntimeError):

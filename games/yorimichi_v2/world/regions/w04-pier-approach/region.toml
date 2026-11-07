@@ -1,0 +1,9 @@
+# W04 Sunset Pier approach, first slice section: terrain cells -1_-1 and -1_-2 (source x -128..0 m, y -256..0 m).
+# Unreal = (100 x, -100 y) cm. Its west edge meets w01-start at X = -12800 cm (Y 0..12800).
+schema = 1
+id = "region/w04-pier-approach"
+about = "House_C and its lot, the road bend, the pier path's middle and the shoreline under the deck entrance"
+bounds_cm = [-12800, 0, 0, 25600]
+neighbours = ["region/w01-start"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/road-set", "shared/skatepark"]

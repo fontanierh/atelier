@@ -16,6 +16,10 @@ public:
     /** Move the player as if the stick were held: Intent is camera-relative (Y forward, X right), Gait 0 walk, 1 run, 2 sprint.
      *  Zero intent stops. Any player input takes over again. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Drive(FVector2D Intent, int32 Gait = 1);
+    /** Travel the player to Location's ground, facing Yaw, as the map's travel does: it leaves any swim, skate, boat,
+     *  bike or horse state first (LiveLibrary.TeleportPlayer keeps it, so a swimmer stays at sea level). False while
+     *  the player or world is not ready. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool Travel(FVector Location, float Yaw);
     /** Hold the bike lean, -1 back (wheelie) .. 1 forward, as the left stick's forward axis does on the bike. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool BikeLean(float Lean);
     /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */

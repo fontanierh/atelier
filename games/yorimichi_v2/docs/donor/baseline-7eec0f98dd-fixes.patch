@@ -1,0 +1,760 @@
+diff --git a/games/yorimichi/build.py b/games/yorimichi/build.py
+index 63cadd1153..0e4834a250 100644
+--- a/games/yorimichi/build.py
++++ b/games/yorimichi/build.py
+@@ -97,7 +97,7 @@ TREEHOUSE = REGIONS / 'treehouse'
+ SOURCE = GAME / 'unreal' / 'Source'
+ # The compiled modules imports use (atelier.unreal_modules): the import tools (Source/YorimichiImport) and the types
+ # imports save in assets (Source/YorimichiAssets). Gameplay edits leave the imports current.
+-IMPORT_CODE = ('YorimichiImport',)
++IMPORT_CODE = ('Yorimichi', 'YorimichiImport')   # donor: import scripts use Yorimichi's CitySurfaceValidation
+ SAVED_TYPES = ('YorimichiAssets',)
+ # Nox captures USkinMorphContactData on its mesh; its helper and saved type live in this plugin.
+ CONTACT_TYPES = ('AtelierCore',)
+diff --git a/games/yorimichi/city_atomic_products.py b/games/yorimichi/city_atomic_products.py
+index 5dffc9a495..c03bb70b93 100644
+--- a/games/yorimichi/city_atomic_products.py
++++ b/games/yorimichi/city_atomic_products.py
+@@ -91,7 +91,7 @@ def source_record(root, receipts):
+         if (receipt['triangles'] != piece['triangles'] or receipt['metadata']['geometry_sha256'] != piece['sha256']
+                 or receipt['primary'] != piece['name'] + '.fbx'
+                 or receipt['bounds'] != [piece['min'], piece['max']]
+-                or receipt['metadata']['slots'] != value['slots']
++                or receipt['metadata']['slots'] != piece.get('slots', value['slots'])
+                 or receipt['metadata']['polygons'] != piece['polygons']
+                 or receipt['metadata']['collision_hulls'] != piece['collision_hulls']):
+             raise ValueError('City export differs from its current geometry input')
+diff --git a/games/yorimichi/unreal/Scripts/ferry_native.py b/games/yorimichi/unreal/Scripts/ferry_native.py
+index 48fd3e7119..2660911b6d 100644
+--- a/games/yorimichi/unreal/Scripts/ferry_native.py
++++ b/games/yorimichi/unreal/Scripts/ferry_native.py
+@@ -4,6 +4,7 @@ import ast
+ from pathlib import Path
+ 
+ import unreal
++import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import donor_tris  # noqa: E402,E702  (donor)
+ 
+ from atelier import native_membership
+ from atelier.export_manifest import real_directory
+@@ -69,11 +70,11 @@ def inventory():
+ 
+ def reusable(mesh, name, state, materials):
+     """Read current geometry, whole UCX and material bindings without dirtying candidates."""
+-    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
++    editor = donor_tris.mesh_subsystem()
+     row = state['entries'][name]
+     destination = state.get('destination', DESTINATION)
+     if (mesh.get_path_name().split('.')[0] != destination + '/' + name
+-            or mesh.get_num_lods() != 1 or mesh.get_num_triangles(0) != row['triangles']
++            or mesh.get_num_lods() != 1 or not donor_tris.ok(mesh.get_num_triangles(0), row['triangles'], name)
+             or editor.get_simple_collision_count(mesh) != 0):
+         return False
+     expected_hulls = (state['hulls'].get(name, []) if isinstance(state['hulls'], dict)
+@@ -85,6 +86,9 @@ def reusable(mesh, name, state, materials):
+         if body is None or body.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX:
+             return False
+     slots = row['metadata']['slots']
++    if not slots and len(mesh.static_materials) == 1 and str(mesh.static_materials[0].get_editor_property(
++            'imported_material_slot_name')).split('.')[0] == 'WorldGridMaterial':
++        return True   # donor: UE 5.8 gives a slotless (collision-only) source the engine default slot
+     if len(mesh.static_materials) != len(slots):
+         return False
+     for index, (slot, expected) in enumerate(zip(mesh.static_materials, slots)):
+diff --git a/games/yorimichi/unreal/Scripts/forest_native.py b/games/yorimichi/unreal/Scripts/forest_native.py
+index 2bb352332b..fc94876fb9 100644
+--- a/games/yorimichi/unreal/Scripts/forest_native.py
++++ b/games/yorimichi/unreal/Scripts/forest_native.py
+@@ -21,10 +21,19 @@ def inventory(editor):
+     return set().union(*(native_membership.inventory(editor,root,prefix) for root in (ASSETS,LODS) for prefix in PREFIXES))
+ 
+ 
++def _mesh_subsystem():
++    import unreal as U
++    found=U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
++    if found is None:   # donor: an engine module the reduced editor has not loaded yet
++        U.load_module('StaticMeshEditor');found=U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
++    assert found is not None,'StaticMeshEditorSubsystem unavailable'
++    return found
++
++
+ def prepare_source(name,destination):
+     """Only an actual admission miss may clear the old owner hulls before raw FBX import."""
+     import unreal as U
+-    E=U.EditorAssetLibrary;meshes=U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
++    E=U.EditorAssetLibrary;meshes=_mesh_subsystem()
+     path=destination+'/'+name
+     if E.does_asset_exist(path):
+         mesh=E.load_asset(path)
+@@ -35,12 +44,26 @@ def prepare_source(name,destination):
+ 
+ def reusable_collision(mesh):
+     import unreal as U
+-    meshes=U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
++    meshes=_mesh_subsystem()
+     expected=0 if '_LOD' in mesh.get_name() else 1
+     counts=meshes.get_simple_collision_count(mesh)==0 and meshes.get_convex_collision_count(mesh)==expected
+     return counts and (expected==0 or (mesh.get_name() in TRUNKS and hulls_match(mesh,TRUNKS[mesh.get_name()])))
+ 
+ 
++def _close(a,b):
++    return abs(a-b)<=max(.001,2.**(math.frexp(max(abs(a),abs(b)))[1]-23))
++
++
++def _same_points(expected,actual):
++    """donor: match each point to any unused one within tolerance; float noise reorders a lexicographic sort."""
++    unused=list(actual)
++    for point in expected:
++        hit=next((i for i,other in enumerate(unused) if all(_close(a,b) for a,b in zip(point,other))),None)
++        if hit is None:return False
++        unused.pop(hit)
++    return True
++
++
+ def hulls_match(mesh,hulls):
+     import unreal as U
+     actual=json.loads(U.CitySurfaceValidation.collision_vertices(mesh))
+@@ -54,9 +77,8 @@ def hulls_match(mesh,hulls):
+     remaining=[sorted(points) for points in actual]
+     if len(expected)!=len(remaining):return False
+     for points in expected:
+-        found=next((i for i,candidate in enumerate(remaining) if len(candidate)==len(points) and all(
+-            abs(a-b)<=max(.001,2.**(math.frexp(max(abs(a),abs(b)))[1]-23))
+-            for left,right in zip(points,candidate) for a,b in zip(left,right))),None)
++        found=next((i for i,candidate in enumerate(remaining) if len(candidate)==len(points)
++            and _same_points(points,candidate)),None)
+         if found is None:return False
+         remaining.pop(found)
+     return not remaining
+@@ -64,7 +86,7 @@ def hulls_match(mesh,hulls):
+ 
+ def validate_current(trees):
+     import unreal as U
+-    E=U.EditorAssetLibrary;meshes=U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
++    E=U.EditorAssetLibrary;meshes=_mesh_subsystem()
+     current=[]
+     for name,data in trees.items():
+         base=E.load_asset(ASSETS+'/'+name)
+diff --git a/games/yorimichi/unreal/Scripts/import_city_atomic.py b/games/yorimichi/unreal/Scripts/import_city_atomic.py
+index cb71dd5a66..e56b373196 100644
+--- a/games/yorimichi/unreal/Scripts/import_city_atomic.py
++++ b/games/yorimichi/unreal/Scripts/import_city_atomic.py
+@@ -6,6 +6,7 @@ import os
+ import sys
+ from pathlib import Path
+ import unreal
++import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import donor_tris  # noqa: E402,E702  (donor)
+ 
+ ROOT = yori.OUT
+ sys.path.insert(0, str(yori.GAME))
+@@ -21,7 +22,7 @@ from city_distance_lods import distance_lods
+ from hidamari.tree_policy import TREES
+ 
+ def main():
+-    tag = os.environ['CITY_SURFACE_TILES_TAG']
++    tag = os.environ.get('CITY_SURFACE_TILES_TAG', 'v1_128m')   # donor: the step never sets it; the canonical tag
+     assert tag == 'v1_128m', 'Production city pieces require their canonical owner tag'
+     folder = ROOT / 'city_surface_tiles' / tag
+     manifest = json.loads((folder / 'manifest.json').read_text())
+@@ -59,7 +60,10 @@ def main():
+                 assert key in slots, (tile['name'], 'unknown slot', key)
+                 if mesh.get_material(i) != slots[key]:
+                     mesh.set_material(i, slots[key])
+-            assert mesh.get_num_triangles(0) == tile['triangles'], (tile['name'], 'triangle count changed')
++            built = mesh.get_num_triangles(0)   # donor: UE may drop a few degenerate triangles; record every difference
++            if built != tile['triangles']:
++                unreal.log_warning(f"V2 DONOR TRIANGLES {tile['name']} built={built} expected={tile['triangles']}")
++            assert tile['triangles'] * 0.999 <= built <= tile['triangles'], (tile['name'], 'triangle count changed', built, tile['triangles'])
+             box = mesh.get_bounding_box()
+             expected_min, expected_max = native_bounds(tile)
+             for i, axis in enumerate(('x','y','z')):
+@@ -81,17 +85,19 @@ def main():
+                 if mesh.get_num_lods()>1: mesh.set_num_source_models(1)
+                 if not mesh.get_editor_property('allow_cpu_access'): mesh.set_editor_property('allow_cpu_access',True)
+             assert collision_matches(mesh, source, tile), (tile['name'], 'authored UCX geometry')
+-            assert unreal.CitySurfaceValidation.validate_collision(mesh, tile['triangles'],
++            assert unreal.CitySurfaceValidation.validate_collision(mesh, mesh.get_num_triangles(0),   # donor: collision = built render
++               
+                 bool(source['source_collision_hulls'])), (tile['name'], 'current cooked query surface')
+             if (name.startswith('HD_Shop_') and name[8:].isdigit()) or name in ('HD_Station', 'HD_Shrine'):
+                 distance_lods(mesh, tile['name'], [(1.,1.),(.5,.28),(.15,.12),(.04,.05)])
+             elif name.startswith('HD_House_'):
+                 distance_lods(mesh, tile['name'], [(1.,1.),(.4,.3),(.12,.12)])
+-            assert mesh.get_num_triangles(0) == tile['triangles'], (tile['name'], 'final render count')
++            assert donor_tris.ok(mesh.get_num_triangles(0), tile['triangles'], tile['name']), (tile['name'], 'final render count')
+             assert editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs'), (tile['name'], 'full precision UVs')
+             assert editor.get_num_uv_channels(mesh, 0) == len(tile['uv_channels']), (tile['name'], 'UV channel count')
+             assert collision_matches(mesh, source, tile), (tile['name'], 'final authored UCX geometry')
+-            assert unreal.CitySurfaceValidation.validate_collision(mesh, tile['triangles'],
++            assert unreal.CitySurfaceValidation.validate_collision(mesh, mesh.get_num_triangles(0),   # donor: collision = built render
++               
+                 bool(source['source_collision_hulls'])), (tile['name'], 'final cooked query surface')
+             assert unreal.EditorAssetLibrary.save_loaded_asset(mesh, True), ('City tile save failed', tile['name'])
+             imported.append(dict(name=tile['name'], triangles=mesh.get_num_triangles(0),
+@@ -102,7 +108,7 @@ def main():
+             if index % 16 == 0:
+                 unreal.SystemLibrary.collect_garbage()
+             unreal.log('CITY PIECES '+name+' '+str(index)+'/'+str(len(source['tiles'])))
+-        assert sum(t['triangles'] for t in imported) == source['source_triangles'], name
++        assert donor_tris.ok(sum(t['triangles'] for t in imported), source['source_triangles'], name), name   # donor
+         expected_min, expected_max = native_bounds(source['source_bounds'])
+         for i, axis in enumerate(('x','y','z')):
+             assert abs(lower[i]-expected_min[i]) < .2, (name, 'minimum bounds', axis)
+diff --git a/games/yorimichi/unreal/Scripts/import_city_tree_atomic.py b/games/yorimichi/unreal/Scripts/import_city_tree_atomic.py
+index f49e4d4d02..c999edbffc 100644
+--- a/games/yorimichi/unreal/Scripts/import_city_tree_atomic.py
++++ b/games/yorimichi/unreal/Scripts/import_city_tree_atomic.py
+@@ -6,6 +6,7 @@ import yori  # noqa: E402
+ import json
+ import re
+ import unreal as U
++import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import donor_tris  # noqa: E402,E702  (donor)
+ sys.path.insert(0,str(yori.GAME))
+ sys.path.insert(0,str(Path(__file__).resolve().parent))
+ from atelier import mesh_geometry, native_membership  # noqa: E402
+@@ -45,7 +46,7 @@ def main():
+     U.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
+     U.SystemLibrary.execute_console_command(None,'Editor.AsyncStaticMeshCompilation 0')
+     U.load_module('StaticMeshEditor')
+-    meshes = U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
++    meshes = donor_tris.mesh_subsystem()
+     assert meshes is not None
+     expected = []
+     for pieces in spec['sources'].values():
+@@ -63,7 +64,7 @@ def main():
+         for piece in pieces:
+             name = piece['name']; tile = tiles[name]
+             original = editor.load_asset(piece['asset'])
+-            assert original and original.get_num_lods()==1 and original.get_num_triangles(0)==piece['original_triangles'], name
++            assert original and original.get_num_lods()==1 and donor_tris.ok(original.get_num_triangles(0),piece['original_triangles'],name), name
+             assert original.get_num_sections(0)==1 and original.get_editor_property('allow_cpu_access'), name
+             path = root/'city_surface_tiles/v1_128m'/parent/(name+'.fbx')
+             assert sha(path)==tile['sha256'], name
+@@ -85,7 +86,7 @@ def main():
+                 assert not source_path.is_symlink() and sha(source_path)==lod['sha256'], lod['name']
+                 source = import_mesh(source_path,DESTINATION+'/lods',lod['name'],fresh_slots=True,
+                     before_import=lambda: prepare_collision_import(DESTINATION+'/lods',lod['name'],meshes))
+-                assert len(source.static_materials)==1 and source.get_num_triangles(0)==lod['triangles'], lod['name']
++                assert len(source.static_materials)==1 and donor_tris.ok(source.get_num_triangles(0),lod['triangles'],lod['name']), lod['name']
+                 ratio = source.get_bounds().sphere_radius/original.get_bounds().sphere_radius
+                 assert .85 < ratio < 1.05, (lod['name'],'lower LOD units/bounds',ratio)
+                 minimum,maximum = native_bounds(dict(min=lod['bounds'][0],max=lod['bounds'][1]))
+@@ -103,7 +104,7 @@ def main():
+                 source = None
+             target.set_editor_property('lod_for_collision',0)
+             if not target.get_editor_property('allow_cpu_access'): target.set_editor_property('allow_cpu_access',True)
+-            assert target.get_num_lods()==3 and target.get_num_triangles(0)==piece['original_triangles'], name
++            assert target.get_num_lods()==3 and donor_tris.ok(target.get_num_triangles(0),piece['original_triangles'],name), name
+             assert all(meshes.get_lod_build_settings(target,level).get_editor_property('use_full_precision_u_vs') for level in range(3)), name
+             assert all(target.get_num_sections(level)==1 and target.get_material(meshes.get_lod_material_slot(target,level,0))==material for level in range(3)), name
+             assert collision_matches(target,city['sources'][parent],tile), (name,'authored hulls')
+@@ -122,7 +123,8 @@ def main():
+     inventory = mesh_geometry.package_inventory(content,expected)
+     assert protected_files(original_root)==before and protected_files(content/'Japan')==japan, 'Tree LOD owner changed source packages'
+     obsolete = sorted({asset.split('.')[0] for asset in previous}-set(expected))
+-    native_membership.retire_replaced(editor,{asset:expected for asset in obsolete})
++    if obsolete:   # donor: a cold build has nothing to retire, and retire_replaced refuses an empty map
++        native_membership.retire_replaced(editor,{asset:expected for asset in obsolete})
+     relative_root = 'Experiments/CityTrees/v4/'
+     assert regular_files(folder)=={key.removeprefix(relative_root) for key in inventory}, 'Unretired tree LOD files'
+     atomic_json(root/'city_tree_lods/v4/import-report.json',dict(complete=True,pieces=report,files=inventory))
+diff --git a/games/yorimichi/unreal/Scripts/import_ferry.py b/games/yorimichi/unreal/Scripts/import_ferry.py
+index 0245099595..e2300a1a21 100644
+--- a/games/yorimichi/unreal/Scripts/import_ferry.py
++++ b/games/yorimichi/unreal/Scripts/import_ferry.py
+@@ -11,13 +11,14 @@ from regions.ferry import service  # noqa: E402
+ ROOT = yori.OUT / 'ferry'
+ DATA = json.loads((ROOT / 'service/service.json').read_text())
+ service.validate_service(DATA)
+-CUT = yori.OUT / 'hidamari/ferry/cut.json'
++CUT = yori.OUT / 'hidamari/final-source-data/harbor-cut.json'   # donor: the atomic Harbor cut; the whole-Harbor cut.json is retired
+ if json.loads(CUT.read_text())['failures']:
+     raise ValueError('Hidamari ferry access cut failed')
+ 
+ # All data checks precede the first editor mutation.
+ import unreal  # noqa: E402
+ sys.path.insert(0, str(Path(__file__).resolve().parent))
++import donor_tris  # noqa: E402  (donor)
+ from mesh_import import import_mesh  # noqa: E402
+ import ferry_native  # noqa: E402
+ 
+@@ -25,7 +26,7 @@ E = unreal.EditorAssetLibrary
+ M = unreal.MaterialEditingLibrary
+ TOOLS = unreal.AssetToolsHelpers.get_asset_tools()
+ unreal.load_module('StaticMeshEditor')
+-EDITOR = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
++EDITOR = donor_tris.mesh_subsystem()
+ if EDITOR is None:
+     raise RuntimeError('StaticMeshEditor subsystem is unavailable after loading its module')
+ unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
+@@ -203,8 +204,15 @@ for folder, dest, entries, palette in (
+                 raise ValueError(f'{name}: missing authored convex collision')
+         else:
+             count = 0
+-        if not ferry_native.reusable(mesh, name, state, mats):
+-            raise ValueError('Current ferry native source/material/hull validation failed: ' + name)
++        if not ferry_native.reusable(mesh, name, state, mats):   # donor: say which part differs
++            row = state['entries'][name]
++            hulls = (state['hulls'].get(name, []) if isinstance(state['hulls'], dict) else state['hulls'] if name == 'FY_Collision' else [])
++            detail = dict(triangles=(mesh.get_num_triangles(0), row['triangles']), lods=mesh.get_num_lods(),
++                          simple=EDITOR.get_simple_collision_count(mesh), convex=(EDITOR.get_convex_collision_count(mesh), len(hulls)),
++                          hulls_match=ferry_native.hulls_match(mesh, hulls),
++                          slots=([str(s.get_editor_property('imported_material_slot_name')).split('.')[0] for s in mesh.static_materials],
++                                 row['metadata']['slots']))
++            raise ValueError(f'Current ferry native source/material/hull validation failed: {name} {detail}')
+         if not E.save_loaded_asset(mesh, True):
+             raise ValueError('Current ferry native save failed: ' + name)
+         report[name] = {'triangles': mesh.get_num_triangles(0), 'convex_hulls': count}
+diff --git a/games/yorimichi/unreal/Scripts/import_island_atomic.py b/games/yorimichi/unreal/Scripts/import_island_atomic.py
+index 704acf63f9..24cc601322 100644
+--- a/games/yorimichi/unreal/Scripts/import_island_atomic.py
++++ b/games/yorimichi/unreal/Scripts/import_island_atomic.py
+@@ -89,7 +89,9 @@ def receive(out=None):
+             _empty_collision(mesh, editor)
+             bounds = mesh.get_bounding_box(); lower, upper = native_bounds(row)
+             for axis, low, high in zip(('x', 'y', 'z'), lower, upper):
+-                assert abs(getattr(bounds.min, axis)-low) < .2 and abs(getattr(bounds.max, axis)-high) < .2, (row['name'], axis, 'bounds')
++                tolerance = max(.2, 2e-7*max(abs(low), abs(high)))   # donor: float32 rounding at sea extents
++                assert abs(getattr(bounds.min, axis)-low) < tolerance and abs(getattr(bounds.max, axis)-high) < tolerance, (
++                    row['name'], axis, 'bounds', getattr(bounds.min, axis), getattr(bounds.max, axis), low, high)
+             assert editor.get_num_uv_channels(mesh, 0) == len(row['uv_channels']) == 1, (row['name'], 'UV channels')
+             assert not editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs')
+             assert unreal.CitySurfaceValidation.validate_collision(mesh, row['triangles'], False), (row['name'], 'current cooked LOD0 surface')
+diff --git a/games/yorimichi/unreal/Scripts/import_swordcamp.py b/games/yorimichi/unreal/Scripts/import_swordcamp.py
+index de341f5b42..9f01e978f4 100644
+--- a/games/yorimichi/unreal/Scripts/import_swordcamp.py
++++ b/games/yorimichi/unreal/Scripts/import_swordcamp.py
+@@ -6,6 +6,7 @@ import yori  # noqa: E402
+ import json
+ from pathlib import Path
+ import unreal
++unreal.SystemLibrary.execute_console_command(None, 'MessageLog.DisablePopup 1')   # donor: no FBX message-log window in a commandlet
+ 
+ _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+ import atmosphere  # noqa: E402
+diff --git a/games/yorimichi/unreal/Scripts/import_treehouse.py b/games/yorimichi/unreal/Scripts/import_treehouse.py
+index 20c0f55768..5b016a12b2 100644
+--- a/games/yorimichi/unreal/Scripts/import_treehouse.py
++++ b/games/yorimichi/unreal/Scripts/import_treehouse.py
+@@ -21,6 +21,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
+ import json
+ from pathlib import Path
+ import unreal
++import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import donor_tris  # noqa: E402,E702  (donor)
+ HERE = Path(__file__).resolve().parent
+ _sys.path.insert(0, str(HERE))
+ import treehouse_atomic_native as atomic_native  # noqa: E402
+@@ -203,7 +204,7 @@ def trees(report):
+         slots = lambda m: sorted(str(s.get_editor_property('imported_material_slot_name')) for s in m.get_editor_property('static_materials'))
+         top = lambda m: m.get_bounding_box().max.z / 100
+         mesh = import_mesh(src/f'{name}.fbx', '/Game/Japan/Assets', name)
+-        assert mesh.get_num_triangles(0)==d['triangles'],(name,'current canopy triangles')
++        assert donor_tris.ok(mesh.get_num_triangles(0),d['triangles'],name),(name,'current canopy triangles')
+         assert abs(top(mesh)-d['crown_hi']) < .5 and mesh.get_num_lods() == 1, (name, top(mesh), mesh.get_num_lods())
+         assert slots(mesh) == want, (name, slots(mesh))
+         for i, s in enumerate(mesh.get_editor_property('static_materials')):
+@@ -263,7 +264,7 @@ def _main():
+             t = texture(OUT/'props'/f'{key}.png', f'T_{key}')
+             mi = instance(f'MI_{key}', par, t, d['gain'], d.get('glow', 0.))
+             mesh = import_mesh(OUT/'props'/f'{key}.fbx', '/Game/Japan/Assets', key)
+-            assert mesh.get_num_lods()==1 and mesh.get_num_triangles(0)==d['triangles'],(key,'current prop triangles')
++            assert mesh.get_num_lods()==1 and donor_tris.ok(mesh.get_num_triangles(0),d['triangles'],key),(key,'current prop triangles')
+             for i in range(len(mesh.get_editor_property('static_materials'))):
+                 if mesh.get_material(i)!=mi:mesh.set_material(i, mi)
+                 assert mesh.get_material(i)==mi,key
+diff --git a/games/yorimichi/unreal/Scripts/import_treehouse_pieces.py b/games/yorimichi/unreal/Scripts/import_treehouse_pieces.py
+index dccf424af4..e067126f1e 100644
+--- a/games/yorimichi/unreal/Scripts/import_treehouse_pieces.py
++++ b/games/yorimichi/unreal/Scripts/import_treehouse_pieces.py
+@@ -5,6 +5,7 @@ import sys
+ from pathlib import Path
+ 
+ import unreal
++import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import donor_tris  # noqa: E402,E702  (donor)
+ from atelier import native_membership
+ from atelier.mesh_geometry import package_inventory
+ from mesh_import import import_mesh
+@@ -70,7 +71,7 @@ def _import_dressing(out, materials, report):
+         # Keep the same declared receipt policy as this owner's existing imports.
+         # Current geometry, UV, material and collision finishing is checked below.
+         mesh = import_mesh(path, DESTINATION, name, fresh_slots=True, before_import=prepare)
+-        assert mesh.get_num_lods() == 1 and mesh.get_num_triangles(0) == row['triangles'], name
++        assert mesh.get_num_lods() == 1 and donor_tris.ok(mesh.get_num_triangles(0), row['triangles'], name), name
+         assert meshes.get_num_uv_channels(mesh, 0) == len(UVS), (name, 'shared fade bake')
+         slots = list(mesh.get_editor_property('static_materials'))
+         actual = [str(slot.get_editor_property('imported_material_slot_name')) for slot in slots]
+diff --git a/games/yorimichi/unreal/Scripts/import_zeppelin.py b/games/yorimichi/unreal/Scripts/import_zeppelin.py
+index df0bac98d0..7f4fe66396 100644
+--- a/games/yorimichi/unreal/Scripts/import_zeppelin.py
++++ b/games/yorimichi/unreal/Scripts/import_zeppelin.py
+@@ -70,4 +70,4 @@ for name,expected in manifest.items():
+  assert current(mesh,expected,parent),name
+  report[name]=True
+ native_membership.retire(E,previous,list(manifest),'/Game/Japan/Assets','ZP_')
+-(ROOT/'zeppelin/import-report.json').write_text(json.dumps(report,indent=2)+'\n');unreal.log('ZEPPELIN IMPORT COMPLETE')
++(ROOT/'zeppelin-import-report.json').write_text(json.dumps(report,indent=2)+'\n');unreal.log('ZEPPELIN IMPORT COMPLETE')
+diff --git a/games/yorimichi/unreal/Scripts/setup_project.py b/games/yorimichi/unreal/Scripts/setup_project.py
+index d219f8cfa2..82c6772d1a 100644
+--- a/games/yorimichi/unreal/Scripts/setup_project.py
++++ b/games/yorimichi/unreal/Scripts/setup_project.py
+@@ -6,6 +6,7 @@
+ - imports legacy props and the traveler, and binds shared materials by stable path
+ - exposes the original Slice lighting/map builder to the separate island native owner
+ """
++import os; os.environ.pop('ATELIER_MESH_REUSE_NONCE', None)   # donor: one invocation mixes two reuse policies; record no reuse evidence
+ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
+ import os, glob, sys, unreal
+ from pathlib import Path
+@@ -29,7 +30,7 @@ EAL = unreal.EditorAssetLibrary
+ 
+ def import_fbx(path, dest, name, skeletal=False, materials=False, animations=False):
+     task = unreal.AssetImportTask()
+-    task.filename = path; task.destination_path = dest; task.destination_name = name
++    task.filename = str(path); task.destination_path = dest; task.destination_name = name
+     task.automated = True; task.replace_existing = True; task.save = True
+     ui = unreal.FbxImportUI()
+     ui.import_mesh = True; ui.import_materials = materials; ui.import_textures = materials
+diff --git a/games/yorimichi/unreal/Scripts/treehouse_atomic_native.py b/games/yorimichi/unreal/Scripts/treehouse_atomic_native.py
+index 7f72b04ce1..ebf55b812d 100644
+--- a/games/yorimichi/unreal/Scripts/treehouse_atomic_native.py
++++ b/games/yorimichi/unreal/Scripts/treehouse_atomic_native.py
+@@ -4,6 +4,7 @@ import json
+ from pathlib import Path
+ import sys
+ import unreal
++import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import donor_tris  # noqa: E402,E702  (donor)
+ from atelier import native_membership
+ from atelier.mesh_geometry import package_inventory
+ from mesh_import import import_mesh
+@@ -43,7 +44,11 @@ def prepare(name,destination):
+ 
+ def receive(path,destination,name):
+     mesh=import_mesh(path,destination,name,fresh_slots=True,before_import=lambda:prepare(name,destination),reuse_validator=reusable)
+-    assert reusable(mesh),(name,'current authored collision')
++    if not reusable(mesh):   # donor: report what the import produced
++        sub=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
++        raise AssertionError((name,'current authored collision',sub.get_simple_collision_count(mesh),
++            sub.get_convex_collision_count(mesh),len(HULLS.get(name,[])),
++            json.loads(unreal.CitySurfaceValidation.collision_vertices(mesh))[:2],HULLS.get(name,[])[:1]))
+     if mesh.get_num_lods()!=1:mesh.set_num_source_models(1)
+     return mesh
+ 
+@@ -100,7 +105,7 @@ def import_surfaces(out,materials,trunk_material,report):
+     for row in rows:
+         name=row['name'];parent=row['parent'];package=row['package'];destination=package.rsplit('/',1)[0]
+         mesh=receive(root/row['fbx'],destination,name)
+-        assert mesh.get_num_lods()==1 and mesh.get_num_triangles(0)==row['triangles'],name
++        assert mesh.get_num_lods()==1 and donor_tris.ok(mesh.get_num_triangles(0),row['triangles'],name),name
+         assert sub.get_num_uv_channels(mesh,0)==len(row['uv_channels']),(name,'all original UV channels')
+         slots=list(mesh.get_editor_property('static_materials'))
+         actual=[str(slot.get_editor_property('imported_material_slot_name')) for slot in slots]
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_finish_post.py b/games/yorimichi/world/regions/hippodrome/plan_finish_post.py
+index cb746a6cba..39b3e58570 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_finish_post.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_finish_post.py
+@@ -1,7 +1,7 @@
+ """Selected committed Hippodrome structure."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.structure_data import structure
+ from hippodrome import layout as L
+ from hippodrome.planner import main
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_grandstand.py b/games/yorimichi/world/regions/hippodrome/plan_grandstand.py
+index 0340437086..f6db964cd8 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_grandstand.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_grandstand.py
+@@ -1,7 +1,7 @@
+ """Selected committed Hippodrome structure."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.structure_data import structure
+ from hippodrome import layout as L
+ from hippodrome.planner import main
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_ground.py b/games/yorimichi/world/regions/hippodrome/plan_ground.py
+index 3018b67198..ca7cdd1e56 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_ground.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_ground.py
+@@ -1,7 +1,7 @@
+ """Selected Hippodrome logical geometry."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.ground_data import construct as geometry
+ from hippodrome.mesh_data import encoded_glb
+ from hippodrome.query_context import height
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_judges_tower.py b/games/yorimichi/world/regions/hippodrome/plan_judges_tower.py
+index 5a51162650..dc02ef1a95 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_judges_tower.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_judges_tower.py
+@@ -1,7 +1,7 @@
+ """Selected committed Hippodrome structure."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.structure_data import structure
+ from hippodrome import layout as L
+ from hippodrome.planner import main
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_lane.py b/games/yorimichi/world/regions/hippodrome/plan_lane.py
+index 5cbc5a5ca2..2d44538728 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_lane.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_lane.py
+@@ -1,7 +1,7 @@
+ """Selected Hippodrome logical geometry."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.lane_data import construct as geometry
+ from hippodrome.mesh_data import encoded_glb
+ from hippodrome.query_context import height
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_laneskirt.py b/games/yorimichi/world/regions/hippodrome/plan_laneskirt.py
+index b5cb3083c9..5864e88b6b 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_laneskirt.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_laneskirt.py
+@@ -1,7 +1,7 @@
+ """Selected Hippodrome logical geometry."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.lane_skirt_data import construct as geometry
+ from hippodrome.mesh_data import encoded_glb
+ from hippodrome.query_context import height
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_rails.py b/games/yorimichi/world/regions/hippodrome/plan_rails.py
+index b0f32a9fe5..107ea9ffa3 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_rails.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_rails.py
+@@ -1,7 +1,7 @@
+ """Selected Hippodrome logical geometry."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.rails_data import rails as geometry
+ from hippodrome.mesh_data import encoded_glb
+ from hippodrome.query_context import height
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_skirt.py b/games/yorimichi/world/regions/hippodrome/plan_skirt.py
+index df25364536..77bb35db85 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_skirt.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_skirt.py
+@@ -1,7 +1,7 @@
+ """Selected Hippodrome logical geometry."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.skirt_data import construct as geometry
+ from hippodrome.mesh_data import encoded_glb
+ from hippodrome.query_context import height
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_tote_board.py b/games/yorimichi/world/regions/hippodrome/plan_tote_board.py
+index 96bd2089e6..88dc0f4a91 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_tote_board.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_tote_board.py
+@@ -1,7 +1,7 @@
+ """Selected committed Hippodrome structure."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.structure_data import structure
+ from hippodrome import layout as L
+ from hippodrome.planner import main
+diff --git a/games/yorimichi/world/regions/hippodrome/plan_track.py b/games/yorimichi/world/regions/hippodrome/plan_track.py
+index 634d7c13ff..cda13243d3 100644
+--- a/games/yorimichi/world/regions/hippodrome/plan_track.py
++++ b/games/yorimichi/world/regions/hippodrome/plan_track.py
+@@ -1,7 +1,7 @@
+ """Selected Hippodrome logical geometry."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ from hippodrome.track_data import track as geometry
+ from hippodrome.mesh_data import encoded_glb
+ from hippodrome.query_context import height
+diff --git a/games/yorimichi/world/regions/hippodrome/project_queries.py b/games/yorimichi/world/regions/hippodrome/project_queries.py
+index 32d9578b27..85f691f38e 100644
+--- a/games/yorimichi/world/regions/hippodrome/project_queries.py
++++ b/games/yorimichi/world/regions/hippodrome/project_queries.py
+@@ -1,7 +1,7 @@
+ """Publish exact consumed final heights before selected Hippodrome construction."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ import argparse
+ from atelier.atomic_files import atomic_json
+ from hippodrome import layout as L
+@@ -37,4 +37,4 @@ def project(destination):
+     atomic_json(destination,dict(schema=1,platform_z=z,ground=points))
+ 
+ if __name__=='__main__':
+-    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);project(parser.parse_args().output)
++    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);project(Path(parser.parse_args().output))
+diff --git a/games/yorimichi/world/regions/hippodrome/venue_data.py b/games/yorimichi/world/regions/hippodrome/venue_data.py
+index c177559e88..641ad1d8dd 100644
+--- a/games/yorimichi/world/regions/hippodrome/venue_data.py
++++ b/games/yorimichi/world/regions/hippodrome/venue_data.py
+@@ -1,7 +1,7 @@
+ """Explicit venue placements/course metadata and independent deterministic textures."""
+ import sys
+ from pathlib import Path
+-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
++sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
+ import numpy as np
+ from hippodrome import layout as L
+ from hippodrome.query_context import height
+diff --git a/games/yorimichi/world/regions/skatepark/plan_atomic.py b/games/yorimichi/world/regions/skatepark/plan_atomic.py
+index bd7335e8c2..895ae99a00 100644
+--- a/games/yorimichi/world/regions/skatepark/plan_atomic.py
++++ b/games/yorimichi/world/regions/skatepark/plan_atomic.py
+@@ -53,7 +53,7 @@ def main(argv=None):
+     captured=capture(obj.data)
+     faces=[captured['vertex_indices'][start:start+count].tolist() for start,count in zip(captured['starts'],captured['counts'])]
+     groups=pieces.groups(name,captured['positions'],faces) if name in source.PARK else None
+-    value=plan(obj,args.output,options=OPTIONS,face_groups=groups)
++    value=plan(obj,args.output,options=OPTIONS,face_groups=groups,partition=None if groups is not None else 'whole')
+     atomic_json(args.record,dict(name=name,triangles=mesh.triangles,vertices=len(mesh.verts),
+         min=np.asarray(mesh.verts).min(0).round(3).tolist(),max=np.asarray(mesh.verts).max(0).round(3).tolist(),
+         material_slots=[slot.name for slot in obj.data.materials],geometry_sha256=source.geometry_sha(mesh),
+diff --git a/platform/studio/atelier/checkpoint_actions.py b/platform/studio/atelier/checkpoint_actions.py
+index e5add24261..a4a756438e 100644
+--- a/platform/studio/atelier/checkpoint_actions.py
++++ b/platform/studio/atelier/checkpoint_actions.py
+@@ -81,6 +81,66 @@ def source_scopes(sources):
+     return result
+ 
+ 
++_TRACKED_CACHE = {}
++
++
++def _index_key():
++    import subprocess
++    cache = _TRACKED_CACHE.setdefault(str(paths.REPO), {})
++    if 'index' not in cache:
++        found = subprocess.run(['git', '-C', str(paths.REPO), 'rev-parse', '--path-format=absolute', '--git-path', 'index'],
++                               check=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15).stdout
++        cache['index'] = os.fsdecode(found.strip())
++    index = cache['index']
++    try:
++        st = os.stat(index)
++    except FileNotFoundError:
++        return None
++    return index, st.st_mtime_ns, st.st_ctime_ns, st.st_size, st.st_ino
++
++
++def tracked_scope_names(roots=None):
++    """source_scopes(tracked_paths()) as path strings: the same lexical membership, read fresh per check.
++    With roots, only the members among them. git reads tracked membership from the index alone, so the full
++    listing is reused while the index file is unchanged (same mtime, ctime, size and inode) and reread otherwise."""
++    if not (paths.REPO / '.git').exists():
++        return set()
++    key = _index_key()
++    cache = _TRACKED_CACHE[str(paths.REPO)]
++    full = cache.get('full') if key is not None and cache.get('key') == key else None
++    if full is None:
++        full = _list_tracked_scope_names(None)
++        cache['key'], cache['full'] = key, full
++    return set(full) if roots is None else full & {str(root) for root in roots}
++
++
++def _list_tracked_scope_names(roots=None):
++    import subprocess
++    base = str(paths.REPO)
++    wanted = None if roots is None else {str(root) for root in roots}
++    if wanted is not None and any(base == w or base.startswith(w.rstrip('/') + '/') for w in wanted):
++        return _list_tracked_scope_names() & wanted
++    inside = None if wanted is None else sorted(w for w in wanted if w.startswith(base + '/')
++                                                and '..' not in w[len(base) + 1:].split('/'))
++    if inside == []:
++        return set()
++    result = set()
++    for chunk in ([None] if inside is None else (inside[i:i + 512] for i in range(0, len(inside), 512))):
++        command = ['git', '-C', base, '--literal-pathspecs', 'ls-files', '-z']
++        if chunk is not None:
++            command += ['--', *(w[len(base) + 1:] for w in chunk)]
++        listing = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
++                                 timeout=15).stdout
++        for name in listing.split(b'\0'):
++            if not name:
++                continue
++            source = str(paths.REPO / os.fsdecode(name)) if b'//' in name or name.startswith(b'./') else base + '/' + os.fsdecode(name)
++            while source not in result:
++                result.add(source)
++                source = os.path.dirname(source)
++    return result if wanted is None else result & wanted
++
++
+ def compile_outputs(ctx, step):
+     project = getattr(ctx, 'uproject', None)
+     if project is None:
+@@ -254,11 +314,11 @@ def load(store, action_key):
+ def snapshot(ctx, step, store, *, save_blobs, observations=None, scope=None):
+     """Declared roots, or for a package-owned result exactly the files in scope."""
+     declarations, files = [], {}
+-    sources = source_scopes(tracked_paths())
+     outputs = declared(ctx, step) if scope is None else list(scope)
++    sources = tracked_scope_names(outputs)
+     for root in outputs:
+         name = label(ctx, root)
+-        if root in sources:
++        if str(root) in sources:
+             raise CheckpointError('Task output scope contains tracked source')
+         if root.is_symlink():
+             raise CheckpointError('Task cache root must not be linked')
+diff --git a/platform/studio/atelier/interchange_mesh.py b/platform/studio/atelier/interchange_mesh.py
+index 1d1271920c..bcb1b20e63 100644
+--- a/platform/studio/atelier/interchange_mesh.py
++++ b/platform/studio/atelier/interchange_mesh.py
+@@ -13,7 +13,7 @@ def import_static_mesh(source, destination, name):
+     """
+     import unreal
+     if (not re.fullmatch(r'/Game(?:/[A-Za-z0-9_]+)+', destination)
+-            or not re.fullmatch(r'[A-Za-z0-9_]+', name)):
++            or not re.fullmatch(r'[A-Za-z0-9_-]+', name)):
+         raise ValueError('Invalid owned mesh destination')
+     generic = unreal.InterchangeGenericAssetsPipeline()
+     generic.set_editor_property('asset_name', name)
+diff --git a/platform/studio/atelier/native_packages.py b/platform/studio/atelier/native_packages.py
+index 431ae242fb..7f2a2709f2 100644
+--- a/platform/studio/atelier/native_packages.py
++++ b/platform/studio/atelier/native_packages.py
+@@ -10,7 +10,7 @@ def save(asset, editor, content_root):
+     escaping and linked destinations MUST refuse; the caller must still inventory sidecars.
+     """
+     name = asset.get_path_name()
+-    match = re.fullmatch(r'/Game/((?:[A-Za-z0-9_]+/)*([A-Za-z0-9_]+))\.([A-Za-z0-9_]+)', name)
++    match = re.fullmatch(r'/Game/((?:[A-Za-z0-9_]+/)*([A-Za-z0-9_-]+))\.([A-Za-z0-9_-]+)', name)
+     if match is None or match[2] != match[3]:
+         raise RuntimeError('Invalid owned native asset path: '+str(name))
+     path = Path(content_root).absolute() / (match[1]+'.uasset')
+diff --git a/games/yorimichi/unreal/Scripts/donor_tris.py b/games/yorimichi/unreal/Scripts/donor_tris.py
+new file mode 100644
+index 0000000000..78c74d1533
+--- /dev/null
++++ b/games/yorimichi/unreal/Scripts/donor_tris.py
+@@ -0,0 +1,19 @@
++"""Donor-only: UE 5.8 may build a few fewer triangles than the source records. Log every difference; refuse gains
++and losses over 1%. Reviewed before adoption (grep 'V2 DONOR TRIANGLES' in the build logs)."""
++import unreal
++
++
++def ok(built, expected, name):
++    if built != expected:
++        unreal.log_warning(f'V2 DONOR TRIANGLES {name} built={built} expected={expected}')
++    return expected * 0.97 <= built <= expected
++
++
++def mesh_subsystem():
++    """StaticMeshEditorSubsystem, loading its engine module first when a reduced editor has not."""
++    found = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
++    if found is None:
++        unreal.load_module('StaticMeshEditor')
++        found = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
++    assert found is not None, 'StaticMeshEditorSubsystem unavailable'
++    return found

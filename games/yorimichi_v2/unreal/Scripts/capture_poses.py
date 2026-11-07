@@ -1,6 +1,7 @@
 """Capture each visual parity pose (tools/parity/poses.json) as `<pose>.png` for tools/parity/compare.py (plan P3.6).
 
-V2_CAPTURE_DIR names the output folder (required). V2_OPEN_MAP names the map to open first (default
+V2_CAPTURE_DIR names the output folder (required); it must hold no PNG and no capture.json yet, so a stale screenshot
+can never stand in for the current scene. V2_OPEN_MAP names the map to open first (default
 /Game/V2/Maps/Slice; empty keeps the editor's current map), V2_CAPTURE_POSES another poses file, V2_CAPTURE_SIZE the
 resolution (default 2560x1440, the play profile's), V2_CAPTURE_WARMUP the renders before the kept one (default 8,
 so streaming and temporal effects settle) and V2_CAPTURE_LOAD_M the radius of World Partition actors loaded around
@@ -8,26 +9,53 @@ each pose (default 500 m; a partitioned map opens in the editor with none loaded
 
 editor.run's commandlet editor has no viewport, so each pose is rendered by a transient SceneCapture2D (final
 tone-mapped colour, with the world's post process volumes) into a transient render target and exported as PNG.
-Capture the donor and V2 with this same script, so both go through the same renderer path. It saves nothing: the
+It saves nothing: the
 capture actor is transient and destroyed, the render target is never an asset, and the dirty packages are reported
-as in open_close.py. The donor island's scenery is spawned at runtime (docs/INVENTORY.md), so the donor's saved map
-alone does not show it.
+as in open_close.py.
+
+After the last pose it writes the receipt capture.json next to the PNGs: the V2 git revision (and whether
+games/yorimichi_v2 had uncommitted changes), the map, capture size, warmup, load radius, the poses file's sha256, the
+UTC time, the engine version, the render settings (renderer and the scalability and screen-percentage values in
+QUALITY) and `source` ("v2"; V2_CAPTURE_SOURCE may name another, e.g. "donor-runtime").
+compare.py requires it on both sides.
+
+Opening an editor map does NOT instantiate the donor's runtime-spawned scenery (docs/INVENTORY.md), so this script
+on the donor's map is no donor baseline. The donor baseline must come from a real initialized donor scene (the
+running game); that capture route is pending.
 """
+import datetime
+import hashlib
 import json
 import os
 import re
+import subprocess
 from pathlib import Path
 
 import unreal as U
 
 MARKER = 'V2 CAPTURE DONE'
+QUALITY = ('r.ScreenPercentage', 'sg.ResolutionQuality', 'sg.ViewDistanceQuality', 'sg.AntiAliasingQuality',
+           'sg.ShadowQuality', 'sg.GlobalIlluminationQuality', 'sg.ReflectionQuality', 'sg.PostProcessQuality',
+           'sg.TextureQuality', 'sg.EffectsQuality', 'sg.FoliageQuality', 'sg.ShadingQuality')
 EAS = U.get_editor_subsystem(U.EditorActorSubsystem)
+V2_ROOT = Path(__file__).resolve().parents[2]
 if not os.environ.get('V2_CAPTURE_DIR'):
     raise RuntimeError('V2_CAPTURE_DIR must name the folder for the captures')
 out = Path(os.environ['V2_CAPTURE_DIR']).resolve()
 out.mkdir(parents=True, exist_ok=True)
-poses_file = Path(os.environ.get('V2_CAPTURE_POSES') or Path(__file__).resolve().parents[2] / 'tools/parity/poses.json')
-poses = json.loads(poses_file.read_text())
+stale = sorted(p.name for p in out.iterdir() if p.suffix.lower() == '.png' or p.name == 'capture.json')
+if stale:
+    raise RuntimeError(f'{out} must start empty of captures; it holds {stale}')
+
+
+def git(*args):
+    return subprocess.run(['git', '-C', str(V2_ROOT), *args], check=True, capture_output=True, text=True).stdout
+
+
+revision = {'commit': git('rev-parse', 'HEAD').strip(), 'dirty': bool(git('status', '--porcelain', '--', '.').strip())}
+poses_file = Path(os.environ.get('V2_CAPTURE_POSES') or V2_ROOT / 'tools/parity/poses.json')
+poses_bytes = poses_file.read_bytes()
+poses = json.loads(poses_bytes)
 if poses.get('schema') != 1:
     raise RuntimeError(f'{poses_file}: unknown poses schema {poses.get("schema")!r}')
 bad = [p.get('name') for p in poses['poses'] if not re.fullmatch(r'[a-z0-9_]+', str(p.get('name')))]
@@ -94,6 +122,15 @@ try:
         U.log(f'V2 CAPTURED {name}: {out / (name + ".png")}')
 finally:
     EAS.destroy_actor(camera)
-dirty = [p.get_name() for p in U.EditorLoadingAndSavingUtils.get_dirty_map_packages() +
+receipt = {'schema': 1, 'source': os.environ.get('V2_CAPTURE_SOURCE') or 'v2', 'revision': revision,
+           'map': path or world.get_path_name(), 'size': [width, height], 'warmup': warmup,
+           'load_radius_m': load_cm / 100., 'poses_sha256': hashlib.sha256(poses_bytes).hexdigest(),
+           'poses': [p['name'] for p in poses['poses']],
+           'captured_utc': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+           'engine_version': U.SystemLibrary.get_engine_version(),
+           'render': {'renderer': 'SceneCapture2D SCS_FINAL_COLOR_LDR',
+                      'quality': {cvar: U.SystemLibrary.get_console_variable_float_value(cvar) for cvar in QUALITY}}}
+(out / 'capture.json').write_text(json.dumps(receipt, indent=2) + '\n')
+dirty =[p.get_name() for p in U.EditorLoadingAndSavingUtils.get_dirty_map_packages() +
          U.EditorLoadingAndSavingUtils.get_dirty_content_packages()]
 U.log(f'{MARKER}: {len(poses["poses"])} captures in {out}; dirty (not saved): {dirty or "none"}')

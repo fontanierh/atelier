@@ -1,0 +1,243 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Japan/Materials
+schema = 1
+id = "adopted/japan/materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Bark"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_BarkOlive"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_BarkTuscan"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Coast"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_CoastRock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Concrete"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_FarForest"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Feather"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_FeatherDark"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Flower"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Grass"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Ground"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Lattice"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafAmber"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafBroad"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCedar"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCrimson"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCypress"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafGinkgo"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafMaple"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOak"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOchre"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOchreSmall"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOlive"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafPine"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafSmall"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafStonePine"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Litter"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Metal"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Moss"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_NorthRockCaps"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Paint"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Plaster"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Road"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Rock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_RoofTile"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Sand"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Sky"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Stone"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tile"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Forest_Ginkgo_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Forest_Maple_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Forest_Oak_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Forest_Pine_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Tuscan_Cypress_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Tuscan_Oak_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Tuscan_Olive_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Tuscan_Pine_Impostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Vermilion"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Water"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Wood"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MPC_Wind"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Arcade"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ArcadePaving"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Bike"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_CloudShadow"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_CoastRock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Foliage"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestGround"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestImpostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestLakeWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Grass"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Harbor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_HarborWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_NorthGate"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_NorthMountains"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Painted"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Painterly"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PlazaPaving"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PlazaWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PondWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_SailboatCloth"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_SailboatWake"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sea"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sky"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Village"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_VillageResident"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ZeppelinFabric"

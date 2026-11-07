@@ -1,0 +1,66 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Experiments/VillageAtomic
+schema = 1
+id = "adopted/experiments/villageatomic"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/villageatomic"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_CottageA"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_CottageB"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Details"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Edges"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Garden"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Ground"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_0_0_Piece1"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_0_0_Piece30"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_0_0_Piece31"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_0_0_Piece32"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_0_0_Piece33"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_1_0"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_1_1"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Sign"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Storehouse"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_TeaHouse"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Threshold"
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Workshop"
