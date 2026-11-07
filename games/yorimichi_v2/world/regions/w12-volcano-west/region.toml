@@ -1,0 +1,10 @@
+# W12 volcano: HD_NorthMountains x -707.4..2458.9, y 437.9..3600 (city_surface_tiles/v1_128m/manifest.json:1);
+# city.json:1 north_bounds [-700, 500, 2400, 3600]. Forest scatter and HD_NorthRock* only.
+# Source x -512..256 m, y 1792..3584 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w12-volcano-west"
+about = "The volcano's west flank above Mega Park"
+bounds_cm = [-51200, -358400, 25600, -179200]
+neighbours = ["region/w05-forest-far-west", "region/w11-megapark", "region/w12-craterpark", "region/w12-volcano-north", "region/w12-volcano-south", "region/w16-belmonte"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/experiments/citysurfaces/v1-128m"]

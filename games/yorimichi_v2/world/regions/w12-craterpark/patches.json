@@ -1,0 +1,710 @@
+{
+  "patches": {
+    "010b90b4789203e0": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/7F/BR706BBGXPS2V151N75T9D.uasset"
+    },
+    "014bfc15208af173": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/K8/3IKDIIEC23NAMZS398FZHB.uasset"
+    },
+    "0270bff1217c7a98": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/ZE/5SJ6T9H40VHFF46YO88TJJ.uasset"
+    },
+    "027d853e137643ce": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/A0/D36U41A3V1B1915N45YARV.uasset"
+    },
+    "03a938bd83612281": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/KV/S7ZNZAWXNP47VWETMWAZKE.uasset"
+    },
+    "056e10596e612a5b": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/9E/EP9U9G04K9PE26OFLMBQ3O.uasset"
+    },
+    "06e1ee25f743dc2a": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/RS/UT9IOZNF4SB644GCS9XHOE.uasset"
+    },
+    "07317f43a501fa05": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/FV/7J96MKIPHZ3XMNRIU3NHGA.uasset"
+    },
+    "081c673523c939ff": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/T7/TNHJBRREBCCLLDUXEF5JPM.uasset"
+    },
+    "08ceabe4fb0fc4f4": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/JB/GCQBXSGRL7QFVLWN9N97CK.uasset"
+    },
+    "0911226c335273c6": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/HX/HXLLPSAMFGAPD7T0JVX8JD.uasset"
+    },
+    "09525a3bf37d1efd": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/2Y/YGZGN90TINMUNXYJ5B2XWG.uasset"
+    },
+    "09c995f6fe65735a": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/HC/Q11AMFS7HHVS0CS91VIYQA.uasset"
+    },
+    "0a1ee87e2d7984bf": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/70/AVNB8U0UVTR1CCBVQP4THC.uasset"
+    },
+    "0ad507e46eb9743d": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/A2/83ML9MOGS8QJ4O2FTAPTOH.uasset"
+    },
+    "0af4b784ff6a8372": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/RW/LIK0O8RZFWX5EKP6FOV2PM.uasset"
+    },
+    "124c9d7e7e50cef3": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/57/PNKXVECNEYEQGRW4VWW20W.uasset"
+    },
+    "1418a68c3203fae3": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/A2/ERXUZWYWFYJGZIFRWWU9K0.uasset"
+    },
+    "141e1354af5103c0": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/V0/N6IGSKUBCZZEF9LG97C1UM.uasset"
+    },
+    "152f8d5737b05294": {
+      "key": "Tree_Forest_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/4Z/1LQ5DES37SXF6U3DRJEX3L.uasset"
+    },
+    "182ab5d2420b0c83": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/HJ/F5MB609A4KAGB6Q4UISOPQ.uasset"
+    },
+    "1af7e4268593f89c": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/4I/X746U03QQOEYLKSJI0R6AS.uasset"
+    },
+    "1b5499d033ecc2e8": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/SJ/3CCRTU0CD94BDL3PD6SCNX.uasset"
+    },
+    "1b766623c4f61a18": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/LF/5NLM7BQDQPIG117ZN7IOGW.uasset"
+    },
+    "1e311ad0692dc35a": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/2C/DBDYV1HF9PFMJQY6FLT42W.uasset"
+    },
+    "1e55d600989a195b": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/0M/H474MMQX4LT3XBXXA6M5M4.uasset"
+    },
+    "1eb96db4271b787d": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/OE/D82DCT19AMG155SHUXYC2J.uasset"
+    },
+    "1ee27fb0560f4fe6": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/AQ/E3AEALKVBJC660JDW3KVWO.uasset"
+    },
+    "1f9b480b03332873": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/SU/FQ6JK4RFGMK1ZLF8350007.uasset"
+    },
+    "2207775cfe44f3e4": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/JG/9XTETK2HCR8YJ85XWF49HD.uasset"
+    },
+    "2364b56b5cada379": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/WB/95F3412X4FYCPVOC106FTP.uasset"
+    },
+    "24458cbefad3bf42": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/7I/CO5Q5UMK20RWK5GKH7G8VA.uasset"
+    },
+    "24639f3a6dc6196a": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/SE/NHEI4SAL2PP3JVXE0C0NV6.uasset"
+    },
+    "27858e1b38286f8e": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/YJ/9V12LE8VAXSU17A2MAJ38H.uasset"
+    },
+    "293d26a75a314995": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/WS/JHOMIPU3DXR0R0UM6XJSZH.uasset"
+    },
+    "304b91c9c547e7e8": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/2S/W85ZC8WEJCESS9ZGJY0WDM.uasset"
+    },
+    "30be696f76603428": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/6D/FT4LJ5MZ7AHJGIDHV0MY3K.uasset"
+    },
+    "332a04803e8acd2d": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/6L/6BOJULYJTDK0YAVPSR47B7.uasset"
+    },
+    "336e21dc68fe0b08": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/OD/VFZNLJZ2IKNDED4TGOK6U5.uasset"
+    },
+    "36d2a6a94467516f": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/ZW/WIN4HCBEXJ82WEUZL9X5KQ.uasset"
+    },
+    "37401ff86765ddde": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/BH/BSCJK7DXRTIBV5WSTXP419.uasset"
+    },
+    "3b053f1d204ab2af": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/0K/QFNTXXNT6S6FEX2HN5NZ3Y.uasset"
+    },
+    "3b2139e21a839171": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/6N/4S561I97VF7NKHG4FPOOZB.uasset"
+    },
+    "3ccbc20b9913de54": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/R8/OV8WOHWIGZF8K63MH5YJZR.uasset"
+    },
+    "41d25c5edfc95c83": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/MA/WIGUM0EU6VG6J2JXU44RIL.uasset"
+    },
+    "47d927e318ab0798": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/L9/SP3EFFXZYSJFBFCS0EM7M3.uasset"
+    },
+    "4a68434dcdd7b87d": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/P6/7GXBPJ2HA9SGFHYZIY4QF6.uasset"
+    },
+    "51218db7284ac1c8": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/FX/SOVP6XF5FY2GJ9R5DVE42O.uasset"
+    },
+    "51fb9c3528c4c203": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/G2/UR0ZLZQ2JN38ZJ65JIBTNJ.uasset"
+    },
+    "5211e9e4f39088cc": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/W6/KZFK6LD0NLJ9ASRVAX8FLQ.uasset"
+    },
+    "5bbe40a0d7d26509": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/Q7/ZKTDRXYBIEGIH8BXOE3O7I.uasset"
+    },
+    "5cf727aceb60076e": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/YB/S488NTJ36MSV06C22OGWHQ.uasset"
+    },
+    "5d2ff156766fa869": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/54/THD0D8PDSFZU3GPVJ9I5WJ.uasset"
+    },
+    "5da62c285dbef3f5": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/86/6PECYCBTEO398210TUDJWT.uasset"
+    },
+    "5e24613d9fd9ce3c": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/C0/9KFGE3798ZYFFO2T383C0M.uasset"
+    },
+    "5f93ee04945f4ced": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/GU/IDU3RZFVG7UBJI16TSMF7N.uasset"
+    },
+    "60d19465cce86a8d": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/ST/8EYAGHT924KMI3E8ZGTYU9.uasset"
+    },
+    "62f75f303890ecb2": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/YG/DAOOWS75ION0WZFXIV1BCS.uasset"
+    },
+    "658c1e84e8762c5a": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/QC/NW99LDXR35J4KL491KHO85.uasset"
+    },
+    "65fba7b2e3ec7ce0": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/HY/IDDDC67U5M5GYUSSFJTG24.uasset"
+    },
+    "6645af8fbfdb284f": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/WL/BLY091BR2VGKFB138VR5O1.uasset"
+    },
+    "66f3f0d2829e1a77": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/72/0W38988S993LIHI9ONAIRI.uasset"
+    },
+    "683e7033d435b7d2": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/1P/6XBUES04WN5OQNZ4J388VT.uasset"
+    },
+    "6a91122a89c29e39": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/VE/SQSEDYW2ICH55894QPSTN7.uasset"
+    },
+    "6db1c809d9d85ec1": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/B7/TO4C33T21N18KFV50F0HGI.uasset"
+    },
+    "6fcf7328c409c543": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/SF/J15IBW5Z1THZEKLO4QMIXK.uasset"
+    },
+    "70968aa959e4babc": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/P4/R1OZLT1Q4L9BF6LI1YHNG6.uasset"
+    },
+    "711e3064a2fb0580": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/Z3/V5940XL4JTZNC2SN2CMRN2.uasset"
+    },
+    "727dd76ab85b6bab": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/4R/0M33T84T3X9GG7TGMWF929.uasset"
+    },
+    "7292cec38ca288ac": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/D4/O4D6IKI8RXZ3ENFC2BVFEM.uasset"
+    },
+    "72d6018a8ca19b9b": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/DK/88IT9BCWN65VKIQBAM685J.uasset"
+    },
+    "73060cc8cd67552e": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/JQ/7V6D9KSQCEUWC3GEA7OESK.uasset"
+    },
+    "74aebcb588f9aee3": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/WI/NQY4IL54MN88MJ4GVSZMW6.uasset"
+    },
+    "7adf0e5a49ac13d9": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/QU/99ONLQDDDOL8Q39007OB1Y.uasset"
+    },
+    "7b71812b767abfce": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/01/VRI97NMII6ZWOJC6GADAJ7.uasset"
+    },
+    "7ba28870e6d391f6": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/2A/XW6P0N3DYZMY0SYOUT7VS8.uasset"
+    },
+    "7ddbfcdcd3a76326": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/PT/LK01RWKCLEE80EHOBRSJ2E.uasset"
+    },
+    "7e03cacdef258d30": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/ZN/BKYQT9HGYN5EUNU6ZC8GF8.uasset"
+    },
+    "7f1d878e119cd973": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/DT/52IUBKB34YS0H00H1L30S5.uasset"
+    },
+    "7f934cdfda914fb5": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/H5/I3M3V5SSQWG58JQXRPQ4E2.uasset"
+    },
+    "80246c431ba2253a": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/B3/DO7SANIV7U3EHPEDV0S2J3.uasset"
+    },
+    "80e1eef7b7af2b6d": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/JZ/ZGX6KI1CZSEG6ENMYZQFHB.uasset"
+    },
+    "828a0215403bafc3": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/SR/XVNIIV44CL3RNX5U1ECAG9.uasset"
+    },
+    "83f5cb26ad043819": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/36/4ODOAYFC5KDXOM6ONHE8RI.uasset"
+    },
+    "863ad174f9879cfa": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/W8/1WPR4EZY89GU1RQWG0C8J9.uasset"
+    },
+    "8761b10b08252415": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/MF/EXXGTB0PB4CF8ADPY6ABM1.uasset"
+    },
+    "88cdc27c96920e35": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/CK/SHGH3KF22F4VHHO11KDDNG.uasset"
+    },
+    "8c187e106cd24726": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/W6/6BL64XYPAZLZYE80HP6BPE.uasset"
+    },
+    "8cdbbc4af4d7536d": {
+      "key": "Tree_Forest_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/GK/0QNLTXHUHI1PB5IKT6YZJY.uasset"
+    },
+    "8e2ee454d23ee2a4": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/2D/C2L5M36TGJ2TDU8A2NC7SA.uasset"
+    },
+    "8fb8f628a6f22f71": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/RO/QHIZXQI9BB32QHZE157SVW.uasset"
+    },
+    "90577c55942cad3f": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/F6/SSD7DF6HFHUKAAG49TULZP.uasset"
+    },
+    "905e572f5edf03f5": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/DD/JS52YPLDU9G13L7K1D9H8N.uasset"
+    },
+    "92d001ac14026c3a": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/DV/5LLPQYMR1T2RTM9NIJ6NMJ.uasset"
+    },
+    "946b5911c8a49d6d": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/HU/WZ5KNIT1RUEWABUF3FTGQU.uasset"
+    },
+    "95cb17685338e41b": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/FM/CNYUIBGF03FUISGHMQHNI1.uasset"
+    },
+    "9613bfa6d25d191d": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/O6/6Z2VZYECLKH0CYLDO2HWB2.uasset"
+    },
+    "9723958a80d56751": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/9N/55T3RA0TWLTBY5A77G8XEM.uasset"
+    },
+    "97eba6e8eeac144c": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/QY/WYRX5BL5OEL74D3PGVVYTB.uasset"
+    },
+    "997eba1ec58eb2b4": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/UI/WIA01TFC4NON024RCMZ59U.uasset"
+    },
+    "9c568b6b1044705a": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/6S/SP7RO7YF3383AIGZEIQCHX.uasset"
+    },
+    "9d933752a2c7a801": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/QJ/1VVOWOO8LDP0KG5YA7DL3W.uasset"
+    },
+    "9dc31092d6a95235": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/97/W5NKAO02K7225BI9KIPE4H.uasset"
+    },
+    "a12e975acb1b6e4a": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/0Z/VKVHIWLGG3GPMZDL42ASOS.uasset"
+    },
+    "a28ddbab44be9bee": {
+      "key": "Tree_Forest_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/17/D49AZFG0DDK444POBF8KTG.uasset"
+    },
+    "a32feb46b0202b32": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/6I/JWSWV92Y7S5AB3RVAK9J6N.uasset"
+    },
+    "a775c215fb4bc53c": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/YJ/CKS6EB948F73QMKITV9VP6.uasset"
+    },
+    "a98bbaa51917ce86": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/83/LRRN133HHBI3RCS52IYJEJ.uasset"
+    },
+    "add2ddc4a357f585": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/JL/TND4RWZPW7UGLXPGC0J0CI.uasset"
+    },
+    "b0321c80520f32b2": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/N3/1B3R67SUMSVXOGFGV2KLVA.uasset"
+    },
+    "b132e5a62b0666e0": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/5Z/72CILQSBYS8A5NNAH4Z1BI.uasset"
+    },
+    "b187f5f6ed644e09": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/8P/XXKKKBCHEIMKQA48GMGRMP.uasset"
+    },
+    "b3643b85a37c1c47": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/NX/HZGCROWETNHUGVTEG4YDF4.uasset"
+    },
+    "b58fd557a5448e25": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/DD/2CIQ0ZAT3OJSVIWLEVRHQ0.uasset"
+    },
+    "b7fbf149eab0fa37": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/4J/B34MW5QSK8XWX6H5D7VANQ.uasset"
+    },
+    "b923c567234d8571": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/6C/6MIVAG10ZBNEEOL6TZI3I1.uasset"
+    },
+    "bb71a5a636d21782": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/L3/EHTKRF51DKUDBYY66YC2DR.uasset"
+    },
+    "bbb6c5d4bd7455da": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/DJ/VC1JDRLOVJKJUOAA0SJ2M0.uasset"
+    },
+    "bd0c4431a08c9874": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/ZF/3NKY2TTSCB8KADBR35C8T1.uasset"
+    },
+    "bd5ee78aa6e008de": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/GM/TN72E8M4NI651XHNW23JM9.uasset"
+    },
+    "bdc64c7bd6fc39d8": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/MT/X9SBVZ8MWXXI0HVDH1UM2J.uasset"
+    },
+    "be5b1cc14e49188c": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/N1/6YTBHYHF4S3TVQDG2JDQUF.uasset"
+    },
+    "c02be8e3f07ec2ac": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/U1/T1E1FV1RDXCY6S2C9N58VC.uasset"
+    },
+    "c1203994aa67b4b3": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/N8/3O8OFIR2C1F3K9ISDCP0I5.uasset"
+    },
+    "c19db18ebb4d225e": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/SV/MSI6O4R6FKMC09U8V1LNZJ.uasset"
+    },
+    "c28c1736a80b881a": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/IA/HP32YQPW9YXMETJG5HUP0P.uasset"
+    },
+    "c292cb95afb7f1b8": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/HB/MD06KNOTW201GFR6CZ3X8H.uasset"
+    },
+    "c4012474f97f6b1f": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/MW/MUYDLIBB9QNDB7PF48FK2Q.uasset"
+    },
+    "c45b407965dd305b": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/IY/2S0TWU5HM485HKSPFRDG6X.uasset"
+    },
+    "c561e8f32426dcf1": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/8B/DNSLIHCG9RKGIWOBXIZNZD.uasset"
+    },
+    "c9e57d48326e834d": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/HU/BNOKGYU98LLL2L0K1KQN3U.uasset"
+    },
+    "cb7254d2914fa4dc": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/YT/UHMVRGGE6H6TJXVDUC1GJ6.uasset"
+    },
+    "cd1b6adcf11ba8ad": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/2J/TSA4ATXYKXVQU0VARG2GQ6.uasset"
+    },
+    "cd98813136ed4467": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/6F/22Z65LOBBZSRL0SSHFMCDU.uasset"
+    },
+    "ce94ab1942fa0611": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/6E/EN61QUYT681IS0B1B7UICQ.uasset"
+    },
+    "d1b8616af9c19b2f": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/BL/TCYS5RT1RNQP97FMEDO1Q2.uasset"
+    },
+    "d1e74edc0d3e4f72": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/UF/IRFD1QPF4SO3PELL1LBXRC.uasset"
+    },
+    "d24e7728c2acfc03": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/F2/C5JMA6KVL29LXH8J84K9V8.uasset"
+    },
+    "d511f2ded35268c8": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/FA/ZYL4D3Y2E6OIDG62PJXUHO.uasset"
+    },
+    "d5529b12b3593ad3": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/GV/CNX7Q1UQTKC7E7VLJWAI4L.uasset"
+    },
+    "d5540216aac3045b": {
+      "key": "Tree_Forest_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/O6/8JT4P5A7DGG6ZX0YS6TFOQ.uasset"
+    },
+    "d6b1ea0c8fd96e9c": {
+      "key": "Tree_Forest_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/DS/N8WHG33MWU621C8B5PDHSG.uasset"
+    },
+    "d7333d3ca51e9643": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/2J/NXXDN3XIRBGVMYJYNNCC2H.uasset"
+    },
+    "d8440e9a134ac349": {
+      "key": "HD_NorthRockA",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/4H/K3KZ4AF4OX2UY2EK9Y2P8M.uasset"
+    },
+    "da6e845ae2f7c665": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/W5/BIOPVIC2Z2X604X87GT6KX.uasset"
+    },
+    "da872e03ac0590ef": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/WM/F1EXAL0FAPEWBM0ABFCZBU.uasset"
+    },
+    "db34001ece9236d1": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/UP/TZ1KYWDMNL53LGTVO24HHJ.uasset"
+    },
+    "dc0b31129fa434b5": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/W4/I5IP6QAK4SEYVILQAGJYBB.uasset"
+    },
+    "ddac88a7b9ab5f4f": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/F0/KC41EJW19AH6KQDATIQV0C.uasset"
+    },
+    "de28696037c9d834": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/H7/IH4O8PP6OSXWKN0VEMRM4C.uasset"
+    },
+    "df6206be25a273da": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/J8/JR4MEB7YW6ZLG2FY89KDNX.uasset"
+    },
+    "df9d669823c0b402": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/KV/ECVPC18Y7EH3470II2RVUB.uasset"
+    },
+    "dfc0628e74161141": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/JZ/G6WU3E1ZNYBCJR72GPP00Z.uasset"
+    },
+    "e0a8008ec35dab4e": {
+      "key": "HD_NorthRockC",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/U8/0S748HC06TB56ND1EW4NX7.uasset"
+    },
+    "e19ee42acc4887dd": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/OY/7OGB8EDFC3I1V5CYX1WBCR.uasset"
+    },
+    "e56cb3bffd822568": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/6N/0B17LGFMYESXZ98SY7KYH2.uasset"
+    },
+    "e5856db60f70cde1": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/U3/Y8IASZGOUE7UWO008BGWB1.uasset"
+    },
+    "e6e048b1708fe9fb": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/PY/CT26DUJJXBSTW1CHQ8387T.uasset"
+    },
+    "e81252589561fe4e": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/LH/MY5QSUW45PHKM35B3TF23K.uasset"
+    },
+    "e8371f1320ded91d": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/9Y/X7THT4IQSM6INEWOJ0KS9P.uasset"
+    },
+    "e968c5228301355d": {
+      "key": "Tree_Forest_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/Q3/PU24K4R3OURJHAFDQDM4NK.uasset"
+    },
+    "e9f45e07a80283bc": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/68/4MUKJBOUXMFB5J5C5P2MDI.uasset"
+    },
+    "ee6b62bf16e1d97b": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/7W/85U4UJZ7SJP6NOJJJRUX3P.uasset"
+    },
+    "ef5f3b166f00208d": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/O1/2AI0LMNIL1U15ERD18V21D.uasset"
+    },
+    "f08e548dfc44a5e3": {
+      "key": "Tree_Forest_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/WI/YZK09IC5NZQ8QGKEF06VA5.uasset"
+    },
+    "f28e9b10222a56f8": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/E3/DTPVG6LA3LXTF1XN7DZ89C.uasset"
+    },
+    "f4f5932e0186317a": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/W0/8OZT41M1ABDAVMP621L1LO.uasset"
+    },
+    "f5829987ee092c6f": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/N8/AB1JA0W8H422KPNYWOKNXO.uasset"
+    },
+    "f5a72091a941a9d9": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/U7/BJDNBSYW0VEXDT1QGEE7BD.uasset"
+    },
+    "f6356ae4d41b5638": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/SD/SUZKFLCDTLSD5GSJMCIJHI.uasset"
+    },
+    "f6c9efe11c430d5b": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/27/32RZS71F2106JGSELVK3T0.uasset"
+    },
+    "fb74bfffcf3c9df7": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/J4/UFPM15EZRX82JA5A5GBUFN.uasset"
+    },
+    "fbae1b763bffc215": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/Y7/KA2ZTZC8U9Z50EQGDEVG9W.uasset"
+    },
+    "fbe37a7a67b998f9": {
+      "key": "Tree_Forest_Pine",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/94/4YBE6NGSSBIBFS6UZXJ2X4.uasset"
+    },
+    "fd36149fc8efe1f6": {
+      "key": "HD_NorthMountains",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/EI/NUXGY4VREFB2HVAJYYSMYB.uasset"
+    },
+    "fd58e1394b012818": {
+      "key": "HD_NorthRockB",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/2C/67SATYEVY7GJA9XN56HJZB.uasset"
+    }
+  },
+  "region": "region/w12-craterpark",
+  "schema": 1
+}

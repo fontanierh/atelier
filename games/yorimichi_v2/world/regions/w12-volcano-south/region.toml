@@ -1,0 +1,9 @@
+# W12 volcano: HD_NorthTrail x 997.9..1202.1, y 335..1131.6 (city_surface_tiles/v1_128m/manifest.json:1).
+# Source x 256..1536 m, y 896..1920 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w12-volcano-south"
+about = "The volcano's south flank and the north trail from Hidamari"
+bounds_cm = [25600, -192000, 153600, -89600]
+neighbours = ["region/w05-forest-far-east", "region/w11-megapark", "region/w12-craterpark", "region/w12-volcano-west", "region/w14-hidamari-stable", "region/w15-hippodrome"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/experiments/citysurfaces/v1-128m"]

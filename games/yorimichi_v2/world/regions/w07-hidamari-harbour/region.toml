@@ -1,0 +1,11 @@
+# W07 hidamari: city.json:1 bounds [300, -260, 1320, 430]; city_surface_tiles/v1_128m/manifest.json:1 HD_Arrival
+# x 292.7..400, HD_Harbor x 416..900.1, HD_ArcadeFloor 599..722, HD_PlazaFloor 660..802; ferry terminal hidamari
+# (839.8, -138.8) (ferry/service/service.json:1). Split from w07-hidamari-station at x = 896. Includes terrain cells 2_*.
+# Source x 256..896 m, y -384..384 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w07-hidamari-harbour"
+about = "Hidamari west: arrival from the island road, the harbour and ferry jetty, arcade, plaza, square, precinct"
+bounds_cm = [25600, -38400, 89600, 38400]
+neighbours = ["region/w02-village", "region/w03-mega", "region/w07-hidamari-station", "region/w08-southwest-isle-east", "region/w15-hippodrome"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/road-set", "shared/experiments/citysurfaces/v1-128m"]

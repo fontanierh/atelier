@@ -1,0 +1,11 @@
+# W09 brinecove: brinecove/region.py:14 ORIGIN (-1500, -120), :23 OUTER_WORLD x -2526.3..-707.4, y -1044.2..572.6
+# (= brinecove/runtime.json:1 bounds_m); ferry terminal brinecove (-1745, -94.8) (ferry/service/service.json:1).
+# Bounds widened to the 512 m FarHills grid (plan_terrain.py:17) so its backdrop cells have one owner.
+# Source x -3584..-512 m, y -1536..1024 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w09-brinecove"
+about = "Brinecove pirate port, its ferry terminal, and the far west sea and backdrop south of y 1024"
+bounds_cm = [-358400, -102400, -51200, 153600]
+neighbours = ["region/w05-forest-far-west", "region/w05-forest-north", "region/w05-forest-west", "region/w08-southwest-coast", "region/w08-southwest-terrace", "region/w11-megapark"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

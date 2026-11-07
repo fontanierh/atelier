@@ -1,0 +1,11 @@
+# W08 southwest: SW_Dock (-231, -153.5), SW_BoatShed, SW_CoconutStand (-221, -169.5), SW_Boat, SW_StoneWall, SW_DryingRack;
+# SW_Island placed at (-150, -530) yaw 15 (world.json:1), local bounds +-170 x +-158 (southwest/runtime.json:1);
+# SW_Temple (-152.1, -522.3). Also the pier deck's west quarter (sea; the pier itself is W04's SkatePark patch).
+# Source x -512..-128 m, y -1024..-128 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w08-southwest-coast"
+about = "The fishing harbour (dock, boat shed, coconut stand, boats) and the southwest island with its temple"
+bounds_cm = [-51200, 12800, -12800, 102400]
+neighbours = ["region/w01-start", "region/w04-pier-approach", "region/w08-southwest-isle-east", "region/w08-southwest-terrace", "region/w09-brinecove"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

@@ -1,0 +1,10 @@
+# W07 hidamari: HD_InlandWater x 840..1076, HD_Park 979..1087.5, HD_StationYard 1128..1300, HD_Terrain to x 1420
+# (city_surface_tiles/v1_128m/manifest.json:1); zeppelin_city (1273, 321) (world.json:1 zeppelin).
+# Source x 896..1536 m, y -384..384 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w07-hidamari-station"
+about = "Hidamari east: inland water, park and civic gardens, station yard, Hidamari air station"
+bounds_cm = [89600, -38400, 153600, 38400]
+neighbours = ["region/w05-forest-far-east", "region/w07-hidamari-harbour", "region/w14-hidamari-stable"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/experiments/citysurfaces/v1-128m"]

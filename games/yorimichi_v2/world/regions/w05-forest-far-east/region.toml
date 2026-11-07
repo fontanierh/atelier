@@ -1,0 +1,10 @@
+# W05 forest backdrop and W20 corridor: belmonte/runtime.json:1 railway_corridor (1231.4, 301.5) .. (1350, 4380);
+# city.json:1 instances to x 3123.9. 512 m aligned (the corridor's first 300 m lie in Hidamari/stable/volcano).
+# Source x 1536..3584 m, y -1536..3584 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w05-forest-far-east"
+about = "Far east backdrop forest and the railway corridor east of the volcano"
+bounds_cm = [153600, -358400, 358400, 153600]
+neighbours = ["region/w05-forest-far-northeast", "region/w07-hidamari-station", "region/w12-craterpark", "region/w12-volcano-north", "region/w12-volcano-south", "region/w14-hidamari-stable", "region/w16-belmonte"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

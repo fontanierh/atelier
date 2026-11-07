@@ -1,0 +1,9 @@
+# W12 volcano: HD_NorthMountains to y 3600; gondola/structures.py:19 BOUNDS (340, 2700, 560, 4680) crosses here.
+# Source x 256..1536 m, y 3072..3584 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w12-volcano-north"
+about = "The volcano's north flank down to the Belmonte valley"
+bounds_cm = [25600, -358400, 153600, -307200]
+neighbours = ["region/w05-forest-far-east", "region/w12-craterpark", "region/w12-volcano-west", "region/w16-belmonte"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/experiments/citysurfaces/v1-128m"]

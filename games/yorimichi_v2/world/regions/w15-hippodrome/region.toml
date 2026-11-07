@@ -1,0 +1,10 @@
+# W15 hippodrome: hippodrome/layout.py:14 ORIGIN (600, 525), :24-25 PLATFORM x 476..747, y 443..589;
+# hippodrome/hippodrome.json:1 clearance x 469..754, y 436..596 (its access strip y 341..444 starts in Hidamari).
+# Source x 256..896 m, y 384..896 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w15-hippodrome"
+about = "The hippodrome and the volcano's south foot above the city's west half"
+bounds_cm = [25600, -89600, 89600, -38400]
+neighbours = ["region/w05-forest-north", "region/w07-hidamari-harbour", "region/w12-volcano-south", "region/w14-hidamari-stable"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

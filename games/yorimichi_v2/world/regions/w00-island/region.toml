@@ -5,6 +5,6 @@ schema = 1
 id = "region/w00-island"
 about = "Island foundation and the map-wide environment"
 bounds_cm = [-2000000, -2000000, 2000000, 2000000]
-neighbours = ["region/w01-start", "region/w04-pier-approach"]
+neighbours = ["region/w01-start", "region/w02-village", "region/w03-mega", "region/w04-pier-approach", "region/w05-forest-far-east", "region/w05-forest-far-northeast", "region/w05-forest-far-west", "region/w05-forest-north", "region/w05-forest-west", "region/w06-lake-treehouse", "region/w07-hidamari-harbour", "region/w07-hidamari-station", "region/w08-southwest-coast", "region/w08-southwest-isle-east", "region/w08-southwest-terrace", "region/w09-brinecove", "region/w11-megapark", "region/w12-craterpark", "region/w12-volcano-north", "region/w12-volcano-south", "region/w12-volcano-west", "region/w14-hidamari-stable", "region/w15-hippodrome", "region/w16-belmonte"]
 maps = ["/Game/V2/Maps/Slice"]
 shared = ["shared/material/japan", "shared/sky", "shared/sea"]
