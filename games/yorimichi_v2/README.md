@@ -73,13 +73,16 @@ ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_I
 uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # one-time donor adoption, one record per ownership unit (D08)
 uv run python games/yorimichi_v2/tools/migrate/adopt.py --repartition --check-only   # split older per-folder adopted records into units
 uv run python games/yorimichi_v2/tools/migrate/adopt.py --pin-data [--claim TASK]   # pin unreal/Content/Data in runtime-data.lock.json after a claimed change
-uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # one-time world migration (the slice: 526 actors)
+uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # one-time world migration (the slice: 803 actors); a rerun keeps every migrated actor and its edits
 uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/capture_poses.py V2_CAPTURE_DIR=DIR \
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # (pending) into an empty DIR: one PNG per parity pose + capture.json receipt, saves nothing
 uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim S   # visual parity of two receipted capture sets (all poses in poses.json)
-# (pending) donor baseline capture from the running donor game: capture_poses.py on an editor map does NOT spawn the
-# donor's runtime scenery, so it is no donor baseline; compare.py rejects a donor receipt whose source is "v2"
+uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --source donor-runtime --checkout DONOR --out DIR
+uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --session ID --source v2 --out DIR   # the same poses from the running V2 game
+# The donor baseline comes from the running donor game (its scenery is spawned at run time); capturing V2 the same way
+# keeps both on one render path. Each receipt names the revision the game was proven to launch from (its session, or
+# for the donor the process on its live port). capture_poses.py on an editor map proves none: compare.py rejects it
 ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/move_actor.py V2_MOVE_ACTOR=/Game/__ExternalActors__/... V2_MOVE_BY_CM="X Y Z" \
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # move one saved actor, save only its package (31 s)

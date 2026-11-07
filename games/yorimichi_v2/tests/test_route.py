@@ -1,8 +1,11 @@
 """The slice route check (tools/test/route.py): a recorded walk and skate run passes only when Cairo walked the road,
 rode the pier at speed on a flat deck and the frame rate held."""
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('v2_route', ROOT / 'tools/test/route.py')
@@ -25,7 +28,7 @@ def skate(n=10, top=850., board='ride', dz=0.):
 def test_a_good_route_passes():
     failures, measured = route.evaluate(walk() + skate())
     assert failures == []
-    assert measured['walk_m'] == 17.5 and measured['skate_top_speed'] == 850. and measured['min_fps'] == 60.
+    assert measured['walk_m'] == 17.5 and measured['skate_top_speed'] == 850. and measured['min_sampled_fps'] == 60.
 
 
 def test_swimming_or_a_short_walk_fails():
@@ -43,6 +46,14 @@ def test_missing_phases_and_low_frame_rates_fail():
     assert route.evaluate(skate())[0] == ['walk: 0 samples']
     rows = walk() + skate()
     rows[3]['fps'] = 12.
-    assert route.evaluate(rows)[0] == ['frame: 12.0 fps < 20']
+    assert route.evaluate(rows)[0] == ['frame: a sampled frame at 12.0 fps < 20']
     teleport = {**rows[0], 'phase': 'skate_place', 'fps': 2.5}   # a teleport's streaming frame is no play
     assert route.evaluate(walk() + [teleport] + skate())[0] == []
+
+
+def test_the_report_names_the_launch_commit_and_refuses_a_moved_checkout():
+    head = subprocess.run(['git', '-C', str(route.REPO), 'rev-parse', 'HEAD'], capture_output=True, text=True,
+                          check=True).stdout.strip()
+    assert route.revision(head)['commit'] == head
+    with pytest.raises(ValueError, match='launched at'):
+        route.revision('0' * 40)

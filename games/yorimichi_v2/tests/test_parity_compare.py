@@ -44,7 +44,7 @@ def write_poses(path, names):
 def write_receipt(folder, poses_file, **fields):
     """capture.json as capture_poses.py writes it, with `fields` overriding the defaults."""
     folder.mkdir(parents=True, exist_ok=True)
-    receipt = {'schema': 1, 'source': 'v2', 'revision': {'commit': 'abc1234def5678', 'dirty': False},
+    receipt = {'schema': 1, 'source': 'v2', 'revision': {'commit': 'abc1234def5678', 'dirty': False, 'launch': 'session'},
                'map': '/Game/V2/Maps/Slice', 'size': [64, 64], 'warmup': 8, 'load_radius_m': 500.0,
                'poses_sha256': hashlib.sha256(poses_file.read_bytes()).hexdigest(), 'captured_utc': '2026-11-07T00:00:00Z',
                'poses': [pose['name'] for pose in json.loads(poses_file.read_text())['poses']],

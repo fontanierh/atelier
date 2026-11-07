@@ -34,7 +34,7 @@ from pathlib import Path
 import unreal as U
 
 MARKER = 'V2 CAPTURE DONE'
-QUALITY = ('r.ScreenPercentage', 'sg.ResolutionQuality', 'sg.ViewDistanceQuality', 'sg.AntiAliasingQuality',
+QUALITY = ('r.ForwardShading', 'r.ScreenPercentage', 'sg.ResolutionQuality', 'sg.ViewDistanceQuality', 'sg.AntiAliasingQuality',
            'sg.ShadowQuality', 'sg.GlobalIlluminationQuality', 'sg.ReflectionQuality', 'sg.PostProcessQuality',
            'sg.TextureQuality', 'sg.EffectsQuality', 'sg.FoliageQuality', 'sg.ShadingQuality')
 EAS = U.get_editor_subsystem(U.EditorActorSubsystem)

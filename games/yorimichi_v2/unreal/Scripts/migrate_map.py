@@ -55,6 +55,13 @@ def open_map(path):
 
 
 def existing():
+    """Every actor already in the map by its stable ID. World Partition loads only the always-loaded actors with the
+    map, so every actor is loaded first: an unloaded one would be placed again (a duplicate, or its package
+    overwritten and a later edit to it lost)."""
+    wpl = U.WorldPartitionBlueprintLibrary
+    guids = [d.get_editor_property('guid') for d in wpl.get_actor_descs() or []]
+    if guids:
+        wpl.load_actors(guids)
     found = {}
     for actor in EAS.get_all_level_actors():
         for tag in actor.tags:
@@ -98,7 +105,8 @@ def inside(bounds, x, y):
 def region_of(name):
     """The region holding a `<Parent>_cell_<i>_<j>[_PieceN]` island piece: the one whose bounds hold its cell's
     centre (source cell i covers x 128 i .. 128 (i + 1) m; Unreal is (100 x, -100 y) cm). A piece the donor did
-    not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island: the environment owns it."""
+    not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island, and a cell no migrated
+    region holds is the island foundation's: the environment owns both, so the island has no holes."""
     if '_cell_' not in name:
         return plan['environment']
     parts = name.split('_cell_', 1)[1].split('_')
@@ -107,7 +115,7 @@ def region_of(name):
     for region in plan['regions']:
         if inside(region['bounds_cm'], x, y):
             return region['id']
-    return None
+    return plan['environment']
 
 
 def island_pieces():
@@ -126,7 +134,7 @@ def island_pieces():
             if mesh is None:
                 raise RuntimeError(f'{row["asset"]} is missing from V2 Content: adopt it first')
             actor = place(U.StaticMeshActor, region, f'Island:{parent}:{row["name"]}',
-                          stable_id('island', parent, row['name'], row['sha256']))
+                          stable_id('island', parent, row['name'], row['sha256']), spatial=False)
             if actor is None:
                 continue
             component = actor.static_mesh_component
@@ -134,6 +142,23 @@ def island_pieces():
                 raise RuntimeError(f'could not assign {row["name"]}')
             component.set_editor_property('component_tags', [U.Name('IslandSurface:' + parent)])
             actor.set_mobility(U.ComponentMobility.STATIC)
+
+
+BACKDROP = (':Island:', ':SkyDome:', ':Sea:')
+
+
+def always_loaded():
+    """The island (terrain, far hills, road, lane, guardrail, wires), the sky dome and the sea stay loaded, as the
+    donor's AJapanWorld spawns them: the sky light captures the scene beyond 1.5 km once, when it registers, so a
+    streamed-out far hill brightens and blues every surface's sky light, and the backdrop is seen from everywhere.
+    Kept actors from an earlier run are switched too; returns how many changed."""
+    changed = 0
+    for actor in EAS.get_all_level_actors():
+        if any(part in actor.get_actor_label() for part in BACKDROP) and actor.get_editor_property('is_spatially_loaded'):
+            actor.modify()
+            actor.set_editor_property('is_spatially_loaded', False)
+            changed += 1
+    return changed
 
 
 def soft_colour_grade(settings):
@@ -243,6 +268,7 @@ environment(env)
 manifest(env)
 island_pieces()
 kept += scenery(world, env)
+U.log(f'V2 ALWAYS LOADED {always_loaded()} backdrop actor(s) switched')
 if not U.EditorLoadingAndSavingUtils.save_dirty_packages(True, True):
     raise RuntimeError('could not save the map and its actor packages')
 for actor in created:
