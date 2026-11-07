@@ -19,3 +19,5 @@
 *.wav filter=lfs diff=lfs merge=lfs -text lockable
 *.ogg filter=lfs diff=lfs merge=lfs -text lockable
 *.skatepack filter=lfs diff=lfs merge=lfs -text lockable
+# Staged runtime data (Content/Data) is generated in bulk, megabytes per file: LFS, not mergeable text.
+unreal/Content/Data/** filter=lfs diff=lfs merge=lfs -text lockable

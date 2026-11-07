@@ -1,8 +1,11 @@
-# Restricted content (docs/DECISIONS.md D05 group 2): packages cut from licensed sound masters never go to public
-# Git LFS. Every file under these roots is ignored by Git (.gitignore lists the same folders), pinned by hash in the
+# Restricted content (docs/DECISIONS.md D05 group 2): packages cut from licensed sound masters, and animation whose
+# redistribution permission is not recorded yet (group 1), never go to public Git LFS. Every file under these roots is ignored by Git (.gitignore lists the same folders), pinned by hash in the
 # lock and copied in by `tools/restricted/fetch.py fetch`. Narrowing a root is an edit here and in .gitignore.
 schema = 1
-roots = ["/Game/Audio", "/Game/Japan/Audio"]
+roots = [
+    "/Game/Audio", "/Game/Japan/Audio",                     # Sonniss-derived sounds
+    "/Game/Cairo", "/Game/SkateRide", "/Game/SkateMotion",  # animation not yet cleared (D05 group 1)
+]
 lock = "restricted.lock.json"
 
 [source]

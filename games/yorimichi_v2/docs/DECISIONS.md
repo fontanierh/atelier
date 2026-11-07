@@ -70,17 +70,21 @@ created set measured from the disk is exact by construction.
 The repository is public and Git LFS is not private storage. No source in the repository carries a license
 field, and there is no LICENSE file. The inventory (inventory/world.md §5) sorts V2 content into three groups:
 
-1. **Public LFS allowed:** packages derived from sources the owner has **already published in this repository**
-   with recorded provenance (owner-made or AI-generated with a provenance record). This covers terrain, houses,
-   props, foliage, the skate pier, the characters, effects and fonts (OFL). Committing the Unreal form of
-   content that is already public does not widen what is published. Raw Mixamo clips are already committed;
-   their derived animation packages follow the same rule. **Owner review is still recommended**, because Mixamo's
-   terms forbid redistributing raw clips as such.
-2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters. Their license forbids sharing them
+1. **Public LFS allowed, per source:** a package goes to public LFS only when its own source has a recorded
+   permission for redistributing it in editable form: owner-made, AI-generated with a provenance record, or a
+   third-party license that allows it (fonts under OFL). That a source is already published in this repository is
+   not that permission, since nobody recorded checking its terms. This covers terrain, houses, props, foliage, the
+   skate pier, effects and fonts. **Third-party animation is not cleared yet:** Mixamo's terms allow its clips in a
+   game but not distributing them as files, and an editable animation package is such a file. The characters and
+   skate rider (`/Game/Cairo`, `/Game/SkateRide`, `/Game/SkateMotion`; their clips are Mixamo-derived or of
+   unrecorded origin) therefore take the group 2 route until each source's permission is recorded; then a root is
+   removed from `restricted.toml` and `.gitignore` in a reviewed commit.
+2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters (and, until cleared, the group 1
+   animation roots). Their license forbids sharing them
    as a sound pack of their own, and the masters are fetched, not committed. These SoundWave packages go to
    authorized restricted storage, with pinned hashes and a documented fetch. The music library stays the
    existing pinned external release (plan §14). Mechanism: `restricted.toml` declares the roots (`/Game/Audio`,
-   `/Game/Japan/Audio`, Git-ignored), `restricted.lock.json` pins each file, `tools/restricted/fetch.py` pins and
+   `/Game/Japan/Audio` and the group 1 animation roots, Git-ignored), `restricted.lock.json` pins each file, `tools/restricted/fetch.py` pins and
    fetches, and the content check fails on a tracked or unpinned restricted file (README, "Restricted audio").
 3. **Blocked pending the owner:** **Super Ultra Mega Park** (`assets/megapark`, W11, F26, F31). Its data carries
    retail material identifiers, a decoded vertex codec and baked lightmaps. Its provenance as "Atelier's own asset
