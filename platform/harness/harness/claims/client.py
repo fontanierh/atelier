@@ -200,11 +200,13 @@ def protected(repo, paths, patterns=(), cached=False):
     return found
 
 
-def evaluate(changes, guarded, coverage, stage='commit'):
+def evaluate(changes, guarded, coverage, stage='commit', actor=None):
     """Return problems: every changed protected path (both sides of a rename, deletions included) must be
     covered by an ACTIVE claim of the task that the service re-verified live for this check (its LFS locks on
     the remote and its base against the target branch). Publication additionally requires exact paths, with
-    verified LFS locks for lockable files; new files under a region prefix must be added to the claim first."""
+    verified LFS locks for lockable files; new files under a region prefix must be added to the claim first. Only
+    claims held by `actor`, the principal checking, count: a task's claim transferred to another principal no longer
+    authorizes its previous holder."""
     touched = sorted({p for change in changes for p in change.paths() if p in guarded})
     if not touched:
         return []
@@ -213,7 +215,8 @@ def evaluate(changes, guarded, coverage, stage='commit'):
     if coverage.get('service') != 'ready':
         return [f'claims service is {coverage.get("service")}; protected writes wait for reconciliation']
     # Only a live verification counts: a coverage answer without one (stored state alone) authorizes nothing.
-    active = [c for c in coverage['claims'] if c['state'] == 'active' and c.get('verified') is True]
+    active = [c for c in coverage['claims'] if c['state'] == 'active' and c.get('verified') is True
+              and (actor is None or c.get('principal') == actor)]
     items = [(i['kind'], i['value']) for c in active for i in c['items'] if i['kind'] != 'scope']
     exact = {i['value'].casefold(): i['lfs'] for c in active for i in c['items'] if i['kind'] == 'path'}
     locked = {l['path'].casefold() for c in active for l in c['locks'] if l['state'] == 'verified'}
@@ -224,7 +227,10 @@ def evaluate(changes, guarded, coverage, stage='commit'):
             held = [c['id'] for c in coverage['claims'] if scopes.covers(
                 [(i['kind'], i['value']) for i in c['items']], path)]
             unverified = [c for c in coverage['claims'] if c['id'] in held and c['state'] == 'active']
-            if unverified:
+            foreign = [c for c in unverified if actor is not None and c.get('principal') != actor]
+            if foreign:
+                why = f'claim {foreign[0]["id"]} is held by {foreign[0].get("principal")}, not {actor}'
+            elif unverified:
                 why = (f'claim {unverified[0]["id"]} failed live verification against the remote: '
                        f'{json.dumps(unverified[0].get("problems", "not verified"), sort_keys=True)[:300]}')
             else:
@@ -246,11 +252,11 @@ def check(client, repo, task, changes, patterns=(), stage='commit', cached=False
     if not any(p in guarded for p in names):
         return []
     if not task:
-        return evaluate(changes, guarded, None, stage)
+        return evaluate(changes, guarded, None, stage, client.actor)
     try:
         coverage = client.call('GET', f'/tasks/{task}/coverage')
     except Unreachable as error:
         return [f'{error}: protected changes cannot be verified']
     except Refused as error:
         return [f'claims service refused the check: {error}']
-    return evaluate(changes, guarded, coverage, stage)
+    return evaluate(changes, guarded, coverage, stage, client.actor)
