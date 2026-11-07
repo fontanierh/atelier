@@ -253,6 +253,90 @@ def load_verified(path: Path) -> dict:
     return data
 
 
+@dataclass(frozen=True)
+class Restricted:
+    """Package roots whose bytes never go to public Git LFS (`restricted.toml`, DECISIONS D05 group 2): ignored by Git,
+    pinned by Content-relative path in the lock, and fetched from the directory `$<source_env>` names."""
+    roots: tuple[str, ...]      # /Game/... roots; empty when the game declares none
+    lock: Path                  # absolute path of the pinned manifest
+    source_env: str
+
+    @property
+    def folders(self) -> tuple[str, ...]:
+        """The roots as Content-relative folders: `/Game/Japan/Audio` -> `Japan/Audio`."""
+        return tuple(root[len('/Game/'):] for root in self.roots)
+
+    def covers(self, rel: str) -> bool:
+        """True for a Content-relative file (`Audio/Skate/A_Roll.uasset`) under a restricted root."""
+        return any(rel.startswith(folder + '/') for folder in self.folders)
+
+    def covers_package(self, package: str) -> bool:
+        return package.startswith('/Game/') and self.covers(package[len('/Game/'):])
+
+    def content_rel(self, game_rel: str) -> str | None:
+        """`unreal/Content/Audio/X.uasset` -> `Audio/X.uasset` when restricted, else None."""
+        prefix = 'unreal/Content/'
+        rel = game_rel[len(prefix):] if game_rel.startswith(prefix) else None
+        return rel if rel is not None and self.covers(rel) else None
+
+
+def load_restricted(game: Path) -> Restricted:
+    """The game's restricted roots; none when it has no `restricted.toml`."""
+    path = game / 'restricted.toml'
+    if not path.is_file():
+        return Restricted((), game / 'restricted.lock.json', 'V2_RESTRICTED_SOURCE')
+    try:
+        data = tomllib.loads(path.read_text())
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise RecordError(f'{path}: {error}') from None
+    _known(data, {'schema', 'roots', 'lock', 'source'}, path)
+    if data.get('schema') != SCHEMA:
+        raise RecordError(f'{path}: `schema` must be {SCHEMA}')
+    roots = _need(data, 'roots', path, list)
+    for root in roots:
+        if not isinstance(root, str) or not PACKAGE.match(root):
+            raise RecordError(f'{path}: root {root!r} must be a /Game package path')
+    lock = _portable(_need(data, 'lock', path), path, 'lock')
+    source = _need(data, 'source', path, dict)
+    _known(source, {'env', 'about'}, path, '[source]')
+    return Restricted(tuple(roots), game / lock, _need(source, 'env', path))
+
+
+def load_lock(restricted: Restricted) -> dict[str, dict]:
+    """Content-relative path -> {sha256, size} for every pinned restricted file; empty when there is no lock yet."""
+    path = restricted.lock
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as error:
+        raise RecordError(f'{path}: {error}') from None
+    files = data.get('files') if isinstance(data, dict) else None
+    if not isinstance(data, dict) or data.get('schema') != SCHEMA or not isinstance(files, dict):
+        raise RecordError(f'{path}: a lock is {{"schema": {SCHEMA}, "files": {{PATH: {{sha256, size}}}}}}')
+    for rel, entry in files.items():
+        _portable(rel, path, 'files')
+        if not restricted.covers(rel) or not rel.endswith(PACKAGE_EXTENSIONS + COMPANION_EXTENSIONS):
+            raise RecordError(f'{path}: {rel} is not a package file under a restricted root')
+        if not isinstance(entry, dict) or set(entry) != {'sha256', 'size'} or not HEX64.match(str(entry['sha256'])) \
+                or not isinstance(entry['size'], int):
+            raise RecordError(f'{path}: {rel} must pin {{"sha256": 64 hex digits, "size": bytes}}')
+    return files
+
+
+def restricted_tracked(game: Path, restricted: Restricted) -> list[str]:
+    """Game-relative files under the restricted roots that Git tracks or has staged; none outside a Git checkout."""
+    import subprocess
+    if not restricted.roots:
+        return []
+    try:
+        listing = subprocess.run(['git', 'ls-files', '-z', '--cached', '--', *(f'unreal/Content/{f}' for f in restricted.folders)],
+                                 cwd=game, capture_output=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    return sorted(n for n in listing.stdout.decode().split('\0') if n) if listing.returncode == 0 else []
+
+
 def write_json(path: Path, data: dict) -> bool:
     """Write canonical JSON only when the content changes; a no-op leaves the file and its time untouched."""
     text = json.dumps(data, indent=2, sort_keys=True) + '\n'

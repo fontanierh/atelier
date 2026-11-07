@@ -12,7 +12,9 @@ It writes only under a claim covering every written path, or as the D04 bootstra
 existing package with different bytes (an edited package belongs to its owner's route) and refuses a package
 another record owns. It reports, without copying past it, every hard reference of an adopted package that resolves
 to no package in V2 (the closure must be complete) and every package whose bytes name a home folder or private
-host (they need the editor scrub before commit).
+host (they need the editor scrub before commit). Packages under a restricted root (`restricted.toml`, D05 group 2) are
+copied like any other but Git ignores them; pin them afterwards (`tools/restricted/fetch.py pin`). A reference into a
+restricted root is satisfied when this run adopts it or the lock pins it, since a checkout fetches rather than commits it.
 `--data` copies the donor's staged runtime data (`Content/Data`) as committed runtime data.
 """
 from __future__ import annotations
@@ -94,6 +96,8 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
           check_only=False, claim: str | None = None, echo=print) -> dict:
     target = game / 'unreal' / 'Content'
     owned = owners(game)
+    restricted = records.load_restricted(game)
+    pinned = records.load_lock(restricted)
     plan, problems = {}, []
     for folder in folders:
         asset_id = 'adopted/' + SLUG.sub('-', folder.lower()).strip('-')
@@ -114,6 +118,9 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
                     continue
                 if any((target / ref[len('/Game/'):]).with_suffix(s).is_file() for s in records.PACKAGE_EXTENSIONS):
                     continue
+                if restricted.covers_package(ref) and any(ref[len('/Game/'):] + s in pinned
+                                                          for s in records.PACKAGE_EXTENSIONS):
+                    continue   # fetched, not committed; one adopted in this run is already in `adopted`
                 missing.setdefault(ref, package_name(content, path))
             if personal(path.read_bytes()):
                 private.append(package_name(content, path))

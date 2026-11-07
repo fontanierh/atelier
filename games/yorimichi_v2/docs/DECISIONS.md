@@ -60,7 +60,9 @@ field, and there is no LICENSE file. The inventory (inventory/world.md §5) sort
 2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters. Their license forbids sharing them
    as a sound pack of their own, and the masters are fetched, not committed. These SoundWave packages go to
    authorized restricted storage, with pinned hashes and a documented fetch. The music library stays the
-   existing pinned external release (plan §14).
+   existing pinned external release (plan §14). Mechanism: `restricted.toml` declares the roots (`/Game/Audio`,
+   `/Game/Japan/Audio`, Git-ignored), `restricted.lock.json` pins each file, `tools/restricted/fetch.py` pins and
+   fetches, and the content check fails on a tracked or unpinned restricted file (README, "Restricted audio").
 3. **Blocked pending the owner:** **Super Ultra Mega Park** (`assets/megapark`, W11, F26, F31). Its data carries
    retail material identifiers, a decoded vertex codec and baked lightmaps. Its provenance as "Atelier's own asset
    library" is unverified. Until the owner settles its rights, V2 does not upload its packages. Crater Park's

@@ -9,3 +9,7 @@ unreal/*.xcworkspace
 unreal/.vscode/
 unreal/*_????????.uproject
 *.tmp
+# Restricted content (restricted.toml, DECISIONS D05 group 2): never staged; pinned in restricted.lock.json and fetched.
+# A nested .gitignore takes precedence, so these win over the root re-include of unreal/Content.
+unreal/Content/Audio/
+unreal/Content/Japan/Audio/

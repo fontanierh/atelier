@@ -198,7 +198,8 @@ def _authorize_import(ctx, log):
 
 
 def _check_package_inputs(ctx, log):
-    """A package is made only from complete, current committed content: the full-hash check must pass first."""
+    """A package is made only from complete, current committed content: the full-hash check must pass first, with
+    every pinned restricted file fetched (the check fails on an absent one)."""
     import subprocess
     import sys
     result = subprocess.run([sys.executable, str(GAME / 'tools/content/check.py'), '--full'], capture_output=True,

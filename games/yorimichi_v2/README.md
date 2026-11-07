@@ -21,6 +21,7 @@ scope.
 | `tools/content/` | records library and the read-only content check |
 | `tools/import/` | the targeted importer |
 | `tools/review/` | the change-set report for reviews |
+| `restricted.toml`, `restricted.lock.json`, `tools/restricted/` | restricted audio: declared roots, pinned hashes, pin and fetch |
 | `tools/test/` | the native automation test runner |
 | `tools/migrate/` | one-time migration: donor adoption, the world migration runner, scene dumps and their parity compare |
 | `tools/parity/` | visual parity: the slice's named poses (`poses.json`) and the capture compare (`compare.py`) |
@@ -38,6 +39,21 @@ git lfs install --local                               # once per clone: without 
 git lfs pull --include="games/yorimichi_v2/**"        # the committed content
 uv run python games/yorimichi_v2/tools/content/check.py   # is every package present, current and owned?
 ```
+
+### Restricted audio
+
+Sounds cut from licensed masters never go to public Git LFS (DECISIONS D05 group 2). `restricted.toml` lists their
+roots (`/Game/Audio`, `/Game/Japan/Audio`); Git ignores them, and `restricted.lock.json` pins each file's sha256
+and size. With access to the authorized restricted storage (a directory laid out like `unreal/Content`):
+
+```sh
+V2_RESTRICTED_SOURCE=DIR uv run python games/yorimichi_v2/tools/restricted/fetch.py fetch   # copy in, verified
+uv run python games/yorimichi_v2/tools/restricted/fetch.py pin   # after adoption or a claimed edit; then upload the same bytes
+```
+
+Without it these packages are absent locally, and the content check (so every build, play and package) fails with
+"fetch required". `--allow-restricted-absent` only notes it, for checkouts without restricted access that do not
+build or play. A fetch never overwrites a local file that differs from its pin.
 
 ## Everyday commands
 
