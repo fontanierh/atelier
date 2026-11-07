@@ -1,0 +1,240 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Brinecove/Textures
+schema = 1
+id = "adopted/brinecove/textures"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/textures"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_autumn_olive"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_canvas"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_canvas_blue"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_canvas_gold"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_canvas_green"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_canvas_red"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_canvas_teal"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_cobble"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_cobble_dark"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_coral"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_cream"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_deck_planks"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_earth"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_foam_lace"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_gold"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_galleon-hull_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_1"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_2"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_1"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_10"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_2"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_4"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_5"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_6"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_7"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_9"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hull"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_jungle"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_jungle_light"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_leaf_deep"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_leaf_gold"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_leaf_light"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_leaf_mid"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_leaf_rust"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_leaf_sun"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_leaf_warm"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_metal"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_mist"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_moss"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_ochre"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_palm_frond"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_peach_wall"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_planks"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_plaster"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_roof_slate"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_roof_straw"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_roof_teal"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_roof_terra"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_roof_terra_light"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_rose_wall"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_sage_wall"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_sail"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_sail_dark"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_sand"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_stone"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_stone_dark"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_stone_light"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_teal_wall"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_forest"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_forest_n"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_meadow"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_meadow_n"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_rock"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_rock_n"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_sand"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_terrain_sand_n"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_water_mid"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_water_shallow"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_waterfall_streaks"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_wood"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_wood_dark"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_wood_light"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_yellow_wall"

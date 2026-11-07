@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/ModoriHorse
+schema = 1
+id = "adopted/modorihorse"
+kind = "adopted"
+authority = "editor"
+owner = "shared/modorihorse"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseCanter"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseDismount"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseGallop"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseIdle"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseIdleAffection"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseIdleFlehmen"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseIdleGraze"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseIdleLook"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseIdleShake"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseMount"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseSprint"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseTrot"
+
+[[outputs]]
+package = "/Game/ModoriHorse/A_HorseWalk"

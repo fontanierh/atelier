@@ -1,0 +1,22 @@
+{
+  "asset": "adopted/cairohorse",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CairoHorse/A_HorseCanter.uasset": "56c75c96aa524c034b07e935a91dca34c8ea385700da59f2c6c42bee6cb1dc49",
+    "unreal/Content/CairoHorse/A_HorseDismount.uasset": "e4604306e3f6f1dbaf3071bfd0c075c7c086c798862c2edef49775b137055afe",
+    "unreal/Content/CairoHorse/A_HorseGallop.uasset": "3e3125f6e76b9e272baf39494fe6d9d4a9d774d6d7f1098165614e860021c531",
+    "unreal/Content/CairoHorse/A_HorseIdle.uasset": "a92ee0afab7aba91187641aa2e6b22e5cae590ed238d955054cb98c2e8b2ef72",
+    "unreal/Content/CairoHorse/A_HorseIdleAffection.uasset": "941c6bb74eb23ced7ce142fa38fff35640180edf36f446c96d3d54a8c7221490",
+    "unreal/Content/CairoHorse/A_HorseIdleFlehmen.uasset": "6b61e8cbeb79b9187e5a3773fe71d53f21bc211168f8a11eb88750356bc7842e",
+    "unreal/Content/CairoHorse/A_HorseIdleGraze.uasset": "239f2a6976c65162952c4437b7279d7557b2bc1e21f56f1f8386cec0af814686",
+    "unreal/Content/CairoHorse/A_HorseIdleLook.uasset": "afa2d415bad749366478d13bfcd36e7bde8fa134024538b88b9e98fff00c3037",
+    "unreal/Content/CairoHorse/A_HorseIdleShake.uasset": "52c21a14443b8acc9e8c41fcf91d58f1b32ca7e9a09107e6d5d20f82873c252c",
+    "unreal/Content/CairoHorse/A_HorseMount.uasset": "d45d2ebe3a1e0a832b19d06c7ce763910df8b88723cac72f8444a25685d1022c",
+    "unreal/Content/CairoHorse/A_HorseSprint.uasset": "92db3a044d67fd752c42612e69a18918944047a992bbddf0d69aea3dfecff3b2",
+    "unreal/Content/CairoHorse/A_HorseTrot.uasset": "9dc315cbc9f39efc1d9171b54fd1e32736a2aaaf90dc2d3d28815b0d24d44df1",
+    "unreal/Content/CairoHorse/A_HorseWalk.uasset": "a26691bae7a5e9641060a770047c639c6bf63bd1d178411b452da7e05cc21019"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,150 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/CraterPark/Textures
+schema = 1
+id = "adopted/craterpark/textures"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/textures"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_aggregate"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_boost_magenta"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_boost_sun"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_boost_yellow"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_bowl"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_brick_coping"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_concrete"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_concrete_deck"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_concrete_edge"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_coping_frieze"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_coping_tile"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_flagstone"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_herringbone"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ledge"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_masonite"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_023"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_024"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_025"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_026"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_027"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_028"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_029"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_045"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_paving"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_planter"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_pool"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado_letters"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado_magenta"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado_navy"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado_orange"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado_sun"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado_teal"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado_yellow"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ramp_boards"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ramp_fascia"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ramp_planks"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_retaining_wall"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_bell_pavilion"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_nobori"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_stone_lantern"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_torii"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_side_bank"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_stair_brick"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_stamped"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_tile_edge"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_turtle"

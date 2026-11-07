@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/paulbike",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/PaulBike/A_BikeBell.uasset": "c10a2845c0955ad3bbe332b3947e2b6ad3bf3a00404c55b6dcecc82b945850a4",
+    "unreal/Content/PaulBike/A_BikeCrash.uasset": "50f212f3fad66da892f5ed9b70bad2d8991a588b129547fb5e17a84b4b71d09f",
+    "unreal/Content/PaulBike/A_BikeDismount.uasset": "1ecc804c8161837fa4b94d50480fa82f141bb02a652b8e0afaba0656c38bc7d8",
+    "unreal/Content/PaulBike/A_BikeFootDown.uasset": "6e2d261874efa49f7e5f62c76ff8668f4678fff401015de3b6f277c9dfc122cd",
+    "unreal/Content/PaulBike/A_BikeHop.uasset": "b853950d8aebea6fb0e73a4e526070c9c0be5bdeec2c368f2689fe485359c40a",
+    "unreal/Content/PaulBike/A_BikeKickstand.uasset": "c667af3b70c0c923460961dd6652ee1bfb200f176132459a8eef5ec8b5ec5c96",
+    "unreal/Content/PaulBike/A_BikeMount.uasset": "6e05c1fa77b81ed9674590aa16ebac6a23fac364f20e19665ceac07dcc483bb5",
+    "unreal/Content/PaulBike/A_BikeRide.uasset": "ede30f6f1e2a1db057ac24eb552f186eec78adfbadb4d99e061cdb9749382643",
+    "unreal/Content/PaulBike/A_BikeSkid.uasset": "c73c81edc7dcc7316c810230ee64e26b22c830541e16d85fb914637e73e15604",
+    "unreal/Content/PaulBike/A_BikeWave.uasset": "f188a2a895bf65d89a0dae6f5ba2038e6b21693c9e265523bb42f5a239010bda"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

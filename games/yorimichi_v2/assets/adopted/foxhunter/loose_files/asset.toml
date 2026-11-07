@@ -1,0 +1,69 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/FoxHunter
+schema = 1
+id = "adopted/foxhunter/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/foxhunter/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxAttackL_A"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxAttackL_B"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxAttackR_A"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxAttackR_B"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxCreep"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxDashBackward"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxDashForward"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxDeath"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxHurt"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxIdle"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxJump"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxKick"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxRun"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxTurnLeft"
+
+[[outputs]]
+package = "/Game/FoxHunter/A_FoxTurnRight"
+
+[[outputs]]
+package = "/Game/FoxHunter/BS_FoxLocomotion"
+
+[[outputs]]
+package = "/Game/FoxHunter/DA_FoxHunter"
+
+[[outputs]]
+package = "/Game/FoxHunter/M_FoxHunter_tripo_mat_8d75b5c6"
+
+[[outputs]]
+package = "/Game/FoxHunter/SK_FoxHunter"
+
+[[outputs]]
+package = "/Game/FoxHunter/SK_FoxHunter_Skeleton"

@@ -1,0 +1,138 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Ferry/Materials
+schema = 1
+id = "adopted/ferry/materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/ferry/materials"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Brass"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Crate"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_FenderBlack"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Float"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Glass"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Ink"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Iron"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Kawara"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_KawaraRidge"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_LanternGlow"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Moss"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Net"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Paper"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Plank"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Plaster"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Rope"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Stone"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Terracotta"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_Timber"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_TimberDark"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FT_WhitePaint"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_AnchorBronze"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_Black"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_BoatCover"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_BoatGunwale"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_BoatTimber"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_BoatTimberDark"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_BootTopBlue"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_Brass"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_Canvas"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_CowlThroat"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_CreamFunnel"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_DarkIron"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_DeckTimber"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_Glass"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_GoldMoulding"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_HawseRecess"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_Lifebuoy"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_TarredRope"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_VarnishedTimber"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/FY_WhitePaint"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/M_Ferry"
+
+[[outputs]]
+package = "/Game/Ferry/Materials/M_FerryWake"

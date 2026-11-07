@@ -1,0 +1,23 @@
+{
+  "asset": "adopted/swordcamp/assets",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_CampBales.uasset": "8c2af44850fa4a3adc34923c7003302f4f0b104ed2beaa0882aa2038c61b9b66",
+    "unreal/Content/SwordCamp/Assets/SM_CampFirePit.uasset": "8547532021acc079d20bee2e710b00c46c420758c1369dcca1c1c66357b38b90",
+    "unreal/Content/SwordCamp/Assets/SM_CampJinmaku.uasset": "bb7e0796cc968e07280a599e2e7972b768f0b2b1b04182d6b21f350e91404568",
+    "unreal/Content/SwordCamp/Assets/SM_CampWeaponRack.uasset": "e9da5a9c19fdf6ef07bd121652cb2a4175861e214a6efaedbe456042dd8fcfc2",
+    "unreal/Content/SwordCamp/Assets/SM_CaptainKabuto.uasset": "f30e5fc68c619ffceab7c245e59b26afa8eb65bbb8349188b5687b8482a4a4de",
+    "unreal/Content/SwordCamp/Assets/SM_GuardJingasa.uasset": "66c7033a698b0a753d6beb9b8273ce855803663b4b72edffadc23eb3ac953a31",
+    "unreal/Content/SwordCamp/Assets/SM_RoninDo.uasset": "487c176681602099ac05f24eaa190e930cfdfb0509a48efbffa3e22f20c7db96",
+    "unreal/Content/SwordCamp/Assets/SM_RoninKasa.uasset": "03a218af03e983d2b1c0ad63e2b05ab5b75b4655fc8f8c23df75cb8ff57f86b0",
+    "unreal/Content/SwordCamp/Assets/SM_RoninKatana.uasset": "cf817d64f1c0996ec1bc10911c3213b47c6af639128726d16bd9ea85448a00e9",
+    "unreal/Content/SwordCamp/Assets/SM_RoninMenpo.uasset": "39c1f0c4ba0fbcc08c01573a226745a1691676033d16ddf7f50227c695a8468e",
+    "unreal/Content/SwordCamp/Assets/SM_RoninNodachi.uasset": "5fb676f030eb07f2e8e85e71cddc64a2bd9ab884b9e37b33dd8f68c1876dd371",
+    "unreal/Content/SwordCamp/Assets/SM_RoninSashimono.uasset": "75cfd6f5b5ddcc51f74c2f2921ff8eb8c17cc7d88d532a55ea914ef455f70fc8",
+    "unreal/Content/SwordCamp/Assets/SM_RoninSode.uasset": "cd11347651d4addbd721d052ea49c40fe3d4e49b304983654f24d9f412f8f1f6",
+    "unreal/Content/SwordCamp/Assets/SM_RoninWakizashi.uasset": "ec8dd158c7764200bd2f5a08c4320071f7944642485420579b70c8e35a06b2cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

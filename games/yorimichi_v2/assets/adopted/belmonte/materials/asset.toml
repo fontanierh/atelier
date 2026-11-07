@@ -1,0 +1,123 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Belmonte/Materials
+schema = 1
+id = "adopted/belmonte/materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/materials"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_0a81ebb01ed9"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_296da39ab8d2"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_424af3e6356a"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_447b2bfac41d"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_4ac86121edbc"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_4ee3168b033c"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_51cddac82e05"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_56eb5489daa9"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_5775b3667d19"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_588c21ca63ae"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_5abe3878aa19"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_5ac531c8f835"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_6826135717c4"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_69b755f9ad2a"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_7ebfea974bb1"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_88275ca9defa"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_8c7322bc790c"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_97411df1649f"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_99b3c7fe8da6"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_9b1e8dfc79be"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_9c599add99e7"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_Ground"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_aa1a8d45375e"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_aadab9c1da71"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_afae53c1b42d"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_b5dfa6e6373d"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_bd97e7f1dd81"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_c0fe55905675"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_cb8e7d712521"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_cd9cdab3ba49"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_e17c9375ae80"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_e740b7591ceb"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_eaef11a76e4c"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_f76f48666871"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_fae8893ff89f"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_fd5f4f4381ce"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/M_Belmonte"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/M_BelmonteJoin"

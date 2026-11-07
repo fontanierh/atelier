@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/cairobike",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CairoBike/A_BikeBell.uasset": "2f405ab1bd62c68251992e7f4be6d4b2c581e21191ee5d944fed8c9580ff3352",
+    "unreal/Content/CairoBike/A_BikeCrash.uasset": "866f2d98a7030478725093db4459183e8840111cc60cb2828f4f3bcb1f8cdac0",
+    "unreal/Content/CairoBike/A_BikeDismount.uasset": "a4787e4c2e1fac4399545ba48b5ba192ceac07072dae1ed01b39ccc056a7234f",
+    "unreal/Content/CairoBike/A_BikeFootDown.uasset": "d1663c2a9be43946fe1c4ed0c7dc9c8a7d10238721a6c89c0f6dd81ac19662b5",
+    "unreal/Content/CairoBike/A_BikeHop.uasset": "8a2d8c940952cd4b508e4415119c548c6512d279deb1b816c538325db51edcd8",
+    "unreal/Content/CairoBike/A_BikeKickstand.uasset": "626249146b37ca8a3e477323233e98a896d697b63e212db96661a29c8242e862",
+    "unreal/Content/CairoBike/A_BikeMount.uasset": "51a0b0a1fa31a698a9f4a894def1ac7b22d9f715e9b6814f4675fff40b17bb01",
+    "unreal/Content/CairoBike/A_BikeRide.uasset": "4c13c300a85b15d064974ac6978f00ee8fb0c5a64ca0ac98c59d35858d243ba8",
+    "unreal/Content/CairoBike/A_BikeSkid.uasset": "987076157f55a3d18c1ef0d2a0de1131ea018afa289cc574f8d8632240f3134b",
+    "unreal/Content/CairoBike/A_BikeWave.uasset": "6c6d0521c2b24eebed0cab58e702354e0c19ecf00a1900b3d1136e21c7284b94"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

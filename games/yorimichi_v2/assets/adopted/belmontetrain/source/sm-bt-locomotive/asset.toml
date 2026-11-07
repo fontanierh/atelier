@@ -1,0 +1,162 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/BelmonteTrain/Source/SM_BT_Locomotive
+schema = 1
+id = "adopted/belmontetrain/source/sm-bt-locomotive"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/source/sm-bt-locomotive"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Brass"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_BrassDull"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Ceiling"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Coal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Crest"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_EnamelGrimy"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_EnamelSoot"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_EnamelWhite"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_EndDark"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Fire"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Glass"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_IronBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_LampWhite"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_LiningRed"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_LocoBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Parquet"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_SmokeboxDoor"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Steel"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Undercarriage"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Walnut"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_Crest"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_SmokeboxDoor"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_Underframe"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_Walnut"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_Walnut1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Brass"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Ceiling"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Coal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Crest"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_EndDark"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Fire"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Glass"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_IronBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_LampWhite"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_LocoBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Parquet"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_SmokeboxDoor"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Steel"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Undercarriage"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Walnut"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/T_BT_Crest"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/T_BT_SmokeboxDoor"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/T_BT_Underframe"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/T_BT_Walnut"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/T_BT_Walnut1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_IronBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_LocoBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_Undercarriage"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/T_BT_Underframe"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/SM_BT_Locomotive_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/SM_BT_Locomotive_LOD2"

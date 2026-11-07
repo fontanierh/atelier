@@ -1,0 +1,22 @@
+{
+  "asset": "adopted/paulhorse",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/PaulHorse/A_HorseCanter.uasset": "a2426897ceae53a43771a835707823f3ffeff8408002c0d2db727656a68555d5",
+    "unreal/Content/PaulHorse/A_HorseDismount.uasset": "aeb6f9c0e0adf977e347aa3fd218051fe710fe1cd25b3d41aec5308633e7ac34",
+    "unreal/Content/PaulHorse/A_HorseGallop.uasset": "cc6de9bdc7e584926d2eb9c5f2c066107662b98e8a8a595de344a73aeb072df4",
+    "unreal/Content/PaulHorse/A_HorseIdle.uasset": "648ba04ab06f7f9b4022c67e80e36052a2fb1ae3b480ae5b855d895dd8dd324d",
+    "unreal/Content/PaulHorse/A_HorseIdleAffection.uasset": "45501597e4510f59a710093497ffa9a34c2f9b0e25ce0e801a6c46b20f619861",
+    "unreal/Content/PaulHorse/A_HorseIdleFlehmen.uasset": "79d6ec87f6052ccff435b0fb89a4f1bac9aa90dc66311de0dbc9eab31e3be4a6",
+    "unreal/Content/PaulHorse/A_HorseIdleGraze.uasset": "77be80a9abae60aff5446ebabca87cf68aa70facb98b7d03b01220c46ead9206",
+    "unreal/Content/PaulHorse/A_HorseIdleLook.uasset": "b9e2a66ef5de304644647664c061da6e4d0efaef1ce4831e4f0d97481a1a77ab",
+    "unreal/Content/PaulHorse/A_HorseIdleShake.uasset": "f23a192b32f15b106d82e18837232f0282691a89bc3f78065a21d5cfaaf82073",
+    "unreal/Content/PaulHorse/A_HorseMount.uasset": "1d7ed23893f01708a4cd6c3594f6b6288922359412b6083c689c354c1dd02835",
+    "unreal/Content/PaulHorse/A_HorseSprint.uasset": "030ded972643ee940b3e923b259482426c9c01edb4b35fd6991144aefe2958fe",
+    "unreal/Content/PaulHorse/A_HorseTrot.uasset": "8495434b44791f57c43b2a082ca2a8be87dd92eccc8eb33bb7cbb8404fb99082",
+    "unreal/Content/PaulHorse/A_HorseWalk.uasset": "b5b2897877db59a6cb2006838631bb4e0cfef7f3281afab87653d0f46b90cf06"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

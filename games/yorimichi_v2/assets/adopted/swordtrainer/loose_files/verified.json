@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/swordtrainer/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordTrainer/A_Bow.uasset": "a5ad79df90b15e70e866e992b0fc09fc5959bb91757bab91bac9c7962d8dcb0a",
+    "unreal/Content/SwordTrainer/A_Talk.uasset": "ec9121011766f90e97aeba89794da91f7b6e11483a032484217259a847beacda",
+    "unreal/Content/SwordTrainer/DA_SwordTrainer.uasset": "2754986c478342c810411bcfbf92d36dfb09fe0f71f3e61a227d8c39ecb0eb51",
+    "unreal/Content/SwordTrainer/DA_SwordTrainerBase.uasset": "93428d07e717d6f3b8b6828386558a0606d7863f2c494b3b3504ee693279b55a",
+    "unreal/Content/SwordTrainer/M_SwordTrainer_tripo_mat_ee5a1a4b.uasset": "0d8d8648ba69b567914629a2517126fbc00f4e98aef40dfb9c46b95bdcbf8755",
+    "unreal/Content/SwordTrainer/SK_SwordTrainer.uasset": "2af2000d8ab6b62e33f1fcc731ce55a2662948788b99b4e19b75abcc44191690",
+    "unreal/Content/SwordTrainer/SK_SwordTrainer_Skeleton.uasset": "481e671f348d7c6a3e03260cc30bc1e59aa478ef37c6ed5592ba45579bf553e9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,51 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Hippodrome/Meshes
+schema = 1
+id = "adopted/hippodrome/meshes"
+kind = "adopted"
+authority = "editor"
+owner = "shared/hippodrome/meshes"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_FinishPost/Color_c3f66034-a443-44e1-ac12-bc4a9a617bb9"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_FinishPost/HD_FinishPost"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Grandstand/Color_d791cab5-3476-4925-85c1-f4131c7af4b8"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Ground/HD_Grass"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_JudgesTower/Color_13d66ee9-7f6a-447a-a77d-ada02b839472"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Lane/HD_Dirt"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_LaneSkirt/HD_Stone"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Rails/HD_Rail"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Skirt/HD_Stone"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_ToteBoard/Color_72c00844-b377-41e6-8796-37d3e46331b9"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Track/HD_Dirt"

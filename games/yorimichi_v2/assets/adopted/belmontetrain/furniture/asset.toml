@@ -1,0 +1,57 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/BelmonteTrain/Furniture
+schema = 1
+id = "adopted/belmontetrain/furniture"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/furniture"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenCounter"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenLadle"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenMug"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenPot"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenShelves"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenSink"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenStove"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_FirstClassSofa"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_FirstClassTable"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_LocoBackhead"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_RestaurantBanquette"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_RestaurantTable"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_SecondClassBench"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_SecondClassBenchCarved"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_TableLamp"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_WallSconce"

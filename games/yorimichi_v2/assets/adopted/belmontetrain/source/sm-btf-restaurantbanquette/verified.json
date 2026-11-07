@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/belmontetrain/source/sm-btf-restaurantbanquette",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD0/M_BT_RestaurantBanquette.uasset": "56bed90b43c170871ce3c8dac04ff4b57fbd9d17673cd65f61e46d01a20a4d81",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD0/restaurant-banquette-base.uasset": "000f3674aaa1a8fa07f3200e66cfa69d114dac3ceb1f93c6555d9a49d2c91aa5",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD0/restaurant-banquette-mr.uasset": "43ec86c18b518febddc798b62069ff86f315695c71e786e6245ae29a9986a297",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD0/restaurant-banquette-normal.uasset": "3f18b145d06fe8faebc004ea7948a0f5b053e75f762f775dfb6f65da5dbc05f7",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD1/M_BT_RestaurantBanquette_LOD1.uasset": "219c22682176e002a5cd715986671e52a3d3278db2f41a9d90272cab6fe7e387",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD1/restaurant-banquette-lod1-base.uasset": "82ed5bfa10de664fe25dc9a5b8fe46b18adfbda8a7d54ec5fa412e0080416bb0",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD1/restaurant-banquette-lod1-mr.uasset": "918141eb6b9b45f77efc4434800c59ff8366e3d8fbe9d6c8a36d47c585e6ba32",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/LOD1/restaurant-banquette-lod1-normal.uasset": "f12e2ff4e6ef2fa26d19277e20fdba28c070f6fa63ff2a24cff356cd7c127e42",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_RestaurantBanquette/SM_BTF_RestaurantBanquette_LOD1.uasset": "bf3836f3a6a519bd9a3584fea88c14707c6860d850be381eb5e3a8e1a99de722"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

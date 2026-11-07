@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmontetrain/source/sm-btf-tablelamp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/M_BT_TableLamp.uasset": "785c4c395bc881182b9c999efe05569d13558dec44977248ac4c5e4d0dc218d0",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/table-lamp-base.uasset": "8665307cf81ab19d9781c3fdba5a48e4c638e5ef8c6fbb42d5144a41ec00b629",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/table-lamp-mr.uasset": "d511e9bb019e39894a4a5be947dc0507d468b124b23ec6012b3c4e4a6e7c9916",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/table-lamp-normal.uasset": "b231b636581cac256afbddd72d11dd9e3c764e75c215ddcf904827bdd8527a35"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,18 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/BelmonteTrain/Source/SM_BTF_CanteenMug
+schema = 1
+id = "adopted/belmontetrain/source/sm-btf-canteenmug"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/source/sm-btf-canteenmug"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/M_BT_CanteenMug"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/canteen-mug-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/canteen-mug-normal"

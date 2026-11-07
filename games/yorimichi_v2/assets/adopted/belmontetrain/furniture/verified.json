@@ -1,0 +1,25 @@
+{
+  "asset": "adopted/belmontetrain/furniture",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenCounter.uasset": "9cc5ae9c2537b57853411149e43f4bc91463378893a7f9a33ae10c0728cff928",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenLadle.uasset": "24312b563af471b538509fff967c62467eb81d434fb51aec6868a9b7e5c5fd88",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenMug.uasset": "567b42cec686d7c36803c1b188d682eac4f1965b25ea4971a0ff7717ec96f8be",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenPot.uasset": "dbf9eea9e948e3ce31f649073c4573d5d98426f2f8f11e72e149c033ae91b78b",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenShelves.uasset": "159d9008e65fa36b2a6fbb3964bb77bac6cf227549aeb09504bc4ffb7e947cbe",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenSink.uasset": "0d1ab033e957743be65c7c2fc2b776d5aaa539f00ac9c93da7e483e808500bec",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenStove.uasset": "975e66fad4c07ffa0488dcc94ec7fd4aacada7e55e3cb221bd0c177f4141b30d",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_FirstClassSofa.uasset": "200b0af53efdf312ab8a8ee93824358e34f672c3aac00eef4ff90be60d5072fa",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_FirstClassTable.uasset": "65dd164a2042e889248a23285b6d6c9e90417c8b355b1fa5ae5f4e755dd66b47",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_LocoBackhead.uasset": "2676e2557dbc86c78d8ed87781201313724b22a4a50c0ab1d023d4d4f12f4070",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_RestaurantBanquette.uasset": "81a5d521984769fec8ada32082fabeee77af0bba6a595f70fb5e4b7cf38de578",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_RestaurantTable.uasset": "7607c2f415f99998b5eec86b0ba1b0f67b66eeff9f0620df7a6f228cea45b3a9",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_SecondClassBench.uasset": "46a2de11f7f68a0c632a869b781b186d4122539e323b56de8d6b9d9ff1ccc69a",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_SecondClassBenchCarved.uasset": "0816e24d53f72eb4f1231f0c3f7737fb5f9d23881dfbdaf55271f7864c751feb",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_TableLamp.uasset": "44964ba1982150f26d8141a64aa9222d4cbc96c02c031b38ecfb0b40b4ffd9c7",
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_WallSconce.uasset": "cbd29f88718dfbe740f4e86ce26611d693bfbb0938515f906d41330ed325164f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

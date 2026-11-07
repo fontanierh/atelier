@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/BelmonteTrain/Source/SM_BTF_SecondClassBench
+schema = 1
+id = "adopted/belmontetrain/source/sm-btf-secondclassbench"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/source/sm-btf-secondclassbench"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD0/M_BT_SecondClassBench"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD0/second-class-bench-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD0/second-class-bench-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD1/M_BT_SecondClassBench_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD1/second-class-bench-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD1/second-class-bench-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/SM_BTF_SecondClassBench_LOD1"

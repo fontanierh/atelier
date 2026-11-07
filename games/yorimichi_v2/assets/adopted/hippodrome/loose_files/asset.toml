@@ -1,0 +1,39 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/Hippodrome
+schema = 1
+id = "adopted/hippodrome/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/hippodrome/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_FinishPost"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Grandstand"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Ground"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_JudgesTower"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Lane"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_LaneSkirt"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Rails"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Skirt"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_ToteBoard"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Track"

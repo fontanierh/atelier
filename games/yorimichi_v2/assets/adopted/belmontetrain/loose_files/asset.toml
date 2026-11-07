@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/BelmonteTrain
+schema = 1
+id = "adopted/belmontetrain/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/SM_BT_BaggageVan"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/SM_BT_BrakeVan"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/SM_BT_FirstClass"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/SM_BT_Locomotive"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/SM_BT_Restaurant"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/SM_BT_SecondClass"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/SM_BT_Tender"

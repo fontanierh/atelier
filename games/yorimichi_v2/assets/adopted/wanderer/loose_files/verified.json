@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/wanderer/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Wanderer/DA_Wanderer.uasset": "cb0728e0381160ef42bf086e3ff17f168f74469a477fa812356790146723065d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

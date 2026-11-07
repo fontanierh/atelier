@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/hippodrome/materials",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Materials/M_HD_Dirt.uasset": "b07ca7bb588426722318668e1e95ae9a7a4a55b594c56c13dbcde6fe1d432b73",
+    "unreal/Content/Hippodrome/Materials/M_HD_Grass.uasset": "8045016bb384e16ffdfb8c93c7cf55071fa79608e6d9f1e35544fe1cc7ae7657",
+    "unreal/Content/Hippodrome/Materials/M_HD_Rail.uasset": "8b7ed9b5e0771f28fb16d5f65fd987af6f03b8b44b3abc7f5916408832e018da",
+    "unreal/Content/Hippodrome/Materials/M_HD_Stone.uasset": "e769de20f4152c0ebed1fa563f063f6f52c60749ade7a4a78790efe123c32b98",
+    "unreal/Content/Hippodrome/Materials/M_HD_Structure.uasset": "00a1393e501e9caaaa729ca64e7dc4e7f61b058e430079f200ff4a97d0462b42"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

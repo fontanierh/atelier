@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/foxhunter/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FoxHunter/Textures/T_FoxHunter_Color.uasset": "c2716911348fb96999efebbb141df8a1d13f2c7e71d159efdaf2a174557b6565"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
