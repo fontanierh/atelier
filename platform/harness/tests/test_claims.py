@@ -618,6 +618,20 @@ def test_protected_checks_reverify_locks_and_base_live(world):
     assert check(a, repo, 'ta', [Change('M', 'Source/Skate.cpp')]) == []  # unprotected text still passes
 
 
+def test_changed_paths_of_a_large_claim_are_listed_in_bounded_diffs(world, monkeypatch):
+    from atelier.harness.claims import remote
+    base = git(world.seed, 'rev-parse', 'HEAD')
+    for name in 'abcde':
+        world.write(f'Content/{name}.txt', name)
+    head = world.commit('five files')
+    items = [('path', f'Content/{name}.txt') for name in 'abcdef'] + [('prefix', 'Other/')]
+    cli = GitCli(world.service_repo)
+    cli.head('main')
+    whole = cli.changed(base, head, items)
+    monkeypatch.setattr(remote, 'DIFF_SPECS', 2)
+    assert cli.changed(base, head, items) == whole == [f'Content/{name}.txt' for name in 'abcde']
+
+
 def test_unseen_uncertain_lock_keeps_its_reservation_until_settled(world):
     a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
     world.task(a, 'ta'), world.task(b, 'tb')

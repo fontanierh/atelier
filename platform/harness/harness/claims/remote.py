@@ -243,6 +243,9 @@ def client_locker(repo, remote=None, timeout=60):
 
 # ---------------------------------------------------------------------------- Git
 
+DIFF_SPECS = 1000   # pathspecs per `git diff`: well inside the OS argument limit for repository paths
+
+
 class GitCli:
     """Target-branch checks in a service-host clone of the shared remote (``git ls-remote`` + ``fetch``)."""
 
@@ -286,5 +289,8 @@ class GitCli:
         specs = [':(literal,icase)' + value.rstrip('/') for kind, value in items if kind in ('path', 'prefix')]
         if not specs:
             return []
-        out = self._git('diff', '--no-renames', '--name-only', base, head, '--', *specs).stdout
-        return [line for line in out.split('\n') if line]
+        changed = set()
+        for start in range(0, len(specs), DIFF_SPECS):   # a claim of thousands of paths exceeds one argument list
+            out = self._git('diff', '--no-renames', '--name-only', base, head, '--', *specs[start:start + DIFF_SPECS])
+            changed.update(line for line in out.stdout.split('\n') if line)
+        return sorted(changed)
