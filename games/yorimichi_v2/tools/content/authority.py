@@ -113,7 +113,9 @@ def owning_scopes(game: Path, paths: list[str]) -> tuple[set[str], list[str]]:
     for region in regions:
         if region.actors.is_file():
             for rel in records.load_verified(region.actors)['files']:
-                owner[f'games/yorimichi_v2/{rel}'] = scope_of(region.id)
+                stem = Path(rel).with_suffix('')   # an actor package's companions belong to its region too
+                for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS:
+                    owner[f'games/yorimichi_v2/{stem.with_suffix(ext).as_posix()}'] = scope_of(region.id)
     return {owner[p] for p in paths if p in owner}, [p for p in paths if p not in owner]
 
 
