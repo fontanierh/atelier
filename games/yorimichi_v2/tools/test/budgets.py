@@ -151,9 +151,10 @@ def run_once(operation, index, args, log):
     elif operation == 'cpp':
         args.edit.write_bytes(args.original + f'// budget run {index}\n'.encode())
         extra['source_sha256'] = hashlib.sha256(args.edit.read_bytes()).hexdigest()
-        ok, wall, queue, output = timed(['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2',
-                                         'unreal.compile'], log=log)
-        extra['compiled'] = compiled(output, args.edit.name)
+        ok, wall, queue, _ = timed(['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2',
+                                    'unreal.compile'], log=log)
+        step_log = REPO / 'build/yorimichi_v2/logs/unreal.compile.log'   # UnrealBuildTool's actions go there
+        extra['compiled'] = compiled(step_log.read_text(errors='replace') if step_log.is_file() else '', args.edit.name)
         ok = ok and extra['compiled']
         if ok:
             ok, opened, waited = play_until_playable(log)
@@ -165,7 +166,8 @@ def run_once(operation, index, args, log):
 
 
 def compiled(output, name):
-    """Did this build's compiler actually rebuild the edited file (UnrealBuildTool's `Compile ... <name>` action)?"""
+    """Did this build's compiler actually rebuild the edited file? `log` is the compile step's own log, which holds
+    UnrealBuildTool's `[n/m] Compile [Apple] <name>` actions."""
     return any('Compile' in line and line.rstrip().endswith(name) for line in output.splitlines())
 
 
