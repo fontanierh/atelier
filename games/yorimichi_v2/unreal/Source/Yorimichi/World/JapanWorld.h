@@ -153,6 +153,11 @@ private:
     int32 AppliedTreeOptimization = -1;
     int32 AppliedTreeLODMode = -1;
     float AppliedTreeDistanceScale = -1.f;
+    // The saved tree settings last asked for, kept apart from what applied: a swap that fails while a roster piece
+    // has not streamed in yet is retried with them when the next scene patch registers.
+    int32 RequestedTreeOptimization = -1;
+    int32 RequestedTreeLODMode = 0;
+    float RequestedTreeDistanceScale = 1.f;
     // The level's height fog and sun before the volumetric look (setup_project.py builds the fog with no density), and
     // the look applied (unset: off).
     struct FFogBase { float Density = 0.f, Falloff = 0.f, Cutoff = 0.f, Distance = 0.f, Shafts = 1.f; bool bVolumetric = false; };

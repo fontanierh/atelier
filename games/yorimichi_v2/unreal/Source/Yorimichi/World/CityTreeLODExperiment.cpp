@@ -153,8 +153,9 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
 
 bool AJapanWorld::ApplyTreeOptimization(bool bEnabled,int32 LODMode,float DistanceScale)
 {
-    if (!bLoaded) return false;
     LODMode=FMath::Clamp(LODMode,0,3);DistanceScale=FMath::Clamp(DistanceScale,.5f,3.f);
+    RequestedTreeOptimization=int32(bEnabled);RequestedTreeLODMode=LODMode;RequestedTreeDistanceScale=DistanceScale;
+    if (!bLoaded) return false;
     if (AppliedTreeOptimization == int32(bEnabled) && AppliedTreeLODMode==LODMode &&
         FMath::IsNearlyEqual(AppliedTreeDistanceScale,DistanceScale)) return true;
     // A failed swap may have touched an earlier group: force a real rollback/retry.

@@ -994,11 +994,11 @@ void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
         AppliedPerformanceMode = -1;
         ApplyPerformanceSettings(bPerformance, AppliedTreeSway, AppliedForestDetail, AppliedTreeShadow);
     }
-    if (AppliedTreeOptimization >= 0)
+    if (RequestedTreeOptimization >= 0)
     {
-        const bool bEnabled = AppliedTreeOptimization != 0;
+        // The saved request, not the last success: a swap that failed before this patch arrived is retried too.
         AppliedTreeOptimization = -1;
-        ApplyTreeOptimization(bEnabled, AppliedTreeLODMode, AppliedTreeDistanceScale);
+        ApplyTreeOptimization(RequestedTreeOptimization != 0, RequestedTreeLODMode, RequestedTreeDistanceScale);
     }
     AppliedBackdropCull = -1.f;
     AppliedHideGroups.Reset();
