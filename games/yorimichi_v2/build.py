@@ -188,6 +188,13 @@ def _authorize_migration(ctx, log):
     held = authority.creation_claim(plan['claim'], _migration_regions(plan), 'map migration')
     MIGRATE_BEFORE.update(authority.content_snapshot(GAME))
     claimed = set(authority.items_of(held, 'path'))
+    # The existing files the editor may save are authorized now, with their live LFS locks verified: a listed path
+    # whose lock is missing must refuse before anything is written, not only when the created files are bound.
+    existing = sorted(p for p in claimed if p.removeprefix('games/yorimichi_v2/') in MIGRATE_BEFORE)
+    if existing:
+        owners, _ = authority.owning_scopes(GAME, existing)
+        authority.authorize(existing, plan['claim'], 'map migration',
+                            scopes=owners or set(_migration_regions(plan)))
     unclaimed = sorted(p for p in (f'games/yorimichi_v2/{rel}' for rel in MIGRATE_BEFORE) if p not in claimed)
     authority.deny_saves(unclaimed, ctx.out / 'migrate' / 'save-deny.txt', repo=GAME.parents[1])
     log.write(f"migration authorized (claim {plan['claim']}, {len(unclaimed)} existing file(s) denied)\n")

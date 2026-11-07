@@ -36,7 +36,7 @@ class ClaimService:
     the publish stage. A coordinator transfer moves a task's claim and locks to another agent's workspace."""
 
     def __init__(self):
-        self.tasks, self.extensions = {}, []
+        self.tasks, self.extensions, self.unlocked, self.checks = {}, [], set(), []
 
     def grant(self, task, holder, scopes, paths=()):
         self.tasks[task] = {'id': len(self.tasks) + 1, 'holder': holder, 'scopes': list(scopes), 'paths': set(paths)}
@@ -61,7 +61,9 @@ class ClaimService:
         if command[4] == 'check':
             task = self.tasks.get(command[command.index('--task') + 1])
             paths = set(command[command.index('--paths') + 1:])
-            ok = task is not None and task['holder'] == os.environ.get('ATELIER_AGENT') and paths <= task['paths']
+            self.checks.append(command)
+            ok = (task is not None and task['holder'] == os.environ.get('ATELIER_AGENT') and paths <= task['paths']
+                  and not paths & self.unlocked)   # a listed path whose LFS lock the service cannot verify
             return Result(0 if ok else 1)
         if command[4] == 'extend':   # the service refuses a claim another principal holds (`not_holder`)
             task = next((t for t in self.tasks.values() if str(t['id']) == command[5]), None)

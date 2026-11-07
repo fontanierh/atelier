@@ -222,6 +222,21 @@ def test_modifying_an_existing_unclaimed_file_is_refused(tmp_path, game, claims,
     assert claims.extensions == []                             # nothing is bound when any write is refused
 
 
+def test_a_claimed_existing_file_without_its_verified_lock_refuses_before_the_editor(tmp_path, game, claims, env):
+    env.setenv('ATELIER_AGENT', 'agent-a')
+    claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'], paths=[f'games/yorimichi_v2/{OLD}'])
+    claims.unlocked.add(f'games/yorimichi_v2/{OLD}')               # listed in the claim, but its LFS lock is missing
+    with pytest.raises(authority.Unauthorized, match='verified locks'):
+        migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {}), out=tmp_path / 'm',
+                          echo=lambda *_: None)
+    assert (game / OLD).read_text() == 'region/w01:Old:whole:id0'   # refused at authorization: nothing written
+    claims.unlocked.clear()                                          # with its lock verified, the step proceeds
+    os.environ['V2_MIGRATE_PLAN'] = str(tmp_path / 'direct.json')
+    (tmp_path / 'direct.json').write_text(json.dumps({**plan(game), 'claim': 'T1'}))
+    recipe._authorize_migration(type('Ctx', (), {'out': tmp_path / 'out'})(), io.StringIO())
+    assert any('--paths' in c and f'games/yorimichi_v2/{OLD}' in c for c in claims.checks)
+
+
 def test_a_claim_must_hold_every_touched_region_before_the_editor_starts(tmp_path, game, claims, env):
     env.setenv('ATELIER_AGENT', 'agent-a')
     claims.grant('T1', 'agent-a', ['region/w01'])
