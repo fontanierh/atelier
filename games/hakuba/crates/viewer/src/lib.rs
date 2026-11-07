@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The character viewer: one character at a time on a plain stage, a camera that circles it, and buttons to pick the
 //! character and the clip it plays. While a paraglider clip plays, the character holds the paraglider, through the
 //! same grip as in the world.

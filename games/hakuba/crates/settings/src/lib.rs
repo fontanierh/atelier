@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The settings: how the world looks and sounds, and how fast the game draws. The game keeps them between visits, and holds
 //! itself to the chosen frame rate. The Settings screen, from the menu, shows the [`panel`] of them.
 

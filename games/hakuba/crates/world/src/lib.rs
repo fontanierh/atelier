@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The world: the ground, the road and what stands around it from `assets/world`, the sea, the sky, sun and haze, and
 //! a camera that starts at the spawn. It publishes where the player starts ([`Spawn`]) and what the player can stand
 //! on ([`Ground`]), and [`PushesPlants`], which makes the plants around whatever carries it lean away; the player

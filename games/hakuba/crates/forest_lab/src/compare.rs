@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! `lab-compare REFERENCE CANDIDATE`: compares two forest lab runs' saved frames, frame by frame, to find what a
 //! player would see change: a tree changing shape, appearing late or vanishing.
 //!

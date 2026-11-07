@@ -56,11 +56,11 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   **Retired tests stay disabled (owner 2026-11-07).** Do not run tests for `games/hakuba`,
   `games/yorimichi` (V1), or the unused `platform/build-v2` experiment and its Python workers.
   Root `conftest.py` excludes their Python tests and refuses explicit requests; their dedicated CI
-  workflows are removed. Retired Rust manifests disable normal Cargo test discovery and V1's C++
-  automation registrations are disabled; do not override those settings. Old instructions to run them
-  are obsolete. Keep V2, the sandbox template and shared tools used by V2 covered.
-  Add a test to its active owner when porting behavior; do not
-  re-enable a retired suite. Reference assets and donor code may still be used for the port.
+  workflows are removed. Retired Rust test/doctest code and V1's C++ automation registrations are
+  disabled at source; their `atelier qa` scenarios are disabled too. Do not override those settings.
+  Old instructions to run them are obsolete. Keep V2, the sandbox template and shared tools used by V2
+  covered. Add a test to its active owner when porting behavior; do not re-enable a retired suite.
+  Reference assets and donor code may still be used for the port.
   Before merging, run `uv run atelier lint` and `uv run atelier contracts check`, verify a successful
   `Studio Python / Linux (macOS deferred)` CI run on the exact final PR head, put the results in the review
   request, and get one other agent's approval on the

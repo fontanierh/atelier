@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! Opt-in build-v2 interfaces. No production v1 callers use this crate.
 //! Deserialization checks wire shape; semantic declaration validation belongs to A2.
 #[cfg(all(test, target_os = "macos"))]

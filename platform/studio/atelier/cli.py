@@ -428,6 +428,8 @@ def main(argv=None):
         from . import contracts
         return contracts.check()
     if args.command == 'qa':
+        if manifest.game(args.game).get('qa_enabled', True) is False:
+            raise SystemExit(f'QA is disabled for retired game {args.game}; use the active game instead.')
         from .build_snapshot import require_complete
         require_complete(paths.build_root() / args.game, game=args.game)
         script = paths.game_dir(args.game) / 'scenarios' / f'{args.scenario}.py'

@@ -3,6 +3,7 @@ id = "yorimichi"
 title = "Yorimichi"
 atelier = "0.1"
 engine = "unreal"
+qa_enabled = false                     # retired experiment: do not run scenarios
 unreal_project = "unreal/Yorimichi.uproject"
 editor_target = "YorimichiEditor"
 player = "assets/characters/cairo"

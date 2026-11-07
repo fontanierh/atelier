@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The paraglider, and how a character holds it. A [`Glider`] spawned as a child of a character's model loads the
 //! paraglider, its cloth rippling in a loop. While it is [`held`](Glider::held) it sits on the body over the wrists,
 //! where the holder's were, scaled to the character's size, leaning as far as it is told to [bank](Glider::bank), and each hand holds its handle

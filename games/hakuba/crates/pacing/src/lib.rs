@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The frame pacer of the desktop game, at the Frame rate setting's 60: each frame starts on a fixed deadline, so every
 //! frame lands on the same display refresh, and on the Mac each stays on screen at least a 60th of a second, so a
 //! 120 Hz display shows a steady 60 timed by the window server rather than a timer on the CPU. A screen that shows at

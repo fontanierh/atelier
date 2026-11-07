@@ -76,3 +76,35 @@ def test_invocation_inside_a_retired_tree_is_refused(suite, retired):
     result = invoke(suite, ['-m', 'pytest', '-q'], cwd=suite / retired / 'tests')
     assert result.returncode == pytest.ExitCode.USAGE_ERROR, result.stdout + result.stderr
     assert 'Retired experiment tests are disabled' in result.stderr
+
+
+@pytest.mark.parametrize('requested', [
+    *(f'{p}.tests.test_retired'.replace('/', '.') for p in RETIRED_TREES if '-' not in p),
+])
+def test_pyargs_refuses_retired_modules_without_importing_packages(suite, requested):
+    # Regular packages as well as namespace packages: even the retired package's
+    # __init__ must not execute merely to find where a dotted test name lives.
+    package = suite / Path(*requested.split('.')[:-2])
+    (package / '__init__.py').write_text('raise RuntimeError("retired package was imported")\n')
+    result = invoke(suite, ['-m', 'pytest', '-q', '--pyargs', requested])
+    assert result.returncode == pytest.ExitCode.USAGE_ERROR, result.stdout + result.stderr
+    assert 'Retired experiment tests are disabled' in result.stderr
+    assert 'was imported' not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize('retired', RETIRED_FILES)
+def test_pyargs_refuses_a_retired_module_on_pythonpath(suite, retired):
+    path = suite / retired
+    env = {**os.environ, 'PYTHONPATH': str(path.parent), 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1',
+           'PYTEST_ADDOPTS': ''}
+    result = subprocess.run([sys.executable, '-m', 'pytest', '-q', '--pyargs', path.stem],
+                            cwd=suite, env=env, text=True, capture_output=True, timeout=20)
+    assert result.returncode == pytest.ExitCode.USAGE_ERROR, result.stdout + result.stderr
+    assert 'Retired experiment tests are disabled' in result.stderr
+    assert 'was imported' not in result.stdout + result.stderr
+
+
+def test_pyargs_keeps_active_modules(suite):
+    result = invoke(suite, ['-m', 'pytest', '-q', '--pyargs', 'games.current.tests.test_active'])
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert '1 passed' in result.stdout

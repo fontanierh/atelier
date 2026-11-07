@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! What every screen shares: which screen is showing, Escape back to the menu (or pausing the world), how buttons look
 //! and the frame rate.
 

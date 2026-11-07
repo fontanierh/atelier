@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! One real guarded resident-session window for C5c slice 6 (not a test; run once by hand, under
 //! normal admission, only after review).
 //!

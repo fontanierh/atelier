@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The game program, what runs when the game opens: it builds the app, adds every feature's plugin and opens on the
 //! menu (crates/menu).
 

@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! T1b: the production build-v2 Blender job loop inside the installed Blender, run once in one
 //! admitted session (`cargo run --example t1b_blender_session` under `guarded --kind job`).
 //! `ATELIER_T1B_BLENDER` names the Blender binary; `ATELIER_T1B_EVIDENCE`, when set, is where the

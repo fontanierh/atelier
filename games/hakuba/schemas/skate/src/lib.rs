@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! Bounds-checked little-endian simulation data and an indexed, immutable payload archive.
 
 use sha2::{Digest, Sha256};

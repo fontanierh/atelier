@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The `export` command: exports asset folders, or checks that their committed exports are current.
 //!
 //! ```sh

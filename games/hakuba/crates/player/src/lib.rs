@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! The player: the character the player controls in the world, spawned where the world says the player starts. It
 //! walks, runs and sprints, jumps and double jumps, dodges, and glides; the camera follows it. Nothing moves while the
 //! game is paused, nor in dev mode, whose camera flies free.

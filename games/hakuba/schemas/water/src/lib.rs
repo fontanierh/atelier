@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! Shared validation of source-authored bounded-water index metadata (also used by the exporter).
 use serde_json::Value;
 use std::collections::HashSet;

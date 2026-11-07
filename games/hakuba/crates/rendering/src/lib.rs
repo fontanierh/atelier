@@ -1,3 +1,6 @@
+// Retired experiment: explicit Cargo test/doctest targets must stay empty.
+#![cfg(not(any(test, doctest)))]
+
 //! Shared rendering commands for rigid meshes and 3D shadow views.
 
 mod defaults;

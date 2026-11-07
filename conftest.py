@@ -11,6 +11,7 @@ own HOME, so state written by one test cannot reach another through a module-lev
 that need specific paths still patch them as before.
 """
 import os
+from importlib.machinery import PathFinder
 from pathlib import Path, PurePath
 import re
 import shutil
@@ -44,6 +45,27 @@ def pytest_ignore_collect(collection_path, config):
         return True
 
 
+def _retired_test_module(name):
+    """Resolve --pyargs package locations without executing their __init__ or test code."""
+    search = None
+    parts = name.split('.')
+    for part in parts:
+        # Look up each component in its parent's paths. A qualified namespace
+        # spec would require importing the parent into sys.modules first.
+        spec = PathFinder.find_spec(part, search)
+        if spec is None:
+            return False
+        locations = list(spec.submodule_search_locations or ())
+        if spec.origin:
+            locations.append(spec.origin)
+        if any(_retired_test_path(Path(path)) for path in locations):
+            return True
+        if spec.submodule_search_locations is None:
+            return False
+        search = list(spec.submodule_search_locations)
+    return False
+
+
 def _caller_settings():
     return [name for name in os.environ if name.startswith('ATELIER_')]
 
@@ -53,8 +75,10 @@ def pytest_configure(config):
     # Pytest's ignores do not cover explicitly requested paths. Refuse those too,
     # before importing a retired test module or running any fixtures.
     for arg in config.args:
-        path = config.invocation_params.dir / arg.split('::', 1)[0]
-        if _retired_test_path(path):
+        name = arg.split('::', 1)[0]
+        path = config.invocation_params.dir / name
+        if (_retired_test_path(path)
+                or (config.option.pyargs and _retired_test_module(name))):
             raise pytest.UsageError(f'Retired experiment tests are disabled: {arg}. '
                                     'Run games/yorimichi_v2/tests or the active shared tooling tests.')
     global _SESSION_HOME

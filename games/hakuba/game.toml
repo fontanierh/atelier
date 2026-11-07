@@ -4,6 +4,7 @@ id = "hakuba"
 title = "Hakuba"
 atelier = "0.1"
 engine = "bevy"
+qa_enabled = false                     # retired experiment: do not run scenarios
 build = "build.py"
 
 [bevy]
