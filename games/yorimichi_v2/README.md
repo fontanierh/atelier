@@ -97,11 +97,12 @@ V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/move_actor.py V2_MOVE_AC
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # move one saved actor, save only its package (31 s)
 uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen                # the slice game; prints its live session ID
 uv run python games/yorimichi_v2/tools/test/route.py --session ID --out DIR     # walk + skate route in that game, report.json
+uv run python games/yorimichi_v2/tools/test/budgets.py open --out DIR           # a plan §15 budget: warm-up + 5 runs, receipt
 ```
 
 `/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
 from a fresh checkout without donor content. Collaboration test results are kept in
-[docs/COLLABORATION_TESTS.md](docs/COLLABORATION_TESTS.md).
+[docs/COLLABORATION_TESTS.md](docs/COLLABORATION_TESTS.md), the slice budgets in [docs/BUDGETS.md](docs/BUDGETS.md).
 
 ## How content is owned and changed
 
