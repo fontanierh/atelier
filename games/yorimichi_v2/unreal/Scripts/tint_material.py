@@ -18,7 +18,8 @@ if not isinstance(instance, U.MaterialInstanceConstant):
 MEL = U.MaterialEditingLibrary
 before = MEL.get_material_instance_vector_parameter_value(instance, PARAMETER)
 if not MEL.set_material_instance_vector_parameter_value(instance, PARAMETER, VALUE):
-    raise RuntimeError(f'{PATH} has no vector parameter {PARAMETER}')
+    names = sorted(str(n) for n in MEL.get_vector_parameter_names(instance.get_editor_property('parent')))
+    raise RuntimeError(f'{PATH} has no vector parameter {PARAMETER}; its parent has {names}')
 MEL.update_material_instance(instance)
 if not U.EditorAssetLibrary.save_loaded_asset(instance, False):
     raise RuntimeError(f'could not save {PATH}')
