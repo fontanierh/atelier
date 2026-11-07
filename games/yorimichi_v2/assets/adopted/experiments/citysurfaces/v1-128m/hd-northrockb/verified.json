@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-northrockb",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthRockB.uasset": "3534398fb0aed67a8ec370ecd5d9e66da7d0a1b116f4e8277b1e6e8645c558ec"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

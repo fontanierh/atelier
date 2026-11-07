@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/islandterrain/v1-atomic/sea",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Sea.uasset": "df3ca5c4ee42a1f5607b2e83cfe1f493c07667d13e76d7a2aecb4c2d012cf4ff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

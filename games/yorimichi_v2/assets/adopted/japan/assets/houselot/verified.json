@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/assets/houselot",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HouseLot_1.uasset": "4bc518ddeef9f928db22538d89a9af76607d5cf6d26fbe7d1fa542c52bb3bac9",
+    "unreal/Content/Japan/Assets/HouseLot_2.uasset": "5539b8dd9d8491b01b42c70a85dc31d8668f8e7687aeac07ff50d40c350f7cbb",
+    "unreal/Content/Japan/Assets/HouseLot_3.uasset": "36510e3b24a18776203796524051b57e34f58c8b80dedf4106fc9468bcf31277",
+    "unreal/Content/Japan/Assets/HouseLot_4.uasset": "18bc6fedf750133d0d2b630ee0dc4f89cb01def9dfb195760be04cd79bdfe8e0",
+    "unreal/Content/Japan/Assets/HouseLot_5.uasset": "660d8fdf5c4d575e055059631ba817ce478accdceb77046f6c52a62ade95c658"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

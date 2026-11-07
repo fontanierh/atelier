@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-northparktrail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthParkTrail.uasset": "f673b35ff9a4be6ecba307262e22eadd562e1b904ad2d583d061b1a726fd520b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

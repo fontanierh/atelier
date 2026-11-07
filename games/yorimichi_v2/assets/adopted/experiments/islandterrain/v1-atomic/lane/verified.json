@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/islandterrain/v1-atomic/lane",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Lane.uasset": "fdc4211b46d92044cc743f89b880db754d535c0ce99bc0410e974caab23a0876"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

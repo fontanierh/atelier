@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/bush-hd-hedge",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Hedge.uasset": "48bf92f5ce02861c3880110bdcf6395b8f1c8ab113c7c07ec1d013a26555e0a3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

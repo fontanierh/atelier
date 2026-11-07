@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/japan/assets/tree-tuscan",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Tuscan_Cypress.uasset": "f900276096ed6e0e6e4abdd5b08aa4657c4e6d12b8cb0d9bac7e70624b680e16",
+    "unreal/Content/Japan/Assets/Tree_Tuscan_Oak.uasset": "bcdef96eb9d0b65fec2a87a5436935f90b4b2775ec288e3f15e9570a025b52bf",
+    "unreal/Content/Japan/Assets/Tree_Tuscan_Olive.uasset": "14a4b6279189c429d43b729f6015e3ea60ab453f7da052ffac021933ec2a2651",
+    "unreal/Content/Japan/Assets/Tree_Tuscan_Pine.uasset": "2d56567c3773cb0c3bcc2168710c8d956da9446cb8e2c2808e1645f487629153"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

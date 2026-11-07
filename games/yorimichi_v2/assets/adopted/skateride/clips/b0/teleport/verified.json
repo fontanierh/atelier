@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/teleport",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/TELEPORT.uasset": "0a2a7f53110aad202a4536a948710d0e206552934d8722bf77b48ffd988a0c82"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/bush-hd-amber",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Amber.uasset": "e8c0d3190a13e78ceddce7ae9fbc43c2a3fee47ac35f488e22bd558686c1f210"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

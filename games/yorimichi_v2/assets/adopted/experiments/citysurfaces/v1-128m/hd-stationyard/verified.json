@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-stationyard",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_StationYard.uasset": "b12dc67ad0e8dbf453d14a7864f505c0fcee2d4afb3e8ee8824819e03695eb68"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

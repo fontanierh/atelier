@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-fire-buckets",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_fire_buckets.uasset": "4f4598f3982c0341d47776fd5d0e07826b63f452c0f6fcdfc84f387c0dd78ab6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

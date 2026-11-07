@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-pagoda",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Pagoda.uasset": "a6aeacfb80c493de79e379b88f1651e52720334422776555705dd223eee07d72"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

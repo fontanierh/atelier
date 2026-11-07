@@ -1,0 +1,177 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: N in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/n"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/n"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360FLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360FLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360FLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360FLIP_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360HARDFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360HARDFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360HARDFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360HARDFLIP_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360INWARDHEELFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360INWARDHEELFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360INWARDHEELFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360INWARDHEELFLIP_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360POPSHUVIT_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360POPSHUVIT_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360POPSHUVIT_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_360POPSHUVIT_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FS360POPSHUVIT_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FS360POPSHUVIT_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FS360POPSHUVIT_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FS360POPSHUVIT_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FSPOPSHUVIT_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FSPOPSHUVIT_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FSPOPSHUVIT_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_FSPOPSHUVIT_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HARDFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HARDFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HARDFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HARDFLIP_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HEELFLIP_IN_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HEELFLIP_IN_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HEELFLIP_IN_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_HEELFLIP_IN_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_INWARDHEELFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_INWARDHEELFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_INWARDHEELFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_INWARDHEELFLIP_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_KICKFLIP_IN_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_KICKFLIP_IN_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_KICKFLIP_IN_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_KICKFLIP_IN_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_LASERFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_LASERFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_LASERFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_LASERFLIP_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_POPSHUVIT_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_POPSHUVIT_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_POPSHUVIT_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_POPSHUVIT_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALHEELFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALHEELFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALHEELFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALHEELFLIP_LOW_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALKICKFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALKICKFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALKICKFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/N_VARIALKICKFLIP_LOW_G"

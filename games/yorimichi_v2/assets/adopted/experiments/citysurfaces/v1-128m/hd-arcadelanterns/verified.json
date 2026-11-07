@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-arcadelanterns",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeLanterns.uasset": "314d5d08faaf4c1166b18e12cb1666a4744df02ce4b367ada93b0374aab8927d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

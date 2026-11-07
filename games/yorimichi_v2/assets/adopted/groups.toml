@@ -1,0 +1,33 @@
+# Logical ownership groups inside adopted folders (DECISIONS D08; tools/migrate/adopt.py).
+#
+# A folder listed here splits its own packages by what they are instead of by sorted batches. The first capture
+# group of `key`, matched against the package name, names the record: adopted/<folder>/<group slug>, or the name
+# `names` gives that group. A package the key does not match gets a record of its own. Package paths never change.
+# After editing a rule, run `adopt.py --repartition --check-only`, then `adopt.py --repartition --claim TASK` under a
+# claim on the records it rewrites.
+
+# The shared Japan props: one record per feature (bike, sailboat, treehouse, zeppelin, birds, house lots, tree
+# family, ...); each Hidamari street prop (HD_P_*) and every one-off mesh is its own record.
+[[group]]
+folder = "/Game/Japan/Assets"
+key = '^(BK|SB|TH|ZP|Bird|Bush|Grass|Rock|HouseLot|House|Mega|Pole|Tree_(?:Caldera|Canopy|Forest|Tuscan|Broad|Cedar|Ginkgo|Maple|Pine))(?:_|$|(?=[A-Z]))'
+names = { BK = "bike", SB = "sailboat", TH = "treehouse", ZP = "zeppelin", Mega = "mega-park-pieces" }
+
+# Skate clips: one record per move family, the name's first token (R, G, B, T, PRO, TKDWN, ...); a family over 200
+# clips splits into numbered parts.
+[[group]]
+folder = "/Game/SkateRide/Clips/B0"
+key = '^([0-9A-Z]+)_'
+
+[[group]]
+folder = "/Game/SkateRide/Clips/B1"
+key = '^([0-9A-Z]+)_'
+
+# Atomic terrain and city surfaces: one record per area (the name before `_cell`).
+[[group]]
+folder = "/Game/Experiments/CitySurfaces/v1_128m"
+key = '^(.*?)_cell'
+
+[[group]]
+folder = "/Game/Experiments/IslandTerrain/v1_atomic"
+key = '^(.*?)_cell'

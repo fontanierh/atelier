@@ -1,0 +1,33 @@
+{
+  "asset": "adopted/skateride/clips/b0/boneless",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_A.uasset": "2468180665825ac874d8204d5c2ec639e79742bb06f5709c97e22fc607654df7",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_F.uasset": "66fa53c4ddda7267644853d19f76eb9a10d9e88cb9f0e67bf2d3817456295cea",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_G.uasset": "019cb4a815780af1b4e0b8245718d7a91e15f5859b60b3811e958ba99658a248",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_L.uasset": "891e0b32c5e76f2ef394a68ba7ea3f1b674ccf8c93da47bea34688104c5087f2",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_SLOW_A.uasset": "0e6849b91bda2a7ec43fc06abeaa46a6ff8d545aa078c03758416794d2c5e2f5",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_SLOW_F.uasset": "e43ce8b13d8c7582f2de27efe49a612ba173df1d2ff3d0587791f182ade522d7",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_SLOW_G.uasset": "9cacb03e2f7b4721eb5e16713c454515c5b3903fcf6005fbad9ce12f1349274d",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_SLOW_L.uasset": "b747aacf2828ca3c0ae6c4469b95737c7d27b2625470a2c1e6d18b1ab5fd96c8",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_A.uasset": "110a9247fab7c912714f7003af5dca7186b9028ed37a6ac50e120eb03d9e4901",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_F.uasset": "dd6929c7b5ad454b36805806b961b4d3f5414f4d887abd2c7426b0fd5d79228a",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_G.uasset": "b585763c2b59ee832c8416248762e724c9b484ad25be9c5218a24399f533c878",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_L.uasset": "2287f9aa50a52a922082f0f82f934922b898e665e68e4e5dd865886ec72cb067",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_FAST_A.uasset": "a73fbef6ede1689ef634681a5b4da3587dfb8c43496a1b37041075fd92f6abb3",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_FAST_F.uasset": "de124b75e9799c2cb3dda2a7df190b3fea60febe4e73a7b1c6ed253a86567059",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_FAST_G.uasset": "920011694464c231789705a403238a9e6f154dd5a70383e953cb575a7095df72",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_FAST_L.uasset": "b45bee4272623d254e9a8d82904fcaf0e1ae8461ad3afcac3348818f3ac3a514",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_A.uasset": "e11b0dfd41e77df684e45186acf23f74f71fcb9e64e1dcf731a67af49c3744f7",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_F.uasset": "f89ee36cc20cdc6f9726c259d4cbac0351516ed0c05732390da4f322e290c38d",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_G.uasset": "2387fa2afe454e4c0d02047191156a8d036665add21c1d6437d00fcc31eaf256",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_L.uasset": "74afec22e2aea57fc5a19f359a3b605e2654e585440ef1736f591d955f3b9a6d",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_A.uasset": "e16adb706f3a6bdf1a14d29c27d2646335dd65292e426dfcf7c01f2713291f10",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_F.uasset": "9760571878e28b31ef1a9d30f2ce9df397e7a42a5ecc108dadcaa23517dc93e7",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_G.uasset": "cdc2d8deaf48627fbae5633c586ea2a576142f82cb1fbd2b550d3f8e4117bb25",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_L.uasset": "5d95327f81b5733f5e273dd6df18940d8faf4d9ce53b65bc8ebf5811f1a1f8d2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

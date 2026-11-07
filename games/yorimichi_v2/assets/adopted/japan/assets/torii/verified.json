@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/torii",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Torii.uasset": "0e4a22b718eefc531537e2118ab9f4665f93ddf9ce87ce3cb0851bb0aa5fc8b5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

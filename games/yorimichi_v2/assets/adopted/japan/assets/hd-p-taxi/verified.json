@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-taxi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_taxi.uasset": "9780b924ce60136270daaf113ce97a7844059c93735eda6f670420054a2adaad"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/japan/assets/bush",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Bush_Flower_A.uasset": "f472c48a213a1e3be754971b06888d3c86ccea67cc492fcee8fc77fdd7ed4f6d",
+    "unreal/Content/Japan/Assets/Bush_Flower_B.uasset": "b836cb18e6f00a09943a4a1b5aa4616c27f6f12d5e1d613ed3a11891fc6c29ae",
+    "unreal/Content/Japan/Assets/Bush_Green_A.uasset": "04d599828c18b41950a9ba7aba9544bba30b4cd25890688fa78aaf642a6a1bab",
+    "unreal/Content/Japan/Assets/Bush_Green_B.uasset": "048828f1b4f2ec223eed3c865331d9c134c6627e16a381ea9714909a4f870f54",
+    "unreal/Content/Japan/Assets/Bush_Ochre_A.uasset": "00e969aae11e7c57d44ed2cfb554b0407eab7b9bb32c3c2086e644532e3ed830",
+    "unreal/Content/Japan/Assets/Bush_Ochre_B.uasset": "6e5f1d481091ddd1ca2e89aab09e41e1ca78feb6a53c660ec0e4dbc9394d16b8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

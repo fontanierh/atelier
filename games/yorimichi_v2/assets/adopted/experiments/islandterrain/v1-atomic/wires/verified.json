@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/islandterrain/v1-atomic/wires",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Wires.uasset": "5743e50e8fc332810d92d7a55a8e591fce1dfb7298a7462510f72c4353733dce"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

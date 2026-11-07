@@ -168,6 +168,42 @@ def test_partition_refuses_folders_whose_names_collide():
         adopt.partition(['/Game/Japan/My Props/A', '/Game/Japan/My_Props/B'], 'Japan')
 
 
+def test_a_group_rule_splits_a_mixed_folder_by_what_its_packages_are(tmp_path):
+    """A folder of unrelated props becomes one record per feature; unmatched packages get their own; over cap, parts."""
+    rules = tmp_path / 'groups.toml'
+    rules.write_text('[[group]]\nfolder = "/Game/Japan/Assets"\nkey = \'^(BK|Tree_[A-Za-z]+)_\'\n'
+                     'names = { BK = "bike" }\n')
+    groups = adopt.load_groups(rules)
+    mixed = (['/Game/Japan/Assets/BK_Frame', '/Game/Japan/Assets/BK_Pedal', '/Game/Japan/Assets/Tree_Maple_A',
+              '/Game/Japan/Assets/Tree_Maple_B', '/Game/Japan/Assets/HD_P_postbox', '/Game/Japan/Assets/Sub/SM_X']
+             + [f'/Game/Japan/Assets/Tree_Pine_{i:02d}' for i in range(5)])
+    units = adopt.partition(mixed, 'Japan/Assets', cap=3, groups=groups)
+    assert {u: sorted(p.rsplit('/', 1)[1] for p in v[2]) for u, v in units.items()} == {
+        'adopted/japan/assets/bike': ['BK_Frame', 'BK_Pedal'],
+        'adopted/japan/assets/tree-maple': ['Tree_Maple_A', 'Tree_Maple_B'],
+        'adopted/japan/assets/tree-pine_01': ['Tree_Pine_00', 'Tree_Pine_01', 'Tree_Pine_02'],
+        'adopted/japan/assets/tree-pine_02': ['Tree_Pine_03', 'Tree_Pine_04'],
+        'adopted/japan/assets/hd-p-postbox': ['HD_P_postbox'],
+        'adopted/japan/assets/sub': ['SM_X']}
+    assert units['adopted/japan/assets/bike'][0] == 'shared/japan/assets/bike'
+    for a in units:
+        assert not any(b != a and b.startswith(a + '/') for b in units), a
+    assert adopt.partition(list(reversed(mixed)), 'Japan/Assets', cap=3, groups=groups) == units
+    # Without the rule the same folder is one record, as before.
+    assert sorted(adopt.partition(mixed, 'Japan/Assets', cap=200)) == ['adopted/japan/assets']
+
+
+def test_group_rules_are_checked_and_colliding_group_names_refused(tmp_path):
+    rules = tmp_path / 'groups.toml'
+    rules.write_text('[[group]]\nfolder = "/Game/A"\nkey = "^BK_"\n')
+    with pytest.raises(adopt.AdoptError, match='capture group'):
+        adopt.load_groups(rules)
+    rules.write_text('[[group]]\nfolder = "/Game/A"\nkey = "^(BK)_"\nnames = { BK = "sub" }\n')
+    with pytest.raises(adopt.AdoptError, match='share the record name sub'):
+        adopt.partition(['/Game/A/BK_1', '/Game/A/Sub/X'], 'A', groups=adopt.load_groups(rules))
+    assert adopt.load_groups(tmp_path / 'missing.toml') == {}
+
+
 def coarse_tree(game, packages, asset_id='adopted/japan', verified=True):
     """An adoption from before ownership units: one record per top-level folder, validated."""
     files = {}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/assets/pole",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Pole.uasset": "918aff1578ae0a15de86565444560e49cd2acfae0b633445a894febd73013b38",
+    "unreal/Content/Japan/Assets/Pole_Lamp.uasset": "377ba944ba3a17a925d5a8880af4debea4a4e9e503f39c1e1d0bff5cfca54045"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

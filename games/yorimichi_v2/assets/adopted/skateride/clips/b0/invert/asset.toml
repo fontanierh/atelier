@@ -1,0 +1,222 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: INVERT in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/invert"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/invert"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_0_ANTIC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_0_ANTIC_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_0_INTO_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_1FTBACK_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_1FTBACK_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_1FTBACK_INTO_FC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_1FTBACK_INTO_LAT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_1FTBACK_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_CROSSBONE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_CROSSBONE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_CROSSBONE_INTO_L"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_CROSSBONE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_JUDO_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_JUDO_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_JUDO_INTO_FC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_JUDO_INTO_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_JUDO_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_METHOD_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_METHOD_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_METHOD_INTO_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_METHOD_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOFOOT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOFOOT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOFOOT_INTO_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOFOOT_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOSEBONE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOSEBONE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOSEBONE_INTO_LA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_NOSEBONE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_TUCK_KNEE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_TUCK_KNEE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_TUCK_KNEE_INTO_L"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_BS_TUCK_KNEE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_0_ANTIC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_0_ANTIC_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_0_INTO_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTBACK_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTBACK_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTBACK_INTO_FC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTBACK_INTO_LAT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTBACK_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTFRONT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTFRONT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTFRONT_INTO_FC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTFRONT_INTO_LA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_1FTFRONT_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_NOFOOT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_NOFOOT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_NOFOOT_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_NOSEBONE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_NOSEBONE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_NOSEBONE_INTO_LA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_NOSEBONE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_STIFFY_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_STIFFY_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_STIFFY_INTO_LATE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_STIFFY_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TAILBONE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TAILBONE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TAILBONE_INTO_LA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TAILBONE_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TUCK_KNEE_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TUCK_KNEE_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TUCK_KNEE_INTO_L"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/INVERT_HANDPLANT_FS_TUCK_KNEE_OUT"

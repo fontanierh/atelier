@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/ollie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_HIGH_A.uasset": "c7d6b68ba07a76aa04b082f95f5b2fba14bf73d084617fdd2478a8f96d98b64e",
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_HIGH_G.uasset": "9ba62a328da7542a0ffa30fd2577eeed3fedf23c12fe3a2779583707e5fe5a8a",
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_HIGH_WALL_BS_A.uasset": "90c84476748d7140ab04c1d48cff7ca5e096219075fdc5f21bfda25134cd91dd",
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_HIGH_WALL_BS_G.uasset": "f5fb86bce5c84c29b8799c73416c843196c96a53f503eac334607acc9935c6a7",
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_HIGH_WALL_FS_A.uasset": "5afba207ff6705842d62e20fe28838c37d29d1de7822df6f66101969a8a8e736",
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_HIGH_WALL_FS_G.uasset": "184d08ed5154f1e9619cc888a32bb94c03c2e7368c499003fb988aaf4f128fd2",
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_LOW_A.uasset": "7ebe0d0b32e8333ced9157faa5076a734519285ef64ecded322ca1ddeff43be9",
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_LOW_G.uasset": "5524af103c6083276393444fad09cbbb2c7f382bebffafc401b461ed9a671f24"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

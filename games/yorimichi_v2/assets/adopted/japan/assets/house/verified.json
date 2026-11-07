@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/japan/assets/house",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/House_A.uasset": "8615994e991af34cd80d20fcf9600517d9032564c682150ed30146dbbce506f2",
+    "unreal/Content/Japan/Assets/House_B.uasset": "0d8619639253fa54d87cad40c2109fefbb48d9b9b38a9e2d950e66909027d5de",
+    "unreal/Content/Japan/Assets/House_C.uasset": "d4e01c9a138992256e769e361d11e1b32c41d29a30596da54c60f26a1c08deff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

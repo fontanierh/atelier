@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree_Caldera in /Game/Japan/Assets
+schema = 1
+id = "adopted/japan/assets/tree-caldera"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/assets/tree-caldera"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Caldera_BlackPine_A"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Caldera_BlackPine_B"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Caldera_Cedar_A"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Caldera_Cedar_B"

@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_ABOVEHEAD.uasset": "bfccc826f03a6b648b678e1163b5502b67602ba6bc2c95b49069210554d7c11b",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_BACK.uasset": "a9ad7269e19d8fa652e12952dfcf248c9525af2d4dc65356539312f36162c8bd",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_FACEDOWN.uasset": "6e874d266d13790d6923ebfe8356525540d363cde8d633bac3ed6ee322e212d4",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_LEFTSIDE.uasset": "1a8d2ddc5b629a7720f9c0cb7ab674eaad161f4edc66b5504f9288a63ba40057",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_LEGS.uasset": "6c754cdfb2129f3e253616e78e01908604f4212badd0055fe1e9345f41997821",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_RIGHTSIDE.uasset": "e7dec88cfbfcdbf9b4905096fada4a3858f6934e780bf00496445299eb657568",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_ABOVEHEAD.uasset": "552038318a6ea5d6decc4fd6f71e93d91d641dbff4558f92cdcdf2e82bcaffe7",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_BACK.uasset": "2baa17b704597d8104121bb59a61d355910c3ef42398503602e87fadcf0d4254",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_FACEDOWN.uasset": "e245364c7e28cb87cb6636cc3e73e905cce1ed138b8bd408c53a74fcc6ddb689",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_LEFTSIDE.uasset": "081550bc60f8f04671003fd01d9067d64b1aa6e117cc469438775604ce6ea75d",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_LEGS.uasset": "0627bb8bd64bf93452d82170a072ae72aa38949d964b7e039edd303f2f37eba6",
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_RIGHTSIDE.uasset": "7c04109459ea25ee41ebe2824d0683fc56408d30222e0e8be94678fb00650fb7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

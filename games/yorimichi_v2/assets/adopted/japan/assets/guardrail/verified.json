@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/guardrail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Guardrail.uasset": "dbc1db0193f2668d8e0f25aa2c3a12303d4d0dbb48770258f57df1a0f7eaafb5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

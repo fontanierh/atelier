@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: 360HARDFLIP in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/360hardflip"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/360hardflip"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/360HARDFLIP_HIGH_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/360HARDFLIP_HIGH_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/360HARDFLIP_LOW_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/360HARDFLIP_LOW_G"

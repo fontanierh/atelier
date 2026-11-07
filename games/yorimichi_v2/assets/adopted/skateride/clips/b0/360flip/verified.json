@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/360flip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_D_HIGH_A.uasset": "27a0efc0d311a0066b7d27d546301776333f5de0d1c5b035b44b65e4fbd14504",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_D_HIGH_G.uasset": "4d3337f2ea4c220580532af3acc571969decd7d834674e935c968d3f17fdd4a1",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_D_LOW_A.uasset": "88fb31528f42362545758d6825b2d89065e713a94a60896ed1f4a08b44f1ab0b",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_D_LOW_G.uasset": "ff9a322297680dde94543dfdcb6e6dff8087785a66ccb12c4a978c31bb2a3681",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_HIGH_A.uasset": "16a13ac360eb112328ff88a0eb46ac46207e0180ac1b3b4a4d92dfd8bda310ed",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_HIGH_G.uasset": "d30a429fb49ee646dee6112c11c492a1a5b46b6026f67b8b097c5b0ef9820945",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_LOW_A.uasset": "82bc8c2f4370bfdb78f8ba4babcd2d8267f7827e978a1338cbbf614180dff98a",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_LOW_G.uasset": "6298809ec060e70d1d57e10851b7402c561f95464554a79cae7608735345f97f",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_HSU_HIGH_A.uasset": "bfc50b1d35cdbbe7fb568a6d70fa973be47bd930a24a7c5f157be82d6c72e47e",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_HSU_HIGH_G.uasset": "2b766418a47d7e713cd7be8405fde24efd10b26275641a23fc13c8928e80d172",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_HSU_LOW_A.uasset": "3902aa8d8e6dbe9499083d299d4106f738c97086083f82d2827d3f6fcffab43f",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_HSU_LOW_G.uasset": "907bd3e1672390d47c800baf3bb2f42222776c935e73c9fc08e5dc249647f8e6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,141 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: W in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/w"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/w"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN000TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN045TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN045TWIST090_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN045TWIST180_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN045TWIST270_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN045TWIST360_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN090TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN090TWIST090_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN090TWIST180_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN090TWIST270_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN090TWIST360_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN135TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN135TWIST090_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN135TWIST180_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN135TWIST270_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN135TWIST360_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_BRACE_LEAN180TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN000TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN045TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN045TWIST090_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN045TWIST180_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN045TWIST270_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN045TWIST360_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN090TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN090TWIST090_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN090TWIST180_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN090TWIST270_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN090TWIST360_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN135TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN135TWIST090_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN135TWIST180_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN135TWIST270_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN135TWIST360_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_FLAIL_LEAN180TWIST000_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONBACKFACE_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONBACKLGUT_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONBACKLSPRAWL_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONBACKRFACE_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONBACKRSPRAWL_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONBACKSPRAWL_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONFRONT_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONLEFT_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONRIGHTHEAD_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/W_RECOVERY_ONRIGHT_N_0_N"

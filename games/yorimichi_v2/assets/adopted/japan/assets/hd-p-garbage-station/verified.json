@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-garbage-station",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_garbage_station.uasset": "9219555e4f2c68c1d352b9a33ca1cd0497ad2caee2aba88c408e9018380bc232"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-ac-unit",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_ac_unit.uasset": "65b28ccefb12a5fb435bdc35047ea5b199c6e51ea997efd6606ceaa17c31b8c4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

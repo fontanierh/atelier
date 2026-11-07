@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/japan/assets/rock",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Rock_A.uasset": "39b15d2bf92ee79df02b8053542aa13dc688d0e391720c629f02d21b15c30188",
+    "unreal/Content/Japan/Assets/Rock_B.uasset": "3658a13eafdd972f9c6c1562d46d0ff1b1cb2f2dc8c1f5799b135d851c991bbd",
+    "unreal/Content/Japan/Assets/Rock_C.uasset": "f11ed7259d267bba23b313dace8c024d73080572c511264a50b1a035abfd3444"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

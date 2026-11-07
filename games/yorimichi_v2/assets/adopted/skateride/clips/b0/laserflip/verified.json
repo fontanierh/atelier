@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/laserflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/LASERFLIP_HIGH_A.uasset": "b2233d7a78c72aad39166e80bd20180aa93bc17038b369f2852b632683b45f07",
+    "unreal/Content/SkateRide/Clips/B0/LASERFLIP_HIGH_G.uasset": "9bf3df1a682970bc431dee98d8304ca4f278f576f3b7d31f010b37224f9746e8",
+    "unreal/Content/SkateRide/Clips/B0/LASERFLIP_LOW_A.uasset": "a2fd50628e2b12ba488700c0a4be7884963b4dcd3d7ca68e325b9d73c4ed4e68",
+    "unreal/Content/SkateRide/Clips/B0/LASERFLIP_LOW_G.uasset": "5088e85e731e07e196054d3c2da05a2a8d9bf8274f9e70bbefe7e04e0eff2df7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

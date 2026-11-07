@@ -31,6 +31,7 @@ import json
 import re
 import shutil
 import sys
+import tomllib
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -49,6 +50,7 @@ SLUG = re.compile(r'[^a-z0-9]+')
 DEPTH = 2       # /Game/<top>/<sub>: the default ownership unit
 CAP = 200       # most packages one adopted record lists
 LOOSE = 'loose_files'   # a split folder's own packages; no slug has '_', so it never collides with a subfolder
+GROUPS = GAME / 'assets' / 'adopted' / 'groups.toml'   # logical ownership groups inside adopted folders (D08)
 PROVENANCE = 'donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)'
 
 
@@ -96,7 +98,30 @@ def slug(segment: str) -> str:
     return name
 
 
-def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP) -> dict[str, tuple[str, str, list[str]]]:
+def load_groups(path: Path = GROUPS) -> dict[str, tuple[re.Pattern, dict[str, str]]]:
+    """Folder -> (the regex whose first group names a package's logical group, readable names for some groups), from
+    `assets/adopted/groups.toml`."""
+    if not path.is_file():
+        return {}
+    rules = {}
+    for rule in tomllib.loads(path.read_text()).get('group', []):
+        folder, key = rule.get('folder'), rule.get('key')
+        if not isinstance(folder, str) or not folder.startswith('/Game/') or not isinstance(key, str):
+            raise AdoptError(f'{path.name}: each [[group]] needs folder = "/Game/..." and key = "<regex>"')
+        pattern = re.compile(key)
+        if pattern.groups < 1:
+            raise AdoptError(f'{path.name}: the key of {folder} needs a capture group (the group name)')
+        names = rule.get('names', {})
+        if not isinstance(names, dict) or not all(isinstance(v, str) for v in names.values()):
+            raise AdoptError(f'{path.name}: the names of {folder} must map groups to record names')
+        if folder.rstrip('/') in rules:
+            raise AdoptError(f'{path.name}: {folder} has two rules')
+        rules[folder.rstrip('/')] = (pattern, names)
+    return rules
+
+
+def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP,
+              groups: dict[str, tuple[re.Pattern, dict[str, str]]] | None = None) -> dict[str, tuple[str, str, list[str]]]:
     """Ownership units of packages under the Content folder `root`: record ID -> (owner scope, what it holds, packages).
 
     A folder is one unit when it is at least `depth` segments below /Game or has no subfolders, and holds at most
@@ -104,6 +129,10 @@ def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP) -> dic
     (sorted chunks `loose_files_01`, ... of `cap` when over it). IDs (`adopted/<slugs>`) and owners (`shared/<slugs>`)
     follow the slugged path, so units are prefix-free and a claim on one never covers another. The same packages,
     depth and cap always give the same units; two folders whose names slug alike are refused, never merged.
+
+    A folder with a `groups` rule always splits its own packages by logical group instead: the rule's first capture
+    group on the package name names the unit (`adopted/<folder slugs>/<group slug>`, or the rule's readable name for
+    that group); a package it does not match is a unit of its own, named after the package. A group over `cap` splits into sorted chunks `<group>_01`, ...
     """
     if cap < 1 or depth < 1:
         raise AdoptError('partition needs depth >= 1 and cap >= 1')
@@ -121,13 +150,31 @@ def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP) -> dic
                 here.append(package)
             else:
                 below.setdefault(rest[0], []).append(package)
-        if (len(parts) >= depth or not below) and len(members) <= cap:
+        rule = (groups or {}).get(folder)
+        if rule is None and (len(parts) >= depth or not below) and len(members) <= cap:
             return add(names, folder, members)
-        chunks = [here[i:i + cap] for i in range(0, len(here), cap)]
-        for i, chunk in enumerate(chunks, 1):
-            name, part = (LOOSE, '') if len(chunks) == 1 else (f'{LOOSE}_{i:02d}', f' (part {i} of {len(chunks)})')
-            add(names + (name,), f'packages directly in {folder}{part}', chunk)
         seen = {}
+        if rule is None:
+            chunks = [here[i:i + cap] for i in range(0, len(here), cap)]
+            for i, chunk in enumerate(chunks, 1):
+                name, part = (LOOSE, '') if len(chunks) == 1 else (f'{LOOSE}_{i:02d}', f' (part {i} of {len(chunks)})')
+                add(names + (name,), f'packages directly in {folder}{part}', chunk)
+        else:
+            pattern, readable = rule
+            by_group: dict[str, list[str]] = {}
+            for package in here:
+                leaf = package.rsplit('/', 1)[1]
+                match = pattern.match(leaf)
+                by_group.setdefault(match.group(1) if match and match.group(1) else leaf, []).append(package)
+            for group in sorted(by_group):
+                name = slug(readable.get(group, group))
+                if name in seen:
+                    raise AdoptError(f'{folder}: groups {group} and {seen[name]} would share the record name {name}')
+                seen[name] = group
+                chunks = [by_group[group][i:i + cap] for i in range(0, len(by_group[group]), cap)]
+                for i, chunk in enumerate(chunks, 1):
+                    unit, part = (name, '') if len(chunks) == 1 else (f'{name}_{i:02d}', f' (part {i} of {len(chunks)})')
+                    add(names + (unit,), f'{group} in {folder}{part}', chunk)
         for segment in sorted(below):
             name = slug(segment)
             if name in seen:
@@ -174,11 +221,12 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
     restricted = records.load_restricted(game)
     pinned = records.load_lock(restricted)
     found, plan, problems = {}, {}, []
+    rules = load_groups(game / GROUPS.relative_to(GAME))
     for folder in folders:
         files = donor_files(content, folder, excludes)
         packages = sorted({package_name(content, p) for p in files if p.suffix in records.PACKAGE_EXTENSIONS})
         found[folder] = (files, packages)
-        for asset_id, unit in partition(packages, folder, depth=depth, cap=cap).items():
+        for asset_id, unit in partition(packages, folder, depth=depth, cap=cap, groups=rules).items():
             if asset_id in plan:
                 raise AdoptError(f'{asset_id} would come from two --folder arguments; name each folder once')
             plan[asset_id] = (folder, *unit)
@@ -270,8 +318,9 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
     for package in source:
         tops.setdefault(package.split('/')[2], []).append(package)
     units = {}
+    rules = load_groups(game / GROUPS.relative_to(GAME))
     for top in sorted(tops):
-        units.update(partition(tops[top], top, depth=depth, cap=cap))
+        units.update(partition(tops[top], top, depth=depth, cap=cap, groups=rules))
     members = [p for _, _, packages in units.values() for p in packages]
     if len(members) != len(set(members)) or set(members) != set(source):
         raise AdoptError(f'repartition would lose {len(set(source) - set(members))} and double-own '

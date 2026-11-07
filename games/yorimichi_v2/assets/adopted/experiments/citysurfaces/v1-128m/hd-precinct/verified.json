@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-precinct",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Precinct.uasset": "bc5b2eb8beaa763cd685598bc131996b6eeef45f438726e57ceeb158d7e0f9cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
