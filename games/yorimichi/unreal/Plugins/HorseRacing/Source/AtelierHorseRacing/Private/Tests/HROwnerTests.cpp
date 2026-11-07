@@ -1,7 +1,7 @@
 #include "HRTestUtil.h"
 #include "Misc/AutomationTest.h"
 
-#if WITH_DEV_AUTOMATION_TESTS
+#if 0 && WITH_DEV_AUTOMATION_TESTS // Retired V1 tests (owner 2026-11-07).
 
 // A player as an owner: buying a stable, the market, entries, riders and wages, riding their own horses (the player's
 // rider skill), training sessions and breeding.

@@ -1,5 +1,9 @@
 # Yorimichi
 
+> **Retired experiment (owner 2026-11-07).** Tests and benchmarks are disabled. Do not run or restore
+> the historical test commands below. Source and assets remain available as reference; new tests
+> belong with the active implementation. This retirement is not a passing test result.
+
 Yorimichi (寄り道, "a detour on the way home") is a painterly Japanese island in Unreal Engine 5.8. You walk, run and
 roll through a coastal countryside, a forest hamlet, the city of Hidamari, a fishing cove and an island temple; sail
 a dinghy, ride a horse, the bike and the zeppelin, skate the pier, Mega Park and Crater Park with skate.-style Flick-It controls, and fight the fox

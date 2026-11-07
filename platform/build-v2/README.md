@@ -1,5 +1,9 @@
 # Build v2 interfaces (A0)
 
+> **Retired experiment (owner 2026-11-07).** Tests and benchmarks are disabled. Do not run or restore
+> the historical test commands below. Source and assets remain available as reference; new tests
+> belong with the active implementation. This retirement is not a passing test result.
+
 This unused Rust library is the shared interface for the build-v2 tracks. Production v1 is unchanged.
 Declaration schema **2** (fixed declarations v1 remain readable), result schema **3** and protocol
 version **1** are the wire contracts; incompatible changes

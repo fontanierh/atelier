@@ -21,6 +21,27 @@ import pytest
 
 _SESSION = pytest.MonkeyPatch()
 _SESSION_HOME = None
+_REPO = Path(__file__).resolve().parent
+
+# Retired experiments (owner, 2026-11-07). Keep their source as reference, but never
+# import their tests during collection. build-v2 is an unused build-system experiment,
+# unrelated to the active game in games/yorimichi_v2.
+_RETIRED_TEST_TREES = ('games/yorimichi', 'games/hakuba', 'platform/build-v2')
+_RETIRED_TEST_FILES = ('platform/studio/tests/test_build_v2_*.py',)
+
+
+def _retired_test_path(path):
+    try:
+        relative = path.resolve().relative_to(_REPO)
+    except ValueError:
+        return False
+    return (any(relative.is_relative_to(tree) for tree in _RETIRED_TEST_TREES)
+            or any(relative.match(pattern) for pattern in _RETIRED_TEST_FILES))
+
+
+def pytest_ignore_collect(collection_path, config):
+    if _retired_test_path(collection_path):
+        return True
 
 
 def _caller_settings():
@@ -29,6 +50,13 @@ def _caller_settings():
 
 def pytest_configure(config):
     """Before collection imports any Atelier module, replace HOME and drop inherited Atelier settings."""
+    # Pytest's ignores do not cover explicitly requested paths. Refuse those too,
+    # before importing a retired test module or running any fixtures.
+    for arg in config.args:
+        path = config.invocation_params.dir / arg.split('::', 1)[0]
+        if _retired_test_path(path):
+            raise pytest.UsageError(f'Retired experiment tests are disabled: {arg}. '
+                                    'Run games/yorimichi_v2/tests or the active shared tooling tests.')
     global _SESSION_HOME
     _SESSION_HOME = Path(tempfile.mkdtemp(prefix='atelier-tests-home-')).resolve()
     _SESSION.setenv('HOME', str(_SESSION_HOME))
@@ -42,7 +70,6 @@ def pytest_unconfigure(config):
         shutil.rmtree(_SESSION_HOME, ignore_errors=True)
 
 
-_REPO = Path(__file__).resolve().parent
 _REPOSITORY_MODULES = {}
 
 

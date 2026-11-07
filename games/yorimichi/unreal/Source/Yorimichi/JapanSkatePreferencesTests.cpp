@@ -1,6 +1,6 @@
 #include "JapanAudioPreferences.h"
 #include "SkateComponent.h"
-#if WITH_DEV_AUTOMATION_TESTS
+#if 0 && WITH_DEV_AUTOMATION_TESTS // Retired V1 tests (owner 2026-11-07).
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Misc/AutomationTest.h"

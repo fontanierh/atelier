@@ -1,5 +1,8 @@
 # Ordered world skating metadata, shared by export and runtime.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_world_skate_schema"
 version.workspace = true
 edition.workspace = true
@@ -7,3 +10,9 @@ publish.workspace = true
 
 [dependencies]
 serde.workspace = true
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

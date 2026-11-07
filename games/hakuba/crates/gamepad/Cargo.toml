@@ -1,5 +1,8 @@
 # A DualSense read from its HID reports on macOS, and the playtests' scripted pad. See README.md.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_gamepad"
 version.workspace = true
 edition.workspace = true
@@ -12,3 +15,9 @@ hakuba_world.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 hidapi = { version = "2", default-features = false, features = ["macos-shared-device"] }
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

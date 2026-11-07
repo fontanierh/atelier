@@ -1,5 +1,8 @@
 # Bounded water metadata shared by the exporter and world runtime.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_water_schema"
 version.workspace = true
 edition.workspace = true
@@ -7,3 +10,9 @@ publish.workspace = true
 
 [dependencies]
 serde_json.workspace = true
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

@@ -3,7 +3,7 @@
 #include "Misc/AutomationTest.h"
 #include <limits>
 
-#if WITH_DEV_AUTOMATION_TESTS
+#if 0 && WITH_DEV_AUTOMATION_TESTS // Retired V1 tests (owner 2026-11-07).
 
 // Save admission (HRSave::FromJson) and the economy's invariants: settlement, refunds, balances, saturation and bounded
 // catch-up.

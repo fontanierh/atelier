@@ -1,5 +1,8 @@
 # Skating simulation and its Bevy host integration.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_skate"
 version.workspace = true
 edition.workspace = true
@@ -17,3 +20,9 @@ hakuba_settings.workspace = true
 hakuba_glider.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

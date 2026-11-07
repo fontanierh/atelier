@@ -1,5 +1,8 @@
 # The character viewer. See README.md.
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_viewer"
 version.workspace = true
 edition.workspace = true
@@ -10,3 +13,9 @@ bevy.workspace = true
 hakuba_characters.workspace = true
 hakuba_glider.workspace = true
 hakuba_screens.workspace = true
+
+# Retired experiment: keep ordinary cargo test from compiling or running this suite.
+[lib]
+test = false
+doctest = false
+bench = false

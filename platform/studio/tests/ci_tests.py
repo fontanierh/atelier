@@ -1,4 +1,4 @@
-"""Run one CI group after normal pytest collection; plain pytest still runs everything."""
+"""Run one CI group after normal pytest collection; retired experiments are excluded by conftest.py."""
 import argparse
 import json
 import os

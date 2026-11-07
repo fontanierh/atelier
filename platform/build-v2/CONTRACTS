@@ -44,16 +44,9 @@ tests/vectors/protocol_v1.json checked by tests/worker_session.rs and
 platform/studio/tests/test_build_v2_protocol.py.
 
 @cc [owner:fontanierh,label:correctness] build-v2-t0-registry
-CI MUST compile the current crate successfully before running host tier tests. Its matrix MUST cover
-all declared supported host platforms. Every active scenario MUST declare one tier: t0 and t1a run
-as the two required steps of that job within ten and thirty seconds respectively, excluding
-compilation; t1b (Blender) and t2 (Unreal) are native exclusions and MUST NOT run there. Every
-applicable test MUST be assigned to exactly one host tier and have complete, unskipped execution
-evidence on each applicable platform; the filters derived from that assignment MUST select exactly
-each tier's own tests, including tests that share one binary with another tier. Other-platform
-exclusions, native tiers and pending future scenarios MUST be reported separately and MUST NOT count
-as coverage.
-See tools/check_registry.py and platform/studio/tests/test_build_v2_registry.py.
+This unused experiment's tests MUST remain disabled locally and in CI (owner 2026-11-07).
+The registry and its old tier requirements are historical reference, not active acceptance gates.
+Retired tests MUST NOT be reported as passing or re-enabled to validate the active game port.
 
 @cc [owner:fontanierh,label:correctness] build-v2-object-digest-format
 Object format version 1 MUST name payload bytes with exactly 64 lowercase SHA-256 hex characters

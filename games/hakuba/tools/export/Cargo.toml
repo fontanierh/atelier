@@ -1,11 +1,16 @@
 # The `export` command (src/main.rs), which writes each asset folder's .glb (assets/README.md).
 [package]
+# Retired experiment: no automatically discovered test or benchmark targets.
+autotests = false
+autobenches = false
 name = "hakuba_export"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
 
 [[bin]]
+test = false
+bench = false
 name = "export"
 path = "src/main.rs"
 
