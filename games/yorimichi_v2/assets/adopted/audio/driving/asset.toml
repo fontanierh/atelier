@@ -1,0 +1,72 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Audio/Driving
+schema = 1
+id = "adopted/audio/driving"
+kind = "adopted"
+authority = "editor"
+owner = "shared/audio/driving"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Audio/Driving/bump_01"
+
+[[outputs]]
+package = "/Game/Audio/Driving/bump_02"
+
+[[outputs]]
+package = "/Game/Audio/Driving/bump_03"
+
+[[outputs]]
+package = "/Game/Audio/Driving/engine_01"
+
+[[outputs]]
+package = "/Game/Audio/Driving/engine_02"
+
+[[outputs]]
+package = "/Game/Audio/Driving/engine_03"
+
+[[outputs]]
+package = "/Game/Audio/Driving/engine_04"
+
+[[outputs]]
+package = "/Game/Audio/Driving/engine_05"
+
+[[outputs]]
+package = "/Game/Audio/Driving/impact_01"
+
+[[outputs]]
+package = "/Game/Audio/Driving/impact_02"
+
+[[outputs]]
+package = "/Game/Audio/Driving/impact_03"
+
+[[outputs]]
+package = "/Game/Audio/Driving/impact_04"
+
+[[outputs]]
+package = "/Game/Audio/Driving/skid_01"
+
+[[outputs]]
+package = "/Game/Audio/Driving/skid_02"
+
+[[outputs]]
+package = "/Game/Audio/Driving/skid_03"
+
+[[outputs]]
+package = "/Game/Audio/Driving/tyre_01"
+
+[[outputs]]
+package = "/Game/Audio/Driving/tyre_02"
+
+[[outputs]]
+package = "/Game/Audio/Driving/tyre_03"
+
+[[outputs]]
+package = "/Game/Audio/Driving/wind_01"
+
+[[outputs]]
+package = "/Game/Audio/Driving/wind_02"
+
+[[outputs]]
+package = "/Game/Audio/Driving/wind_03"

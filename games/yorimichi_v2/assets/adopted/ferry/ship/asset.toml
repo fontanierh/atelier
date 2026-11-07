@@ -1,0 +1,39 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Ferry/Ship
+schema = 1
+id = "adopted/ferry/ship"
+kind = "adopted"
+authority = "editor"
+owner = "shared/ferry/ship"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_BoardingGate"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Collision"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Fittings"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Funnel"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Hull"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Lifeboats"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Masts"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Rails"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Superstructure"
+
+[[outputs]]
+package = "/Game/Ferry/Ship/FY_Wake"

@@ -6,6 +6,10 @@ roots = [
     "/Game/Audio", "/Game/Japan/Audio",                     # Sonniss-derived sounds
     "/Game/Cairo", "/Game/CairoAdventure", "/Game/Modori", "/Game/Nox", "/Game/Paul",  # characters: animation
     "/Game/SkateRide", "/Game/SkateMotion",                                          # not yet cleared (D05 group 1)
+    "/Game/Horses", "/Game/CairoBike", "/Game/CairoHorse", "/Game/ModoriBike", "/Game/ModoriHorse",  # mounts and riders:
+    "/Game/NoxBike", "/Game/NoxHorse", "/Game/PaulBike", "/Game/PaulHorse",                          # animation origin
+    "/Game/FoxHunter", "/Game/SwordTrainer", "/Game/Wanderer",                                     # not recorded
+    "/Game/CraterPark",                                       # owner's crater-skate-park: license not recorded yet
 ]
 lock = "restricted.lock.json"
 

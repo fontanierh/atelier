@@ -1,0 +1,12 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/Wanderer
+schema = 1
+id = "adopted/wanderer/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/wanderer/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Wanderer/DA_Wanderer"

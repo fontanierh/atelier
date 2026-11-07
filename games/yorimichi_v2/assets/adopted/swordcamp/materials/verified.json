@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/swordcamp/materials",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Materials/M_RoninBody.uasset": "d1de5e332101029efb0dc6c327c2850bba9a22a41264a80218d7ff7ca1b08c18",
+    "unreal/Content/SwordCamp/Materials/M_SwordCamp.uasset": "a9a8c2414f99292b2c87e427823c5257ad6976e6cd1d3b395837e07cf3099cdc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

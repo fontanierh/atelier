@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/CairoHorse
+schema = 1
+id = "adopted/cairohorse"
+kind = "adopted"
+authority = "editor"
+owner = "shared/cairohorse"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseCanter"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseDismount"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseGallop"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseIdle"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseIdleAffection"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseIdleFlehmen"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseIdleGraze"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseIdleLook"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseIdleShake"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseMount"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseSprint"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseTrot"
+
+[[outputs]]
+package = "/Game/CairoHorse/A_HorseWalk"

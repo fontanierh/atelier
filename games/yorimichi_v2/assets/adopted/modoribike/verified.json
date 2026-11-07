@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/modoribike",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/ModoriBike/A_BikeBell.uasset": "a495deacc25cdfedf3fa183454815086031f64f4ab4fb45ae7109d414262f8a7",
+    "unreal/Content/ModoriBike/A_BikeCrash.uasset": "f3295dee93824a806fc48616429b4a7b3fe46e9af9cbeabb0661ed10745cdfbf",
+    "unreal/Content/ModoriBike/A_BikeDismount.uasset": "4ca5710c5bf7c769b7571e86cd1f2e32cd517f67fd49484c4c1973b42c868058",
+    "unreal/Content/ModoriBike/A_BikeFootDown.uasset": "8dee6b51908fdf42f3bc96cc2efe92b3ac777e755609b11a7de225c1c9ef298f",
+    "unreal/Content/ModoriBike/A_BikeHop.uasset": "0824cda5013bd12da07aaea38d2729210f15d158000f73fba0f84e656d3da49e",
+    "unreal/Content/ModoriBike/A_BikeKickstand.uasset": "22fbf9784712f300bde83c3f4722d1d02c729fbdc4829ecd9af2790a25bac922",
+    "unreal/Content/ModoriBike/A_BikeMount.uasset": "2e4b1dfcce81567b7a041459b2422bea71f4614afa3d93fd09a2f70bbf16be91",
+    "unreal/Content/ModoriBike/A_BikeRide.uasset": "3d9e71da1a9281ede016cb08c88978a20ca4e29528d825c614344b79d52bfbab",
+    "unreal/Content/ModoriBike/A_BikeSkid.uasset": "770d0293d3540b0b0045931d9c7d9e25ef3b17fabdd30c8e0a964105a1facb78",
+    "unreal/Content/ModoriBike/A_BikeWave.uasset": "3cfbdec4fd511d21bbc1b40811eef0d36d462ef47d2dc1080c068639207c2c7e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

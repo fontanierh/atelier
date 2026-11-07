@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/gondola/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/Textures/GD_deck_planks_color.uasset": "7c6ecb3872379cf447e3dc2dd0ebaa4135cd118d22c7ef1b8e94eccac806e4c0",
+    "unreal/Content/Gondola/Textures/GD_deck_planks_rough.uasset": "66ba4da8d036fa9496d8b56a3a818f857be680d0eef9ea320863d21d92472f90",
+    "unreal/Content/Gondola/Textures/GD_shingle_color.uasset": "0e200de1379b0bd802d1c54a9ff3b719ef5f3844a23044e41b74ef052d0dac06",
+    "unreal/Content/Gondola/Textures/GD_shingle_rough.uasset": "18c42895b831b1b645a0ed8245463b30321239be4baf597aef569a53bd815494",
+    "unreal/Content/Gondola/Textures/GD_wood_grain_color.uasset": "196a954f007080f30f6c155e9f10eb8e33244ed79f30f17c7ec1a8922477d20d",
+    "unreal/Content/Gondola/Textures/GD_wood_grain_dark_color.uasset": "4c25ba9eace785c3d943a7ddf9174819b82e4b1066d1e4e04b9f9b1262f4fa47",
+    "unreal/Content/Gondola/Textures/GD_wood_grain_dark_rough.uasset": "05bcf2fd3282215253db6e789e50916361568aae59a25750893b1ee79d291566",
+    "unreal/Content/Gondola/Textures/GD_wood_grain_light_color.uasset": "7f4f3828024a3282d117ec54614b83b9531b7b716c3469b8ec7a07a4570ed7dd",
+    "unreal/Content/Gondola/Textures/GD_wood_grain_light_rough.uasset": "5fc7ecbdb75a4a428913852b5fa5d8ea9d740c23d59c2d21aa25128e4f462167",
+    "unreal/Content/Gondola/Textures/GD_wood_grain_rough.uasset": "8b11596d47de4021fc4e666e86a3bb5c62bd169b7b81e74673b786b1b0e68b88",
+    "unreal/Content/Gondola/Textures/GD_wood_panel_color.uasset": "024e08cff72677ddbc6a723f090697f32c08e4e9247122e9143042207d3b53df",
+    "unreal/Content/Gondola/Textures/GD_wood_panel_rough.uasset": "24b9263c787f4201b14a3ac3916f8fdd515d0e4ec951af605de85969cc04639d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

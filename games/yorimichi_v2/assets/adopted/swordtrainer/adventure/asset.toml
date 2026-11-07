@@ -1,0 +1,372 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/SwordTrainer/Adventure
+schema = 1
+id = "adopted/swordtrainer/adventure"
+kind = "adopted"
+authority = "editor"
+owner = "shared/swordtrainer/adventure"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_A_Pose_Sword_Wait"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_AirToWall"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Jump_Off_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Ed_Edge_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Jump_L_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Jump_R_FootR"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Jump_UL_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Jump_UR_FootR"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Jump_U_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_D"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_DL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_DR"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_R"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_U"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_UL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Move_UR"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Off_Tired_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Climb_Wall_Wait_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_DoubleJump"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Equip_Float_Off"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Equip_Float_On"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Equip_Float_On_Fall"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Equip_Sword_Off_Natural"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Equip_Sword_On_Natural"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Fall"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Float_Float"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Float_Float_B"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Float_Float_F"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Float_Float_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Float_Float_R"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Interact"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_B"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_B_Standup"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_F"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_F_Standup"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_L_Standup"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_R"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_L_R_Standup"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_Land"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_Land_Stand"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_M_B"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_M_F"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_M_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_M_R"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_S_B"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_S_F"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_S_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Damage_S_R"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Jump_B_Ed"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Jump_B_St"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Run_B"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Run_F"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Run_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Run_R"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Step_L_Ed"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Step_L_St"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Step_R_Ed"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Step_R_St"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Wait"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Walk_B"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Walk_F"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Walk_L"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Lockon_Walk_R"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Move_Dash"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Move_Run"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Move_Run_Jump_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Move_Run_Jump_FootR"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Move_Run_Land_ToRun_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Move_Run_Land_ToRun_FootR"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Move_Walk"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Wait"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Wait_Jump"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Nml_Wait_Land"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Rolldown"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_SitDown"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_SitIdle"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Squat_Move_Run"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Squat_Move_Walk"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Squat_Wait_FootL"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_StandUp"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Swim_Die"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Swim_Ed_Edge_0cm"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Swim_Ed_Edge_50cm"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Swim_Move_Dash"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Swim_Move_Slow_F"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Swim_Wait"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_SwordIdle"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_SwordParry"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_SwordParryHit"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Charge"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Dash"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Fall"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Fall_Ed"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Fall_St"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Jump_F_Ed"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Jump_F_St"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Jump_Loop"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Just"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Just_Rush1"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Just_Rush2"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Just_Rush3"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Just_Rush4"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Just_Rush5"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_Ninja"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_S1"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_S2"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_S3"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Attack_SF"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Charge"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Charge_Wait"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Guard_Break"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Guard_Hit"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Guard_Just"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Guard_Wait"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Sword_Move_Run_Upper"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/A_Wave"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/BS_SwordTrainerAdventureArmedLocomotion"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/BS_SwordTrainerAdventureCrouching"
+
+[[outputs]]
+package = "/Game/SwordTrainer/Adventure/BS_SwordTrainerAdventureLocomotion"

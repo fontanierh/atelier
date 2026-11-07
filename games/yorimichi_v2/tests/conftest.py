@@ -15,3 +15,8 @@ def d04_open(tmp_path_factory, monkeypatch):
     path.write_text(f'schema = 1\n[d04]\nwriter = "{authority.BOOTSTRAP_WRITER}"\nclosed = false\n')
     monkeypatch.setattr(authority, 'GOVERNANCE', path)
     return path
+
+
+@pytest.fixture(autouse=True)
+def no_bind_wait(monkeypatch):
+    monkeypatch.setattr(authority, 'BIND_RETRY_S', 0.0)   # a retried bind batch does not wait in tests

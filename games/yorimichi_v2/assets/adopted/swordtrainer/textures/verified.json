@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/swordtrainer/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordTrainer/Textures/T_tripo_mat_ee5a1a4b.uasset": "e5478f9757b5a9e97eb8ea36980273036f7c452e9643ac9967e1d36af5893afd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

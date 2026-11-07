@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/BelmonteTrack/Materials
+schema = 1
+id = "adopted/belmontetrack/materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrack/materials"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_ST_Clock"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_ST_Coach"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_ST_Glass"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_ST_Green"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_TK_Bank"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_TK_LampGlow"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_TK_Signal"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/MI_TK_TunnelLining"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/Materials/M_TK_Glow"

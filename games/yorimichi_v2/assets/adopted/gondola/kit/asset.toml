@@ -1,0 +1,108 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Gondola/Kit
+schema = 1
+id = "adopted/gondola/kit"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/kit"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Cabin"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinDoorLeft"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinDoorRight"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinGrip"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinHanger"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Cabin_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Building"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Fittings"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Machinery"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Platform"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationRim_Building"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationRim_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationRim_Fittings"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationRim_Machinery"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationRim_Platform"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationValley_Building"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationValley_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationValley_Fittings"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationValley_Machinery"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationValley_Platform"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_10m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_10m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_13m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_13m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_16m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_16m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_20m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_20m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_24m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_24m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_28m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_28m_Collision"

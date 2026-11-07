@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/SwordTrainer
+schema = 1
+id = "adopted/swordtrainer/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/swordtrainer/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SwordTrainer/A_Bow"
+
+[[outputs]]
+package = "/Game/SwordTrainer/A_Talk"
+
+[[outputs]]
+package = "/Game/SwordTrainer/DA_SwordTrainer"
+
+[[outputs]]
+package = "/Game/SwordTrainer/DA_SwordTrainerBase"
+
+[[outputs]]
+package = "/Game/SwordTrainer/M_SwordTrainer_tripo_mat_ee5a1a4b"
+
+[[outputs]]
+package = "/Game/SwordTrainer/SK_SwordTrainer"
+
+[[outputs]]
+package = "/Game/SwordTrainer/SK_SwordTrainer_Skeleton"

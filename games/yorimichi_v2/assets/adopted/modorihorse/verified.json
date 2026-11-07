@@ -1,0 +1,22 @@
+{
+  "asset": "adopted/modorihorse",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/ModoriHorse/A_HorseCanter.uasset": "0b1a2e50d134ddcf58f4b9f128d6777c0e95ca8e2efc13da6ffe4912f065c5b4",
+    "unreal/Content/ModoriHorse/A_HorseDismount.uasset": "90c39df832d57032e9a3508053deb32dc0184af5d3776c1df5cb113f08a97006",
+    "unreal/Content/ModoriHorse/A_HorseGallop.uasset": "0d5aa3f97ed5312d81be1cd9a916eafd717423042d79d77e079a75d2cd315eab",
+    "unreal/Content/ModoriHorse/A_HorseIdle.uasset": "18ecee0a2ad7df1cdefaad5a8c2ae76964f782d88c3015beea9dee6a3797f714",
+    "unreal/Content/ModoriHorse/A_HorseIdleAffection.uasset": "6e387c039db3035f2692239ba8b9e34815c3b797ad6e7374a9a548be8043743f",
+    "unreal/Content/ModoriHorse/A_HorseIdleFlehmen.uasset": "d3be58a752806bb25dc6c1d27d96212d22e8c19184e4d25a8c6bcd0939f8ed42",
+    "unreal/Content/ModoriHorse/A_HorseIdleGraze.uasset": "2d5791bcd7c83ad00f2b8e7eb498e0dcee9f4cb786c9e93de90adef24c0abbab",
+    "unreal/Content/ModoriHorse/A_HorseIdleLook.uasset": "bd2eae485461489130d266ef72b1a0e2762856b57a3519922372d41881444f52",
+    "unreal/Content/ModoriHorse/A_HorseIdleShake.uasset": "69ca5d8caa5f7fd914efba1859706084145bfb3684306834c4d96934f61b4d8a",
+    "unreal/Content/ModoriHorse/A_HorseMount.uasset": "d2321a47b597a7ad3b8c6a11f98d73af9f4ab64fd7fac6340c6cc51c57aeff2b",
+    "unreal/Content/ModoriHorse/A_HorseSprint.uasset": "355997b24c6215ac3a8c3195350d3188bd1eac69824103303936dc47c81f11c5",
+    "unreal/Content/ModoriHorse/A_HorseTrot.uasset": "c7589aea8747ea8648129f207ee9749b39e8e5360564cd2bf41ad47b6d3346f1",
+    "unreal/Content/ModoriHorse/A_HorseWalk.uasset": "4266901c7f81152507a5bd9c54ebc89eb34637de324decd7cae35e171e91c885"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

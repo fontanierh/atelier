@@ -38,6 +38,7 @@ class ClaimService:
     def __init__(self):
         self.tasks, self.extensions, self.unlocked, self.checks = {}, [], set(), []
         self.failure = None   # 'down' (the service is unavailable) or 'garbled' (its answer does not parse)
+        self.extend_timeouts = 0   # extensions that time out (a busy service) before one gets through
 
     def grant(self, task, holder, scopes, paths=()):
         self.tasks[task] = {'id': len(self.tasks) + 1, 'holder': holder, 'scopes': list(scopes), 'paths': set(paths)}
@@ -70,6 +71,9 @@ class ClaimService:
             ok = (task is not None and task['holder'] == os.environ.get('ATELIER_AGENT') and paths <= task['paths']
                   and not paths & self.unlocked)   # a listed path whose LFS lock the service cannot verify
             return Result(0 if ok else 1)
+        if command[4] == 'extend' and self.extend_timeouts:
+            self.extend_timeouts -= 1
+            return Result(1, stderr='claims: claims service at http://127.0.0.1:8840: timed out')
         if command[4] == 'extend':   # the service refuses a claim another principal holds (`not_holder`)
             task = next((t for t in self.tasks.values() if str(t['id']) == command[5]), None)
             if task is None or task['holder'] != os.environ.get('ATELIER_AGENT') or '--acquire' not in command:

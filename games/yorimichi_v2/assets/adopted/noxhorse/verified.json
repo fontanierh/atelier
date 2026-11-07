@@ -1,0 +1,22 @@
+{
+  "asset": "adopted/noxhorse",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/NoxHorse/A_HorseCanter.uasset": "d210dad5af2c65055dc57fb7a9aa66835d2f61ba179a126502d03278cb1834c4",
+    "unreal/Content/NoxHorse/A_HorseDismount.uasset": "66c1c9bbe852ca55f3b076775677314edfe8e886da538807a3f7f85f17a4fe96",
+    "unreal/Content/NoxHorse/A_HorseGallop.uasset": "757d9bfb2074a567badea709257976023a6b2fa2265dffa98c7c21e6ac9231db",
+    "unreal/Content/NoxHorse/A_HorseIdle.uasset": "4634712f810552c12236cb0cc961b8124f69f5e6522dee753d5fead73f282940",
+    "unreal/Content/NoxHorse/A_HorseIdleAffection.uasset": "ac455b581e413a6e4bc2688b397020b3c24fe4909b370575a82c6f3a1e106753",
+    "unreal/Content/NoxHorse/A_HorseIdleFlehmen.uasset": "e6996fcc575e15f83a9ce4fa486d76b8036d5693c41b696e2e5c6d4af4ed5df9",
+    "unreal/Content/NoxHorse/A_HorseIdleGraze.uasset": "5f57b1537d2c4ccb88411ec4c0b01f23c103f3ad317e9b975be6946b572de386",
+    "unreal/Content/NoxHorse/A_HorseIdleLook.uasset": "567130bd9d8c0b54cbe99eb55d76a62685d50ad4273e97dbdd58234c183572cc",
+    "unreal/Content/NoxHorse/A_HorseIdleShake.uasset": "edd1595f19d4fc7ee916e6866f126e00083ab86994922e4aa79f6241391a8083",
+    "unreal/Content/NoxHorse/A_HorseMount.uasset": "72cc47e153e33eb1519f373d21dafafb9a367c2f17296aba30ec7b2a683fefa4",
+    "unreal/Content/NoxHorse/A_HorseSprint.uasset": "fbae670c07458590a7a46c6c7ec9928535017f0ad32e97a9f9ade1205ef03b0c",
+    "unreal/Content/NoxHorse/A_HorseTrot.uasset": "d0829c662ee1a418a03146f07cde26e22fae8632c7d2e32c6bccaa87ca6aee69",
+    "unreal/Content/NoxHorse/A_HorseWalk.uasset": "0fa862ca69a1f9aa1f1c2f976662a5c145f497de9da6e4098e2a30e3075f8c07"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

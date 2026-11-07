@@ -1,0 +1,29 @@
+{
+  "asset": "adopted/foxhunter/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FoxHunter/A_FoxAttackL_A.uasset": "f104886345e5bab1df81dcf6860cc5da21889b4e8e7adf5c31dc5def6d03e1ce",
+    "unreal/Content/FoxHunter/A_FoxAttackL_B.uasset": "f0ffcffca95659ca30a86ae1298a2b07a7a4ece4d962aa35344852184d6d679f",
+    "unreal/Content/FoxHunter/A_FoxAttackR_A.uasset": "f9bfd3def9e61584e9dc7d8f53586cf7d6239e0c13c1ba015346fdaeed424c72",
+    "unreal/Content/FoxHunter/A_FoxAttackR_B.uasset": "dc3494b5fc6aa1d8685e8c344cf402ab7e6ca7659324427efbb83bd195c71090",
+    "unreal/Content/FoxHunter/A_FoxCreep.uasset": "95664a6e12a514da31f898c29ec0b56e246704a52a95a3be059531cb5fe50cd5",
+    "unreal/Content/FoxHunter/A_FoxDashBackward.uasset": "b7501622f038d215b29511cfcc7cf065091b8b184a4a09546c962c0ad3348417",
+    "unreal/Content/FoxHunter/A_FoxDashForward.uasset": "838d6306b68fdf82d436a4b105fb56c6a4edf45efd8de4f677a7923a6c648ba3",
+    "unreal/Content/FoxHunter/A_FoxDeath.uasset": "3f8d7fdd32b5db19968b4b39c223f176bc06edd8a8c280cceccd89e759df1a71",
+    "unreal/Content/FoxHunter/A_FoxHurt.uasset": "d75dd079244b9b29cf1bce2c55d899e1a437c3ef0227167ed137487f0ab046d2",
+    "unreal/Content/FoxHunter/A_FoxIdle.uasset": "57967872a61e95aaa280c25820e4ee2480ba245b20cac96714073933e34fcbdd",
+    "unreal/Content/FoxHunter/A_FoxJump.uasset": "2ea6e85c55437dc015136c2cdde8ef1c457feadaf7bc8dca56b6814c05af01a4",
+    "unreal/Content/FoxHunter/A_FoxKick.uasset": "a485f2b41386be4aa8b6dc32220ef6ad1754b2d5ff8aa7a4388f710dc5cdd0c0",
+    "unreal/Content/FoxHunter/A_FoxRun.uasset": "ede439c862c5014bc11c98933ead4aa652a82963953248da8678db63120746f4",
+    "unreal/Content/FoxHunter/A_FoxTurnLeft.uasset": "e23e3876a3e33aae47c33989f040ff703756dccc844f08fa763df8c348082199",
+    "unreal/Content/FoxHunter/A_FoxTurnRight.uasset": "df57483e48609bca4d20435c60a5a59c6f25d57ca553a3a6c5d1d6f995be2382",
+    "unreal/Content/FoxHunter/BS_FoxLocomotion.uasset": "8bb00b88a96d4127d3f0926c2ca11113e984f477283e9fde11e14472d8c91d0a",
+    "unreal/Content/FoxHunter/DA_FoxHunter.uasset": "77b3c45f7c23d762acdfbaa6e1c7b8f918d0f14aa0c149f6ccdf012ec47f7c2b",
+    "unreal/Content/FoxHunter/M_FoxHunter_tripo_mat_8d75b5c6.uasset": "0e8e9208ed6775f5a08ef016f547f2fd4d3c0fa1892e0e4bdf14151a83c44d8d",
+    "unreal/Content/FoxHunter/SK_FoxHunter.uasset": "d1cde7731fc7ebeb310daa051faa253c7f7d5ab4af5e1e77e33f2338a06645b4",
+    "unreal/Content/FoxHunter/SK_FoxHunter_Skeleton.uasset": "3948b291e050733d6cef4633d6ead857add135fdd732a0b876df7fd7e6a8ea8f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

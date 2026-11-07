@@ -1,0 +1,87 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Gondola/Materials
+schema = 1
+id = "adopted/gondola/materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/materials"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Basalt"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Bolt"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Brass"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Concrete"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_DarkIron"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_DeckTimber"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Gasket"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Glass"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_LampGlow"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Paving"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Plaster"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_RoofTile"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Rope"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Rubber"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_SafetyPaint"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Shingle"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_SignBoard"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Soil"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Steel"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Stone"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Terracotta"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_Timber"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_TimberDark"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_TimberPanel"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_TimberPlank"
+
+[[outputs]]
+package = "/Game/Gondola/Materials/GD_WindowPane"

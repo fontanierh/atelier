@@ -2,6 +2,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "Misc/AutomationTest.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Engine/StaticMesh.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FV2ManifestCoverageTest,"Yorimichi.V2.ManifestCoverage",
     EAutomationTestFlags_ApplicationContextMask|EAutomationTestFlags::EngineFilter)
@@ -30,6 +31,21 @@ bool FV2ManifestCoverageTest::RunTest(const FString&)
     Manifest->MigratedServices.Add(TEXT("Sea"));
     TestTrue(TEXT("A listed service is saved"), Manifest->CoversService(TEXT("Sea")));
     TestFalse(TEXT("An unlisted one is not"), Manifest->CoversService(TEXT("SkyDome")));
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FV2OwnerPointTest,"Yorimichi.V2.OwnerPoint",
+    EAutomationTestFlags_ApplicationContextMask|EAutomationTestFlags::EngineFilter)
+bool FV2OwnerPointTest::RunTest(const FString&)
+{
+    // A world-space piece: placed at the origin, its geometry 500 m east and 300 m north of it.
+    TStrongObjectPtr<UStaticMesh> Piece(NewObject<UStaticMesh>());
+    Piece->SetExtendedBounds(FBoxSphereBounds(FVector(50000, -30000, 200), FVector(1000), 1000));
+    TestEqual(TEXT("A piece at the origin is owned where its geometry is"),
+        AV2WorldManifest::OwnerPoint(FTransform::Identity, Piece.Get()), FVector2D(50000, -30000));
+    TestEqual(TEXT("A placed instance is owned where it stands"),
+        AV2WorldManifest::OwnerPoint(FTransform(FVector(-20000, 100, 0)), Piece.Get()), FVector2D(-20000, 100));
+    TestEqual(TEXT("Without a mesh, the placement"), AV2WorldManifest::OwnerPoint(FTransform::Identity, nullptr), FVector2D::ZeroVector);
     return true;
 }
 #endif

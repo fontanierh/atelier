@@ -5,6 +5,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "V2ScenePatch.generated.h"
 
+class UStaticMesh;
+
 class AJapanWorld;
 class UPrimitiveComponent;
 
@@ -61,6 +63,10 @@ public:
         return P.X >= Box.Min.X && P.X < Box.Max.X && P.Y >= Box.Min.Y && P.Y < Box.Max.Y;
     }
     bool CoversInstance(const FVector2D& P) const;
+    /** The point whose region owns an instance: its placement, or for a world-space piece placed at the origin (the
+     *  lake, the village ground, Hidamari's surfaces, the volcano) its geometry's centre. The migration and the runtime
+     *  skip both use it, so a piece is never both saved and spawned. */
+    static FVector2D OwnerPoint(const FTransform& Placement, const UStaticMesh* Mesh);
     bool CoversService(FName Service) const { return MigratedServices.Contains(Service); }
     bool Runs(FName Service) const { return !bOnlyMigrated || RuntimeServices.Contains(Service); }
 };

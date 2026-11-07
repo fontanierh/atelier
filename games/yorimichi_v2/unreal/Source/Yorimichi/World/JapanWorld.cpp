@@ -508,7 +508,8 @@ void AJapanWorld::Load()
                     const double Sc = A[4]->AsNumber();
                     const FVector Position = ToUE(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber());
                     if (!ParkClearance.IsEmpty() && (bTree || bBush || bGrass || bLitter || Key.StartsWith(TEXT("Rock"))) && ASkatePark::Inside(ParkClearance, FVector2D(Position))) { ++Cleared; continue; }
-                    if (Manifest && Manifest->CoversInstance(FVector2D(Position))) { ++MigratedInstances; continue; }
+                    if (Manifest && Manifest->CoversInstance(AV2WorldManifest::OwnerPoint(
+                            FTransform(FRotator(0, -A[3]->AsNumber(), 0), Position, FVector(Sc)), Mesh))) { ++MigratedInstances; continue; }
                     // The far-hill backdrop is outside the playable square. Keep its
                     // silhouettes, but do not build thousands of useless physics bodies.
                     const bool bCityTree=City.IsValid() && Position.X>30000 && Position.X<142000 && Position.Y>-50000 && Position.Y<30000;
@@ -857,7 +858,12 @@ void AJapanWorld::Load()
     };
     if (ServiceRuns(TEXT("SkatePark"))) InstallPark(ParkPath, TEXT("skate pier"));
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
-    if (ServiceRuns(TEXT("MegaPark")))
+    // V2 stages no Mega Park data until its rights are settled (DECISIONS D05 group 3): the park is then absent, not broken.
+    if (ServiceRuns(TEXT("MegaPark")) && !FPaths::FileExists(AtelierDataPath(TEXT("megapark/park.json"))))
+    {
+        UE_LOG(LogTemp, Display, TEXT("MEGA PARK not staged (DECISIONS D05 group 3)"));
+    }
+    else if (ServiceRuns(TEXT("MegaPark")))
     {
         const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
         if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));

@@ -1,0 +1,609 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/CraterPark/Meshes (part 1 of 6)
+schema = 1
+id = "adopted/craterpark/meshes/loose_files_01"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/meshes/loose_files_01"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_12_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_12_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_13_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_13_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_13_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_13_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_13_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_16_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_16_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_16_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_16_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_16_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_17_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_17_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_17_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_18_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_18_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_18_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_18_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_19_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_19_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_19_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_19_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_20_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_20_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_21_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_21_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_21_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_21_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_22_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_22_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_22_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_22_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_23_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_23_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_23_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_23_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_23_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_24_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_24_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_24_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_24_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_24_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_25_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_14_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_14_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_15_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_15_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_15_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_15_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_15_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_15_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_15_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_16_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_17_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_18_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_19_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_20_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_21_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_22_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_22_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_22_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_22_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_22_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_22_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_22_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_23_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_25_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_26_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_26_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_15_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_15_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_15_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_15_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_15_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_16_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_17_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_17_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_17_14"

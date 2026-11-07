@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/belmontetrain/source/sm-btf-canteencounter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD0/M_BT_CanteenCounter.uasset": "29e5cbdff41cb9cd4b95d44d80e3c16dfd71a00c96752a4fefa1a5c37fdf4e69",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD0/canteen-counter-base.uasset": "7d609218443659deb56a054076c24e127abf967b2ac4196cfbbd717ebc53de07",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD0/canteen-counter-normal.uasset": "033878746365006d8601a9016ee894f6954e653c40d6441930a0d38a03c87483",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD1/M_BT_CanteenCounter_LOD1.uasset": "1541bb41b94fcf42d9a374cf32198b13b2117d5682b77facb630c5b17be062cb",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD1/canteen-counter-lod1-base.uasset": "254327f189f1ae7867f6de3a431779bef37e869f7aa256c43f589104e7c7d937",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD1/canteen-counter-lod1-normal.uasset": "2963103acfdf56180b137035243fa8d78a1eb9aec8ced91bd1efa0b483f46f13",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenCounter/SM_BTF_CanteenCounter_LOD1.uasset": "d09ab8882e6d74558971203069675ed059f4bc913bfd15fbeacb23d0ce2dfca0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

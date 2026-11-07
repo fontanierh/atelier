@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmontetrain/source/sm-btf-wallsconce",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/M_BT_WallSconce.uasset": "73001f5ca56cda7964b69069e03c5e6d66051737efff8e0446d729cdfecdb19b",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/wall-sconce-base.uasset": "efa2f3e07b10bd47018d32997bca21f5901baa160c4c4761d9e574321c786ee0",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/wall-sconce-mr.uasset": "f1f7f649abe6d227bd6f204997486793139d45c055adf91f0250995140252960",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/wall-sconce-normal.uasset": "7ea1f5d4e3f5a4e9332d9ef1178022dc28fc998c7ad149e218ce194ea86e2d12"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

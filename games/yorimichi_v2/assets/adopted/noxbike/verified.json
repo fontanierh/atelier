@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/noxbike",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/NoxBike/A_BikeBell.uasset": "a27bf4ae8aef8ebbdd2df5e4ab480f1ab7597552f1c7527fed35a970ca8c2031",
+    "unreal/Content/NoxBike/A_BikeCrash.uasset": "231d7f0a957f559298f73a8fa9340b1713ac1ef4d1b296ca76d93370d1c898de",
+    "unreal/Content/NoxBike/A_BikeDismount.uasset": "ada10671e2f05e149518f27d070d239db4d9ba9b79129ff2e1c9850487d6197b",
+    "unreal/Content/NoxBike/A_BikeFootDown.uasset": "d0c7701ad52310394c9290e41e987c70fd6b6df2600d4554a12bc93ba2e0ccf4",
+    "unreal/Content/NoxBike/A_BikeHop.uasset": "103dc5fd2119872b752ca8c9d45012c8e88f49c5e9871ed34d4bab8a63905e3c",
+    "unreal/Content/NoxBike/A_BikeKickstand.uasset": "88638586283aae00a3c5c946d07d41bb5284c9709d115eca80d1eaf042fdfecc",
+    "unreal/Content/NoxBike/A_BikeMount.uasset": "18c8c0d8211975fe204ddbea6e0ded70af3fb4addece6f4f22dadb40cbfcf4af",
+    "unreal/Content/NoxBike/A_BikeRide.uasset": "3566961bebac71a580864df56aca44f3bb537b47c3d05dfd42abb75024fd5868",
+    "unreal/Content/NoxBike/A_BikeSkid.uasset": "bdac9261a50b6dfcad022d4a5bc0d8d71954b59de364af1404ceca748c199ad1",
+    "unreal/Content/NoxBike/A_BikeWave.uasset": "7beabc143b3946f230b86ddce68ef0fc8371649ba6f146a82fc17fd8202c8ad3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

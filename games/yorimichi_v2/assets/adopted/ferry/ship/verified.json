@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/ferry/ship",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Ferry/Ship/FY_BoardingGate.uasset": "4d0f0ed842c866436c8cb1374625a6775ef8bb45c5f088c506e5fe4a1d5d0d7a",
+    "unreal/Content/Ferry/Ship/FY_Collision.uasset": "7c4eb7470d7478c1e4169a14867d4ce6a2c2050639968847bd56696a7fd8bd6e",
+    "unreal/Content/Ferry/Ship/FY_Fittings.uasset": "3f116fcc5117a4c631353fc8c91b6fb23b88d6dc30278374011b11e1bc77b8d0",
+    "unreal/Content/Ferry/Ship/FY_Funnel.uasset": "8d4f8b0e6131d4dfa47c787a88ef07c254e3a5f8d7bfa3dd81c2386d658bd95a",
+    "unreal/Content/Ferry/Ship/FY_Hull.uasset": "c2553323410f68ce941996c038463dbef74c79ce8fb32b1c7cc2d57c461d087c",
+    "unreal/Content/Ferry/Ship/FY_Lifeboats.uasset": "e9149e6f64af0d1fe7b67b32a7a36e1afe1d1aad4314a238dd9b6c20e3cf034f",
+    "unreal/Content/Ferry/Ship/FY_Masts.uasset": "70ee94d596d287556e41da6c0e51dd08e0fbb527ad589d69db30c500e08d952d",
+    "unreal/Content/Ferry/Ship/FY_Rails.uasset": "e476d5f424c35ba0ec3c5d67a610d1532a5c60af4afbb86550e8c53d5d6483f1",
+    "unreal/Content/Ferry/Ship/FY_Superstructure.uasset": "17228d80ad5cc613c3b39162373075ed3a43881a5fbdba87c303f9c9efe46d04",
+    "unreal/Content/Ferry/Ship/FY_Wake.uasset": "a32ed18682c21169ed35c716c5e5c656b00c37df870ffaa64be08d8e9bc52c46"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

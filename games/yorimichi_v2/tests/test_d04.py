@@ -36,6 +36,7 @@ SLICE = 'unreal/Content/__ExternalActors__/V2/Maps/Slice'
 OTHER = 'unreal/Content/__ExternalActors__/V2/Maps/Other'
 OLD, NEW, SKY = f'{SLICE}/0/AA/OLD.uasset', f'{SLICE}/1/BB/KIOSK.uasset', f'{SLICE}/2/CC/SKY.uasset'
 FAR = f'{OTHER}/0/DD/FAR.uasset'
+FAR_NEW = f'{SLICE}/3/EE/KIOSK2.uasset'
 ENV = ('ATELIER_AGENT', 'ATELIER_CLAIMS_TASK', 'ATELIER_CLAIMS_ACTOR', 'V2_MIGRATE_PLAN', 'V2_EDITOR_CLAIM',
        'V2_EDITOR_PATHS', 'V2_EDITOR_SCOPES', 'V2_EDITOR_SCRIPT', 'V2_SAVE_ALLOW', 'V2_SAVE_DENY')
 
@@ -195,6 +196,21 @@ def test_a_claimed_migration_creates_binds_and_records_its_regions_actors(tmp_pa
     assert migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {}), out=tmp_path / 'm',
                              echo=lambda *_: None) == []                                 # a rerun creates nothing
     assert len(claims.extensions) == 1
+
+
+def test_a_bind_batch_that_times_out_is_retried(tmp_path, game, claims, env):
+    env.setenv('ATELIER_AGENT', 'agent-a')
+    claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
+    claims.extend_timeouts = 2                         # a busy claim service: the third try gets through
+    files = {NEW: 'region/w01:Kiosk:whole:id1', SKY: 'region/w00:Sky:whole:id2'}
+    assert migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, files),
+                             out=tmp_path / 'm', echo=lambda *_: None) == [NEW, SKY]
+    assert (game / NEW).exists() and repo_path(NEW) in claims.tasks['T1']['paths']
+    claims.extend_timeouts = 3                         # three timeouts: the bind fails and removes what it made
+    with pytest.raises(authority.Unauthorized, match='cannot bind'):
+        migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {FAR_NEW: 'region/w01:K2'}),
+                          out=tmp_path / 'm', echo=lambda *_: None)
+    assert not (game / FAR_NEW).exists()
 
 
 def test_creation_in_another_regions_folder_or_outside_actor_folders_is_refused(tmp_path, game, claims, env):

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/belmontetrain/source/sm-btf-firstclasstable",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD0/M_BT_FirstClassTable.uasset": "26368bd79a2104c5aa2ad7499f760f504eb56e28341ff8f7b120f1c631ed8a00",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD0/first-class-table-base.uasset": "0586e74ee084296808e19f3ff8e9368dda908458a1cbf8f24a1fe8fec30ec7fd",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD0/first-class-table-mr.uasset": "d70fb1f877979f7ef84d98c092ac6ec7f04399bb5877140ca11b5759ef1cc88e",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD0/first-class-table-normal.uasset": "a846fc30c16edf36ef03f9d722de015860370a9c97270ed93208db1e12e8abab",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD1/M_BT_FirstClassTable_LOD1.uasset": "cfd20b9fe8cd832fd9e0f31af53ad1b7101fcd128ce45d2976061b337b22dbc3",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD1/first-class-table-lod1-base.uasset": "d2b22de67a2b6a2f0ff3a45f695bd1ee136e4ecfb6450670b6d34d3ab6f7e045",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD1/first-class-table-lod1-mr.uasset": "cf3fd3df0a130123f9ce1c235ad549e2bbbe0b998f7f98278ff4e28dd095daa8",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/LOD1/first-class-table-lod1-normal.uasset": "4faa0ab2eadd9799984aac04f87c686c4534e773d762886fc79aa4ac6b07eb28",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_FirstClassTable/SM_BTF_FirstClassTable_LOD1.uasset": "b79dd8b175c90920da95bac7d51b19018a2c144d0fa4c809572c0cb1fcde926d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

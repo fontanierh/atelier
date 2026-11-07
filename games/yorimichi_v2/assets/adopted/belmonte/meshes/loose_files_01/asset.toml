@@ -1,0 +1,609 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/Belmonte/Meshes (part 1 of 3)
+schema = 1
+id = "adopted/belmonte/meshes/loose_files_01"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/meshes/loose_files_01"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeChair"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeChair_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeParasol"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeParasol_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Lake"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_0_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_1_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_2_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_3_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Passerella"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Piazza"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Ponte"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_QuayWall"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Rock_A"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Rock_B"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Rock_C"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_WaterFoam"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_5"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_6"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_7"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_Ponte"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Waterfall"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_0_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_0_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_0_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_0_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_0_Stables"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_0_Stables_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_0_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_0_Villa_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Stables"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Stables_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Villa_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_2_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_2_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_2_Stables"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_2_Stables_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_2_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_2_Villa_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_3_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_3_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_3_Stables"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_3_Stables_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_3_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_3_Villa_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece1_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_4_Villa_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_5_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_5_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_5_Stables"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_5_Stables_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_5_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_5_Villa_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_6_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_6_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_6_Stables"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_6_Stables_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_6_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_6_Villa_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_BaleStack"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_BaleStack_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_HayCart"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_HayCart_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_MountingBlock"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_MountingBlock_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_SaddleRack"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_TieRail"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_TieRail_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_Trough"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_Trough_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_Wheelbarrow"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_BellTower"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_BellTower_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Chiostro"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Chiostro_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Church"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Church_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Fontanella"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Fontanella_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Forno"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Forno_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_FountainPiazza"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_FountainPiazza_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Osteria"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_OsteriaPergola"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_OsteriaPergola_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Osteria_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Osteria_Taproom"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_PalazzoComunale"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_PalazzoComunale_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_NW"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_NW_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_Nord"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_Nord_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_SE"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_SE_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Pozzo"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Pozzo_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Arenas"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Course"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_DistMarker"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_DistPole"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_FinishPost"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_GatePier"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_GatePier_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_HayBale"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_HayBale_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Infield"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Jump"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Kiosk"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Kiosk_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_MembersBar"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_MembersBar_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Pond"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_RailSeg"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_RailSeg_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Salon"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SalonGrounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SalonHall"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Salon_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SecondStand"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SecondStand_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StableYard"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandGardens"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandGardens_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandTerrace"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece02"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece03"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece12"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece13"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StartingStalls"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_TieRail"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_TieRail_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Amphora"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Amphora_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Barrel"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Barrel_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Basket"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Basket_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Bench"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Bench_Collision"

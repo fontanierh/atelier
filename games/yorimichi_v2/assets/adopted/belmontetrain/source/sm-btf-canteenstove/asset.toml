@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/BelmonteTrain/Source/SM_BTF_CanteenStove
+schema = 1
+id = "adopted/belmontetrain/source/sm-btf-canteenstove"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/source/sm-btf-canteenstove"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD0/M_BT_CanteenStove"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD0/canteen-stove-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD0/canteen-stove-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD1/M_BT_CanteenStove_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD1/canteen-stove-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD1/canteen-stove-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/SM_BTF_CanteenStove_LOD1"

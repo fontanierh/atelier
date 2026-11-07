@@ -1,0 +1,45 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Gondola/Textures
+schema = 1
+id = "adopted/gondola/textures"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/textures"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_deck_planks_color"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_deck_planks_rough"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_shingle_color"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_shingle_rough"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_grain_color"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_grain_dark_color"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_grain_dark_rough"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_grain_light_color"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_grain_light_rough"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_grain_rough"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_panel_color"
+
+[[outputs]]
+package = "/Game/Gondola/Textures/GD_wood_panel_rough"

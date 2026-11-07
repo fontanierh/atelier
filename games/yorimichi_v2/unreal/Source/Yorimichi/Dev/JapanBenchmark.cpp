@@ -18,6 +18,7 @@
 #include "Misc/Paths.h"
 #include "Misc/CommandLine.h"
 #include "ProfilingDebugging/CsvProfiler.h"
+#include "YorimichiLive.h"
 
 CSV_DEFINE_CATEGORY(JapanBenchmark,true);
 
@@ -65,7 +66,7 @@ bool AWandererCharacter::AdvanceZeppelinBenchmark()
 }
 
 // A real-time capture, with no screenshots or file writes inside the measured
-// interval. It runs only with -benchmarkview=spawn|forest|coast|traverse|zeppelin.
+// interval. It runs only with -benchmarkview=spawn|forest|coast|traverse|zeppelin|road_walk|slice_route.
 void AWandererCharacter::AdvanceBenchmark(float Dt)
 {
     if (bBenchmarkFinished) return;
@@ -190,6 +191,15 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
             GetCharacterMovement()->StopMovementImmediately();
             Controller->SetControlRotation(FRotator(-12.f,ReviewForward.Rotation().Yaw,0.f));
         }
+        if (BenchmarkView == TEXT("slice_route"))
+        {
+            // The slice route of tools/test/route_game.py, for a package without the live bridge: the same game calls,
+            // stepped on game time. Warm-up at start_road, on the village road down to the coast.
+            UYorimichiLive::SkateRelease();
+            UYorimichiLive::Drive(FVector2D::ZeroVector,1);
+            if (!UYorimichiLive::Travel(FVector(-24830,10000,1080),2.73f))
+            { UE_LOG(LogTemp,Error,TEXT("BENCHMARK slice_route: the player could not travel to start_road")); AtelierRequestExit(2); return; }
+        }
         UE_LOG(LogTemp,Display,TEXT("BENCHMARK warmup: %s, %.1f measured seconds"),*BenchmarkView,BenchmarkSeconds);
     }
     const float Previous = BenchmarkTime;
@@ -269,6 +279,27 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         MoveIntent=FVector2D(0.f,1.f);
         const FRotator Target(-12.f,ReviewForward.Rotation().Yaw,0.f);
         Controller->SetControlRotation(FMath::RInterpTo(Controller->GetControlRotation(),Target,Dt,5.f));
+    }
+    if (BenchmarkView == TEXT("slice_route"))
+    {
+        // route_game.py's steps after its settle: walk 5 s, stop, mount, place on the skate pier, push 4 s, coast 1 s.
+        const float Was = Previous-BenchmarkCaptureStart;
+        auto At = [Was,T](float S) { return Was < S && T >= S; };
+        int32 Step = T < 5.f ? 1 : T < 6.f ? 2 : T < 9.f ? 3 : T < 11.f ? 4 : T < 15.f ? 5 : T < 16.f ? 6 : 7;
+        if (Was < 0.f) UYorimichiLive::Drive(FVector2D(0.f,1.f),1);
+        if (At(5.f)) UYorimichiLive::Drive(FVector2D::ZeroVector,1);
+        if (At(6.f)) UYorimichiLive::SkateToggle();
+        if (At(9.f))
+        {
+            const FTransform Spawn = UYorimichiLive::SkateParkSpawn();
+            if (Spawn.Equals(FTransform::Identity) || !UYorimichiLive::SkatePlace(Spawn.GetLocation(),Spawn.Rotator().Yaw))
+                UE_LOG(LogTemp,Error,TEXT("BENCHMARK slice_route: no skate pier spawn to ride from"));
+            UE_LOG(LogTemp,Display,TEXT("BENCHMARK slice_route: on the skate pier at %s"),*GetActorLocation().ToString());
+        }
+        if (At(11.f)) UYorimichiLive::SkateInput(FVector2D(0.f,1.f),FVector2D::ZeroVector,true,false,false,0.f,0.f);
+        if (At(15.f)) UYorimichiLive::SkateInput(FVector2D::ZeroVector,FVector2D::ZeroVector,false,false,false,0.f,0.f);
+        if (At(16.f)) { UYorimichiLive::SkateRelease(); UYorimichiLive::SkateToggle(); }
+        CSV_CUSTOM_STAT(JapanBenchmark,RouteStep,Step,ECsvCustomStatOp::Set);
     }
     if (BenchmarkView == TEXT("traverse"))
     {

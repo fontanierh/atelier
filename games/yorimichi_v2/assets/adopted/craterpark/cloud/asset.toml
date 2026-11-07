@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/CraterPark/Cloud
+schema = 1
+id = "adopted/craterpark/cloud"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/cloud"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/CraterPark/Cloud/M_CraterCloud"
+
+[[outputs]]
+package = "/Game/CraterPark/Cloud/M_CraterCloudVeil"

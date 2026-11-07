@@ -1,0 +1,315 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Horses/Arabian
+schema = 1
+id = "adopted/horses/arabian"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/arabian"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_Canter"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_Gallop"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_Idle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_IdleAffection"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_IdleFlehmen"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_IdleGraze"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_IdleLook"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_IdleShake"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_Jump"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_Sprint"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_Trot"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_TurnLeft"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_TurnRight"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/A_Horse_Arabian_Walk"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Arabian_Eyeball_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Arabian_Hair_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Arabian_Metal_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Coat"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Eye"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Foot"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Hoof"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Mane"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/SKEL_Horse_Arabian"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/SK_Horse_Arabian"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_00/Kestrel_Reins_00_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_00/Reins_00_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_00/SK_Horse_Arabian_Reins_00"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_01/Kestrel_Reins_01_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_01/Reins_01_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_01/SK_Horse_Arabian_Reins_01"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_02/Kestrel_Reins_02_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_02/Reins_02_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_02/SK_Horse_Arabian_Reins_02"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_03/Kestrel_Reins_03_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_03/Reins_03_Mt_Belt"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_03/Reins_03_Mt_Metal"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_03/SK_Horse_Arabian_Reins_03"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_04/Kestrel_Reins_04_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_04/Reins_04_Mt_Belt"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_04/Reins_04_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_04/SK_Horse_Arabian_Reins_04"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/Kestrel_Reins_05_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Jem"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins1"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins2"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins3"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_05/SK_Horse_Arabian_Reins_05"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_06/Kestrel_Reins_06_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_06/Reins_06_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Reins_06/SK_Horse_Arabian_Reins_06"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_00/Kestrel_Saddle_00_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_00/Kestrel_Saddle_Cloth_00_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_00/SK_Horse_Arabian_Saddle_00"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_00/Saddle_00_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_00/Saddle_00_Mt_Saddle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/SK_Horse_Arabian_Saddle_01"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Bag_A"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Bag_B"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Saddle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_02/SK_Horse_Arabian_Saddle_02"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_02/Saddle_02_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_02/Saddle_02_Mt_Saddle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_03/Kestrel_Saddle_03_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_03/SK_Horse_Arabian_Saddle_03"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_03/Saddle_03_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_03/Saddle_03_Mt_Metal"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_03/Saddle_03_Mt_Saddle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_04/Kestrel_Saddle_04_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_04/SK_Horse_Arabian_Saddle_04"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_04/Saddle_04_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_04/Saddle_04_Mt_Parts"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_04/Saddle_04_Mt_Saddle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/SK_Horse_Arabian_Saddle_05"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Gem"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Saddle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_06/SK_Horse_Arabian_Saddle_06"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_06/Saddle_06_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_06/Saddle_06_Mt_Saddle"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tail"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/coat_Arabian_Mt_Body_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/coat_Arabian_Mt_Foot_png"

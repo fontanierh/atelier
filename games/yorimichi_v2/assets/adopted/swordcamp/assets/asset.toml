@@ -1,0 +1,51 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/SwordCamp/Assets
+schema = 1
+id = "adopted/swordcamp/assets"
+kind = "adopted"
+authority = "editor"
+owner = "shared/swordcamp/assets"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_CampBales"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_CampFirePit"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_CampJinmaku"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_CampWeaponRack"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_CaptainKabuto"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_GuardJingasa"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninDo"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninKasa"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninKatana"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninMenpo"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninNodachi"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninSashimono"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninSode"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninWakizashi"

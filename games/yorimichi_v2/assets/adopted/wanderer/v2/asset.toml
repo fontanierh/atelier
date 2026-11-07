@@ -1,0 +1,93 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Wanderer/V2
+schema = 1
+id = "adopted/wanderer/v2"
+kind = "adopted"
+authority = "editor"
+owner = "shared/wanderer/v2"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Climb"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_CrouchIdle"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_CrouchWalk"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Dodge"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_DoubleJump"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Fall"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Glide"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_HardLand"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Idle"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Interact"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Jog"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_JumpRise"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_JumpStart"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Land"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Run"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_SitDown"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_SitIdle"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Sprint"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_StandUp"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_TurnLeft"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_TurnRight"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Walk"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/A_Wave"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/BS_Crouching"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/BS_Locomotion"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/M_Wanderer"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/SK_Wanderer"
+
+[[outputs]]
+package = "/Game/Wanderer/V2/SK_Wanderer_Skeleton"

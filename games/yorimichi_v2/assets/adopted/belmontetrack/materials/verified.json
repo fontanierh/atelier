@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/belmontetrack/materials",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/Materials/MI_ST_Clock.uasset": "67ee1151791d742dd7f1084fd07f2c93f328989de8cb0dcb8f10c9d3ff217bc3",
+    "unreal/Content/BelmonteTrack/Materials/MI_ST_Coach.uasset": "1c0c29ff84477c7fa893f1bdcf212e77d03642ce5fd8db0633f71839296ab037",
+    "unreal/Content/BelmonteTrack/Materials/MI_ST_Glass.uasset": "68ba801d361d1535a3ec4c3ce777f5332ef4b5cc591d33dce2900dcf8407def5",
+    "unreal/Content/BelmonteTrack/Materials/MI_ST_Green.uasset": "c74437f21f5a1248250ceb476cc3d8241947d9575f69bde75b0e4509e6d527a6",
+    "unreal/Content/BelmonteTrack/Materials/MI_TK_Bank.uasset": "2528855e5643c8ea2f2aa1c11ce7e45c362cca6d803d2678232a5a590b8c949f",
+    "unreal/Content/BelmonteTrack/Materials/MI_TK_LampGlow.uasset": "d30b6e3e19ac834c3e04b41b43c6d5b9973ff22f195917179d333f04b26f0bf7",
+    "unreal/Content/BelmonteTrack/Materials/MI_TK_Signal.uasset": "18361c6123af2eaa90f360435304547759e9be64edc290a2fe63ff7b07e51ad3",
+    "unreal/Content/BelmonteTrack/Materials/MI_TK_TunnelLining.uasset": "ba2cf7e6ab3d1b2c191f2c9efe286174a9456c7e476aae657712198ec38d8972",
+    "unreal/Content/BelmonteTrack/Materials/M_TK_Glow.uasset": "212bd2c40e316981499a698879aa04fb1efba0754ff0b987937dc3adacb2e5d3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

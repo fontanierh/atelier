@@ -1,0 +1,609 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/CraterPark/Meshes (part 4 of 6)
+schema = 1
+id = "adopted/craterpark/meshes/loose_files_04"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/meshes/loose_files_04"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_20_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_20_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_20_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_20_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_21_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_22_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_23_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_25_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_26_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_26_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_046_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_046_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_047_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_048_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_049_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_21_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_21_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_21_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_21_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_22_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_22_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_22_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_22_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_23_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_23_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_23_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_24_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_24_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_24_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_24_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_25_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_053_25_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_21_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_21_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_21_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_21_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_22_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_22_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_22_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_010_22_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_21_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_21_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_21_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_21_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_22_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_22_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_22_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_023_22_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_13_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_13_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_16_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_17_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_18_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_19_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_23"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_20_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_12"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_13"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_14"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_17"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_21_23"

@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/belmontetrain/source/sm-btf-canteenladle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenLadle/LOD0/M_BT_CanteenLadle.uasset": "c179546b4d4c0aae9a389700689f2f497e75d1568475d5c23d7006f6cb5f9eb5",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenLadle/LOD0/canteen-ladle-base.uasset": "1c14fa9793a9482688449937d54a9f2b3727177168b98f9d4861de78e99ab1d4",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenLadle/LOD0/canteen-ladle-normal.uasset": "fed7b9af6220b926732237ad327c458b6b6b5bd20e9e680da5eb170e4c9dd8cc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

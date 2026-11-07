@@ -1,0 +1,72 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Horses/Coats
+schema = 1
+id = "adopted/horses/coats"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coats"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Overo_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Pangare_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Solid_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Spots_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Tobiano_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/bay"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/bay-tobiano"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/black"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/blanket"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/blue-roan"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/buckskin"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/chestnut"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/chestnut-overo"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/dapple-grey"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/leopard"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/palomino"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/perlino"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/red-roan"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/seal-brown"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/silver-dun"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/sorrel"

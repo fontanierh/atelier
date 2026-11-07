@@ -69,6 +69,12 @@ const AV2WorldManifest* AV2WorldManifest::Find(const UWorld* World)
     return It ? *It : nullptr;
 }
 
+FVector2D AV2WorldManifest::OwnerPoint(const FTransform& Placement, const UStaticMesh* Mesh)
+{
+    const FVector2D P(Placement.GetLocation());
+    return P.IsZero() && Mesh ? FVector2D(Placement.TransformPosition(Mesh->GetBounds().Origin)) : P;
+}
+
 bool AV2WorldManifest::CoversInstance(const FVector2D& P) const
 {
     if (bOnlyMigrated) return true;
@@ -174,7 +180,7 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
         {
             FTransform X;
             Group->GetInstanceTransform(I, X, true);
-            const FVector2D P(X.GetLocation());
+            const FVector2D P = AV2WorldManifest::OwnerPoint(X, Group->GetStaticMesh());
             if (!AV2WorldManifest::InsideHalfOpen(BoundsCm[R], P)) continue;
             FHitResult Hit;
             if (bTraceGround && !World->LineTraceSingleByChannel(Hit, X.GetLocation() + FVector(0, 0, 300),

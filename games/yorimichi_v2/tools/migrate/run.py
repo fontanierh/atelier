@@ -41,6 +41,11 @@ class MigrationError(RuntimeError):
     pass
 
 
+def overlap(a, b) -> bool:
+    """Two half-open [min x, min y, max x, max y) boxes share area."""
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+
 def make_plan(game: Path, ids: list[str], environment: str, services, only_migrated, runtime_services, patch_m):
     _, regions = records.discover(game)
     by_id = {r.id: r for r in regions}
@@ -50,6 +55,13 @@ def make_plan(game: Path, ids: list[str], environment: str, services, only_migra
     maps = {m for i in ids + [environment] for m in by_id[i].maps}
     if len(maps) != 1:
         raise MigrationError(f'the regions must share exactly one map, not {sorted(maps)}')
+    # An instance is copied into every region whose box holds it: two migrated regions of one map never overlap.
+    # The environment owns what no region holds, so its box (the whole map) is the one exception.
+    mapped = sorted((r for r in regions if maps <= set(r.maps) and r.id != environment), key=lambda r: r.id)
+    for index, a in enumerate(mapped):
+        for b in mapped[index + 1:]:
+            if overlap(a.bounds_cm, b.bounds_cm) and (a.id in ids or b.id in ids):
+                raise MigrationError(f'{a.id} and {b.id} overlap on {next(iter(maps))}: their scenery would be copied twice')
     return {'map': maps.pop(), 'environment': environment, 'services': list(services), 'patch_m': patch_m,
             'only_migrated': only_migrated, 'runtime_services': list(runtime_services),
             'regions': [{'id': i, 'bounds_cm': list(by_id[i].bounds_cm)} for i in ids]}
@@ -130,9 +142,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('regions', nargs='+', help='region IDs whose scenery and island pieces to migrate')
     parser.add_argument('--environment', required=True, help='the region owning map-wide actors and services')
-    parser.add_argument('--services', nargs='*', default=[], choices=['SkyDome', 'Sea', 'SkatePark.Scenery'])
+    parser.add_argument('--services', nargs='+', action='extend', default=[], choices=['SkyDome', 'Sea', 'SkatePark.Scenery'])
     parser.add_argument('--only-migrated', action='store_true', help='slice map: no runtime instance scenery')
-    parser.add_argument('--runtime-service', nargs='*', default=[], help='with --only-migrated: services that run')
+    parser.add_argument('--runtime-service', nargs='+', action='extend', default=[],
+                        help='with --only-migrated: services that run (repeatable; every name is kept)')
     parser.add_argument('--patch-m', type=float, default=32.0)
     parser.add_argument('--claim', help='claims task holding every touched region (else the D04 bootstrap writer)')
     args = parser.parse_args(argv)
