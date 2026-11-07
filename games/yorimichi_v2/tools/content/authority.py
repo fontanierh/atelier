@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import time
 import tomllib
 from pathlib import Path
 
@@ -202,6 +203,9 @@ def creation_claim(claim: str, regions: list[str], what: str, *, repo: Path = RE
                        f'{", ".join(regions)}; request one with each region scope')
 
 
+BIND_RETRY_S = 20.0   # a busy claim service (a reconcile listing every lock) times a batch out
+
+
 def bind_created(claim: str, regions: list[str], before: dict, after: dict, what: str, *, game: Path = GAME,
                  repo: Path = REPO) -> list[str]:
     """Check a claimed creating write from content snapshots taken around it and bind what it created; returns the
@@ -236,7 +240,11 @@ def bind_created(claim: str, regions: list[str], before: dict, after: dict, what
             batch = paths[start:start + 500]
             command = ['uv', 'run', 'atelier', 'claims', 'extend', str(held['id']),
                        *(arg for path in batch for arg in ('--lock-path', path)), '--acquire']
-            result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+            for attempt in range(3):   # extending again is safe: held items stay, and only missing locks are taken
+                result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+                if not result.returncode:
+                    break
+                time.sleep(BIND_RETRY_S * (attempt + 1))
             if result.returncode:
                 raise Unauthorized(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
                                    f'{claim}: {result.stderr.strip()[-300:]}')
