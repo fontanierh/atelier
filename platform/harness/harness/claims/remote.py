@@ -4,11 +4,15 @@ The service verifies, it never trusts a report: a claim becomes active only afte
 reported lock (path, owner, ID) on the remote and a Git verifier shows the base is current. Any doubt raises
 ``Unavailable``, which callers treat as a refusal (fail closed), never as success.
 
-Clients lock and unlock with their own credentials through a locker (``git lfs lock --json`` normally).
+Clients lock and unlock with their own credentials through a locker: the LFS locking API with the checkout's git
+credential (``client_locker``), or ``git lfs lock --json`` when that cannot be set up.
 """
+import base64
 import json
 import os
+import re
 import subprocess
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -110,7 +114,12 @@ class LfsHttp:
 # ---------------------------------------------------------------------------- LFS: git-lfs command line
 
 class GitLfsCli:
-    """``git lfs locks/lock/unlock --json`` in a checkout, using that checkout's configured credentials."""
+    """``git lfs locks/lock/unlock --json`` in a checkout, using that checkout's configured credentials.
+
+    git-lfs keeps one lock cache per repository (shared by its worktrees) and concurrent lock/unlock commands corrupt
+    it, so this runs them one at a time in a process."""
+
+    _cache = threading.Lock()
 
     def __init__(self, repo, remote=None, timeout=60):
         self.repo, self.remote, self.timeout = str(repo), remote, timeout
@@ -137,7 +146,8 @@ class GitLfsCli:
 
     def lock(self, path, ref=None):
         try:
-            result = self._run('lock', path)
+            with self._cache:
+                result = self._run('lock', path)
         except subprocess.TimeoutExpired as error:
             return LockResult('unknown', detail=f'git lfs lock timed out: {error}')
         except OSError as error:
@@ -166,12 +176,49 @@ class GitLfsCli:
 
     def unlock(self, lock_id, ref=None):
         try:
-            result = self._run('unlock', '--id', lock_id)
+            with self._cache:
+                result = self._run('unlock', '--id', lock_id)
         except (OSError, subprocess.TimeoutExpired) as error:
             raise Unavailable(f'git lfs unlock: {error}') from error
         if result.returncode != 0:
             raise Unavailable(f'git lfs unlock {lock_id} failed: {(result.stderr + result.stdout).strip()[-500:]}')
         return True
+
+
+def lfs_endpoint(env_text, remote=None):
+    """The LFS endpoint URL from ``git lfs env`` output (``Endpoint=URL (auth=..)``, or ``Endpoint (REMOTE)=URL``)."""
+    for line in env_text.splitlines():
+        match = re.match(r'Endpoint(?: \(([^)]+)\))?=(\S+)', line.strip())
+        if match and match.group(1) == remote:
+            return match.group(2)
+    return None
+
+
+def basic_auth(credential_text):
+    """An Authorization header value from ``git credential fill`` output, or None without a username and password."""
+    fields = dict(line.split('=', 1) for line in credential_text.splitlines() if '=' in line)
+    if not fields.get('username') or not fields.get('password'):
+        return None
+    return 'Basic ' + base64.b64encode(f"{fields['username']}:{fields['password']}".encode()).decode()
+
+
+def client_locker(repo, remote=None, timeout=60):
+    """The locker a client uses in checkout REPO: the LFS locking API on the checkout's endpoint with the git credential
+    git-lfs itself would send (safe to run concurrently, no lock cache), else ``GitLfsCli``."""
+    env = {**os.environ, 'GIT_TERMINAL_PROMPT': '0'}
+    try:
+        lfs_env = subprocess.run(['git', '-C', str(repo), 'lfs', 'env'], capture_output=True, text=True, timeout=timeout,
+                                 env=env)
+        url = lfs_endpoint(lfs_env.stdout, remote) if lfs_env.returncode == 0 else None
+        if url and url.startswith('https://'):
+            fill = subprocess.run(['git', '-C', str(repo), 'credential', 'fill'], input=f'url={url}\n\n',
+                                  capture_output=True, text=True, timeout=timeout, env=env)
+            auth = basic_auth(fill.stdout) if fill.returncode == 0 else None
+            if auth:
+                return LfsHttp(url, {'Authorization': auth}, timeout=timeout)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return GitLfsCli(repo, remote, timeout)
 
 
 # ---------------------------------------------------------------------------- Git

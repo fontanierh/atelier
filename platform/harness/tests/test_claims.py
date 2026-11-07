@@ -863,3 +863,35 @@ def test_many_locks_are_released_concurrently(world):
     assert len(unlocks) == 30 and 1 < peak['max'] <= 8
     assert all(world.lfs.at(p) == [] for p in paths)
     assert {l['state'] for l in view['locks']} == {'released'}
+
+
+def test_the_client_locker_reads_the_lfs_endpoint_and_git_credential():
+    from atelier.harness.claims.remote import basic_auth, lfs_endpoint
+    env = ('git-lfs/3.6.1\nEndpoint=https://github.com/o/r.git/info/lfs (auth=basic)\n'
+           'Endpoint (fork)=https://github.com/f/r.git/info/lfs (auth=none)\nLocalWorkingDir=/w\n')
+    assert lfs_endpoint(env) == 'https://github.com/o/r.git/info/lfs'
+    assert lfs_endpoint(env, 'fork') == 'https://github.com/f/r.git/info/lfs'
+    assert lfs_endpoint(env, 'other') is None
+    assert basic_auth('protocol=https\nhost=github.com\nusername=u\npassword=p=q\n') == 'Basic dTpwPXE='
+    assert basic_auth('protocol=https\nhost=github.com\n') is None
+
+
+def test_the_git_lfs_command_locker_never_runs_two_lock_commands_at_once(tmp_path, monkeypatch):
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    running, peak, guard = [0], [0], threading.Lock()
+
+    def run(self, *argv):
+        with guard:
+            running[0] += 1
+            peak[0] = max(peak[0], running[0])
+        time.sleep(0.02)
+        with guard:
+            running[0] -= 1
+        return subprocess.CompletedProcess(argv, 0, '', '')
+
+    monkeypatch.setattr(GitLfsCli, '_run', run)
+    cli = GitLfsCli(tmp_path)
+    with ThreadPoolExecutor(8) as pool:
+        list(pool.map(lambda i: cli.unlock(str(i)), range(16)))
+    assert peak[0] == 1
