@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/modori/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Modori/Textures/T_Modori_Body.uasset": "8cba1abcf77266407cfd980d9efcd56002589aa9f461cc7267d4b8bf28582383",
+    "unreal/Content/Modori/Textures/T_Modori_Coat.uasset": "e9fa964efb315a0e51855bd6610a6036302dde9f0cf2e838d202169d11fe288f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

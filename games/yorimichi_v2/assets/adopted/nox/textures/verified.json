@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/nox/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Nox/Textures/T_Nox_Body.uasset": "49467c0fcafd8b5acb6bbb540b94d12656588137676018117c8848994802951b",
+    "unreal/Content/Nox/Textures/T_Nox_Head.uasset": "fd3057328fb35e2ab2b7fd64a79e7266267a99729df75b084f3ba50e4bc791e6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

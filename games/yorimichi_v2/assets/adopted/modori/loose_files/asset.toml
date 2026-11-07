@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: packages directly in /Game/Modori
+schema = 1
+id = "adopted/modori/loose_files"
+kind = "adopted"
+authority = "editor"
+owner = "shared/modori/loose_files"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Modori/BP_Modori"
+
+[[outputs]]
+package = "/Game/Modori/DA_Modori"
+
+[[outputs]]
+package = "/Game/Modori/DA_ModoriBase"
+
+[[outputs]]
+package = "/Game/Modori/M_Modori_Body"
+
+[[outputs]]
+package = "/Game/Modori/M_Modori_Coat"
+
+[[outputs]]
+package = "/Game/Modori/PA_Modori_Cloth"
+
+[[outputs]]
+package = "/Game/Modori/SK_Modori"
+
+[[outputs]]
+package = "/Game/Modori/SK_Modori_Skeleton"

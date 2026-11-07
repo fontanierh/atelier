@@ -216,27 +216,34 @@ def bind_created(claim: str, regions: list[str], before: dict, after: dict, what
     folders = [folder + '/' for r in regions for folder in by_id[r].actor_folders]
     changed = written(before, after)
     created = sorted(rel for rel in changed if rel not in before and rel in after)
-    outside = [rel for rel in created if not rel.startswith(tuple(folders))]
-    if outside:
-        raise Unauthorized(f'{what}: created {", ".join(outside[:8])} outside the actor folders of '
-                           f'{", ".join(regions)}; delete them (a claimed write creates only its regions\' actors)')
-    paths = [f'games/yorimichi_v2/{rel}' for rel in created]
-    owned, _ = owning_scopes(game, paths)
-    if owned:
-        raise Unauthorized(f'{what}: created files a record already lists ({", ".join(sorted(map(str, owned)))}); '
-                           'a new file must not have existed before the write')
-    existing = [f'games/yorimichi_v2/{rel}' for rel in sorted(changed - set(created))]
-    if existing:
-        scopes, _ = owning_scopes(game, existing)
-        authorize(existing, claim, what, scopes=scopes | set(regions), repo=repo)
-    for start in range(0, len(paths), 500):   # bounded command lines for a large migration
-        batch = paths[start:start + 500]
-        command = ['uv', 'run', 'atelier', 'claims', 'extend', str(held['id']),
-                   *(arg for path in batch for arg in ('--lock-path', path)), '--acquire']
-        result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
-        if result.returncode:
-            raise Unauthorized(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
-                               f'{claim}: {result.stderr.strip()[-300:]}')
-    if paths:
-        authorize(paths, claim, what, scopes=set(regions), repo=repo)
+    try:
+        outside = [rel for rel in created if not rel.startswith(tuple(folders))]
+        if outside:
+            raise Unauthorized(f'{what}: created {", ".join(outside[:8])} outside the actor folders of '
+                               f'{", ".join(regions)}; delete them (a claimed write creates only its regions\' actors)')
+        paths = [f'games/yorimichi_v2/{rel}' for rel in created]
+        owned, _ = owning_scopes(game, paths)
+        if owned:
+            raise Unauthorized(f'{what}: created files a record already lists ({", ".join(sorted(map(str, owned)))}); '
+                               'a new file must not have existed before the write')
+        existing = [f'games/yorimichi_v2/{rel}' for rel in sorted(changed - set(created))]
+        if existing:
+            scopes, _ = owning_scopes(game, existing)
+            authorize(existing, claim, what, scopes=scopes | set(regions), repo=repo)
+        for start in range(0, len(paths), 500):   # bounded command lines for a large migration
+            batch = paths[start:start + 500]
+            command = ['uv', 'run', 'atelier', 'claims', 'extend', str(held['id']),
+                       *(arg for path in batch for arg in ('--lock-path', path)), '--acquire']
+            result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+            if result.returncode:
+                raise Unauthorized(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
+                                   f'{claim}: {result.stderr.strip()[-300:]}')
+        if paths:
+            authorize(paths, claim, what, scopes=set(regions), repo=repo)
+    except Unauthorized:
+        # Created files exist before their paths can be claimed (World Partition names them at save). Unbound,
+        # they are unauthorized writes: remove every one, so a refused or failed bind leaves nothing behind.
+        for rel in created:
+            (game / rel).unlink(missing_ok=True)
+        raise
     return paths

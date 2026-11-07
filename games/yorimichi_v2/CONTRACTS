@@ -14,6 +14,10 @@ an active claim covering the package's scope and exact path, and the LFS lock th
 when the write is authorized; a task's changed-file set MUST stay inside its claim, including companions,
 deletions and moves between regions. The only exception is DECISIONS D04: until D04 is closed, the recorded
 bootstrap writer, in a checkout with no claims task, is the single binary writer and writes without a claim.
+One creation exception: World Partition names a new actor package only when it saves it, so a migration whose
+active claim holds every touched region's scope MAY create new packages in those regions' actor folders before
+their paths are claimed; it MUST then bind each to the claim with its acquired LFS lock and verify them before
+publication, and any refused or failed bind MUST delete every file it created. Existing files stay exact-claimed.
 Every write route (import, editor script, save validation, adoption) MUST enforce the same rule, and adoption
 MUST NOT overwrite an existing package whose bytes differ.
 

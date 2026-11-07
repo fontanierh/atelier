@@ -203,8 +203,7 @@ def test_creation_in_another_regions_folder_or_outside_actor_folders_is_refused(
         with pytest.raises(authority.Unauthorized, match='outside the actor folders of region/w01, region/w00'):
             migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K', rel: 'x'}),
                               out=tmp_path / 'm', echo=lambda *_: None)
-        (game / rel).unlink()
-        (game / NEW).unlink()
+        assert not (game / rel).exists() and not (game / NEW).exists()   # every created file is removed
     assert claims.extensions == [] and claims.tasks['T1']['paths'] == set()
     assert not (game / 'world/regions/w00/actors.verified.json').exists()
 
@@ -218,7 +217,7 @@ def test_modifying_an_existing_unclaimed_file_is_refused(tmp_path, game, claims,
             migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K', rel: 'v2'},
                                                                    denied), out=tmp_path / 'm', echo=lambda *_: None)
         assert any(d.endswith(rel) for d in denied)            # the editor's save guard refuses it first
-        (game / NEW).unlink()
+        assert not (game / NEW).exists()                       # the refused run's created file is removed
     assert claims.extensions == []                             # nothing is bound when any write is refused
 
 
@@ -235,6 +234,16 @@ def test_a_claimed_existing_file_without_its_verified_lock_refuses_before_the_ed
     (tmp_path / 'direct.json').write_text(json.dumps({**plan(game), 'claim': 'T1'}))
     recipe._authorize_migration(type('Ctx', (), {'out': tmp_path / 'out'})(), io.StringIO())
     assert any('--paths' in c and f'games/yorimichi_v2/{OLD}' in c for c in claims.checks)
+
+
+def test_a_failed_bind_removes_every_created_file(tmp_path, game, claims, env):
+    env.setenv('ATELIER_AGENT', 'agent-a')
+    claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
+    claims.unlocked.add(f'games/yorimichi_v2/{NEW}')               # its lock is acquired but cannot be verified
+    with pytest.raises(authority.Unauthorized, match='verified locks'):
+        migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K'}),
+                          out=tmp_path / 'm', echo=lambda *_: None)
+    assert not (game / NEW).exists()
 
 
 def test_a_claim_must_hold_every_touched_region_before_the_editor_starts(tmp_path, game, claims, env):

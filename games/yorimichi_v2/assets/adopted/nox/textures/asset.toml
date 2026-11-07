@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: /Game/Nox/Textures
+schema = 1
+id = "adopted/nox/textures"
+kind = "adopted"
+authority = "editor"
+owner = "shared/nox/textures"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Nox/Textures/T_Nox_Body"
+
+[[outputs]]
+package = "/Game/Nox/Textures/T_Nox_Head"

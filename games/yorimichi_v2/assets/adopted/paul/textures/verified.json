@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/paul/textures",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Paul/Textures/T_M_Paul_0.uasset": "960909d7bf91165c15ba23e78b9565f01aa3b42d706b093c3db939b301be9655",
+    "unreal/Content/Paul/Textures/T_M_Paul_1.uasset": "e1a4d86c738fd31e3a0ce77b684ee87b733b287ebe9c38ee0bd1bea80cfc13de"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
