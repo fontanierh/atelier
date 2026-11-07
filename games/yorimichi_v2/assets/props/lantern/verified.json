@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/Lantern.uasset": "3bf1795587aef7343ac76e0e986bd154de6902f0638b018d51e5b000bea4b75a"
+    "unreal/Content/Japan/Assets/Lantern.uasset": "5e848af7e1f3a945dfba1eb5a04e5f25c2f6bbe83dbbf3ef76b47967403a3689"
   },
-  "input_fingerprint": "b23745264bc64e47990e624d8c8c4af9281d80d6081297e39d5b5cc96b081edb",
+  "input_fingerprint": "d5efd6e544558d479f70d53faad8a77f55e0a3fa2be85168e49e214e12adb2a1",
   "kind": "imported",
   "schema": 1,
   "tool": "static-mesh@1"
