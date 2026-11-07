@@ -17,14 +17,14 @@ machine is reachable from this one, so the two-machine rows wait for a collabora
 | C09 stale base | pass (native, one machine) | PR #732; native at aea8c3c860 | `stale_base` refusal in `test_claims.py` and the integration test. Native run: "Claims cases on the live service" below. |
 | C10 service unreachable | pass (native, one machine) | PR #732; native at aea8c3c860 | fail-closed and partial-acquisition cases in `test_claims.py`. Native run: "Claims cases on the live service" below. |
 | C11 crash and restart | pass (native, one machine) | PR #732; native at aea8c3c860 | restart/reconcile cases in `test_claims.py`. Native run: "Claims cases on the live service" below. |
-| C12 import crash | unit | | `test_import_run.py` journal restore cases |
+| C12 import crash | pass (native, one machine) | main 3d85747c82 plus the recovery report of this change | Unit: `test_import_run.py` journal restore cases. Native run with Unreal, real claims and LFS locks: "C12 native run" below. The editor killed after its write, and the import controller killed mid-import: no record either time, the crashed output refused by the content check, restored exactly by the next run |
 | C13 delete/rename/move | pass (native, claims check) | native at aea8c3c860 | `test_changeset.py`. Native run: "Claims cases on the live service" below. |
 | C14 undeclared shared scope | pass (native, claims check) | native at aea8c3c860 | `test_changeset.py` out-of-scope write. Native run: "Claims cases on the live service" below. |
 | C15 missing payload, stale source, corrupt output | pass (test map; stale source in unit tests) | f1d2b1529a | on the real test map in a clean clone: one flipped byte in `TestMinimal.umap` → OUTPUT_CHANGED, a deleted HLOD layer → MISSING, an actor package restored to its LFS pointer → NOT_HYDRATED with the exact pull; exit 1, nothing regenerated, and after restoring, `check.py --full` passes with 7 files hashed. The hint for a changed or lost editor package now says to restore unless the change is a claimed edit (recording it would have stamped corrupt bytes as current). SOURCE_CHANGED: `test_content_check.py`, real import pending. |
 | C16 two live sessions plus stale record | partial pass (native) | PR #733 (merged) | unit: `test_live_sessions.py` with two fake bridges. Native, two `atelier play yorimichi_v2 --profile test` launches: each got its own session record and loopback port (26874, 26981); game A's bridge answered and `atelier live --session ID py -` ran inside it (PID 42089); with two records and no `--session` the CLI refused ("pass --session ID"); after stopping game A its session was refused ("no live session"), and `--prune` removed the stale records. Found and fixed on the way: the bridge started only once a player pawn was ready, so a map without world data never listened; `AJapanGameMode::BeginPlay` now starts it. Not yet shown: both games answering at once, and screenshots. Game B waited in the capacity queue the whole 20 minutes while the donor build held the CPU (admission working, not bypassed); rerun once the donor is done. |
 | C17 pushed, not merged | pass (native, one machine) | PR #732; native at aea8c3c860 | claims release only on merge or cancel. Native run: "Claims cases on the live service" below. |
 | C18 push or LFS upload fails | partial pass | f1d2b1529a | in a scratch clone with `.githooks`, a commit carrying a new LFS package was pushed with LFS pointed at an unreachable endpoint: `git lfs pre-push` failed the batch upload ("connection refused"), the push exited 1, `git ls-remote` shows the branch never reached origin, and the commit and the 4 KB local package stayed. Claim retention on failure is the claims service rule (release only on merge or cancel, PR #732). Not yet run: the retry that reconciles before pushing again (needs a sandbox remote, not the public repository). |
-| C19 shared definition update | harness (no Unreal) | | `tests/test_collaboration_harness.py`: a claimed save of a shared material makes the check report exactly its direct `input_dependencies` dependents STALE_IMPORT and the import plan add the transitive one, nothing else; two dependent owners reimport under their own claims and main checks clean, with unrelated records and packages byte-identical. Rerun on adopted content. |
+| C19 shared definition update | harness + native editor-owned case | main 3d85747c82 plus this change | `tests/test_collaboration_harness.py`: a claimed save of a shared material makes the check report exactly its direct `input_dependencies` dependents STALE_IMPORT and the import plan add the transitive one, nothing else; two dependent owners reimport under their own claims and main checks clean, with unrelated records and packages byte-identical. Native: a claimed edit of the shared `MI_Stone` changed only it and its record ("C19 native run" below). The slice has no generated asset with real `input_dependencies` yet; the dependent-reimport half waits for P4-A (skeletons and their clips) |
 | C20 cancel a guarded build | pass (test map) | f1d2b1529a | a guarded `editor.run` holding the editor (`Scripts/hold.py`) was cancelled with SIGTERM 16 s in: the build reported "BUILD INTERRUPTED during editor.run; completed steps stay published", its editor child (UnrealEditor-Cmd) was gone within 1 s, the hold script never finished, another owner's running build (the donor, same machine) kept its PID and kept running, and `git status` was unchanged. The next guarded editor run was admitted at once. |
 | C21 claimed new actors after D04 closes | pass (native, one machine) | main fa63a342cd plus the claims change of PR #739, in a scratch branch | Unit: `tests/test_d04.py`. Native run with Unreal and the real claims service and GitHub LFS locks, recorded under "C21 native run" below. |
 
@@ -168,3 +168,47 @@ agents editing them needed the same scope. At main 216ba854a6, with the records 
 | Each agent tries the other's package | refused: "claim OWN-A holds no active scope covering asset/adopted/japan/assets/tree-maple …" |
 
 Both claims were released afterwards.
+
+## C12 native run: an import crashes after writing its package
+
+This ran on 2026-11-07 in the compiled asset workspace, against the live claims service with real GitHub LFS locks.
+Agent `jim5-c21` held a claim on `asset/prop/lantern` (the FBX, the package and its companions). Each time, the
+lantern's FBX was changed to an earlier shape, so the import had real work. Everything was reset afterwards, the
+claims were cancelled, and no V2 lock was left.
+
+| Crash | What happened |
+|---|---|
+| The editor is killed (`kill -9`) just after it rewrote `Lantern.uasset` | the import failed: "restored 1 file(s); no record written". The package was back to its exact earlier bytes (5e848af7e1f3), and the record and journal were unchanged |
+| The import controller (`run.py`) is killed while the guarded editor imports | the guarded build finished by itself and wrote a new package. No record was written, and the journal stayed. The content check then reported the package as `OUTPUT_CHANGED` and the source as `SOURCE_CHANGED`: the crashed output was not accepted |
+| The next run after that | "recovered prop/lantern: restored 1 file(s) an interrupted import left", then a fresh import and its record. The content check passed and the journal was gone |
+
+Two lessons from the run:
+
+- **The first attempt at the controller crash killed the wrong process.** `pgrep` matched the `uv run` wrapper
+  instead of the Python process inside it. The import kept running, so that attempt proved nothing. The rerun
+  killed the interpreter itself and checked that it was gone.
+- **A recovery used to be silent.** The next run restored the journal without saying so. It now reports what it
+  restored (`run.py`, with a test).
+
+Reimporting the same FBX gave different package bytes each time (3de599…, f3a58b…, 568c7e…). The import is not
+byte-reproducible, so the content check compares a package with its own record, never with a fresh reimport.
+
+## C19 native run: a shared material edit
+
+The slice has no generated asset whose import depends on another asset's bytes. The lantern uses the shared stone
+material instance `MI_Stone` (record `adopted/japan/materials`), but only by path: a material change does not
+change the mesh. So the native case is the editor-owned half of C19. A claimed edit of the shared definition must
+change only that package and its record, and nothing that refers to it may go stale.
+
+| Step | Result |
+|---|---|
+| Claim `asset/adopted/japan/materials` with locks on `MI_Stone` and its companions | active |
+| `editor.run` with `Scripts/tint_material.py`: `Tint` (0.5, 0.5, 0.47) → (0.62, 0.6, 0.56) | rc 0 in 18 s; only `MI_Stone.uasset` changed |
+| Content check before save validation | `OUTPUT_CHANGED adopted/japan/materials: MI_Stone.uasset differs from its verified bytes` |
+| `save_validate.py adopted/japan/materials --claim …` | "78 package file(s), 1 changed" |
+| Content check after | OK, 0 problems: the lantern and every other record are current |
+| Changed files | `MI_Stone.uasset` and `adopted/japan/materials/verified.json`; `claims check --staged`: ok (2 paths) |
+
+Everything was reset and the claim cancelled. The first two attempts failed before saving anything: UE 5.8's
+`SetMaterialInstanceVectorParameterValue` always returns false. The script now checks the parent's parameter
+names and reads the value back.

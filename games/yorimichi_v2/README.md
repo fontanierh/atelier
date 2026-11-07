@@ -55,6 +55,15 @@ Without it these packages are absent locally, and the content check (so every bu
 "fetch required". `--allow-restricted-absent` only notes it, for checkouts without restricted access that do not
 build or play. A fetch never overwrites a local file that differs from its pin.
 
+### Workspaces on one machine
+
+Keep compiled workspaces and reuse them for later tasks. A new Git worktree pays a full editor compile (17 and
+32 minutes in the C01 run) and about 18 GB of build output; a copy-on-write clone of another workspace's build
+folders did not help. In the C04 handoff, an already compiled receiving workspace was ready 5.5 s after the
+transfer. So each workspace has one writer at a time and moves to its next task's branch only after its Unreal
+work has stopped. This is the proven one-machine workflow. Several machines are a separate gate (DECISIONS D03),
+not yet proven.
+
 ## Everyday commands
 
 Each command below has been run as written. A command marked *(pending)* exists but has not yet been proven on
