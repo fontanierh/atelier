@@ -4,7 +4,7 @@
 schema = 1
 roots = [
     "/Game/Audio", "/Game/Japan/Audio",                     # Sonniss-derived sounds
-    "/Game/Cairo", "/Game/SkateRide", "/Game/SkateMotion",  # animation not yet cleared (D05 group 1)
+    "/Game/Cairo", "/Game/CairoAdventure", "/Game/SkateRide", "/Game/SkateMotion",  # animation not yet cleared (D05 group 1)
 ]
 lock = "restricted.lock.json"
 

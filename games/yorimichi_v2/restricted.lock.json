@@ -800,6 +800,458 @@
       "sha256": "ae8679fe96c739cb2b03411a9ca284b35290a41a63e6ff1b97e583a519ee526c",
       "size": 9652409
     },
+    "CairoAdventure/A_A_Pose_Sword_Wait.uasset": {
+      "sha256": "82480bb69a1a54e1ae9605acdfc4f227bc2483f6fbaa3e28ed3cd2ff827fc49c",
+      "size": 171821
+    },
+    "CairoAdventure/A_Climb_AirToWall.uasset": {
+      "sha256": "c216a24e1efbac93a2d62f402f3845f39f891423d66aad935849ab818664a2d8",
+      "size": 257528
+    },
+    "CairoAdventure/A_Climb_Jump_Off_FootL.uasset": {
+      "sha256": "76da46a444ee5c9606ed642d1d8431e74c3ece43597355d9c108b0e9034016a0",
+      "size": 241465
+    },
+    "CairoAdventure/A_Climb_Wall_Ed_Edge_L.uasset": {
+      "sha256": "974456c81d7d1a83c7e35d2ece49418ef7a161fd09a33ac18303f058850e83f4",
+      "size": 295065
+    },
+    "CairoAdventure/A_Climb_Wall_Jump_L_FootL.uasset": {
+      "sha256": "f520f3fdd74fd2609585a0abaa599c2ab75410303f372ec0e640d80a1023958a",
+      "size": 362848
+    },
+    "CairoAdventure/A_Climb_Wall_Jump_R_FootR.uasset": {
+      "sha256": "5ff03a049cf19f317c1ab617d4fce7abbe1b82b001fab77dadb4b88babbe578c",
+      "size": 362848
+    },
+    "CairoAdventure/A_Climb_Wall_Jump_UL_FootL.uasset": {
+      "sha256": "6271adb4dc7f7d5e1cc07a7c5f4ec108dee1257a14952ea4d6c5a043c3eef68e",
+      "size": 359117
+    },
+    "CairoAdventure/A_Climb_Wall_Jump_UR_FootR.uasset": {
+      "sha256": "d83d94593551184581daa8cf7ed15870f5e4e8186550a0c5f334da55bd6937c2",
+      "size": 359117
+    },
+    "CairoAdventure/A_Climb_Wall_Jump_U_FootL.uasset": {
+      "sha256": "47413294faf69672c5dffad51ed8c7cab598f135787781ebe082b5b9881785ae",
+      "size": 361600
+    },
+    "CairoAdventure/A_Climb_Wall_Move_D.uasset": {
+      "sha256": "850bf4759819ac37734e07a54a0814164c69b578c330575a8fc0cf4f4a59f1d5",
+      "size": 291826
+    },
+    "CairoAdventure/A_Climb_Wall_Move_DL.uasset": {
+      "sha256": "158d1e047006a879f91a2b1db7c27ad6acd58c776c62995de286ecd9dcd7d1f5",
+      "size": 292642
+    },
+    "CairoAdventure/A_Climb_Wall_Move_DR.uasset": {
+      "sha256": "dfc6b6004daddf507b5e8c8bc9e01789335d0c5796b44b6e665110fa5ae44812",
+      "size": 291842
+    },
+    "CairoAdventure/A_Climb_Wall_Move_L.uasset": {
+      "sha256": "d3275d98df00b06968edecaba8d56c020afbc8ff4a29a4728250000cba0f555f",
+      "size": 293437
+    },
+    "CairoAdventure/A_Climb_Wall_Move_R.uasset": {
+      "sha256": "ac8c525b0d156d71a345d286469feb9af79bce07d9956ee2d14865531b6e0495",
+      "size": 292637
+    },
+    "CairoAdventure/A_Climb_Wall_Move_U.uasset": {
+      "sha256": "73aedc23d372876d9eaf5f8f8792e0eb521d216b76c6d3ab620fd3320201210f",
+      "size": 295037
+    },
+    "CairoAdventure/A_Climb_Wall_Move_UL.uasset": {
+      "sha256": "40208b214adccb18e670af08f7b6e64b6c465bbb0b9821659d26558a911480e1",
+      "size": 291850
+    },
+    "CairoAdventure/A_Climb_Wall_Move_UR.uasset": {
+      "sha256": "299460aa854fe7553b7930459f58c992e1ef967293e239a9a2928fefe7c4e0f8",
+      "size": 291850
+    },
+    "CairoAdventure/A_Climb_Wall_Off_Tired_FootL.uasset": {
+      "sha256": "d82537291b7ea577bdee460bc70f924462aeb2617ee81344858258482c3d79a1",
+      "size": 198994
+    },
+    "CairoAdventure/A_Climb_Wall_Wait_FootL.uasset": {
+      "sha256": "d12a8c69624020d6e3c133b8c43bad4b6febb7752400da32da39b7c57427459b",
+      "size": 256561
+    },
+    "CairoAdventure/A_Equip_Float_Off.uasset": {
+      "sha256": "2c3650a91fc729479bdfebb33886df0c9cdcf29e702c1292c31d436cdf60ab71",
+      "size": 222147
+    },
+    "CairoAdventure/A_Equip_Float_On.uasset": {
+      "sha256": "f67a66299572b394da0c0b2bde481904b5dcaf2a82a4f6ed100cbbee7179343f",
+      "size": 321590
+    },
+    "CairoAdventure/A_Equip_Float_On_Fall.uasset": {
+      "sha256": "d9a733e1b2517056ca8baf9f91789a28bd676053f86a4df5afc10b4d71ef33bd",
+      "size": 472471
+    },
+    "CairoAdventure/A_Equip_Sword_Off_Natural.uasset": {
+      "sha256": "fc8c120f79046709d98cbd68329e80e38856bf5aacc68331609b03f8e1f972e4",
+      "size": 287915
+    },
+    "CairoAdventure/A_Equip_Sword_On_Natural.uasset": {
+      "sha256": "dbd88cbf9346578f91ed8709db430b3d3c01606204272439c4238e6894e9d836",
+      "size": 283838
+    },
+    "CairoAdventure/A_Fall.uasset": {
+      "sha256": "3df179a74736ba1ae920959d662fd693967518ac66024a702c5e5f79865f4434",
+      "size": 197969
+    },
+    "CairoAdventure/A_Float_Float.uasset": {
+      "sha256": "8398167ee904b45394b3070c03236a7250bcf757e63d9b6b3d03430283d22336",
+      "size": 225359
+    },
+    "CairoAdventure/A_Float_Float_B.uasset": {
+      "sha256": "27579cb31548bad8443bfc0cce5db3591e65cfe41b56d5a1d1cc85411c67d4d4",
+      "size": 217385
+    },
+    "CairoAdventure/A_Float_Float_F.uasset": {
+      "sha256": "f5235097117b87ae177c6a5f5925ce2ebaf8a4d03f38bc67543afc165ae4372d",
+      "size": 224585
+    },
+    "CairoAdventure/A_Float_Float_L.uasset": {
+      "sha256": "848bcc45f8e3148a1150a2dfd0e1813bb975057aa028521b2f007921b5f6cd39",
+      "size": 222985
+    },
+    "CairoAdventure/A_Float_Float_R.uasset": {
+      "sha256": "5535b299f96c8dd0a72cabf1790e00537f961d6f23718ecb16e813ec840da0eb",
+      "size": 222185
+    },
+    "CairoAdventure/A_Nml_Damage_L_B.uasset": {
+      "sha256": "0bd890e15ae7494d40d7dd01d5885bdfcd34a84830589d19abf6f58fee0c4d50",
+      "size": 246038
+    },
+    "CairoAdventure/A_Nml_Damage_L_B_Standup.uasset": {
+      "sha256": "865999738ef66aa1bd02f9d9852e615e4730a80480aa54f49bc53218c8ba6171",
+      "size": 267582
+    },
+    "CairoAdventure/A_Nml_Damage_L_F.uasset": {
+      "sha256": "929d5aa6d62d4bb86605391a28292c3fe6c2f8e07d154230277638a3871d6aa0",
+      "size": 245526
+    },
+    "CairoAdventure/A_Nml_Damage_L_F_Standup.uasset": {
+      "sha256": "e6524dcbb7dbc670b50b8662171228a1ef2dd9f8ba5617e9c06a0a9bfb15e1ff",
+      "size": 269054
+    },
+    "CairoAdventure/A_Nml_Damage_L_L.uasset": {
+      "sha256": "1924c4949cb93e9eb781486b1651c6a9c514140542fbb784668bd9a64701f94e",
+      "size": 246038
+    },
+    "CairoAdventure/A_Nml_Damage_L_L_Standup.uasset": {
+      "sha256": "5f7d1fa91f31e4b0954f5a45e0b119f7c060d299ee0717a4675b47e3a32ed4c7",
+      "size": 266366
+    },
+    "CairoAdventure/A_Nml_Damage_L_R.uasset": {
+      "sha256": "a0ee176debae60193ecfb3dbdff7e2f9084e55910fca695db5996438ca7bd236",
+      "size": 246038
+    },
+    "CairoAdventure/A_Nml_Damage_L_R_Standup.uasset": {
+      "sha256": "be1d7aa55f799fa06bdd90394d34bd295b5c47625197683899e7841e8a518226",
+      "size": 266366
+    },
+    "CairoAdventure/A_Nml_Damage_Land.uasset": {
+      "sha256": "ef8cf4330ece3717d87b1b0706b46eed29f78df7dfc498159e103f08c18f2db4",
+      "size": 364675
+    },
+    "CairoAdventure/A_Nml_Damage_Land_Stand.uasset": {
+      "sha256": "7a5e9c83508193569c659d87694a2db663c78d6ea82c3eeed5d1f2a67e38c997",
+      "size": 332913
+    },
+    "CairoAdventure/A_Nml_Damage_M_B.uasset": {
+      "sha256": "edfa35d28d9d0bdb598ea89fae8ad9fcd17e37a13812ef6bf3eeb46587819054",
+      "size": 267222
+    },
+    "CairoAdventure/A_Nml_Damage_M_F.uasset": {
+      "sha256": "7964d0bd7f6551f89df9c71859b27d787bd1267725706d82dd3c7c4f9c9d34f5",
+      "size": 299030
+    },
+    "CairoAdventure/A_Nml_Damage_M_L.uasset": {
+      "sha256": "d5a0ce77765f8e4d650fa3b4e87a44dca2303fde0b8a7b80c0569b34c5b9baf4",
+      "size": 296342
+    },
+    "CairoAdventure/A_Nml_Damage_M_R.uasset": {
+      "sha256": "0d96b123ff44b7ef3cbdb1f048f5e52566e21bff79d83d2521785afc3d6089cf",
+      "size": 299030
+    },
+    "CairoAdventure/A_Nml_Damage_S_B.uasset": {
+      "sha256": "e218b626b6dd76209a188299e05531f30b1387e9393bc30dd42fb8ddd3d72075",
+      "size": 256310
+    },
+    "CairoAdventure/A_Nml_Damage_S_F.uasset": {
+      "sha256": "d086e20c5f195fc00e3d64a5e2dd9c09c7a6b3240c4bc000039cd2efabdaed20",
+      "size": 256310
+    },
+    "CairoAdventure/A_Nml_Damage_S_L.uasset": {
+      "sha256": "781b64404fb433ec1a2fb1713272e7f16232d9973dd29895cfe8370cd38cb431",
+      "size": 255702
+    },
+    "CairoAdventure/A_Nml_Damage_S_R.uasset": {
+      "sha256": "878ed357e1329adfc97898866eee030fa08fba0cf4e020f02e2fc1b67508b22f",
+      "size": 242326
+    },
+    "CairoAdventure/A_Nml_Lockon_Jump_B_Ed.uasset": {
+      "sha256": "57b14c28cff2bb6fc3b46dc84161fabb7392cea54c6c1e47dbbe14ba77b55786",
+      "size": 228900
+    },
+    "CairoAdventure/A_Nml_Lockon_Jump_B_St.uasset": {
+      "sha256": "3f807c2b09a160e4c3186bd2546a6e1e3da2d0f52b88103cdce7cf852298feb7",
+      "size": 320676
+    },
+    "CairoAdventure/A_Nml_Lockon_Run_B.uasset": {
+      "sha256": "a698afa586628d09af30c75c7fedf89050329da32262d15718bbef26b2a31583",
+      "size": 222224
+    },
+    "CairoAdventure/A_Nml_Lockon_Run_F.uasset": {
+      "sha256": "3fdd7d9ca82787543c8be1e902329e1dba9cde57bfdc2bcd2393c5247e6d7d14",
+      "size": 225424
+    },
+    "CairoAdventure/A_Nml_Lockon_Run_L.uasset": {
+      "sha256": "c9dfdc945f244d3d1e464d130f6207e1be2911f65f9df9a63cfba3a43be331ae",
+      "size": 223824
+    },
+    "CairoAdventure/A_Nml_Lockon_Run_R.uasset": {
+      "sha256": "7741c6754125681bc588dfff16b81f8d89a3426eed3e8b9f2b0dede333261289",
+      "size": 227024
+    },
+    "CairoAdventure/A_Nml_Lockon_Step_L_Ed.uasset": {
+      "sha256": "99d3a9a7093b285f7588aa6676ebb4f49984a7d30527814aedf1bdba500be181",
+      "size": 203556
+    },
+    "CairoAdventure/A_Nml_Lockon_Step_L_St.uasset": {
+      "sha256": "7732f3dbb08f309f4a0e769be4dcbf37a1b32c2576219bbf49f59f2c3cd506b5",
+      "size": 367364
+    },
+    "CairoAdventure/A_Nml_Lockon_Step_R_Ed.uasset": {
+      "sha256": "288220cb5b39dec5afbaa0fb656425a9e15aa1dd8b5b1a411f2635020204e27d",
+      "size": 242916
+    },
+    "CairoAdventure/A_Nml_Lockon_Step_R_St.uasset": {
+      "sha256": "dc5347082937afcf700ccb1b58f292c68bfe45078516ae9f92f45a53e695927b",
+      "size": 367364
+    },
+    "CairoAdventure/A_Nml_Lockon_Wait.uasset": {
+      "sha256": "5cb7959fc8bd0a9690beab91b9649cc2bb34b09df92ceaafdca82554cd77f943",
+      "size": 270595
+    },
+    "CairoAdventure/A_Nml_Lockon_Walk_B.uasset": {
+      "sha256": "7f9c660daa5c24d3add7ff0a76cc760866802a6cd8d855a605bb0d1d2eed3568",
+      "size": 238237
+    },
+    "CairoAdventure/A_Nml_Lockon_Walk_F.uasset": {
+      "sha256": "b89ae23d0f91346e4083052b88cc02376b64d56b4026bb37dd50b7cb39890da6",
+      "size": 227037
+    },
+    "CairoAdventure/A_Nml_Lockon_Walk_L.uasset": {
+      "sha256": "41bf788040d8b3aae19866600e1613f0fa31fc26cd851924072cd19150445954",
+      "size": 224637
+    },
+    "CairoAdventure/A_Nml_Lockon_Walk_R.uasset": {
+      "sha256": "d82fcd832c78ae55c99794e1ef74aaf8c35fe25b41e7bb0f8b714dba832d34db",
+      "size": 227037
+    },
+    "CairoAdventure/A_Nml_Move_Dash.uasset": {
+      "sha256": "2bf2e2d60884e243739fb8c5ba231b5a1926ba80586be4efeb4168ff02784661",
+      "size": 286985
+    },
+    "CairoAdventure/A_Nml_Move_Run.uasset": {
+      "sha256": "08f23fa7f5f3f3791af69d053251c03366aa98af1c1012f8bbf71a8206f4dc14",
+      "size": 226172
+    },
+    "CairoAdventure/A_Nml_Move_Run_Jump_FootL.uasset": {
+      "sha256": "bcab477f609646597585f56f3d6cf4397180e970b6c3daaa61a20dc1a7ce8995",
+      "size": 223307
+    },
+    "CairoAdventure/A_Nml_Move_Run_Jump_FootR.uasset": {
+      "sha256": "2695d5b09ab9a6c9aa00ecdcdf30ec3f45e07e26a93e226d7a705ebce41b8ac9",
+      "size": 222955
+    },
+    "CairoAdventure/A_Nml_Move_Run_Land_ToRun_FootL.uasset": {
+      "sha256": "5c37720d378ef2be5dfa8f9809b7d84f11934257b8390725f54aa44b74182418",
+      "size": 219032
+    },
+    "CairoAdventure/A_Nml_Move_Run_Land_ToRun_FootR.uasset": {
+      "sha256": "46f791ba566781a90feeac80d6c42c66d753451b45ef90a24868708f50fd4d82",
+      "size": 219352
+    },
+    "CairoAdventure/A_Nml_Move_Walk.uasset": {
+      "sha256": "92c05a6dcb3d1bbc6ce6c797f60771c5d50f0c9569f7596d1961ba69f1667232",
+      "size": 292585
+    },
+    "CairoAdventure/A_Nml_Wait.uasset": {
+      "sha256": "8a07ab9a4db09c525b52049af23681b5999691d09434ffbfd46b13e0eeeb5aca",
+      "size": 394376
+    },
+    "CairoAdventure/A_Nml_Wait_Jump.uasset": {
+      "sha256": "132541f8ea65373980d35be1ea6239c0de62cd237a6e0da33aef39f3844c2f79",
+      "size": 222121
+    },
+    "CairoAdventure/A_Nml_Wait_Land.uasset": {
+      "sha256": "15e24d9034f4c6ba34d51634377b88baea0dcc074ef730644fd4210680fbdd05",
+      "size": 219144
+    },
+    "CairoAdventure/A_Rolldown.uasset": {
+      "sha256": "1492f3e5b6d247f9dd7429d37830f41dd7bbc0de66a4fa9baa25da6d884010b3",
+      "size": 171717
+    },
+    "CairoAdventure/A_Squat_Move_Run.uasset": {
+      "sha256": "89aeb06307db8781aa49a988b2ba6d7c44e10873cfad2e3ba57617e7b0151d26",
+      "size": 222198
+    },
+    "CairoAdventure/A_Squat_Move_Walk.uasset": {
+      "sha256": "fa22a73de8f1e1892bd1da1569240af053ad37f1441ce2410332fd8164917aa6",
+      "size": 226211
+    },
+    "CairoAdventure/A_Squat_Wait_FootL.uasset": {
+      "sha256": "b9a276eb63900f97b2427278bf45e7164c51ea80f69f6a7b145acdfde10bce7a",
+      "size": 264336
+    },
+    "CairoAdventure/A_Swim_Die.uasset": {
+      "sha256": "1ca657a01122f722b3a0c9c62d425e82cb6abec6762295bcd4b57f5ac5bebf54",
+      "size": 591883
+    },
+    "CairoAdventure/A_Swim_Ed_Edge_0cm.uasset": {
+      "sha256": "8eda94932f654da50d1ddf23362f0b961695a4e5a87bce1439fabda69e857fed",
+      "size": 311024
+    },
+    "CairoAdventure/A_Swim_Ed_Edge_50cm.uasset": {
+      "sha256": "e6eb16bf0a57691051e9a6d6219812c6c9d4487895240feafdf3d43f1d039e47",
+      "size": 311965
+    },
+    "CairoAdventure/A_Swim_Move_Dash.uasset": {
+      "sha256": "b4e07511465896880329e1a0773facf0f1b3f00d54ac7059f9d8aada2e379f7c",
+      "size": 312342
+    },
+    "CairoAdventure/A_Swim_Move_Slow_F.uasset": {
+      "sha256": "f72d8cca5373519ec50fcc4afb277770a1bcd43596d0db237e74c7bd72aa477f",
+      "size": 369936
+    },
+    "CairoAdventure/A_Swim_Wait.uasset": {
+      "sha256": "63568bec37578b94af9bbf33ce12807a87c30242533a049d1616c067eb0df1b4",
+      "size": 305653
+    },
+    "CairoAdventure/A_Sword_Attack_Charge.uasset": {
+      "sha256": "13f1275a164d583d40c5f5fe163cda1e03e785a71921fde3ab56afeb6b472eb7",
+      "size": 316567
+    },
+    "CairoAdventure/A_Sword_Attack_Dash.uasset": {
+      "sha256": "8364b9d0a92a735a01d95567c8adb7776e9eee96e3a0ec287646b25a5d8b1b5f",
+      "size": 255613
+    },
+    "CairoAdventure/A_Sword_Attack_Fall.uasset": {
+      "sha256": "969425dec392e8e1aa8317907e9cd27367127d364111500cfbbd82cd6b0a154d",
+      "size": 210237
+    },
+    "CairoAdventure/A_Sword_Attack_Fall_Ed.uasset": {
+      "sha256": "2a69f2df549beb0e3754a4310eb633cd3dfed421738137faa2176a6a1c183b0b",
+      "size": 403620
+    },
+    "CairoAdventure/A_Sword_Attack_Fall_St.uasset": {
+      "sha256": "4669f278e16b199805970dfa2e3785ad79c985b4908e7435770a64edeb5e4f1a",
+      "size": 246276
+    },
+    "CairoAdventure/A_Sword_Attack_Jump_F_Ed.uasset": {
+      "sha256": "068bcbd6f50284200ae36151ba643c272223a16df65fecedcf96add5e3623268",
+      "size": 241534
+    },
+    "CairoAdventure/A_Sword_Attack_Jump_F_St.uasset": {
+      "sha256": "81a3f003f75f163f12939b35959938f3659b29713b49e826de19fb2e0c78f3bc",
+      "size": 245630
+    },
+    "CairoAdventure/A_Sword_Attack_Jump_Loop.uasset": {
+      "sha256": "c694488a750f70d7e4d539e84b55eb9e7bed86fe68074ee1ca38b5cfe37c5238",
+      "size": 205502
+    },
+    "CairoAdventure/A_Sword_Attack_Just.uasset": {
+      "sha256": "6475d8c8382eaca551c258402ebcf797f9cd9d2f300fa8e816510c4a39575f8b",
+      "size": 252093
+    },
+    "CairoAdventure/A_Sword_Attack_Just_Rush1.uasset": {
+      "sha256": "14f8a41c6191acd11e78120a23fa74e79b925f0ba9b685429afabc98662b4a07",
+      "size": 220299
+    },
+    "CairoAdventure/A_Sword_Attack_Just_Rush2.uasset": {
+      "sha256": "d268a7937085a74335589fa6d219a0d6b3b30448280295d4347a0d9035553454",
+      "size": 224171
+    },
+    "CairoAdventure/A_Sword_Attack_Just_Rush3.uasset": {
+      "sha256": "6406fa68ca69b10a4abca2055786297bfd8d1a84faa5d7b875f59d3312e8921f",
+      "size": 244299
+    },
+    "CairoAdventure/A_Sword_Attack_Just_Rush4.uasset": {
+      "sha256": "48ba0e0ee6fd149efccee1d891d59362f38d58df14fdab6a9c98073561c093e2",
+      "size": 223435
+    },
+    "CairoAdventure/A_Sword_Attack_Just_Rush5.uasset": {
+      "sha256": "41bd7cb7d57fdfa9d574e8ca876f82b63c048e4fa0918147d002d27ad76cacb4",
+      "size": 225643
+    },
+    "CairoAdventure/A_Sword_Attack_Ninja.uasset": {
+      "sha256": "6527bf4dedcc30fae36b5d02d325800d3da4c23f32ddb52b62abeff3eb7dac24",
+      "size": 409994
+    },
+    "CairoAdventure/A_Sword_Attack_S1.uasset": {
+      "sha256": "e7d2c20e5d33518e2aa8f6351967b0b03dbd5b296c0daa6d70886a2124518562",
+      "size": 228835
+    },
+    "CairoAdventure/A_Sword_Attack_S2.uasset": {
+      "sha256": "749d0a01271eae560f5d8c76fe50c8a1c8b14cedbc97411bc4103ec38b3be86e",
+      "size": 226915
+    },
+    "CairoAdventure/A_Sword_Attack_S3.uasset": {
+      "sha256": "ba3c5a38b1733e56e9ed2ba507baeb6d323a25ba176417bd9eca7677ae70177f",
+      "size": 226246
+    },
+    "CairoAdventure/A_Sword_Attack_SF.uasset": {
+      "sha256": "ad57ff343232ee798d703671fd13029fb155597a4020cc20ad6bbc42d5058716",
+      "size": 252326
+    },
+    "CairoAdventure/A_Sword_Charge.uasset": {
+      "sha256": "fefd5b9bd0381898f23b1ddec2f52b93f86a092ee4c24022381ecbab4d080202",
+      "size": 297279
+    },
+    "CairoAdventure/A_Sword_Charge_Wait.uasset": {
+      "sha256": "555e8d862bd8b83c7d53f036f133381a02a394efa1a2005ef13bf1c861cbb1fe",
+      "size": 258080
+    },
+    "CairoAdventure/A_Sword_Guard_Break.uasset": {
+      "sha256": "32945a428fd9a12ceb5d2eade60d8b34f074e14c5e6526b7e33d9c072a73d109",
+      "size": 288800
+    },
+    "CairoAdventure/A_Sword_Guard_Hit.uasset": {
+      "sha256": "a9b2459ee878a8b7657229470795a356852260bfe29ee65d907c67a001abb0f4",
+      "size": 228614
+    },
+    "CairoAdventure/A_Sword_Guard_Just.uasset": {
+      "sha256": "c7cd300d980bc3df5e64dfac7e8613c8c57d4686ca19c1b02f403b271298356a",
+      "size": 239219
+    },
+    "CairoAdventure/A_Sword_Guard_Wait.uasset": {
+      "sha256": "015eb2aa6f6e587dc6f4769c7108aed8625a918300c4dfed5dbe21a43d356868",
+      "size": 244051
+    },
+    "CairoAdventure/A_Sword_Move_Run_Upper.uasset": {
+      "sha256": "c5f441c71aabffc8af687c3a7a15b009e7f32f9e47f39c0c27358770fac0ff1c",
+      "size": 221479
+    },
+    "CairoAdventure/BS_CairoAdventureArmedLocomotion.uasset": {
+      "sha256": "69defa01df9bef833ec43e344b649912b97be1d04180bf662dd4f46daa916572",
+      "size": 4398
+    },
+    "CairoAdventure/BS_CairoAdventureCrouching.uasset": {
+      "sha256": "252354ce78fc02952b9b5725260352b618920b1dde0411f22971df7c59b93004",
+      "size": 4138
+    },
+    "CairoAdventure/BS_CairoAdventureLocomotion.uasset": {
+      "sha256": "555631d94f9020bd510554c46360535c9d956ff8c2393c37aaa2a40984ce7596",
+      "size": 4642
+    },
+    "CairoAdventure/DA_CairoAdventure.uasset": {
+      "sha256": "492719eb0c1352d10e341db725889fa0c7ed7e21255136b30e9e5d98adde3d70",
+      "size": 22714
+    },
     "Japan/Audio/A_Footstep.uasset": {
       "sha256": "510b217dfaf6b2bae2d0b61c2f5fd8a2792b7e29d23bd1ec43d84fe7bf748afe",
       "size": 1550

@@ -76,7 +76,7 @@ field, and there is no LICENSE file. The inventory (inventory/world.md §5) sort
    not that permission, since nobody recorded checking its terms. This covers terrain, houses, props, foliage, the
    skate pier, effects and fonts. **Third-party animation is not cleared yet:** Mixamo's terms allow its clips in a
    game but not distributing them as files, and an editable animation package is such a file. The characters and
-   skate rider (`/Game/Cairo`, `/Game/SkateRide`, `/Game/SkateMotion`; their clips are Mixamo-derived or of
+   skate rider (`/Game/Cairo`, `/Game/CairoAdventure`, `/Game/SkateRide`, `/Game/SkateMotion`; their clips are Mixamo-derived or of
    unrecorded origin) therefore take the group 2 route until each source's permission is recorded; then a root is
    removed from `restricted.toml` and `.gitignore` in a reviewed commit.
 2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters (and, until cleared, the group 1

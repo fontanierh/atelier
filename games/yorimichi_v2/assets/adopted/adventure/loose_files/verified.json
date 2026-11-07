@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/adventure/loose_files",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Adventure/M_AdventureCharacter.uasset": "599dcca94f8af237c6e3bfeb2d2b34c65a470f6b28d38157062084692c80ef89",
+    "unreal/Content/Adventure/M_AdventureCharacterMasked.uasset": "8a2a69882e421f760f874286a3e8a14524f7b4135a1a64878849def19d4018f7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
