@@ -130,7 +130,7 @@ def authorize(game, asset, claim):
     """Protected writes need the claim's exact paths with verified locks, or the recorded bootstrap writer."""
     paths = [f'games/yorimichi_v2/{records.content_relative(game, f)}' for f in generated_files(game, asset)]
     try:
-        authority.authorize(paths, claim, f'import of {asset.id}', scopes={authority.scope_of(asset.id)})
+        authority.authorize(paths, claim, f'import of {asset.id}', scopes={authority.asset_scope(asset)})
     except authority.Unauthorized as error:
         raise ImportError_(str(error)) from None
 

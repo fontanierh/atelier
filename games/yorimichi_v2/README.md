@@ -23,6 +23,7 @@ scope.
 | `tools/review/` | the change-set report for reviews |
 | `tools/test/` | the native automation test runner |
 | `tools/migrate/` | one-time migration: donor adoption, the world migration runner, scene dumps and their parity compare |
+| `tools/parity/` | visual parity: the slice's named poses (`poses.json`) and the capture compare (`compare.py`) |
 | `unreal/` | `YorimichiV2.uproject`, `Config/`, `Source/` (by feature), `Plugins/HorseRacing`, `Scripts/` (editor scripts), **`Content/` (committed)** |
 | `tests/` | Python checks for these tools |
 
@@ -56,6 +57,9 @@ ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/import/run.py ASSET_I
 uv run python games/yorimichi_v2/tools/migrate/adopt.py --donor-content DIR --folder F --check-only   # (pending) one-time donor adoption
 uv run python games/yorimichi_v2/tools/migrate/run.py REGION... --environment REGION   # (pending) one-time world migration
 uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json   # parity of two scene dumps
+V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/capture_poses.py V2_CAPTURE_DIR=DIR \
+  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # (pending) one PNG per parity pose, saves nothing
+uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim S   # visual parity of two capture sets
 ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
 ```
 

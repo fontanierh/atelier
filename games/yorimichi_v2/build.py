@@ -190,10 +190,10 @@ def _authorize_import(ctx, log):
         destinations |= {'games/yorimichi_v2/' + records.content_relative(GAME, stem.with_suffix(ext))
                          for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
     owners, _ = authority.owning_scopes(GAME, sorted(destinations))
-    if owners - {authority.scope_of(asset.id)}:
-        raise RuntimeError(f'{asset.id}: a destination is owned by {sorted(owners - {authority.scope_of(asset.id)})}')
+    if owners - {authority.asset_scope(asset)}:
+        raise RuntimeError(f'{asset.id}: a destination is owned by {sorted(map(str, owners - {authority.asset_scope(asset)}))}')
     paths = sorted(destinations | set(plan.get('write_paths', ())))
-    authority.authorize(paths, plan.get('claim'), f'import of {asset.id}', scopes={authority.scope_of(asset.id)})
+    authority.authorize(paths, plan.get('claim'), f'import of {asset.id}', scopes={authority.asset_scope(asset)})
     authority.allow_saves(sorted(destinations), plan_file.with_name('save-allow.txt'))
 
 
