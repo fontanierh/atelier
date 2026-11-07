@@ -1,0 +1,11 @@
+# W08 southwest: world.json:1 southwest.terrace (-262, -124); SW_FisherHouseA (-271, -119), SW_StoneStairs (-266.5, -111).
+# southwest/layout.py:25 EDIT_BOUNDS unpacked xmin,xmax,ymin,ymax at :91 = x -300..-200, y -190..-90: split with W01
+# (SW_FisherHouseB) and w08-southwest-coast.
+# Source x -512..-256 m, y -128..0 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w08-southwest-terrace"
+about = "The fishing village terrace: Fisher house A, the stone stairs, the road's west end"
+bounds_cm = [-51200, 0, -25600, 12800]
+neighbours = ["region/w01-start", "region/w05-forest-west", "region/w08-southwest-coast", "region/w09-brinecove"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/road-set"]

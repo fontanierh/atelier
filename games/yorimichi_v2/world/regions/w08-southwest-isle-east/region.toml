@@ -1,0 +1,10 @@
+# W08 southwest: SW_Boulder_* x -295.5..12.8, y -687.3..-362.3 (world.json:1); pier deck y -300..-168
+# (skatepark/park.json:1 origin (-110, -234) + deck +-85 x +-66), its south strip is here.
+# Source x -128..256 m, y -1024..-256 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w08-southwest-isle-east"
+about = "The southwest island's east half (boulders, lean pines) and the sea south of the pier"
+bounds_cm = [-12800, 25600, 25600, 102400]
+neighbours = ["region/w02-village", "region/w04-pier-approach", "region/w07-hidamari-harbour", "region/w08-southwest-coast"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

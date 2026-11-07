@@ -1,0 +1,10 @@
+# W02 Momiji Hamlet: village/layout.py:11 EDIT_BOUNDS x 40..185, y -40..190; buildings x 77.5..125.8, y 68..108
+# (world.json:1 instances.Village_*); also House_A (26.3, -55.6), House_C (47.8, -19.0) of the W01 houses row.
+# Source x 0..256 m, y -256..128 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w02-village"
+about = "Momiji Hamlet, the road houses east of the bend (House_A/C 2, lots 4-5), the road and its south shore"
+bounds_cm = [0, -12800, 25600, 25600]
+neighbours = ["region/w03-mega", "region/w04-pier-approach", "region/w06-lake-treehouse", "region/w07-hidamari-harbour", "region/w08-southwest-isle-east"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/road-set"]

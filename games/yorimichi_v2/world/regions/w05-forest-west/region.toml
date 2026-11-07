@@ -1,0 +1,9 @@
+# W05 forest, west coast: terrain cells -3_0..-3_2; world.json:1 park_trail starts at x -396.7.
+# Source x -512..-256 m, y 0..384 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w05-forest-west"
+about = "West coast woods north of the road and the park trail's west end"
+bounds_cm = [-51200, -38400, -25600, 0]
+neighbours = ["region/w05-forest-north", "region/w06-lake-treehouse", "region/w08-southwest-terrace", "region/w09-brinecove"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

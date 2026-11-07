@@ -1,0 +1,11 @@
+# W06 forest_lake: forest_lake/manifest.json:1 assets x -131.0..55.5, y 204.3..262.7. W10 treehouse:
+# treehouse/surfaces.json:1 assets x -169.6..-103.2, y 135.8..208.0; props treehouse/runtime.json:1 x -168.5..-115.4.
+# They interleave at y 204..208, so one record. Zeppelin woodland station (-205, 230) (world.json:1 zeppelin).
+# Source x -256..0 m, y 0..384 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w06-lake-treehouse"
+about = "Forest lake and cabin, the treehouse, the Woodland air station and the woods north of the road"
+bounds_cm = [-25600, -38400, 0, 0]
+neighbours = ["region/w01-start", "region/w02-village", "region/w03-mega", "region/w04-pier-approach", "region/w05-forest-north", "region/w05-forest-west"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

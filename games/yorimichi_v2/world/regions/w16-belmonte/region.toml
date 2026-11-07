@@ -1,0 +1,11 @@
+# W16 belmonte: belmonte/layout.py:12-14 BOUNDS x -474.5..1573.5, y 3899.5..5691.5 (= belmonte/runtime.json:1
+# bounds_m); clearance_m x -654.5..1753.5, y 3600..5871.5; zeppelin_belmonte (410, 4660); gondola belmonte
+# (379.5, 4607.6). 512 m aligned.
+# Source x -512..2048 m, y 3584..7168 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w16-belmonte"
+about = "Belmonte valley (town, estates, racecourses, stations) and the backdrop north of it"
+bounds_cm = [-51200, -716800, 204800, -358400]
+neighbours = ["region/w05-forest-far-east", "region/w05-forest-far-northeast", "region/w05-forest-far-west", "region/w12-volcano-north", "region/w12-volcano-west"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

@@ -1,0 +1,9 @@
+# W05 forest backdrop: world.json:1 instances reach y 6792.1 (Bush_Ochre_A, Tree_Pine_B). 512 m aligned.
+# Source x 2048..3584 m, y 3584..7168 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w05-forest-far-northeast"
+about = "Far northeast backdrop forest beside Belmonte"
+bounds_cm = [204800, -716800, 358400, -358400]
+neighbours = ["region/w05-forest-far-east", "region/w16-belmonte"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

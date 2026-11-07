@@ -1,0 +1,10 @@
+# W05 forest north: HD_NorthApproach x -300..-36, y 300..500; HD_NorthParkTrail x -398.3..-90.3, y 214.2..1265.2
+# (city_surface_tiles/v1_128m/manifest.json:1); world.json:1 park_trail x -396.7..-91.9, y 214.5..1262.9.
+# Source x -512..256 m, y 384..896 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w05-forest-north"
+about = "The northern ecotone between the island and Mega Park: north approach and park trail"
+bounds_cm = [-51200, -89600, 25600, -38400]
+neighbours = ["region/w03-mega", "region/w05-forest-west", "region/w06-lake-treehouse", "region/w09-brinecove", "region/w11-megapark", "region/w15-hippodrome"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

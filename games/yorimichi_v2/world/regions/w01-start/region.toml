@@ -4,6 +4,6 @@ schema = 1
 id = "region/w01-start"
 about = "Spawn, House_A/B and their lots, the coastal road with poles and lamps, the top of the pier path"
 bounds_cm = [-25600, 0, -12800, 12800]
-neighbours = ["region/w04-pier-approach"]
+neighbours = ["region/w04-pier-approach", "region/w06-lake-treehouse", "region/w08-southwest-coast", "region/w08-southwest-terrace"]
 maps = ["/Game/V2/Maps/Slice"]
 shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/road-set"]

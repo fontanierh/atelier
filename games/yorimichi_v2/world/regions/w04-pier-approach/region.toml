@@ -4,6 +4,6 @@ schema = 1
 id = "region/w04-pier-approach"
 about = "House_C and its lot, the road bend, the pier path's middle and the shoreline under the deck entrance"
 bounds_cm = [-12800, 0, 0, 25600]
-neighbours = ["region/w01-start"]
+neighbours = ["region/w01-start", "region/w02-village", "region/w06-lake-treehouse", "region/w08-southwest-coast", "region/w08-southwest-isle-east"]
 maps = ["/Game/V2/Maps/Slice"]
 shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/road-set", "shared/skatepark"]

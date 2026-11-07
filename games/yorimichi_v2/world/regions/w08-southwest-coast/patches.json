@@ -1,0 +1,654 @@
+{
+  "patches": {
+    "0104b12c6315b9ab": {
+      "key": "Tree_Canopy_Amber",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/K0/4MH2WAZUP2U2DQSRSS3IV5.uasset"
+    },
+    "022bbe08b480da4a": {
+      "key": "Bush_Green_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/M5/7ZE8QG8B2AMEQMBOI8YE4T.uasset"
+    },
+    "027503a20884d7fd": {
+      "key": "SW_Boulder_C",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/QD/SAY1M83C6UCYN704H15OCP.uasset"
+    },
+    "038bc7c48bed324b": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/63/MLVP5DSM85YQ2ZWJCG2E7M.uasset"
+    },
+    "04b2033f95212638": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/SA/3K4X19A2OYT2UNOI45JA5Q.uasset"
+    },
+    "06e4785aceeb97ec": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/ZI/UA0CW3I4NGAIKF57RKQWDK.uasset"
+    },
+    "0a999498b479fc18": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/QF/CGXFGUWZLDC6QTMQ8R0HYE.uasset"
+    },
+    "0b90a78af15ea72d": {
+      "key": "Tree_Cedar_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/C9/JK6D2GMYP2TXJ75B6RNJPQ.uasset"
+    },
+    "0c723640c6d1826b": {
+      "key": "Lantern",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/JH/KOPWX1CIR6PMW7YQKX8JQT.uasset"
+    },
+    "0d7ce1c93e8d42f1": {
+      "key": "Tree_Canopy_Crimson",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/6F/1VIR7PT9VMBIMWU4L2OP12.uasset"
+    },
+    "10a79b43638f7cac": {
+      "key": "SW_Dock",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/06/O9H06T2ZF0504VKYBJE36C.uasset"
+    },
+    "11d11759e83c4f1b": {
+      "key": "Grass_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/9R/U7Z10X1IZRAVX8ACCBISVR.uasset"
+    },
+    "1314227e9e7ee385": {
+      "key": "Grass_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/F/3Z/D2BPXBM153LC81SP8C0K8D.uasset"
+    },
+    "15a704e6dad02ee4": {
+      "key": "Tree_Maple_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/9S/3JJ5IMVUZNN0V8QL44L145.uasset"
+    },
+    "161be1944ba60dae": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/GA/P9MZTISEHNP4IROXM1LR8A.uasset"
+    },
+    "171ee76e7d54a185": {
+      "key": "SW_Boulder_C",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/4D/IQILYVB2CRKYP6JEE16FVJ.uasset"
+    },
+    "18260a0f4e6c1b3a": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/TC/LG3HLW4CVQ93WA1UIBLPGT.uasset"
+    },
+    "1888283a6b4e46e1": {
+      "key": "SW_Boulder_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/1J/H0QKB8TGUERG3BV66BEFY5.uasset"
+    },
+    "19a076e91c6eeb8e": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/B1/JCX6NSGNGHIW03TOLGHVU4.uasset"
+    },
+    "1a7ed36fdd75e3e3": {
+      "key": "Bush_Green_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/4H/DI3EHYBR4RBF23U4GYDPVR.uasset"
+    },
+    "1a8a656b99bc8dad": {
+      "key": "SW_CoconutStand",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/ZP/WOXHN5HW6GKT3FO6FUOGVL.uasset"
+    },
+    "1c9f4e42bbf429bf": {
+      "key": "Tree_Canopy_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/0T/GVZ5U10M1J6OH60BM41BNB.uasset"
+    },
+    "1e5cb0f0fde597ca": {
+      "key": "Tree_Canopy_Amber",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/IR/92XPYEYNOE9LX7FPSDFMQ5.uasset"
+    },
+    "1ef772f25ff87159": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/NU/AAN8194JDIIZPS5Q9PD0U2.uasset"
+    },
+    "210fe371e8b73767": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/VM/QSWKM5LMYWI6YPTVDJMIA2.uasset"
+    },
+    "216b9382e17cd527": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/ND/VJ7SLTUJPGHT4O620UX410.uasset"
+    },
+    "21819b301317a5da": {
+      "key": "Tree_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/Z3/MB2D5NT7N9GBW4HAWMMUXV.uasset"
+    },
+    "2292c752bbd33023": {
+      "key": "Bush_Ochre_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/NM/645DHSX1HPZZ65YP8WR88T.uasset"
+    },
+    "2299f1a509892d4b": {
+      "key": "Torii",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/DX/1GV3FO9UA6UKSMGC2EFLUY.uasset"
+    },
+    "22e5ec53e7f72a24": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/0U/Z7MT5KXEXC2DPUKOAQ0ZB9.uasset"
+    },
+    "28d6e4298f389140": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/ZE/Y6VN71W15WQ1JR9NGV8HXY.uasset"
+    },
+    "2e273b1856bba118": {
+      "key": "Tree_Broad_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/6L/TWBVC5F22Q6JVTOLV73Z1R.uasset"
+    },
+    "2f2902a78018fcf7": {
+      "key": "SW_Boulder_C",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/RD/1DFGH7RQ9PVLU5SF6SH8IM.uasset"
+    },
+    "2fd9bf5d5ec99540": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/44/CP4P7CHDS739E3N15PG7UW.uasset"
+    },
+    "308f118ffc3254cf": {
+      "key": "SW_StoneWall",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/VV/TQUHD3CQK4CVCR0PMH78JG.uasset"
+    },
+    "31574e3afb26a46d": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/6X/ENGOCRBT8V5I88QS3Z0HW9.uasset"
+    },
+    "34db27b62b36417b": {
+      "key": "Tree_Cedar_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/S4/KY0SOXRZM784IV05XPTKTO.uasset"
+    },
+    "3c821f10b1f10e41": {
+      "key": "Tree_Canopy_Amber",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/R6/JO9HIIDVNBRB3QMANZMQ3U.uasset"
+    },
+    "3cb41ff1abafeac3": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/J9/JHE7BYTJCUA72L6OTNMA02.uasset"
+    },
+    "3d5f202984f07453": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/W1/6OP2X1T9AZ6CMCIKHXWXQI.uasset"
+    },
+    "3de713b7768b254d": {
+      "key": "Tree_PineLean_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/MZ/UUTNC3TM112HF4CH4QXHTC.uasset"
+    },
+    "419eb04ce7189388": {
+      "key": "Tree_Cedar_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/2O/D5F5IO0QVZXMWOPVZFMLIO.uasset"
+    },
+    "420b3ab2cd717b9a": {
+      "key": "Grass_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/FO/CIRPI0NSJ16WCI6KKL3NTG.uasset"
+    },
+    "42e6a0c5e5060c2e": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/O0/1UQ88DYHX3X0V247NQ9ZAG.uasset"
+    },
+    "42f870248b3ba86b": {
+      "key": "SW_Boulder_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/D2/O948MGYERKOJWH07S85VSM.uasset"
+    },
+    "43e2a04e84c1c8df": {
+      "key": "SW_Boulder_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/0R/OFHB1UA957QJV0GJICVRPO.uasset"
+    },
+    "443527b9729f7362": {
+      "key": "Tree_Maple_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/R3/ZRNEEEZWKS5NIMLVXTBS4S.uasset"
+    },
+    "460341c87766fbc1": {
+      "key": "SW_Boulder_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/JK/23KF5WWB24V0MHZPODSHP2.uasset"
+    },
+    "48f5b4ba2de5713a": {
+      "key": "Grass_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/02/MUV0YTNNP9UV8TS9PUM2I3.uasset"
+    },
+    "4f7c8a169ddeeb53": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/2J/REAFCGAZ6C2XGBY73XDZHS.uasset"
+    },
+    "500567ccf22de5a2": {
+      "key": "Bush_Ochre_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/85/1EXDFXE9L995SJAJP5YNB3.uasset"
+    },
+    "50be21867575f4fe": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/5D/XHSKNH09W1VF307BPHAXCC.uasset"
+    },
+    "5137feac9679933c": {
+      "key": "SW_Boulder_C",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/K7/S1OXBEJK6ZQRQEDOOAFQG7.uasset"
+    },
+    "51f52ca4f2a71c9d": {
+      "key": "Tree_Canopy_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/XO/AQQPW3ERBV0NMUJBS546KJ.uasset"
+    },
+    "521bfc143d8514e3": {
+      "key": "Grass_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/NY/3WOX26QEVWBUXXJFDWHUNK.uasset"
+    },
+    "52a73af7cf3d4229": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/HC/UJ1BZH659A9CQA7IFCEL6T.uasset"
+    },
+    "5331caf0226b960b": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/4Y/4FJ9Z8K1ILTC3A8QLI1YHS.uasset"
+    },
+    "57071662a857e554": {
+      "key": "Bush_Green_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/XK/H3FVS77SMM9L5SPM1SOHHE.uasset"
+    },
+    "586fc6fb6b0bdb7c": {
+      "key": "Tree_Canopy_Amber",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/M7/A12XHIRRJYI17DG2WSI4TD.uasset"
+    },
+    "5d78a26a425f3c4f": {
+      "key": "Bush_Green_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/HN/OE2K653PWBMORQTO6PJEXK.uasset"
+    },
+    "616dff0da881b9e7": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/X5/IMNR1FZE3198N0NNF45G4I.uasset"
+    },
+    "63d50ff122f45f13": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/9Y/GRI99K8NMSYS1S5W5RB3G5.uasset"
+    },
+    "64369a21e0bd2f8e": {
+      "key": "Tree_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/RJ/FXA1OX95KQJYKPNZIEIR6F.uasset"
+    },
+    "6579f001f0502747": {
+      "key": "Tree_Broad_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/0C/0L7ZDNZB8PPZI39WOXH121.uasset"
+    },
+    "694d6fa49fae7772": {
+      "key": "Tree_PineLean_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/YT/IH4ZI0DQB5J3V8VP7GA2RE.uasset"
+    },
+    "6a8513a0e32d9e69": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/PA/8VY3HHHJASUG5CCF33BS05.uasset"
+    },
+    "6c56a0a3e0367b1f": {
+      "key": "Tree_PineLean_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/QJ/R7EIQJCAUMW684095SDHAH.uasset"
+    },
+    "6daca5079f3ea0d2": {
+      "key": "Tree_Canopy_Crimson",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/LQ/B8FNLA8HBG9KPRKFG6246L.uasset"
+    },
+    "6e2ed10c67746932": {
+      "key": "Tree_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/6L/NIB43WSTKOSUFSGW1JDWFO.uasset"
+    },
+    "73a21e48c914d95d": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/R5/F7AWXBY3B8Z9F2BV6H4G49.uasset"
+    },
+    "745e8a4239bf2f95": {
+      "key": "SW_Boulder_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/VG/CUNTJ9VCKIZGXDWD1N7FFN.uasset"
+    },
+    "7512014b8d091912": {
+      "key": "Bush_Green_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/W6/XXFEI9XUSA89K3SFOH6QO9.uasset"
+    },
+    "766f2c85ea321848": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/1O/FTJ385JX19Q8PA2OASYP6D.uasset"
+    },
+    "7837ebb6eed6ce83": {
+      "key": "SW_Boulder_C",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/CU/J52K3NOLE0CTXZTLGYVH82.uasset"
+    },
+    "7b89f164327ffc42": {
+      "key": "Grass_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/5K/XF7NVTD1EYK6X3MZ1ISSAF.uasset"
+    },
+    "7cce7c1035c672f2": {
+      "key": "SW_Boat",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/PM/9BGKNOUTXUWRU2CQ7DKMCX.uasset"
+    },
+    "7d71a3f929f0c689": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/AI/5312DTD5SLMN79ONBTZW45.uasset"
+    },
+    "7f3d5836620017e5": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/X0/2FQ5B3PWGC40PQ0KL8CKFB.uasset"
+    },
+    "82666e0b9522c5c9": {
+      "key": "Tree_PineLean_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/AB/VXS7TJ2BVG12CZR5CF5TBY.uasset"
+    },
+    "847ca4a6ac50163f": {
+      "key": "Tree_Canopy_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/IG/DWSNF4FUFURGSQK0MHSN7L.uasset"
+    },
+    "848f9270f19b60db": {
+      "key": "Tree_Canopy_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/HR/L0DUCUMO2Z45BEWY4LJ5ET.uasset"
+    },
+    "853a4985d75670be": {
+      "key": "Tree_Canopy_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/FI/8L2AFI478W9H6YK6D2CL8L.uasset"
+    },
+    "87c0299893ed2594": {
+      "key": "SW_DryingRack",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/48/2GWUM0Z0UBAZIHMG5R7HYY.uasset"
+    },
+    "89a5fa9c80d206de": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/94/E9EGAC3H0DIAHWMAWGNL86.uasset"
+    },
+    "8a7972cd7c08faa2": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/0E/ME5WCU0AMV5YYU7YPDU3Z4.uasset"
+    },
+    "8afd259de5bc0347": {
+      "key": "Tree_PineLean_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/RG/GTDRH0YS52I9RCFBAGL9HV.uasset"
+    },
+    "8b897ad9433c3211": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/OO/8HY4EYFSC393O5LFK1XD48.uasset"
+    },
+    "8bdd7817cfb48edf": {
+      "key": "Tree_PineLean_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/WY/ML425RP5R8GHD7CD6ELC0H.uasset"
+    },
+    "8bdf156f39175e1a": {
+      "key": "Tree_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/CW/P5J02R2F5HF9C3D192SZ7M.uasset"
+    },
+    "8d31152ae9447fd6": {
+      "key": "Tree_Canopy_Maple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/88/PV2OAUI2IHH9H7LX4P790X.uasset"
+    },
+    "8e1777176d313435": {
+      "key": "Tree_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/5D/939UOSGCNKD41JUUL13PIA.uasset"
+    },
+    "8ecfba063a4ada5b": {
+      "key": "Tree_Canopy_Crimson",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/DF/VVXB475QAP0M3JLULXVR1S.uasset"
+    },
+    "8f8dc81e6b5d1425": {
+      "key": "Tree_Cedar_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/B4/F76K3HQTNDR7V5WAJK9CLZ.uasset"
+    },
+    "8faaffedbd597606": {
+      "key": "Tree_Canopy_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/2N/DRX22XUVG0Q95KJW6D3TRC.uasset"
+    },
+    "915bd93cc60b55ae": {
+      "key": "Tree_Canopy_Crimson",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/7L/NG0AURE6VQ2F847WUYZH8U.uasset"
+    },
+    "986d5fb8c99f0bfc": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/RL/LUWI61WTRC74QF3SVQIQBS.uasset"
+    },
+    "98de834226d8ff8c": {
+      "key": "Tree_Maple_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/0L/8CPN7WYQD92M6S6GZPRMYJ.uasset"
+    },
+    "99f1240f60595785": {
+      "key": "SW_Boulder_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/P7/H166BOCDB57RPPKS4RTMT7.uasset"
+    },
+    "9b5fcfb54a9e271c": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/5O/4N5CGVLJV73KQ2YTYD1RLR.uasset"
+    },
+    "9c3d554b707e2006": {
+      "key": "Tree_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/R8/O1BHXEBL2RSVRWNFA8BF3U.uasset"
+    },
+    "9e853b07a945f04f": {
+      "key": "SW_Boulder_C",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/1S/O4NY8AIDOCG843OIEHPYV5.uasset"
+    },
+    "9e8a22ec72b24099": {
+      "key": "Tree_PineLean_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/WX/JAF8UKWXQ8MHWVTJYMAWP1.uasset"
+    },
+    "a14bfb1459ea8502": {
+      "key": "Tree_Broad_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/5L/JDFC93K7AO7BMF40MCMXDX.uasset"
+    },
+    "a5160bc93324f316": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/UY/9XXJQLEJNA0FZXXRN13TNV.uasset"
+    },
+    "a695a4f52966ae69": {
+      "key": "Tree_Canopy_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/EV/1SVKH84UN58JHLA9QOK6V8.uasset"
+    },
+    "a78a3f0b52f7c191": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/PT/3FD1SYNVBDUQEWOY1W6XVR.uasset"
+    },
+    "a8164acdb88bc9f5": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/ZF/85DPJT8OKZKCB0RZ8EXK86.uasset"
+    },
+    "a84289bb20133976": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/C5/DAIH72MAB6K50ZB5OA8RH3.uasset"
+    },
+    "a84884ff4c7d54a8": {
+      "key": "Bush_Ochre_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/HF/872WD68LJQBI68NJK7WTUT.uasset"
+    },
+    "a9063fd305d3445e": {
+      "key": "Bush_Ochre_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/58/9SMX76OGTS8ME2OBP7EFZH.uasset"
+    },
+    "a9a69c439b947c4c": {
+      "key": "Bush_Green_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/N5/XA3W6ZIT4JLHYLUXSHVRZ7.uasset"
+    },
+    "ab4f7596afc5abc3": {
+      "key": "Grass_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/X8/PR97ARMLWDHLN4VLAZJDD4.uasset"
+    },
+    "aca177deeb380d57": {
+      "key": "Tree_Cedar_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/P6/KAY339O7RDTE9LEA1Q8IHR.uasset"
+    },
+    "ada7ca914a876e2b": {
+      "key": "Tree_PineLean_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/DZ/94CIJW12U3098J6Y2HCXU0.uasset"
+    },
+    "add5211cddc0a23b": {
+      "key": "Bush_Green_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/JB/4T924H4N75L9DLX8D9F6FW.uasset"
+    },
+    "ae707c8b42d42cb7": {
+      "key": "Tree_Broad_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/Q3/BV9R9TL21ATOZFG5G2RA13.uasset"
+    },
+    "afc0f8a47287cf03": {
+      "key": "Tree_Cedar_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/16/JW72SEX5W9FJXLNY25GFRZ.uasset"
+    },
+    "b12c920002c3c4d0": {
+      "key": "SW_StoneWall",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/ZD/AR26M65RD7C2QLI39QFZKG.uasset"
+    },
+    "b1509dfbecbca7fa": {
+      "key": "SW_BoatShed",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/47/H4LHEB2WJK8IJAXQMPJZJ4.uasset"
+    },
+    "b177459c2356a523": {
+      "key": "Tree_Cedar_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/3F/6N48FYB4IB6446HWQTIHH1.uasset"
+    },
+    "b4a31741de07046a": {
+      "key": "Bush_Green_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/0F/MK43IQGLBN325LK3R5JM0G.uasset"
+    },
+    "b4bbc8067c6dd998": {
+      "key": "Tree_PineLean_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/P1/41KCGNQAPZ0PREV3IOTQHH.uasset"
+    },
+    "b4d09f02dbdbd155": {
+      "key": "Tree_Broad_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/KV/R4M8KWX1LPHAI0TGBDL1MQ.uasset"
+    },
+    "b6f9ee4932af5800": {
+      "key": "SW_Temple",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/WI/T076PWAU1KOM1F12D76WAS.uasset"
+    },
+    "b82485cee8e20f9e": {
+      "key": "Tree_Canopy_Crimson",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/O5/GEQ8Z1SGV8LZGJMY7EZ8U1.uasset"
+    },
+    "b8817d0b6fb584c6": {
+      "key": "Tree_Canopy_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/F/02/JX4I16BA8HRYJ78UJJS4V3.uasset"
+    },
+    "b92a82f21c79c42c": {
+      "key": "Tree_Maple_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/LE/TNV91SCSF9UJ3EW1AZX6HH.uasset"
+    },
+    "bac2b04c5b950ac4": {
+      "key": "Tree_Canopy_Amber",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/KR/7C8YJ2UQPN6PY38S176UJK.uasset"
+    },
+    "be3ba38ab5581fa5": {
+      "key": "Tree_Canopy_Crimson",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/4N/P40HSB767BNVQUXVVF9E95.uasset"
+    },
+    "c43d6e144d4fb12e": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/M1/V3PY7W2M6UIEHOT5ERHJ3K.uasset"
+    },
+    "c6abf00c0ff39f48": {
+      "key": "Bush_Ochre_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/DM/RUQYR4MLH6WN41TWGBVPID.uasset"
+    },
+    "c6c56b3d4cfc0d9b": {
+      "key": "Tree_Canopy_Ginkgo",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/X1/NXMR2ROLXE90YFOKC9FPEE.uasset"
+    },
+    "c6fd65dffaa507d0": {
+      "key": "Bush_Green_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/F/4E/YXB520NG5Q59YMSNX4FHH9.uasset"
+    },
+    "c71c60dc51ad6e37": {
+      "key": "Tree_Cedar_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/SS/ZD2BAYYDIMLOK270FAHWNO.uasset"
+    },
+    "c892fd6184db326f": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/LH/EP6IM1AZVFTC35ECJJR4W6.uasset"
+    },
+    "ca360b946abd9437": {
+      "key": "Tree_Cedar_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/TA/WIQMZT9KZ4SDGX0LX0AS3L.uasset"
+    },
+    "cda0a354ebe594b0": {
+      "key": "Lantern",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/AI/7SGADMGG90HLAVB9BTKZ4V.uasset"
+    },
+    "ce2ce2b4eaab4053": {
+      "key": "Tree_Maple_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/TO/UEIZ1AVKCC5GDH3Q8JYYB7.uasset"
+    },
+    "ce335392b765eb86": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/4B/74QZEMDSQGM7UUSCOL9P18.uasset"
+    },
+    "d145eb2080fde1bc": {
+      "key": "SW_Boulder_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/SC/YMII09FO0UAZCKTKF01T7Z.uasset"
+    },
+    "d2111eceba56a8bc": {
+      "key": "Bush_Ochre_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/A3/GOXGZTYBOV8XAVJVFSTKSX.uasset"
+    },
+    "d2fbc977a9d8c5b6": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/ID/ET41OXYCYGLU6G6C06Z9EJ.uasset"
+    },
+    "d50ef0be066a17cd": {
+      "key": "SW_Boulder_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/ZP/WNVS4CWTSAYMNFB0LYBUT4.uasset"
+    },
+    "d62b4eafea251221": {
+      "key": "Tree_Pine_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/CY/Y8GE2Z54665ZFI398FWPXA.uasset"
+    },
+    "d8642c34705be758": {
+      "key": "SW_Boulder_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/NE/0TU7PG8IKFQMF1LMW6CIB2.uasset"
+    },
+    "db7308db02c3889d": {
+      "key": "Tree_PineLean_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/O4/VWFWXGJXSDL8BSYS5LH5KS.uasset"
+    },
+    "def4c7316573e2a3": {
+      "key": "SW_Island",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/LQ/B37R4CZ0AQO72DFMHW49CU.uasset"
+    },
+    "e36f8c4f22eee270": {
+      "key": "Bush_Green_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/7Z/9IXUGSRPZ5EY5BO7VBMRDE.uasset"
+    },
+    "e5bff3442a6bae6c": {
+      "key": "Grass_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/NG/E0703Z5D51S6Q3ZJGBUU5B.uasset"
+    },
+    "e5c38ceea5eb7120": {
+      "key": "SW_Boulder_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/E6/YW18IBEUEA51HHVXS6R9HC.uasset"
+    },
+    "e60f4c1462ca828a": {
+      "key": "SW_Boat",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/X0/UJGYX8SEP3DJA99R3E0NXI.uasset"
+    },
+    "e74a0fdf05459048": {
+      "key": "Tree_Maple_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/RH/VFFHR0KB54AEM6BWN058PH.uasset"
+    },
+    "e77463fa640f85f8": {
+      "key": "Tree_PineLean_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/MX/0L4TM0THEX3KPS8YN4TGDJ.uasset"
+    },
+    "e99ca4f4ef982f46": {
+      "key": "Bush_Green_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/2A/Y1H10UUJFQIJPG01MHA22O.uasset"
+    },
+    "e9c843ef2a9ed92f": {
+      "key": "Bush_Green_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/O0/YSJMQRVNQTRHZ5WO6HPGQS.uasset"
+    },
+    "f00d10a9d478372c": {
+      "key": "Tree_Pine_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/9E/KH2CY0DEB9D38WA5WRZ66J.uasset"
+    },
+    "f1c52718140418ca": {
+      "key": "Tree_Cedar_B",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/U8/OULI7K79BX5H8K88G5Q6FV.uasset"
+    },
+    "f4022bae33e74f7a": {
+      "key": "Tree_PineLean_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/05/NVF0RYSDVWFF96H470QPFR.uasset"
+    },
+    "f5421b9e0670f8b0": {
+      "key": "SW_Boulder_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/E4/9ZKITONHOWKY3F28WHMKJF.uasset"
+    },
+    "fa3c56a57e22e0bd": {
+      "key": "Tree_Canopy_Amber",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/T7/BALSJMS7L6R0XBW47M0ODU.uasset"
+    },
+    "fed2eff1179a4a07": {
+      "key": "Bush_Green_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/AS/JFO5I5BLSHX9R9PKRA4WR8.uasset"
+    },
+    "ff85cbf5b16be271": {
+      "key": "Tree_Maple_A",
+      "package": "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/2M/KBZCLH8CULO00HTSXG8CNI.uasset"
+    }
+  },
+  "region": "region/w08-southwest-coast",
+  "schema": 1
+}

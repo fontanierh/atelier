@@ -1,0 +1,10 @@
+# W14 hidamari_stable: hidamari_stable/layout.py:21 SITE (955, 447), :23 COMPOUND +-40 x +-35 -> x 915..995, y 412..482;
+# :20 ENABLED = False. Gondola station hidamari (1119.7, 447.4) (gondola/runtime.json:1 stations).
+# Source x 896..1536 m, y 384..896 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w14-hidamari-stable"
+about = "The (disabled) Hidamari stable site, the Hidamari gondola station and the slope above the city's east half"
+bounds_cm = [89600, -89600, 153600, -38400]
+neighbours = ["region/w05-forest-far-east", "region/w07-hidamari-station", "region/w12-volcano-south", "region/w15-hippodrome"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

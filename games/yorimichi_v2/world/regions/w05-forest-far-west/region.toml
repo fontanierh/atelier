@@ -1,0 +1,10 @@
+# W05 forest backdrop: world.json:1 Tree_Maple_A x -2977.6..2985.7, y -671.7..6781.6; city.json:1 Tree_Forest_*
+# from x -1572.1. 512 m aligned.
+# Source x -3584..-512 m, y 1024..7168 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w05-forest-far-west"
+about = "Far west backdrop forest (west rim forest and city forest backdrop)"
+bounds_cm = [-358400, -716800, -51200, -102400]
+neighbours = ["region/w09-brinecove", "region/w11-megapark", "region/w12-volcano-west", "region/w16-belmonte"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

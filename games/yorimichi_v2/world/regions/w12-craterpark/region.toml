@@ -1,0 +1,11 @@
+# W12 craterpark: craterpark/placement.py:26 CENTRE (850, 2400); craterpark/park.json:1 placement bounds
+# x 351.0..1362.1, y 1955.8..2942.0. Gondola floor (1016.5, 2180.9), rims (1180.3, 2047.6), (1201.5, 2071.1),
+# (488.5, 2787.4) (gondola/runtime.json:1 stations).
+# Source x 256..1536 m, y 1920..3072 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w12-craterpark"
+about = "Crater Park in the caldera, the caldera floor and rim gondola stations"
+bounds_cm = [25600, -307200, 153600, -192000]
+neighbours = ["region/w05-forest-far-east", "region/w12-volcano-north", "region/w12-volcano-south", "region/w12-volcano-west"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea", "shared/experiments/citysurfaces/v1-128m"]

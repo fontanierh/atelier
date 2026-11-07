@@ -1,0 +1,10 @@
+# W03 mega: mega/layout.py:5 ORIGIN (65, 242), :8 BOUNDS x 20..150, y 220..292; world.json:1 mega.trail x 60..198.5,
+# y 167..234. The hamlet's north edge (y 128..169, Village_Ground pieces) is here: split at y = 128.
+# Source x 0..256 m, y 128..384 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
+schema = 1
+id = "region/w03-mega"
+about = "The mini Mega ramp, its trail from the hamlet, and the hamlet's north woods"
+bounds_cm = [0, -38400, 25600, -12800]
+neighbours = ["region/w02-village", "region/w05-forest-north", "region/w06-lake-treehouse", "region/w07-hidamari-harbour"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]
