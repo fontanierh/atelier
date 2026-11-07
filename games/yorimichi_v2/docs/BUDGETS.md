@@ -35,5 +35,5 @@ and needs `--cook-memory-gib 20` (PARITY "Packaged slice").
   not to the build's output. So five real compiles were first counted as failures, not as passes. The proof now
   reads `build/yorimichi_v2/logs/unreal.compile.log`. It counts a compile only when this run's build ran the step
   (not `up to date`) and wrote that log after the run began; each run keeps its own copy. The review found that an
-  older log under an `up to date` build would otherwise pass. The six C++ runs above did compile: the step ran in
-  each, and the rebuilt file is in each log.
+  older log under an `up to date` build would otherwise pass. In the six C++ runs above the build ran the step each
+  time (six `unreal.compile done in` lines). Only the last run's log was kept, and it holds the rebuilt file.
