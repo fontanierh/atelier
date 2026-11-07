@@ -116,7 +116,17 @@ def _client(args):
     from .client import Client
     if not args.actor:
         raise SystemExit('claims: set --actor, ATELIER_CLAIMS_ACTOR or ATELIER_AGENT')
-    return Client(args.url, _token(args), args.actor, timeout=getattr(args, 'timeout', 30))
+    return Client(args.url, _token(args), args.actor, timeout=getattr(args, 'timeout', None) or _default_timeout())
+
+
+def _default_timeout():
+    """Seconds a command waits for the service (30): ATELIER_CLAIMS_TIMEOUT raises it, for example for a protected
+    check whose live verification lists every lock on a remote that holds thousands."""
+    value = os.environ.get('ATELIER_CLAIMS_TIMEOUT', '30')
+    try:
+        return _positive_seconds(value)
+    except (ValueError, argparse.ArgumentTypeError) as error:
+        raise SystemExit(f'claims: ATELIER_CLAIMS_TIMEOUT: {error}') from None
 
 
 class _Offline:
