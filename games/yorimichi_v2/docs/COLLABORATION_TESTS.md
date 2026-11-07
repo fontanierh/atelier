@@ -6,10 +6,10 @@ machine is reachable from this one, so the two-machine rows wait for a collabora
 
 | Test | Status | Revision | Evidence |
 | --- | --- | --- | --- |
-| C01 one machine, three agents | harness (no Unreal) | | `tests/test_collaboration_harness.py`: three agents in their own Git worktrees, each under a disjoint fake claim (asset, editor-owned material, region), write through import, the build's editor guard and save validation, and land on main in sequence with no conflict, a clean change-set report and a clean content check after each merge; writes outside a claim, a new actor before its lock, D04 inside a claimed checkout and a stray committed edit are refused. Rerun on the slice with real claims and Unreal. |
+| C01 one machine, three agents | pass (native, one machine) | main 40494d4e68 to aea8c3c860 | Unit: `tests/test_collaboration_harness.py`: three agents in their own Git worktrees, each under a disjoint fake claim (asset, editor-owned material, region), write through import, the build's editor guard and save validation, and land on main in sequence with no conflict, a clean change-set report and a clean content check after each merge; writes outside a claim, a new actor before its lock, D04 inside a claimed checkout and a stray committed edit are refused. Native run with real claims, GitHub LFS locks and Unreal: "C01 and C04 native run" below. |
 | C02 two machines, four workers | blocked | | D03: no second machine |
 | C03 human editor workflow | not run | | needs the slice content (P3) |
-| C04 handoff | harness (no Unreal) | | `tests/test_collaboration_harness.py`: agent A imports under a claim and commits, the coordinator transfers the claim to B, who continues A's branch; A's next import is refused before any write and B's result lands with a clean report and content check. Rerun with the real `recover --action transfer` and LFS locks. |
+| C04 handoff | pass (native, one machine) | main 40494d4e68 to aea8c3c860 | Unit: `tests/test_collaboration_harness.py`: agent A imports under a claim and commits, the coordinator transfers the claim to B, who continues A's branch; A's next import is refused before any write and B's result lands with a clean report and content check. Native run with the real `recover --action transfer`: "C01 and C04 native run" below. It found the old holder still passing checks (fixed in #744). |
 | C05 warm no-op | pass (test map) | e56b885da9 | warm check + compile: up to date in 1 s, no authoring step; `editor.run` with `Scripts/open_close.py` opened TestMinimal in 27 s, dirty packages after open: none; `git status` unchanged before and after. Rerun on the slice map. |
 | C06 clean second-machine checkout | partial | e56b885da9 | LFS round trip on this machine: a fresh `--depth 1` clone (227 s) holds pointers, and the check reports NOT_HYDRATED for all 7 files with the pull to run; `git lfs pull` skipped everything until `git lfs install --local` (now in the README and the check's hint); then the pull took 1 s, `check.py --full` passed with 7 files hashed, and the map is byte-identical. Compile, open and package on a second machine are blocked (D03). |
 | C07 same-asset requests | unit + real LFS | PR #732 | `test_claims.py` (different/same account), `test_claims_lfs_integration.py` against the GitHub LFS API |
@@ -81,3 +81,59 @@ PR #739 made three changes:
 
 The rerun locked at about 8 locks/s. Concurrent `git lfs lock/unlock` commands corrupt git-lfs's per-repository
 lock cache (`lockcache.db: gob: bad data`), so the command-line fallback locks one path at a time.
+
+## C01 and C04 native run
+
+This ran on 2026-11-07 on one machine, from main 40494d4e68 with D04 closed (#741). The local claims service backed
+it, with real GitHub LFS locks. Each agent worked in its own Git worktree under its own claims task, and the claims
+were disjoint:
+
+| Workspace | Agent | Task and claim | Edit | Changed set |
+|---|---|---|---|---|
+| `jim5-c21-ws` (new worktree) | `jim5-c21` | C01-A, `asset/prop/lantern`, locks on the FBX and the package files | The lantern source made 10% taller in guarded Blender (6 s), then `tools/import/run.py prop/lantern --claim C01-A` (62 s). An unchanged rerun took 0 s and did not start Unreal | `Lantern.fbx` (sha256 bb158afb…bb91 → 97a4b908…2fe2f), `asset.toml`, `verified.json`, `Japan/Assets/Lantern.uasset` (#742) |
+| `jim5-c21b-ws` (new worktree) | `jim5-c21b` | C01-B, `region/w01-start`, locks on one actor package and its companions | `Tree_Ginkgo` moved 30 cm east with `editor.run` + `move_actor.py` (18 s), then `save_validate.py region/w01-start --claim C01-B` | the actor package and `actors.verified.json` (#745) |
+| `jim5-yv2` (the existing checkout) | `jim-macbook-5` | C01-C, prefixes `tools/parity/`, `tools/test/`, `tools/content/` | The receipts' launch-provenance helper moved into one module; a region now owns its actor packages' companions | 6 text files (#743) |
+
+Each change passed `claims check --stage publish` and a clean content check in its own workspace. They merged on
+main one at a time, with no conflicts: A as 586b2dee36, C as 3d7af8aca6, the claims fix (#744) as 5fc55df1d5, then
+B as aea8c3c860. The content check on main reported 0 problems after each merge, and `claims task merged` released
+every lock: no V2 lock remains on the remote.
+
+**The edit survives a reopen.** `unreal/Scripts/actor_transform.py` reads one saved actor in a freshly started
+editor and saves nothing. Before the move it read the ginkgo at x = -20800.0; afterwards, in a new editor process,
+at -20770.0, with rotation and scale unchanged. The receiving workspace read the same transform after the handoff.
+
+**C04 handoff.** The coordinator (`lead`) ran `claims recover 5 --action transfer --to-workspace jim5-yv2
+--old-writer-stopped --preserved "branch jim5/c01-place at 68fdd2797f"`:
+
+| Step | Time |
+|---|---|
+| Transfer: the claim, still active, and its 5 verified locks move to `jim-macbook-5` | 0.2 s |
+| The receiver checks out the branch | 1.5 s |
+| First build in the warm receiving workspace (compile up to date; the content check reruns) | 3.8 s |
+| Second, warm no-op build | 3.6 s |
+| Receiver's editor reads the moved actor; `claims check --range origin/main...HEAD --stage publish` passes | 34 s |
+
+The receiver was ready about 5.5 s after the transfer.
+
+**What the run found and fixed**
+
+- **The old holder could still write after the transfer (fixed in #744).** After the transfer, `jim5-c21b`'s
+  claimed move from its old workspace was authorized and saved. `claims check` accepted every active claim of
+  the task, whoever held it, and the GitHub LFS locks could not tell the agents apart, because all of them use one
+  account. That write was discarded. A check now counts only the checking principal's claims. Rerun against the
+  live service, the old holder is refused with `claim 5 is held by jim-macbook-5, not jim5-c21b`, and the new
+  holder passes.
+- **Companion files need locks before an import.** The first claimed import was refused in 3 s, before Unreal
+  started. The import may write `Lantern.uexp/.ubulk/.umap/.uptnl`, and the claim had not locked them. It passed
+  after `claims extend 4 --lock-path …` for each one.
+- **A region did not own its actors' companion paths (fixed in #743).** The first claimed move was refused before
+  Unreal started with `new packages need V2_EDITOR_SCOPES`. Now `authority.owning_scopes` maps an actor package's
+  `.uexp/.ubulk/.uptnl` to its region, as asset records already did for their packages.
+- **Editor scripts must live in `unreal/Scripts`.** `run_named.py` refuses any other path. The probe was committed
+  there as `actor_transform.py`.
+- **A new workspace pays a full editor compile.** The cold compile took 1030 s in the first new worktree and
+  1906 s in the second, and each wrote about 18 GB of build output, beside a 6.7 GB checkout. Seeding the second
+  worktree with a copy-on-write clone of a compiled checkout's `Intermediate` and `Binaries` saved nothing: the
+  build ran both steps and restored none, so the clone did not help. A workspace that is already compiled is the
+  cheap receiver: there the handoff costs seconds.
