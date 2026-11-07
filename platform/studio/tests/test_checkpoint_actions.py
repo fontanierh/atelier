@@ -210,6 +210,8 @@ def test_tracked_scope_names_match_source_scopes(tmp_path, monkeypatch):
     (repo / 'a/new.txt').write_text('new')
     subprocess.run(['git', '-C', str(repo), 'add', 'a/new.txt'], check=True)
     assert str(repo / 'a/new.txt') in actions.tracked_scope_names()  # read fresh per check
+    subprocess.run(['git', '-C', str(repo), 'rm', '-q', '--cached', 'a/new.txt'], check=True)
+    assert str(repo / 'a/new.txt') not in actions.tracked_scope_names()  # the index changed: reread
     full = actions.tracked_scope_names()
     probes = [repo / 'a', repo / 'a/b', repo / 'a/b/c.txt', repo / 'a/b/c', repo / 'a/bc', repo / 'A/b/c.txt',
               repo / 'z z', repo / 'z z/f g.txt', repo / 'a/../top.txt', repo / 'build/out', repo / '*',

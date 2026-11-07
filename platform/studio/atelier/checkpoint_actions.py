@@ -81,17 +81,45 @@ def source_scopes(sources):
     return result
 
 
+_TRACKED_CACHE = {}
+
+
+def _index_key():
+    import subprocess
+    cache = _TRACKED_CACHE.setdefault(str(paths.REPO), {})
+    if 'index' not in cache:
+        found = subprocess.run(['git', '-C', str(paths.REPO), 'rev-parse', '--path-format=absolute', '--git-path', 'index'],
+                               check=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15).stdout
+        cache['index'] = os.fsdecode(found.strip())
+    index = cache['index']
+    try:
+        st = os.stat(index)
+    except FileNotFoundError:
+        return None
+    return index, st.st_mtime_ns, st.st_ctime_ns, st.st_size, st.st_ino
+
+
 def tracked_scope_names(roots=None):
     """source_scopes(tracked_paths()) as path strings: the same lexical membership, read fresh per check.
-    With roots, only the members among them. git lists just the tracked files at or under those roots (a
-    superset under case folding), and exact string comparison decides; a root at or above the checkout reads all."""
-    import subprocess
+    With roots, only the members among them. git reads tracked membership from the index alone, so the full
+    listing is reused while the index file is unchanged (same mtime, ctime, size and inode) and reread otherwise."""
     if not (paths.REPO / '.git').exists():
         return set()
+    key = _index_key()
+    cache = _TRACKED_CACHE[str(paths.REPO)]
+    full = cache.get('full') if key is not None and cache.get('key') == key else None
+    if full is None:
+        full = _list_tracked_scope_names(None)
+        cache['key'], cache['full'] = key, full
+    return set(full) if roots is None else full & {str(root) for root in roots}
+
+
+def _list_tracked_scope_names(roots=None):
+    import subprocess
     base = str(paths.REPO)
     wanted = None if roots is None else {str(root) for root in roots}
     if wanted is not None and any(base == w or base.startswith(w.rstrip('/') + '/') for w in wanted):
-        return tracked_scope_names() & wanted
+        return _list_tracked_scope_names() & wanted
     inside = None if wanted is None else sorted(w for w in wanted if w.startswith(base + '/')
                                                 and '..' not in w[len(base) + 1:].split('/'))
     if inside == []:
