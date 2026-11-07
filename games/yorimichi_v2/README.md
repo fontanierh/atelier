@@ -78,7 +78,7 @@ uv run python games/yorimichi_v2/tools/migrate/compare.py ORIGINAL.json V2.json 
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/capture_poses.py V2_CAPTURE_DIR=DIR \
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # (pending) into an empty DIR: one PNG per parity pose + capture.json receipt, saves nothing
 uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim S   # visual parity of two receipted capture sets (all poses in poses.json)
-uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --source donor-runtime --checkout DONOR --live-from DONOR --out DIR
+uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --source donor-runtime --checkout DONOR --out DIR
 uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --session ID --source v2 --out DIR   # the same poses from the running V2 game
 # The donor baseline comes from the running donor game (its scenery is spawned at run time); capturing V2 the same way
 # keeps both on one render path. Each receipt names the revision the game was proven to launch from (its session, or

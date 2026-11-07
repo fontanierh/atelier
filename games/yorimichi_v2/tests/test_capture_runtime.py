@@ -109,7 +109,7 @@ def test_a_game_without_a_session_needs_head_unmoved_since_it_started(checkout, 
     real = subprocess.run
     monkeypatch.setattr(capture.subprocess, 'run', fake)
     offset = 5
-    assert capture.process_revision(checkout, 8830) == head(checkout)
+    assert capture.process_revision(checkout, 8830)[0] == head(checkout)
     offset = -5
     with pytest.raises(ValueError, match='HEAD moved after the game'):
         capture.process_revision(checkout, 8830)
