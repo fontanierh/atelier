@@ -237,4 +237,8 @@ if not U.EditorLoadingAndSavingUtils.save_dirty_packages(True, True):
     raise RuntimeError('could not save the map and its actor packages')
 for actor in created:
     U.log(f'V2 MIGRATED {actor.get_package().get_name()} {actor.get_actor_label()}')
-U.log(f'{MARKER} created={len(created)} kept={kept}')
+# Every scene patch the map now holds, created or kept: tools/migrate/run.py records them as the regions' rosters.
+patches = [a for a in EAS.get_all_level_actors() if a.get_class().get_name() == 'V2ScenePatch']
+for actor in patches:
+    U.log(f'V2 PATCH {actor.get_package().get_name()} {actor.get_actor_label()}')
+U.log(f'{MARKER} created={len(created)} kept={kept} patches={len(patches)}')

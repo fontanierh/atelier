@@ -27,8 +27,9 @@ import authority  # noqa: E402
 import records  # noqa: E402
 import save_validate  # noqa: E402
 
-LOG = REPO / 'build/yorimichi_v2/logs/migrate.map/stdout.log'
-MIGRATED = re.compile(r'V2 MIGRATED (\S+) (\S+)')
+LOG = REPO / 'build/yorimichi_v2/logs/migrate.map.guard/stdout.log'   # the guarded editor's output
+PATCH = re.compile(r'V2 PATCH (\S+) (\S+)')
+DONE = re.compile(r'V2 MIGRATE DONE created=(\d+) kept=(\d+) patches=(\d+)')
 
 
 class MigrationError(RuntimeError):
@@ -51,14 +52,26 @@ def make_plan(game: Path, ids: list[str], environment: str, services, only_migra
 
 def native_migrate(plan_file: Path):
     env = {**os.environ, 'V2_MIGRATE_PLAN': str(plan_file)}
+    LOG.unlink(missing_ok=True)   # the rosters are read from this run's output only
     command = ['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2', 'migrate.map']
     result = subprocess.run(command, cwd=REPO, env=env)
     if result.returncode:
         raise MigrationError(f'the editor migration failed (exit {result.returncode}); see {LOG}')
 
 
+def patches_made(text: str) -> list[tuple[str, str]]:
+    """Every scene patch the migrated map holds, from the editor's output; incomplete capture is a failure."""
+    done = DONE.findall(text)
+    if not done:
+        raise MigrationError(f'the editor migration did not report completion in {LOG}')
+    found = PATCH.findall(text)
+    if len(found) != int(done[-1][2]):
+        raise MigrationError(f'roster capture is incomplete: {len(found)} of {done[-1][2]} scene patch(es) in {LOG}')
+    return found
+
+
 def record_rosters(game: Path, made: list[tuple[str, str]]) -> None:
-    """Add each created patch to its region's committed roster (world/regions/<name>/patches.json): the scene
+    """Add each patch to its region's committed roster (world/regions/<name>/patches.json): the scene
     patches the region must keep, so one deleted outright fails the content check instead of passing readiness."""
     rosters = {}
     for package, label in made:
@@ -99,8 +112,8 @@ def main(argv=None) -> int:
         plan_file = out / 'plan.json'
         plan_file.write_text(json.dumps(plan, indent=2, sort_keys=True) + '\n')
         native_migrate(plan_file)
-        made = MIGRATED.findall(LOG.read_text(errors='replace')) if LOG.is_file() else []
-        print(f'{len(made)} actor package(s) created')
+        made = patches_made(LOG.read_text(errors='replace') if LOG.is_file() else '')
+        print(f'{len(made)} scene patch(es) on the map')
         record_rosters(GAME, made)
         for region in args.regions + [args.environment]:
             save_validate.validate(GAME, region, claim=args.claim)

@@ -108,3 +108,13 @@ def test_migration_rosters_merge_per_region(tmp_path):
     roster = json.loads((tmp_path / 'world/regions/w01-start/patches.json').read_text())['patches']
     assert roster == {'id1': {'key': 'Sea:SM_Sea', 'package': 'unreal/Content/__ExternalActors__/V2/Maps/Slice/0/AB/X1.uasset'},
                       'id2': {'key': 'HD_Bench', 'package': 'unreal/Content/__ExternalActors__/V2/Maps/Slice/0/CD/X2.uasset'}}
+
+
+def test_roster_capture_must_be_complete():
+    line = 'V2 PATCH /Game/__ExternalActors__/V2/Maps/Slice/0/AB/X1 region/w01-start:Sea:SM_Sea:whole:id1\n'
+    assert run.patches_made(line + 'V2 MIGRATE DONE created=1 kept=0 patches=1\n') == [
+        ('/Game/__ExternalActors__/V2/Maps/Slice/0/AB/X1', 'region/w01-start:Sea:SM_Sea:whole:id1')]
+    with pytest.raises(run.MigrationError, match='incomplete'):
+        run.patches_made(line + 'V2 MIGRATE DONE created=0 kept=2 patches=2\n')
+    with pytest.raises(run.MigrationError, match='did not report'):
+        run.patches_made('')
