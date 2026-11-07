@@ -208,9 +208,15 @@ BIND_RETRY_S = 20.0   # a busy claim service (a reconcile listing every lock) ti
 PENDING = REPO / 'build/yorimichi_v2/migrate/pending'   # checked created files a failed bind set aside
 
 
+# What the claims CLI reports when the service, not a decision, failed: it is unreachable or timed out, still
+# reconciling, cannot reach the LFS or Git remote, or holds an earlier lock request whose outcome is unknown.
+SERVICE_FAULTS = ('claims service at ', 'unsettled', 'reconciling', 'lfs_unavailable', 'git_unavailable', 'uncertain',
+                  ': unknown')
+
+
 class BindFailed(Unauthorized):
-    """The created files passed every check but not all could be bound: they wait in PENDING, outside the content
-    tree, for `resume_created` once the claim service can take their locks (no editor rerun)."""
+    """The claim service failed to bind created files that passed every check: they wait in PENDING, outside the
+    content tree, for `resume_created` once it can take their locks (no editor rerun). A refusal is Unauthorized."""
 
 
 def _check_created(claim: str, regions: list[str], created: list[str], what: str, *, game: Path,
@@ -246,10 +252,16 @@ def _bind(held: dict, paths: list[str], claim: str, regions: list[str], what: st
                 break
             time.sleep(BIND_RETRY_S * (attempt + 1))
         if result.returncode:
-            raise BindFailed(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
-                             f'{claim}: {result.stderr.strip()[-300:]}')
+            error = BindFailed if any(f in result.stderr for f in SERVICE_FAULTS) else Unauthorized
+            raise error(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
+                        f'{claim}: {result.stderr.strip()[-300:]}')
     if paths:
-        authorize(paths, claim, what, scopes=set(regions), repo=repo)
+        try:
+            authorize(paths, claim, what, scopes=set(regions), repo=repo)
+        except Unauthorized as error:
+            if any(f in str(error) for f in SERVICE_FAULTS):
+                raise BindFailed(str(error)) from error
+            raise
 
 
 def _move(rels: list[str], source: Path, target: Path) -> None:
@@ -267,32 +279,28 @@ def bind_created(claim: str, regions: list[str], before: dict, after: dict, what
     extend ID --lock-path ... --acquire`) and then checked like any claimed path, so nothing unbound is published."""
     changed = written(before, after)
     created = sorted(rel for rel in changed if rel not in before and rel in after)
-    checked = False
     try:
         held, paths = _check_created(claim, regions, created, what, game=game, repo=repo)
         existing = [f'games/yorimichi_v2/{rel}' for rel in sorted(changed - set(created))]
         if existing:
             scopes, _ = owning_scopes(game, existing)
             authorize(existing, claim, what, scopes=scopes | set(regions), repo=repo)
-        checked = True
         _bind(held, paths, claim, regions, what, repo=repo)
     except BaseException as error:
         # Created files exist before their paths can be claimed (World Partition names them at save). Unbound,
-        # they are unauthorized writes and leave the content tree: checked ones wait in `pending` for a resumed
-        # bind (a claim service fault must not discard a long editor run), any other is removed. Existing files
-        # and claims are left as they were.
+        # they are unauthorized writes and leave the content tree: after a claim service fault (BindFailed) the
+        # checked files wait in `pending` for a resumed bind, so the fault does not discard a long editor run; after
+        # any refusal or other error they are removed. Existing files and claims are left as they were.
         pending = PENDING
-        if not checked or pending.exists():   # one set waits at a time: run.py refuses a new run while it does
+        if not isinstance(error, BindFailed) or pending.exists():   # one set waits at a time (no new run starts)
             for rel in created:
                 (game / rel).unlink(missing_ok=True)
             raise
         _move(created, game, pending / 'files')
         (pending / 'pending.json').write_text(json.dumps({'claim': claim, 'regions': regions, 'what': what,
                                                           'created': created}, indent=2) + '\n')
-        if isinstance(error, BindFailed):
-            raise BindFailed(f'{error}; the {len(created)} created file(s) wait in {pending}: resume the bind '
-                             'once the claim service settles (tools/migrate/run.py --resume)') from error
-        raise
+        raise BindFailed(f'{error}; the {len(created)} created file(s) wait in {pending}: resume the bind '
+                         'once the claim service settles (tools/migrate/run.py --resume)') from error
     return paths
 
 

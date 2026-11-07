@@ -214,6 +214,10 @@ def test_a_bind_batch_that_times_out_is_retried(tmp_path, game, claims, env):
     assert repo_path(FAR_NEW) not in claims.tasks['T1']['paths']
     with pytest.raises(migration.MigrationError, match='resume it'):     # no new run while a set waits
         migration.migrate(game, plan(game), 'T1', editor=never, out=tmp_path / 'm')
+    os.environ['V2_MIGRATE_PLAN'] = str(tmp_path / 'direct.json')        # nor through the build step directly
+    (tmp_path / 'direct.json').write_text(json.dumps({**plan(game), 'claim': 'T1'}))
+    with pytest.raises(RuntimeError, match='failed bind'):
+        recipe._authorize_migration(type('Ctx', (), {'out': tmp_path / 'out'})(), io.StringIO())
     with pytest.raises(migration.MigrationError, match='no saved editor output'):
         migration.resume(game, out=tmp_path / 'm')
     (authority.PENDING / 'stdout.log').write_text('V2 MIGRATE DONE created=0 kept=0 patches=0\n')   # run.py saves it
@@ -268,14 +272,14 @@ def test_a_claimed_existing_file_without_its_verified_lock_refuses_before_the_ed
     assert any('--paths' in c and f'games/yorimichi_v2/{OLD}' in c for c in claims.checks)
 
 
-def test_a_failed_bind_takes_every_created_file_out_of_the_content_tree(tmp_path, game, claims, env):
+def test_a_refused_bind_removes_every_created_file(tmp_path, game, claims, env):
     env.setenv('ATELIER_AGENT', 'agent-a')
     claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
     claims.unlocked.add(f'games/yorimichi_v2/{NEW}')               # its lock is acquired but cannot be verified
     with pytest.raises(authority.Unauthorized, match='verified locks'):
         migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K'}),
                           out=tmp_path / 'm', echo=lambda *_: None)
-    assert not (game / NEW).exists() and (authority.PENDING / 'files' / NEW).is_file()   # checked: it waits
+    assert not (game / NEW).exists() and not authority.PENDING.exists()   # a refusal, not a service fault
 
 
 @pytest.mark.parametrize('failure', ['down', 'garbled'])
