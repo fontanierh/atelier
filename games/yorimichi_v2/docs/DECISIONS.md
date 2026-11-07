@@ -136,3 +136,18 @@ record owns, reports every hard reference that resolves to nothing in V2, and re
 a home folder or private host. Those need the editor scrub before commit. Runtime data (`Content/Data`) is
 copied from the donor's staged data and committed as runtime data. The rights groups of D05 decide which
 folders are adopted publicly.
+
+## D09 — The desktop look is the game's own, and the island backdrop stays loaded
+
+The original's look came partly from its desktop launcher (`tools/desktop_preview.py` and the shipped launch
+script), not the game. Every forward start passed a sky light at a third (`r.SkylightIntensityMultiplier .33`), no
+distance fields, a 3 lux harbor fill, cascade caching off, a shadow slope bias of 3, and vsync. V2 has no launcher.
+`UJapanPreferences::Apply` sets the renderer-dependent part: forward has a third of the sky light, no
+distance-field AO and the harbor fill; Lumen has the full sky light. The fixed cvars are in `DefaultEngine.ini`
+`[SystemSettings]`, so play and a packaged build agree. Without them, the slice's surfaces were 10–34% brighter
+and bluer than the original.
+
+The original spawns every island piece (terrain, far hills, road, lane, guardrail, wires), the sky dome and the sea
+at load. The sky light captures the scene beyond 1.5 km once, so the migration places those actors always loaded
+(`migrate_map.always_loaded`), not streamed. A cell no migrated region holds belongs to the environment region, so
+the slice island has no holes.

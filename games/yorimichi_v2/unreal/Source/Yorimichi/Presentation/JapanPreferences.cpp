@@ -550,6 +550,14 @@ void UJapanPreferences::Apply()
     Set(TEXT("r.DynamicRes.FrameTimeBudget"),1000.f/60.f);
     Set(TEXT("r.DynamicRes.TargetedGPUHeadRoomPercentage"),10.f);
     Set(TEXT("r.DynamicRes.OperationMode"),PerformanceMode ? 2.f : 0.f);
+    // The forward look the original's desktop launcher set at every start (its docs/DESKTOP_PERFORMANCE.md), now the
+    // game's own: forward has no Lumen bounce, so the full sky light washed out the ambient and the water. A third of it,
+    // no distance-field sky occlusion (the original generated no distance fields in forward) and a warm 3 lux harbor
+    // fill standing in for the second directional light forward cannot render. Lumen keeps the full sky light.
+    const bool bForward = CurrentRenderer() == 0;
+    Set(TEXT("r.SkylightIntensityMultiplier"), bForward ? .33f : 1.f);
+    Set(TEXT("r.DistanceFieldAO"), bForward ? 0.f : 1.f);
+    if (GEngine) GEngine->Exec(Owner->GetWorld(), bForward ? TEXT("japan.ForwardHarborFill 3") : TEXT("japan.ForwardHarborFill 0"));
     Owner->ApplyCameraPreferences(Get(TEXT("mouse")),Get(TEXT("cam_dist")),Get(TEXT("fov")));
     // Every sound in the game (the audio device's primary volume).
     if (FAudioDeviceHandle Audio = Owner->GetWorld()->GetAudioDevice(); Audio.IsValid()) Audio->SetTransientPrimaryVolume(Get(TEXT("volume")));

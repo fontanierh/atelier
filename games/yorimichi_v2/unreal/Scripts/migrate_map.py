@@ -134,7 +134,7 @@ def island_pieces():
             if mesh is None:
                 raise RuntimeError(f'{row["asset"]} is missing from V2 Content: adopt it first')
             actor = place(U.StaticMeshActor, region, f'Island:{parent}:{row["name"]}',
-                          stable_id('island', parent, row['name'], row['sha256']))
+                          stable_id('island', parent, row['name'], row['sha256']), spatial=False)
             if actor is None:
                 continue
             component = actor.static_mesh_component
@@ -142,6 +142,23 @@ def island_pieces():
                 raise RuntimeError(f'could not assign {row["name"]}')
             component.set_editor_property('component_tags', [U.Name('IslandSurface:' + parent)])
             actor.set_mobility(U.ComponentMobility.STATIC)
+
+
+BACKDROP = (':Island:', ':SkyDome:', ':Sea:')
+
+
+def always_loaded():
+    """The island (terrain, far hills, road, lane, guardrail, wires), the sky dome and the sea stay loaded, as the
+    donor's AJapanWorld spawns them: the sky light captures the scene beyond 1.5 km once, when it registers, so a
+    streamed-out far hill brightens and blues every surface's sky light, and the backdrop is seen from everywhere.
+    Kept actors from an earlier run are switched too; returns how many changed."""
+    changed = 0
+    for actor in EAS.get_all_level_actors():
+        if any(part in actor.get_actor_label() for part in BACKDROP) and actor.get_editor_property('is_spatially_loaded'):
+            actor.modify()
+            actor.set_editor_property('is_spatially_loaded', False)
+            changed += 1
+    return changed
 
 
 def soft_colour_grade(settings):
@@ -251,6 +268,7 @@ environment(env)
 manifest(env)
 island_pieces()
 kept += scenery(world, env)
+U.log(f'V2 ALWAYS LOADED {always_loaded()} backdrop actor(s) switched')
 if not U.EditorLoadingAndSavingUtils.save_dirty_packages(True, True):
     raise RuntimeError('could not save the map and its actor packages')
 for actor in created:

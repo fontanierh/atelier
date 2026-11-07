@@ -26,7 +26,7 @@ machine is reachable from this one, so the two-machine rows wait for a collabora
 | C18 push or LFS upload fails | partial pass | f1d2b1529a | in a scratch clone with `.githooks`, a commit carrying a new LFS package was pushed with LFS pointed at an unreachable endpoint: `git lfs pre-push` failed the batch upload ("connection refused"), the push exited 1, `git ls-remote` shows the branch never reached origin, and the commit and the 4 KB local package stayed. Claim retention on failure is the claims service rule (release only on merge or cancel, PR #732). Not yet run: the retry that reconciles before pushing again (needs a sandbox remote, not the public repository). |
 | C19 shared definition update | harness (no Unreal) | | `tests/test_collaboration_harness.py`: a claimed save of a shared material makes the check report exactly its direct `input_dependencies` dependents STALE_IMPORT and the import plan add the transitive one, nothing else; two dependent owners reimport under their own claims and main checks clean, with unrelated records and packages byte-identical. Rerun on adopted content. |
 | C20 cancel a guarded build | pass (test map) | f1d2b1529a | a guarded `editor.run` holding the editor (`Scripts/hold.py`) was cancelled with SIGTERM 16 s in: the build reported "BUILD INTERRUPTED during editor.run; completed steps stay published", its editor child (UnrealEditor-Cmd) was gone within 1 s, the hold script never finished, another owner's running build (the donor, same machine) kept its PID and kept running, and `git status` was unchanged. The next guarded editor run was admitted at once. |
-| C21 claimed new actors after D04 closes | pending (native); unit pass | | Unit: `tests/test_d04.py` (closed switch refuses the bootstrap writer on all seven routes; a claimed migration creates, binds with `--lock-path … --acquire` and records its regions' actors; creation in another map's actor folder or outside actor folders, and an unclaimed existing write, are refused with nothing bound). Native plan, needs Unreal and the real service: in a scratch branch set `governance.toml` `closed = true`; as a non-bootstrap agent, request a claim with `region/test-minimal` scope plus the TestMinimal map's existing actor paths, acquire it, and run `tools/migrate/run.py region/test-minimal --environment region/test-minimal --claim TASK` with a plan that adds one new labelled actor. Expect: the bootstrap writer without `--claim` refused before the editor starts; the editor's save of an unclaimed existing package refused by V2SaveGuard; exactly the new OFPA file(s) bound to the claim with LFS locks held on the remote (`git lfs locks`), including a path not yet on the remote; `claims check --stage publish` and the content check pass; the change-set report is clean. Then the same with a second agent holding another region: its creation in this region's map folder is refused. |
+| C21 claimed new actors after D04 closes | pass (native, one machine) | main fa63a342cd plus the claims change of PR #739, in a scratch branch | Unit: `tests/test_d04.py`. Native run with Unreal and the real claims service and GitHub LFS locks, recorded under "C21 native run" below. |
 
 Unit rows prove the logic; each still needs its run on the slice (plan §13: "a simulation of lock logic does not
 replace actual LFS/server integration tests").
@@ -53,3 +53,31 @@ become saved, placed actors with the gameplay features in P4.
 
 The first real import found that `import.<id>` was no valid build step name (`/` is not allowed). Import steps are
 now named `import.` plus the ID with `.` for `/` (`records.import_step`), and a collision fails the build.
+
+## C21 native run
+
+This ran on 2026-11-07 in a scratch branch with `governance.toml` `closed = true`. The local claims service
+backed the run, and the locks were real GitHub LFS locks. Agent `jim5-c21` held task C21-T1, with scope
+`region/test-minimal` and locks on the TestMinimal map and its 4 existing actors. With region/test-minimal as its
+own environment, the migration placed the whole island's scenery: 1015 scene patches in 1025 new OFPA packages.
+
+| Step | Result |
+|---|---|
+| The bootstrap writer without `--claim` | refused in 0 s, before the editor |
+| Claimed migration (`tools/migrate/run.py region/test-minimal --environment region/test-minimal --claim C21-T1`) | rc 0 in 200 s (editor 190 s, including binding). All 1025 created files were bound with `claims extend --lock-path … --acquire`; 1032 locks were verified on GitHub (`git lfs locks`); `claims: ok (1025 changed paths, stage publish)`; the region record was written (1025 changed) |
+| A second agent (`jim5-c21b`, task C21-T2) requests `region/test-minimal` | refused: `overlap` |
+| The same agent, holding `region/w01-start`, migrates test-minimal with `--claim C21-T2` | refused in 0 s, before the editor: no claim whose scopes cover region/test-minimal |
+| Cleanup | both claims cancelled as discarded; their locks released through the LFS API |
+
+The first attempt failed after the editor finished. Binding locked the 1025 paths one at a time with `git lfs
+lock` (about 0.6 locks/s). Activation then verified each of 507 locks with its own remote listing and passed the
+client's 30 s timeout. The cleanup removed every created file and left no unbound write behind, as designed;
+the leftover locks were released afterwards.
+
+PR #739 made three changes:
+- Clients lock through the LFS locking API with the checkout's git credential.
+- Up to 8 paths are locked at once.
+- A claim with more than 20 locks is verified against one listing.
+
+The rerun locked at about 8 locks/s. Concurrent `git lfs lock/unlock` commands corrupt git-lfs's per-repository
+lock cache (`lockcache.db: gob: bad data`), so the command-line fallback locks one path at a time.
