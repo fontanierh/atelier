@@ -4,7 +4,8 @@ yorimichi-v2-portable-records). Run through `editor.run` (V2_EDITOR_SCRIPT=unrea
 An adopted package's import data names the donor checkout's absolute source files (a home folder), and an
 Interchange import also keeps its node graph, which repeats them. V2 does not reimport adopted packages from
 those files: a generated asset's sources are its record's repository-relative paths. So each asset under
-V2_SCRUB_FOLDERS (comma-separated /Game folders) whose import data names any source file has each recorded file
+V2_SCRUB_FOLDERS (comma-separated /Game folders), or each package of V2_SCRUB_PACKAGES (space-separated
+/Game package names), whose import data names any source file has each recorded file
 blanked, any Interchange node graph replaced by an empty one and its factory node ID renamed after the asset, and
 only those packages are saved. Geometry,
 materials and settings are untouched; a package without import data, or with none recorded, is not resaved.
@@ -37,11 +38,14 @@ def private_node(data):
 
 def main():
     folders = [f.strip() for f in os.environ.get('V2_SCRUB_FOLDERS', '').split(',') if f.strip()]
-    if not folders or any(not f.startswith('/Game/') for f in folders):
-        raise RuntimeError('V2_SCRUB_FOLDERS must name /Game folders')
+    packages = os.environ.get('V2_SCRUB_PACKAGES', '').split()
+    if not (folders or packages) or any(not f.startswith('/Game/') for f in folders + packages):
+        raise RuntimeError('V2_SCRUB_FOLDERS or V2_SCRUB_PACKAGES must name /Game folders or packages')
+    # Named packages (the adoption check's private-bytes list) are scrubbed alone; a folder scrubs all it holds.
+    groups = [packages] if packages else [EAL.list_assets(f, recursive=True, include_folder=False) for f in folders]
     scrubbed = kept = 0
-    for folder in folders:
-        for index, path in enumerate(EAL.list_assets(folder, recursive=True, include_folder=False)):
+    for group in groups:
+        for index, path in enumerate(group):
             if index % 256 == 255:
                 U.SystemLibrary.collect_garbage()   # thousands of adopted assets: bound what stays loaded
             asset = EAL.load_asset(path.split('.')[0])
