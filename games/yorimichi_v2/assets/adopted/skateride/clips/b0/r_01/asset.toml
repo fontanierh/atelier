@@ -1,0 +1,609 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: R in /Game/SkateRide/Clips/B0 (part 1 of 3)
+schema = 1
+id = "adopted/skateride/clips/b0/r_01"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/r_01"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_360SHUVIT_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_360SHUVIT_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_360SHUVIT_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_L_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_L_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_R_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_R_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_L_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_L_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_R_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_R_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_L_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_L_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_R_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_R_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_L_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_L_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_R_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_R_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_FS360SHUVIT_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_FS360SHUVIT_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_FS360SHUVIT_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_N360SHUVIT_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_N360SHUVIT_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_N360SHUVIT_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NFS360SHUVIT_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NFS360SHUVIT_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NFS360SHUVIT_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_L_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_L_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_R_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_OLLIE_R_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_CR_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_CR_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_CR_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_CR_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_N_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_BRAKE_N_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CROUCH_KICKTURN_STAT_BS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CROUCH_KICKTURN_STAT_FS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_LEFT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_LEFT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_LEFT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_LEFT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_LEFT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_LEFT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_RIGHT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_RIGHT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_RIGHT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_MONGO_RIGHT_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_N_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_N_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_RIGHT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_RIGHT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_HSTR_RIGHT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_LEFT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_LEFT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_LEFT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_LEFT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_LEFT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_LEFT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_RIGHT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_RIGHT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_MONGO_RIGHT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_N_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_N_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_RIGHT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_RIGHT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHHSP_LSTR_RIGHT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_LEFT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_LEFT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_LEFT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_LEFT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_LEFT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_LEFT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_RIGHT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_RIGHT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_MONGO_RIGHT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_N_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_N_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_RIGHT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_RIGHT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_HSTR_RIGHT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_LEFT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_LEFT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_LEFT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_LEFT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_LEFT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_LEFT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_RIGHT_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_RIGHT_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_MONGO_RIGHT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_N_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_N_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_RIGHT_0_CYC1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_RIGHT_0_CYC2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSHLSP_LSTR_RIGHT_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_LEFT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_LEFT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_LEFT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_LEFT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_LEFT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_LEFT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_LEFT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_LEFT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_N_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_N_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_N_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_N_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_RIGHT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_RIGHT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_RIGHT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_M_RIGHT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_N_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_N_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_N_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_N_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_RIGHT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_RIGHT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_RIGHT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_L_RIGHT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_HIGHANTIC_360SHUVIT_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_HIGHANTIC_360SHUVIT_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_HIGHANTIC_360SHUVIT_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_HIGHANTIC_FS360SHUVIT_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_HIGHANTIC_FS360SHUVIT_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_HIGHANTIC_FS360SHUVIT_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_HIGHANTIC_N360SHUVIT_L_0_CYC"

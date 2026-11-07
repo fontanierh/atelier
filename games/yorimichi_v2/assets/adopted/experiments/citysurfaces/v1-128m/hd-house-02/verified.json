@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-house-02",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_House_02.uasset": "05f53fbe891ce98e232cfdaae03c5d13e74e39e30b73667d98b77ce055296dec"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

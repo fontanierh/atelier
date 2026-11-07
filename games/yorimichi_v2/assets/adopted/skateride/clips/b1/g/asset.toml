@@ -1,0 +1,99 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: G in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/g"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/g"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_CYC_CANNONBALL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_CYC_FLAIL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_CYC_JUMPKICK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_CYC_SWAN_DIVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_CYC_TORPEDO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_INTO_CANNONBALL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_INTO_FLAIL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_INTO_JUMPKICK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_INTO_SWAN_DIVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_BR_INTO_TORPEDO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_HIPPY_CYC_JUMPKICK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_HIPPY_INTO_JUMPKICK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_CANNONBALL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_CANNONBALL_H"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_FLAIL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_FLAIL_H"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_JUMPKICK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_SWAN_DIVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_SWAN_DIVE_H"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_TORPEDO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_CYC_TORPEDO_H"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_CANNONBALL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_CANNONBALL_H"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_FLAIL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_FLAIL_H"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_JUMPKICK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_SWAN_DIVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_SWAN_DIVE_H"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_TORPEDO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/G_BODYTWEAK_NB_INTO_TORPEDO_H"

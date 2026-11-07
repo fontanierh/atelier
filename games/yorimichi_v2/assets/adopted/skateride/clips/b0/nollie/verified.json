@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/nollie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/NOLLIE_HIGH_A.uasset": "b58a0d0bac360b27f5b2b2de951a9a077ee5f0f6fbc2856752b720e1cb96d867",
+    "unreal/Content/SkateRide/Clips/B0/NOLLIE_HIGH_G.uasset": "b328c844ba0734891be995878b21f36b40c09279daa0f3c269ebdc3814bcb33c",
+    "unreal/Content/SkateRide/Clips/B0/NOLLIE_LOW_A.uasset": "21c45fa211faf217327942b9a2d706a8aa16d22ebffde0d0d188f35073ad91dd",
+    "unreal/Content/SkateRide/Clips/B0/NOLLIE_LOW_G.uasset": "cab344e93ab886a731d4e89be6a6170b0a0ebf9db020efea1f3ae8d4be520481"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

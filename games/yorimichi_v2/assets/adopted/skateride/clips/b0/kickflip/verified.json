@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/kickflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_HIGH_A.uasset": "b546b92611e1b6c3ced2cf0da3fff2b5950862aa6054aa432c772de0e8b1a4c5",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_HIGH_G.uasset": "4888e48a2ff5077218ec43d2911c172508d4d0c039006708859b108e2f082ee2",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_LOW_A.uasset": "b16882a1a49d7f3558f517b4a6d46d7b3a4baf115e9f1c21adaf25e21c3b53c8",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_LOW_G.uasset": "751bd7cbd616b444b1573252ce9e9809db55a68064889ac63b1a4149bd278ff4",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_HIGH_A.uasset": "50744f97dbc4e8fa2416f82418e804fa5e8bef278978b6e1bcfa92c4314b2ad8",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_HIGH_G.uasset": "07a1e60276feeace4300cdfb3539f9da9d051ffcbc777e05a77ba3336288ab17",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_LOW_A.uasset": "8a7bf4afa8057b0035b7d00e88f341900c785915a4a650d35e25b8e8dbb96ad9",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_LOW_G.uasset": "24975609b170fabe38a9719e77dd43c78265905a65eaa038b3df2245636c4160",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_HIGH_A.uasset": "3b8878de5e384c17671ddedf6efa5b3db8a8903356769e24775a26c88a86b036",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_HIGH_G.uasset": "faed9faadcda8a775a0354ddba7e0c0bad9c12fecdf91664bf7a0020311a0a21",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_LOW_A.uasset": "9b96456fcf7dc50917f64bbe53dd3ff91227f6bedd08d48808e0e537fbe67ce6",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_LOW_G.uasset": "23bf9e99e062a48c7b1f866a73c866d54e2b3747ffd2bc3aaed5ee006b5d3a57"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

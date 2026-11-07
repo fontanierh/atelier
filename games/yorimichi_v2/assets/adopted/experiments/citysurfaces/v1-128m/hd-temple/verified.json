@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-temple",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Temple_cell_-1_-1.uasset": "4fa26e067a75a89064799d0df8716d8361cf9bd838912959f1eaea2233b1108a",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Temple_cell_-1_0.uasset": "d88d64af4d360dce164385ae56fba80dcd2acb28f02752b74fdfe1ef0e729e32",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Temple_cell_0_-1.uasset": "07b5fc9cf7abcc9179a2c63b8c24f78915ed9b11fe494637c2e767dd4f4d4228",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Temple_cell_0_0.uasset": "38bce4fbb2653987c5cff1e7ee9cd977ed9bd47f5387f22276da96ee5dea7117"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

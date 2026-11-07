@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-town-bus",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_town_bus.uasset": "f7b35a391121942b573d1823035d07633547d5cfadfcc871a91da570cc327933"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

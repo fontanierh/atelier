@@ -1,0 +1,45 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: PUSHOFF in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/pushoff"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/pushoff"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_ABOVEHEAD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_FACEDOWN"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_LEFTSIDE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_LEGS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_RIGHTSIDE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_TUCK_ABOVEHEAD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_TUCK_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_TUCK_FACEDOWN"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_TUCK_LEFTSIDE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_TUCK_LEGS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PUSHOFF_TUCK_RIGHTSIDE"

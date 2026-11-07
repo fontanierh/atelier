@@ -1,0 +1,12 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: HD_LaneEdges in /Game/Experiments/CitySurfaces/v1_128m
+schema = 1
+id = "adopted/experiments/citysurfaces/v1-128m/hd-laneedges"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/citysurfaces/v1-128m/hd-laneedges"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_LaneEdges"

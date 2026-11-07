@@ -1,0 +1,582 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: MVOBJ in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/mvobj"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/mvobj"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_CROUCH_STILL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSOFF_CRCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSOFF_HIGH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSOFF_MED"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSON_CRCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSON_CRCH_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSON_HIGH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSON_HIGH_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSON_MED"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HANDSON_MED_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_HIGH_STILL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_CRCH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_HIGH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_45_MED_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_CRCH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_HIGH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PULL_MED_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_CRCH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_HIGH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_45_MED_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_CRCH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_HIGH_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_LOWSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_LOWSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_LOWSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_LOWSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_LOWSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_PUSH_MED_LOWSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_LOSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_LOSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_LOSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_LOSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_LOSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_CRCH_LOSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_LOSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_LOSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_LOSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_LOSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_LOSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_HIGH_LOSTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_HISTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_HISTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_HISTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_HISTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_HISTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_HISTR_SLOW_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_LOSTR_FAST_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_LOSTR_FAST_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_LOSTR_MED_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_LOSTR_MED_CYCB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_LOSTR_SLOW_CYCA"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/MVOBJ_STRF_MED_LOSTR_SLOW_CYCB"

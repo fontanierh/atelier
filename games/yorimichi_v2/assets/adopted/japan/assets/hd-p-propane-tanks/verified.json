@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-propane-tanks",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_propane_tanks.uasset": "823caddf3ce24f5251481663118e99b1efd0c9557075734e6f1b3b25647769c7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

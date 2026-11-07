@@ -1,0 +1,30 @@
+{
+  "asset": "adopted/skateride/clips/b0/ofb",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_0_ABSORB.uasset": "f0a71e35cd1d0aa4f13fb2fc82e318cd011e7370e0eacee54be5354c6aed4def",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_0_CYC.uasset": "e2eaaa4515effa3b44bff2158fdbf0cd052e415e154f954da553300008b9f439",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_HEAVY_ABSORB.uasset": "ddab2e0481f8fb90ef972403b318adb2a06f1a282644b688286e30cfedec9a64",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_OUT.uasset": "b28c498040524111daf6478ceb713ff720a51b8bb32ebdeb27cacce2a7b51fb7",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_VERYFAST_ABSORB.uasset": "78fd7ec691a863c11e343fde331638411eda2dcb93d7ddfd21c1dfb31dcf622c",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSR_0_ABSORB.uasset": "9fa5bebc3921bd40d73841ed7ea176740a2e9ed1bc4d43c8c908b008ca42ef09",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSR_0_CYC.uasset": "6d9a1ec8ad0478f88f284014fe6541a8faced45cfb4a93f1825c4f87bffbb0f7",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSR_FAST_ABSORB.uasset": "3d080433ea15cf89743ca329e6a321b87795df964592dc00a7c2028de6560ed1",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSR_HEAVY_ABSORB.uasset": "f7d615f2b80c45dd361ebc0f2c3b63d1979104f129e70253152296a1840ab28b",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSR_OUT.uasset": "7352711900dff3ce9ad689be9092770d53a40fc914920c20e972d77936b819b6",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSR_VERYFAST_ABSORB.uasset": "9493d495116cb0f7e62e4e0a7df92e3b8b1d8789f63f8e78251e738d7fb1fc61",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSL_0_CYC.uasset": "4f8c0a2b034ffc8d09f10ad8f49c4e3cbdd6e5901a41f4b20728b396345b664e",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSL_ABSORB.uasset": "0bcfb54a5f66cbf4b6330f96015b2376c757387234f8ecde64dd0287c3f02830",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSL_HEAVY_ABSORB.uasset": "6fa6cfe99840ca9aa215bb40ee0198fa6c4641d11cc5a811263d64b9314045bf",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSL_OUT.uasset": "fa71623b404aa548a7b7b8d84a8ad2c6a99f2d4b962a4fe7c9b79cbd7900d8f1",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSL_VERYFAST_ABSORB.uasset": "a4718395adc7d796b7a350fcd141d738a96b08f7f1d3ccaf4fe269535b058b11",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSR_0_CYC.uasset": "91deea1a67150eceffe2bc523aa34a957f84e512e5ed1f11ba14a22828fb5bd3",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSR_ABSORB.uasset": "c09f232df304a7081dc91177cf5ab8fa336e1a78e93d2e64d888c71353069c88",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSR_HEAVY_ABSORB.uasset": "15bd658b7d359c812a69cbd854a58e08ef86609c15c04054e2cfd44832b33b8a",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSR_OUT.uasset": "547f50547d3b4670b38013372e902247400419d1e9f8b3d8e69d5f88e14fafe4",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_FSR_VERYFAST_ABSORB.uasset": "408dda249d453cf9c52ca470e6c9b0dec694f1e0cfadec6877509faf6cd18dcf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

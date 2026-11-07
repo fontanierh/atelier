@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-plazatreeorange",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeOrange_cell_-1_-1.uasset": "e3b6cfabc12f0f50478497295648852c5e5d8ed503fb43577a27a3605083a3f3",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeOrange_cell_-1_0.uasset": "2e0ac8e2efb0b115431f83d69e822f0e0442fa2b81f359ef52f804dc825df3f5",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeOrange_cell_0_-1.uasset": "f960f5765c96ae69b02fe9d59e969c59837a182b90a50451964f25430746ba78",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeOrange_cell_0_0.uasset": "a824a4d410505fff442ec2e59f34fcbbbf654d3ff602f6d72895c3f9351f9664"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

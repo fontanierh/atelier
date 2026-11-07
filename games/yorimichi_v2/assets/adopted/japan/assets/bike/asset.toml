@@ -1,0 +1,42 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: BK in /Game/Japan/Assets
+schema = 1
+id = "adopted/japan/assets/bike"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/assets/bike"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Crank"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Frame"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Kickstand"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Pedal"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_RackBoard"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Steer_BasketFoot"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Steer_BasketRim"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Steer_BasketShell"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Steer_Core"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_WheelFront"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_WheelRear"

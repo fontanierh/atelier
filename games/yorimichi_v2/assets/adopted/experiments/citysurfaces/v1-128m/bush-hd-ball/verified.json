@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/bush-hd-ball",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Ball.uasset": "8cb1598f370372924ccb84be92023063c07d9bc23caf89dce5dbf1a11b60b10c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

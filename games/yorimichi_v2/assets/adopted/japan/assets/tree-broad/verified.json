@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/japan/assets/tree-broad",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Broad_A.uasset": "c5ab7564d0323a01fdcadb0bfa42a771b7682ca5e0577771994e8d7ec7907bf3",
+    "unreal/Content/Japan/Assets/Tree_Broad_B.uasset": "ab010e7a813fd83c45724a48c74f21912f4780485e5262854db58db5c348713a",
+    "unreal/Content/Japan/Assets/Tree_Broad_C.uasset": "49a6e29871963ff79824b2146e9be5f476429243500cb829b1a54bdcd3609c0c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

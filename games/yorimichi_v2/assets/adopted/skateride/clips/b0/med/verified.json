@@ -1,0 +1,31 @@
+{
+  "asset": "adopted/skateride/clips/b0/med",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_L0_DN1.uasset": "fd5ccbb481df47df384adfeb0e09c47489ff0d94b32b1c2c1668dda62680baf6",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_L0_DP1.uasset": "244dde542d76bf5f225b2fdeda0bea1e37ca3890cd3f9d21d44c97689e3fc6da",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LN1_D0.uasset": "1ebfffa8bba193a3af78bee367ba1209f11135c5d0f03737080815fb31c084a9",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LN1_DN1.uasset": "f366e5f5715e99f3640b9e6bab4639cc55ba5dce2f4e320a62ef6ed0aceaa6e1",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LP1_D0.uasset": "5366814eae9bc9f42e9594bf9db7c1cd5a2641c0c5629907cf4bac32cad71bd5",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LP1_DP1.uasset": "f056837138861f9363f53eb33d1cf54da5cdf248a01f73a45cc9a7745f874620",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_L0_DN1.uasset": "e7c82cf0b03cd0b4e4b62c7119d081df17206529f009b6628e815acfce617d5f",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_L0_DP1.uasset": "afe3d1708cb1ed95a2cc274bdb27c1b62f6e4353e5d4d84907379cf719d8be98",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LN1_D0.uasset": "805f77d34048e77c91b81b2aa3f73b616856420b085071675b2807b61146749d",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LN1_DN1.uasset": "2ace17daeb1a6c6f11d191d3f46ead80f1d2f2d39575f43770687dd1e738c900",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LP1_D0.uasset": "49f1939477b3e8bcac032775a06e3e0292373a3eda467d883b72adff1405029a",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LP1_DP1.uasset": "0e480fd318908bd69d07fa35cc0fbfb5cd12ad7f6db54c6ea1252cfb8ef8e298",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_0.uasset": "b26f8265cfc822e1fc6b99c0eb26fb8bffabf024d010e8e1843b9a64211d4008",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_1.uasset": "4b8dcb6da6c390d839b36845313aef447373eca5b9d39540e241eee10331663d",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_2.uasset": "2aa27d35eaa9c730873decab84949f6638d427bd864e0413d8ffd64468104f1d",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_3.uasset": "1716b7433516794fbe2d0f864f570c63dba9188a81edaf238104c8ff107a3cdf",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_4.uasset": "969097688f82a28579ca4fa55a2b1c2a94a6e4f1a8258e62a57b96e7eabb1517",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_5.uasset": "be99d900b03155287fc5e33b24de3fe9eeb7a7000ec7443d5f3bfc8947dc2c11",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_6.uasset": "f14227cab8a787a008b10158d9851ee2b2155d697545d086c6fe36ac6f9c407c",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_7.uasset": "7ec28af3c5eb5445b78cbcaa88081f8312b76e29eefee3dd34366bda05a1f0ad",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_8.uasset": "aa8c8fc8b82a4fb42cde0e5244029ef40c90c13ca8d768a12518df0e5642faf9",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_POSE_9.uasset": "025f8ac7fbc36ba4ff71250764b511761c56ef668d383fc43ad8983a43968646"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,78 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: IA in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/ia"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/ia"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_FLAT_BS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_FLAT_BS_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_FLAT_FS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_FLAT_FS_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_NOSE_BS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_NOSE_BS_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_NOSE_FS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_NOSE_FS_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_NOSE_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_NOSE_N_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_TAIL_BS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_TAIL_BS_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_TAIL_FS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_TAIL_FS_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_TAIL_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_ADJUST_TAIL_N_LOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_BODYSPIN_OLLIE_BS_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_BODYSPIN_OLLIE_FS_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_DS_IDLE_LO_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_DS_IDLE_N_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_EXTEND_LO_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_IDLE_LO_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_IDLE_N_N_0_CYC"

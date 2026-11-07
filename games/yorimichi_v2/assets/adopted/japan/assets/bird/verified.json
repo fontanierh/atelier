@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/japan/assets/bird",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/BirdBody.uasset": "27225f2c0ec77cb24f1de45fe5386e22223e7e5c11eeee8da194b1f6f28c899c",
+    "unreal/Content/Japan/Assets/BirdWingL.uasset": "a7b310c8a3e971bb081d378cab33dbd160fd3a923d8f56e6ddb6d54be7da5fff",
+    "unreal/Content/Japan/Assets/BirdWingR.uasset": "a809e9f1fa9ab8e9fdd939b8e04e188c66fdd8fb5b44744eef0345baf8e27edc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

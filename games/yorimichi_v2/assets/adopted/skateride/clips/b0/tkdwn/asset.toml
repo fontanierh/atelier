@@ -1,0 +1,327 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: TKDWN in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/tkdwn"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/tkdwn"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_05_RHANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_0_RHANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_100_LB_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_105_LB_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_10_RHANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_110_LB_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_115_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_120_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_125_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_130_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_135_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_140_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_145_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_150_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_155_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_15_L_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_160_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_165_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_170_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_175_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_180_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_185_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_190_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_195_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_200_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_205_R_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_20_L_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_225_R_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_250_R_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_255_R_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_25_L_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_270_R_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_290_R_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_300_R_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_30_F_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_315_R_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_345_R_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_350_SLAM"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_355_SLAM"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_35_F_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_360_SLAM"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_40_F_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_45_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_50_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_55_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_60_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_65_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_70_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_75_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_80_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_85_DOUBLE_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_90_DOUBLE_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_95_DOUBLE_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_05_RHANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_0_RHANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_100_LB_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_105_LB_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_10_RHANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_110_LB_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_115_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_120_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_125_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_130_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_135_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_140_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_145_SHOVE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_150_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_155_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_15_L_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_160_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_165_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_170_1HANDPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_175_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_180_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_185_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_190_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_195_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_200_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_205_R_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_20_L_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_225_R_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_250_R_SWIPE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_255_R_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_25_L_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_270_R_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_290_R_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_300_R_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_30_F_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_315_R_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_345_R_BODYCHECK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_350_SLAM"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_355_SLAM"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_35_F_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_360_SLAM"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_40_F_DOUBLEPUNCH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_45_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_50_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_55_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_60_DOUBLEUPPERCUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_65_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_70_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_75_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_80_L_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_85_DOUBLE_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_90_DOUBLE_CLOTHESLINE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/TKDWN_LOW_95_DOUBLE_CLOTHESLINE"

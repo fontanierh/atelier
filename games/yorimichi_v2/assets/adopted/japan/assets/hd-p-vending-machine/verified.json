@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-vending-machine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_vending_machine.uasset": "ef417de5842f7c28e6e22fe4171667a8633ebc11894a307fbe70019551566f0e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

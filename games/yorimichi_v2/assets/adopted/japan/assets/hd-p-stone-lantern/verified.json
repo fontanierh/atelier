@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-stone-lantern",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_stone_lantern.uasset": "760dfb6c83c1bd923a9683de029e5e74b5bb39f5f49cf3d39b5409fc533c59fd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

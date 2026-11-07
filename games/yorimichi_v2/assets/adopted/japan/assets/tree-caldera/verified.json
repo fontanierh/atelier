@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/japan/assets/tree-caldera",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Caldera_BlackPine_A.uasset": "e90b6b868ff4db4c892fa06ea58e86af6fa1aafd628bd482beb3c58272771169",
+    "unreal/Content/Japan/Assets/Tree_Caldera_BlackPine_B.uasset": "3001544d8003604691ec1d24f5e086c59d629ffd43a6cfac85e8aeca0a69f5ec",
+    "unreal/Content/Japan/Assets/Tree_Caldera_Cedar_A.uasset": "c619fdc8de37043a9d8dd939fae5653a1c5924379fa4828b0191026deef8e29a",
+    "unreal/Content/Japan/Assets/Tree_Caldera_Cedar_B.uasset": "cf8159d0227673f984e8642104c075fc7b52cc40ee9a7950a9c8ba8265933ba9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

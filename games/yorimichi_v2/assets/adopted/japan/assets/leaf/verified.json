@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/leaf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Leaf.uasset": "ee11e85bcc23cb2389092960de76ff08671a3615e9630902620bc9c0d7349fac"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

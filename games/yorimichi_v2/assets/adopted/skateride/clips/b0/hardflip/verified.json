@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/hardflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/HARDFLIP_HIGH_A.uasset": "d581357391952960fe736fcd90be85adcd69a23aa3ca3ce16fa9eb1cb6be4b52",
+    "unreal/Content/SkateRide/Clips/B0/HARDFLIP_HIGH_G.uasset": "56a817330f2f7683f6254387e3185fc2dc91232576cf188c3a5d9536dca752fa",
+    "unreal/Content/SkateRide/Clips/B0/HARDFLIP_LOW_A.uasset": "d6a602ffe0a8f4a578ba618b9a4ab07b0bd4bf931cdf7db3e52ba2dfc53747ac",
+    "unreal/Content/SkateRide/Clips/B0/HARDFLIP_LOW_G.uasset": "a87df03309f52a3782cd013b41bfc4ce0dbd543b7e11f8cccaabd1099f204aef"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

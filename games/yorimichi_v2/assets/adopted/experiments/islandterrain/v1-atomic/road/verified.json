@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/islandterrain/v1-atomic/road",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Road.uasset": "f1dea392f73cecf554b2b6c1b540f937a1c550b525ec24fad562eb817dd1a540"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/tree-ginkgo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Ginkgo.uasset": "03f76b050074aa0a2240a05eaa19edbbaeab545b126b15780208ea52dd8edf2c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

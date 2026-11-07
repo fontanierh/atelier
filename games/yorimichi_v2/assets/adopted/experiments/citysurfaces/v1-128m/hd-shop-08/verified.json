@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-shop-08",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Shop_08_cell_-1_-1.uasset": "e527d44e04125aea892433cb6ede415689788101ff9194c8839a7d8819060e91",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Shop_08_cell_-1_0.uasset": "391c51a7a4b833e45640c0f69fc003b0e899a2b5620e1167321b8a221aa462b2",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Shop_08_cell_0_-1.uasset": "4a0205fe14e0d2cc8f17187b1fbbc3e96a60746dfb54ba6a1145dd24e9c5b896",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Shop_08_cell_0_0.uasset": "4dae360cb702d5e2c68a1c186673110157649a0f523b3bf506369f51fe7a556b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

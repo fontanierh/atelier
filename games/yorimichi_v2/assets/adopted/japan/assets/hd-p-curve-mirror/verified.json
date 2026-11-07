@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/assets/hd-p-curve-mirror",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_curve_mirror.uasset": "1a520bfdf81cf78cd0d03c7e4e832804070a5db27f6e9b42809eac4840a72227"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

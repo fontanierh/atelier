@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-planter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Planter.uasset": "b838c0a76641d5ff44783f19d9c9d6a02d09b2ad74d8c51e6ffd8a561e961807"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

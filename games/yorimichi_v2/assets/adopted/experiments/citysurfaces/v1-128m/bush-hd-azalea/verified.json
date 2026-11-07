@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/bush-hd-azalea",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Azalea.uasset": "8ccdf1f565fe247256234d1dab33cff36a7d26873a7f579b3785ce34e19380dc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

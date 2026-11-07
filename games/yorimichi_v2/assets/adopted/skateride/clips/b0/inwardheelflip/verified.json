@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/inwardheelflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/INWARDHEELFLIP_HIGH_A.uasset": "2813d72a6c5f7bfdb9e4740a8b60f4dce03113edc2269b738f8dc81927cda6e9",
+    "unreal/Content/SkateRide/Clips/B0/INWARDHEELFLIP_HIGH_G.uasset": "af11bbc79ee697a9252cb4547cc773437bd4adaeb45c94958542bc434f6f0a46",
+    "unreal/Content/SkateRide/Clips/B0/INWARDHEELFLIP_LOW_A.uasset": "01ff354fb8db97b5a98363e53295279d3a1b568dd261f9d77f4e2d94f2e678c9",
+    "unreal/Content/SkateRide/Clips/B0/INWARDHEELFLIP_LOW_G.uasset": "852b1183275bfb81a46317ab0ee52019207b0bdec527b92b48361d2a3b0b0201"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

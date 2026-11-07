@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-boat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Boat.uasset": "60636face6ffeffb55e4f108056ac84c151d44bf32234d2d0f2f3790310175e7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

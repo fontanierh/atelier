@@ -134,7 +134,11 @@ split: each adopted folder's packages become editor-owned records of one ownersh
 folder two levels below `/Game` (`adopted/japan/hidamari`, owner `shared/japan/hidamari`), split by subfolder and
 then into sorted chunks so no record lists more than 200 packages. Units are prefix-free, so separate edits claim
 separate units instead of contending on one folder-wide record (C01, C19). `adopt.py --repartition` rewrites the
-earlier one-record-per-folder records into these units with identical membership. Save
+earlier one-record-per-folder records into these units with identical membership. A folder of unrelated packages, or one that would
+only split into sorted batches, takes a rule in `assets/adopted/groups.toml`: its packages split by what they are
+(one record per feature, family or area, named by a capture of the package name; an unmatched package gets its
+own record), so two unrelated edits never claim one record. This took the 131 mixed Japan props, the skate clips
+and the atomic terrain and city cells from 74 records to 270, with the same 6820 packages and the same paths. Save
 validation records the record's bytes. A later edit is an ordinary claimed editor edit of that record, and a
 finer record (a prop, a region's map) may take packages over explicitly. Adoption refuses packages another
 record owns, reports every hard reference that resolves to nothing in V2, and reports packages whose bytes name

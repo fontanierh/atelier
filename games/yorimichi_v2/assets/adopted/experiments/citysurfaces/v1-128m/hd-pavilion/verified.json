@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-pavilion",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Pavilion.uasset": "b3fc2fb3c67a2796a74a235f9150ad963c095d4a1a46a51946a6f3f982efdd2f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,30 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/hd-square",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_0.uasset": "17d89bb29fb48ed7bbd859fc6c58c8cc5c0bbc91eb080ab5c1a5a18d4f4d4661",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece01.uasset": "42f2d691870ae7c915e2dd9713264cfc38996c046f59b58698ce1d70eccaabfa",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece030.uasset": "36bd869bad08c04e5f22f6695f66c06bb6bc0de1571fac82ae4d8de7a64059d6",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece031.uasset": "6de468d07c11dc2672bb72b975d3ec83d38011f9e1a88def7439eb5b094d0844",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece032.uasset": "b7e9fcc8ae6b9dd3a92e3fa5d06eb258711b0222c9144ca145538cac2e9c0b9e",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece033.uasset": "7ae0dc9e54e66eff932b0fe7d99d7930deff98f8f27de163d98c3a128d09b976",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece100.uasset": "832306a7c7148c20003884a1f5eaaa678dc671abc26ac3b138c48585883e6a9f",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece102.uasset": "1e493802b18b73c3633007bbecbaf00087ec381f7d8b18421ae1df1fface41a4",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece103.uasset": "a784a0fb98a82051fae42881a86ec93f0250d887552e39e8e18b27c1ad103cdd",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1100.uasset": "381c06a2d507ccebc0118077de8092abc4ccabacb97811441780f2abbba53e4e",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1101.uasset": "f1de3d52e96b521671e8e56d3f38c0132620b2099dd0ffd33c0ccf37082a014d",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1102.uasset": "204f7f2cd25a08a7d2e8906b20f78795932c82a455c718f1945fcfc2669fce93",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1103.uasset": "40220e0a8dced9a5c203d717f541604ded72f1f5e83c48cb84016b5ecadd8be3",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece111.uasset": "252e9213799a23aa8129178ac128e69a8f50430f68907eea1a8089829fb65cdb",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece112.uasset": "7f6fb6a14966142331dd28093eaf3050bc10813b3aa2c87b7f22a47a7455e119",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece113.uasset": "584bb8c112eb1fcab0410be2c0ab083ccfe06a68b196c0544188a0fc6c4df9b5",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece12.uasset": "55c5c26db5361eb0f2b81651fb708a19913ef9ef0605bc1b0a21e9ee541ba284",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece13.uasset": "a5d727f4a0e948ec4e7da3e6f02ce545e174f1397549bd743a23e53bf52ee439",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece2.uasset": "732eaa9bfee0a15ffea4d69d9effda505de775703bb1e4cbd99a3f7f9b677c29",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_6_1_Piece0.uasset": "bdccf258b8a20690fec602ab519032813a1d990e8e01da018692002544c8a664",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_6_1_Piece2.uasset": "b57cc41569dfb5842f73ce9407a07be9a29f81f60633fae1d5bfdc076e12877b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
