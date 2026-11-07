@@ -81,7 +81,8 @@ uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out 
 uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --source donor-runtime --checkout DONOR --live-from DONOR --out DIR
 uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --session ID --source v2 --out DIR   # the same poses from the running V2 game
 # The donor baseline comes from the running donor game (its scenery is spawned at run time); capturing V2 the same way
-# keeps both on one render path. capture_poses.py on an editor map is no donor baseline: compare.py rejects that receipt
+# keeps both on one render path. Each receipt names the revision the game was proven to launch from (its session, or
+# for the donor the process on its live port). capture_poses.py on an editor map proves none: compare.py rejects it
 ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/move_actor.py V2_MOVE_ACTOR=/Game/__ExternalActors__/... V2_MOVE_BY_CM="X Y Z" \
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # move one saved actor, save only its package (31 s)

@@ -32,6 +32,16 @@ def shot(folder, name, size=(64, 36)):
     return folder / f'{name}.png'
 
 
+def head(repo):
+    return subprocess.run(['git', '-C', str(repo), 'rev-parse', 'HEAD'], capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def advance(repo):
+    subprocess.run(['git', '-C', str(repo), '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-q',
+                    '--allow-empty', '-m', 'advance'], check=True)
+
+
 @pytest.fixture
 def checkout(tmp_path):
     repo = tmp_path / 'repo'
@@ -47,28 +57,62 @@ def test_a_runtime_receipt_passes_compare_s_receipt_checks(tmp_path, checkout):
     names = ['coast', 'pier']
     sizes = [capture.png_size(shot(tmp_path / 'donor', n)) for n in names]
     assert sizes == [[64, 36], [64, 36]]
-    receipt = capture.receipt('donor-runtime', checkout, DONE, poses, names, sizes, 8.)
+    receipt = capture.receipt('donor-runtime', checkout, DONE, poses, names, sizes, 8., head(checkout), 'process')
     sha = compare.hashlib.sha256(poses.read_bytes()).hexdigest()
     assert compare.receipt_errors('donor', receipt, names, sha, tmp_path / 'donor') == []
     assert receipt['revision']['dirty'] is False and len(receipt['revision']['commit']) == 40
-    assert receipt['revision']['launch_verified'] is False
+    assert receipt['revision']['launch'] == 'process'
 
 
 def test_captures_of_different_sizes_fail(tmp_path, checkout):
     poses = tmp_path / 'poses.json'
     poses.write_text(json.dumps({'schema': 1, 'poses': [{'name': 'a'}, {'name': 'b'}]}))
     with pytest.raises(ValueError, match='different sizes'):
-        capture.receipt('v2', checkout, DONE, poses, ['a', 'b'], [[64, 36], [32, 18]], 8.)
+        capture.receipt('v2', checkout, DONE, poses, ['a', 'b'], [[64, 36], [32, 18]], 8., head(checkout), 'session')
 
 
-def test_a_session_receipt_names_the_launch_commit_and_refuses_a_moved_checkout(tmp_path, checkout):
+def test_a_receipt_names_the_launch_commit_and_refuses_a_moved_checkout(tmp_path, checkout):
     poses = tmp_path / 'poses.json'
     poses.write_text(json.dumps({'schema': 1, 'poses': [{'name': 'a'}]}))
-    head = subprocess.run(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], capture_output=True, text=True,
-                          check=True).stdout.strip()
-    bound = capture.receipt('v2', checkout, DONE, poses, ['a'], [[64, 36]], 8., launched=head)
-    assert bound['revision'] == {'commit': head, 'dirty': False, 'launch_verified': True}
-    subprocess.run(['git', '-C', str(checkout), '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit',
-                    '-q', '--allow-empty', '-m', 'advance'], check=True)
+    launched = head(checkout)
+    bound = capture.receipt('v2', checkout, DONE, poses, ['a'], [[64, 36]], 8., launched, 'session')
+    assert bound['revision'] == {'commit': launched, 'dirty': False, 'launch': 'session'}
+    advance(checkout)
     with pytest.raises(ValueError, match='launched at'):
-        capture.receipt('v2', checkout, DONE, poses, ['a'], [[64, 36]], 8., launched=head)
+        capture.receipt('v2', checkout, DONE, poses, ['a'], [[64, 36]], 8., launched, 'session')
+
+
+def test_compare_rejects_a_receipt_without_a_proven_launch(tmp_path, checkout):
+    poses = tmp_path / 'poses.json'
+    poses.write_text(json.dumps({'schema': 1, 'poses': [{'name': 'a'}]}))
+    receipt = capture.receipt('v2', checkout, DONE, poses, ['a'], [[64, 36]], 8., head(checkout), 'session')
+    shot(tmp_path / 'v2', 'a')
+    sha = compare.hashlib.sha256(poses.read_bytes()).hexdigest()
+    del receipt['revision']['launch']
+    assert any('revision' in e for e in compare.receipt_errors('v2', receipt, ['a'], sha, tmp_path / 'v2'))
+
+
+def test_a_game_without_a_session_needs_head_unmoved_since_it_started(checkout, monkeypatch):
+    moved = capture.head_moved(checkout)
+    assert moved > 0
+    command = f'UnrealEditor {checkout.resolve()}/Game.uproject -game'
+
+    def fake(argv, **kwargs):
+        out = {'lsof': '4242\n', 'command=': command, 'lstart=': ''}
+        key = 'lsof' if argv[0] == 'lsof' else argv[2]
+        if key == 'lstart=':
+            out[key] = capture.datetime.datetime.fromtimestamp(moved + offset).strftime('%a %b %d %H:%M:%S %Y')
+        if argv[0] == 'git':
+            return real(argv, **kwargs)
+        return subprocess.CompletedProcess(argv, 0, out[key], '')
+
+    real = subprocess.run
+    monkeypatch.setattr(capture.subprocess, 'run', fake)
+    offset = 5
+    assert capture.process_revision(checkout, 8830) == head(checkout)
+    offset = -5
+    with pytest.raises(ValueError, match='HEAD moved after the game'):
+        capture.process_revision(checkout, 8830)
+    command = 'UnrealEditor /elsewhere/Game.uproject -game'
+    with pytest.raises(ValueError, match='does not run a project of'):
+        capture.process_revision(checkout, 8830)

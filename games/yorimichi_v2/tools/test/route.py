@@ -79,7 +79,7 @@ def revision(launched: str) -> dict:
     if launched != commit:
         raise ValueError(f'the game was launched at {launched[:10] or "an unknown revision"}, but this checkout is now '
                          f'at {commit[:10]}: relaunch it')
-    return {'commit': commit, 'dirty': bool(git('status', '--porcelain').strip())}
+    return {'commit': commit, 'dirty': bool(git('status', '--porcelain').strip()), 'launch': 'session'}
 
 
 def launch_revision(session: str) -> str:

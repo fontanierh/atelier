@@ -10,9 +10,9 @@ V2 the same way (a runtime viewport screenshot, not an editor scene capture) kee
 Through the game's live bridge, capture_runtime_game.py travels the player below each pose, hides it and the HUD,
 views from a hidden prop at the pose (the pose FOV on the camera manager), settles, and screenshots the viewport. Then this writes the receipt
 capture.json (schema, source, revision, map, size, settle time as warmup, poses and their sha256, UTC time, engine
-version, render settings) that compare.py requires. With --session the revision is the session's launch commit, and a
-checkout that has moved since the launch is refused; a game without a session record (the donor) is marked
-`launch_verified: false`. OUT must hold no PNG and no receipt yet.
+version, render settings) that compare.py requires. The revision is the commit the game was proven to start from: its
+session's launch commit (--session), or, for a game without a session record (the donor), HEAD when the process on its
+live port runs this checkout and HEAD has not moved since it started. A checkout that has moved is refused. OUT must hold no PNG and no receipt yet.
 """
 import argparse
 import datetime
@@ -54,16 +54,18 @@ def camera_glb(path: Path) -> Path:
     return path
 
 
-def revision(checkout: Path, launched: str | None = None) -> dict:
-    """The checkout's commit and dirty state. `launched` is the commit the verified live session recorded at launch: a
-    checkout that has moved since then is refused, so the receipt cannot name a revision the game does not run."""
-    def git(*argv):
-        return subprocess.run(['git', '-C', str(checkout), *argv], capture_output=True, text=True, check=True).stdout
-    commit = git('rev-parse', 'HEAD').strip()
-    if launched is not None and launched != commit:
+def git(checkout: Path, *argv) -> str:
+    return subprocess.run(['git', '-C', str(checkout), *argv], capture_output=True, text=True, check=True).stdout
+
+
+def revision(checkout: Path, launched: str, how: str) -> dict:
+    """The checkout's commit and dirty state, refused unless it is `launched`, the commit the running game was proven
+    to start from (`how`: its live session record, or the process start check for a game without one)."""
+    commit = git(checkout, 'rev-parse', 'HEAD').strip()
+    if launched != commit:
         raise ValueError(f'the game was launched at {launched[:10] or "an unknown revision"}, but {checkout} is now at '
                          f'{commit[:10]}: relaunch the game from this checkout')
-    return {'commit': commit, 'dirty': bool(git('status', '--porcelain').strip()), 'launch_verified': launched is not None}
+    return {'commit': commit, 'dirty': bool(git(checkout, 'status', '--porcelain').strip()), 'launch': how}
 
 
 def launch_revision(session: str, checkout: Path) -> str:
@@ -74,10 +76,36 @@ def launch_revision(session: str, checkout: Path) -> str:
     return record.get('revision') or ''
 
 
-def receipt(source, checkout, done, poses_file, names, sizes, settle, launched=None):
+def head_moved(checkout: Path) -> int:
+    """When the checkout's HEAD last changed (its newest reflog entry, Unix seconds)."""
+    entry = git(checkout, 'reflog', '-1', '--date=unix', '--format=%gd').strip()
+    if not entry.startswith('HEAD@{') or not entry[6:-1].isdigit():
+        raise ValueError(f'{checkout}: no HEAD reflog, so the launch revision cannot be proven')
+    return int(entry[6:-1])
+
+
+def process_revision(checkout: Path, port: int) -> str:
+    """For a game without a session record (the donor's live CLI predates sessions): the process listening on loopback
+    `port` must run a project of `checkout`, and HEAD must not have moved since that process started. Returns HEAD."""
+    pids = subprocess.run(['lsof', '-nP', f'-iTCP@127.0.0.1:{int(port)}', '-sTCP:LISTEN', '-t'], capture_output=True,
+                          text=True).stdout.split()
+    if len(set(pids)) != 1:
+        raise ValueError(f'expected one process listening on loopback port {port}, found {len(set(pids))}')
+    pid = pids[0]
+    command = subprocess.run(['ps', '-o', 'command=', '-p', pid], capture_output=True, text=True).stdout
+    if f'{checkout.resolve()}/' not in command or '.uproject' not in command:
+        raise ValueError(f'the process on port {port} (PID {pid}) does not run a project of {checkout}')
+    start = subprocess.run(['ps', '-o', 'lstart=', '-p', pid], capture_output=True, text=True, env={'LC_ALL': 'C'})
+    started = datetime.datetime.strptime(' '.join(start.stdout.split()), '%a %b %d %H:%M:%S %Y').timestamp()
+    if head_moved(checkout) >= started:
+        raise ValueError(f'{checkout} HEAD moved after the game (PID {pid}) started: relaunch it')
+    return git(checkout, 'rev-parse', 'HEAD').strip()
+
+
+def receipt(source, checkout, done, poses_file, names, sizes, settle, launched, how):
     if len(set(map(tuple, sizes))) != 1:
         raise ValueError(f'the captures have different sizes: {sizes}')
-    return {'schema': 1, 'source': source, 'revision': revision(checkout, launched), 'map': done['map'], 'size': sizes[0],
+    return {'schema': 1, 'source': source, 'revision': revision(checkout, launched, how), 'map': done['map'], 'size': sizes[0],
             'warmup': int(round(settle)), 'poses_sha256': hashlib.sha256(poses_file.read_bytes()).hexdigest(),
             'poses': names, 'captured_utc': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             'engine_version': done['engine_version'], 'render': done['render']}
@@ -91,6 +119,7 @@ def main(argv=None) -> int:
                         help='checkout whose `atelier live` talks to the game (default this one; the donor its own)')
     parser.add_argument('--source', required=True, choices=['donor-runtime', 'v2'])
     parser.add_argument('--checkout', type=Path, default=REPO, help='the checkout the game runs from (its revision)')
+    parser.add_argument('--port', type=int, default=8830, help='without --session: the loopback live port of the game')
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--poses', type=Path, default=DEFAULT_POSES)
     parser.add_argument('--settle', type=float, default=8., help='seconds at each pose before its screenshot')
@@ -102,14 +131,14 @@ def main(argv=None) -> int:
     if stale:
         print(f'{out} already holds {", ".join(stale[:5])}: capture into an empty folder', file=sys.stderr)
         return 2
-    launched = None
-    if args.session:
-        try:
-            launched = launch_revision(args.session, args.checkout)
-            revision(args.checkout, launched)  # refuse a moved checkout before capturing anything
-        except (OSError, ValueError, RuntimeError) as error:
-            print(f'cannot bind the capture to its game: {error}', file=sys.stderr)
-            return 2
+    how = 'session' if args.session else 'process'
+    try:
+        launched = (launch_revision(args.session, args.checkout) if args.session
+                    else process_revision(args.checkout, args.port))
+        revision(args.checkout, launched, how)  # refuse a moved checkout before capturing anything
+    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
+        print(f'cannot bind the capture to its game: {error}', file=sys.stderr)
+        return 2
     poses = json.loads(args.poses.read_text())['poses']
     names = [p['name'] for p in poses]
     glb = camera_glb(Path(tempfile.mkdtemp(prefix='parity-camera-')) / 'camera.glb')
@@ -134,7 +163,7 @@ def main(argv=None) -> int:
         print(f'capture failed in the game: {done["error"]}', file=sys.stderr)
         return 1
     sizes = [png_size(out / f'{n}.png') for n in names]
-    data = receipt(args.source, args.checkout, done, args.poses, names, sizes, args.settle, launched)
+    data = receipt(args.source, args.checkout, done, args.poses, names, sizes, args.settle, launched, how)
     (out / 'capture.json').write_text(json.dumps(data, indent=2) + '\n')
     print(f'{len(names)} captures in {out}, {data["size"][0]}x{data["size"][1]}, receipt capture.json')
     return 0

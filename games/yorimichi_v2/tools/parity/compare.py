@@ -132,7 +132,8 @@ def receipt_errors(side, r, names, poses_sha, folder):
             (r.get('schema') == 1, 'schema', '1'),
             (r.get('source') == SOURCES[side], 'source', repr(SOURCES[side])),
             (isinstance(rev, dict) and isinstance(rev.get('commit'), str) and len(rev['commit']) >= 7
-             and isinstance(rev.get('dirty'), bool), 'revision', '{"commit": <sha>, "dirty": <bool>}'),
+             and isinstance(rev.get('dirty'), bool) and rev.get('launch') in ('session', 'process'), 'revision',
+             '{"commit": <sha>, "dirty": <bool>, "launch": "session" or "process"} (the proven launch revision)'),
             (isinstance(r.get('map'), str) and r['map'].startswith('/'), 'map', 'a package path'),
             (isinstance(size, list) and len(size) == 2 and all(type(v) is int and v > 0 for v in size),
              'size', '[width, height] in pixels'),
