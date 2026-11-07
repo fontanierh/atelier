@@ -161,12 +161,17 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
     return report
 
 
+BLOCKED_DATA = ('megapark',)   # DECISIONS D05 group 3: not uploaded until the owner settles its rights
+
+
 def copy_data(game: Path, content: Path, echo=print) -> int:
     source, dest = content / 'Data', game / 'unreal' / 'Content' / 'Data'
     if not source.is_dir():
         raise AdoptError(f'{source} holds no staged runtime data; build the donor first')
     copied = 0
     for path in sorted(source.rglob('*')):
+        if path.relative_to(source).parts[0] in BLOCKED_DATA:
+            continue
         if path.is_symlink():
             raise AdoptError(f'{path} is a link; runtime data must be regular files')
         if not path.is_file():

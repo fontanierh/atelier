@@ -110,6 +110,9 @@ def test_writes_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):
 
 def test_runtime_data_copies_regular_files(donor):
     game, content = donor
+    (content / 'Data/megapark').mkdir(parents=True)
+    (content / 'Data/megapark/park.json').write_text('{}')   # D05 group 3: rights-blocked, never copied
     assert adopt.copy_data(game, content, echo=lambda *_: None) == 1
     assert adopt.copy_data(game, content, echo=lambda *_: None) == 0
+    assert not (game / 'unreal/Content/Data/megapark').exists()
     assert tomllib  # stdlib only
