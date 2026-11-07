@@ -6,7 +6,8 @@ and only in a checkout that has no claims task set; this exception ends when `go
 
 A write that creates actor packages World Partition names only when it saves them (the migration) runs under a
 claim holding each region it touches: it may create new files in those regions' actor folders, which are then
-bound to the claim with their LFS locks before publication (`creation_claim`, `bind_created`).
+bound to the claim with their LFS locks before publication (`creation_claim`, `bind_created`; a failed bind sets
+them aside for `resume_created`).
 """
 from __future__ import annotations
 
@@ -204,6 +205,57 @@ def creation_claim(claim: str, regions: list[str], what: str, *, repo: Path = RE
 
 
 BIND_RETRY_S = 20.0   # a busy claim service (a reconcile listing every lock) times a batch out
+PENDING = REPO / 'build/yorimichi_v2/migrate/pending'   # checked created files a failed bind set aside
+
+
+class BindFailed(Unauthorized):
+    """The created files passed every check but not all could be bound: they wait in PENDING, outside the content
+    tree, for `resume_created` once the claim service can take their locks (no editor rerun)."""
+
+
+def _check_created(claim: str, regions: list[str], created: list[str], what: str, *, game: Path,
+                   repo: Path) -> tuple[dict, list[str]]:
+    """The claim that may bind these created files and their repository paths, or Unauthorized."""
+    import records
+    held = creation_claim(claim, regions, what, repo=repo)
+    by_id = {r.id: r for r in records.discover(game)[1]}
+    unknown = [r for r in regions if r not in by_id]
+    if unknown:
+        raise Unauthorized(f'{what}: no region record for {", ".join(unknown)}')
+    folders = [folder + '/' for r in regions for folder in by_id[r].actor_folders]
+    outside = [rel for rel in created if not rel.startswith(tuple(folders))]
+    if outside:
+        raise Unauthorized(f'{what}: created {", ".join(outside[:8])} outside the actor folders of '
+                           f'{", ".join(regions)}; delete them (a claimed write creates only its regions\' actors)')
+    paths = [f'games/yorimichi_v2/{rel}' for rel in created]
+    owned, _ = owning_scopes(game, paths)
+    if owned:
+        raise Unauthorized(f'{what}: created files a record already lists ({", ".join(sorted(map(str, owned)))}); '
+                           'a new file must not have existed before the write')
+    return held, paths
+
+
+def _bind(held: dict, paths: list[str], claim: str, regions: list[str], what: str, *, repo: Path) -> None:
+    for start in range(0, len(paths), 500):   # bounded command lines for a large migration
+        batch = paths[start:start + 500]
+        command = ['uv', 'run', 'atelier', 'claims', 'extend', str(held['id']),
+                   *(arg for path in batch for arg in ('--lock-path', path)), '--acquire']
+        for attempt in range(3):   # extending again is safe: held items stay, and only missing locks are taken
+            result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
+            if not result.returncode:
+                break
+            time.sleep(BIND_RETRY_S * (attempt + 1))
+        if result.returncode:
+            raise BindFailed(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
+                             f'{claim}: {result.stderr.strip()[-300:]}')
+    if paths:
+        authorize(paths, claim, what, scopes=set(regions), repo=repo)
+
+
+def _move(rels: list[str], source: Path, target: Path) -> None:
+    for rel in rels:
+        (target / rel).parent.mkdir(parents=True, exist_ok=True)
+        os.replace(source / rel, target / rel)
 
 
 def bind_created(claim: str, regions: list[str], before: dict, after: dict, what: str, *, game: Path = GAME,
@@ -213,48 +265,53 @@ def bind_created(claim: str, regions: list[str], before: dict, after: dict, what
     of the claim's regions; any other created file is refused. Changed or deleted existing files must be exactly
     claimed, as for every write. The created files are added to the claim with their LFS locks (`atelier claims
     extend ID --lock-path ... --acquire`) and then checked like any claimed path, so nothing unbound is published."""
-    import records
     changed = written(before, after)
     created = sorted(rel for rel in changed if rel not in before and rel in after)
+    checked = False
     try:
-        held = creation_claim(claim, regions, what, repo=repo)
-        by_id = {r.id: r for r in records.discover(game)[1]}
-        unknown = [r for r in regions if r not in by_id]
-        if unknown:
-            raise Unauthorized(f'{what}: no region record for {", ".join(unknown)}')
-        folders = [folder + '/' for r in regions for folder in by_id[r].actor_folders]
-        outside = [rel for rel in created if not rel.startswith(tuple(folders))]
-        if outside:
-            raise Unauthorized(f'{what}: created {", ".join(outside[:8])} outside the actor folders of '
-                               f'{", ".join(regions)}; delete them (a claimed write creates only its regions\' actors)')
-        paths = [f'games/yorimichi_v2/{rel}' for rel in created]
-        owned, _ = owning_scopes(game, paths)
-        if owned:
-            raise Unauthorized(f'{what}: created files a record already lists ({", ".join(sorted(map(str, owned)))}); '
-                               'a new file must not have existed before the write')
+        held, paths = _check_created(claim, regions, created, what, game=game, repo=repo)
         existing = [f'games/yorimichi_v2/{rel}' for rel in sorted(changed - set(created))]
         if existing:
             scopes, _ = owning_scopes(game, existing)
             authorize(existing, claim, what, scopes=scopes | set(regions), repo=repo)
-        for start in range(0, len(paths), 500):   # bounded command lines for a large migration
-            batch = paths[start:start + 500]
-            command = ['uv', 'run', 'atelier', 'claims', 'extend', str(held['id']),
-                       *(arg for path in batch for arg in ('--lock-path', path)), '--acquire']
-            for attempt in range(3):   # extending again is safe: held items stay, and only missing locks are taken
-                result = subprocess.run(command, cwd=repo, capture_output=True, text=True)
-                if not result.returncode:
-                    break
-                time.sleep(BIND_RETRY_S * (attempt + 1))
-            if result.returncode:
-                raise Unauthorized(f'{what}: cannot bind {len(batch)} created file(s) to claim {held["id"]} of task '
-                                   f'{claim}: {result.stderr.strip()[-300:]}')
-        if paths:
-            authorize(paths, claim, what, scopes=set(regions), repo=repo)
-    except BaseException:
+        checked = True
+        _bind(held, paths, claim, regions, what, repo=repo)
+    except BaseException as error:
         # Created files exist before their paths can be claimed (World Partition names them at save). Unbound,
-        # they are unauthorized writes: remove every one, so any refusal or failure (the claim service unavailable
-        # or unreadable included) leaves nothing behind. Existing files and claims are left as they were.
-        for rel in created:
-            (game / rel).unlink(missing_ok=True)
+        # they are unauthorized writes and leave the content tree: checked ones wait in `pending` for a resumed
+        # bind (a claim service fault must not discard a long editor run), any other is removed. Existing files
+        # and claims are left as they were.
+        pending = PENDING
+        if not checked or pending.exists():   # one set waits at a time: run.py refuses a new run while it does
+            for rel in created:
+                (game / rel).unlink(missing_ok=True)
+            raise
+        _move(created, game, pending / 'files')
+        (pending / 'pending.json').write_text(json.dumps({'claim': claim, 'regions': regions, 'what': what,
+                                                          'created': created}, indent=2) + '\n')
+        if isinstance(error, BindFailed):
+            raise BindFailed(f'{error}; the {len(created)} created file(s) wait in {pending}: resume the bind '
+                             'once the claim service settles (tools/migrate/run.py --resume)') from error
         raise
     return paths
+
+
+def resume_created(*, game: Path = GAME, repo: Path = REPO) -> list[str]:
+    """Bind the created files a failed bind set aside: re-check them, put them back and bind them as `bind_created`
+    does; returns their game-relative paths and removes `pending`. On failure they go back to `pending`."""
+    import shutil
+    pending = PENDING
+    record = json.loads((pending / 'pending.json').read_text())
+    created = record['created']
+    present = [rel for rel in created if (game / rel).exists()]
+    if present:
+        raise Unauthorized(f'{record["what"]}: {present[0]} is already in the content tree; not resuming')
+    held, paths = _check_created(record['claim'], record['regions'], created, record['what'], game=game, repo=repo)
+    _move(created, pending / 'files', game)
+    try:
+        _bind(held, paths, record['claim'], record['regions'], record['what'], repo=repo)
+    except BaseException:
+        _move(created, game, pending / 'files')
+        raise
+    shutil.rmtree(pending)
+    return created

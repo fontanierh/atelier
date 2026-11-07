@@ -206,11 +206,26 @@ def test_a_bind_batch_that_times_out_is_retried(tmp_path, game, claims, env):
     assert migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, files),
                              out=tmp_path / 'm', echo=lambda *_: None) == [NEW, SKY]
     assert (game / NEW).exists() and repo_path(NEW) in claims.tasks['T1']['paths']
-    claims.extend_timeouts = 3                         # three timeouts: the bind fails and removes what it made
-    with pytest.raises(authority.Unauthorized, match='cannot bind'):
+    claims.extend_timeouts = 3                         # three timeouts: the bind fails and sets what it made aside
+    with pytest.raises(authority.BindFailed, match='cannot bind.*wait in'):
         migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {FAR_NEW: 'region/w01:K2'}),
                           out=tmp_path / 'm', echo=lambda *_: None)
-    assert not (game / FAR_NEW).exists()
+    assert not (game / FAR_NEW).exists() and (authority.PENDING / 'files' / FAR_NEW).is_file()
+    assert repo_path(FAR_NEW) not in claims.tasks['T1']['paths']
+    with pytest.raises(migration.MigrationError, match='resume it'):     # no new run while a set waits
+        migration.migrate(game, plan(game), 'T1', editor=never, out=tmp_path / 'm')
+    with pytest.raises(migration.MigrationError, match='no saved editor output'):
+        migration.resume(game, out=tmp_path / 'm')
+    (authority.PENDING / 'stdout.log').write_text('V2 MIGRATE DONE created=0 kept=0 patches=0\n')   # run.py saves it
+    claims.extend_timeouts = 3                         # still failing: the files go back to wait
+    with pytest.raises(authority.BindFailed):
+        migration.resume(game, out=tmp_path / 'm', echo=lambda *_: None)
+    assert not (game / FAR_NEW).exists() and (authority.PENDING / 'files' / FAR_NEW).is_file()
+    claims.extend_timeouts = 0                         # settled: the resumed bind binds and records them
+    assert migration.resume(game, out=tmp_path / 'm', echo=lambda *_: None) == [FAR_NEW]
+    assert (game / FAR_NEW).read_text() == 'region/w01:K2' and repo_path(FAR_NEW) in claims.tasks['T1']['paths']
+    assert FAR_NEW in records.load_verified(game / 'world/regions/w01/actors.verified.json')['files']
+    assert not authority.PENDING.exists()
 
 
 def test_creation_in_another_regions_folder_or_outside_actor_folders_is_refused(tmp_path, game, claims, env):
@@ -253,14 +268,14 @@ def test_a_claimed_existing_file_without_its_verified_lock_refuses_before_the_ed
     assert any('--paths' in c and f'games/yorimichi_v2/{OLD}' in c for c in claims.checks)
 
 
-def test_a_failed_bind_removes_every_created_file(tmp_path, game, claims, env):
+def test_a_failed_bind_takes_every_created_file_out_of_the_content_tree(tmp_path, game, claims, env):
     env.setenv('ATELIER_AGENT', 'agent-a')
     claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
     claims.unlocked.add(f'games/yorimichi_v2/{NEW}')               # its lock is acquired but cannot be verified
     with pytest.raises(authority.Unauthorized, match='verified locks'):
         migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K'}),
                           out=tmp_path / 'm', echo=lambda *_: None)
-    assert not (game / NEW).exists()
+    assert not (game / NEW).exists() and (authority.PENDING / 'files' / NEW).is_file()   # checked: it waits
 
 
 @pytest.mark.parametrize('failure', ['down', 'garbled'])

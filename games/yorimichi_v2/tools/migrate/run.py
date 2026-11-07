@@ -13,6 +13,8 @@ It writes as the D04 bootstrap writer while D04 is open, or with `--claim TASK`:
 touched region's scope. World Partition names actor packages only when it saves them, so a claimed run may create
 new files in those regions' actor folders; the build step refuses any other write and binds the created files to
 the claim with their LFS locks (authority.bind_created), and every one must end up in a touched region's record.
+If the claim service fails that bind, the checked files and the editor's output wait outside the content tree;
+`run.py --resume` binds them and records the regions without running the editor again.
 """
 from __future__ import annotations
 
@@ -73,6 +75,11 @@ def native_migrate(plan_file: Path) -> str:
     LOG.unlink(missing_ok=True)   # the rosters are read from this run's output only
     command = ['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2', 'migrate.map']
     result = subprocess.run(command, cwd=REPO, env=env)
+    pending = authority.PENDING
+    if result.returncode and (pending / 'pending.json').is_file() and LOG.is_file():
+        (pending / 'stdout.log').write_bytes(LOG.read_bytes())   # the rosters, for the resumed bind
+        raise MigrationError(f'the created files could not all be bound; they wait in {pending}: run '
+                             '`tools/migrate/run.py --resume` once the claim service settles')
     if result.returncode:
         raise MigrationError(f'the editor migration failed (exit {result.returncode}); see {LOG}')
     return LOG.read_text(errors='replace') if LOG.is_file() else ''
@@ -113,6 +120,9 @@ def migrate(game: Path, plan: dict, claim: str | None = None, *, editor=native_m
     """Authorize, run the editor step, record rosters and regions; returns the game-relative files it created.
     The build step re-checks the plan itself; this checks first so a refused run never starts the editor."""
     regions = [r['id'] for r in plan['regions']] + [plan['environment']]
+    if authority.PENDING.exists():
+        raise MigrationError(f'{authority.PENDING} holds the created files of a failed bind: '
+                             'resume it (--resume) or delete it first')
     if claim:
         authority.creation_claim(claim, regions, 'map migration')
     else:
@@ -123,6 +133,23 @@ def migrate(game: Path, plan: dict, claim: str | None = None, *, editor=native_m
     before = authority.content_snapshot(game)
     made = patches_made(editor(plan_file))
     created = sorted(set(authority.content_snapshot(game)) - set(before))
+    return record(game, plan, claim, made, created, echo=echo)
+
+
+def resume(game: Path, *, out: Path = REPO / 'build/yorimichi_v2/migrate', echo=print) -> list[str]:
+    """Bind the created files of a migration whose bind failed (authority.resume_created) and record its regions
+    from the saved editor output, as the migration would have."""
+    plan = json.loads((out / 'plan.json').read_text())
+    pending = authority.PENDING
+    if not (pending / 'stdout.log').is_file():
+        raise MigrationError(f'nothing to resume: {pending} has no saved editor output')
+    made = patches_made((pending / 'stdout.log').read_text(errors='replace'))
+    created = authority.resume_created(game=game)
+    return record(game, plan, plan['claim'], made, created, echo=echo)
+
+
+def record(game: Path, plan: dict, claim: str | None, made, created: list[str], *, echo=print) -> list[str]:
+    regions = [r['id'] for r in plan['regions']] + [plan['environment']]
     echo(f'{len(made)} scene patch(es) on the map, {len(created)} file(s) created')
     record_rosters(game, made)
     for region in regions:
@@ -140,8 +167,9 @@ def migrate(game: Path, plan: dict, claim: str | None = None, *, editor=native_m
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('regions', nargs='+', help='region IDs whose scenery and island pieces to migrate')
-    parser.add_argument('--environment', required=True, help='the region owning map-wide actors and services')
+    parser.add_argument('regions', nargs='*', help='region IDs whose scenery and island pieces to migrate')
+    parser.add_argument('--environment', help='the region owning map-wide actors and services')
+    parser.add_argument('--resume', action='store_true', help='bind and record the created files of a failed bind')
     parser.add_argument('--services', nargs='+', action='extend', default=[], choices=['SkyDome', 'Sea', 'SkatePark.Scenery'])
     parser.add_argument('--only-migrated', action='store_true', help='slice map: no runtime instance scenery')
     parser.add_argument('--runtime-service', nargs='+', action='extend', default=[],
@@ -149,7 +177,12 @@ def main(argv=None) -> int:
     parser.add_argument('--patch-m', type=float, default=32.0)
     parser.add_argument('--claim', help='claims task holding every touched region (else the D04 bootstrap writer)')
     args = parser.parse_args(argv)
+    if not args.resume and not (args.regions and args.environment):
+        parser.error('give the regions and --environment, or --resume')
     try:
+        if args.resume:
+            resume(GAME)
+            return 0
         plan = make_plan(GAME, args.regions, args.environment, args.services, args.only_migrated,
                          args.runtime_service, args.patch_m)
         migrate(GAME, plan, args.claim)

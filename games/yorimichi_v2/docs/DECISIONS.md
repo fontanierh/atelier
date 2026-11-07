@@ -66,7 +66,9 @@ file must have been absent, unrecorded and inside those folders, or the run is r
 existing files must be exactly claimed. The created files are then added to the claim with their LFS locks
 (`atelier claims extend ID --lock-path … --acquire`, the claim service's documented route for new files under a
 region) and pass the same publish check before save validation records them; each must end in a touched
-region's record. Nothing unbound reaches a commit. *Rejected: reserving actor paths before saving.* It needs an
+region's record. Nothing unbound reaches a commit: if the claim service fails the bind, the checked created files move
+out of the content tree to `build/yorimichi_v2/migrate/pending/`, and `tools/migrate/run.py --resume` binds and
+records them later without another editor run. *Rejected: reserving actor paths before saving.* It needs an
 editor dry run to predict the hashed names and fails whenever the editor names a package differently; the
 created set measured from the disk is exact by construction.
 

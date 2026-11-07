@@ -18,5 +18,6 @@ def d04_open(tmp_path_factory, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def no_bind_wait(monkeypatch):
+def no_bind_wait(tmp_path_factory, monkeypatch):
     monkeypatch.setattr(authority, 'BIND_RETRY_S', 0.0)   # a retried bind batch does not wait in tests
+    monkeypatch.setattr(authority, 'PENDING', tmp_path_factory.mktemp('migrate') / 'pending')   # nor uses the checkout's
