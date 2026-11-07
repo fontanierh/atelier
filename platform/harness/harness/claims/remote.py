@@ -11,8 +11,10 @@ import base64
 import json
 import os
 import re
+import socket
 import subprocess
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -47,6 +49,12 @@ def _lock(data):
         return Lock(str(data['id']), str(data['path']), str((data.get('owner') or {}).get('name') or ''))
     except (KeyError, TypeError, AttributeError) as error:
         raise Unavailable(f'malformed LFS lock record: {data!r}') from error
+
+
+def _never_sent(error) -> bool:
+    """An error raised before any byte of the request could reach the server (name resolution, refused connection)."""
+    reason = getattr(error, 'reason', error)
+    return isinstance(reason, (socket.gaierror, ConnectionRefusedError))
 
 
 # ---------------------------------------------------------------------------- LFS: HTTP locking API
@@ -89,11 +97,20 @@ class LfsHttp:
                 return found
         raise Unavailable('LFS lock listing did not terminate')
 
-    def lock(self, path, ref=None):
-        try:
-            status, payload = self._call('POST', '/locks', {'path': path, **({'ref': {'name': ref}} if ref else {})})
-        except Unavailable as error:
-            return LockResult('unknown', detail=str(error))
+    def lock(self, path, ref=None, attempts=3, backoff=1.0):
+        body = {'path': path, **({'ref': {'name': ref}} if ref else {})}
+        for attempt in range(attempts):
+            try:
+                status, payload = self._call('POST', '/locks', body)
+                break
+            except Unavailable as error:
+                if not _never_sent(error.__cause__):
+                    return LockResult('unknown', detail=str(error))
+                # The host name did not resolve or the connection was refused: the request never left this
+                # machine, so no lock can exist from it. Retrying is safe; if it never goes out, nothing was made.
+                if attempt == attempts - 1:
+                    return LockResult('failed', detail=f'not sent: {error}')
+                time.sleep(backoff * (attempt + 1))
         if status == 201 and isinstance(payload.get('lock'), dict):
             return LockResult('created', _lock(payload['lock']))
         if status == 409:

@@ -911,3 +911,33 @@ def test_the_git_lfs_command_locker_never_runs_two_lock_commands_at_once(tmp_pat
     with ThreadPoolExecutor(8) as pool:
         list(pool.map(lambda i: cli.unlock(str(i)), range(16)))
     assert peak[0] == 1
+
+
+def test_a_lock_request_that_never_left_is_retried_then_failed_not_unknown(monkeypatch):
+    """A DNS failure or refused connection proves no lock was made: retry it, and never leave it uncertain."""
+    import socket
+    import urllib.error
+    from atelier.harness.claims import remote
+    calls = []
+
+    def unresolved(self, method, path, body=None, query=None):
+        calls.append(method)
+        raise remote.Unavailable('no name') from urllib.error.URLError(socket.gaierror(8, 'nodename nor servname'))
+    monkeypatch.setattr(remote.LfsHttp, '_call', unresolved)
+    result = remote.LfsHttp('http://lfs.invalid').lock('a.uasset', backoff=0)
+    assert result.outcome == 'failed' and result.detail.startswith('not sent') and calls == ['POST'] * 3
+
+    answers = iter([urllib.error.URLError(ConnectionRefusedError()), None])
+
+    def flaky(self, method, path, body=None, query=None):
+        error = next(answers)
+        if error:
+            raise remote.Unavailable('refused') from error
+        return 201, {'lock': {'id': '7', 'path': 'a.uasset', 'owner': {'name': 'alice'}}}
+    monkeypatch.setattr(remote.LfsHttp, '_call', flaky)
+    assert remote.LfsHttp('http://lfs.invalid').lock('a.uasset', backoff=0).outcome == 'created'
+
+    def timed_out(self, method, path, body=None, query=None):
+        raise remote.Unavailable('slow') from TimeoutError('timed out')
+    monkeypatch.setattr(remote.LfsHttp, '_call', timed_out)
+    assert remote.LfsHttp('http://lfs.invalid').lock('a.uasset', backoff=0).outcome == 'unknown'
