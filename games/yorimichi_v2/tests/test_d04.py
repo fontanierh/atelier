@@ -343,3 +343,11 @@ def test_a_region_owns_its_actor_packages_companions(game):
     stem = repo_path(OLD)[:-len('.uasset')]
     scopes, unowned = authority.owning_scopes(game, [stem + ext for ext in ('.uasset', '.uexp', '.ubulk', '.uptnl')])
     assert scopes == {'region/w01'} and unowned == []
+
+
+def test_a_large_protected_check_runs_in_bounded_commands(game, claims, env):
+    env.setenv('ATELIER_AGENT', 'agent-a')
+    claims.grant('T1', 'agent-a', ['region/w01'], {repo_path(OLD), repo_path(NEW)})
+    env.setattr(authority, 'CHECK_PATHS', 1)
+    authority.authorize([repo_path(OLD), repo_path(NEW)], 'T1', 'a write', scopes={'region/w01'})
+    assert [c[c.index('--paths') + 1:] for c in claims.checks] == [[repo_path(OLD)], [repo_path(NEW)]]

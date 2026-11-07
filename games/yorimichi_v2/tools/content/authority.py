@@ -161,6 +161,9 @@ def covered(scope, held: list[str]) -> bool:
     return any(parts[:len(h.split('/'))] == h.casefold().split('/') for h in held)
 
 
+CHECK_PATHS = 1000   # paths per protected check command line
+
+
 def authorize(paths: list[str], claim: str | None, what: str, *, scopes=(), repo: Path = REPO) -> None:
     """Raise Unauthorized unless this write of repository-relative `paths`, owned by `scopes`, is allowed."""
     if claim:
@@ -172,13 +175,14 @@ def authorize(paths: list[str], claim: str | None, what: str, *, scopes=(), repo
         missing = sorted(' or '.join(s) if isinstance(s, tuple) else s for s in scopes if not covered(s, held))
         if missing:
             raise Unauthorized(f'{what}: claim {claim} holds no active scope covering {", ".join(missing)}')
-        command = ['uv', 'run', 'atelier', 'claims', 'check', '--stage', 'publish', '--task', claim,
-                   '--paths', *paths]
-        result = subprocess.run(command, cwd=repo, stderr=subprocess.PIPE, text=True)
-        if result.returncode:
-            reason = (result.stderr or '').strip()
-            raise Unauthorized(f'{what}: claim {claim} does not exactly cover these paths with verified locks; '
-                               f'extend and acquire it first' + (f' ({reason[-300:]})' if reason else ''))
+        for start in range(0, len(paths), CHECK_PATHS):   # a whole-island write exceeds one argument list
+            command = ['uv', 'run', 'atelier', 'claims', 'check', '--stage', 'publish', '--task', claim,
+                       '--paths', *paths[start:start + CHECK_PATHS]]
+            result = subprocess.run(command, cwd=repo, stderr=subprocess.PIPE, text=True)
+            if result.returncode:
+                reason = (result.stderr or '').strip()
+                raise Unauthorized(f'{what}: claim {claim} does not exactly cover these paths with verified locks; '
+                                   f'extend and acquire it first' + (f' ({reason[-300:]})' if reason else ''))
         return
     writer, closed = d04()
     if closed:
