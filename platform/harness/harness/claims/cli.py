@@ -118,8 +118,8 @@ class _Offline:
 
 
 def _locker(args):
-    from .remote import GitLfsCli
-    return GitLfsCli(_toplevel(args.repo), args.lfs_remote)
+    from .remote import client_locker
+    return client_locker(_toplevel(args.repo), args.lfs_remote)
 
 
 def _toplevel(repo):

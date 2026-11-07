@@ -2,8 +2,10 @@
 import fnmatch
 import json
 import subprocess
+import threading
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from . import scopes
@@ -49,37 +51,68 @@ class AcquireFailed(Exception):
         self.claim = claim
 
 
-def acquire(client, claim_id, locker, ref=None):
+LOCK_WORKERS = 8   # paths locked at once: each path is three remote round trips, and paths are independent
+
+
+def _workers(locker, workers, count):
+    return max(1, min(workers if getattr(locker, 'concurrent', False) else 1, count))
+
+
+def acquire(client, claim_id, locker, ref=None, workers=LOCK_WORKERS):
     """Lock every needed LFS path of a pending (or extended active) claim with this client's own credentials,
     then have the service verify and activate it. On failure abort the attempt: the service lists only the
-    locks this attempt proved it created, and this client unlocks exactly those."""
+    locks this attempt proved it created, and this client unlocks exactly those.
+
+    Paths are locked `workers` at a time when the locker is safe to run concurrently (`locker.concurrent`), else
+    one at a time, so no request waits behind another after its intent is recorded. Each path still records its
+    intent right before its lock request and its result after it. After the first failure or error, no new path starts; the requests already started finish
+    and report before the attempt is aborted or the error is raised."""
     view = client.call('GET', f'/claims/{claim_id}')
-    failure = None
-    for lock in view['locks']:
-        if lock['state'] not in ('needed', 'refused', 'requested', 'uncertain', 'abandoned'):
-            continue
-        path = lock['path']
+    paths = [lock['path'] for lock in view['locks']
+             if lock['state'] in ('needed', 'refused', 'requested', 'uncertain', 'abandoned')]
+    stop = threading.Event()
+
+    def lock_one(path):
+        if stop.is_set():
+            return None
         try:
-            intent = client.call('POST', f'/claims/{claim_id}/lock-intent', {'path': path})  # Unreachable: nothing locked
-        except Refused as error:
-            if error.code != 'unsettled':
-                raise
-            # An earlier attempt's request may still land: keep the reservation, do not abort.
-            raise AcquireFailed(f'{error}; claim {claim_id} stays reserved', view) from None
-        if intent.get('resumed'):
-            continue  # an earlier interrupted attempt made this lock; the service recorded it
-        result = locker.lock(path, ref=ref)
-        body = {'path': path, 'outcome': result.outcome, 'detail': result.detail}
-        if result.outcome == 'created':
-            body.update(lock_id=result.lock.id, owner=result.lock.owner)
-        try:
-            client.call('POST', f'/claims/{claim_id}/lock-result', body)
-        except Unreachable as error:
-            raise AcquireFailed(f'{error}; {path} is {result.outcome} and stays reserved until the service '
-                                'reconciles (do not unlock or edit it)') from None
+            try:
+                intent = client.call('POST', f'/claims/{claim_id}/lock-intent', {'path': path})  # Unreachable: nothing locked
+            except Refused as error:
+                if error.code != 'unsettled':
+                    raise
+                # An earlier attempt's request may still land: keep the reservation, do not abort.
+                raise AcquireFailed(f'{error}; claim {claim_id} stays reserved', view) from None
+            if intent.get('resumed'):
+                return None  # an earlier interrupted attempt made this lock; the service recorded it
+            result = locker.lock(path, ref=ref)
+            body = {'path': path, 'outcome': result.outcome, 'detail': result.detail}
+            if result.outcome == 'created':
+                body.update(lock_id=result.lock.id, owner=result.lock.owner)
+            try:
+                client.call('POST', f'/claims/{claim_id}/lock-result', body)
+            except Unreachable as error:
+                raise AcquireFailed(f'{error}; {path} is {result.outcome} and stays reserved until the service '
+                                    'reconciles (do not unlock or edit it)') from None
+        except BaseException:
+            stop.set()
+            raise
         if result.outcome != 'created':
-            failure = f'{path}: {result.outcome} {result.detail}'.strip()
-            break
+            stop.set()
+            return f'{path}: {result.outcome} {result.detail}'.strip()
+        return None
+
+    failure, error = None, None
+    with ThreadPoolExecutor(max_workers=_workers(locker, workers, len(paths))) as pool:
+        for future in [pool.submit(lock_one, path) for path in paths]:   # in path order: the first problem wins
+            try:
+                outcome = future.result()
+            except BaseException as raised:   # noqa: BLE001 - re-raised once every started request reported
+                error = error or raised
+                continue
+            failure = failure or outcome
+    if error is not None:
+        raise error
     if failure is None:
         try:
             return client.call('POST', f'/claims/{claim_id}/activate')
@@ -92,16 +125,24 @@ def acquire(client, claim_id, locker, ref=None):
     raise AcquireFailed(f'claim {claim_id} not granted: {failure}', released)
 
 
-def release_locks(client, view, locker, ref=None):
-    """Unlock the claim's locks the service marked releasing (proven ours), reporting each one."""
-    for lock in view['locks']:
-        if lock['state'] == 'releasing' and lock['lock_id']:
-            try:
-                locker.unlock(lock['lock_id'], ref=ref)
-            except Unavailable:
-                continue  # stays releasing; retry with `atelier claims unlock`
-            view = client.call('POST', f'/claims/{view["id"]}/unlocked', {'path': lock['path']})
-    return view
+def release_locks(client, view, locker, ref=None, workers=LOCK_WORKERS):
+    """Unlock the claim's locks the service marked releasing (proven ours), reporting each one, `workers` at a
+    time. A lock the LFS server cannot unlock now stays releasing (retry with `atelier claims unlock`)."""
+    releasing = [lock for lock in view['locks'] if lock['state'] == 'releasing' and lock['lock_id']]
+
+    def release(lock):
+        try:
+            locker.unlock(lock['lock_id'], ref=ref)
+        except Unavailable:
+            return False
+        client.call('POST', f'/claims/{view["id"]}/unlocked', {'path': lock['path']})
+        return True
+
+    if not releasing:
+        return view
+    with ThreadPoolExecutor(max_workers=_workers(locker, workers, len(releasing))) as pool:
+        list(pool.map(release, releasing))   # re-raises the first error once every started unlock reported
+    return client.call('GET', f'/claims/{view["id"]}')
 
 
 # ---------------------------------------------------------------------------- change-set check
