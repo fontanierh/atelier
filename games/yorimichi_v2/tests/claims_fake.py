@@ -39,6 +39,7 @@ class ClaimService:
         self.tasks, self.extensions, self.unlocked, self.checks = {}, [], set(), []
         self.failure = None   # 'down' (the service is unavailable) or 'garbled' (its answer does not parse)
         self.extend_timeouts = 0   # extensions that time out (a busy service) before one gets through
+        self.check_timeouts = 0    # protected checks that time out
 
     def grant(self, task, holder, scopes, paths=()):
         self.tasks[task] = {'id': len(self.tasks) + 1, 'holder': holder, 'scopes': list(scopes), 'paths': set(paths)}
@@ -64,6 +65,9 @@ class ClaimService:
             items += [{'kind': 'path', 'value': p} for p in sorted(task['paths'])]
             return Result(0, json.dumps({'id': command[6], 'claims': [
                 {'id': task['id'], 'state': 'active', 'principal': task['holder'], 'items': items}]}))
+        if command[4] == 'check' and self.check_timeouts:
+            self.check_timeouts -= 1
+            return Result(1, stderr='claims: claims service at http://127.0.0.1:8840: timed out')
         if command[4] == 'check':
             task = self.tasks.get(command[command.index('--task') + 1])
             paths = set(command[command.index('--paths') + 1:])

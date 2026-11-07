@@ -232,6 +232,21 @@ def test_a_bind_batch_that_times_out_is_retried(tmp_path, game, claims, env):
     assert not authority.PENDING.exists()
 
 
+def test_a_publish_check_timeout_sets_the_files_aside_and_a_resumed_refusal_deletes_them(tmp_path, game, claims, env):
+    env.setenv('ATELIER_AGENT', 'agent-a')
+    claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
+    claims.check_timeouts = 1                          # extended, then the final check times out: a service fault
+    with pytest.raises(authority.BindFailed, match='timed out'):
+        migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K'}),
+                          out=tmp_path / 'm', echo=lambda *_: None)
+    assert not (game / NEW).exists() and (authority.PENDING / 'files' / NEW).is_file()
+    (authority.PENDING / 'stdout.log').write_text('V2 MIGRATE DONE created=0 kept=0 patches=0\n')
+    claims.unlocked.add(repo_path(NEW))                # resumed, the check now refuses: the files are deleted
+    with pytest.raises(authority.Unauthorized, match='verified locks'):
+        migration.resume(game, out=tmp_path / 'm', echo=lambda *_: None)
+    assert not (game / NEW).exists() and not authority.PENDING.exists()
+
+
 def test_creation_in_another_regions_folder_or_outside_actor_folders_is_refused(tmp_path, game, claims, env):
     env.setenv('ATELIER_AGENT', 'agent-a')
     claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
