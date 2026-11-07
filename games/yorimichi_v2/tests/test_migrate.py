@@ -128,3 +128,15 @@ def test_roster_capture_must_be_complete():
         run.patches_made(line + 'V2 MIGRATE DONE created=0 kept=2 patches=2\n')
     with pytest.raises(run.MigrationError, match='did not report'):
         run.patches_made('')
+
+
+def test_repeated_service_flags_keep_every_name(monkeypatch):
+    """`--runtime-service A --runtime-service B` keeps both (a store action kept only the last, so a whole-island run
+    started only the gulls)."""
+    seen = {}
+    monkeypatch.setattr(run, 'make_plan', lambda game, ids, env, services, only, runtime, patch: seen.update(
+        services=services, runtime=runtime) or {})
+    monkeypatch.setattr(run, 'migrate', lambda game, plan, claim: None)
+    assert run.main(['region/w01-start', '--environment', 'region/w00-island', '--services', 'SkyDome', '--services',
+                     'Sea', '--only-migrated', '--runtime-service', 'Village', '--runtime-service', 'Ferry', 'Gulls']) == 0
+    assert seen == {'services': ['SkyDome', 'Sea'], 'runtime': ['Village', 'Ferry', 'Gulls']}

@@ -142,9 +142,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('regions', nargs='+', help='region IDs whose scenery and island pieces to migrate')
     parser.add_argument('--environment', required=True, help='the region owning map-wide actors and services')
-    parser.add_argument('--services', nargs='*', default=[], choices=['SkyDome', 'Sea', 'SkatePark.Scenery'])
+    parser.add_argument('--services', nargs='+', action='extend', default=[], choices=['SkyDome', 'Sea', 'SkatePark.Scenery'])
     parser.add_argument('--only-migrated', action='store_true', help='slice map: no runtime instance scenery')
-    parser.add_argument('--runtime-service', nargs='*', default=[], help='with --only-migrated: services that run')
+    parser.add_argument('--runtime-service', nargs='+', action='extend', default=[],
+                        help='with --only-migrated: services that run (repeatable; every name is kept)')
     parser.add_argument('--patch-m', type=float, default=32.0)
     parser.add_argument('--claim', help='claims task holding every touched region (else the D04 bootstrap writer)')
     args = parser.parse_args(argv)
