@@ -1,0 +1,12 @@
+{
+  "asset": "prop/lantern",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Lantern.uasset": "3bf1795587aef7343ac76e0e986bd154de6902f0638b018d51e5b000bea4b75a"
+  },
+  "input_fingerprint": "b23745264bc64e47990e624d8c8c4af9281d80d6081297e39d5b5cc96b081edb",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

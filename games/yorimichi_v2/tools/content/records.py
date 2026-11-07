@@ -98,6 +98,11 @@ class Region:
                 for m in self.maps for root in ACTOR_ROOTS]
 
 
+def import_step(asset_id: str) -> str:
+    """The build step that imports a generated asset: `import.` and its ID with "/" as "." (step names allow no "/")."""
+    return 'import.' + asset_id.replace('/', '.')
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open('rb') as handle:

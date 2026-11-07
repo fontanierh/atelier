@@ -18,8 +18,8 @@ WALK_YAW = 2.73                              # along the road's straight before 
 
 
 def walk_start():
-    ground = L.ground_at(WALK_FROM)
-    L.teleport_player(U.Vector(ground.x, ground.y, ground.z + 100), WALK_YAW)
+    if not Y.travel(WALK_FROM, WALK_YAW):   # the game's own travel: it leaves any swim or ride state first
+        raise RuntimeError('the player could not travel to start_road')
 
 
 def skate_place():

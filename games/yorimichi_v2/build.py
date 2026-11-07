@@ -75,7 +75,9 @@ def import_steps():
             continue        # check.content reports it
         if asset.authority == 'editor':
             continue
-        name = f'import.{asset.id}'
+        name = records.import_step(asset.id)
+        if any(step.name == name for step in found):
+            raise RuntimeError(f'{asset.id}: its import step {name} is another asset\'s too; rename one of them')
         found.append(Step(name, [Call(f'authorize {name}', _authorize_import), UnrealScript(script, 'V2 IMPORT DONE'),
                                  ran(name)],
                           inputs=[script], after=['unreal.compile'], heavy=True, explicit=True,

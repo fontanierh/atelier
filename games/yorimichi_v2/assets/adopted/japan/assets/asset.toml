@@ -198,9 +198,6 @@ package = "/Game/Japan/Assets/House_B"
 package = "/Game/Japan/Assets/House_C"
 
 [[outputs]]
-package = "/Game/Japan/Assets/Lantern"
-
-[[outputs]]
 package = "/Game/Japan/Assets/Leaf"
 
 [[outputs]]

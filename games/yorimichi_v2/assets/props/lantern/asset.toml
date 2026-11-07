@@ -1,0 +1,18 @@
+# The stone lantern of the slice's road (3 placements), the P3 targeted mesh import. Its source is the donor's
+# Blender export (games/yorimichi/world/build_assets.py lantern(), 100 triangles, one "Stone" slot), committed here.
+schema = 1
+id = "prop/lantern"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan/assets"
+
+[[sources]]
+path = "src/Lantern.fbx"
+sha256 = "bb158afb9dfa46548acdff508f8627ee2e999b212bf5abcbb858c44102a6bb91"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/Lantern"
