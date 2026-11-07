@@ -504,6 +504,27 @@ def test_reconcile_timeout_reaches_the_transport_without_changing_other_commands
     assert seen == [(args.url + '/' + command[0], seconds)]
 
 
+@pytest.mark.parametrize('command, seconds', [(['status'], 300.0), (['reconcile', '--timeout', '900'], 900)])
+def test_claims_timeout_env_raises_the_default_wait(monkeypatch, command, seconds):
+    import io
+    from atelier.harness.claims import client as claims_client
+
+    seen = []
+    monkeypatch.setenv('ATELIER_CLAIMS_TOKEN', TOKEN)
+    monkeypatch.setenv('ATELIER_CLAIMS_TIMEOUT', '300')
+    monkeypatch.setattr(claims_client.urllib.request, 'urlopen',
+                        lambda request, timeout: seen.append(timeout) or io.BytesIO(b'{"state": "ready"}'))
+    assert claims_cli.main(claims_cli_args('--url', 'http://127.0.0.1:8840', '--actor', 'lead', *command)) == 0
+    assert seen == [seconds]
+
+
+def test_a_bad_claims_timeout_env_is_refused(monkeypatch):
+    monkeypatch.setenv('ATELIER_CLAIMS_TOKEN', TOKEN)
+    monkeypatch.setenv('ATELIER_CLAIMS_TIMEOUT', 'soon')
+    with pytest.raises(SystemExit, match='ATELIER_CLAIMS_TIMEOUT'):
+        claims_cli.main(claims_cli_args('--url', 'http://127.0.0.1:8840', '--actor', 'lead', 'status'))
+
+
 @pytest.mark.parametrize('seconds', ['0', '-1', 'nan', 'inf'])
 def test_reconcile_timeout_must_be_finite_and_positive(seconds):
     with pytest.raises(SystemExit):
