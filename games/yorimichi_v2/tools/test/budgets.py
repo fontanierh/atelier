@@ -6,20 +6,25 @@
   place   one saved actor moved 1 cm through editor.run (move_actor.py), alternately +x and -x, so an even number of
           runs ends where it began. Needs V2_EDITOR_CLAIM, V2_EDITOR_PATHS and V2_MOVE_ACTOR, as move_actor.py does.
           Target: median <= 30 s, slowest <= 60 s
-  mesh    a predefined slice prop reimported from alternately the two FBX files given with --sources, under --claim.
+  mesh    a predefined slice prop reimported from alternately the two FBX files given with --sources, under --claim;
+          a run the importer skipped as unchanged fails.
           Target: median <= 3 min, slowest <= 6 min
-  cpp     one C++ file (--touch) edited, the editor module recompiled, then the slice played until it is playable.
+  cpp     one C++ file (--edit) changed by a byte edit (a trailing comment naming the run), the editor module
+          recompiled, then the slice played until it is playable. A run whose compile did not rebuild that file fails:
+          a reused result is recorded as such, not timed as an edit. The file's bytes are restored at the end.
           Target: median <= 3 min, slowest <= 6 min
   open    the slice played from launch until it is playable. Target: median <= 90 s
 
 Playable means the live bridge answers and the player stands on the ground, walking; the game is then quit through
-the bridge. Each run's resource-queue wait (the guard's last "Waiting for capacity" report) is recorded separately and
-subtracted, so the budget times the operation and not the queue. Failed runs stay in the report.
+the bridge. A game that has not exited 120 s after its quit request stops the series (exit 2): no further run starts
+while it may still be alive. Each run's resource-queue wait (the guard's last "Waiting for capacity" report) is
+recorded separately and subtracted, so the budget times the operation and not the queue. Failed runs stay in the report.
 
 The writing operations change committed files: run them only in a scratch checkout under a claim, then discard the
 changes. OUT/OPERATION.json is the receipt: the checkout's revision, every run and the verdict.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -50,6 +55,10 @@ QUIT = '''import unreal as U
 U.SystemLibrary.execute_console_command(U.LiveLibrary.game_world(), 'quit')
 print('quit requested')
 '''
+
+
+class CleanupError(RuntimeError):
+    """A launched game did not finish its supported quit: the series must stop."""
 
 
 def summarize(operation, runs):
@@ -114,7 +123,9 @@ def play_until_playable(log, timeout=600):
             rest, _ = game.communicate(timeout=120)
             output.append(rest or '')
         except subprocess.TimeoutExpired:
-            output.append('the game did not quit within 120 s of its quit request')
+            log.write(f'$ {" ".join(PLAY)}\n{"".join(output)}\n')
+            raise CleanupError(f'the game (launcher pid {game.pid}, session {session}) did not quit within 120 s of '
+                               'its quit request') from None
     text = ''.join(output)
     log.write(f'$ {" ".join(PLAY)}\n{text}\n')
     waits = QUEUE.findall(text)
@@ -122,6 +133,7 @@ def play_until_playable(log, timeout=600):
 
 
 def run_once(operation, index, args, log):
+    extra = {}
     if operation == 'check':
         ok, wall, queue, _ = timed(['uv', 'run', 'python', str(GAME / 'tools/content/check.py')], log=log)
     elif operation == 'place':
@@ -132,19 +144,29 @@ def run_once(operation, index, args, log):
     elif operation == 'mesh':
         source, target = args.sources[index % 2], args.target
         target.write_bytes(source.read_bytes())
-        ok, wall, queue, _ = timed(['nice', '-n', '10', 'uv', 'run', 'python', str(GAME / 'tools/import/run.py'),
-                                    args.asset, '--claim', args.claim], log=log)
+        ok, wall, queue, output = timed(['nice', '-n', '10', 'uv', 'run', 'python', str(GAME / 'tools/import/run.py'),
+                                         args.asset, '--claim', args.claim], log=log)
+        extra['imported'] = f'imported   {args.asset}' in output   # not a skip of unchanged inputs
+        ok = ok and extra['imported']
     elif operation == 'cpp':
-        os.utime(args.touch)
-        ok, wall, queue, _ = timed(['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2',
-                                    'unreal.compile'], log=log)
+        args.edit.write_bytes(args.original + f'// budget run {index}\n'.encode())
+        extra['source_sha256'] = hashlib.sha256(args.edit.read_bytes()).hexdigest()
+        ok, wall, queue, output = timed(['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2',
+                                         'unreal.compile'], log=log)
+        extra['compiled'] = compiled(output, args.edit.name)
+        ok = ok and extra['compiled']
         if ok:
             ok, opened, waited = play_until_playable(log)
             wall, queue = wall + opened, queue + waited
     else:
         ok, wall, queue = play_until_playable(log)
     return {'run': index, 'ok': ok, 'wall_s': round(wall, 1), 'queue_s': queue,
-            'operation_s': round(max(wall - queue, 0), 1)}
+            'operation_s': round(max(wall - queue, 0), 1), **extra}
+
+
+def compiled(output, name):
+    """Did this build's compiler actually rebuild the edited file (UnrealBuildTool's `Compile ... <name>` action)?"""
+    return any('Compile' in line and line.rstrip().endswith(name) for line in output.splitlines())
 
 
 def main(argv=None):
@@ -156,25 +178,39 @@ def main(argv=None):
     parser.add_argument('--target', type=Path, help='mesh: the committed FBX the prop imports from')
     parser.add_argument('--asset', default='prop/lantern', help='mesh: the asset ID')
     parser.add_argument('--claim', help='mesh: the claim (task ID) authorizing the import')
-    parser.add_argument('--touch', type=Path, help='cpp: the C++ file to edit')
+    parser.add_argument('--edit', type=Path, help='cpp: the C++ file to change')
     args = parser.parse_args(argv)
     if args.operation == 'mesh' and not (args.sources and args.target and args.claim):
         parser.error('mesh needs --sources A B, --target and --claim')
-    if args.operation == 'cpp' and not (args.touch and args.touch.is_file()):
-        parser.error('cpp needs --touch FILE')
+    if args.operation == 'cpp' and not (args.edit and args.edit.is_file()):
+        parser.error('cpp needs --edit FILE')
+    args.original = args.edit.read_bytes() if args.edit else None
     args.out.mkdir(parents=True, exist_ok=True)
-    runs = []
+    runs, stopped = [], None
     with open(args.out / f'{args.operation}.log', 'w') as log:
-        for index in range(args.runs + 1):
-            result = run_once(args.operation, index, args, log)
-            result['warm_up'] = index == 0
-            print(json.dumps(result), flush=True)
-            runs.append(result)
+        try:
+            for index in range(args.runs + 1):
+                result = run_once(args.operation, index, args, log)
+                result['warm_up'] = index == 0
+                print(json.dumps(result), flush=True)
+                runs.append(result)
+        except CleanupError as error:
+            stopped = str(error)
+        finally:
+            if args.original is not None:
+                args.edit.write_bytes(args.original)
+    measured = summarize(args.operation, [r for r in runs if not r['warm_up']])
+    if stopped:
+        measured.update(passed=False, stopped=stopped)
     receipt = {'schema': 1, 'operation': args.operation, 'revision': git(REPO, 'rev-parse', 'HEAD').strip(),
-               'measured': summarize(args.operation, [r for r in runs if not r['warm_up']]), 'all_runs': runs}
+               'measured': measured, 'all_runs': runs}
     (args.out / f'{args.operation}.json').write_text(json.dumps(receipt, indent=2) + '\n')
-    print(json.dumps(receipt['measured']))
-    return 0 if receipt['measured']['passed'] else 1
+    print(json.dumps(measured))
+    if stopped:
+        print(f'STOPPED: {stopped}; retain {args.out} and the play logs, and quit that game before another run',
+              file=sys.stderr)
+        return 2
+    return 0 if measured['passed'] else 1
 
 
 if __name__ == '__main__':
