@@ -113,6 +113,28 @@ def test_a_claimed_editor_script_must_stay_inside_its_paths(tmp_path, monkeypatc
         recipe._check_editor_writes(None, io.StringIO())
 
 
+def test_a_read_only_editor_script_needs_no_claim_and_may_save_nothing(tmp_path, monkeypatch):
+    game = tmp_path / 'game'
+    (game / 'unreal/Content/V2').mkdir(parents=True)
+    monkeypatch.setattr(recipe, 'GAME', game)
+    monkeypatch.setenv('V2_EDITOR_READ_ONLY', '1')
+    monkeypatch.delenv('V2_EDITOR_CLAIM', raising=False)
+    monkeypatch.delenv('V2_EDITOR_PATHS', raising=False)
+    ctx = type('Ctx', (), {'out': tmp_path / 'out'})()
+    log = io.StringIO()
+    recipe._authorize_editor(ctx, log)                               # D04 closed: no claim, still admitted
+    assert 'read-only' in log.getvalue()
+    assert Path(os.environ['V2_SAVE_ALLOW']).read_text() == ''      # the editor's save guard refuses every save
+    recipe._check_editor_writes(None, io.StringIO())
+    recipe._authorize_editor(ctx, io.StringIO())
+    (game / 'unreal/Content/V2/A.uasset').write_bytes(b'a')
+    with pytest.raises(RuntimeError, match='read-only editor script changed files'):
+        recipe._check_editor_writes(None, io.StringIO())
+    monkeypatch.setenv('V2_EDITOR_CLAIM', 'T9')
+    with pytest.raises(RuntimeError, match='without V2_EDITOR_CLAIM'):
+        recipe._authorize_editor(ctx, io.StringIO())
+
+
 def test_a_claimed_editor_script_must_declare_its_paths(monkeypatch, writer):
     monkeypatch.setenv('V2_EDITOR_CLAIM', 'T9')
     with pytest.raises(RuntimeError, match='needs V2_EDITOR_PATHS'):

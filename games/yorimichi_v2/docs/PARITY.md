@@ -58,8 +58,8 @@ The first comparison scored SSIM 0.77–0.86 and MAD 0.065–0.105. It found thr
 `tools/test/route.py` ran twice on the aea8c3c860 game, after the captures. The second run passed: 15.5 m walked at
 ≥3.5 m/s, a skate top speed of 8.5 m/s with 0.0 cm deck variation, and the lowest sampled fps 59.9 over 20 sampled
 frames. The first run failed at a lowest sampled 3.1 fps, as on the earlier build. The capture had already visited
-`start_road`, so this is not only first use of that place. The packaged slice (below) answers the open question:
-its first arrival does not stall.
+`start_road`, so this is not only first use of that place. It stays open: the packaged slice (below) has measured a
+walk from spawn, not this walk and skate route.
 
 ## Packaged slice (P3.5, 2026-11-07)
 
@@ -85,8 +85,14 @@ benchmark sets. The three long frames come at the same frame numbers each time: 
 after the first frame) and frame 442 (about 8 s after it, as the benchmark ends its warm-up and starts its own
 capture). None falls in the walk.
 
-So the packaged first arrival does not reproduce the editor route's first run (lowest sampled 3.1 fps, "Route on
-the same build"). That stall is specific to the editor game; its cause there is not measured.
+What this shows, and no more. On every warm launch the packaged game has long frames at frame 1 (141–143 ms),
+frame 114 (84–86 ms) and frame 442 (442–447 ms); the first launch had 435 ms at frame 1. Its warmed 20 s walk from
+spawn holds 60 fps. The first launch's walk
+was not validly recorded (see the note). The editor route's first run (lowest sampled 3.1 fps, "Route on the same
+build") covered a different path, the walk and skate from `start_road` and the pier. So whether that route stalls
+in the package is not yet measured. Measuring it needs the same route in the package with real-time stepping and a
+frame trace from boot. The game's benchmark has no view for the pier ride, and the package has no live bridge to
+drive one, so that takes a route view and a new cook.
 
 Note on the first launch: it was started with UE's own `-benchmark` switch by mistake, which fixes the time step and
 exits after `-benchmarkseconds` of game time. Its load and first frames are valid; its walk is not, and the warm runs

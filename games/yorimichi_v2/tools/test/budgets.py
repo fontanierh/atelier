@@ -44,6 +44,7 @@ from launch import git  # noqa: E402
 # operation: (median target s, slowest target s or None)
 TARGETS = {'check': (10, None), 'place': (30, 60), 'mesh': (180, 360), 'cpp': (180, 360), 'open': (90, None)}
 QUEUE = re.compile(r'Waiting for capacity: (\d+)')
+COMPILE_LOG = REPO / 'build/yorimichi_v2/logs/unreal.compile.log'   # UnrealBuildTool's actions go there
 PLAY = ['nice', '-n', '10', 'uv', 'run', 'atelier', 'play', 'yorimichi_v2', '--profile', 'slice', '--memory-gib', '16',
         '--', '-RenderOffscreen']
 PLAYABLE = '''import unreal as U
@@ -151,10 +152,11 @@ def run_once(operation, index, args, log):
     elif operation == 'cpp':
         args.edit.write_bytes(args.original + f'// budget run {index}\n'.encode())
         extra['source_sha256'] = hashlib.sha256(args.edit.read_bytes()).hexdigest()
-        ok, wall, queue, _ = timed(['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2',
-                                    'unreal.compile'], log=log)
-        step_log = REPO / 'build/yorimichi_v2/logs/unreal.compile.log'   # UnrealBuildTool's actions go there
-        extra['compiled'] = compiled(step_log.read_text(errors='replace') if step_log.is_file() else '', args.edit.name)
+        began = time.time()
+        ok, wall, queue, output = timed(['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi_v2',
+                                         'unreal.compile'], log=log)
+        extra.update(compile_evidence(output, COMPILE_LOG, began, args.edit.name,
+                                      keep=args.out / f'cpp-run{index}-unreal.compile.log'))
         ok = ok and extra['compiled']
         if ok:
             ok, opened, waited = play_until_playable(log)
@@ -165,10 +167,23 @@ def run_once(operation, index, args, log):
             'operation_s': round(max(wall - queue, 0), 1), **extra}
 
 
-def compiled(output, name):
-    """Did this build's compiler actually rebuild the edited file? `log` is the compile step's own log, which holds
-    UnrealBuildTool's `[n/m] Compile [Apple] <name>` actions."""
-    return any('Compile' in line and line.rstrip().endswith(name) for line in output.splitlines())
+def compiled(log, name):
+    """Does a compile step's log hold UnrealBuildTool's `[n/m] Compile [Apple] <name>` action for the edited file?"""
+    return any('Compile' in line and line.rstrip().endswith(name) for line in log.splitlines())
+
+
+def compile_evidence(output, step_log, began, name, keep=None):
+    """What this invocation's compile did: `ran` (the build ran the step, not `up to date`), whether the step log was
+    written by it (modified after `began`), and `compiled`, true only when both hold and that log rebuilt `name`.
+    The log is copied to `keep`, so each run retains its own evidence; a reused result is never counted as a compile."""
+    ran = re.search(r'^unreal\.compile\s+done in ', output, re.M) is not None
+    reused = re.search(r'^unreal\.compile\s+up to date', output, re.M) is not None
+    fresh = step_log.is_file() and step_log.stat().st_mtime >= began
+    text = step_log.read_text(errors='replace') if fresh else ''
+    if keep is not None and fresh:
+        keep.write_text(text)
+    return {'compile_step': 'ran' if ran else 'up to date' if reused else 'unknown', 'compile_log_fresh': fresh,
+            'compiled': ran and fresh and compiled(text, name)}
 
 
 def main(argv=None):

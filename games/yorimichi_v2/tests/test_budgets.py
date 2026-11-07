@@ -1,7 +1,9 @@
 """The slice budget runner (tools/test/budgets.py): a verdict times the operation itself, not the resource queue, and
 a failed run fails the budget."""
 import importlib.util
+import os
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,8 +39,27 @@ def test_a_failed_run_fails_the_budget():
 def test_only_a_compile_of_the_edited_file_counts():
     built = '[2/4] Compile [Apple] YorimichiLive.cpp\n[3/4] Link [Apple] UnrealEditor-Yorimichi.dylib\n'
     assert budgets.compiled(built, 'YorimichiLive.cpp')
-    assert not budgets.compiled('unreal.compile                     up to date\n', 'YorimichiLive.cpp')
     assert not budgets.compiled('[1/2] Compile [Apple] JapanWorld.cpp\n', 'YorimichiLive.cpp')
+
+
+def test_a_fresh_step_log_from_a_run_step_is_a_compile(tmp_path):
+    log = tmp_path / 'unreal.compile.log'
+    began = time.time() - 1
+    log.write_text('[2/4] Compile [Apple] YorimichiLive.cpp\n')
+    evidence = budgets.compile_evidence('unreal.compile                     done in 10.8 s, capacity slot\n', log,
+                                        began, 'YorimichiLive.cpp', keep=tmp_path / 'kept.log')
+    assert evidence == {'compile_step': 'ran', 'compile_log_fresh': True, 'compiled': True}
+    assert 'YorimichiLive.cpp' in (tmp_path / 'kept.log').read_text()
+
+
+def test_an_old_log_under_an_up_to_date_build_is_not_a_compile(tmp_path):
+    log = tmp_path / 'unreal.compile.log'
+    log.write_text('[2/4] Compile [Apple] YorimichiLive.cpp\n')      # left by an earlier run
+    os.utime(log, (time.time() - 600, time.time() - 600))
+    evidence = budgets.compile_evidence('unreal.compile                     up to date\n', log, time.time(),
+                                        'YorimichiLive.cpp', keep=tmp_path / 'kept.log')
+    assert evidence == {'compile_step': 'up to date', 'compile_log_fresh': False, 'compiled': False}
+    assert not (tmp_path / 'kept.log').exists()
 
 
 def test_a_game_that_does_not_quit_stops_the_series_and_restores_the_edit(tmp_path, monkeypatch):
