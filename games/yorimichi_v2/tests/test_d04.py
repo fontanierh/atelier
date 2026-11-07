@@ -92,7 +92,7 @@ def claims(env):
     return service
 
 
-def editor(game, tmp_path, files, seen=None):
+def editor(game, tmp_path, files, seen=None, after_save=lambda: None):
     """The guarded migrate.map step with the editor's saves stubbed by plain writes."""
     ctx = type('Ctx', (), {'out': tmp_path / 'out'})()
 
@@ -103,6 +103,7 @@ def editor(game, tmp_path, files, seen=None):
             seen.update(Path(os.environ['V2_SAVE_DENY']).read_text().split())
         for rel, data in files.items():
             write(game / rel, data)
+        after_save()
         recipe._check_migration_writes(ctx, io.StringIO())
         return 'V2 MIGRATE DONE created=0 kept=0 patches=0\n'
     return run
@@ -244,6 +245,22 @@ def test_a_failed_bind_removes_every_created_file(tmp_path, game, claims, env):
         migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K'}),
                           out=tmp_path / 'm', echo=lambda *_: None)
     assert not (game / NEW).exists()
+
+
+@pytest.mark.parametrize('failure', ['down', 'garbled'])
+def test_a_claim_service_failure_right_after_the_save_removes_every_created_file(tmp_path, game, claims, env, failure):
+    env.setenv('ATELIER_AGENT', 'agent-a')
+    claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
+    before = {p: p.read_bytes() for p in game.rglob('*') if p.is_file()}
+
+    def fail():
+        claims.failure = failure
+    with pytest.raises(Exception):
+        migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, {NEW: 'region/w01:K'}, after_save=fail),
+                          out=tmp_path / 'm', echo=lambda *_: None)
+    assert not (game / NEW).exists()
+    assert {p: p.read_bytes() for p in game.rglob('*') if p.is_file()} == before   # existing files are kept as they were
+    assert claims.tasks['T1']['paths'] == set()                                    # and the claim is unchanged
 
 
 def test_a_claim_must_hold_every_touched_region_before_the_editor_starts(tmp_path, game, claims, env):

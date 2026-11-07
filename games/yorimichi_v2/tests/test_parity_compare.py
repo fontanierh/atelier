@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,18 +41,22 @@ def write_poses(path, names):
     return path
 
 
-def write_receipt(folder, poses, **fields):
+def write_receipt(folder, poses_file, **fields):
     """capture.json as capture_poses.py writes it, with `fields` overriding the defaults."""
     folder.mkdir(parents=True, exist_ok=True)
-    receipt = {'schema': 1, 'source': 'v2', 'revision': {'commit': 'abc123', 'dirty': False},
+    receipt = {'schema': 1, 'source': 'v2', 'revision': {'commit': 'abc1234def5678', 'dirty': False},
                'map': '/Game/V2/Maps/Slice', 'size': [64, 64], 'warmup': 8, 'load_radius_m': 500.0,
-               'poses_sha256': hashlib.sha256(poses.read_bytes()).hexdigest(), 'captured_utc': '2026-11-07T00:00:00Z',
-               'engine_version': '5.7.0', **fields}
+               'poses_sha256': hashlib.sha256(poses_file.read_bytes()).hexdigest(), 'captured_utc': '2026-11-07T00:00:00Z',
+               'poses': [pose['name'] for pose in json.loads(poses_file.read_text())['poses']],
+               'engine_version': '5.8.0', 'render': {'renderer': 'SceneCapture2D', 'quality': {'sg.ShadowQuality': 3.0}},
+               **fields}
+    receipt = {k: v for k, v in receipt.items() if v is not DROP}
     (folder / 'capture.json').write_text(json.dumps(receipt))
     return receipt
 
 
 DONOR = {'source': 'donor-runtime'}
+DROP = object()   # a write_receipt field override that leaves the field out
 
 
 def run(tmp_path, donor, v2, *extra, names=None, receipts=None, default_poses=False):
@@ -150,21 +155,62 @@ def test_receipt_of_another_poses_file_fails(tmp_path):
     img = scene()
     code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
                           receipts={'donor': DONOR, 'v2': {'poses_sha256': '0' * 64}})
-    assert code == 1 and len(report['errors']) == 1 and report['errors'][0].startswith('v2: receipt poses_sha256 000')
+    assert code == 1 and len(report['errors']) == 1 and report['errors'][0].startswith('v2: receipt poses_sha256 must be')
 
 
 def test_receipt_capture_size_mismatch_fails(tmp_path):
     img = scene()
     code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
                           receipts={'donor': DONOR, 'v2': {'size': [80, 80]}})
-    assert code == 1 and report['errors'] == ['capture size differs: donor receipt [64, 64], V2 receipt [80, 80]']
+    assert code == 1 and report['errors'] == ['v2: coast.png is 64x64, the receipt says 80x80',
+                                              'capture size differs: donor receipt [64, 64], V2 receipt [80, 80]']
 
 
 def test_v2_capture_as_donor_fails(tmp_path):
     img = scene()
     code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
                           receipts={'donor': {}, 'v2': {}})
-    assert code == 1 and len(report['errors']) == 1 and report['errors'][0].startswith('donor: receipt source is "v2"')
+    assert code == 1 and report['errors'] == ["donor: receipt source must be 'donor-runtime', not 'v2'"]
+
+
+REQUIRED = ['schema', 'source', 'revision', 'map', 'size', 'warmup', 'poses_sha256', 'poses', 'captured_utc',
+            'engine_version', 'render']
+
+
+@pytest.mark.parametrize('field', REQUIRED)
+def test_a_receipt_without_a_required_field_fails(tmp_path, field):
+    img = scene()
+    code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                          receipts={'donor': DONOR, 'v2': {field: DROP}})
+    assert code == 1 and any(e.startswith(f'v2: receipt {field} must be') for e in report['errors'])
+
+
+@pytest.mark.parametrize('field, value', [
+    ('schema', '1'), ('revision', {'commit': 'abc123'}), ('revision', 'abc123'), ('map', 3), ('size', [64.0, 64]),
+    ('size', [64]), ('warmup', -1), ('warmup', True), ('poses', ['other']), ('captured_utc', 7),
+    ('engine_version', ''), ('render', {'renderer': 'SceneCapture2D', 'quality': {}}), ('render', 'high')])
+def test_a_receipt_field_of_the_wrong_type_fails(tmp_path, field, value):
+    img = scene()
+    code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                          receipts={'donor': DONOR, 'v2': {field: value}})
+    assert code == 1 and any(e.startswith(f'v2: receipt {field} must be') for e in report['errors'])
+
+
+def test_another_source_than_the_side_s_fails(tmp_path):
+    img = scene()
+    code, _, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                          receipts={'donor': {'source': 'donor-editor'}, 'v2': {'source': 'donor-runtime'}})
+    assert code == 1 and report['errors'] == ["donor: receipt source must be 'donor-runtime', not 'donor-editor'",
+                                              "v2: receipt source must be 'v2', not 'donor-runtime'"]
+
+
+def test_different_render_settings_fail(tmp_path):
+    img = scene()
+    low = {'renderer': 'SceneCapture2D', 'quality': {'sg.ShadowQuality': 1.0}}
+    code, rows, report = run(tmp_path, {'coast': img}, {'coast': img}, '--min-ssim', '0.5',
+                             receipts={'donor': DONOR, 'v2': {'render': low}})
+    assert code == 1 and rows['coast']['passed']
+    assert len(report['errors']) == 1 and report['errors'][0].startswith('capture render differs')
 
 
 def test_real_poses_file_is_well_formed():

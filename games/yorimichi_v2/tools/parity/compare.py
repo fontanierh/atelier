@@ -10,8 +10,10 @@ it measures the mean absolute difference of the RGB values (MAD, 0..1) and the s
 (donor left, V2 right) and OUT/<pose>_diff.png (the absolute difference, amplified by --gain).
 
 It fails closed: a pose missing from a folder or captured at another size, a PNG that is not an expected pose, a
-missing or unreadable receipt, a receipt made from another poses file (sha256), receipts of different capture sizes
-and a donor receipt whose source is "v2" all fail. Exit 0 only when none of these happen and every pose has
+missing or unreadable receipt, a receipt lacking a required field (schema, source, revision, map, size, warmup,
+poses_sha256, poses, captured_utc, engine_version, render) or holding one of the wrong type, a receipt made from another
+poses file, a capture whose real size is not its receipt's, receipts of different capture sizes or render settings
+(renderer and quality), and a source other than "donor-runtime" for the donor or "v2" for V2 all fail. Exit 0 only when none of these happen and every pose has
 SSIM >= --min-ssim and, when given, MAD <= --max-mad.
 
 The donor baseline must come from a real initialized donor scene (the running game). The donor island's scenery is
@@ -115,20 +117,60 @@ def read_receipt(folder):
     return receipt if isinstance(receipt, dict) else None
 
 
+SOURCES = {'donor': 'donor-runtime', 'v2': 'v2'}   # the only capture source each side accepts
+
+
+def receipt_errors(side, r, names, poses_sha, folder):
+    """The receipt's required fields with their types, its source, its poses and the real size of each capture."""
+    def bad(field, want):
+        return f'{side}: receipt {field} must be {want}, not {r.get(field)!r}'
+    errors = []
+    rev = r.get('revision')
+    size = r.get('size')
+    render = r.get('render')
+    for ok, field, want in (
+            (r.get('schema') == 1, 'schema', '1'),
+            (r.get('source') == SOURCES[side], 'source', repr(SOURCES[side])),
+            (isinstance(rev, dict) and isinstance(rev.get('commit'), str) and len(rev['commit']) >= 7
+             and isinstance(rev.get('dirty'), bool), 'revision', '{"commit": <sha>, "dirty": <bool>}'),
+            (isinstance(r.get('map'), str) and r['map'].startswith('/'), 'map', 'a package path'),
+            (isinstance(size, list) and len(size) == 2 and all(type(v) is int and v > 0 for v in size),
+             'size', '[width, height] in pixels'),
+            (type(r.get('warmup')) is int and r['warmup'] >= 0, 'warmup', 'a count of renders'),
+            (r.get('poses_sha256') == poses_sha, 'poses_sha256', "the compared poses file's sha256"),
+            (r.get('poses') == names, 'poses', 'the poses file\'s names in order'),
+            (isinstance(r.get('captured_utc'), str) and r['captured_utc'].endswith('Z'), 'captured_utc', 'a UTC time'),
+            (isinstance(r.get('engine_version'), str) and r['engine_version'], 'engine_version', 'the engine version'),
+            (isinstance(render, dict) and isinstance(render.get('renderer'), str)
+             and isinstance(render.get('quality'), dict) and render['quality'], 'render',
+             '{"renderer": ..., "quality": {setting: value}}')):
+        if not ok:
+            errors.append(bad(field, want))
+    if not errors:
+        for name in names:
+            path = folder / f'{name}.png'
+            if path.is_file():
+                with Image.open(path) as image:
+                    if list(image.size) != size:
+                        errors.append(f'{side}: {name}.png is {image.size[0]}x{image.size[1]}, '
+                                      f'the receipt says {size[0]}x{size[1]}')
+    return errors
+
+
 def check(dirs, receipts, names, poses_sha):
-    """What fails the run whatever the metrics: stray captures, missing or mismatched receipts."""
+    """What fails the run whatever the metrics: stray captures, missing, incomplete or mismatched receipts."""
     errors = [f'{side}: unexpected capture {p.name} (not a pose in the poses file)'
               for side, d in dirs.items() for p in sorted(d.glob('*.png')) if p.stem not in names]
     for side, r in receipts.items():
         if r is None:
             errors.append(f'{side}: no readable {RECEIPT} in {dirs[side]}')
-        elif r.get('poses_sha256') != poses_sha:
-            errors.append(f'{side}: receipt poses_sha256 {r.get("poses_sha256")} is not the compared poses file\'s')
+        else:
+            errors += receipt_errors(side, r, names, poses_sha, dirs[side])
     donor, v2 = receipts['donor'], receipts['v2']
-    if donor is not None and donor.get('source') == 'v2':
-        errors.append('donor: receipt source is "v2", a V2 capture is no donor baseline')
-    if donor is not None and v2 is not None and donor.get('size') != v2.get('size'):
-        errors.append(f'capture size differs: donor receipt {donor.get("size")}, V2 receipt {v2.get("size")}')
+    if donor is not None and v2 is not None:
+        for field in ('size', 'render'):
+            if donor.get(field) != v2.get(field):
+                errors.append(f'capture {field} differs: donor receipt {donor.get(field)}, V2 receipt {v2.get(field)}')
     return errors
 
 
@@ -149,7 +191,7 @@ def main(argv=None) -> int:
         return 2
     dirs = {'donor': args.donor, 'v2': args.v2}
     receipts = {side: read_receipt(d) for side, d in dirs.items()}
-    errors = check(dirs, receipts, set(names), hashlib.sha256(args.poses.read_bytes()).hexdigest())
+    errors = check(dirs, receipts, names, hashlib.sha256(args.poses.read_bytes()).hexdigest())
     args.out.mkdir(parents=True, exist_ok=True)
     rows = [compare_pose(n, args.donor, args.v2, args.out, args.min_ssim, args.max_mad, args.gain) for n in names]
     passed = not errors and all(r['passed'] for r in rows)

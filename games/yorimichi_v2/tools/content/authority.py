@@ -208,15 +208,15 @@ def bind_created(claim: str, regions: list[str], before: dict, after: dict, what
     claimed, as for every write. The created files are added to the claim with their LFS locks (`atelier claims
     extend ID --lock-path ... --acquire`) and then checked like any claimed path, so nothing unbound is published."""
     import records
-    held = creation_claim(claim, regions, what, repo=repo)
-    by_id = {r.id: r for r in records.discover(game)[1]}
-    unknown = [r for r in regions if r not in by_id]
-    if unknown:
-        raise Unauthorized(f'{what}: no region record for {", ".join(unknown)}')
-    folders = [folder + '/' for r in regions for folder in by_id[r].actor_folders]
     changed = written(before, after)
     created = sorted(rel for rel in changed if rel not in before and rel in after)
     try:
+        held = creation_claim(claim, regions, what, repo=repo)
+        by_id = {r.id: r for r in records.discover(game)[1]}
+        unknown = [r for r in regions if r not in by_id]
+        if unknown:
+            raise Unauthorized(f'{what}: no region record for {", ".join(unknown)}')
+        folders = [folder + '/' for r in regions for folder in by_id[r].actor_folders]
         outside = [rel for rel in created if not rel.startswith(tuple(folders))]
         if outside:
             raise Unauthorized(f'{what}: created {", ".join(outside[:8])} outside the actor folders of '
@@ -240,9 +240,10 @@ def bind_created(claim: str, regions: list[str], before: dict, after: dict, what
                                    f'{claim}: {result.stderr.strip()[-300:]}')
         if paths:
             authorize(paths, claim, what, scopes=set(regions), repo=repo)
-    except Unauthorized:
+    except BaseException:
         # Created files exist before their paths can be claimed (World Partition names them at save). Unbound,
-        # they are unauthorized writes: remove every one, so a refused or failed bind leaves nothing behind.
+        # they are unauthorized writes: remove every one, so any refusal or failure (the claim service unavailable
+        # or unreadable included) leaves nothing behind. Existing files and claims are left as they were.
         for rel in created:
             (game / rel).unlink(missing_ok=True)
         raise

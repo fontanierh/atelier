@@ -37,6 +37,7 @@ class ClaimService:
 
     def __init__(self):
         self.tasks, self.extensions, self.unlocked, self.checks = {}, [], set(), []
+        self.failure = None   # 'down' (the service is unavailable) or 'garbled' (its answer does not parse)
 
     def grant(self, task, holder, scopes, paths=()):
         self.tasks[task] = {'id': len(self.tasks) + 1, 'holder': holder, 'scopes': list(scopes), 'paths': set(paths)}
@@ -50,6 +51,10 @@ class ClaimService:
     def __call__(self, command, **kwargs):
         if command[:4] != ['uv', 'run', 'atelier', 'claims']:
             return REAL_RUN(command, **kwargs)
+        if self.failure == 'down':
+            return Result(1, stderr='claim service unavailable')
+        if self.failure == 'garbled':
+            return Result(0, '<html>bad gateway</html>')
         if command[4:6] == ['task', 'show']:
             task = self.tasks.get(command[6])
             if task is None:

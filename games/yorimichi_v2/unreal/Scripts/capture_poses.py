@@ -15,7 +15,8 @@ as in open_close.py.
 
 After the last pose it writes the receipt capture.json next to the PNGs: the V2 git revision (and whether
 games/yorimichi_v2 had uncommitted changes), the map, capture size, warmup, load radius, the poses file's sha256, the
-UTC time, the engine version and `source` ("v2"; V2_CAPTURE_SOURCE may name another, e.g. "donor-runtime").
+UTC time, the engine version, the render settings (renderer and the scalability and screen-percentage values in
+QUALITY) and `source` ("v2"; V2_CAPTURE_SOURCE may name another, e.g. "donor-runtime").
 compare.py requires it on both sides.
 
 Opening an editor map does NOT instantiate the donor's runtime-spawned scenery (docs/INVENTORY.md), so this script
@@ -33,6 +34,9 @@ from pathlib import Path
 import unreal as U
 
 MARKER = 'V2 CAPTURE DONE'
+QUALITY = ('r.ScreenPercentage', 'sg.ResolutionQuality', 'sg.ViewDistanceQuality', 'sg.AntiAliasingQuality',
+           'sg.ShadowQuality', 'sg.GlobalIlluminationQuality', 'sg.ReflectionQuality', 'sg.PostProcessQuality',
+           'sg.TextureQuality', 'sg.EffectsQuality', 'sg.FoliageQuality', 'sg.ShadingQuality')
 EAS = U.get_editor_subsystem(U.EditorActorSubsystem)
 V2_ROOT = Path(__file__).resolve().parents[2]
 if not os.environ.get('V2_CAPTURE_DIR'):
@@ -123,7 +127,9 @@ receipt = {'schema': 1, 'source': os.environ.get('V2_CAPTURE_SOURCE') or 'v2', '
            'load_radius_m': load_cm / 100., 'poses_sha256': hashlib.sha256(poses_bytes).hexdigest(),
            'poses': [p['name'] for p in poses['poses']],
            'captured_utc': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-           'engine_version': U.SystemLibrary.get_engine_version()}
+           'engine_version': U.SystemLibrary.get_engine_version(),
+           'render': {'renderer': 'SceneCapture2D SCS_FINAL_COLOR_LDR',
+                      'quality': {cvar: U.SystemLibrary.get_console_variable_float_value(cvar) for cvar in QUALITY}}}
 (out / 'capture.json').write_text(json.dumps(receipt, indent=2) + '\n')
 dirty =[p.get_name() for p in U.EditorLoadingAndSavingUtils.get_dirty_map_packages() +
          U.EditorLoadingAndSavingUtils.get_dirty_content_packages()]
