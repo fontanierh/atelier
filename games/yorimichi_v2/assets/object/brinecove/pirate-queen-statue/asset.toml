@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the pirate queen statue (its hero model cut into four cells, one actor).
+# Its placement is this actor package; its model is adopted/brinecove/hero-pirate-queen-statue. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/pirate-queen-statue"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["adopted/brinecove/hero-pirate-queen-statue"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/SD/CU2BQWD5FKC36X5QDW77A8"

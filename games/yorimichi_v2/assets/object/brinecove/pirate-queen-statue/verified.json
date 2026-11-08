@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/pirate-queen-statue",
+  "dependencies": {
+    "adopted/brinecove/hero-pirate-queen-statue": "c81a5cd3557a24a99ce125bb61b9705aa01d67db0b7a43af2e32ae1c8a894abc"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/SD/CU2BQWD5FKC36X5QDW77A8.uasset": "c8b7b5c5a6d33024da4ca295fa1218bb7107e621eaa68ab4eca1884fa5671c99"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

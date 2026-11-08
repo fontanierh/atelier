@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/chiostro",
+  "dependencies": {
+    "adopted/belmonte/town-chiostro": "6826b8f215b90131924b991c94e472484d8ca109e975770f63c3a3adb5099ef3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/J3/SUXZ8N42FKSAJ4PTX4Y0LA.uasset": "61dd0f0522516d1e95d7dfaf9f2f5b119bd67dd0195f28c2187644ba827b2c1f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

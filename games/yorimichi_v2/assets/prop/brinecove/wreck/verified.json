@@ -1,0 +1,12 @@
+{
+  "asset": "prop/brinecove/wreck",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Ships_2_2.uasset": "38e4bbddc7990375e16af09896cf1fb612df6541859408d06fcdcb0279cd9962"
+  },
+  "input_fingerprint": "799e058bfb12500ea38158e03ba88d4a9e1d8cfc99acd3591539532520d51253",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): the cloister.
+# Its placement is this actor package; its model is adopted/belmonte/town-chiostro. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/chiostro"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/town-chiostro"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/5/J3/SUXZ8N42FKSAJ4PTX4Y0LA"

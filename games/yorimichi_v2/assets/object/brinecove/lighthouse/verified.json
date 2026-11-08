@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/lighthouse",
+  "dependencies": {
+    "adopted/brinecove/lighthouse": "f15ba96ca13a0c6f5e552ef0cce1fef936dc7c66d9d29187eb99e28de69b59fd"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/LA/POEO7KWQN58EJ5I092WTHN.uasset": "68dd45891f2c627f89cafff14589c85bca6bc3b38e658c3464a87fd3d5aabe10"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

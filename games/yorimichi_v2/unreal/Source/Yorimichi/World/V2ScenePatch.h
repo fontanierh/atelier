@@ -25,14 +25,14 @@ public:
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
     /** The region record that owns this actor (games/yorimichi_v2/world/regions/<id>). */
-    UPROPERTY(VisibleAnywhere, Category = "V2") FName Region;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") FName Region;
     /** The world.json instance key (or SkyDome, Sea) whose instances this patch holds. */
-    UPROPERTY(VisibleAnywhere, Category = "V2") FString SourceKey;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") FString SourceKey;
     /** Stable identity: hash of region, key, mesh, role and patch cell, so a rerun finds it instead of duplicating it. */
-    UPROPERTY(VisibleAnywhere, Category = "V2") FString V2Id;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") FString V2Id;
     /** What the migration saved here, one "mesh|tags|instances" entry per component, sorted. A saved patch whose
      *  components no longer match (a child deleted or swapped in the editor) fails the world's readiness. */
-    UPROPERTY(VisibleAnywhere, Category = "V2") TArray<FString> ExpectedMembers;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") TArray<FString> ExpectedMembers;
 
     /** This patch's members as saved now, in ExpectedMembers' form. */
     TArray<FString> Members() const;
