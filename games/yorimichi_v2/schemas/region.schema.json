@@ -50,6 +50,11 @@
         "type": "string"
       },
       "description": "shared scopes it reads (sky, sea material); reading needs no claim"
+    },
+    "patch_m": {
+      "type": "number",
+      "minimum": 1,
+      "description": "its saved scenery patch size in metres, when not the migration default (tools/migrate/run.py --patch-m)"
     }
   }
 }

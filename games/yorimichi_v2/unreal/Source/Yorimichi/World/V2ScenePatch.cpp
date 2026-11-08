@@ -80,7 +80,7 @@ bool AV2WorldManifest::CoversInstance(const FVector2D& P) const
     if (bOnlyMigrated) return true;
     for (const FBox2D& Box : MigratedBoundsCm)
         if (InsideHalfOpen(Box, P)) return true;
-    return false;
+    return bEnvironmentMigrated && !RegionBoundsCm.ContainsByPredicate([&P](const FBox2D& Box) { return InsideHalfOpen(Box, P); });
 }
 
 #if WITH_EDITOR
@@ -109,21 +109,38 @@ namespace
 #endif
 
 int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FName>& Regions, const TArray<FBox2D>& BoundsCm,
-    float PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated, int32& OutKept,
+    const TArray<FBox2D>& HeldCm, const TArray<float>& PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated, int32& OutKept,
     FString& Error)
 {
     OutCreated.Reset(); OutKept = 0;
 #if WITH_EDITOR
     UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
     if (!World || World->IsGameWorld()) { Error = TEXT("needs the editor world"); return -1; }
-    if (Regions.Num() != BoundsCm.Num() || PatchCm < 100.f) { Error = TEXT("needs one bounds box per region and a patch of 1 m or more"); return -1; }
+    if (Regions.Num() != BoundsCm.Num() || PatchCm.Num() != Regions.Num() + 1 || PatchCm.ContainsByPredicate([](float P) { return P < 100.f; }))
+    {
+        Error = TEXT("needs one bounds box per region and a patch size of 1 m or more per region and for the environment");
+        return -1;
+    }
     for (int32 R = 0; R < Regions.Num(); ++R)
         if (Regions[R].IsNone() || !BoundsCm[R].bIsValid) { Error = TEXT("a region needs an ID and valid bounds"); return -1; }
     if (!Services.IsEmpty() && ServicesRegion.IsNone()) { Error = TEXT("services need ServicesRegion"); return -1; }
+    for (const FBox2D& Box : HeldCm)
+        if (!Box.bIsValid) { Error = TEXT("a held region needs valid bounds"); return -1; }
 
     int32 Floating = 0;
     TMap<FString, AV2ScenePatch*> Existing;
-    for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
+    // A region's group (key and mesh) already saved under other IDs means another patch size: the run would copy that
+    // scenery a second time, so it stops before anything is saved. A key's mesh not saved before (newly migrated) is new.
+    TSet<FString> SavedGroups;
+    for (TActorIterator<AV2ScenePatch> It(World); It; ++It)
+    {
+        Existing.Add(It->V2Id, *It);
+        TArray<UStaticMeshComponent*> Parts;
+        It->GetComponents(Parts);
+        for (const UStaticMeshComponent* C : Parts)
+            if (C->GetStaticMesh()) SavedGroups.Add(It->Region.ToString() + TEXT("|") + It->SourceKey + TEXT("|") + C->GetStaticMesh()->GetPathName());
+    }
+    int32 Duplicates = 0;
 
     FActorSpawnParameters Spawn;
     Spawn.ObjectFlags = RF_Transient;
@@ -144,9 +161,17 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
     // A mesh still compiling has no collision yet: the ground trace below needs this map's ground finished.
     FStaticMeshCompilingManager::Get().FinishAllCompilation();
 
-    auto Patch = [&](FName RegionId, const FString& Key, const FString& Role, const FVector& Centre, const FString& Id) -> AV2ScenePatch*
+    auto Patch = [&](FName RegionId, const FString& Key, const FString& Mesh, const FString& Role, const FVector& Centre,
+        const FString& Id) -> AV2ScenePatch*
     {
         if (Existing.Contains(Id)) { ++OutKept; return nullptr; }
+        if (SavedGroups.Contains(RegionId.ToString() + TEXT("|") + Key + TEXT("|") + Mesh))
+        {
+            if (Duplicates++ < 10)
+                UE_LOG(LogTemp, Warning, TEXT("V2 MIGRATION duplicate %s %s %s %s at (%.0f, %.0f)"), *RegionId.ToString(), *Key,
+                    *Mesh, *Role, Centre.X, Centre.Y);
+            return nullptr;
+        }
         FActorSpawnParameters Params;
         Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
         AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Centre, FRotator::ZeroRotator, Params);
@@ -173,27 +198,41 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
         // the same trace here, against this map's saved ground.
         const bool bTraceGround = bBackdrop && Group->GetStaticMesh()->GetName().StartsWith(TEXT("Tree"));
         const FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(V2BackdropGround), true);
-        for (int32 R = 0; R < Regions.Num(); ++R)
+        // Regions[R] takes what its box holds; the last pass (ServicesRegion, the environment) takes what no box of
+        // the map's regions holds, migrated in this run or not, as the island's cells (an open-water piece such as
+        // the harbour's HD_Sea).
+        for (int32 R = 0; R <= Regions.Num(); ++R)
         {
+        const bool bEnvironment = R == Regions.Num();
+        if (bEnvironment && ServicesRegion.IsNone()) break;
+        const FName Owner = bEnvironment ? ServicesRegion : Regions[R];
+        const float Size = PatchCm[R];   // the region's saved grid: a map migrated in parts may hold more than one size
+        auto Holds = [&](const FVector2D& P)
+        {
+            if (!bEnvironment) return AV2WorldManifest::InsideHalfOpen(BoundsCm[R], P);
+            for (const FBox2D& Box : BoundsCm) if (AV2WorldManifest::InsideHalfOpen(Box, P)) return false;
+            for (const FBox2D& Box : HeldCm) if (AV2WorldManifest::InsideHalfOpen(Box, P)) return false;
+            return true;
+        };
         TMap<FIntPoint, TArray<FTransform>> Cells;
         for (int32 I = 0; I < Group->GetInstanceCount(); ++I)
         {
             FTransform X;
             Group->GetInstanceTransform(I, X, true);
             const FVector2D P = AV2WorldManifest::OwnerPoint(X, Group->GetStaticMesh());
-            if (!AV2WorldManifest::InsideHalfOpen(BoundsCm[R], P)) continue;
+            if (!Holds(P)) continue;
             FHitResult Hit;
             if (bTraceGround && !World->LineTraceSingleByChannel(Hit, X.GetLocation() + FVector(0, 0, 300),
                     X.GetLocation() - FVector(0, 0, 400), ECC_Visibility, GroundQuery)) { ++Floating; continue; }
-            Cells.FindOrAdd(FIntPoint(FMath::FloorToInt(P.X / PatchCm), FMath::FloorToInt(P.Y / PatchCm))).Add(X);
+            Cells.FindOrAdd(FIntPoint(FMath::FloorToInt(P.X / Size), FMath::FloorToInt(P.Y / Size))).Add(X);
         }
         Cells.KeySort([](const FIntPoint& A, const FIntPoint& B) { return A.X != B.X ? A.X < B.X : A.Y < B.Y; });
         for (const auto& Cell : Cells)
         {
-            const FString Id = StableId({Regions[R].ToString(), Key ? *Key : Mesh, Mesh, Role,
+            const FString Id = StableId({Owner.ToString(), Key ? *Key : Mesh, Mesh, Role,
                 FString::FromInt(Cell.Key.X), FString::FromInt(Cell.Key.Y)});
-            const FVector Centre((Cell.Key.X + .5) * PatchCm, (Cell.Key.Y + .5) * PatchCm, 0.0);
-            AV2ScenePatch* Made = Patch(Regions[R], Key ? *Key : Mesh, Role, Centre, Id);
+            const FVector Centre((Cell.Key.X + .5) * Size, (Cell.Key.Y + .5) * Size, 0.0);
+            AV2ScenePatch* Made = Patch(Owner, Key ? *Key : Mesh, Mesh, Role, Centre, Id);
             if (!Made) continue;
             auto Fill = [&](const UHierarchicalInstancedStaticMeshComponent* From, const TArray<FName>& Roles)
             {
@@ -217,8 +256,8 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
     auto Whole = [&](UStaticMeshComponent* From, const FString& Key, FName Role)
     {
         if (!From) return;
-        AV2ScenePatch* Made = Patch(ServicesRegion, Key, TEXT("whole"), FVector::ZeroVector,
-            StableId({TEXT("world"), Key, From->GetStaticMesh() ? From->GetStaticMesh()->GetPathName() : FString()}));
+        const FString Mesh = From->GetStaticMesh() ? From->GetStaticMesh()->GetPathName() : FString();
+        AV2ScenePatch* Made = Patch(ServicesRegion, Key, Mesh, TEXT("whole"), FVector::ZeroVector, StableId({TEXT("world"), Key, Mesh}));
         if (!Made) return;
         UStaticMeshComponent* C = CopyInto(Made, From);
         C->SetWorldTransform(From->GetComponentTransform());
@@ -248,7 +287,7 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
         FName Owner = ServicesRegion;
         for (int32 R = 0; R < Regions.Num(); ++R)
             if (AV2WorldManifest::InsideHalfOpen(BoundsCm[R], FVector2D(Park->GetActorLocation()))) Owner = Regions[R];
-        if (AV2ScenePatch* Made = Patch(Owner, TEXT("SkatePark"), TEXT("scenery"), Park->GetActorLocation(),
+        if (AV2ScenePatch* Made = Patch(Owner, TEXT("SkatePark"), FString(), TEXT("scenery"), Park->GetActorLocation(),
                 StableId({TEXT("skatepark"), Owner.ToString()})))
         {
             Made->SetActorRotation(Park->GetActorRotation());
@@ -264,6 +303,14 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
         Park->Destroy();
     }
     Source->Destroy();
+    if (Duplicates)
+    {
+        for (AActor* Made : OutCreated) Made->Destroy();
+        OutCreated.Reset();
+        Error = FString::Printf(TEXT("%d patch(es) would copy scenery its region already saved under other IDs: is the "
+            "region's patch size its saved one (region.toml patch_m, else run.py --patch-m)? Nothing was kept"), Duplicates);
+        return -1;
+    }
     for (AActor* Made : OutCreated)
     {
         AV2ScenePatch* Saved = CastChecked<AV2ScenePatch>(Made);

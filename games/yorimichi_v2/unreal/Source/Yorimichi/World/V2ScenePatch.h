@@ -49,6 +49,10 @@ class YORIMICHI_API AV2WorldManifest : public AInfo
 public:
     /** Unreal cm, half-open [Min, Max): world.json instances placed inside are saved patches, not spawned. */
     UPROPERTY(EditAnywhere, Category = "V2") TArray<FBox2D> MigratedBoundsCm;
+    /** The environment region saved every instance no region box of the map holds (an open-water piece such as
+     *  HD_Sea): those are saved patches too. RegionBoundsCm are the map's region boxes at that migration. */
+    UPROPERTY(EditAnywhere, Category = "V2") bool bEnvironmentMigrated = false;
+    UPROPERTY(EditAnywhere, Category = "V2") TArray<FBox2D> RegionBoundsCm;
     /** A slice or test map: no runtime instance scenery anywhere, and of the region services only RuntimeServices. */
     UPROPERTY(EditAnywhere, Category = "V2") bool bOnlyMigrated = false;
     /** Pieces saved in this map instead of spawned: SkyDome, Sea, SkatePark.Scenery (the pier's meshes and trees;
@@ -79,12 +83,13 @@ class YORIMICHI_API UV2Migration : public UBlueprintFunctionLibrary
 public:
     /** Builds the world once as AJapanWorld::Load does (in a transient, migration-mode AJapanWorld) and moves every
      *  instance group's instances inside each region's bounds (Regions[i] owns BoundsCm[i], half-open) into
-     *  AV2ScenePatch actors, one per group and PatchCm cell, each component a copy of the one Load made. Services
+     *  AV2ScenePatch actors, one per group and PatchCm cell (one size per region, then the environment's), each component a copy of the one Load made. An instance
+     *  inside no box of BoundsCm or HeldCm (every region of the map) is ServicesRegion's, the environment's. Services
      *  (SkyDome, Sea) become whole-world patches of ServicesRegion; SkatePark.Scenery becomes one patch of the
      *  region holding the pier. Existing V2Ids are kept, not recreated. Returns
      *  the number of actors created, or -1 with Error set. */
     UFUNCTION(BlueprintCallable, Category = "V2 Migration", meta = (WorldContext = "WorldContext"))
     static int32 MigrateStaticScenery(UObject* WorldContext, const TArray<FName>& Regions, const TArray<FBox2D>& BoundsCm,
-        float PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated,
+        const TArray<FBox2D>& HeldCm, const TArray<float>& PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated,
         int32& OutKept, FString& Error);
 };

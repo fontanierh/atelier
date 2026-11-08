@@ -90,13 +90,31 @@ def test_plan_uses_record_bounds_and_one_map(tmp_path):
     region(tmp_path, 'w00', '[-1000, -1000, 1000, 1000]')
     plan = run.make_plan(tmp_path, ['region/w01'], 'region/w00', ['Sea'], True, ['SkatePark'], 32.0)
     assert plan['map'] == '/Game/V2/Maps/Slice'
-    assert plan['regions'] == [{'id': 'region/w01', 'bounds_cm': [-200.0, 0.0, -100.0, 100.0]}]
+    assert plan['regions'] == [{'id': 'region/w01', 'bounds_cm': [-200.0, 0.0, -100.0, 100.0], 'patch_m': 32.0}]
     assert plan['services'] == ['Sea'] and plan['only_migrated'] and plan['runtime_services'] == ['SkatePark']
+    assert plan['held_cm'] == [[-200.0, 0.0, -100.0, 100.0]]
+    # A region of the map this run leaves out still holds its box: the environment takes only what none holds.
+    region(tmp_path, 'w03', '[300, 300, 400, 400]')
+    held = run.make_plan(tmp_path, ['region/w01'], 'region/w00', [], False, [], 32.0)['held_cm']
+    assert held == [[-200.0, 0.0, -100.0, 100.0], [300.0, 300.0, 400.0, 400.0]]
     region(tmp_path, 'w02', '[0, 0, 100, 100]', '["/Game/V2/Maps/Other"]')
     with pytest.raises(run.MigrationError, match='one map'):
         run.make_plan(tmp_path, ['region/w01', 'region/w02'], 'region/w00', [], False, [], 32.0)
     with pytest.raises(run.MigrationError, match='no region record'):
         run.make_plan(tmp_path, ['region/w09'], 'region/w00', [], False, [], 32.0)
+
+
+def test_plan_keeps_each_regions_saved_patch_size(tmp_path):
+    region(tmp_path, 'w00', '[-1000, -1000, 1000, 1000]')
+    region(tmp_path, 'w01', '[-200, 0, -100, 100]')
+    path = tmp_path / 'world/regions/w01/region.toml'
+    path.write_text(path.read_text() + 'patch_m = 32\n')
+    region(tmp_path, 'w03', '[300, 300, 400, 400]')
+    plan = run.make_plan(tmp_path, ['region/w01', 'region/w03'], 'region/w00', [], False, [], 128.0)
+    assert [r['patch_m'] for r in plan['regions']] == [32.0, 128.0] and plan['patch_m'] == 128.0
+    path.write_text(path.read_text().replace('patch_m = 32', 'patch_m = 0'))
+    with pytest.raises(run.records.RecordError):
+        run.make_plan(tmp_path, ['region/w01'], 'region/w00', [], False, [], 128.0)
 
 
 def test_plan_refuses_overlapping_regions_of_one_map(tmp_path):
@@ -140,3 +158,19 @@ def test_repeated_service_flags_keep_every_name(monkeypatch):
     assert run.main(['region/w01-start', '--environment', 'region/w00-island', '--services', 'SkyDome', '--services',
                      'Sea', '--only-migrated', '--runtime-service', 'Village', '--runtime-service', 'Ferry', 'Gulls']) == 0
     assert seen == {'services': ['SkyDome', 'Sea'], 'runtime': ['Village', 'Ferry', 'Gulls']}
+
+
+def test_slice_saves_the_harbour_sea_once_as_the_environments():
+    """HD_Sea is open water outside every region box: only the environment pass saves it (review #31114, the far
+    view had no harbour sea). Exactly one roster lists it, the environment's, with its package committed."""
+    regions = ROOT / 'world' / 'regions'
+    owners = {}
+    for path in sorted(regions.glob('*/patches.json')):
+        roster = json.loads(path.read_text())
+        for patch in roster['patches'].values():
+            if patch['key'] == 'HD_Sea':
+                owners.setdefault(roster['region'], []).append(patch['package'])
+    assert list(owners) == ['region/w00-island'] and len(owners['region/w00-island']) == 1, owners
+    package = owners['region/w00-island'][0]
+    assert (ROOT / package).is_file()
+    assert package in json.loads((regions / 'w00-island' / 'actors.verified.json').read_text())['files']
