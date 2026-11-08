@@ -78,8 +78,9 @@ def _shared_editor(command):
     return (args.count('-run=pythonscript') == 1
             and sum(arg.startswith('-run=') for arg in args) == 1
             and '-nullrhi' in args and '-unattended' in args
-            and not any(arg in ('-game', '-server', '-allowcommandletrendering', '-renderoffscreen')
-                        for arg in args))
+            and not any(arg.lstrip('-/') in ('game', 'server', 'allowcommandletrendering',
+                                             'renderoffscreen', 'runascookcommandlet')
+                        or (not arg.startswith('-') and arg.endswith('commandlet')) for arg in args))
 
 
 def validate_session_profile(admission, *, kind, command, limit_gib):
