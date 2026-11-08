@@ -303,12 +303,16 @@ class UnrealScript:
     def prepared(self, ctx):
         """(argv, environment) for one run. With modules, the guard runs the script in an editor started on a
         descriptor that exists until the run ends (atelier.unreal_modules.descriptor)."""
+        # Non-rendering authoring consumes the already compiled editor. UE otherwise starts
+        # UBT's all-platform SDK discovery (and its shared mutex) at every launch. This is
+        # UE's supported authoring-only opt-out; actual compile/cook commands keep SDK checks.
+        env = (*self.env, ('UE_SKIP_UBT_SDK_SETUP', '1')) if self.null_rhi else self.env
         if not self.modules:
-            yield self.prepared_argv(self._argv(ctx, ctx.uproject, self.script)), self.env
+            yield self.prepared_argv(self._argv(ctx, ctx.uproject, self.script)), env
             return
         from .unreal_modules import descriptor
         with descriptor(ctx.uproject, self.modules) as (project, left_out):
-            yield self.prepared_argv(self._argv(ctx, project, GUARD)), (*self.env, ('ATELIER_SCRIPT', str(self.script)),
+            yield self.prepared_argv(self._argv(ctx, project, GUARD)), (*env, ('ATELIER_SCRIPT', str(self.script)),
                                                     ('ATELIER_LEFT_OUT', json.dumps(left_out)))
 
     def _argv(self, ctx, project, script):

@@ -61,3 +61,22 @@ def test_later_nondefault_batch_member_is_rejected_before_selection_or_execution
     later = replace(first, name='later', commands=[replace(first.commands[0], memory_gib=24)])
     with pytest.raises(ValueError, match='without batching'):
         build.check_modules([first, later])
+
+
+@pytest.mark.parametrize('headless', [False, True])
+@pytest.mark.parametrize('modules', [(), ('Tools',)])
+def test_only_non_rendering_authoring_skips_sdk_discovery(tmp_path, monkeypatch, headless, modules):
+    from contextlib import contextmanager
+    from atelier import unreal_modules
+    @contextmanager
+    def descriptor(project, selected):
+        yield project, []
+    monkeypatch.setattr(unreal_modules, 'descriptor', descriptor)
+    ctx = SimpleNamespace(uproject=tmp_path / 'Fixture.uproject', unreal_cmd=Path('UnrealEditor-Cmd'))
+    command = build.UnrealScript(Path('import.py'), 'DONE', null_rhi=headless, modules=modules,
+                                env=(('AUTHORING_INPUT', 'keep'),))
+    with command.prepared(ctx) as (argv, env):
+        assert dict(env)['AUTHORING_INPUT'] == 'keep'
+        assert (dict(env).get('UE_SKIP_UBT_SDK_SETUP') == '1') is headless
+        assert ('-NullRHI' in argv) is headless
+    assert command.env == (('AUTHORING_INPUT', 'keep'),)

@@ -279,8 +279,12 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   Increase only after same-input timing and output checks show a useful gain. The launcher charges the
   actual worker count. Memory reservations cover both guard ceilings: normally 10 GiB, or an automatic
   4 GiB Blender envelope backed by valid prior peak evidence. Never understate resources to fit a free budget.
-  Compile, UAT, imports, games and unclassified commands currently reserve the managed CPU pool with
-  performance exclusion. Three compiler workers do not cap all engine threads; lowering a reservation alone
+  Literal unattended NullRHI Python editor commandlets may share capacity: each reserves half the managed
+  CPU pool and its full memory ceiling, with a separate checkout and disjoint package claims. This is a
+  scheduling share, not a thread cap. Use V2 `tools/editor/session.py JOBS.json --headless` only for object
+  batches; captures and arbitrary scripts use rendered sessions. Compile, UAT, rendered editors, games
+  and unclassified commands reserve the managed CPU pool with performance exclusion.
+  Three compiler workers do not cap all engine threads; lowering a reservation alone
   does not throttle a tool or remove exclusion. Use the capacity guide for measurements and profile changes.
 - Merge and run `uv sync` only after the checkout's native child and its enclosing caller have stopped at a
   boundary where neither can start another child. Preserve generated files and caches. Agents must not edit

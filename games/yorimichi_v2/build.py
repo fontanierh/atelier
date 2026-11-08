@@ -93,7 +93,8 @@ def import_steps():
         name = records.import_step(asset.id)
         if any(step.name == name for step in found):
             raise RuntimeError(f'{asset.id}: its import step {name} is another asset\'s too; rename one of them')
-        found.append(Step(name, [Call(f'authorize {name}', _authorize_import), UnrealScript(script, 'V2 IMPORT DONE'),
+        found.append(Step(name, [Call(f'authorize {name}', _authorize_import),
+                                 UnrealScript(script, 'V2 IMPORT DONE', null_rhi=asset.kind == 'static-mesh'),
                                  ran(name)],
                           inputs=[script], after=['unreal.compile'], heavy=True, explicit=True,
                           verify=lambda name=name: name in RAN,
@@ -196,7 +197,11 @@ SESSION_BEFORE = {}
 
 
 def _session_script():
-    script = UnrealScript(UNREAL / 'Scripts/job_queue.py', 'V2 JOBS DONE')
+    import json
+    import os
+    folder = os.environ.get('V2_JOBS')
+    headless = bool(folder) and json.loads((Path(folder) / 'session.json').read_text()).get('headless') is True
+    script = UnrealScript(UNREAL / 'Scripts/job_queue.py', 'V2 JOBS DONE', null_rhi=headless)
     script.timeout = 4 * 3600   # the guard ends a session, a hung job included, after this
     return script
 

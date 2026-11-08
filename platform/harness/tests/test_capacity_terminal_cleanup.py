@@ -70,6 +70,61 @@ def test_any_live_retained_identity_blocks_terminal_release(terminal):
     assert not broker._settle_exited(record)
 
 
+@pytest.mark.parametrize('bad', [None, 'controller', 'missing-late', 'unresolved', 'scan-failed',
+    'nonempty', 'missing-root-exit', 'live-tail', 'stopped', 'wrong-owner', 'wrong-limit', 'stale'])
+def test_shared_editor_releases_only_its_bound_normal_empty_tree(terminal, bad):
+    broker, record, path, receipt = terminal
+    broker.mode = 'capacity'
+    record['request'].update(shared_editor=True, phase='job')
+    receipt.update(controller=record['principal'], late_reporters=dict(
+        adopted=[], unresolved=[], unresolved_pids=[], scan_failed=False))
+    if bad == 'controller': receipt['controller'] = [1, 2]
+    elif bad == 'missing-late': del receipt['late_reporters']
+    elif bad == 'unresolved': receipt['late_reporters']['unresolved_pids'] = [200]
+    elif bad == 'scan-failed': receipt['late_reporters']['scan_failed'] = True
+    elif bad == 'nonempty': receipt.update(processes=[{'pid': 1}], footprint_bytes=1)
+    elif bad == 'missing-root-exit': record['exited'] = record['exited'][1:]
+    elif bad == 'live-tail': broker.alive = lambda pin: pin == tuple(record['roster'][-1])
+    elif bad == 'stopped': receipt['state'] = 'controller_exited'
+    elif bad == 'wrong-owner': receipt['owner_started'] += 1
+    elif bad == 'wrong-limit': receipt['limit_bytes'] += 1
+    elif bad == 'stale': receipt['time'] = 1
+    path.write_text(json.dumps(receipt))
+    assert broker._settle_exited(record) is (bad is None)
+    if bad is None:
+        assert record['release_witness']['kind'] == 'shared-editor-exit'
+        assert len(record['exited']) == 32 and record['ancestry_unknown']
+        assert broker._check_completion(record)['terminal']
+    else:
+        assert record['state'] == 'uncertain'
+
+
+def test_refresh_releases_finished_editor_without_releasing_live_peer(terminal):
+    import copy
+    broker, finished, path, receipt = terminal
+    broker.mode, broker.activation_id, broker.compatible = 'capacity', 'fixture', True
+    broker._compatibility_proof = lambda: {'activation_id': 'fixture'}
+    broker._watches, broker.lease_seconds = {}, 30
+    broker._guard_health = lambda record: None
+    now = time.monotonic()
+    finished['request'].update(shared_editor=True, phase='job')
+    receipt.update(controller=finished['principal'], late_reporters=dict(
+        adopted=[], unresolved=[], unresolved_pids=[], scan_failed=False))
+    path.write_text(json.dumps(receipt))
+    peer = copy.deepcopy(finished)
+    peer.update(state='running', child=[200, 2000], principal=[199, 1990], roster=[[200, 2000]],
+                exited=[], ancestry_unknown=False, heartbeat=now, nonce='peer')
+    peer['request'].update(id='peer', locks=['checkout:peer'],
+                           resources=asdict(Resources(memory_mib=10240, cpu_millis=5000)))
+    before = copy.deepcopy(peer)
+    broker.started = lambda pid: pid * 10
+    broker.alive = lambda pin: pin in ((199, 1990), (200, 2000))
+    state = {'records': {'done': finished, 'peer': peer}}
+    broker._refresh(state, now)
+    assert finished['state'] == 'released'
+    assert peer == before  # Its grant, memory/CPU charge, checkout lock and live identities remain exact.
+
+
 def stopped_receipt(record, receipt, reason):
     footprint = record['limit_bytes'] + 1 if reason == 'memory_limit' else 77
     return receipt | dict(state=reason, footprint_bytes=footprint, peak_bytes=footprint,

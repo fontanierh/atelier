@@ -68,17 +68,41 @@ def _worker_profile(command):
     return workers[0]
 
 
+def _shared_editor(command):
+    """Recognize a non-rendering Python commandlet, not a wrapper or a worker-count cap."""
+    if not command or Path(command[0]).name.lower() not in ('unrealeditor-cmd', 'unrealeditor-cmd.exe'):
+        return False
+    args = [str(arg).lower() for arg in command[1:]]
+    # Conflicting run modes must never receive a shared allowance. Keep argument parsing
+    # deliberately narrower than Unreal's: uncertain commands retain exclusive admission.
+    return (args.count('-run=pythonscript') == 1
+            and sum(arg.lstrip('-/').startswith('run=') for arg in args) == 1
+            and '-nullrhi' in args and '-unattended' in args
+            and not any(arg.lstrip('-/') in ('game', 'server', 'allowcommandletrendering',
+                                             'renderoffscreen', 'runascookcommandlet')
+                        or (not arg.startswith('-') and arg.endswith('commandlet')) for arg in args))
+
+
 def validate_session_profile(admission, *, kind, command, limit_gib):
     """@cc [owner:fontanierh,label:safety] explicit-capacity-command-envelope
     Explicit full sessions MUST cover the actual unchanged command workers and guard ceiling,
     claim the actual checkout lock, and reserve CPU. I/O reservations MAY be zero unless a calibrated
     workload needs them; explicit nonzero I/O reservations MUST still fit the configured budget.
-    Unknown commands, games and compiles MUST remain exclusive; an explicit session MUST NOT bypass
-    configured-launch profile rules.
+    Unknown commands, games and compiles MUST remain exclusive. A shared editor MUST be a literal
+    unattended NullRHI Python commandlet in full mode, reserve at least half the managed CPU pool,
+    and MUST NOT claim bounded workers. This share limits concurrency, not native thread usage.
+    An explicit session MUST NOT bypass configured-launch profile rules.
     """
     from atelier.harness import capacity_protocol as wire
     request = admission.request
     workers = _worker_profile(command)
+    shared_editor = request.get('shared_editor', False)
+    if type(shared_editor) is not bool:
+        raise ValueError('shared_editor must be a boolean')
+    if shared_editor and (getattr(admission, 'mode', None) != 'capacity' or kind != 'job'
+                          or not _shared_editor(command) or request.get('performance') is not False
+                          or request.get('workers') is not None):
+        raise ValueError('Shared editor requires a nonexclusive full-mode NullRHI Python commandlet without workers')
     resources = wire.resources(request.get('resources'))
     if (request.get('checkout') != str(REPO) or 'checkout:' + str(REPO) not in request.get('locks', [])):
         raise ValueError('Full-capacity session must hold the actual checkout named lock')
@@ -86,7 +110,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
         raise ValueError('Full-capacity session must reserve CPU capacity')
     if request.get('phase') != kind:
         raise ValueError('Full-capacity session phase differs from the actual launch kind')
-    if request.get('performance') is not True and (kind in ('game', 'compile') or workers is None):
+    if request.get('performance') is not True and (kind in ('game', 'compile') or (workers is None and not shared_editor)):
         raise ValueError('Full-capacity games, compiles and unknown commands require exclusive admission')
     maintenance = getattr(admission, 'mode', None) == 'sealed-maintenance'
     if maintenance:
@@ -99,8 +123,10 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
             raise ValueError('Unknown commands cannot declare bounded Blender workers')
         from atelier.harness import capacity_compat
         proof = proof if maintenance else capacity_compat.verify(admission.cutover)
-        if resources.cpu_millis < proof['total']['cpu_millis'] - proof['reserve']['cpu_millis']:
-            raise ValueError('Unknown commands must reserve the complete managed CPU budget')
+        budget = proof['total']['cpu_millis'] - proof['reserve']['cpu_millis']
+        if resources.cpu_millis < ((budget + 1) // 2 if shared_editor else budget):
+            raise ValueError('Shared editors must reserve half the managed CPU budget' if shared_editor else
+                             'Unknown commands must reserve the complete managed CPU budget')
     if workers is not None:
         declared = request.get('workers')
         if type(declared) is not int or declared < workers or resources.cpu_millis < declared * 1000:
@@ -134,7 +160,11 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     An explicit cook compile ceiling MAY grow only its full-mode reservation, with finite 10–24 GiB
     selection equal to the actual guard limit and a profile already covering the default 10 GiB.
     An explicit script job ceiling MAY likewise grow only its full-mode reservation, matching
-    the finite 10–24 GiB guard limit, with the complete managed CPU budget and exclusion. It
+    the finite 10–24 GiB guard limit. Literal unattended NullRHI Python commandlets MAY share
+    full-mode capacity with half the managed CPU pool per editor, without declaring worker limits.
+    Their entire guard ceiling and checkout lock MUST still be reserved. This scheduling share
+    MUST NOT change native threading. Explicit performance windows, maintenance, other Unreal
+    commands and wrappers MUST keep complete CPU reservation and exclusion. An explicit script ceiling
     MUST NOT select a bounded Blender worker envelope or change configured profiles.
     Other compile requests and legacy/maintenance profiles MUST retain their configured reservation.
     """
@@ -220,13 +250,17 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
             resources = replace(resources, memory_mib=math.ceil(selected * 1024))
     if kind == 'job' and workers is not None:
         resources = replace(resources, cpu_millis=workers * 1000)
+    shared_editor = full and kind == 'job' and not performance and _shared_editor(command)
     if full or maintenance:
-        exclusive = maintenance or performance or kind in ('game', 'compile') or workers is None
+        exclusive = maintenance or performance or kind in ('game', 'compile') or (workers is None and not shared_editor)
         budget = proof['total']['cpu_millis'] - proof['reserve']['cpu_millis']
         floor = budget if maintenance or workers is None else workers * 1000
         if kind == 'compile':
             floor = max(floor, 3000)  # Existing UBT/compiler tuning remains three workers.
-        resources = replace(resources, cpu_millis=budget if maintenance else max(resources.cpu_millis, floor))
+        # A calibrated host may expose more CPU than the original sealed budget.
+        # Its installed whole-pool profile covers that; the broker also checks its live budget.
+        resources = replace(resources, cpu_millis=(max(resources.cpu_millis, budget) + 1) // 2 if shared_editor else
+                            budget if maintenance else max(resources.cpu_millis, floor))
         performance = exclusive
     locks = profile['locks']
     if (not isinstance(locks, list) or any(not isinstance(lock, str) or not lock for lock in locks)
@@ -242,6 +276,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
                    seconds=math.ceil(timeout) if timeout > 0 else 300, performance=performance)
     if (full or maintenance) and workers is not None:
         request['workers'] = workers
+    if shared_editor:
+        request['shared_editor'] = True
     options = {'cutover': value['cutover'], 'guard_limit_gib': guard_limit_gib} if full or maintenance else {}
     if maintenance:
         options.update(mode='sealed-maintenance', seal_policy_sha256=value['seal_policy_sha256'])

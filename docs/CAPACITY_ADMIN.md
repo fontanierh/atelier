@@ -8,6 +8,27 @@ Use only the installed configuration and an explicitly authorized maintenance wi
 callers and retained reservations before service changes; never change a running job's source or guards.
 The broker and guards remain the authority in every mode. There is no automatic fallback after refusal.
 
+## Shared editor jobs
+
+The optional request field `shared_editor: true` admits a nonexclusive `job` with no `workers`
+claim and at least half the broker's live managed CPU budget, rounded up. The common launcher
+sets it only for a literal unattended NullRHI Python commandlet. This limits concurrency to two
+editors, rather than pretending to cap Unreal's threads. Memory, pressure, named-lock, guard and
+fairness checks remain unchanged. A shared editor may release after its root positively exits and
+its exact bound aggregate guard reports `child_exited`, empty cleanup and no unresolved late
+reporters. The controller, time and memory ceiling must match; a live retained process refuses
+release. This witnesses the monitored job's cleanup without inventing missing historical exits.
+Other jobs and guard-stop receipts keep their existing rules. A nonzero or canceled native result
+stays failed; resource release does not certify its output.
+Legacy and maintenance modes reject this allowance. Existing clients keep their old behavior,
+and older brokers reject the new field before granting work.
+
+Deploy through the existing supervised service at a coordinated boundary with no charged grants
+and stopped callers, preserving the database, sealed compatibility files and installed resource
+profiles. Do not restart the broker under active editors. Verify normal exits and cancellation
+of one editor while its peer completes before enabling a production pair. Use separate checkouts
+and disjoint claims, including companion manifests; keep shared-manifest work in one warm queue.
+
 ## Compatibility failures
 
 A failed compatibility proof stops admission and makes held grants uncertain. Preserve the failed
@@ -300,8 +321,9 @@ as an empty pool. Offline planner advice must never appear as a live grant. Slot
 
 ## Full capacity cutover
 
-**Current overlap eligibility is limited to literal Blender commands with explicit unchanged worker counts.**
-Editors, games, compiles, performance windows and unknown commands stay exclusive. These conservative profiles
+**Overlap is supported for literal Blender commands with explicit unchanged worker counts and shared editor jobs.**
+Rendered editors, games, compiles, performance windows and unknown commands stay exclusive. Non-rendering
+Python commandlets have the explicit shared-editor allowance described above. These conservative profiles
 are not calibrated or learned by phase/input scale; richer estimation and throughput measurements remain follow-up work.
 
 Schema 1 bridge configuration remains usable without a reboot and retains exclusive legacy lanes. Full mode
