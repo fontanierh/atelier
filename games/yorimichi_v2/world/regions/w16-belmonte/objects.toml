@@ -1,0 +1,125 @@
+# Belmonte objects a person edits on their own (tools/migrate/objects.py). Each object lists the runtime groups that
+# hold it alone (one placement each); `model` is its unit in assets/adopted/belmonte/units.json.
+schema = 1
+tag = "belmonte"
+data = "belmonte/runtime.json"
+
+[[objects]]
+id = "object/belmonte/church"
+groups = ["SM_BM_BH_Church"]
+model = "adopted/belmonte/town-church"
+about = "the town church"
+
+[[objects]]
+id = "object/belmonte/bell-tower"
+groups = ["SM_BM_BH_BellTower"]
+model = "adopted/belmonte/town-bell-tower"
+about = "the bell tower"
+
+[[objects]]
+id = "object/belmonte/osteria"
+groups = ["SM_BM_BH_Osteria", "SM_BM_BH_OsteriaPergola", "SM_BM_BH_Osteria_Taproom"]
+model = "adopted/belmonte/town-osteria"
+about = "the osteria with its taproom and pergola"
+
+[[objects]]
+id = "object/belmonte/palazzo-comunale"
+groups = ["SM_BM_BH_PalazzoComunale"]
+model = "adopted/belmonte/town-palazzo-comunale"
+about = "the town hall"
+
+[[objects]]
+id = "object/belmonte/chiostro"
+groups = ["SM_BM_BH_Chiostro"]
+model = "adopted/belmonte/town-chiostro"
+about = "the cloister"
+
+[[objects]]
+id = "object/belmonte/forno"
+groups = ["SM_BM_BH_Forno"]
+model = "adopted/belmonte/town-forno"
+about = "the bakery"
+
+[[objects]]
+id = "object/belmonte/porta-nord"
+groups = ["SM_BM_BH_Porta_Nord"]
+model = "adopted/belmonte/town-porta-nord"
+about = "the north town gate"
+
+[[objects]]
+id = "object/belmonte/hippodrome-stand"
+groups = ["SM_BM_BHip_StandGardens", "SM_BM_BHip_StandShell_Piece2", "SM_BM_BHip_StandShell_Piece3", "SM_BM_BHip_StandTerrace", "SM_BM_BHip_Stand_Piece02", "SM_BM_BHip_Stand_Piece03", "SM_BM_BHip_Stand_Piece12", "SM_BM_BHip_Stand_Piece13", "SM_BM_BHip_Stand_Piece2", "SM_BM_BHip_Stand_Piece3"]
+model = "adopted/belmonte/hippodrome-stand"
+about = "the grandstand: sliced shell, gardens and terrace"
+
+[[objects]]
+id = "object/belmonte/hippodrome-salon"
+groups = ["SM_BM_BHip_Salon", "SM_BM_BHip_SalonGrounds", "SM_BM_BHip_SalonHall"]
+model = "adopted/belmonte/hippodrome-salon"
+about = "the Salon des paris with its grounds and hall"
+
+[[objects]]
+id = "object/belmonte/hippodrome-second-stand"
+groups = ["SM_BM_BHip_SecondStand"]
+model = "adopted/belmonte/hippodrome-second-stand"
+about = "the second stand"
+
+[[objects]]
+id = "object/belmonte/hippodrome-stables"
+groups = ["SM_BM_BHip_StableYard", "SM_BM_BHip_Stables_Piece0", "SM_BM_BHip_Stables_Piece1", "SM_BM_BHip_Stables_Piece2", "SM_BM_BHip_Stables_Piece3"]
+model = "adopted/belmonte/hippodrome-stables"
+about = "the racecourse stables and yard"
+
+[[objects]]
+id = "object/belmonte/hippodrome-starting-stalls"
+groups = ["SM_BM_BHip_StartingStalls"]
+model = "adopted/belmonte/hippodrome-starting-stalls"
+about = "the starting stalls"
+
+[[objects]]
+id = "object/belmonte/hippodrome-members-bar"
+groups = ["SM_BM_BHip_MembersBar"]
+model = "adopted/belmonte/hippodrome-members-bar"
+about = "the members bar"
+
+[[objects]]
+id = "object/belmonte/estate-0"
+groups = ["SM_BM_BE_0_Accent", "SM_BM_BE_0_Grounds", "SM_BM_BE_0_Stables", "SM_BM_BE_0_Villa"]
+model = "adopted/belmonte/estate-0"
+about = "estate 0: villa, stables, grounds and accent"
+
+[[objects]]
+id = "object/belmonte/estate-1"
+groups = ["SM_BM_BE_1_Accent", "SM_BM_BE_1_Grounds", "SM_BM_BE_1_Stables", "SM_BM_BE_1_Villa"]
+model = "adopted/belmonte/estate-1"
+about = "estate 1: villa, stables, grounds and accent"
+
+[[objects]]
+id = "object/belmonte/estate-2"
+groups = ["SM_BM_BE_2_Accent", "SM_BM_BE_2_Grounds", "SM_BM_BE_2_Stables", "SM_BM_BE_2_Villa"]
+model = "adopted/belmonte/estate-2"
+about = "estate 2: villa, stables, grounds and accent"
+
+[[objects]]
+id = "object/belmonte/estate-3"
+groups = ["SM_BM_BE_3_Accent", "SM_BM_BE_3_Grounds", "SM_BM_BE_3_Stables", "SM_BM_BE_3_Villa"]
+model = "adopted/belmonte/estate-3"
+about = "estate 3: villa, stables, grounds and accent"
+
+[[objects]]
+id = "object/belmonte/estate-4"
+groups = ["SM_BM_BE_4_Accent", "SM_BM_BE_4_Grounds", "SM_BM_BE_4_Stables_Piece1", "SM_BM_BE_4_Stables_Piece2", "SM_BM_BE_4_Stables_Piece3", "SM_BM_BE_4_Villa"]
+model = "adopted/belmonte/estate-4"
+about = "estate 4: villa, stables, grounds and accent"
+
+[[objects]]
+id = "object/belmonte/estate-5"
+groups = ["SM_BM_BE_5_Accent", "SM_BM_BE_5_Grounds", "SM_BM_BE_5_Stables", "SM_BM_BE_5_Villa"]
+model = "adopted/belmonte/estate-5"
+about = "estate 5: villa, stables, grounds and accent"
+
+[[objects]]
+id = "object/belmonte/estate-6"
+groups = ["SM_BM_BE_6_Accent", "SM_BM_BE_6_Grounds", "SM_BM_BE_6_Stables", "SM_BM_BE_6_Villa"]
+model = "adopted/belmonte/estate-6"
+about = "estate 6: villa, stables, grounds and accent"
