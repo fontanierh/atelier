@@ -21,7 +21,7 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
-#include "UObject/PackageName.h"
+#include "Misc/PackageName.h"
 #include "V2ScenePatch.h"
 
 ASuperUltraMegaPark::ASuperUltraMegaPark()
