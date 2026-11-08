@@ -1,0 +1,125 @@
+{
+  "objects": {
+    "object/start/house-a-01": {
+      "groups": [],
+      "id": "object/start/house-a-01",
+      "model": "adopted/japan/assets/house",
+      "models": [
+        "adopted/japan/assets/house"
+      ],
+      "split": {
+        "at": [
+          -195.74,
+          -108.22
+        ],
+        "key": "House_A"
+      }
+    },
+    "object/start/lantern-01": {
+      "groups": [],
+      "id": "object/start/lantern-01",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -193.83,
+          -99.49
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/start/lantern-02": {
+      "groups": [],
+      "id": "object/start/lantern-02",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -157.28,
+          -73.43
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/start/pole-01": {
+      "groups": [],
+      "id": "object/start/pole-01",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -223.95,
+          -94.99
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/start/pole-02": {
+      "groups": [],
+      "id": "object/start/pole-02",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -195.49,
+          -87.99
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/start/pole-03": {
+      "groups": [],
+      "id": "object/start/pole-03",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -137.68,
+          -71.46
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/start/pole-lamp-01": {
+      "groups": [],
+      "id": "object/start/pole-lamp-01",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -252.94,
+          -95.37
+        ],
+        "key": "Pole_Lamp"
+      }
+    },
+    "object/start/pole-lamp-02": {
+      "groups": [],
+      "id": "object/start/pole-lamp-02",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -166.51,
+          -79.65
+        ],
+        "key": "Pole_Lamp"
+      }
+    }
+  },
+  "schema": 1
+}

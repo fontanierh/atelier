@@ -93,6 +93,25 @@ def test_an_object_gets_its_own_record_and_its_region_never_takes_its_actor(game
     assert (game / 'assets/object/cove/wreck/asset.toml').read_text() == record
 
 
+def test_a_saved_object_whose_definition_changed_is_refused_on_rerun(game):
+    """A rerun keeps the saved actor as it is, so an entry moved into it since (or any other membership change) must
+    fail instead of being listed without its geometry (CONTRACTS yorimichi-v2-targeted-authoring)."""
+    objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=editor(game), out=game / 'out',
+                    echo=lambda *_: None)
+    saved = json.loads((game / 'world/regions/w09-cove/objects.saved.json').read_text())
+    assert saved == {'schema': 1, 'objects': {'object/cove/wreck': {
+        'id': 'object/cove/wreck', 'groups': ['SM_BC_Ships_2_2'], 'model': 'adopted/cove/wreck',
+        'models': ['adopted/cove/wreck']}}}
+    toml = game / 'world/regions/w09-cove/objects.toml'
+    toml.write_text(toml.read_text().replace('about = "the broken hull on the western rocks"', 'about = "reworded"'))
+    objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=editor(game, created=False),
+                    out=game / 'out', echo=lambda *_: None)   # a new description is no membership change
+    toml.write_text(toml.read_text().replace('group = "SM_BC_Ships_2_2"', 'groups = ["SM_BC_Ships_2_2", "SM_BC_Mast"]'))
+    with pytest.raises(objects.ObjectError, match=r'object/cove/wreck changed since it was saved \(groups\)'):
+        objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=editor(game, created=False),
+                        out=game / 'out', echo=lambda *_: None)
+
+
 def test_an_object_the_map_does_not_hold_fails(game):
     def nothing(plan_file):
         return 'V2 OBJECTS DONE created=0 kept=0\n'

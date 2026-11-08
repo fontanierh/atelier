@@ -171,6 +171,53 @@ def models(item: dict) -> list[str]:
     return [item['model']] if isinstance(item['model'], str) else list(item['model'])
 
 
+SAVED = 'objects.saved.json'   # per region: each saved object's definition when it was saved
+
+
+def definition(item: dict) -> dict:
+    """What an objects.toml entry says its object holds: everything but its description."""
+    return {k: v for k, v in item.items() if k != 'about'}
+
+
+def load_saved(region) -> dict:
+    path = region.folder / SAVED
+    return json.loads(path.read_text()).get('objects', {}) if path.is_file() else {}
+
+
+def check_saved(game: Path, by_id: dict, wanted: dict):
+    """A rerun keeps a saved object's actor as it is, so its definition must still be the one it was saved with
+    (CONTRACTS yorimichi-v2-targeted-authoring): an entry moved into it from another object, or a member it gained or
+    lost since, has no saved geometry or still has some, and the manifest would hide or spawn the wrong runtime pieces.
+    A saved object its region's objects.saved.json does not list yet (saved before the file existed) is taken as saved
+    with its current definition and listed after this run."""
+    for rid, item in wanted.values():
+        if not (game / 'assets' / item['id'] / 'asset.toml').is_file():
+            continue
+        saved, now = load_saved(by_id[rid]).get(item['id']), definition(item)
+        if saved is not None and saved != now:
+            changed = sorted(k for k in set(saved) | set(now) if saved.get(k) != now.get(k))
+            raise ObjectError(f'{item["id"]} changed since it was saved ({", ".join(changed)}): delete its actor and '
+                              'record, then rerun to save it again')
+
+
+def write_saved(game: Path, by_id: dict, wanted: dict, claim: str | None):
+    """List every saved object's definition in its region's objects.saved.json; unchanged files are not written."""
+    regions = {}
+    for rid, item in wanted.values():
+        regions.setdefault(rid, load_saved(by_id[rid]))[item['id']] = definition(item)
+    due = {}
+    for rid, listed in regions.items():
+        path = by_id[rid].folder / SAVED
+        text = json.dumps({'schema': 1, 'objects': listed}, indent=2, sort_keys=True) + '\n'
+        if not path.is_file() or path.read_text() != text:
+            due[path] = text
+    if due:
+        authority.authorize(sorted(f'games/yorimichi_v2/{p.relative_to(game).as_posix()}' for p in due), claim,
+                            f'{len(due)} saved-object list(s)', scopes=set(regions))
+    for path, text in due.items():
+        path.write_text(text)
+
+
 def record_text(item: dict, region: str, package) -> str:
     """The record of a saved object: one actor package, or a list of them (the cell patches of one building)."""
     packages = [package] if isinstance(package, str) else list(package)
@@ -197,6 +244,7 @@ def claim_paths(game: Path, region_ids: list[str], *, only=None) -> dict[str, li
         patches = json.loads(roster.read_text()).get('patches', {}) if roster.is_file() else {}
         lock |= {f'games/yorimichi_v2/{e["package"]}' for e in patches.values() if e['key'] in keys}
         path |= {f'games/yorimichi_v2/assets/{i["id"]}/{name}' for i in items for name in ('asset.toml', 'verified.json')}
+        path.add(f'games/yorimichi_v2/{by_id[rid].folder.relative_to(game).as_posix()}/{SAVED}')
     return {'lock': sorted(lock), 'path': sorted(path)}
 
 
@@ -413,6 +461,7 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
             props.append(prop_plan(rid, listed['tag'], listed['data'], prop_items, game))
         for item in listed['objects']:
             wanted[saved_key(listed['tag'], item)] = (rid, item)
+    check_saved(game, by_id, wanted)
     unit_objects = bool(parks or hippodromes or statics or trees or props or any(routes.values()))
     if (groups or unit_objects) and not environment:
         raise ObjectError('--environment is needed to save runtime-group, park, hippodrome, tree, prop, static and '
@@ -440,6 +489,7 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     created = sorted(set(authority.content_snapshot(game)) - set(before))
     made = record_objects(game, [(rid, item, saved[key]) for key, (rid, item) in sorted(wanted.items())], claim,
                           echo=echo)
+    write_saved(game, by_id, wanted, claim)
     if groups or unit_objects:
         save_validate.validate(game, environment, claim=claim, echo=echo)   # the manifest lists the saved groups and pieces
     for split in splits:   # its area patches gave up the split objects' instances
