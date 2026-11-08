@@ -69,3 +69,114 @@ id = "object/lake/trunks"
 patch = "e6a7418330631a7c"
 model = "adopted/japan/assets/treehouse"
 about = "the tree house trunks"
+
+# Split entries: each takes one placed instance (source metres, within 50 cm) out of the area patches.
+# Source data: unreal/Content/Data/treehouse/runtime.json (TH_P_*) and unreal/Content/Data/world.json (others).
+[[objects]]
+id = "object/lake/th-p-backpack-01"
+split = {key = "TH_P_backpack", at = [-147.156, 184.087]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_backpack 1 of 3 in w06-lake-treehouse, placed at (-147.156, 184.087) m"
+
+[[objects]]
+id = "object/lake/th-p-backpack-02"
+split = {key = "TH_P_backpack", at = [-129.283, 199.67]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_backpack 2 of 3 in w06-lake-treehouse, placed at (-129.283, 199.67) m"
+
+[[objects]]
+id = "object/lake/th-p-backpack-03"
+split = {key = "TH_P_backpack", at = [-124.591, 167.723]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_backpack 3 of 3 in w06-lake-treehouse, placed at (-124.591, 167.723) m"
+
+[[objects]]
+id = "object/lake/th-p-bell-01"
+split = {key = "TH_P_bell", at = [-147.637, 138.531]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bell 1 of 2 in w06-lake-treehouse, placed at (-147.637, 138.531) m"
+
+[[objects]]
+id = "object/lake/th-p-bell-02"
+split = {key = "TH_P_bell", at = [-123.01, 160.311]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bell 2 of 2 in w06-lake-treehouse, placed at (-123.01, 160.311) m"
+
+[[objects]]
+id = "object/lake/th-p-bookshelf-01"
+split = {key = "TH_P_bookshelf", at = [-146.215, 184.987]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bookshelf 1 of 6 in w06-lake-treehouse, placed at (-146.215, 184.987) m"
+
+[[objects]]
+id = "object/lake/th-p-bookshelf-02"
+split = {key = "TH_P_bookshelf", at = [-145.582, 185.683]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bookshelf 2 of 6 in w06-lake-treehouse, placed at (-145.582, 185.683) m"
+
+[[objects]]
+id = "object/lake/th-p-bookshelf-03"
+split = {key = "TH_P_bookshelf", at = [-144.829, 186.511]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bookshelf 3 of 6 in w06-lake-treehouse, placed at (-144.829, 186.511) m"
+
+[[objects]]
+id = "object/lake/th-p-bookshelf-04"
+split = {key = "TH_P_bookshelf", at = [-144.196, 187.206]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bookshelf 4 of 6 in w06-lake-treehouse, placed at (-144.196, 187.206) m"
+
+[[objects]]
+id = "object/lake/th-p-bookshelf-05"
+split = {key = "TH_P_bookshelf", at = [-123.453, 167.589]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bookshelf 5 of 6 in w06-lake-treehouse, placed at (-123.453, 167.589) m"
+
+[[objects]]
+id = "object/lake/th-p-bookshelf-06"
+split = {key = "TH_P_bookshelf", at = [-122.651, 166.992]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_bookshelf 6 of 6 in w06-lake-treehouse, placed at (-122.651, 166.992) m"
+
+[[objects]]
+id = "object/lake/th-p-futon-01"
+split = {key = "TH_P_futon", at = [-162.242, 172.289]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_futon 1 of 3 in w06-lake-treehouse, placed at (-162.242, 172.289) m"
+
+[[objects]]
+id = "object/lake/th-p-futon-02"
+split = {key = "TH_P_futon", at = [-162.062, 173.476]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_futon 2 of 3 in w06-lake-treehouse, placed at (-162.062, 173.476) m"
+
+[[objects]]
+id = "object/lake/th-p-futon-03"
+split = {key = "TH_P_futon", at = [-161.882, 174.662]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_futon 3 of 3 in w06-lake-treehouse, placed at (-161.882, 174.662) m"
+
+[[objects]]
+id = "object/lake/th-p-planter-01"
+split = {key = "TH_P_planter", at = [-168.45, 168.627]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_planter 1 of 4 in w06-lake-treehouse, placed at (-168.45, 168.627) m"
+
+[[objects]]
+id = "object/lake/th-p-planter-02"
+split = {key = "TH_P_planter", at = [-152.88, 186.861]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_planter 2 of 4 in w06-lake-treehouse, placed at (-152.88, 186.861) m"
+
+[[objects]]
+id = "object/lake/th-p-planter-03"
+split = {key = "TH_P_planter", at = [-133.036, 144.621]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_planter 3 of 4 in w06-lake-treehouse, placed at (-133.036, 144.621) m"
+
+[[objects]]
+id = "object/lake/th-p-planter-04"
+split = {key = "TH_P_planter", at = [-128.25, 191.4]}
+model = "adopted/japan/assets/treehouse"
+about = "TH_P_planter 4 of 4 in w06-lake-treehouse, placed at (-128.25, 191.4) m"
+

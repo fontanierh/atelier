@@ -51,3 +51,120 @@ id = "object/village/workshop"
 patch = "5a6894dee105d020"
 model = "adopted/experiments/villageatomic"
 about = "the hamlet workshop"
+
+# Split entries: each takes one placed instance (source metres, within 50 cm) out of the area patches.
+# Source data: unreal/Content/Data/world.json instances.
+[[objects]]
+id = "object/village/house-a-01"
+split = {key = "House_A", at = [26.26, -55.58]}
+model = "adopted/japan/assets/house"
+about = "House_A 1 of 1 in w02-village, placed at (26.26, -55.58) m"
+
+[[objects]]
+id = "object/village/house-c-01"
+split = {key = "House_C", at = [47.76, -19.02]}
+model = "adopted/japan/assets/house"
+about = "House_C 1 of 1 in w02-village, placed at (47.76, -19.02) m"
+
+[[objects]]
+id = "object/village/lantern-01"
+split = {key = "Lantern", at = [28.15, -46.92]}
+model = "prop/lantern"
+about = "Lantern 1 of 4 in w02-village, placed at (28.15, -46.92) m"
+
+[[objects]]
+id = "object/village/lantern-02"
+split = {key = "Lantern", at = [45.12, -27.02]}
+model = "prop/lantern"
+about = "Lantern 2 of 4 in w02-village, placed at (45.12, -27.02) m"
+
+[[objects]]
+id = "object/village/lantern-03"
+split = {key = "Lantern", at = [187.45, 82.99]}
+model = "prop/lantern"
+about = "Lantern 3 of 4 in w02-village, placed at (187.45, 82.99) m"
+
+[[objects]]
+id = "object/village/lantern-04"
+split = {key = "Lantern", at = [189.99, 77.55]}
+model = "prop/lantern"
+about = "Lantern 4 of 4 in w02-village, placed at (189.99, 77.55) m"
+
+[[objects]]
+id = "object/village/pole-01"
+split = {key = "Pole", at = [35.3, -33.01]}
+model = "adopted/japan/assets/pole"
+about = "Pole 1 of 6 in w02-village, placed at (35.3, -33.01) m"
+
+[[objects]]
+id = "object/village/pole-02"
+split = {key = "Pole", at = [64.93, -26.51]}
+model = "adopted/japan/assets/pole"
+about = "Pole 2 of 6 in w02-village, placed at (64.93, -26.51) m"
+
+[[objects]]
+id = "object/village/pole-03"
+split = {key = "Pole", at = [124.74, -21.6]}
+model = "adopted/japan/assets/pole"
+about = "Pole 3 of 6 in w02-village, placed at (124.74, -21.6) m"
+
+[[objects]]
+id = "object/village/pole-04"
+split = {key = "Pole", at = [153.21, -14.45]}
+model = "adopted/japan/assets/pole"
+about = "Pole 4 of 6 in w02-village, placed at (153.21, -14.45) m"
+
+[[objects]]
+id = "object/village/pole-05"
+split = {key = "Pole", at = [207.14, 9.04]}
+model = "adopted/japan/assets/pole"
+about = "Pole 5 of 6 in w02-village, placed at (207.14, 9.04) m"
+
+[[objects]]
+id = "object/village/pole-06"
+split = {key = "Pole", at = [232.28, 25.21]}
+model = "adopted/japan/assets/pole"
+about = "Pole 6 of 6 in w02-village, placed at (232.28, 25.21) m"
+
+[[objects]]
+id = "object/village/pole-lamp-01"
+split = {key = "Pole_Lamp", at = [6.21, -41.77]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 1 of 3 in w02-village, placed at (6.21, -41.77) m"
+
+[[objects]]
+id = "object/village/pole-lamp-02"
+split = {key = "Pole_Lamp", at = [95.38, -23.65]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 2 of 3 in w02-village, placed at (95.38, -23.65) m"
+
+[[objects]]
+id = "object/village/pole-lamp-03"
+split = {key = "Pole_Lamp", at = [180.98, -4.26]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 3 of 3 in w02-village, placed at (180.98, -4.26) m"
+
+[[objects]]
+id = "object/village/torii-01"
+split = {key = "Torii", at = [186, 79]}
+model = "adopted/japan/assets/torii"
+about = "Torii 1 of 1 in w02-village, placed at (186, 79) m"
+
+[[objects]]
+id = "object/village/village-sign-01"
+split = {key = "Village_Sign", at = [90.1, -22.4]}
+model = "adopted/experiments/villageatomic"
+about = "Village_Sign 1 of 2 in w02-village, placed at (90.1, -22.4) m"
+
+[[objects]]
+id = "object/village/village-sign-02"
+split = {key = "Village_Sign", at = [118, 106]}
+model = "adopted/experiments/villageatomic"
+about = "Village_Sign 2 of 2 in w02-village, placed at (118, 106) m"
+
+[[objects]]
+id = "object/village/village-threshold-01"
+split = {key = "Village_Threshold", at = [125.803, 107.863]}
+model = "adopted/experiments/villageatomic"
+about = "Village_Threshold 1 of 1 in w02-village, placed at (125.803, 107.863) m"
+

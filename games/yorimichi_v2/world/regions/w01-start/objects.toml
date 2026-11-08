@@ -27,3 +27,54 @@ id = "object/start/fisher-house-b"
 patch = "46158b7d1fafe6c9"
 model = "adopted/japan/southwest"
 about = "fisher house B"
+
+# Split entries: each takes one placed instance (source metres, within 50 cm) out of the area patches.
+# Source data: unreal/Content/Data/world.json instances.
+[[objects]]
+id = "object/start/house-a-01"
+split = {key = "House_A", at = [-195.74, -108.22]}
+model = "adopted/japan/assets/house"
+about = "House_A 1 of 1 in w01-start, placed at (-195.74, -108.22) m"
+
+[[objects]]
+id = "object/start/lantern-01"
+split = {key = "Lantern", at = [-193.83, -99.49]}
+model = "prop/lantern"
+about = "Lantern 1 of 2 in w01-start, placed at (-193.83, -99.49) m"
+
+[[objects]]
+id = "object/start/lantern-02"
+split = {key = "Lantern", at = [-157.28, -73.43]}
+model = "prop/lantern"
+about = "Lantern 2 of 2 in w01-start, placed at (-157.28, -73.43) m"
+
+[[objects]]
+id = "object/start/pole-01"
+split = {key = "Pole", at = [-223.95, -94.99]}
+model = "adopted/japan/assets/pole"
+about = "Pole 1 of 3 in w01-start, placed at (-223.95, -94.99) m"
+
+[[objects]]
+id = "object/start/pole-02"
+split = {key = "Pole", at = [-195.49, -87.99]}
+model = "adopted/japan/assets/pole"
+about = "Pole 2 of 3 in w01-start, placed at (-195.49, -87.99) m"
+
+[[objects]]
+id = "object/start/pole-03"
+split = {key = "Pole", at = [-137.68, -71.46]}
+model = "adopted/japan/assets/pole"
+about = "Pole 3 of 3 in w01-start, placed at (-137.68, -71.46) m"
+
+[[objects]]
+id = "object/start/pole-lamp-01"
+split = {key = "Pole_Lamp", at = [-252.94, -95.37]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 1 of 2 in w01-start, placed at (-252.94, -95.37) m"
+
+[[objects]]
+id = "object/start/pole-lamp-02"
+split = {key = "Pole_Lamp", at = [-166.51, -79.65]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 2 of 2 in w01-start, placed at (-166.51, -79.65) m"
+

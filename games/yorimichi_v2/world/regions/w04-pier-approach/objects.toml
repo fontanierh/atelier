@@ -9,3 +9,42 @@ id = "object/pier/house-lot-3"
 patch = "f29af5e94a3ee4c2"
 model = "adopted/japan/assets/houselot"
 about = "the lot (grounds) of the pier-approach house"
+
+# Split entries: each takes one placed instance (source metres, within 50 cm) out of the area patches.
+# Source data: unreal/Content/Data/world.json instances.
+[[objects]]
+id = "object/pier/house-c-01"
+split = {key = "House_C", at = [-125.06, -57.36]}
+model = "adopted/japan/assets/house"
+about = "House_C 1 of 1 in w04-pier-approach, placed at (-125.06, -57.36) m"
+
+[[objects]]
+id = "object/pier/lantern-01"
+split = {key = "Lantern", at = [-127.77, -65.37]}
+model = "prop/lantern"
+about = "Lantern 1 of 1 in w04-pier-approach, placed at (-127.77, -65.37) m"
+
+[[objects]]
+id = "object/pier/pole-01"
+split = {key = "Pole", at = [-107.53, -65.42]}
+model = "adopted/japan/assets/pole"
+about = "Pole 1 of 3 in w04-pier-approach, placed at (-107.53, -65.42) m"
+
+[[objects]]
+id = "object/pier/pole-02"
+split = {key = "Pole", at = [-48.45, -65.23]}
+model = "adopted/japan/assets/pole"
+about = "Pole 2 of 3 in w04-pier-approach, placed at (-48.45, -65.23) m"
+
+[[objects]]
+id = "object/pier/pole-03"
+split = {key = "Pole", at = [-21.51, -54.39]}
+model = "adopted/japan/assets/pole"
+about = "Pole 3 of 3 in w04-pier-approach, placed at (-21.51, -54.39) m"
+
+[[objects]]
+id = "object/pier/pole-lamp-01"
+split = {key = "Pole_Lamp", at = [-76.9, -66.56]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 1 of 1 in w04-pier-approach, placed at (-76.9, -66.56) m"
+
