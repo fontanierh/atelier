@@ -43,6 +43,8 @@ def test_groups_sharing_a_mesh_are_checked_by_their_summed_instances():
     rows = {'SM_Fern': [['V2ScenePatch', 'brinecove:fern-a', 6, [0, 0, 0]],
                         ['V2ScenePatch', 'brinecove:fern-b', 5, [1, 1, 0]]]}
     assert saved_objects.check(listed, rows, expected) == {}
+    rows['SM_Fern'].append(['V2ScenePatch', 'megapark:trees/cell-x0-z0', 40, [9, 9, 0]])   # another region's own plants
+    assert saved_objects.check(listed, rows, expected) == {}
     rows['SM_Fern'].append(['BrineCoveRegion', 'BrineCoveRegion_0', 0, [0, 0, 0]])   # emptied: draws nothing
     assert saved_objects.check(listed, rows, expected) == {}
     rows['SM_Fern'][-1][2] = 11

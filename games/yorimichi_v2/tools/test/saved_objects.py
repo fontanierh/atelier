@@ -113,8 +113,11 @@ def check(listed: dict, found: dict, expected: dict[str, int]) -> dict:
                 wrong.append(f'{mesh}: the runtime file places no instance of {[k for k in keys if expected.get(k, 0) < 1]}')
             elif sum(r[2] for r in mine) != want:
                 wrong.append(f'{mesh}: {sum(r[2] for r in mine)} instance(s) drawn, {want} expected')
-            # A component with no instances draws nothing (the runtime region keeps its emptied plant groups).
-            others = [r for r in rows if r[2] and not (r[0] == 'V2ScenePatch' and r[1] in owners[mesh])]
+            # A copy is the runtime drawing it, or a second saved actor of this region. A component with no instances
+            # draws nothing (the runtime region keeps its emptied plant groups); other regions' patches draw a shared
+            # plant mesh at their own places.
+            others = [r for r in rows if r[2] and (r[0] != 'V2ScenePatch' or (
+                r[1].startswith(f'{listed["tag"]}:') and r[1] not in owners[mesh]))]
             if others:
                 wrong.append(f'{mesh}: also drawn by {", ".join(f"{r[0]} {r[1]}" for r in others[:3])}')
         if len({tuple(r[3]) for m in by_mesh for r in found.get(m, []) if r[1] == key}) > 1:

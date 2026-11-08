@@ -94,8 +94,11 @@ One slice session (profile `slice`, 22 GiB) at main 493a6f4419 plus the park cli
 | `gondola_ride.py --start hidamari belmonte floor` | passed: three lines; boarded seated, carried by the cabin with no clipping, stood off at the next station |
 | `train_ride.py` | passed: boarded at Belmonte, walked the saloon at speed, seated, passing loop and spiral, stepped off at Hidamari |
 | Park trees drawn once (Mega Park, Crater Park) | 0 visible doubles in 165,010 instances; the earlier 58,409 were each group's hidden shadow-only twin (`V2Role:ShadowTwin`) |
-| `saved_objects.py` Brine Cove | 198 of 243 matched; the other 45 are cell-piece groups (`<mesh>#<i>@<x>_<y>`) the checker read as mesh names (fixed: groups are matched by their mesh) |
-| `saved_objects.py` Belmonte | none of 289 seen after travel; rechecked with a longer settle and a probe of the pawn and loaded patches |
+| `saved_objects.py` Brine Cove (`--zone brinecove_quay`) | 243 of 243 drawn once by their saved actor with the runtime's instance counts. The first run's 45 misses were cell-piece groups (`<mesh>#<i>@<x>_<y>`) the checker read as mesh names; fixed |
+| `saved_objects.py` Belmonte | 289 of 289. The first run saw none: travel to the town square found no ground (its scenery streams in by cell), the player fell and water recovery took him to Hidamari. `TravelTo` now holds the player until the target's ground blocks (2.25 s at Belmonte, 1.00 s at the Brine Cove quay). A position probe found 0 of 55,594 saved Belmonte plant instances drawn elsewhere; shared plant meshes of other regions are not copies |
+| City tree LODs | after leaving the city and coming back: 0 `incomplete child swap` errors (1,688 before), 29 applies; the swap re-runs only for arriving tree pieces and swaps the loaded subset |
+
+Later runs at 98167295fc and 91e7554f65 (this branch).
 
 ## Ownership units (data)
 
