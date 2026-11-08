@@ -249,8 +249,12 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
         if roster.is_file():
             # Migration's roster of this region's scene patches: one deleted outright (with its record entry)
             # would otherwise leave the surviving patches to pass readiness with missing geometry.
+            # A patch that holds one object alone may have become that object's own record (objects.py --promote).
+            placed = {'unreal/Content/' + o.package[len('/Game/'):] for a in assets
+                      if a.kind == 'placement' and a.owner == region.id for o in a.outputs}
             for patch_id, patch in sorted(json.loads(roster.read_text()).get('patches', {}).items()):
-                if patch.get('package') not in record['files']:
+                if patch.get('package') not in record['files'] \
+                        and str(patch.get('package', '')).rsplit('.', 1)[0] not in placed:
                     problems.append(Problem('PATCH_MISSING', region.id,
                                             f'scene patch {patch_id} ({patch.get("key")}) is gone: {patch.get("package")}',
                                             'restore it (git checkout -- PATH && git lfs pull) or rerun the migration; '

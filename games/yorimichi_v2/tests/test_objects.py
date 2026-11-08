@@ -119,3 +119,30 @@ def test_only_names_a_subset_and_refuses_an_unknown_object(game):
     with pytest.raises(objects.ObjectError, match='not all are objects'):
         objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, only=['object/cove/mast'],
                         editor=editor(game), out=game / 'out', echo=lambda *_: None)
+
+
+def test_a_patch_object_takes_its_saved_patch_and_the_region_lets_it_go(game):
+    """A patch holding one object alone becomes that object's record; the region's verification drops it, and the
+    content check's roster accepts the patch as held by the region's object."""
+    patch_rel = 'unreal/Content/__ExternalActors__/V2/Maps/Slice/A/4O/STOREHOUSE.uasset'
+    write(game / patch_rel, b'storehouse patch')
+    village = region(game, 'w02-village', [0, 0, 1000, 1000], [patch_rel])
+    (village / 'patches.json').write_text(json.dumps({'schema': 1, 'region': 'region/w02-village', 'patches': {
+        '05ed3a01c13d434b': {'key': 'Village_Storehouse', 'package': patch_rel}}}))
+    (village / 'objects.toml').write_text(
+        'schema = 1\ntag = "village"\ndata = ""\n\n[[objects]]\nid = "object/village/storehouse"\n'
+        'patch = "05ed3a01c13d434b"\nmodel = "adopted/japan/assets"\nabout = "the storehouse"\n')
+    objects.save_validate.validate(game, 'region/w02-village', add=[patch_rel], echo=lambda *_: None)
+    assert patch_rel in records.load_verified(village / 'actors.verified.json')['files']
+    made = objects.promote(game, ['region/w02-village'], None, echo=lambda *_: None)
+    package = '/Game/__ExternalActors__/V2/Maps/Slice/A/4O/STOREHOUSE'
+    assert made == {'object/village/storehouse': package}
+    record = records.load_asset(game / 'assets/object/village/storehouse/asset.toml')
+    assert (record.kind, record.owner, [o.package for o in record.outputs]) == ('placement', 'region/w02-village', [package])
+    assert list(records.load_verified(record.verified)['files']) == [patch_rel]
+    assert patch_rel not in records.load_verified(village / 'actors.verified.json')['files']
+    assert objects.promote(game, ['region/w02-village'], None, echo=lambda *_: None) == made   # a rerun writes nothing
+    # A runtime-group migration of the same region skips its patch objects.
+    with pytest.raises(objects.ObjectError, match='not all are objects'):
+        objects.migrate(game, ['region/w02-village'], 'region/w00-island', None, only=['object/village/storehouse'],
+                        editor=editor(game), out=game / 'out', echo=lambda *_: None)

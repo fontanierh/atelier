@@ -44,8 +44,9 @@ class ObjectError(RuntimeError):
 
 
 def load_objects(region) -> dict:
-    """The region's objects.toml: {tag, data, objects: [{id, groups, model, about}]}; an object names one `group` or
-    several `groups` (a statue cut into cells), and each group belongs to one object."""
+    """The region's objects.toml: {tag, data, objects: [{id, groups, patch, model, about}]}. An object names one
+    runtime `group` or several `groups` (a statue cut into cells), each group belonging to one object; or the `patch`
+    (its V2Id in the region's patches.json) the migration already saved holding it alone, which it takes over."""
     path = region.folder / 'objects.toml'
     if not path.is_file():
         raise ObjectError(f'{region.id} has no objects.toml')
@@ -54,12 +55,15 @@ def load_objects(region) -> dict:
         raise ObjectError(f'{path}: needs schema = {records.SCHEMA}, tag and data')
     objects = data.get('objects', [])
     for item in objects:
-        keys = set(item) - {'group', 'groups'}
-        if keys != {'id', 'model', 'about'} or ('group' in item) == ('groups' in item) or not records.ID.match(item['id']) \
-                or not item['id'].startswith('object/'):
-            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", group or groups, model and about, '
-                              f'not {item}')
-        item['groups'] = [item.pop('group')] if 'group' in item else list(item['groups'])
+        keys = set(item) - {'group', 'groups', 'patch'}
+        if keys != {'id', 'model', 'about'} or len({'group', 'groups', 'patch'} & set(item)) != 1 \
+                or not records.ID.match(item['id']) or not item['id'].startswith('object/'):
+            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", one of group, groups or patch, model '
+                              f'and about, not {item}')
+        item['groups'] = [item.pop('group')] if 'group' in item else list(item.get('groups', []))
+    for values in ([i['patch'] for i in objects if 'patch' in i],):
+        if len(values) != len(set(values)):
+            raise ObjectError(f'{path}: a patch is listed twice')
     for values in ([i['id'] for i in objects], [i['id'].rsplit('/', 1)[1] for i in objects],
                    [g for i in objects for g in i['groups']]):
         if len(values) != len(set(values)):
@@ -95,7 +99,7 @@ def migrate(game: Path, region_ids: list[str], environment: str, claim: str | No
     by_id = {r.id: r for r in regions}
     missing = [r for r in region_ids + [environment] if r not in by_id]
     if only is not None and not set(only) <= {i['id'] for r in region_ids if r in by_id
-                                              for i in load_objects(by_id[r])['objects']}:
+                                              for i in load_objects(by_id[r])['objects'] if i['groups']}:
         raise ObjectError(f'{sorted(only)}: not all are objects of {region_ids}')
     if missing:
         raise ObjectError(f'no region record for {missing}')
@@ -105,10 +109,11 @@ def migrate(game: Path, region_ids: list[str], environment: str, claim: str | No
     wanted, groups = {}, []
     for rid in region_ids:
         listed = load_objects(by_id[rid])
+        listed['objects'] = [item for item in listed['objects'] if item['groups']]   # patch objects: promote()
         if only is not None:
             listed['objects'] = [item for item in listed['objects'] if item['id'] in set(only)]
-            if not listed['objects']:
-                continue
+        if not listed['objects']:
+            continue
         pairs = [(g, item['id'].rsplit('/', 1)[1]) for item in listed['objects'] for g in item['groups']]
         groups.append({'region': rid, 'tag': listed['tag'], 'data': listed['data'],
                        'meshes': [g for g, _ in pairs], 'objects': [o for _, o in pairs]})
@@ -153,15 +158,63 @@ def migrate(game: Path, region_ids: list[str], environment: str, claim: str | No
     return made
 
 
+def promote(game: Path, region_ids: list[str], claim: str | None, *, only=None, echo=print) -> dict[str, str]:
+    """Give each `patch` object of the regions its own record: the actor package the migration saved holding that
+    object alone (patches.json) leaves its region's verification for the object's. Nothing is opened or saved in the
+    editor; the package bytes stay as they are. Returns {object id: actor package}."""
+    _, regions = records.discover(game)
+    by_id = {r.id: r for r in regions}
+    missing = [r for r in region_ids if r not in by_id]
+    if missing:
+        raise ObjectError(f'no region record for {missing}')
+    made = {}
+    for rid in region_ids:
+        region = by_id[rid]
+        items = [i for i in load_objects(region)['objects'] if 'patch' in i and (only is None or i['id'] in set(only))]
+        if not items:
+            continue
+        roster = region.folder / 'patches.json'
+        patches = json.loads(roster.read_text()).get('patches', {}) if roster.is_file() else {}
+        for item in items:
+            entry = patches.get(item['patch'])
+            if entry is None:
+                raise ObjectError(f'{item["id"]}: patch {item["patch"]} is not in {rid}\'s patches.json')
+            rel = entry['package']
+            if not rel.startswith('unreal/Content/') or not (game / rel).is_file():
+                raise ObjectError(f'{item["id"]}: its patch package {rel} is missing')
+            package = '/Game/' + rel[len('unreal/Content/'):].rsplit('.', 1)[0]
+            record = game / 'assets' / item['id'] / 'asset.toml'
+            text = record_text(item, rid, package)
+            if not record.is_file() or record.read_text() != text:
+                authority.authorize([f'games/yorimichi_v2/{record.relative_to(game).as_posix()}'], claim,
+                                    f'object record {item["id"]}', scopes={rid})
+                record.parent.mkdir(parents=True, exist_ok=True)
+                record.write_text(text)
+            save_validate.validate(game, item['id'], claim=claim, echo=echo)
+            made[item['id']] = package
+        save_validate.validate(game, rid, claim=claim, echo=echo)   # the region's verification drops them
+    if only is not None and set(only) - set(made):
+        raise ObjectError(f'{sorted(set(only) - set(made))}: no patch object of {region_ids}')
+    echo(f'{len(made)} object(s) promoted: ' + ', '.join(sorted(made)))
+    return made
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('regions', nargs='+', help='region IDs whose objects.toml to save')
-    parser.add_argument('--environment', required=True, help="the region owning the map's manifest")
+    parser.add_argument('--environment', help="the region owning the map's manifest (runtime-group objects)")
+    parser.add_argument('--promote', action='store_true',
+                        help='record the `patch` objects (no editor): their saved patches become their own records')
     parser.add_argument('--claim', help='claims task holding the regions and the environment')
     parser.add_argument('--only', action='append', help='only this object ID (repeatable)')
     args = parser.parse_args(argv)
     try:
-        migrate(GAME, args.regions, args.environment, args.claim, only=args.only)
+        if args.promote:
+            promote(GAME, args.regions, args.claim, only=args.only)
+        elif not args.environment:
+            raise ObjectError('--environment is needed to migrate runtime-group objects')
+        else:
+            migrate(GAME, args.regions, args.environment, args.claim, only=args.only)
     except (ObjectError, authority.Unauthorized, save_validate.ValidationError, records.RecordError) as error:
         print(f'object migration failed: {error}', file=sys.stderr)
         return 1

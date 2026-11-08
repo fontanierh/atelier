@@ -83,7 +83,10 @@ def region_files(game: Path, region, others: dict[str, str], add: list[str], rem
         for folder in map_actor_dirs(game, map_package):
             if folder.is_dir():
                 candidates.update(records.content_relative(game, p) for p in folder.rglob('*.uasset'))
-    members = {rel for rel in current if (game / rel).is_file()}
+    # A member an asset record now owns (an object promoted from its patch, objects.py) leaves the region: the record's
+    # outputs are explicit ownership. Another region's claim on a member stays an error below.
+    members = {rel for rel in current if (game / rel).is_file()
+               and not (rel in others and not others[rel].startswith('region/'))}
     for rel in sorted(candidates - members):
         if rel in others:
             continue
