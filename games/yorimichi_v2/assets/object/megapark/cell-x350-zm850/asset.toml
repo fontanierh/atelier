@@ -1,0 +1,12 @@
+# One saved object of region/w11-megapark (tools/migrate/objects.py, from its objects.toml): the Mega Park section at stream cell (350, -850).
+# Its placement is this actor package; its model is adopted/megapark/cell-x350-zm850. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/megapark/cell-x350-zm850"
+kind = "placement"
+authority = "editor"
+owner = "region/w11-megapark"
+references = ["adopted/megapark/cell-x350-zm850"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/01/YLJIIXPHT3LTUGKSVZBBFO"

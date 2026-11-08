@@ -1,0 +1,12 @@
+# One saved object of region/w12-craterpark (tools/migrate/objects.py, from its objects.toml): the Crater Park piece p312 (into-the-orange-last-section).
+# Its placement is this actor package; its model is adopted/craterpark/p312-into-the-orange-last-section. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/craterpark/p312-into-the-orange-last-section"
+kind = "placement"
+authority = "editor"
+owner = "region/w12-craterpark"
+references = ["adopted/craterpark/p312-into-the-orange-last-section"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/A/V7/M4LNPLFI4QG25THM0G02B8"

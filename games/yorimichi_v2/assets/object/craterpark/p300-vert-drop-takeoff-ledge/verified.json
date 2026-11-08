@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p300-vert-drop-takeoff-ledge",
+  "dependencies": {
+    "adopted/craterpark/p300-vert-drop-takeoff-ledge": "fa6a536f4fe52a58e5089b4c8b07b37ad41049a13ce1c01f1e601c066f4ce62e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/YY/ICPMRBXZXQA2ETJCZ2C3VY.uasset": "01ec8cf72a8c5fbd8582d4cf984f7bac312a84dd2068ca022d9055697675054e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p38-w4",
+  "dependencies": {
+    "adopted/craterpark/p38-w4": "e44e19a392c2839afe5286765724d6e029c70113e54b99e3ea7c8312a7c7c740"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/G9/X53VW1VGVB2ECKHBM1L76W.uasset": "0878f7f29674a3e2281274d26e794d470caaebe40ccef137a0482f30df968353"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

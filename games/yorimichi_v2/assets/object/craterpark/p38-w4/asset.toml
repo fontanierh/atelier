@@ -1,0 +1,12 @@
+# One saved object of region/w12-craterpark (tools/migrate/objects.py, from its objects.toml): the Crater Park piece p38 (w4).
+# Its placement is this actor package; its model is adopted/craterpark/p38-w4. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/craterpark/p38-w4"
+kind = "placement"
+authority = "editor"
+owner = "region/w12-craterpark"
+references = ["adopted/craterpark/p38-w4"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/G9/X53VW1VGVB2ECKHBM1L76W"

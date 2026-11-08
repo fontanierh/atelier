@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p42-gap-25-m-g6",
+  "dependencies": {
+    "adopted/craterpark/p42-gap-25-m-g6": "504af8cb0f355f1e719dcbfb48663a447b37d7f5196d3080659f911597f2781b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/HS/9H6HWWLUBARVQ4ATU33HQF.uasset": "44b7fe6e433e8f0d2201abd6a0a16e1783279cf57783e42e8558a1e601ab3ed7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

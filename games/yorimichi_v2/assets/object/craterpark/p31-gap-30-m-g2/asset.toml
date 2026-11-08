@@ -1,0 +1,12 @@
+# One saved object of region/w12-craterpark (tools/migrate/objects.py, from its objects.toml): the Crater Park piece p31 (gap-30-m-g2).
+# Its placement is this actor package; its model is adopted/craterpark/p31-gap-30-m-g2. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/craterpark/p31-gap-30-m-g2"
+kind = "placement"
+authority = "editor"
+owner = "region/w12-craterpark"
+references = ["adopted/craterpark/p31-gap-30-m-g2"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/CN/F8Y1MKDL8BTGO1Z5TZEF3D"

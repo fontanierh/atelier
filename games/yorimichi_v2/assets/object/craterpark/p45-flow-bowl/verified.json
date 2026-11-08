@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p45-flow-bowl",
+  "dependencies": {
+    "adopted/craterpark/p45-flow-bowl": "176ddf4f81ae494b8fa5dbc3c8046250784badcadb4c9f7263a4135c9fc4ea9d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/ZW/91W17X3932GG5VMFI20F4E.uasset": "a7e38c7223ed856e1033bfc472f6cc8db4f46cce101cd0e078b4460e762e81ed"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

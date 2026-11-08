@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p50-t-approach",
+  "dependencies": {
+    "adopted/craterpark/p50-t-approach": "a6611074d8ae1f907da015f0ef93e62c2a6c9f8279a8c328bfde80ba6dd0a4a8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/YF/3QM5AAU086V7W5WM90BN3O.uasset": "06b8b16636f96ef5738c87f38ef547068a25b51be7bfd7f715a1d6cc21adad7f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

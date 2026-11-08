@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p320-step-down-18-m-sd",
+  "dependencies": {
+    "adopted/craterpark/p320-step-down-18-m-sd": "2088ba093469ba5d995dac06e0a8b891815385bee2deadc598fa5ff8a031b903"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/V0/ZXPGXA1OZ3SZ8Z9S6I7K01.uasset": "2847fb8837af6fe2bae8767b8e2479b7fa6ad0315f98e44bd1f43dbf90a4f07c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

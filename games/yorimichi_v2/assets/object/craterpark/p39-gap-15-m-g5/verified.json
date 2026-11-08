@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p39-gap-15-m-g5",
+  "dependencies": {
+    "adopted/craterpark/p39-gap-15-m-g5": "b25056fa38320cd10b1b298d3db2c4458d20efb5bd235a8508ed26c61f8ee370"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/M4/89MAFKR0XM6VF2BGNVLK7K.uasset": "bd0a56d49b596e91a88426a54299fea77aa2cd1ced451a1213fff2668e9e3195"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

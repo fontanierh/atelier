@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p185-c2-run-out",
+  "dependencies": {
+    "adopted/craterpark/p185-c2-run-out": "66114ce23534aa49ab65179cbe4ef0178c242d70278d0f9be71b3e74f509b204"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/RD/PT6SJ4D6EONI5LTYWKLRYS.uasset": "dffbb48d6382e722f4855d089c28537c058e9f2edce7db22cb7378a398a1b631"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

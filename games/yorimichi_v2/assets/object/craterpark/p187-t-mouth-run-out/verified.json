@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p187-t-mouth-run-out",
+  "dependencies": {
+    "adopted/craterpark/p187-t-mouth-run-out": "b03aa927ebb1234eee77ecf223945fe94af878d0c968c548807d116e3b2ff4ba"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/17/NORFPQY2319MKJY16TYC5L.uasset": "0d0e5b18fce5debc3581dfcd77fd47c0b65e5e8f584186c30dbb236eba4cbd13"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
