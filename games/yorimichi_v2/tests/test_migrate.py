@@ -158,3 +158,19 @@ def test_repeated_service_flags_keep_every_name(monkeypatch):
     assert run.main(['region/w01-start', '--environment', 'region/w00-island', '--services', 'SkyDome', '--services',
                      'Sea', '--only-migrated', '--runtime-service', 'Village', '--runtime-service', 'Ferry', 'Gulls']) == 0
     assert seen == {'services': ['SkyDome', 'Sea'], 'runtime': ['Village', 'Ferry', 'Gulls']}
+
+
+def test_slice_saves_the_harbour_sea_once_as_the_environments():
+    """HD_Sea is open water outside every region box: only the environment pass saves it (review #31114, the far
+    view had no harbour sea). Exactly one roster lists it, the environment's, with its package committed."""
+    regions = ROOT / 'world' / 'regions'
+    owners = {}
+    for path in sorted(regions.glob('*/patches.json')):
+        roster = json.loads(path.read_text())
+        for patch in roster['patches'].values():
+            if patch['key'] == 'HD_Sea':
+                owners.setdefault(roster['region'], []).append(patch['package'])
+    assert list(owners) == ['region/w00-island'] and len(owners['region/w00-island']) == 1, owners
+    package = owners['region/w00-island'][0]
+    assert (ROOT / package).is_file()
+    assert package in json.loads((regions / 'w00-island' / 'actors.verified.json').read_text())['files']

@@ -18,6 +18,15 @@ bool FV2ManifestCoverageTest::RunTest(const FString&)
     TestFalse(TEXT("Max edge is outside"), Manifest->CoversInstance(FVector2D(0, 100)));
     TestFalse(TEXT("Max Y edge is outside"), Manifest->CoversInstance(FVector2D(-20000, 12800)));
     TestFalse(TEXT("Elsewhere"), Manifest->CoversInstance(FVector2D(5000, 5000)));
+    // The environment saved what no region box of the map holds (the harbour's HD_Sea): the runtime spawns it never,
+    // and still spawns what a region box not yet migrated holds.
+    Manifest->bEnvironmentMigrated = true;
+    Manifest->RegionBoundsCm = Manifest->MigratedBoundsCm;
+    Manifest->RegionBoundsCm.Add(FBox2D(FVector2D(0, 0), FVector2D(12800, 12800)));
+    TestTrue(TEXT("Open water outside every region is the environment's"), Manifest->CoversInstance(FVector2D(500000, -90000)));
+    TestFalse(TEXT("A region not migrated yet still spawns its own"), Manifest->CoversInstance(FVector2D(5000, 5000)));
+    TestTrue(TEXT("A migrated region stays covered"), Manifest->CoversInstance(FVector2D(-20000, 100)));
+    Manifest->bEnvironmentMigrated = false;
     const FBox2D First = Manifest->MigratedBoundsCm[0], Second = Manifest->MigratedBoundsCm[1];
     const FVector2D Edge(-12800, 6400);
     TestTrue(TEXT("A shared-edge point is in exactly one region"),
