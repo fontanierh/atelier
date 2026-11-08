@@ -204,9 +204,9 @@ int32 UV2MigrationParkDressing::MigrateParkProps(UObject* WorldContext, FName Re
         const FString Id = StableId({Region.ToString(), Tag.ToString(), TEXT("props/") + Unit});
         if (Existing.Contains(Id))
         {
-            TArray<FString> Keys;
-            for (const int32 I : UnitPicks[Unit]) Keys.Add(TagKey + TEXT(":") + Meshes[I]);
-            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+            TArray<FString> Requested;
+            for (const int32 I : UnitPicks[Unit]) Requested.Add(TagKey + TEXT(":") + Meshes[I]);
+            if (!Manifest->KeptUnitCovers(Unit, Requested, Error)) break;
             ++OutKept;
             continue;
         }

@@ -108,9 +108,9 @@ int32 UV2MigrationMisc::MigrateStaticMeshes(UObject* WorldContext, FName Region,
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
         if (Existing.Contains(Id))
         {
-            TArray<FString> Keys;
-            for (const FString& Mesh : Its) Keys.Add(Tag.ToString() + TEXT(":") + Mesh);
-            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+            TArray<FString> Requested;
+            for (const FString& Mesh : Its) Requested.Add(Tag.ToString() + TEXT(":") + Mesh);
+            if (!Manifest->KeptUnitCovers(Unit, Requested, Error)) break;
             ++OutKept;
             continue;
         }

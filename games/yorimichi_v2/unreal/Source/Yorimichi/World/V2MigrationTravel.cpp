@@ -67,9 +67,9 @@ namespace
             const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
             if (Existing.Contains(Id))
             {
-                TArray<FString> Keys;
-                for (const FString& Name : ByUnit[Unit]) Keys.Add(Tag.ToString() + TEXT(":") + Name);
-                if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+                TArray<FString> Requested;
+                for (const FString& Name : ByUnit[Unit]) Requested.Add(Tag.ToString() + TEXT(":") + Name);
+                if (!Manifest->KeptUnitCovers(Unit, Requested, Error)) break;
                 ++OutKept;
                 continue;
             }

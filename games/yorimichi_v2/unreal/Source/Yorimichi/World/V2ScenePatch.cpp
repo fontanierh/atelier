@@ -402,9 +402,9 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Object});
         if (Existing.Contains(Id))
         {
-            TArray<FString> Keys;
-            for (const FString& Listed : Groups[Object]) Keys.Add(Tag.ToString() + TEXT(":") + Listed);
-            if (!Manifest->KeptUnitCovers(Object, Keys, Error)) break;
+            TArray<FString> Requested;
+            for (const FString& Listed : Groups[Object]) Requested.Add(Tag.ToString() + TEXT(":") + Listed);
+            if (!Manifest->KeptUnitCovers(Object, Requested, Error)) break;
             ++OutKept;
             continue;
         }
@@ -566,9 +566,9 @@ int32 UV2Migration::MigrateParkPieces(UObject* WorldContext, FName Region, FName
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
         if (AV2ScenePatch** Kept = Existing.Find(Id))
         {
-            TArray<FString> Keys;
-            for (const int32 I : ByUnit[Unit]) Keys.Add(Tag.ToString() + TEXT(":") + Pieces[I]);
-            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+            TArray<FString> Requested;
+            for (const int32 I : ByUnit[Unit]) Requested.Add(Tag.ToString() + TEXT(":") + Pieces[I]);
+            if (!Manifest->KeptUnitCovers(Unit, Requested, Error)) break;
             ++OutKept;
             KeepOriginal(*Kept, Placement);
             continue;
@@ -675,9 +675,9 @@ int32 UV2Migration::MigrateHippodromePieces(UObject* WorldContext, FName Region,
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
         if (AV2ScenePatch** Kept = Existing.Find(Id))
         {
-            TArray<FString> Keys;
-            for (const int32 I : ByUnit[Unit]) Keys.Add(Tag.ToString() + TEXT(":") + Pieces[I]);
-            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+            TArray<FString> Requested;
+            for (const int32 I : ByUnit[Unit]) Requested.Add(Tag.ToString() + TEXT(":") + Pieces[I]);
+            if (!Manifest->KeptUnitCovers(Unit, Requested, Error)) break;
             ++OutKept;
             KeepOriginal(*Kept, FTransform(FRotator::ZeroRotator, Placement));
             continue;
