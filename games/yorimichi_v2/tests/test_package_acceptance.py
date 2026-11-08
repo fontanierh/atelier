@@ -1,5 +1,6 @@
 """The V2 package acceptance ledger and automated checks (tools/package/acceptance.py) on a fake package."""
 import importlib.util
+import json
 import plistlib
 import subprocess
 import sys
@@ -146,5 +147,14 @@ def test_unknown_item_is_refused(tmp_path, tools):
 def test_check_details_name_the_bundle_not_its_folder(tmp_path):
     """Shareable evidence carries no extraction folder or home path (CONTRACTS yorimichi-v2-portable-records)."""
     app = tmp_path / 'deep' / 'YorimichiV2.app'
-    text = f'{app}/Contents/MacOS/YorimichiV2: code object is not signed; {Path.home()}/x'
-    assert acceptance.portable(text, app) == 'YorimichiV2.app/Contents/MacOS/YorimichiV2: code object is not signed; ~/x'
+    text = (f'{app}/Contents/MacOS/YorimichiV2: code object is not signed; {Path.home()}/x; '
+            f"foreign ['/Volumes/Donor/Build/Intermediate/libfoo.dylib']")
+    assert acceptance.portable(text, app) == ('YorimichiV2.app/Contents/MacOS/YorimichiV2: code object is not signed; x; '
+                                              "foreign ['libfoo.dylib']")
+
+
+def test_recorded_evidence_carries_no_time(tmp_path, tools):
+    """The ledger is shareable evidence too: status and note only, no timestamp (yorimichi-v2-portable-records)."""
+    app, evidence = make_app(tmp_path), tmp_path / 'e.json'
+    acceptance.record(app, evidence, 'first_launch', 'pass', 'ok', reset=False)
+    assert json.loads(evidence.read_text())['items']['first_launch'] == {'status': 'pass', 'note': 'ok'}

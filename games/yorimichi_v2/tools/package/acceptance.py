@@ -19,9 +19,9 @@ import hashlib
 import json
 import os
 import plistlib
+import re
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -36,6 +36,7 @@ MULTIPLAYER = ('two_machine_multiplayer',)
 # Paths outside the app that a bundled binary may not reference: a build folder or a developer's home leaks in.
 FOREIGN_LINK_MARKERS = ('/Users/', '/Volumes/', '/private/', 'Intermediate', 'Saved/', 'Binaries/')
 SYSTEM_PREFIXES = ('/System/', '/usr/lib/', '/usr/libexec/')
+ABSOLUTE = re.compile(r"(^|[\s'\"(\[,=:])(/[^\s'\",\])]+)")
 
 
 class Check:
@@ -154,9 +155,10 @@ def check_runtime_data(app: Path, game: Path | None = None) -> list[Check]:
 
 def portable(text: str, app: Path) -> str:
     """Check details as shareable evidence records them (CONTRACTS yorimichi-v2-portable-records): the bundle by its name,
-    never the folder it was extracted to, and no home path."""
+    never the folder it was extracted to, and any other absolute path (a foreign dependency's build folder, a home
+    path) by its file name only."""
     text = text.replace(str(app.resolve()), app.name).replace(str(app), app.name)
-    return text.replace(str(Path.home()), '~')
+    return ABSOLUTE.sub(lambda m: m.group(1) + Path(m.group(2)).name, text)
 
 
 def automated(app: Path) -> list[Check]:
@@ -199,8 +201,7 @@ def record(app: Path, evidence: Path, item: str, status: str, note: str, reset: 
         raise SystemExit(f'{evidence} is bound to another package ({ledger["package"][:12]}); use --reset to start over')
     if ledger.get('package') != current:
         ledger = {'package': current, 'items': {}}
-    ledger['items'][item] = {'status': status, 'note': note,
-                             'at': datetime.now(timezone.utc).isoformat(timespec='seconds')}
+    ledger['items'][item] = {'status': status, 'note': note}
     write_ledger(evidence, ledger)
     return f'{item}: {status} recorded for package {current[:12]}'
 
