@@ -100,6 +100,7 @@ uv run python games/yorimichi_v2/tools/test/route.py --session ID --out DIR     
 uv run python games/yorimichi_v2/tools/test/train_ride.py --session ID --out DIR   # board, ride and leave the Belmonte train
 uv run python games/yorimichi_v2/tools/test/ferry_ride.py --session ID --start hidamari   # board, cross and leave the ferry
 uv run python games/yorimichi_v2/tools/test/gondola_ride.py --session ID --start hidamari belmonte floor   # ride each gondola line
+uv run python games/yorimichi_v2/tools/test/map_travel.py --session ID   # every map zone by the map's travel: ground, near, still
 uv run python games/yorimichi_v2/tools/test/budgets.py open --out DIR           # a plan §15 budget: warm-up + 5 runs, receipt
 ```
 
