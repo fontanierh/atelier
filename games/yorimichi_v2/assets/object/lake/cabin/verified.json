@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/cabin",
+  "dependencies": {
+    "adopted/japan/lake": "54822d59d0a7bebb05778e0642af6582ae32dd87c213f8583bd47e7b2f020250"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/8U/FHC2IATZ4SV49RMSCNH5RG.uasset": "c0bbedf30bdd64fd35e5f6cff338d5bddbf1ecf44ebe46fd222e33509704f6e4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/globe",
+  "dependencies": {
+    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/32/NA91EV90VHZCH361CHD877.uasset": "b1eae6d049636181d1b477f86d350f6084ae2d057d5c2743b64db2feaaf55bdf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

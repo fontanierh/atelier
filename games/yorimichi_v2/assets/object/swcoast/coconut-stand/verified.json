@@ -1,0 +1,12 @@
+{
+  "asset": "object/swcoast/coconut-stand",
+  "dependencies": {
+    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/ZP/WOXHN5HW6GKT3FO6FUOGVL.uasset": "1c87776b4df2f936c7012979b34190e381d9111b00b8db4e11cb280e9615bac0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
