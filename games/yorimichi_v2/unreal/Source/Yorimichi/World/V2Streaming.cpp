@@ -1,6 +1,7 @@
 #include "World/V2Streaming.h"
 #include "Engine/World.h"
 #include "WorldPartition/WorldPartition.h"
+#include "WorldPartition/WorldPartitionSubsystem.h"
 
 namespace
 {
@@ -77,6 +78,17 @@ float UV2Streaming::MinLoadingRange(const UObject* WorldContext)
         if (!IsHlod(Path)) Smallest = Smallest < 0. ? Read(Number, Value) : FMath::Min(Smallest, Read(Number, Value));
     });
     return Smallest < 0. ? 0.f : float(Smallest);
+}
+
+bool UV2Streaming::IsLoadedAround(const UObject* WorldContext, FVector Location, float RadiusCm)
+{
+    const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+    const UWorldPartitionSubsystem* Partition = World ? World->GetSubsystem<UWorldPartitionSubsystem>() : nullptr;
+    if (!Partition || !World->GetWorldPartition()) return true;
+    FWorldPartitionStreamingQuerySource Query(Location);
+    Query.Radius = RadiusCm;
+    Query.bUseGridLoadingRange = false;
+    return Partition->IsStreamingCompleted(EWorldPartitionRuntimeCellState::Activated, {Query}, false);
 }
 
 FString UV2Streaming::DescribeLoadingRanges(const UObject* WorldContext)

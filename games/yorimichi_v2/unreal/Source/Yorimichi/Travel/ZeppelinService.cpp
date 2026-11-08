@@ -16,6 +16,7 @@
 #include "Engine/DirectionalLight.h"
 #include "EngineUtils.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "LiveLibrary.h"
 
 static float Ease(float X) { X=FMath::Clamp(X,0.f,1.f);return X*X*(3.f-2.f*X); }
 // Ride speeds the passenger can step through in flight. 1x is the authored cruise (Woodland to Hidamari in 28 s).
@@ -99,6 +100,25 @@ bool AZeppelinService::IsPassenger(const AWandererCharacter* C) const
  return Passenger && Passenger==C;
 }
 FVector AZeppelinService::ShipPosition() const { return ShipRoot->GetComponentLocation(); }
+FString AZeppelinService::StateJson() const
+{
+ auto V=[](const FVector& P){return FString::Printf(TEXT("[%.1f,%.1f,%.1f]"),P.X,P.Y,P.Z);};
+ FString Rows;
+ for(int32 I=0;I<Stations.Num();++I)
+  Rows+=FString::Printf(TEXT("%s{\"name\":\"%s\",\"entry\":%s,\"ship\":%s}"),I?TEXT(","):TEXT(""),*Stations[I].Name,*V(Stations[I].Entry),*V(Stations[I].Ship));
+ const APlayerController* PC=GetWorld()->GetFirstPlayerController();
+ const auto* Player=PC?Cast<AWandererCharacter>(PC->GetPawn()):nullptr;
+ const auto* Move=Player?Player->GetCharacterMovement():nullptr;
+ return FString::Printf(TEXT("{\"ready\":%s,\"phase\":%d,\"dock\":%d,\"destination\":%d,\"came\":%d,\"phase_time\":%.2f,\"flight_speed\":%.2f,\"ship\":%s,\"ship_yaw\":%.1f,\"gate\":%.2f,\"stations\":[%s],\"passenger\":%s,\"player\":%s,\"mode\":%d,\"on_ground\":%s}"),
+  Ready?TEXT("true"):TEXT("false"),Phase,Dock,Destination,Came,PhaseTime,FlightSpeed,*V(ShipPosition()),ShipRoot->GetComponentRotation().Yaw,GateOpen,*Rows,
+  IsPassenger(Player)?TEXT("true"):TEXT("false"),*V(Player?Player->GetActorLocation():FVector::ZeroVector),Move?int32(Move->MovementMode.GetValue()):-1,Move&&Move->IsMovingOnGround()?TEXT("true"):TEXT("false"));
+}
+FString UZeppelinLive::ZeppelinState()
+{
+ const UWorld* World=ULiveLibrary::GameWorld();
+ for(TActorIterator<AZeppelinService> It(World);World&&It;++It)return It->StateJson();
+ return TEXT("{}");
+}
 int32 AZeppelinService::Nearby(const AWandererCharacter* C,float Radius) const
 {
  if(!C||!Ready)return INDEX_NONE;

@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
 #include "ZeppelinService.generated.h"
 class AWandererCharacter;
 class UStaticMeshComponent;
@@ -77,6 +78,8 @@ public:
  int32 GetDestination() const { return Destination; }
  const TArray<FZeppelinStation>& GetStations() const { return Stations; }
  FVector ShipPosition() const;
+ /** The live bridge's view (UZeppelinLive::ZeppelinState): phase, stops, clock, ship, gate, the stations and the player. */
+ FString StateJson() const;
 private:
  UPROPERTY(ReplicatedUsing=OnRep_NetworkState) FZeppelinNetworkState NetworkState;
  UFUNCTION() void OnRep_NetworkState();
@@ -137,4 +140,14 @@ private:
  void WalkPassenger(float Dt);
  void PlacePassenger(bool Walking,float Dt);
  int32 Nearby(const AWandererCharacter* Character,float Radius) const;
+};
+
+/** Live-bridge helpers (atelier live py) for scripted zeppelin checks; the player uses it through live.press('interact'). */
+UCLASS()
+class YORIMICHI_API UZeppelinLive : public UBlueprintFunctionLibrary
+{
+ GENERATED_BODY()
+public:
+ /** AZeppelinService::StateJson as JSON; "{}" without a zeppelin. */
+ UFUNCTION(BlueprintCallable, Category = "Live") static FString ZeppelinState();
 };

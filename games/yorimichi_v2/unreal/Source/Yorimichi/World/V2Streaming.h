@@ -24,6 +24,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "V2 Streaming", meta = (WorldContext = "WorldContext"))
     static float MinLoadingRange(const UObject* WorldContext);
 
+    /** Whether World Partition has activated every cell within RadiusCm of Location (a moving streaming source, such as
+     *  a rider on the zeppelin, has loaded where it arrives); true without World Partition. */
+    UFUNCTION(BlueprintCallable, Category = "V2 Streaming", meta = (WorldContext = "WorldContext"))
+    static bool IsLoadedAround(const UObject* WorldContext, FVector Location, float RadiusCm);
+
     /** Every loading range under the world's runtime hash, as "path=range_cm" lines; empty without World Partition. */
     UFUNCTION(BlueprintCallable, Category = "V2 Streaming", meta = (WorldContext = "WorldContext"))
     static FString DescribeLoadingRanges(const UObject* WorldContext);
