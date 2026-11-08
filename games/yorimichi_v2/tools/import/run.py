@@ -1,6 +1,7 @@
 """Targeted import: turn the selected generated assets' sources into their Unreal packages, and nothing else.
 
     uv run python games/yorimichi_v2/tools/import/run.py prop/harbour-bench-01 [more IDs] [--plan] [--claim TASK]
+    uv run python games/yorimichi_v2/tools/import/run.py IDS... --claim TASK --batch N   (one editor per N assets)
 
 For each selected asset and its declared dependents (assets whose `input_dependencies` name it), the run:
 
@@ -199,6 +200,48 @@ def native_import(game, asset, plan_file: Path):
         raise ImportError_(f'{asset.id}: the editor import failed (exit {result.returncode}); see build/yorimichi_v2/logs')
 
 
+def write_plan(game, asset, by_id, kind, claim, write_set, plan_file: Path):
+    """The import plan the editor step re-checks at its write boundary (build.py _authorize_import)."""
+    allowed = {records.content_relative(game, f) for f in write_set}
+    deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
+    plan_file.write_text(json.dumps({
+        'asset': asset.id, 'kind': asset.kind, 'importer': kind[0], 'version': kind[1],
+        'settings': asset.recipe.get('settings', {}),
+        'sources': [str((asset.folder / s.path).resolve()) for s in asset.sources],
+        'portable_sources': ['games/yorimichi_v2/' + records.content_relative(game, asset.folder / s.path)
+                             for s in asset.sources],
+        'packages': [o.package for o in asset.outputs if o.writer == 'generated'],
+        'references': {dep: [o.package for o in by_id[dep].outputs] for dep in asset.references + asset.input_dependencies},
+        'claim': claim,
+        'write_paths': sorted(f'games/yorimichi_v2/{rel}' for rel in allowed),
+    }, indent=2))
+
+
+def recorded_files(game, asset, write_set) -> dict:
+    """The verified file hashes of an import that wrote its packages: every generated package must exist."""
+    files = {}
+    for output in asset.outputs:
+        if output.writer != 'generated':
+            continue
+        present = [p for p in records.package_files(game, output.package) if p.is_file()]
+        if not present:
+            raise ImportError_(f'{asset.id}: {output.package} was not written')
+    for path in write_set:
+        if path.is_file():
+            files[records.content_relative(game, path)] = records.sha256_file(path)
+    if asset.authority == 'split' and asset.verified.is_file():
+        # The editor-owned part keeps its own saved hashes; a generated file the import no longer wrote
+        # (such as a dropped .ubulk) is gone from the record, never carried over.
+        editor_files = {records.content_relative(game, p.with_suffix(ext))
+                        for o in asset.outputs if o.writer == 'editor'
+                        for p in records.package_files(game, o.package)[:1]
+                        for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
+        for rel, digest in records.load_verified(asset.verified)['files'].items():
+            if rel in editor_files:
+                files.setdefault(rel, digest)
+    return files
+
+
 def import_one(game, asset, by_id, *, engine, claim, importer=native_import, echo=print):
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
     stale = [d for d, s in deps.items() if s is None]
@@ -229,17 +272,7 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
     allowed = {records.content_relative(game, f) for f in write_set}
     before = content_snapshot(game)
     plan_file = journal.dir / 'plan.json'
-    plan_file.write_text(json.dumps({
-        'asset': asset.id, 'kind': asset.kind, 'importer': kind[0], 'version': kind[1],
-        'settings': asset.recipe.get('settings', {}),
-        'sources': [str((asset.folder / s.path).resolve()) for s in asset.sources],
-        'portable_sources': ['games/yorimichi_v2/' + records.content_relative(game, asset.folder / s.path)
-                             for s in asset.sources],
-        'packages': [o.package for o in asset.outputs if o.writer == 'generated'],
-        'references': {dep: [o.package for o in by_id[dep].outputs] for dep in asset.references + asset.input_dependencies},
-        'claim': claim,
-        'write_paths': sorted(f'games/yorimichi_v2/{rel}' for rel in allowed),
-    }, indent=2))
+    write_plan(game, asset, by_id, kind, claim, write_set, plan_file)
     try:
         importer(game, asset, plan_file)
         after = content_snapshot(game)
@@ -247,26 +280,7 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
         outside = sorted(rel for rel in changed - allowed if not rel.startswith('unreal/Saved/'))
         if outside:
             raise ImportError_(f'{asset.id}: the import wrote outside its declared packages: {", ".join(outside[:8])}')
-        files = {}
-        for output in asset.outputs:
-            if output.writer != 'generated':
-                continue
-            present = [p for p in records.package_files(game, output.package) if p.is_file()]
-            if not present:
-                raise ImportError_(f'{asset.id}: {output.package} was not written')
-        for path in write_set:
-            if path.is_file():
-                files[records.content_relative(game, path)] = records.sha256_file(path)
-        if asset.authority == 'split' and asset.verified.is_file():
-            # The editor-owned part keeps its own saved hashes; a generated file the import no longer wrote
-            # (such as a dropped .ubulk) is gone from the record, never carried over.
-            editor_files = {records.content_relative(game, p.with_suffix(ext))
-                            for o in asset.outputs if o.writer == 'editor'
-                            for p in records.package_files(game, o.package)[:1]
-                            for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
-            for rel, digest in records.load_verified(asset.verified)['files'].items():
-                if rel in editor_files:
-                    files.setdefault(rel, digest)
+        files = recorded_files(game, asset, write_set)
     except BaseException:
         restored = journal.restore()
         echo(f'failed     {asset.id}: restored {len(restored)} file(s); no record written')
@@ -296,11 +310,219 @@ def update_source_hashes(asset, hashes):
     asset.record.write_text(text)
 
 
+class BatchCrash(RuntimeError):
+    """The editor session died: `results` holds the job results it reported before it died."""
+
+    def __init__(self, message, results=None):
+        super().__init__(message)
+        self.results = results or {}
+
+
+SESSION = GAME / 'tools' / 'editor' / 'session.py'
+JOBS_DIR = Path('unreal/Saved/ImportBatch')
+SESSION_FAILED = re.compile(r'editor session failed: job (\d+) ')
+SUMMARY_LINE = re.compile(r'summary (\S+summary\.json)')
+
+
+def run_session(jobs_file: Path) -> dict:
+    """Run one editor session over the batch's JOBS.json (tools/editor/session.py, rendered: its headless mode takes
+    only object migrations). Returns {asset ID: {'status': 'done'|'failed'|'not-run', 'error': str|None,
+    'written': [repository paths]}}, or raises BatchCrash when the session died without a job's result."""
+    if "'import'" not in SESSION.read_text():
+        # session.py runs only the job kinds it knows; checking first spares an editor start that would fail after it.
+        raise BatchCrash(f"{SESSION.name} has no 'import' job kind, so no batch can run an import yet")
+    command = ['nice', '-n', '10', 'uv', 'run', 'python', str(SESSION), str(jobs_file)]
+    done = subprocess.run(command, cwd=REPO, capture_output=True, text=True)
+    text = done.stdout + done.stderr
+    jobs = json.loads(jobs_file.read_text())['jobs']
+    results = {job['asset']: {'status': 'not-run', 'error': None, 'written': []} for job in jobs}
+    summary_path = SUMMARY_LINE.search(text)
+    if summary_path and Path(summary_path.group(1)).is_file():
+        summary = json.loads(Path(summary_path.group(1)).read_text())
+        for entry in summary.get('jobs', []):
+            asset = entry['name'].removeprefix('import ')
+            if asset in results and 'written' in entry:
+                results[asset] = {'status': 'done', 'error': None, 'written': list(entry['written'])}
+    if done.returncode:
+        failed = SESSION_FAILED.search(text)
+        if failed and 1 <= int(failed.group(1)) <= len(jobs):
+            asset = jobs[int(failed.group(1)) - 1]['asset']
+            results[asset] = {'status': 'failed', 'error': text.split('editor session failed: ', 1)[-1].strip(),
+                              'written': []}
+        elif not any(r['status'] == 'done' for r in results.values()):
+            raise BatchCrash(f'the editor session failed before any job finished: {text.strip()[-300:]}')
+    return results
+
+
+class _Prepared:
+    def __init__(self, asset, journal, write_set, plan_file, deps, hashes, fingerprint):
+        self.asset, self.journal, self.write_set = asset, journal, write_set
+        self.plan_file, self.deps, self.hashes, self.fingerprint = plan_file, deps, hashes, fingerprint
+
+
+def _prepare_batch(game, asset, by_id, *, claim, echo):
+    """import_one's steps before its editor run: fingerprint, authorize, journal, plan. None when up to date."""
+    deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
+    stale = [d for d, s in deps.items() if s is None]
+    if stale:
+        raise ImportError_(f'{asset.id}: input dependencies {stale} have no verified state; import them first')
+    hashes = current_source_hashes(asset)
+    fingerprint = fingerprint_with_sources(asset, hashes, deps)
+    if up_to_date(game, asset, fingerprint):
+        echo(f'unchanged  {asset.id}')
+        return None
+    authorize(game, asset, claim)
+    kind = IMPORTERS.get(asset.kind)
+    if kind is None or asset.recipe.get('importer') != kind[0] or asset.recipe.get('version') != kind[1]:
+        raise ImportError_(f'{asset.id}: no importer {asset.recipe.get("importer")}@{asset.recipe.get("version")} '
+                           f'for kind {asset.kind}')
+    journal = Journal(game, asset)
+    write_set = generated_files(game, asset)
+    outside = sorted(journal.pending() - {records.content_relative(game, f) for f in write_set})
+    if outside:
+        raise ImportError_(f'{asset.id}: an interrupted import journal would restore files outside its current '
+                           f'outputs ({", ".join(outside[:5])}); resolve {journal.dir} by hand')
+    recovered = journal.restore()
+    if recovered:
+        echo(f'recovered  {asset.id}: restored {len(recovered)} file(s) an interrupted import left')
+    journal.begin(write_set)
+    plan_file = journal.dir / 'plan.json'
+    write_plan(game, asset, by_id, kind, claim, write_set, plan_file)
+    return _Prepared(asset, journal, write_set, plan_file, deps, hashes, fingerprint)
+
+
+def _verify_batch(game, prepared, result, *, engine, echo):
+    """Record one asset whose job finished, exactly as import_one does: its own write set only, every package there."""
+    asset = prepared.asset
+    allowed = {'games/yorimichi_v2/' + records.content_relative(game, f) for f in prepared.write_set}
+    outside = sorted(set(result['written']) - allowed)
+    if outside:
+        raise ImportError_(f'{asset.id}: the import wrote outside its declared packages: {", ".join(outside[:8])}')
+    # A package that existed before the job must have been written by it: the session reports every changed file.
+    existed = {rel for rel, before in json.loads(prepared.journal.manifest.read_text())['files'].items()
+               if before is not None}
+    for output in asset.outputs:
+        if output.writer != 'generated':
+            continue
+        for path in records.package_files(game, output.package):
+            rel = records.content_relative(game, path)
+            if rel in existed and 'games/yorimichi_v2/' + rel not in result['written']:
+                raise ImportError_(f'{asset.id}: {output.package} was not written by its job')
+    files = recorded_files(game, asset, prepared.write_set)
+    update_source_hashes(asset, prepared.hashes)
+    records.write_json(asset.verified, {
+        'schema': records.SCHEMA, 'kind': 'imported', 'asset': asset.id, 'engine': engine,
+        'tool': f'{asset.recipe["importer"]}@{asset.recipe["version"]}', 'input_fingerprint': prepared.fingerprint,
+        'files': files, 'dependencies': {d: s for d, s in sorted(prepared.deps.items())}})
+    prepared.journal.close()
+    echo(f'imported   {asset.id}: {len(files)} file(s)')
+
+
+def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_session, echo=print) -> dict:
+    """Import many generated assets through one warm editor: at most `batch_size` jobs per editor session.
+
+    Each asset is prepared (fingerprint, authorize, journal, plan) and its write set journaled as import_one does; the
+    session runs one job per asset in order. Per asset: a finished job is verified and recorded; a failed job restores
+    its journal and records its error; a job the session never reached restores its journal and waits for the next
+    session. An asset's failure never rolls back another's success. A session that dies restores only the assets it
+    did not finish, and the batch stops. Returns the report: imported, unchanged, failed {ID: error}, interrupted.
+    """
+    if batch_size < 1:
+        raise ImportError_('--batch needs a size of 1 or more')
+    ordered, _ = plan(game, asset_ids)
+    report = {'imported': [], 'unchanged': [], 'failed': {}, 'interrupted': None}
+    by_id = {a.id: a for a in records.discover(game)[0]}
+    queue = [a.id for a in ordered]
+    session_no = 0
+    while queue:
+        chunk, queue, blocked = [], list(queue), False
+        while queue and len(chunk) < batch_size:
+            asset_id = queue[0]
+            asset = by_id[asset_id]
+            failed_deps = [d for d in asset.input_dependencies if d in report['failed']]
+            if failed_deps:
+                report['failed'][asset_id] = f'input dependency {failed_deps[0]} failed; not imported'
+                echo(f'failed     {asset_id}: {report["failed"][asset_id]}')
+                queue.pop(0)
+                continue
+            # A dependency still waiting in this batch must be recorded before its dependent is prepared.
+            if any(d in queue and d != asset_id for d in asset.input_dependencies) or \
+                    any(d in {p.asset.id for p in chunk} for d in asset.input_dependencies):
+                blocked = True
+                break
+            queue.pop(0)
+            try:
+                prepared = _prepare_batch(game, asset, by_id, claim=claim, echo=echo)
+            except ImportError_ as error:
+                report['failed'][asset_id] = str(error)
+                echo(f'failed     {asset_id}: {error}; no record written')
+                continue
+            if prepared is None:
+                report['unchanged'].append(asset_id)
+            else:
+                chunk.append(prepared)
+        if not chunk:
+            if blocked:                              # cannot happen for a plan that orders dependencies first
+                raise ImportError_('an input dependency is not ordered before its dependent; nothing was started')
+            continue
+        session_no += 1
+        jobs_file = game / JOBS_DIR / f'session-{session_no}.json'
+        jobs_file.parent.mkdir(parents=True, exist_ok=True)
+        jobs_file.write_text(json.dumps({'jobs': [{
+            'kind': 'import', 'name': f'import {p.asset.id}', 'asset': p.asset.id, 'claim': claim,
+            'script': 'import_asset.py', 'plan': str(p.plan_file),
+            'write_paths': json.loads(p.plan_file.read_text())['write_paths'],
+            'env': {'V2_IMPORT_PLAN': str(p.plan_file)}} for p in chunk]}, indent=2))
+        crashed = None
+        try:
+            results = runner(jobs_file)
+        except BatchCrash as crash:
+            results, crashed = crash.results, str(crash)
+            report['interrupted'] = crashed
+        progressed, requeue = False, []
+        for p in chunk:
+            asset_id = p.asset.id
+            result = results.get(asset_id, {'status': 'not-run', 'error': None, 'written': []})
+            status = result['status'] if result['status'] in ('done', 'failed') or crashed is None else 'interrupted'
+            if status == 'done':
+                try:
+                    _verify_batch(game, p, result, engine=engine, echo=echo)
+                    report['imported'].append(asset_id)
+                    progressed = True
+                    continue
+                except ImportError_ as error:
+                    status, result = 'failed', {'error': str(error)}
+            if status == 'failed':
+                p.journal.restore()
+                report['failed'][asset_id] = result.get('error') or 'its job failed'
+                echo(f'failed     {asset_id}: {report["failed"][asset_id]}; restored its files, no record written')
+                progressed = True
+            elif status == 'interrupted':
+                p.journal.restore()
+                echo(f'interrupted {asset_id}: the editor session died; restored its files, no record written')
+            else:                                    # not-run: the session stopped before this job
+                p.journal.restore()
+                requeue.append(asset_id)
+        if crashed:
+            break                                    # the dead session's unfinished assets stay unimported
+        if not progressed:
+            # Nothing finished or failed in this session: stop rather than loop on the same jobs.
+            report['interrupted'] = 'the session finished no job and reported no failure'
+            for asset_id in requeue:
+                echo(f'not run    {asset_id}: the session stopped before it; left for a later run')
+            break
+        queue = requeue + queue
+        by_id = {a.id: a for a in records.discover(game)[0]}
+    return report
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('assets', nargs='+', help='asset IDs to import, e.g. prop/harbour-bench-01')
     parser.add_argument('--plan', action='store_true', help='print what would be imported and exit')
     parser.add_argument('--claim', help='the active claim (task ID) authorizing these writes')
+    parser.add_argument('--batch', type=int, default=0, metavar='N',
+                        help='import through one warm editor session per N assets (default: one editor per asset)')
     args = parser.parse_args(argv)
     try:
         ordered, by_id = plan(GAME, args.assets)
@@ -310,6 +532,13 @@ def main(argv=None) -> int:
             return 0
         from atelier import engine as engine_paths
         engine = engine_identity(Path(engine_paths.unreal_root()))
+        if args.batch:
+            report = import_batch(GAME, args.assets, engine=engine, claim=args.claim, batch_size=args.batch)
+            print(f'batch: {len(report["imported"])} imported, {len(report["unchanged"])} unchanged, '
+                  f'{len(report["failed"])} failed' + (f'; stopped: {report["interrupted"]}' if report['interrupted'] else ''))
+            for asset_id, error in sorted(report['failed'].items()):
+                print(f'  failed {asset_id}: {error}', file=sys.stderr)
+            return 1 if report['failed'] or report['interrupted'] else 0
         for asset in ordered:
             by_id = {a.id: a for a in records.discover(GAME)[0]}      # fresh: dependencies were just imported
             import_one(GAME, by_id[asset.id], by_id, engine=engine, claim=args.claim)
