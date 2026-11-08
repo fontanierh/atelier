@@ -145,7 +145,8 @@ def main(argv=None):
     parser.add_argument('--out', type=Path, default=REPO / 'build' / 'yorimichi_v2' / 'train-ride')
     parser.add_argument('--scale', type=float, default=10.0, help='service clock speed between the walking tests')
     parser.add_argument('--vehicle', default='second-class')
-    parser.add_argument('--door', default='exterior-bl')
+    parser.add_argument('--door', default='exterior-bl', help='the boarding door (Belmonte platform: left)')
+    parser.add_argument('--exit', default='exterior-br', help='the door out at Hidamari (its platform is on the right)')
     parser.add_argument('--inner', default='bulkhead-b', help='the vestibule door into the saloon')
     parser.add_argument('--seats', type=int, default=64)
     args = parser.parse_args(argv)
@@ -247,11 +248,11 @@ def ride(args):
     r.walk(vehicle(f'seat:{seat}'), 70)
     py("live.press('interact')")
     time.sleep(2)
-    console(f'train.TimeScale {args.scale}')
+    console('train.TimeScale 3')   # slower than --scale: a busy game answers late, and Hidamari is near
     s = r.wait(lambda s: s['trains'][train]['s'] < 2200, 600, 1)
     r.log('6f past the spiral', 'past-spiral')
+    console('train.TimeScale 1')   # the Hidamari dwell must not pass at --scale before the walk to the door
     s = r.wait(lambda s: s['trains'][train]['s'] < 600, 600, 1)
-    console('train.TimeScale 1')
     # 7. Arrive at Hidamari, seated, through the braking.
     s = r.wait(lambda s: s['trains'][train]['station'], 240)
     r.log('7 arrived at Hidamari', 'arrived')
@@ -265,8 +266,8 @@ def ride(args):
         py("live.press('interact')")
         time.sleep(1.2)
     r.walk(vehicle('local:10.7:0'), 30)   # through the bulkhead doorway, then across the vestibule
-    r.walk(vehicle(f'board:{args.door}:-1'), 30)
-    py(f'train_face({vehicle(f"board:{args.door}:0")!r})')
+    r.walk(vehicle(f'board:{args.exit}:-1'), 30)
+    py(f'train_face({vehicle(f"board:{args.exit}:0")!r})')
     time.sleep(.3)
     s = r.log('8a inside at the door at Hidamari', 'door-hidamari')
     assert 'step off' in s['prompt'], s['prompt']
