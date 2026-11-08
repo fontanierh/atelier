@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: the galleon Adventure in the harbour (layout.SHIPS, tile 3_3 alone)
+# Ownership unit: the galleon Adventure in the harbour: rig, deck and guns (layout.SHIPS, tile 3_3 alone; its hull is the shared hero-galleon-hull)
 schema = 1
 id = "adopted/brinecove/galleon-adventure"
 kind = "adopted"

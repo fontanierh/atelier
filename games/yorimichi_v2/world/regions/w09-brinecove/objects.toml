@@ -1,0 +1,30 @@
+# Brine Cove objects a person edits on their own (tools/migrate/objects.py). Each group holds its object alone;
+# docs/inventory/brinecove-objects.md lists the objects that are fused with others and what extracting them needs.
+# `model` is the object's unit in assets/adopted/brinecove/units.json.
+schema = 1
+tag = "brinecove"
+data = "brinecove/runtime.json"
+
+[[objects]]
+id = "object/brinecove/wreck"
+group = "SM_BC_Ships_2_2"
+model = "adopted/brinecove/wreck"
+about = "the broken, unfinished galleon hull on the western rocks"
+
+[[objects]]
+id = "object/brinecove/galleon-adventure"
+group = "SM_BC_Ships_3_3"
+model = "adopted/brinecove/galleon-adventure"
+about = "the galleon Adventure moored in the harbour: rig, deck and guns (its hull is a shared hero model)"
+
+[[objects]]
+id = "object/brinecove/lighthouse"
+group = "SM_BC_Landmarks_1_3"
+model = "adopted/brinecove/lighthouse"
+about = "the lighthouse on the western headland (its planting is the separate SM_BC_Landmarks_1_3_Soft group)"
+
+[[objects]]
+id = "object/brinecove/fort"
+group = "SM_BC_Landmarks_3_5"
+model = "adopted/brinecove/fort"
+about = "the hillside fort: curtain walls, towers, keep, gatehouse and courtyard"

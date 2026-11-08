@@ -1,8 +1,14 @@
 {
  "about": "Brine Cove editing units for tools/migrate/adopt.py (written by tools/migrate/brinecove_units.py)",
  "units": {
+  "fort": {
+   "about": "the hillside fort: curtain walls, towers, keep, gatehouse and courtyard (landmarks tile 3_5)",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
   "galleon-adventure": {
-   "about": "the galleon Adventure in the harbour (layout.SHIPS, tile 3_3 alone)",
+   "about": "the galleon Adventure in the harbour: rig, deck and guns (layout.SHIPS, tile 3_3 alone; its hull is the shared hero-galleon-hull)",
    "references": [
     "adopted/brinecove/materials"
    ]
@@ -433,38 +439,8 @@
     "adopted/brinecove/materials"
    ]
   },
-  "landmarks-1-3": {
-   "about": "Brine Cove landmarks-1-3 (2 mesh(es))",
-   "references": [
-    "adopted/brinecove/materials"
-   ]
-  },
-  "landmarks-3-5": {
-   "about": "Brine Cove landmarks-3-5 (1 mesh(es))",
-   "references": [
-    "adopted/brinecove/materials"
-   ]
-  },
-  "landmarks-5-3": {
-   "about": "Brine Cove landmarks-5-3 (3 mesh(es))",
-   "references": [
-    "adopted/brinecove/materials"
-   ]
-  },
-  "landmarks-5-4": {
-   "about": "Brine Cove landmarks-5-4 (2 mesh(es))",
-   "references": [
-    "adopted/brinecove/materials"
-   ]
-  },
-  "landmarks-6-3": {
-   "about": "Brine Cove landmarks-6-3 (8 mesh(es))",
-   "references": [
-    "adopted/brinecove/materials"
-   ]
-  },
-  "landmarks-6-4": {
-   "about": "Brine Cove landmarks-6-4 (2 mesh(es))",
+  "lighthouse": {
+   "about": "the lighthouse on the western headland (landmarks tile 1_3 alone, with its planting)",
    "references": [
     "adopted/brinecove/materials"
    ]
@@ -1047,20 +1023,8 @@
     "adopted/brinecove/materials"
    ]
   },
-  "ships-4-2": {
-   "about": "Brine Cove ships-4-2 (1 mesh(es))",
-   "references": [
-    "adopted/brinecove/materials"
-   ]
-  },
-  "ships-4-3": {
-   "about": "Brine Cove ships-4-3 (1 mesh(es))",
-   "references": [
-    "adopted/brinecove/materials"
-   ]
-  },
-  "ships-5-3": {
-   "about": "Brine Cove ships-5-3 (1 mesh(es))",
+  "ships-nightjar-sloop": {
+   "about": "the galleon Nightjar and the eastern sloop, fused in ship tiles 4_2, 4_3 and 5_3",
    "references": [
     "adopted/brinecove/materials"
    ]
@@ -1472,6 +1436,12 @@
     "adopted/brinecove/materials"
    ]
   },
+  "waterfall-canyon": {
+   "about": "the waterfall with the canyon river, rope bridge and ledge shrine (landmarks tiles 5_3, 5_4, 6_3 and 6_4)",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
   "wreck": {
    "about": "the broken hull on the western rocks (modules.ships(), tile 2_2 alone)",
    "references": [
@@ -1661,24 +1631,24 @@
   "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_-1_0": "hero-pirate-queen-statue",
   "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_0_-1": "hero-pirate-queen-statue",
   "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_0_0": "hero-pirate-queen-statue",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3": "landmarks-1-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3_Soft": "landmarks-1-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_3_5": "landmarks-3-5",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3": "landmarks-5-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece1": "landmarks-5-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece3": "landmarks-5-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_4": "landmarks-5-4",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_4_Soft": "landmarks-5-4",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece0": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece1": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece20": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece21": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece22": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece23": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece3": "landmarks-6-3",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_4": "landmarks-6-4",
-  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_4_Soft": "landmarks-6-4",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3": "lighthouse",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3_Soft": "lighthouse",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_3_5": "fort",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece1": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_4": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_4_Soft": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece0": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece1": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece20": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece21": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece22": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece23": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_4": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_4_Soft": "waterfall-canyon",
   "/Game/Brinecove/Meshes/SM_BC_Market_3_3": "market-3-3",
   "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece10": "market-3-4",
   "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece110": "market-3-4",
@@ -1859,9 +1829,9 @@
   "/Game/Brinecove/Meshes/SM_BC_Rocks_7_6_Soft": "rocks-7-6",
   "/Game/Brinecove/Meshes/SM_BC_Ships_2_2": "wreck",
   "/Game/Brinecove/Meshes/SM_BC_Ships_3_3": "galleon-adventure",
-  "/Game/Brinecove/Meshes/SM_BC_Ships_4_2": "ships-4-2",
-  "/Game/Brinecove/Meshes/SM_BC_Ships_4_3": "ships-4-3",
-  "/Game/Brinecove/Meshes/SM_BC_Ships_5_3": "ships-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ships_4_2": "ships-nightjar-sloop",
+  "/Game/Brinecove/Meshes/SM_BC_Ships_4_3": "ships-nightjar-sloop",
+  "/Game/Brinecove/Meshes/SM_BC_Ships_5_3": "ships-nightjar-sloop",
   "/Game/Brinecove/Meshes/SM_BC_TownLower_1_2": "townlower-1-2",
   "/Game/Brinecove/Meshes/SM_BC_TownLower_1_2_Soft": "townlower-1-2",
   "/Game/Brinecove/Meshes/SM_BC_TownLower_1_3": "townlower-1-3",

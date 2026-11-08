@@ -1,13 +1,16 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: Brine Cove landmarks-3-5 (1 mesh(es))
+# Ownership unit: the lighthouse on the western headland (landmarks tile 1_3 alone, with its planting)
 schema = 1
-id = "adopted/brinecove/landmarks-3-5"
+id = "adopted/brinecove/lighthouse"
 kind = "adopted"
 authority = "editor"
-owner = "shared/brinecove/landmarks-3-5"
+owner = "shared/brinecove/lighthouse"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 references = ["adopted/brinecove/materials"]
 
 [[outputs]]
-package = "/Game/Brinecove/Meshes/SM_BC_Landmarks_3_5"
+package = "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3_Soft"

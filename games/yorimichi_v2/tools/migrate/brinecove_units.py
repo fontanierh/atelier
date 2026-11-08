@@ -4,9 +4,9 @@
 
 The region generator (games/yorimichi/world/regions/brinecove) bakes its scenery into meshes by feature and 256 m
 tile, `SM_BC_<Feature>_<tx>_<ty>[_Soft|_PieceN]` (build.py: a face's centre picks its tile), so each feature tile is
-one editing unit with its soft and split pieces: `rocks-3-4`, `townupper-4-4`. The ship tiles that hold one ship
-alone are named for it: tile (2, 2) is the broken hull on the western rocks (modules.ships(), the wreck), tile
-(3, 3) the galleon Adventure (layout.SHIPS); the other two galleons share tiles 4_2, 4_3 and 5_3. Each plant model
+one editing unit with its soft and split pieces: `rocks-3-4`, `townupper-4-4`. Tiles holding one object alone are
+named for it (the wreck, the galleon Adventure, the lighthouse, the fort), and tiles one structure spans are one unit
+(the waterfall canyon; the Nightjar and the sloop, fused in their ship tiles). Each plant model
 family (`SM_BC_Plant_<Family><n>`) is one unit, and each hero model (`SM_BC_Hero_<Model>_cell...`) one unit with
 its own material instances and textures (`MI_BC_hero_<model>_n`, `T_BC_hero_<model>_n`). The shared materials and
 textures stay `materials` and `textures`.
@@ -38,10 +38,21 @@ OUT = GAME / 'assets' / 'adopted' / 'brinecove' / 'units.json'
 ROOT = '/Game/Brinecove/'
 MESH = re.compile(r'^SM_BC_(?:Hero_([A-Za-z]+)(?:_cell|$)|(Plant_[A-Za-z]+?)\d+$|([A-Za-z]+)_(-?\d+)_(-?\d+)(?:_|$))')
 HERO = re.compile(r'^(?:MI|T)_BC_hero_([a-z-]+)_\d+$')
-# Ship tiles holding a single ship (modules.ships(): the face centres of each ship alone).
-NAMED = {'ships-2-2': 'wreck', 'ships-3-3': 'galleon-adventure'}
+# Tiles named for what they hold, each found by running its generator function alone and bucketing its face
+# centres (docs/inventory/brinecove-objects.md): a ship or landmark alone in its tile, or one structure spread over
+# several tiles that change together.
+NAMED = {'ships-2-2': 'wreck', 'ships-3-3': 'galleon-adventure', 'landmarks-1-3': 'lighthouse',
+         'landmarks-3-5': 'fort', 'ships-4-2': 'ships-nightjar-sloop', 'ships-4-3': 'ships-nightjar-sloop',
+         'ships-5-3': 'ships-nightjar-sloop', 'landmarks-5-3': 'waterfall-canyon', 'landmarks-5-4': 'waterfall-canyon',
+         'landmarks-6-3': 'waterfall-canyon', 'landmarks-6-4': 'waterfall-canyon'}
 ABOUT = {'wreck': 'the broken hull on the western rocks (modules.ships(), tile 2_2 alone)',
-         'galleon-adventure': 'the galleon Adventure in the harbour (layout.SHIPS, tile 3_3 alone)'}
+         'galleon-adventure': 'the galleon Adventure in the harbour: rig, deck and guns (layout.SHIPS, tile 3_3 alone; '
+                              'its hull is the shared hero-galleon-hull)',
+         'lighthouse': 'the lighthouse on the western headland (landmarks tile 1_3 alone, with its planting)',
+         'fort': 'the hillside fort: curtain walls, towers, keep, gatehouse and courtyard (landmarks tile 3_5)',
+         'ships-nightjar-sloop': 'the galleon Nightjar and the eastern sloop, fused in ship tiles 4_2, 4_3 and 5_3',
+         'waterfall-canyon': 'the waterfall with the canyon river, rope bridge and ledge shrine (landmarks tiles 5_3, '
+                             '5_4, 6_3 and 6_4)'}
 # The generator of every Brine Cove package (donor build steps world.brinecove and unreal.brinecove).
 GENERATOR = ('world/source_registry.py', 'assets/source-library.json')
 GENERATOR_FOLDERS = ('world/regions/brinecove', 'assets/brinecove/export-parameters')

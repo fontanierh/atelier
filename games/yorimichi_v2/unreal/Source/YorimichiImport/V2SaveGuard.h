@@ -9,6 +9,8 @@
  * before any bytes are written; an unreadable list refuses every save. V2_SAVE_DENY names files that may not be
  * saved at all (the generated packages, during a bootstrap editor script); an unreadable deny list refuses every
  * save too. Without either the editor's own rules apply unchanged. The authorized route writes the lists.
+ * The lists are re-read whenever the environment names other files or the files change, so a warm editor that runs
+ * several authorized actions checks each save against its own action's lists; an action naming none saves nothing.
  */
 UCLASS()
 class YORIMICHIIMPORT_API UV2SaveGuard : public UBlueprintFunctionLibrary
