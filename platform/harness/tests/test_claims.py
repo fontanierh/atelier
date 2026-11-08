@@ -1094,3 +1094,25 @@ def test_a_check_reads_the_remotes_once_for_all_claims_of_its_task(world, monkey
     assert evaluate([Change('M', BENCH), Change('M', SEA)], {BENCH: 'lockable', SEA: 'lockable'}, view, 'publish') == []
     world.lfs.locks.pop(next(iter(world.lfs.locks)))   # one lock gone from the remote: its claim fails, not the other
     assert sorted(c['verified'] for c in coverage(a, 'ta')['claims']) == [False, True]
+
+
+def test_a_check_reads_only_the_locks_of_its_own_paths(world, monkeypatch):
+    """A claim of many locks is checked for one path with that path's lock alone (no full listing), and a lock missing
+    from the remote fails exactly the checks that write through it."""
+    a = world.agent('a', 'alice')
+    world.task(a, 'ta')
+    paths = [f'{HARBOUR}Actor{i:02}.uasset' for i in range(30)]
+    claim = world.request(a, 'ta', lock_paths=paths)
+    assert acquire(a, claim['id'], a.locker)['state'] == 'active'
+    counts = {}
+    monkeypatch.setattr(world.store, 'lfs', Counting(world.store.lfs, counts, 'lfs'))
+    repo = world.seed
+    assert check(a, repo, 'ta', [Change('M', paths[0])], stage='publish') == []
+    assert 'lfs.locks.all' not in counts, counts                 # one per-path read, not the 30-lock listing
+    gone = next(i for i, l in world.lfs.locks.items() if l['path'] == paths[5])
+    world.lfs.locks.pop(gone)                                    # another path's lock disappears from the remote
+    assert check(a, repo, 'ta', [Change('M', paths[0])], stage='publish') == []
+    problems = check(a, repo, 'ta', [Change('M', paths[5])], stage='publish')
+    assert problems and 'failed live verification' in problems[0], problems
+    # The whole-task answer still reads every lock.
+    assert [c['verified'] for c in coverage(a, 'ta')['claims']] == [False]
