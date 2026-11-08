@@ -358,6 +358,11 @@ private:
     bool bHasSafeCoastLocation=false;
     FVector LastSafeCityLocation=FVector::ZeroVector;
     bool bHasSafeCityLocation=false;
+    // A travel whose target ground has not streamed in yet holds the player there until it has (TravelTo).
+    FTimerHandle TravelGroundWait;
+    FVector TravelGroundTarget=FVector::ZeroVector;
+    float TravelGroundAbove=0.f, TravelGroundWaited=0.f;
+    void WaitForTravelGround();
     FString BuildingReviewSpecPath;
     TSharedPtr<struct FBuildingReviewState> BuildingReview;
     void AdvanceBuildingReview(float Dt);

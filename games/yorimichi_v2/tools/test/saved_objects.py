@@ -1,7 +1,7 @@
 """Check a region's saved objects in the running slice game: each exactly once, as its saved actor (audit A1).
 
     uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen      # first, and wait for the world
-    uv run python games/yorimichi_v2/tools/test/saved_objects.py --session ID --region w09-brinecove --zone cove
+    uv run python games/yorimichi_v2/tools/test/saved_objects.py --session ID --region w09-brinecove --zone brinecove_quay
 
 The objects are the region's objects.toml (tools/migrate/objects.py). After travelling to --zone and --settle seconds
 of streaming, every component of the game world drawing one of an object's group meshes must belong to that
@@ -113,7 +113,8 @@ def check(listed: dict, found: dict, expected: dict[str, int]) -> dict:
                 wrong.append(f'{mesh}: the runtime file places no instance of {[k for k in keys if expected.get(k, 0) < 1]}')
             elif sum(r[2] for r in mine) != want:
                 wrong.append(f'{mesh}: {sum(r[2] for r in mine)} instance(s) drawn, {want} expected')
-            others = [r for r in rows if not (r[0] == 'V2ScenePatch' and r[1] in owners[mesh])]
+            # A component with no instances draws nothing (the runtime region keeps its emptied plant groups).
+            others = [r for r in rows if r[2] and not (r[0] == 'V2ScenePatch' and r[1] in owners[mesh])]
             if others:
                 wrong.append(f'{mesh}: also drawn by {", ".join(f"{r[0]} {r[1]}" for r in others[:3])}')
         if len({tuple(r[3]) for m in by_mesh for r in found.get(m, []) if r[1] == key}) > 1:
