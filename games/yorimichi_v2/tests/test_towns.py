@@ -44,9 +44,12 @@ def state(owners, clearance):
     """{tag: (text, head, runtime data, classification of the groups the region's existing objects do not save)}."""
     out = {}
     for tag in TAGS:
+        runtime = towns.runtime_path(tag, ROOT)
+        if not runtime.is_file() or records.is_lfs_pointer(runtime):
+            pytest.skip(f'{runtime.name} is not hydrated in this checkout')
         text = towns.region_folder(tag, ROOT).joinpath('objects.toml').read_text()
         head = towns.split_head(text)
-        data = json.loads(towns.runtime_path(tag, ROOT).read_text())
+        data = json.loads(runtime.read_text())
         taken = {item['id'] for item in tomllib.loads(head).get('objects', [])}
         result = towns.classify(tag, data, towns.covered_groups(head), owners, taken, clearance)
         out[tag] = (text, head, data, result)
