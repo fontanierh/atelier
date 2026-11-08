@@ -1,0 +1,33 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): the two harbour temples (HD_Temple: two placements, cut into eight cell patches).
+# Its placement is these 8 actor packages (its cells); its model is adopted/experiments/citysurfaces/v1-128m/temple-m1-m1, adopted/experiments/citysurfaces/v1-128m/temple-m1-0, adopted/experiments/citysurfaces/v1-128m/temple-0-m1, adopted/experiments/citysurfaces/v1-128m/temple-0-0. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/temples"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/experiments/citysurfaces/v1-128m/temple-m1-m1", "adopted/experiments/citysurfaces/v1-128m/temple-m1-0", "adopted/experiments/citysurfaces/v1-128m/temple-0-m1", "adopted/experiments/citysurfaces/v1-128m/temple-0-0"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/3/6J/O3CB481B76GXY5JS9NUFOF"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/DY/I0DKCXQ9HAF09IUXJ5TG3H"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/13/P1K4ZCGIMMFXNH4GWK5KXL"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/A/BM/YUXKVS2HIT04P3OKXGN7SJ"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/ZU/AXPJQWMK61ACPPPDQL19SF"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/EO/DFVVH06HQL0QWB22XEDOPD"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/8F/M8YTRH1GA8P7ZH617VI3VN"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/B/B3/7N5C1Z8Z4KVSY2JKQSGMMY"

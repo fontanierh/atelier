@@ -1,0 +1,21 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): the clock hall (HD_ClockHall: one placement, cut into four cells).
+# Its placement is these 4 actor packages (its cells); its model is adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-m1, adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-0, adopted/experiments/citysurfaces/v1-128m/clock-hall-0-m1, adopted/experiments/citysurfaces/v1-128m/clock-hall-0-0. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/clock-hall"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-m1", "adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-0", "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-m1", "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-0"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/F/3N/MGYH5JH06C4212EDABNQW1"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/3/XD/SUQ4EMTH9QQPXLYG4IEWHN"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/7J/V2M9CJGB3VYV4OB88SS0FA"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/NM/SZBALBWXIZR4SCAV9IMSBQ"

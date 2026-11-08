@@ -1,0 +1,22 @@
+{
+  "asset": "object/harbour/temples",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/temple-0-0": "0d57b5b89557d1949e688f5d726df1cd7ef96e663e170700c5f653d1a3222f31",
+    "adopted/experiments/citysurfaces/v1-128m/temple-0-m1": "82637bf441771ae506fa7eaefa42fca933218f2be6d5dfde5b84ea6e3c67f204",
+    "adopted/experiments/citysurfaces/v1-128m/temple-m1-0": "da6746ce4be87935adc20b1bed87f659c96f2f7e9dbb0e4007a1aaa129b8e245",
+    "adopted/experiments/citysurfaces/v1-128m/temple-m1-m1": "8d9a1fe879509050eb762c710553de756fbf689ab4023bf4a99ea4e9eadd8bdf"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/ZU/AXPJQWMK61ACPPPDQL19SF.uasset": "6f88f60ec5ac8db3ed0b4b3a696b7e180dc2cdc1fd10f27ea2a80ef2bb2876b1",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/EO/DFVVH06HQL0QWB22XEDOPD.uasset": "4b3e8d441ecfed00c0dc08e900d4fb058ed9ef5fd5840c9b3568b5cf2709b0cb",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/6J/O3CB481B76GXY5JS9NUFOF.uasset": "412b9816c1996382e0b134334b2755beee7f302450e706af724fc695c8aeeae8",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/8F/M8YTRH1GA8P7ZH617VI3VN.uasset": "287d6e106e7db20e211c7f51a18e308e818ef2eab6ef22a2174337d1ad5dd634",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/DY/I0DKCXQ9HAF09IUXJ5TG3H.uasset": "c4b35d9affd92b58735c5215a1bf9cfc71d61544ee09734a6872faf5725f6645",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/BM/YUXKVS2HIT04P3OKXGN7SJ.uasset": "c1aea89f13162a98ca5f3ef1d75b2dc9fe4645ba88f59f1d8d96a6aba51300e5",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/B3/7N5C1Z8Z4KVSY2JKQSGMMY.uasset": "3797cb0a22a455ea361b3889cf9b020c05dd7e8073dd552a14a1619e5861814b",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/13/P1K4ZCGIMMFXNH4GWK5KXL.uasset": "6f448c69be6916cea4a7a0ce028a84b1a139d43083d0388bbba0a5d5ac3169b1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

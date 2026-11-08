@@ -1,0 +1,18 @@
+{
+  "asset": "object/harbour/clock-hall",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-0": "56d16f0687002c5aa167f9c6a55811cb9ba9c72cae82e69c6f1a3af968d2161c",
+    "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-m1": "1551059a3725c894ddb6cec8f862ce746186ea34e5794cdb25c1478246c2df2d",
+    "adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-0": "9bb54259446ef43f06e3ba4710f240bedb0d3df576ba97ce5c70de34993b5ce2",
+    "adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-m1": "61c290b00c79daa3a33df12ad9d58e7c71a57f3c253a2b77c295ecd031b1f65c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/XD/SUQ4EMTH9QQPXLYG4IEWHN.uasset": "5ff54796dc24eca42357f2ed91ffbec7cc4df88e36a8933bc989100e46baef0f",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/7J/V2M9CJGB3VYV4OB88SS0FA.uasset": "a7abea32fcf5a5073561ca453fc4808d02bc1fc7ffeba6379bac4eff859af26b",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/NM/SZBALBWXIZR4SCAV9IMSBQ.uasset": "136bf110054f158c1cf5ec84efdffd5ebdf2cd1aaf1e5eb7ae5b6256543256dd",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/F/3N/MGYH5JH06C4212EDABNQW1.uasset": "cdabc0cc03fff0ab3371f446f23e50f5306ee2389c3dfed8eae9d8d6943f1d1f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
