@@ -8,6 +8,12 @@ tag = "megapark"
 data = "megapark/park.json"
 
 [[objects]]
+id = "object/megapark/zeppelin-station"
+patch = "474f0b2366558ad9"
+model = "adopted/japan/assets/zeppelin"
+about = "the Mega Park zeppelin station (ZP_MegaPark)"
+
+[[objects]]
 id = "object/megapark/cell-x150-zm750"
 park = [
     "SM_MP_2A4ACEDB492E1152", "UC_MP_DF7E3E667186E81A_0",
@@ -136,10 +142,3 @@ park = [
 ]
 model = "adopted/megapark/seam"
 about = "the Mega Park seam meshes joining the park to the zeppelin footbridge"
-
-# A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
-[[objects]]
-id = "object/megapark/zeppelin-station"
-patch = "474f0b2366558ad9"
-model = "adopted/japan/assets/zeppelin"
-about = "the Mega Park zeppelin station (ZP_MegaPark)"
