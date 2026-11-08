@@ -47,6 +47,20 @@ package = "{package}"
     return folder
 
 
+def test_static_mesh_recipe_uses_shared_headless_import_without_changing_other_kinds(tmp_path, monkeypatch):
+    from atelier.build import UnrealScript
+    spec = importlib.util.spec_from_file_location('v2_import_recipe', ROOT / 'build.py')
+    recipe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(recipe)
+    mesh_asset(tmp_path, 'bench', '/Game/Props/SM_Bench')
+    texture = mesh_asset(tmp_path, 'paint', '/Game/Props/T_Paint') / 'asset.toml'
+    texture.write_text(texture.read_text().replace('static-mesh', 'texture'))
+    monkeypatch.setattr(recipe, 'GAME', tmp_path)
+    modes = {step.name: next(c.null_rhi for c in step.commands if isinstance(c, UnrealScript))
+             for step in recipe.import_steps()}
+    assert modes == {'import.prop.bench': True, 'import.prop.paint': False}
+
+
 class FakeEditor:
     """Writes the planned packages like the editor would; can misbehave on request."""
 

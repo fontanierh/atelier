@@ -116,7 +116,8 @@ must set the same variable in its child environment; do not export it globally.
 
 For V2 object migration, use `tools/editor/session.py JOBS.json --headless` for a bounded warm batch
 containing only `objects` jobs, including their no-op reruns. Other script jobs, especially captures,
-use the existing rendered session. Each editor needs its own checkout, Content, Saved and compiled
+use the existing rendered session. Targeted V2 static-mesh imports use the same non-rendering path
+automatically; texture imports keep their current route. Each editor needs its own checkout, Content, Saved and compiled
 outputs. Use disjoint claims for all output packages, including region and environment manifests;
 jobs that both change the same manifest stay in one sequential queue. Prepare inputs before opening
 the editor and close it when the ready batch is done. Never run two controllers in one checkout.
