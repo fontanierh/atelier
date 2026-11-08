@@ -42,20 +42,50 @@ def load_json(relative):
     return json.loads((DATA / relative).read_text())
 
 
-WORLD = load_json('world.json')
-CITY = load_json('hidamari/city.json')
-GONDOLA = load_json('gondola/runtime.json')
-FERRY = load_json('ferry/service/service.json')
-TRAIN = load_json('belmonte_train/service.json')
-BELMONTE = load_json('belmonte/runtime.json')
-BRINECOVE = load_json('brinecove/runtime.json')
-HIPPO = load_json('hippodrome/hippodrome.json')
-HEIGHTS = np.fromfile(DATA / 'heightmap.bin', dtype='<f4')
-N = int(WORLD['n'])
-SIZE = float(WORLD['size'])
-assert HEIGHTS.size == N * N, 'heightmap.bin is not n x n float32'
-HEIGHTS = HEIGHTS.reshape(N, N)      # HEIGHTS[j, i] at (xs[i], ys[j]), as gen_world.py writes it
-STEP = SIZE / (N - 1)
+DATA_FILES = ('world.json', 'hidamari/city.json', 'gondola/runtime.json', 'ferry/service/service.json',
+              'belmonte_train/service.json', 'belmonte/runtime.json', 'brinecove/runtime.json',
+              'hippodrome/hippodrome.json', 'skatepark/park.json', 'heightmap.bin')
+LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
+# The committed inputs, read by load_data() on first use. A CI checkout without LFS data has pointers here, so the
+# module imports and its pure helpers (look_at, Target, the pose schema) still work; the data-dependent calls refuse.
+WORLD = CITY = GONDOLA = FERRY = TRAIN = BELMONTE = BRINECOVE = HIPPO = SKATE = None
+HEIGHTS = SAMPLES = None
+N = SIZE = STEP = None
+
+
+def pointer_inputs():
+    """The generator's committed inputs that are still Git LFS pointers in this checkout."""
+    found = []
+    for name in DATA_FILES:
+        path = DATA / name
+        if path.stat().st_size < 1024 and path.read_bytes().startswith(LFS_POINTER):
+            found.append(f'unreal/Content/Data/{name}')
+    return found
+
+
+def load_data():
+    global WORLD, CITY, GONDOLA, FERRY, TRAIN, BELMONTE, BRINECOVE, HIPPO, SKATE, HEIGHTS, SAMPLES, N, SIZE, STEP
+    if WORLD is not None:
+        return
+    pointers = pointer_inputs()
+    if pointers:
+        raise SystemExit(f'committed inputs are Git LFS pointers, run git lfs pull: {", ".join(pointers)}')
+    WORLD = load_json('world.json')
+    CITY = load_json('hidamari/city.json')
+    GONDOLA = load_json('gondola/runtime.json')
+    FERRY = load_json('ferry/service/service.json')
+    TRAIN = load_json('belmonte_train/service.json')
+    BELMONTE = {**load_json('belmonte/runtime.json'), '_path': 'unreal/Content/Data/belmonte/runtime.json'}
+    BRINECOVE = {**load_json('brinecove/runtime.json'), '_path': 'unreal/Content/Data/brinecove/runtime.json'}
+    HIPPO = load_json('hippodrome/hippodrome.json')
+    SKATE = load_json('skatepark/park.json')
+    HEIGHTS = np.fromfile(DATA / 'heightmap.bin', dtype='<f4')
+    N = int(WORLD['n'])
+    SIZE = float(WORLD['size'])
+    assert HEIGHTS.size == N * N, 'heightmap.bin is not n x n float32'
+    HEIGHTS = HEIGHTS.reshape(N, N)      # HEIGHTS[j, i] at (xs[i], ys[j]), as gen_world.py writes it
+    STEP = SIZE / (N - 1)
+    SAMPLES = _scenery_samples()
 
 
 def _scenery_samples():
@@ -70,11 +100,9 @@ def _scenery_samples():
     return np.asarray(rows, dtype=np.float64)
 
 
-SAMPLES = _scenery_samples()
-
-
 def heightfield(x, y):
     """Bilinear height inside the committed square, or None outside it."""
+    load_data()
     fi, fj = (x + SIZE / 2) / STEP, (y + SIZE / 2) / STEP
     if not (0 <= fi <= N - 1 and 0 <= fj <= N - 1):
         return None
@@ -86,6 +114,7 @@ def heightfield(x, y):
 
 def nearest_sample(x, y, radius):
     """(z, distance) of the nearest committed scenery sample within `radius` metres, or None."""
+    load_data()
     d = np.hypot(SAMPLES[:, 0] - x, SAMPLES[:, 1] - y)
     k = int(np.argmin(d))
     if d[k] > radius:
@@ -127,8 +156,9 @@ class Target:
     cite: str
 
 
-def world_row(section, key, index=0, source=WORLD, path='unreal/Content/Data/world.json'):
-    row = source[section][key][index]
+def world_row(section, key, index=0, source=None, path='unreal/Content/Data/world.json'):
+    load_data()
+    row = (WORLD if source is None else source)[section][key][index]
     return Target(row[0], row[1], row[2], f'{path} {section}.{key}[{index}]')
 
 
@@ -205,13 +235,10 @@ def zeppelin(key):
     return Target(x, y, z, f'unreal/Content/Data/world.json zeppelin.stations[{key}].origin')
 
 
-BELMONTE = {**BELMONTE, '_path': 'unreal/Content/Data/belmonte/runtime.json'}
-BRINECOVE = {**BRINECOVE, '_path': 'unreal/Content/Data/brinecove/runtime.json'}
-
-
 def build_poses():
     """(name, target, bearing, distance, height, what) for every pose, in the order of the rows W00-W20."""
-    skate = load_json('skatepark/park.json')
+    load_data()
+    skate = SKATE
     belmonte_train = TRAIN
     hd_station_key = next(s for s in belmonte_train['stations'] if s['key'] == 'hidamari_station')
     bm_station_key = next(s for s in belmonte_train['stations'] if s['key'] == 'belmonte_station')
@@ -369,6 +396,7 @@ def sample_row(key, index):
 
 
 def generate():
+    load_data()
     poses = []
     for name, target, bearing, distance, height, what in build_poses():
         placed = pose_from(target, bearing, distance, height)

@@ -26,8 +26,12 @@ poseset = load('v2_poseset', PARITY / 'poseset.py')
 ISLAND = json.loads((PARITY / 'island_poses.json').read_text())
 POSES = ISLAND['poses']
 NAME = re.compile(r'^w(\d{2})_[a-z0-9_]+$')
+# CI checks out Git LFS pointers, not the committed heightmap and world data the generator reads: those tests skip there.
+POINTERS = gen.pointer_inputs()
+needs_data = pytest.mark.skipif(bool(POINTERS), reason='generator inputs are Git LFS pointers in this checkout')
 
 
+@needs_data
 def test_the_committed_file_is_the_generator_output():
     assert gen.main(['--check']) == 0, 'island_poses.json is stale: rerun make_island_poses.py'
 
@@ -72,12 +76,14 @@ def test_the_look_at_math_reproduces_the_slice_pier_arrival():
     assert rotation['pitch'] == pytest.approx(arrival['rotation']['pitch'], abs=0.05)
 
 
+@needs_data
 def test_the_heightfield_is_the_committed_grid_in_north_up_rows():
     # world.json park_trail[0] is (-184.0, 214.5, 70.728): row J = +Y north, 2 m spacing.
     assert gen.heightfield(-184.0, 214.5) == pytest.approx(70.728, abs=0.5)
     assert gen.heightfield(400.0, 0.0) is None
 
 
+@needs_data
 def test_each_camera_is_outside_its_target_above_the_ground_and_looks_down():
     for name, target, bearing, distance, height, _ in gen.build_poses():
         placed = gen.pose_from(target, bearing, distance, height)
