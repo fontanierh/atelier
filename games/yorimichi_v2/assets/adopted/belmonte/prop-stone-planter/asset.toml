@@ -1,0 +1,38 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-stone-planter (2 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-stone-planter"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-stone-planter"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StonePlanter_A.glb"
+sha256 = "65c5667e4daaed8169d852b3c27db7ddbd88f6a56dc4f21d52b557c10a812276"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StonePlanter_A_Collision.glb"
+sha256 = "f2b7f14c02fc82c885ae4ccaee1de4438d818c55ac7dc4c9662a7a3ae48623c2"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StonePlanter_B.glb"
+sha256 = "ee136b9e68420835a6ae5eaf53973bdc7f7b3fdfefa7158e6a83678d6a84a1ff"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StonePlanter_B_Collision.glb"
+sha256 = "ec728c0ad47bb704a3fa4ed8a5563d0a2d2c687baaac3bc2df094bdabea5aa5e"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_A"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_A_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_B"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_B_Collision"

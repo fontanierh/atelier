@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-crate",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Crate.uasset": "0c2204eb6b8340a876c3cbdb0241b1e4a55ff6be97248a3bd882d46e813de8d7",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Crate_Collision.uasset": "d999b0af034a14e5b6441d2c91d5e3353312f831a8bec63a005ef4d324bea4c6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-pot-shrub",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotShrub.uasset": "b9759fb07fe96d496148d0e5da3764a79eb37e4aed2acf6c475e842764d84bea",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotShrub_Collision.uasset": "60c018e534ced133688fafa027173ef58b5b6f5cce19dc77f03905e8608dfd24"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

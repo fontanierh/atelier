@@ -1,0 +1,101 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-works (13 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-works"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-works"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_0_2.glb"
+sha256 = "19812bc2e259828cb14f8f78436f4517076237a56fb1921670a6c2224d1717b2"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_0_3.glb"
+sha256 = "f739b33049d605eb96fef8f6e4862e366f885085017c5f35b15c1e231e6151e8"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_1_1.glb"
+sha256 = "dd61d49197d9df066ea54d3071d9bf82ba807e17be6b061e65d778aafd4e12a3"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_1_2.glb"
+sha256 = "4d61284837eac8c7b5a5f67a14d954a92a9b73e38033b3671213bc363134614b"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_1_3.glb"
+sha256 = "dd374753b6305b2e5a89d1c231f2baa3bb43a1f0fcabae01fc80a44fe0cc8f2f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_1_4.glb"
+sha256 = "d4fdc1e54209419535895cd2edd4ee24264b908a953420e3de3e6de0dbb6bd97"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_2_1.glb"
+sha256 = "85d7d8a81d627e852502378ba12037ac8ef003a662cdfadd78f88706937be12f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_2_2.glb"
+sha256 = "e9575c85341ff5c5cb71433e845ac0cdbcab16ae68d7ff51f418dcba9349bf7e"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_2_3.glb"
+sha256 = "bfd2312d3d0fd8c38e7dde6b78361380ca66b34fd54d2ceeb350236f77d1adf8"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_2_4.glb"
+sha256 = "ccc44d1c8b4110f4f9db3de7633fb28cc31dbe930ae5c64bf0a0f4cdcb81bf0f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_3_2.glb"
+sha256 = "c106019cc24e8306a4db0f69d7e4265007260e3d233a361de09150db4fc81e59"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_3_3.glb"
+sha256 = "20f581edb109ad72e6ebb985d0f037ac730c4dc4fa16761b690cf1e02e922411"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Works_3_4.glb"
+sha256 = "a6f54a27cc607742da9368f2470858e9e23f36bb7d0274fca77ff158c63a46e4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_0_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_0_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_4"

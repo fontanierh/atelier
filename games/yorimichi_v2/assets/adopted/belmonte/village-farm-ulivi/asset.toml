@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte village-farm-ulivi (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/village-farm-ulivi"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/village-farm-ulivi"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_Farm_Ulivi.glb"
+sha256 = "dcfedb601cf0e143c20c506a828f04aae6d6727c7712137fc0ef40659bcb5a62"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_Farm_Ulivi_Collision.glb"
+sha256 = "626086c91a437fbdd43ab192f8f42cc795700a978df1f748544e5132293d9bb4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Ulivi"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Ulivi_Collision"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-chiostro (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-chiostro"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-chiostro"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Chiostro.glb"
+sha256 = "03664f6729c6cac664d7bf78eecabce5c1d99adb97c983688f15cbd72c8ea0f5"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Chiostro_Collision.glb"
+sha256 = "e20527cd36ed45c9a372da28e424dadfefd80e893171ae83fdf83c9aa2b81a93"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Chiostro"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Chiostro_Collision"

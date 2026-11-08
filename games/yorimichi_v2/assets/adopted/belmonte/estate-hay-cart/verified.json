@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/estate-hay-cart",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_HayCart.uasset": "6a16ae365fe945312edcde5d36ebcf24bbebfc58076dab63305ff2f2f942e472",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_HayCart_Collision.uasset": "fabf97d0909a26be22354b7a9b84e16ba3b2c7197a2984043cc30ab78fb00390"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

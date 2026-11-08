@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/prop-saucer",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Saucer.uasset": "7e351725b2a48b8f3cd5c295224a0040b3bb1493f6ea5bd0fdc0e0fe383c5829"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

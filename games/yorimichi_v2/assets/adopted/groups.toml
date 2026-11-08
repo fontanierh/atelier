@@ -47,3 +47,11 @@ map = "megapark/units.json"
 [[units]]
 folder = "/Game/Brinecove"
 map = "brinecove/units.json"
+
+# Belmonte (audit A3): a committed map (written by tools/migrate/belmonte_units.py) makes each imported source model
+# (a town block, an estate, a building, a furniture piece) one unit with its collision, slices and own materials,
+# each terrain tile and civil-works family a bounded unit, shared surfaces by family, and the generator unit holding
+# the region generator and its inputs, which every other unit references.
+[[units]]
+folder = "/Game/Belmonte"
+map = "belmonte/units.json"

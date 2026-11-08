@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-porta-nw (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-porta-nw"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-porta-nw"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Porta_NW.glb"
+sha256 = "762fd57a6bd0f8a9a2b3abf158a5b5b7989e942e0aa0d7ba295a09b69061195c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Porta_NW_Collision.glb"
+sha256 = "5491de14e2edad6f4a97dfa04d1ddf6b5261c944204bb3a3a2e177bb2690f04b"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_NW"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Porta_NW_Collision"

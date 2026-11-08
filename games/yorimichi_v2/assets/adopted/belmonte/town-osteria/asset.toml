@@ -1,0 +1,45 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-osteria (3 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-osteria"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-osteria"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Osteria.glb"
+sha256 = "ca98e2aabddf3810f62aafc6c0a8a88d917319f57b4debc3973f82b81127d251"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_OsteriaPergola.glb"
+sha256 = "89b19f8a5ed8dddcf3f715d1202d14c7146711f61da050b45696d09f315ed371"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_OsteriaPergola_Collision.glb"
+sha256 = "7886e10dd0f21a5f4f00bfae8ab3384471b3b47cebd94abb5ad0f377774fe320"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Osteria_Collision.glb"
+sha256 = "c737c1d5262456d6ebc4f89a445ef6b28e86f99ca29bea5356fab057909da224"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Osteria_Taproom.glb"
+sha256 = "30307fe8f7a681c50648f6ad5bc45105fa2e6ea7bdc108a20437fde7e5bc125d"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Osteria"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_OsteriaPergola"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_OsteriaPergola_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Osteria_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Osteria_Taproom"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-bench (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-bench"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-bench"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Bench.glb"
+sha256 = "a8d51d9eca3d9b1c3c1016b66c89a11e0041225d5d1bc8c656b2f4dacc090b2e"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Bench_Collision.glb"
+sha256 = "ddb005d1a43222d116416c74d660f8f3032615ae0b08973bb46f4969f16db44e"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Bench"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Bench_Collision"

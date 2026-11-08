@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-pot-geranium (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-pot-geranium"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-pot-geranium"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotGeranium.glb"
+sha256 = "6f72c774854c17851ce0ed74d25469d39baf2733fd236c79705cbc09e182ff14"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotGeranium_Collision.glb"
+sha256 = "d588551cde9593302bb55e018db053024bc9990d49333d42777370ae1d9e07fb"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotGeranium"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotGeranium_Collision"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-chalkboard",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Chalkboard.uasset": "f50b966ea3bdc51508e9b1ecc5f78f68827cc810d6ca8e25197b6becb90ba7f5",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Chalkboard_Collision.uasset": "e5565038f078432860991748bf4588e30ff9400749e7c085f92ae245e46bec85"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

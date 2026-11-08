@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-water-foam (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-water-foam"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-water-foam"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_WaterFoam.glb"
+sha256 = "73fdc21be66f1c4771ef694452bc58272c483d32ec98852d4cbc6ecf9733d5ed"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_WaterFoam"

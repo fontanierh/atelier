@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-amphora (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-amphora"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-amphora"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Amphora.glb"
+sha256 = "beaafbb49820065866f951ea5650ae7b5a5fae2008589d036f9baadb3c23f9c5"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Amphora_Collision.glb"
+sha256 = "2e348b97550cbb2b2f8d39497693e7ee7e9645487f268ffe0f4fa6ace13ce730"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Amphora"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Amphora_Collision"

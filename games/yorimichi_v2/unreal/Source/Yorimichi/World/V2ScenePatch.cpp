@@ -330,13 +330,17 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
 }
 
 int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
-    const TArray<FString>& Meshes, TArray<AActor*>& OutCreated, int32& OutKept, FString& Error)
+    const TArray<FString>& Meshes, const TArray<FString>& Objects, TArray<AActor*>& OutCreated, int32& OutKept, FString& Error)
 {
     OutCreated.Reset(); OutKept = 0;
 #if WITH_EDITOR
     UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
     if (!World || World->IsGameWorld()) { Error = TEXT("needs the editor world"); return -1; }
-    if (Region.IsNone() || Tag.IsNone() || Meshes.IsEmpty()) { Error = TEXT("needs a region, its runtime tag and at least one mesh"); return -1; }
+    if (Region.IsNone() || Tag.IsNone() || Meshes.IsEmpty() || Objects.Num() != Meshes.Num())
+    {
+        Error = TEXT("needs a region, its runtime tag, and one object name per mesh");
+        return -1;
+    }
     AV2WorldManifest* Manifest = nullptr;
     for (TActorIterator<AV2WorldManifest> It(World); It; ++It) Manifest = *It;
     if (!Manifest) { Error = TEXT("the map has no AV2WorldManifest"); return -1; }
@@ -350,41 +354,50 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
         const FString Name = FPaths::GetBaseFilename(Entry->GetStringField(TEXT("asset")));
         if (Meshes.Contains(Name)) Entries.Add(Name, Entry);
     }
-    for (const FString& Name : Meshes)
+    TMap<FString, TArray<FString>> Groups;   // object -> its meshes, in the order given
+    TArray<FString> Order;
+    for (int32 I = 0; I < Meshes.Num(); ++I)
     {
+        const FString& Name = Meshes[I];
         if (!Entries.Contains(Name)) { Error = Name + TEXT(" is no group of ") + DataFile; return -1; }
         if (Entries[Name]->GetBoolField(TEXT("plant"))) { Error = Name + TEXT(" is a plant group: plants join the island's tree lists"); return -1; }
+        if (!Groups.Contains(Objects[I])) Order.Add(Objects[I]);
+        Groups.FindOrAdd(Objects[I]).Add(Name);
     }
     TMap<FString, AV2ScenePatch*> Existing;
     for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
-    const FVector Origin(Data->GetArrayField(TEXT("origin_cm"))[0]->AsNumber(), Data->GetArrayField(TEXT("origin_cm"))[1]->AsNumber(),
-        Data->GetArrayField(TEXT("origin_cm"))[2]->AsNumber());
-    for (const FString& Name : Meshes)
+    const auto& O = Data->GetArrayField(TEXT("origin_cm"));
+    const FVector Origin(O[0]->AsNumber(), O[1]->AsNumber(), O[2]->AsNumber());
+    for (const FString& Object : Order)
     {
-        const FString Id = StableId({Region.ToString(), Tag.ToString(), Name});
+        const FString Id = StableId({Region.ToString(), Tag.ToString(), Object});
         if (Existing.Contains(Id)) { ++OutKept; continue; }
-        const auto& Entry = Entries[Name];
-        auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Entry->GetStringField(TEXT("asset")));
-        if (!Mesh) { Error = Name + TEXT(": its mesh is missing from V2 Content"); break; }
         FActorSpawnParameters Params;
         Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
         AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Origin, FRotator::ZeroRotator, Params);
-        if (!Made) { Error = Name + TEXT(": could not spawn its patch"); break; }
-        Made->Region = Region; Made->SourceKey = Tag.ToString() + TEXT(":") + Name; Made->V2Id = Id;
-        Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Name, *Id));
+        if (!Made) { Error = Object + TEXT(": could not spawn its patch"); break; }
+        OutCreated.Add(Made);
+        Made->Region = Region; Made->SourceKey = Tag.ToString() + TEXT(":") + Object; Made->V2Id = Id;
+        Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Object, *Id));
         Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
         Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
-        int32 Missing = 0, Outside = 0;
-        UHierarchicalInstancedStaticMeshComponent* C = ABelmonteRegion::MakeGroup(Made, Made->GetRootComponent(), Entry, Mesh, Tag, Missing);
-        C->CreationMethod = EComponentCreationMethod::Instance;
-        Made->AddInstanceComponent(C);
-        C->bAutoRebuildTreeOnInstanceChanges = false;
-        C->RegisterComponent();
-        C->AddInstances(ABelmonteRegion::SceneryTransforms(Data, Entry, Outside), false, false, false);
-        C->BuildTreeIfOutdated(false, true);
-        C->bAutoRebuildTreeOnInstanceChanges = true;
-        OutCreated.Add(Made);
-        if (Missing || !C->GetInstanceCount()) { Error = Name + TEXT(": missing materials or no instance inside the district"); break; }
+        for (const FString& Name : Groups[Object])
+        {
+            const auto& Entry = Entries[Name];
+            auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Entry->GetStringField(TEXT("asset")));
+            if (!Mesh) { Error = Name + TEXT(": its mesh is missing from V2 Content"); break; }
+            int32 Missing = 0, Outside = 0;
+            UHierarchicalInstancedStaticMeshComponent* C = ABelmonteRegion::MakeGroup(Made, Made->GetRootComponent(), Entry, Mesh, Tag, Missing);
+            C->CreationMethod = EComponentCreationMethod::Instance;
+            Made->AddInstanceComponent(C);
+            C->bAutoRebuildTreeOnInstanceChanges = false;
+            C->RegisterComponent();
+            C->AddInstances(ABelmonteRegion::SceneryTransforms(Data, Entry, Outside), false, false, false);
+            C->BuildTreeIfOutdated(false, true);
+            C->bAutoRebuildTreeOnInstanceChanges = true;
+            if (Missing || !C->GetInstanceCount()) { Error = Name + TEXT(": missing materials or no instance inside the district"); break; }
+        }
+        if (!Error.IsEmpty()) break;
     }
     if (!Error.IsEmpty())
     {

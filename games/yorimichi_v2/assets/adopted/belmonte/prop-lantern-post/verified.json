@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-lantern-post",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_LanternPost.uasset": "35c5a008fb8f5d9b6aaeb72ad4fccc36682aa8c68b71d56dfda538339ad8f701",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_LanternPost_Collision.uasset": "4a69cc35dc01dd7ac6585dbee70aed8c440d9be2262b51ffde2f1c9e9a4bd7a9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

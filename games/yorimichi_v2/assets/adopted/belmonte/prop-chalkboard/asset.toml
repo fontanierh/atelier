@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-chalkboard (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-chalkboard"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-chalkboard"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Chalkboard.glb"
+sha256 = "af0e94d46a2223cfdbe3c859b12a9cfca4c5b117bfa972950e3138ab97daa20c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Chalkboard_Collision.glb"
+sha256 = "f93073ab0a29e5b5ea80da3dcef69f5565b35f6cf47a698afec9d62a68b3bac6"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Chalkboard"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Chalkboard_Collision"

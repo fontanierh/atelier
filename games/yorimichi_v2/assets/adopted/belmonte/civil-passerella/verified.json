@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/civil-passerella",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Passerella.uasset": "9da77aaf7ecfa6189c494bfd32ff84bae5c19d82ab873a64776655c672e15c1d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

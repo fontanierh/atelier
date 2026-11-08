@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-flower-bucket (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-flower-bucket"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-flower-bucket"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_FlowerBucket.glb"
+sha256 = "772447375824faa7fcf95a3e0d5cc3ec5a39ea8c0e4863cb5783420767c2d977"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_FlowerBucket_Collision.glb"
+sha256 = "1345a240b6fee3ca3b120c9d466ca22c8d4253954fd0295cb5306e44be0c9767"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_FlowerBucket"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_FlowerBucket_Collision"

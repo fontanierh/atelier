@@ -97,12 +97,15 @@ public:
         const TArray<FBox2D>& HeldCm, const TArray<float>& PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated,
         int32& OutKept, FString& Error);
 
-    /** Saves runtime-region scenery groups (ABelmonteRegion's runtime.json `groups`, by mesh name) as one AV2ScenePatch
-     *  each, owned by Region, at the region's origin with the component ABelmonteRegion::MakeGroup builds and the
-     *  same instances, then lists them in the map's manifest MigratedGroups so the runtime skips only them. A
-     *  group already saved (its V2Id: region, tag, mesh) is kept as it is, edits included. Plant groups, which join
-     *  the island's tree lists, are refused. Returns the number of actors created, or -1 with Error set. */
+    /** Saves runtime-region scenery groups (ABelmonteRegion's runtime.json `groups`, by mesh name) as objects: one
+     *  AV2ScenePatch per object (Objects[i] names the object of Meshes[i]; a statue cut into cells is one object of
+     *  several groups), owned by Region, at the region's origin, holding for each of its groups the component
+     *  ABelmonteRegion::MakeGroup builds with the same instances. The groups are listed in the map's manifest
+     *  MigratedGroups so the runtime skips only them. An object already saved (its V2Id: region, tag, object) is kept
+     *  as it is, edits included. Plant groups, which join the island's tree lists, are refused. Returns the number of
+     *  actors created, or -1 with Error set. */
     UFUNCTION(BlueprintCallable, Category = "V2 Migration", meta = (WorldContext = "WorldContext"))
     static int32 MigrateRegionGroups(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
-        const TArray<FString>& Meshes, TArray<AActor*>& OutCreated, int32& OutKept, FString& Error);
+        const TArray<FString>& Meshes, const TArray<FString>& Objects, TArray<AActor*>& OutCreated, int32& OutKept,
+        FString& Error);
 };

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/village-house-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Village_2.uasset": "cca972dff1535d918b7d46a95fab70033b66f54cc6a921b70b122578953fb73b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

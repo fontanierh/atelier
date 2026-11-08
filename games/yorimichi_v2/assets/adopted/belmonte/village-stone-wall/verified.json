@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/village-stone-wall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_StoneWall.uasset": "1a178c93ddaf50dd128dcd6281fa8c7a1cb6afe7d4729826299116cf513b38d7",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_StoneWall_Collision.uasset": "04c1abcd011c7bbe35f6e348c5fd00d4777c51fdbeb38a3494c1579c118bdb7b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

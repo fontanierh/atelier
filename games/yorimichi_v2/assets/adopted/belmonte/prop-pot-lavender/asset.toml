@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-pot-lavender (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-pot-lavender"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-pot-lavender"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotLavender.glb"
+sha256 = "c441fac8a765880adb5a56296af89f18b644c805a9439969705c995bca6ed25b"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotLavender_Collision.glb"
+sha256 = "0cc80449ec035e29676b56dce29a16bb362f70dcffc1d3cf912d8ca52d0ab8c8"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotLavender"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotLavender_Collision"

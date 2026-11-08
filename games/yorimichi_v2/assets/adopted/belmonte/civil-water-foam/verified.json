@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/civil-water-foam",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_WaterFoam.uasset": "46cafed524c4c5e078e828bf21afc4654aacd489d2cf3967c41ac143c0de955b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

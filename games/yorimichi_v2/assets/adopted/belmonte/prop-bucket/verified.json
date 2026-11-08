@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-bucket",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Bucket.uasset": "45ba7dc19b40a1dcccd75af1b4029ab0d47ad3dfa0cd22e940839733cb06497b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Bucket_Collision.uasset": "43e833da57cfa01dbfac5b48de0482d7b13b1c2e41d7483898a86f3cf51dcb7f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

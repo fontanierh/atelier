@@ -44,7 +44,8 @@ class ObjectError(RuntimeError):
 
 
 def load_objects(region) -> dict:
-    """The region's objects.toml: {tag, data, objects: [{id, group, model, about}]}."""
+    """The region's objects.toml: {tag, data, objects: [{id, groups, model, about}]}; an object names one `group` or
+    several `groups` (a statue cut into cells), and each group belongs to one object."""
     path = region.folder / 'objects.toml'
     if not path.is_file():
         raise ObjectError(f'{region.id} has no objects.toml')
@@ -53,13 +54,16 @@ def load_objects(region) -> dict:
         raise ObjectError(f'{path}: needs schema = {records.SCHEMA}, tag and data')
     objects = data.get('objects', [])
     for item in objects:
-        if set(item) != {'id', 'group', 'model', 'about'} or not records.ID.match(item['id']) \
+        keys = set(item) - {'group', 'groups'}
+        if keys != {'id', 'model', 'about'} or ('group' in item) == ('groups' in item) or not records.ID.match(item['id']) \
                 or not item['id'].startswith('object/'):
-            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", group, model and about, not {item}')
-    for key in ('id', 'group'):
-        values = [item[key] for item in objects]
+            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", group or groups, model and about, '
+                              f'not {item}')
+        item['groups'] = [item.pop('group')] if 'group' in item else list(item['groups'])
+    for values in ([i['id'] for i in objects], [i['id'].rsplit('/', 1)[1] for i in objects],
+                   [g for i in objects for g in i['groups']]):
         if len(values) != len(set(values)):
-            raise ObjectError(f'{path}: an object {key} is listed twice')
+            raise ObjectError(f'{path}: an object or group is listed twice')
     return {'tag': data['tag'], 'data': data['data'], 'objects': objects}
 
 
@@ -96,10 +100,11 @@ def migrate(game: Path, region_ids: list[str], environment: str, claim: str | No
     wanted, groups = {}, []
     for rid in region_ids:
         listed = load_objects(by_id[rid])
+        pairs = [(g, item['id'].rsplit('/', 1)[1]) for item in listed['objects'] for g in item['groups']]
         groups.append({'region': rid, 'tag': listed['tag'], 'data': listed['data'],
-                       'meshes': [item['group'] for item in listed['objects']]})
+                       'meshes': [g for g, _ in pairs], 'objects': [o for _, o in pairs]})
         for item in listed['objects']:
-            wanted[f'{listed["tag"]}:{item["group"]}'] = (rid, item)
+            wanted[f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'] = (rid, item)
     if claim:
         authority.creation_claim(claim, region_ids + [environment], 'object migration')
     else:

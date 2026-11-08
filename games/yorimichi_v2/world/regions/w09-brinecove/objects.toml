@@ -1,4 +1,4 @@
-# Brine Cove objects a person edits on their own (tools/migrate/objects.py). Each group holds its object alone;
+# Brine Cove objects a person edits on their own (tools/migrate/objects.py), one saved actor each. Their groups hold them alone;
 # docs/inventory/brinecove-objects.md lists the objects that are fused with others and what extracting them needs.
 # `model` is the object's unit in assets/adopted/brinecove/units.json.
 schema = 1
@@ -28,3 +28,9 @@ id = "object/brinecove/fort"
 group = "SM_BC_Landmarks_3_5"
 model = "adopted/brinecove/fort"
 about = "the hillside fort: curtain walls, towers, keep, gatehouse and courtyard"
+
+[[objects]]
+id = "object/brinecove/pirate-queen-statue"
+groups = ["SM_BC_Hero_PirateQueenStatue_cell_-1_-1", "SM_BC_Hero_PirateQueenStatue_cell_-1_0", "SM_BC_Hero_PirateQueenStatue_cell_0_-1", "SM_BC_Hero_PirateQueenStatue_cell_0_0"]
+model = "adopted/brinecove/hero-pirate-queen-statue"
+about = "the pirate queen statue (its hero model cut into four cells, one actor)"

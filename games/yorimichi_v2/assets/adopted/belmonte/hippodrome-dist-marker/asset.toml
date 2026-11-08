@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-dist-marker (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-dist-marker"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-dist-marker"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_DistMarker.glb"
+sha256 = "7c7d17ad57e910c18ea19398b5232f70aa261a1d5af707a0d63f63fe7c27491f"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_DistMarker"

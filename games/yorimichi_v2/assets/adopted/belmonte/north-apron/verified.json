@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/belmonte/north-apron",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece00.uasset": "7cb4598aca752faa3bdbf2617be326cd92b7ad39008f9793a4f9a176a564b14e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece01.uasset": "ad75be2c6ebf6a1be4460ae92d60a7081643c066615d0ec88dcaa86ec535a620",
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece02.uasset": "ea3b7a48af8ccff993c9f4bc1ebd6f2db2565048b878ce1531ec9e930b8d99d4",
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece10.uasset": "7675da81cd739c4f7ab7b0630918ed6ed3d10371ae8a947770f56c16821ab051",
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece11.uasset": "e42fa52631007c8a9b29a6c8d4310d94abeb84370bb87ebca0382d123b1d3e6b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece13.uasset": "50ec6c1e88ed58b6d4abe5e33d004fe09caf0fa8127abdbb01966132c37a0c25",
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece2.uasset": "5bec75b0996b6d22316cec922ec08d2335151fda9b1adb1b4bbbc11fe13278fc",
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece3.uasset": "de30a4cf6dc3f8122e5948c69f697b698ea2a1a2d5ed7d62d8e3dca54d6cea9c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

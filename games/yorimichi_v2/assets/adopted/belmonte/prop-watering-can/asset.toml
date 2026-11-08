@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-watering-can (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-watering-can"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-watering-can"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_WateringCan.glb"
+sha256 = "09778c6ca7054e98dd3eed7677de0c900a456534a83c0c5c621aa86508ca81e4"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_WateringCan_Collision.glb"
+sha256 = "c5ff44a0cdeea2321a4f9f0e6ca0e0f9915615eb8594ad2c9016ed68c5a8c9f2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_WateringCan"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_WateringCan_Collision"

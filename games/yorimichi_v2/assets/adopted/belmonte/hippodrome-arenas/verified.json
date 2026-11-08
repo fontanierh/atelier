@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-arenas",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Arenas.uasset": "42ce9ea9e81410c92eb4d5a7e55fcbfe79618156e8aec6d744c27fa307f964b3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

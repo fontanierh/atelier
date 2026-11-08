@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/civil-lake",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Lake.uasset": "e53dc02c3117824c01572cbcf85ccccae250c0244d79beec42425aa17b25e4c7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

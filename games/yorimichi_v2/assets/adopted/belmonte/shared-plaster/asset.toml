@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte shared plaster materials and their textures
+schema = 1
+id = "adopted/belmonte/shared-plaster"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/shared-plaster"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_rough_plaster_broken_D-b39f163f74.jpg"
+sha256 = "f7e849b0b233e1f0613ebad8fab3737de79333ff8a0b82ed365d87fbf2566641"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_yellow_plaster_D-e160611677.jpg"
+sha256 = "284a3f65cc6970dd28485913bd803f403058ddee0a8332defd344755dd72082e"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_99b3c7fe8da6"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_9c599add99e7"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_a1f5113d77e1"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_a85386eda38e"

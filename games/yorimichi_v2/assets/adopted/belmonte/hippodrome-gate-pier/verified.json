@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/hippodrome-gate-pier",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_GatePier.uasset": "b5e6bbedc1ae5cb4efab5395fa3b1ed5fa561fafcf9998c16680378a997f6fe1",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_GatePier_Collision.uasset": "f077ada6b121d495837597bd846d21cdccb6552f86ef92393907331036f7a300"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

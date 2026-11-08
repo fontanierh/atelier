@@ -1,0 +1,31 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-gorge-strata (3 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-gorge-strata"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-gorge-strata"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_GorgeStrata_0.glb"
+sha256 = "d71232171977766f0a207bf12cf95c7fa989ffac5df776e0e9eb327e505ab296"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_GorgeStrata_1.glb"
+sha256 = "d0c7f9a54928b92f84283dd98180e9e36b1d92ab1691c956ddc4fbd78a4a9442"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_GorgeStrata_2.glb"
+sha256 = "06fd1862bd6d4288f1308705800738c9fa11f3616176d9a58bce0e05c16263bc"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_2"

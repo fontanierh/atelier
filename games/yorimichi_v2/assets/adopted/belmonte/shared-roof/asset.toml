@@ -1,0 +1,20 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte shared roof materials and their textures
+schema = 1
+id = "adopted/belmonte/shared-roof"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/shared-roof"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_clay_roof_tiles_02_D-c9e880ab3f.jpg"
+sha256 = "4d8d4debec0b11c7a07f313835d2bb6f91d54d229c813b558137d176e629cdc7"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_e17c9375ae80"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_b62cf5b69761"

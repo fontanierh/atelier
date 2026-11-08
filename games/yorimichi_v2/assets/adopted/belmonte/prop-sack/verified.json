@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-sack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Sack.uasset": "7e32b9d271b35e8d165afd7f9ad42fbe392de5a8e3804962061bba1c66e99ee7",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Sack_Collision.uasset": "ed2d086756a85efeeec9dfce7a9ed415397d1b97000d14d29d4389fa9816094b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

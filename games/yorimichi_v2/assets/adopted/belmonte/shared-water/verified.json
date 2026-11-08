@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/shared-water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_aadab9c1da71.uasset": "caecec9b6eff8f5e28e34fc9d0fc386274a7db0d73094c42fbf568cbf8d47c9f",
+    "unreal/Content/Belmonte/Materials/MI_BM_f76f48666871.uasset": "0c0f93fd429f31d353ba09663e59d1af8be312f6af2bf9417c76eef2e5deb4b4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

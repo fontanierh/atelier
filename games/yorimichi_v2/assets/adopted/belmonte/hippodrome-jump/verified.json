@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-jump",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Jump.uasset": "69b7577bad4b5478372bec9b89a201b4ffd9c26bd0eb7ac97c47eec85d416828"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-infield (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-infield"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-infield"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Infield.glb"
+sha256 = "f6078cf43b17dee8894c9d09d91cdef0741d8415a91e1568aeee4998758cbae1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Infield"

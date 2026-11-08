@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-members-bar (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-members-bar"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-members-bar"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_MembersBar.glb"
+sha256 = "d67297a21d1b2a54eb2989d6fa6eb6d392aa1f781961aa4ade2f85d12cfe0e89"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_MembersBar_Collision.glb"
+sha256 = "465081d43b91b2632658f43195826f957abcc4fbeed950d03fae4da6736896c7"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_MembersBar"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_MembersBar_Collision"

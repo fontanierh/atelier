@@ -1,0 +1,34 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte cafe-chair (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/cafe-chair"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/cafe-chair"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_AT_CafeChair.glb"
+sha256 = "15736330bc0b96f8852640f8874e7787c34e265796eaa83241fecd26095de571"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_AT_CafeChair_Collision.glb"
+sha256 = "7aad63497c57b319e9573208280e7a81e8803615baf5d6f3367e657ef15e7e02"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_AT_CafeChair_D-9c754f82fb.jpg"
+sha256 = "6a1d7178a834f1f03d2f226a1c48cf0cceb396291438b90caf09640ac02d388a"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_afae53c1b42d"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeChair"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeChair_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_8a6a307d3152"

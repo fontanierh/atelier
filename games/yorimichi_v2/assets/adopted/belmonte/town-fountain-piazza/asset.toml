@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-fountain-piazza (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-fountain-piazza"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-fountain-piazza"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_FountainPiazza.glb"
+sha256 = "586c8972fed97a60ccf0c6eb9b621d3b7bd2faace9d15216737558d67a50beb1"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_FountainPiazza_Collision.glb"
+sha256 = "fec63f8b2e9d7d23cebcb997c71d602dcf8e010203fe5a50a72f7450ca91f74b"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_FountainPiazza"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_FountainPiazza_Collision"

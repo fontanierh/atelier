@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte shared timber materials and their textures
+schema = 1
+id = "adopted/belmonte/shared-timber"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/shared-timber"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_weathered_planks_D-4cd10312e4.jpg"
+sha256 = "46d6421846d45ed82e0f585503ed84a9e0a56e37a9aa5ab175c2d1a6211f3493"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_wood_planks_D-39ceb687eb.jpg"
+sha256 = "570e6354d515b7a0fcd7877845dd9feb5304879a1f3956a2ffc42ade8d5555a6"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_4ac86121edbc"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_7ebfea974bb1"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_545174045712"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_bb1c8b9d4039"

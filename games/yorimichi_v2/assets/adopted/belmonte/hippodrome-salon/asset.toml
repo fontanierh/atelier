@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-salon (3 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-salon"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-salon"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Salon.glb"
+sha256 = "ac3a8a19e7bb445bf6895ca2270c596d35acef3d73bcc09e2984d657942570e1"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_SalonGrounds.glb"
+sha256 = "e14dfdd63033093f448429270944bca39cfbc2b193b47db0a2cd67784346bf1b"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_SalonHall.glb"
+sha256 = "9ae963d60ff33dcc98606af0e591cc59179327c076b5b3c23e4b1997890d7340"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Salon_Collision.glb"
+sha256 = "0140a412d9ac0fae4081b8a7c1d0d0d0f09da343ded216c3b4642fbc70523187"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_BSalonPosters-d82ad7c5a1.jpg"
+sha256 = "26c6aaa4c4ab626d083977e31ddbcf4defd3ba8f92dcb6629dbe917476c53fc5"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_56eb5489daa9"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Salon"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SalonGrounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SalonHall"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Salon_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_a56121473d0a"

@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/belmonte/civil-water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_0.uasset": "bd2c09fac018027c6a3adb53c81b352b41eaa393d0f841619f9c2cdeb2375944",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_1.uasset": "987a907e2a98fa82faa72aeb1219b4eca112ccecacd03c5e37629157a8b3f27f",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_2.uasset": "4a3ea7c00cdb87fa32e304049b829359bf3af1530b6cb06ff43b1fe5737534ca",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_3.uasset": "0b6dbfc527233e9ea7bb75fa1a92b68e453b8be0dd0d782a1fd03283d2011f0b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_4.uasset": "72c5cef109b9a0a163d86aa519c4bb760324a0415f26df9a174bb5e32ab1fd88",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_5.uasset": "bf17d710a707a338d10b508498f5f7621b55512f7f4faae11e6812b9243d0107",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_6.uasset": "ad0892acd4abd9cacd45c47ed1d36750c831d6ea2b3f56b3d861ee6516791aad",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_7.uasset": "885641cecab2234c673227c1a033febe4c5ed2c9e9654c391ab9797209f206a3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

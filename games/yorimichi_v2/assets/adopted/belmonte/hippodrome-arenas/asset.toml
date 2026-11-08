@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-arenas (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-arenas"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-arenas"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Arenas.glb"
+sha256 = "bc8832b6cda033cacee24888139696c4c5111194a1217708920168a4958c2cb0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Arenas"

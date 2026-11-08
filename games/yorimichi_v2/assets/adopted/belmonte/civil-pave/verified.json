@@ -1,0 +1,24 @@
+{
+  "asset": "adopted/belmonte/civil-pave",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_0_2.uasset": "4e1138742b7b413a146b5e5b35228b148882a97db2421d5e00f7bb90e78c24a4",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_0_3.uasset": "2c3ddd3f6daa8f261a34296d5e8b727ec651d6fe4977ef879cf57fdcb043ff0e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_0_4.uasset": "1ff23a1b91f0c7e0f69b381bfd2bd2554af543e3d1c19bc217e62f57ddb1410b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_1_1.uasset": "45b52d63ccf39bb92b8e80b16aba3451c295cb2d968d1fb2789a4d14bd55d0d9",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_1_2.uasset": "c42c842af37adb8423aee6eb8a4e14604722dce32d660138d8a3ecfe08f60e82",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_1_3.uasset": "29d18cde8d82c7207c1a618247fea6585440baf158f98205028cc341275db12a",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_1_4.uasset": "48868b8635bdf7f65527f2a169345abba1898b5ae9d32b5c5d4cf26217b0cc73",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_2_0.uasset": "98fcbc14fa19b0fddbe875298da977ec3cac8d3b998c80616737b235fc3f142d",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_2_1.uasset": "3f21df6c48a903cad23cc61bce1a954b1afb7ae73cfc566b1ad68f3caa3063d4",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_2_2.uasset": "697d459156e6d34e92217b1a6734e6b9751022222a4a60f379ae40dac3d0e058",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_2_3.uasset": "b6f8071e8b9066bb0008f2a1f9605cb2aef837c055bc8832edc4ce5c45b40be8",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_2_4.uasset": "280210cfa305268a21bac857393f09996fb64cd7a6d10d01b98f80c0b502047f",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_3_2.uasset": "553d59e994b8de6c18ee3b6abedffb1c10b41faa4d5765d217eb3db6ab058461",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_3_3.uasset": "119aae5e801e6c8e46d56cc29495a7f6375b5fb0d6fb54e2cb9cd73d3b98c0ec",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Pave_3_4.uasset": "6b32d3575da159ddc5d05a3ae2e7881240a697422bd116ed24320b5c6054d23c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

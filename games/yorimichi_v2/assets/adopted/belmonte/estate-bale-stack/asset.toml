@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte estate-bale-stack (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/estate-bale-stack"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/estate-bale-stack"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_BaleStack.glb"
+sha256 = "c342a5bb495dc5cd94f14097c06b76d91a869cbbccb3f4b1bc26afa597e3bb88"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_BaleStack_Collision.glb"
+sha256 = "e008094b0b9c20b6960c6248d65c5ec31696b9638a2d4ce312b23f91aa6c8243"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_BaleStack"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_BaleStack_Collision"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte village-hay-stack (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/village-hay-stack"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/village-hay-stack"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_HayStack.glb"
+sha256 = "33fc2bf8f2c42dd4dcf724e08891c869493c9e1e3788411f9f2a330e29371336"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_HayStack_Collision.glb"
+sha256 = "1268f8af9862dc7b947456444fe5a6b66d0b6629a82198373fa215fd83104fc9"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_HayStack"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_HayStack_Collision"

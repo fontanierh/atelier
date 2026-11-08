@@ -1,0 +1,1286 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte region generator and source library: the build scripts, Unreal import script and acquisition tools that made every Belmonte package, the pinned Haras revision (source.json: model and texture checksums, placements, material settings), and the generated base materials
+schema = 1
+id = "adopted/belmonte/generator"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/generator"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/assets/belmonte/README.md"
+sha256 = "b4177c31ee122e98b7db32fab1e7135acdd8b69ad9659e4751b8f7d5abad1d20"
+
+[[sources]]
+path = "source/assets/belmonte/source.json"
+sha256 = "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0000-000.npz"
+sha256 = "86ad08bc96660f3a58c8c257d44c1eda939869d9333806847bf40df3179cc92d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0001-000.npz"
+sha256 = "33ca4618d5ea0f16d36f2b7fd057cabd0a060ee69926c0ad915adfe211187e49"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0002-000.npz"
+sha256 = "63108fff8e9d5de1e98b0bf4b1842272f1c705b7b9312a2b9db067a64d858373"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0003-000.npz"
+sha256 = "6565be1e9c3bc4010121afc9bb989b7c9d9298c57b5859ef62b16ec9a32a6f7f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0004-000.npz"
+sha256 = "1dad121f4b33d479966084c3fd466a3114f643ae49307a856a820e1fdd642f1c"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0005-000.npz"
+sha256 = "33b4315abbfd16bdaf99b028f7515dc74c1a9a44cb96546aa8cad3c0d7a8054d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0006-000.npz"
+sha256 = "7aae209f200492d28312c59474f68896fa637844a6ad454997bef1d5cf6ce613"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0007-000.npz"
+sha256 = "534101dfc9ad9b4b0ae5c84ba5320b78f930a27ac655661424a12f10c5fb8c3b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0008-000.npz"
+sha256 = "70772b026e50aefd3f1cb790dcbe66ffa5444e53efc6876d3a0dcaad0fbd362e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0009-000.npz"
+sha256 = "7e42816531ec6e22b1181d998c26e9d08977da25489b91890e98f403d4811654"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0010-000.npz"
+sha256 = "34e421d84a1206265702f6aeb5f45bd1061a9de9b410b7eb32d1f28c4416f829"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0011-000.npz"
+sha256 = "2c77a19e653e1759a1df6f22df5373a8e11339475e4d75cee0675965eb44408a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0012-000.npz"
+sha256 = "ca11e13adbfd95ce48b2d2186211349986a9ed48aeeb0cc7fa9ab06ba0025fd1"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0013-000.npz"
+sha256 = "cebcae6a5047680efa141e97fd9eb035869fc20c031c646f9269528fe663ee80"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0014-000.npz"
+sha256 = "710b9ff4038d79d627f61d66b901e24cf4a6a64e43f8be3941d823177e5b7da8"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0015-000.npz"
+sha256 = "3061d0c0de081488d013496ab6a114b6cf2c018c2275b432ab2c69bb13a248fc"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0016-000.npz"
+sha256 = "f2f17a02ba63b96a17b454e773cc08713ee996585fde51177f7f6ea002cf6de1"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0017-000.npz"
+sha256 = "4974dc399fb591e22e52bb37a0c0d4b137ed460135677a83674060e5cd2fdbd0"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0018-000.npz"
+sha256 = "2a15b4b90de4cde4cf5d4366ba26b929ef956251868cb631b10b923c50fe3361"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0019-000.npz"
+sha256 = "f4c5ffea3587027daf1179c570a56e37f558eaeccb6212212daa8ab418d1cf73"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0020-000.npz"
+sha256 = "b22672d114982d18c5e1187c3ab4c8b2cf696c5096f1eb1186f318f0a70cee77"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0021-000.npz"
+sha256 = "c27db2822cbc5459ac4a6d7f0493583416192e7bc0dfe5fe718e39f87b5916e5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0022-000.npz"
+sha256 = "ab081c93e0f52d30310be45e45c9f2ad81057fab12c4ac373dd716dd49860aec"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0023-000.npz"
+sha256 = "1755f12f111f1132fbd3730983f179a0c0af67f1257d7ea6c1c3215dde486e00"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0024-000.npz"
+sha256 = "2de7f3b798f0c0a45fffdd7e82c177beca7c69c2e5697d7c41d35849afdb18f6"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0025-000.npz"
+sha256 = "c3e259a1f9ed7eebd03e628f51cd1260fcad2f586e23d83d4681a56680245e36"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0026-000.npz"
+sha256 = "d7d5df65935e971500d07261addac69828e4cc4907fe25033b0852a5c926227d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0027-000.npz"
+sha256 = "889b20415737d6471d6b8ace44fd442437d15d2511b767f06e4cf37a04736628"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0028-000.npz"
+sha256 = "4b2c1fa32c169672287c12ed29e89bc9ee0008a6a2a052e5f08b57a117a79642"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0029-000.npz"
+sha256 = "732139e30100671f281a8219369b814274a67a71b447276058871d6b3acf3734"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0030-000.npz"
+sha256 = "36211df73b472af5a0b3245537be53b21647f066f618e963d6d42c52dfbdc457"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0031-000.npz"
+sha256 = "6add9b68337ac34e2c9f087dbfee18aa39eb4d9fb54b02c1d6598d40c49bf501"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0032-000.npz"
+sha256 = "53acc0a55f3f097ec6b980c7a249f6280c1c5608187d4465a1a022a12f815a2f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0033-000.npz"
+sha256 = "0741352ab0d9e44bb39c082588962dd08a3b878a1000ce01a10656aa099e1742"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0034-000.npz"
+sha256 = "6c5ac6ebc0b4616b5ff6d237484a91abaf6926a6c72902def77b8588295ca0cb"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0035-000.npz"
+sha256 = "27b5074ee78e954937cd624a124b7a114b343b3083a1e351a84b8ece3cc6336a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0036-000.npz"
+sha256 = "ad88f59b6c129853616fddb4fec0c035288c008a47a2294e5d1796f080988929"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0037-000.npz"
+sha256 = "17ed1904bafda8047a3be1eae16a6e05f305f49887d20a81b352bf697e681702"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0038-000.npz"
+sha256 = "50de703bac70f81f7342a88b39b43e80fc7bd46f3cd499ba438610966baaa3c2"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0039-000.npz"
+sha256 = "98f4b2823b14536eb908826daf8b1d19c13700ad6c090a53a4d35358e65d3d83"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0040-000.npz"
+sha256 = "ad30655365ca99b2d7cf64e175b553696f2274d7897ea691fc3b8420ff48a8e0"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0041-000.npz"
+sha256 = "6c3c34f1ca30f848d284c271d778bc87aa78ae5e2eacc4456da1e4f3e8f5fc61"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0042-000.npz"
+sha256 = "5ed7ef734250101f489e25ac9e282851c8ca2d1dfd074df06b54a7a8f6ad447a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0043-000.npz"
+sha256 = "eb7fa76b89e32ed7532f75c4efb93dba79aca5187a6e1966eb10b2f3a016be62"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0044-000.npz"
+sha256 = "a74420066517eb915175f957e8816412b9f2a04c5ecccbcde3afe61ec7b0ca72"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0045-000.npz"
+sha256 = "684e5ea83a160b6e97d138701ab622bf2220e7152358ebd16c86a514d0ce8e19"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0046-000.npz"
+sha256 = "75b345c777f9d2e5397e203c18f00363e5c49ef8060b84c8f4324c609a912559"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0047-000.npz"
+sha256 = "08c31e80dbd38ed71f4926aa2db37aac7670114eae4fcde2eed18f03e46465c8"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0048-000.npz"
+sha256 = "be55de21f40d304d8be3965c865764a98cbb8c306acc064667fd6952849513e4"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0049-000.npz"
+sha256 = "9fb23cd090e3f841efc50a60770c844ec6686fc4b830be41f6b1b5d27fc4da4b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0050-000.npz"
+sha256 = "ebb54cdf15901718e9b0d9ef8e0ef90f1c84e35bbf56b1079534f697c503c333"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0051-000.npz"
+sha256 = "d79b273a765c1fcb38cecf6c4063bb4b5585f8b9ef78ad8199d48e72dda6c83c"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0052-000.npz"
+sha256 = "40fdcf4e66211b422ebc17e7f11f80b52d933aa80b53b23a9a4c595451e69056"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0053-000.npz"
+sha256 = "45cb6e474c01743cab41e2ced8f4b0b1ae7e0f43d65d325d744fbb9c80c90d5c"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0054-000.npz"
+sha256 = "1580b642411314fbbc7caa507ff7d367a19742d4d07f60e68c69b2f6f580dc8e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0055-000.npz"
+sha256 = "a2d2609a12d9d68bfbff597eb108afdb51341b7755eaf6d852c3df78a037f53a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0056-000.npz"
+sha256 = "135d5a4079625061198f431a0057c33468e941a14eea71760b59e8bb7a20f495"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0057-000.npz"
+sha256 = "20b98e252df2deaee8cb2f09a7f581316ce8602bafe3bd26da5e151bf2206fe0"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0058-000.npz"
+sha256 = "5a31391ad6f2ddf2c6def729e96197b26762ea556d5895b08e55568fd8a0970d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0059-000.npz"
+sha256 = "d6dcad5c06166e56cd9ee99e6d12055eb332a3cd522d07b54c30e50658fee959"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0060-000.npz"
+sha256 = "cbfd739c914ea672f31e3889c5df6beeafdbd2e04f404051e6b46b7095e6bb59"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0061-000.npz"
+sha256 = "ddec148d4fa179d762557bdc4f23095f5661eba0d9aae158f7c72f1df15c34c5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0062-000.npz"
+sha256 = "570442a779d7f45f591737de799974ececeb7b19a897d14a46b1db5a5c182bf5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0063-000.npz"
+sha256 = "52c1356dbc051685d1007e29cc916dbc77eab0c977973e63273489770fcc4d0f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0064-000.npz"
+sha256 = "f43057b4727ef04f679d54d8483a290bc22e73a5e10dbad24d4754fc33353d41"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0065-000.npz"
+sha256 = "0174b3eff2539ca591c8dff3d8fddd7177f8e6847b72b77659b34f1c8b8a8c1e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0066-000.npz"
+sha256 = "4623d685384065183a19e1bf72d036e6315e751a181bc23c464797fe8d5bcbdd"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0067-000.npz"
+sha256 = "902e0c245c5e789cf3e1f2cc56e9f478186d487e14802c1d3ab3f38d49faa061"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0068-000.npz"
+sha256 = "5793ed7ca2737ed78c9fb9bad2b825180faa82a45d45951389e94d535e65c6ac"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0069-000.npz"
+sha256 = "11b85d0ff470eca162f5dfacdcc2c773dc603b47f41ee26ef4187155e294c205"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0070-000.npz"
+sha256 = "fce26cb98f79c0f1c4d0ab4e2ac95e1ac0dff592a4a723de5443c90c78b34561"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0071-000.npz"
+sha256 = "e5387010db80895d72cf7de4176f0af215e6bdea72577320c747852f5e408ec2"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0072-000.npz"
+sha256 = "f1f18b0bfd012409312c810341ddaad6d1f916bc2ff7b58095944977b03f61ea"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0073-000.npz"
+sha256 = "fa3da38c3a0b1e8483918aece30ef57888027cfd53115f34f0dd7e0e34871c7d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0074-000.npz"
+sha256 = "b33ef54772c091b92134d6fc0a030173c48a30d032f9a88ac9df1852ee408c20"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0075-000.npz"
+sha256 = "4469c71bfcbbd66e7b85a5d47369b8af6bc109eb5d0a8ca60ad94dc55126b393"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0076-000.npz"
+sha256 = "ae9c8040f521db53fc963c3896755eafe79e498c612bea9a51447aa6a459acae"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0077-000.npz"
+sha256 = "e9c70bd36fcdbee4ff7cf3423805498d6e0c486c64b7e93fbc766472d123116b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0078-000.npz"
+sha256 = "fdd95bcbfd8678bb1b07b304fe77abfdd1b3dcfc57b9c99a42da01751db5aee7"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0079-000.npz"
+sha256 = "5482d827676fd6024f4aadd8763351951c518050665f11393aa16222b62e400c"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0080-000.npz"
+sha256 = "5bd554a9843a2d3b92b75d9a4978804e5962ba09303a0ed0ab979db10b81f134"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0081-000.npz"
+sha256 = "e28e700c520d0cf6fd39eff9c540832312a51ede3fff4ad83782c2c52f617968"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0082-000.npz"
+sha256 = "9b270dc6e4b45cf26fa2d3584eba5fb0a2ae65ea6c0717f2ef63845cbc70c4c7"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0083-000.npz"
+sha256 = "c44fe78723964b495f07c1b9707c548afd23a0223eb653d85deebc01cc3573ee"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0084-000.npz"
+sha256 = "26551448a552492dca8b4b280fb5a38d03704c4156f1a05020d3dd461da48f3b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0085-000.npz"
+sha256 = "31b4951a5e4e10be78866d8a112082d4eb79414fc1d23edd9ab6098f3d2dde4e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0086-000.npz"
+sha256 = "ca249455645f1641ae1645eadadebaeddf387b9e3b70eda4633656c2d3fdc058"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0087-000.npz"
+sha256 = "7973da7f4fc61751074020f63d5c108151fa8111796795be1bafd5ea0647a2eb"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0088-000.npz"
+sha256 = "c7c2dce863e381388ce3069018bbec747197d14ab8fceb7ce519fe20bae90e83"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0089-000.npz"
+sha256 = "e1f299f786ca7c8a108d15d22f27eb15a0e9af0f432c7589a9092b8e030aae34"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0090-000.npz"
+sha256 = "1683339ff290c3e8a7eb11bec423457dd978f142fcf7a53ae7dcbc55e9ce2727"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0091-000.npz"
+sha256 = "6aebf1e408688474cfb2f6d51488887aab90efcf4065c598cd8925f03e245815"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0092-000.npz"
+sha256 = "d7b127c33863be6f8679bf2364898f5fabd0a021ac901731f66cc4c977e676b9"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0093-000.npz"
+sha256 = "7b41f4582318baa09bb951c304657d983067d99c5f56006940f9d5ebe27d806a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0094-000.npz"
+sha256 = "64a47f62f7f6c465a5cb99edc2b1e4162f345b71106611125d6defd1bd9a978c"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0095-000.npz"
+sha256 = "1986cfc48c00d7644112357be9263440c92c7df772e1e58d2b402a89cc630c84"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0096-000.npz"
+sha256 = "8feee00eeee7ccd9019ae0ecd30570f8cae4d3667f33539506079117095ec653"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0097-000.npz"
+sha256 = "857e64ea04b56a07e9ff6cbb0daf49e3dfdc8c0bd14e39ca5e18ad7eac62272e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0098-000.npz"
+sha256 = "987b54ea897052e887e8c75f230194724873003e9582820fc6d870566055d154"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0099-000.npz"
+sha256 = "27cf61042ab63dff085f53825d99ca31780af6f20b6352a4066ed7e1083eb04e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0100-000.npz"
+sha256 = "6f913149ab235c038a846fe68da558235a5fd6f3ed516a26e876590d5adcc0f4"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0101-000.npz"
+sha256 = "1c3970a07b47b6fbc5e163ce357e9a371c891ac8c498987d0cea97aa9a3fa1b2"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0102-000.npz"
+sha256 = "76c61eb9263db656f593f75f70d38b2b84f49c14d74ae100de36f0f4c70d621b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0103-000.npz"
+sha256 = "68875752a2037674b2b2b35252d2c5b95e039cc1701f4a87cacde929b55f6dab"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0104-000.npz"
+sha256 = "1c7cb96bc464b5a81a99335161bcbb74999d515d2bb6fa1a3a2e9ae7e60a1e41"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0105-000.npz"
+sha256 = "b8d5f3fe5841c0e38b81b059b35ee56a8a02e4563c8201a5293baec28b46b98a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0106-000.npz"
+sha256 = "29e73d9b1fecdfa4a9df2d75f9d9eb6fef8a60efa635af068b468296502d9587"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0107-000.npz"
+sha256 = "ff1588da13ee6bb789edd3a5ab11f0a782e860a67a7af46cc33eea1e08fde32e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0108-000.npz"
+sha256 = "a78b87b9958f5ffc29ecf7d9f104f908624f564f15877a17a1b6a1479e42e0a6"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0109-000.npz"
+sha256 = "f7fe3d18b2ec47c7b5199bcbdf1fba7d538bba131321cb31dbe37e295be1dc68"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0110-000.npz"
+sha256 = "7f57e507ac6bdee4437bcd4bc7fff1cc19d0821ca34319b563dccd17ea74f5b7"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0111-000.npz"
+sha256 = "1c90cd298d908615bf72e7637f0af49b266a87d1c564153bbbe3f4508ab47cd5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0112-000.npz"
+sha256 = "b07632c3a9325da000601a1b1e95cfc44feb5e290ce44012a0472d135f47d22e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0113-000.npz"
+sha256 = "5dab5927543f97ba4f0cc4c851d761d97d55137a81c1432f4554860c71301b0f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0114-000.npz"
+sha256 = "dbee5d1fed4601eaa79c0494638b5df9a64d15dfb888ff6821456b6e77b3b3f8"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0115-000.npz"
+sha256 = "b4d562fd015608c4ea8e6c2c135a5c77dde15f806e58c8866adf0cd02cd76fd9"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0116-000.npz"
+sha256 = "a084f5f71db465aa3c7e7071f34a3ac199c0fd1720df88bc58e80f874fd3790c"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0117-000.npz"
+sha256 = "19bc178089bf2d50a6fa4230a8122d16d51642f6f384349f7aed194f7c5f0147"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0118-000.npz"
+sha256 = "0b3fcafa3c65251385502557d3c085179c2dcdc9060813900f3277f0ceda2dbc"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0119-000.npz"
+sha256 = "a95b832f26d99c28cdebcbf436f47b772513d9a0634968255b699e0e9bb5fc3f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0120-000.npz"
+sha256 = "e00188bf23dc5894fbe756ca4286f4f92450986125e7ff90d2ec4e4a1ff16522"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0121-000.npz"
+sha256 = "d70bf1a1f12046459cb5f9a331894b80181f547b51b12c623c825bf501c6816f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0122-000.npz"
+sha256 = "c555b3fdc63bb67cb1e798edeebb03c19f20e8e6ab764f15b860ec616ae18b6e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0123-000.npz"
+sha256 = "be20e25f02f3feb7031a8c0a101cee5355a033de5e1fe355c6eb1376ea74d801"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0124-000.npz"
+sha256 = "ae2e6a5b6c951210397f639c0dfc9babd65b0e0db384bba37c14fd3982ecdf62"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0125-000.npz"
+sha256 = "398ada75b6ae587c6050e2b79bb18b9bfe282dd2ccc4d72dd4afa2faa3d944cc"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0126-000.npz"
+sha256 = "3b6f03ee62a18a87efffdfc45f77725c64a6876b2d3992809924ec3f456b67b5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0127-000.npz"
+sha256 = "595c86ff6547a2f0378e6e757f7accbb4d2ed87ec8858b5d4c6d6d96a43e4c2b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0128-000.npz"
+sha256 = "1d7364337e774829eda930eaa6fc4a6d4a1d5ae9a9743a6df7164acdff8e7247"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0129-000.npz"
+sha256 = "68db2c0ea6a3d511f8a0e3136df0e6f85a5f3f2cfb7ffb7b72d33c092f9fb2e3"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0130-000.npz"
+sha256 = "aaf06d481770b182c192efcfa2d0cbfbc4c247e706db815838926a7994990805"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0131-000.npz"
+sha256 = "de4234af6eb4d9680525161982ae7e504cbafd5a28d095a6d460f37ee7efbaae"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0132-000.npz"
+sha256 = "e05cf8168a87fce7c5814c1d7086c4e828647bdb0853406a6f98972bafa07a91"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0133-000.npz"
+sha256 = "8e9f22bfdd104ccd91bfee8ec68b8138796edee6610e6f6767db1e00e6eea335"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0134-000.npz"
+sha256 = "6c6761881e01b413679c509be44ce91185b9f830da7c4890ef7d381e1ba917f4"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0135-000.npz"
+sha256 = "f9e8e39c4f7a38fc403a8d8ff59bac1ed274f56aeb6adfddfd3648d10557ce74"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0136-000.npz"
+sha256 = "9a7cff988afcc6e010be03e0026ed34b841734aaaa4c5632febcd2de17830697"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0137-000.npz"
+sha256 = "3d6ba90090899af56f59f98c3dc3b4ab5987e331506292b605a20b03a3cdb95d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0138-000.npz"
+sha256 = "af911eee3311db1bc4715aea5182528f32a7ae0bb313e30fef4a1057ca744934"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0139-000.npz"
+sha256 = "fef7442c6364219d11b152d13ae217f398d6af264865366f9457b0303e2ff162"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0140-000.npz"
+sha256 = "9aa93322d9db9d0dad67578b0c805416b5de62b8ca7752353f237cc8518c1dd7"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0141-000.npz"
+sha256 = "1cb2770a4585fa41d4a59c8b786ac60b432138b770fa947a318277323c54c00f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0142-000.npz"
+sha256 = "6e18b1e3ba46a4c4c0e411a9ce3e177cb0a130f2355cd389996e98ad6ed22809"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0143-000.npz"
+sha256 = "286acb9d31aad3c7c068e65bcdfb64a5f035255620c70ef7e1f9fa3049f7f0e7"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0144-000.npz"
+sha256 = "133d767406c287a3e6a391376270a4b4a4eb41b8683399de8940e4ddd482db8f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0145-000.npz"
+sha256 = "c43239a93adf408ab6581eddb7396d50e299f5576f5fd8a987bd1afce89a3125"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0146-000.npz"
+sha256 = "016ec8e73432f83ead4f04f17adba9fa6ddc547552c19d03bc3280788c18c8eb"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0147-000.npz"
+sha256 = "52d0200a98b10cd919aef99ff8c2bb527ba95b86335fd5d329a2d15ebbb3b211"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0148-000.npz"
+sha256 = "3788f356221413d8b4bab1eda4387478a3d50bb852aa206a71f1330d0d24d0f2"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0149-000.npz"
+sha256 = "36ddc8a66c41f63377f13066be238817f39b6543f557f2413d5bec313fe53207"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0150-000.npz"
+sha256 = "0253433c0aceeea1e20f03dcc3d84ca83ad1cd5962fcefc7170636a521d5184b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0151-000.npz"
+sha256 = "0ccc157f417eb0fb070809e45081ea29fc9e839fb6fa8f5d0a26b6de054d1b9d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0152-000.npz"
+sha256 = "cc8f435fa0ddf8faa3abe777db3aa5d7b0cdb00cec2410c57cd9c37e98a58628"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0153-000.npz"
+sha256 = "6dd4942b95bcccb7128b3ba161abca5aa279fb5d3408e283d6a3c70d3eb033ad"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0154-000.npz"
+sha256 = "55b99364ebddc28674cf2028e6345f748736cb833b8c50da31e99598daf81fc9"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0155-000.npz"
+sha256 = "4f1fc055de4b95b565ced4f44aee5297a5c954d073cbc104aa12c351be8fe89d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0156-000.npz"
+sha256 = "8c8211f7594900d61a8759c441ad3ff1d97aae0a198105762e40a0600628dd91"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0157-000.npz"
+sha256 = "54675caebcb62e8538386ee2627f0faaa7d9f253888df9af4253ad211a753f70"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0158-000.npz"
+sha256 = "b2cc7dbccd4f4124bca75451cde2ca880def8e5ffee151c2512701d2150ce4ef"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0159-000.npz"
+sha256 = "48c10ea18d453a9028ef7aa11511426ac4ab90ee720f52a3dea6abc98e70f131"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0160-000.npz"
+sha256 = "db4c168a0a05bf524f9460cf0b54d2042c99e6db98190fd9c75b4356c9221894"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0161-000.npz"
+sha256 = "46b7d8690217b55eec67a39d40891ea6a3d0f9ae3aeb54f655d47791f023caa5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0162-000.npz"
+sha256 = "4b229429e6487028f1fe6ecdcfb55cbf2a7dc8361714f68e6620e3d7a17e5dad"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0163-000.npz"
+sha256 = "49bf0db5232fe8684de5543483cbf3ddccb840cfaff5ae340a0476ed40901c2f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0164-000.npz"
+sha256 = "b458f3d0d3118d5296e46188b8aa61502316e901e3aa1640ffd3831398cd4a8b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0165-000.npz"
+sha256 = "eabfbdcea3009faaf3b383901f89ba74e33722fe471ce936d7a9d6da1ea810eb"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0166-000.npz"
+sha256 = "62201b578f3292277c24af44791c9a833aa6ac6907de8759c64f838dbc2d777e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0167-000.npz"
+sha256 = "84a76c3406f603e0517b55e4fc0ffcdf7258696c9fa9a3e0ab811f0ceaccfcf0"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0168-000.npz"
+sha256 = "891ee6940005bec5dc30ecd4608daa527debec2d4b0b103228726e577cb125c7"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0169-000.npz"
+sha256 = "d5d2774b0cf82e74c63021c79a8d7afd609f9c79f85c10300f5d275605ef50a5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0170-000.npz"
+sha256 = "951938576d69976612f46a88ecb888b1610efe3680fc77ace7c9656cd6555a4a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0171-000.npz"
+sha256 = "20e974ed7b56fafbb4e61e98d9ba3821ab241aa8c5b95d4669cc1e5f4c993f3e"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0172-000.npz"
+sha256 = "e89235b0dcf9d0f37896d2f5a419fb749a4ef47fe762dbba5968e8bd9e49849a"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0173-000.npz"
+sha256 = "15bc05c118d625cbad6abfd518e78b11419a2e2f5504212e0936bafc63f85e96"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0174-000.npz"
+sha256 = "86b867ebdd0c121ab368c0e3360f272282e3ae276a71f778ab97561fd0762991"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0175-000.npz"
+sha256 = "64e8d957fde110c743315f25e1fa8549efd702d51b00ba169fbd406f9e847ee1"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0176-000.npz"
+sha256 = "ce2276b06940e7f64c7ff32aa27b4edae3ca60edea8f7126a8595f73defd7f8c"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0177-000.npz"
+sha256 = "9134c2c6ae1735e47a920201084636e4caeadd6826dea274750155b31783bdf4"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0178-000.npz"
+sha256 = "d9bf06aea166c2b929aba362985975cfed8e66d8645611ed82169565ea48de73"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0179-000.npz"
+sha256 = "dd8b3a9841658d402fd9b9996bb8789f1601d264fbceb84eb3fe2300ff94fae0"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0180-000.npz"
+sha256 = "f6587d53f24df488e0156ac0f80732a13efe0b5c5c8fe9811afd640cc41e1bbb"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0181-000.npz"
+sha256 = "3ada06a3e151fa8a3df0301312e5c209b47c46d6ad6936b5215c1c8ecb5ee67f"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0182-000.npz"
+sha256 = "18d8ce96225aeef8bc96c918fc1b1138cc0eee28d2991ac26066cdfcaad7fdc1"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0183-000.npz"
+sha256 = "486ff42261e623db0f6bb4665a3d67c70050ec769744b19415b2e1893c4a5705"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0184-000.npz"
+sha256 = "89de6fde1941ad04738c17850be220aec8388ec744a4a8aad8b877347e01bda5"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0185-000.npz"
+sha256 = "c33f285a6a787eb6b236e6bad7e9e0d394b2ac613600c52e8d395df224851f32"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0186-000.npz"
+sha256 = "c835c18b1a195b37bdb59216f2032f7e17e27144ddf4a99aa7b3d63abff77b2d"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0187-000.npz"
+sha256 = "bc582b6b599f83ce7f50c6ef841a28b9e75ef3cf4d906274d501bf091280a606"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0188-000.npz"
+sha256 = "b12aa21c86f849f0fed7a3c6c6787eaeff6c4064a4ba0b73d24b0384fb39f805"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0189-000.npz"
+sha256 = "c146ef855681aa6d731c43a14fc1bc444839fa5de5b89e911c69d87fc03feb3b"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0190-000.npz"
+sha256 = "1ac961a9f46cbca9c51c0fad1ef8ddc0af3b66a5c3594833eb3445eb4d9b6e20"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0191-000.npz"
+sha256 = "a6e6578d96eb61877c99568f8f46577e8dd998da76ee17c9ffc0370a90d1e4cf"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0192-000.npz"
+sha256 = "034fae4f23df2868ce370218de67ec12c8384006484704afcf9e05f663cf1214"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0193-000.npz"
+sha256 = "1e24cf27a0c35a840b7003357004ddd75ef57dee45b96f9fcd330958ac1456df"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0194-000.npz"
+sha256 = "4b74fac516ed6e1990eb4a38993e71654056104fde158ae4de9deceea94d1315"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0195-000.npz"
+sha256 = "ec818971559ac8b8f7b7709c37c76bebee3aaea3ba7d5ca72383d520b3b89e42"
+
+[[sources]]
+path = "source/assets/craterpark/geometry/mesh-0196-000.npz"
+sha256 = "e464d4775e2f0fcca348e0d3d67b18856eb7c4672cc23b82a28f834e07935bee"
+
+[[sources]]
+path = "source/assets/craterpark/scene.json"
+sha256 = "69b7f7dc2bce6a3c3d49ebeab291573db545b15a51f2f1ab8042d43f4f204263"
+
+[[sources]]
+path = "source/assets/source-library.json"
+sha256 = "56d7aa5142852e1304c7bf04a95e3acfcbac079ad5d2d2962800b10879eec1b6"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/line.json"
+sha256 = "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180"
+
+[[sources]]
+path = "source/belmonte_north_build.py"
+sha256 = "055082c4ae449cb0793ef25946aea45e7f57bc31a8f47c9a84a2507efeb352ad"
+
+[[sources]]
+path = "source/belmonte_scene_build.py"
+sha256 = "fe669f1726ee720db7199beb2ad12639a119b15596c7f4549b66279145c6961f"
+
+[[sources]]
+path = "source/tools/belmonte_convert.py"
+sha256 = "856cafa54c2ce9eeaeb1dbb169813190c5f9517de80bdd9aac55ee133e9f85a5"
+
+[[sources]]
+path = "source/tools/belmonte_extract.py"
+sha256 = "80bf398f17434682436e8591fc72adb59d23397f2c3dbec6479e4c9d194e200d"
+
+[[sources]]
+path = "source/unreal/Scripts/import_belmonte.py"
+sha256 = "b5193574dd374bfdd936cd09dca84e66005e760c5d62bd75f83c098aff85b628"
+
+[[sources]]
+path = "source/world/coast_water.py"
+sha256 = "a7f9b6f40ae171526aa86999b17f4f3a48ebe35cce6dff4c305baa644c5d9381"
+
+[[sources]]
+path = "source/world/coastal_dressing.py"
+sha256 = "00cf5b610983dd69f775f88d82f6786c0436059acce1aa5f9862c922fed4d6f0"
+
+[[sources]]
+path = "source/world/coastal_surface.py"
+sha256 = "e625c3913f408b70cb642d24a93325de485baeb762ae510d52e47cb63538c1f2"
+
+[[sources]]
+path = "source/world/farhills_grid.py"
+sha256 = "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4"
+
+[[sources]]
+path = "source/world/gen_world.py"
+sha256 = "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef"
+
+[[sources]]
+path = "source/world/regions/belmonte/__init__.py"
+sha256 = "02fd2aeb9c7e38acc870e092d726629ea6e15ce873c31aa7f50b72ee501d8161"
+
+[[sources]]
+path = "source/world/regions/belmonte/appearance.py"
+sha256 = "a11db408d3d1e45d9fae188b4c2e2bbaa6dc04a4f1b4219c5313f2165bad8733"
+
+[[sources]]
+path = "source/world/regions/belmonte/assemble.py"
+sha256 = "99c7843d06e81ac6c34bd8e002855a99ddaabbb70415caf9c02dafa743af8450"
+
+[[sources]]
+path = "source/world/regions/belmonte/atomic_library.py"
+sha256 = "2ed6665ea5ec5b2b48885811913678813569b80fa9eb67fab7db528515853833"
+
+[[sources]]
+path = "source/world/regions/belmonte/atomic_metadata.py"
+sha256 = "183396742b528c12bc9b28ff81ea8e255f691101d1d8f182b2d009406caceb22"
+
+[[sources]]
+path = "source/world/regions/belmonte/build.py"
+sha256 = "4ff704c666e26920574a7488a91dd04ccd92f0cb2447c4473c7d4ec31496c3d4"
+
+[[sources]]
+path = "source/world/regions/belmonte/carve_ground.py"
+sha256 = "f233a2d73a51f8f9d257114f490cbc4ae184bbee153a1d020bf9c2cd75187b6f"
+
+[[sources]]
+path = "source/world/regions/belmonte/gondola.py"
+sha256 = "569dd74cadba9aa1d142990ebd1bca951b445f97f48376e7771a0871369b3acb"
+
+[[sources]]
+path = "source/world/regions/belmonte/ground_names.py"
+sha256 = "ef71d416c8b71015fe38848101893d9d9bcc4f7bae1459e1df9b604770cf125c"
+
+[[sources]]
+path = "source/world/regions/belmonte/ground_pieces.py"
+sha256 = "eedabff64f5c8c4ad47f04fec5745e88b663f85b1823368694f5946f9509956d"
+
+[[sources]]
+path = "source/world/regions/belmonte/layout.py"
+sha256 = "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890"
+
+[[sources]]
+path = "source/world/regions/belmonte/material_preparation.py"
+sha256 = "6fb11c206b86cbd9f60eda3f3ba316c1eec1388bb38a49cd524dcf4ab938c60c"
+
+[[sources]]
+path = "source/world/regions/belmonte/mesh_data.py"
+sha256 = "5a57ac65e70c2cd392cec2bdcd42f4c3a96359cc70df1cae89e0237f42250bfc"
+
+[[sources]]
+path = "source/world/regions/belmonte/model_pieces.py"
+sha256 = "ea1f31628d07e3da0353ec936f375dd68293721075878bdf208b97ed27750661"
+
+[[sources]]
+path = "source/world/regions/belmonte/model_sources.py"
+sha256 = "b151ca600737dd1a48f62a5293a8634fbe19613d1065ff10fd7c3fa6871d9b4e"
+
+[[sources]]
+path = "source/world/regions/belmonte/north_apron.py"
+sha256 = "599a4c3f617139b8f0ce4ffee51bce57a9500a67187a14ca6513847f8e1bdb3f"
+
+[[sources]]
+path = "source/world/regions/belmonte/north_context.py"
+sha256 = "bd03abded569e215a3136646a8b19b0b3a41f0442a4e0ce38e433fc5aedbe36d"
+
+[[sources]]
+path = "source/world/regions/belmonte/north_country.py"
+sha256 = "3a3c137dbf6b7ede489f7641fe2b4dac7e189835377cee821c60b30de194a433"
+
+[[sources]]
+path = "source/world/regions/belmonte/north_pipeline.py"
+sha256 = "0d221e755a62de9ba87985422e46e23cff61bfcfada6e274baefbfb7b0d12b66"
+
+[[sources]]
+path = "source/world/regions/belmonte/plan.py"
+sha256 = "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c"
+
+[[sources]]
+path = "source/world/regions/belmonte/plan_ground.py"
+sha256 = "2210fc7485d247cc5ae5b18c3ae158a8969f6bd06706decb06ddbfd3d4f72eaf"
+
+[[sources]]
+path = "source/world/regions/belmonte/plan_model.py"
+sha256 = "e1ff06459e9b9be862d566501beb3c0cc68c96b5fce91fc40d9b9f1b34b9f992"
+
+[[sources]]
+path = "source/world/regions/belmonte/planting.py"
+sha256 = "b8b17b20484bdd187a92dcd5443d26542ab79a89a7923479115021a2ed0c2d22"
+
+[[sources]]
+path = "source/world/regions/belmonte/prepare_materials.py"
+sha256 = "7c3ffe37fbafde2c2e17550e553ca13a1dac5bee0c24048c2a739414c6e30597"
+
+[[sources]]
+path = "source/world/regions/belmonte/prepare_planting.py"
+sha256 = "b618709979da2b0be48704427aa6734c0b404da8f317969b1163ccb9bd1250e7"
+
+[[sources]]
+path = "source/world/regions/belmonte/query_arrays.py"
+sha256 = "2bf353fee3471499ee742a561d55b44e046aa8132f79551bd20d1520b06c8223"
+
+[[sources]]
+path = "source/world/regions/belmonte/query_surface.py"
+sha256 = "01212f534acb9b5c8ee0a5e475c8d209d163b91e33696f1c145811398a159c9e"
+
+[[sources]]
+path = "source/world/regions/belmonte/runtime_groups.py"
+sha256 = "e275db73fdd093b2fd21eb2eaa62e0a62708c7c70ed72748321fcb19a807bd40"
+
+[[sources]]
+path = "source/world/regions/belmonte/runtime_layout.py"
+sha256 = "1c53a36916f85b3714ebec33bc676ef2c42170b2cae16cfb1e5484b86d8a2405"
+
+[[sources]]
+path = "source/world/regions/belmonte/scene_inputs.py"
+sha256 = "298b0ac85e16603efc52c88dce87dda446a9dad5b62055008e68e93f421ed828"
+
+[[sources]]
+path = "source/world/regions/belmonte/seam_data.py"
+sha256 = "fd8e79377cc37460f1d8b74bf441770a26bef85069049562732ffc0367085dac"
+
+[[sources]]
+path = "source/world/regions/belmonte/source.py"
+sha256 = "323dbc1637d8ff8cb80097c60342f9efb38d54dc972b0922553d059e0289a47d"
+
+[[sources]]
+path = "source/world/regions/belmonte/source_ground.py"
+sha256 = "1191cae25cc178aa3965e530c53f139c6ebb496caedfb5f950892f9afe715a98"
+
+[[sources]]
+path = "source/world/regions/belmonte/surface_data.py"
+sha256 = "965e24468cebbb691ae1c3fc0b44e3f2483a8be58fad0d9c781d8fbf6ee381de"
+
+[[sources]]
+path = "source/world/regions/belmonte/terrain.py"
+sha256 = "efe5a61fee8198f0b400547692db20adbbf4f304446eae53fb4a790c87f19e4b"
+
+[[sources]]
+path = "source/world/regions/belmonte/terrain_bounds.py"
+sha256 = "75e66899899936cea96d48669884ada8b8889b2ac20ba4ffb25f64dd8e1696a7"
+
+[[sources]]
+path = "source/world/regions/belmonte/terrain_palette.py"
+sha256 = "ecd2ed4adaada822258be2112494d5de29cde34768e734ff39014ed44f8fe0af"
+
+[[sources]]
+path = "source/world/regions/belmonte/valley_palette.py"
+sha256 = "1bd30dc56d9b17a636fb7d9fab19ea485123c680b39942c0fc0c24bfaf51919b"
+
+[[sources]]
+path = "source/world/regions/belmonte/valley_query.py"
+sha256 = "595eed01ab7b001879430fc6829747b5f738feca0a2985932df4d7ce6dc3489c"
+
+[[sources]]
+path = "source/world/regions/craterpark/__init__.py"
+sha256 = "7d062d3f44a29448be2ca840783b25c5199ca18ec598c616b92f18e55b4c8089"
+
+[[sources]]
+path = "source/world/regions/craterpark/placement.py"
+sha256 = "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/__init__.py"
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/curves.py"
+sha256 = "37ce55a236bce8e5078882b8d797f4aa91e2c02cfe6ebeeb4c2f29b98dfa7fe5"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/dsl.py"
+sha256 = "0e7c4cee3ab004db1ab2c5318a9747a3ba913c768eee85115bd0b436609e241f"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/profile.py"
+sha256 = "873b2f3e1e8480dfea8b2126b12d3bfea805cf54588765752d921c7bc8641690"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_config.py"
+sha256 = "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_placement.py"
+sha256 = "2a2a1c221a5dd3a1dcf78dad86c08645d74656815ee48e2fd45794a033549673"
+
+[[sources]]
+path = "source/world/regions/forest/__init__.py"
+sha256 = "d6c75297b152c2fedc3954a5b1c5e95f65a9cc256c7e6831a1841720d1912bf5"
+
+[[sources]]
+path = "source/world/regions/forest/ecotone.py"
+sha256 = "4066c68d12d4ec333534b432d7a78b4da1695755c6c001ba6b7e0b6356c88703"
+
+[[sources]]
+path = "source/world/regions/forest/specs.py"
+sha256 = "7c10bd8474e32e568f60e06245096cdb41ab423665bc11151c3e72c5e88c0a3b"
+
+[[sources]]
+path = "source/world/regions/forest_lake/__init__.py"
+sha256 = "b17903897427a70e63ce09e60a80afc62b38f7dd6aa9f2835a2a6e88e973b60c"
+
+[[sources]]
+path = "source/world/regions/forest_lake/layout.py"
+sha256 = "18e7ffc4ae8a6b67e3c6e520c9f57bcc1a94a6ac0d7995f853e9f4b0a0215e23"
+
+[[sources]]
+path = "source/world/regions/hidamari/__init__.py"
+sha256 = "c103d1d53b1a37de0c6f4fd231bf1ce07a43a0c5edbc7f124c4bc11919e171c4"
+
+[[sources]]
+path = "source/world/regions/hidamari/arrival_placement.py"
+sha256 = "515374f677e891321e48d0f46187f792872c4a0887eb70676784f6c795d82d03"
+
+[[sources]]
+path = "source/world/regions/hidamari/city_poles.py"
+sha256 = "215d8e03b5e70c239f54208392d809de17664e377898df7cc84c5bc136052739"
+
+[[sources]]
+path = "source/world/regions/hidamari/forest_backdrop.py"
+sha256 = "cd7008f2f2bbe609ac903e13e4dc07c45a204e92fc275cf3ae2017bed9bb6b79"
+
+[[sources]]
+path = "source/world/regions/hidamari/house_gardens.py"
+sha256 = "4b62cd2392d0bf8cacc3d2776acbd0d96d22c4c5706a822894d7d03857415a9a"
+
+[[sources]]
+path = "source/world/regions/hidamari/layout.py"
+sha256 = "3dfe3ed560dc4ca08e012b9f50738bb36ca59729b55a2411f91d70ece0d8e0de"
+
+[[sources]]
+path = "source/world/regions/hidamari/mountains.py"
+sha256 = "7060bf6ae296bf0a5a1e7dd7e30703591198ad91a833439c0329865546787b76"
+
+[[sources]]
+path = "source/world/regions/hidamari/natural_terrain.py"
+sha256 = "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0"
+
+[[sources]]
+path = "source/world/regions/hidamari/park_grounds_placement.py"
+sha256 = "837bdd9c8bdd640dab7b7af0bbccf29beecf7950aba38232b77a7ccbc694f9b6"
+
+[[sources]]
+path = "source/world/regions/hidamari/public_spaces.py"
+sha256 = "6a7e748a41027ecd144fe152f90a4ffe0c873cc4a16e62a0b09130e7743b3060"
+
+[[sources]]
+path = "source/world/regions/hidamari/station_yard_placement.py"
+sha256 = "939f81ed0b590115f4f808d3ac3e3434d009f58ec88e7bb4bc693dbcfaaf9504"
+
+[[sources]]
+path = "source/world/regions/hidamari/street_props.py"
+sha256 = "0718264801c031edf7a5602449762781f8ac6741c33caa1d98c025ff13d88466"
+
+[[sources]]
+path = "source/world/regions/hidamari/temple_precinct_placement.py"
+sha256 = "5a64a7703ffebeed56f8923f146bfe75d332b4e1116ca06353c7ff379e50a169"
+
+[[sources]]
+path = "source/world/regions/hidamari_stable/__init__.py"
+sha256 = "a3f4d7add9c9da8e453371faf9dc0ae8f7a87f6582c98ab064a9b8fa50122ec4"
+
+[[sources]]
+path = "source/world/regions/hidamari_stable/layout.py"
+sha256 = "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c"
+
+[[sources]]
+path = "source/world/regions/hippodrome/__init__.py"
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[[sources]]
+path = "source/world/regions/hippodrome/build.py"
+sha256 = "50204ef72c0b0667db9e2194fdf72bbe72d2d3336947e0b6cb05a46604499419"
+
+[[sources]]
+path = "source/world/regions/hippodrome/layout.py"
+sha256 = "f9e6a856f238c5fc92d0ba08aea5ecc1e5e52e6345483b09e0d16d4013a2a65f"
+
+[[sources]]
+path = "source/world/regions/houses/__init__.py"
+sha256 = "24d0ca580db4ba0cca3e9dcd7eb5fac3e8ded8a6e2922eaf59613f9f3e638edc"
+
+[[sources]]
+path = "source/world/regions/houses/layout.py"
+sha256 = "a0b140b5df72718c4f05f33d22baafe9c7cc46954b0a0ab01a390e1a596bd343"
+
+[[sources]]
+path = "source/world/regions/mega/__init__.py"
+sha256 = "d1564980fc73a09c443181e0395f0b7ecf5a4c0bbc34f0099136464f8516769c"
+
+[[sources]]
+path = "source/world/regions/mega/layout.py"
+sha256 = "ce0fe4cb8bfdf90b0e4ab354bde6deaffdb41dd6498f03c1b53720491575f551"
+
+[[sources]]
+path = "source/world/regions/megapark/__init__.py"
+sha256 = "ea733abfdca567acb17ecd5884b4e7708b3512299693f680d8e7b83d39d83bb2"
+
+[[sources]]
+path = "source/world/regions/megapark/forest.py"
+sha256 = "2ba9bb680e8393abb3b931b1ad6ca69e0b4abc3bb7528323454453f700145c00"
+
+[[sources]]
+path = "source/world/regions/megapark/gate.py"
+sha256 = "6842682b2acfc2e6461e7977e18933bb5f42b2d8bdd2900ea56b9eeaf4ac376e"
+
+[[sources]]
+path = "source/world/regions/megapark/placement.py"
+sha256 = "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf"
+
+[[sources]]
+path = "source/world/regions/megapark/plants.py"
+sha256 = "efae2d6918ddcde94a96509216006a71d75f3b3363fe116c10d9e16a5c05787c"
+
+[[sources]]
+path = "source/world/regions/megapark/trail.py"
+sha256 = "8e61ad96cfdb19d2b99df55f213a8e618b040b9ce42680c999c2109092605043"
+
+[[sources]]
+path = "source/world/regions/skatepark/__init__.py"
+sha256 = "408973a2100cb2b19ca7cb35742b4d0ce2dd0331f23bc7b7b66f2198932f5a59"
+
+[[sources]]
+path = "source/world/regions/skatepark/pier_site.py"
+sha256 = "67c4403a26d2e7ceeafe93c70e79da06e183303708d147233fbf7df0be368e80"
+
+[[sources]]
+path = "source/world/regions/southwest/__init__.py"
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[[sources]]
+path = "source/world/regions/southwest/island.py"
+sha256 = "33a35bc01cf22f5552268717716d01e5eaf64d73c15f75abf6af1603d7bf90c1"
+
+[[sources]]
+path = "source/world/regions/southwest/layout.py"
+sha256 = "d43d13264aee99e6b4fb98189b00b605657adc279522a6a9f6cc809e1b67fdbe"
+
+[[sources]]
+path = "source/world/regions/southwest/mesh.py"
+sha256 = "41ce26b98f5fd6835eff6c24044241bebde224328ced75185d8953b37efbe899"
+
+[[sources]]
+path = "source/world/regions/treehouse/__init__.py"
+sha256 = "c56b8dcaadcb1f5311966458073ad8d1ecf9d029c3d7239dec38390d2309e1e9"
+
+[[sources]]
+path = "source/world/regions/treehouse/layout.py"
+sha256 = "d2bda98e7ccedf92bc1dbbd43ac5722df888d9e0c33803a9e234658c2643a3b4"
+
+[[sources]]
+path = "source/world/regions/treehouse/screen.py"
+sha256 = "00508256bf5e438e41e38d9ddd266dbcd3293149938a40c20c9808af34b7331f"
+
+[[sources]]
+path = "source/world/regions/village/__init__.py"
+sha256 = "beea9c9bd995595f147fb748190f9ea9e49ca2865ddadeb4927e6968b32911ed"
+
+[[sources]]
+path = "source/world/regions/village/layout.py"
+sha256 = "1cc1d206979c297abd94b07e3efc0306c42dce678547ad6df25fefcb1f1608e4"
+
+[[sources]]
+path = "source/world/regions/village/mesh.py"
+sha256 = "386ec356206fe1d96c77a516cb0ce794184bcd574448042f948795882839d4c7"
+
+[[sources]]
+path = "source/world/regions/zeppelin/__init__.py"
+sha256 = "4bef65ad463ae7cd092b0d34955c93065885d78b311a740b164cb108080bba67"
+
+[[sources]]
+path = "source/world/regions/zeppelin/layout.py"
+sha256 = "1d0b480ccdaf12cd4ecafa58cedc87380315f98534d86f43da99297c0ca25e35"
+
+[[sources]]
+path = "source/world/shorelines.py"
+sha256 = "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+
+[[sources]]
+path = "source/world/source_registry.py"
+sha256 = "01eb1094164b3f518b3de9c40cb19afc8862e3635f4cc081be50af822b462edf"
+
+[[sources]]
+path = "source/world/surface_textures.py"
+sha256 = "f677939afca576d3cfa147f294a472b55ce056c0ac941370ebcc0b218591969f"
+
+[[sources]]
+path = "source/world/terrain_product.py"
+sha256 = "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd"
+
+[[sources]]
+path = "source/world/terrain_query.py"
+sha256 = "66a07162b39bc6612af33e3b8c26ac2f57bf6e389705389c2afab6f1be086be7"
+
+[[sources]]
+path = "source/world/torii_clearance.py"
+sha256 = "fe2b5d8633f885e1a555f55aabf492461b49b9f2299706d60468a1f6ed99c2b9"
+
+[[sources]]
+path = "source/world/train/__init__.py"
+sha256 = "19113ebbd5e09109c67dee28786d28fed41b7f03c2525403be730a1c6a118de4"
+
+[[sources]]
+path = "source/world/train/corridor.py"
+sha256 = "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88"
+
+[[sources]]
+path = "source/world/train/earthworks.py"
+sha256 = "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c"
+
+[[sources]]
+path = "source/world/train/station_site.py"
+sha256 = "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e"
+
+[[sources]]
+path = "source/world/yori.py"
+sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_Ground"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/M_Belmonte"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/M_BelmonteJoin"

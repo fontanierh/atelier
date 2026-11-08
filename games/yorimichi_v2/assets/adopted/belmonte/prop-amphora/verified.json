@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-amphora",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Amphora.uasset": "c87c50fdffcbd5f4e8eb4a14926ff84f468456626ab5eb869678c8f927a79ce2",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Amphora_Collision.uasset": "38dbb266cde95d454c5975f18774efaa93eb62bbc36dc6e23b530e03eec12189"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

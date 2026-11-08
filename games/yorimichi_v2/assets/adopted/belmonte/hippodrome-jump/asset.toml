@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-jump (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-jump"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-jump"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Jump.glb"
+sha256 = "dfba37dd2d5ae3422c61ac2d9ce06ed376b5f1b19cedc8c3aaa856c70082d947"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Jump"

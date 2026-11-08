@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/hippodrome-hay-bale",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_HayBale.uasset": "073cdc3e1760021f96c911face69b8d35651e35f6459da27a6568b45db910cfd",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_HayBale_Collision.uasset": "ab7c82490224855569d3a7dd299cb7ff3e3e9eb4c8e59d38d925c5e5f8d54422"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

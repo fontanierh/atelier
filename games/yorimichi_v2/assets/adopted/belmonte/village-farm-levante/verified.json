@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/village-farm-levante",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Levante.uasset": "e2071176871550019c29dc0e738c193daa1dbd2dfbc4c557ff329a7b1374820e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Levante_Collision.uasset": "de98f6398c8a8649c12bed366c023465c022482f78bf830d6192268977f5087e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

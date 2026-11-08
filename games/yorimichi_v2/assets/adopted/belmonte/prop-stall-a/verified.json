@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-stall-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Stall_A.uasset": "c26dff2443d156645fd6b7becfebd3517e4ccc20d0943b49d674bf131d1c6f54",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Stall_A_Collision.uasset": "586d7fadf0666399bd2c215b6e19cf2d153ed820fabbf95f2bf106e469cea6cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

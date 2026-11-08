@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/prop-wall-lantern",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_WallLantern.uasset": "d4e19cc2ad559ddcf598bc8a7feeef982d3f2fc416a5d8a94e612f8016b546d0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

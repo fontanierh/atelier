@@ -1,0 +1,31 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-rocks (3 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-rocks"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-rocks"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Rock_A.glb"
+sha256 = "82d4e9475e9236588fe5e9cb15de63e658e5b8cf55f772b9cf9e0a056b7e419b"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Rock_B.glb"
+sha256 = "e07833f87b545515122f7815db5fb96c2e1bcbd5514de37e1e32529445dce00f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Rock_C.glb"
+sha256 = "1e2a3524fd50ccd0af47c81a5463d6686bd341de1f4193478dcca2b8f803a116"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Rock_A"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Rock_B"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Rock_C"

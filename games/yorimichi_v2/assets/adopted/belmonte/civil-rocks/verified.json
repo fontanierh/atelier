@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/belmonte/civil-rocks",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Rock_A.uasset": "dfa0f372ac9d8cb2eface0ed6c7ae455b8b4e76ec124c5971981a8e0955e39e0",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Rock_B.uasset": "78153e15e7dbeac9ed8f9e732c3f872c10178a220f03e98ae79eb61edaba47dd",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Rock_C.uasset": "12d0662547f181d6a251c36657a599bbaef88653e23b3ae6f916fbbb7f89724e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

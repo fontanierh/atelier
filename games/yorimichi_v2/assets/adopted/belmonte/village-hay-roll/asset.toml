@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte village-hay-roll (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/village-hay-roll"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/village-hay-roll"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_HayRoll.glb"
+sha256 = "636d205c0a7e8f58fa4aecacc2a82d7d356a42b7f5087e1f3f198d9b2c58de18"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_HayRoll_Collision.glb"
+sha256 = "6eacbe4bd2bbc69bc9de22d8555e78a207da1017feeffbc0bf9d538885d61b63"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_HayRoll"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_HayRoll_Collision"

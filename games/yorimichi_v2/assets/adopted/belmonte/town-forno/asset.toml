@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-forno (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-forno"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-forno"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Forno.glb"
+sha256 = "304274c194472a8d57e0f147c1f57d5b2d1563c0f06688b524a3dc02653e9917"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Forno_Collision.glb"
+sha256 = "ea1413089b0148281979ac3a5863c041e11bbc5b78f197e95cc7499b70313458"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Forno"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Forno_Collision"

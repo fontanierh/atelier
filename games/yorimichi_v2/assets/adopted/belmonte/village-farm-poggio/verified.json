@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/village-farm-poggio",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Poggio.uasset": "f8d556cdd05362b49691bd3714d4c89e6d79f26dccbf7c0e643282701b31db9a",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Poggio_Collision.uasset": "2c752c2e8faee03038a1922acf28d70a037e88e1fd9e0bf436da900adf73f22a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

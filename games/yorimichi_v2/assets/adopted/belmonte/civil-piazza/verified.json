@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/civil-piazza",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Piazza.uasset": "8ca9d59409b4608fd4177599cb93a39e9bea3a2d459e41a4a066da202f8eb131"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

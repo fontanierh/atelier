@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/prop-crate-stack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_CrateStack.uasset": "a83615e63b17891d590738f045ac334208a235197d746b22586ca32d617b91b9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

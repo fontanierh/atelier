@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte block-23 (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/block-23"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/block-23"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BT_blk_23.glb"
+sha256 = "61108069ca757b3dc3df81c5ff0ce588c6ae52d8e29807b9a8ff1ec745290208"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BT_blk_23_Collision.glb"
+sha256 = "23ecb5808f9836b1283e3416a4355b8b72e2cf163301ec7c477e980c39874084"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_blk_23"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_blk_23_Collision"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/estate-bale-stack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_BaleStack.uasset": "d86b680bfd8d7030b96a341faef10810e735890d28d2b1848d368da30bfa9ab8",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_BaleStack_Collision.uasset": "efe6a1c42d1cbad42f697e3483d0df0316cd8349a8c1e2948761fd4af64f8ca6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

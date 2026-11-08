@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-lantern-post (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-lantern-post"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-lantern-post"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_LanternPost.glb"
+sha256 = "081644cbd8a735ca12e5c0eb320bcdb3eabde708daf089ddcb08ca7f86ba41b7"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_LanternPost_Collision.glb"
+sha256 = "e082185fb729f3888d08f7bce18e14e8d73434acb8b057431dc8e118e493e3a7"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_LanternPost"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_LanternPost_Collision"

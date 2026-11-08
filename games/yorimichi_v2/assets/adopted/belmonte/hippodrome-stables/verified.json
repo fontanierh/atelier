@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/belmonte/hippodrome-stables",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StableYard.uasset": "be011a6c17a52c8a4b56d8efa6aec4b8c845622cdb89f9209307ec4fb58e3b35",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0.uasset": "6724e9c334dd064cc4baca623bae5f99163d3416e344822b67355a059b989d76",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0_Collision.uasset": "9f6ade6ac2945c0d199896cd4f070e1b4cd5a7118928dfc2bc308eeb441579f8",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stables_Piece1.uasset": "a1386dadd3d32957caefc59272aaddd814d2301563448b23a6362c76ab2d5ebf",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stables_Piece2.uasset": "b1b6925375e9d583fe64c4b9318bc59bb949e95226b7dae951c9d807389cb8fb",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stables_Piece3.uasset": "a5456c77ba8641bc8c33d9b7726459fb4f84be9215b5b3354f627822cb82ee74"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-pozzo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Pozzo.uasset": "a3e2ef4fa7a72dc402bf07ccc694e1839d68c34063b3af9d280327b3ca218204",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Pozzo_Collision.uasset": "785d6aba4e3bcb513b1e83db411c583def1b7c916ac410c00d61ffffd2b406be"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

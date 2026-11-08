@@ -1,0 +1,74 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte shared ground materials and their textures
+schema = 1
+id = "adopted/belmonte/shared-ground"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/shared-ground"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_grass_ground_D-c17533b977.jpg"
+sha256 = "1388084b1ac30c57f4d18b4ffda25c883c319510064206766975a867f21ed9ab"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_gravelly_sand_D-7c7d6294b6.jpg"
+sha256 = "71aa9b3fbefcac4126d04a5b600e1c47a82751c4098e2e7fa803a9baf2c1ccf4"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_park_sand_D-a7ee5cb65f.jpg"
+sha256 = "f4bc84551fba17c1857d460a10ba1bd99798f8dddadc914ba7914d5ac8dc3f17"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_withered_grass_D-4293e66187.jpg"
+sha256 = "3c840cd66f51d0bda305bf8104281d50f1077d48e5ac903849ff6b0515d88ed2"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_worn_rock_natural_01_D-2827c5ee4d.jpg"
+sha256 = "db9cbf0d54c5f730428602addc96b115624476ee806106a3f6821a789fd1cc65"
+
+[[sources]]
+path = "source/assets/environment/textures/tuscan-ground.jpg"
+sha256 = "b7a9e55d50d4d20830bbcdcb416b417e02a92d84e29211ab242317bdcc71b6ea"
+
+[[sources]]
+path = "source/assets/environment/textures/tuscan-ground.provenance.json"
+sha256 = "c70ade5c078b97e5b629f43aaa98b13089ff116f6748951ec059874576de788f"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_296da39ab8d2"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_447b2bfac41d"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_5abe3878aa19"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_6826135717c4"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_8c7322bc790c"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_bd97e7f1dd81"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_0fe86703fe93"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_3a9a9b320ef7"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_3b3b593ecaf2"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_4621dbb4ad29"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_68613c1d3edd"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_f4df37bcee65"

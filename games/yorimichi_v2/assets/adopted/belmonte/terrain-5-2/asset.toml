@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte ground tile 5-2 (committed Haras terrain tile; carved at build time); carved for the railway cutting and station by tools/belmonte_station_terrain.py, which is not in the repository (open gap)
+schema = 1
+id = "adopted/belmonte/terrain-5-2"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/terrain-5-2"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BT_Terrain_5_2.glb"
+sha256 = "ca4820d65fb08441ecbb8e477205d30bc71014c96233d11bf99a32368d51fbeb"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_2"

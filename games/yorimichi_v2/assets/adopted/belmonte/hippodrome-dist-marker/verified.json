@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-dist-marker",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_DistMarker.uasset": "8f2d32b9ac24cee46168a9c1700a07250d89e9cc38610c5e36fd53a89b08059a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

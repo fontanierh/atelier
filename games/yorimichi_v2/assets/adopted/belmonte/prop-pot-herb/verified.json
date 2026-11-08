@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-pot-herb",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotHerb.uasset": "b5145e3ed8c563affb410318d933df18579dcfb3ddf802905303a7feaee463e1",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotHerb_Collision.uasset": "7f2bc95ecc12ec7b3ceb8ae717178e5eef229885d6db3745594c2dea88045b65"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

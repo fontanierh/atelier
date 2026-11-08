@@ -1,0 +1,38 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-crate-produce (2 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-crate-produce"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-crate-produce"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_CrateProduce_A.glb"
+sha256 = "5bad245cdd16cdba3f606acce832b6b42ea96c6c0d3f499aceb63dfd920ca12a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_CrateProduce_A_Collision.glb"
+sha256 = "85c0545fac8521f5a37388349ca2263950a45ef52205347c179e02e358a7404a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_CrateProduce_B.glb"
+sha256 = "fb61379e72e91acb1dc236b14b162252f57abad7d9e63a3bbf2409c911b48693"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_CrateProduce_B_Collision.glb"
+sha256 = "1622c581699c4448452e4264ba20edba76fc72d06b8c09f1dc6678a7d3370053"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_A"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_A_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_B"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_B_Collision"

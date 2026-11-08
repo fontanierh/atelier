@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-fontanella",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Fontanella.uasset": "dbf97e0f1df537b9518aedad72470bfd08d99fe87ef9606d48128c7814ed2979",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Fontanella_Collision.uasset": "b6fdca3638dc5f90a38ebe006608b437c82bae9c8ceeda57896e262d1e1def41"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

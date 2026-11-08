@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-pozzo (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-pozzo"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-pozzo"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Pozzo.glb"
+sha256 = "58d41fb2631832214147efd27af78a2201ef7cdf109936720c983d196f59daa9"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Pozzo_Collision.glb"
+sha256 = "8fc1a4e45f8e2ccc8da09311f69c40d5fc6bcd1e2eeca8c30b275bf0c9f4af6c"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Pozzo"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Pozzo_Collision"

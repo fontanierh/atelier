@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-stool",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Stool.uasset": "b77666972505789b16221ce97811392aa1c4195df0ca6baa9f0a6359bf18d2ba",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Stool_Collision.uasset": "77b5d215565dcf680f2195f8464562935772708b022f56651eacc4ceb257efd9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmonte/cafe-parasol",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_eaef11a76e4c.uasset": "7d7cbbc23c624f328fcabd22506bd88d2aca29d7653e4da1ce176fbfb1146624",
+    "unreal/Content/Belmonte/Meshes/SM_BM_AT_CafeParasol.uasset": "9076e8435b5732a558e523600bbe4c22b91edb62b97b2db39298135d89e36067",
+    "unreal/Content/Belmonte/Meshes/SM_BM_AT_CafeParasol_Collision.uasset": "27251ae8d95528362c0d79b1ed8c85430fb8c9c23cc83f6cb352b1a088fa2189",
+    "unreal/Content/Belmonte/Textures/T_BM_1776fd88d0c7.uasset": "f1966e2e4b3d274b0e8a91d05c2d3d1266b54b976f4a91e8c3843c3a1c1ce255"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

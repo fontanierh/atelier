@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/village-farm-ulivi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Ulivi.uasset": "fd5dc93548502bda2506fa37077c7c500e95d5b8aaf5ecf302159b54097312ba",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Ulivi_Collision.uasset": "1414511e46b548a3ecbc4cfbd506171cc601acf2c626bd16fc277e14982b0ade"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

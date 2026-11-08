@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/block-37",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_blk_37.uasset": "db1e2fd7d7293cfde0d99888b82857884a32772e25d0e45cfa040fbe04ded513",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_blk_37_Collision.uasset": "244271e917f40de136b6e7f11e75c4099ee4d9610ec5597346f70a02f9bba148"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

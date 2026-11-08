@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte emblems (5 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/emblems"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/emblems"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_HV_Emblem_Crown.glb"
+sha256 = "1f5dc578c7ada4aa31aac1a63e3308e52777a76304041def1c9fdd9e35defb22"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_HV_Emblem_Diamond.glb"
+sha256 = "f351d7c6174ec0292d32773ca876c40f1f4136e68502545961d6c50dafcd0e07"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_HV_Emblem_Laurel.glb"
+sha256 = "16f7e1f506c9fa0ece59525e9186151607d7deeddabe36c070991c7fad558bc4"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_HV_Emblem_Moon.glb"
+sha256 = "0ca211cd85dd99f21d8a4b6dfefa6f2fc633b93e6f4863857165063f9e0fcd1e"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_HV_Emblem_Star.glb"
+sha256 = "7fb77aff8dc05f51f7c1b3709a678979fcfe8c903bc2ed94729db8e559a92e2a"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_fd5f4f4381ce"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Crown"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Diamond"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Laurel"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Moon"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Star"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-kiosk (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-kiosk"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-kiosk"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Kiosk.glb"
+sha256 = "46b573037d16fc5a7f9db2409df179c69546b301b0b94718b8cc93abd47c073d"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Kiosk_Collision.glb"
+sha256 = "8882a94c4603e665be1128497b048e01b4c272a8a48567656c4ec811b153dd50"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Kiosk"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Kiosk_Collision"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte estate-hay-cart (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/estate-hay-cart"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/estate-hay-cart"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_HayCart.glb"
+sha256 = "05a09f05fdd8474f358f0036b455f5330dc3c806728a7d906787222c8608d20e"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_HayCart_Collision.glb"
+sha256 = "2001bb9920b40f82135da38e16f2f1a69807de33a8d35c01df40df94f5c0c279"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_HayCart"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_HayCart_Collision"

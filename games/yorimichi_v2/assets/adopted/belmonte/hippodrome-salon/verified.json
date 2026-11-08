@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/belmonte/hippodrome-salon",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_56eb5489daa9.uasset": "ca13ceb0d99d23128233eb53afd00b08fcfd452a47740128fdaeafb4d7f914be",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Salon.uasset": "b173491bf9efa40ca9a45fa211f603a472d0fc057822f4a2ddb29b3c2c7e6eca",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_SalonGrounds.uasset": "ed49658c6212745f6fa33f978e68bc26ddda9e0f8b588506f0cc07537928459c",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_SalonHall.uasset": "4609a2f0074862b8fcaf902f465a5d9a6112c2890d54192843f0771b12eaffcc",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Salon_Collision.uasset": "15639be83822194c9bcf6c958dc3d808ac12ba96f640570020635c278d76e3e8",
+    "unreal/Content/Belmonte/Textures/T_BM_a56121473d0a.uasset": "14e8202320bc7e4c4288e5590c2798655696427a397dabdfd6203dd275061cda"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

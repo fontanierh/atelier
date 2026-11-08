@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-pot-geranium",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotGeranium.uasset": "00ff704958fbb6ad8018443d1e914380f5097c2e1693c649169d8dd760833d7c",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotGeranium_Collision.uasset": "ad7a636cd76a968bb258732d6ab8b85c811204c7c7939efab61b44c390bbd07b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

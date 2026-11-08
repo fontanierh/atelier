@@ -62,11 +62,11 @@ def editor(game, created=True):
     def run(plan_file):
         plan = json.loads(plan_file.read_text())
         assert plan['groups'] == [{'region': 'region/w09-cove', 'tag': 'brinecove', 'data': 'brinecove/runtime.json',
-                                   'meshes': ['SM_BC_Ships_2_2']}]
+                                   'meshes': ['SM_BC_Ships_2_2'], 'objects': ['wreck']}]
         if created:
             write(game / f'unreal/Content{WRECK[len("/Game"):]}.uasset', b'wreck')
             write(game / MANIFEST, b'manifest listing the wreck')
-        return f'V2 OBJECT {WRECK} brinecove:SM_BC_Ships_2_2\nV2 OBJECTS DONE created={int(created)} kept={int(not created)}\n'
+        return f'V2 OBJECT {WRECK} brinecove:wreck\nV2 OBJECTS DONE created={int(created)} kept={int(not created)}\n'
     return run
 
 

@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte ground tile 3-4 (committed Haras terrain tile; carved at build time)
+schema = 1
+id = "adopted/belmonte/terrain-3-4"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/terrain-3-4"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BT_Terrain_3_4.glb"
+sha256 = "27f8307a5809ea2745da9f8868806db07e673cb9061b44f817196bddea2da2c7"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_4"

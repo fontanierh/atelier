@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/hippodrome-tie-rail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_TieRail.uasset": "bba09ed1b77c6daedd7eccee9cb503a79b15bc596d17701dabe163123c5897a6",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_TieRail_Collision.uasset": "898d8c850432675b417051dd8669b9d0f574cdb430d871fe7e094f7c13354e84"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

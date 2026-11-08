@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-pond (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-pond"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-pond"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Pond.glb"
+sha256 = "939fba6e0ae030f712a3713548811dbf6129b0674c73053716416dfa06798152"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Pond"

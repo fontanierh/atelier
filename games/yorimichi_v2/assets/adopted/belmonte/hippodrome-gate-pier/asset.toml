@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-gate-pier (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-gate-pier"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-gate-pier"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_GatePier.glb"
+sha256 = "cca9e35701e3f67b61850b2e282e33f40f58fe168b3072579c75205cba35b8e2"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_GatePier_Collision.glb"
+sha256 = "88c90b1d8d09d9fbc730a1aa894d6a20abe4797d896f7406bf647bba6e8c9d20"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_GatePier"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_GatePier_Collision"

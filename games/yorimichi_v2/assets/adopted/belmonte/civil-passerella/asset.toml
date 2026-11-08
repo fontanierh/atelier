@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-passerella (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-passerella"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-passerella"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Passerella.glb"
+sha256 = "bd5ee8c67177f12fad198a87ec5972b3713ff844ed272a27e436c19902c71ad8"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Passerella"

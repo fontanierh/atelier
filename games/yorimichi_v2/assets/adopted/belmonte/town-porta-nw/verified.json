@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-porta-nw",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Porta_NW.uasset": "c89d470531c43e95e5fc4ec2d7bb398bdd848d41f5271bbf80dfa1f98b4ab96b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Porta_NW_Collision.uasset": "e1e025b6e66ea11f79f9575510a10d00666701c0bdad0e0e7514eb70c2c04f67"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

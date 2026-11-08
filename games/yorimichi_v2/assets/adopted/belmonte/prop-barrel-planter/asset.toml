@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-barrel-planter (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-barrel-planter"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-barrel-planter"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_BarrelPlanter.glb"
+sha256 = "c6fa2a0049c6463046b150c794365d8e3047be8f6b3e57e2806d6ff2d2040161"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_BarrelPlanter_Collision.glb"
+sha256 = "8aa8d7735fae2ba6c3a710d99be317423c4d9668021597d34524f151fb7a6e1f"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter_Collision"

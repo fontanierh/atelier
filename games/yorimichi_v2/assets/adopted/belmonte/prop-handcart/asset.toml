@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-handcart (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-handcart"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-handcart"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Handcart.glb"
+sha256 = "ad551df78dc4d3c21e77d2804a90b274c822f00b036dfc8bcb965606a5896d59"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Handcart_Collision.glb"
+sha256 = "5060ec60c7d1a4af916c5f1ea4730145a5ea3ee63222aca38467a86b81e3a3b4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Handcart"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Handcart_Collision"

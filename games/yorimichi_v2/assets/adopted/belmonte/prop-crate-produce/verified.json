@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmonte/prop-crate-produce",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_CrateProduce_A.uasset": "354a3eec337edab7d2cf0080ff904093274ba73ea9532e08a40c1e24e7def3db",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_CrateProduce_A_Collision.uasset": "85f7decea8e9500a257bfb411ac23fd1f07000f28ae946b990a1684cb9392354",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_CrateProduce_B.uasset": "c7def1471ed492493a53462193288fa816e234c4149df5d628bab6074aac5eea",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_CrateProduce_B_Collision.uasset": "bb9248b733e3849cd406e20e6b64c8311e500f3b23665092b5c9b3ff127986cf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -37,7 +37,8 @@
         "level-instance",
         "foliage",
         "physics",
-        "adopted"
+        "adopted",
+        "placement"
       ]
     },
     "authority": {

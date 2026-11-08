@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-tie-rail (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-tie-rail"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-tie-rail"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_TieRail.glb"
+sha256 = "caf4adcf213d8fc49fcf0c4ec4a5834a27b60bdff8c2184332cce7709afb2ea5"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_TieRail_Collision.glb"
+sha256 = "995088a0142756a54cc367bbe9be124073567f89d9194231164d99e6e1a00c10"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_TieRail"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_TieRail_Collision"

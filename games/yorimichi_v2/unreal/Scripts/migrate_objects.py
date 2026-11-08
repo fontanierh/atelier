@@ -1,8 +1,9 @@
 """Save runtime-region scenery groups as their own actors (audit A1), run by tools/migrate/objects.py (guarded step
 `migrate.objects`) with V2_MIGRATE_PLAN naming:
   map       the World Partition map holding them
-  groups    [{region, tag, data, meshes}]: the region that owns them, ABelmonteRegion's runtime tag (brinecove), its
-            runtime file under Content/Data, and the group meshes to save (one object each)
+  groups    [{region, tag, data, meshes, objects}]: the region that owns them, ABelmonteRegion's runtime tag
+            (brinecove), its runtime file under Content/Data, the group meshes to save and the object each belongs to
+            (one actor per object)
 UV2Migration.MigrateRegionGroups builds each patch with the runtime's own component code and lists the group in the
 map's manifest, so the runtime skips only those groups. A group already saved is kept as it is, edits included: a
 rerun creates nothing. Prints each object's actor package for its record.
@@ -28,12 +29,13 @@ world = U.get_editor_subsystem(U.UnrealEditorSubsystem).get_editor_world()
 created, kept, keys = [], 0, set()
 for group in plan['groups']:
     count, actors, reused, error = U.V2Migration.migrate_region_groups(
-        world, U.Name(group['region']), U.Name(group['tag']), group['data'], list(group['meshes']))
+        world, U.Name(group['region']), U.Name(group['tag']), group['data'], list(group['meshes']),
+        list(group['objects']))
     if count < 0:
         raise RuntimeError(f'MigrateRegionGroups {group["tag"]}: {error}')
     created += actors
     kept += reused
-    keys |= {f'{group["tag"]}:{mesh}' for mesh in group['meshes']}
+    keys |= {f'{group["tag"]}:{name}' for name in group['objects']}
 if not U.EditorLoadingAndSavingUtils.save_dirty_packages(True, True):
     raise RuntimeError('could not save the objects and the manifest')
 for actor in EAS.get_all_level_actors():

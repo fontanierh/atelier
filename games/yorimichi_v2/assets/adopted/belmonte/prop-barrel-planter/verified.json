@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-barrel-planter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_BarrelPlanter.uasset": "81fc81c53e1fe6125de864959af7fcb583235b969047e984da3673cb8b204868",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_BarrelPlanter_Collision.uasset": "991777ad5a2cf4a6a2cccc7a7869f6ff21ecb36a0733de418efcc1b71505019c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

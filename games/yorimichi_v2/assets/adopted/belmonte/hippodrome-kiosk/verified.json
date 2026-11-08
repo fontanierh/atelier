@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/hippodrome-kiosk",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Kiosk.uasset": "3640c73de24965c9735814fc1646c4730158ab104a78c1db276a847dff7d375f",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Kiosk_Collision.uasset": "5081f384213a036566ca965516468eeea3bc5cad7c0f03745358f1f8f924432a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

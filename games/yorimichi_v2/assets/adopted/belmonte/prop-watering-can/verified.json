@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-watering-can",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_WateringCan.uasset": "731fe11924f833c588b10360d9309245035851c8ffd1f15a21d384954a9f8cea",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_WateringCan_Collision.uasset": "fade979f22a8114892671c30ccdbcb512566180eb809035a78aebbad86578090"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

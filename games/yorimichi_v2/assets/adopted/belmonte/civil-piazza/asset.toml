@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-piazza (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-piazza"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-piazza"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Piazza.glb"
+sha256 = "98ea75ed45a3cd03f14ecf3051441c9e549fe0dd40ec1f8962aacd050d09fb0f"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Piazza"
