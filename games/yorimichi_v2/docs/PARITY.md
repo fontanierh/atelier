@@ -139,4 +139,22 @@ names only the subset, and compare.py needs the same `--only`:
         build/yorimichi_v2/parity/island-v2 --out build/yorimichi_v2/parity/island-report --min-ssim 0.75 \
         --poses games/yorimichi_v2/tools/parity/island_poses.json --only 'w07_*'
 
-Omit `--only` for all 54. Nothing here has been captured yet: the donor and V2 captures are the next step.
+Omit `--only` for all 54.
+
+### First whole-island run (2026-11-08)
+
+Donor `7eec0f98dd` (desktop profile) and V2 `1d9ac65d77` (`jim5/yv2-statics-run`, clean), 2560x1440, all 54 poses,
+`compare.py --min-ssim 0.75`. Both games ran under the normal play guard; whole-island V2 needs `--memory-gib 22`
+(it peaks near 20 GiB while far tiles stream in; 10 and 16 GiB stop it during startup).
+
+| Settle per pose | Pass | Below 0.75 |
+|---|---:|---|
+| 8 s (the old default) | 47 / 54 | w07 harbour pier, w07 station yard, w20 Hidamari platform, w20 corridor viaduct, w17 Hidamari ferry pier, w02 teahouse, w13 Ronin camp |
+| 30 s (the 7, plus w05 far northeast as a control) | 51 / 54 | w17 Hidamari ferry pier 0.71, w13 Ronin camp 0.70, w02 teahouse 0.59 |
+
+- At 8 s V2 was still streaming Hidamari's city cells and the corridor forest in (flat sea plane where the town stands,
+  bare slopes); at 30 s the same views score 0.78 to 0.96. The capture default is now 30 s.
+- The three still below 0.75 show the same scenery by eye. The teahouse and camp cameras stood inside the canopy, so
+  leaf motion dominated the score; they now stand 30 and 35 m above their targets (make_island_poses.py). The ferry
+  pier differs only by the ferry, docked in the V2 frame and away in the donor's: a moving service, not scenery.
+

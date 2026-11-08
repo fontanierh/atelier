@@ -128,7 +128,8 @@ def main(argv=None) -> int:
     parser.add_argument('--poses', type=Path, default=DEFAULT_POSES)
     parser.add_argument('--only', action='append', help='capture only the poses named by this glob (e.g. w07_*), '
                         'comma separated or repeated; the receipt then names only those poses')
-    parser.add_argument('--settle', type=float, default=8., help='seconds at each pose before its screenshot')
+    parser.add_argument('--settle', type=float, default=30., help='seconds at each pose before its screenshot '
+                        '(far city cells and forests are still streaming in after 8 s)')
     parser.add_argument('--timeout', type=float, default=900)
     args = parser.parse_args(argv)
     out = args.out.resolve()
