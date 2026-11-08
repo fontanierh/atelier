@@ -408,7 +408,7 @@ def test_shared_editor_reserves_full_memory_and_checkout_but_a_cpu_share(client,
     ['sh', '-c', ' '.join(EDITOR)], ['UnrealEditor', *EDITOR[1:]],
     *[EDITOR + [arg] for arg in ('-game', '-server', '-run=cook', '-AllowCommandletRendering', '-RenderOffscreen',
                                'CookCommandlet', '-RunAsCookCommandlet', '/RunAsCookCommandlet',
-                               '/AllowCommandletRendering', '/RenderOffscreen', '/game')]])
+                               '/AllowCommandletRendering', '/RenderOffscreen', '/game', '/run=cook')]])
 def test_only_literal_non_rendering_editor_commandlets_can_share(client, monkeypatch, command):
     configure_schema(client, monkeypatch, 2)
     client[2]()

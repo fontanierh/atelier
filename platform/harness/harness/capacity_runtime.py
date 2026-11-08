@@ -76,7 +76,7 @@ def _shared_editor(command):
     # Conflicting run modes must never receive a shared allowance. Keep argument parsing
     # deliberately narrower than Unreal's: uncertain commands retain exclusive admission.
     return (args.count('-run=pythonscript') == 1
-            and sum(arg.startswith('-run=') for arg in args) == 1
+            and sum(arg.lstrip('-/').startswith('run=') for arg in args) == 1
             and '-nullrhi' in args and '-unattended' in args
             and not any(arg.lstrip('-/') in ('game', 'server', 'allowcommandletrendering',
                                              'renderoffscreen', 'runascookcommandlet')
