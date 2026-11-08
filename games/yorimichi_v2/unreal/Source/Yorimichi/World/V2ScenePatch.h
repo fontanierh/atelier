@@ -78,7 +78,21 @@ public:
      *  skip both use it, so a piece is never both saved and spawned. */
     static FVector2D OwnerPoint(const FTransform& Placement, const UStaticMesh* Mesh);
     bool CoversService(FName Service) const { return MigratedServices.Contains(Service); }
-    bool CoversGroup(FName Tag, const FString& MeshName) const { return MigratedGroups.Contains(Tag.ToString() + TEXT(":") + MeshName); }
+    bool CoversGroup(FName Tag, const FString& MeshName) const { return GroupSet().Contains(Tag.ToString() + TEXT(":") + MeshName); }
+    /** MigratedGroups as a set for CoversGroup, a transient cache (not saved): rebuilt when the list's length changes, which
+     *  is the only way the migration changes it (entries are added, never replaced). */
+    const TSet<FString>& GroupSet() const
+    {
+        if (GroupSetCount != MigratedGroups.Num())
+        {
+            GroupSetCache.Reset();
+            for (const FString& Group : MigratedGroups) GroupSetCache.Add(Group);
+            GroupSetCount = MigratedGroups.Num();
+        }
+        return GroupSetCache;
+    }
+    mutable TSet<FString> GroupSetCache;
+    mutable int32 GroupSetCount = -1;
     bool Runs(FName Service) const { return !bOnlyMigrated || RuntimeServices.Contains(Service); }
 };
 

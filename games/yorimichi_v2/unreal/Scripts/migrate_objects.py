@@ -10,8 +10,8 @@
             unit (one actor per unit) and whether it is a collision piece (UV2Migration.MigrateParkPieces)
   hippodromes  [{region, tag, data, pieces, units}]: the hippodrome's meshes, each with its unit (one actor per unit;
             UV2Migration.MigrateHippodromePieces)
-  trees     [{region, tag, data, species, index, units}]: each tree of a park (its species, its index in the park file's
-            list) with its unit (one actor per unit; UV2MigrationParkDressing.MigrateParkTrees)
+  trees     [{region, tag, data, units}]: the units of a park whose trees are saved, one actor per unit; the trees of
+            each unit are assigned by the runtime rule (UV2MigrationParkDressing.MigrateParkTrees)
   props     [{region, tag, data, meshes, units}]: a park's props (the kei cars), each with its object (one actor per object;
             UV2MigrationParkDressing.MigrateParkProps)
 UV2Migration.MigrateRegionGroups builds each patch with the runtime's own component code and lists the group in the
@@ -73,8 +73,7 @@ for hippodrome in plan.get('hippodromes', []):
     keys |= {f'{hippodrome["tag"]}:{unit}' for unit in hippodrome['units']}
 for trees in plan.get('trees', []):
     count, actors, reused, error = U.V2MigrationParkDressing.migrate_park_trees(
-        world, U.Name(trees['region']), U.Name(trees['tag']), trees['data'], list(trees['species']),
-        [int(i) for i in trees['index']], list(trees['units']))
+        world, U.Name(trees['region']), U.Name(trees['tag']), trees['data'], list(trees['units']))
     if count < 0:
         raise RuntimeError(f'MigrateParkTrees {trees["tag"]}: {error}')
     for actor in actors:

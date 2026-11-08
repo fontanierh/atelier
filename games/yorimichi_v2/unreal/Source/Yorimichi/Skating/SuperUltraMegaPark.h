@@ -15,6 +15,15 @@ class UStaticMesh;
 class UStaticMeshComponent;
 class USceneComponent;
 
+/** Who owns each tree of a park: the unit of every render and collision piece (tree_units.json beside park.json, written
+ *  by tools/migrate/parks.py), each piece's origin in the plane, and the species that stay runtime (no adopted record). */
+struct FParkTreeOwners
+{
+    struct FPiece { FString Unit; double X = 0.; double Y = 0.; };
+    TArray<FPiece> Pieces;          // render, then collision, in park.json's order
+    TSet<FString> UnsavedSpecies;
+};
+
 /** The park's grind paths. In the standalone level, render and collision geometry are ordinary StaticMeshActors and
  *  the game mode spawns this actor from the level's AMegaParkLayout; in the island, Spawn places the park from its
  *  manifest and owns the meshes as components (docs/MEGAPARK.md). */
@@ -42,6 +51,14 @@ public:
     /** One tree entry of park.json, [x, y, z, yaw, scale], as the instance transform Spawn places it with. False when the
      *  entry is too short to be a tree. */
     static bool TreeTransform(const TSharedPtr<FJsonValue>& Value, FTransform& Out);
+    /** Reads the tree owners of the park file at ParkPath (its tree_units.json) for the park Root. False, with Out empty,
+     *  when the file is missing or does not name the unit of every render and collision piece. */
+    static bool LoadTreeOwners(const TSharedPtr<FJsonObject>& Root, const FString& ParkPath, FParkTreeOwners& Out);
+    /** The unit that owns the tree of Species at Location (its place in park.json's frame): the unit of the piece whose
+     *  origin is nearest in the plane, the earlier piece on a tie (the rule parks.py's tree_units mirrors). Empty for a
+     *  species that stays runtime. Shared by Spawn and UV2MigrationParkDressing::MigrateParkTrees, so a tree is saved or
+     *  spawned, never both. */
+    static FString TreeUnit(const FParkTreeOwners& Owners, const FString& Species, const FVector& Location);
     /** One kei car of park.json's props as a component of Parent: its basis and location, blocking collision. The caller
      *  adds and registers it. Shared with UV2MigrationParkDressing::MigrateParkProps. */
     static UStaticMeshComponent* MakeProp(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,

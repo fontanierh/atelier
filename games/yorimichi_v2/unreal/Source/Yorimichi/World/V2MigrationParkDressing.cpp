@@ -61,17 +61,18 @@ namespace
 #endif
 
 int32 UV2MigrationParkDressing::MigrateParkTrees(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
-    const TArray<FString>& Species, const TArray<int32>& Indices, const TArray<FString>& Units, TArray<AActor*>& OutCreated,
-    int32& OutKept, FString& Error)
+    const TArray<FString>& Units, TArray<AActor*>& OutCreated, int32& OutKept, FString& Error)
 {
     OutCreated.Reset(); OutKept = 0;
 #if WITH_EDITOR
     UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
     if (!World || World->IsGameWorld()) { Error = TEXT("needs the editor world"); return -1; }
-    if (Region.IsNone() || Tag.IsNone() || Species.IsEmpty() || Indices.Num() != Species.Num() || Units.Num() != Species.Num())
+    if (Region.IsNone() || Tag.IsNone() || Units.IsEmpty()) { Error = TEXT("needs a region, its runtime tag and at least one unit"); return -1; }
+    TSet<FString> Wanted;
+    for (const FString& Unit : Units)
     {
-        Error = TEXT("needs a region, its runtime tag, and one species, index and unit per tree");
-        return -1;
+        if (Unit.IsEmpty() || Wanted.Contains(Unit)) { Error = Unit + TEXT(": empty or listed twice"); return -1; }
+        Wanted.Add(Unit);
     }
     AV2WorldManifest* Manifest = nullptr;
     for (TActorIterator<AV2WorldManifest> It(World); It; ++It) Manifest = *It;
@@ -80,51 +81,44 @@ int32 UV2MigrationParkDressing::MigrateParkTrees(UObject* WorldContext, FName Re
     if (!Data) { Error = DataFile + TEXT(" is missing or unreadable"); return -1; }
     const TSharedPtr<FJsonObject>* TreeGroups = nullptr;
     if (!Data->TryGetObjectField(TEXT("trees"), TreeGroups)) { Error = DataFile + TEXT(" has no trees"); return -1; }
+    FParkTreeOwners Owners;
+    if (!ASuperUltraMegaPark::LoadTreeOwners(Data, AtelierDataPath(DataFile), Owners))
+    { Error = DataFile + TEXT(": its tree_units.json is missing or does not name every piece's unit"); return -1; }
 
-    // Every tree is checked before anything is made: its species is a tree group of the file, its index is in range and
-    // is a tree (ASuperUltraMegaPark::TreeTransform), it is listed once, and it has a unit.
-    const FString TagKey = Tag.ToString().ToLower();   // Spawn reads the manifest under the lower-case tag
-    TArray<FString> Order;                             // the units, in the order given
-    TMap<FString, TArray<int32>> UnitPicks;            // unit -> the trees it joins (indices into the inputs)
-    TSet<FString> Seen;
-    for (int32 I = 0; I < Species.Num(); ++I)
+    // Every tree of the named units, assigned by the runtime's rule: its species, its transform, in park.json's order.
+    TMap<FString, TArray<FString>> UnitSpecies;                    // unit -> its species, in the order first met
+    TMap<FString, TMap<FString, TArray<FTransform>>> UnitTrees;   // unit -> species -> its instances
+    for (const auto& Pair : (*TreeGroups)->Values)
     {
-        const FString Key = FString::Printf(TEXT("%s/%d"), *Species[I], Indices[I]);
-        const TArray<TSharedPtr<FJsonValue>>* List = nullptr;
-        if (!(*TreeGroups)->TryGetArrayField(Species[I], List) || !List) { Error = Species[I] + TEXT(" is no tree species of ") + DataFile; return -1; }
-        FTransform Check;
-        if (Indices[I] < 0 || Indices[I] >= List->Num() || !ASuperUltraMegaPark::TreeTransform((*List)[Indices[I]], Check))
-        { Error = Key + TEXT(" is no tree of ") + DataFile; return -1; }
-        if (Seen.Contains(Key)) { Error = Key + TEXT(" is listed twice"); return -1; }
-        if (Units[I].IsEmpty()) { Error = Key + TEXT(" has no unit"); return -1; }
-        Seen.Add(Key);
-        if (!UnitPicks.Contains(Units[I])) Order.Add(Units[I]);
-        UnitPicks.FindOrAdd(Units[I]).Add(I);
+        const FString Species(Pair.Key);
+        const TArray<TSharedPtr<FJsonValue>>& List = Pair.Value->AsArray();
+        for (int32 Index = 0; Index < List.Num(); ++Index)
+        {
+            FTransform X;
+            if (!ASuperUltraMegaPark::TreeTransform(List[Index], X)) continue;
+            const FString Unit = ASuperUltraMegaPark::TreeUnit(Owners, Species, X.GetLocation());
+            if (Unit.IsEmpty() || !Wanted.Contains(Unit)) continue;
+            TMap<FString, TArray<FTransform>>& Groups = UnitTrees.FindOrAdd(Unit);
+            if (!Groups.Contains(Species)) UnitSpecies.FindOrAdd(Unit).Add(Species);
+            Groups.FindOrAdd(Species).Add(X);
+        }
     }
+    for (const FString& Unit : Units)
+        if (!UnitTrees.Contains(Unit)) { Error = Unit + TEXT(" holds no tree of ") + DataFile; return -1; }
 
     const FTransform Placement = ParkPlacement(Data);
+    const FString TagKey = Tag.ToString().ToLower();   // Spawn reads the manifest under the lower-case tag
     TMap<FString, AV2ScenePatch*> Existing;
     for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
-    for (const FString& Unit : Order)
+    for (const FString& Unit : Units)
     {
         const FString Id = StableId({Region.ToString(), Tag.ToString(), TEXT("trees/") + Unit});
         if (Existing.Contains(Id)) { ++OutKept; continue; }
         AV2ScenePatch* Made = SpawnUnitPatch(World, Region, Tag, Placement, Id, TagKey + TEXT(":trees/") + Unit);
         if (!Made) { Error = Unit + TEXT(": could not spawn its patch"); break; }
         OutCreated.Add(Made);
-        // One component per species the unit holds, in park.json's order, with exactly the unit's instances of it.
-        TArray<FString> UnitSpecies;
-        TMap<FString, TArray<FTransform>> Transforms;
-        for (const int32 I : UnitPicks[Unit])
-        {
-            const TArray<TSharedPtr<FJsonValue>>* List = nullptr;
-            (*TreeGroups)->TryGetArrayField(Species[I], List);
-            FTransform X;
-            ASuperUltraMegaPark::TreeTransform((*List)[Indices[I]], X);
-            if (!Transforms.Contains(Species[I])) UnitSpecies.Add(Species[I]);
-            Transforms.FindOrAdd(Species[I]).Add(X);
-        }
-        for (const FString& Sp : UnitSpecies)
+        const TMap<FString, TArray<FTransform>>& Groups = UnitTrees.FindChecked(Unit);
+        for (const FString& Sp : UnitSpecies.FindChecked(Unit))
         {
             UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Sp, *Sp));
             if (!Mesh) { Error = Sp + TEXT(": its mesh is missing from V2 Content"); break; }
@@ -132,7 +126,7 @@ int32 UV2MigrationParkDressing::MigrateParkTrees(UObject* WorldContext, FName Re
             H->CreationMethod = EComponentCreationMethod::Instance;
             Made->AddInstanceComponent(H);
             H->RegisterComponent();
-            H->AddInstances(Transforms[Sp], false, false, false);
+            H->AddInstances(Groups.FindChecked(Sp), false, false, false);
         }
         if (!Error.IsEmpty()) break;
     }
@@ -148,10 +142,9 @@ int32 UV2MigrationParkDressing::MigrateParkTrees(UObject* WorldContext, FName Re
         Saved->ExpectedMembers = Saved->Members();
         Made->MarkPackageDirty();
     }
-    // The units and each saved tree stay listed, kept units too: Spawn must never spawn a tree this map saved.
+    // The units stay listed, kept units too: Spawn must never spawn a tree a saved unit holds.
     TArray<FString> Entries;
-    for (const FString& Unit : Order) Entries.Add(TagKey + TEXT(":trees/") + Unit);
-    for (int32 I = 0; I < Species.Num(); ++I) Entries.Add(FString::Printf(TEXT("%s:tree/%s/%d"), *TagKey, *Species[I], Indices[I]));
+    for (const FString& Unit : Units) Entries.Add(TagKey + TEXT(":trees/") + Unit);
     ListInManifest(Manifest, Entries);
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s trees: created %d, kept %d"), *TagKey, OutCreated.Num(), OutKept);
     return OutCreated.Num();

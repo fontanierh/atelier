@@ -229,9 +229,9 @@ def saved_key(tag: str, item: dict) -> str:
 
 
 def tree_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> dict:
-    """The plan entry of a region's tree objects: every tree of the named units, each with its species, its index in the
-    park file's list and its unit. The assignment is parks.py's (park_rules.tree_units), the same for every rerun.
-    A unit that holds no tree is refused before the editor runs."""
+    """The plan entry of a region's tree objects: the named units. The editor step assigns the trees itself
+    (ASuperUltraMegaPark::TreeUnit, the same rule as parks.py's tree_units, which checks here that every named unit holds
+    a tree before the editor runs)."""
     spec = read_piece_file(region, data, game)
     if 'trees' not in spec:
         raise ObjectError(f'{region}: {data} has no trees')
@@ -243,9 +243,7 @@ def tree_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -
     held = {t['unit'] for t in trees}
     if sorted(set(wanted) - held):
         raise ObjectError(f'{region}: {sorted(set(wanted) - held)} hold no tree of {data}')
-    chosen = [t for t in trees if t['unit'] in set(wanted)]
-    return {'region': region, 'tag': tag, 'data': data, 'species': [t['species'] for t in chosen],
-            'index': [t['index'] for t in chosen], 'units': [t['unit'] for t in chosen]}
+    return {'region': region, 'tag': tag, 'data': data, 'units': sorted(wanted)}
 
 
 def prop_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> dict:

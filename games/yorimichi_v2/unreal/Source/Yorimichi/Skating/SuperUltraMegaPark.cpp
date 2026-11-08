@@ -22,6 +22,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Misc/PackageName.h"
+#include "Misc/Paths.h"
+#include "AtelierData.h"
 #include "V2ScenePatch.h"
 
 ASuperUltraMegaPark::ASuperUltraMegaPark()
@@ -82,6 +84,44 @@ bool ASuperUltraMegaPark::TreeTransform(const TSharedPtr<FJsonValue>& Value, FTr
     Out = FTransform(FRotator(0., A[3]->AsNumber(), 0.), FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()),
         FVector(A[4]->AsNumber()));
     return true;
+}
+
+bool ASuperUltraMegaPark::LoadTreeOwners(const TSharedPtr<FJsonObject>& Root, const FString& ParkPath, FParkTreeOwners& Out)
+{
+    Out = FParkTreeOwners();
+    const auto Owners = AtelierReadJson(FPaths::Combine(FPaths::GetPath(ParkPath), TEXT("tree_units.json")));
+    const TSharedPtr<FJsonObject>* Pieces = nullptr;
+    if (!Owners || !Owners->TryGetObjectField(TEXT("pieces"), Pieces)) return false;
+    FParkTreeOwners Loaded;
+    if (const TArray<TSharedPtr<FJsonValue>>* Unsaved = nullptr; Owners->TryGetArrayField(TEXT("unsaved_trees"), Unsaved))
+        for (const TSharedPtr<FJsonValue>& Value : *Unsaved) Loaded.UnsavedSpecies.Add(Value->AsString());
+    for (const TCHAR* Kind : {TEXT("render"), TEXT("collision")})
+        for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(Kind))
+        {
+            const TSharedPtr<FJsonObject> Entry = Value->AsObject();
+            const FString Name = Entry->GetStringField(TEXT("name"));
+            FString Unit;
+            if (!(*Pieces)->TryGetStringField(Name, Unit) || Unit.IsEmpty()) return false;
+            const TArray<TSharedPtr<FJsonValue>>& Origin = Entry->GetArrayField(TEXT("origin_cm"));
+            Loaded.Pieces.Add({Unit, Origin[0]->AsNumber(), Origin[1]->AsNumber()});
+        }
+    Out = MoveTemp(Loaded);
+    return true;
+}
+
+FString ASuperUltraMegaPark::TreeUnit(const FParkTreeOwners& Owners, const FString& Species, const FVector& Location)
+{
+    if (Owners.UnsavedSpecies.Contains(Species)) return FString();
+    FString Best;
+    double BestDistance = 0.;
+    for (const FParkTreeOwners::FPiece& Piece : Owners.Pieces)
+    {
+        // The strict comparison keeps the earlier piece on a tie, as parks.py's min over (distance, index) does.
+        const double Dx = Piece.X - Location.X, Dy = Piece.Y - Location.Y;
+        const double Distance = Dx * Dx + Dy * Dy;
+        if (Best.IsEmpty() || Distance < BestDistance) { Best = Piece.Unit; BestDistance = Distance; }
+    }
+    return Best;
 }
 
 UStaticMeshComponent* ASuperUltraMegaPark::MakeProp(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
@@ -184,18 +224,20 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     // surfaces and the skating snapshot stay the original ones (docs/MEGAPARK.md, "Restyle").
     // Trees a saved unit holds (UV2MigrationParkDressing::MigrateParkTrees) are not spawned again: the manifest lists each
     // one as "<tag>:tree/<species>/<index>", its index in this file's list, and the rest spawn as before.
-    TMap<FString, TSet<int32>> SavedTrees;   // species -> the indices of its trees this map saved
+    // Trees a saved unit holds (UV2MigrationParkDressing::MigrateParkTrees) are not spawned again: TreeUnit names the unit a
+    // tree belongs to, and the manifest lists that unit as "<tag>:trees/<unit>". A standalone park map spawns every tree.
+    bool bTreesSaved = false;
     if (Manifest)
     {
-        const FString Prefix = Tag.ToLower() + TEXT(":tree/");
+        const FString Prefix = Tag.ToLower() + TEXT(":trees/");
         for (const FString& Group : Manifest->MigratedGroups)
-        {
-            if (!Group.StartsWith(Prefix)) continue;
-            const FString Rest = Group.Mid(Prefix.Len());
-            const int32 Slash = Rest.Find(TEXT("/"), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
-            if (Slash == INDEX_NONE) continue;
-            SavedTrees.FindOrAdd(Rest.Left(Slash)).Add(FCString::Atoi(*Rest.Mid(Slash + 1)));
-        }
+            if (Group.StartsWith(Prefix)) { bTreesSaved = true; break; }
+    }
+    FParkTreeOwners TreeOwners;
+    if (bTreesSaved && !LoadTreeOwners(Root, Path, TreeOwners))
+    {
+        // Without the owners every tree would spawn beside the saved ones: the park is not ready.
+        ++Missing; UE_LOG(LogTemp, Error, TEXT("%s has saved trees but its tree_units.json does not name their units"), *Tag);
     }
     int32 Trees = 0, SavedTreeCount = 0;
     const TSharedPtr<FJsonObject>* TreeGroups = nullptr;
@@ -203,17 +245,22 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         for (const auto& Pair : (*TreeGroups)->Values)
         {
             const FString Key(Pair.Key);
-            const TSet<int32>* Saved = SavedTrees.Find(Key);
             TArray<FTransform> Xs;
+            bool bSkipped = false;
             const TArray<TSharedPtr<FJsonValue>>& List = Pair.Value->AsArray();
             for (int32 Index = 0; Index < List.Num(); ++Index)
             {
                 FTransform X;
                 if (!TreeTransform(List[Index], X)) continue;
-                if (Saved && Saved->Contains(Index)) { ++SavedTreeCount; continue; }
+                const FString Unit = bTreesSaved ? TreeUnit(TreeOwners, Key, X.GetLocation()) : FString();
+                if (!Unit.IsEmpty() && Manifest->CoversGroup(SavedTag, FString(TEXT("trees/")) + Unit))
+                {
+                    ++SavedTreeCount; bSkipped = true;
+                    continue;
+                }
                 Xs.Add(X);
             }
-            if (Saved && !FPackageName::DoesPackageExist(FString::Printf(TEXT("/Game/Japan/Assets/%s"), *Key)))
+            if (bSkipped && !FPackageName::DoesPackageExist(FString::Printf(TEXT("/Game/Japan/Assets/%s"), *Key)))
             {
                 // Its saved unit draws it; its mesh must still be committed content (checked without loading it).
                 ++Missing; UE_LOG(LogTemp, Error, TEXT("%s missing saved tree mesh %s"), *Tag, *Key);

@@ -166,7 +166,9 @@ def single_record(name: str, records: dict[str, list[str]]) -> str | None:
 def tree_units(park: dict, owners: dict[str, str], records: dict[str, list[str]]) -> tuple[list[dict], list[str]]:
     """The park's trees, each as {species, index, unit} in the file's order, and the species with no record (they stay at
     runtime). A tree belongs to the unit that owns the park piece whose origin is nearest in the plane; ties go to the
-    earlier piece. Nothing depends on which units are saved, so every rerun assigns the same trees."""
+    earlier piece (render, then collision, in the file's order). This is the test oracle for
+    ASuperUltraMegaPark::TreeUnit, which runs the same rule at runtime from tree_units.json. Nothing depends on which units
+    are saved, so every rerun assigns the same trees."""
     pieces = []
     for kind in ('render', 'collision'):
         for entry in park[kind]:
@@ -271,6 +273,30 @@ def build(game: Path, megapark_park: dict, craterpark_park: dict) -> dict[str, l
     return {'megapark': mega, 'craterpark': crater}
 
 
+def tree_units_json(tag: str, park: dict, owners: dict[str, str], records: dict[str, list[str]]) -> str:
+    """The sidecar ASuperUltraMegaPark::TreeUnit reads beside park.json: the unit of every render and collision piece, and
+    the tree species that stay runtime. Written from the same units the migration saves, so the runtime rule and the
+    converter's agree."""
+    _, unmodelled = tree_units(park, owners, records)
+    pieces = {entry['name']: owners[entry['name']] for kind in ('render', 'collision') for entry in park[kind]}
+    document = {'about': f'{LABELS[tag]}: the unit of each piece, and the tree species that stay runtime (no adopted record). '
+                         'Written by tools/migrate/parks.py; read by ASuperUltraMegaPark::TreeUnit.',
+                'pieces': dict(sorted(pieces.items())), 'unsaved_trees': unmodelled}
+    return json.dumps(document, indent=2) + '\n'
+
+
+def sidecars(game: Path, megapark_park: dict, craterpark_park: dict) -> dict[Path, str]:
+    """{tree_units.json path: its new text} for both parks, beside each park.json."""
+    units = json.loads((game / 'assets/adopted/megapark/units.json').read_text())
+    records = japan_records(game)
+    return {
+        game / 'unreal/Content/Data/megapark/tree_units.json':
+            tree_units_json('megapark', megapark_park, mega_owners(units), records),
+        game / 'unreal/Content/Data/craterpark/tree_units.json':
+            tree_units_json('craterpark', craterpark_park, crater_owners(game / 'assets/adopted/craterpark'), records),
+    }
+
+
 def outputs(game: Path, megapark_data: Path, craterpark_data: Path) -> dict[Path, str]:
     """{objects.toml path: its new text} for both parks."""
     objects = build(game, json.loads(megapark_data.read_text()), json.loads(craterpark_data.read_text()))
@@ -289,17 +315,20 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     try:
         texts = outputs(GAME, args.megapark_data, args.craterpark_data)
+        mega = json.loads(args.megapark_data.read_text())
+        crater = json.loads(args.craterpark_data.read_text())
+        texts.update(sidecars(GAME, mega, crater))
     except (ConvertError, OSError, ValueError, KeyError) as error:
         print(f'parks: {error}', file=sys.stderr)
         return 1
     changed = []
     for path, text in texts.items():
-        if path.read_text() == text:
+        old = path.read_text() if path.exists() else ''
+        if old == text:
             continue
         changed.append(path)
         if args.check:
-            sys.stdout.writelines(difflib.unified_diff(path.read_text().splitlines(True), text.splitlines(True),
-                                                       str(path), str(path)))
+            sys.stdout.writelines(difflib.unified_diff(old.splitlines(True), text.splitlines(True), str(path), str(path)))
         else:
             path.write_text(text)
     print(f'parks: {len(changed)} objects.toml file(s) ' + ('would change' if args.check else 'written')

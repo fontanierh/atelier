@@ -245,10 +245,10 @@ def test_the_tree_plan_carries_each_tree_of_the_named_units(game):
     set_objects(game, TREE_OBJECTS)
     items = [o for o in objects.load_objects(region_of(game))['objects'] if 'trees' in o]
     plan = objects.tree_plan('region/w11-megapark', 'megapark', 'megapark/park.json', items, game)
-    # The seam's trees: the pine at x = 990 (index 1) and the bush at x = 1000 (index 0); every tree of the plan is the seam's.
-    assert plan['units'] == ['seam'] * len(plan['species'])
-    assert set(zip(plan['species'], plan['index'])) == {('Tree_Pine_B', 1), ('Bush_Ochre_A', 0)}
-    assert all(isinstance(i, int) for i in plan['index'])
+    # The plan names the units; the editor step assigns their trees with the runtime rule (the seam holds two trees here).
+    assert plan['units'] == ['seam']
+    seam = [t for t in parks.tree_units(PARK, OWNERS, RECORDS)[0] if t['unit'] == 'seam']
+    assert sorted((t['species'], t['index']) for t in seam) == [('Bush_Ochre_A', 0), ('Tree_Pine_B', 1)]
 
 
 def test_a_unit_with_no_tree_is_refused_before_the_editor(game):
@@ -289,7 +289,7 @@ def test_the_migration_plan_carries_trees_and_props_and_needs_the_environment(ga
                         out=game / 'out', echo=lambda *_: None)
     plan = seen[0]
     assert plan['trees'][0]['region'] == 'region/w11-megapark' and plan['trees'][0]['tag'] == 'megapark'
-    assert plan['trees'][0]['units'] == ['seam'] * len(plan['trees'][0]['species'])
+    assert plan['trees'][0]['units'] == ['seam']
     assert plan['props'] == [{'region': 'region/w11-megapark', 'tag': 'megapark', 'data': 'megapark/park.json',
                               'meshes': ['SM_Kei_Pickup'], 'units': ['kei-pickup']}]
     with pytest.raises(objects.ObjectError, match='--environment is needed'):
@@ -307,3 +307,13 @@ def test_the_python_calls_the_functions_the_cpp_defines():
         assert name in cpp and name in header
     # Python calls the UFUNCTIONs by their snake_case names: MigrateParkTrees is migrate_park_trees.
     assert 'V2MigrationParkDressing.migrate_park_trees' in script and 'V2MigrationParkDressing.migrate_park_props' in script
+
+
+def test_the_committed_tree_units_match_the_converter():
+    """tree_units.json beside each park.json is what ASuperUltraMegaPark::TreeUnit reads: it must be the converter's text."""
+    real = {tag: ROOT / 'unreal/Content/Data' / tag / 'park.json' for tag in ('megapark', 'craterpark')}
+    if any(not p.is_file() or records.is_lfs_pointer(p) for p in real.values()):
+        pytest.skip('the park files are Git LFS pointers in this checkout')
+    expected = parks.sidecars(ROOT, json.loads(real['megapark'].read_text()), json.loads(real['craterpark'].read_text()))
+    for path, text in expected.items():
+        assert path.read_text() == text, f'{path} is out of date: run tools/migrate/parks.py'
