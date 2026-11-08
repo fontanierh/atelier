@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/ground-0-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Ground_0_2.uasset": "431b159d836ec6d4396c94461e8ce1b05d41a6ff3ee18a36bd3210279763da29"
+  },
+  "input_fingerprint": "e2c48bd24ad122e0cfbc1d63ec7e5bfaf90b34e22986aa14b78d19584247c13b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Ground_0_2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
