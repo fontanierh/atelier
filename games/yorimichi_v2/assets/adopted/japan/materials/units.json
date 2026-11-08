@@ -1,0 +1,246 @@
+{
+ "about": "Japan materials editing units for tools/migrate/adopt.py (written by tools/migrate/japan_units.py)",
+ "units": {
+  "bark": {
+   "about": "Japan bark materials (3 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "base-materials": {
+   "about": "Japan parent materials and the wind collection, and the generator: shared material, texture and foliage scripts that made the materials, textures and foliage LODs",
+   "sources": [
+    "games/yorimichi/forest_atomic_build.py",
+    "games/yorimichi/unreal/Scripts/atmosphere.py",
+    "games/yorimichi/unreal/Scripts/city_parent_transition.py",
+    "games/yorimichi/unreal/Scripts/foliage_material.py",
+    "games/yorimichi/unreal/Scripts/foliage_package_repair.py",
+    "games/yorimichi/unreal/Scripts/foliage_slots.py",
+    "games/yorimichi/unreal/Scripts/forest_impostor_material.py",
+    "games/yorimichi/unreal/Scripts/forest_lake_material.py",
+    "games/yorimichi/unreal/Scripts/forest_native.py",
+    "games/yorimichi/unreal/Scripts/ground_grain.py",
+    "games/yorimichi/unreal/Scripts/import_foliage.py",
+    "games/yorimichi/unreal/Scripts/import_foliage_lods.py",
+    "games/yorimichi/unreal/Scripts/import_forest.py",
+    "games/yorimichi/unreal/Scripts/material_assets.py",
+    "games/yorimichi/unreal/Scripts/mesh_import.py",
+    "games/yorimichi/unreal/Scripts/mountain_material.py",
+    "games/yorimichi/unreal/Scripts/painterly_kernel.py",
+    "games/yorimichi/unreal/Scripts/plaza_material.py",
+    "games/yorimichi/unreal/Scripts/sea_look.py",
+    "games/yorimichi/unreal/Scripts/see_through.py",
+    "games/yorimichi/unreal/Scripts/shared_materials.py",
+    "games/yorimichi/world/assemble_forest.py",
+    "games/yorimichi/world/asset_catalog.py",
+    "games/yorimichi/world/asset_mesh.py",
+    "games/yorimichi/world/bake_forest_tree.py",
+    "games/yorimichi/world/build_foliage_lods.py",
+    "games/yorimichi/world/export_foliage_piece.py",
+    "games/yorimichi/world/far_crown.py",
+    "games/yorimichi/world/foliage_geometry.py",
+    "games/yorimichi/world/foliage_selected_source.py",
+    "games/yorimichi/world/forest_impostors.py",
+    "games/yorimichi/world/forest_parameters.py",
+    "games/yorimichi/world/forest_source.py",
+    "games/yorimichi/world/forest_trees.py",
+    "games/yorimichi/world/gen_textures.py",
+    "games/yorimichi/world/material_specs.py",
+    "games/yorimichi/world/mesh_pieces.py",
+    "games/yorimichi/world/region_mesh_parts.py",
+    "games/yorimichi/world/region_plan_files.py",
+    "games/yorimichi/world/surface_textures.py",
+    "games/yorimichi/world/texture_catalog.py",
+    "games/yorimichi/world/yori.py"
+   ]
+  },
+  "buildings": {
+   "about": "Japan buildings materials (8 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "foliage": {
+   "about": "Japan foliage materials (19 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "ground": {
+   "about": "Japan ground materials (5 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "rock-concrete": {
+   "about": "Japan rock-concrete materials (6 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "sky-wind": {
+   "about": "Japan sky-wind materials (1 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-ginkgo": {
+   "about": "Japan tree-forest-ginkgo materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Ginkgo.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-maple": {
+   "about": "Japan tree-forest-maple materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Maple.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-oak": {
+   "about": "Japan tree-forest-oak materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Oak.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-pine": {
+   "about": "Japan tree-forest-pine materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Pine.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-cypress": {
+   "about": "Japan tree-tuscan-cypress materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Cypress.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-oak": {
+   "about": "Japan tree-tuscan-oak materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Oak.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-olive": {
+   "about": "Japan tree-tuscan-olive materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Olive.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-pine": {
+   "about": "Japan tree-tuscan-pine materials (1 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Pine.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "water": {
+   "about": "Japan water materials (1 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Japan/Materials/MI_Bark": "bark",
+  "/Game/Japan/Materials/MI_BarkOlive": "bark",
+  "/Game/Japan/Materials/MI_BarkTuscan": "bark",
+  "/Game/Japan/Materials/MI_Coast": "rock-concrete",
+  "/Game/Japan/Materials/MI_CoastRock": "rock-concrete",
+  "/Game/Japan/Materials/MI_Concrete": "rock-concrete",
+  "/Game/Japan/Materials/MI_FarForest": "foliage",
+  "/Game/Japan/Materials/MI_Feather": "foliage",
+  "/Game/Japan/Materials/MI_FeatherDark": "foliage",
+  "/Game/Japan/Materials/MI_Flower": "foliage",
+  "/Game/Japan/Materials/MI_Grass": "foliage",
+  "/Game/Japan/Materials/MI_Ground": "ground",
+  "/Game/Japan/Materials/MI_Lattice": "buildings",
+  "/Game/Japan/Materials/MI_LeafAmber": "foliage",
+  "/Game/Japan/Materials/MI_LeafBroad": "foliage",
+  "/Game/Japan/Materials/MI_LeafCedar": "foliage",
+  "/Game/Japan/Materials/MI_LeafCrimson": "foliage",
+  "/Game/Japan/Materials/MI_LeafCypress": "foliage",
+  "/Game/Japan/Materials/MI_LeafGinkgo": "foliage",
+  "/Game/Japan/Materials/MI_LeafMaple": "foliage",
+  "/Game/Japan/Materials/MI_LeafOak": "foliage",
+  "/Game/Japan/Materials/MI_LeafOchre": "foliage",
+  "/Game/Japan/Materials/MI_LeafOchreSmall": "foliage",
+  "/Game/Japan/Materials/MI_LeafOlive": "foliage",
+  "/Game/Japan/Materials/MI_LeafPine": "foliage",
+  "/Game/Japan/Materials/MI_LeafSmall": "foliage",
+  "/Game/Japan/Materials/MI_LeafStonePine": "foliage",
+  "/Game/Japan/Materials/MI_Litter": "ground",
+  "/Game/Japan/Materials/MI_Metal": "buildings",
+  "/Game/Japan/Materials/MI_Moss": "ground",
+  "/Game/Japan/Materials/MI_NorthRockCaps": "rock-concrete",
+  "/Game/Japan/Materials/MI_Paint": "buildings",
+  "/Game/Japan/Materials/MI_Plaster": "buildings",
+  "/Game/Japan/Materials/MI_Road": "ground",
+  "/Game/Japan/Materials/MI_Rock": "rock-concrete",
+  "/Game/Japan/Materials/MI_RoofTile": "buildings",
+  "/Game/Japan/Materials/MI_Sand": "ground",
+  "/Game/Japan/Materials/MI_Sky": "sky-wind",
+  "/Game/Japan/Materials/MI_Stone": "rock-concrete",
+  "/Game/Japan/Materials/MI_Tile": "buildings",
+  "/Game/Japan/Materials/MI_Tree_Forest_Ginkgo_Impostor": "tree-forest-ginkgo",
+  "/Game/Japan/Materials/MI_Tree_Forest_Maple_Impostor": "tree-forest-maple",
+  "/Game/Japan/Materials/MI_Tree_Forest_Oak_Impostor": "tree-forest-oak",
+  "/Game/Japan/Materials/MI_Tree_Forest_Pine_Impostor": "tree-forest-pine",
+  "/Game/Japan/Materials/MI_Tree_Tuscan_Cypress_Impostor": "tree-tuscan-cypress",
+  "/Game/Japan/Materials/MI_Tree_Tuscan_Oak_Impostor": "tree-tuscan-oak",
+  "/Game/Japan/Materials/MI_Tree_Tuscan_Olive_Impostor": "tree-tuscan-olive",
+  "/Game/Japan/Materials/MI_Tree_Tuscan_Pine_Impostor": "tree-tuscan-pine",
+  "/Game/Japan/Materials/MI_Vermilion": "buildings",
+  "/Game/Japan/Materials/MI_Water": "water",
+  "/Game/Japan/Materials/MI_Wood": "buildings",
+  "/Game/Japan/Materials/MPC_Wind": "base-materials",
+  "/Game/Japan/Materials/M_Arcade": "base-materials",
+  "/Game/Japan/Materials/M_ArcadePaving": "base-materials",
+  "/Game/Japan/Materials/M_Bike": "base-materials",
+  "/Game/Japan/Materials/M_CloudShadow": "base-materials",
+  "/Game/Japan/Materials/M_CoastRock": "base-materials",
+  "/Game/Japan/Materials/M_Foliage": "base-materials",
+  "/Game/Japan/Materials/M_ForestGround": "base-materials",
+  "/Game/Japan/Materials/M_ForestImpostor": "base-materials",
+  "/Game/Japan/Materials/M_ForestLakeWater": "base-materials",
+  "/Game/Japan/Materials/M_Grass": "base-materials",
+  "/Game/Japan/Materials/M_Harbor": "base-materials",
+  "/Game/Japan/Materials/M_HarborWater": "base-materials",
+  "/Game/Japan/Materials/M_NorthGate": "base-materials",
+  "/Game/Japan/Materials/M_NorthMountains": "base-materials",
+  "/Game/Japan/Materials/M_Painted": "base-materials",
+  "/Game/Japan/Materials/M_Painterly": "base-materials",
+  "/Game/Japan/Materials/M_PlazaPaving": "base-materials",
+  "/Game/Japan/Materials/M_PlazaWater": "base-materials",
+  "/Game/Japan/Materials/M_PondWater": "base-materials",
+  "/Game/Japan/Materials/M_SailboatCloth": "base-materials",
+  "/Game/Japan/Materials/M_SailboatWake": "base-materials",
+  "/Game/Japan/Materials/M_Sea": "base-materials",
+  "/Game/Japan/Materials/M_Sky": "base-materials",
+  "/Game/Japan/Materials/M_Village": "base-materials",
+  "/Game/Japan/Materials/M_VillageResident": "base-materials",
+  "/Game/Japan/Materials/M_ZeppelinFabric": "base-materials"
+ }
+}
