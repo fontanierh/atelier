@@ -108,6 +108,12 @@ Neither changes Unreal's thread count. Two editors may compete for CPU; measure 
 time, not just their individual runtimes. One editor can also overlap bounded Blender preparation
 when the full memory/CPU vectors fit. Explicit performance windows remain exclusive.
 
+`UnrealScript(null_rhi=True)` sets Unreal's supported `UE_SKIP_UBT_SDK_SETUP=1` for that authoring
+process. Imports and saved placements use the compiled editor and do not need the startup scan
+of every platform SDK. This also avoids repeated helper launches and contention on UBT's shared
+mutex. Real compile and cook commands retain their SDK validation. A direct equivalent commandlet
+must set the same variable in its child environment; do not export it globally.
+
 For V2 object migration, use `tools/editor/session.py JOBS.json --headless` for a bounded warm batch
 containing only `objects` jobs, including their no-op reruns. Other script jobs, especially captures,
 use the existing rendered session. Each editor needs its own checkout, Content, Saved and compiled
