@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-curve-mirror-13",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-curve-mirror": "87ac9639887d6be6b711a0eae8f713e27fcf8a85231bc9e852c32038aaf5eba7"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/5H/H6QUVDFFVVX8CNQTOEFFPX.uasset": "fe9f158e550b8ddc02c50a8e76ad8f8a7609d93663ffc1c76daded3551b19264"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

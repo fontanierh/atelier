@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): estate 3: villa, stables, grounds and accent.
+# Its placement is this actor package; its model is adopted/belmonte/estate-3. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/estate-3"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/estate-3"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/8/B8/BFDB2JVQ9VW4UCHV2TGIQO"

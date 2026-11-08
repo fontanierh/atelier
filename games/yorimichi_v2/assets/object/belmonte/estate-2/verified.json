@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-2",
+  "dependencies": {
+    "adopted/belmonte/estate-2": "933d57c02c7c3a8851cbbecc2736bf94cccd72ea5c6fa8bfd666aadba8b7a79e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/JL/7XND55JY70LHRTR1QKLPF7.uasset": "00c5e5c1ba3406d863ec40f7692820c88371f009b7a495827e94e9242f202b68"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

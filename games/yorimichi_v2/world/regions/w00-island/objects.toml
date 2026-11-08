@@ -1,0 +1,5 @@
+# Split objects of w00-island: none. Its patches (Sea, HD_Sea, SkyDome) are water and sky, and it has no
+# placed object to split. Source data: none.
+schema = 1
+tag = "island"
+data = ""

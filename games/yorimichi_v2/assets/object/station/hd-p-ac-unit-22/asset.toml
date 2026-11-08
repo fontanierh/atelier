@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_P_ac_unit 22 of 49 in w07-hidamari-station, placed at (1034.29, 190.677) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-ac-unit. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-p-ac-unit-22"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/japan/assets/hd-p-ac-unit"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/8/Q6/8ZXANJBGSV0TN7E5XTAE2Z"

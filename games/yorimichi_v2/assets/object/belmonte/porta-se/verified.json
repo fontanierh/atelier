@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/porta-se",
+  "dependencies": {
+    "adopted/belmonte/town-porta-se": "e9c8d0bf4c26fb6e9a8566e1932a505b449535a9ae8fe7e667622be6f3436290"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/BZ/FG9ZJOI6FZ1WNHHOAE46P8.uasset": "27f2e34aa47974af27ec5435dec6087353fc92b89d4b68a01be5f9624d94076c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

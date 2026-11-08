@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/farm-poggio",
+  "dependencies": {
+    "adopted/belmonte/village-farm-poggio": "30d74841be7ece04347ed37938c16ddfac74dc15fbdeab8b7c4807d38284e764"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/BV/2MUNZX20DBH2OWWM0C58OS.uasset": "a4ad75acadf901e67460c3bd2c6d5e856c7d612ab2a1e78c29f14a395bbc596c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

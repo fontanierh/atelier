@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-p-scooter-06",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-scooter": "e0ea5c5d9be351b86d832a4f542536efcf889d6d8d1fd074e002793fe5dc7ff9"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/8Z/GLK44PHNKU2WNKAH7E07II.uasset": "6ca7ba3b5b05ac71b50bbe78adde74631ed9e6cba85d6c407f3176cdea42e666"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

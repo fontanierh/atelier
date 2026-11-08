@@ -1,0 +1,12 @@
+{
+  "asset": "object/swcoast/torii-04",
+  "dependencies": {
+    "adopted/japan/assets/torii": "2ea97c065a85b5cb162e6e9d7b4d4ee68609fbb9b14d48a64018f84b5e667add"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/SW/DLEXIZE2SHWYEU6AOTCV69.uasset": "c0606effb48d616a1ceb046609eec09fdd19c3754b3ffea3b26f285a184f9750"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

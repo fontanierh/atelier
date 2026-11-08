@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_P_phone_booth 1 of 1 in w07-hidamari-station, placed at (1216.0, 262.0) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-phone-booth. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-p-phone-booth-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/japan/assets/hd-p-phone-booth"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/09/EXRRJAFULGY692KYRXJP19"

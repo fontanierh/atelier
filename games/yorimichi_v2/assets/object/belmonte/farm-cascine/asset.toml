@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): the Cascine farm.
+# Its placement is this actor package; its model is adopted/belmonte/village-farm-cascine. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/farm-cascine"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/village-farm-cascine"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/0/M4/Q46BEW0ZR51QEVHWZ8DSXW"

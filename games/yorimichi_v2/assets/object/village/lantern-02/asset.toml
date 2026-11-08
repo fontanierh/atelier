@@ -1,0 +1,12 @@
+# One saved object of region/w02-village (tools/migrate/objects.py, from its objects.toml): Lantern 2 of 4 in w02-village, placed at (45.12, -27.02) m.
+# Its placement is this actor package; its model is prop/lantern. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/village/lantern-02"
+kind = "placement"
+authority = "editor"
+owner = "region/w02-village"
+references = ["prop/lantern"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/A/FL/A6B6RAE72XC4G3F1SOKHQA"

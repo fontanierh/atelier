@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-stables",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-stables": "41600a03ac7e7b2d23df3ca9346014c2eff967be0ad798e9918efcf469121411"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/2E/6JWQ16R4EATUDWQQ9V13VX.uasset": "e7299e00710f42cbc19e99deb9cfea8fe8af677add58779bd5f620a8bfd411cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

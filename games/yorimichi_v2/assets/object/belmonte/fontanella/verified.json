@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/fontanella",
+  "dependencies": {
+    "adopted/belmonte/town-fontanella": "84bcd6774bf250b0768e359824f171439f1f740d768cf71c239caa0af06e71d3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/52/IIFX00JEDZRQEGX0928YRU.uasset": "403cff7095e4fc1cc4e20018dcee6a03032dfb0d9f833928a7f25d088a43fba5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_P_kei_truck 15 of 16 in w07-hidamari-harbour, placed at (827.66, 178.4) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-kei-truck. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-p-kei-truck-15"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/hd-p-kei-truck"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/A/3U/CLWFW1T7XHYYZ71QB116S6"

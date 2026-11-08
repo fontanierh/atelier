@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_P_scooter 1 of 6 in w07-hidamari-station, placed at (954.165, 85.6) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-scooter. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-p-scooter-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/japan/assets/hd-p-scooter"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/0/7R/O57HUEN9NV146YM0HRLLID"

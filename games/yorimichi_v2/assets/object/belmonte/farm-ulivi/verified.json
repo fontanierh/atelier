@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/farm-ulivi",
+  "dependencies": {
+    "adopted/belmonte/village-farm-ulivi": "78a1cf631ce8daf0301045f128cce765659170449d243f17642b4d7be5522036"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/TX/YADYTKF1XPVHZESYYXQFTS.uasset": "3dd688d145dfc70b8cca6adb736a5b69f8a51c08976490df926435a979a944ca"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

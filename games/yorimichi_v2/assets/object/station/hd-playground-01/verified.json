@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-playground-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/playground": "e8563c8fbc22826542af4eb727875053447be766664f98c19c55a7b26e7d850e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/U2/ZIGGBEKVIWYX2IJZ9TQD22.uasset": "2b4b1d492922bffd8a172482b56951ddb250c48aa44768bb1d713fde817ead95"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

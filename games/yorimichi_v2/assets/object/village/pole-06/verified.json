@@ -1,0 +1,12 @@
+{
+  "asset": "object/village/pole-06",
+  "dependencies": {
+    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/NW/P6O3J6MIGF56JFCGW6P04G.uasset": "6e70a1922af2d2e968fdee854acf8061a7f3a513601e0f0752c36bcd26b8714a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

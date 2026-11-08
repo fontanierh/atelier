@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_P_water_basin 1 of 1 in w07-hidamari-harbour, placed at (612.5, 265.0) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-water-basin. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-p-water-basin-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/hd-p-water-basin"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/0/6H/OFU14YLGXDMSEM8D1E5QKN"

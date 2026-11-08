@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/th-p-bell-02",
+  "dependencies": {
+    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/UD/DNHRDCX6RNTNHS9X0C8UXV.uasset": "3a9fa3d07da6951463ecaf2e3edeeb4c040fb972cc12a269eba306584daf3051"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

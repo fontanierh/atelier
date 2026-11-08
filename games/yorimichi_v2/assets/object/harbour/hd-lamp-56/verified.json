@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-lamp-56",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/lamp": "2c13d90a49860b7af091f21f2ef4c4fbb873792a56480c8add8e584cb8d294fe"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/7H/65OUJ2G9T6YL38W2J7FMMG.uasset": "b5ca0b81a5463c38fbe733fb7cf03c63c1866533bec7c747e695d4a572e11691"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

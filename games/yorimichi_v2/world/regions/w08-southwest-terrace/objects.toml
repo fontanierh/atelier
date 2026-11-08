@@ -15,3 +15,11 @@ id = "object/swterrace/stone-stairs"
 patch = "518fb0312fd77083"
 model = "adopted/japan/southwest"
 about = "the stone stairs"
+
+# Split entries (Yorimichi V2 object prep): placed instances left in the area patches, each one actor of its own.
+# Source: games/yorimichi_v2/unreal/Content/Data/world.json instances (metres).
+[[objects]]
+id = "object/swterrace/pole-01"
+split = {key = "Pole", at = [-282.53, -92.12]}
+model = "adopted/japan/assets/pole"
+about = "Pole 1 of 1 in w08-southwest-terrace, placed at (-282.53, -92.12) m"

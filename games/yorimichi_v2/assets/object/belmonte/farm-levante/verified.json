@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/farm-levante",
+  "dependencies": {
+    "adopted/belmonte/village-farm-levante": "67267f420bd386d0bdd6fd0931ee73a6b12d08138917e4699fd83a9b988f4aec"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/RL/LQRG0UU5MACGCETAG3ZRIY.uasset": "eca5f58b5d6ad2eb5cc108e577a0434505b1a1ccc1e2b44bd7c87366d067d2bf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

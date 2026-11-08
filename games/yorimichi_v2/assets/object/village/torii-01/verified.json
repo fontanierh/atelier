@@ -1,0 +1,12 @@
+{
+  "asset": "object/village/torii-01",
+  "dependencies": {
+    "adopted/japan/assets/torii": "2ea97c065a85b5cb162e6e9d7b4d4ee68609fbb9b14d48a64018f84b5e667add"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/IV/XR9MJ6IMQWTF110KWQOCGC.uasset": "e0a2e7396d9893c6989e39d0ae6630c69adad7c56f27608284b9c806b28afaaa"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

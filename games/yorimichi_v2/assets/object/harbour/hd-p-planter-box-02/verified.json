@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-planter-box-02",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-planter-box": "36d2b6175fbde1709f80ec5ade35e9cae8a07cd3ede9dc675ccfff0bb022b6c8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/Z9/446JVHU20OYKR20D5WJSAS.uasset": "0bff2c6f864fe2e351a66b01a55b7a0535e595aff4a66c50acc568a4c2330efb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

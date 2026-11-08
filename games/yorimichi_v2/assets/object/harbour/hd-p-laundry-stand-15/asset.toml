@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_P_laundry_stand 15 of 37 in w07-hidamari-harbour, placed at (545.94, 264.3) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-laundry-stand. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-p-laundry-stand-15"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/hd-p-laundry-stand"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/0Q/AH8UK0OZBUPB7HRWHJ7RVV"

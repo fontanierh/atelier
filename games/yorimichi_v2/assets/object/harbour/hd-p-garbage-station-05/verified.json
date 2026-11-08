@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-garbage-station-05",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-garbage-station": "8287f255231c5ae473391525a93708851cedaa5e5fb9f946d510c6225acf0542"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/66/1WB7KL61S44MCQXCQ38FAG.uasset": "8222e9e5d46c0b9b67b176801f1128d4deb0f43d2996fa90f4f36698b177c335"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

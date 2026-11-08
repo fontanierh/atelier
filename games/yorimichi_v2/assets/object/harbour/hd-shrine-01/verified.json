@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-shrine-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/shrine": "b515988aaea1a2341aec567715811946c998cc4912daf06c106f232f13a559f8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/QP/ZXQAGMGWT41PHA0CTNCLYD.uasset": "dd947f4f60ae1da01fc527c49b55b3b45e64266f98aff9498f729717770b8c5e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

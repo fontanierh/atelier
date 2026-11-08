@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_Lamp 31 of 45 in w07-hidamari-station, placed at (1134.0, -82.2) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/lamp. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-lamp-31"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/experiments/citysurfaces/v1-128m/lamp"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/OX/VR22T8C7RVWUKJA0ZK52LZ"

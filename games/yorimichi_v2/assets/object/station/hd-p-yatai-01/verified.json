@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-p-yatai-01",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-yatai": "e5b3c58c07f4ebafa3b62e5c2235e3930f98c44063450aeb0eaef41a8cf0832a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/SZ/8IN6E3YY1MFK1MQ2AVIMH7.uasset": "024225cacb8b312b2a21fd6c894fd007bcaa1c257a0d5a59c3ee5526392e864d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-planter-19",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/planter": "ead738866b4de59621da50d34cd1b34863f459acd1437bf69072eac25f52880c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/FW/AT9MG1UD1F3KDY7NE6OW57.uasset": "788e1b3e01a8417e58503383a74284121788de07dc5cb8a0feea2f76199ee924"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

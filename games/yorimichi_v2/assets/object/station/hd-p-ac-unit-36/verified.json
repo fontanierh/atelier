@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-p-ac-unit-36",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-ac-unit": "bac8508c9005c446a0f3cc0855af6e353069ff46cc5ef9870236df7365f795d6"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/3L/TNII8AFG8WOVRMNBFRSL2B.uasset": "e66ef6c3f19291f446379a4744870305a18550375a7842457db63eb7f406a015"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

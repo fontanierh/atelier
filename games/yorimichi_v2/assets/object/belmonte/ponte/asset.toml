@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): the bridge with its water surface.
+# Its placement is this actor package; its model is adopted/belmonte/civil-ponte. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/ponte"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/civil-ponte"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/0G/LQXVHT6818WOB4C71B8U5K"

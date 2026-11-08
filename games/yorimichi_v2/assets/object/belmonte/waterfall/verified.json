@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/waterfall",
+  "dependencies": {
+    "adopted/belmonte/civil-waterfall": "a9d94a4d14dd83a58a51305a947b49bce0b88248993fc9496a0b2b7dad493c0c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/WM/R6VEC76ZAD4VCV9KPD51MV.uasset": "fc82c3352ecea0bda01a9443f8abad41c82dca23b87d07c4d89c525637925109"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/pier/pole-02",
+  "dependencies": {
+    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/FH/YB2FZ5EA1BD13IO0LR1QVY.uasset": "99c5d66eb313019d0aa62d96d7f5782dda607daba4a67c11b4824858b930aa0c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-produce-stand-01",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-produce-stand": "907db039c250a9eb78a4dd18569f0396168fafcd0bc959442bbf32ea11d550b2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/52/8U3AN3XSEDDT3BN64KI68N.uasset": "06f3e779df185de193769e7cae06aca5d9926051178b73e52bf69aca620ac2b4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

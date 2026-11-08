@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-p-vending-machine-02",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-vending-machine": "d9487fa56b7a10587abf419115aaeba6e0cc771e5b6adc5469fcddbd195b2cb4"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/04/89I1M3XQEOZKTT3XU2HGH0.uasset": "edf518958b99fe23c518e7ea2432fee87f417dc021bb4f77b6d94ade9b2225ff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

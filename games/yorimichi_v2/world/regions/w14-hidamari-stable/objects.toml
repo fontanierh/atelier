@@ -1,0 +1,6 @@
+# Hidamari stable objects (split entries for the editor's objects.toml, see tools/migrate/objects.py).
+# Source data: unreal/Content/Data/hidamari/city.json. The stable site is disabled (layout.py ENABLED = False) and no
+# stable key is in this region's patches. HD_NorthTrail and HD_Terrain are surface tiles, not split.
+schema = 1
+tag = "hidastable"
+data = ""

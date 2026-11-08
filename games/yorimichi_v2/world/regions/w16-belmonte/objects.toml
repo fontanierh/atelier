@@ -4,6 +4,9 @@ schema = 1
 tag = "belmonte"
 data = "belmonte/runtime.json"
 
+# Not objects: village houses 1-8 (SM_BM_BVV_Village_1..8) are the source scene's distant hill villages, kilometres
+# outside the district; the runtime never draws them (ABelmonteRegion::SceneryTransforms), so nothing is saved.
+
 [[objects]]
 id = "object/belmonte/church"
 groups = ["SM_BM_BH_Church"]
@@ -171,54 +174,6 @@ id = "object/belmonte/farm-ulivi"
 groups = ["SM_BM_BVV_Farm_Ulivi"]
 model = "adopted/belmonte/village-farm-ulivi"
 about = "the Ulivi farm"
-
-[[objects]]
-id = "object/belmonte/village-house-1"
-groups = ["SM_BM_BVV_Village_1"]
-model = "adopted/belmonte/village-house-1"
-about = "village house 1"
-
-[[objects]]
-id = "object/belmonte/village-house-2"
-groups = ["SM_BM_BVV_Village_2"]
-model = "adopted/belmonte/village-house-2"
-about = "village house 2"
-
-[[objects]]
-id = "object/belmonte/village-house-3"
-groups = ["SM_BM_BVV_Village_3"]
-model = "adopted/belmonte/village-house-3"
-about = "village house 3"
-
-[[objects]]
-id = "object/belmonte/village-house-4"
-groups = ["SM_BM_BVV_Village_4"]
-model = "adopted/belmonte/village-house-4"
-about = "village house 4"
-
-[[objects]]
-id = "object/belmonte/village-house-5"
-groups = ["SM_BM_BVV_Village_5"]
-model = "adopted/belmonte/village-house-5"
-about = "village house 5"
-
-[[objects]]
-id = "object/belmonte/village-house-6"
-groups = ["SM_BM_BVV_Village_6"]
-model = "adopted/belmonte/village-house-6"
-about = "village house 6"
-
-[[objects]]
-id = "object/belmonte/village-house-7"
-groups = ["SM_BM_BVV_Village_7"]
-model = "adopted/belmonte/village-house-7"
-about = "village house 7"
-
-[[objects]]
-id = "object/belmonte/village-house-8"
-groups = ["SM_BM_BVV_Village_8"]
-model = "adopted/belmonte/village-house-8"
-about = "village house 8"
 
 [[objects]]
 id = "object/belmonte/ponte"

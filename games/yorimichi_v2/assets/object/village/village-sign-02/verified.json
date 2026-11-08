@@ -1,0 +1,12 @@
+{
+  "asset": "object/village/village-sign-02",
+  "dependencies": {
+    "adopted/experiments/villageatomic": "acd763d7dfeb5ab989212f9fe8d7c4fbff9617a122faacb40cf1c05d82034721"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/CU/D2AEOEIQWFMZEPTP5OLNES.uasset": "23af1313eb3b1ba3a921c8fbcfcf34b94c9ae6736d2ada7c7df4e0b05bf15dd5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

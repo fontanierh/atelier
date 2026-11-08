@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/block-18",
+  "dependencies": {
+    "adopted/belmonte/block-18": "cea52537ea10e010b1b00ec9c9fe916376477902dbfbf980f0bdce411794096b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/L5/TPWFYK181GU3924ASM9YRB.uasset": "8da1b9ed3f9aefc0f6ed3d96cb7cdef9c2d76c34905006a599e261374ea5b9f3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-p-tanuki-04",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-tanuki": "ee713f505d0686d557c98af92b5d852aad7e30ee31dc549893f6a1be48645295"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/AX/5KZQJXZYBGNXYNMYXX6JYA.uasset": "e46653fa8a4e356886b9fb1a4bb595e26ba739ed4e877df6cd7173a7f693ed41"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

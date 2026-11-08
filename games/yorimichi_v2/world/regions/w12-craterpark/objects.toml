@@ -1,0 +1,6 @@
+# Crater Park objects (split entries for the editor's objects.toml, see tools/migrate/objects.py).
+# Source data: unreal/Content/Data/craterpark/park.json (render, collision, rails). This region's patches carry no
+# CP_ park key at all, so there is nothing to split from the area patches: park geometry needs per-piece export.
+schema = 1
+tag = "craterpark"
+data = ""

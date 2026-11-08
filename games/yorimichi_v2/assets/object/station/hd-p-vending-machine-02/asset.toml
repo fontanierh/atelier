@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_P_vending_machine 2 of 8 in w07-hidamari-station, placed at (954.165, 150.6) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-vending-machine. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-p-vending-machine-02"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/japan/assets/hd-p-vending-machine"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/0/04/89I1M3XQEOZKTT3XU2HGH0"

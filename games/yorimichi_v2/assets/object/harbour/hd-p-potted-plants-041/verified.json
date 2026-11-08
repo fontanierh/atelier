@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-potted-plants-041",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-potted-plants": "a0ce091274944240b347bf5366ed39ee5315ba87a2e8e9e4572083970ca86810"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/S8/Y4Z2PV5AC43ID3HRJWKOKX.uasset": "ea39f4f42f174bfd3c71d9d60e4a7f92123adb039a761ed3f5c19c06e292621f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

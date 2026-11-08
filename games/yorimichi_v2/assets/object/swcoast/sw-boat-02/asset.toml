@@ -1,0 +1,12 @@
+# One saved object of region/w08-southwest-coast (tools/migrate/objects.py, from its objects.toml): SW_Boat 2 of 2 in w08-southwest-coast, placed at (-226.5, -158.5) m.
+# Its placement is this actor package; its model is adopted/japan/southwest. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/swcoast/sw-boat-02"
+kind = "placement"
+authority = "editor"
+owner = "region/w08-southwest-coast"
+references = ["adopted/japan/southwest"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/87/WXO0EQEJRYRG3DQOD0ADHP"

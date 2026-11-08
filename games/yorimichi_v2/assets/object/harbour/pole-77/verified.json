@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/pole-77",
+  "dependencies": {
+    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/VI/85UNZ8YJ3WJMR7D2XAJBJO.uasset": "1c08d2d6eadb0fa3688da4c2f5e358ee7cda0a28495395d61fd907ecf3bcb29f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

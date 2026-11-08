@@ -1,0 +1,12 @@
+# One saved object of region/w08-southwest-coast (tools/migrate/objects.py, from its objects.toml): Torii 1 of 5 in w08-southwest-coast, placed at (-204.05, -472.26) m.
+# Its placement is this actor package; its model is adopted/japan/assets/torii. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/swcoast/torii-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w08-southwest-coast"
+references = ["adopted/japan/assets/torii"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/7E/OOJRL6OIHBOETPZGJTE9TV"

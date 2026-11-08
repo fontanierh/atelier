@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-members-bar",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-members-bar": "c7e2d866ce41aca2294550f5eacdde122c8cf3d28bf408fd8783cbfd1eae02ca"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/S3/XK7X8WXBMI0YLAFRL2DQH8.uasset": "829921a2bd9d7f4e10f8c79db7e05f0989d1e83b90ef4d5ae0829f27b58c070d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

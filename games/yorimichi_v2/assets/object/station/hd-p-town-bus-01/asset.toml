@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_P_town_bus 1 of 1 in w07-hidamari-station, placed at (1160.0, 232.4) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-town-bus. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-p-town-bus-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/japan/assets/hd-p-town-bus"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/75/LIUSO63VOLXAFJ2AYA7SUS"

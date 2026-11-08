@@ -1,0 +1,12 @@
+{
+  "asset": "object/swcoast/lantern-09",
+  "dependencies": {
+    "prop/lantern": "cb1eb2fba1aa523092033274da03d25da5e98b81e7e7df9a545de1f73c3ff6e9"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/R5/HLCWHY0DXNF99V27U0X935.uasset": "09710150425bcb3c5f4ca5336195946077f45c4286eb88c5e3852eb464863705"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/ponte",
+  "dependencies": {
+    "adopted/belmonte/civil-ponte": "37a9d44b8c3a43660cb4187d4b22110226eb86e8f9e2075a5fb5057e0f00081a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/0G/LQXVHT6818WOB4C71B8U5K.uasset": "e0cf036988d126464e994fd42e4420b6b21b0012bad4617194ea4c78610baa96"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

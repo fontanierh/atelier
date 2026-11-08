@@ -1,0 +1,12 @@
+{
+  "asset": "object/village/village-threshold-01",
+  "dependencies": {
+    "adopted/experiments/villageatomic": "acd763d7dfeb5ab989212f9fe8d7c4fbff9617a122faacb40cf1c05d82034721"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/1J/8Z8B90AIASJ7XJIL5HVI99.uasset": "d6dbda898b6edd8cba2d86e879d897ed06d48a520e6a7d0f9912eb1767f4c526"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
