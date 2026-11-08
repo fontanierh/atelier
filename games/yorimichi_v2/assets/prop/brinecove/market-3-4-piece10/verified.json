@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/market-3-4-piece10",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece10.uasset": "53547dddb7fc7162e099caac0bbc8910b5968b0940131b31c47d8774a05aae16"
+  },
+  "input_fingerprint": "304178415bbb98aaf76bbee8c35004868d1ed2eb44920528423865f7c233f2ea",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece10": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

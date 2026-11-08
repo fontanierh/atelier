@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/market-3-4-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Soft.uasset": "3c9d6915c66b93dcebc95e9a06fc0106c1418e2d9cf723e19d190756969853b2"
+  },
+  "input_fingerprint": "92a0ee834f05fbf83fe7da2472116847027a96d69cd3fc67f8109bfad20722d1",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

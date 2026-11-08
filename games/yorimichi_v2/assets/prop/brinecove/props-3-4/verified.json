@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/props-3-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Props_3_4.uasset": "8caf724d870be3aa8ffcbfdd018ad21e3f3d9da8989e35fb8ccd53608204b3e7"
+  },
+  "input_fingerprint": "d161208c56da8c4acd5b412bc0a22649ddcb5e4fbb67686a3605e2fbcdf742bd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Props_3_4": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
