@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Harbor_2_3_Soft: one Brine Cove mesh (90 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/harbor-2-3-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-2-3-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Harbor_2_3_Soft.glb"
+sha256 = "59e2ad966fbd9859c8c7cb088a0250da6efe3a50ea081176c08cff8fd3d00406"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_palm_frond"]
+triangles = 90
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Harbor_2_3_Soft"

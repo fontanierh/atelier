@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_3_4_Piece0: one Brine Cove mesh (2 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-upper-3-4-piece0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-upper-3-4-piece0"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownUpper_3_4_Piece0.glb"
+sha256 = "41c2019fff21e1473c178c75b5e037c5cf668fd949717f056a56a8070db42760"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_stone_light"]
+triangles = 2
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece0"

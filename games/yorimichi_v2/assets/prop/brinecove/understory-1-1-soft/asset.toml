@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Understory_1_1_Soft: one Brine Cove mesh (104 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/understory-1-1-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/understory-1-1-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Understory_1_1_Soft.glb"
+sha256 = "67de2ea277730ec6618c7c86d2c57848870fc169bae8b6e8e8fdb1f498b3154e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_fern", "/Game/Brinecove/Materials/MI_BC_cover_fern_light"]
+triangles = 104
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Understory_1_1_Soft"

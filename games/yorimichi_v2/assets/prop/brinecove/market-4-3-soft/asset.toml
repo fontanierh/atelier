@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Market_4_3_Soft: one Brine Cove mesh (2 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/market-4-3-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/market-4-3-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Market_4_3_Soft.glb"
+sha256 = "182388dcd6299b5d86204f06f6c901108447139259bfac4fa80a2e58c32b6f33"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_palm_frond"]
+triangles = 2
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_3_Soft"
