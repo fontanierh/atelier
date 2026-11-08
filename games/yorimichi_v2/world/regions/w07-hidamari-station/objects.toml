@@ -658,3 +658,3027 @@ id = "object/station/hd-pavilion-02"
 split = {key = "HD_Pavilion", at = [1040, 350]}
 model = "adopted/experiments/citysurfaces/v1-128m/pavilion"
 about = "HD_Pavilion 2 of 2 in w07-hidamari-station, placed at (1040, 350) m"
+
+[[objects]]
+id = "object/station/hd-bench-01"
+split = {key = "HD_Bench", at = [995.0, 319.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/bench"
+about = "HD_Bench 1 of 4 in w07-hidamari-station, placed at (995.0, 319.0) m"
+
+[[objects]]
+id = "object/station/hd-bench-02"
+split = {key = "HD_Bench", at = [998.0, 250.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/bench"
+about = "HD_Bench 2 of 4 in w07-hidamari-station, placed at (998.0, 250.0) m"
+
+[[objects]]
+id = "object/station/hd-bench-03"
+split = {key = "HD_Bench", at = [1064.0, 250.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/bench"
+about = "HD_Bench 3 of 4 in w07-hidamari-station, placed at (1064.0, 250.0) m"
+
+[[objects]]
+id = "object/station/hd-bench-04"
+split = {key = "HD_Bench", at = [1080.0, 320.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/bench"
+about = "HD_Bench 4 of 4 in w07-hidamari-station, placed at (1080.0, 320.0) m"
+
+[[objects]]
+id = "object/station/hd-lamp-01"
+split = {key = "HD_Lamp", at = [924.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 1 of 45 in w07-hidamari-station, placed at (924.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-02"
+split = {key = "HD_Lamp", at = [924.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 2 of 45 in w07-hidamari-station, placed at (924.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-03"
+split = {key = "HD_Lamp", at = [924.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 3 of 45 in w07-hidamari-station, placed at (924.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-04"
+split = {key = "HD_Lamp", at = [924.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 4 of 45 in w07-hidamari-station, placed at (924.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-05"
+split = {key = "HD_Lamp", at = [924.0, 237.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 5 of 45 in w07-hidamari-station, placed at (924.0, 237.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-06"
+split = {key = "HD_Lamp", at = [927.8, 281.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 6 of 45 in w07-hidamari-station, placed at (927.8, 281.6) m"
+
+[[objects]]
+id = "object/station/hd-lamp-07"
+split = {key = "HD_Lamp", at = [960.2, 296.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 7 of 45 in w07-hidamari-station, placed at (960.2, 296.0) m"
+
+[[objects]]
+id = "object/station/hd-lamp-08"
+split = {key = "HD_Lamp", at = [961.2, 274.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 8 of 45 in w07-hidamari-station, placed at (961.2, 274.5) m"
+
+[[objects]]
+id = "object/station/hd-lamp-09"
+split = {key = "HD_Lamp", at = [966.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 9 of 45 in w07-hidamari-station, placed at (966.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-10"
+split = {key = "HD_Lamp", at = [966.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 10 of 45 in w07-hidamari-station, placed at (966.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-11"
+split = {key = "HD_Lamp", at = [966.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 11 of 45 in w07-hidamari-station, placed at (966.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-12"
+split = {key = "HD_Lamp", at = [966.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 12 of 45 in w07-hidamari-station, placed at (966.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-13"
+split = {key = "HD_Lamp", at = [966.0, 237.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 13 of 45 in w07-hidamari-station, placed at (966.0, 237.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-14"
+split = {key = "HD_Lamp", at = [1008.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 14 of 45 in w07-hidamari-station, placed at (1008.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-15"
+split = {key = "HD_Lamp", at = [1008.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 15 of 45 in w07-hidamari-station, placed at (1008.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-16"
+split = {key = "HD_Lamp", at = [1008.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 16 of 45 in w07-hidamari-station, placed at (1008.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-17"
+split = {key = "HD_Lamp", at = [1008.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 17 of 45 in w07-hidamari-station, placed at (1008.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-18"
+split = {key = "HD_Lamp", at = [1038.5, 245.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 18 of 45 in w07-hidamari-station, placed at (1038.5, 245.0) m"
+
+[[objects]]
+id = "object/station/hd-lamp-19"
+split = {key = "HD_Lamp", at = [1038.5, 323.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 19 of 45 in w07-hidamari-station, placed at (1038.5, 323.0) m"
+
+[[objects]]
+id = "object/station/hd-lamp-20"
+split = {key = "HD_Lamp", at = [1050.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 20 of 45 in w07-hidamari-station, placed at (1050.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-21"
+split = {key = "HD_Lamp", at = [1050.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 21 of 45 in w07-hidamari-station, placed at (1050.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-22"
+split = {key = "HD_Lamp", at = [1050.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 22 of 45 in w07-hidamari-station, placed at (1050.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-23"
+split = {key = "HD_Lamp", at = [1050.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 23 of 45 in w07-hidamari-station, placed at (1050.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-24"
+split = {key = "HD_Lamp", at = [1050.0, 237.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 24 of 45 in w07-hidamari-station, placed at (1050.0, 237.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-25"
+split = {key = "HD_Lamp", at = [1092.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 25 of 45 in w07-hidamari-station, placed at (1092.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-26"
+split = {key = "HD_Lamp", at = [1092.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 26 of 45 in w07-hidamari-station, placed at (1092.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-27"
+split = {key = "HD_Lamp", at = [1092.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 27 of 45 in w07-hidamari-station, placed at (1092.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-28"
+split = {key = "HD_Lamp", at = [1092.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 28 of 45 in w07-hidamari-station, placed at (1092.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-29"
+split = {key = "HD_Lamp", at = [1092.0, 237.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 29 of 45 in w07-hidamari-station, placed at (1092.0, 237.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-30"
+split = {key = "HD_Lamp", at = [1112.2, 281.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 30 of 45 in w07-hidamari-station, placed at (1112.2, 281.6) m"
+
+[[objects]]
+id = "object/station/hd-lamp-31"
+split = {key = "HD_Lamp", at = [1134.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 31 of 45 in w07-hidamari-station, placed at (1134.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-32"
+split = {key = "HD_Lamp", at = [1134.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 32 of 45 in w07-hidamari-station, placed at (1134.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-33"
+split = {key = "HD_Lamp", at = [1134.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 33 of 45 in w07-hidamari-station, placed at (1134.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-34"
+split = {key = "HD_Lamp", at = [1134.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 34 of 45 in w07-hidamari-station, placed at (1134.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-35"
+split = {key = "HD_Lamp", at = [1176.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 35 of 45 in w07-hidamari-station, placed at (1176.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-36"
+split = {key = "HD_Lamp", at = [1176.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 36 of 45 in w07-hidamari-station, placed at (1176.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-37"
+split = {key = "HD_Lamp", at = [1176.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 37 of 45 in w07-hidamari-station, placed at (1176.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-38"
+split = {key = "HD_Lamp", at = [1176.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 38 of 45 in w07-hidamari-station, placed at (1176.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-39"
+split = {key = "HD_Lamp", at = [1176.0, 237.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 39 of 45 in w07-hidamari-station, placed at (1176.0, 237.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-40"
+split = {key = "HD_Lamp", at = [1176.0, 342.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 40 of 45 in w07-hidamari-station, placed at (1176.0, 342.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-41"
+split = {key = "HD_Lamp", at = [1218.0, -82.2]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 41 of 45 in w07-hidamari-station, placed at (1218.0, -82.2) m"
+
+[[objects]]
+id = "object/station/hd-lamp-42"
+split = {key = "HD_Lamp", at = [1218.0, 22.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 42 of 45 in w07-hidamari-station, placed at (1218.0, 22.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-43"
+split = {key = "HD_Lamp", at = [1218.0, 82.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 43 of 45 in w07-hidamari-station, placed at (1218.0, 82.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-44"
+split = {key = "HD_Lamp", at = [1218.0, 147.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 44 of 45 in w07-hidamari-station, placed at (1218.0, 147.8) m"
+
+[[objects]]
+id = "object/station/hd-lamp-45"
+split = {key = "HD_Lamp", at = [1218.0, 342.8]}
+model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+about = "HD_Lamp 45 of 45 in w07-hidamari-station, placed at (1218.0, 342.8) m"
+
+[[objects]]
+id = "object/station/hd-planter-01"
+split = {key = "HD_Planter", at = [932.0, -81.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 1 of 52 in w07-hidamari-station, placed at (932.0, -81.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-02"
+split = {key = "HD_Planter", at = [932.0, 6.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 2 of 52 in w07-hidamari-station, placed at (932.0, 6.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-03"
+split = {key = "HD_Planter", at = [932.0, 24.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 3 of 52 in w07-hidamari-station, placed at (932.0, 24.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-04"
+split = {key = "HD_Planter", at = [932.0, 66.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 4 of 52 in w07-hidamari-station, placed at (932.0, 66.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-05"
+split = {key = "HD_Planter", at = [932.0, 84.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 5 of 52 in w07-hidamari-station, placed at (932.0, 84.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-06"
+split = {key = "HD_Planter", at = [932.0, 131.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 6 of 52 in w07-hidamari-station, placed at (932.0, 131.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-07"
+split = {key = "HD_Planter", at = [932.0, 149.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 7 of 52 in w07-hidamari-station, placed at (932.0, 149.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-08"
+split = {key = "HD_Planter", at = [932.0, 221.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 8 of 52 in w07-hidamari-station, placed at (932.0, 221.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-09"
+split = {key = "HD_Planter", at = [980.167, 131.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 9 of 52 in w07-hidamari-station, placed at (980.167, 131.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-10"
+split = {key = "HD_Planter", at = [984.667, -81.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 10 of 52 in w07-hidamari-station, placed at (984.667, -81.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-11"
+split = {key = "HD_Planter", at = [984.667, 6.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 11 of 52 in w07-hidamari-station, placed at (984.667, 6.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-12"
+split = {key = "HD_Planter", at = [984.667, 24.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 12 of 52 in w07-hidamari-station, placed at (984.667, 24.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-13"
+split = {key = "HD_Planter", at = [984.667, 66.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 13 of 52 in w07-hidamari-station, placed at (984.667, 66.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-14"
+split = {key = "HD_Planter", at = [984.667, 84.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 14 of 52 in w07-hidamari-station, placed at (984.667, 84.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-15"
+split = {key = "HD_Planter", at = [984.667, 149.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 15 of 52 in w07-hidamari-station, placed at (984.667, 149.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-16"
+split = {key = "HD_Planter", at = [984.667, 221.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 16 of 52 in w07-hidamari-station, placed at (984.667, 221.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-17"
+split = {key = "HD_Planter", at = [998.0, 319.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 17 of 52 in w07-hidamari-station, placed at (998.0, 319.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-18"
+split = {key = "HD_Planter", at = [1001.0, 250.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 18 of 52 in w07-hidamari-station, placed at (1001.0, 250.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-19"
+split = {key = "HD_Planter", at = [1037.333, -81.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 19 of 52 in w07-hidamari-station, placed at (1037.333, -81.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-20"
+split = {key = "HD_Planter", at = [1037.333, 6.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 20 of 52 in w07-hidamari-station, placed at (1037.333, 6.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-21"
+split = {key = "HD_Planter", at = [1037.333, 24.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 21 of 52 in w07-hidamari-station, placed at (1037.333, 24.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-22"
+split = {key = "HD_Planter", at = [1037.333, 66.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 22 of 52 in w07-hidamari-station, placed at (1037.333, 66.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-23"
+split = {key = "HD_Planter", at = [1037.333, 84.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 23 of 52 in w07-hidamari-station, placed at (1037.333, 84.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-24"
+split = {key = "HD_Planter", at = [1037.333, 131.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 24 of 52 in w07-hidamari-station, placed at (1037.333, 131.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-25"
+split = {key = "HD_Planter", at = [1037.333, 149.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 25 of 52 in w07-hidamari-station, placed at (1037.333, 149.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-26"
+split = {key = "HD_Planter", at = [1037.333, 221.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 26 of 52 in w07-hidamari-station, placed at (1037.333, 221.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-27"
+split = {key = "HD_Planter", at = [1067.0, 250.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 27 of 52 in w07-hidamari-station, placed at (1067.0, 250.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-28"
+split = {key = "HD_Planter", at = [1083.0, 320.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 28 of 52 in w07-hidamari-station, placed at (1083.0, 320.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-29"
+split = {key = "HD_Planter", at = [1090.0, -81.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 29 of 52 in w07-hidamari-station, placed at (1090.0, -81.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-30"
+split = {key = "HD_Planter", at = [1090.0, 6.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 30 of 52 in w07-hidamari-station, placed at (1090.0, 6.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-31"
+split = {key = "HD_Planter", at = [1090.0, 24.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 31 of 52 in w07-hidamari-station, placed at (1090.0, 24.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-32"
+split = {key = "HD_Planter", at = [1090.0, 66.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 32 of 52 in w07-hidamari-station, placed at (1090.0, 66.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-33"
+split = {key = "HD_Planter", at = [1090.0, 84.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 33 of 52 in w07-hidamari-station, placed at (1090.0, 84.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-34"
+split = {key = "HD_Planter", at = [1090.0, 131.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 34 of 52 in w07-hidamari-station, placed at (1090.0, 131.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-35"
+split = {key = "HD_Planter", at = [1090.0, 149.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 35 of 52 in w07-hidamari-station, placed at (1090.0, 149.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-36"
+split = {key = "HD_Planter", at = [1090.0, 221.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 36 of 52 in w07-hidamari-station, placed at (1090.0, 221.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-37"
+split = {key = "HD_Planter", at = [1148.0, -81.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 37 of 52 in w07-hidamari-station, placed at (1148.0, -81.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-38"
+split = {key = "HD_Planter", at = [1148.0, 6.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 38 of 52 in w07-hidamari-station, placed at (1148.0, 6.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-39"
+split = {key = "HD_Planter", at = [1148.0, 24.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 39 of 52 in w07-hidamari-station, placed at (1148.0, 24.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-40"
+split = {key = "HD_Planter", at = [1148.0, 66.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 40 of 52 in w07-hidamari-station, placed at (1148.0, 66.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-41"
+split = {key = "HD_Planter", at = [1148.0, 84.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 41 of 52 in w07-hidamari-station, placed at (1148.0, 84.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-42"
+split = {key = "HD_Planter", at = [1148.0, 131.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 42 of 52 in w07-hidamari-station, placed at (1148.0, 131.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-43"
+split = {key = "HD_Planter", at = [1148.0, 149.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 43 of 52 in w07-hidamari-station, placed at (1148.0, 149.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-44"
+split = {key = "HD_Planter", at = [1148.0, 221.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 44 of 52 in w07-hidamari-station, placed at (1148.0, 221.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-45"
+split = {key = "HD_Planter", at = [1197.5, 131.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 45 of 52 in w07-hidamari-station, placed at (1197.5, 131.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-46"
+split = {key = "HD_Planter", at = [1202.0, -81.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 46 of 52 in w07-hidamari-station, placed at (1202.0, -81.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-47"
+split = {key = "HD_Planter", at = [1202.0, 6.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 47 of 52 in w07-hidamari-station, placed at (1202.0, 6.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-48"
+split = {key = "HD_Planter", at = [1202.0, 24.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 48 of 52 in w07-hidamari-station, placed at (1202.0, 24.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-49"
+split = {key = "HD_Planter", at = [1202.0, 66.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 49 of 52 in w07-hidamari-station, placed at (1202.0, 66.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-50"
+split = {key = "HD_Planter", at = [1202.0, 84.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 50 of 52 in w07-hidamari-station, placed at (1202.0, 84.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-51"
+split = {key = "HD_Planter", at = [1202.0, 149.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 51 of 52 in w07-hidamari-station, placed at (1202.0, 149.0) m"
+
+[[objects]]
+id = "object/station/hd-planter-52"
+split = {key = "HD_Planter", at = [1202.0, 221.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/planter"
+about = "HD_Planter 52 of 52 in w07-hidamari-station, placed at (1202.0, 221.0) m"
+
+[[objects]]
+id = "object/station/hd-playground-01"
+split = {key = "HD_Playground", at = [1100.0, 260.0]}
+model = "adopted/experiments/citysurfaces/v1-128m/playground"
+about = "HD_Playground 1 of 1 in w07-hidamari-station, placed at (1100.0, 260.0) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-01"
+split = {key = "HD_P_ac_unit", at = [902.79, 190.234]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 1 of 49 in w07-hidamari-station, placed at (902.79, 190.234) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-02"
+split = {key = "HD_P_ac_unit", at = [942.29, 190.575]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 2 of 49 in w07-hidamari-station, placed at (942.29, 190.575) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-03"
+split = {key = "HD_P_ac_unit", at = [944.28, -53.709]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 3 of 49 in w07-hidamari-station, placed at (944.28, -53.709) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-04"
+split = {key = "HD_P_ac_unit", at = [952.43, -39.521]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 4 of 49 in w07-hidamari-station, placed at (952.43, -39.521) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-05"
+split = {key = "HD_P_ac_unit", at = [955.62, 176.298]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 5 of 49 in w07-hidamari-station, placed at (955.62, 176.298) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-06"
+split = {key = "HD_P_ac_unit", at = [955.78, -53.366]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 6 of 49 in w07-hidamari-station, placed at (955.78, -53.366) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-07"
+split = {key = "HD_P_ac_unit", at = [963.93, -39.42]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 7 of 49 in w07-hidamari-station, placed at (963.93, -39.42) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-08"
+split = {key = "HD_P_ac_unit", at = [965.29, 190.516]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 8 of 49 in w07-hidamari-station, placed at (965.29, 190.516) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-09"
+split = {key = "HD_P_ac_unit", at = [967.28, -53.992]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 9 of 49 in w07-hidamari-station, placed at (967.28, -53.992) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-10"
+split = {key = "HD_P_ac_unit", at = [976.79, 190.695]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 10 of 49 in w07-hidamari-station, placed at (976.79, 190.695) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-11"
+split = {key = "HD_P_ac_unit", at = [978.78, -53.922]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 11 of 49 in w07-hidamari-station, placed at (978.78, -53.922) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-12"
+split = {key = "HD_P_ac_unit", at = [983.84, -39.671]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 12 of 49 in w07-hidamari-station, placed at (983.84, -39.671) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-13"
+split = {key = "HD_P_ac_unit", at = [985.82, 176.681]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 13 of 49 in w07-hidamari-station, placed at (985.82, 176.681) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-14"
+split = {key = "HD_P_ac_unit", at = [988.29, 190.841]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 14 of 49 in w07-hidamari-station, placed at (988.29, 190.841) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-15"
+split = {key = "HD_P_ac_unit", at = [990.28, -53.449]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 15 of 49 in w07-hidamari-station, placed at (990.28, -53.449) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-16"
+split = {key = "HD_P_ac_unit", at = [997.32, 176.226]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 16 of 49 in w07-hidamari-station, placed at (997.32, 176.226) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-17"
+split = {key = "HD_P_ac_unit", at = [999.79, 190.582]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 17 of 49 in w07-hidamari-station, placed at (999.79, 190.582) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-18"
+split = {key = "HD_P_ac_unit", at = [1013.28, -53.285]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 18 of 49 in w07-hidamari-station, placed at (1013.28, -53.285) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-19"
+split = {key = "HD_P_ac_unit", at = [1014.92, 176.751]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 19 of 49 in w07-hidamari-station, placed at (1014.92, 176.751) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-20"
+split = {key = "HD_P_ac_unit", at = [1022.79, 190.538]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 20 of 49 in w07-hidamari-station, placed at (1022.79, 190.538) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-21"
+split = {key = "HD_P_ac_unit", at = [1024.78, -53.323]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 21 of 49 in w07-hidamari-station, placed at (1024.78, -53.323) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-22"
+split = {key = "HD_P_ac_unit", at = [1034.29, 190.677]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 22 of 49 in w07-hidamari-station, placed at (1034.29, 190.677) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-23"
+split = {key = "HD_P_ac_unit", at = [1036.28, -53.208]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 23 of 49 in w07-hidamari-station, placed at (1036.28, -53.208) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-24"
+split = {key = "HD_P_ac_unit", at = [1045.79, 190.229]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 24 of 49 in w07-hidamari-station, placed at (1045.79, 190.229) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-25"
+split = {key = "HD_P_ac_unit", at = [1047.78, -53.675]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 25 of 49 in w07-hidamari-station, placed at (1047.78, -53.675) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-26"
+split = {key = "HD_P_ac_unit", at = [1048.28, -39.796]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 26 of 49 in w07-hidamari-station, placed at (1048.28, -39.796) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-27"
+split = {key = "HD_P_ac_unit", at = [1059.78, -39.646]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 27 of 49 in w07-hidamari-station, placed at (1059.78, -39.646) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-28"
+split = {key = "HD_P_ac_unit", at = [1065.9, 190.35]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 28 of 49 in w07-hidamari-station, placed at (1065.9, 190.35) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-29"
+split = {key = "HD_P_ac_unit", at = [1070.78, -53.952]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 29 of 49 in w07-hidamari-station, placed at (1070.78, -53.952) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-30"
+split = {key = "HD_P_ac_unit", at = [1082.28, -53.719]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 30 of 49 in w07-hidamari-station, placed at (1082.28, -53.719) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-31"
+split = {key = "HD_P_ac_unit", at = [1099.59, 190.72]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 31 of 49 in w07-hidamari-station, placed at (1099.59, 190.72) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-32"
+split = {key = "HD_P_ac_unit", at = [1141.09, 190.573]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 32 of 49 in w07-hidamari-station, placed at (1141.09, 190.573) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-33"
+split = {key = "HD_P_ac_unit", at = [1144.42, 176.564]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 33 of 49 in w07-hidamari-station, placed at (1144.42, 176.564) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-34"
+split = {key = "HD_P_ac_unit", at = [1152.59, 190.259]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 34 of 49 in w07-hidamari-station, placed at (1152.59, 190.259) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-35"
+split = {key = "HD_P_ac_unit", at = [1152.84, -38.916]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 35 of 49 in w07-hidamari-station, placed at (1152.84, -38.916) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-36"
+split = {key = "HD_P_ac_unit", at = [1155.17, -53.911]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 36 of 49 in w07-hidamari-station, placed at (1155.17, -53.911) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-37"
+split = {key = "HD_P_ac_unit", at = [1155.92, 175.948]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 37 of 49 in w07-hidamari-station, placed at (1155.92, 175.948) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-38"
+split = {key = "HD_P_ac_unit", at = [1164.34, -39.284]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 38 of 49 in w07-hidamari-station, placed at (1164.34, -39.284) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-39"
+split = {key = "HD_P_ac_unit", at = [1166.67, -53.669]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 39 of 49 in w07-hidamari-station, placed at (1166.67, -53.669) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-40"
+split = {key = "HD_P_ac_unit", at = [1175.84, -39.73]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 40 of 49 in w07-hidamari-station, placed at (1175.84, -39.73) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-41"
+split = {key = "HD_P_ac_unit", at = [1187.09, 190.29]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 41 of 49 in w07-hidamari-station, placed at (1187.09, 190.29) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-42"
+split = {key = "HD_P_ac_unit", at = [1187.34, -38.918]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 42 of 49 in w07-hidamari-station, placed at (1187.34, -38.918) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-43"
+split = {key = "HD_P_ac_unit", at = [1198.59, 190.749]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 43 of 49 in w07-hidamari-station, placed at (1198.59, 190.749) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-44"
+split = {key = "HD_P_ac_unit", at = [1198.84, -39.773]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 44 of 49 in w07-hidamari-station, placed at (1198.84, -39.773) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-45"
+split = {key = "HD_P_ac_unit", at = [1201.17, -53.72]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 45 of 49 in w07-hidamari-station, placed at (1201.17, -53.72) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-46"
+split = {key = "HD_P_ac_unit", at = [1210.09, 190.743]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 46 of 49 in w07-hidamari-station, placed at (1210.09, 190.743) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-47"
+split = {key = "HD_P_ac_unit", at = [1210.34, -39.256]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 47 of 49 in w07-hidamari-station, placed at (1210.34, -39.256) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-48"
+split = {key = "HD_P_ac_unit", at = [1210.43, 176.031]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 48 of 49 in w07-hidamari-station, placed at (1210.43, 176.031) m"
+
+[[objects]]
+id = "object/station/hd-p-ac-unit-49"
+split = {key = "HD_P_ac_unit", at = [1212.67, -53.302]}
+model = "adopted/japan/assets/hd-p-ac-unit"
+about = "HD_P_ac_unit 49 of 49 in w07-hidamari-station, placed at (1212.67, -53.302) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-01"
+split = {key = "HD_P_bicycle", at = [897.92, 178.1]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 1 of 16 in w07-hidamari-station, placed at (897.92, 178.1) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-02"
+split = {key = "HD_P_bicycle", at = [980.502, 25.6]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 2 of 16 in w07-hidamari-station, placed at (980.502, 25.6) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-03"
+split = {key = "HD_P_bicycle", at = [985.97, 188.9]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 3 of 16 in w07-hidamari-station, placed at (985.97, 188.9) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-04"
+split = {key = "HD_P_bicycle", at = [1006.833, -79.4]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 4 of 16 in w07-hidamari-station, placed at (1006.833, -79.4) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-05"
+split = {key = "HD_P_bicycle", at = [1006.833, 150.6]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 5 of 16 in w07-hidamari-station, placed at (1006.833, 150.6) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-06"
+split = {key = "HD_P_bicycle", at = [1022.96, -41.1]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 6 of 16 in w07-hidamari-station, placed at (1022.96, -41.1) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-07"
+split = {key = "HD_P_bicycle", at = [1031.97, 188.9]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 7 of 16 in w07-hidamari-station, placed at (1031.97, 188.9) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-08"
+split = {key = "HD_P_bicycle", at = [1033.165, 4.4]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 8 of 16 in w07-hidamari-station, placed at (1033.165, 4.4) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-09"
+split = {key = "HD_P_bicycle", at = [1033.165, 64.4]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 9 of 16 in w07-hidamari-station, placed at (1033.165, 64.4) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-10"
+split = {key = "HD_P_bicycle", at = [1057.46, -41.1]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 10 of 16 in w07-hidamari-station, placed at (1057.46, -41.1) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-11"
+split = {key = "HD_P_bicycle", at = [1085.833, 85.6]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 11 of 16 in w07-hidamari-station, placed at (1085.833, 85.6) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-12"
+split = {key = "HD_P_bicycle", at = [1085.833, 219.4]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 12 of 16 in w07-hidamari-station, placed at (1085.833, 219.4) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-13"
+split = {key = "HD_P_bicycle", at = [1099.52, -41.1]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 13 of 16 in w07-hidamari-station, placed at (1099.52, -41.1) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-14"
+split = {key = "HD_P_bicycle", at = [1158.24, 178.1]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 14 of 16 in w07-hidamari-station, placed at (1158.24, 178.1) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-15"
+split = {key = "HD_P_bicycle", at = [1161.77, 188.9]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 15 of 16 in w07-hidamari-station, placed at (1161.77, 188.9) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-16"
+split = {key = "HD_P_bicycle", at = [1196.27, 188.9]}
+model = "adopted/japan/assets/hd-p-bicycle"
+about = "HD_P_bicycle 16 of 16 in w07-hidamari-station, placed at (1196.27, 188.9) m"
+
+[[objects]]
+id = "object/station/hd-p-bicycle-shelter-01"
+split = {key = "HD_P_bicycle_shelter", at = [1158.5, 268.0]}
+model = "adopted/japan/assets/hd-p-bicycle-shelter"
+about = "HD_P_bicycle_shelter 1 of 1 in w07-hidamari-station, placed at (1158.5, 268.0) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-01"
+split = {key = "HD_P_bonsai_shelf", at = [957.74, 178.25]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 1 of 13 in w07-hidamari-station, placed at (957.74, 178.25) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-02"
+split = {key = "HD_P_bonsai_shelf", at = [957.9, -51.75]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 2 of 13 in w07-hidamari-station, placed at (957.9, -51.75) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-03"
+split = {key = "HD_P_bonsai_shelf", at = [961.81, -41.25]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 3 of 13 in w07-hidamari-station, placed at (961.81, -41.25) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-04"
+split = {key = "HD_P_bonsai_shelf", at = [969.24, 178.25]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 4 of 13 in w07-hidamari-station, placed at (969.24, 178.25) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-05"
+split = {key = "HD_P_bonsai_shelf", at = [992.4, -51.75]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 5 of 13 in w07-hidamari-station, placed at (992.4, -51.75) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-06"
+split = {key = "HD_P_bonsai_shelf", at = [1015.4, -51.75]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 6 of 13 in w07-hidamari-station, placed at (1015.4, -51.75) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-07"
+split = {key = "HD_P_bonsai_shelf", at = [1028.54, 178.25]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 7 of 13 in w07-hidamari-station, placed at (1028.54, 178.25) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-08"
+split = {key = "HD_P_bonsai_shelf", at = [1038.4, -51.75]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 8 of 13 in w07-hidamari-station, placed at (1038.4, -51.75) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-09"
+split = {key = "HD_P_bonsai_shelf", at = [1138.97, 188.75]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 9 of 13 in w07-hidamari-station, placed at (1138.97, 188.75) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-10"
+split = {key = "HD_P_bonsai_shelf", at = [1173.47, 188.75]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 10 of 13 in w07-hidamari-station, placed at (1173.47, 188.75) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-11"
+split = {key = "HD_P_bonsai_shelf", at = [1181.04, 178.25]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 11 of 13 in w07-hidamari-station, placed at (1181.04, 178.25) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-12"
+split = {key = "HD_P_bonsai_shelf", at = [1203.29, -51.75]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 12 of 13 in w07-hidamari-station, placed at (1203.29, -51.75) m"
+
+[[objects]]
+id = "object/station/hd-p-bonsai-shelf-13"
+split = {key = "HD_P_bonsai_shelf", at = [1212.55, 178.25]}
+model = "adopted/japan/assets/hd-p-bonsai-shelf"
+about = "HD_P_bonsai_shelf 13 of 13 in w07-hidamari-station, placed at (1212.55, 178.25) m"
+
+[[objects]]
+id = "object/station/hd-p-bus-stop-01"
+split = {key = "HD_P_bus_stop", at = [1162.0, 244.0]}
+model = "adopted/japan/assets/hd-p-bus-stop"
+about = "HD_P_bus_stop 1 of 1 in w07-hidamari-station, placed at (1162.0, 244.0) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-01"
+split = {key = "HD_P_curve_mirror", at = [901.71, -43.2]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 1 of 12 in w07-hidamari-station, placed at (901.71, -43.2) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-02"
+split = {key = "HD_P_curve_mirror", at = [903.07, 186.8]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 2 of 12 in w07-hidamari-station, placed at (903.07, 186.8) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-03"
+split = {key = "HD_P_curve_mirror", at = [933.17, 186.8]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 3 of 12 in w07-hidamari-station, placed at (933.17, 186.8) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-04"
+split = {key = "HD_P_curve_mirror", at = [943.31, -43.2]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 4 of 12 in w07-hidamari-station, placed at (943.31, -43.2) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-05"
+split = {key = "HD_P_curve_mirror", at = [995.62, -43.2]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 5 of 12 in w07-hidamari-station, placed at (995.62, -43.2) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-06"
+split = {key = "HD_P_curve_mirror", at = [1016.16, -43.2]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 6 of 12 in w07-hidamari-station, placed at (1016.16, -43.2) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-07"
+split = {key = "HD_P_curve_mirror", at = [1099.87, 186.8]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 7 of 12 in w07-hidamari-station, placed at (1099.87, 186.8) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-08"
+split = {key = "HD_P_curve_mirror", at = [1102.12, -43.2]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 8 of 12 in w07-hidamari-station, placed at (1102.12, -43.2) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-09"
+split = {key = "HD_P_curve_mirror", at = [1131.97, 186.8]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 9 of 12 in w07-hidamari-station, placed at (1131.97, 186.8) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-10"
+split = {key = "HD_P_curve_mirror", at = [1143.72, -43.2]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 10 of 12 in w07-hidamari-station, placed at (1143.72, -43.2) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-11"
+split = {key = "HD_P_curve_mirror", at = [1210.62, -43.2]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 11 of 12 in w07-hidamari-station, placed at (1210.62, -43.2) m"
+
+[[objects]]
+id = "object/station/hd-p-curve-mirror-12"
+split = {key = "HD_P_curve_mirror", at = [1221.87, 186.8]}
+model = "adopted/japan/assets/hd-p-curve-mirror"
+about = "HD_P_curve_mirror 12 of 12 in w07-hidamari-station, placed at (1221.87, 186.8) m"
+
+[[objects]]
+id = "object/station/hd-p-drink-crates-01"
+split = {key = "HD_P_drink_crates", at = [1085.833, 150.6]}
+model = "adopted/japan/assets/hd-p-drink-crates"
+about = "HD_P_drink_crates 1 of 1 in w07-hidamari-station, placed at (1085.833, 150.6) m"
+
+[[objects]]
+id = "object/station/hd-p-fire-buckets-01"
+split = {key = "HD_P_fire_buckets", at = [1006.833, 25.6]}
+model = "adopted/japan/assets/hd-p-fire-buckets"
+about = "HD_P_fire_buckets 1 of 5 in w07-hidamari-station, placed at (1006.833, 25.6) m"
+
+[[objects]]
+id = "object/station/hd-p-fire-buckets-02"
+split = {key = "HD_P_fire_buckets", at = [1033.165, -79.4]}
+model = "adopted/japan/assets/hd-p-fire-buckets"
+about = "HD_P_fire_buckets 2 of 5 in w07-hidamari-station, placed at (1033.165, -79.4) m"
+
+[[objects]]
+id = "object/station/hd-p-fire-buckets-03"
+split = {key = "HD_P_fire_buckets", at = [1059.502, 4.4]}
+model = "adopted/japan/assets/hd-p-fire-buckets"
+about = "HD_P_fire_buckets 3 of 5 in w07-hidamari-station, placed at (1059.502, 4.4) m"
+
+[[objects]]
+id = "object/station/hd-p-fire-buckets-04"
+split = {key = "HD_P_fire_buckets", at = [1059.502, 64.4]}
+model = "adopted/japan/assets/hd-p-fire-buckets"
+about = "HD_P_fire_buckets 4 of 5 in w07-hidamari-station, placed at (1059.502, 64.4) m"
+
+[[objects]]
+id = "object/station/hd-p-fire-buckets-05"
+split = {key = "HD_P_fire_buckets", at = [1170.5, 85.6]}
+model = "adopted/japan/assets/hd-p-fire-buckets"
+about = "HD_P_fire_buckets 5 of 5 in w07-hidamari-station, placed at (1170.5, 85.6) m"
+
+[[objects]]
+id = "object/station/hd-p-garbage-station-01"
+split = {key = "HD_P_garbage_station", at = [1197.5, 219.4]}
+model = "adopted/japan/assets/hd-p-garbage-station"
+about = "HD_P_garbage_station 1 of 1 in w07-hidamari-station, placed at (1197.5, 219.4) m"
+
+[[objects]]
+id = "object/station/hd-p-hokora-01"
+split = {key = "HD_P_hokora", at = [1193.345, 178.9]}
+model = "adopted/japan/assets/hd-p-hokora"
+about = "HD_P_hokora 1 of 1 in w07-hidamari-station, placed at (1193.345, 178.9) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-car-01"
+split = {key = "HD_P_kei_car", at = [963.87, 188.6]}
+model = "adopted/japan/assets/hd-p-kei-car"
+about = "HD_P_kei_car 1 of 4 in w07-hidamari-station, placed at (963.87, 188.6) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-car-02"
+split = {key = "HD_P_kei_car", at = [1081.08, 188.6]}
+model = "adopted/japan/assets/hd-p-kei-car"
+about = "HD_P_kei_car 2 of 4 in w07-hidamari-station, placed at (1081.08, 188.6) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-car-03"
+split = {key = "HD_P_kei_car", at = [1168.84, 178.4]}
+model = "adopted/japan/assets/hd-p-kei-car"
+about = "HD_P_kei_car 3 of 4 in w07-hidamari-station, placed at (1168.84, 178.4) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-car-04"
+split = {key = "HD_P_kei_car", at = [1191.09, -51.6]}
+model = "adopted/japan/assets/hd-p-kei-car"
+about = "HD_P_kei_car 4 of 4 in w07-hidamari-station, placed at (1191.09, -51.6) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-01"
+split = {key = "HD_P_kei_truck", at = [1021.37, 188.6]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 1 of 9 in w07-hidamari-station, placed at (1021.37, 188.6) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-02"
+split = {key = "HD_P_kei_truck", at = [1046.86, -41.4]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 2 of 9 in w07-hidamari-station, placed at (1046.86, -41.4) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-03"
+split = {key = "HD_P_kei_truck", at = [1073.84, 178.4]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 3 of 9 in w07-hidamari-station, placed at (1073.84, 178.4) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-04"
+split = {key = "HD_P_kei_truck", at = [1081.36, -41.4]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 4 of 9 in w07-hidamari-station, placed at (1081.36, -41.4) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-05"
+split = {key = "HD_P_kei_truck", at = [1145.84, 178.4]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 5 of 9 in w07-hidamari-station, placed at (1145.84, 178.4) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-06"
+split = {key = "HD_P_kei_truck", at = [1174.42, -41.4]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 6 of 9 in w07-hidamari-station, placed at (1174.42, -41.4) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-07"
+split = {key = "HD_P_kei_truck", at = [1179.59, -51.6]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 7 of 9 in w07-hidamari-station, placed at (1179.59, -51.6) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-08"
+split = {key = "HD_P_kei_truck", at = [1185.92, -41.4]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 8 of 9 in w07-hidamari-station, placed at (1185.92, -41.4) m"
+
+[[objects]]
+id = "object/station/hd-p-kei-truck-09"
+split = {key = "HD_P_kei_truck", at = [1228.0, 266.0]}
+model = "adopted/japan/assets/hd-p-kei-truck"
+about = "HD_P_kei_truck 9 of 9 in w07-hidamari-station, placed at (1228.0, 266.0) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-01"
+split = {key = "HD_P_lantern_sign", at = [954.165, 219.4]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 1 of 8 in w07-hidamari-station, placed at (954.165, 219.4) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-02"
+split = {key = "HD_P_lantern_sign", at = [980.502, 85.6]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 2 of 8 in w07-hidamari-station, placed at (980.502, 85.6) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-03"
+split = {key = "HD_P_lantern_sign", at = [1059.502, 129.4]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 3 of 8 in w07-hidamari-station, placed at (1059.502, 129.4) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-04"
+split = {key = "HD_P_lantern_sign", at = [1085.833, 25.6]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 4 of 8 in w07-hidamari-station, placed at (1085.833, 25.6) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-05"
+split = {key = "HD_P_lantern_sign", at = [1170.5, -79.4]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 5 of 8 in w07-hidamari-station, placed at (1170.5, -79.4) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-06"
+split = {key = "HD_P_lantern_sign", at = [1197.5, 4.4]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 6 of 8 in w07-hidamari-station, placed at (1197.5, 4.4) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-07"
+split = {key = "HD_P_lantern_sign", at = [1197.5, 64.4]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 7 of 8 in w07-hidamari-station, placed at (1197.5, 64.4) m"
+
+[[objects]]
+id = "object/station/hd-p-lantern-sign-08"
+split = {key = "HD_P_lantern_sign", at = [1197.5, 150.6]}
+model = "adopted/japan/assets/hd-p-lantern-sign"
+about = "HD_P_lantern_sign 8 of 8 in w07-hidamari-station, placed at (1197.5, 150.6) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-01"
+split = {key = "HD_P_laundry_stand", at = [943.51, -37.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 1 of 17 in w07-hidamari-station, placed at (943.51, -37.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-02"
+split = {key = "HD_P_laundry_stand", at = [955.01, -37.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 2 of 17 in w07-hidamari-station, placed at (955.01, -37.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-03"
+split = {key = "HD_P_laundry_stand", at = [999.2, -55.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 3 of 17 in w07-hidamari-station, placed at (999.2, -55.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-04"
+split = {key = "HD_P_laundry_stand", at = [1023.84, 174.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 4 of 17 in w07-hidamari-station, placed at (1023.84, 174.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-05"
+split = {key = "HD_P_laundry_stand", at = [1025.37, 192.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 5 of 17 in w07-hidamari-station, placed at (1025.37, 192.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-06"
+split = {key = "HD_P_laundry_stand", at = [1033.7, -55.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 6 of 17 in w07-hidamari-station, placed at (1033.7, -55.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-07"
+split = {key = "HD_P_laundry_stand", at = [1050.86, -37.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 7 of 17 in w07-hidamari-station, placed at (1050.86, -37.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-08"
+split = {key = "HD_P_laundry_stand", at = [1090.67, 192.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 8 of 17 in w07-hidamari-station, placed at (1090.67, 192.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-09"
+split = {key = "HD_P_laundry_stand", at = [1143.92, -37.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 9 of 17 in w07-hidamari-station, placed at (1143.92, -37.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-10"
+split = {key = "HD_P_laundry_stand", at = [1155.17, 192.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 10 of 17 in w07-hidamari-station, placed at (1155.17, 192.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-11"
+split = {key = "HD_P_laundry_stand", at = [1164.09, -55.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 11 of 17 in w07-hidamari-station, placed at (1164.09, -55.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-12"
+split = {key = "HD_P_laundry_stand", at = [1176.34, 174.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 12 of 17 in w07-hidamari-station, placed at (1176.34, 174.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-13"
+split = {key = "HD_P_laundry_stand", at = [1187.09, -55.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 13 of 17 in w07-hidamari-station, placed at (1187.09, -55.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-14"
+split = {key = "HD_P_laundry_stand", at = [1187.84, 174.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 14 of 17 in w07-hidamari-station, placed at (1187.84, 174.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-15"
+split = {key = "HD_P_laundry_stand", at = [1201.42, -37.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 15 of 17 in w07-hidamari-station, placed at (1201.42, -37.3) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-16"
+split = {key = "HD_P_laundry_stand", at = [1212.67, 192.7]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 16 of 17 in w07-hidamari-station, placed at (1212.67, 192.7) m"
+
+[[objects]]
+id = "object/station/hd-p-laundry-stand-17"
+split = {key = "HD_P_laundry_stand", at = [1219.35, 174.3]}
+model = "adopted/japan/assets/hd-p-laundry-stand"
+about = "HD_P_laundry_stand 17 of 17 in w07-hidamari-station, placed at (1219.35, 174.3) m"
+
+[[objects]]
+id = "object/station/hd-p-phone-booth-01"
+split = {key = "HD_P_phone_booth", at = [1216.0, 262.0]}
+model = "adopted/japan/assets/hd-p-phone-booth"
+about = "HD_P_phone_booth 1 of 1 in w07-hidamari-station, placed at (1216.0, 262.0) m"
+
+[[objects]]
+id = "object/station/hd-p-planter-box-01"
+split = {key = "HD_P_planter_box", at = [1170.5, 219.4]}
+model = "adopted/japan/assets/hd-p-planter-box"
+about = "HD_P_planter_box 1 of 1 in w07-hidamari-station, placed at (1170.5, 219.4) m"
+
+[[objects]]
+id = "object/station/hd-p-postbox-01"
+split = {key = "HD_P_postbox", at = [1033.165, 25.6]}
+model = "adopted/japan/assets/hd-p-postbox"
+about = "HD_P_postbox 1 of 6 in w07-hidamari-station, placed at (1033.165, 25.6) m"
+
+[[objects]]
+id = "object/station/hd-p-postbox-02"
+split = {key = "HD_P_postbox", at = [1059.502, -79.4]}
+model = "adopted/japan/assets/hd-p-postbox"
+about = "HD_P_postbox 2 of 6 in w07-hidamari-station, placed at (1059.502, -79.4) m"
+
+[[objects]]
+id = "object/station/hd-p-postbox-03"
+split = {key = "HD_P_postbox", at = [1085.833, 4.4]}
+model = "adopted/japan/assets/hd-p-postbox"
+about = "HD_P_postbox 3 of 6 in w07-hidamari-station, placed at (1085.833, 4.4) m"
+
+[[objects]]
+id = "object/station/hd-p-postbox-04"
+split = {key = "HD_P_postbox", at = [1085.833, 64.4]}
+model = "adopted/japan/assets/hd-p-postbox"
+about = "HD_P_postbox 4 of 6 in w07-hidamari-station, placed at (1085.833, 64.4) m"
+
+[[objects]]
+id = "object/station/hd-p-postbox-05"
+split = {key = "HD_P_postbox", at = [1195.0, 241.0]}
+model = "adopted/japan/assets/hd-p-postbox"
+about = "HD_P_postbox 5 of 6 in w07-hidamari-station, placed at (1195.0, 241.0) m"
+
+[[objects]]
+id = "object/station/hd-p-postbox-06"
+split = {key = "HD_P_postbox", at = [1197.5, 85.6]}
+model = "adopted/japan/assets/hd-p-postbox"
+about = "HD_P_postbox 6 of 6 in w07-hidamari-station, placed at (1197.5, 85.6) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-01"
+split = {key = "HD_P_potted_plants", at = [897.56, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 1 of 80 in w07-hidamari-station, placed at (897.56, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-02"
+split = {key = "HD_P_potted_plants", at = [898.92, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 2 of 80 in w07-hidamari-station, placed at (898.92, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-03"
+split = {key = "HD_P_potted_plants", at = [899.47, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 3 of 80 in w07-hidamari-station, placed at (899.47, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-04"
+split = {key = "HD_P_potted_plants", at = [936.49, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 4 of 80 in w07-hidamari-station, placed at (936.49, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-05"
+split = {key = "HD_P_potted_plants", at = [936.65, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 5 of 80 in w07-hidamari-station, placed at (936.65, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-06"
+split = {key = "HD_P_potted_plants", at = [938.42, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 6 of 80 in w07-hidamari-station, placed at (938.42, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-07"
+split = {key = "HD_P_potted_plants", at = [947.99, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 7 of 80 in w07-hidamari-station, placed at (947.99, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-08"
+split = {key = "HD_P_potted_plants", at = [948.15, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 8 of 80 in w07-hidamari-station, placed at (948.15, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-09"
+split = {key = "HD_P_potted_plants", at = [948.56, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 9 of 80 in w07-hidamari-station, placed at (948.56, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-10"
+split = {key = "HD_P_potted_plants", at = [949.92, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 10 of 80 in w07-hidamari-station, placed at (949.92, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-11"
+split = {key = "HD_P_potted_plants", at = [959.49, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 11 of 80 in w07-hidamari-station, placed at (959.49, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-12"
+split = {key = "HD_P_potted_plants", at = [959.65, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 12 of 80 in w07-hidamari-station, placed at (959.65, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-13"
+split = {key = "HD_P_potted_plants", at = [960.06, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 13 of 80 in w07-hidamari-station, placed at (960.06, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-14"
+split = {key = "HD_P_potted_plants", at = [961.42, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 14 of 80 in w07-hidamari-station, placed at (961.42, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-15"
+split = {key = "HD_P_potted_plants", at = [970.99, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 15 of 80 in w07-hidamari-station, placed at (970.99, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-16"
+split = {key = "HD_P_potted_plants", at = [971.15, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 16 of 80 in w07-hidamari-station, placed at (971.15, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-17"
+split = {key = "HD_P_potted_plants", at = [972.92, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 17 of 80 in w07-hidamari-station, placed at (972.92, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-18"
+split = {key = "HD_P_potted_plants", at = [979.97, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 18 of 80 in w07-hidamari-station, placed at (979.97, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-19"
+split = {key = "HD_P_potted_plants", at = [980.502, 150.6]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 19 of 80 in w07-hidamari-station, placed at (980.502, 150.6) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-20"
+split = {key = "HD_P_potted_plants", at = [980.502, 219.4]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 20 of 80 in w07-hidamari-station, placed at (980.502, 219.4) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-21"
+split = {key = "HD_P_potted_plants", at = [982.65, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 21 of 80 in w07-hidamari-station, placed at (982.65, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-22"
+split = {key = "HD_P_potted_plants", at = [984.42, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 22 of 80 in w07-hidamari-station, placed at (984.42, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-23"
+split = {key = "HD_P_potted_plants", at = [989.69, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 23 of 80 in w07-hidamari-station, placed at (989.69, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-24"
+split = {key = "HD_P_potted_plants", at = [991.47, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 24 of 80 in w07-hidamari-station, placed at (991.47, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-25"
+split = {key = "HD_P_potted_plants", at = [994.15, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 25 of 80 in w07-hidamari-station, placed at (994.15, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-26"
+split = {key = "HD_P_potted_plants", at = [995.92, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 26 of 80 in w07-hidamari-station, placed at (995.92, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-27"
+split = {key = "HD_P_potted_plants", at = [1001.19, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 27 of 80 in w07-hidamari-station, placed at (1001.19, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-28"
+split = {key = "HD_P_potted_plants", at = [1005.65, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 28 of 80 in w07-hidamari-station, placed at (1005.65, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-29"
+split = {key = "HD_P_potted_plants", at = [1007.42, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 29 of 80 in w07-hidamari-station, placed at (1007.42, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-30"
+split = {key = "HD_P_potted_plants", at = [1017.15, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 30 of 80 in w07-hidamari-station, placed at (1017.15, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-31"
+split = {key = "HD_P_potted_plants", at = [1018.79, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 31 of 80 in w07-hidamari-station, placed at (1018.79, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-32"
+split = {key = "HD_P_potted_plants", at = [1018.92, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 32 of 80 in w07-hidamari-station, placed at (1018.92, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-33"
+split = {key = "HD_P_potted_plants", at = [1021.41, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 33 of 80 in w07-hidamari-station, placed at (1021.41, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-34"
+split = {key = "HD_P_potted_plants", at = [1028.65, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 34 of 80 in w07-hidamari-station, placed at (1028.65, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-35"
+split = {key = "HD_P_potted_plants", at = [1030.29, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 35 of 80 in w07-hidamari-station, placed at (1030.29, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-36"
+split = {key = "HD_P_potted_plants", at = [1030.42, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 36 of 80 in w07-hidamari-station, placed at (1030.42, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-37"
+split = {key = "HD_P_potted_plants", at = [1040.15, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 37 of 80 in w07-hidamari-station, placed at (1040.15, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-38"
+split = {key = "HD_P_potted_plants", at = [1041.92, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 38 of 80 in w07-hidamari-station, placed at (1041.92, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-39"
+split = {key = "HD_P_potted_plants", at = [1044.41, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 39 of 80 in w07-hidamari-station, placed at (1044.41, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-40"
+split = {key = "HD_P_potted_plants", at = [1051.65, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 40 of 80 in w07-hidamari-station, placed at (1051.65, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-41"
+split = {key = "HD_P_potted_plants", at = [1055.91, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 41 of 80 in w07-hidamari-station, placed at (1055.91, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-42"
+split = {key = "HD_P_potted_plants", at = [1059.502, 219.4]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 42 of 80 in w07-hidamari-station, placed at (1059.502, 219.4) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-43"
+split = {key = "HD_P_potted_plants", at = [1062.03, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 43 of 80 in w07-hidamari-station, placed at (1062.03, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-44"
+split = {key = "HD_P_potted_plants", at = [1067.41, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 44 of 80 in w07-hidamari-station, placed at (1067.41, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-45"
+split = {key = "HD_P_potted_plants", at = [1074.65, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 45 of 80 in w07-hidamari-station, placed at (1074.65, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-46"
+split = {key = "HD_P_potted_plants", at = [1076.29, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 46 of 80 in w07-hidamari-station, placed at (1076.29, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-47"
+split = {key = "HD_P_potted_plants", at = [1078.63, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 47 of 80 in w07-hidamari-station, placed at (1078.63, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-48"
+split = {key = "HD_P_potted_plants", at = [1078.91, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 48 of 80 in w07-hidamari-station, placed at (1078.91, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-49"
+split = {key = "HD_P_potted_plants", at = [1086.15, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 49 of 80 in w07-hidamari-station, placed at (1086.15, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-50"
+split = {key = "HD_P_potted_plants", at = [1095.72, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 50 of 80 in w07-hidamari-station, placed at (1095.72, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-51"
+split = {key = "HD_P_potted_plants", at = [1097.97, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 51 of 80 in w07-hidamari-station, placed at (1097.97, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-52"
+split = {key = "HD_P_potted_plants", at = [1136.79, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 52 of 80 in w07-hidamari-station, placed at (1136.79, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-53"
+split = {key = "HD_P_potted_plants", at = [1137.22, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 53 of 80 in w07-hidamari-station, placed at (1137.22, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-54"
+split = {key = "HD_P_potted_plants", at = [1148.29, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 54 of 80 in w07-hidamari-station, placed at (1148.29, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-55"
+split = {key = "HD_P_potted_plants", at = [1148.72, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 55 of 80 in w07-hidamari-station, placed at (1148.72, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-56"
+split = {key = "HD_P_potted_plants", at = [1148.97, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 56 of 80 in w07-hidamari-station, placed at (1148.97, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-57"
+split = {key = "HD_P_potted_plants", at = [1159.04, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 57 of 80 in w07-hidamari-station, placed at (1159.04, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-58"
+split = {key = "HD_P_potted_plants", at = [1159.79, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 58 of 80 in w07-hidamari-station, placed at (1159.79, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-59"
+split = {key = "HD_P_potted_plants", at = [1160.22, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 59 of 80 in w07-hidamari-station, placed at (1160.22, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-60"
+split = {key = "HD_P_potted_plants", at = [1160.47, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 60 of 80 in w07-hidamari-station, placed at (1160.47, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-61"
+split = {key = "HD_P_potted_plants", at = [1170.5, 25.6]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 61 of 80 in w07-hidamari-station, placed at (1170.5, 25.6) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-62"
+split = {key = "HD_P_potted_plants", at = [1170.54, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 62 of 80 in w07-hidamari-station, placed at (1170.54, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-63"
+split = {key = "HD_P_potted_plants", at = [1171.29, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 63 of 80 in w07-hidamari-station, placed at (1171.29, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-64"
+split = {key = "HD_P_potted_plants", at = [1171.72, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 64 of 80 in w07-hidamari-station, placed at (1171.72, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-65"
+split = {key = "HD_P_potted_plants", at = [1171.97, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 65 of 80 in w07-hidamari-station, placed at (1171.97, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-66"
+split = {key = "HD_P_potted_plants", at = [1182.04, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 66 of 80 in w07-hidamari-station, placed at (1182.04, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-67"
+split = {key = "HD_P_potted_plants", at = [1182.79, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 67 of 80 in w07-hidamari-station, placed at (1182.79, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-68"
+split = {key = "HD_P_potted_plants", at = [1183.22, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 68 of 80 in w07-hidamari-station, placed at (1183.22, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-69"
+split = {key = "HD_P_potted_plants", at = [1183.47, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 69 of 80 in w07-hidamari-station, placed at (1183.47, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-70"
+split = {key = "HD_P_potted_plants", at = [1193.54, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 70 of 80 in w07-hidamari-station, placed at (1193.54, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-71"
+split = {key = "HD_P_potted_plants", at = [1194.72, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 71 of 80 in w07-hidamari-station, placed at (1194.72, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-72"
+split = {key = "HD_P_potted_plants", at = [1194.97, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 72 of 80 in w07-hidamari-station, placed at (1194.97, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-73"
+split = {key = "HD_P_potted_plants", at = [1197.5, -79.4]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 73 of 80 in w07-hidamari-station, placed at (1197.5, -79.4) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-74"
+split = {key = "HD_P_potted_plants", at = [1202.8, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 74 of 80 in w07-hidamari-station, placed at (1202.8, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-75"
+split = {key = "HD_P_potted_plants", at = [1205.04, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 75 of 80 in w07-hidamari-station, placed at (1205.04, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-76"
+split = {key = "HD_P_potted_plants", at = [1206.22, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 76 of 80 in w07-hidamari-station, placed at (1206.22, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-77"
+split = {key = "HD_P_potted_plants", at = [1206.47, -41.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 77 of 80 in w07-hidamari-station, placed at (1206.47, -41.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-78"
+split = {key = "HD_P_potted_plants", at = [1214.3, 178.2]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 78 of 80 in w07-hidamari-station, placed at (1214.3, 178.2) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-79"
+split = {key = "HD_P_potted_plants", at = [1216.54, -51.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 79 of 80 in w07-hidamari-station, placed at (1216.54, -51.8) m"
+
+[[objects]]
+id = "object/station/hd-p-potted-plants-80"
+split = {key = "HD_P_potted_plants", at = [1217.72, 188.8]}
+model = "adopted/japan/assets/hd-p-potted-plants"
+about = "HD_P_potted_plants 80 of 80 in w07-hidamari-station, placed at (1217.72, 188.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-01"
+split = {key = "HD_P_propane_tanks", at = [904.47, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 1 of 41 in w07-hidamari-station, placed at (904.47, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-02"
+split = {key = "HD_P_propane_tanks", at = [933.42, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 2 of 41 in w07-hidamari-station, placed at (933.42, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-03"
+split = {key = "HD_P_propane_tanks", at = [941.49, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 3 of 41 in w07-hidamari-station, placed at (941.49, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-04"
+split = {key = "HD_P_propane_tanks", at = [941.65, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 4 of 41 in w07-hidamari-station, placed at (941.65, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-05"
+split = {key = "HD_P_propane_tanks", at = [952.99, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 5 of 41 in w07-hidamari-station, placed at (952.99, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-06"
+split = {key = "HD_P_propane_tanks", at = [953.15, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 6 of 41 in w07-hidamari-station, placed at (953.15, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-07"
+split = {key = "HD_P_propane_tanks", at = [956.42, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 7 of 41 in w07-hidamari-station, placed at (956.42, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-08"
+split = {key = "HD_P_propane_tanks", at = [964.65, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 8 of 41 in w07-hidamari-station, placed at (964.65, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-09"
+split = {key = "HD_P_propane_tanks", at = [967.92, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 9 of 41 in w07-hidamari-station, placed at (967.92, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-10"
+split = {key = "HD_P_propane_tanks", at = [974.97, -39.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 10 of 41 in w07-hidamari-station, placed at (974.97, -39.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-11"
+split = {key = "HD_P_propane_tanks", at = [976.15, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 11 of 41 in w07-hidamari-station, placed at (976.15, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-12"
+split = {key = "HD_P_propane_tanks", at = [979.42, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 12 of 41 in w07-hidamari-station, placed at (979.42, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-13"
+split = {key = "HD_P_propane_tanks", at = [986.47, -39.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 13 of 41 in w07-hidamari-station, placed at (986.47, -39.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-14"
+split = {key = "HD_P_propane_tanks", at = [987.65, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 14 of 41 in w07-hidamari-station, placed at (987.65, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-15"
+split = {key = "HD_P_propane_tanks", at = [990.92, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 15 of 41 in w07-hidamari-station, placed at (990.92, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-16"
+split = {key = "HD_P_propane_tanks", at = [1002.42, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 16 of 41 in w07-hidamari-station, placed at (1002.42, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-17"
+split = {key = "HD_P_propane_tanks", at = [1006.19, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 17 of 41 in w07-hidamari-station, placed at (1006.19, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-18"
+split = {key = "HD_P_propane_tanks", at = [1010.65, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 18 of 41 in w07-hidamari-station, placed at (1010.65, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-19"
+split = {key = "HD_P_propane_tanks", at = [1016.41, -39.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 19 of 41 in w07-hidamari-station, placed at (1016.41, -39.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-20"
+split = {key = "HD_P_propane_tanks", at = [1022.15, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 20 of 41 in w07-hidamari-station, placed at (1022.15, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-21"
+split = {key = "HD_P_propane_tanks", at = [1035.29, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 21 of 41 in w07-hidamari-station, placed at (1035.29, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-22"
+split = {key = "HD_P_propane_tanks", at = [1036.92, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 22 of 41 in w07-hidamari-station, placed at (1036.92, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-23"
+split = {key = "HD_P_propane_tanks", at = [1039.41, -39.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 23 of 41 in w07-hidamari-station, placed at (1039.41, -39.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-24"
+split = {key = "HD_P_propane_tanks", at = [1056.65, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 24 of 41 in w07-hidamari-station, placed at (1056.65, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-25"
+split = {key = "HD_P_propane_tanks", at = [1073.63, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 25 of 41 in w07-hidamari-station, placed at (1073.63, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-26"
+split = {key = "HD_P_propane_tanks", at = [1079.65, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 26 of 41 in w07-hidamari-station, placed at (1079.65, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-27"
+split = {key = "HD_P_propane_tanks", at = [1081.29, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 27 of 41 in w07-hidamari-station, placed at (1081.29, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-28"
+split = {key = "HD_P_propane_tanks", at = [1132.22, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 28 of 41 in w07-hidamari-station, placed at (1132.22, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-29"
+split = {key = "HD_P_propane_tanks", at = [1143.72, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 29 of 41 in w07-hidamari-station, placed at (1143.72, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-30"
+split = {key = "HD_P_propane_tanks", at = [1153.29, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 30 of 41 in w07-hidamari-station, placed at (1153.29, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-31"
+split = {key = "HD_P_propane_tanks", at = [1155.47, -39.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 31 of 41 in w07-hidamari-station, placed at (1155.47, -39.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-32"
+split = {key = "HD_P_propane_tanks", at = [1164.79, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 32 of 41 in w07-hidamari-station, placed at (1164.79, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-33"
+split = {key = "HD_P_propane_tanks", at = [1166.72, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 33 of 41 in w07-hidamari-station, placed at (1166.72, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-34"
+split = {key = "HD_P_propane_tanks", at = [1166.97, -39.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 34 of 41 in w07-hidamari-station, placed at (1166.97, -39.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-35"
+split = {key = "HD_P_propane_tanks", at = [1175.54, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 35 of 41 in w07-hidamari-station, placed at (1175.54, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-36"
+split = {key = "HD_P_propane_tanks", at = [1178.22, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 36 of 41 in w07-hidamari-station, placed at (1178.22, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-37"
+split = {key = "HD_P_propane_tanks", at = [1178.47, -39.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 37 of 41 in w07-hidamari-station, placed at (1178.47, -39.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-38"
+split = {key = "HD_P_propane_tanks", at = [1198.54, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 38 of 41 in w07-hidamari-station, placed at (1198.54, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-39"
+split = {key = "HD_P_propane_tanks", at = [1201.22, 190.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 39 of 41 in w07-hidamari-station, placed at (1201.22, 190.2) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-40"
+split = {key = "HD_P_propane_tanks", at = [1207.8, 176.8]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 40 of 41 in w07-hidamari-station, placed at (1207.8, 176.8) m"
+
+[[objects]]
+id = "object/station/hd-p-propane-tanks-41"
+split = {key = "HD_P_propane_tanks", at = [1210.04, -53.2]}
+model = "adopted/japan/assets/hd-p-propane-tanks"
+about = "HD_P_propane_tanks 41 of 41 in w07-hidamari-station, placed at (1210.04, -53.2) m"
+
+[[objects]]
+id = "object/station/hd-p-scooter-01"
+split = {key = "HD_P_scooter", at = [954.165, 85.6]}
+model = "adopted/japan/assets/hd-p-scooter"
+about = "HD_P_scooter 1 of 6 in w07-hidamari-station, placed at (954.165, 85.6) m"
+
+[[objects]]
+id = "object/station/hd-p-scooter-02"
+split = {key = "HD_P_scooter", at = [1033.165, 129.4]}
+model = "adopted/japan/assets/hd-p-scooter"
+about = "HD_P_scooter 2 of 6 in w07-hidamari-station, placed at (1033.165, 129.4) m"
+
+[[objects]]
+id = "object/station/hd-p-scooter-03"
+split = {key = "HD_P_scooter", at = [1084.5, -51.9]}
+model = "adopted/japan/assets/hd-p-scooter"
+about = "HD_P_scooter 3 of 6 in w07-hidamari-station, placed at (1084.5, -51.9) m"
+
+[[objects]]
+id = "object/station/hd-p-scooter-04"
+split = {key = "HD_P_scooter", at = [1150.37, 188.9]}
+model = "adopted/japan/assets/hd-p-scooter"
+about = "HD_P_scooter 4 of 6 in w07-hidamari-station, placed at (1150.37, 188.9) m"
+
+[[objects]]
+id = "object/station/hd-p-scooter-05"
+split = {key = "HD_P_scooter", at = [1150.62, -41.1]}
+model = "adopted/japan/assets/hd-p-scooter"
+about = "HD_P_scooter 5 of 6 in w07-hidamari-station, placed at (1150.62, -41.1) m"
+
+[[objects]]
+id = "object/station/hd-p-scooter-06"
+split = {key = "HD_P_scooter", at = [1170.5, 150.6]}
+model = "adopted/japan/assets/hd-p-scooter"
+about = "HD_P_scooter 6 of 6 in w07-hidamari-station, placed at (1170.5, 150.6) m"
+
+[[objects]]
+id = "object/station/hd-p-street-bench-01"
+split = {key = "HD_P_street_bench", at = [1170.5, 4.4]}
+model = "adopted/japan/assets/hd-p-street-bench"
+about = "HD_P_street_bench 1 of 2 in w07-hidamari-station, placed at (1170.5, 4.4) m"
+
+[[objects]]
+id = "object/station/hd-p-street-bench-02"
+split = {key = "HD_P_street_bench", at = [1170.5, 64.4]}
+model = "adopted/japan/assets/hd-p-street-bench"
+about = "HD_P_street_bench 2 of 2 in w07-hidamari-station, placed at (1170.5, 64.4) m"
+
+[[objects]]
+id = "object/station/hd-p-tanuki-01"
+split = {key = "HD_P_tanuki", at = [954.165, -79.4]}
+model = "adopted/japan/assets/hd-p-tanuki"
+about = "HD_P_tanuki 1 of 5 in w07-hidamari-station, placed at (954.165, -79.4) m"
+
+[[objects]]
+id = "object/station/hd-p-tanuki-02"
+split = {key = "HD_P_tanuki", at = [980.502, 4.4]}
+model = "adopted/japan/assets/hd-p-tanuki"
+about = "HD_P_tanuki 2 of 5 in w07-hidamari-station, placed at (980.502, 4.4) m"
+
+[[objects]]
+id = "object/station/hd-p-tanuki-03"
+split = {key = "HD_P_tanuki", at = [980.502, 64.4]}
+model = "adopted/japan/assets/hd-p-tanuki"
+about = "HD_P_tanuki 3 of 5 in w07-hidamari-station, placed at (980.502, 64.4) m"
+
+[[objects]]
+id = "object/station/hd-p-tanuki-04"
+split = {key = "HD_P_tanuki", at = [1033.165, 85.6]}
+model = "adopted/japan/assets/hd-p-tanuki"
+about = "HD_P_tanuki 4 of 5 in w07-hidamari-station, placed at (1033.165, 85.6) m"
+
+[[objects]]
+id = "object/station/hd-p-tanuki-05"
+split = {key = "HD_P_tanuki", at = [1170.5, 129.4]}
+model = "adopted/japan/assets/hd-p-tanuki"
+about = "HD_P_tanuki 5 of 5 in w07-hidamari-station, placed at (1170.5, 129.4) m"
+
+[[objects]]
+id = "object/station/hd-p-taxi-01"
+split = {key = "HD_P_taxi", at = [1194.0, 252.0]}
+model = "adopted/japan/assets/hd-p-taxi"
+about = "HD_P_taxi 1 of 2 in w07-hidamari-station, placed at (1194.0, 252.0) m"
+
+[[objects]]
+id = "object/station/hd-p-taxi-02"
+split = {key = "HD_P_taxi", at = [1200.0, 252.0]}
+model = "adopted/japan/assets/hd-p-taxi"
+about = "HD_P_taxi 2 of 2 in w07-hidamari-station, placed at (1200.0, 252.0) m"
+
+[[objects]]
+id = "object/station/hd-p-town-bus-01"
+split = {key = "HD_P_town_bus", at = [1160.0, 232.4]}
+model = "adopted/japan/assets/hd-p-town-bus"
+about = "HD_P_town_bus 1 of 1 in w07-hidamari-station, placed at (1160.0, 232.4) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-01"
+split = {key = "HD_P_vending_machine", at = [954.165, 25.6]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 1 of 8 in w07-hidamari-station, placed at (954.165, 25.6) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-02"
+split = {key = "HD_P_vending_machine", at = [954.165, 150.6]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 2 of 8 in w07-hidamari-station, placed at (954.165, 150.6) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-03"
+split = {key = "HD_P_vending_machine", at = [980.502, -79.4]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 3 of 8 in w07-hidamari-station, placed at (980.502, -79.4) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-04"
+split = {key = "HD_P_vending_machine", at = [1033.165, 219.4]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 4 of 8 in w07-hidamari-station, placed at (1033.165, 219.4) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-05"
+split = {key = "HD_P_vending_machine", at = [1059.502, 85.6]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 5 of 8 in w07-hidamari-station, placed at (1059.502, 85.6) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-06"
+split = {key = "HD_P_vending_machine", at = [1197.5, 129.4]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 6 of 8 in w07-hidamari-station, placed at (1197.5, 129.4) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-07"
+split = {key = "HD_P_vending_machine", at = [1206.0, 276.0]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 7 of 8 in w07-hidamari-station, placed at (1206.0, 276.0) m"
+
+[[objects]]
+id = "object/station/hd-p-vending-machine-08"
+split = {key = "HD_P_vending_machine", at = [1207.3, 276.0]}
+model = "adopted/japan/assets/hd-p-vending-machine"
+about = "HD_P_vending_machine 8 of 8 in w07-hidamari-station, placed at (1207.3, 276.0) m"
+
+[[objects]]
+id = "object/station/hd-p-yatai-01"
+split = {key = "HD_P_yatai", at = [1180.0, 245.0]}
+model = "adopted/japan/assets/hd-p-yatai"
+about = "HD_P_yatai 1 of 1 in w07-hidamari-station, placed at (1180.0, 245.0) m"
+
+[[objects]]
+id = "object/station/pole-01"
+split = {key = "Pole", at = [911.5, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 1 of 86 in w07-hidamari-station, placed at (911.5, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-02"
+split = {key = "Pole", at = [923.5, -79.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 2 of 86 in w07-hidamari-station, placed at (923.5, -79.0) m"
+
+[[objects]]
+id = "object/station/pole-03"
+split = {key = "Pole", at = [923.5, -37.5]}
+model = "adopted/japan/assets/pole"
+about = "Pole 3 of 86 in w07-hidamari-station, placed at (923.5, -37.5) m"
+
+[[objects]]
+id = "object/station/pole-04"
+split = {key = "Pole", at = [923.5, 4.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 4 of 86 in w07-hidamari-station, placed at (923.5, 4.0) m"
+
+[[objects]]
+id = "object/station/pole-05"
+split = {key = "Pole", at = [923.5, 26.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 5 of 86 in w07-hidamari-station, placed at (923.5, 26.0) m"
+
+[[objects]]
+id = "object/station/pole-06"
+split = {key = "Pole", at = [923.5, 64.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 6 of 86 in w07-hidamari-station, placed at (923.5, 64.0) m"
+
+[[objects]]
+id = "object/station/pole-07"
+split = {key = "Pole", at = [923.5, 86.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 7 of 86 in w07-hidamari-station, placed at (923.5, 86.0) m"
+
+[[objects]]
+id = "object/station/pole-08"
+split = {key = "Pole", at = [923.5, 129.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 8 of 86 in w07-hidamari-station, placed at (923.5, 129.0) m"
+
+[[objects]]
+id = "object/station/pole-09"
+split = {key = "Pole", at = [923.5, 151.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 9 of 86 in w07-hidamari-station, placed at (923.5, 151.0) m"
+
+[[objects]]
+id = "object/station/pole-10"
+split = {key = "Pole", at = [923.5, 185.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 10 of 86 in w07-hidamari-station, placed at (923.5, 185.0) m"
+
+[[objects]]
+id = "object/station/pole-11"
+split = {key = "Pole", at = [923.5, 219.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 11 of 86 in w07-hidamari-station, placed at (923.5, 219.0) m"
+
+[[objects]]
+id = "object/station/pole-12"
+split = {key = "Pole", at = [923.5, 241.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 12 of 86 in w07-hidamari-station, placed at (923.5, 241.0) m"
+
+[[objects]]
+id = "object/station/pole-13"
+split = {key = "Pole", at = [923.5, 282.5]}
+model = "adopted/japan/assets/pole"
+about = "Pole 13 of 86 in w07-hidamari-station, placed at (923.5, 282.5) m"
+
+[[objects]]
+id = "object/station/pole-14"
+split = {key = "Pole", at = [923.5, 324.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 14 of 86 in w07-hidamari-station, placed at (923.5, 324.0) m"
+
+[[objects]]
+id = "object/station/pole-15"
+split = {key = "Pole", at = [928.5, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 15 of 86 in w07-hidamari-station, placed at (928.5, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-16"
+split = {key = "Pole", at = [928.5, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 16 of 86 in w07-hidamari-station, placed at (928.5, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-17"
+split = {key = "Pole", at = [928.5, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 17 of 86 in w07-hidamari-station, placed at (928.5, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-18"
+split = {key = "Pole", at = [928.5, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 18 of 86 in w07-hidamari-station, placed at (928.5, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-19"
+split = {key = "Pole", at = [928.5, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 19 of 86 in w07-hidamari-station, placed at (928.5, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-20"
+split = {key = "Pole", at = [928.5, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 20 of 86 in w07-hidamari-station, placed at (928.5, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-21"
+split = {key = "Pole", at = [959.0, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 21 of 86 in w07-hidamari-station, placed at (959.0, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-22"
+split = {key = "Pole", at = [959.0, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 22 of 86 in w07-hidamari-station, placed at (959.0, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-23"
+split = {key = "Pole", at = [959.0, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 23 of 86 in w07-hidamari-station, placed at (959.0, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-24"
+split = {key = "Pole", at = [959.0, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 24 of 86 in w07-hidamari-station, placed at (959.0, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-25"
+split = {key = "Pole", at = [959.0, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 25 of 86 in w07-hidamari-station, placed at (959.0, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-26"
+split = {key = "Pole", at = [989.5, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 26 of 86 in w07-hidamari-station, placed at (989.5, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-27"
+split = {key = "Pole", at = [1020.0, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 27 of 86 in w07-hidamari-station, placed at (1020.0, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-28"
+split = {key = "Pole", at = [1020.0, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 28 of 86 in w07-hidamari-station, placed at (1020.0, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-29"
+split = {key = "Pole", at = [1020.0, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 29 of 86 in w07-hidamari-station, placed at (1020.0, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-30"
+split = {key = "Pole", at = [1020.0, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 30 of 86 in w07-hidamari-station, placed at (1020.0, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-31"
+split = {key = "Pole", at = [1020.0, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 31 of 86 in w07-hidamari-station, placed at (1020.0, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-32"
+split = {key = "Pole", at = [1020.0, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 32 of 86 in w07-hidamari-station, placed at (1020.0, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-33"
+split = {key = "Pole", at = [1050.5, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 33 of 86 in w07-hidamari-station, placed at (1050.5, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-34"
+split = {key = "Pole", at = [1050.5, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 34 of 86 in w07-hidamari-station, placed at (1050.5, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-35"
+split = {key = "Pole", at = [1050.5, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 35 of 86 in w07-hidamari-station, placed at (1050.5, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-36"
+split = {key = "Pole", at = [1050.5, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 36 of 86 in w07-hidamari-station, placed at (1050.5, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-37"
+split = {key = "Pole", at = [1050.5, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 37 of 86 in w07-hidamari-station, placed at (1050.5, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-38"
+split = {key = "Pole", at = [1081.0, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 38 of 86 in w07-hidamari-station, placed at (1081.0, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-39"
+split = {key = "Pole", at = [1111.5, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 39 of 86 in w07-hidamari-station, placed at (1111.5, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-40"
+split = {key = "Pole", at = [1111.5, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 40 of 86 in w07-hidamari-station, placed at (1111.5, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-41"
+split = {key = "Pole", at = [1111.5, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 41 of 86 in w07-hidamari-station, placed at (1111.5, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-42"
+split = {key = "Pole", at = [1111.5, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 42 of 86 in w07-hidamari-station, placed at (1111.5, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-43"
+split = {key = "Pole", at = [1111.5, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 43 of 86 in w07-hidamari-station, placed at (1111.5, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-44"
+split = {key = "Pole", at = [1111.5, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 44 of 86 in w07-hidamari-station, placed at (1111.5, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-45"
+split = {key = "Pole", at = [1123.5, -79.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 45 of 86 in w07-hidamari-station, placed at (1123.5, -79.0) m"
+
+[[objects]]
+id = "object/station/pole-46"
+split = {key = "Pole", at = [1123.5, -37.5]}
+model = "adopted/japan/assets/pole"
+about = "Pole 46 of 86 in w07-hidamari-station, placed at (1123.5, -37.5) m"
+
+[[objects]]
+id = "object/station/pole-47"
+split = {key = "Pole", at = [1123.5, 4.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 47 of 86 in w07-hidamari-station, placed at (1123.5, 4.0) m"
+
+[[objects]]
+id = "object/station/pole-48"
+split = {key = "Pole", at = [1123.5, 26.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 48 of 86 in w07-hidamari-station, placed at (1123.5, 26.0) m"
+
+[[objects]]
+id = "object/station/pole-49"
+split = {key = "Pole", at = [1123.5, 64.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 49 of 86 in w07-hidamari-station, placed at (1123.5, 64.0) m"
+
+[[objects]]
+id = "object/station/pole-50"
+split = {key = "Pole", at = [1123.5, 86.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 50 of 86 in w07-hidamari-station, placed at (1123.5, 86.0) m"
+
+[[objects]]
+id = "object/station/pole-51"
+split = {key = "Pole", at = [1123.5, 129.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 51 of 86 in w07-hidamari-station, placed at (1123.5, 129.0) m"
+
+[[objects]]
+id = "object/station/pole-52"
+split = {key = "Pole", at = [1123.5, 151.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 52 of 86 in w07-hidamari-station, placed at (1123.5, 151.0) m"
+
+[[objects]]
+id = "object/station/pole-53"
+split = {key = "Pole", at = [1123.5, 185.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 53 of 86 in w07-hidamari-station, placed at (1123.5, 185.0) m"
+
+[[objects]]
+id = "object/station/pole-54"
+split = {key = "Pole", at = [1123.5, 219.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 54 of 86 in w07-hidamari-station, placed at (1123.5, 219.0) m"
+
+[[objects]]
+id = "object/station/pole-55"
+split = {key = "Pole", at = [1123.5, 241.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 55 of 86 in w07-hidamari-station, placed at (1123.5, 241.0) m"
+
+[[objects]]
+id = "object/station/pole-56"
+split = {key = "Pole", at = [1123.5, 282.5]}
+model = "adopted/japan/assets/pole"
+about = "Pole 56 of 86 in w07-hidamari-station, placed at (1123.5, 282.5) m"
+
+[[objects]]
+id = "object/station/pole-57"
+split = {key = "Pole", at = [1123.5, 324.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 57 of 86 in w07-hidamari-station, placed at (1123.5, 324.0) m"
+
+[[objects]]
+id = "object/station/pole-58"
+split = {key = "Pole", at = [1128.5, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 58 of 86 in w07-hidamari-station, placed at (1128.5, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-59"
+split = {key = "Pole", at = [1128.5, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 59 of 86 in w07-hidamari-station, placed at (1128.5, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-60"
+split = {key = "Pole", at = [1128.5, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 60 of 86 in w07-hidamari-station, placed at (1128.5, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-61"
+split = {key = "Pole", at = [1128.5, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 61 of 86 in w07-hidamari-station, placed at (1128.5, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-62"
+split = {key = "Pole", at = [1128.5, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 62 of 86 in w07-hidamari-station, placed at (1128.5, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-63"
+split = {key = "Pole", at = [1162.833, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 63 of 86 in w07-hidamari-station, placed at (1162.833, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-64"
+split = {key = "Pole", at = [1197.167, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 64 of 86 in w07-hidamari-station, placed at (1197.167, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-65"
+split = {key = "Pole", at = [1197.167, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 65 of 86 in w07-hidamari-station, placed at (1197.167, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-66"
+split = {key = "Pole", at = [1197.167, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 66 of 86 in w07-hidamari-station, placed at (1197.167, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-67"
+split = {key = "Pole", at = [1197.167, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 67 of 86 in w07-hidamari-station, placed at (1197.167, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-68"
+split = {key = "Pole", at = [1197.167, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 68 of 86 in w07-hidamari-station, placed at (1197.167, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-69"
+split = {key = "Pole", at = [1197.167, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 69 of 86 in w07-hidamari-station, placed at (1197.167, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-70"
+split = {key = "Pole", at = [1231.5, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole 70 of 86 in w07-hidamari-station, placed at (1231.5, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-71"
+split = {key = "Pole", at = [1231.5, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 71 of 86 in w07-hidamari-station, placed at (1231.5, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-72"
+split = {key = "Pole", at = [1231.5, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 72 of 86 in w07-hidamari-station, placed at (1231.5, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-73"
+split = {key = "Pole", at = [1231.5, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 73 of 86 in w07-hidamari-station, placed at (1231.5, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-74"
+split = {key = "Pole", at = [1231.5, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole 74 of 86 in w07-hidamari-station, placed at (1231.5, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-75"
+split = {key = "Pole", at = [1243.5, -79.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 75 of 86 in w07-hidamari-station, placed at (1243.5, -79.0) m"
+
+[[objects]]
+id = "object/station/pole-76"
+split = {key = "Pole", at = [1243.5, -37.5]}
+model = "adopted/japan/assets/pole"
+about = "Pole 76 of 86 in w07-hidamari-station, placed at (1243.5, -37.5) m"
+
+[[objects]]
+id = "object/station/pole-77"
+split = {key = "Pole", at = [1243.5, 4.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 77 of 86 in w07-hidamari-station, placed at (1243.5, 4.0) m"
+
+[[objects]]
+id = "object/station/pole-78"
+split = {key = "Pole", at = [1243.5, 26.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 78 of 86 in w07-hidamari-station, placed at (1243.5, 26.0) m"
+
+[[objects]]
+id = "object/station/pole-79"
+split = {key = "Pole", at = [1243.5, 64.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 79 of 86 in w07-hidamari-station, placed at (1243.5, 64.0) m"
+
+[[objects]]
+id = "object/station/pole-80"
+split = {key = "Pole", at = [1243.5, 86.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 80 of 86 in w07-hidamari-station, placed at (1243.5, 86.0) m"
+
+[[objects]]
+id = "object/station/pole-81"
+split = {key = "Pole", at = [1243.5, 129.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 81 of 86 in w07-hidamari-station, placed at (1243.5, 129.0) m"
+
+[[objects]]
+id = "object/station/pole-82"
+split = {key = "Pole", at = [1243.5, 151.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 82 of 86 in w07-hidamari-station, placed at (1243.5, 151.0) m"
+
+[[objects]]
+id = "object/station/pole-83"
+split = {key = "Pole", at = [1243.5, 185.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 83 of 86 in w07-hidamari-station, placed at (1243.5, 185.0) m"
+
+[[objects]]
+id = "object/station/pole-84"
+split = {key = "Pole", at = [1243.5, 219.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 84 of 86 in w07-hidamari-station, placed at (1243.5, 219.0) m"
+
+[[objects]]
+id = "object/station/pole-85"
+split = {key = "Pole", at = [1243.5, 241.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 85 of 86 in w07-hidamari-station, placed at (1243.5, 241.0) m"
+
+[[objects]]
+id = "object/station/pole-86"
+split = {key = "Pole", at = [1243.5, 324.0]}
+model = "adopted/japan/assets/pole"
+about = "Pole 86 of 86 in w07-hidamari-station, placed at (1243.5, 324.0) m"
+
+[[objects]]
+id = "object/station/pole-lamp-01"
+split = {key = "Pole_Lamp", at = [911.5, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 1 of 24 in w07-hidamari-station, placed at (911.5, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-lamp-02"
+split = {key = "Pole_Lamp", at = [911.5, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 2 of 24 in w07-hidamari-station, placed at (911.5, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-03"
+split = {key = "Pole_Lamp", at = [911.5, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 3 of 24 in w07-hidamari-station, placed at (911.5, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-04"
+split = {key = "Pole_Lamp", at = [911.5, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 4 of 24 in w07-hidamari-station, placed at (911.5, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-05"
+split = {key = "Pole_Lamp", at = [911.5, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 5 of 24 in w07-hidamari-station, placed at (911.5, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-06"
+split = {key = "Pole_Lamp", at = [959.0, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 6 of 24 in w07-hidamari-station, placed at (959.0, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-07"
+split = {key = "Pole_Lamp", at = [989.5, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 7 of 24 in w07-hidamari-station, placed at (989.5, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-lamp-08"
+split = {key = "Pole_Lamp", at = [989.5, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 8 of 24 in w07-hidamari-station, placed at (989.5, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-09"
+split = {key = "Pole_Lamp", at = [989.5, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 9 of 24 in w07-hidamari-station, placed at (989.5, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-10"
+split = {key = "Pole_Lamp", at = [989.5, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 10 of 24 in w07-hidamari-station, placed at (989.5, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-11"
+split = {key = "Pole_Lamp", at = [989.5, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 11 of 24 in w07-hidamari-station, placed at (989.5, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-12"
+split = {key = "Pole_Lamp", at = [1050.5, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 12 of 24 in w07-hidamari-station, placed at (1050.5, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-13"
+split = {key = "Pole_Lamp", at = [1081.0, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 13 of 24 in w07-hidamari-station, placed at (1081.0, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-lamp-14"
+split = {key = "Pole_Lamp", at = [1081.0, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 14 of 24 in w07-hidamari-station, placed at (1081.0, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-15"
+split = {key = "Pole_Lamp", at = [1081.0, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 15 of 24 in w07-hidamari-station, placed at (1081.0, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-16"
+split = {key = "Pole_Lamp", at = [1081.0, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 16 of 24 in w07-hidamari-station, placed at (1081.0, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-17"
+split = {key = "Pole_Lamp", at = [1081.0, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 17 of 24 in w07-hidamari-station, placed at (1081.0, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-18"
+split = {key = "Pole_Lamp", at = [1128.5, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 18 of 24 in w07-hidamari-station, placed at (1128.5, 70.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-19"
+split = {key = "Pole_Lamp", at = [1162.833, -94.3]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 19 of 24 in w07-hidamari-station, placed at (1162.833, -94.3) m"
+
+[[objects]]
+id = "object/station/pole-lamp-20"
+split = {key = "Pole_Lamp", at = [1162.833, 10.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 20 of 24 in w07-hidamari-station, placed at (1162.833, 10.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-21"
+split = {key = "Pole_Lamp", at = [1162.833, 135.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 21 of 24 in w07-hidamari-station, placed at (1162.833, 135.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-22"
+split = {key = "Pole_Lamp", at = [1162.833, 225.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 22 of 24 in w07-hidamari-station, placed at (1162.833, 225.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-23"
+split = {key = "Pole_Lamp", at = [1162.833, 330.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 23 of 24 in w07-hidamari-station, placed at (1162.833, 330.7) m"
+
+[[objects]]
+id = "object/station/pole-lamp-24"
+split = {key = "Pole_Lamp", at = [1231.5, 70.7]}
+model = "adopted/japan/assets/pole"
+about = "Pole_Lamp 24 of 24 in w07-hidamari-station, placed at (1231.5, 70.7) m"
