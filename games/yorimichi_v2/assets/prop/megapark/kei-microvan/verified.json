@@ -1,0 +1,12 @@
+{
+  "asset": "prop/megapark/kei-microvan",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SM_Kei_Microvan.uasset": "9cafb402e2bc3b510b81191f914f7218e4ec9d2397db05a49bb0bf801aac89bf"
+  },
+  "input_fingerprint": "32c33f2693065917ea4c96f644fe9ead4be8bd3471e1594a68f8708b32d75874",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

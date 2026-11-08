@@ -1,0 +1,12 @@
+{
+  "asset": "prop/megapark/kei-pickup",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SM_Kei_Pickup.uasset": "9c4568485781c0e9cce0af3d04356a09ef406d3ff20522e04f16d5aca0931219"
+  },
+  "input_fingerprint": "c352e05dcf5fb1f85a992976840833eab8ee6358e960ca79f1a576e2242b3819",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

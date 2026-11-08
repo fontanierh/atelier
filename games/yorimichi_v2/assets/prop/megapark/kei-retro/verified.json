@@ -1,0 +1,12 @@
+{
+  "asset": "prop/megapark/kei-retro",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SM_Kei_Retro.uasset": "b1163c9d73ffd65d2aa9ef68911dde0d193e63bc18b68592422e7c0cd0f38c9d"
+  },
+  "input_fingerprint": "924730a54f641594cafc84a5ffe657d3ecb7f31780d6e11e92b3e8f4121463af",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

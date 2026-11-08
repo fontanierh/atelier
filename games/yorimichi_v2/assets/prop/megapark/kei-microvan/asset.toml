@@ -1,0 +1,26 @@
+# One of the Mega Park car park's four kei cars: an indigo kei microvan with a cream waist and two skateboards on its roof rack, after the Sunburst kei sheet.
+# Its source is the donor generator's own export (games/yorimichi/assets/vehicles/kei/build.py, built by the donor step
+# world.kei: build/yorimichi/kei/assets/SM_Kei_Microvan.fbx, 1148 triangles, 1 UCX box(es)), committed here, so the car
+# is edited and reimported from V2 alone (tools/import/run.py). The settings are those of the donor's import
+# (import_kei.py): M_Village on its one slot, the FBX's own box collision. ASuperUltraMegaPark parks it from park.json.
+schema = 1
+id = "prop/megapark/kei-microvan"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/megapark/kei-microvan"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SM_Kei_Microvan.fbx"
+sha256 = "49fa1847b24d1f4d9a20d3d8e0bc80df86fd542d234f329886563409881c6a38"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 1148
+
+[[outputs]]
+package = "/Game/Japan/Assets/SM_Kei_Microvan"

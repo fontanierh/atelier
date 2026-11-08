@@ -1,0 +1,26 @@
+# One of the Mega Park car park's four kei cars: a vermilion retro kei car with round lamps and a cream roof, after the Sunburst kei sheet.
+# Its source is the donor generator's own export (games/yorimichi/assets/vehicles/kei/build.py, built by the donor step
+# world.kei: build/yorimichi/kei/assets/SM_Kei_Retro.fbx, 804 triangles, 1 UCX box(es)), committed here, so the car
+# is edited and reimported from V2 alone (tools/import/run.py). The settings are those of the donor's import
+# (import_kei.py): M_Village on its one slot, the FBX's own box collision. ASuperUltraMegaPark parks it from park.json.
+schema = 1
+id = "prop/megapark/kei-retro"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/megapark/kei-retro"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SM_Kei_Retro.fbx"
+sha256 = "8903f5b9f678c0d393c6560c5a5e64e0b82493d4f09f91c16db8210371ea2b48"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 804
+
+[[outputs]]
+package = "/Game/Japan/Assets/SM_Kei_Retro"
