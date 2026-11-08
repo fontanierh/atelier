@@ -7,6 +7,10 @@ small owned parts, so several people and agents can change different things at o
 [docs/DECISIONS.md](docs/DECISIONS.md), and the pinned engine and tools are in [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md).
 The original game in `games/yorimichi` stays as the reference until V2 passes acceptance.
 
+The [authoring audit](docs/AUTHORING_AUDIT.md) records the remaining editing limits: some fixed scenery still
+spawns at runtime, some ownership units are too broad, and most original-source links are not registered in V2.
+It includes the complete asset-family and saved-region inventory and a ranked repair plan.
+
 Excluded from this version: phone streaming and the go-kart (`Driving`). Everything else in the original game is in
 scope.
 
