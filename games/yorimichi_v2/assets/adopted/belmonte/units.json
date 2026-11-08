@@ -1,0 +1,2821 @@
+{
+ "about": "Belmonte editing units for tools/migrate/adopt.py (written by tools/migrate/belmonte_units.py)",
+ "units": {
+  "block-01": {
+   "about": "Belmonte block-01 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_01.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_01_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-02": {
+   "about": "Belmonte block-02 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_02.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_02_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-03": {
+   "about": "Belmonte block-03 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_03.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_03_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-04": {
+   "about": "Belmonte block-04 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_04.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_04_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-05": {
+   "about": "Belmonte block-05 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_05.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_05_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-06": {
+   "about": "Belmonte block-06 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_06.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_06_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-07": {
+   "about": "Belmonte block-07 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_07.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_07_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-08": {
+   "about": "Belmonte block-08 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_08.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_08_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-09": {
+   "about": "Belmonte block-09 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_09.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_09_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-10": {
+   "about": "Belmonte block-10 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_10.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_10_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-11": {
+   "about": "Belmonte block-11 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_11.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_11_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-12": {
+   "about": "Belmonte block-12 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_12.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_12_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-13": {
+   "about": "Belmonte block-13 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_13.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_13_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-14": {
+   "about": "Belmonte block-14 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_14.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_14_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-15": {
+   "about": "Belmonte block-15 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_15.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_15_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-16": {
+   "about": "Belmonte block-16 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_16.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_16_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-17": {
+   "about": "Belmonte block-17 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_17.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_17_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-18": {
+   "about": "Belmonte block-18 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_18.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_18_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-19": {
+   "about": "Belmonte block-19 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_19.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_19_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-20": {
+   "about": "Belmonte block-20 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_20.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_20_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-21": {
+   "about": "Belmonte block-21 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_21.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_21_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-22": {
+   "about": "Belmonte block-22 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_22.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_22_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-23": {
+   "about": "Belmonte block-23 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_23.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_23_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-24": {
+   "about": "Belmonte block-24 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_24.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_24_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-25": {
+   "about": "Belmonte block-25 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_25.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_25_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-26": {
+   "about": "Belmonte block-26 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_26.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_26_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-27": {
+   "about": "Belmonte block-27 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_27.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_27_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-28": {
+   "about": "Belmonte block-28 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_28.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_28_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-29": {
+   "about": "Belmonte block-29 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_29.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_29_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-30": {
+   "about": "Belmonte block-30 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_30.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_30_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-31": {
+   "about": "Belmonte block-31 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_31.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_31_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-32": {
+   "about": "Belmonte block-32 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_32.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_32_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-33": {
+   "about": "Belmonte block-33 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_33.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_33_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-34": {
+   "about": "Belmonte block-34 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_34.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_34_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-35": {
+   "about": "Belmonte block-35 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_35.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_35_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-36": {
+   "about": "Belmonte block-36 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_36.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_36_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-37": {
+   "about": "Belmonte block-37 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_37.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_37_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-38": {
+   "about": "Belmonte block-38 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_38.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_38_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "block-39": {
+   "about": "Belmonte block-39 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_39.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_blk_39_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "cafe-chair": {
+   "about": "Belmonte cafe-chair (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_AT_CafeChair.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_AT_CafeChair_Collision.glb",
+    "games/yorimichi/assets/belmonte/textures/T_AT_CafeChair_D-9c754f82fb.jpg"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "cafe-parasol": {
+   "about": "Belmonte cafe-parasol (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_AT_CafeParasol.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_AT_CafeParasol_Collision.glb",
+    "games/yorimichi/assets/belmonte/textures/T_AT_CafeParasol_D-f96ef4ce80.jpg"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-gorge-strata": {
+   "about": "Belmonte civil-gorge-strata (3 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_GorgeStrata_0.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_GorgeStrata_1.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_GorgeStrata_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-lake": {
+   "about": "Belmonte civil-lake (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Lake.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-mura": {
+   "about": "Belmonte civil-mura (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_0.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_0_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_1.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_1_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_2_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Mura_3_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-passerella": {
+   "about": "Belmonte civil-passerella (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Passerella.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-pave": {
+   "about": "Belmonte civil-pave (15 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_0_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_0_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_0_4.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_1_1.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_1_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_1_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_1_4.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_2_0.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_2_1.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_2_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_2_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_2_4.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_3_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_3_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Pave_3_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-piazza": {
+   "about": "Belmonte civil-piazza (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Piazza.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-ponte": {
+   "about": "Belmonte civil-ponte (2 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Ponte.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_Ponte.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-quay-wall": {
+   "about": "Belmonte civil-quay-wall (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_QuayWall.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-rocks": {
+   "about": "Belmonte civil-rocks (3 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Rock_A.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Rock_B.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Rock_C.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-water": {
+   "about": "Belmonte civil-water (8 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_0.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_1.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_4.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_5.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_6.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Water_7.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-water-foam": {
+   "about": "Belmonte civil-water-foam (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_WaterFoam.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-waterfall": {
+   "about": "Belmonte civil-waterfall (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Waterfall.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "civil-works": {
+   "about": "Belmonte civil-works (13 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_0_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_0_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_1_1.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_1_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_1_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_1_4.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_2_1.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_2_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_2_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_2_4.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_3_2.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_3_3.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BC_Works_3_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "emblems": {
+   "about": "Belmonte emblems (5 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_HV_Emblem_Crown.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_HV_Emblem_Diamond.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_HV_Emblem_Laurel.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_HV_Emblem_Moon.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_HV_Emblem_Star.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-0": {
+   "about": "Belmonte estate-0 (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_0_Accent.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_0_Grounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_0_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_0_Stables_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_0_Villa.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_0_Villa_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-1": {
+   "about": "Belmonte estate-1 (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_1_Accent.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_1_Grounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_1_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_1_Stables_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_1_Villa.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_1_Villa_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-2": {
+   "about": "Belmonte estate-2 (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_2_Accent.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_2_Grounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_2_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_2_Stables_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_2_Villa.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_2_Villa_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-3": {
+   "about": "Belmonte estate-3 (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_3_Accent.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_3_Grounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_3_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_3_Stables_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_3_Villa.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_3_Villa_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-4": {
+   "about": "Belmonte estate-4 (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_4_Accent.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_4_Grounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_4_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_4_Stables_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_4_Villa.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_4_Villa_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-5": {
+   "about": "Belmonte estate-5 (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_5_Accent.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_5_Grounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_5_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_5_Stables_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_5_Villa.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_5_Villa_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-6": {
+   "about": "Belmonte estate-6 (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_6_Accent.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_6_Grounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_6_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_6_Stables_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_6_Villa.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_6_Villa_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-bale-stack": {
+   "about": "Belmonte estate-bale-stack (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_BaleStack.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_BaleStack_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-hay-cart": {
+   "about": "Belmonte estate-hay-cart (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_HayCart.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_HayCart_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-mounting-block": {
+   "about": "Belmonte estate-mounting-block (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_MountingBlock.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_MountingBlock_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-saddle-rack": {
+   "about": "Belmonte estate-saddle-rack (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_SaddleRack.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-tie-rail": {
+   "about": "Belmonte estate-tie-rail (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_TieRail.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_TieRail_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-trough": {
+   "about": "Belmonte estate-trough (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_Trough.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_Trough_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "estate-wheelbarrow": {
+   "about": "Belmonte estate-wheelbarrow (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BE_Wheelbarrow.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "generator": {
+   "about": "Belmonte region generator and source library: the build scripts, Unreal import script and acquisition tools that made every Belmonte package, the pinned Haras revision (source.json: model and texture checksums, placements, material settings), and the generated base materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/README.md",
+    "games/yorimichi/assets/belmonte/source.json",
+    "games/yorimichi/assets/source-library.json",
+    "games/yorimichi/tools/belmonte_convert.py",
+    "games/yorimichi/tools/belmonte_extract.py",
+    "games/yorimichi/unreal/Scripts/import_belmonte.py",
+    "games/yorimichi/world/regions/belmonte/__init__.py",
+    "games/yorimichi/world/regions/belmonte/appearance.py",
+    "games/yorimichi/world/regions/belmonte/assemble.py",
+    "games/yorimichi/world/regions/belmonte/atomic_library.py",
+    "games/yorimichi/world/regions/belmonte/atomic_metadata.py",
+    "games/yorimichi/world/regions/belmonte/build.py",
+    "games/yorimichi/world/regions/belmonte/carve_ground.py",
+    "games/yorimichi/world/regions/belmonte/gondola.py",
+    "games/yorimichi/world/regions/belmonte/ground_names.py",
+    "games/yorimichi/world/regions/belmonte/ground_pieces.py",
+    "games/yorimichi/world/regions/belmonte/layout.py",
+    "games/yorimichi/world/regions/belmonte/material_preparation.py",
+    "games/yorimichi/world/regions/belmonte/mesh_data.py",
+    "games/yorimichi/world/regions/belmonte/model_pieces.py",
+    "games/yorimichi/world/regions/belmonte/model_sources.py",
+    "games/yorimichi/world/regions/belmonte/north_apron.py",
+    "games/yorimichi/world/regions/belmonte/north_context.py",
+    "games/yorimichi/world/regions/belmonte/north_country.py",
+    "games/yorimichi/world/regions/belmonte/north_pipeline.py",
+    "games/yorimichi/world/regions/belmonte/plan.py",
+    "games/yorimichi/world/regions/belmonte/plan_ground.py",
+    "games/yorimichi/world/regions/belmonte/plan_model.py",
+    "games/yorimichi/world/regions/belmonte/planting.py",
+    "games/yorimichi/world/regions/belmonte/prepare_materials.py",
+    "games/yorimichi/world/regions/belmonte/prepare_planting.py",
+    "games/yorimichi/world/regions/belmonte/query_arrays.py",
+    "games/yorimichi/world/regions/belmonte/query_surface.py",
+    "games/yorimichi/world/regions/belmonte/runtime_groups.py",
+    "games/yorimichi/world/regions/belmonte/runtime_layout.py",
+    "games/yorimichi/world/regions/belmonte/scene_inputs.py",
+    "games/yorimichi/world/regions/belmonte/seam_data.py",
+    "games/yorimichi/world/regions/belmonte/source.py",
+    "games/yorimichi/world/regions/belmonte/source_ground.py",
+    "games/yorimichi/world/regions/belmonte/surface_data.py",
+    "games/yorimichi/world/regions/belmonte/terrain.py",
+    "games/yorimichi/world/regions/belmonte/terrain_bounds.py",
+    "games/yorimichi/world/regions/belmonte/terrain_palette.py",
+    "games/yorimichi/world/regions/belmonte/valley_palette.py",
+    "games/yorimichi/world/regions/belmonte/valley_query.py",
+    "games/yorimichi/world/source_registry.py"
+   ]
+  },
+  "hippodrome-arenas": {
+   "about": "Belmonte hippodrome-arenas (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Arenas.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-course": {
+   "about": "Belmonte hippodrome-course (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Course.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-dist-marker": {
+   "about": "Belmonte hippodrome-dist-marker (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_DistMarker.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-dist-pole": {
+   "about": "Belmonte hippodrome-dist-pole (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_DistPole.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-finish-post": {
+   "about": "Belmonte hippodrome-finish-post (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_FinishPost.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-gate-pier": {
+   "about": "Belmonte hippodrome-gate-pier (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_GatePier.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_GatePier_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-hay-bale": {
+   "about": "Belmonte hippodrome-hay-bale (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_HayBale.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_HayBale_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-infield": {
+   "about": "Belmonte hippodrome-infield (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Infield.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-jump": {
+   "about": "Belmonte hippodrome-jump (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Jump.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-kiosk": {
+   "about": "Belmonte hippodrome-kiosk (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Kiosk.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Kiosk_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-members-bar": {
+   "about": "Belmonte hippodrome-members-bar (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_MembersBar.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_MembersBar_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-pond": {
+   "about": "Belmonte hippodrome-pond (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Pond.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-rail-seg": {
+   "about": "Belmonte hippodrome-rail-seg (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_RailSeg.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_RailSeg_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-salon": {
+   "about": "Belmonte hippodrome-salon (3 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Salon.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_SalonGrounds.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_SalonHall.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Salon_Collision.glb",
+    "games/yorimichi/assets/belmonte/textures/T_BSalonPosters-d82ad7c5a1.jpg"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-second-stand": {
+   "about": "Belmonte hippodrome-second-stand (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_SecondStand.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_SecondStand_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-stables": {
+   "about": "Belmonte hippodrome-stables (2 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_StableYard.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Stables.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Stables_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-stand": {
+   "about": "Belmonte hippodrome-stand (4 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_Stand.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_StandGardens.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_StandGardens_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_StandShell.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_StandShell_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_StandTerrace.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-starting-stalls": {
+   "about": "Belmonte hippodrome-starting-stalls (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_StartingStalls.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "hippodrome-tie-rail": {
+   "about": "Belmonte hippodrome-tie-rail (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_TieRail.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BHip_TieRail_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "north-apron": {
+   "about": "Belmonte north-apron terrain: generated by the region scripts from the valley query data (8 bounded pieces); no committed model",
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "north-country": {
+   "about": "Belmonte north-country terrain: generated by the region scripts from the valley query data (108 bounded pieces); no committed model",
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-amphora": {
+   "about": "Belmonte prop-amphora (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Amphora.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Amphora_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-barrel": {
+   "about": "Belmonte prop-barrel (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Barrel.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Barrel_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-barrel-planter": {
+   "about": "Belmonte prop-barrel-planter (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_BarrelPlanter.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_BarrelPlanter_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-basket": {
+   "about": "Belmonte prop-basket (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Basket.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Basket_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-bench": {
+   "about": "Belmonte prop-bench (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Bench.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Bench_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-bucket": {
+   "about": "Belmonte prop-bucket (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Bucket.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Bucket_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-cafe-table": {
+   "about": "Belmonte prop-cafe-table (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_CafeTable.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_CafeTable_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-chalkboard": {
+   "about": "Belmonte prop-chalkboard (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Chalkboard.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Chalkboard_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-crate": {
+   "about": "Belmonte prop-crate (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Crate.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Crate_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-crate-produce": {
+   "about": "Belmonte prop-crate-produce (2 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_CrateProduce_A.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_CrateProduce_A_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_CrateProduce_B.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_CrateProduce_B_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-crate-stack": {
+   "about": "Belmonte prop-crate-stack (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_CrateStack.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-flower-bucket": {
+   "about": "Belmonte prop-flower-bucket (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_FlowerBucket.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_FlowerBucket_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-flower-stand": {
+   "about": "Belmonte prop-flower-stand (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_FlowerStand.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-garden-pergola": {
+   "about": "Belmonte prop-garden-pergola (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_GardenPergola.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_GardenPergola_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-handcart": {
+   "about": "Belmonte prop-handcart (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Handcart.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Handcart_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-kiosk": {
+   "about": "Belmonte prop-kiosk (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Kiosk.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Kiosk_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-lantern-post": {
+   "about": "Belmonte prop-lantern-post (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_LanternPost.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_LanternPost_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-laundry-basket": {
+   "about": "Belmonte prop-laundry-basket (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_LaundryBasket.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_LaundryBasket_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-orcio": {
+   "about": "Belmonte prop-orcio (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Orcio.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Orcio_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-pot-geranium": {
+   "about": "Belmonte prop-pot-geranium (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotGeranium.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotGeranium_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-pot-herb": {
+   "about": "Belmonte prop-pot-herb (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotHerb.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotHerb_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-pot-large": {
+   "about": "Belmonte prop-pot-large (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotLarge.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotLarge_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-pot-lavender": {
+   "about": "Belmonte prop-pot-lavender (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotLavender.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotLavender_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-pot-shrub": {
+   "about": "Belmonte prop-pot-shrub (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotShrub.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_PotShrub_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-sack": {
+   "about": "Belmonte prop-sack (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Sack.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Sack_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-saucer": {
+   "about": "Belmonte prop-saucer (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Saucer.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-stall-a": {
+   "about": "Belmonte prop-stall-a (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stall_A.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stall_A_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-stall-b": {
+   "about": "Belmonte prop-stall-b (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stall_B.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stall_B_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-stall-c": {
+   "about": "Belmonte prop-stall-c (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stall_C.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stall_C_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-stall-goods": {
+   "about": "Belmonte prop-stall-goods (7 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StallGoods_A.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StallGoods_B.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StallGoods_C.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StallGoods_D.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StallGoods_E.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StallGoods_F.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StallGoods_G.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-stone-bench": {
+   "about": "Belmonte prop-stone-bench (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StoneBench.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StoneBench_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-stone-planter": {
+   "about": "Belmonte prop-stone-planter (2 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StonePlanter_A.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StonePlanter_A_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StonePlanter_B.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_StonePlanter_B_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-stool": {
+   "about": "Belmonte prop-stool (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stool.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_Stool_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-wall-lantern": {
+   "about": "Belmonte prop-wall-lantern (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_WallLantern.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "prop-watering-can": {
+   "about": "Belmonte prop-watering-can (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_WateringCan.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BP_WateringCan_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "shared-ground": {
+   "about": "Belmonte shared ground materials and their textures",
+   "sources": [
+    "games/yorimichi/assets/belmonte/textures/T_B_grass_ground_D-c17533b977.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_gravelly_sand_D-7c7d6294b6.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_park_sand_D-a7ee5cb65f.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_withered_grass_D-4293e66187.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_worn_rock_natural_01_D-2827c5ee4d.jpg",
+    "games/yorimichi/assets/environment/textures/tuscan-ground.jpg",
+    "games/yorimichi/assets/environment/textures/tuscan-ground.provenance.json"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "shared-metal-glass": {
+   "about": "Belmonte shared metal-glass materials and their textures",
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "shared-plaster": {
+   "about": "Belmonte shared plaster materials and their textures",
+   "sources": [
+    "games/yorimichi/assets/belmonte/textures/T_B_rough_plaster_broken_D-b39f163f74.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_yellow_plaster_D-e160611677.jpg"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "shared-roof": {
+   "about": "Belmonte shared roof materials and their textures",
+   "sources": [
+    "games/yorimichi/assets/belmonte/textures/T_B_clay_roof_tiles_02_D-c9e880ab3f.jpg"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "shared-stone": {
+   "about": "Belmonte shared stone materials and their textures",
+   "sources": [
+    "games/yorimichi/assets/belmonte/textures/T_B_cobblestone_floor_08_D-3b6f631163.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_cobblestone_large_01_D-45cfccc09e.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_medieval_blocks_03_D-2666290930.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_rock_wall_11_D-d45075f074.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_sandstone_blocks_05_D-377f16c8af.jpg"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "shared-timber": {
+   "about": "Belmonte shared timber materials and their textures",
+   "sources": [
+    "games/yorimichi/assets/belmonte/textures/T_B_weathered_planks_D-4cd10312e4.jpg",
+    "games/yorimichi/assets/belmonte/textures/T_B_wood_planks_D-39ceb687eb.jpg"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "shared-water": {
+   "about": "Belmonte shared water materials and their textures",
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-0-0": {
+   "about": "Belmonte ground tile 0-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_0_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-0-1": {
+   "about": "Belmonte ground tile 0-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_0_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-0-2": {
+   "about": "Belmonte ground tile 0-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_0_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-0-3": {
+   "about": "Belmonte ground tile 0-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_0_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-0-4": {
+   "about": "Belmonte ground tile 0-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_0_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-0-5": {
+   "about": "Belmonte ground tile 0-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_0_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-0-6": {
+   "about": "Belmonte ground tile 0-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_0_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-1-0": {
+   "about": "Belmonte ground tile 1-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_1_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-1-1": {
+   "about": "Belmonte ground tile 1-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_1_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-1-2": {
+   "about": "Belmonte ground tile 1-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_1_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-1-3": {
+   "about": "Belmonte ground tile 1-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_1_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-1-4": {
+   "about": "Belmonte ground tile 1-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_1_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-1-5": {
+   "about": "Belmonte ground tile 1-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_1_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-1-6": {
+   "about": "Belmonte ground tile 1-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_1_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-2-0": {
+   "about": "Belmonte ground tile 2-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_2_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-2-1": {
+   "about": "Belmonte ground tile 2-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_2_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-2-2": {
+   "about": "Belmonte ground tile 2-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_2_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-2-3": {
+   "about": "Belmonte ground tile 2-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_2_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-2-4": {
+   "about": "Belmonte ground tile 2-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_2_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-2-5": {
+   "about": "Belmonte ground tile 2-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_2_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-2-6": {
+   "about": "Belmonte ground tile 2-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_2_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-3-0": {
+   "about": "Belmonte ground tile 3-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_3_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-3-1": {
+   "about": "Belmonte ground tile 3-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_3_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-3-2": {
+   "about": "Belmonte ground tile 3-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_3_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-3-3": {
+   "about": "Belmonte ground tile 3-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_3_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-3-4": {
+   "about": "Belmonte ground tile 3-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_3_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-3-5": {
+   "about": "Belmonte ground tile 3-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_3_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-3-6": {
+   "about": "Belmonte ground tile 3-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_3_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-4-0": {
+   "about": "Belmonte ground tile 4-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_4_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-4-1": {
+   "about": "Belmonte ground tile 4-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_4_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-4-2": {
+   "about": "Belmonte ground tile 4-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_4_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-4-3": {
+   "about": "Belmonte ground tile 4-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_4_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-4-4": {
+   "about": "Belmonte ground tile 4-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_4_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-4-5": {
+   "about": "Belmonte ground tile 4-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_4_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-4-6": {
+   "about": "Belmonte ground tile 4-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_4_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-5-0": {
+   "about": "Belmonte ground tile 5-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_5_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-5-1": {
+   "about": "Belmonte ground tile 5-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_5_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-5-2": {
+   "about": "Belmonte ground tile 5-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_5_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-5-3": {
+   "about": "Belmonte ground tile 5-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_5_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-5-4": {
+   "about": "Belmonte ground tile 5-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_5_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-5-5": {
+   "about": "Belmonte ground tile 5-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_5_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-5-6": {
+   "about": "Belmonte ground tile 5-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_5_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-6-0": {
+   "about": "Belmonte ground tile 6-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_6_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-6-1": {
+   "about": "Belmonte ground tile 6-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_6_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-6-2": {
+   "about": "Belmonte ground tile 6-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_6_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-6-3": {
+   "about": "Belmonte ground tile 6-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_6_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-6-4": {
+   "about": "Belmonte ground tile 6-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_6_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-6-5": {
+   "about": "Belmonte ground tile 6-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_6_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-6-6": {
+   "about": "Belmonte ground tile 6-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_6_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-7-0": {
+   "about": "Belmonte ground tile 7-0 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_7_0.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-7-1": {
+   "about": "Belmonte ground tile 7-1 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_7_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-7-2": {
+   "about": "Belmonte ground tile 7-2 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_7_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-7-3": {
+   "about": "Belmonte ground tile 7-3 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_7_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-7-4": {
+   "about": "Belmonte ground tile 7-4 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_7_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-7-5": {
+   "about": "Belmonte ground tile 7-5 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_7_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "terrain-7-6": {
+   "about": "Belmonte ground tile 7-6 (committed Haras terrain tile; carved at build time)",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BT_Terrain_7_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-bell-tower": {
+   "about": "Belmonte town-bell-tower (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_BellTower.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_BellTower_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-chiostro": {
+   "about": "Belmonte town-chiostro (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Chiostro.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Chiostro_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-church": {
+   "about": "Belmonte town-church (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Church.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Church_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-fontanella": {
+   "about": "Belmonte town-fontanella (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Fontanella.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Fontanella_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-forno": {
+   "about": "Belmonte town-forno (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Forno.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Forno_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-fountain-piazza": {
+   "about": "Belmonte town-fountain-piazza (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_FountainPiazza.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_FountainPiazza_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-osteria": {
+   "about": "Belmonte town-osteria (3 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Osteria.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_OsteriaPergola.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_OsteriaPergola_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Osteria_Collision.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Osteria_Taproom.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-palazzo-comunale": {
+   "about": "Belmonte town-palazzo-comunale (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_PalazzoComunale.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_PalazzoComunale_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-porta-nord": {
+   "about": "Belmonte town-porta-nord (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Porta_Nord.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Porta_Nord_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-porta-nw": {
+   "about": "Belmonte town-porta-nw (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Porta_NW.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Porta_NW_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-porta-se": {
+   "about": "Belmonte town-porta-se (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Porta_SE.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Porta_SE_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "town-pozzo": {
+   "about": "Belmonte town-pozzo (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Pozzo.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BH_Pozzo_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-farm-cascine": {
+   "about": "Belmonte village-farm-cascine (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Cascine.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Cascine_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-farm-levante": {
+   "about": "Belmonte village-farm-levante (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Levante.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Levante_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-farm-poggio": {
+   "about": "Belmonte village-farm-poggio (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Poggio.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Poggio_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-farm-ulivi": {
+   "about": "Belmonte village-farm-ulivi (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Ulivi.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Farm_Ulivi_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-hay-roll": {
+   "about": "Belmonte village-hay-roll (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_HayRoll.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_HayRoll_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-hay-stack": {
+   "about": "Belmonte village-hay-stack (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_HayStack.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_HayStack_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-1": {
+   "about": "Belmonte village-house-1 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_1.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-2": {
+   "about": "Belmonte village-house-2 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_2.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-3": {
+   "about": "Belmonte village-house-3 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_3.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-4": {
+   "about": "Belmonte village-house-4 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_4.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-5": {
+   "about": "Belmonte village-house-5 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_5.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-6": {
+   "about": "Belmonte village-house-6 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_6.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-7": {
+   "about": "Belmonte village-house-7 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_7.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-house-8": {
+   "about": "Belmonte village-house-8 (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_Village_8.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  },
+  "village-stone-wall": {
+   "about": "Belmonte village-stone-wall (1 model(s)) with its collision hulls, pieces and own materials",
+   "sources": [
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_StoneWall.glb",
+    "games/yorimichi/assets/belmonte/meshes/SM_BM_BVV_StoneWall_Collision.glb"
+   ],
+   "references": [
+    "adopted/belmonte/generator"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Belmonte/Meshes/SM_BM_AT_CafeChair": "cafe-chair",
+  "/Game/Belmonte/Meshes/SM_BM_AT_CafeChair_Collision": "cafe-chair",
+  "/Game/Belmonte/Meshes/SM_BM_AT_CafeParasol": "cafe-parasol",
+  "/Game/Belmonte/Meshes/SM_BM_AT_CafeParasol_Collision": "cafe-parasol",
+  "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_0": "civil-gorge-strata",
+  "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_1": "civil-gorge-strata",
+  "/Game/Belmonte/Meshes/SM_BM_BC_GorgeStrata_2": "civil-gorge-strata",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Lake": "civil-lake",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_0": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_0_Collision": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_1": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_1_Collision": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_2": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_2_Collision": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_3": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Mura_3_Collision": "civil-mura",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Passerella": "civil-passerella",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_2": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_3": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_4": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_1": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_2": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_3": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_4": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_0": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_1": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_2": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_3": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_4": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_2": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_3": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_4": "civil-pave",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Piazza": "civil-piazza",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Ponte": "civil-ponte",
+  "/Game/Belmonte/Meshes/SM_BM_BC_QuayWall": "civil-quay-wall",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Rock_A": "civil-rocks",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Rock_B": "civil-rocks",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Rock_C": "civil-rocks",
+  "/Game/Belmonte/Meshes/SM_BM_BC_WaterFoam": "civil-water-foam",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_0": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_1": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_2": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_3": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_4": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_5": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_6": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_7": "civil-water",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Water_Ponte": "civil-ponte",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Waterfall": "civil-waterfall",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_0_2": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_0_3": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_1": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_2": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_3": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_1_4": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_1": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_2": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_3": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_2_4": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_2": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_3": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BC_Works_3_4": "civil-works",
+  "/Game/Belmonte/Meshes/SM_BM_BE_0_Accent": "estate-0",
+  "/Game/Belmonte/Meshes/SM_BM_BE_0_Grounds": "estate-0",
+  "/Game/Belmonte/Meshes/SM_BM_BE_0_Stables": "estate-0",
+  "/Game/Belmonte/Meshes/SM_BM_BE_0_Stables_Collision": "estate-0",
+  "/Game/Belmonte/Meshes/SM_BM_BE_0_Villa": "estate-0",
+  "/Game/Belmonte/Meshes/SM_BM_BE_0_Villa_Collision": "estate-0",
+  "/Game/Belmonte/Meshes/SM_BM_BE_1_Accent": "estate-1",
+  "/Game/Belmonte/Meshes/SM_BM_BE_1_Grounds": "estate-1",
+  "/Game/Belmonte/Meshes/SM_BM_BE_1_Stables": "estate-1",
+  "/Game/Belmonte/Meshes/SM_BM_BE_1_Stables_Collision": "estate-1",
+  "/Game/Belmonte/Meshes/SM_BM_BE_1_Villa": "estate-1",
+  "/Game/Belmonte/Meshes/SM_BM_BE_1_Villa_Collision": "estate-1",
+  "/Game/Belmonte/Meshes/SM_BM_BE_2_Accent": "estate-2",
+  "/Game/Belmonte/Meshes/SM_BM_BE_2_Grounds": "estate-2",
+  "/Game/Belmonte/Meshes/SM_BM_BE_2_Stables": "estate-2",
+  "/Game/Belmonte/Meshes/SM_BM_BE_2_Stables_Collision": "estate-2",
+  "/Game/Belmonte/Meshes/SM_BM_BE_2_Villa": "estate-2",
+  "/Game/Belmonte/Meshes/SM_BM_BE_2_Villa_Collision": "estate-2",
+  "/Game/Belmonte/Meshes/SM_BM_BE_3_Accent": "estate-3",
+  "/Game/Belmonte/Meshes/SM_BM_BE_3_Grounds": "estate-3",
+  "/Game/Belmonte/Meshes/SM_BM_BE_3_Stables": "estate-3",
+  "/Game/Belmonte/Meshes/SM_BM_BE_3_Stables_Collision": "estate-3",
+  "/Game/Belmonte/Meshes/SM_BM_BE_3_Villa": "estate-3",
+  "/Game/Belmonte/Meshes/SM_BM_BE_3_Villa_Collision": "estate-3",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Accent": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Grounds": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece1": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece1_Collision": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece2": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece3": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Villa": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_4_Villa_Collision": "estate-4",
+  "/Game/Belmonte/Meshes/SM_BM_BE_5_Accent": "estate-5",
+  "/Game/Belmonte/Meshes/SM_BM_BE_5_Grounds": "estate-5",
+  "/Game/Belmonte/Meshes/SM_BM_BE_5_Stables": "estate-5",
+  "/Game/Belmonte/Meshes/SM_BM_BE_5_Stables_Collision": "estate-5",
+  "/Game/Belmonte/Meshes/SM_BM_BE_5_Villa": "estate-5",
+  "/Game/Belmonte/Meshes/SM_BM_BE_5_Villa_Collision": "estate-5",
+  "/Game/Belmonte/Meshes/SM_BM_BE_6_Accent": "estate-6",
+  "/Game/Belmonte/Meshes/SM_BM_BE_6_Grounds": "estate-6",
+  "/Game/Belmonte/Meshes/SM_BM_BE_6_Stables": "estate-6",
+  "/Game/Belmonte/Meshes/SM_BM_BE_6_Stables_Collision": "estate-6",
+  "/Game/Belmonte/Meshes/SM_BM_BE_6_Villa": "estate-6",
+  "/Game/Belmonte/Meshes/SM_BM_BE_6_Villa_Collision": "estate-6",
+  "/Game/Belmonte/Meshes/SM_BM_BE_BaleStack": "estate-bale-stack",
+  "/Game/Belmonte/Meshes/SM_BM_BE_BaleStack_Collision": "estate-bale-stack",
+  "/Game/Belmonte/Meshes/SM_BM_BE_HayCart": "estate-hay-cart",
+  "/Game/Belmonte/Meshes/SM_BM_BE_HayCart_Collision": "estate-hay-cart",
+  "/Game/Belmonte/Meshes/SM_BM_BE_MountingBlock": "estate-mounting-block",
+  "/Game/Belmonte/Meshes/SM_BM_BE_MountingBlock_Collision": "estate-mounting-block",
+  "/Game/Belmonte/Meshes/SM_BM_BE_SaddleRack": "estate-saddle-rack",
+  "/Game/Belmonte/Meshes/SM_BM_BE_TieRail": "estate-tie-rail",
+  "/Game/Belmonte/Meshes/SM_BM_BE_TieRail_Collision": "estate-tie-rail",
+  "/Game/Belmonte/Meshes/SM_BM_BE_Trough": "estate-trough",
+  "/Game/Belmonte/Meshes/SM_BM_BE_Trough_Collision": "estate-trough",
+  "/Game/Belmonte/Meshes/SM_BM_BE_Wheelbarrow": "estate-wheelbarrow",
+  "/Game/Belmonte/Meshes/SM_BM_BH_BellTower": "town-bell-tower",
+  "/Game/Belmonte/Meshes/SM_BM_BH_BellTower_Collision": "town-bell-tower",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Chiostro": "town-chiostro",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Chiostro_Collision": "town-chiostro",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Church": "town-church",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Church_Collision": "town-church",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Fontanella": "town-fontanella",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Fontanella_Collision": "town-fontanella",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Forno": "town-forno",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Forno_Collision": "town-forno",
+  "/Game/Belmonte/Meshes/SM_BM_BH_FountainPiazza": "town-fountain-piazza",
+  "/Game/Belmonte/Meshes/SM_BM_BH_FountainPiazza_Collision": "town-fountain-piazza",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Osteria": "town-osteria",
+  "/Game/Belmonte/Meshes/SM_BM_BH_OsteriaPergola": "town-osteria",
+  "/Game/Belmonte/Meshes/SM_BM_BH_OsteriaPergola_Collision": "town-osteria",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Osteria_Collision": "town-osteria",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Osteria_Taproom": "town-osteria",
+  "/Game/Belmonte/Meshes/SM_BM_BH_PalazzoComunale": "town-palazzo-comunale",
+  "/Game/Belmonte/Meshes/SM_BM_BH_PalazzoComunale_Collision": "town-palazzo-comunale",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Porta_NW": "town-porta-nw",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Porta_NW_Collision": "town-porta-nw",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Porta_Nord": "town-porta-nord",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Porta_Nord_Collision": "town-porta-nord",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Porta_SE": "town-porta-se",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Porta_SE_Collision": "town-porta-se",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Pozzo": "town-pozzo",
+  "/Game/Belmonte/Meshes/SM_BM_BH_Pozzo_Collision": "town-pozzo",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Arenas": "hippodrome-arenas",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Course": "hippodrome-course",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_DistMarker": "hippodrome-dist-marker",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_DistPole": "hippodrome-dist-pole",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_FinishPost": "hippodrome-finish-post",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_GatePier": "hippodrome-gate-pier",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_GatePier_Collision": "hippodrome-gate-pier",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_HayBale": "hippodrome-hay-bale",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_HayBale_Collision": "hippodrome-hay-bale",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Infield": "hippodrome-infield",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Jump": "hippodrome-jump",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Kiosk": "hippodrome-kiosk",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Kiosk_Collision": "hippodrome-kiosk",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_MembersBar": "hippodrome-members-bar",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_MembersBar_Collision": "hippodrome-members-bar",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Pond": "hippodrome-pond",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_RailSeg": "hippodrome-rail-seg",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_RailSeg_Collision": "hippodrome-rail-seg",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Salon": "hippodrome-salon",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_SalonGrounds": "hippodrome-salon",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_SalonHall": "hippodrome-salon",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Salon_Collision": "hippodrome-salon",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_SecondStand": "hippodrome-second-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_SecondStand_Collision": "hippodrome-second-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StableYard": "hippodrome-stables",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0": "hippodrome-stables",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0_Collision": "hippodrome-stables",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece1": "hippodrome-stables",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece2": "hippodrome-stables",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece3": "hippodrome-stables",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StandGardens": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StandGardens_Collision": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2_Collision": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece3": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StandTerrace": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece02": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece03": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece12": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece13": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece2": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece3": "hippodrome-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_StartingStalls": "hippodrome-starting-stalls",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_TieRail": "hippodrome-tie-rail",
+  "/Game/Belmonte/Meshes/SM_BM_BHip_TieRail_Collision": "hippodrome-tie-rail",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Amphora": "prop-amphora",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Amphora_Collision": "prop-amphora",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Barrel": "prop-barrel",
+  "/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter": "prop-barrel-planter",
+  "/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter_Collision": "prop-barrel-planter",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Barrel_Collision": "prop-barrel",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Basket": "prop-basket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Basket_Collision": "prop-basket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Bench": "prop-bench",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Bench_Collision": "prop-bench",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Bucket": "prop-bucket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Bucket_Collision": "prop-bucket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_CafeTable": "prop-cafe-table",
+  "/Game/Belmonte/Meshes/SM_BM_BP_CafeTable_Collision": "prop-cafe-table",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Chalkboard": "prop-chalkboard",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Chalkboard_Collision": "prop-chalkboard",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Crate": "prop-crate",
+  "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_A": "prop-crate-produce",
+  "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_A_Collision": "prop-crate-produce",
+  "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_B": "prop-crate-produce",
+  "/Game/Belmonte/Meshes/SM_BM_BP_CrateProduce_B_Collision": "prop-crate-produce",
+  "/Game/Belmonte/Meshes/SM_BM_BP_CrateStack": "prop-crate-stack",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Crate_Collision": "prop-crate",
+  "/Game/Belmonte/Meshes/SM_BM_BP_FlowerBucket": "prop-flower-bucket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_FlowerBucket_Collision": "prop-flower-bucket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand": "prop-flower-stand",
+  "/Game/Belmonte/Meshes/SM_BM_BP_GardenPergola": "prop-garden-pergola",
+  "/Game/Belmonte/Meshes/SM_BM_BP_GardenPergola_Collision": "prop-garden-pergola",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Handcart": "prop-handcart",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Handcart_Collision": "prop-handcart",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Kiosk": "prop-kiosk",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Kiosk_Collision": "prop-kiosk",
+  "/Game/Belmonte/Meshes/SM_BM_BP_LanternPost": "prop-lantern-post",
+  "/Game/Belmonte/Meshes/SM_BM_BP_LanternPost_Collision": "prop-lantern-post",
+  "/Game/Belmonte/Meshes/SM_BM_BP_LaundryBasket": "prop-laundry-basket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_LaundryBasket_Collision": "prop-laundry-basket",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Orcio": "prop-orcio",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Orcio_Collision": "prop-orcio",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotGeranium": "prop-pot-geranium",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotGeranium_Collision": "prop-pot-geranium",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotHerb": "prop-pot-herb",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotHerb_Collision": "prop-pot-herb",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotLarge": "prop-pot-large",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotLarge_Collision": "prop-pot-large",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotLavender": "prop-pot-lavender",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotLavender_Collision": "prop-pot-lavender",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotShrub": "prop-pot-shrub",
+  "/Game/Belmonte/Meshes/SM_BM_BP_PotShrub_Collision": "prop-pot-shrub",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Sack": "prop-sack",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Sack_Collision": "prop-sack",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Saucer": "prop-saucer",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_A": "prop-stall-goods",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_B": "prop-stall-goods",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_C": "prop-stall-goods",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_D": "prop-stall-goods",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_E": "prop-stall-goods",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_F": "prop-stall-goods",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_G": "prop-stall-goods",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stall_A": "prop-stall-a",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stall_A_Collision": "prop-stall-a",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stall_B": "prop-stall-b",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stall_B_Collision": "prop-stall-b",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stall_C": "prop-stall-c",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stall_C_Collision": "prop-stall-c",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StoneBench": "prop-stone-bench",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StoneBench_Collision": "prop-stone-bench",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_A": "prop-stone-planter",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_A_Collision": "prop-stone-planter",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_B": "prop-stone-planter",
+  "/Game/Belmonte/Meshes/SM_BM_BP_StonePlanter_B_Collision": "prop-stone-planter",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stool": "prop-stool",
+  "/Game/Belmonte/Meshes/SM_BM_BP_Stool_Collision": "prop-stool",
+  "/Game/Belmonte/Meshes/SM_BM_BP_WallLantern": "prop-wall-lantern",
+  "/Game/Belmonte/Meshes/SM_BM_BP_WateringCan": "prop-watering-can",
+  "/Game/Belmonte/Meshes/SM_BM_BP_WateringCan_Collision": "prop-watering-can",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_0_0": "terrain-0-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_0_1": "terrain-0-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_0_2": "terrain-0-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_0_3": "terrain-0-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_0_4": "terrain-0-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_0_5": "terrain-0-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_0_6": "terrain-0-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_1_0": "terrain-1-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_1_1": "terrain-1-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_1_2": "terrain-1-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_1_3": "terrain-1-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_1_4": "terrain-1-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_1_5": "terrain-1-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_1_6": "terrain-1-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_2_0": "terrain-2-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_2_1": "terrain-2-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_2_2": "terrain-2-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_2_3": "terrain-2-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_2_4": "terrain-2-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_2_5": "terrain-2-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_2_6": "terrain-2-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_0": "terrain-3-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_1": "terrain-3-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_2": "terrain-3-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_3": "terrain-3-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_4": "terrain-3-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_5": "terrain-3-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_3_6": "terrain-3-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_4_0": "terrain-4-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_4_1": "terrain-4-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_4_2": "terrain-4-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_4_3": "terrain-4-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_4_4": "terrain-4-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_4_5": "terrain-4-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_4_6": "terrain-4-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_0": "terrain-5-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_1": "terrain-5-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_2": "terrain-5-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_3": "terrain-5-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_4": "terrain-5-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_5": "terrain-5-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_5_6": "terrain-5-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_6_0": "terrain-6-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_6_1": "terrain-6-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_6_2": "terrain-6-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_6_3": "terrain-6-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_6_4": "terrain-6-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_6_5": "terrain-6-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_6_6": "terrain-6-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_7_0": "terrain-7-0",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_7_1": "terrain-7-1",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_7_2": "terrain-7-2",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_7_3": "terrain-7-3",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_7_4": "terrain-7-4",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_7_5": "terrain-7-5",
+  "/Game/Belmonte/Meshes/SM_BM_BT_Terrain_7_6": "terrain-7-6",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_01": "block-01",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_01_Collision": "block-01",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_02": "block-02",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_02_Collision": "block-02",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_03": "block-03",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_03_Collision": "block-03",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_04": "block-04",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_04_Collision": "block-04",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_05": "block-05",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_05_Collision": "block-05",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_06": "block-06",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_06_Collision": "block-06",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_07": "block-07",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_07_Collision": "block-07",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_08": "block-08",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_08_Collision": "block-08",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_09_Piece0": "block-09",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_09_Piece0_Collision": "block-09",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_09_Piece1": "block-09",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_09_Piece2": "block-09",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_09_Piece3": "block-09",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_10_Piece0": "block-10",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_10_Piece0_Collision": "block-10",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_10_Piece1": "block-10",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_10_Piece2": "block-10",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_10_Piece3": "block-10",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_11_Piece0": "block-11",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_11_Piece0_Collision": "block-11",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_11_Piece1": "block-11",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_11_Piece2": "block-11",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_11_Piece3": "block-11",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_12": "block-12",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_12_Collision": "block-12",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_13": "block-13",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_13_Collision": "block-13",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_14": "block-14",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_14_Collision": "block-14",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_15_Piece0": "block-15",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_15_Piece0_Collision": "block-15",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_15_Piece1": "block-15",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_15_Piece2": "block-15",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_15_Piece3": "block-15",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_16": "block-16",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_16_Collision": "block-16",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece0": "block-17",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece0_Collision": "block-17",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece1": "block-17",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece2": "block-17",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece3": "block-17",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_18": "block-18",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_18_Collision": "block-18",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_19": "block-19",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_19_Collision": "block-19",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_20": "block-20",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_20_Collision": "block-20",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_21": "block-21",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_21_Collision": "block-21",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_22": "block-22",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_22_Collision": "block-22",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_23": "block-23",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_23_Collision": "block-23",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_24": "block-24",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_24_Collision": "block-24",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_25": "block-25",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_25_Collision": "block-25",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_26": "block-26",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_26_Collision": "block-26",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_27": "block-27",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_27_Collision": "block-27",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_28": "block-28",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_28_Collision": "block-28",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_29": "block-29",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_29_Collision": "block-29",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_30": "block-30",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_30_Collision": "block-30",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_31": "block-31",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_31_Collision": "block-31",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_32": "block-32",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_32_Collision": "block-32",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_33": "block-33",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_33_Collision": "block-33",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_34": "block-34",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_34_Collision": "block-34",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_35": "block-35",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_35_Collision": "block-35",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_36": "block-36",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_36_Collision": "block-36",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_37": "block-37",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_37_Collision": "block-37",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_38": "block-38",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_38_Collision": "block-38",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_39_Piece0": "block-39",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_39_Piece0_Collision": "block-39",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_39_Piece1": "block-39",
+  "/Game/Belmonte/Meshes/SM_BM_BT_blk_39_Piece2": "block-39",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Cascine": "village-farm-cascine",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Cascine_Collision": "village-farm-cascine",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Levante": "village-farm-levante",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Levante_Collision": "village-farm-levante",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Poggio": "village-farm-poggio",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Poggio_Collision": "village-farm-poggio",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Ulivi": "village-farm-ulivi",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Ulivi_Collision": "village-farm-ulivi",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_HayRoll": "village-hay-roll",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_HayRoll_Collision": "village-hay-roll",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_HayStack": "village-hay-stack",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_HayStack_Collision": "village-hay-stack",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_StoneWall": "village-stone-wall",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_StoneWall_Collision": "village-stone-wall",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_1": "village-house-1",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_2": "village-house-2",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_3": "village-house-3",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_4": "village-house-4",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_5": "village-house-5",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_6": "village-house-6",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_7": "village-house-7",
+  "/Game/Belmonte/Meshes/SM_BM_BVV_Village_8": "village-house-8",
+  "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Crown": "emblems",
+  "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Diamond": "emblems",
+  "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Laurel": "emblems",
+  "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Moon": "emblems",
+  "/Game/Belmonte/Meshes/SM_BM_HV_Emblem_Star": "emblems",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece00": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece01": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece02": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece10": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece11": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece13": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece2": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece3": "north-apron",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece000": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece001": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece002": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece003": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece01": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece020": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0210": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0211": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0212": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0213": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece022": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0230": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0231": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0232": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece0233": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece03": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece10": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece110": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece111": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1120": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1121": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1122": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1123": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece113": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece12": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1300": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1301": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1302": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1303": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece131": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1320": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1321": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1322": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece1323": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece133": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece200": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2010": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2011": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2012": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2013": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece202": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2030": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2031": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2032": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2033": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece210": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece211": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2120": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2121": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2122": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2123": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2130": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2131": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2132": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2133": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece220": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2210": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2211": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2212": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2213": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece222": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece223": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2300": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2301": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2302": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2303": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2310": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2311": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2312": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece2313": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece232": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece233": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece301": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3020": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3021": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3022": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3023": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3030": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3031": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3032": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3033": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3100": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3101": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3102": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3103": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece311": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3120": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3121": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3122": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3123": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece313": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3200": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3201": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3202": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3203": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3210": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3211": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3212": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3213": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece322": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece323": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3300": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3301": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3302": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3303": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece331": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece332": "north-country",
+  "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece333": "north-country",
+  "/Game/Belmonte/Materials/MI_BM_0a81ebb01ed9": "estate-2",
+  "/Game/Belmonte/Materials/MI_BM_296da39ab8d2": "shared-ground",
+  "/Game/Belmonte/Materials/MI_BM_424af3e6356a": "shared-stone",
+  "/Game/Belmonte/Materials/MI_BM_447b2bfac41d": "shared-ground",
+  "/Game/Belmonte/Materials/MI_BM_4ac86121edbc": "shared-timber",
+  "/Game/Belmonte/Materials/MI_BM_4ee3168b033c": "shared-metal-glass",
+  "/Game/Belmonte/Materials/MI_BM_51cddac82e05": "estate-5",
+  "/Game/Belmonte/Materials/MI_BM_56eb5489daa9": "hippodrome-salon",
+  "/Game/Belmonte/Materials/MI_BM_5775b3667d19": "estate-0",
+  "/Game/Belmonte/Materials/MI_BM_588c21ca63ae": "estate-1",
+  "/Game/Belmonte/Materials/MI_BM_5abe3878aa19": "shared-ground",
+  "/Game/Belmonte/Materials/MI_BM_5ac531c8f835": "shared-stone",
+  "/Game/Belmonte/Materials/MI_BM_6826135717c4": "shared-ground",
+  "/Game/Belmonte/Materials/MI_BM_69b755f9ad2a": "shared-metal-glass",
+  "/Game/Belmonte/Materials/MI_BM_7ebfea974bb1": "shared-timber",
+  "/Game/Belmonte/Materials/MI_BM_88275ca9defa": "shared-stone",
+  "/Game/Belmonte/Materials/MI_BM_8c7322bc790c": "shared-ground",
+  "/Game/Belmonte/Materials/MI_BM_97411df1649f": "shared-stone",
+  "/Game/Belmonte/Materials/MI_BM_99b3c7fe8da6": "shared-plaster",
+  "/Game/Belmonte/Materials/MI_BM_9b1e8dfc79be": "estate-4",
+  "/Game/Belmonte/Materials/MI_BM_9c599add99e7": "shared-plaster",
+  "/Game/Belmonte/Materials/MI_BM_Ground": "generator",
+  "/Game/Belmonte/Materials/MI_BM_aa1a8d45375e": "shared-metal-glass",
+  "/Game/Belmonte/Materials/MI_BM_aadab9c1da71": "shared-water",
+  "/Game/Belmonte/Materials/MI_BM_afae53c1b42d": "cafe-chair",
+  "/Game/Belmonte/Materials/MI_BM_b5dfa6e6373d": "shared-metal-glass",
+  "/Game/Belmonte/Materials/MI_BM_bd97e7f1dd81": "shared-ground",
+  "/Game/Belmonte/Materials/MI_BM_c0fe55905675": "estate-6",
+  "/Game/Belmonte/Materials/MI_BM_cb8e7d712521": "estate-3",
+  "/Game/Belmonte/Materials/MI_BM_cd9cdab3ba49": "shared-stone",
+  "/Game/Belmonte/Materials/MI_BM_e17c9375ae80": "shared-roof",
+  "/Game/Belmonte/Materials/MI_BM_e740b7591ceb": "shared-stone",
+  "/Game/Belmonte/Materials/MI_BM_eaef11a76e4c": "cafe-parasol",
+  "/Game/Belmonte/Materials/MI_BM_f76f48666871": "shared-water",
+  "/Game/Belmonte/Materials/MI_BM_fae8893ff89f": "shared-metal-glass",
+  "/Game/Belmonte/Materials/MI_BM_fd5f4f4381ce": "emblems",
+  "/Game/Belmonte/Materials/M_Belmonte": "generator",
+  "/Game/Belmonte/Materials/M_BelmonteJoin": "generator",
+  "/Game/Belmonte/Textures/T_BM_0d86c8bae5dc": "shared-stone",
+  "/Game/Belmonte/Textures/T_BM_0fe86703fe93": "shared-ground",
+  "/Game/Belmonte/Textures/T_BM_1776fd88d0c7": "cafe-parasol",
+  "/Game/Belmonte/Textures/T_BM_3a9a9b320ef7": "shared-ground",
+  "/Game/Belmonte/Textures/T_BM_3b3b593ecaf2": "shared-ground",
+  "/Game/Belmonte/Textures/T_BM_4621dbb4ad29": "shared-ground",
+  "/Game/Belmonte/Textures/T_BM_545174045712": "shared-timber",
+  "/Game/Belmonte/Textures/T_BM_68613c1d3edd": "shared-ground",
+  "/Game/Belmonte/Textures/T_BM_70491bcd4c11": "shared-stone",
+  "/Game/Belmonte/Textures/T_BM_8a6a307d3152": "cafe-chair",
+  "/Game/Belmonte/Textures/T_BM_8af1850d289a": "shared-stone",
+  "/Game/Belmonte/Textures/T_BM_96d3faa5f412": "shared-stone",
+  "/Game/Belmonte/Textures/T_BM_a1f5113d77e1": "shared-plaster",
+  "/Game/Belmonte/Textures/T_BM_a56121473d0a": "hippodrome-salon",
+  "/Game/Belmonte/Textures/T_BM_a85386eda38e": "shared-plaster",
+  "/Game/Belmonte/Textures/T_BM_b62cf5b69761": "shared-roof",
+  "/Game/Belmonte/Textures/T_BM_bb1c8b9d4039": "shared-timber",
+  "/Game/Belmonte/Textures/T_BM_de86965ec07c": "shared-stone",
+  "/Game/Belmonte/Textures/T_BM_f4df37bcee65": "shared-ground"
+ }
+}
