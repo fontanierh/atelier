@@ -29,6 +29,13 @@ objects = load('v2_migrate_objects_for_towns', 'tools/migrate/objects.py')
 TAGS = sorted(towns.REGIONS)
 
 
+def need(path: Path) -> Path:
+    """The town data are LFS files; a checkout without them (CI) skips these tests instead of failing."""
+    if not path.is_file() or records.is_lfs_pointer(path):
+        pytest.skip(f'{path.name} is not hydrated in this checkout')
+    return path
+
+
 @pytest.fixture(scope='module')
 def owners():
     return towns.package_records(ROOT)
@@ -36,6 +43,7 @@ def owners():
 
 @pytest.fixture(scope='module')
 def clearance():
+    need(towns.CLEARANCE)
     return towns.clearance_segments()
 
 
@@ -44,9 +52,7 @@ def state(owners, clearance):
     """{tag: (text, head, runtime data, classification of the groups the region's existing objects do not save)}."""
     out = {}
     for tag in TAGS:
-        runtime = towns.runtime_path(tag, ROOT)
-        if not runtime.is_file() or records.is_lfs_pointer(runtime):
-            pytest.skip(f'{runtime.name} is not hydrated in this checkout')
+        runtime = need(towns.runtime_path(tag, ROOT))
         text = towns.region_folder(tag, ROOT).joinpath('objects.toml').read_text()
         head = towns.split_head(text)
         data = json.loads(runtime.read_text())
