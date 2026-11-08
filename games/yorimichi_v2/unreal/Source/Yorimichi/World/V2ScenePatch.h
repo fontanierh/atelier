@@ -63,7 +63,8 @@ public:
     /** Runtime-region scenery groups saved in this map as one patch each, "<region tag>:<mesh name>" (for example
      *  brinecove:SM_BC_Ships_2_2, the wreck): ABelmonteRegion::Spawn skips only these, and its service still runs.
      *  Park pieces saved the same way (megapark:SM_MP_..., craterpark:SM_CP_...) are listed here too: ASuperUltraMegaPark::
-     *  Spawn skips only those render and collision pieces; the park's rails, zones and trees stay runtime. */
+     *  Spawn skips only those render and collision pieces; the park's rails, zones and trees stay runtime. The hippodrome's
+     *  meshes too (hippodrome:SM_HD_...): AHippodrome::Spawn skips only those, the course and its race service stay runtime. */
     UPROPERTY(EditAnywhere, Category = "V2") TArray<FString> MigratedGroups;
 
     static const AV2WorldManifest* Find(const UWorld* World);
@@ -121,6 +122,15 @@ public:
     static int32 MigrateParkPieces(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
         const TArray<FString>& Pieces, const TArray<bool>& IsCollision, const TArray<FString>& Units,
         TArray<AActor*>& OutCreated, int32& OutKept, FString& Error);
+    /** Saves the hippodrome's meshes (DataFile, hippodrome.json under Content/Data; AHippodrome::Spawn reads it) as objects:
+     *  one AV2ScenePatch per unit, at the course origin, holding for each of its meshes the component AHippodrome::MakePiece
+     *  builds. Pieces[i] is the mesh name of one of the file's meshes, listed once, and Units[i] the object it joins. The
+     *  pieces are listed in the map's manifest as Tag:mesh, so Spawn skips only them. A unit already saved (V2Id: region,
+     *  tag, unit) is kept as it is. Returns the number of actors created, or -1 with Error set; nothing changes on an error. */
+    UFUNCTION(BlueprintCallable, Category = "V2 Migration", meta = (WorldContext = "WorldContext"))
+    static int32 MigrateHippodromePieces(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
+        const TArray<FString>& Pieces, const TArray<FString>& Units, TArray<AActor*>& OutCreated, int32& OutKept,
+        FString& Error);
     /** Splits placed things out of the region's area patches (MigrateStaticScenery's, one key and mesh per cell): for
      *  each Objects[i], every component of the region's patches whose SourceKey is Keys[i] gives up its instances
      *  within ToleranceCm (in the plane) of PointsCm[i] to one new patch at that point (V2Id: region, key, "object",

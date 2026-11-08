@@ -17,6 +17,11 @@ of its park file (unreal/Content/Data/<park>/park.json) that the unit owns. UV2M
 as the unit's AV2ScenePatch at the park's placement, and ASuperUltraMegaPark::Spawn skips exactly those pieces. The
 entries are written by tools/migrate/parks.py.
 
+A `park` object of w15-hippodrome is one unit of the hippodrome: the meshes of its data file (unreal/Content/Data/
+hippodrome/hippodrome.json, its `meshes`) that the unit owns. UV2Migration::MigrateHippodromePieces saves them as the
+unit's AV2ScenePatch at the course origin, and AHippodrome::Spawn skips exactly those meshes. The data file's shape picks
+the migration: a park file has render and collision entries, the hippodrome file a meshes list.
+
 The claim holds the region's and the environment's scopes, the manifest's actor package, and each object record's
 two files; the created actor packages are bound to it by the build step.
 """
@@ -141,17 +146,46 @@ def claim_paths(game: Path, region_ids: list[str], *, only=None) -> dict[str, li
     return {'lock': sorted(lock), 'path': sorted(path)}
 
 
+def read_piece_file(region: str, data: str, game: Path) -> dict:
+    """The parsed data file of a region's unit objects (a park file or the hippodrome file), refused while it is missing or
+    still a Git LFS pointer."""
+    path = game / 'unreal/Content/Data' / data
+    if not path.is_file() or records.is_lfs_pointer(path):
+        raise ObjectError(f'{region}: {path} is missing or still a Git LFS pointer; fetch the data first')
+    try:
+        return json.loads(path.read_text())
+    except ValueError as error:
+        raise ObjectError(f'{region}: {path} is not JSON: {error}') from None
+
+
+def piece_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> tuple[str, dict]:
+    """(the plan list, its entry) of a region's unit objects: a park file's ("parks") or the hippodrome file's, which has a
+    meshes list ("hippodromes"). The file's shape picks the migration call the editor step makes."""
+    if 'meshes' in read_piece_file(region, data, game):
+        return 'hippodromes', hippodrome_plan(region, tag, data, units, game)
+    return 'parks', park_plan(region, tag, data, units, game)
+
+
+def hippodrome_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> dict:
+    """The plan entry of the hippodrome's unit objects: each mesh name and the unit it joins. Every name must be a mesh of
+    the hippodrome file (read here, so an unknown name is refused before the editor runs)."""
+    names = {entry['name'] for entry in read_piece_file(region, data, game).get('meshes', [])}
+    pieces, joined = [], []
+    for item in units:
+        unit = item['id'].rsplit('/', 1)[1]
+        for name in item['park']:
+            if name not in names:
+                raise ObjectError(f'{item["id"]}: {name} is no mesh of {data}')
+            pieces.append(name)
+            joined.append(unit)
+    return {'region': region, 'tag': tag, 'data': data, 'pieces': pieces, 'units': joined}
+
+
 def park_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> dict:
     """The plan entry of a region's park objects: each piece's mesh name, whether the park file makes it a collision
     piece, and the unit it joins. Every name must be a render or collision entry of the park file, and listed once (the
     load checks that too). The park file is read here, so an unknown name is refused before the editor runs."""
-    path = game / 'unreal/Content/Data' / data
-    if not path.is_file() or records.is_lfs_pointer(path):
-        raise ObjectError(f'{region}: {path} is missing or still a Git LFS pointer; fetch the park data first')
-    try:
-        spec = json.loads(path.read_text())
-    except ValueError as error:
-        raise ObjectError(f'{region}: {path} is not JSON: {error}') from None
+    spec = read_piece_file(region, data, game)
     kinds = {entry['name']: collision for kind, collision in (('render', False), ('collision', True))
              for entry in spec.get(kind, [])}
     pieces, is_collision, joined = [], [], []
@@ -193,7 +227,7 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     maps = {m for r in region_ids for m in by_id[r].maps}
     if len(maps) != 1:
         raise ObjectError(f'the regions must share exactly one map, not {sorted(maps)}')
-    wanted, groups, splits, parks = {}, [], [], []
+    wanted, groups, splits, parks, hippodromes = {}, [], [], [], []
     for rid in region_ids:
         listed = load_objects(by_id[rid])
         listed['objects'] = [item for item in listed['objects'] if 'patch' not in item]   # patch objects: promote()
@@ -214,18 +248,21 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
                            'tolerance_cm': SPLIT_TOLERANCE_CM})
         units = [item for item in listed['objects'] if 'park' in item]
         if units:
-            parks.append(park_plan(rid, listed['tag'], listed['data'], units, game))
+            kind, entry = piece_plan(rid, listed['tag'], listed['data'], units, game)
+            (parks if kind == 'parks' else hippodromes).append(entry)
         for item in listed['objects']:
             wanted[f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'] = (rid, item)
-    if (groups or parks) and not environment:
-        raise ObjectError('--environment is needed to save runtime-group and park objects (the manifest lists their meshes)')
-    environment = environment if groups or parks else None
+    unit_objects = bool(parks or hippodromes)
+    if (groups or unit_objects) and not environment:
+        raise ObjectError('--environment is needed to save runtime-group, park and hippodrome objects (the manifest lists '
+                          'their meshes)')
+    environment = environment if groups or unit_objects else None
     if claim:
         authority.creation_claim(claim, region_ids + ([environment] if environment else []), 'object migration')
     else:
         authority.authorize([], None, 'object migration')
     plan = {'map': maps.pop(), 'claim': claim, 'regions': [{'id': r} for r in region_ids], 'environment': environment,
-            'groups': groups, 'splits': splits, 'parks': parks}
+            'groups': groups, 'splits': splits, 'parks': parks, 'hippodromes': hippodromes}
     out.mkdir(parents=True, exist_ok=True)
     plan_file = out / 'objects-plan.json'
     plan_file.write_text(json.dumps(plan, indent=2, sort_keys=True) + '\n')
@@ -240,7 +277,7 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     created = sorted(set(authority.content_snapshot(game)) - set(before))
     made = record_objects(game, [(rid, item, saved[key]) for key, (rid, item) in sorted(wanted.items())], claim,
                           echo=echo)
-    if groups or parks:
+    if groups or unit_objects:
         save_validate.validate(game, environment, claim=claim, echo=echo)   # the manifest lists the saved groups and pieces
     for split in splits:   # its area patches gave up the split objects' instances
         save_validate.validate(game, split['region'], claim=claim, echo=echo)

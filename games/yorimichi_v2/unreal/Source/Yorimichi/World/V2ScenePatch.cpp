@@ -3,6 +3,7 @@
 #include "JapanGameplayCollisionWorld.h"
 #include "SkatePark.h"
 #include "SuperUltraMegaPark.h"
+#include "Hippodrome.h"
 #include "AtelierData.h"
 #include "BelmonteRegion.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -534,6 +535,106 @@ int32 UV2Migration::MigrateParkPieces(UObject* WorldContext, FName Region, FName
         Manifest->MarkPackageDirty();
     }
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s park: created %d, kept %d"), *Tag.ToString(), OutCreated.Num(), OutKept);
+    return OutCreated.Num();
+#else
+    Error = TEXT("editor only");
+    return -1;
+#endif
+}
+
+int32 UV2Migration::MigrateHippodromePieces(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
+    const TArray<FString>& Pieces, const TArray<FString>& Units, TArray<AActor*>& OutCreated, int32& OutKept, FString& Error)
+{
+    OutCreated.Reset(); OutKept = 0;
+#if WITH_EDITOR
+    UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+    if (!World || World->IsGameWorld()) { Error = TEXT("needs the editor world"); return -1; }
+    if (Region.IsNone() || Tag.IsNone() || Pieces.IsEmpty() || Units.Num() != Pieces.Num())
+    {
+        Error = TEXT("needs a region, its runtime tag, and one unit per piece");
+        return -1;
+    }
+    AV2WorldManifest* Manifest = nullptr;
+    for (TActorIterator<AV2WorldManifest> It(World); It; ++It) Manifest = *It;
+    if (!Manifest) { Error = TEXT("the map has no AV2WorldManifest"); return -1; }
+    const auto Data = AtelierReadJson(AtelierDataPath(DataFile));
+    if (!Data) { Error = DataFile + TEXT(" is missing or unreadable"); return -1; }
+    FString AssetRoot = TEXT("/Game/Hippodrome");
+    Data->TryGetStringField(TEXT("asset_root"), AssetRoot);
+    // Every listed piece is one mesh of this file, listed once.
+    TMap<FString, TSharedPtr<FJsonObject>> Entries;
+    for (const auto& Value : Data->GetArrayField(TEXT("meshes")))
+    {
+        const auto Entry = Value->AsObject();
+        Entries.Add(Entry->GetStringField(TEXT("name")), Entry);
+    }
+    TMap<FString, TArray<int32>> ByUnit;   // unit -> the indices of its pieces, in the order given
+    TArray<FString> Order;
+    TSet<FString> Seen;
+    for (int32 I = 0; I < Pieces.Num(); ++I)
+    {
+        const FString& Name = Pieces[I];
+        if (!Entries.Contains(Name)) { Error = Name + TEXT(" is no mesh of ") + DataFile; return -1; }
+        if (Seen.Contains(Name)) { Error = Name + TEXT(" is listed twice"); return -1; }
+        if (Units[I].IsEmpty()) { Error = Name + TEXT(" has no unit"); return -1; }
+        Seen.Add(Name);
+        if (!ByUnit.Contains(Units[I])) Order.Add(Units[I]);
+        ByUnit.FindOrAdd(Units[I]).Add(I);
+    }
+    // The course origin, where AHippodrome::Spawn places the actor (its meshes are offsets from it): Blender metres, Unreal cm.
+    const auto& O = Data->GetArrayField(TEXT("origin"));
+    if (O.Num() < 3) { Error = DataFile + TEXT(" has no origin"); return -1; }
+    const FVector Placement(O[0]->AsNumber() * 100., -O[1]->AsNumber() * 100., O[2]->AsNumber() * 100.);
+    TMap<FString, AV2ScenePatch*> Existing;
+    for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
+    for (const FString& Unit : Order)
+    {
+        const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
+        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        FActorSpawnParameters Params;
+        Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
+        AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Placement, FRotator::ZeroRotator, Params);
+        if (!Made) { Error = Unit + TEXT(": could not spawn its patch"); break; }
+        OutCreated.Add(Made);
+        Made->Region = Region; Made->SourceKey = Tag.ToString() + TEXT(":") + Unit; Made->V2Id = Id;
+        Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Unit, *Id));
+        Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
+        Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
+        for (const int32 I : ByUnit[Unit])
+        {
+            const FString& Name = Pieces[I];
+            auto* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
+            if (!Mesh) { Error = Name + TEXT(": its mesh is missing from V2 Content"); break; }
+            UStaticMeshComponent* C = AHippodrome::MakePiece(Made, Made->GetRootComponent(), Entries[Name], Mesh);
+            C->CreationMethod = EComponentCreationMethod::Instance;
+            Made->AddInstanceComponent(C);
+            C->RegisterComponent();
+        }
+        if (!Error.IsEmpty()) break;
+    }
+    if (!Error.IsEmpty())
+    {
+        for (AActor* Made : OutCreated) Made->Destroy();
+        OutCreated.Reset();
+        return -1;
+    }
+    for (AActor* Made : OutCreated)
+    {
+        AV2ScenePatch* Saved = CastChecked<AV2ScenePatch>(Made);
+        Saved->ExpectedMembers = Saved->Members();
+        Made->MarkPackageDirty();
+    }
+    // Saved meshes stay listed, kept units too: the runtime must never place a mesh this map saved.
+    TArray<FString> Listed = Manifest->MigratedGroups;
+    for (const FString& Name : Pieces) Listed.AddUnique(Tag.ToString() + TEXT(":") + Name);
+    Listed.Sort();
+    if (Listed != Manifest->MigratedGroups)
+    {
+        Manifest->Modify();
+        Manifest->MigratedGroups = MoveTemp(Listed);
+        Manifest->MarkPackageDirty();
+    }
+    UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s hippodrome pieces: created %d, kept %d"), *Tag.ToString(), OutCreated.Num(), OutKept);
     return OutCreated.Num();
 #else
     Error = TEXT("editor only");
