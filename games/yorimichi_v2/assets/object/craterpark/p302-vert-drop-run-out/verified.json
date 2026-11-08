@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p302-vert-drop-run-out",
+  "dependencies": {
+    "adopted/craterpark/p302-vert-drop-run-out": "85124d6236bf3e2f46f3634693cb4e525d9f8c3f4371e887b213761469fa8442"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/I0/NU03XDDOFIYDSD18VP9IR0.uasset": "ce2ac43b95036da3b9d8ba0f66ddc2e956d3d653f77327afc36fef0864c6d2c0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

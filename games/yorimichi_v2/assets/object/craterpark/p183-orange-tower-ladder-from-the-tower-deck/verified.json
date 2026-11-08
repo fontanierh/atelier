@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p183-orange-tower-ladder-from-the-tower-deck",
+  "dependencies": {
+    "adopted/craterpark/p183-orange-tower-ladder-from-the-tower-deck": "69a9f1031c3d2ac396d8fcf78431f5deb804d255c98af017142c7211624ebe54"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/2N/1MU08QDC2TR2RZ2M71TKXC.uasset": "1323171e62c63e14903ae1052b80d7753a7907467f5e24772f15b107201bb9e4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

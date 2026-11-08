@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p8-roll-in-rollin",
+  "dependencies": {
+    "adopted/craterpark/p8-roll-in-rollin": "d3c7e95fdd7a8e0e08c4718cf7370abe262b44c41f3d4b97497fe79f45df45ac"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/17/62NSIHR7ZGMUAEQS93DW30.uasset": "d831b2d39e33006f088c9bb80df121581e6843aeb4fa4819d8a1b3edc74420ce"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

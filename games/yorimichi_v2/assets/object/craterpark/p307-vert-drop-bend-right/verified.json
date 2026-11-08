@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p307-vert-drop-bend-right",
+  "dependencies": {
+    "adopted/craterpark/p307-vert-drop-bend-right": "d37f7ec1f5450caf41aa9c7ca88385af64524247bdcf3523c858fe27f5f3fb22"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/51/KH8XX0D8HCIWI118WGG4AN.uasset": "80be182cd16a88d7e6ed5b99f8ad76fb999982186d606c94a1ad711027588a00"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

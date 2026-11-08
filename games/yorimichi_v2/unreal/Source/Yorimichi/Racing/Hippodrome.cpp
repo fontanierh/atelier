@@ -8,6 +8,8 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Misc/PackageName.h"
+#include "V2ScenePatch.h"
 
 static TSharedPtr<FJsonObject> ReadHippodromeJson(const FString& Path)
 {
@@ -17,6 +19,19 @@ static TSharedPtr<FJsonObject> ReadHippodromeJson(const FString& Path)
 static FVector HorseJsonVector(const TArray<TSharedPtr<FJsonValue>>& A)
 {
     return FVector(A.Num() > 0 ? A[0]->AsNumber() : 0., A.Num() > 1 ? A[1]->AsNumber() : 0., A.Num() > 2 ? A[2]->AsNumber() : 0.);
+}
+
+// A mesh's place relative to the course origin, which is the actor's location: Blender metres to Unreal cm, as
+// FHippodromeCourse::World maps them, without the origin and height it adds.
+static FVector PieceOffset(const TSharedPtr<FJsonObject>& Entry)
+{
+    const FVector At = HorseJsonVector(Entry->GetArrayField(TEXT("at")));
+    return FVector(At.X * 100., -At.Y * 100., At.Z * 100.);
+}
+
+static FRotator PieceRotation(const TSharedPtr<FJsonObject>& Entry)
+{
+    return FRotator(0, -Entry->GetNumberField(TEXT("yaw")), 0);
 }
 
 // ------------------------------------------------------------------------------------------------------------ Course
@@ -62,6 +77,19 @@ AHippodrome* AHippodrome::Spawn(UWorld* World, const FString& Path)
     return H;
 }
 
+UStaticMeshComponent* AHippodrome::MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
+    UStaticMesh* Mesh)
+{
+    bool bBlocks = true; Entry->TryGetBoolField(TEXT("blocks"), bBlocks);
+    auto* Component = NewObject<UStaticMeshComponent>(Outer, *Entry->GetStringField(TEXT("name")));
+    Component->SetStaticMesh(Mesh); Component->SetupAttachment(Parent);
+    Component->SetRelativeLocationAndRotation(PieceOffset(Entry), PieceRotation(Entry));
+    Component->SetCollisionEnabled(bBlocks ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+    Component->SetCollisionResponseToAllChannels(ECR_Block);
+    Component->SetCanEverAffectNavigation(false);
+    return Component;
+}
+
 AHippodrome* AHippodrome::Find(const UObject* WorldContext)
 {
     UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
@@ -85,27 +113,41 @@ bool AHippodrome::Initialize(const FString& Path)
     Course.FinishX = C->GetNumberField(TEXT("finish_x"));
     SetActorLocation(Course.World(O.X, O.Y));
     Tags.AddUnique(TEXT("hippodrome"));
+    // Meshes a saved unit holds (UV2Migration::MigrateHippodromePieces) are not placed again: the map's manifest lists them
+    // as "hippodrome:<mesh>". A standalone map has no manifest and places every mesh, as before.
+    const AV2WorldManifest* Manifest = AV2WorldManifest::Find(GetWorld());
+    const FName SavedTag(TEXT("hippodrome"));
     int32 Placed = 0;
     Course.Grounds = FBox(ForceInit);
     for (const TSharedPtr<FJsonValue>& Entry : Root_->GetArrayField(TEXT("meshes")))
     {
         const TSharedPtr<FJsonObject>& M = Entry->AsObject();
         const FString Name = M->GetStringField(TEXT("name"));
-        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
-        if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Hippodrome: mesh %s is not imported"), *Name); continue; }
-        const FVector At = HorseJsonVector(M->GetArrayField(TEXT("at")));
-        bool bBlocks = true; M->TryGetBoolField(TEXT("blocks"), bBlocks);
-        auto* Component = NewObject<UStaticMeshComponent>(this, *Name);
-        Component->SetStaticMesh(Mesh); Component->SetupAttachment(RootComponent);
-        Component->SetWorldLocationAndRotation(Course.World(O.X + At.X, O.Y + At.Y, At.Z), FRotator(0, -M->GetNumberField(TEXT("yaw")), 0));
-        Component->SetCollisionEnabled(bBlocks ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
-        Component->SetCollisionResponseToAllChannels(ECR_Block);
-        Component->SetCanEverAffectNavigation(false);
-        Component->RegisterComponent(); ++Placed;
         FString LogicalParent;
         M->TryGetStringField(TEXT("logical_parent"), LogicalParent);
-        if (Name == TEXT("SM_HD_Ground") || LogicalParent == TEXT("SM_HD_Ground"))
-            Course.Grounds += Component->Bounds.GetBox();
+        const bool bGround = Name == TEXT("SM_HD_Ground") || LogicalParent == TEXT("SM_HD_Ground");
+        if (Manifest && Manifest->CoversGroup(SavedTag, Name))
+        {
+            // Its saved unit draws it; its mesh must still be committed content (checked without loading it). The
+            // ground's bounds, which the racing course reads, come from its mesh at the place the course gives it.
+            if (!FPackageName::DoesPackageExist(FString::Printf(TEXT("%s/%s"), *AssetRoot, *Name)))
+            {
+                UE_LOG(LogTemp, Error, TEXT("Hippodrome: saved mesh %s is missing"), *Name);
+                continue;
+            }
+            ++Placed;
+            if (bGround)
+            {
+                if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name)))
+                    Course.Grounds += Mesh->GetBounds().TransformBy(FTransform(PieceRotation(M), GetActorLocation() + PieceOffset(M))).GetBox();
+            }
+            continue;
+        }
+        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
+        if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Hippodrome: mesh %s is not imported"), *Name); continue; }
+        auto* Component = MakePiece(this, RootComponent, M, Mesh);
+        Component->RegisterComponent(); ++Placed;
+        if (bGround) Course.Grounds += Component->Bounds.GetBox();
     }
     RootComponent->SetMobility(EComponentMobility::Static);
     bGameplayReady = Placed > 0 && Placed == Root_->GetArrayField(TEXT("meshes")).Num();

@@ -1,0 +1,12 @@
+{
+  "asset": "object/megapark/cell-x250-zm750",
+  "dependencies": {
+    "adopted/megapark/cell-x250-zm750": "1373b988d24ed6a281ace57ce311ac7ba5226fe6040c0c5664436790cc9a6667"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/8Q/B7ON0ZEY1STY1FDZU7SAOZ.uasset": "cd968897a0b88ead816a4c053603c28164b06067aeedd8426e5f5d86dbbc8ae2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/megapark/seam",
+  "dependencies": {
+    "adopted/megapark/seam": "b39454605f0810ae2ec9c3bc1635de1f17c81edd8b3d40313fbe3a6e8d9413f7"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/1E/ZMITYDA0SIC19EKTFW8J5K.uasset": "a624f8fa670b239bcc2da23df640642e437f57c780a9dd0022210cdaa2e7e9ec"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

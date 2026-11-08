@@ -21,6 +21,8 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Misc/PackageName.h"
+#include "V2ScenePatch.h"
 
 ASuperUltraMegaPark::ASuperUltraMegaPark()
 {
@@ -38,6 +40,24 @@ void ASuperUltraMegaPark::BeginPlay()
 static FVector JsonVector(const TArray<TSharedPtr<FJsonValue>>& A)
 {
     return A.Num() >= 3 ? FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()) : FVector::ZeroVector;
+}
+
+UStaticMeshComponent* ASuperUltraMegaPark::MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
+    UStaticMesh* Mesh, bool bCollision)
+{
+    const FString Name = Entry->GetStringField(TEXT("name"));
+    auto* C = NewObject<UStaticMeshComponent>(Outer, *Name);
+    C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(Parent);
+    C->SetRelativeLocation(JsonVector(Entry->GetArrayField(TEXT("origin_cm"))));
+    C->SetCanEverAffectNavigation(false);
+    if (bCollision)
+    {
+        // The original riding surfaces: invisible and blocking (the riding traces and the skating ground read them).
+        C->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+        C->SetVisibility(false); C->SetHiddenInGame(true); C->SetCastShadow(false);
+    }
+    else C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    return C;
 }
 
 ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Path)
@@ -60,6 +80,10 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     Root->TryGetStringField(TEXT("mesh_root"), MeshRoot);
     Root->TryGetStringField(TEXT("name"), Tag);
     Root->TryGetBoolField(TEXT("rails_required"), bRailsRequired);
+    // Pieces a saved unit holds (UV2Migration::MigrateParkPieces) are not spawned again: the map's manifest lists them as
+    // "<tag>:<mesh>". A standalone park map has no manifest and spawns every piece, as before.
+    const AV2WorldManifest* Manifest = AV2WorldManifest::Find(World);
+    const FName SavedTag(*Tag.ToLower());
     int32 Meshes = 0, Missing = 0;
     for (const TCHAR* Kind : {TEXT("render"), TEXT("collision")})
     {
@@ -68,20 +92,16 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         {
             const TSharedPtr<FJsonObject> Entry = Value->AsObject();
             const FString Name = Entry->GetStringField(TEXT("name"));
+            if (Manifest && Manifest->CoversGroup(SavedTag, Name))
+            {
+                // Its saved unit draws it; its mesh must still be committed content (checked without loading it).
+                if (FPackageName::DoesPackageExist(FString::Printf(TEXT("%s/%s"), *MeshRoot, *Name))) ++Meshes;
+                else { ++Missing; UE_LOG(LogTemp, Error, TEXT("%s missing saved piece %s"), *Tag, *Name); }
+                continue;
+            }
             UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *MeshRoot, *Name, *Name));
             if (!Mesh) { ++Missing; continue; }
-            auto* C = NewObject<UStaticMeshComponent>(Park, *Name);
-            C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(Park->GetRootComponent());
-            C->SetRelativeLocation(JsonVector(Entry->GetArrayField(TEXT("origin_cm"))));
-            C->SetCanEverAffectNavigation(false);
-            if (bCollision)
-            {
-                // The original riding surfaces: invisible, blocking, and read by the skating snapshot.
-                C->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
-                C->SetVisibility(false); C->SetHiddenInGame(true); C->SetCastShadow(false);
-            }
-            else C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-            C->RegisterComponent(); ++Meshes;
+            MakePiece(Park, Park->GetRootComponent(), Entry, Mesh, bCollision)->RegisterComponent(); ++Meshes;
         }
     }
     for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("rails")))

@@ -48,3 +48,11 @@ split = {key = "Pole_Lamp", at = [-76.9, -66.56]}
 model = "adopted/japan/assets/pole"
 about = "Pole_Lamp 1 of 1 in w04-pier-approach, placed at (-76.9, -66.56) m"
 
+
+# The pier skatepark scenery (ASkatePark: SkatePark.Scenery), saved in one patch: promoted, bytes unchanged. Its rails
+# and spawns stay runtime (MigratedServices).
+[[objects]]
+id = "object/pier/skatepark"
+patch = "45dc277827164f31"
+model = "adopted/skatepark/loose_files"
+about = "the pier skatepark (pier, features, furniture, planting, decals)"

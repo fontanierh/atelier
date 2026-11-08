@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p37-gap-30-m-g4",
+  "dependencies": {
+    "adopted/craterpark/p37-gap-30-m-g4": "4a90aa1fcc42f74b608ecb9ec2a5de87d433d6a4cae2d6818fd7ee79dade70b1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/RO/9GE8V3OT5OWW474K9MDI2N.uasset": "463643eb4c766acbf3259210796247579a64df1c724a498851725c56a75edbdd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

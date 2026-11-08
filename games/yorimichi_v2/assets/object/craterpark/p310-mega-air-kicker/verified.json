@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p310-mega-air-kicker",
+  "dependencies": {
+    "adopted/craterpark/p310-mega-air-kicker": "4aa8b9b09800a518ee60bb0ba9053ee656511fd6e8a11be734c37ae7c4cf59b4"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/OW/ZJ7BOUGZ11Z8JLL27LV9N0.uasset": "9768c69fe9d1813b81d542397140894176f7bd260b0f7a01e8b63c5115b6e89e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

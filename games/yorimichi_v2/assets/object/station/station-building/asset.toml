@@ -1,0 +1,21 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): the Hidamari station building (HD_Station: one placement, cut into four cells).
+# Its placement is these 4 actor packages (its cells); its model is adopted/experiments/citysurfaces/v1-128m/station-m1-m1, adopted/experiments/citysurfaces/v1-128m/station-m1-0, adopted/experiments/citysurfaces/v1-128m/station-0-m1, adopted/experiments/citysurfaces/v1-128m/station-0-0. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/station-building"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/experiments/citysurfaces/v1-128m/station-m1-m1", "adopted/experiments/citysurfaces/v1-128m/station-m1-0", "adopted/experiments/citysurfaces/v1-128m/station-0-m1", "adopted/experiments/citysurfaces/v1-128m/station-0-0"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/NF/P5JMNK8S2UZWW2PF21DXC7"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/RK/WDPL6JC9MKQSC7YSEN5X4Y"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/WE/OBM9OD6TW6FKFK2JASZ08Q"
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/K8/NISBP59GCG2FROYGZFN1RN"

@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p56-in",
+  "dependencies": {
+    "adopted/craterpark/p56-in": "ba88f387a563105d9b03981ec7796a0e460452cda79ecd3b4e81abb205dfee95"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/XP/34AT9BA358FV9QTLONEVXB.uasset": "ff4a240dccf5961546a623a1b565621f99a0c2b80440e1204b3339087db46214"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

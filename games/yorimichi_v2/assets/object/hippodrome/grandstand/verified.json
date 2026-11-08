@@ -1,0 +1,12 @@
+{
+  "asset": "object/hippodrome/grandstand",
+  "dependencies": {
+    "adopted/hippodrome/loose_files": "98dc9fa9bd9d7f3d4006b826b021699fb8a56c6e13761279cef31e94f7cec836"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/43/MV6NW2Y43X6UG59VJUH515.uasset": "37b0f565caa0cc2a8fbafd979fa67174f107fdccc07208b94bdfd72927ebf4da"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

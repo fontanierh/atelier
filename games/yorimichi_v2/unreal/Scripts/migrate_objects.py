@@ -6,9 +6,15 @@
             (one actor per object)
   splits    [{region, tag, keys, objects, points_cm, tolerance_cm}]: placed things of the region's area patches (each
             object's source key and point) that become actors of their own (UV2Migration.SplitPatchObjects)
+  parks     [{region, tag, data, pieces, is_collision, units}]: a park's render and collision meshes, each with its
+            unit (one actor per unit) and whether it is a collision piece (UV2Migration.MigrateParkPieces)
+  hippodromes  [{region, tag, data, pieces, units}]: the hippodrome's meshes, each with its unit (one actor per unit;
+            UV2Migration.MigrateHippodromePieces)
 UV2Migration.MigrateRegionGroups builds each patch with the runtime's own component code and lists the group in the
 map's manifest, so the runtime skips only those groups. A group already saved is kept as it is, edits included: a
 rerun creates nothing. Prints each object's actor package for its record.
+A park unit is always loaded, as the runtime park is spawned with the island whatever the distance, so its actor is
+not spatially loaded. The hippodrome unit is the same: it is spawned with the island (the Hippodrome service).
 """
 import json
 import os
@@ -38,6 +44,29 @@ for group in plan.get('groups', []):
     created += actors
     kept += reused
     keys |= {f'{group["tag"]}:{name}' for name in group['objects']}
+for park in plan.get('parks', []):
+    count, actors, reused, error = U.V2Migration.migrate_park_pieces(
+        world, U.Name(park['region']), U.Name(park['tag']), park['data'], list(park['pieces']),
+        [bool(c) for c in park['is_collision']], list(park['units']))
+    if count < 0:
+        raise RuntimeError(f'MigrateParkPieces {park["tag"]}: {error}')
+    for actor in actors:
+        # The runtime park is spawned with the island, whatever the distance: its saved units load with the map too.
+        actor.set_editor_property('is_spatially_loaded', False)
+    created += actors
+    kept += reused
+    keys |= {f'{park["tag"]}:{unit}' for unit in park['units']}
+for hippodrome in plan.get('hippodromes', []):
+    count, actors, reused, error = U.V2Migration.migrate_hippodrome_pieces(
+        world, U.Name(hippodrome['region']), U.Name(hippodrome['tag']), hippodrome['data'], list(hippodrome['pieces']),
+        list(hippodrome['units']))
+    if count < 0:
+        raise RuntimeError(f'MigrateHippodromePieces {hippodrome["tag"]}: {error}')
+    for actor in actors:
+        actor.set_editor_property('is_spatially_loaded', False)
+    created += actors
+    kept += reused
+    keys |= {f'{hippodrome["tag"]}:{unit}' for unit in hippodrome['units']}
 for split in plan.get('splits', []):
     count, actors, changed, reused, error = U.V2Migration.split_patch_objects(
         world, U.Name(split['region']), U.Name(split['tag']), list(split['keys']), list(split['objects']),

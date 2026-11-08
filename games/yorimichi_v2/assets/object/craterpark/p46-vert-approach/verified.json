@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p46-vert-approach",
+  "dependencies": {
+    "adopted/craterpark/p46-vert-approach": "6c65e5803ca2e48f77f8de737112a55cf77fbea12eafbf96e70be3786b7c6450"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/PQ/S6162R6BX6FWKU5PE2UZEP.uasset": "31f2e8596279c7b7164f51caa2e428c4f34b35241fa1444fb1684d1280bc4378"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

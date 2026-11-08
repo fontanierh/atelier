@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p305-vert-launch-no-assist",
+  "dependencies": {
+    "adopted/craterpark/p305-vert-launch-no-assist": "b814fcaf2969b1389ab6cff1800b6b484f19c20ebf1ad1f9ef0f598011468a77"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/MG/T1F8QV85NBLS1SGW2LAY0X.uasset": "fe3c5b26dcda66df4751ba37d9744ba16f7a175660e04d54de61e6ad2ba661b9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

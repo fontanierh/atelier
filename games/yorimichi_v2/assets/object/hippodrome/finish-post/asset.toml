@@ -1,0 +1,12 @@
+# One saved object of region/w15-hippodrome (tools/migrate/objects.py, from its objects.toml): the Hippodrome finish post, on the home straight.
+# Its placement is this actor package; its model is adopted/hippodrome/loose_files. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/hippodrome/finish-post"
+kind = "placement"
+authority = "editor"
+owner = "region/w15-hippodrome"
+references = ["adopted/hippodrome/loose_files"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/8O/4X31270UMZ35S5TNW7XB67"

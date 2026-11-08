@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/crater-floor-4-5",
+  "dependencies": {
+    "adopted/craterpark/crater-floor-4-5": "a07f7f000865b4d355db39cace6af64c0aa1fe380865e965bcc76e38aa902ac0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/SE/M01JLSKHJNFG3HIAPV1YXT.uasset": "ba24293fe03fff905f58a6d24fefe16ee192ee31b2885d65b4ab9895a7913267"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
