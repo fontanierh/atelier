@@ -76,7 +76,8 @@ def expected_instances(data: dict) -> dict[str, int]:
     """{group key: instances the runtime places}, with the runtime's own filters as towns.py mirrors them (district
     bounds for scenery, gondola clearance for plants) and its cell pieces, so a saved group drawing fewer is missing
     geometry."""
-    segments = towns.clearance_segments()
+    # Only plant groups are clipped by the gondola clearance.
+    segments = towns.clearance_segments() if any(e['plant'] for e in data['groups']) else []
     counts = {}
     for entry, key in zip(data['groups'], towns.group_keys(data)):
         cells = towns.kept_cells(data, entry, segments)
