@@ -70,6 +70,11 @@ def load_objects(region) -> dict:
                                   or not isinstance(split['key'], str) or len(split['at']) != 2
                                   or not all(isinstance(v, (int, float)) for v in split['at'])):
             raise ObjectError(f'{path}: {item["id"]}: split needs key = "..." and at = [x, y], not {split}')
+        models = [item['model']] if isinstance(item['model'], str) else item['model']
+        if (not isinstance(models, list) or not models or len(set(models)) != len(models)
+                or not all(isinstance(m, str) and records.ID.match(m) for m in models)):
+            raise ObjectError(f'{path}: {item["id"]}: model is one record id or a list of distinct record ids, not {item["model"]}')
+        item['models'] = models
         item['groups'] = [item.pop('group')] if 'group' in item else list(item.get('groups', []))
     for values in ([i['patch'] for i in objects if 'patch' in i],
                    [(i['split']['key'], *i['split']['at']) for i in objects if 'split' in i]):
@@ -85,10 +90,15 @@ def load_objects(region) -> dict:
 def record_text(item: dict, region: str, package: str) -> str:
     return '\n'.join([
         f'# One saved object of {region} (tools/migrate/objects.py, from its objects.toml): {item["about"]}.',
-        f'# Its placement is this actor package; its model is {item["model"]}. Edit it in the editor and save-validate',
+        f'# Its placement is this actor package; its model is {", ".join(models_of(item))}. Edit it in the editor and save-validate',
         '# this record: the region\'s other objects and actors are not part of it.',
         'schema = 1', f'id = "{item["id"]}"', 'kind = "placement"', 'authority = "editor"', f'owner = "{region}"',
-        f'references = ["{item["model"]}"]', '', '[[outputs]]', f'package = "{package}"', ''])
+        'references = [' + ', '.join(f'"{m}"' for m in models_of(item)) + ']', '', '[[outputs]]', f'package = "{package}"', ''])
+
+
+def models_of(item: dict) -> list[str]:
+    """The model records of an object: its `model` (one record id) or `model` as a list (a shop cut into cells)."""
+    return [item['model']] if isinstance(item['model'], str) else list(item['model'])
 
 
 def claim_paths(game: Path, region_ids: list[str], *, only=None) -> dict[str, list[str]]:

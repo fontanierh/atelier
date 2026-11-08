@@ -1,6 +1,6 @@
 # Hidamari station objects that leave their area patches (tools/migrate/objects.py split; UV2Migration::SplitPatchObjects):
 # each is one placed instance of its key in city.json (metres), found within 50 cm of its source point.
-# The fused city-surface pieces (HD_Shop_* _cell_ meshes, streets, squares) stay area patches.
+# HD_Shop_* placements are instances of their type (tools/migrate/shop_objects.py): one object per shop, its model the type's mesh.
 schema = 1
 tag = "station"
 data = ""
@@ -456,6 +456,84 @@ model = "adopted/experiments/citysurfaces/v1-128m/house-03"
 about = "HD_House_03 13 of 13 in w07-hidamari-station, placed at (1217.09, -54.5) m"
 
 [[objects]]
+id = "object/station/hd-shop-00-01"
+split = {key = "HD_Shop_00", at = [941, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+about = "HD_Shop_00 1 of 3 in w07-hidamari-station, placed at (941, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-00-02"
+split = {key = "HD_Shop_00", at = [941, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+about = "HD_Shop_00 2 of 3 in w07-hidamari-station, placed at (941, 159) m"
+
+[[objects]]
+id = "object/station/hd-shop-00-03"
+split = {key = "HD_Shop_00", at = [1184, 211]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+about = "HD_Shop_00 3 of 3 in w07-hidamari-station, placed at (1184, 211) m"
+
+[[objects]]
+id = "object/station/hd-shop-01-01"
+split = {key = "HD_Shop_01", at = [967.333, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+about = "HD_Shop_01 1 of 5 in w07-hidamari-station, placed at (967.333, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-01-02"
+split = {key = "HD_Shop_01", at = [967.333, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+about = "HD_Shop_01 2 of 5 in w07-hidamari-station, placed at (967.333, 159) m"
+
+[[objects]]
+id = "object/station/hd-shop-01-03"
+split = {key = "HD_Shop_01", at = [1157, -4]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+about = "HD_Shop_01 3 of 5 in w07-hidamari-station, placed at (1157, -4) m"
+
+[[objects]]
+id = "object/station/hd-shop-01-04"
+split = {key = "HD_Shop_01", at = [1157, 34]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+about = "HD_Shop_01 4 of 5 in w07-hidamari-station, placed at (1157, 34) m"
+
+[[objects]]
+id = "object/station/hd-shop-01-05"
+split = {key = "HD_Shop_01", at = [1211, 211]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+about = "HD_Shop_01 5 of 5 in w07-hidamari-station, placed at (1211, 211) m"
+
+[[objects]]
+id = "object/station/hd-shop-02-01"
+split = {key = "HD_Shop_02", at = [941, -71]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+about = "HD_Shop_02 1 of 5 in w07-hidamari-station, placed at (941, -71) m"
+
+[[objects]]
+id = "object/station/hd-shop-02-02"
+split = {key = "HD_Shop_02", at = [993.667, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+about = "HD_Shop_02 2 of 5 in w07-hidamari-station, placed at (993.667, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-02-03"
+split = {key = "HD_Shop_02", at = [993.667, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+about = "HD_Shop_02 3 of 5 in w07-hidamari-station, placed at (993.667, 159) m"
+
+[[objects]]
+id = "object/station/hd-shop-02-04"
+split = {key = "HD_Shop_02", at = [1184, -4]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+about = "HD_Shop_02 4 of 5 in w07-hidamari-station, placed at (1184, -4) m"
+
+[[objects]]
+id = "object/station/hd-shop-02-05"
+split = {key = "HD_Shop_02", at = [1184, 34]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+about = "HD_Shop_02 5 of 5 in w07-hidamari-station, placed at (1184, 34) m"
+
+[[objects]]
 id = "object/station/hd-shop-03-01"
 split = {key = "HD_Shop_03", at = [967.333, -71]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
@@ -486,6 +564,24 @@ model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
 about = "HD_Shop_03 5 of 5 in w07-hidamari-station, placed at (1211, 34) m"
 
 [[objects]]
+id = "object/station/hd-shop-04-01"
+split = {key = "HD_Shop_04", at = [993.667, -71]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+about = "HD_Shop_04 1 of 3 in w07-hidamari-station, placed at (993.667, -71) m"
+
+[[objects]]
+id = "object/station/hd-shop-04-02"
+split = {key = "HD_Shop_04", at = [1046.333, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+about = "HD_Shop_04 2 of 3 in w07-hidamari-station, placed at (1046.333, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-04-03"
+split = {key = "HD_Shop_04", at = [1046.333, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+about = "HD_Shop_04 3 of 3 in w07-hidamari-station, placed at (1046.333, 159) m"
+
+[[objects]]
 id = "object/station/hd-shop-05-01"
 split = {key = "HD_Shop_05", at = [941, 56]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
@@ -505,21 +601,51 @@ about = "HD_Shop_05 3 of 6 in w07-hidamari-station, placed at (1020, -71) m"
 
 [[objects]]
 id = "object/station/hd-shop-05-04"
-split = {key = "HD_Shop_05", at = [1072.67, 121]}
+split = {key = "HD_Shop_05", at = [1072.667, 121]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
-about = "HD_Shop_05 4 of 6 in w07-hidamari-station, placed at (1072.67, 121) m"
+about = "HD_Shop_05 4 of 6 in w07-hidamari-station, placed at (1072.667, 121) m"
 
 [[objects]]
 id = "object/station/hd-shop-05-05"
-split = {key = "HD_Shop_05", at = [1072.67, 159]}
+split = {key = "HD_Shop_05", at = [1072.667, 159]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
-about = "HD_Shop_05 5 of 6 in w07-hidamari-station, placed at (1072.67, 159) m"
+about = "HD_Shop_05 5 of 6 in w07-hidamari-station, placed at (1072.667, 159) m"
 
 [[objects]]
 id = "object/station/hd-shop-05-06"
 split = {key = "HD_Shop_05", at = [1143, 249]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
 about = "HD_Shop_05 6 of 6 in w07-hidamari-station, placed at (1143, 249) m"
+
+[[objects]]
+id = "object/station/hd-shop-06-01"
+split = {key = "HD_Shop_06", at = [967.333, 56]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+about = "HD_Shop_06 1 of 5 in w07-hidamari-station, placed at (967.333, 56) m"
+
+[[objects]]
+id = "object/station/hd-shop-06-02"
+split = {key = "HD_Shop_06", at = [967.333, 94]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+about = "HD_Shop_06 2 of 5 in w07-hidamari-station, placed at (967.333, 94) m"
+
+[[objects]]
+id = "object/station/hd-shop-06-03"
+split = {key = "HD_Shop_06", at = [1046.333, -71]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+about = "HD_Shop_06 3 of 5 in w07-hidamari-station, placed at (1046.333, -71) m"
+
+[[objects]]
+id = "object/station/hd-shop-06-04"
+split = {key = "HD_Shop_06", at = [1099, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+about = "HD_Shop_06 4 of 5 in w07-hidamari-station, placed at (1099, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-06-05"
+split = {key = "HD_Shop_06", at = [1099, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+about = "HD_Shop_06 5 of 5 in w07-hidamari-station, placed at (1099, 159) m"
 
 [[objects]]
 id = "object/station/hd-shop-07-01"
@@ -541,9 +667,135 @@ about = "HD_Shop_07 3 of 4 in w07-hidamari-station, placed at (993.667, 94) m"
 
 [[objects]]
 id = "object/station/hd-shop-07-04"
-split = {key = "HD_Shop_07", at = [1072.67, -71]}
+split = {key = "HD_Shop_07", at = [1072.667, -71]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
-about = "HD_Shop_07 4 of 4 in w07-hidamari-station, placed at (1072.67, -71) m"
+about = "HD_Shop_07 4 of 4 in w07-hidamari-station, placed at (1072.667, -71) m"
+
+[[objects]]
+id = "object/station/hd-shop-08-01"
+split = {key = "HD_Shop_08", at = [967.333, 211]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+about = "HD_Shop_08 1 of 6 in w07-hidamari-station, placed at (967.333, 211) m"
+
+[[objects]]
+id = "object/station/hd-shop-08-02"
+split = {key = "HD_Shop_08", at = [1020, 56]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+about = "HD_Shop_08 2 of 6 in w07-hidamari-station, placed at (1020, 56) m"
+
+[[objects]]
+id = "object/station/hd-shop-08-03"
+split = {key = "HD_Shop_08", at = [1020, 94]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+about = "HD_Shop_08 3 of 6 in w07-hidamari-station, placed at (1020, 94) m"
+
+[[objects]]
+id = "object/station/hd-shop-08-04"
+split = {key = "HD_Shop_08", at = [1099, -71]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+about = "HD_Shop_08 4 of 6 in w07-hidamari-station, placed at (1099, -71) m"
+
+[[objects]]
+id = "object/station/hd-shop-08-05"
+split = {key = "HD_Shop_08", at = [1157, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+about = "HD_Shop_08 5 of 6 in w07-hidamari-station, placed at (1157, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-08-06"
+split = {key = "HD_Shop_08", at = [1157, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+about = "HD_Shop_08 6 of 6 in w07-hidamari-station, placed at (1157, 159) m"
+
+[[objects]]
+id = "object/station/hd-shop-09-01"
+split = {key = "HD_Shop_09", at = [941, -4]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+about = "HD_Shop_09 1 of 7 in w07-hidamari-station, placed at (941, -4) m"
+
+[[objects]]
+id = "object/station/hd-shop-09-02"
+split = {key = "HD_Shop_09", at = [941, 34]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+about = "HD_Shop_09 2 of 7 in w07-hidamari-station, placed at (941, 34) m"
+
+[[objects]]
+id = "object/station/hd-shop-09-03"
+split = {key = "HD_Shop_09", at = [993.667, 211]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+about = "HD_Shop_09 3 of 7 in w07-hidamari-station, placed at (993.667, 211) m"
+
+[[objects]]
+id = "object/station/hd-shop-09-04"
+split = {key = "HD_Shop_09", at = [1046.333, 56]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+about = "HD_Shop_09 4 of 7 in w07-hidamari-station, placed at (1046.333, 56) m"
+
+[[objects]]
+id = "object/station/hd-shop-09-05"
+split = {key = "HD_Shop_09", at = [1046.333, 94]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+about = "HD_Shop_09 5 of 7 in w07-hidamari-station, placed at (1046.333, 94) m"
+
+[[objects]]
+id = "object/station/hd-shop-09-06"
+split = {key = "HD_Shop_09", at = [1184, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+about = "HD_Shop_09 6 of 7 in w07-hidamari-station, placed at (1184, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-09-07"
+split = {key = "HD_Shop_09", at = [1184, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+about = "HD_Shop_09 7 of 7 in w07-hidamari-station, placed at (1184, 159) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-01"
+split = {key = "HD_Shop_10", at = [967.333, -4]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 1 of 8 in w07-hidamari-station, placed at (967.333, -4) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-02"
+split = {key = "HD_Shop_10", at = [967.333, 34]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 2 of 8 in w07-hidamari-station, placed at (967.333, 34) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-03"
+split = {key = "HD_Shop_10", at = [1020, 211]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 3 of 8 in w07-hidamari-station, placed at (1020, 211) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-04"
+split = {key = "HD_Shop_10", at = [1072.667, 56]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 4 of 8 in w07-hidamari-station, placed at (1072.667, 56) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-05"
+split = {key = "HD_Shop_10", at = [1072.667, 94]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 5 of 8 in w07-hidamari-station, placed at (1072.667, 94) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-06"
+split = {key = "HD_Shop_10", at = [1157, -71]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 6 of 8 in w07-hidamari-station, placed at (1157, -71) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-07"
+split = {key = "HD_Shop_10", at = [1211, 121]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 7 of 8 in w07-hidamari-station, placed at (1211, 121) m"
+
+[[objects]]
+id = "object/station/hd-shop-10-08"
+split = {key = "HD_Shop_10", at = [1211, 159]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+about = "HD_Shop_10 8 of 8 in w07-hidamari-station, placed at (1211, 159) m"
 
 [[objects]]
 id = "object/station/hd-shop-11-01"
@@ -559,9 +811,9 @@ about = "HD_Shop_11 2 of 7 in w07-hidamari-station, placed at (993.667, 34) m"
 
 [[objects]]
 id = "object/station/hd-shop-11-03"
-split = {key = "HD_Shop_11", at = [1046.33, 211]}
+split = {key = "HD_Shop_11", at = [1046.333, 211]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
-about = "HD_Shop_11 3 of 7 in w07-hidamari-station, placed at (1046.33, 211) m"
+about = "HD_Shop_11 3 of 7 in w07-hidamari-station, placed at (1046.333, 211) m"
 
 [[objects]]
 id = "object/station/hd-shop-11-04"
@@ -588,16 +840,40 @@ model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
 about = "HD_Shop_11 7 of 7 in w07-hidamari-station, placed at (1219.5, 249) m"
 
 [[objects]]
+id = "object/station/hd-shop-12-01"
+split = {key = "HD_Shop_12", at = [1020, -4]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+about = "HD_Shop_12 1 of 4 in w07-hidamari-station, placed at (1020, -4) m"
+
+[[objects]]
+id = "object/station/hd-shop-12-02"
+split = {key = "HD_Shop_12", at = [1020, 34]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+about = "HD_Shop_12 2 of 4 in w07-hidamari-station, placed at (1020, 34) m"
+
+[[objects]]
+id = "object/station/hd-shop-12-03"
+split = {key = "HD_Shop_12", at = [1072.667, 211]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+about = "HD_Shop_12 3 of 4 in w07-hidamari-station, placed at (1072.667, 211) m"
+
+[[objects]]
+id = "object/station/hd-shop-12-04"
+split = {key = "HD_Shop_12", at = [1211, -71]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+about = "HD_Shop_12 4 of 4 in w07-hidamari-station, placed at (1211, -71) m"
+
+[[objects]]
 id = "object/station/hd-shop-13-01"
-split = {key = "HD_Shop_13", at = [1046.33, -4]}
+split = {key = "HD_Shop_13", at = [1046.333, -4]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
-about = "HD_Shop_13 1 of 5 in w07-hidamari-station, placed at (1046.33, -4) m"
+about = "HD_Shop_13 1 of 5 in w07-hidamari-station, placed at (1046.333, -4) m"
 
 [[objects]]
 id = "object/station/hd-shop-13-02"
-split = {key = "HD_Shop_13", at = [1046.33, 34]}
+split = {key = "HD_Shop_13", at = [1046.333, 34]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
-about = "HD_Shop_13 2 of 5 in w07-hidamari-station, placed at (1046.33, 34) m"
+about = "HD_Shop_13 2 of 5 in w07-hidamari-station, placed at (1046.333, 34) m"
 
 [[objects]]
 id = "object/station/hd-shop-13-03"
@@ -616,6 +892,30 @@ id = "object/station/hd-shop-13-05"
 split = {key = "HD_Shop_13", at = [1157, 94]}
 model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
 about = "HD_Shop_13 5 of 5 in w07-hidamari-station, placed at (1157, 94) m"
+
+[[objects]]
+id = "object/station/hd-shop-14-01"
+split = {key = "HD_Shop_14", at = [1072.667, -4]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+about = "HD_Shop_14 1 of 4 in w07-hidamari-station, placed at (1072.667, -4) m"
+
+[[objects]]
+id = "object/station/hd-shop-14-02"
+split = {key = "HD_Shop_14", at = [1072.667, 34]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+about = "HD_Shop_14 2 of 4 in w07-hidamari-station, placed at (1072.667, 34) m"
+
+[[objects]]
+id = "object/station/hd-shop-14-03"
+split = {key = "HD_Shop_14", at = [1184, 56]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+about = "HD_Shop_14 3 of 4 in w07-hidamari-station, placed at (1184, 56) m"
+
+[[objects]]
+id = "object/station/hd-shop-14-04"
+split = {key = "HD_Shop_14", at = [1184, 94]}
+model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+about = "HD_Shop_14 4 of 4 in w07-hidamari-station, placed at (1184, 94) m"
 
 [[objects]]
 id = "object/station/hd-shop-15-01"
@@ -3684,6 +3984,7 @@ model = "adopted/japan/assets/pole"
 about = "Pole_Lamp 24 of 24 in w07-hidamari-station, placed at (1231.5, 70.7) m"
 
 # A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
+
 [[objects]]
 id = "object/station/zeppelin-station"
 patch = "0f79acf8e0bacc38"
