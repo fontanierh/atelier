@@ -37,13 +37,14 @@ public:
      *  placement is, so an unset patch counts as unmoved. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") FTransform OriginalTransform = FTransform::Identity;
 
-    /** How far the editor has moved this patch from OriginalTransform, in the world: the identity while it is unmoved (or
+    /** How far the editor has moved this patch from OriginalTransform, as a world transform to apply after a saved world
+     *  transform (UE order: Saved * MovedBy()): the identity while it is unmoved (or
      *  unset), so a runtime that follows the move takes the exact saved path when nothing moved. */
     FTransform MovedBy() const
     {
         const FTransform Now = GetActorTransform();
         if (OriginalTransform.Equals(FTransform::Identity, 0.) || Now.Equals(OriginalTransform, 0.)) return FTransform::Identity;
-        return Now.GetRelativeTransform(OriginalTransform);
+        return OriginalTransform.Inverse() * Now;   // x * Original = w  =>  x * Now = w * (Original^-1 * Now)
     }
 
     /** This patch's members as saved now, in ExpectedMembers' form. */

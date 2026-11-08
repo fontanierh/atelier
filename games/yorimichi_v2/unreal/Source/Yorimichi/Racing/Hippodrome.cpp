@@ -156,7 +156,7 @@ bool AHippodrome::Initialize(const FString& Path)
                 {
                     FTransform Place(PieceRotation(M), GetActorLocation() + PieceOffset(M));
                     const FTransform Moved = SavedMove(Name);
-                    if (!Moved.Equals(FTransform::Identity, 0.)) Place = Moved.TransformFTransform(Place);
+                    if (!Moved.Equals(FTransform::Identity, 0.)) Place = Place * Moved;
                     Course.Grounds += Mesh->GetBounds().TransformBy(Place).GetBox();
                 }
             }

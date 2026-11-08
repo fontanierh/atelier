@@ -135,7 +135,7 @@ namespace
     // carries into its own frame as ParkInverse * Moved * Park.
     FTransform LocalMoveOf(const FTransform& Park, const FTransform& Moved)
     {
-        return Park.Inverse().TransformFTransform(Moved).TransformFTransform(Park);
+        return Park * Moved * Park.Inverse();   // park-local -> world, the world move, back to park-local (UE order)
     }
 }
 
