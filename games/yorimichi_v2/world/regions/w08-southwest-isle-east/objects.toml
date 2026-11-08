@@ -1,0 +1,6 @@
+# Objects of w08-southwest-isle-east that are split out of its area patches (tools/migrate/objects.py). None yet: the
+# region holds only foliage, boulders (scattered rocks, not split) and the pier's south strip.
+# The source is games/yorimichi_v2/unreal/Content/Data/world.json instances (metres).
+schema = 1
+tag = "swisle"
+data = ""
