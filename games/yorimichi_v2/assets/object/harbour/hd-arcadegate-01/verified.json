@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-arcadegate-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/arcade-gate": "e0befe198902e2cf5f8bd9a2be7fcc4109953bd781e82f1db30e2a65fb2b53de"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/I9/9P6MWUD61KJO2J435X5Z2R.uasset": "854ca743b734d33c8eb7db9d03793727c76def769ee2836377f888d390ad5f12"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

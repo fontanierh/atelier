@@ -1,0 +1,12 @@
+# One saved object of region/w02-village (tools/migrate/objects.py, from its objects.toml): Pole 6 of 6 in w02-village, placed at (232.28, 25.21) m.
+# Its placement is this actor package; its model is adopted/japan/assets/pole. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/village/pole-06"
+kind = "placement"
+authority = "editor"
+owner = "region/w02-village"
+references = ["adopted/japan/assets/pole"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/0/NW/P6O3J6MIGF56JFCGW6P04G"

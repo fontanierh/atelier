@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-propane-tanks-11",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-propane-tanks": "9f8614cfd4ff9a968b7780446f6ff0723e50a8e56e035ee9b700ae240e5778b1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/DM/RZMDE7601XXAMBWAWFZVO7.uasset": "360a904189d2b1e290f7ef20b71eb12ff9e61aa67727dbef4ede4daefa1205b6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

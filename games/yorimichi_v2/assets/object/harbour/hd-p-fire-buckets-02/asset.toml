@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_P_fire_buckets 2 of 2 in w07-hidamari-harbour, placed at (846.5, 324.4) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-fire-buckets. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-p-fire-buckets-02"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/hd-p-fire-buckets"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/W1/ZX687XV6IYWKVH7BHLVKR2"

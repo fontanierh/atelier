@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_P_postbox 2 of 3 in w07-hidamari-harbour, placed at (522.5, 150.6) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-postbox. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-p-postbox-02"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/hd-p-postbox"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/U9/ASCTJLEE6E2ZUGZPWWUNP5"

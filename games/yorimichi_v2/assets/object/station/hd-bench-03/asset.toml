@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_Bench 3 of 4 in w07-hidamari-station, placed at (1064.0, 250.0) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/bench. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-bench-03"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/experiments/citysurfaces/v1-128m/bench"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/R1/TE4B2Q1VEOI792JZ9RI5JD"

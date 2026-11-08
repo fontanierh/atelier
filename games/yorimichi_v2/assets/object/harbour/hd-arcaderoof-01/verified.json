@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-arcaderoof-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/arcade-roof": "58e4bb06c57f60d102ec42c98c33f22d71a115708aeec8ac96ab38a217191d2a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/LG/1W8TKCIT15HE9YOSTD9TYT.uasset": "3a1de5aba65168ba59883303807972d79b09268fc90f94348234ad5ee1391fe1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

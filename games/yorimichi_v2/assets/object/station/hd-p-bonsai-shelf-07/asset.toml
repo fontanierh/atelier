@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_P_bonsai_shelf 7 of 13 in w07-hidamari-station, placed at (1028.54, 178.25) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-bonsai-shelf. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-p-bonsai-shelf-07"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/japan/assets/hd-p-bonsai-shelf"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/D/XT/SKHGN9VNJNUNGWI9WMPWOI"

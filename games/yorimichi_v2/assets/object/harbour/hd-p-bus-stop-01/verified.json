@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-bus-stop-01",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-bus-stop": "dc35b704a1826642bbfbe4435dda42c6e64e11880ce5cc901edcc9b4f285b3ba"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/ZM/R2I6OJQTQ6EM741N0442G0.uasset": "40d596f313fc1b51d6687e17169b7ad4f4f8bdb2bef9033e16ba1c32ba10fbaa"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

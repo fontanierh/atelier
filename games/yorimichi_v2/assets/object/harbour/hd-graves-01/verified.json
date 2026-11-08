@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-graves-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/graves": "fed3ea81f71c1ac4cbbc4bcf42af92a5eb8757787d138dd965cbf733491d0f11"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/D4/J4ICUM88RYF43OPJTNUT2F.uasset": "2ac588080598c3b864805b92f8f464810aa0e32163e0484adf5fca5ec39827f9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

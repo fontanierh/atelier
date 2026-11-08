@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): Pole 66 of 90 in w07-hidamari-harbour, placed at (734.3, 4.0) m.
+# Its placement is this actor package; its model is adopted/japan/assets/pole. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/pole-66"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/pole"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/8/AX/0QMV8FDVYKXYHI6Y8XDEM0"

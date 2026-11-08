@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-arcadelanterns-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/arcade-lanterns": "875920ff47ab14752792b7dbca241ba94cd9f63813af804d318ff2c00c9cadf0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/XL/JSQB7SLSA67IU7IFZUWV31.uasset": "906d848669301ec3cb1ef195859aeb299ced39793f6b57365d7ed6800461ff9d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

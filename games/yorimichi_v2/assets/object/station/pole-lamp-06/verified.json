@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/pole-lamp-06",
+  "dependencies": {
+    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/I6/TITOFYAW01AEAO4AX7T1HF.uasset": "6cea32d2aae94c3f9ad81b14ead1dde2913ea9127c8cc663b0d6b7bae497a8a5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

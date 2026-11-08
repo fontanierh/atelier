@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/pole-10",
+  "dependencies": {
+    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/FX/Y8WLDXE9HB2G4Z7YZNP0J9.uasset": "26dbffe14511cfb775ef13538aba87db41143bd94b0ac5e945ad26aa84d73e31"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

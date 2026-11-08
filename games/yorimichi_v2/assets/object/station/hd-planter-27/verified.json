@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-planter-27",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/planter": "ead738866b4de59621da50d34cd1b34863f459acd1437bf69072eac25f52880c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/G4/D978S53DIEQ9C25QV2CS8V.uasset": "8827299d41457881fd0d492d5e1acd42d9691efe3bd8154abcb6c17e0c6b1636"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

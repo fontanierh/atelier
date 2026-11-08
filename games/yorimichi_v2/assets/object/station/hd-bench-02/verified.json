@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-bench-02",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/bench": "6a41ba8352b6c139363d31b0dd85e2dc264f94afd3a3ef8f11898476cc6c80e0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/D4/L5ZK40WOTSA314AMPUC3BE.uasset": "a523725da370b0c7afdd0c052e09adf4cfc75585415a9c597526b67729fa1426"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

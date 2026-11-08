@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-sake-barrels-02",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-sake-barrels": "bbb69025965a16d9a2b6baf5736eccf413de2d3512a138e672e397c2551516b9"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/CE/PAT7O41IMTWHYRZ48LWYHI.uasset": "d3b9a03873df675ae42e1d04e88dd9ea90de6c921012c0f2c44f903ca1b1bca0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

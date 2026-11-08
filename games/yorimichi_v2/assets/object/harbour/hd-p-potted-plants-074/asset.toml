@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_P_potted_plants 74 of 113 in w07-hidamari-harbour, placed at (659.38, -51.8) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-potted-plants. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-p-potted-plants-074"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/hd-p-potted-plants"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/L6/M05ADET8PGG13IYYXISE6F"

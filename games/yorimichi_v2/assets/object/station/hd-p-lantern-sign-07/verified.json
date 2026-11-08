@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-p-lantern-sign-07",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-lantern-sign": "f3cc760d9a68e18f864ee85d1a0d03b95bc8d1796f27a3e644f166e16e135944"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/3P/LNTXQIB6N3LAL55O36EQJR.uasset": "e138aae142b3ace04a323aeee5a6fb4a4529260623cd9a4c683ba5a88f3097a6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

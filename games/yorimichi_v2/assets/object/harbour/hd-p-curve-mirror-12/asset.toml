@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_P_curve_mirror 12 of 18 in w07-hidamari-harbour, placed at (683.71, -43.2) m.
+# Its placement is this actor package; its model is adopted/japan/assets/hd-p-curve-mirror. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-p-curve-mirror-12"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/hd-p-curve-mirror"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/B/LM/IZ1BN41GRTN9VF1NLNWQIY"

@@ -1,0 +1,12 @@
+{
+  "asset": "object/start/lantern-02",
+  "dependencies": {
+    "prop/lantern": "cb1eb2fba1aa523092033274da03d25da5e98b81e7e7df9a545de1f73c3ff6e9"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/HM/499IHZ2ZIL6COC0E0111L7.uasset": "2e361f646400563bd8bae4104ccc9c233e9b2871897cb0f53b23e5da2ad12138"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

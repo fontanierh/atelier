@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-boat-12",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/boat": "b2f1ad53dad36cfaedbd80a525b1bb07c83923ab2a351e0425293f466eb2e305"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/3C/1WB0PHVR270DB2BL704CHF.uasset": "c8aa16e5da387f3393bda60d50fbb60423921327c83602589a58306aa0cdefe7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

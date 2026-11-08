@@ -1,0 +1,12 @@
+# One saved object of region/w06-lake-treehouse (tools/migrate/objects.py, from its objects.toml): TH_P_bookshelf 6 of 6 in w06-lake-treehouse, placed at (-122.651, 166.992) m.
+# Its placement is this actor package; its model is adopted/japan/assets/treehouse. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/lake/th-p-bookshelf-06"
+kind = "placement"
+authority = "editor"
+owner = "region/w06-lake-treehouse"
+references = ["adopted/japan/assets/treehouse"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/XC/G2LWZ8W7NDW1CL32554SJX"

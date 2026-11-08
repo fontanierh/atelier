@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_Planter 8 of 57 in w07-hidamari-harbour, placed at (446.0, 221.0) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/planter. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-planter-08"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/experiments/citysurfaces/v1-128m/planter"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/8/T6/FQ7A4XJ6GCHJUHCQCOE7U6"

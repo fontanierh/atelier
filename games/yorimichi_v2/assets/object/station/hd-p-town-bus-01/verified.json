@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-p-town-bus-01",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-town-bus": "d3b4dc3cb22d2aa374df573c5935de65c05337dd575dce123d4f3f8fe60b2f7a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/75/LIUSO63VOLXAFJ2AYA7SUS.uasset": "2df32cf5f5195fc3bb69b09c726082f7544d726eab26137a3985f3b1405963db"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

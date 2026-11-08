@@ -1,0 +1,12 @@
+# One saved object of region/w04-pier-approach (tools/migrate/objects.py, from its objects.toml): Lantern 1 of 1 in w04-pier-approach, placed at (-127.77, -65.37) m.
+# Its placement is this actor package; its model is prop/lantern. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/pier/lantern-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w04-pier-approach"
+references = ["prop/lantern"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/M8/MOV8POU9MT2Z72AKBPAIIC"

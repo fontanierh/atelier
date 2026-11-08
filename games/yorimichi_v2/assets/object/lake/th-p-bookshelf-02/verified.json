@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/th-p-bookshelf-02",
+  "dependencies": {
+    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/23/HUIORQ3JQII8U5S791EL5F.uasset": "8a0cc8e77e220ad3877fe4c80fdf225f8cc22f571959a4311b0a8794b4b61f55"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

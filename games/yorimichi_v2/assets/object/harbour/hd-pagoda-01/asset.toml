@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_Pagoda 1 of 1 in w07-hidamari-harbour, placed at (641.0, 304.0) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/pagoda. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-pagoda-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/experiments/citysurfaces/v1-128m/pagoda"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/LQ/EE0HDQBPQOVD1IFIQC30UL"

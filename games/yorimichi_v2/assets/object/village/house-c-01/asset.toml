@@ -1,0 +1,12 @@
+# One saved object of region/w02-village (tools/migrate/objects.py, from its objects.toml): House_C 1 of 1 in w02-village, placed at (47.76, -19.02) m.
+# Its placement is this actor package; its model is adopted/japan/assets/house. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/village/house-c-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w02-village"
+references = ["adopted/japan/assets/house"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/EZ/V83NNOTTDWFLXZ3ZJQX430"

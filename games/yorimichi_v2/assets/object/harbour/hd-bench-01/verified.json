@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-bench-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/bench": "6a41ba8352b6c139363d31b0dd85e2dc264f94afd3a3ef8f11898476cc6c80e0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/DB/F5UWNSIM67FUXQJA67I4IS.uasset": "a04355d527771b8cbf1073a248672d828f9623fdb498dfdf5aad351215d5f71a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

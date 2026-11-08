@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-street-bench-04",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-street-bench": "96ef2d45ef580b231008ff8db9bf79ce61775e0eba851326894914772dc8e1bc"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/3P/7FVZ95UTJYR9C6EQF54ESR.uasset": "fa361878c6cbcce415330748ce7dfa59b0733424b135bc2739be5626abb27d0a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

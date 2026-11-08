@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-p-kei-car-12",
+  "dependencies": {
+    "adopted/japan/assets/hd-p-kei-car": "d153960b0f0090ac4422026dfcb081a49c68bf00c7400b55f93a7a4f1d1203a8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/PV/4TLTSE1XUWFD1U1KX3YSRX.uasset": "609ca10a44c972212a0019e59503fba7836ac49eda01fa86a33b5c1977f6dc8e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
