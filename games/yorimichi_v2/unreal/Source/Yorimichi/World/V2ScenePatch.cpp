@@ -125,7 +125,15 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
 
     int32 Floating = 0;
     TMap<FString, AV2ScenePatch*> Existing;
-    for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
+    // A region's group already saved under other IDs means another patch size (or a moved source): the run would
+    // copy that scenery a second time, so it stops before anything is saved.
+    TSet<FString> SavedGroups;
+    for (TActorIterator<AV2ScenePatch> It(World); It; ++It)
+    {
+        Existing.Add(It->V2Id, *It);
+        SavedGroups.Add(It->Region.ToString() + TEXT("|") + It->SourceKey);
+    }
+    int32 Duplicates = 0;
 
     FActorSpawnParameters Spawn;
     Spawn.ObjectFlags = RF_Transient;
@@ -149,6 +157,7 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
     auto Patch = [&](FName RegionId, const FString& Key, const FString& Role, const FVector& Centre, const FString& Id) -> AV2ScenePatch*
     {
         if (Existing.Contains(Id)) { ++OutKept; return nullptr; }
+        if (SavedGroups.Contains(RegionId.ToString() + TEXT("|") + Key)) { ++Duplicates; return nullptr; }
         FActorSpawnParameters Params;
         Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
         AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Centre, FRotator::ZeroRotator, Params);
@@ -279,6 +288,14 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
         Park->Destroy();
     }
     Source->Destroy();
+    if (Duplicates)
+    {
+        for (AActor* Made : OutCreated) Made->Destroy();
+        OutCreated.Reset();
+        Error = FString::Printf(TEXT("%d patch(es) would copy scenery its region already saved under other IDs: is the "
+            "patch size the map's (tools/migrate/run.py --patch-m)? Nothing was kept"), Duplicates);
+        return -1;
+    }
     for (AActor* Made : OutCreated)
     {
         AV2ScenePatch* Saved = CastChecked<AV2ScenePatch>(Made);

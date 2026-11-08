@@ -176,7 +176,8 @@ def main(argv=None) -> int:
     parser.add_argument('--only-migrated', action='store_true', help='slice map: no runtime instance scenery')
     parser.add_argument('--runtime-service', nargs='+', action='extend', default=[],
                         help='with --only-migrated: services that run (repeatable; every name is kept)')
-    parser.add_argument('--patch-m', type=float, default=32.0)
+    parser.add_argument('--patch-m', type=float, default=128.0,
+                        help='scene patch size; the Slice map was cut at 128 m, and another size is refused')
     parser.add_argument('--claim', help='claims task holding every touched region (else the D04 bootstrap writer)')
     args = parser.parse_args(argv)
     if not args.resume and not (args.regions and args.environment):
