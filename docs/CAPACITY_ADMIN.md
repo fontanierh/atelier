@@ -13,8 +13,13 @@ The broker and guards remain the authority in every mode. There is no automatic 
 The optional request field `shared_editor: true` admits a nonexclusive `job` with no `workers`
 claim and at least half the broker's live managed CPU budget, rounded up. The common launcher
 sets it only for a literal unattended NullRHI Python commandlet. This limits concurrency to two
-editors, rather than pretending to cap Unreal's threads. All memory, pressure, named-lock, guard,
-fairness and exit checks remain unchanged; the exclusive terminal-tree fallback does not apply.
+editors, rather than pretending to cap Unreal's threads. Memory, pressure, named-lock, guard and
+fairness checks remain unchanged. A shared editor may release after its root positively exits and
+its exact bound aggregate guard reports `child_exited`, empty cleanup and no unresolved late
+reporters. The controller, time and memory ceiling must match; a live retained process refuses
+release. This witnesses the monitored job's cleanup without inventing missing historical exits.
+Other jobs and guard-stop receipts keep their existing rules. A nonzero or canceled native result
+stays failed; resource release does not certify its output.
 Legacy and maintenance modes reject this allowance. Existing clients keep their old behavior,
 and older brokers reject the new field before granting work.
 

@@ -50,7 +50,8 @@ class CapacityBroker:
     MAY abandon a compile missing its root exit, with explicit acknowledgement and exact original
     monitor/report fences. It MUST preserve the missing exit and record its absence in the witness.
     These actions MUST NOT certify outputs or run
-    through ordinary close/reconcile. Exact exit evidence covers the retained roster only. Bridge and performance-exclusive grants
+    through ordinary close/reconcile. Exact exit evidence covers the retained roster only. Bridge and performance-exclusive grants,
+    or exited shared editor jobs with exact controller binding and no unresolved late reporters,
     MAY instead use a positively exited root plus its bound aggregate guard's terminal empty-tree
     cleanup receipt; that witnesses the monitored owned tree, not every descendant's kernel exit.
     The adapter MUST retain exclusive legacy exclusion in bridge
@@ -404,8 +405,11 @@ class CapacityBroker:
         return True
 
     def _terminal_tree_exit(self, record, *, preserved=None):
-        """@cc [owner:fontanierh,label:safety] exclusive-terminal-tree-release
-        Only bridge or sealed-mode performance-exclusive grants MAY use this policy. The root MUST
+        """@cc [owner:fontanierh,label:safety] monitored-terminal-tree-release
+        Bridge or sealed-mode performance-exclusive grants MAY use this policy. A full-mode shared editor
+        MAY use only a normal child_exited receipt with an exactly bound controller, an empty zero-byte
+        post-cleanup tree, and complete late-reporter evidence without unresolved entries or scan failure.
+        It MUST NOT use a stopped receipt or the legacy pre-cleanup-tail allowance. The root MUST
         have affirmative exit evidence and its previously bound aggregate report MUST match
         identity, ceiling and invocation time, with completed cleanup. A normal child exit
         MUST satisfy the normal terminal sample checks. A memory/duration/controller-loss stop MUST have
@@ -415,12 +419,32 @@ class CapacityBroker:
         entire reported tail has retained positive exits and an exact footprint sum.
         Any verifiably live retained identity MUST refuse release. This
         witnesses monitored-owned-tree cleanup, never individual historical kernel exits.
+        A child_exited receipt MAY follow a nonzero or canceled root; releasing its resources MUST NOT
+        certify successful output. The caller MUST still propagate the native result.
         """
-        if (self.mode != 'legacy-bridge'
-                and not (self.mode in ('capacity', 'sealed-maintenance') and record.get('request', {}).get('performance') is True)):
-            return None
         if record.get('child') not in record.get('exited', []):
             return None
+        request = record.get('request', {})
+        exclusive = self.mode == 'legacy-bridge' or (
+            self.mode in ('capacity', 'sealed-maintenance') and request.get('performance') is True)
+        if not exclusive:
+            if not (self.mode == 'capacity' and request.get('shared_editor') is True
+                    and request.get('phase') == 'job' and request.get('performance') is False):
+                return None
+            try:
+                receipt = preserved if preserved is not None else wire.decode(wire.private_file(
+                    record['guards']['tree_guard']['report'], limit=wire.MAX_FRAME, private=False))
+                late = receipt.get('late_reporters', {})
+                if (receipt.get('state') != 'child_exited' or receipt.get('controller') != record['principal']
+                        or receipt.get('processes') != [] or type(receipt.get('footprint_bytes')) is not int
+                        or receipt['footprint_bytes'] != 0 or late.get('unresolved') != []
+                        or late.get('unresolved_pids') != [] or late.get('scan_failed') is not False):
+                    return None
+            except (OSError, ValueError, KeyError, TypeError, AttributeError, wire.CapacityError):
+                return None
+            # Validate the same immutable observation, rather than rereading a possibly newer report.
+            witness = self._tree_end_observation(record, preserved=receipt)
+            return dict(witness, kind='shared-editor-exit') if witness is not None else None
         return self._tree_end_observation(record, preserved=preserved, allow_stopped=True)
 
     def _stopped_terminal_sample(self, record, receipt):
@@ -510,7 +534,7 @@ class CapacityBroker:
     def _check_completion(self, record, *, reconcile=False):
         witness = record.get('release_witness', {})
         if (record['state'] == 'released' and record.get('child')
-                and witness.get('kind') in ('retained-kernel-exits', 'guarded-tree-exit')):
+                and witness.get('kind') in ('retained-kernel-exits', 'guarded-tree-exit', 'shared-editor-exit')):
             return dict(state='released', admission=False, terminal=True, child=record['child'])
         if (record['state'] == 'uncertain' and record.get('guard_completion_candidate') is True
                 and self.compatible and self._clock() - record['heartbeat'] <= self.lease_seconds):

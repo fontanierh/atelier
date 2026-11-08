@@ -121,7 +121,10 @@ outputs. Use disjoint claims for all output packages, including region and envir
 jobs that both change the same manifest stay in one sequential queue. Prepare inputs before opening
 the editor and close it when the ready batch is done. Never run two controllers in one checkout.
 
-Memory pressure, guard ceilings, queue fairness, deadlines and exact exit checks are unchanged.
+Memory pressure, guard ceilings, queue fairness and deadlines are unchanged. A completed shared
+editor releases only with positive root exit and its exactly bound guard's empty cleanup evidence,
+with no live retained processes or unresolved late reporters. Its native result still determines
+success; resource release never turns a failed or canceled job into a successful import.
 An older broker refuses the new shared-editor request before launching work; update it only at a
 coordinated drained boundary, using the existing supervision path and unchanged machine policy.
 The full-pool entries above describe the current fallback, not evidence that every such process consumes eight
