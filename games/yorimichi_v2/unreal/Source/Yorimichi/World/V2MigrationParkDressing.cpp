@@ -36,6 +36,7 @@ namespace
         AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Placement.GetLocation(), Placement.Rotator(), Params);
         if (!Made) return nullptr;
         Made->Region = Region; Made->SourceKey = SourceKey; Made->V2Id = Id;
+        Made->OriginalTransform = Placement;   // what the editor's moves of this unit are measured from
         Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *SourceKey, *Id));
         Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
         Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));

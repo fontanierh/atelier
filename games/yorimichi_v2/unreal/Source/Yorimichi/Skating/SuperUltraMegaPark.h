@@ -59,6 +59,9 @@ public:
      *  species that stays runtime. Shared by Spawn and UV2MigrationParkDressing::MigrateParkTrees, so a tree is saved or
      *  spawned, never both. */
     static FString TreeUnit(const FParkTreeOwners& Owners, const FString& Species, const FVector& Location);
+    /** The unit of the piece whose origin is nearest in the plane to Location (a tree's, a rail's first point, a zone's
+     *  centre; park-local), the earlier piece on a tie. Empty when the owners name no piece. */
+    static FString NearestUnit(const FParkTreeOwners& Owners, const FVector& Location);
     /** One kei car of park.json's props as a component of Parent: its basis and location, blocking collision. The caller
      *  adds and registers it. Shared with UV2MigrationParkDressing::MigrateParkProps. */
     static UStaticMeshComponent* MakeProp(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,

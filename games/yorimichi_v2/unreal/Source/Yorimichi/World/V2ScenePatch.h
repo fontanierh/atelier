@@ -33,6 +33,18 @@ public:
     /** What the migration saved here, one "mesh|tags|instances" entry per component, sorted. A saved patch whose
      *  components no longer match (a child deleted or swapped in the editor) fails the world's readiness. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") TArray<FString> ExpectedMembers;
+    /** The placement the migration saved this patch at (a park's or the course's). Unset is the identity, which no
+     *  placement is, so an unset patch counts as unmoved. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") FTransform OriginalTransform = FTransform::Identity;
+
+    /** How far the editor has moved this patch from OriginalTransform, in the world: the identity while it is unmoved (or
+     *  unset), so a runtime that follows the move takes the exact saved path when nothing moved. */
+    FTransform MovedBy() const
+    {
+        const FTransform Now = GetActorTransform();
+        if (OriginalTransform.Equals(FTransform::Identity, 0.) || Now.Equals(OriginalTransform, 0.)) return FTransform::Identity;
+        return Now.GetRelativeTransform(OriginalTransform);
+    }
 
     /** This patch's members as saved now, in ExpectedMembers' form. */
     TArray<FString> Members() const;

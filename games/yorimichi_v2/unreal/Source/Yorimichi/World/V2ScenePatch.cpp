@@ -497,6 +497,7 @@ int32 UV2Migration::MigrateParkPieces(UObject* WorldContext, FName Region, FName
         if (!Made) { Error = Unit + TEXT(": could not spawn its patch"); break; }
         OutCreated.Add(Made);
         Made->Region = Region; Made->SourceKey = Tag.ToString() + TEXT(":") + Unit; Made->V2Id = Id;
+        Made->OriginalTransform = Placement;   // the park placement: Spawn moves the unit's rails and zones by its move
         Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Unit, *Id));
         Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
         Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
@@ -597,6 +598,7 @@ int32 UV2Migration::MigrateHippodromePieces(UObject* WorldContext, FName Region,
         if (!Made) { Error = Unit + TEXT(": could not spawn its patch"); break; }
         OutCreated.Add(Made);
         Made->Region = Region; Made->SourceKey = Tag.ToString() + TEXT(":") + Unit; Made->V2Id = Id;
+        Made->OriginalTransform = FTransform(FRotator::ZeroRotator, Placement);   // the course origin, as spawned
         Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Unit, *Id));
         Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
         Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
