@@ -3,6 +3,8 @@
 #include "GameFramework/Actor.h"
 #include "Hippodrome.generated.h"
 
+class FJsonObject;
+class UStaticMesh;
 class UStaticMeshComponent;
 
 /**
@@ -39,6 +41,11 @@ public:
     /** The hippodrome described by Path (hippodrome.json); null when the file or its meshes are missing. */
     static AHippodrome* Spawn(UWorld* World, const FString& Path);
     static AHippodrome* Find(const UObject* WorldContext);
+    /** One mesh entry of hippodrome.json as a component of Parent: its position and yaw from the course origin, and its
+     *  collision (blocks). Initialize spawns every mesh this way, and UV2Migration::MigrateHippodromePieces saves it as its
+     *  unit's object, so a mesh is saved as an object or spawned at runtime, never both. The caller adds and registers it. */
+    static UStaticMeshComponent* MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
+        UStaticMesh* Mesh);
 
     FHippodromeCourse Course;
     FVector ReturnGround = FVector::ZeroVector;

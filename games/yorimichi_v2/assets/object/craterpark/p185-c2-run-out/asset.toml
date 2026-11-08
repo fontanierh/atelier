@@ -1,0 +1,12 @@
+# One saved object of region/w12-craterpark (tools/migrate/objects.py, from its objects.toml): the Crater Park piece p185 (c2-run-out).
+# Its placement is this actor package; its model is adopted/craterpark/p185-c2-run-out. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/craterpark/p185-c2-run-out"
+kind = "placement"
+authority = "editor"
+owner = "region/w12-craterpark"
+references = ["adopted/craterpark/p185-c2-run-out"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/RD/PT6SJ4D6EONI5LTYWKLRYS"

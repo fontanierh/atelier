@@ -3990,3 +3990,11 @@ id = "object/station/zeppelin-station"
 patch = "0f79acf8e0bacc38"
 model = "adopted/japan/assets/zeppelin"
 about = "the City zeppelin station (ZP_City)"
+
+# A building cut into cells: its cell patches each hold a piece of it alone; promoted together, bytes unchanged.
+[[objects]]
+id = "object/station/station-building"
+patch = ["0e4ce182d4c0fb6f", "197d8f9270845421", "8ea290320289a9dd", "91334fcb1d4986d1"]
+model = ["adopted/experiments/citysurfaces/v1-128m/station-m1-m1", "adopted/experiments/citysurfaces/v1-128m/station-m1-0", "adopted/experiments/citysurfaces/v1-128m/station-0-m1", "adopted/experiments/citysurfaces/v1-128m/station-0-0"]
+about = "the Hidamari station building (HD_Station: one placement, cut into four cells)"
+

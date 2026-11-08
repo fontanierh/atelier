@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p303-vert-drop-into-the-void",
+  "dependencies": {
+    "adopted/craterpark/p303-vert-drop-into-the-void": "1e1bc94823452164356656e1ecf5eab7322177d34c828e725d18250f6d9854a5"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/RG/MMYQQT05M5YCGVGVT3NZXJ.uasset": "5c72a9c4ed4795e15351d91ee93619a9565c1430f456d164c4726f5bd0495085"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

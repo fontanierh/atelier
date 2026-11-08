@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p9-mega-55-m-mega",
+  "dependencies": {
+    "adopted/craterpark/p9-mega-55-m-mega": "9abe14a500a26a6a57a10e67ead464005c4b9450129883e5e2835c5c6fafc111"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/O8/KTC5NP982CY90E7BBCMXCP.uasset": "40efcb28587d4a7c5ed361c26a9b923a8ae45e4d93d9cfa716ea2e54abaf993a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

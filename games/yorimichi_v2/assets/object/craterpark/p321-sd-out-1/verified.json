@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p321-sd-out-1",
+  "dependencies": {
+    "adopted/craterpark/p321-sd-out-1": "f3985e4b154726d931a5d2ffd741041b3875951c9a7a7ec6bdb4acd5d2d505fa"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/D0/2SUPW06QLZGYSMT3JR670N.uasset": "abe30c5b5700e6e1ead26cb855352a9ea7a096c6c475f94736afefadd7cedb0c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

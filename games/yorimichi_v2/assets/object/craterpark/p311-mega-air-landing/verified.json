@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p311-mega-air-landing",
+  "dependencies": {
+    "adopted/craterpark/p311-mega-air-landing": "41bdb96bb6df4ab65c444e281749d60aa1dc7d989ca99ffec5c23d98bab1ea83"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/67/5RW93HLVFJ5JFL3GHQKWYY.uasset": "933fc5b939d226901ff02a05414b87a84b74194965de9e01d42e39a32e4975c3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

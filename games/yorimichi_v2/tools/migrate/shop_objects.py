@@ -113,13 +113,16 @@ def rewritten(text: str, items: list[dict]) -> str:
     for b in blocks:   # the shop block run stays where the old one was; every other block is kept byte for byte
         if SHOP_BLOCK.search(b):
             if not placed:
+                if not out[-1].endswith('\n\n'):
+                    out.append('\n')
                 out.append(shops)
                 placed = True
             continue
-        out.append(b if b.endswith('\n\n') else b.rstrip('\n') + '\n\n')
+        out.append(b)
     if not placed:
         out.append(shops)
-    return ''.join(out).rstrip('\n') + '\n'
+    trailing = len(text) - len(text.rstrip('\n'))   # the file's own closing newlines
+    return ''.join(out).rstrip('\n') + '\n' * max(trailing, 1)
 
 
 def plan() -> dict[str, str]:

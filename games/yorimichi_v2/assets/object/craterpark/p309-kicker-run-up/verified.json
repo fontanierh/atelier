@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p309-kicker-run-up",
+  "dependencies": {
+    "adopted/craterpark/p309-kicker-run-up": "68857a5bb3e2ed80247199daa56b1a7c06bac8714a6f816d6e11a01ea2b0bc2d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/PS/HC3YZE7KDQZEC71FNIAZ43.uasset": "55132efc029e90dba7c17f361187187ffdf0fc7cc57baa602d1e222f9613a57a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

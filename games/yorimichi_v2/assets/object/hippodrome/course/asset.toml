@@ -1,0 +1,12 @@
+# One saved object of region/w15-hippodrome (tools/migrate/objects.py, from its objects.toml): the Hippodrome course: its platform ground and skirt, the track, the rails, and the lane with its skirt.
+# Its placement is this actor package; its model is adopted/hippodrome/loose_files. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/hippodrome/course"
+kind = "placement"
+authority = "editor"
+owner = "region/w15-hippodrome"
+references = ["adopted/hippodrome/loose_files"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/Z8/LNJ1CD88LZWFZOOO0KZFT1"

@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p312-into-the-orange-last-section",
+  "dependencies": {
+    "adopted/craterpark/p312-into-the-orange-last-section": "95be0204f798777fe622f49f92517a76f6b937d2a59ee6bc6e7162c87cb20155"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/V7/M4LNPLFI4QG25THM0G02B8.uasset": "23a1d5c6bbb1e56c33c8cea094c4824431341788bb91bb8ca5becfde44724419"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

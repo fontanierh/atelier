@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p54-final",
+  "dependencies": {
+    "adopted/craterpark/p54-final": "7a9140e661420dde86b7725a6de74cdd0267aaf0a5851342b61b8d5cbca1a2d8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/B4/PS0099QXV2DC77R4SNC8RN.uasset": "c9bcd93d4b75d5f155f56a588a010369b11ddecc5fa024e9611805396fb8b446"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

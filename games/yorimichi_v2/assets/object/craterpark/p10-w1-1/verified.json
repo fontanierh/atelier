@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p10-w1-1",
+  "dependencies": {
+    "adopted/craterpark/p10-w1-1": "e4d272e6724f0a3e8d751bd9902b4c1090e6e1ff6d00204f916236b08c6b111c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/5P/FOM28VRNAS7RIAOHK44JER.uasset": "233c036c2faf79302c66551f265c0702935326bed4e68539cb7645fd737f8b14"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

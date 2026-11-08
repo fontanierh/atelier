@@ -1,0 +1,18 @@
+{
+  "asset": "object/station/station-building",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/station-0-0": "2ca93f32f938fe9063f612d887dd1fb944f2a7e3e075d7d3bf14047edb8123a9",
+    "adopted/experiments/citysurfaces/v1-128m/station-0-m1": "28929daa8fdef7afbc517bdf921ee5754c3eae29acaef587eb661552a1d4f44d",
+    "adopted/experiments/citysurfaces/v1-128m/station-m1-0": "7d09c4472daf8e221cd652d639814606837d154b335f25256837b3f15633258f",
+    "adopted/experiments/citysurfaces/v1-128m/station-m1-m1": "734cad2c76cf2dae59d084c85e17081821a40cd5194ddaf30c21ea9ad8b6d904"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/K8/NISBP59GCG2FROYGZFN1RN.uasset": "80e93e96f1d5ccf851c73b2f5eabeca17f826b272b68b0f36597b020b8994dbe",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/WE/OBM9OD6TW6FKFK2JASZ08Q.uasset": "a12ba494331e6b4b3842c84de0867569d3a0e33da02f7218992573ec3fd234b5",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/NF/P5JMNK8S2UZWW2PF21DXC7.uasset": "d1e664631d9f46f26198f37dd85ac4b8a7cb6d22f172a67ec22c00b2abfe8df1",
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/RK/WDPL6JC9MKQSC7YSEN5X4Y.uasset": "edd440f524bb35a0d4a2ef74f07647bd76f8bf760db8f23b9340f5f236e7ecab"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

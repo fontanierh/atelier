@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p43-turn-t1",
+  "dependencies": {
+    "adopted/craterpark/p43-turn-t1": "f974df9e941940db63fae9931162ac1946894c59824a21db60fa50f8a087a4c5"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/88/GX482VT17RJ2FD8PVY34JW.uasset": "e51f7807e5bc673fdb728ed445c9df434f92c5f4aa515d67de58360f87491f3c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

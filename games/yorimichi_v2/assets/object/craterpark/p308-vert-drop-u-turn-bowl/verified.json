@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/p308-vert-drop-u-turn-bowl",
+  "dependencies": {
+    "adopted/craterpark/p308-vert-drop-u-turn-bowl": "1e4b0c83860e9a0604630ff6a7631c316b365df9d9e02adaf10ffb35c5e6af3b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/2L/EB27HFLSCQW5NPSZRMIH1C.uasset": "7b0445ef3f11df69a2f80344d0d934edba1ebd25a336d84c5a108e1b261da2f8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

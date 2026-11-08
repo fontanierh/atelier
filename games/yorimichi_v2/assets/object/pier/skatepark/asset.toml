@@ -1,0 +1,12 @@
+# One saved object of region/w04-pier-approach (tools/migrate/objects.py, from its objects.toml): the pier skatepark (pier, features, furniture, planting, decals).
+# Its placement is this actor package; its model is adopted/skatepark/loose_files. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/pier/skatepark"
+kind = "placement"
+authority = "editor"
+owner = "region/w04-pier-approach"
+references = ["adopted/skatepark/loose_files"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/D/ZL/LNKMHWS0X3RJIE67ZGULPS"
