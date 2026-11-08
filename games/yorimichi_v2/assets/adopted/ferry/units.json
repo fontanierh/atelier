@@ -1,0 +1,150 @@
+{
+ "about": "Ferry editing units for tools/migrate/adopt.py (written by tools/migrate/ferry_units.py)",
+ "units": {
+  "materials": {
+   "about": "ferry materials (terminal FT_*, ship FY_*), and the generator that made every ferry package",
+   "sources": [
+    "games/yorimichi/assets/source-library.json",
+    "games/yorimichi/assets/vehicles/ferry/README.md",
+    "games/yorimichi/assets/vehicles/ferry/build.py",
+    "games/yorimichi/assets/vehicles/ferry/compare.py",
+    "games/yorimichi/assets/vehicles/ferry/render.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/build.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/compare.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/render.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/site.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/walkcheck.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/world_probe.py",
+    "games/yorimichi/assets/vehicles/ferry/walk.py",
+    "games/yorimichi/world/region_plan_files.py",
+    "games/yorimichi/world/regions/ferry/CONTRACTS",
+    "games/yorimichi/world/regions/ferry/__init__.py",
+    "games/yorimichi/world/regions/ferry/export_ship_collision.py",
+    "games/yorimichi/world/regions/ferry/export_terminal_collision.py",
+    "games/yorimichi/world/regions/ferry/plan_ship.py",
+    "games/yorimichi/world/regions/ferry/plan_terminal.py",
+    "games/yorimichi/world/regions/ferry/query_geometry.py",
+    "games/yorimichi/world/regions/ferry/route.py",
+    "games/yorimichi/world/regions/ferry/service.py",
+    "games/yorimichi/world/regions/ferry/ship_audit.py",
+    "games/yorimichi/world/regions/ferry/ship_sources.py",
+    "games/yorimichi/world/regions/ferry/site_inputs.py",
+    "games/yorimichi/world/regions/ferry/terminal_audit.py",
+    "games/yorimichi/world/regions/ferry/terminal_constructor.py",
+    "games/yorimichi/world/regions/ferry/terminal_sources.py",
+    "games/yorimichi/world/regions/ferry/timetable.py",
+    "games/yorimichi/world/regions/hidamari/ferry_source.py",
+    "games/yorimichi/world/source_registry.py",
+    "games/yorimichi/world/walk_raster.py"
+   ]
+  },
+  "ship": {
+   "about": "the ferry ship: hull, superstructure, funnel, lifeboats, rails, masts, fittings, collision, gate and wake",
+   "sources": [
+    "games/yorimichi/assets/vehicles/ferry/build.py",
+    "games/yorimichi/world/regions/ferry/export_ship_collision.py",
+    "games/yorimichi/world/regions/ferry/plan_ship.py",
+    "games/yorimichi/world/regions/ferry/ship_sources.py"
+   ],
+   "references": [
+    "adopted/ferry/materials"
+   ]
+  },
+  "terminal-brinecove": {
+   "about": "the Brine Cove ferry terminal: landing, pavilion, ticket hut, fenders, props, collision and brow (berth 1)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/ferry/terminals/build.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/site.py",
+    "games/yorimichi/world/regions/ferry/export_terminal_collision.py",
+    "games/yorimichi/world/regions/ferry/plan_terminal.py",
+    "games/yorimichi/world/regions/ferry/terminal_constructor.py",
+    "games/yorimichi/world/regions/ferry/terminal_sources.py"
+   ],
+   "references": [
+    "adopted/ferry/materials"
+   ]
+  },
+  "terminal-hidamari": {
+   "about": "the Hidamari ferry terminal: jetty, stage, waiting house, timetable board, collision and brow (berth 0)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/ferry/terminals/build.py",
+    "games/yorimichi/assets/vehicles/ferry/terminals/site.py",
+    "games/yorimichi/world/regions/ferry/export_terminal_collision.py",
+    "games/yorimichi/world/regions/ferry/plan_terminal.py",
+    "games/yorimichi/world/regions/ferry/terminal_constructor.py",
+    "games/yorimichi/world/regions/ferry/terminal_sources.py"
+   ],
+   "references": [
+    "adopted/ferry/materials"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Ferry/Materials/FT_Brass": "materials",
+  "/Game/Ferry/Materials/FT_Crate": "materials",
+  "/Game/Ferry/Materials/FT_FenderBlack": "materials",
+  "/Game/Ferry/Materials/FT_Float": "materials",
+  "/Game/Ferry/Materials/FT_Glass": "materials",
+  "/Game/Ferry/Materials/FT_Ink": "materials",
+  "/Game/Ferry/Materials/FT_Iron": "materials",
+  "/Game/Ferry/Materials/FT_Kawara": "materials",
+  "/Game/Ferry/Materials/FT_KawaraRidge": "materials",
+  "/Game/Ferry/Materials/FT_LanternGlow": "materials",
+  "/Game/Ferry/Materials/FT_Moss": "materials",
+  "/Game/Ferry/Materials/FT_Net": "materials",
+  "/Game/Ferry/Materials/FT_Paper": "materials",
+  "/Game/Ferry/Materials/FT_Plank": "materials",
+  "/Game/Ferry/Materials/FT_Plaster": "materials",
+  "/Game/Ferry/Materials/FT_Rope": "materials",
+  "/Game/Ferry/Materials/FT_Stone": "materials",
+  "/Game/Ferry/Materials/FT_Terracotta": "materials",
+  "/Game/Ferry/Materials/FT_Timber": "materials",
+  "/Game/Ferry/Materials/FT_TimberDark": "materials",
+  "/Game/Ferry/Materials/FT_WhitePaint": "materials",
+  "/Game/Ferry/Materials/FY_AnchorBronze": "materials",
+  "/Game/Ferry/Materials/FY_Black": "materials",
+  "/Game/Ferry/Materials/FY_BoatCover": "materials",
+  "/Game/Ferry/Materials/FY_BoatGunwale": "materials",
+  "/Game/Ferry/Materials/FY_BoatTimber": "materials",
+  "/Game/Ferry/Materials/FY_BoatTimberDark": "materials",
+  "/Game/Ferry/Materials/FY_BootTopBlue": "materials",
+  "/Game/Ferry/Materials/FY_Brass": "materials",
+  "/Game/Ferry/Materials/FY_Canvas": "materials",
+  "/Game/Ferry/Materials/FY_CowlThroat": "materials",
+  "/Game/Ferry/Materials/FY_CreamFunnel": "materials",
+  "/Game/Ferry/Materials/FY_DarkIron": "materials",
+  "/Game/Ferry/Materials/FY_DeckTimber": "materials",
+  "/Game/Ferry/Materials/FY_Glass": "materials",
+  "/Game/Ferry/Materials/FY_GoldMoulding": "materials",
+  "/Game/Ferry/Materials/FY_HawseRecess": "materials",
+  "/Game/Ferry/Materials/FY_Lifebuoy": "materials",
+  "/Game/Ferry/Materials/FY_TarredRope": "materials",
+  "/Game/Ferry/Materials/FY_VarnishedTimber": "materials",
+  "/Game/Ferry/Materials/FY_WhitePaint": "materials",
+  "/Game/Ferry/Materials/M_Ferry": "materials",
+  "/Game/Ferry/Materials/M_FerryWake": "materials",
+  "/Game/Ferry/Ship/FY_BoardingGate": "ship",
+  "/Game/Ferry/Ship/FY_Collision": "ship",
+  "/Game/Ferry/Ship/FY_Fittings": "ship",
+  "/Game/Ferry/Ship/FY_Funnel": "ship",
+  "/Game/Ferry/Ship/FY_Hull": "ship",
+  "/Game/Ferry/Ship/FY_Lifeboats": "ship",
+  "/Game/Ferry/Ship/FY_Masts": "ship",
+  "/Game/Ferry/Ship/FY_Rails": "ship",
+  "/Game/Ferry/Ship/FY_Superstructure": "ship",
+  "/Game/Ferry/Ship/FY_Wake": "ship",
+  "/Game/Ferry/Terminals/FT_BC_Brow": "terminal-brinecove",
+  "/Game/Ferry/Terminals/FT_BC_Collision": "terminal-brinecove",
+  "/Game/Ferry/Terminals/FT_BC_Fenders": "terminal-brinecove",
+  "/Game/Ferry/Terminals/FT_BC_Landing": "terminal-brinecove",
+  "/Game/Ferry/Terminals/FT_BC_Pavilion": "terminal-brinecove",
+  "/Game/Ferry/Terminals/FT_BC_Props": "terminal-brinecove",
+  "/Game/Ferry/Terminals/FT_BC_TicketHut": "terminal-brinecove",
+  "/Game/Ferry/Terminals/FT_HD_Brow": "terminal-hidamari",
+  "/Game/Ferry/Terminals/FT_HD_Collision": "terminal-hidamari",
+  "/Game/Ferry/Terminals/FT_HD_Jetty": "terminal-hidamari",
+  "/Game/Ferry/Terminals/FT_HD_Stage": "terminal-hidamari",
+  "/Game/Ferry/Terminals/FT_HD_Timetable": "terminal-hidamari",
+  "/Game/Ferry/Terminals/FT_HD_WaitingHouse": "terminal-hidamari"
+ }
+}

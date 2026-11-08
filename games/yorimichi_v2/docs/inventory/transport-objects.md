@@ -80,3 +80,18 @@ dock gates (move), track pieces and the train platforms (the ride and boarding r
   claim for the whole system. Units like Brine Cove's `units.json` are needed per tower, station and terminal.
 - Hidamari's train platform and buffer have no mesh or source.
 - The service actors carry the `NoClimb` tag for all their parts; saved actors need it on each.
+
+## Ownership units (data)
+
+`tools/migrate/{gondola,ferry,train}_units.py` write `assets/adopted/{gondola,ferry,belmontetrack}/units.json` (shared
+writer `transport_units.py`). The controller adds one `[[units]]` entry each to `assets/adopted/groups.toml`
+(`/Game/Gondola` -> `gondola/units.json`, `/Game/Ferry` -> `ferry/units.json`, `/Game/BelmonteTrack` ->
+`belmontetrack/units.json`).
+
+Zeppelin is not split: its meshes (`ZP_Woodland`, `ZP_City`, `ZP_MegaPark`, `ZP_Belmonte`, `ZP_Trail`, `ZP_Airship`,
+`ZP_Motors`, `ZP_Propeller`, `ZP_Gate`, `ZP_Gangway`) live in `/Game/Japan/Assets`, which already has a `[[group]]` rule
+and takes one rule per folder. The rule's `key` captures `ZP` and `names` maps it to `zeppelin`, so all ten are one
+record `adopted/japan/assets/zeppelin`. A per-object split needs that rule to capture the whole name for ZP: key
+`ZP_[A-Za-z]+` with names `ZP_Woodland -> zeppelin-woodland-station` ... `ZP_Belmonte -> zeppelin-belmonte-station`,
+`ZP_Trail -> zeppelin-trail`, and `ZP_Airship|Motors|Propeller|Gate|Gangway -> zeppelin-ship`; the generators are
+`world/regions/zeppelin/parts/station.py` and `plan_*.py`. Left for the controller, who owns the rule.
