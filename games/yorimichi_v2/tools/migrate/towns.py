@@ -10,8 +10,8 @@ the district's bounds culling (ABelmonteRegion::SceneryTransforms), plant groups
 (ABelmonteRegion::PlantTransforms). This module mirrors those filters to count the instances and to cut the cell pieces.
 
 Keys (V2MigrationTowns::GroupKeys): a group's mesh name, or "<mesh>#<index>" when another group of the file shares the
-name. A plant group of more than PIECE_LIMIT instances is cut into 128 m cell pieces, "<key>@<x>_<y>" (the cell of each
-instance's world position, floor of metres over 128); each piece is an object of its own.
+name. A group of more than PIECE_LIMIT instances the runtime draws is cut into 128 m cell pieces, "<key>@<x>_<y>" (the cell
+of each instance's world position, floor of metres over 128); the pieces of one 512 m block form one object.
 
 Each object is one editing unit: the adopted record that owns the group's mesh (assets/**/asset.toml outputs), which is
 the ownership split already set by belmonte_units.py and brinecove_units.py (one building, one estate, one landmark or ship
@@ -118,17 +118,16 @@ def world_m(data: dict, translation_cm: list[float]) -> tuple[float, float]:
     return (ox + translation_cm[0]) / 100.0, -(oy + translation_cm[1]) / 100.0
 
 
-def in_district(data: dict, entry: dict) -> int:
-    """How many of a non-plant group's instances SceneryTransforms keeps: inside the district's bounds, with its margin."""
+def in_bounds(data: dict, x: float, y: float) -> bool:
+    """SceneryTransforms' test: inside the district's bounds_m with its 100 m margin (strict)."""
     bounds = data['bounds_m']
-    lo_x, lo_y = bounds[0] - DISTRICT_MARGIN_M, bounds[1] - DISTRICT_MARGIN_M
-    hi_x, hi_y = bounds[2] + DISTRICT_MARGIN_M, bounds[3] + DISTRICT_MARGIN_M
-    kept = 0
-    for item in entry['transforms']:
-        x, y = world_m(data, item['translation_cm'])
-        if lo_x < x < hi_x and lo_y < y < hi_y:
-            kept += 1
-    return kept
+    return (bounds[0] - DISTRICT_MARGIN_M < x < bounds[2] + DISTRICT_MARGIN_M
+            and bounds[1] - DISTRICT_MARGIN_M < y < bounds[3] + DISTRICT_MARGIN_M)
+
+
+def in_district(data: dict, entry: dict) -> int:
+    """How many of a non-plant group's instances SceneryTransforms keeps."""
+    return sum(1 for item in entry['transforms'] if in_bounds(data, *world_m(data, item['translation_cm'])))
 
 
 def in_clearance(segments: list, x: float, y: float) -> bool:
@@ -145,15 +144,19 @@ def in_clearance(segments: list, x: float, y: float) -> bool:
     return False
 
 
-def plant_cells(data: dict, entry: dict, segments: list) -> dict[tuple[int, int], int]:
-    """A plant group's instances that survive the clearance (ABelmonteRegion::PlantTransforms), counted per 128 m cell."""
+def kept_cells(data: dict, entry: dict, segments: list) -> dict[tuple[int, int], int]:
+    """The instances the runtime draws from a group, counted per 128 m cell: a plant group's outside the gondola clearance
+    (ABelmonteRegion::PlantTransforms), any other group's inside the district (SceneryTransforms)."""
     cells: dict[tuple[int, int], int] = collections.Counter()
     for item in entry['transforms']:
         x, y = world_m(data, item['translation_cm'])
-        if in_clearance(segments, x, y):
-            continue
-        cells[(math.floor(x / CELL_M), math.floor(y / CELL_M))] += 1
+        keep = not in_clearance(segments, x, y) if entry['plant'] else in_bounds(data, x, y)
+        if keep:
+            cells[(math.floor(x / CELL_M), math.floor(y / CELL_M))] += 1
     return dict(cells)
+
+
+plant_cells = kept_cells
 
 
 def clearance_segments() -> list:
@@ -210,25 +213,19 @@ def classify(tag: str, data: dict, covered: set[str], owners: dict[str, list[str
             handled.add(key)
             continue
         base_unit = unit_of(adopted[0])
-        if not entry['plant']:
-            kept = in_district(data, entry)
-            if kept == 0:
-                blocked['outside'].append((key, 'no instance inside the district'))
-                handled.add(key)
-                continue
-            add(base_unit, key, adopted, kept)
-            continue
-        cells = plant_cells(data, entry, segments)
+        # A plant group keeps its own family unit; any other group its record unit (one building, tile or family).
+        whole_unit = f'plant-{kebab(mesh_name(entry))}' if entry['plant'] else base_unit
+        cells = kept_cells(data, entry, segments)
         total = sum(cells.values())
         if total == 0:
-            blocked['outside'].append((key, 'no instance survives the gondola clearance'))
+            reason = 'no instance survives the gondola clearance' if entry['plant'] else 'no instance inside the district'
+            blocked['outside'].append((key, reason))
             handled.add(key)
             continue
         if total <= PIECE_LIMIT:
-            add(f'plant-{kebab(mesh_name(entry))}', key, adopted, total)
+            add(whole_unit, key, adopted, total)
             continue
         # Over the limit: one piece per 128 m cell the instances lie in; the pieces of one 512 m block form an object.
-        plant_unit = f'plant-{kebab(mesh_name(entry))}'
         for cell in sorted(cells):
             piece = piece_key(key, *cell)
             if piece in covered:
@@ -236,7 +233,7 @@ def classify(tag: str, data: dict, covered: set[str], owners: dict[str, list[str
                 handled.add(key)
                 continue
             block = (math.floor(cell[0] / BLOCK_CELLS), math.floor(cell[1] / BLOCK_CELLS))
-            add(f'{plant_unit}-{cell_label(block)}', piece, adopted, cells[cell])
+            add(f'{whole_unit}-{cell_label(block)}', piece, adopted, cells[cell])
     return {'units': dict(sorted(units.items())), 'blocked': blocked, 'handled': handled, **counted}
 
 
