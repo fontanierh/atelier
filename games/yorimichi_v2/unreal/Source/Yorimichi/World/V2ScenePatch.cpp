@@ -80,7 +80,7 @@ bool AV2WorldManifest::CoversInstance(const FVector2D& P) const
     if (bOnlyMigrated) return true;
     for (const FBox2D& Box : MigratedBoundsCm)
         if (InsideHalfOpen(Box, P)) return true;
-    return false;
+    return bEnvironmentMigrated && !RegionBoundsCm.ContainsByPredicate([&P](const FBox2D& Box) { return InsideHalfOpen(Box, P); });
 }
 
 #if WITH_EDITOR

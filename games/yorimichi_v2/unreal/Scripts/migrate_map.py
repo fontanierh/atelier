@@ -249,6 +249,9 @@ def manifest(region):
         if not any((x.min.x, x.min.y, x.max.x, x.max.y) == tuple(b) for x in boxes):
             boxes.append(box)
     actor.set_editor_property('migrated_bounds_cm', boxes)
+    # The environment pass saved what no region box holds: the runtime must not spawn it again.
+    actor.set_editor_property('environment_migrated', True)
+    actor.set_editor_property('region_bounds_cm', [box2d(b) for b in plan.get('held_cm', [])])
     actor.set_editor_property('migrated_services', [U.Name(s) for s in plan.get('services', [])])
     actor.set_editor_property('only_migrated', bool(plan.get('only_migrated')))
     actor.set_editor_property('runtime_services', [U.Name(s) for s in plan.get('runtime_services', [])])

@@ -49,6 +49,10 @@ class YORIMICHI_API AV2WorldManifest : public AInfo
 public:
     /** Unreal cm, half-open [Min, Max): world.json instances placed inside are saved patches, not spawned. */
     UPROPERTY(EditAnywhere, Category = "V2") TArray<FBox2D> MigratedBoundsCm;
+    /** The environment region saved every instance no region box of the map holds (an open-water piece such as
+     *  HD_Sea): those are saved patches too. RegionBoundsCm are the map's region boxes at that migration. */
+    UPROPERTY(EditAnywhere, Category = "V2") bool bEnvironmentMigrated = false;
+    UPROPERTY(EditAnywhere, Category = "V2") TArray<FBox2D> RegionBoundsCm;
     /** A slice or test map: no runtime instance scenery anywhere, and of the region services only RuntimeServices. */
     UPROPERTY(EditAnywhere, Category = "V2") bool bOnlyMigrated = false;
     /** Pieces saved in this map instead of spawned: SkyDome, Sea, SkatePark.Scenery (the pier's meshes and trees;
