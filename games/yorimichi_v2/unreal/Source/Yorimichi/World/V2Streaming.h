@@ -13,6 +13,17 @@ class YORIMICHI_API UV2Streaming : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:
+    /** The loading range a V2 map needs to show the original's far views: 3 km keeps Hidamari's far town and harbour
+     *  and Crater Park from the rim; 10 km looked the same for 0.7 GiB more. Scripts/set_streaming.py applies it, and
+     *  the Yorimichi.V2.StreamingRange test checks that the committed Slice map holds it. */
+    UFUNCTION(BlueprintPure, Category = "V2 Streaming")
+    static float IslandRangeCm();
+
+    /** The smallest loading range of the world's streaming grids or partition layers, not its HLOD layers; 0 without
+     *  any. */
+    UFUNCTION(BlueprintCallable, Category = "V2 Streaming", meta = (WorldContext = "WorldContext"))
+    static float MinLoadingRange(const UObject* WorldContext);
+
     /** Every loading range under the world's runtime hash, as "path=range_cm" lines; empty without World Partition. */
     UFUNCTION(BlueprintCallable, Category = "V2 Streaming", meta = (WorldContext = "WorldContext"))
     static FString DescribeLoadingRanges(const UObject* WorldContext);

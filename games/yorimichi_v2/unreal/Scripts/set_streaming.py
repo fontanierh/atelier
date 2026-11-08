@@ -3,16 +3,16 @@
 The original game spawns its whole island at once and only culls by screen size; with the engine's default 256 m
 main-layer range and no HLODs built, a V2 map shows nothing beyond 256 m (the far town, harbour and hills of the original
 views). Run through `editor.run` with V2_EDITOR_CLAIM and V2_EDITOR_PATHS naming the map's package file.
-V2_LOADING_RANGE_CM is the range (default 300,000: 3 km keeps the original's far town, harbour and crater views;
-10 km looked the same and cost about 0.7 GiB more); V2_OPEN_MAP names the map (default /Game/V2/Maps/Slice). The HLOD
-layers keep their ranges.
+V2_LOADING_RANGE_CM is the range (default UV2Streaming.IslandRangeCm, 3 km, which the Yorimichi.V2.StreamingRange test
+checks the committed map holds); V2_OPEN_MAP names the map (default /Game/V2/Maps/Slice). The HLOD layers keep their
+ranges.
 """
 import os
 
 import unreal as U
 
 MAP = os.environ.get('V2_OPEN_MAP') or '/Game/V2/Maps/Slice'
-RANGE = float(os.environ.get('V2_LOADING_RANGE_CM') or 300_000)
+RANGE = float(os.environ.get('V2_LOADING_RANGE_CM') or U.V2Streaming.island_range_cm())
 
 if not U.get_editor_subsystem(U.LevelEditorSubsystem).load_level(MAP):
     raise RuntimeError(f'cannot open {MAP}')

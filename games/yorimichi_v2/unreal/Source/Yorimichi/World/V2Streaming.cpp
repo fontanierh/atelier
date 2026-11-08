@@ -52,6 +52,31 @@ UObject* RuntimeHash(const UObject* WorldContext)
     FObjectProperty* Property = FindFProperty<FObjectProperty>(UWorldPartition::StaticClass(), TEXT("RuntimeHash"));
     return Partition && Property ? Property->GetObjectPropertyValue_InContainer(Partition) : nullptr;
 }
+
+// The HLOD layers keep their own ranges (0 = always loaded).
+bool IsHlod(const FString& Path) { return Path.Contains(TEXT("HLOD")); }
+
+double Read(FNumericProperty* Number, void* Value)
+{
+    return Number->IsFloatingPoint() ? Number->GetFloatingPointPropertyValue(Value) : double(Number->GetSignedIntPropertyValue(Value));
+}
+}
+
+float UV2Streaming::IslandRangeCm()
+{
+    return 300000.f;
+}
+
+float UV2Streaming::MinLoadingRange(const UObject* WorldContext)
+{
+    UObject* Hash = RuntimeHash(WorldContext);
+    if (!Hash) return 0.f;
+    double Smallest = -1.;
+    VisitRanges(Hash, Hash->GetClass(), Hash, FString(), 0, [&](const FString& Path, FNumericProperty* Number, void* Value)
+    {
+        if (!IsHlod(Path)) Smallest = Smallest < 0. ? Read(Number, Value) : FMath::Min(Smallest, Read(Number, Value));
+    });
+    return Smallest < 0. ? 0.f : float(Smallest);
 }
 
 FString UV2Streaming::DescribeLoadingRanges(const UObject* WorldContext)
@@ -62,8 +87,7 @@ FString UV2Streaming::DescribeLoadingRanges(const UObject* WorldContext)
     VisitRanges(Hash, Hash->GetClass(), Hash, Hash->GetClass()->GetName(), 0,
                 [&](const FString& Path, FNumericProperty* Number, void* Value)
                 {
-                    Lines += FString::Printf(TEXT("%s=%.0f\n"), *Path, Number->IsFloatingPoint()
-                        ? Number->GetFloatingPointPropertyValue(Value) : double(Number->GetSignedIntPropertyValue(Value)));
+                    Lines += FString::Printf(TEXT("%s=%.0f\n"), *Path, Read(Number, Value));
                 });
     return Lines;
 }
@@ -76,7 +100,7 @@ int32 UV2Streaming::SetLoadingRanges(const UObject* WorldContext, float RangeCm)
     int32 Changed = 0;
     VisitRanges(Hash, Hash->GetClass(), Hash, FString(), 0, [&](const FString& Path, FNumericProperty* Number, void* Value)
     {
-        if (Path.Contains(TEXT("HLOD"))) return;   // the HLOD layers keep their own ranges (0 = always loaded)
+        if (IsHlod(Path)) return;
         if (Number->IsFloatingPoint()) Number->SetFloatingPointPropertyValue(Value, RangeCm);
         else Number->SetIntPropertyValue(Value, int64(RangeCm));
         ++Changed;
