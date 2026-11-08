@@ -6,6 +6,8 @@
 #include "JapanGameMode.h"
 #include "JapanPreferences.h"
 #include "JapanWorld.h"
+#include "V2ScenePatch.h"
+#include "V2MigrationMisc.h"
 #include "WandererDefinition.h"
 #include "WandererSword.h"
 #include "JapanEncounters.h"
@@ -424,6 +426,54 @@ void ASwordTrainer::AlertCamp(AWandererCharacter* Player)
     }
 }
 
+namespace
+{
+    // The camp's frame: its centre, the unit vectors toward the road and to its left, and the road's yaw.
+    struct FRoninCampFrame { FVector2D Center, Forward, Left; float BaseYaw; };
+    FRoninCampFrame RoninCampFrame()
+    {
+        FRoninCampFrame Frame;
+        Frame.Center = FVector2D(-54.0, -94.0);   // Site A: Coastal Bluff Overlook, facing the road bend (s=243 at (-55.0, -71.0)).
+        const FVector2D RoadPoint(-55.0, -71.0);
+        Frame.Forward = (RoadPoint - Frame.Center).GetSafeNormal();
+        Frame.Left = FVector2D(-Frame.Forward.Y, Frame.Forward.X);
+        Frame.BaseYaw = FMath::RadiansToDegrees(FMath::Atan2(Frame.Forward.Y, Frame.Forward.X));
+        return Frame;
+    }
+
+    // The ground under a camp point (UE cm): the first thing a visibility trace hits, else the terrain's height.
+    FVector RoninGroundAt(UWorld* U, double Bx, double By, float ExtraZ)
+    {
+        const FVector Probe = AJapanWorld::ToUE(Bx, By, 28.0);
+        FHitResult Hit;
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(RoninCampSpawn), false);
+        if (U->LineTraceSingleByChannel(Hit, Probe, Probe - FVector(0, 0, 4000.f), ECC_Visibility, Params))
+            return Hit.ImpactPoint + FVector(0, 0, ExtraZ);
+        return AJapanWorld::ToUE(Bx, By, 8.1) + FVector(0, 0, ExtraZ);
+    }
+}
+
+const ASwordTrainer::FRoninCampProp* ASwordTrainer::FindRoninCampProp(const TCHAR* Mesh)
+{
+    static const FRoninCampProp Props[] = {
+        { TEXT("SM_CampFirePit"),     0.0,  0.0,   0.f },
+        { TEXT("SM_CampJinmaku"),    -6.2,  0.0,  90.f },
+        { TEXT("SM_CampWeaponRack"), -2.4,  4.4, -35.f },
+        { TEXT("SM_CampBales"),      -2.6, -4.4,  30.f },
+    };
+    for (const FRoninCampProp& Prop : Props)
+        if (FCString::Strcmp(Prop.Mesh, Mesh) == 0) return &Prop;
+    return nullptr;
+}
+
+FVector ASwordTrainer::RoninCampPropPlacement(UWorld* U, const FRoninCampProp& Prop, FRotator& OutRotation)
+{
+    const FRoninCampFrame Frame = RoninCampFrame();
+    const FVector2D Pos = Frame.Center + Frame.Forward * Prop.ForwardM + Frame.Left * Prop.LeftM;
+    OutRotation = FRotator(0, -(Frame.BaseYaw + Prop.YawDeg), 0);
+    return RoninGroundAt(U, Pos.X, Pos.Y, -2.f);
+}
+
 void ASwordTrainer::SpawnRoninCamp(AJapanWorld* World)
 {
     const TCHAR* Line = FCommandLine::Get();
@@ -432,12 +482,9 @@ void ASwordTrainer::SpawnRoninCamp(AJapanWorld* World)
     UWorld* U = World->GetWorld();
     if (!U) return;
 
-    // Site A: Coastal Bluff Overlook (-54.0, -94.0) facing the main coastal road bend (s=243 at (-55.0, -71.0)).
-    const FVector2D CampCenter(-54.0, -94.0);
-    const FVector2D RoadPoint(-55.0, -71.0);
-    const FVector2D Fwd2D = (RoadPoint - CampCenter).GetSafeNormal();
-    const FVector2D Left2D(-Fwd2D.Y, Fwd2D.X);
-    const float BaseYawBlender = FMath::RadiansToDegrees(FMath::Atan2(Fwd2D.Y, Fwd2D.X));
+    const FRoninCampFrame Frame = RoninCampFrame();
+    const FVector2D CampCenter = Frame.Center, Fwd2D = Frame.Forward, Left2D = Frame.Left;
+    const float BaseYawBlender = Frame.BaseYaw;
     const FVector CampCenterUE = AJapanWorld::ToUE(CampCenter.X, CampCenter.Y, 8.1);
 
     // Clear instanced trees, bushes and rocks within 15.5 m of the camp center so the arena and sightlines to the road are open.
@@ -456,28 +503,26 @@ void ASwordTrainer::SpawnRoninCamp(AJapanWorld* World)
         }
     }
 
-    auto GroundAt = [&](double Bx, double By, float ExtraZ = 0.f) -> FVector
-    {
-        const FVector Probe = AJapanWorld::ToUE(Bx, By, 28.0);
-        FHitResult Hit;
-        FCollisionQueryParams Params(SCENE_QUERY_STAT(RoninCampSpawn), false);
-        if (U->LineTraceSingleByChannel(Hit, Probe, Probe - FVector(0, 0, 4000.f), ECC_Visibility, Params))
-            return Hit.ImpactPoint + FVector(0, 0, ExtraZ);
-        return AJapanWorld::ToUE(Bx, By, 8.1) + FVector(0, 0, ExtraZ);
-    };
+    auto GroundAt = [&](double Bx, double By, float ExtraZ) -> FVector { return RoninGroundAt(U, Bx, By, ExtraZ); };
 
-    auto SpawnProp = [&](const TCHAR* AssetPath, double ForwardM, double LeftM, float LocalYawDeg) -> FVector
+    // A camp prop the map saved as an object (object/swordcamp/...) already stands; the others spawn as before.
+    const AV2WorldManifest* Manifest = AV2WorldManifest::Find(U);
+    auto SpawnProp = [&](const TCHAR* Mesh) -> FVector
     {
-        const FVector2D Pos = CampCenter + Fwd2D * ForwardM + Left2D * LeftM;
-        const FVector Loc = GroundAt(Pos.X, Pos.Y, -2.f);
-        UStaticMesh* MeshAsset = LoadObject<UStaticMesh>(nullptr, AssetPath, nullptr, LOAD_NoWarn | LOAD_Quiet);
+        const FRoninCampProp* Prop = FindRoninCampProp(Mesh);
+        if (!Prop) return FVector::ZeroVector;
+        FRotator Rot;
+        const FVector Loc = RoninCampPropPlacement(U, *Prop, Rot);
+        if (V2StaticSaved(Manifest, TEXT("swordcamp"), Mesh, TEXT("/Game/SwordCamp/Assets"))) return Loc;
+        const FString AssetPath = FString::Printf(TEXT("/Game/SwordCamp/Assets/%s.%s"), Mesh, Mesh);
+        UStaticMesh* MeshAsset = LoadObject<UStaticMesh>(nullptr, *AssetPath, nullptr, LOAD_NoWarn | LOAD_Quiet);
         if (!MeshAsset) return Loc;
         FActorSpawnParameters Spawn;
         Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-        if (AStaticMeshActor* Prop = U->SpawnActor<AStaticMeshActor>(Loc, FRotator(0, -(BaseYawBlender + LocalYawDeg), 0), Spawn))
+        if (AStaticMeshActor* Spawned = U->SpawnActor<AStaticMeshActor>(Loc, Rot, Spawn))
         {
-            Prop->SetMobility(EComponentMobility::Stationary);
-            if (UStaticMeshComponent* Comp = Prop->GetStaticMeshComponent())
+            Spawned->SetMobility(EComponentMobility::Stationary);
+            if (UStaticMeshComponent* Comp = Spawned->GetStaticMeshComponent())
             {
                 Comp->SetStaticMesh(MeshAsset);
                 Comp->SetCollisionProfileName(TEXT("BlockAll"));
@@ -487,10 +532,10 @@ void ASwordTrainer::SpawnRoninCamp(AJapanWorld* World)
         return Loc;
     };
 
-    const FVector FireLoc = SpawnProp(TEXT("/Game/SwordCamp/Assets/SM_CampFirePit.SM_CampFirePit"), 0.0, 0.0, 0.f);
-    SpawnProp(TEXT("/Game/SwordCamp/Assets/SM_CampJinmaku.SM_CampJinmaku"), -6.2, 0.0, 90.f);
-    const FVector RackLoc = SpawnProp(TEXT("/Game/SwordCamp/Assets/SM_CampWeaponRack.SM_CampWeaponRack"), -2.4, 4.4, -35.f);
-    SpawnProp(TEXT("/Game/SwordCamp/Assets/SM_CampBales.SM_CampBales"), -2.6, -4.4, 30.f);
+    const FVector FireLoc = SpawnProp(TEXT("SM_CampFirePit"));
+    SpawnProp(TEXT("SM_CampJinmaku"));
+    const FVector RackLoc = SpawnProp(TEXT("SM_CampWeaponRack"));
+    SpawnProp(TEXT("SM_CampBales"));
 
     struct FRoninSpawn { int32 Role; double ForwardM; double LeftM; float YawOffset; };
     const FRoninSpawn Squad[3] = {

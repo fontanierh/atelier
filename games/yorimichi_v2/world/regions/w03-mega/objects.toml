@@ -1,6 +1,14 @@
 # Mega region objects (split entries for the editor's objects.toml, see tools/migrate/objects.py).
 # Source data: none needed; this region's non-foliage patch keys are Mega_Trail (1 path patch) and Village_Planting
 # (1 planting patch). Both are kept in the area patches. No placed object of this region is split yet.
+# The mini Mega ramp is spawned from code at world.json "mega" (AMegaRamp::Initialize), not from a region file: its two
+# meshes are one static object (object/megaramp/ramp, UV2MigrationMisc::MigrateStaticMeshes).
 schema = 1
 tag = "mega"
 data = ""
+
+[[objects]]
+id = "object/megaramp/ramp"
+static = ["Mega_Ramp", "Mega_Trim"]
+model = "adopted/japan/assets/mega-park-pieces"
+about = "the mini Mega ramp in the clearing: the ridden Mega_Ramp and its look-only Mega_Trim seams, at world.json's mega origin"
