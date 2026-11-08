@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/megapark/seam",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_3fc3174182abbed4_Seam.uasset": "6362c91cb6699cfb22d625e9a1881bd9b748826d15a1cac5734dcab3a8faa46c",
+    "unreal/Content/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam.uasset": "10c2589fbdf15cdc12a1360a9be2c719e9224279ece28b21f7bda4ee9896023c",
+    "unreal/Content/MegaPark/Materials/MI_b4686eeb54647811_Seam.uasset": "8f437bf6063cbcfd2b175a16f95f24b88e2c656a08aaa9bce5e2283a8d67704c",
+    "unreal/Content/MegaPark/Meshes/SM_MP_Seam.uasset": "98d38b70aa8743e93e2520e0a3cdef73d37dfed5099c3745e692682a94841142",
+    "unreal/Content/MegaPark/Meshes/UC_MP_Seam.uasset": "5e1251f234beddad643a40f34377b8f92d1509837ead1db6b29c590cb4164c45"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

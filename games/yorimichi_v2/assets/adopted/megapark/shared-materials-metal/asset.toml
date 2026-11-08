@@ -1,0 +1,26 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park materials shared by more than one section, surface family metal
+schema = 1
+id = "adopted/megapark/shared-materials-metal"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-materials-metal"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/textures/1388a8ee83f05a88.png"
+sha256 = "c3c442880605f439bfc47e992d4901edff59dda25ceaa684a98e67743e33f354"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_50154985eb80297a"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_8833a462318d0f36"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_e42c5fbb0d12910b"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_1388a8ee83f05a88"

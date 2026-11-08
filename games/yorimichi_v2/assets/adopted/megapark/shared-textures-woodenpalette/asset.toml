@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park textures shared by more than one section, surface family woodenpalette
+schema = 1
+id = "adopted/megapark/shared-textures-woodenpalette"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-textures-woodenpalette"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/textures/00002fd203e3870a.png"
+sha256 = "e8f8778d3b400d65e70b7df52226337082cdebbe1fd5185b7091f5e84d142f6d"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_00002fd203e3870a"

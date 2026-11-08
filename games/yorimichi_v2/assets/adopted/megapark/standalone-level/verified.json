@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/megapark/standalone-level",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Maps/SuperUltraMegaPark.umap": "94fb8aa3bba0e2e9d334a3eb01b452e8bb554fa55c24cafbd01080161b693337"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

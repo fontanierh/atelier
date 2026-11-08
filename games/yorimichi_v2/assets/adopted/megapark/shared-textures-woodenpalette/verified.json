@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/megapark/shared-textures-woodenpalette",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_00002fd203e3870a.uasset": "67a7e70546a0ba61b2b8749530e554e8ea269ed80363b675fc51e5d013738ce4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

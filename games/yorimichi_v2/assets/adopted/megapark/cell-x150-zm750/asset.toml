@@ -1,0 +1,62 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park section at stream cell (150, -750): 1 model(s), 1 collision mesh(es), their own materials and textures
+schema = 1
+id = "adopted/megapark/cell-x150-zm750"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/cell-x150-zm750"
+provenance = "donor build of games/yorimichi (unreal.megapark) from games/yorimichi/assets/megapark/collision/DF7E3E667186E81A_0.npz, geometry/2A4ACEDB492E1152.npz (map.json 0x2A4ACEDB492E1152, 0xDF7E3E667186E81A)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/collision/DF7E3E667186E81A_0.npz"
+sha256 = "b27c68c554113b08c91463014c8574645fbb35af64eea1f417560e667c0ee175"
+
+[[sources]]
+path = "source/assets/megapark/geometry/2A4ACEDB492E1152.npz"
+sha256 = "5903d6b374f8ff950bc820fa836b82fc11cadb33e6c9a248493193dd032fc6e9"
+
+[[sources]]
+path = "source/assets/megapark/textures/811c1938d9d1640a.png"
+sha256 = "8ac002900ccb0ba86f9c67c5a96a9c1ee563ca55368891f3fc30bb4f1b570728"
+
+[[sources]]
+path = "source/assets/megapark/textures/8b068e5c4f70dd7a.png"
+sha256 = "bb06a252ef4300845ce459c0924c53a94f789adc51ba319ca8ddec63693b7b16"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_26359ffa02aa8b79"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_3efa1590536cec8f"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_6ace49ffc6810f8c"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_6cdcc7c59fce9acf"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_71983c9a3be37111"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_8b857125f92e05a3"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_8d6b80c1af99bb72"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_e89b3cb94062eacd"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_2A4ACEDB492E1152"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/UC_MP_DF7E3E667186E81A_0"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_811c1938d9d1640a"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_8b068e5c4f70dd7a"

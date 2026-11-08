@@ -349,7 +349,7 @@ measurement), **Scale**.
 
 ### W11 `megapark` (Super Ultra Mega Park)
 - **Src.** `world/regions/megapark/*`; `assets/megapark` (89 MB, 505 files: npz geometry and collision, 405 PNG,
-  `map.json`) — see the rights risk in §5.
+  `map.json`) — rights cleared by the owner on 2026-11-08 (§5 item 1, DECISIONS D05 group 3).
 - **Steps.** `world.megapark.letters_data`, `world.megapark`, `world.megapark_restyle`; `unreal.megapark`
   (`build.py:1618`); `unreal.kei` (cars).
 - **/Game.** `/Game/MegaPark/{Meshes, Materials, Textures, Maps/SuperUltraMegaPark}`.
@@ -580,6 +580,8 @@ the Sea and SkyDome, and `InstallPark` (`JapanWorld.cpp:842-846`); or a slice-on
      payloads"; it has baked lightmaps, "original desert campus" and "shark logos" (`docs/MEGAPARK.md:166-228`).
    - My inference, not verified: this is extracted from a commercial console game whose park has this name.
    - Do **not** upload it to public LFS until the rights are established. Mark W11 blocked or restricted.
+   - **Resolved 2026-11-08:** the owner granted Mega Park's asset permissions in full (DECISIONS D05 group 3,
+     board #31124). W11 is ported in full: `/Game/MegaPark` and `Data/megapark` are adopted as group 1 content.
 2. **Crater Park (`assets/craterpark`, 59 MB).** The source is `github.com/fontanierh/crater-skate-park` @bf511b1,
    "contributed by the park's author". It is probably the owner's, but no license file was copied. Record a
    license.

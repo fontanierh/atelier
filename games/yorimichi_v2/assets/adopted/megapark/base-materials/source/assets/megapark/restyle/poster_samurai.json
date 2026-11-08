@@ -1,0 +1,33 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Image 1 shows the colours of a stylised game set on a Japanese volcanic island in autumn. Paint a bold, edgy skateboard graphic in the spirit of 1980s skate deck art crossed with Japanese woodblock prints, to be printed on a big billboard in a rugged skate park: thick black ink outlines, flat screen-printed colour in a limited palette of black, bone white, vermilion, indigo and ochre, halftone dots, slightly misregistered and distressed print texture. Flat and straight-on, filling the whole frame edge to edge: no frame, no perspective, no lettering or text of any kind. The image: a skeleton samurai in battered lacquered armour launching a huge frontside air out of a concrete bowl, grabbing the board, a giant curling wave and the snow-capped volcano behind him, maple leaves torn into the wind.",
+  "references": {
+    "build/yorimichi/megapark/restyle/style.png": "c28c71c95f91f0eacb156aaf85a7ad3150b783701d99e3111d20d964926e3fa2"
+  },
+  "purpose": "Mega Park restyle texture",
+  "status": "done",
+  "started_at": "2026-10-01T00:59:37.601392+00:00",
+  "usage": {
+    "input_tokens": 768,
+    "input_tokens_details": {
+      "image_tokens": 576,
+      "text_tokens": 192
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2140
+  },
+  "png_sha256": "b9aa8bbd3d0d1233101b8902b9f375dadd546fd55f1ac29fc8997ddaad95645c",
+  "output": {
+    "file": "poster_samurai.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-01T01:00:15.517076+00:00"
+}

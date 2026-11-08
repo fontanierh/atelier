@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/megapark/shared-materials-grass",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_019f21907e23ff72.uasset": "3d4d69bcf41c757719e98fdedaaf1bf64c288b7c2ba96989672d31bbee71bc05",
+    "unreal/Content/MegaPark/Materials/MI_1c459d531b9e2a50.uasset": "89dc7a8030089ae3463afa147cc460ccac11c09a5fa11f3bb5492a3e5972eda6",
+    "unreal/Content/MegaPark/Materials/MI_8e16faae0899d41c.uasset": "c09662e3df6cfcef5f84ab826d5e04cda06d2bb0d9051c2c97e90c1374c1770b",
+    "unreal/Content/MegaPark/Materials/MI_8ebf3479943062ea.uasset": "794a3b085cba09d704d526481894bdeb3f84af2411e6cfcf21c5984e4d330ffe",
+    "unreal/Content/MegaPark/Materials/MI_b3387759918e63ae.uasset": "99a6d58938ee61204ceb331a5e09dcb938150948c45aa5c7411e83f2a008193c",
+    "unreal/Content/MegaPark/Materials/MI_c8a0563acd40a4bb.uasset": "bcd16af0a9960ab0d7693617a174150989ffa20b1b1bdf5df8d43b92b278094f",
+    "unreal/Content/MegaPark/Materials/MI_de1b3fb86ca47714.uasset": "523d4b3672497533d5ff4bb65a767d103272056c2d2d2a333c7734c15879b3bb",
+    "unreal/Content/MegaPark/Materials/MI_defde38b5c2de4e4.uasset": "fd788714004ad97bb8e1c92389790c107eda673eab0bd0ab630e0ef6fe01e671",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00040094.uasset": "97020d84d7f62175efa333b432ab9e3e63646e7779f9aebf67a583f684cfd8c1",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00040095.uasset": "0270dfee3d8128cdf4d6846a7b8ea641da8e13f6f1cb1a1e6d8498ff241669e7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

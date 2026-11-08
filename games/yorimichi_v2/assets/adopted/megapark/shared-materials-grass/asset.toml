@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park materials shared by more than one section, surface family grass
+schema = 1
+id = "adopted/megapark/shared-materials-grass"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-materials-grass"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a00040094.png"
+sha256 = "ec5453f6159740aee1b8b37dd1aed75ce8b87510a97c07db582e91d1b864b533"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a00040095.png"
+sha256 = "26312364530678533515038b1a081c41b4d8838571c44a59b5b0b1296ceafc58"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_019f21907e23ff72"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_1c459d531b9e2a50"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_8e16faae0899d41c"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_8ebf3479943062ea"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_b3387759918e63ae"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_c8a0563acd40a4bb"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_de1b3fb86ca47714"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_defde38b5c2de4e4"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a00040094"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a00040095"

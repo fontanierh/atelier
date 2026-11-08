@@ -1,6 +1,6 @@
 # W11 megapark: megapark/placement.py:19 CENTRE (-150, 1300); megapark/park.json:1 placement bounds x -339.5..69.2,
 # y 1023.1..1569.6; HD_NorthGate x -260..-60, y 1440..1600; zeppelin_megapark (-200, 1484) (world.json:1).
-# Rights risk: inventory world.md §5 item 1.
+# Rights: cleared by the owner 2026-11-08 (inventory world.md §5 item 1, DECISIONS D05 group 3).
 # Source x -512..256 m, y 896..1792 m; Unreal = (100 x, -100 y) cm, half-open (inventory/world.md §1).
 schema = 1
 id = "region/w11-megapark"

@@ -1,0 +1,70 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park materials shared by more than one section, surface family wood
+schema = 1
+id = "adopted/megapark/shared-materials-wood"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-materials-wood"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0297e420658d668d"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0a62da3eb9f73004"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0e1c4253739c05d1"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0e3433716e431235"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_234095f625b41d97"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_26bca4f4c4439b9a"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_2d236e27b1c7ae19"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_2d299e45c0b686a4"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_4154dbd709458a3a"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_54b9cb948ff265c3"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_5b7d4772f362d980"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_5fa42b1b843c5f13"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_74de62d96d172fcd"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_97fb1d5d055dc83e"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_9d9ad61af96a5a48"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_b34bfde2b1b2ba35"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_c3a8971b198e360e"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_c941862c2cc7a50f"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_cef7e645a74d3d6c"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_da41d4c91df999ea"

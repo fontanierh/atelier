@@ -26,8 +26,8 @@ proposed), or disabled.
 - **V2 needs its own identity:** a different `ProjectName` so its Saved state (settings, markers, racing saves)
   cannot overwrite the original game's, and a network build ID computed from V2's own folders.
 - **ElectraPlayer stays:** the music library plays MP3 through it (`JapanMusic.cpp:194`).
-- **Rights:** see DECISIONS D05. Mega Park's public upload is blocked; Sonniss-derived sounds go to restricted
-  storage.
+- **Rights:** see DECISIONS D05. The owner cleared Mega Park's assets on 2026-11-08, so it is ported in full;
+  Sonniss-derived sounds go to restricted storage.
 
 ## Gameplay and shared systems
 

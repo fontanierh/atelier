@@ -1,0 +1,25 @@
+{
+  "asset": "adopted/megapark/shared-textures-metal",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_00007d4b03e3870a.uasset": "24166147b4e5b4fa1e17068971d000c5f6a274b21e8570769acd67d4d758b49b",
+    "unreal/Content/MegaPark/Textures/T_00007d4c03e3870a.uasset": "0469fd131e80b6f7723b0ab6dc160e879744f0b97f7672b2becc356ff8d4a4e4",
+    "unreal/Content/MegaPark/Textures/T_00007d4d03e3870a.uasset": "ebad4fd15d5b501850486cc6199b315ef6fc275478b664a1de708d738317bbfc",
+    "unreal/Content/MegaPark/Textures/T_00008d0103e3870a.uasset": "e4cf97cfb08da5a8c41c4ad7b521b0936480c9e3f9ded04ff1daab3459de8848",
+    "unreal/Content/MegaPark/Textures/T_00008d3103e3870a.uasset": "43fc5e86e2068953fc22a9c9157d3883f3d8a3fc940b7d4e7b79184c33ab1d1d",
+    "unreal/Content/MegaPark/Textures/T_00008d3703e3870a.uasset": "4a58b450bab70a489bdc83e8394e1ac517107246e4031456becb725af6c95b57",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00040012.uasset": "b556f092a1eaa7c7c1469900313f394afec7d81bd9ad37170dd2c10396ed153b",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00040013.uasset": "806ec708e488a3da5c17a34ae9f2dffe15f43b69771c02dc4b3a4c4f7aae6009",
+    "unreal/Content/MegaPark/Textures/T_2c70170a000400d4.uasset": "78585a0a32be543fc5e254e65253e7efe30d9f8f56fcc4be23f44474799027a2",
+    "unreal/Content/MegaPark/Textures/T_2c70170a0005025f.uasset": "9e98ae03e7f8cc90fa94a62a7c0bbad9145616a1d14371d75fe22403e1c9cf54",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00050262.uasset": "84b5544fa955da31ffd7b8fc7d1f39331fe2b6cb6b77ab491bf1562a1fdc17d3",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0130.uasset": "502805f26d09a8c74e462170d01e80ad9441ed616fa9fd9269dce007bce76e5e",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0131.uasset": "40c55797591288fc00c10f79fffebd96d97f366aac192a0386ae3ca30573849e",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0169.uasset": "c582d0fe1d940bc72db6391b0549c0366adf94e1bcf38048167005a9cf5ef8a3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

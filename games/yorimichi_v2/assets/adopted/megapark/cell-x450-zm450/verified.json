@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/megapark/cell-x450-zm450",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Meshes/SM_MP_DBDE3D0EED110A40.uasset": "8fd42413d60612341353ecefc10b447cc2720e1d9f37b1ee7d564c1e373f1921",
+    "unreal/Content/MegaPark/Meshes/SM_MP_F3ACAD491674B546.uasset": "24fcce7d100a32b3a083410a1ab67c009d18bf212b3c39a3883d33fccadc34df",
+    "unreal/Content/MegaPark/Meshes/UC_MP_85B482F74109D22C_0.uasset": "297fb86b9a8e7d3d7c55cea40e43cc325f645684c1af63b44269264ca22f2170",
+    "unreal/Content/MegaPark/Meshes/UC_MP_E3F9D354AB7015F2_0.uasset": "ac25466b5b4eccdd133fd44a5993ec0b546a2ed0dd638ef4dfaa0ad8c1ed8bec"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

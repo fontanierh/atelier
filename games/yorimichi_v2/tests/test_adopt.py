@@ -1,5 +1,6 @@
 """Adoption copies donor packages once under their paths, records them editor-owned, and reports gaps."""
 import importlib.util
+import json
 import sys
 import tomllib
 from pathlib import Path
@@ -113,13 +114,13 @@ def test_writes_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):
 def test_runtime_data_copies_regular_files(donor):
     game, content = donor
     (content / 'Data/megapark').mkdir(parents=True)
-    (content / 'Data/megapark/park.json').write_text('{}')   # D05 group 3: rights-blocked, never copied
-    assert adopt.copy_data(game, content, echo=lambda *_: None) == 1
+    (content / 'Data/megapark/park.json').write_text('{}')   # D05 group 3 cleared 2026-11-08: copied like the rest
+    assert adopt.copy_data(game, content, echo=lambda *_: None) == 2
     assert adopt.copy_data(game, content, echo=lambda *_: None) == 0
-    assert not (game / 'unreal/Content/Data/megapark').exists()
+    assert (game / 'unreal/Content/Data/megapark/park.json').is_file()
     assert tomllib  # stdlib only
     lock = adopt.records.load_data_lock(game)                 # every copied file is pinned
-    assert set(lock) == set(adopt.records.data_files(game)) and len(lock) == 1
+    assert set(lock) == set(adopt.records.data_files(game)) and len(lock) == 2
 
 
 def test_runtime_data_writes_and_pins_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):
@@ -193,6 +194,64 @@ def test_a_group_rule_splits_a_mixed_folder_by_what_its_packages_are(tmp_path):
     assert sorted(adopt.partition(mixed, 'Japan/Assets', cap=200)) == ['adopted/japan/assets']
 
 
+def test_a_units_map_groups_a_hashed_folder_across_its_subfolders(tmp_path):
+    """Mega Park's way: a committed map puts each package, whatever its subfolder, in a named unit with its provenance."""
+    (tmp_path / 'park').mkdir()
+    (tmp_path / 'park/units.json').write_text(json.dumps({
+        'units': {'cell-x150-zm850': {'about': 'section (150, -850)', 'provenance': 'from geometry/AB.npz'},
+                  'shared-materials-stone': {'about': 'shared stone'}},
+        'packages': {'/Game/Park/Meshes/SM_MP_AB': 'cell-x150-zm850', '/Game/Park/Materials/MI_1': 'cell-x150-zm850',
+                     '/Game/Park/Materials/MI_2': 'shared-materials-stone'}}))
+    rules = tmp_path / 'groups.toml'
+    rules.write_text('[[units]]\nfolder = "/Game/Park"\nmap = "park/units.json"\n')
+    groups = adopt.load_groups(rules)
+    units = adopt.partition(['/Game/Park/Meshes/SM_MP_AB', '/Game/Park/Materials/MI_1', '/Game/Park/Materials/MI_2'],
+                            'Park', groups=groups)
+    assert {u: (v[1], sorted(v[2])) for u, v in units.items()} == {
+        'adopted/park/cell-x150-zm850': ('section (150, -850)', ['/Game/Park/Materials/MI_1', '/Game/Park/Meshes/SM_MP_AB']),
+        'adopted/park/shared-materials-stone': ('shared stone', ['/Game/Park/Materials/MI_2'])}
+    assert groups['/Game/Park'].provenance('cell-x150-zm850') == 'from geometry/AB.npz'
+    assert groups['/Game/Park'].provenance('shared-materials-stone') == adopt.PROVENANCE
+    with pytest.raises(adopt.AdoptError, match='in no unit'):
+        adopt.partition(['/Game/Park/Meshes/SM_MP_CD'], 'Park', groups=groups)
+    with pytest.raises(adopt.AdoptError, match='over 1; split it'):
+        adopt.partition(['/Game/Park/Meshes/SM_MP_AB', '/Game/Park/Materials/MI_1'], 'Park', cap=1, groups=groups)
+
+
+def test_a_mapped_unit_carries_its_sources_into_its_record(tmp_path, monkeypatch):
+    """Each unit's originals are copied into its record and pinned there; units without own originals reference the
+    unit holding their generator. A missing original refuses the adoption."""
+    repo = tmp_path / 'repo'
+    game, content = repo / 'games/v2', tmp_path / 'donor'
+    write(content / 'Park/Meshes/SM_MP_AB.uasset')
+    write(content / 'Park/Materials/M_Base.uasset')
+    write(repo / 'games/old/assets/park/geometry/AB.npz', b'mesh')
+    write(repo / 'games/old/tools/importer.py', b'code')
+    (game / 'unreal/Content').mkdir(parents=True)
+    write(game / 'assets/adopted/park/units.json', json.dumps({
+        'units': {'cell': {'about': 'section', 'sources': ['games/old/assets/park/geometry/AB.npz'],
+                           'references': ['adopted/park/base']},
+                  'base': {'about': 'base', 'sources': ['games/old/tools/importer.py']}},
+        'packages': {'/Game/Park/Meshes/SM_MP_AB': 'cell', '/Game/Park/Materials/M_Base': 'base'}}).encode())
+    write(game / 'assets/adopted/groups.toml', b'[[units]]\nfolder = "/Game/Park"\nmap = "park/units.json"\n')
+    monkeypatch.setattr(adopt, 'references', lambda path: [])
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
+    assert adopt.adopt(game, content, ['Park'], [], 'x', check_only=True)['sources'] == 2
+    assert not (game / 'assets/adopted/park/cell').exists()
+    adopt.adopt(game, content, ['Park'], [], 'x', echo=lambda *_: None)
+    cell = records.load_asset(game / 'assets/adopted/park/cell/asset.toml')
+    assert [(s.path, s.sha256) for s in cell.sources] == [('source/assets/park/geometry/AB.npz',
+                                                           records.sha256_file(repo / 'games/old/assets/park/geometry/AB.npz'))]
+    assert (game / 'assets/adopted/park/cell/source/assets/park/geometry/AB.npz').read_bytes() == b'mesh'
+    assert cell.references == ['adopted/park/base']
+    base = records.load_asset(game / 'assets/adopted/park/base/asset.toml')
+    assert [s.path for s in base.sources] == ['source/tools/importer.py'] and base.references == []
+    (repo / 'games/old/tools/importer.py').unlink()
+    with pytest.raises(adopt.AdoptError, match='importer.py is missing'):
+        adopt.adopt(game, content, ['Park'], [], 'x', check_only=True)
+
+
 def test_group_rules_are_checked_and_colliding_group_names_refused(tmp_path):
     rules = tmp_path / 'groups.toml'
     rules.write_text('[[group]]\nfolder = "/Game/A"\nkey = "^BK_"\n')
@@ -255,6 +314,57 @@ def test_repartition_keeps_membership_exactly_passes_the_check_and_is_idempotent
     again = adopt.repartition(game, cap=200, echo=lambda *_: None)
     assert again['write'] == [] and again['delete'] == [] and again['records'] == report['records']
     assert stamps == {p: p.stat().st_mtime_ns for p in (game / 'assets').rglob('*') if p.is_file()}
+
+
+def test_repartition_into_a_units_map_copies_each_units_sources_and_passes_the_check(tmp_path, monkeypatch):
+    """A batch-partitioned region split by a units map: every unit keeps its packages and verified files, takes its
+    sources into its record (pinned) and its references; a second run changes nothing."""
+    repo = tmp_path / 'repo'
+    game = repo / 'games/v2'
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
+    packages = ['/Game/Cove/Meshes/SM_Ships_2_2', '/Game/Cove/Meshes/SM_Rocks_1_1', '/Game/Cove/Materials/MI_Wood']
+    files = coarse_tree(game, packages, 'adopted/cove/loose_files_01')
+    write(repo / 'games/old/regions/cove/build.py', b'generator')
+    write(game / 'assets/adopted/cove/units.json', json.dumps({
+        'units': {'wreck': {'about': 'the wreck', 'references': ['adopted/cove/materials']},
+                  'rocks-1-1': {'about': 'rocks', 'references': ['adopted/cove/materials']},
+                  'materials': {'about': 'materials and the generator', 'sources': ['games/old/regions/cove/build.py']}},
+        'packages': {packages[0]: 'wreck', packages[1]: 'rocks-1-1', packages[2]: 'materials'}}).encode())
+    write(game / 'assets/adopted/groups.toml', b'[[units]]\nfolder = "/Game/Cove"\nmap = "cove/units.json"\n')
+    report = adopt.repartition(game, echo=lambda *_: None)
+    assert sorted(report['records']) == ['adopted/cove/materials', 'adopted/cove/rocks-1-1', 'adopted/cove/wreck']
+    assert 'assets/adopted/cove/materials/source/regions/cove/build.py' in report['write']
+    materials = records.load_asset(game / 'assets/adopted/cove/materials/asset.toml')
+    assert [(s.path, s.sha256) for s in materials.sources] == [
+        ('source/regions/cove/build.py', records.sha256_file(repo / 'games/old/regions/cove/build.py'))]
+    wreck = records.load_asset(game / 'assets/adopted/cove/wreck/asset.toml')
+    assert wreck.references == ['adopted/cove/materials'] and [o.package for o in wreck.outputs] == packages[:1]
+    assert membership(game)[2] == files
+    again = adopt.repartition(game, echo=lambda *_: None)
+    assert again['write'] == [] and again['delete'] == []
+
+
+def test_a_units_map_on_a_nested_folder_carries_its_sources(tmp_path, monkeypatch):
+    """A units map below the top folder (/Game/Japan/Cove) gives its units their sources, like a top-level one."""
+    repo = tmp_path / 'repo'
+    game = repo / 'games/v2'
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
+    packages = ['/Game/Japan/Cove/SM_Ships_2_2', '/Game/Japan/Cove/MI_Wood']
+    coarse_tree(game, packages, 'adopted/japan/loose_files_01')
+    write(repo / 'games/old/regions/cove/build.py', b'generator')
+    write(repo / 'games/old/regions/cove/wreck.glb', b'model')
+    write(game / 'assets/adopted/japan/cove/units.json', json.dumps({
+        'units': {'wreck': {'about': 'the wreck', 'sources': ['games/old/regions/cove/wreck.glb']},
+                  'materials': {'about': 'the generator', 'sources': ['games/old/regions/cove/build.py']}},
+        'packages': {packages[0]: 'wreck', packages[1]: 'materials'}}).encode())
+    write(game / 'assets/adopted/groups.toml', b'[[units]]\nfolder = "/Game/Japan/Cove"\nmap = "japan/cove/units.json"\n')
+    report = adopt.repartition(game, echo=lambda *_: None)
+    assert sorted(report['records']) == ['adopted/japan/cove/materials', 'adopted/japan/cove/wreck']
+    wreck = records.load_asset(game / 'assets/adopted/japan/cove/wreck/asset.toml')
+    assert [s.path for s in wreck.sources] == ['source/regions/cove/wreck.glb']
+    assert (game / 'assets/adopted/japan/cove/wreck/source/regions/cove/wreck.glb').read_bytes() == b'model'
 
 
 def test_repartition_refuses_double_ownership_and_lost_packages_writing_nothing(donor, monkeypatch):
@@ -322,3 +432,12 @@ def test_adoption_writes_the_repartitioned_units_and_asks_for_repartition_over_c
     report = adopt.adopt(game, content, ['Japan'], [], 'owner-published', echo=lambda *_: None)
     assert set(report['records']) == {a.id for a in records.discover(game)[0]}
     assert stamps == {p: p.stat().st_mtime_ns for p in (game / 'assets').rglob('asset.toml')}
+
+
+def test_a_donor_asset_toml_among_copied_sources_is_no_record(tmp_path):
+    """A record's sources keep their donor names: the donor's own asset.toml in source/ is a file, not a V2 record."""
+    game = tmp_path / 'game'
+    write(game / 'assets/adopted/cove/prop/asset.toml', b'schema = 1\n')
+    write(game / 'assets/adopted/cove/prop/source/assets/props/prop/asset.toml', b'model = "donor"\n')
+    write(game / 'assets/prop/other/asset.toml', b'schema = 1\n')
+    assert records.record_paths(game) == [game / 'assets/adopted/cove/prop/asset.toml', game / 'assets/prop/other/asset.toml']

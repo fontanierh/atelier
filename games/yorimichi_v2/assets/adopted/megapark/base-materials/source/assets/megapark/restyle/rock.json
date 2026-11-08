@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, cool lavender-grey volcanic rock with moss, autumn leaves. Repaint Image 1 as a seamless tileable texture in that style, keeping the layout, scale and direction of its features (strata, cracks, pebbles, blades) so it fits the same 3D surfaces. Seen perfectly flat and straight-on, filling the square edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film, soft strokes that still read as the real material, medium detail that holds up when repeated. The surface: rugged layered volcanic rock like Mount Myogi, crisp horizontal strata and blocky joints, pale lavender-grey granite speckled with small faceted strokes of lilac, blue-grey and warm grey, a few small yellow-green lichen spots, clean and bright rather than dark or mottled.",
+  "references": {
+    "games/yorimichi/assets/megapark/textures/2c70170a001d0133.png": "460ea2192a218af88809d59afbc3f377d9e10a8824f8169be37f693591d3494c",
+    "build/yorimichi/megapark/restyle/style-rock.png": "9c250cfa274b52c72dc8e5f8466f9db06b84ebf4bdf0898d46b19721e10b048e"
+  },
+  "purpose": "Mega Park restyle texture",
+  "status": "done",
+  "started_at": "2026-10-01T00:57:38.987862+00:00",
+  "usage": {
+    "input_tokens": 2167,
+    "input_tokens_details": {
+      "image_tokens": 1920,
+      "text_tokens": 247
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3923
+  },
+  "png_sha256": "f92de536304a21817c2b8e9d470e572d0d8f7127d34e1f037d756e7fdf29913b",
+  "output": {
+    "file": "rock.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-10-01T00:58:18.889523+00:00"
+}

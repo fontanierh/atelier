@@ -1,0 +1,32 @@
+{
+  "asset": "adopted/megapark/shared-materials-dirtgravel",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_137acbbd780c0760.uasset": "321e75013f16d77252c0864daa893347ccf61e377fb433a4a8b5ae91899a1c12",
+    "unreal/Content/MegaPark/Materials/MI_1afc75be17525f83.uasset": "48a8b86d3a6928bebe4ab5c3dc095342d03a5606f4794a28932f9f1884098b55",
+    "unreal/Content/MegaPark/Materials/MI_1b789074f4183ee0.uasset": "11af2d697f12f6689840ff1a9a657d77e7d0c1f1017ca1103204a7dfd7fa74eb",
+    "unreal/Content/MegaPark/Materials/MI_30d2b0576500f96a.uasset": "1efa29ac39652af8b87840a9d07c1189d05c5cf0dc1ea84e55d3480406ccbaf2",
+    "unreal/Content/MegaPark/Materials/MI_425f92a48bc2d7e1.uasset": "20357ce0853454328eb15ee4862d9b8fcf03410b483d64680e43a0aff2c2f39c",
+    "unreal/Content/MegaPark/Materials/MI_4cef5bb305cb09eb.uasset": "e27a5c055b5bf1c454cd31951e2de5bb1505483971372e97ae3d87a0d9002919",
+    "unreal/Content/MegaPark/Materials/MI_57e5b863bc4b0ff3.uasset": "80e87f005c6c2a92a5c8605b909a930e84ec5302bcff4676eb2626df14970519",
+    "unreal/Content/MegaPark/Materials/MI_57e9f41fb7c23d24.uasset": "a15fbbfa59ce76793cd4377cab48908f46079b989fc4173bbf9de810b2ef3d9b",
+    "unreal/Content/MegaPark/Materials/MI_5cabec63bf8f4d8e.uasset": "0db2f8bd67582085a6f72ced230b235620db36c06e95fea6a498aed690f0da13",
+    "unreal/Content/MegaPark/Materials/MI_8717ed5720165d92.uasset": "2dda1546ed7a60d6dcab132726a0451dca2c3ec978d3b1bc2a61f464561bb346",
+    "unreal/Content/MegaPark/Materials/MI_8dd03ed7d12d34e1.uasset": "6bcda6360e88ea9a0dc8cc77433f536148b8ccb906431f0fd2403562957575d9",
+    "unreal/Content/MegaPark/Materials/MI_94c47e973e6a99ca.uasset": "33b65acecb19e1ccd37fa6c3643044dd1e815aef6c7c4db729f1f0d35d3b0bcb",
+    "unreal/Content/MegaPark/Materials/MI_b4686eeb54647811.uasset": "ab95e312558d2152680a05ef7da70e7e1c60b2e766600fa3353969a9dc0ee7dd",
+    "unreal/Content/MegaPark/Materials/MI_ec34964a9ba0ef7c.uasset": "db0b8e88ba84185a9708eea5829003ddf9029be71443ef7dad80e95637759394",
+    "unreal/Content/MegaPark/Materials/MI_eece4d72f636b990.uasset": "2fa06d01d6606d6bdb536ba5d46be9cda6affad6655c85a965c28c25f9d98476",
+    "unreal/Content/MegaPark/Materials/MI_f110f5748d8a673d.uasset": "73d67b31a172a726d661b271ddf198d5874f8dfd252a8fe6fd675fae6cb0648d",
+    "unreal/Content/MegaPark/Textures/T_1c888ac4aa494547.uasset": "e6185c57b24fdb207b5dc725c78da469221d604622fec7ca43a5b22d122ea227",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0128.uasset": "a78c2b34265437fc0e70e450ae079b9e318476f1e88d896b6c5a47d2876cb589",
+    "unreal/Content/MegaPark/Textures/T_384272052e183fb5.uasset": "e690720c9bcb1aa84ac0b0c55434f211404e69482f1b560a007bc169a0c2e044",
+    "unreal/Content/MegaPark/Textures/T_82287efe2fbf5a5d.uasset": "ed581c83446c773cf7514680bc14adcbcae048d0caa843a2848e5ac1944907d6",
+    "unreal/Content/MegaPark/Textures/T_a13a0b6bac593669.uasset": "54e36932a5601fdc0f22632e42697396d18b0d44a5a553b03200e8f18cebfe7a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

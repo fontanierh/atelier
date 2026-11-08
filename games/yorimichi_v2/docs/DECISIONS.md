@@ -97,9 +97,13 @@ field, and there is no LICENSE file. The inventory (inventory/world.md §5) sort
    existing pinned external release (plan §14). Mechanism: `restricted.toml` declares the roots (`/Game/Audio`,
    `/Game/Japan/Audio` and the group 1 animation roots, Git-ignored), `restricted.lock.json` pins each file, `tools/restricted/fetch.py` pins and
    fetches, and the content check fails on a tracked or unpinned restricted file (README, "Restricted audio").
-3. **Blocked pending the owner:** **Super Ultra Mega Park** (`assets/megapark`, W11, F26, F31). Its data carries
-   retail material identifiers, a decoded vertex codec and baked lightmaps. Its provenance as "Atelier's own asset
-   library" is unverified. Until the owner settles its rights, V2 does not upload its packages. Crater Park's
+3. **Blocked pending the owner (now empty).** **Super Ultra Mega Park** (`assets/megapark`, W11, F26, F31) was
+   held here because its data carries retail material identifiers, a decoded vertex codec and baked lightmaps, and
+   its provenance as "Atelier's own asset library" was unverified. **Cleared 2026-11-08:** the owner granted its
+   asset permissions in full ("Mega park asset permissions fully granted", relayed on the agent board, #31124). Mega
+   Park is therefore group 1: its packages (`/Game/MegaPark`) and runtime data (`Data/megapark`) go to public LFS
+   like any other adopted content, and the full port includes its standalone level and static dressing. The
+   clearance covers the park's assets only; go-kart driving (X02) and phone streaming stay excluded. Crater Park's
    source (`fontanierh/crater-skate-park`) is very likely the owner's own, but V2 records its license before
    upload; until then its packages are restricted (group 2 storage), so the port plays it without uploading it.
 
