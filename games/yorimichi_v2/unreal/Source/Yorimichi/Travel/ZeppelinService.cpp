@@ -116,8 +116,9 @@ FString AZeppelinService::StateJson() const
 FString UZeppelinLive::ZeppelinState()
 {
  const UWorld* World=ULiveLibrary::GameWorld();
- for(TActorIterator<AZeppelinService> It(World);World&&It;++It)return It->StateJson();
- return TEXT("{}");
+ if(!World)return TEXT("{}");
+ TActorIterator<AZeppelinService> It(World);
+ return It?It->StateJson():TEXT("{}");
 }
 int32 AZeppelinService::Nearby(const AWandererCharacter* C,float Radius) const
 {
