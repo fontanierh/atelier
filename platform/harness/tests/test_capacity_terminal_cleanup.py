@@ -99,6 +99,32 @@ def test_shared_editor_releases_only_its_bound_normal_empty_tree(terminal, bad):
         assert record['state'] == 'uncertain'
 
 
+def test_refresh_releases_finished_editor_without_releasing_live_peer(terminal):
+    import copy
+    broker, finished, path, receipt = terminal
+    broker.mode, broker.activation_id, broker.compatible = 'capacity', 'fixture', True
+    broker._compatibility_proof = lambda: {'activation_id': 'fixture'}
+    broker._watches, broker.lease_seconds = {}, 30
+    broker._guard_health = lambda record: None
+    now = time.monotonic()
+    finished['request'].update(shared_editor=True, phase='job')
+    receipt.update(controller=finished['principal'], late_reporters=dict(
+        adopted=[], unresolved=[], unresolved_pids=[], scan_failed=False))
+    path.write_text(json.dumps(receipt))
+    peer = copy.deepcopy(finished)
+    peer.update(state='running', child=[200, 2000], principal=[199, 1990], roster=[[200, 2000]],
+                exited=[], ancestry_unknown=False, heartbeat=now, nonce='peer')
+    peer['request'].update(id='peer', locks=['checkout:peer'],
+                           resources=asdict(Resources(memory_mib=10240, cpu_millis=5000)))
+    before = copy.deepcopy(peer)
+    broker.started = lambda pid: pid * 10
+    broker.alive = lambda pin: pin in ((199, 1990), (200, 2000))
+    state = {'records': {'done': finished, 'peer': peer}}
+    broker._refresh(state, now)
+    assert finished['state'] == 'released'
+    assert peer == before  # Its grant, memory/CPU charge, checkout lock and live identities remain exact.
+
+
 def stopped_receipt(record, receipt, reason):
     footprint = record['limit_bytes'] + 1 if reason == 'memory_limit' else 77
     return receipt | dict(state=reason, footprint_bytes=footprint, peak_bytes=footprint,
