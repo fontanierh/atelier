@@ -352,34 +352,52 @@ SESSION_FAILED = re.compile(r'editor session failed: job (\d+) ')
 SUMMARY_LINE = re.compile(r'summary (\S+summary\.json)')
 
 
-def run_session(jobs_file: Path) -> dict:
-    """Run one editor session over the batch's JOBS.json (tools/editor/session.py, rendered: its headless mode takes
-    only object migrations). Returns {asset ID: {'status': 'done'|'failed'|'not-run', 'error': str|None,
-    'written': [repository paths]}}, or raises BatchCrash when the session died without a job's result."""
+class SessionOutcome:
+    """One editor session's result: each job's status (done, failed or not-run), and the session's exit code."""
+
+    def __init__(self, results: dict, exit_code: int):
+        self.results, self.exit_code = results, exit_code
+
+
+def run_session(jobs_file: Path, *, log_file: Path, headless: bool = False) -> SessionOutcome:
+    """Run one editor session over the batch's JOBS.json (tools/editor/session.py). Its output is streamed to this
+    console and to `log_file`; the summary path and the failed job are read from the streamed text. The session's
+    summary lists each finished job's asset and written files. A job the session reports as failed is 'failed'; every
+    other job it did not finish is 'not-run'. Raises BatchCrash only when the session cannot start."""
     if "'import'" not in SESSION.read_text():
         # session.py runs only the job kinds it knows; checking first spares an editor start that would fail after it.
         raise BatchCrash(f"{SESSION.name} has no 'import' job kind, so no batch can run an import yet")
     command = ['nice', '-n', '10', 'uv', 'run', 'python', str(SESSION), str(jobs_file)]
-    done = subprocess.run(command, cwd=REPO, capture_output=True, text=True)
-    text = done.stdout + done.stderr
+    if headless:
+        command.append('--headless')
     jobs = json.loads(jobs_file.read_text())['jobs']
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    lines = []
+    with log_file.open('w') as log:
+        process = subprocess.Popen(command, cwd=REPO, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                   bufsize=1)
+        for line in process.stdout:
+            print(line, end='', flush=True)
+            log.write(line)
+            log.flush()
+            lines.append(line)
+        code = process.wait()
+    text = ''.join(lines)
     results = {job['asset']: {'status': 'not-run', 'error': None, 'written': []} for job in jobs}
     summary_path = SUMMARY_LINE.search(text)
     if summary_path and Path(summary_path.group(1)).is_file():
         summary = json.loads(Path(summary_path.group(1)).read_text())
         for entry in summary.get('jobs', []):
-            asset = entry['name'].removeprefix('import ')
+            asset = entry.get('asset') or entry['name'].removeprefix('import ')
             if asset in results and 'written' in entry:
                 results[asset] = {'status': 'done', 'error': None, 'written': list(entry['written'])}
-    if done.returncode:
+    if code:
         failed = SESSION_FAILED.search(text)
         if failed and 1 <= int(failed.group(1)) <= len(jobs):
             asset = jobs[int(failed.group(1)) - 1]['asset']
             results[asset] = {'status': 'failed', 'error': text.split('editor session failed: ', 1)[-1].strip(),
                               'written': []}
-        elif not any(r['status'] == 'done' for r in results.values()):
-            raise BatchCrash(f'the editor session failed before any job finished: {text.strip()[-300:]}')
-    return results
+    return SessionOutcome(results, code)
 
 
 class _Prepared:
@@ -448,18 +466,20 @@ def _verify_batch(game, prepared, result, *, engine, echo):
 
 
 def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_session, echo=print) -> dict:
-    """Import many generated assets through one warm editor: at most `batch_size` jobs per editor session.
+    """Import many generated assets through warm editor sessions: at most `batch_size` jobs per session, and a session
+    holds one asset kind only. A static-mesh session runs headless; a texture session stays rendered.
 
-    Each asset is prepared (fingerprint, authorize, journal, plan) and its write set journaled as import_one does; the
-    session runs one job per asset in order. Per asset: a finished job is verified and recorded; a failed job restores
-    its journal and records its error; a job the session never reached restores its journal and waits for the next
-    session. An asset's failure never rolls back another's success. A session that dies restores only the assets it
-    did not finish, and the batch stops. Returns the report: imported, unchanged, failed {ID: error}, interrupted.
+    Each asset is prepared (fingerprint, authorize, journal, plan) and its write set journaled as import_one does. The
+    session runs one job per asset in order. A finished job is verified and recorded; a failed job restores its
+    journal and records its error. A session that exits nonzero, or dies, is an interrupted batch even when earlier jobs
+    finished: the finished ones are recorded, every other job restores its journal and is listed under not_run, and the
+    batch stops without starting another session. Only when the session exits cleanly does a job it did not reach
+    wait for the next session. Returns the report: imported, unchanged, failed {ID: error}, interrupted, not_run.
     """
     if batch_size < 1:
         raise ImportError_('--batch needs a size of 1 or more')
     ordered, _ = plan(game, asset_ids)
-    report = {'imported': [], 'unchanged': [], 'failed': {}, 'interrupted': None}
+    report = {'imported': [], 'unchanged': [], 'failed': {}, 'interrupted': None, 'not_run': []}
     by_id = {a.id: a for a in records.discover(game)[0]}
     queue = [a.id for a in ordered]
     session_no = 0
@@ -468,6 +488,8 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
         while queue and len(chunk) < batch_size:
             asset_id = queue[0]
             asset = by_id[asset_id]
+            if chunk and asset.kind != by_id[chunk[0].asset.id].kind:
+                break                                # one kind per session: the next chunk starts with this asset
             failed_deps = [d for d in asset.input_dependencies if d in report['failed']]
             if failed_deps:
                 report['failed'][asset_id] = f'input dependency {failed_deps[0]} failed; not imported'
@@ -495,6 +517,7 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
                 raise ImportError_('an input dependency is not ordered before its dependent; nothing was started')
             continue
         session_no += 1
+        headless = all(p.asset.kind == 'static-mesh' for p in chunk)
         jobs_file = game / JOBS_DIR / f'session-{session_no}.json'
         jobs_file.parent.mkdir(parents=True, exist_ok=True)
         jobs_file.write_text(json.dumps({'jobs': [{
@@ -502,17 +525,20 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
             'script': 'import_asset.py', 'plan': str(p.plan_file),
             'write_paths': json.loads(p.plan_file.read_text())['write_paths'],
             'env': {'V2_IMPORT_PLAN': str(p.plan_file)}} for p in chunk]}, indent=2))
-        crashed = None
+        echo(f'session {session_no}: {len(chunk)} {"headless" if headless else "rendered"} import(s)')
+        failure, results = None, {}
         try:
-            results = runner(jobs_file)
+            outcome = runner(jobs_file, log_file=game / JOBS_DIR / f'session-{session_no}.log', headless=headless)
+            results = outcome.results
+            if outcome.exit_code:
+                failure = f'editor session {session_no} exited {outcome.exit_code}'
         except BatchCrash as crash:
-            results, crashed = crash.results, str(crash)
-            report['interrupted'] = crashed
+            results, failure = crash.results, f'editor session {session_no} died: {crash}'
         progressed, requeue = False, []
         for p in chunk:
             asset_id = p.asset.id
             result = results.get(asset_id, {'status': 'not-run', 'error': None, 'written': []})
-            status = result['status'] if result['status'] in ('done', 'failed') or crashed is None else 'interrupted'
+            status = result['status']
             if status == 'done':
                 try:
                     _verify_batch(game, p, result, engine=engine, echo=echo)
@@ -526,17 +552,20 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
                 report['failed'][asset_id] = result.get('error') or 'its job failed'
                 echo(f'failed     {asset_id}: {report["failed"][asset_id]}; restored its files, no record written')
                 progressed = True
-            elif status == 'interrupted':
+            elif failure:                            # the session ended badly: this job is not run, not retried here
                 p.journal.restore()
-                echo(f'interrupted {asset_id}: the editor session died; restored its files, no record written')
-            else:                                    # not-run: the session stopped before this job
+                report['not_run'].append(asset_id)
+                echo(f'not run    {asset_id}: {failure}; restored its files, no record written')
+            else:                                    # clean session exit, job not reached: the next session runs it
                 p.journal.restore()
                 requeue.append(asset_id)
-        if crashed:
-            break                                    # the dead session's unfinished assets stay unimported
+        if failure:
+            report['interrupted'] = failure
+            break
         if not progressed:
             # Nothing finished or failed in this session: stop rather than loop on the same jobs.
             report['interrupted'] = 'the session finished no job and reported no failure'
+            report['not_run'].extend(requeue)
             for asset_id in requeue:
                 echo(f'not run    {asset_id}: the session stopped before it; left for a later run')
             break
@@ -564,7 +593,8 @@ def main(argv=None) -> int:
         if args.batch:
             report = import_batch(GAME, args.assets, engine=engine, claim=args.claim, batch_size=args.batch)
             print(f'batch: {len(report["imported"])} imported, {len(report["unchanged"])} unchanged, '
-                  f'{len(report["failed"])} failed' + (f'; stopped: {report["interrupted"]}' if report['interrupted'] else ''))
+                  f'{len(report["failed"])} failed, {len(report["not_run"])} not run'
+                  + (f'; stopped: {report["interrupted"]}' if report['interrupted'] else ''))
             for asset_id, error in sorted(report['failed'].items()):
                 print(f'  failed {asset_id}: {error}', file=sys.stderr)
             return 1 if report['failed'] or report['interrupted'] else 0

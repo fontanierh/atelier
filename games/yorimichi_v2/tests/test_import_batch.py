@@ -54,17 +54,21 @@ class FakeSession:
     """Plays tools/editor/session.py's contract for `import` jobs: in order, one result per job, the first failure
     ends the session, a crash raises BatchCrash with the results reported so far."""
 
-    def __init__(self, game, *, fail=(), crash_during=None, stray=None, skip_write=()):
+    def __init__(self, game, *, fail=(), crash_during=None, stray=None, skip_write=(), stop_after=None):
         self.game, self.fail, self.crash_during = game, set(fail), crash_during
-        self.stray, self.skip_write = stray, set(skip_write)
+        self.stray, self.skip_write, self.stop_after = stray, set(skip_write), stop_after
         self.calls = 0
+        self.headless_calls = []
 
-    def __call__(self, jobs_file):
+    def __call__(self, jobs_file, *, log_file, headless=False):
         self.calls += 1
+        self.headless_calls.append(headless)
         jobs = json.loads(jobs_file.read_text())['jobs']
-        results = {}
-        for job in jobs:
+        results, exit_code = {}, 0
+        for seq, job in enumerate(jobs, 1):
             asset = job['asset']
+            if self.stop_after is not None and seq > self.stop_after:
+                break                                   # a clean exit before this job: the session ends, nothing failed
             plan = json.loads(Path(job['plan']).read_text())
             if asset == self.crash_during:
                 for package in plan['packages']:            # the editor wrote part of it, then died
@@ -74,6 +78,7 @@ class FakeSession:
                 for package in plan['packages']:
                     write(records.package_files(self.game, package)[0], b'partial')
                 results[asset] = {'status': 'failed', 'error': 'import script raised', 'written': []}
+                exit_code = 1
                 break
             written = []
             for package in plan['packages']:
@@ -90,7 +95,7 @@ class FakeSession:
                 write(Path(job['plan']).with_name('lod-result.json'), json.dumps(
                     {package: {'before': None, 'after': one} for package in plan['packages']}))
             results[asset] = {'status': 'done', 'error': None, 'written': written}
-        return results
+        return run.SessionOutcome(results, exit_code)
 
 
 @pytest.fixture
@@ -115,14 +120,48 @@ def recorded(game, name):
     return (game / f'assets/props/{name}/verified.json').is_file()
 
 
-def test_failure_restores_only_its_files_and_the_unreached_job_runs_in_the_next_session(game):
+def test_a_failed_job_is_an_interrupted_batch_that_keeps_the_finished_jobs(game):
+    """The session exits nonzero: a finished job is recorded, the failed one restores, the unreached one is not run and
+    not retried in this run, and no further session starts."""
     session = FakeSession(game, fail={'prop/b'})
     report = batch(game, ['prop/a', 'prop/b', 'prop/c'], session)
-    assert report['imported'] == ['prop/a', 'prop/c']
-    assert list(report['failed']) == ['prop/b'] and report['interrupted'] is None
+    assert report['imported'] == ['prop/a'] and recorded(game, 'a')
+    assert list(report['failed']) == ['prop/b'] and not recorded(game, 'b')
     assert content(game, 'b') == b'old b'                      # b's partial write was restored
-    assert not recorded(game, 'b') and recorded(game, 'a') and recorded(game, 'c')
-    assert session.calls == 2                                  # c waited for the second session
+    assert report['not_run'] == ['prop/c'] and content(game, 'c') == b'old c' and not recorded(game, 'c')
+    assert report['interrupted'] and 'exited 1' in report['interrupted']
+    assert session.calls == 1
+
+
+def test_a_clean_exit_leaves_the_unreached_job_for_the_next_session(game):
+    session = FakeSession(game, stop_after=1)
+    report = batch(game, ['prop/a', 'prop/b', 'prop/c'], session)
+    assert report['imported'] == ['prop/a', 'prop/b', 'prop/c'] and report['interrupted'] is None
+    assert session.calls == 3                       # one job per clean session: b and c wait for the next ones
+
+
+def test_static_mesh_chunks_are_headless_and_texture_chunks_stay_rendered(game):
+    texture = game / 'assets/textures/t'
+    write(texture / 'src/model.glb', b'tex')
+    write(texture / 'asset.toml', f"""schema = 1
+id = "texture/t"
+kind = "texture"
+authority = "generated"
+owner = "region/w04-skatepark"
+[[sources]]
+path = "src/model.glb"
+sha256 = "{sha(b'tex')}"
+[recipe]
+importer = "texture"
+version = 1
+[[outputs]]
+package = "/Game/Props/T_Tex"
+""")
+    write(game / 'unreal/Content/Props/T_Tex.uasset', b'old tex')
+    session = FakeSession(game)
+    report = batch(game, ['prop/a', 'prop/b', 'texture/t'], session, size=3)
+    assert report['imported'] == ['prop/a', 'prop/b', 'texture/t']
+    assert session.headless_calls == [True, False]           # the two meshes, then the texture on its own
 
 
 def test_a_session_that_dies_restores_only_the_unfinished_assets(game):
@@ -157,7 +196,7 @@ def test_batch_size_bounds_the_jobs_per_session(game):
     assert report['imported'] == ['prop/a', 'prop/b', 'prop/c'] and session.calls == 2
 
 
-def test_run_session_reads_the_failed_job_and_the_summary_of_the_others(game, tmp_path, monkeypatch):
+def test_run_session_streams_the_output_and_reads_the_summary_and_the_failed_job(game, tmp_path, monkeypatch):
     driver = tmp_path / 'session.py'
     driver.write_text("KINDS = ('import',)\n")          # a driver that knows the import kind
     monkeypatch.setattr(run, 'SESSION', driver)
@@ -165,15 +204,28 @@ def test_run_session_reads_the_failed_job_and_the_summary_of_the_others(game, tm
     jobs.write_text(json.dumps({'jobs': [{'kind': 'import', 'asset': 'prop/a'}, {'kind': 'import', 'asset': 'prop/b'},
                                          {'kind': 'import', 'asset': 'prop/c'}]}))
     summary = tmp_path / 'summary.json'
-    summary.write_text(json.dumps({'jobs': [{'name': 'import prop/a', 'seconds': 1., 'written': ['x']}]}))
-    stdout = f'session nonce closed (exit 1); summary {summary}\nediter\n'
-    stderr = 'editor session failed: job 2 import prop/b: import script raised'
-    monkeypatch.setattr(run, 'subprocess', types.SimpleNamespace(
-        run=lambda *a, **k: subprocess.CompletedProcess(a, 1, stdout, stderr)))
-    results = run.run_session(jobs)
-    assert results['prop/a'] == {'status': 'done', 'error': None, 'written': ['x']}
-    assert results['prop/b']['status'] == 'failed' and 'import script raised' in results['prop/b']['error']
-    assert results['prop/c']['status'] == 'not-run'
+    summary.write_text(json.dumps({'jobs': [{'name': 'import prop/a', 'asset': 'prop/a', 'seconds': 1., 'written': ['x']}]}))
+    output = [f'editor session 1234 closed (exit 1); summary {summary}\n', 'editor session failed: job 2 import prop/b: '
+              'import script raised\n']
+    started = []
+
+    class FakeProcess:
+        def __init__(self, command, **kwargs):
+            started.append((command, kwargs))
+            self.stdout = iter(output)
+
+        def wait(self):
+            return 1
+
+    monkeypatch.setattr(run, 'subprocess', types.SimpleNamespace(Popen=FakeProcess, PIPE=-1, STDOUT=-2))
+    log = tmp_path / 'logs' / 'session-1.log'
+    outcome = run.run_session(jobs, log_file=log, headless=True)
+    assert outcome.exit_code == 1
+    assert outcome.results['prop/a'] == {'status': 'done', 'error': None, 'written': ['x']}
+    assert outcome.results['prop/b']['status'] == 'failed' and 'import script raised' in outcome.results['prop/b']['error']
+    assert outcome.results['prop/c']['status'] == 'not-run'
+    assert log.read_text() == ''.join(output)                 # streamed to the log file as it ran
+    assert started[0][0][-1] == '--headless'
 
 
 def test_the_default_session_refuses_to_start_when_it_has_no_import_job_kind(game, tmp_path, monkeypatch):
@@ -184,10 +236,10 @@ def test_the_default_session_refuses_to_start_when_it_has_no_import_job_kind(gam
     no_import.write_text("KINDS = ('objects', 'script')\n")
     started = []
     monkeypatch.setattr(run, 'SESSION', no_import)
-    monkeypatch.setattr(run, 'subprocess', types.SimpleNamespace(run=lambda *a, **k: started.append(a)))
+    monkeypatch.setattr(run, 'subprocess', types.SimpleNamespace(Popen=lambda *a, **k: started.append(a)))
     with pytest.raises(run.BatchCrash, match="no 'import' job kind"):
-        run.run_session(jobs)
+        run.run_session(jobs, log_file=tmp_path / 'session.log')
     assert started == []
-    report = batch(game, ['prop/a'], lambda jobs_file: run.run_session(jobs_file))
+    report = batch(game, ['prop/a'], run.run_session)
     assert report['imported'] == [] and report['interrupted']
     assert content(game, 'a') == b'old a' and not recorded(game, 'a')
