@@ -126,9 +126,8 @@ Every face has exactly one feature, so every piece separates at the triangle lev
 These caveats remain:
 
 1. **Coping rails are assigned by a nearest-surface vote.** The generator names them `editor_coping_000..027`, not
-   after a piece. Five rails ride a junction of two pieces (for example 004 and 005 on p8, 018 and 019 on p45 or
-   p51); the vote picks one. It is stable, but the owner may want to confirm it, and an editor-side rail id would
-   remove the guess.
+   after a piece. Where a rail runs along a junction of two pieces the vote picks one (not audited rail by rail). It is
+   deterministic, but an editor-side rail-to-piece id would remove the guess.
 2. **Floor is not a piece.** The crater floor (210,915 triangles, 19% of render) is the volcano's ground cut by
    the park; it only exists as the 16 area blocks and is rebuilt when any piece cuts the ground.
 3. **Render-only geometry.** p183 has 66,774 render triangles but 3,890 collision triangles (the shrine props and
@@ -136,8 +135,8 @@ These caveats remain:
 4. **Rails** (`cp_lip_*` in `park.json`) are data, not meshes, and already separate.
 5. **Large owners.** p5 (181,786 render triangles, 15 meshes, 6 collision pieces) and p9 (96,888) cannot be one mesh
    because of the 32768-triangle atomic budget; they stay several files of one record.
-6. **Neighbouring pieces share seam vertices** but not triangles; there are no overlapping triangles, so splitting
-   at the seam changes nothing visible.
+6. **Neighbouring pieces' triangles are not merged or changed, so the seam looks as today** (the exactness check
+   covers this; overlap between pieces was not audited).
 
 ## What V2 needs to adopt this
 
