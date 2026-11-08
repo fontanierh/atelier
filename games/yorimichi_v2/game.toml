@@ -30,3 +30,12 @@ args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-fullscreen", "-Forc
 [play.test]
 # The minimal World Partition test map, small and offscreen: native checks such as two live sessions (C16).
 args = ["/Game/V2/Maps/TestMinimal", "-game", "-windowed", "-resx=1280", "-resy=720", "-RenderOffscreen"]
+
+[release.music]
+# The soundtrack stays out of the package: `atelier fetch` verifies the pinned bundle (the donor's, the same bytes and cache)
+# and the package's launcher clones it into the app's container for the game's -music= folder. Optional: without it the
+# game is silent, required sound effects are complete without it. The donor's copy is games/yorimichi/assets/audio/music.
+fetch = "assets/audio/music/fetch.py"
+cache = "music"
+into = "Library/Application Support/YorimichiV2/Music"
+arg = "-music="
