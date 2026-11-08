@@ -194,6 +194,14 @@ def test_rerun_is_idempotent(state, tag, owners, clearance):
     assert again == text
 
 
+def test_unchanged_rerun_writes_nothing(state, capsys):
+    """A no-op run leaves every committed objects.toml untouched, timestamps included (yorimichi-v2-targeted-authoring)."""
+    paths = [towns.region_folder(tag, ROOT) / 'objects.toml' for tag in TAGS]
+    before = [p.stat().st_mtime_ns for p in paths]
+    assert towns.main([]) == 0
+    assert [p.stat().st_mtime_ns for p in paths] == before
+
+
 def test_reasons_are_the_runtime_ones(state):
     """Belmonte's village houses stay out (outside the district, never drawn). Every other group is saved: the plants by
     the gondola clearance, the Brine Cove cover groups whole, the sharers of a mesh name by key."""

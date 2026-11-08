@@ -325,7 +325,8 @@ def main(argv=None) -> int:
     stale = []
     for tag in args.region or sorted(REGIONS):
         path = region_folder(tag) / 'objects.toml'
-        head = split_head(path.read_text())
+        current = path.read_text()
+        head = split_head(current)
         data = json.loads(runtime_path(tag).read_text())
         text, result = render(tag, head, data, owners)
         check_result(tag, data, result, head)
@@ -334,9 +335,10 @@ def main(argv=None) -> int:
         print(f'{tag}: {count} group(s) (pieces {pieces}) in {len(result["units"])} object(s), {result["covered"]} already '
               f'saved, {result["instances"]} instances; not saved: ' +
               ', '.join(f'{r} {len(result["blocked"][r])}' for r in REASONS))
+        if current == text:
+            continue   # a no-op run writes nothing (CONTRACTS yorimichi-v2-targeted-authoring)
         if args.check:
-            if path.read_text() != text:
-                stale.append(path)
+            stale.append(path)
         else:
             path.write_text(text)
     if stale:
