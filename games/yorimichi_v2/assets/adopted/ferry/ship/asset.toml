@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: /Game/Ferry/Ship
+# Ownership unit: the ferry ship: hull, superstructure, funnel, lifeboats, rails, masts, fittings, collision, gate and wake
 schema = 1
 id = "adopted/ferry/ship"
 kind = "adopted"
@@ -7,6 +7,23 @@ authority = "editor"
 owner = "shared/ferry/ship"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/ferry/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/ferry/build.py"
+sha256 = "8fc1e755761ff37340dab3acb3b1ad9b772b29be1eea6308e054a781717c2279"
+
+[[sources]]
+path = "source/world/regions/ferry/export_ship_collision.py"
+sha256 = "61b09cc4181c1546a2e0b8c6c56bb7f46976d8af2ae8113362d0ffe101a46076"
+
+[[sources]]
+path = "source/world/regions/ferry/plan_ship.py"
+sha256 = "dd0426c71df34d184126fdb1b794003d7f338e5e2d405d8dceede8b64729c93c"
+
+[[sources]]
+path = "source/world/regions/ferry/ship_sources.py"
+sha256 = "45541b00bbe4f77251986f355e84faf5dd048c10d9d0ab6534e1de8989890684"
 
 [[outputs]]
 package = "/Game/Ferry/Ship/FY_BoardingGate"

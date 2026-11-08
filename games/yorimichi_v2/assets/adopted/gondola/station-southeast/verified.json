@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/gondola/station-southeast",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/World/GD_southeast_Access.uasset": "b4402ea34ecc9fbac78f55c418501dadd9c52cdceb82b5aa18718317f450563a",
+    "unreal/Content/Gondola/World/GD_southeast_Foundation.uasset": "50d98766af6648c12ec50241c7b18354913ac776d1a5cd844d04f02da25b94ba"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

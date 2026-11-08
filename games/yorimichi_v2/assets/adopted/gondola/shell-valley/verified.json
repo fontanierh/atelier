@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/gondola/shell-valley",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/Kit/GD_StationValley_Building.uasset": "3aa2f5bf64b42e1a5e58ad74c3326208a5cae80923281e37325c2e226842523a",
+    "unreal/Content/Gondola/Kit/GD_StationValley_Collision.uasset": "b03b41ee0ea081584bd9b0dd4d694f432b74a3cc6726ee4ed692e97022ffad5c",
+    "unreal/Content/Gondola/Kit/GD_StationValley_Fittings.uasset": "3bd31053dffdfdc0d912d4ffdf599da39d0fc506f320ffadc9a328588ddf03bc",
+    "unreal/Content/Gondola/Kit/GD_StationValley_Machinery.uasset": "419cee0392e9916eda4975b732e1b884e842dbf7f3b6cf6249a894782755281c",
+    "unreal/Content/Gondola/Kit/GD_StationValley_Platform.uasset": "f008bbad35324e34efba3729575f87d3e2978467f6fa2e09d1efb30da9f55dcf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

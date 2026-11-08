@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: /Game/Gondola/Textures
+# Ownership unit: gondola shared textures
 schema = 1
 id = "adopted/gondola/textures"
 kind = "adopted"
@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/gondola/textures"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/gondola/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/gondola/textures.py"
+sha256 = "9e205423f071c611bd3d87c620698ee9040e295798106f116264bae321d9b3de"
 
 [[outputs]]
 package = "/Game/Gondola/Textures/GD_deck_planks_color"

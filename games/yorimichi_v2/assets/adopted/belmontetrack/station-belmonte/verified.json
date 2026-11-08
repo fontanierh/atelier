@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmontetrack/station-belmonte",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_ST_Coaches.uasset": "166d55f87d27b144c6688bd236c91eb3e69e2f298310e41bd11862d7e07c1fab",
+    "unreal/Content/BelmonteTrack/SM_ST_Forecourt.uasset": "795eb59f08965979e3924c6ec2206f132ae68be26fd943c883ef3d8e06120e29",
+    "unreal/Content/BelmonteTrack/SM_ST_Headhouse.uasset": "9f90bbf0c500171fca649e18dd61f926376c2584066228f399691e30b12f773b",
+    "unreal/Content/BelmonteTrack/SM_ST_Sheds.uasset": "02b3a276d75d626f7b54ad4d28d7abb328c8ab91b0ef0ce95ecc873a20464e9a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

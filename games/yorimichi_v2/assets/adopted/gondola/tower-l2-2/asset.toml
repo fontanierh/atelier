@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: support tower l2 2: fitted mesh
+schema = 1
+id = "adopted/gondola/tower-l2-2"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/tower-l2-2"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/gondola/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/gondola/tower.py"
+sha256 = "aba93c86ead1914e10f8aba08973a0bc06c8cc23aefaafb06b43142ad9a89ef5"
+
+[[sources]]
+path = "source/world/gondola/structures.py"
+sha256 = "61eaf7ae3a79c63aaf91c8975dbb66b698c7f8735316d046436b70a2316cdf2d"
+
+[[sources]]
+path = "source/world/regions/gondola/layout.py"
+sha256 = "1cc24173df10d4f9f0d992cec314b81414f0743d0c0676073670e1f43e727a45"
+
+[[sources]]
+path = "source/world/regions/gondola/site.py"
+sha256 = "d4535285e96124ccdd5bdb9213ef41d38c525090b2c1903864da64066868318b"
+
+[[outputs]]
+package = "/Game/Gondola/World/GD_L2_2_Tower"

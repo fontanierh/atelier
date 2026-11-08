@@ -1,0 +1,338 @@
+{
+ "cabin_exterior": {
+  "concept": "gondola_cabin.jpg",
+  "box": [
+   0,
+   0,
+   762,
+   1024
+  ],
+  "size": [
+   762,
+   1024
+  ],
+  "pos": [
+   7.7381,
+   -5.7347,
+   -0.7096
+  ],
+  "yaw": 2.49853,
+  "pitch": 0.15283,
+  "roll": 0.01375,
+  "focal_px": 1636.27,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "rms_px": 14.5,
+  "max_px": 29.9
+ },
+ "cabin_interior": {
+  "concept": "gondola_cabin.jpg",
+  "box": [
+   772,
+   0,
+   1536,
+   1024
+  ],
+  "size": [
+   764,
+   1024
+  ],
+  "pos": [
+   0.55,
+   -0.3284,
+   -2.1615
+  ],
+  "yaw": 3.08378,
+  "pitch": 0.0,
+  "roll": 0.0,
+  "focal_px": 335.51,
+  "principal_offset_px": [
+   0.0,
+   -173.7
+  ],
+  "rms_px": 23.2,
+  "max_px": 40.5
+ },
+ "valley_view": {
+  "concept": "gondola_valley_station.jpg",
+  "box": [
+   0,
+   0,
+   1536,
+   1024
+  ],
+  "size": [
+   1536,
+   1024
+  ],
+  "pos": [
+   -9.2651,
+   -36.8588,
+   2.8701
+  ],
+  "yaw": 1.56089,
+  "pitch": 0.06831,
+  "roll": 0.0,
+  "focal_px": 1280.0,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "rms_px": 65.7,
+  "max_px": 145.9
+ },
+ "crater_view": {
+  "concept": "gondola_crater_floor_station.jpg",
+  "box": [
+   0,
+   0,
+   1536,
+   1024
+  ],
+  "size": [
+   1536,
+   1024
+  ],
+  "pos": [
+   -0.5431,
+   36.3211,
+   5.5725
+  ],
+  "yaw": -1.50505,
+  "pitch": 0.06167,
+  "roll": 0.0,
+  "focal_px": 1280.0,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "rms_px": 49.5,
+  "max_px": 65.5
+ },
+ "tower_front": {
+  "concept": "gondola_tower_pylon.jpg",
+  "box": [
+   0,
+   40,
+   500,
+   1000
+  ],
+  "size": [
+   500,
+   960
+  ],
+  "pos": [
+   9.0,
+   -66.0,
+   5.0
+  ],
+  "yaw": 1.70632,
+  "pitch": -0.04201,
+  "roll": 0.0,
+  "focal_px": 3333.33,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 240
+ },
+ "tower_side": {
+  "concept": "gondola_tower_pylon.jpg",
+  "box": [
+   480,
+   40,
+   700,
+   1000
+  ],
+  "size": [
+   220,
+   960
+  ],
+  "pos": [
+   66.0,
+   4.0,
+   5.0
+  ],
+  "yaw": -3.08106,
+  "pitch": -0.04232,
+  "roll": 0.0,
+  "focal_px": 2872.22,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 470
+ },
+ "tower_head": {
+  "concept": "gondola_tower_pylon.jpg",
+  "box": [
+   660,
+   40,
+   1180,
+   520
+  ],
+  "size": [
+   520,
+   480
+  ],
+  "pos": [
+   2.6,
+   -6.6,
+   15.0
+  ],
+  "yaw": 2.11122,
+  "pitch": -0.11736,
+  "roll": 0.0,
+  "focal_px": 433.33,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 30
+ },
+ "tower_base": {
+  "concept": "gondola_tower_pylon.jpg",
+  "box": [
+   720,
+   530,
+   940,
+   945
+  ],
+  "size": [
+   220,
+   415
+  ],
+  "pos": [
+   4.4,
+   -3.1,
+   1.2
+  ],
+  "yaw": 2.56394,
+  "pitch": 0.15146,
+  "roll": 0.0,
+  "focal_px": 244.44,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 40
+ },
+ "tower_anchor": {
+  "concept": "gondola_tower_pylon.jpg",
+  "box": [
+   955,
+   570,
+   1170,
+   945
+  ],
+  "size": [
+   215,
+   375
+  ],
+  "pos": [
+   6.0,
+   -4.6,
+   1.6
+  ],
+  "yaw": 2.13084,
+  "pitch": 0.16202,
+  "roll": 0.0,
+  "focal_px": 238.89,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 40
+ },
+ "tower_scene": {
+  "concept": "gondola_tower_pylon.jpg",
+  "box": [
+   1080,
+   30,
+   1536,
+   540
+  ],
+  "size": [
+   456,
+   510
+  ],
+  "pos": [
+   17.0,
+   -19.0,
+   7.0
+  ],
+  "yaw": 2.22267,
+  "pitch": -0.1331,
+  "roll": 0.0,
+  "focal_px": 405.33,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 32
+ },
+ "rim_view": {
+  "concept": "gondola_rim_station.jpg",
+  "box": [
+   0,
+   0,
+   1536,
+   1024
+  ],
+  "size": [
+   1536,
+   1024
+  ],
+  "pos": [
+   -21.0,
+   -25.0,
+   9.5
+  ],
+  "yaw": 0.96299,
+  "pitch": 0.27483,
+  "roll": 0.0,
+  "focal_px": 1024.0,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 24
+ },
+ "tower_vista": {
+  "concept": "gondola_tower_pylon.jpg",
+  "box": [
+   1180,
+   585,
+   1536,
+   995
+  ],
+  "size": [
+   356,
+   410
+  ],
+  "pos": [
+   -22.0,
+   -27.0,
+   13.0
+  ],
+  "yaw": 0.82384,
+  "pitch": 0.10828,
+  "roll": 0.0,
+  "focal_px": 296.67,
+  "principal_offset_px": [
+   0.0,
+   0.0
+  ],
+  "fit": "framed by eye",
+  "lens_mm": 30
+ }
+}

@@ -1,0 +1,55 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the Brine Cove ferry terminal: landing, pavilion, ticket hut, fenders, props, collision and brow (berth 1)
+schema = 1
+id = "adopted/ferry/terminal-brinecove"
+kind = "adopted"
+authority = "editor"
+owner = "shared/ferry/terminal-brinecove"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/ferry/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/build.py"
+sha256 = "404de5d1405ab53d71089a5ce1ca786f54b89996b5ae808e5c81b2bde4a8c0c3"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/site.py"
+sha256 = "8ab8b2de58a790284b29700ac40a23da547edb29999e067b872e99f19637da78"
+
+[[sources]]
+path = "source/world/regions/ferry/export_terminal_collision.py"
+sha256 = "ddb24cfe7bf9534235cbd13fff421796bdb6274e6cae7231a50e32bbc4aee91d"
+
+[[sources]]
+path = "source/world/regions/ferry/plan_terminal.py"
+sha256 = "cab62fb22234e3a8d22be53e62aa14b8179004201da726ac7c75ab2240a14034"
+
+[[sources]]
+path = "source/world/regions/ferry/terminal_constructor.py"
+sha256 = "dd972f3e5b86184cb3f43b8ac6869661520e52681359074f12ebaa0ebd2506b7"
+
+[[sources]]
+path = "source/world/regions/ferry/terminal_sources.py"
+sha256 = "3f1ebf78877925ed0d5f482d9307c1d0e74fa222568268543a9082291259f383"
+
+[[outputs]]
+package = "/Game/Ferry/Terminals/FT_BC_Brow"
+
+[[outputs]]
+package = "/Game/Ferry/Terminals/FT_BC_Collision"
+
+[[outputs]]
+package = "/Game/Ferry/Terminals/FT_BC_Fenders"
+
+[[outputs]]
+package = "/Game/Ferry/Terminals/FT_BC_Landing"
+
+[[outputs]]
+package = "/Game/Ferry/Terminals/FT_BC_Pavilion"
+
+[[outputs]]
+package = "/Game/Ferry/Terminals/FT_BC_Props"
+
+[[outputs]]
+package = "/Game/Ferry/Terminals/FT_BC_TicketHut"

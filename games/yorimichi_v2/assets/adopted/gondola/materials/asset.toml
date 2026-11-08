@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: /Game/Gondola/Materials
+# Ownership unit: gondola materials, and the generator that made every gondola package
 schema = 1
 id = "adopted/gondola/materials"
 kind = "adopted"
@@ -7,6 +7,194 @@ authority = "editor"
 owner = "shared/gondola/materials"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/assets/source-library.json"
+sha256 = "56d7aa5142852e1304c7bf04a95e3acfcbac079ad5d2d2962800b10879eec1b6"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/NOTES.md"
+sha256 = "d83e86c8032471ec3e743d32c755183a54e4fb240959c785fd006cc821eadda6"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/README.md"
+sha256 = "394fe11299c48775ba07c0da90d969563c53c29f06ec8f3e6f7c0ee2df34532c"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/build.py"
+sha256 = "f460ae9e9c8dd84554f07ea0afe63b2a6a389d268877d1f0a9f204a973edf86b"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/cabin.py"
+sha256 = "0bd4f8d4c8e140824405a0747b92aedc882f505cf99744c0361cf0dbec9b95e2"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/cameras.json"
+sha256 = "2b0b2b29fcae2ebde212292219988e9977253f777b5eaa16417269a0f8ea4532"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/checks.py"
+sha256 = "6bc002cb897625cf317d9fa1d5a9ddcd5a3469ceadcbc13f1dc88f2c9c026347"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/commands.py"
+sha256 = "07888c2c2e5fb2fcf48f0ef026263fed05e74e817a6554fc5605a9b7caff1b91"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/compare.py"
+sha256 = "f565b6ae4be18fa4008427eec81884412e4be5c848ea57c64379c4921889c0ac"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/fbx-query-frame.json"
+sha256 = "7c0ad6efaf1a2812d6e4001177bcd0443155cdb3e5d5844058ec4b0a97a70972"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/fitcam.py"
+sha256 = "4827e27582de030cbf4e6876bdddb97694018d1e432af5d3f8909dccf9b6c546"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/params.py"
+sha256 = "f1ede294471475d24305b68a1bd22d651fdd172c723dd646255763105b0ce25b"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/prove_atomic.py"
+sha256 = "1fb8c4646371c169762c37c3ffdb7a4c4a172ad7f949297b05cf14c5ede80c58"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/render.py"
+sha256 = "28c467c00fb657e09de97a09f29eda3a4aeaa510d7947e3bf1042f35f6e337e6"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/rope.py"
+sha256 = "a6b2171e8be0864e9db12979ba65304b873a3124d470d1f9e3c43613f48d3eb4"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/solid.py"
+sha256 = "0c7d1e1582921a3651130e7883ec3ed25fa31dc3f49027a0821d43bc035cf95a"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/stations.py"
+sha256 = "e396b689f7f20c4b690080ed3b9ba2b88c21b0ba84bcc663902b7271636299c9"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/textures.py"
+sha256 = "9e205423f071c611bd3d87c620698ee9040e295798106f116264bae321d9b3de"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/tower.py"
+sha256 = "aba93c86ead1914e10f8aba08973a0bc06c8cc23aefaafb06b43142ad9a89ef5"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/walk.py"
+sha256 = "15e0e0fe4862bedfd22e64a6c4b93df68d29ac2c066c57ca044cae8269e3f92f"
+
+[[sources]]
+path = "source/world/gondola/__init__.py"
+sha256 = "db2a23648f04a2d85f579b1c80cf032c82ebf21a7182a82506b202926379a25c"
+
+[[sources]]
+path = "source/world/gondola/clearance.py"
+sha256 = "11d2d55df39b7285a07a602d1f54d75d77f7cf899afb0fb0c4b4deabf6e6408b"
+
+[[sources]]
+path = "source/world/gondola/clock.py"
+sha256 = "580b1af763f0f40b0e612770a0a19f045a41657e13beb29130ac4ced26d9e94d"
+
+[[sources]]
+path = "source/world/gondola/inputs.py"
+sha256 = "dc1e045c26bf0e0b2c33621ede54947f323f8d7a308388ca958acb68ec520810"
+
+[[sources]]
+path = "source/world/gondola/interactions.py"
+sha256 = "091cf9eef37172f78276c8bb7602f404463ed31778fb1918524ea82919d28b56"
+
+[[sources]]
+path = "source/world/gondola/line.py"
+sha256 = "3fbe90d516d1557c8947123654c8d65076591ab61ca357857155117b1a2f1733"
+
+[[sources]]
+path = "source/world/gondola/probe.py"
+sha256 = "d76bed00ba0101024b04a81a762348b9a2b83a7f500a82fb634b6d831ba692c9"
+
+[[sources]]
+path = "source/world/gondola/products.py"
+sha256 = "732a21628c4a179b6ee9de38f94327fef65b32acc81f9bdfbd12893eac4ba16b"
+
+[[sources]]
+path = "source/world/gondola/query_frames.py"
+sha256 = "2692e1cda88aeded96069897e8589af668d342da3bc6f9f2142f63343ee774df"
+
+[[sources]]
+path = "source/world/gondola/service.py"
+sha256 = "a5ab514690aaf0692824f876fff0ecd6c739265cd4cda79e25f01f7caeb0445b"
+
+[[sources]]
+path = "source/world/gondola/structure_probe.py"
+sha256 = "7db4b6e93d46718121d493d7494c2e2e3ccdc02e4684cb2c3863592102253f20"
+
+[[sources]]
+path = "source/world/gondola/structures.py"
+sha256 = "61eaf7ae3a79c63aaf91c8975dbb66b698c7f8735316d046436b70a2316cdf2d"
+
+[[sources]]
+path = "source/world/gondola/support.py"
+sha256 = "39b871db34caf5b32407bd3ea17e18b8e6376e88328f576b86e37a612617fdbb"
+
+[[sources]]
+path = "source/world/gondola/terrain.py"
+sha256 = "5485c89ad834ccacf19329a4b7211bcb570d36d92be1c2532d5bf223a305bc43"
+
+[[sources]]
+path = "source/world/gondola/validation.py"
+sha256 = "60158db09c3bd4ad732cd58f336c2d3a734c2d1a7abb3c91ab097fbb0b56dc1d"
+
+[[sources]]
+path = "source/world/regions/belmonte/gondola.py"
+sha256 = "569dd74cadba9aa1d142990ebd1bca951b445f97f48376e7771a0871369b3acb"
+
+[[sources]]
+path = "source/world/regions/gondola/__init__.py"
+sha256 = "871a00e83b5ea705fc83860315da8eaf627cdfa1d3a3858c24cd217554f91ac7"
+
+[[sources]]
+path = "source/world/regions/gondola/export_kit_collision.py"
+sha256 = "acc2a64bfae1728ef674edfddb5dfa97b770dfc6460778f0e818cc48b19890e8"
+
+[[sources]]
+path = "source/world/regions/gondola/kit_actions.py"
+sha256 = "6820efe0816bde98b52a9f3b490b44d7f40e5e9e83dc6b3198c372ad5abb5e1d"
+
+[[sources]]
+path = "source/world/regions/gondola/kit_sources.py"
+sha256 = "71cb415961930d4091e297421df36673b924828a568c5dd7632ef9a33531b44c"
+
+[[sources]]
+path = "source/world/regions/gondola/kit_textures.py"
+sha256 = "2bc2292e5791c4f0b3764f0517f72f156f081b4777db8d69a44fad590bf7a1e7"
+
+[[sources]]
+path = "source/world/regions/gondola/layout.py"
+sha256 = "1cc24173df10d4f9f0d992cec314b81414f0743d0c0676073670e1f43e727a45"
+
+[[sources]]
+path = "source/world/regions/gondola/plan_kit.py"
+sha256 = "a716f8adb46073c5bb978032193bb44dd9e8d5d6712b20f8c451211406ad2c05"
+
+[[sources]]
+path = "source/world/regions/gondola/site.py"
+sha256 = "d4535285e96124ccdd5bdb9213ef41d38c525090b2c1903864da64066868318b"
+
+[[sources]]
+path = "source/world/regions/hidamari/gondola.py"
+sha256 = "ba3658f6e83a1ed88d2bba69163b57ffa8a5f68f456947ab619f3f2527b63d2e"
+
+[[sources]]
+path = "source/world/source_registry.py"
+sha256 = "01eb1094164b3f518b3de9c40cb19afc8862e3635f4cc081be50af822b462edf"
+
+[[sources]]
+path = "source/world/walk_raster.py"
+sha256 = "9d898a1a524f239479c6b270040e48d330ec67e06e570170ea8c3057d14b21c0"
 
 [[outputs]]
 package = "/Game/Gondola/Materials/GD_Basalt"

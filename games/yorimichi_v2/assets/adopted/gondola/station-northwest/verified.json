@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/gondola/station-northwest",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/World/GD_northwest_Access.uasset": "d71ec2f2acb83224a240f1d3549bb8943ea1934bdfddcba9fab72ecac06a532a",
+    "unreal/Content/Gondola/World/GD_northwest_Foundation.uasset": "afd9247f3ddd236db6aa309f9942cf47143075b3c1784df756ad2275d8989616"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

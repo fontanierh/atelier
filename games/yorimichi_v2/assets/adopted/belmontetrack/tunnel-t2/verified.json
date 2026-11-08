@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/belmontetrack/tunnel-t2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_TK_Tunnel_T2_00.uasset": "e91a58688562f914a6ada3acac7df15f373634958fe958ff399f60315175d62d",
+    "unreal/Content/BelmonteTrack/SM_TK_Tunnel_T2_01.uasset": "58fb1ac21f5ed658b89064a547de756587d00964417cd1e8ece7ec5a6cf5a584",
+    "unreal/Content/BelmonteTrack/SM_TK_Tunnel_T2_02.uasset": "88a1980d1f7f9d17c06b72755537a811492d4d9c74c09d3eb648d026c980926a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

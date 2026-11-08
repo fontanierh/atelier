@@ -1,0 +1,403 @@
+{
+ "about": "Belmonte track editing units for tools/migrate/adopt.py (written by tools/migrate/belmontetrack_units.py)",
+ "units": {
+  "banks": {
+   "about": "the 5 bank sections",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/earthworks.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "chunks-0-19": {
+   "about": "route chunks 0-19 (rail bed and rails, in route order)",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "chunks-20-39": {
+   "about": "route chunks 20-39 (rail bed and rails, in route order)",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "chunks-40-59": {
+   "about": "route chunks 40-59 (rail bed and rails, in route order)",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "chunks-60-79": {
+   "about": "route chunks 60-79 (rail bed and rails, in route order)",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "loop": {
+   "about": "the terminus loop",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "materials": {
+   "about": "track and station materials, and the generator that made every track package",
+   "sources": [
+    "games/yorimichi/assets/belmonte/source.json",
+    "games/yorimichi/assets/source-library.json",
+    "games/yorimichi/train_atomic_build.py",
+    "games/yorimichi/world/source_registry.py",
+    "games/yorimichi/world/train/__init__.py",
+    "games/yorimichi/world/train/access.py",
+    "games/yorimichi/world/train/authoring_review.py",
+    "games/yorimichi/world/train/bake_manifest.py",
+    "games/yorimichi/world/train/budgets.py",
+    "games/yorimichi/world/train/build.py",
+    "games/yorimichi/world/train/carriage_mesh.py",
+    "games/yorimichi/world/train/carriage_request.py",
+    "games/yorimichi/world/train/carriage_source.py",
+    "games/yorimichi/world/train/collision.py",
+    "games/yorimichi/world/train/consist.py",
+    "games/yorimichi/world/train/construct_carriage.py",
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/corridor.py",
+    "games/yorimichi/world/train/earthworks.py",
+    "games/yorimichi/world/train/export_carriage.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/fit_furniture.py",
+    "games/yorimichi/world/train/fittings.py",
+    "games/yorimichi/world/train/furniture.py",
+    "games/yorimichi/world/train/layout.py",
+    "games/yorimichi/world/train/lod_furniture.py",
+    "games/yorimichi/world/train/overbridge.py",
+    "games/yorimichi/world/train/parts.py",
+    "games/yorimichi/world/train/plan.py",
+    "games/yorimichi/world/train/plan_carriage.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/prepare_livery.py",
+    "games/yorimichi/world/train/render.py",
+    "games/yorimichi/world/train/review_lods.py",
+    "games/yorimichi/world/train/review_sheets.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/service_meshes.py",
+    "games/yorimichi/world/train/station.py",
+    "games/yorimichi/world/train/station_render.py",
+    "games/yorimichi/world/train/station_site.py",
+    "games/yorimichi/world/train/textures.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py",
+    "games/yorimichi/world/train/track_render.py",
+    "games/yorimichi/world/train/track_review_source.py",
+    "games/yorimichi/world/train/track_sources.py",
+    "games/yorimichi/world/train/viewer.html"
+   ]
+  },
+  "overbridge": {
+   "about": "the Belmonte station overbridge",
+   "sources": [
+    "games/yorimichi/world/train/overbridge.py",
+    "games/yorimichi/world/train/station.py",
+    "games/yorimichi/world/train/station_site.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "station-belmonte": {
+   "about": "the Belmonte station: head house, sheds, coaches and forecourt (SM_ST_*; platforms are part of them)",
+   "sources": [
+    "games/yorimichi/docs/BELMONTE_STATION.md",
+    "games/yorimichi/world/train/station.py",
+    "games/yorimichi/world/train/station_render.py",
+    "games/yorimichi/world/train/station_site.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "track-small": {
+   "about": "the repeated small track parts: sleeper, portal, buffer stop, stop board, turnout, tunnel lamp",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/fittings.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "tunnel-spiral": {
+   "about": "the spiral tunnel linings (26 sections)",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/corridor.py",
+    "games/yorimichi/world/train/earthworks.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "tunnel-t1": {
+   "about": "tunnel T1 linings",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/corridor.py",
+    "games/yorimichi/world/train/earthworks.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "tunnel-t2": {
+   "about": "tunnel T2 linings",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/corridor.py",
+    "games/yorimichi/world/train/earthworks.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  },
+  "viaducts": {
+   "about": "the 7 viaduct sections",
+   "sources": [
+    "games/yorimichi/world/train/construct_track.py",
+    "games/yorimichi/world/train/earthworks.py",
+    "games/yorimichi/world/train/export_track_piece.py",
+    "games/yorimichi/world/train/plan_track.py",
+    "games/yorimichi/world/train/route.py",
+    "games/yorimichi/world/train/track.py",
+    "games/yorimichi/world/train/track_build.py",
+    "games/yorimichi/world/train/track_projection.py"
+   ],
+   "references": [
+    "adopted/belmontetrack/materials"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/BelmonteTrack/Materials/MI_ST_Clock": "materials",
+  "/Game/BelmonteTrack/Materials/MI_ST_Coach": "materials",
+  "/Game/BelmonteTrack/Materials/MI_ST_Glass": "materials",
+  "/Game/BelmonteTrack/Materials/MI_ST_Green": "materials",
+  "/Game/BelmonteTrack/Materials/MI_TK_Bank": "materials",
+  "/Game/BelmonteTrack/Materials/MI_TK_LampGlow": "materials",
+  "/Game/BelmonteTrack/Materials/MI_TK_Signal": "materials",
+  "/Game/BelmonteTrack/Materials/MI_TK_TunnelLining": "materials",
+  "/Game/BelmonteTrack/Materials/M_TK_Glow": "materials",
+  "/Game/BelmonteTrack/SM_ST_Coaches": "station-belmonte",
+  "/Game/BelmonteTrack/SM_ST_Forecourt": "station-belmonte",
+  "/Game/BelmonteTrack/SM_ST_Headhouse": "station-belmonte",
+  "/Game/BelmonteTrack/SM_ST_Overbridge": "overbridge",
+  "/Game/BelmonteTrack/SM_ST_Sheds": "station-belmonte",
+  "/Game/BelmonteTrack/SM_TK_Bank_00": "banks",
+  "/Game/BelmonteTrack/SM_TK_Bank_01": "banks",
+  "/Game/BelmonteTrack/SM_TK_Bank_02": "banks",
+  "/Game/BelmonteTrack/SM_TK_Bank_03": "banks",
+  "/Game/BelmonteTrack/SM_TK_Bank_04": "banks",
+  "/Game/BelmonteTrack/SM_TK_BufferStop": "track-small",
+  "/Game/BelmonteTrack/SM_TK_Chunk_00": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_01": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_02": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_03": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_04": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_05": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_06": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_07": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_08": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_09": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_10": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_11": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_12": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_13": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_14": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_15": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_16": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_17": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_18": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_19": "chunks-0-19",
+  "/Game/BelmonteTrack/SM_TK_Chunk_20": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_21": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_22": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_23": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_24": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_25": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_26": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_27": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_28": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_29": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_30": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_31": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_32": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_33": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_34": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_35": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_36": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_37": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_38": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_39": "chunks-20-39",
+  "/Game/BelmonteTrack/SM_TK_Chunk_40": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_41": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_42": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_43": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_44": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_45": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_46": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_47": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_48": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_49": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_50": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_51": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_52": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_53": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_54": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_55": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_56": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_57": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_58": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_59": "chunks-40-59",
+  "/Game/BelmonteTrack/SM_TK_Chunk_60": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_61": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_62": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_63": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_64": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_65": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_66": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_67": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_68": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_69": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_70": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_71": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_72": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_73": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_74": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_75": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_76": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_77": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_78": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Chunk_79": "chunks-60-79",
+  "/Game/BelmonteTrack/SM_TK_Loop": "loop",
+  "/Game/BelmonteTrack/SM_TK_Portal": "track-small",
+  "/Game/BelmonteTrack/SM_TK_Sleeper": "track-small",
+  "/Game/BelmonteTrack/SM_TK_StopBoard": "track-small",
+  "/Game/BelmonteTrack/SM_TK_TunnelLamp": "track-small",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_00": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_01": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_02": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_03": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_04": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_05": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_06": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_07": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_08": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_09": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_10": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_11": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_12": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_13": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_14": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_15": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_16": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_17": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_18": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_19": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_20": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_21": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_22": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_23": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_24": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_Spiral_25": "tunnel-spiral",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_T1_00": "tunnel-t1",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_T1_01": "tunnel-t1",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_T1_02": "tunnel-t1",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_T1_03": "tunnel-t1",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_T2_00": "tunnel-t2",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_T2_01": "tunnel-t2",
+  "/Game/BelmonteTrack/SM_TK_Tunnel_T2_02": "tunnel-t2",
+  "/Game/BelmonteTrack/SM_TK_Turnout": "track-small",
+  "/Game/BelmonteTrack/SM_TK_Viaduct_00": "viaducts",
+  "/Game/BelmonteTrack/SM_TK_Viaduct_01": "viaducts",
+  "/Game/BelmonteTrack/SM_TK_Viaduct_10": "viaducts",
+  "/Game/BelmonteTrack/SM_TK_Viaduct_11": "viaducts",
+  "/Game/BelmonteTrack/SM_TK_Viaduct_12": "viaducts",
+  "/Game/BelmonteTrack/SM_TK_Viaduct_13": "viaducts",
+  "/Game/BelmonteTrack/SM_TK_Viaduct_20": "viaducts"
+ }
+}

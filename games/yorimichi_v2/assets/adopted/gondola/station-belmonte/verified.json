@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/gondola/station-belmonte",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/World/GD_belmonte_Access.uasset": "6caaf4528a35d7a3acdc0b8cd11818039490bd83807bae949b84965f8c00fc6e",
+    "unreal/Content/Gondola/World/GD_belmonte_Foundation.uasset": "0e5284428ad0a502deccf131e2055b47540d50dc2ecfeccc3d230c15e3d68441"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

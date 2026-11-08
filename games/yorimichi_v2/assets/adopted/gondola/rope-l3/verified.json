@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/gondola/rope-l3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/World/GD_L3_Rope_LOD0.uasset": "705829e800f29c565fd726d6b72d0f3cf82dc7e38393dfee73288a48ea2afbda"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

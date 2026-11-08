@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/gondola/tower-l2-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/World/GD_L2_1_Tower.uasset": "c6dba577ba62bab08e4095bbfffbcd9e18c42fb3f2fe335659982453564a00bb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

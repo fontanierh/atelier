@@ -64,3 +64,19 @@ map = "belmonte/units.json"
 [[units]]
 folder = "/Game/CraterPark"
 map = "craterpark/units.json"
+
+# Transport (audit A1/A3, docs/inventory/transport-objects.md): each gondola tower, station (with its foundation and
+# ground access) and rope line, each ferry terminal and the ship, and each Belmonte track section, station and tunnel
+# is one unit (tools/migrate/gondola_units.py, ferry_units.py, train_units.py); the materials unit of each system
+# holds its generator, which every other unit references.
+[[units]]
+folder = "/Game/Gondola"
+map = "gondola/units.json"
+
+[[units]]
+folder = "/Game/Ferry"
+map = "ferry/units.json"
+
+[[units]]
+folder = "/Game/BelmonteTrack"
+map = "belmontetrack/units.json"

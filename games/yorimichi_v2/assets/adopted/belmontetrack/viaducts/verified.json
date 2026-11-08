@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/belmontetrack/viaducts",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_TK_Viaduct_00.uasset": "5aef735b21cde8982136f5b06e6add8961c74179391cfbe62a7742e8f2bc373c",
+    "unreal/Content/BelmonteTrack/SM_TK_Viaduct_01.uasset": "23818291b7d5b08e444151da82caa27bf6d77e9174e4f0fed7c0ab0307852c8d",
+    "unreal/Content/BelmonteTrack/SM_TK_Viaduct_10.uasset": "35edfb66f218f8caca03e90f4be57c5d525bc9343f7c06ab9d07a8904ab5b398",
+    "unreal/Content/BelmonteTrack/SM_TK_Viaduct_11.uasset": "03cc72edd8c3fc3e8db2fe6e479f7d5a220b290fac201a24b46dc006b9dba647",
+    "unreal/Content/BelmonteTrack/SM_TK_Viaduct_12.uasset": "a62780d74042556d6b53e4d4060846011f8547e2c6437c2c26f23e3261588c39",
+    "unreal/Content/BelmonteTrack/SM_TK_Viaduct_13.uasset": "4726c51cc559a4cf1d9f6a1eb4e21aca532d2f7b56ff830a3e9118ec37242627",
+    "unreal/Content/BelmonteTrack/SM_TK_Viaduct_20.uasset": "1c508ad2b95a55e6f7732cae66ccbf7cfb9d657c2dd4ec8ea16a94fc92795aeb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

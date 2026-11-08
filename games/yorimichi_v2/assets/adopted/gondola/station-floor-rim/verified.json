@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/gondola/station-floor-rim",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/World/GD_floor_rim_Access.uasset": "c02b94912a6fd199972595232a6b2427e23ebf7f0eba416af0844ba697625bae",
+    "unreal/Content/Gondola/World/GD_floor_rim_Foundation.uasset": "cb67d7bd1eb1190e7385cd109d75278f6854d6647199e875ace8a05d538b7538"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

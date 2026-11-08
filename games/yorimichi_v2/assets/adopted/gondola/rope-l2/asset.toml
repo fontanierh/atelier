@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: rope line l2: the haul-rope mesh (LOD 0)
+schema = 1
+id = "adopted/gondola/rope-l2"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/rope-l2"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/gondola/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/gondola/rope.py"
+sha256 = "a6b2171e8be0864e9db12979ba65304b873a3124d470d1f9e3c43613f48d3eb4"
+
+[[sources]]
+path = "source/world/gondola/structures.py"
+sha256 = "61eaf7ae3a79c63aaf91c8975dbb66b698c7f8735316d046436b70a2316cdf2d"
+
+[[sources]]
+path = "source/world/regions/gondola/layout.py"
+sha256 = "1cc24173df10d4f9f0d992cec314b81414f0743d0c0676073670e1f43e727a45"
+
+[[sources]]
+path = "source/world/regions/gondola/site.py"
+sha256 = "d4535285e96124ccdd5bdb9213ef41d38c525090b2c1903864da64066868318b"
+
+[[outputs]]
+package = "/Game/Gondola/World/GD_L2_Rope_LOD0"

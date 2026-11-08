@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/belmontetrack/track-small",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_TK_BufferStop.uasset": "11a56cfe22cbe710bea8f9c92568111d301b72041fa449ddb2ac4ce770f25615",
+    "unreal/Content/BelmonteTrack/SM_TK_Portal.uasset": "e2ea3dc766c628b6bf9a2e40824a1c4d7eeacf8fe948d1cae7f5843f9c30d6d2",
+    "unreal/Content/BelmonteTrack/SM_TK_Sleeper.uasset": "c165be052c8d5ba8d41467a08a7b3c1bcc74cfc1374f03447a3a83ffc6b65f1a",
+    "unreal/Content/BelmonteTrack/SM_TK_StopBoard.uasset": "c9d9ba4b20663daad120f489340e2234bac6f58721a599abb3330fe42dcb83e3",
+    "unreal/Content/BelmonteTrack/SM_TK_TunnelLamp.uasset": "ea2a9437499c70ef30c4fafa58d284e8aafb0396acb7b49a12113413a961ed04",
+    "unreal/Content/BelmonteTrack/SM_TK_Turnout.uasset": "ff9ede0b786e98c681014ca80220a7793d6a2e94c648765576678f68bb630806"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

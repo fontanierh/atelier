@@ -1,0 +1,71 @@
+{
+  "blender_build_hash": "9e2066aef7ef",
+  "blender_version": [
+    5,
+    2,
+    1
+  ],
+  "codec": "blender-static-identity-fbx-world-frame-v1",
+  "computation_dtype": "<f8",
+  "export_settings": {
+    "apply_scale_options": "FBX_SCALE_ALL",
+    "apply_unit_scale": true,
+    "axis_forward": "-Y",
+    "axis_up": "Z",
+    "bake_space_transform": false,
+    "mesh_smooth_type": "FACE",
+    "use_space_transform": true
+  },
+  "position_dtype": "<f4",
+  "reference": {
+    "indices_exact": true,
+    "original_ground_sha256": "96e17b62186713b3c7dc706e5e906dd08bb70965a7c21bd6e3a36d0ef3bf62c6",
+    "owner": "HD_NorthTrail",
+    "positions_exact": true,
+    "source_query_sha256": "841d2dc1d12680f5543be621641bc16498859fb16b045d882a8ec0f23320fa85",
+    "triangles": 1230,
+    "vertices": 2652,
+    "world_triangles_byte_exact": true
+  },
+  "schema": 1,
+  "source_matrix": "identity",
+  "tool_files": {
+    "bpy_extras/io_utils.py": "a016a12a688b0b4b046b10cf8e07dd2a757f1aa2e00d5bfb02c07754e2f0d2c3",
+    "io_scene_fbx/__init__.py": "2ba1808f7ba8c4f0b5cd51aab4dd352dd9b2031770e6bf6d7c3edead74da161b",
+    "io_scene_fbx/data_types.py": "1697b26e84cdabdebf8cf8c1dbb6e3b303705917aaf84eab835f0cdad6b26e20",
+    "io_scene_fbx/encode_bin.py": "b0e42ec731e1cb232e2bc1d88f23eb2f31bea4a6ece9eabddc3b83c30b903c15",
+    "io_scene_fbx/export_fbx_bin.py": "72852e99d9720398d82d6c8c1169ca1a67ed4a5ef6c20f9ca62739570886b4d4",
+    "io_scene_fbx/fbx2json.py": "857243f5240812da7b1eb2c93862274ce372bd24b818d110266dcc957406a2f7",
+    "io_scene_fbx/fbx_utils.py": "eb6c7be3aef6fcb8ea20479a2b1a68abd25ea7d7500ea91b7b401bc6b7d8ee56",
+    "io_scene_fbx/fbx_utils_threading.py": "2f33b0913f4ca89c5845009053d78558bef47b3487153cba43145901a45ab879",
+    "io_scene_fbx/import_fbx.py": "00d9084aa40947edfdb14d587439b7868a3c7be86eef679e23d95db8347c05cb",
+    "io_scene_fbx/json2fbx.py": "d880bc7451519dfd7e9dc6701d4ceb5db1ba5e487cdb1aaaa6a8e8f70773c920",
+    "io_scene_fbx/parse_fbx.py": "c976b04da54a50051df68834df09a675e43ddef616c8226becbf1f9671af7f93"
+  },
+  "world_matrix": [
+    [
+      1.0,
+      1.5099580252808664e-07,
+      0.0,
+      0.0
+    ],
+    [
+      -1.5099580252808664e-07,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ]
+}
