@@ -163,5 +163,7 @@ and bluer than the original.
 
 The original spawns every island piece (terrain, far hills, road, lane, guardrail, wires), the sky dome and the sea
 at load. The sky light captures the scene beyond 1.5 km once, so the migration places those actors always loaded
-(`migrate_map.always_loaded`), not streamed. A cell no migrated region holds belongs to the environment region, so
-the slice island has no holes.
+(`migrate_map.always_loaded`), not streamed. An island cell or a scenery instance that no region of the map holds
+belongs to the environment region, so the island has no holes. This includes the harbour's water (`HD_Sea`), whose
+anchor lies on open water outside every region. A run that leaves a region out never gives that region's cells to the
+environment.

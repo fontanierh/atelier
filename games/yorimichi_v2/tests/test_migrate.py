@@ -92,6 +92,11 @@ def test_plan_uses_record_bounds_and_one_map(tmp_path):
     assert plan['map'] == '/Game/V2/Maps/Slice'
     assert plan['regions'] == [{'id': 'region/w01', 'bounds_cm': [-200.0, 0.0, -100.0, 100.0]}]
     assert plan['services'] == ['Sea'] and plan['only_migrated'] and plan['runtime_services'] == ['SkatePark']
+    assert plan['held_cm'] == [[-200.0, 0.0, -100.0, 100.0]]
+    # A region of the map this run leaves out still holds its box: the environment takes only what none holds.
+    region(tmp_path, 'w03', '[300, 300, 400, 400]')
+    held = run.make_plan(tmp_path, ['region/w01'], 'region/w00', [], False, [], 32.0)['held_cm']
+    assert held == [[-200.0, 0.0, -100.0, 100.0], [300.0, 300.0, 400.0, 400.0]]
     region(tmp_path, 'w02', '[0, 0, 100, 100]', '["/Game/V2/Maps/Other"]')
     with pytest.raises(run.MigrationError, match='one map'):
         run.make_plan(tmp_path, ['region/w01', 'region/w02'], 'region/w00', [], False, [], 32.0)

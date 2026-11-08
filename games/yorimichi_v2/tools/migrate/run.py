@@ -58,7 +58,8 @@ def make_plan(game: Path, ids: list[str], environment: str, services, only_migra
     if len(maps) != 1:
         raise MigrationError(f'the regions must share exactly one map, not {sorted(maps)}')
     # An instance is copied into every region whose box holds it: two migrated regions of one map never overlap.
-    # The environment owns what no region holds, so its box (the whole map) is the one exception.
+    # The environment owns what no region of the map holds (held_cm: every region's box, migrated in this run or not),
+    # so its box (the whole map) is the one exception.
     mapped = sorted((r for r in regions if maps <= set(r.maps) and r.id != environment), key=lambda r: r.id)
     for index, a in enumerate(mapped):
         for b in mapped[index + 1:]:
@@ -66,7 +67,8 @@ def make_plan(game: Path, ids: list[str], environment: str, services, only_migra
                 raise MigrationError(f'{a.id} and {b.id} overlap on {next(iter(maps))}: their scenery would be copied twice')
     return {'map': maps.pop(), 'environment': environment, 'services': list(services), 'patch_m': patch_m,
             'only_migrated': only_migrated, 'runtime_services': list(runtime_services),
-            'regions': [{'id': i, 'bounds_cm': list(by_id[i].bounds_cm)} for i in ids]}
+            'regions': [{'id': i, 'bounds_cm': list(by_id[i].bounds_cm)} for i in ids],
+            'held_cm': [list(r.bounds_cm) for r in mapped]}
 
 
 def native_migrate(plan_file: Path) -> str:

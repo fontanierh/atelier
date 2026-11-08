@@ -106,8 +106,9 @@ def inside(bounds, x, y):
 def region_of(name):
     """The region holding a `<Parent>_cell_<i>_<j>[_PieceN]` island piece: the one whose bounds hold its cell's
     centre (source cell i covers x c i .. c (i + 1) m, c = 128 m, 512 m for FarHills; Unreal is (100 x, -100 y) cm). A piece the donor did
-    not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island, and a cell no migrated
-    region holds is the island foundation's: the environment owns both, so the island has no holes."""
+    not split into cells (one whole Road, Lane, Guardrail or Wires mesh) spans the island, and a cell no region of the
+    map holds is the island foundation's: the environment owns both, so the island has no holes. None: a region
+    this run does not migrate holds it."""
     if '_cell_' not in name:
         return plan['environment']
     parent, rest = name.split('_cell_', 1)
@@ -118,6 +119,8 @@ def region_of(name):
     for region in plan['regions']:
         if inside(region['bounds_cm'], x, y):
             return region['id']
+    if any(inside(bounds, x, y) for bounds in plan.get('held_cm', [])):
+        return None
     return plan['environment']
 
 
@@ -255,7 +258,8 @@ def scenery(world, env):
     boxes = [box2d(b)
              for b in (item['bounds_cm'] for item in plan['regions'])]
     count, actors, reused, error = U.V2Migration.migrate_static_scenery(
-        world, [U.Name(item['id']) for item in plan['regions']], boxes, float(plan.get('patch_m', 32)) * 100.0,
+        world, [U.Name(item['id']) for item in plan['regions']], boxes, [box2d(b) for b in plan.get('held_cm', [])],
+        float(plan.get('patch_m', 32)) * 100.0,
         U.Name(env), [U.Name(s) for s in plan.get('services', [])])
     if count < 0:
         raise RuntimeError(f'MigrateStaticScenery: {error}')
