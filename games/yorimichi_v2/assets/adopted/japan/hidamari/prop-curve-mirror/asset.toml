@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-curve-mirror"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/curve_mirror/concept.jpg"
+sha256 = "986b3994be976395579bb4490b211e5192d31f0139d08d1fe4939a3458954eae"
+
+[[sources]]
+path = "source/assets/hidamari/props/curve_mirror/concept.json"
+sha256 = "b2f4ecf9d39a6c6e4bb0859c75ec16df5c33ddb6ef55fead861776ec0b6dcab9"
+
+[[sources]]
+path = "source/assets/hidamari/props/curve_mirror/curve_mirror.glb"
+sha256 = "4717710846ee30f79f831404dc8b2a41cd00f74b8cb97cc5cd60a6ed198f798e"
+
+[[sources]]
+path = "source/assets/hidamari/props/curve_mirror/job.json"
+sha256 = "25f69249a289620609518dfd1d40c9f1062ff50c4f2b582065c64d7bf7ec3f1b"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_curve_mirror.json"
+sha256 = "7a896567fff249768ecf624853b6f21021afddaa0dcc30b85b0447f2af457591"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_curve_mirror"

@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "flag",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "e3a67ff6308f2c8de7682f7ba1e85b0acc7aabc37be4f685d7e69a299e8d7c59",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/crow-back.jpg": "d82d315318c92fe7cb9edcd4c2e7567372c0ec464fbf40be35d8876de25d6f0d"
+  },
+  "started_at": "2026-09-29T21:22:58.318619+00:00",
+  "finished_at": "2026-09-29T21:23:36.737735+00:00",
+  "elapsed_seconds": 38.4,
+  "usage": {
+    "input_tokens": 1199,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 119
+    },
+    "output_tokens": 1756,
+    "total_tokens": 2955,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "da40d17fe0283f8f6f2dc6ad93d3b46296e3dc3c766dec1294d34aa6bb8abba6",
+  "error": null,
+  "compact_copy": {
+    "file": "flag.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

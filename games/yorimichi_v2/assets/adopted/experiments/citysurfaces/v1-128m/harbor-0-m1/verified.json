@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/harbor-0-m1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_3_-1.uasset": "0da54524793c02afe2a96afaf7972848ff29b3eab4d49218b6224327e696c01b",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_3_-2.uasset": "f51f23e3c2c446b35bef5b996a2c8c407e6229edd883f656b01a0298181f7ec8",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_4_-1_Piece0.uasset": "4609a74e3ad7ab48a8686a3718a8ab8d0d819dc04d4249690a7861e2b5bf9842",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_4_-1_Piece10.uasset": "199a54892b6009da00d03a726c112b6a734dcc9147ed733a153651f339f7b5e8",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_4_-1_Piece11.uasset": "bacf311496adfb93b92ab0e68dd3aea050a469354992712b7772a483ff663258",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_4_-2.uasset": "8e7322d83d53a2bfd6ad22e666114f9c2665e9f7d4ab0b832cc4d2b2712c3d91",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_5_-1_Piece0.uasset": "a38dce5fb059b61ddcc8b9d031268340155e3bbfcd055c980edd8bb915dd1c51",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_5_-1_Piece1.uasset": "57134d600e6cdc299df798f9e06546a1f621d99d53e99e4e0d5cc85ef9f58ba3",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_5_-2.uasset": "3771ea5df9d40412cdc64aa50de1fd89670985d67adc965d8d475790a8e3d70f",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_6_-1.uasset": "e498d2d4f398a210fe323e43f936208411ac6df1641c0beab80dbbe1ba930e06",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_6_-2.uasset": "e9e58ed2cd0d97ff461c82e9e3c8e2e0623e5377d12dcf4b8056aaadeda12956",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_7_-1.uasset": "8c912999bdf2041d7c81fedcf90ef0fb950a1ca97522233b85297ad78eeb8bba"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

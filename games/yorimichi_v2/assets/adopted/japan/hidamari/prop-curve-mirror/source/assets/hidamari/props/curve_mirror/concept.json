@@ -1,0 +1,37 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "Paint ONE object alone for 3D reconstruction: shown whole, in a three-quarter front view from slightly above, centred with a clear margin all round, on a plain flat light-grey background, soft even light, no cast shadow, no floor, no text, letters or logos anywhere, nothing else in the picture. Images 1 and 2 show the art direction of the game it is for, Yorimichi, a stylised Japanese autumn town: paint the object in that same warm hand-painted style, chunky readable shapes, gently rounded edges, matte colours with soft variation and light weathering, believable real-world proportions, no photographic noise, no glossy highlights. Every part must be solid and connected; nothing floating. The object: a Japanese road curve mirror: a round convex traffic mirror in an orange frame with a small hood, on a tall slim orange metal pole with a concrete foot.",
+  "references": {
+    "games/yorimichi/assets/hidamari/concepts/street_ew140.jpg": "6d94943278f7baba090ccb9963354c7162dd70a6f4c43ca297c7a5a0b5f51f97",
+    "games/yorimichi/assets/hidamari/concepts/station.jpg": "08279405476519938bd5d692623aff1f504a9dee6c0eb5a50f7ab8c986ebabe5"
+  },
+  "execution": "games/yorimichi/tools/hidamari_props.py",
+  "purpose": "Hidamari street prop concept for Tripo",
+  "status": "done",
+  "started_at": "2026-10-05T11:30:01.763464+00:00",
+  "usage": {
+    "input_tokens": 2366,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 206
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4122
+  },
+  "concept_sha256": "5d0dc14491d243d8600ff112a5a6e7d6498f5332cbc1e66b0be6cd221b25a445",
+  "seconds": 29.6,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-05T11:30:31.409034+00:00"
+}

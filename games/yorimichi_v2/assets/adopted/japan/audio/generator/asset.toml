@@ -8,6 +8,34 @@ owner = "shared/japan/audio/generator"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 
+[[sources]]
+path = "source/assets/audio/SONNISS-LICENSE.txt"
+sha256 = "c2c4c988a01bde40da7d849b326f56ec2fa52cdb2b31b2bc541c4995ff385906"
+
+[[sources]]
+path = "source/assets/audio/footsteps/README.md"
+sha256 = "caaa00a43074032ed06d5d87334a85d68fcdc220c9cbe5619f0cd6e713d7b11b"
+
+[[sources]]
+path = "source/assets/audio/footsteps/bank.toml"
+sha256 = "27d92e2100e89cd190007b03f74ff0b7cf9c49489b40a788688ca01c68005d20"
+
+[[sources]]
+path = "source/assets/audio/footsteps/fetch.py"
+sha256 = "eb1c343debcfecb63cd7da1ce7df38d29f047bf3c7287985d85f96d8fc07559f"
+
+[[sources]]
+path = "source/assets/audio/footsteps/slice.py"
+sha256 = "88a586c057306800ee257dee2562c4e5083bb62f7741c9717bf9edd37a3267c3"
+
+[[sources]]
+path = "source/docs/FOOTSTEPS.md"
+sha256 = "9ebfe28f381b63a5ca48741f1c5e046fe875853bf6e7877faab5620fe2d3c1b8"
+
+[[sources]]
+path = "source/unreal/Scripts/import_footsteps.py"
+sha256 = "0f8fe08f06e86dd6cae3a25bc8a12f6c86cd52def8327a0ba7317e8aeadbf82b"
+
 [[outputs]]
 package = "/Game/Japan/Audio/A_Footstep"
 

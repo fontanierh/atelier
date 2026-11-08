@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "name": "Tree_Tuscan_Cypress",
+  "args": [
+    "cypress",
+    271,
+    15.0,
+    3.0,
+    "LeafCypress"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_phone_booth",
+  "parent": "HD_P_phone_booth",
+  "schema": 1,
+  "settings": null,
+  "size": 2.3,
+  "slug": "phone_booth",
+  "solid": true,
+  "target": 0.1,
+  "turn": 0.0,
+  "upright": false
+}

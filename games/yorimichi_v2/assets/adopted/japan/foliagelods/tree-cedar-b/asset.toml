@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/foliagelods/tree-cedar-b"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Tree_Cedar_B.json"
+sha256 = "a9ab1b15e10cccda3367b4bc6a1de7d38de345ca2139f40f2971d809d4cfc20a"
 
 [[outputs]]
 package = "/Game/Japan/FoliageLODs/Tree_Cedar_B/MI_Tree_Cedar_B_Crown"

@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-siding"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/siding.jpg"
+sha256 = "2afb7b8e297895f629714ef9fc23a481403a7899f84e0228e7acc8a9162d6d98"
+
+[[sources]]
+path = "source/assets/hidamari/textures/siding.json"
+sha256 = "465ec5c1b412693ba879711ab25adf723d0f770c5894df3dda5d023ceca81be5"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_siding"

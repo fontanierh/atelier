@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-flagstone"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/flagstone.jpg"
+sha256 = "1067045af4b95c569b55e4ff0c93ac46a1aacc5aafeceb770ce3551df41eea1e"
+
+[[sources]]
+path = "source/assets/hidamari/textures/flagstone.json"
+sha256 = "5dccf51e92d766f38fc0f16df6b8aa77dadced5423a6fe0c7b574410fcd70b32"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_flagstone"

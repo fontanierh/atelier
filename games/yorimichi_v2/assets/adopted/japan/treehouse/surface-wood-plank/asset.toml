@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-wood-plank"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_plank.jpg"
+sha256 = "100dc08feef14eb44e4dd3676df88a85f430d67fdd24960dcd1cafe000cd0360"
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_plank.prompt.txt"
+sha256 = "cc0cf21b367c6163372b2aed068d51234f21c58a34049fa13de055274288cab3"
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_plank.provenance.json"
+sha256 = "637edc48c8ac236c168b3aa72f25ec77e6720e86018f085c79165ed4e9f3d35d"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_wood_plank"

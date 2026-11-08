@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/textures/tree-tuscan-oak"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/forest/export-parameters/Tree_Tuscan_Oak.json"
+sha256 = "91351426f5bf639650285832b106afdf88eec783ba68aab00c202492495b738c"
 
 [[outputs]]
 package = "/Game/Japan/Textures/T_Tree_Tuscan_Oak_colour"

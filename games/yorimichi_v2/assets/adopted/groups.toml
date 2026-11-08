@@ -23,14 +23,15 @@ key = '^([0-9A-Z]+_[0-9A-Z]+_[0-9A-Z]+)(?:_|$)'
 folder = "/Game/SkateRide/Clips/B1"
 key = '^([0-9A-Z]+_[0-9A-Z]+)(?:_|$)'
 
-# Atomic terrain and city surfaces: one record per area (the name before `_cell`).
-[[group]]
+# Atomic terrain and city surfaces: one record per 1024 m area of each layer (8 x 8 cells), each lone mesh its own,
+# and a generator unit holding the cell scripts (tools/migrate/experiments_units.py).
+[[units]]
 folder = "/Game/Experiments/CitySurfaces/v1_128m"
-key = '^(.*?)_cell'
+map = "experiments/citysurfaces/units.json"
 
-[[group]]
+[[units]]
 folder = "/Game/Experiments/IslandTerrain/v1_atomic"
-key = '^(.*?)_cell'
+map = "experiments/islandterrain/units.json"
 
 # Mega Park (DECISIONS D05 group 3, cleared 2026-11-08): its packages are named by content hash, so a committed map
 # (written by tools/migrate/megapark_units.py from its source map.json and the packages' references) puts each in one

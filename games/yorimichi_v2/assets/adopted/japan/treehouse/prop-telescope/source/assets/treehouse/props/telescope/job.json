@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "telescope",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "41a8bb25e4f32681f019003e4b527dd96e4a60baaebc921c3e692460d5026e64",
+  "submitted_at": "2026-09-29T21:19:44.875393+00:00",
+  "task_id": "79ba0210-a623-4169-9b84-4da1a50b66ba",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:21:21.458517+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

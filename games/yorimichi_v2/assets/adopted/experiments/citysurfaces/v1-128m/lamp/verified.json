@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/lamp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Lamp.uasset": "7e095116829fb5f1f5e3c2378a2bf17e91292d97582a42a2a22c14407b8d1120"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

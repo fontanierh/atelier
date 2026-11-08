@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-blockwall"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/blockwall.jpg"
+sha256 = "cd7734118634edab0b001e56762dee910843e4e2f59d145910974b39c0279a67"
+
+[[sources]]
+path = "source/assets/hidamari/textures/blockwall.json"
+sha256 = "33713e968fea54cfce17fe8d407958a5c9a0ff3d97dcfe7bb9eca918b7373be3"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_blockwall"

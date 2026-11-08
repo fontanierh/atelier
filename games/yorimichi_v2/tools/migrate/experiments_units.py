@@ -78,7 +78,9 @@ def build(game: Path, key: str) -> dict:
     for name in sorted(counts):
         info[name] = {'about': f'Experiments {key} {name} ({counts[name]} package(s))'}
         if name != 'generator':
-            info[name]['references'] = [f'{prefix}/generator']
+            # Records sit under the mapped folder's own slug (adopt.partition): adopted/experiments/<key>/v1-128m/...
+            folder = re.sub(r'[^a-z0-9]+', '-', spec['folder'].rsplit('/', 1)[1].lower()).strip('-')
+            info[name]['references'] = [f'{prefix}/{folder}/generator']
     info['generator']['about'] = ('Experiments %s generator: cell scripts, Unreal import scripts and layout closure, '
                                   'with the %s mesh' % (key, spec['generator_package']))
     info['generator']['sources'] = tracked(T.code_closure(spec['roots'], ('world', 'world/regions', '.', 'unreal/Scripts')))

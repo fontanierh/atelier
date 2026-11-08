@@ -7,6 +7,35 @@ authority = "editor"
 owner = "shared/japan/treehouse/prop-planter"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/planter/asset.toml"
+sha256 = "664d57b57261dcddb584250d3d677e44c6cb64f31c46a2ada2c6f82055f088da"
+
+[[sources]]
+path = "source/assets/treehouse/props/planter/concept.jpg"
+sha256 = "e90e09246577c8be027bcdc5090a4a0c097ee297a6bac4f9d20e7c115bf759ab"
+
+[[sources]]
+path = "source/assets/treehouse/props/planter/job.json"
+sha256 = "376bc61c8fc8c3bd22c07f05c398066905c3c7965cb311a0a1ea5b68b53a2bf6"
+
+[[sources]]
+path = "source/assets/treehouse/props/planter/planter.glb"
+sha256 = "c9c773a9581cb2d27ed391f7ca5606c720c034cb96216411f66e3b31008041d3"
+
+[[sources]]
+path = "source/assets/treehouse/props/planter/prompt.txt"
+sha256 = "a648985271c8fc6e9a5595a687da0f1abbe459bc3431c47c6cbf5ee22cb6c90e"
+
+[[sources]]
+path = "source/assets/treehouse/props/planter/provenance.json"
+sha256 = "8fade629532e9c9efbb525fcb218f947be306e84144179d0536bed7eac141f21"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_planter.json"
+sha256 = "ba82a28585bc81df5196c1d9df31da19c12c85e9b38aa35214edf29aa4bad2f8"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_P_planter"

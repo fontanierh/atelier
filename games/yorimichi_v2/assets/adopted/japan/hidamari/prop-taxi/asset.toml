@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-taxi"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/taxi/concept.jpg"
+sha256 = "55666f24676d1a475be9d7c24361c5ba0fab302e09bf5d832beeb4683e776889"
+
+[[sources]]
+path = "source/assets/hidamari/props/taxi/concept.json"
+sha256 = "ee983e145a70e09738f025641ff0556798d77dab3b2b8fef6fa7a221590e663d"
+
+[[sources]]
+path = "source/assets/hidamari/props/taxi/job.json"
+sha256 = "e0b34e9bf10b190335c44169431bef606747b3c9e38ac90c0c30e64d3bad5338"
+
+[[sources]]
+path = "source/assets/hidamari/props/taxi/taxi.glb"
+sha256 = "ea36bb87f49d8047385c6f0b59dbef80b8f43ac31f0a4b0ceec492a5aa6c23d8"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_taxi.json"
+sha256 = "9178fd8a263e9de83ed6376c1ed35c2147f79c3ba5658cd24fd38b85b410e0d5"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_taxi"

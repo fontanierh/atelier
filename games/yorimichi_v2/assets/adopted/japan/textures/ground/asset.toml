@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/textures/ground"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/environment/textures/tuscan-ground.jpg"
+sha256 = "b7a9e55d50d4d20830bbcdcb416b417e02a92d84e29211ab242317bdcc71b6ea"
+
+[[sources]]
+path = "source/assets/environment/textures/tuscan-ground.provenance.json"
+sha256 = "c70ade5c078b97e5b629f43aaa98b13089ff116f6748951ec059874576de788f"
 
 [[outputs]]
 package = "/Game/Japan/Textures/T_ForestNormalDefault"

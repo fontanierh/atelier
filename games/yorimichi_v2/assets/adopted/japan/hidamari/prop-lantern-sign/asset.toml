@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-lantern-sign"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/lantern_sign/concept.jpg"
+sha256 = "09d0ff98df820d12ee4fb47a2f0d836966594b65cf9530113be1ce10ad8056ba"
+
+[[sources]]
+path = "source/assets/hidamari/props/lantern_sign/concept.json"
+sha256 = "20619ef180e13c024a4dafd21924f111f6bb6c92cdaf7825e5b193396a878b03"
+
+[[sources]]
+path = "source/assets/hidamari/props/lantern_sign/job.json"
+sha256 = "f1d63bea7e4b37e667897d16e4684e49b2df4628e2bcfa415c1262f29658e53c"
+
+[[sources]]
+path = "source/assets/hidamari/props/lantern_sign/lantern_sign.glb"
+sha256 = "3f0c3f5ccbf2d02658956daa3dbe7262d7bc4f1703808241fe0a4503daf51bf6"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_lantern_sign.json"
+sha256 = "f00bf9100cd18a3c4f22359c72280fb7b730708f030059a8255c41d93f2f0522"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_lantern_sign"

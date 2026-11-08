@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-kei-truck"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_truck/concept.jpg"
+sha256 = "5103aa1a1fb788fd119b542b7279d5eb7e7692af9dd5c51d259465086b8a638a"
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_truck/concept.json"
+sha256 = "7a7e40da23a9f8385b22ef2c36be4d215376c9d83c3510531691f3c662cb5721"
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_truck/job.json"
+sha256 = "a411f94262b9b7e85e854eccf6d69a843b77a97efabfbb7a0b9c3efe270263c3"
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_truck/kei_truck.glb"
+sha256 = "cfdfdd6d949b2ade8eda81c893337b91f5e42931f9a0d93f9a87ed03eaf6bb66"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_kei_truck.json"
+sha256 = "cc51a2e7168d535523ec5ba46d08c52935ac787f2847a31f2149ae3d0edc0db2"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_truck"

@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/foliagelods/tree-broad-b"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Tree_Broad_B.json"
+sha256 = "a3f959ec283acbe40cadbc6b06fdf482771149ce400aa5fc724d8b0efc59a988"
 
 [[outputs]]
 package = "/Game/Japan/FoliageLODs/Tree_Broad_B/MI_Tree_Broad_B_Crown"

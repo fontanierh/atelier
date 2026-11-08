@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-map"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/map.jpg"
+sha256 = "310061be0c0291c9c7cd974ee0aca09f066c441d095dca09c8f871b70482d691"
+
+[[sources]]
+path = "source/assets/treehouse/textures/map.prompt.txt"
+sha256 = "109b705cad8ba995a1dcf2c4bce4bebebaf150a32f9b3c9bfb417e510aca64eb"
+
+[[sources]]
+path = "source/assets/treehouse/textures/map.provenance.json"
+sha256 = "2317d5ccacbb36c16aa66632fc328e506ca8c23d8f6ffb77a0cfdc743c51c623"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_map"

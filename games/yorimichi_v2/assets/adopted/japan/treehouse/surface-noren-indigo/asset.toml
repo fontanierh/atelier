@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-noren-indigo"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/noren_indigo.jpg"
+sha256 = "37fc2367433e904cb6ceb9d4c20a45a6ffb7fbcc204119b1a9296d0cd49eb914"
+
+[[sources]]
+path = "source/assets/treehouse/textures/noren_indigo.prompt.txt"
+sha256 = "44af6d79ff61df5cc16a175b13fb5c117bc8ca24cb996c9b314df64bf2071b34"
+
+[[sources]]
+path = "source/assets/treehouse/textures/noren_indigo.provenance.json"
+sha256 = "5b1e41c0ffcb02512e35fc38fa3511627ae44586db3fb22bcd7a1ef0044e3cb6"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_noren_indigo"

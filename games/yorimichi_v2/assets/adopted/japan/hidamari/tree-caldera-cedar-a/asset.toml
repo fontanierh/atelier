@@ -7,6 +7,23 @@ authority = "editor"
 owner = "shared/japan/hidamari/tree-caldera-cedar-a"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_a/downloads.json"
+sha256 = "00b196efaf336c865c575da49807938029d89d90f4b210e9951f1c54fb53c1f9"
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_a/job.json"
+sha256 = "1c42e7adaf566c4b94ef96c49ddb773773cfb64aac7853934086c3fe79a796d1"
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_a/raw/output_model_url.glb"
+sha256 = "78f62c042570b6fbfe065b4eebc45ad40249222331fa7eebb6a01f4b318945a9"
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_a/raw/output_rendered_image_url.webp"
+sha256 = "76edee7455f6703cb7e37a75d304846bca321b9232be2770690d33abfbb644ba"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_A"

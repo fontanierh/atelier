@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-gravel"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/gravel.jpg"
+sha256 = "a306e75b6fc9c59d19d994d3a945fb59d926ae8ac2dfe994b54e702c9ce28178"
+
+[[sources]]
+path = "source/assets/hidamari/textures/gravel.json"
+sha256 = "da261f403548f1de77fa78db57c897f7122ff00dc8e74d9087af7b9f6b780887"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_gravel"

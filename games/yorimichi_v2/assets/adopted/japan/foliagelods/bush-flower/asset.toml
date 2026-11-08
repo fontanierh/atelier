@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/foliagelods/bush-flower"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Bush_Flower_A.json"
+sha256 = "7a37f3c121e39e6800391e2beb90a69b8750388622eae32de56b82554a862bde"
+
+[[sources]]
+path = "source/assets/foliage/Bush_Flower_B.json"
+sha256 = "0783c058bce67a877e0994eda1afde6b3e45171707cf812910c70e349819ced0"
 
 [[outputs]]
 package = "/Game/Japan/FoliageLODs/Bush_Flower_A/Bush_Flower_A_LOD1"

@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_stone_lantern",
+  "parent": "HD_P_stone_lantern",
+  "schema": 1,
+  "settings": null,
+  "size": 2.0,
+  "slug": "stone_lantern",
+  "solid": true,
+  "target": 0.1,
+  "turn": 0.0,
+  "upright": false
+}

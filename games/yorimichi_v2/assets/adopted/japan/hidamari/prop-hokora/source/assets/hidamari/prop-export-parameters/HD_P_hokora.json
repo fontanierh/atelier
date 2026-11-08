@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_hokora",
+  "parent": "HD_P_hokora",
+  "schema": 1,
+  "settings": null,
+  "size": 1.5,
+  "slug": "hokora",
+  "solid": true,
+  "target": 0.09,
+  "turn": -90,
+  "upright": false
+}

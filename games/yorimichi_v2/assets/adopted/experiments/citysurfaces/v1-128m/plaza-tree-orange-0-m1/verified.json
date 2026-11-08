@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/plaza-tree-orange-0-m1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeOrange_cell_0_-1.uasset": "f960f5765c96ae69b02fe9d59e969c59837a182b90a50451964f25430746ba78"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-tanuki"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/tanuki/concept.jpg"
+sha256 = "48ef2ee955100cf8ac9ce7095e40ad8de4d0c06b153469db7a9043e44b1168d6"
+
+[[sources]]
+path = "source/assets/hidamari/props/tanuki/concept.json"
+sha256 = "3958c14ba3ed3640820bec1afc97d92fdb93d9527422f40708917d0e6e646a24"
+
+[[sources]]
+path = "source/assets/hidamari/props/tanuki/job.json"
+sha256 = "3604d8e6e44b4f88fa0118ef9eb3dc8500acb9c3ddb2bd637764afa5b08af806"
+
+[[sources]]
+path = "source/assets/hidamari/props/tanuki/tanuki.glb"
+sha256 = "4137f0364160429ee1c3e42372a63a2ebdd4cde5e5a27b1a14086953ad40b65b"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_tanuki.json"
+sha256 = "1d7cd0a6c16f9c3f1d0bce8a5ca81bb07d5d5109b30ce24079443deac53c23e4"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_tanuki"

@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-sake-barrels"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/sake_barrels/concept.jpg"
+sha256 = "9a3c41f3a387c8e6b02116c125ab9c51154a3912a9213c7c41156ffc1568c276"
+
+[[sources]]
+path = "source/assets/hidamari/props/sake_barrels/concept.json"
+sha256 = "79fc5d107695af45c8bc9260dd6e9004b79fd04b6d010a26a6d547568d6ff35e"
+
+[[sources]]
+path = "source/assets/hidamari/props/sake_barrels/job.json"
+sha256 = "e9f7dbe86942881c59f8ce2331c61fccc1ba0f28f297a93118df8c57d9dcf2b5"
+
+[[sources]]
+path = "source/assets/hidamari/props/sake_barrels/sake_barrels.glb"
+sha256 = "307b5f0ce2ccef2da8dd5212df0bf490a1057779d8c4a780fca2fb9e6e8204ac"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_sake_barrels.json"
+sha256 = "2ca5704008cfc0b51db0b0bcf87083cf9762f89ec16126da50504c7e63374b41"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_sake_barrels"

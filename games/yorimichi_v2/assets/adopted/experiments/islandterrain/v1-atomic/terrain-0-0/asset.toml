@@ -1,0 +1,37 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Experiments islandterrain terrain-0-0 (9 package(s))
+schema = 1
+id = "adopted/experiments/islandterrain/v1-atomic/terrain-0-0"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/islandterrain/v1-atomic/terrain-0-0"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/experiments/islandterrain/v1-atomic/generator"]
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_0_0"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_0_1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_0_2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_1_0"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_1_1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_1_2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_2_0"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_2_1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_2_2"

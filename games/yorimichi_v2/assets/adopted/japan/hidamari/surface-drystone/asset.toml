@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-drystone"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/drystone.jpg"
+sha256 = "c249feb85fe3096c6805507faf6efc59541d1fdf27754d539432de8053deecb0"
+
+[[sources]]
+path = "source/assets/hidamari/textures/drystone.json"
+sha256 = "197e7d4df55cd57e92f2b96717545d4c6c438f4b59be18178b4be262d5bc7c55"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_drystone"

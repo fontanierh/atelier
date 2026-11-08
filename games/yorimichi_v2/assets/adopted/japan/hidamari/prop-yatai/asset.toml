@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-yatai"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/yatai/concept.jpg"
+sha256 = "5f46289ef0b2bffbd1122fd2c9cb82b7c1f99757c9de2e88574e3ef36ecff759"
+
+[[sources]]
+path = "source/assets/hidamari/props/yatai/concept.json"
+sha256 = "2ced57b23f658951fec6e93ed3e1ffd0164418f07b87fa8785230b8b7c1a6638"
+
+[[sources]]
+path = "source/assets/hidamari/props/yatai/job.json"
+sha256 = "fdb4dff9a6f2dfbc76649f2b4bef2757e5d21dc46286011c33ce8a51c49dc064"
+
+[[sources]]
+path = "source/assets/hidamari/props/yatai/yatai.glb"
+sha256 = "43acb96ce44d5585fe82f5cca309973eff8fe255533378e3ad65b878c948f034"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_yatai.json"
+sha256 = "c2b5641ca735254a25de3e2b412a2cac1cb02d51ad7926b5222aeaa9404d86ce"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_yatai"

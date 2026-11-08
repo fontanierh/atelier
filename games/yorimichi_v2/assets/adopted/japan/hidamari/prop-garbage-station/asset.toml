@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-garbage-station"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/garbage_station/concept.jpg"
+sha256 = "fe76bcf5bbff69cc8edbde08eeff7e9ff7fe07cd663fc127d26a40aad7cf2334"
+
+[[sources]]
+path = "source/assets/hidamari/props/garbage_station/concept.json"
+sha256 = "13c31fd1ff758fd5efc9b0c762480f1a7e3c641d67d8dd4e2f4d3cd82c6be0ec"
+
+[[sources]]
+path = "source/assets/hidamari/props/garbage_station/garbage_station.glb"
+sha256 = "3cfa081b60a587083c9fe25dcc69c33e861a64c4292d19419700f792d0ebeecb"
+
+[[sources]]
+path = "source/assets/hidamari/props/garbage_station/job.json"
+sha256 = "3e30f90b4d8fb5e344aaaf80fac7d4ec2b6d268dfaa3b98523903c129a513e09"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_garbage_station.json"
+sha256 = "7aacc59fc05c4f07ddb02e74cac43d1bc366936034bde2748bd819a33811534d"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_garbage_station"

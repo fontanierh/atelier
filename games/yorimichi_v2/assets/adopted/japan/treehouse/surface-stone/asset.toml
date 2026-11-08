@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-stone"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/stone.jpg"
+sha256 = "967551a7364cdda29a9e60aaac496361c7d544be737f76dcc73b00a6d9670009"
+
+[[sources]]
+path = "source/assets/treehouse/textures/stone.prompt.txt"
+sha256 = "2efc75f164155c618544000de454a2b73cd8879064e0a18cac15b6a0c14c511b"
+
+[[sources]]
+path = "source/assets/treehouse/textures/stone.provenance.json"
+sha256 = "2628850277a96ef218076ae763f160143faa036f8d848b2e8ce31c703576529e"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_stone"

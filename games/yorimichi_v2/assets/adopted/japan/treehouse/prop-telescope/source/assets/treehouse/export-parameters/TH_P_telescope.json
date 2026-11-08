@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_telescope",
+  "schema": 1,
+  "size": 1.45,
+  "slug": "telescope",
+  "solid": false,
+  "target": 0.06,
+  "turn": 0.0
+}

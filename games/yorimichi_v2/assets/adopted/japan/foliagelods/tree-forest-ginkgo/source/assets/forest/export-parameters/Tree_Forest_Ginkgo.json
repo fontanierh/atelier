@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "name": "Tree_Forest_Ginkgo",
+  "args": [
+    "ginkgo",
+    282,
+    10.0,
+    12.0,
+    "LeafGinkgo"
+  ]
+}

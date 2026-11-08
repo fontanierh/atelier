@@ -119,11 +119,13 @@ class Units(dict):
         return list(self.info.get(unit, {}).get('references', []))
 
 
-def mapped_unit(rules: dict, folder: str, asset_id: str):
-    """(Units, unit name) when a `[[units]]` map partitions `folder` (a /Game folder or its top name), else None."""
-    mapped = rules.get(folder.rstrip('/') if folder.startswith('/Game/') else '/Game/' + folder.strip('/'))
-    if not isinstance(mapped, Units):
+def mapped_unit(rules: dict, package: str, asset_id: str):
+    """(Units, unit name) when a `[[units]]` map partitions the folder holding `package` (/Game/Japan/Hidamari/X:
+    the deepest mapped folder above it, as partition places it), else None."""
+    folders = [f for f, rule in rules.items() if isinstance(rule, Units) and package.startswith(f + '/')]
+    if not folders:
         return None
+    mapped = rules[max(folders, key=len)]
     return mapped, next(u for u in mapped.info if slug(u) == asset_id.rsplit('/', 1)[1])
 
 
@@ -365,7 +367,7 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
     texts, originals = {}, []
     for asset_id, (folder, owner, about, packages) in plan.items():
         texts[asset_id], copies_of = unit_record(game, asset_id, owner, about, packages, license_text, PROVENANCE,
-                                                 mapped_unit(rules, folder, asset_id))
+                                                 mapped_unit(rules, packages[0], asset_id))
         originals += copies_of
     report['sources'] = len(originals)
     if check_only:
@@ -444,9 +446,14 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
         license_text, provenance = terms.pop()
         folder = game / 'assets' / unit_id
         text, copies_of = unit_record(game, unit_id, owner, about, packages, license_text, provenance,
-                                      mapped_unit(rules, packages[0].split('/')[2], unit_id))
+                                      mapped_unit(rules, packages[0], unit_id))
         writes[folder / 'asset.toml'] = (unit_id, text)
         originals += [(src, dest, unit_id) for src, dest in copies_of]
+        found = mapped_unit(rules, packages[0], unit_id)
+        unknown = [r for r in (found[0].references(found[1]) if found else []) if r not in units
+                   and r not in {a.id for a in assets if a.kind != 'adopted'}]
+        if unknown:
+            problems.append(f'{unit_id} references {unknown[0]}, which is no record')
         checked = [s.id for s in sources if s.id in verified]
         if not checked:
             if (folder / 'verified.json').is_file():

@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-plaster"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/plaster.jpg"
+sha256 = "e0204be30b781c74f94ab47c02dd31e942a8ef7f6e64c346c8c4bfb3fa3f14f1"
+
+[[sources]]
+path = "source/assets/hidamari/textures/plaster.json"
+sha256 = "dd4fba3bac5899173a916bda73e12ec9034c103c3a8d8945f22c21670e29725a"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_plaster"

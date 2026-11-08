@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_bookshelf",
+  "schema": 1,
+  "size": 1.9,
+  "slug": "bookshelf",
+  "solid": true,
+  "target": 0.055,
+  "turn": -90
+}

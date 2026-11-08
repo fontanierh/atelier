@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/materials/tree-tuscan-olive"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/forest/export-parameters/Tree_Tuscan_Olive.json"
+sha256 = "2ecac881db68172bd5dfaac51081c4fe44396678985b907c66c759461fa352c9"
 
 [[outputs]]
 package = "/Game/Japan/Materials/MI_Tree_Tuscan_Olive_Impostor"

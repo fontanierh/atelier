@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/generator",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Sea.uasset": "43d970047bca86ac0275fda20678f5a06ee1a894c7b7638899d9a4a83cadceef"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

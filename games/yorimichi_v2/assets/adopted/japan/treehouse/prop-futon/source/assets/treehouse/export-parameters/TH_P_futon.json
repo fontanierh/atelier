@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_futon",
+  "schema": 1,
+  "size": 2.0,
+  "slug": "futon",
+  "solid": false,
+  "target": 0.2,
+  "turn": 180
+}

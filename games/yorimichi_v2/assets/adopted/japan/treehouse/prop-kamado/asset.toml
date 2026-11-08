@@ -7,6 +7,35 @@ authority = "editor"
 owner = "shared/japan/treehouse/prop-kamado"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/kamado/asset.toml"
+sha256 = "a87654c18f0261bebd1a20264bdb8a2b238bcc84ef9bb120ff26bb5966d83d58"
+
+[[sources]]
+path = "source/assets/treehouse/props/kamado/concept.jpg"
+sha256 = "41288ac055292f5631c617ecf136bda7f543245473d5a2975c0080d044b9321b"
+
+[[sources]]
+path = "source/assets/treehouse/props/kamado/job.json"
+sha256 = "54ea09036670d6dd3cbbac918bc851b2e512e021e0cd08a00f75375b22c3ce6b"
+
+[[sources]]
+path = "source/assets/treehouse/props/kamado/kamado.glb"
+sha256 = "9ff3ceefa7ce977097b985bad56f96a84323d33bd2d361fce29439e0fac6f409"
+
+[[sources]]
+path = "source/assets/treehouse/props/kamado/prompt.txt"
+sha256 = "7acdc9164d7a7f2c23433e00edbeee4fd955efa935f2903528a50d4859aa4842"
+
+[[sources]]
+path = "source/assets/treehouse/props/kamado/provenance.json"
+sha256 = "1a6a072635e6395ee72082031c5b5fd5ab8ed9939b42d43004b2a97757aa0d6e"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_kamado.json"
+sha256 = "9005c628abebf123439e848d3f4fa921b76fe699586e04486abc2be71586e356"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_P_kamado"

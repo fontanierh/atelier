@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-kite"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/kite.jpg"
+sha256 = "4a8f74ea878e4e2c13fc731ed53cc48a00b36db9505c36caa2a7bbdab1bc84a2"
+
+[[sources]]
+path = "source/assets/treehouse/textures/kite.prompt.txt"
+sha256 = "41d889999b949f26a49fe0c8da974bfdab845b2ae4b2aef6deff84c845c47e02"
+
+[[sources]]
+path = "source/assets/treehouse/textures/kite.provenance.json"
+sha256 = "905b8aedfee20e53dc78ff6c8c3869389ab20523f673bea599e77806f0e20ff9"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_kite"

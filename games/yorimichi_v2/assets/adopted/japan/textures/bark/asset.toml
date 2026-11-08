@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/textures/bark"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/environment/textures/tree-bark.jpg"
+sha256 = "a3b6a582e5ab4aec6f521475360325d9013587e62e0bcb9ec08ce104dbba3a63"
 
 [[outputs]]
 package = "/Game/Japan/Textures/T_bark"

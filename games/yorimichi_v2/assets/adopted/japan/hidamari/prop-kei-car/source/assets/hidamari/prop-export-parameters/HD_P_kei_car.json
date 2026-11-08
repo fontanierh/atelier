@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_kei_car",
+  "parent": "HD_P_kei_car",
+  "schema": 1,
+  "settings": null,
+  "size": 3.4,
+  "slug": "kei_car",
+  "solid": true,
+  "target": 0.16,
+  "turn": -90,
+  "upright": false
+}

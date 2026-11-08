@@ -7,6 +7,35 @@ authority = "editor"
 owner = "shared/japan/treehouse/prop-barrel"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/barrel/asset.toml"
+sha256 = "8a0e4b45a042e3ddacd7ec4237d55e9cc350afb94d3b6d7bc8c39d568c4126d3"
+
+[[sources]]
+path = "source/assets/treehouse/props/barrel/barrel.glb"
+sha256 = "a380c63e8220d3da609c0a1c0092b2c375799c333ebaa4d55801f00550efdc7b"
+
+[[sources]]
+path = "source/assets/treehouse/props/barrel/concept.jpg"
+sha256 = "92fbfe89a5098f6a665332dab3e9a66a5f3dd3216bd747a9db1e1ec3013784f9"
+
+[[sources]]
+path = "source/assets/treehouse/props/barrel/job.json"
+sha256 = "117e626e58b93aee162898765e510858c0061caae67372ae6058f6470fc53207"
+
+[[sources]]
+path = "source/assets/treehouse/props/barrel/prompt.txt"
+sha256 = "8fb67a0da97edcb0b9482e438aeaec0cd3c46c4b33c8ffa3051b8ddb9705b02e"
+
+[[sources]]
+path = "source/assets/treehouse/props/barrel/provenance.json"
+sha256 = "910fe0a731f3483ca02cc0af25ca434fddc7100f4d28bb6883e66e76986bc72f"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_barrel.json"
+sha256 = "1c04a86e243ee16361048ce58695aab9ca405d949f2d3c16a9b91503adb3f68a"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_P_barrel"

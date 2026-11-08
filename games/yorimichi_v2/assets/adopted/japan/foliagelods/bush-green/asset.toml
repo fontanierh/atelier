@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/foliagelods/bush-green"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Bush_Green_A.json"
+sha256 = "9e2886c929006de2dc5a9f2896463cbe6a0ac862f315de018106111621a9a0df"
+
+[[sources]]
+path = "source/assets/foliage/Bush_Green_B.json"
+sha256 = "f8e9ddff7b62abd6339b12ff411f9d2bbfe8ea5454937ed2d7b4651eb8201951"
 
 [[outputs]]
 package = "/Game/Japan/FoliageLODs/Bush_Green_A/Bush_Green_A_LOD1"

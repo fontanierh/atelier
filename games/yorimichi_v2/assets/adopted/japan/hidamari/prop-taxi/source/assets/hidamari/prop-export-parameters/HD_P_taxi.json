@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_taxi",
+  "parent": "HD_P_taxi",
+  "schema": 1,
+  "settings": null,
+  "size": 4.6,
+  "slug": "taxi",
+  "solid": true,
+  "target": 0.09,
+  "turn": -90,
+  "upright": false
+}

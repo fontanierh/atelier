@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_water_basin",
+  "parent": "HD_P_water_basin",
+  "schema": 1,
+  "settings": null,
+  "size": 2.2,
+  "slug": "water_basin",
+  "solid": true,
+  "target": 0.08,
+  "turn": -90,
+  "upright": false
+}

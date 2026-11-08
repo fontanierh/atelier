@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/foliagelods/tree-pine-a"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Tree_Pine_A.json"
+sha256 = "dc93d67e38b9164bc2aa634d506b9c64d322682ce22c58db4e790acdc258e661"
 
 [[outputs]]
 package = "/Game/Japan/FoliageLODs/Tree_Pine_A/MI_Tree_Pine_A_Crown"

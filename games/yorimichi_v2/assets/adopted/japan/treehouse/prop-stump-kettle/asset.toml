@@ -7,6 +7,35 @@ authority = "editor"
 owner = "shared/japan/treehouse/prop-stump-kettle"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/stump_kettle/asset.toml"
+sha256 = "f10f24661031cdaaea8a44862f96467adb3332ab3559207430f9843126291386"
+
+[[sources]]
+path = "source/assets/treehouse/props/stump_kettle/concept.jpg"
+sha256 = "be5700f1d1adc2e733333b080b3df0b53eb56ec4ec9e4871c62639e2be8ab811"
+
+[[sources]]
+path = "source/assets/treehouse/props/stump_kettle/job.json"
+sha256 = "03daf78d5ac711c66102bff9f724f7d2d71760d7e71e97a70c123f01e596c621"
+
+[[sources]]
+path = "source/assets/treehouse/props/stump_kettle/prompt.txt"
+sha256 = "b14ca7d3febde78aa55b0eefc64fa004ef1a87d1c302d33652e0024e8de4daf3"
+
+[[sources]]
+path = "source/assets/treehouse/props/stump_kettle/provenance.json"
+sha256 = "f8832aa805088d52ff8d0470aad2597d82b53e9237b4f9b73e0ed00e1fd82de1"
+
+[[sources]]
+path = "source/assets/treehouse/props/stump_kettle/stump_kettle.glb"
+sha256 = "7b0c8c5d27486486cd4b93871d32dde373cc189bb6fe80a442cda64088739d5c"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_stump_kettle.json"
+sha256 = "6a4b22446573c8be7d06e69227cef55ab475d28843f991d1743b46223cbbec09"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_P_stump_kettle"

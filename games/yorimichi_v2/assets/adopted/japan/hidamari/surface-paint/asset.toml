@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-paint"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/paint.jpg"
+sha256 = "8f357be9d154c2b1be6f3c384ca0ceb3d64e69ea5f36beed280338e2594e6acd"
+
+[[sources]]
+path = "source/assets/hidamari/textures/paint.json"
+sha256 = "7a939de3aa5d51424c0b2b2539c370f6501e4f7df93084e4a2e8274173851b91"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_paint"

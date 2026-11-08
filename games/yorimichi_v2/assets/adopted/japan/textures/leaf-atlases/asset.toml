@@ -7,6 +7,39 @@ authority = "editor"
 owner = "shared/japan/textures/leaf-atlases"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-cypress.jpg"
+sha256 = "6e66e4ffca5a763af7923b6e20a12b1735e8793e5319ef687b4cc64187ba4ce2"
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-cypress.provenance.json"
+sha256 = "c5ed04f07fb9921306b4ee1f6ec6ccb07ccbfc8f9472297639aa04c308b63362"
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-oak.jpg"
+sha256 = "2fd9a26fc4ebbc6263dd48c90fce5c116d60c6c6f92ef26d52ee217387835f93"
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-oak.provenance.json"
+sha256 = "3afc89b1588bd0b531b663a289ad7d0535e36ff0afeaf588a1e869d9410ee6e2"
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-olive.jpg"
+sha256 = "d404aa679073729232ec30517cdc24abf10b60cb29a25d6e4314c36fea09968f"
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-olive.provenance.json"
+sha256 = "31c88443cbb03901afa0c70fd4d83c601c6c5069b5a712c2f78c952a1c571e85"
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-pine.jpg"
+sha256 = "d9d200908c87f1bfa043dbc59accfa996c5e70b54cafc37e3168790a8e3dc011"
+
+[[sources]]
+path = "source/assets/environment/textures/leaf-pine.provenance.json"
+sha256 = "192aad1ccca8e129b570e7f675737aa0583376992b717f07db4fbc4a6d87a9fa"
 
 [[outputs]]
 package = "/Game/Japan/Textures/T_LeafCypress"

@@ -1,0 +1,31 @@
+{
+  "generator": "tree_broad",
+  "arguments": [
+    3,
+    10.0,
+    5.4
+  ],
+  "screen_sizes": [
+    1.0,
+    0.22,
+    0.09,
+    0.035,
+    0.012
+  ],
+  "strides": [
+    3,
+    9,
+    27,
+    54
+  ],
+  "collision": "complex",
+  "materials": [
+    "Bark",
+    "LeafSmall"
+  ],
+  "import_trunk_collision": false,
+  "far_crown": {
+    "shape": "flat12",
+    "screen_size": 0.0036
+  }
+}

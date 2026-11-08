@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_curve_mirror",
+  "parent": "HD_P_curve_mirror",
+  "schema": 1,
+  "settings": null,
+  "size": 3.0,
+  "slug": "curve_mirror",
+  "solid": false,
+  "target": 0.09,
+  "turn": 180,
+  "upright": false
+}

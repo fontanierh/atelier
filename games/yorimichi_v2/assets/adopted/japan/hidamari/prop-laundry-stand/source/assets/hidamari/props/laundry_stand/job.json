@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "laundry_stand",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "87c685a1d16181315a387cf69447bba2d2987196ab6214175b9408087623cf2b",
+  "concept_sha256": "87c685a1d16181315a387cf69447bba2d2987196ab6214175b9408087623cf2b",
+  "submitted_at": "2026-10-05T11:35:00.224290+00:00",
+  "task_id": "fd503357-732f-4693-93bd-30778d041d9e",
+  "status": "submitted",
+  "user_approval": "Henry (CEO): use all Tripo credits; topped up 2026-10-05",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T11:37:08.582888+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

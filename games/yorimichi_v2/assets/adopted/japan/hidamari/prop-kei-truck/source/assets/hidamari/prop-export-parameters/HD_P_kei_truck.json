@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_kei_truck",
+  "parent": "HD_P_kei_truck",
+  "schema": 1,
+  "settings": null,
+  "size": 3.4,
+  "slug": "kei_truck",
+  "solid": true,
+  "target": 0.18,
+  "turn": -90,
+  "upright": false
+}

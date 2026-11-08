@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Shop_00_cell_-1_0.uasset": "9f80329a744a45a60fb999b1b3dc81433ab88f6fa8c01a41681e68bc79225b83"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

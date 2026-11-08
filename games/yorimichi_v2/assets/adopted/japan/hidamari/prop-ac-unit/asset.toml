@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-ac-unit"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/ac_unit/ac_unit.glb"
+sha256 = "a6dfe6c7fd01b8de8732ff4599d83816524423c412ca398631c44f95792a612f"
+
+[[sources]]
+path = "source/assets/hidamari/props/ac_unit/concept.jpg"
+sha256 = "d259d241bd4fe746acb5efd66c0fa1654f07ebab5870ea006e82fad67c0cdf60"
+
+[[sources]]
+path = "source/assets/hidamari/props/ac_unit/concept.json"
+sha256 = "7df46923007fcd761f2f011271e06e19f46d36b309638e74d99e9ba7a958b391"
+
+[[sources]]
+path = "source/assets/hidamari/props/ac_unit/job.json"
+sha256 = "f1a84168a517dc080c93035c97d04c1a2a240924bfbf1f90db1c0cb631c2fadf"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_ac_unit.json"
+sha256 = "3c623d9760c8cde69dc747b13a25f80283cba9b0242089bbe8530886a04581ca"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_ac_unit"

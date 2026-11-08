@@ -4,25 +4,25 @@
   "far-hills-0-0": {
    "about": "Experiments islandterrain far-hills-0-0 (106 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "far-hills-0-m1": {
    "about": "Experiments islandterrain far-hills-0-m1 (49 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "far-hills-m1-0": {
    "about": "Experiments islandterrain far-hills-m1-0 (47 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "far-hills-m1-m1": {
    "about": "Experiments islandterrain far-hills-m1-m1 (45 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "generator": {
@@ -140,49 +140,49 @@
   "guardrail": {
    "about": "Experiments islandterrain guardrail (1 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "lane": {
    "about": "Experiments islandterrain lane (1 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "road": {
    "about": "Experiments islandterrain road (1 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "terrain-0-0": {
    "about": "Experiments islandterrain terrain-0-0 (9 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "terrain-0-m1": {
    "about": "Experiments islandterrain terrain-0-m1 (9 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "terrain-m1-0": {
    "about": "Experiments islandterrain terrain-m1-0 (9 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "terrain-m1-m1": {
    "about": "Experiments islandterrain terrain-m1-m1 (9 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   },
   "wires": {
    "about": "Experiments islandterrain wires (1 package(s))",
    "references": [
-    "adopted/experiments/islandterrain/generator"
+    "adopted/experiments/islandterrain/v1-atomic/generator"
    ]
   }
  },

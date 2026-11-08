@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/textures/tree-tuscan-cypress"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/forest/export-parameters/Tree_Tuscan_Cypress.json"
+sha256 = "ae588ccd9d2d99a1d7a1bb2bc26c2492ada3255408425bc8b9ab08a438b01790"
 
 [[outputs]]
 package = "/Game/Japan/Textures/T_Tree_Tuscan_Cypress_colour"

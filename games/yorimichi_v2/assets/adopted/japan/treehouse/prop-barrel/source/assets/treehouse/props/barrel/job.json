@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "barrel",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "e49d8f31019982262f55b18ba584250650f7c7bc3b03fef159f5dc0c83954d70",
+  "submitted_at": "2026-09-29T21:21:49.788318+00:00",
+  "task_id": "ad8b271b-b522-4a0d-b086-3a5978bc982d",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:24:09.077420+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-bark"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/bark.jpg"
+sha256 = "fb18246bc21f92e08cdf0d7af98da4642a2a7aec3c6f2bb21be8b44825b567cd"
+
+[[sources]]
+path = "source/assets/treehouse/textures/bark.prompt.txt"
+sha256 = "be9e85a3266ced3f4ef170b58a4b033680bf9d426aa21bb923efa411379bcc24"
+
+[[sources]]
+path = "source/assets/treehouse/textures/bark.provenance.json"
+sha256 = "b2358affc3b115703bc9ec41750bac38dad6bec8fa4bc71d507ce4f58c2d8c35"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_bark"

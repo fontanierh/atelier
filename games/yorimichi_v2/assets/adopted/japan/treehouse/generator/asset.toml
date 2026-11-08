@@ -8,6 +8,194 @@ owner = "shared/japan/treehouse/generator"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 
+[[sources]]
+path = "source/tools/treehouse_art.py"
+sha256 = "36bee70da7530e941e04034758311151e9cb29f046496e140937aaf690355f38"
+
+[[sources]]
+path = "source/tools/treehouse_props.py"
+sha256 = "3e2786142246ba33f355564444fd9cf08ed7b487594517f7e6c5b8569aa3c953"
+
+[[sources]]
+path = "source/tools/treehouse_textures.py"
+sha256 = "d40db5a14eb6c0cab06a7309a26bf477010675bcd1badcc7d86b78cefe89889e"
+
+[[sources]]
+path = "source/treehouse_atomic_build.py"
+sha256 = "23a5879b1b4737debc59c6b374796d832c09655c68a179090d081e7d4d34873b"
+
+[[sources]]
+path = "source/treehouse_pieces.py"
+sha256 = "476e363a76a84cb485e63628c08ae99bb23632402bfd1743c404390790f426ff"
+
+[[sources]]
+path = "source/treehouse_surfaces.py"
+sha256 = "629e51165c35b317eb14fa9a408d3baa383ffe2b575b36eb4bde3f503ff0169d"
+
+[[sources]]
+path = "source/unreal/Scripts/city_parent_transition.py"
+sha256 = "f6a572594945dc4d23cf6ac7047a1b077a6147fd842f083602edb31031217821"
+
+[[sources]]
+path = "source/unreal/Scripts/forest_native.py"
+sha256 = "37c32ee4d939c177409c090bf710bade455daac24e8e90b6b1a4b1697d2f6be8"
+
+[[sources]]
+path = "source/unreal/Scripts/import_treehouse.py"
+sha256 = "0c7a573198e2a01ffca7a3414de04726f930a7d44a10b880a8d6ee2bea11916c"
+
+[[sources]]
+path = "source/unreal/Scripts/import_treehouse_pieces.py"
+sha256 = "52a19d2364c6c7ac2f08627ff45c9bbfb95516dfca47c3d4a0e8aa10fb9401bb"
+
+[[sources]]
+path = "source/unreal/Scripts/mesh_import.py"
+sha256 = "371f2e5b7dc10ddbca659662475bba4b26db69585a9e99f7206ba228e9ba11ad"
+
+[[sources]]
+path = "source/unreal/Scripts/see_through.py"
+sha256 = "9d7da40163a6e4023d91e8fc2aaacdd2578bf07ef02f05b4e10dcc1c4c8fd105"
+
+[[sources]]
+path = "source/unreal/Scripts/treehouse_atomic_native.py"
+sha256 = "c898a5bc8f3135fb3ccc003f255688c5a09e96dc73c8fb8a37e4045b5eef2a7f"
+
+[[sources]]
+path = "source/world/asset_mesh.py"
+sha256 = "7c6af2c51e01f17220c3cbe3acb25816d5216aaacaafbb108a15f38f4358caa5"
+
+[[sources]]
+path = "source/world/material_specs.py"
+sha256 = "9ab9af14980cc22f9618eef86a9cdc130c5f6006e321d468f4ea46c5d1b0dbcf"
+
+[[sources]]
+path = "source/world/mesh_pieces.py"
+sha256 = "079b32da3e360442e9bb780de7bd74fe32fb68b7d8aabefe5978843f8aebc782"
+
+[[sources]]
+path = "source/world/region_mesh_parts.py"
+sha256 = "bb3c22091ecdcb80a592b21cc27eff475c0a5157a7360381dbe139fbdca23aa0"
+
+[[sources]]
+path = "source/world/region_plan_files.py"
+sha256 = "4c6466353527d0f62d0b89902efdc32dfa04c750f7fc11f0493a8e5320a5aac3"
+
+[[sources]]
+path = "source/world/regions/megapark/__init__.py"
+sha256 = "ea733abfdca567acb17ecd5884b4e7708b3512299693f680d8e7b83d39d83bb2"
+
+[[sources]]
+path = "source/world/regions/megapark/placement.py"
+sha256 = "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf"
+
+[[sources]]
+path = "source/world/regions/treehouse/README.md"
+sha256 = "c9f8a3f3016bfecb42f4ae1a3169fe8367184f4326f84493cf142d4eb9c479bf"
+
+[[sources]]
+path = "source/world/regions/treehouse/__init__.py"
+sha256 = "c56b8dcaadcb1f5311966458073ad8d1ecf9d029c3d7239dec38390d2309e1e9"
+
+[[sources]]
+path = "source/world/regions/treehouse/assemble_atomic.py"
+sha256 = "4685cbb6db4b706f3b33535f7319b7e14cb7634e14d96a017be02c9f8772c3c0"
+
+[[sources]]
+path = "source/world/regions/treehouse/atomic_parameters.py"
+sha256 = "b5bef2a4990ec3f48bcdb925685b6ad6a1dc2b9c6843835c35e50a67ac87d110"
+
+[[sources]]
+path = "source/world/regions/treehouse/build.py"
+sha256 = "61f3f8bd8c1a99ddae510bd0db6fdbc20620c9ea74e4a44c48a0043cb0d173e8"
+
+[[sources]]
+path = "source/world/regions/treehouse/canopy.py"
+sha256 = "0745745df76de9daccccef36bd81fa6c0288f5304d27ae519e9b1c48ba314635"
+
+[[sources]]
+path = "source/world/regions/treehouse/canopy_data.py"
+sha256 = "4ef4130463f0d75d73201d3454a8df05d7816bea7471a8ba1db50a0a3590a305"
+
+[[sources]]
+path = "source/world/regions/treehouse/dressing.py"
+sha256 = "180de8340b917e751ece94ac2a275b794174e442324c0b9c5332ff553b2de061"
+
+[[sources]]
+path = "source/world/regions/treehouse/geometry_data.py"
+sha256 = "97ff7bd0b1a2da5379eb44bd75b7580663e2ad758b9fc721d8d0e652283ae2b8"
+
+[[sources]]
+path = "source/world/regions/treehouse/layout.py"
+sha256 = "d2bda98e7ccedf92bc1dbbd43ac5722df888d9e0c33803a9e234658c2643a3b4"
+
+[[sources]]
+path = "source/world/regions/treehouse/plan_prop.py"
+sha256 = "40e6e0ab554258ea518565727691956ab751905b59724a703c3b34cc30be0559"
+
+[[sources]]
+path = "source/world/regions/treehouse/plan_surface.py"
+sha256 = "c4f8f14ba971eb08e97f5dea6b70570bb333b8b4625b85f742e118ff0e3dc3c8"
+
+[[sources]]
+path = "source/world/regions/treehouse/plan_tree.py"
+sha256 = "3d7ebb7944fec00d81bf5bfecbc48f637265ff2ed7535d24651f4304680ba0d6"
+
+[[sources]]
+path = "source/world/regions/treehouse/plan_views.py"
+sha256 = "34877ded71270b1af1c80cd56cab36b7c9d5c092b02ace708a28dd19689f0ece"
+
+[[sources]]
+path = "source/world/regions/treehouse/preview.py"
+sha256 = "5c49220ca9026234ab8e8f5a749395142698cc540c12c41e793c8df86395392c"
+
+[[sources]]
+path = "source/world/regions/treehouse/prop_geometry.py"
+sha256 = "daa034faf8de5c666d3ac0f1807092eb721e94c2b41490eb0e4b408f7db92bc7"
+
+[[sources]]
+path = "source/world/regions/treehouse/props.py"
+sha256 = "03498822a10888c174c301fa4b961e3c4aac367a56a5f96138be702d6b681f46"
+
+[[sources]]
+path = "source/world/regions/treehouse/screen.py"
+sha256 = "00508256bf5e438e41e38d9ddd266dbcd3293149938a40c20c9808af34b7331f"
+
+[[sources]]
+path = "source/world/regions/treehouse/tmesh.py"
+sha256 = "d002abeff6767df078dcd0e50fe5771ad0ae7527d16f4a25825022a48c6b29dd"
+
+[[sources]]
+path = "source/world/regions/treehouse/trees.py"
+sha256 = "75e10cc447409fda754141af8763eb9ecf778b2f7a0ced93f6ebd0dc5deed84c"
+
+[[sources]]
+path = "source/world/regions/treehouse/zfight.py"
+sha256 = "7645073b5b1f018890a9f1d6e3fc6488620c3ea64d3bb40472ca5f3309c8ad79"
+
+[[sources]]
+path = "source/world/regions/village/__init__.py"
+sha256 = "beea9c9bd995595f147fb748190f9ea9e49ca2865ddadeb4927e6968b32911ed"
+
+[[sources]]
+path = "source/world/regions/village/layout.py"
+sha256 = "1cc1d206979c297abd94b07e3efc0306c42dce678547ad6df25fefcb1f1608e4"
+
+[[sources]]
+path = "source/world/regions/village/mesh.py"
+sha256 = "386ec356206fe1d96c77a516cb0ce794184bcd574448042f948795882839d4c7"
+
+[[sources]]
+path = "source/world/regions/zeppelin/__init__.py"
+sha256 = "4bef65ad463ae7cd092b0d34955c93065885d78b311a740b164cb108080bba67"
+
+[[sources]]
+path = "source/world/regions/zeppelin/layout.py"
+sha256 = "1d0b480ccdaf12cd4ecafa58cedc87380315f98534d86f43da99297c0ca25e35"
+
+[[sources]]
+path = "source/world/yori.py"
+sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
+
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/M_TH_Light"
 

@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-rug-blue"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/rug_blue.jpg"
+sha256 = "f73637febb12391de4a3c556106204810a607d2f9c15b2d91d9f4d3c4a7b7b9e"
+
+[[sources]]
+path = "source/assets/treehouse/textures/rug_blue.prompt.txt"
+sha256 = "36629c8c88364972b9198c6c337ea2b2f3a0682503d3179b739747eb7489ec35"
+
+[[sources]]
+path = "source/assets/treehouse/textures/rug_blue.provenance.json"
+sha256 = "0e48bc48958d6fab74a14473f5c45d09010190b8737fa8d41b05c35fa5c3b191"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_rug_blue"

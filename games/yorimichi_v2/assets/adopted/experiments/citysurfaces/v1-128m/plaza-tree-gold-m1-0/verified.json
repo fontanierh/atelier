@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/plaza-tree-gold-m1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeGold_cell_-1_0.uasset": "7fcd16ee9725a59c60b40ecac0b25a7aa7929ec353032b6c300b3e8b0f009af0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/civic-gardens-0-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_5_2_Piece010.uasset": "5a09c8b421fb6c138911a1f0b8cb083f79cf7d4393c906fe8775e2316a046d33",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_5_2_Piece011.uasset": "3b152643035fa006ae763dc93ea3b76a35a988f86d2c7b93e77123ac7d1b8c2f",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_5_2_Piece012.uasset": "106782d4bcbdc0b78c6648b55435b476c3e4f076fe6956a4b4f2b85ba894fb4f",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_5_2_Piece013.uasset": "ea9608e284a5955c6e6e3a393841e35eefdc44746f9c7ae4c820fd3c00bf8bb0",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_6_2_Piece00.uasset": "f7ab8f190f6c7ccc3fddf0d793ac12a292c0a5520de600310d95c490272045cf",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_6_2_Piece01.uasset": "145e06c1d088bf5283949aa9a5e9ecece07cbb2a23dea9fff0672f6c0ea86f0f",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_6_2_Piece02.uasset": "5f5024ded1e8e05ab2e0fce6bec343b35219de7df90cbd3d443b1499ec6a00e0",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_6_2_Piece03.uasset": "fcff52f7dee4468d21419d4780a23d12a0ffa223db87fbcc1b017559b245fb34"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

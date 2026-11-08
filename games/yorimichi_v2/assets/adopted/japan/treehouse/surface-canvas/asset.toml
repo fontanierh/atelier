@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-canvas"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/canvas.jpg"
+sha256 = "cfe699f6b3c14148ebf2754cdc66872d2443bb5a7729008964ef1931fb1a1974"
+
+[[sources]]
+path = "source/assets/treehouse/textures/canvas.prompt.txt"
+sha256 = "001271c962c6437d6d76203122e2789d4a470abc6e11112bb4529caa5e996772"
+
+[[sources]]
+path = "source/assets/treehouse/textures/canvas.provenance.json"
+sha256 = "56b06d85a026b2e541ad17aefa30c22110620d36ba56b4254ed12b5633138a0c"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_canvas"

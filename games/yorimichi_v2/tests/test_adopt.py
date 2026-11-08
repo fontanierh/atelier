@@ -345,6 +345,28 @@ def test_repartition_into_a_units_map_copies_each_units_sources_and_passes_the_c
     assert again['write'] == [] and again['delete'] == []
 
 
+def test_a_units_map_on_a_nested_folder_carries_its_sources(tmp_path, monkeypatch):
+    """A units map below the top folder (/Game/Japan/Cove) gives its units their sources, like a top-level one."""
+    repo = tmp_path / 'repo'
+    game = repo / 'games/v2'
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
+    packages = ['/Game/Japan/Cove/SM_Ships_2_2', '/Game/Japan/Cove/MI_Wood']
+    coarse_tree(game, packages, 'adopted/japan/loose_files_01')
+    write(repo / 'games/old/regions/cove/build.py', b'generator')
+    write(repo / 'games/old/regions/cove/wreck.glb', b'model')
+    write(game / 'assets/adopted/japan/cove/units.json', json.dumps({
+        'units': {'wreck': {'about': 'the wreck', 'sources': ['games/old/regions/cove/wreck.glb']},
+                  'materials': {'about': 'the generator', 'sources': ['games/old/regions/cove/build.py']}},
+        'packages': {packages[0]: 'wreck', packages[1]: 'materials'}}).encode())
+    write(game / 'assets/adopted/groups.toml', b'[[units]]\nfolder = "/Game/Japan/Cove"\nmap = "japan/cove/units.json"\n')
+    report = adopt.repartition(game, echo=lambda *_: None)
+    assert sorted(report['records']) == ['adopted/japan/cove/materials', 'adopted/japan/cove/wreck']
+    wreck = records.load_asset(game / 'assets/adopted/japan/cove/wreck/asset.toml')
+    assert [s.path for s in wreck.sources] == ['source/regions/cove/wreck.glb']
+    assert (game / 'assets/adopted/japan/cove/wreck/source/regions/cove/wreck.glb').read_bytes() == b'model'
+
+
 def test_repartition_refuses_double_ownership_and_lost_packages_writing_nothing(donor, monkeypatch):
     game, _ = donor
     coarse_tree(game, TREE[:3])

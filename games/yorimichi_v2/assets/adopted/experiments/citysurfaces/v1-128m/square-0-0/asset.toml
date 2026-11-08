@@ -1,0 +1,73 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Experiments citysurfaces square-0-0 (21 package(s))
+schema = 1
+id = "adopted/experiments/citysurfaces/v1-128m/square-0-0"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/citysurfaces/v1-128m/square-0-0"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/experiments/citysurfaces/v1-128m/generator"]
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_0"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece01"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece030"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece031"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece032"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece033"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece100"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece102"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece103"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1100"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1101"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1102"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece1103"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece111"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece112"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece113"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece12"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece13"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_5_1_Piece2"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_6_1_Piece0"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_6_1_Piece2"

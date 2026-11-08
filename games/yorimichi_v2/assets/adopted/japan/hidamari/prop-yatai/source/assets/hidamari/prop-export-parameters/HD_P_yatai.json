@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_yatai",
+  "parent": "HD_P_yatai",
+  "schema": 1,
+  "settings": null,
+  "size": 2.6,
+  "slug": "yatai",
+  "solid": true,
+  "target": 0.09,
+  "turn": -90,
+  "upright": false
+}

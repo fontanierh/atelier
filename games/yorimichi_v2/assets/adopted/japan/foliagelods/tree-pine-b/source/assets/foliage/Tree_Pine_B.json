@@ -1,0 +1,30 @@
+{
+  "generator": "tree_pine",
+  "arguments": [
+    5,
+    11.0
+  ],
+  "screen_sizes": [
+    1.0,
+    0.18,
+    0.07,
+    0.025,
+    0.012
+  ],
+  "strides": [
+    3,
+    8,
+    16,
+    32
+  ],
+  "collision": "complex",
+  "materials": [
+    "Bark",
+    "LeafPine"
+  ],
+  "import_trunk_collision": false,
+  "far_crown": {
+    "shape": "flat12",
+    "screen_size": 0.0036
+  }
+}

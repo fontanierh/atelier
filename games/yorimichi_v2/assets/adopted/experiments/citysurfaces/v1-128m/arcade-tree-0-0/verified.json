@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/arcade-tree-0-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeTree_cell_0_0.uasset": "870efb7417812735c8a63dc5062b734f910a19500f9fbf0238151047aef9da5c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-propane-tanks"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/propane_tanks/concept.jpg"
+sha256 = "5e047b51226aae87ba569b3e55b1372344367bd1dc9a3b7f0afcf7d1af90228e"
+
+[[sources]]
+path = "source/assets/hidamari/props/propane_tanks/concept.json"
+sha256 = "789265c9a98275c9ca681032bc505ff4582722b09d44cdce62ecbdfa334d069f"
+
+[[sources]]
+path = "source/assets/hidamari/props/propane_tanks/job.json"
+sha256 = "c12621830fc3b1097d470c6d000aecc89af182bdf602141148f234b2ea280db0"
+
+[[sources]]
+path = "source/assets/hidamari/props/propane_tanks/propane_tanks.glb"
+sha256 = "c3f46a1339212fcab32367c9a161547ceb09c74e6670f8976e725f6155e9e3ee"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_propane_tanks.json"
+sha256 = "44660744beafafb90d002295d0562c559633302a06cc06840e0653be335292b5"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_propane_tanks"

@@ -7,6 +7,35 @@ authority = "editor"
 owner = "shared/japan/treehouse/prop-basket"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/basket/asset.toml"
+sha256 = "c7b4a81790b5bf529fd7e6ce48de38365bf88d75f510391569311a2bdf7d9227"
+
+[[sources]]
+path = "source/assets/treehouse/props/basket/basket.glb"
+sha256 = "a01c3cbc2e18e25de093e78cc6274fa191eb10a4df64b21fd2983db43d72a1de"
+
+[[sources]]
+path = "source/assets/treehouse/props/basket/concept.jpg"
+sha256 = "18d60a8388273113f70ad4c8ae79ef60e67314f7591d63f42ec1efc51c323dad"
+
+[[sources]]
+path = "source/assets/treehouse/props/basket/job.json"
+sha256 = "e8d04fc1a9ec22240d06a7f14d349fbd494470384d6bcdd4b4e1aa17d4868b29"
+
+[[sources]]
+path = "source/assets/treehouse/props/basket/prompt.txt"
+sha256 = "81cf5aacf8474f90164f8fc983be6a1db544e7eb7aed973b6a8c2ec0391f673c"
+
+[[sources]]
+path = "source/assets/treehouse/props/basket/provenance.json"
+sha256 = "a0c7ea20209e01eb3e14fde45bd23a30d48b6bf111edbd0d056cd104130e2b01"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_basket.json"
+sha256 = "9bf297f1b0be7ab3994137e479bfab6cd420d51e5506df22fdd3f957aa8bab54"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_P_basket"

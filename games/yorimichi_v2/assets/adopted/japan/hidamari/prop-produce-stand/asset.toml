@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-produce-stand"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/produce_stand/concept.jpg"
+sha256 = "2b20e62d176c8b2f8ac18be3765395992ac6bf355056117ee6608b39870c9c1d"
+
+[[sources]]
+path = "source/assets/hidamari/props/produce_stand/concept.json"
+sha256 = "cd9fec3a4a403623df1ba10c08e53b48046f3e27548428a15177698706ef0cc0"
+
+[[sources]]
+path = "source/assets/hidamari/props/produce_stand/job.json"
+sha256 = "71c14cdfb6e4d4668b733a12201110432a35bd09b9141971da57d1a0396b0dd0"
+
+[[sources]]
+path = "source/assets/hidamari/props/produce_stand/produce_stand.glb"
+sha256 = "7205de67c6967ecc152cf54f2e7aaf9b3d76fc66af3c5e4fa56927608b55a763"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_produce_stand.json"
+sha256 = "cb2664db05464f97c3d515c13b034bdc80e77fdd9fb059120273d176673c9c17"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_produce_stand"

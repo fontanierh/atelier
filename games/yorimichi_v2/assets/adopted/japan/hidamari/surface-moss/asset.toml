@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-moss"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/moss.jpg"
+sha256 = "148182a0906d8b4f2eb002c4090e8d0968abdd689cfeee6c69d3847b8937d327"
+
+[[sources]]
+path = "source/assets/hidamari/textures/moss.json"
+sha256 = "70d78d1d9966e0a7678b32c119f3b8b133d27bc97a113358f7e47b91e9255b52"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_moss"

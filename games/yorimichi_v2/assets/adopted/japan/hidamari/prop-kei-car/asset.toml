@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-kei-car"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_car/concept.jpg"
+sha256 = "e6f9e3f5b8ce50c3445377a046a75f1ede86328a1d071a22736bf10f41847dd6"
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_car/concept.json"
+sha256 = "b1739c258e6a1dc9d090c912b35effaa8bf24506516ec00ec61e35629c7b511d"
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_car/job.json"
+sha256 = "ab559a8946433aa68d75effbefee5479630f91e4593db0f3dee87be30d06b7c3"
+
+[[sources]]
+path = "source/assets/hidamari/props/kei_car/kei_car.glb"
+sha256 = "f05290f0909b13f064986057a4c5744a5887c5ee54502e44bbabdab9feb6ff75"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_kei_car.json"
+sha256 = "2e3dd307fb90e2c88dfbf30116474e08d22d423f42fa4466699f0004f81a90af"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_car"

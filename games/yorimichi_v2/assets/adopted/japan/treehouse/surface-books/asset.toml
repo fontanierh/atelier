@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-books"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/books.jpg"
+sha256 = "a739aa8d58365b5e751aac9cc81a4387687031523235ea63d55bf8b41b44b562"
+
+[[sources]]
+path = "source/assets/treehouse/textures/books.prompt.txt"
+sha256 = "3d9e06312d9c02583691157c71f4ed3ed443b7f371147067952b69a1c63d75a0"
+
+[[sources]]
+path = "source/assets/treehouse/textures/books.provenance.json"
+sha256 = "edea85485f20ed49714e9747dd14f4dc52bb87dfaa20571339c5902dddb7bb1e"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_books"

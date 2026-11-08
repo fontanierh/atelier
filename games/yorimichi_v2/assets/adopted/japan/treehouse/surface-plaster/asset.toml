@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/japan/treehouse/surface-plaster"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/plaster.jpg"
+sha256 = "0a693aa10992c93f9a43f89f3fe92dc53cc5a7a368c7910c807119c4ffd0c28a"
+
+[[sources]]
+path = "source/assets/treehouse/textures/plaster.prompt.txt"
+sha256 = "ae4e1b7863aab67a60bb2d512b2b3659805eade2b27794c53ae076f8c66dee5a"
+
+[[sources]]
+path = "source/assets/treehouse/textures/plaster.provenance.json"
+sha256 = "22106c47e88f35e39ef8d07089b9907b0419f61a8746d22d46b67024afce03ef"
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/Materials/MI_TH_plaster"

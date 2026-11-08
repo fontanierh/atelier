@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_drink_crates",
+  "parent": "HD_P_drink_crates",
+  "schema": 1,
+  "settings": null,
+  "size": 1.2,
+  "slug": "drink_crates",
+  "solid": true,
+  "target": 0.09,
+  "turn": -90,
+  "upright": false
+}

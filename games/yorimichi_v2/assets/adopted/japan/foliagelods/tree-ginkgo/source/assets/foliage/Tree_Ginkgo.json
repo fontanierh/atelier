@@ -1,0 +1,30 @@
+{
+  "generator": "tree_ginkgo",
+  "arguments": [
+    23,
+    9.0
+  ],
+  "screen_sizes": [
+    1.0,
+    0.22,
+    0.09,
+    0.035,
+    0.012
+  ],
+  "strides": [
+    3,
+    9,
+    27,
+    54
+  ],
+  "collision": "default",
+  "materials": [
+    "Bark",
+    "LeafGinkgo"
+  ],
+  "import_trunk_collision": false,
+  "far_crown": {
+    "shape": "flat12",
+    "screen_size": 0.0036
+  }
+}

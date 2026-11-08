@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/north-trail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthTrail.uasset": "5ae8933bf8d8fc13649cb80c7db3067a09e8e780322faa9eaa439d5aba4283a9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

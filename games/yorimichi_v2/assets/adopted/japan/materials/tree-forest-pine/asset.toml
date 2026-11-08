@@ -7,6 +7,11 @@ authority = "editor"
 owner = "shared/japan/materials/tree-forest-pine"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/forest/export-parameters/Tree_Forest_Pine.json"
+sha256 = "48b5d1942799b05b318afa212e2bb3f3f5d2877f9df4e6e5ff84ba711d45a8d1"
 
 [[outputs]]
 package = "/Game/Japan/Materials/MI_Tree_Forest_Pine_Impostor"

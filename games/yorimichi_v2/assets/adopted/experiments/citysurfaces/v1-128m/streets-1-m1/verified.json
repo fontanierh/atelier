@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/streets-1-m1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_8_-1.uasset": "40305e08d216abd650428302ba2bc62c8b6f689caa3eb4d1a7171a546ef1c943",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_9_-1.uasset": "03aac9b218ba970919f44d4c5ba56bf31f88510a6a6febfafc9d2461005ba273"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

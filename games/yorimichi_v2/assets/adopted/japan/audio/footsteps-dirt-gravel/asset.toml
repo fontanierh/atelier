@@ -7,6 +7,7 @@ authority = "editor"
 owner = "shared/japan/audio/footsteps-dirt-gravel"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/audio/generator"]
 
 [[outputs]]
 package = "/Game/Japan/Audio/Footsteps/dirt_gravel/dirt_gravel_levan_ground_walk_03_01"

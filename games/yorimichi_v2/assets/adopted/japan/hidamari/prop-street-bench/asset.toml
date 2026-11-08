@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-street-bench"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/street_bench/concept.jpg"
+sha256 = "0b452329e41f80204f225f191e8412aa5856976c9179305706addf6b72cc64dd"
+
+[[sources]]
+path = "source/assets/hidamari/props/street_bench/concept.json"
+sha256 = "51d587d3becf3f35bc42720a924c665e933568af383a2d3184795f82279ec27c"
+
+[[sources]]
+path = "source/assets/hidamari/props/street_bench/job.json"
+sha256 = "ce5df4dfde140116020d3fd0df80fededef7c35586a01d4b10816c7f2c40fa5d"
+
+[[sources]]
+path = "source/assets/hidamari/props/street_bench/street_bench.glb"
+sha256 = "a3ba40fda013bbc4235ae1cef753dcb7863e6d97655b35a73d657068b5a6520a"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_street_bench.json"
+sha256 = "79cc2ce1ffb6d81fabb6be528ef95f6ea35377945f7aa53e43687d1484e134c6"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_street_bench"

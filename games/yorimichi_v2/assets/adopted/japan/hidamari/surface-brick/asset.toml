@@ -7,6 +7,15 @@ authority = "editor"
 owner = "shared/japan/hidamari/surface-brick"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/brick.jpg"
+sha256 = "53c2c3fc4e6dac3873e058b6c20b323ddb00926240369159ba4f68c7dd465f98"
+
+[[sources]]
+path = "source/assets/hidamari/textures/brick.json"
+sha256 = "2be423366c15af7f8b8cf716f5dae1bd7ad3c63052f5f966807817f5f9c54d7c"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_brick"

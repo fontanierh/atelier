@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_tanuki",
+  "parent": "HD_P_tanuki",
+  "schema": 1,
+  "settings": null,
+  "size": 1.0,
+  "slug": "tanuki",
+  "solid": true,
+  "target": 0.09,
+  "turn": -90,
+  "upright": false
+}

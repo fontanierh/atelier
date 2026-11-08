@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-vending-machine"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/vending_machine/concept.jpg"
+sha256 = "e0de1310f2542901d392cf473f38dcdf22f6cf471f84e39dfbf017aa55ff41d2"
+
+[[sources]]
+path = "source/assets/hidamari/props/vending_machine/concept.json"
+sha256 = "e77445fec827a91a3f19b1dbc80c64c82fff89d393fa690d888abcd6e6b22aee"
+
+[[sources]]
+path = "source/assets/hidamari/props/vending_machine/job.json"
+sha256 = "b49fe884b51e7dc810bdb8d1b2d3f908ecb739717555bfb745efc39fedaf9865"
+
+[[sources]]
+path = "source/assets/hidamari/props/vending_machine/vending_machine.glb"
+sha256 = "e62051959a0058efd3fba2b7a1616e369900e18395d779d122aa93224e5612a2"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_vending_machine.json"
+sha256 = "b0140e9ce0ab2712a3545d0910d423e97e3659f988c2933ee5c10525a0cac4c7"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_vending_machine"

@@ -7,6 +7,27 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-scooter"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/scooter/concept.jpg"
+sha256 = "5ae99c2b204102f90e3ba6a7c6c0f2e0f428e0c2b628c69dcdcc58a619828a40"
+
+[[sources]]
+path = "source/assets/hidamari/props/scooter/concept.json"
+sha256 = "0d095c6219e6701a2ad02075c26b4d543d2b7b74722885d60ec709f452bc952e"
+
+[[sources]]
+path = "source/assets/hidamari/props/scooter/job.json"
+sha256 = "81ee52ef1d7fe7e83f28a2523f0bb432491519aba131f0cac57d49db574807e4"
+
+[[sources]]
+path = "source/assets/hidamari/props/scooter/scooter.glb"
+sha256 = "157576564f561a03115ae38450e61ace59e06ad23cf799fed2f2b1c5456232f2"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_scooter.json"
+sha256 = "0073901cab01f2ef0539b0cb19b93fdf942e0af2e1b35ec6511e038440bc99b6"
 
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_P_scooter"
