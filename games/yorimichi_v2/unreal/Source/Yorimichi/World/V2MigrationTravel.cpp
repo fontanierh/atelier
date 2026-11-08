@@ -65,7 +65,23 @@ namespace
         for (const FString& Unit : Order)
         {
             const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
-            if (Existing.Contains(Id)) { ++OutKept; continue; }
+            if (Existing.Contains(Id))
+            {
+                // A kept unit was saved with every entry it then had, all listed in the manifest. An entry it gained
+                // since is not in its components, so listing it would hide geometry nobody saved: refuse instead.
+                for (const FString& Name : ByUnit[Unit])
+                {
+                    if (!Manifest->MigratedGroups.Contains(Tag.ToString() + TEXT(":") + Name))
+                    {
+                        Error = FString::Printf(TEXT("%s was saved without %s; delete its patch and rerun to remake it"),
+                            *Unit, *Name);
+                        break;
+                    }
+                }
+                if (!Error.IsEmpty()) break;
+                ++OutKept;
+                continue;
+            }
             FActorSpawnParameters Params;
             Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
             AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(FVector::ZeroVector, FRotator::ZeroRotator, Params);

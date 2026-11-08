@@ -106,7 +106,23 @@ int32 UV2MigrationMisc::MigrateStaticMeshes(UObject* WorldContext, FName Region,
     {
         const TArray<FString>& Its = ByUnit[Unit];
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
-        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        if (Existing.Contains(Id))
+        {
+            // A kept unit holds the meshes it was saved with, all listed in the manifest; a mesh it gained since would
+            // be listed without geometry (the runtime would stop building it), so refuse instead.
+            for (const FString& Mesh : Its)
+            {
+                if (!Manifest->MigratedGroups.Contains(Tag.ToString() + TEXT(":") + Mesh))
+                {
+                    Error = FString::Printf(TEXT("%s was saved without %s; delete its patch and rerun to remake it"),
+                        *Unit, *Mesh);
+                    break;
+                }
+            }
+            if (!Error.IsEmpty()) break;
+            ++OutKept;
+            continue;
+        }
         // Where the runtime puts it: the ramp's origin, or the camp prop's ground point and yaw (the same placement code).
         FVector Location = FVector::ZeroVector;
         FRotator Rotation = FRotator::ZeroRotator;
@@ -134,6 +150,7 @@ int32 UV2MigrationMisc::MigrateStaticMeshes(UObject* WorldContext, FName Region,
             if (IsRampMesh(Mesh))
             {
                 C = AMegaRamp::MakePiece(Made, Made->GetRootComponent(), Mesh == TEXT("Mega_Trim"));
+                if (!C || !C->GetStaticMesh()) { Error = Mesh + TEXT(": its mesh is missing from V2 Content"); break; }
             }
             else
             {
