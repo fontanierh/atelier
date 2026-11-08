@@ -113,13 +113,13 @@ def test_writes_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):
 def test_runtime_data_copies_regular_files(donor):
     game, content = donor
     (content / 'Data/megapark').mkdir(parents=True)
-    (content / 'Data/megapark/park.json').write_text('{}')   # D05 group 3: rights-blocked, never copied
-    assert adopt.copy_data(game, content, echo=lambda *_: None) == 1
+    (content / 'Data/megapark/park.json').write_text('{}')   # D05 group 3 cleared 2026-11-08: copied like the rest
+    assert adopt.copy_data(game, content, echo=lambda *_: None) == 2
     assert adopt.copy_data(game, content, echo=lambda *_: None) == 0
-    assert not (game / 'unreal/Content/Data/megapark').exists()
+    assert (game / 'unreal/Content/Data/megapark/park.json').is_file()
     assert tomllib  # stdlib only
     lock = adopt.records.load_data_lock(game)                 # every copied file is pinned
-    assert set(lock) == set(adopt.records.data_files(game)) and len(lock) == 1
+    assert set(lock) == set(adopt.records.data_files(game)) and len(lock) == 2
 
 
 def test_runtime_data_writes_and_pins_need_a_claim_or_the_bootstrap_writer(donor, monkeypatch):

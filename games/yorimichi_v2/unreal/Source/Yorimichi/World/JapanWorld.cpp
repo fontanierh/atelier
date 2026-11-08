@@ -858,12 +858,7 @@ void AJapanWorld::Load()
     };
     if (ServiceRuns(TEXT("SkatePark"))) InstallPark(ParkPath, TEXT("skate pier"));
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
-    // V2 stages no Mega Park data until its rights are settled (DECISIONS D05 group 3): the park is then absent, not broken.
-    if (ServiceRuns(TEXT("MegaPark")) && !FPaths::FileExists(AtelierDataPath(TEXT("megapark/park.json"))))
-    {
-        UE_LOG(LogTemp, Display, TEXT("MEGA PARK not staged (DECISIONS D05 group 3)"));
-    }
-    else if (ServiceRuns(TEXT("MegaPark")))
+    if (ServiceRuns(TEXT("MegaPark")))
     {
         const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
         if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));

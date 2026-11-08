@@ -391,7 +391,6 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
     return report
 
 
-BLOCKED_DATA = ('megapark',)   # DECISIONS D05 group 3: not uploaded until the owner settles its rights
 
 
 DATA_SCOPE = 'shared/runtime-data'   # the claim scope of unreal/Content/Data and runtime-data.lock.json
@@ -404,8 +403,6 @@ def copy_data(game: Path, content: Path, claim: str | None = None, echo=print) -
         raise AdoptError(f'{source} holds no staged runtime data; build the donor first')
     copies = []
     for path in sorted(source.rglob('*')):
-        if path.relative_to(source).parts[0] in BLOCKED_DATA:
-            continue
         if path.is_symlink():
             raise AdoptError(f'{path} is a link; runtime data must be regular files')
         if not path.is_file():
