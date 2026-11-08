@@ -114,10 +114,13 @@ of every platform SDK. This also avoids repeated helper launches and contention 
 mutex. Real compile and cook commands retain their SDK validation. A direct equivalent commandlet
 must set the same variable in its child environment; do not export it globally.
 
-For V2 object migration, use `tools/editor/session.py JOBS.json --headless` for a bounded warm batch
-containing only `objects` jobs, including their no-op reruns. Other script jobs, especially captures,
-use the existing rendered session. Targeted V2 static-mesh imports use the same non-rendering path
-automatically; texture imports keep their current route. Each editor needs its own checkout, Content, Saved and compiled
+Use V2 `tools/editor/session.py JOBS.json --headless` for a bounded warm batch containing `objects`
+jobs (including no-op reruns) and prepared `import` jobs for static meshes. Import jobs must come from
+the targeted import runner: it prepares each journal and plan, then records success or restores the
+unfinished import after the editor exits. The queue rechecks each claim, uses that asset's save list
+and records its written files before starting the next job. Texture imports and other script jobs,
+especially captures, use rendered sessions. Targeted cold V2 static-mesh imports also select the
+non-rendering path automatically. Each editor needs its own checkout, Content, Saved and compiled
 outputs. Use disjoint claims for all output packages, including region and environment manifests;
 jobs that both change the same manifest stay in one sequential queue. Prepare inputs before opening
 the editor and close it when the ready batch is done. Never run two controllers in one checkout.
