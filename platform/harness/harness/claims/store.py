@@ -837,10 +837,15 @@ class Store:
 
     # ------------------------------------------------------------------ reads
 
-    def coverage(self, task):
+    def coverage(self, task, paths=None):
         """What a protected check needs: the task's held claims with items and lock states, each active claim
-        re-verified live (every LFS lock's path, ID and owner on the remote, and the base against the target
-        branch). An unreachable LFS server or Git remote refuses the check (fail closed)."""
+        re-verified live (its LFS locks' path, ID and owner on the remote, and the base against the target branch).
+        With `paths`, the check's own paths, only the locks of those paths are read: a lock the check does not write
+        through cannot change its answer, and reading every lock of a large claim costs a full remote listing per
+        check. An unreachable LFS server or Git remote refuses the check (fail closed)."""
+        if paths is not None and (not isinstance(paths, list) or not all(isinstance(x, str) for x in paths)):
+            refuse('bad_request', 'paths must be a list of repository paths', 400)
+        wanted = None if paths is None else {x.casefold() for x in paths}
         with self.lock:
             view = self._task_view(self.db, task)
             ready = self.ready
@@ -852,10 +857,11 @@ class Store:
         if not ready:
             return result
         active = [c for c in claims if c['state'] == 'active']
+        checked = {c['id']: [l for l in c['locks'] if wanted is None or l['path'].casefold() in wanted] for c in active}
         # One remote read per check, shared by its claims: a task of many claims costs one lock listing and one
-        # target-branch fetch, not one of each per claim. Every lock and base is still read from the remotes now.
+        # target-branch fetch, not one of each per claim. Every checked lock and base is still read from the remotes now.
         listed, head = None, None
-        if sum(len(c['locks']) for c in active) > LIST_ALL_LOCKS_ABOVE:
+        if sum(len(v) for v in checked.values()) > LIST_ALL_LOCKS_ABOVE:
             try:
                 listed = self.lfs.locks()
             except Unavailable as error:
@@ -866,7 +872,7 @@ class Store:
             except Unavailable as error:
                 refuse('git_unavailable', f'cannot verify the base revision: {error}', 503)
         for c in active:
-            problems = self._lock_problems(c['locks'], accounts[c['id']], listed)
+            problems = self._lock_problems(checked[c['id']], accounts[c['id']], listed)
             items = [(i['kind'], i['value']) for i in c['items'] if i['kind'] != 'scope']
             try:
                 self._base_check(view['target_branch'], c['base_revision'], items + reads, head)

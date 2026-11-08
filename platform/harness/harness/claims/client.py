@@ -245,8 +245,8 @@ def evaluate(changes, guarded, coverage, stage='commit', actor=None):
 
 def check(client, repo, task, changes, patterns=(), stage='commit', cached=False):
     """Fail-closed check. Unprotected changes pass without contacting the service; protected ones need it, and
-    the service re-verifies the task's active claims against the LFS and Git remotes for every check (it refuses
-    when either cannot be asked)."""
+    the service re-verifies the task's active claims against the LFS and Git remotes for every check: the locks of
+    the checked paths and each claim's base (it refuses when either cannot be asked)."""
     names = sorted({p for change in changes for p in change.paths()})
     guarded = protected(repo, names, patterns, cached=cached)
     if not any(p in guarded for p in names):
@@ -254,7 +254,8 @@ def check(client, repo, task, changes, patterns=(), stage='commit', cached=False
     if not task:
         return evaluate(changes, guarded, None, stage, client.actor)
     try:
-        coverage = client.call('GET', f'/tasks/{task}/coverage')
+        # The check's protected paths: the service re-verifies the locks of those paths (and every claim's base).
+        coverage = client.call('POST', f'/tasks/{task}/coverage', {'paths': sorted(p for p in names if p in guarded)})
     except Unreachable as error:
         return [f'{error}: protected changes cannot be verified']
     except Refused as error:
