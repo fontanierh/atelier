@@ -1,5 +1,6 @@
 """Source recovery plans and applies a donor family's records once, and refuses whatever the donor report disagrees with."""
 import hashlib
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -233,3 +234,24 @@ package = "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece001"
     left = records.load_asset(game / 'assets/adopted/belmonte/north-country/asset.toml')
     assert [o.package for o in left.outputs] == ['/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece001']
     assert records.load_asset(game / 'assets/prop/belmonte/north-country-piece000/asset.toml').authority == 'generated'
+
+
+def test_repartition_check_stays_clean_on_the_real_game():
+    """Recovery leaves nothing for adoption's repartition to rewrite: no record file would change, nothing deleted.
+    Source copies are reported too, since a checkout without hydrated LFS bytes differs from its donor copies; they
+    are not record files, so they are not part of this check."""
+    adopt = importlib.import_module('adopt')
+    report = adopt.repartition(recover.GAME, check_only=True)
+    record_writes = [p for p in report['write'] if p.endswith(('asset.toml', 'verified.json'))]
+    assert record_writes == []
+    assert report['delete'] == []
+
+
+def test_partition_honours_a_units_map_below_a_folder_with_few_packages():
+    """A `[[units]]` folder below a folder with one package still puts that package in its mapped unit."""
+    adopt = importlib.import_module('adopt')
+    units = adopt.Units({'/Game/Experiments/IslandTerrain/v1_atomic/Sea': 'generator'},
+                        {'generator': {'about': 'generator'}})
+    rules = {'/Game/Experiments/IslandTerrain/v1_atomic': units}
+    found = adopt.partition(['/Game/Experiments/IslandTerrain/v1_atomic/Sea'], 'Experiments', groups=rules)
+    assert list(found) == ['adopted/experiments/islandterrain/v1-atomic/generator']

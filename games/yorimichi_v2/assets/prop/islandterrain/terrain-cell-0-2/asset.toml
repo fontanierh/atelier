@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Terrain_cell_0_2: one island piece (2816 triangles, materials Ground).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/islandterrain/terrain-cell-0-2"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/islandterrain/terrain-cell-0-2"
+references = ["adopted/japan/materials/ground"]
+
+[[sources]]
+path = "src/Terrain_cell_0_2.fbx"
+sha256 = "2abe8b6a6c39d9ca17c1a8261e768fdf8ca22d74c42de27857b3e20c97a8185c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_Ground"]
+triangles = 2816
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_0_2"

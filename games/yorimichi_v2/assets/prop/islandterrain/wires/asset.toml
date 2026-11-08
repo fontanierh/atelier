@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Wires: one island piece (11200 triangles, materials Metal).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/islandterrain/wires"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/islandterrain/wires"
+references = ["adopted/japan/materials/buildings"]
+
+[[sources]]
+path = "src/Wires.fbx"
+sha256 = "ba0678421a311630228e54ec0a11f3627b95d82ddd69dbfc1e29ed9c6b4df817"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_Metal"]
+triangles = 11200
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Wires"
