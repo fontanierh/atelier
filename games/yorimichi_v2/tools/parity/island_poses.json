@@ -101,15 +101,15 @@
       "location": [
         4461.08,
         -6552.93,
-        4321.52
+        6121.52
       ],
       "rotation": {
-        "pitch": -17.45,
+        "pitch": -39.65,
         "yaw": -20.0,
         "roll": 0.0
       },
       "fov": 60.0,
-      "source": "the tea house and the lane in front of it. Target at (77.50, 77.50, 29.21) m from unreal/Content/Data/world.json village.buildings[0] (Village_TeaHouse). Camera at (44.61, 65.53, 43.22) m: 35 m out at bearing 200 deg, 12 m above the higher of the target and the ground under it."
+      "source": "the tea house and the lane in front of it, from above the trees that hide it lower down. Target at (77.50, 77.50, 29.21) m from unreal/Content/Data/world.json village.buildings[0] (Village_TeaHouse). Camera at (44.61, 65.53, 61.22) m: 35 m out at bearing 200 deg, 30 m above the higher of the target and the ground under it."
     },
     {
       "name": "w03_mini_ramp_overview",
@@ -521,15 +521,15 @@
       "location": [
         -9628.62,
         10939.09,
-        2314.4
+        4314.4
       ],
       "rotation": {
-        "pitch": -14.93,
+        "pitch": -35.42,
         "yaw": -20.0,
         "roll": 0.0
       },
       "fov": 60.0,
-      "source": "the Ronin camp clearing. Target at (-54.00, -94.00, 8.14) m from docs/inventory/world.md W13: Ronin camp at (-54, -94) (SwordTrainer.cpp:427); z from heightmap.bin. Camera at (-96.29, -109.39, 23.14) m: 45 m out at bearing 200 deg, 15 m above the higher of the target and the ground under it."
+      "source": "the Ronin camp clearing, from above the canopy around it. Target at (-54.00, -94.00, 8.14) m from docs/inventory/world.md W13: Ronin camp at (-54, -94) (SwordTrainer.cpp:427); z from heightmap.bin. Camera at (-96.29, -109.39, 43.14) m: 45 m out at bearing 200 deg, 35 m above the higher of the target and the ground under it."
     },
     {
       "name": "w13_ronin_road",

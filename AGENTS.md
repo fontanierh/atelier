@@ -71,7 +71,8 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   Native validation still uses the machine guards.
   Merge PRs with `gh pr merge --squash --match-head-commit <tested head>`; builds publish their results to the local store as they run.
   A refactor must not change behaviour, and a fresh clone must still install and pass.
-- Run focused local Python tests for the changed behavior. Do not repeatedly run the full suite locally or
+- Run focused local Python tests for the changed behavior; never run unrelated tests (owner 2026-11-08).
+  Focus on delivering work and reuse passing evidence. Do not repeatedly run the full suite locally or
   duplicate a successful CI run: hosted CI runs the complete suite on every PR head. After focused tests pass,
   repeat or broaden them only for a new change, failure or unresolved concern. Documentation-only changes need
   no local Python run. A full local run is for diagnosing a specific integration failure or unavailable CI;
@@ -282,8 +283,8 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   Literal unattended NullRHI Python editor commandlets may share capacity: each reserves half the managed
   CPU pool and its full memory ceiling, with a separate checkout and disjoint package claims. This is a
   scheduling share, not a thread cap. Use V2 `tools/editor/session.py JOBS.json --headless` only for object
-  batches; captures and arbitrary scripts use rendered sessions. Compile, UAT, rendered editors, games
-  and unclassified commands reserve the managed CPU pool with performance exclusion.
+  batches and prepared static-mesh imports; textures, captures and arbitrary scripts use rendered sessions.
+  Compile, UAT, rendered editors, games and unclassified commands reserve the managed CPU pool with performance exclusion.
   Three compiler workers do not cap all engine threads; lowering a reservation alone
   does not throttle a tool or remove exclusion. Use the capacity guide for measurements and profile changes.
 - Merge and run `uv sync` only after the checkout's native child and its enclosing caller have stopped at a

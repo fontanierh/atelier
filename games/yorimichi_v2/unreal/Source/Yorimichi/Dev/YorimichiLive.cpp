@@ -27,6 +27,7 @@
 #include "Engine/GameViewportClient.h"
 #include "UnrealClient.h"
 #include "GameFramework/PlayerController.h"
+#include "AssetCompilingManager.h"
 
 // Yorimichi's verbs for the live bridge (the platform's are in ULiveLibrary).
 
@@ -83,6 +84,11 @@ bool UYorimichiLive::PadInput(const FString& Key, float Value)
     else if (Value > .5f) Slate.ProcessKeyDownEvent(FKeyEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0));
     else Slate.ProcessKeyUpEvent(FKeyEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0));
     return true;
+}
+
+int32 UYorimichiLive::PendingAssetCompiles()
+{
+    return FAssetCompilingManager::Get().GetNumRemainingAssets();
 }
 
 FString UYorimichiLive::MenuFocus()

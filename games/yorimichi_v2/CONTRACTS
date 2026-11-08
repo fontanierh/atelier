@@ -45,10 +45,15 @@ dead menu entry. V2 runtime code MUST NOT import or load files from games/yorimi
 @cc [owner:fontanierh,label:correctness] yorimichi-v2-warm-editor-jobs
 One warm editor MAY run several editor jobs (tools/editor/session.py, step editor.session) only when each job is
 authorized immediately before it runs, under its own claim and with its own save lists, by the same code as the
-job's cold step, and checked by that step's code before the next job starts. Between jobs the editor MUST refuse
+job's cold step. Object and editor-script jobs MUST use that step's checking code before the next job starts.
+Import jobs MUST verify their own written files and expected packages before the next job; these receipts are
+provisional. The importing caller MUST perform final import validation and record acceptance after the editor exits.
+Between jobs the editor MUST refuse
 every save. A job that fails or leaves a package unsaved MUST end the session. The session MUST end when its
 editor scripts or C++ change, and every file it wrote MUST be one a job's own check accepted. The build's lock,
 admission and memory guard own the session's whole life; only its controller writes its checkout.
 An explicitly headless session MAY share capacity with another checkout. Both its controller and its editor
-MUST reject every job except object migration; arbitrary scripts and captures retain rendered sessions.
+MUST reject every job except object migration and prepared static-mesh imports; textures, arbitrary scripts and
+captures retain rendered sessions. An import job MUST use the cold import authorization and verify its own writes
+before the next job. The importing caller owns journals and final records; recovery MUST wait for the editor to end.
 Shared sessions MUST still hold disjoint claims, including region and environment companion packages.
