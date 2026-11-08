@@ -4,7 +4,8 @@
     uv run python games/yorimichi_v2/tools/test/zeppelin_ride.py --session ID --out OUT [--start 0] [--legs 6]
 
 The player travels once, to the --start station's entry; from then on only the interact button is pressed, as a
-player would. Each leg, with a screenshot and a state line at each step: 1. interact at the platform (it calls the
+player would (on the first leg the stop buttons also step the destination at the platform and the speed in flight,
+and back). Each leg, with a screenshot and a state line at each step: 1. interact at the platform (it calls the
 ship in when it is docked elsewhere, then boards); 2. the ship's own boarding walk onto the deck; 3. climb, cruise
 and landing, every half second checking the player is still its passenger and rides on the ship; 4. by the time
 the gate opens, World Partition has activated every cell within --loaded metres of the arrival platform (the player
@@ -100,6 +101,14 @@ class Review:
 def leg(r, args, number):
     s = state()
     at, names = s['dock'], [x['name'] for x in s['stations']]
+    if args.controls and number == 1 and s['phase'] == DOCKED:
+        # The stop buttons beside the docked ship choose where it flies next; put it back.
+        going = s['destination']
+        py("live.press('stop_next')")
+        chosen = r.wait(lambda s: s['destination'] != going, 5)['destination']
+        py("live.press('stop_previous')")
+        r.wait(lambda s: s['destination'] == going, 5)
+        r.log(f'{number}.0 chose {names[chosen]}, then {names[going]} again')
     # 1. Interact at the platform: a ship docked elsewhere is called in first, then a second press boards.
     for _ in range(3):
         py("live.press('interact')")
@@ -129,6 +138,13 @@ def leg(r, args, number):
         if s['phase'] == CRUISE and s['phase_time'] > 8 and not cruise_shot:
             cruise_shot = True
             r.log(f'{number}.3 cruising', f'{number}-cruise')
+            if args.controls and number == 1:
+                # In flight the same buttons step the ride's speed; back to the authored cruise.
+                py("live.press('stop_next')")
+                faster = r.wait(lambda s: s['flight_speed'] > 1, 5)['flight_speed']
+                py("live.press('stop_previous')")
+                r.wait(lambda s: s['flight_speed'] == 1, 5)
+                r.log(f'{number}.3 flew at {faster}x, then 1x again')
         if s['phase'] == LANDING and arrived_loaded is None and loaded(s['stations'][to]['entry'], args.loaded * 100):
             arrived_loaded = round(s['phase_time'], 1)
         time.sleep(.5)
@@ -177,6 +193,8 @@ def main(argv=None):
     parser.add_argument('--out', type=Path, default=REPO / 'build' / 'yorimichi_v2' / 'zeppelin-ride')
     parser.add_argument('--start', type=int, default=0, help='station index to travel to first (world.json zeppelin stations)')
     parser.add_argument('--legs', type=int, default=6, help='flights; six from Woodland fly to Belmonte and back')
+    parser.add_argument('--controls', action=argparse.BooleanOptionalAction, default=True,
+                        help='on the first leg, step the destination at the platform and the speed in flight, and back')
     parser.add_argument('--loaded', type=float, default=300.0, help='metres round the arrival platform that must be loaded')
     parser.add_argument('--off-ship', type=float, default=300.0, help='cm the passenger may be from the ship, level')
     parser.add_argument('--ashore', type=float, default=200.0, help='cm the player may stand from the arrival platform entry')
