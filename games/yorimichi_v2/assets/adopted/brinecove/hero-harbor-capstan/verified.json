@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/brinecove/hero-harbor-capstan",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Materials/MI_BC_hero_harbor-capstan_0.uasset": "84008f8a9f29a704ffced0f357048ffb66310d1ecbfbe05f34571dc5bba76d2f",
+    "unreal/Content/Brinecove/Materials/MI_BC_hero_harbor-capstan_1.uasset": "0cdc9a22b68f8bdbbcf7cab1449c1c7161225df95a8903f78f624b2d116916cc",
+    "unreal/Content/Brinecove/Materials/MI_BC_hero_harbor-capstan_2.uasset": "71154857d37a9a5dead8d5168f6811be6eadbd92cc80e6e36fd049ce4be46db6",
+    "unreal/Content/Brinecove/Materials/MI_BC_hero_harbor-capstan_3.uasset": "b5676262730e6ba2aee5ddde028c0d0491f5a8400162823c32e1bb4ae0a89e24",
+    "unreal/Content/Brinecove/Materials/MI_BC_hero_harbor-capstan_4.uasset": "2baf7693274578469bff83145a5c959221d9ae1206ca19c45cfd2429450d80dc",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Hero_HarborCapstan.uasset": "13a9f956fb16121944f911c644889e786d6723538eef896298c29c120845a7c1",
+    "unreal/Content/Brinecove/Textures/T_BC_hero_harbor-capstan_0.uasset": "c3c9ddf25da9ad929a250338a3580ef241c81d883067d97f3c35d816c2f347f8",
+    "unreal/Content/Brinecove/Textures/T_BC_hero_harbor-capstan_1.uasset": "20cc68ec7377f4679f33732ccecb19a37e39789be513cc94cdfebc9f552292bf",
+    "unreal/Content/Brinecove/Textures/T_BC_hero_harbor-capstan_2.uasset": "91acc62e8ebce21efa559b8ef74bed010448d32db434b790dae0951cb26f1ca0",
+    "unreal/Content/Brinecove/Textures/T_BC_hero_harbor-capstan_3.uasset": "ab6d5ab6c60571e541c0ea0957b6d7b07ef259216a4af8946e8b0bbbc7966dd1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

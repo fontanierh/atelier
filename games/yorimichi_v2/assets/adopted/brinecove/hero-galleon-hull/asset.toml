@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove hero model galleon-hull: its mesh cells, material instances and textures
+schema = 1
+id = "adopted/brinecove/hero-galleon-hull"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/hero-galleon-hull"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "source/assets/brinecove/models/galleon-hull.glb"
+sha256 = "72a7420354678f2d7d37073399a86d029b4a80cee6dc7101f6b8f110666ca1cb"
+
+[[sources]]
+path = "source/assets/brinecove/models/galleon-hull.provenance.json"
+sha256 = "595f92a80a32991eae75277214003ec29dc0923bee8553dd1adb0ff5f80088c5"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_galleon-hull_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_0_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_galleon-hull_0"

@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: /Game/Brinecove/Materials
+# Ownership unit: Brine Cove shared materials, and the region generator that made every Brine Cove package
 schema = 1
 id = "adopted/brinecove/materials"
 kind = "adopted"
@@ -7,6 +7,642 @@ authority = "editor"
 owner = "shared/brinecove/materials"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/CONTRACTS"
+sha256 = "b14d45d10c584dc6657ad97bd5db4fc8c089a825f8d3143d9c7c483638cd931c"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/Harbor.json"
+sha256 = "bb0c0729b331a84ac05643884bc647665e718b94fd171811ad530d25fd6304cd"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/Landmarks.json"
+sha256 = "3943a0a59b28d0c6657a50e0f384eefd8ca7393120a5d754937e6d4efa1fd74c"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/Market.json"
+sha256 = "0b5153d4193ca6175c6586f54c94f67b015f60739e3909536d11b98d9eefc2a0"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/Props.json"
+sha256 = "7bd354eea316290a59d96c87371892ecbe412fc561671cf8f789bed2fef9935d"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/README.md"
+sha256 = "375deeee037327b2dd79ccbd0467af743f7ccf37bc78677a0a21f19939234d34"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/Rocks.json"
+sha256 = "b2afb0421bcf44957dc3fa71dcf3e056b57f004555973ede85c2799b845abafc"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/Ships.json"
+sha256 = "61fb2581c6b7c12a1bf1711645447ef950491f228d1931564733ee731e8fc57e"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/TownLower.json"
+sha256 = "bfcf8f02ba4dc16a2d30bbfab26d7677cf323d2de99ffcb3b3cd1df76866aacf"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/TownUpper.json"
+sha256 = "1976854a6fde00a29e4cedbf4f03bbe03c4332bc3d32e922a08aa544eb689dc5"
+
+[[sources]]
+path = "source/assets/brinecove/export-parameters/Understory.json"
+sha256 = "24710d5b964145225f9794b0c091c0a5aac1089e9f20c3570c5528f8ca3e63ff"
+
+[[sources]]
+path = "source/assets/brinecove/models/galleon-figurehead.glb"
+sha256 = "93e0a4f07e4d44245e2b01262db31cf8a03059b2e671d9362d4045070ef54f17"
+
+[[sources]]
+path = "source/assets/brinecove/models/galleon-figurehead.provenance.json"
+sha256 = "099bbae41f50b9bd1e7cc5d8099d49fd1fedfaa364593921e0af404628215fca"
+
+[[sources]]
+path = "source/assets/brinecove/models/harbor-cannon.glb"
+sha256 = "7b6b743b6ec6a85fbb69b7f8dec8e9f7dda12506cd671eadc48598060d7012b3"
+
+[[sources]]
+path = "source/assets/brinecove/models/harbor-cannon.provenance.json"
+sha256 = "6f206e993647393a1dde94d6b923fe51b758c133c14c15b802e410db36897222"
+
+[[sources]]
+path = "source/assets/brinecove/models/ship-anchor.glb"
+sha256 = "c8bf2961a49ae8868ea61678462ba09d41f629d97bee3ae69501ed25f2a210e8"
+
+[[sources]]
+path = "source/assets/brinecove/models/ship-anchor.provenance.json"
+sha256 = "bb2b9cb562d6927fdb27279330a0702f1941062076aaa262d142e78e299a910d"
+
+[[sources]]
+path = "source/assets/brinecove/models/ships-wheel.glb"
+sha256 = "ac3bef3c3216356ff6c8ae814eab4f3c586fe8736aa087bf72916cd59c88b99d"
+
+[[sources]]
+path = "source/assets/brinecove/models/ships-wheel.provenance.json"
+sha256 = "7603cd2c912c85015913f623075a69bc9bcb66a76ba63a5b8898d0ad8855ab7f"
+
+[[sources]]
+path = "source/assets/source-library.json"
+sha256 = "56d7aa5142852e1304c7bf04a95e3acfcbac079ad5d2d2962800b10879eec1b6"
+
+[[sources]]
+path = "source/world/regions/brinecove/DESIGN.md"
+sha256 = "e31ec2e0c30023fcad020a34702ab6543c1316e7f062efc8913811fa38a117df"
+
+[[sources]]
+path = "source/world/regions/brinecove/README.md"
+sha256 = "43c6dde62d04353a3ca610f4b29aa581a4eb94d1a11ab15ead9e3c79f999d8d1"
+
+[[sources]]
+path = "source/world/regions/brinecove/__init__.py"
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[[sources]]
+path = "source/world/regions/brinecove/assemble.py"
+sha256 = "6868567fce7c25ecbfb5e80f28f4ee8c351d3370929c72311487a027551574a1"
+
+[[sources]]
+path = "source/world/regions/brinecove/assembly_files.py"
+sha256 = "31a9b5d9d9c805c55694307528f208109349db44a2efb81cf297b0cf3fd576f2"
+
+[[sources]]
+path = "source/world/regions/brinecove/boundary.py"
+sha256 = "51cc29f795a59bcd72970bdcc1a89b19d5a6b39d6f9af357361a124a582b50ff"
+
+[[sources]]
+path = "source/world/regions/brinecove/build.py"
+sha256 = "93f4b5efbceb24eef09ad0216346a5b96cdee392e171cea174c97330181e9b50"
+
+[[sources]]
+path = "source/world/regions/brinecove/export_foliage_model.py"
+sha256 = "d53f782cc53ae243e6687d856fddcb6b6a61c79082ebad0f1910fd0ded1468ea"
+
+[[sources]]
+path = "source/world/regions/brinecove/falls.py"
+sha256 = "fd4c00b58eba53671f9f9ec081d4e6087217908857af35f004777bf2f6f75a2c"
+
+[[sources]]
+path = "source/world/regions/brinecove/ferry_terminal.py"
+sha256 = "561ff6dbd425b6c163a350359554fc17379c5db6d740eb4f20fdaee050a7a539"
+
+[[sources]]
+path = "source/world/regions/brinecove/flora.py"
+sha256 = "eef3b49e0d4aad5d3a51f430ca355a5c093a3d9ff97e4442fb5eca0260edb3e4"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_atlas.py"
+sha256 = "e43dd896af2fe97d8ad27edcbe633c6301927d6ae251f4b7f71aae70b1f8aee4"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_catalog.json"
+sha256 = "d1360d01dd151177741014535ad972b7679dafc61f0de7e0552c0b3fdfd9aeed"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_library.py"
+sha256 = "3293e00379b42434fd05f8e176ae21a4cff4b0b0edb56d35b946630caeedb62b"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models.py"
+sha256 = "ad2f43d845e20b81536d43d964a0522b413da590dfea992d785a3299ca5df808"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/bloom_0.json"
+sha256 = "2bb43dff0ea0ef70dd2e1261834dd2eecd3672ad6ab04f8d20439eecdce97de3"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/bloom_1.json"
+sha256 = "066b7746c4d6072f949975ed905ddd93d1b2e2f365928e17cbbfdd9be7c93051"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_0.json"
+sha256 = "6c86c55a9529ddb9a3404abe9d09636b79db33b2a74fcf7cbb54cd24058d5cdf"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_1.json"
+sha256 = "a906b8b70ea2de749b3131f2c5a5e6cfe77e8ca693ab9d6e976498f5410aa080"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_2.json"
+sha256 = "053320fc99f04e49209f077be63977578c345dd00b80afd49d74645d6ecf8fef"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_3.json"
+sha256 = "5454eb96c53b8102898ab54177760d8d850ce4ea7c95df2843a8c710dea92abb"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_4.json"
+sha256 = "fbfafe9879635dd06c097fb9781f262ffb6ec3a5909f976b50ac051ac1b5b9bf"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_5.json"
+sha256 = "4bde3a0ad3d6f8f91f88fe023b0e0ccac51baaef153a381101217cde3dd479a0"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_6.json"
+sha256 = "477c1d5ed20a4ec61e28103917d83b875e7efa90512924c0a89ca1119fe528ed"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/broad_7.json"
+sha256 = "79f39ff5c6440ac0ec035c285f67b4878fb8a2323c5f6e63b9a5467ba77b4715"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_fern_0.json"
+sha256 = "3cd24bad3bbaae18402bd0b9cf6ad5a98e8a615fac339c6aad78facf1875a81b"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_fern_1.json"
+sha256 = "35bffa80cdda052351adaaeedc0a42bccaf6d21aa1299d28d5756fec15c0f7df"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_fern_2.json"
+sha256 = "54bd26faef10d90d7bbaf4743d5c335641ac7075dba0f04b39bf1b1bfcdcae73"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_grass_0.json"
+sha256 = "42289dc01a1b583925a5712089b079ae16994c28e3709dc476c6b551dce15d39"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_grass_1.json"
+sha256 = "10db8858bee510ff8449a9d4c0fcf50b028fe8b6d0618223dcb2b98199e246a5"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_grass_2.json"
+sha256 = "b088fb1b1031f90c5513d8bbe427d452fb375a4d657e91a9f9b48db6a9abb18c"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_leaf_0.json"
+sha256 = "9fcbc7d6bfaa7abed1aec5edeac6fadab56dc64308db6c0c0fad295d25506e83"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_leaf_1.json"
+sha256 = "cd044a0f8f8de97d21d64acfa082b3322c0f489fc30f5624529d088ee62ca4f7"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/cover_leaf_2.json"
+sha256 = "9a951dd0a4a99c626a9fb740386bd730819b0588bb8ec8da67ee3dce817b6e07"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/emergent_0.json"
+sha256 = "4ab7958fbc1b34c2526f761daac1695470970f6c37716b8db951769b2ef24ec8"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/emergent_1.json"
+sha256 = "070d1fe71c9ae5e656869f0b64af5baebad86a913104ee7276caae7726b7cfc7"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/emergent_2.json"
+sha256 = "320620865c71bfbb9893c38bea76a71626e696d8b849e4ccc9293c609348ecfe"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/palm_0.json"
+sha256 = "b6d4c1aaa565c49c8c2f3ca6a79d88ab52fe6e3909bd27c0cc0c5779b0c348f2"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/palm_1.json"
+sha256 = "9b1f50451773e6e411bb3c14030952ed4a2b4221f7d09f1c317be0899562c33b"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/palm_2.json"
+sha256 = "902b3ac5cb4b3346d52d1f105122fc3598e2ead05dd7fd2345f06765b82ee360"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/palm_3.json"
+sha256 = "1a9bc932061db75d97220ee8af5489e4172681a7a7f961d02a2f77ce6249b554"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/palm_4.json"
+sha256 = "654ce829b07ca46050995dc2dbdc4ff310ce3b80a9c7c7192010c973c67837f1"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/palm_5.json"
+sha256 = "5e274057e0b771bf578dcd1ce94002a3483fe37aa2e1e20cd770a0848d8e001f"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/shrub_0.json"
+sha256 = "90e8266a65c119f8be39a3db4b41b6b2fe42210850081256747ff9d9ee5a5c1c"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/shrub_1.json"
+sha256 = "2ba45f27c2f8bc9d287c3f5d6798e74fc1453f5398c9c24b0095a9419fe80e20"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/shrub_2.json"
+sha256 = "0ce259d2ce633a560e239c7fddce304311f5c01f0216c43cbfa24c23a58c5ddd"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/shrub_3.json"
+sha256 = "4002637cc8888a5c69c8445c6800bc4141499ee7fa666300293623ce67e97077"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/shrub_4.json"
+sha256 = "8a812a08c5194ac53b0f31ab30340aba075925ea456d72f6deb42f14f0334aff"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/small_0.json"
+sha256 = "45ac52fdb69b2a4be5b0f3a428b520f5c76a5a74d22fe63add53ae48e719fc3d"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/small_1.json"
+sha256 = "123fac7eb6bf2806a5c09c41d451830293914575a4807000648c0684e5494243"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_models/small_2.json"
+sha256 = "74a96c12cfd043c6ff6556f8c114c8bb95a9eb6f6a3c51c8e9e632d7733ef63f"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_names.py"
+sha256 = "3f135d8ea9b5a67e8a72408fc28dd64e2c04b38ba37c1f06a0cd7d7bb5a8ef7b"
+
+[[sources]]
+path = "source/world/regions/brinecove/foliage_placements.py"
+sha256 = "3954d1652d1f61ccf98eaa7fb31c01a0036ee8076f99554d7cafa769aa1b04f7"
+
+[[sources]]
+path = "source/world/regions/brinecove/galleon_hull.py"
+sha256 = "1e9fb9c9113b0f94d77720054c5125d0e888855b22ee8530c452c4ecac37ee63"
+
+[[sources]]
+path = "source/world/regions/brinecove/geom.py"
+sha256 = "35117af22cada2a002862a2364dae189b6399ecdb0ec074edf0b81e7a921c45b"
+
+[[sources]]
+path = "source/world/regions/brinecove/geometry_finish.py"
+sha256 = "fccc7ead2d892a3be38be6b1aa82e731d4c657b5d1cf8733ed9e21ba7df71115"
+
+[[sources]]
+path = "source/world/regions/brinecove/ground.py"
+sha256 = "06bb34478aab4b58c5582c7516d7a03029c5a32abbb078485b05e37f0a67035b"
+
+[[sources]]
+path = "source/world/regions/brinecove/ground_sampling.py"
+sha256 = "2a1c02beccdd8b1a463f0de1aa8a4d98cd301ed18369962aa309d61d922725e0"
+
+[[sources]]
+path = "source/world/regions/brinecove/hero_assets.py"
+sha256 = "688e8783a33abc8a23f63f12ae78566cf4bd8c95191860c1f443619c31bccb43"
+
+[[sources]]
+path = "source/world/regions/brinecove/hero_math.py"
+sha256 = "4c5600399d4eb91380d142d5f7032fa4bfc03a87a45852c2fbe93d1ac926370d"
+
+[[sources]]
+path = "source/world/regions/brinecove/hero_model.py"
+sha256 = "cb45cac16611696238bc09c37ed2a6f0ff528cabfb07a717fc25694ca4828784"
+
+[[sources]]
+path = "source/world/regions/brinecove/hero_placements.py"
+sha256 = "96e28041322c96ce097c20d73b019cd0df04351b3979f418d4e46c2e63cad587"
+
+[[sources]]
+path = "source/world/regions/brinecove/hero_sources.py"
+sha256 = "5ba15f8fb36edc1b9109be669e9b4344e16a4490c28b2bed37ad1efd5271553f"
+
+[[sources]]
+path = "source/world/regions/brinecove/kit.py"
+sha256 = "e882a6573c37b74cb5f2aaf4a263b3e51dfe07928c9c2f4b677f6c458c43dcdc"
+
+[[sources]]
+path = "source/world/regions/brinecove/landmarks.py"
+sha256 = "8eb56581de9d78bf997002b5d7a67a6143a431fc3c492496c9ea3e6c80056de0"
+
+[[sources]]
+path = "source/world/regions/brinecove/layout.py"
+sha256 = "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655"
+
+[[sources]]
+path = "source/world/regions/brinecove/logical_catalogue.py"
+sha256 = "f0ff0f97ef8ee7ba66d35f31ee5db7b78e4fa40ecb68fa3dd265e6ef6055ecd9"
+
+[[sources]]
+path = "source/world/regions/brinecove/modules.py"
+sha256 = "2dd3a61e19ff22b7836323df32bb675d3b3936563c45e5e28634a825e3cfda1c"
+
+[[sources]]
+path = "source/world/regions/brinecove/paths.py"
+sha256 = "ed5eb8342ef2973a7afa6ff13b3df5f94ca2dbd57352ac2402d1bb01a6a86de4"
+
+[[sources]]
+path = "source/world/regions/brinecove/paving_data.py"
+sha256 = "613c1a10681026e5758c02e1776956ab7061921b613bd1ace64cd419d8557d39"
+
+[[sources]]
+path = "source/world/regions/brinecove/piece_inputs.py"
+sha256 = "993df85ff7327cab6ee8cd261b935749193a940a5109988e44eb0cade1e13ba1"
+
+[[sources]]
+path = "source/world/regions/brinecove/placement_data.py"
+sha256 = "4bab59e05d13f81ae84f9ab990f35a2734465fa4e3e5db958c8332ece83e14a5"
+
+[[sources]]
+path = "source/world/regions/brinecove/plan.py"
+sha256 = "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b"
+
+[[sources]]
+path = "source/world/regions/brinecove/plan_component.py"
+sha256 = "3d4f429e9fbb88e9b2372b3632d8789f84a8620a2c8044ddf58f772569f5d193"
+
+[[sources]]
+path = "source/world/regions/brinecove/plan_ground.py"
+sha256 = "9b4cc694df6cfc11e877c23ad788eda0faf96df6f16076b10c04d08aa54affa4"
+
+[[sources]]
+path = "source/world/regions/brinecove/plan_hero.py"
+sha256 = "97eff90be28991744b12ca765d0c8d9f6a55e2ba8c9f727fda8fe2d5cb356682"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/__init__.py"
+sha256 = "0e52a6ecc914b4eb4f9d9240393b947f1e930c305e0bc3788874220ddab8f28b"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/_falls_zone.py"
+sha256 = "c73d31d6a9452eeb11dcc80054939cf8199ba2d17fb9711e14295a4a5f9d635f"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/cell_material.py"
+sha256 = "3596c9ea1eb56e95a9b55699e1c2c1e3320ea2b32ee119400e5330252e0d1c3f"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/covered.py"
+sha256 = "6fd30b5e417026546661ad8027538bf91c9999dc5d586a8e757ce0a0e89364b0"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/falls_cliff.py"
+sha256 = "01143864b100739185034bf19a49dd2549f9adea79eae60a9928e936fabc2858"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/final_ground.py"
+sha256 = "a8981ab1227b10b142af125f96472674a418d89cd3e2ea4817bc0cd7ab0d3779"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/foam_ring.py"
+sha256 = "0adf3519e82931610e0f754adca6bb8f0f14c578b523855d1e10c4f1e4410a29"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/geometry_policy.py"
+sha256 = "f7014a38b6021071106fea4d326e06976a6f50effa2e14b52d002e5f90be85ee"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/ground_face.py"
+sha256 = "a60afa54a7b5dfbd48e47af760681cf3260cb5c7b49335025db4bc2bf09a12f8"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/harbor.py"
+sha256 = "d99d964b391704cfee9d4d6e1a840cd1e1644fdbd335111b9c846a99c14efba2"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/hero_presence.py"
+sha256 = "39226743a8b3dce05203ac3dd841fdb4ecc00df5b39c4d3d0cde8a1e87fea9f5"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/landmarks.py"
+sha256 = "d2262c078f0ca0c31b7e514cc0a9588561b5f29b4aa0911f1d067764b4e51ff1"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/lighthouse.py"
+sha256 = "884488c601b802c398fdaef114ef70dd6c3b2d6fe5fb0009dab6754f3af773f5"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/lower_street_slabs.py"
+sha256 = "c2a4d3d30f598e329db9ecf53cb20307191b1fad6cf706751d3e56d81e5fa330"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/lower_town.py"
+sha256 = "f1e5cb133ffdc435399e67b7eb0dd0aa51f168f8ee13f5d8b402fc09bde90f19"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/market.py"
+sha256 = "c507dafff80689d6075675882ecd470a7bc73eb5e1a8b70391ae60c234f93fa9"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/pave_band.py"
+sha256 = "b4e04b281a1ff05f6ca733d6dd42e8dc23bffea41419602de6e93db05c2570d8"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/paving.py"
+sha256 = "b75381a9916cbce7b6ca7ad37c60f45a54e99e8664ce4c335d89bd2fe0ee82ea"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/paving_grid.py"
+sha256 = "a814abb281c4fa392c0ead487fc1851e740a5843d557508fb4f40ad707bdba70"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/paving_material.py"
+sha256 = "1f6b7cb12fe2009164bba145644902c8de3da9de97b04bd0bd293dae49012d91"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/props.py"
+sha256 = "168c25c636550319f4d9115bf5647c12c0668af60bca99ce0e5fcc202dd9e38a"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/random_state.py"
+sha256 = "7da90cd3de23ebb0ce817816ed747e34c416cb85c1c411ba3c57045218ded57f"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/rock_cluster.py"
+sha256 = "207503dad73a875dfefd584b9c65757c40419860d9c63c82dad3843cebe8760b"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/rowboat.py"
+sha256 = "062e70b246a1047921daa5753c1b6691d23ec57f193124b180f02045291d4975"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/ship.py"
+sha256 = "bcd38a6681bfa60befc9e3b212e735941f3f9f384766589cd4bdb5ba3f7af0ce"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/ships.py"
+sha256 = "0e4185dbf79458e890ca25ae9a1cd8e8ab7eb937b8cfe20129a453478f23911d"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/shore_foam.py"
+sha256 = "aee820052ee095e1fd4cff92f3f842532cfce415cef38cf3113bb2df6ca58289"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/shoreline_foam.py"
+sha256 = "cc011814876220cd935626f405288a61413deda94dbc2aae66da9a3ae91dc641"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/split_lot.py"
+sha256 = "69a0f09d8f7e931f4b3fdd9bdb8a5b0a68c8aea8f7e3df4150f228a292f7d355"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/stair_apron.py"
+sha256 = "76d8e04702a4ed8c177af3bd0393e34b771de1c051967e994313764a993fdbf0"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/statue.py"
+sha256 = "b81e0e1998c6ad62542aa32de93d921c39bc28b135d3646e6fa596c21d8e5eb4"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/terrace_stair.py"
+sha256 = "500d9bc21b454964eb351f088c788c8d2a31f388b64dc2ad74dd15f8b7f5c68d"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/terrace_stair_plan.py"
+sha256 = "85c12298f97aaee717f9c6d32c92001871716f3c504bc325b47fca852d77f477"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/terrain.py"
+sha256 = "ce8df94a7ab4379f2717db3d49c6bb4e5ed97010fd0fcf94709f1625fb065f8c"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/terrain_dressing.py"
+sha256 = "57370512b553f3b6dc085818f76ebd9f4d53130582d3527445b2e5b90889e18a"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/upper_town.py"
+sha256 = "429f7b6fc44ef8d70864ccc4ddb12922e7ed350cba6ec6f42df2f7cb72589f71"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/vegetation.py"
+sha256 = "d72b3a4d8fd0ee9eb02405f4b742c00a14fbd06ab3685a3efe406473d7c7a1b0"
+
+[[sources]]
+path = "source/world/regions/brinecove/procedural/yard_material.py"
+sha256 = "edf73d9b3a010aca7465e4b00bc7354cc13d46815898fdb2a13ab289efc7e44a"
+
+[[sources]]
+path = "source/world/regions/brinecove/process_assets.py"
+sha256 = "9ecb13a476ea43a95b10688f17f54d3655e57db3fdf8fedc38f552b9857efd3f"
+
+[[sources]]
+path = "source/world/regions/brinecove/query_data.py"
+sha256 = "c6a3506aa5250600ce2ca7a5c07572b16cb25130fd846d1e8b3430903ffa7045"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/asset_sheet.py"
+sha256 = "e82234d85389dc6ccfd82bf26b79d9b05b12eb8b8a4f04479bc47b7089c3280e"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/bridge.py"
+sha256 = "382c84bfd35c270511ebad1fde3657ab1e3b47a98e63de08720b9fda979341a0"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/galleon_tripo.py"
+sha256 = "fd6b691ce41a037d67751631045e14dcfa05207c86ba744161e6932594f89d91"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/generate.py"
+sha256 = "f2e5a95a47996fc087cbd7c0083588455ebc9027b35b53b8e036436f064677ec"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/leaf_atlas.py"
+sha256 = "d090c251c52f1a8c9b82cfe151760df094eb05b39150a31b31ffc33e0ec990ad"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/props.py"
+sha256 = "c87198786b957fef3de4fd3ff3e505403baad6fe592a573ec5ae53179b1de798"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/redesign.py"
+sha256 = "d926208cfbbf15dc2119baec8bcbddf8ab2353bb4c935d8b3a04ea8fcebf5342"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/textures.py"
+sha256 = "8f7f3cdbc54a04c368745c056985bba8493fad65e659e113be9a2ef7123c98e1"
+
+[[sources]]
+path = "source/world/regions/brinecove/references/water_atlas.py"
+sha256 = "e7bdb0c807c301583cfb869824f8721bea4f43b5c6f8346000913a4548d7a01a"
+
+[[sources]]
+path = "source/world/regions/brinecove/region.py"
+sha256 = "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408"
+
+[[sources]]
+path = "source/world/regions/brinecove/review_build.py"
+sha256 = "087e83f313a1e74afafe40c47cf823289aac295a67cd2efdedaf4fd3d34f1cf2"
+
+[[sources]]
+path = "source/world/regions/brinecove/review_sheets.py"
+sha256 = "cef6cb93dc9664238aaa5be6c2cca2c82a721b724da24fbfb198742b214afba6"
+
+[[sources]]
+path = "source/world/regions/brinecove/rim_data.py"
+sha256 = "18709c0d22f931f7d5d73948ac0052215612eab3abf9427c7fe4a0909ae5429b"
+
+[[sources]]
+path = "source/world/regions/brinecove/rim_schema.py"
+sha256 = "3fc3d60336f128a99f53f993524c12294c886510d382587cf80bab0802403044"
+
+[[sources]]
+path = "source/world/regions/brinecove/rocks.py"
+sha256 = "bf3c61b27db80d935169e9ac66b5b245c8bc6383982f50619e6820662f50a15f"
+
+[[sources]]
+path = "source/world/regions/brinecove/runtime_data.py"
+sha256 = "6b5d637d5127a0be1392a37d8a8be1decfd7eafa21b0328a8e7bd50dd8f88ec5"
+
+[[sources]]
+path = "source/world/regions/brinecove/surface_mapping.py"
+sha256 = "ffdb197257ab8fc8dca31862d1651f73d99227d4d2acecfdb316789bafd6f520"
+
+[[sources]]
+path = "source/world/regions/brinecove/surfaces.py"
+sha256 = "101a48c6a39c430efdbe4dcf84645e72ac92b51f5a8e9fcd79d237ad4926d815"
+
+[[sources]]
+path = "source/world/regions/brinecove/viewer/app.js"
+sha256 = "1a17bceab38fb3ec8fd86ba8782754c101777e55bb50168ee954a3c0cb807056"
+
+[[sources]]
+path = "source/world/regions/brinecove/viewer/index.html"
+sha256 = "edd199c0557f0db996cac6f9b3f09782e1da33342c4497cc4e6de867e653ec95"
+
+[[sources]]
+path = "source/world/regions/brinecove/viewer/serve.py"
+sha256 = "d18a21e68a335b8c3c7df1e20b3fb7caf8b2f7d9960d2637709f6e404b93421f"
+
+[[sources]]
+path = "source/world/regions/brinecove/viewer/style.css"
+sha256 = "025737eea2feb3205ed9e91944163a50904b70e2951495af570a842e7136ed52"
+
+[[sources]]
+path = "source/world/source_registry.py"
+sha256 = "01eb1094164b3f518b3de9c40cb19afc8862e3635f4cc081be50af822b462edf"
 
 [[outputs]]
 package = "/Game/Brinecove/Materials/MI_BC_autumn_olive"
@@ -91,57 +727,6 @@ package = "/Game/Brinecove/Materials/MI_BC_glass_warm"
 
 [[outputs]]
 package = "/Game/Brinecove/Materials/MI_BC_gold"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_galleon-hull_0"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_0"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_1"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_2"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_3"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_4"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_0"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_1"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_10"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_2"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_3"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_4"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_5"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_6"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_7"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_8"
-
-[[outputs]]
-package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_9"
 
 [[outputs]]
 package = "/Game/Brinecove/Materials/MI_BC_hull"

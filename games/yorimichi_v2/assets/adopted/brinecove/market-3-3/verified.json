@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/brinecove/market-3-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_3.uasset": "99b8165ba41f625056c3c9df28b5d29b9934d706d1bc7703ab7e1915b083f17a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

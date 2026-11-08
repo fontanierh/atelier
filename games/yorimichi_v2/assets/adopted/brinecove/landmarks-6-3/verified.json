@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/brinecove/landmarks-6-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3.uasset": "9cf76b3328ed6948b35046f0332b07eeece292e9b713f245c130c5fcaa4e3abe",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece0.uasset": "f24a76bf9ca7d293bb024d0779d82ff42b0af1492264768d1253600e7efdc258",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece1.uasset": "d21efce93801640d644476f02759f609657ddbc66d79d22bd05f7388486cba8f",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece20.uasset": "57c8dbdc4a051e94ba23d309ba27e5aaaadcb04e529f20d49ddf825e530613cf",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece21.uasset": "77c430adf9dfd12d321a2a9dabb654ab4e022604e6e77083848380e1bc9fc105",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece22.uasset": "c80ef06f90f862043d9b9df3899a446903849b1549b6c3677d6db6819790b912",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece23.uasset": "97688dfa23779cdfc630760fb1920163a937e0a5dfb141f2c544967816dd863b",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece3.uasset": "ad0c965e255f82f25f56f860b99f7450e2c6102eb2b39aec5fa5f38b2a6754ba"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

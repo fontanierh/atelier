@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/brinecove/landmarks-5-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_5_3.uasset": "3dd9a7d878de7ad9a9335ef26bd53a2de944d5cf36dfb78f852613ad4f11aa88",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece1.uasset": "f03ec355906c0811acbae2064b45a1552ab19e64f9dc4e9ebb8c651af921238a",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece3.uasset": "a0394b4a6e885f663f9cadc10fb5330b2c6d90a89f8ec0a6ba7a488278189902"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

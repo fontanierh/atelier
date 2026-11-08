@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/brinecove/plant-cover-grass",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverGrass0.uasset": "2bf4ded2b3ccc29b4c9931c5026a18d2c3b28c53e10967f99b16f66c96c00cab",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverGrass1.uasset": "4c194d31b42aa198b66091e58cba32458f2864895bd6240643966d6949b44fe8",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverGrass2.uasset": "dc7366f606e3b790cfe647e4ea7735961b4f76036d6e9480c8e699648df5e143"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,16 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove props-5-4 (2 mesh(es))
+schema = 1
+id = "adopted/brinecove/props-5-4"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/props-5-4"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Props_5_4"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Props_5_4_Soft"

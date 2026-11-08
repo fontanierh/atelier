@@ -525,7 +525,8 @@ def copy_data(game: Path, content: Path, claim: str | None = None, echo=print) -
         out = dest / path.relative_to(source)
         if not (out.is_file() and records.sha256_file(out) == records.sha256_file(path)):
             copies.append((path, out))
-    _authorize(game, [out for _, out in copies], claim, 'runtime data adoption', {DATA_SCOPE})
+    if copies:   # an unchanged rerun writes nothing, so it needs no claimed paths
+        _authorize(game, [out for _, out in copies], claim, 'runtime data adoption', {DATA_SCOPE})
     for path, out in copies:
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, out)

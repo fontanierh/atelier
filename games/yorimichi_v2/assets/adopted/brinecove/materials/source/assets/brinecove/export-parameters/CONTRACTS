@@ -1,0 +1,5 @@
+@cc [owner:fontanierh,label:correctness;performance] independent-coastal-authoring-context
+Every procedural component MUST restore its own explicit seed and bounded stream
+position after imports, without executing sibling geometry. An unrelated constructor
+edit MUST NOT shift another component's random context. Source parameters MUST NOT
+be mistaken for build/native certificates or used to bypass current verification.

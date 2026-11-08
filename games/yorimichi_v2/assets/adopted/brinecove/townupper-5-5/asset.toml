@@ -1,0 +1,31 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove townupper-5-5 (7 mesh(es))
+schema = 1
+id = "adopted/brinecove/townupper-5-5"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/townupper-5-5"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece00"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece01"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece02"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece03"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece1"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece2"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Soft"

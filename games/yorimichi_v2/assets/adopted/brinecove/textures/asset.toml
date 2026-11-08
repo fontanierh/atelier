@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: /Game/Brinecove/Textures
+# Ownership unit: Brine Cove shared textures
 schema = 1
 id = "adopted/brinecove/textures"
 kind = "adopted"
@@ -7,6 +7,259 @@ authority = "editor"
 owner = "shared/brinecove/textures"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "source/assets/brinecove/textures/autumn_olive.jpg"
+sha256 = "ef05db0c9d7981fd277b923e7ca44666e57dde0d7cc838defec5fc512be6cc55"
+
+[[sources]]
+path = "source/assets/brinecove/textures/canvas.jpg"
+sha256 = "ed59cd18c8d5a7d33b7bd20219669f75f6eff9a3178477f9c64233f3517d3d43"
+
+[[sources]]
+path = "source/assets/brinecove/textures/canvas_blue.jpg"
+sha256 = "b8e21d80c55a96d15d8dee61bf6e183171e336b5e9ba9edf0e923be735e54339"
+
+[[sources]]
+path = "source/assets/brinecove/textures/canvas_gold.jpg"
+sha256 = "89ba6037fc4dd5ef733c8cb74634a7bf194b78969d8c16fbd11220498142e6b2"
+
+[[sources]]
+path = "source/assets/brinecove/textures/canvas_green.jpg"
+sha256 = "aeb71c2cd46fd3c7be9290578b1310b7ac73835c73dd5bee6f241dfff53040ef"
+
+[[sources]]
+path = "source/assets/brinecove/textures/canvas_red.jpg"
+sha256 = "82feb07040aa67cf00b619d69db7a6cbfc9d6cf03c5508063ba70a6f659fe305"
+
+[[sources]]
+path = "source/assets/brinecove/textures/canvas_teal.jpg"
+sha256 = "ed248cc514c61fdc008abc173e232cc17a5d03174c9f5d6482d3a1d859519440"
+
+[[sources]]
+path = "source/assets/brinecove/textures/cobble.jpg"
+sha256 = "30aacabce4aa946eb040c6255784a7dc661ec08d526adf7602b4765814c0906c"
+
+[[sources]]
+path = "source/assets/brinecove/textures/cobble_dark.jpg"
+sha256 = "efecb2b79b66164528f4e705d651455884a3b5ef2be4072fc3d7789c7d657070"
+
+[[sources]]
+path = "source/assets/brinecove/textures/coral.jpg"
+sha256 = "7a42da9f6730c364270b9e42aa57b2ed91c545eb147b256a947664fce8400c94"
+
+[[sources]]
+path = "source/assets/brinecove/textures/cream.jpg"
+sha256 = "fa69677fdbdf87ca3ddd3c960d7d4c0c14fe474803191f762b6c50c1e59fab72"
+
+[[sources]]
+path = "source/assets/brinecove/textures/deck_planks.jpg"
+sha256 = "ea0ae64e9c48807e894ddbcd08cdc502c258252cabefdee28b3356033068c3ba"
+
+[[sources]]
+path = "source/assets/brinecove/textures/earth.jpg"
+sha256 = "dfe845a1d7c80b90833c119fb020db8912f0fca1280b199916a5c2b3cdb87554"
+
+[[sources]]
+path = "source/assets/brinecove/textures/foam_lace.png"
+sha256 = "90c5aaceafb803c4170cd2ed74f141e127017facdd256249aa9625b45b677881"
+
+[[sources]]
+path = "source/assets/brinecove/textures/gold.jpg"
+sha256 = "0dd15c0808748c4ec8ad98da8337000cec34a0b894bd9e3e151a67e037a0ae71"
+
+[[sources]]
+path = "source/assets/brinecove/textures/hull.jpg"
+sha256 = "e8962726ecb637fdaf9c2b4cf84ad41e67552eabb51aa809598234a2836de2fc"
+
+[[sources]]
+path = "source/assets/brinecove/textures/jungle.jpg"
+sha256 = "449b0dec5bff355c5f93ea56f85407985c0d15b9894ba01f160b412b036616a3"
+
+[[sources]]
+path = "source/assets/brinecove/textures/jungle_light.jpg"
+sha256 = "f861692697133ed89b8aa483e873d494d3fcfaf005cc8bcd62f1374ea62c107a"
+
+[[sources]]
+path = "source/assets/brinecove/textures/leaf_deep.png"
+sha256 = "c3bf826283112434d8b47febe26312e4099788434ecafda8f74f5ba7f0c3876e"
+
+[[sources]]
+path = "source/assets/brinecove/textures/leaf_gold.png"
+sha256 = "e21f216d399509ce6d067fe588fce34e6d2f3eefb28db1dbd6176aa819f9fd6b"
+
+[[sources]]
+path = "source/assets/brinecove/textures/leaf_light.png"
+sha256 = "5158f54bca4425a30dc8fb2f64f6d7a2efc372ed317a1f60b9872aa7cf2ce9b9"
+
+[[sources]]
+path = "source/assets/brinecove/textures/leaf_mid.png"
+sha256 = "355f4bdb63cdf89dfac9637debefdca70bcc906acc6792bdc4df354247d04a7f"
+
+[[sources]]
+path = "source/assets/brinecove/textures/leaf_rust.png"
+sha256 = "3b8119374e0507885c51468e7379ce0f8704aa6b497c7393ea30ba330bdb40ac"
+
+[[sources]]
+path = "source/assets/brinecove/textures/leaf_sun.png"
+sha256 = "b0efa4e7c73d460739827b50a16fdf9a83e3a398fae8d781e186075d4c4f4a07"
+
+[[sources]]
+path = "source/assets/brinecove/textures/leaf_warm.png"
+sha256 = "1a0fb7882db853bb812943ba53f117896b9bdfa0b4b4615c3625c3d9e04cf180"
+
+[[sources]]
+path = "source/assets/brinecove/textures/metal.jpg"
+sha256 = "f6e6973fab76e294b5f787e4516839e40a244d4ce8b0a7293281a1a088cfbfcd"
+
+[[sources]]
+path = "source/assets/brinecove/textures/mist.png"
+sha256 = "766e154b7b9ca38727699ec4868b117e7014db25336e098044eaa26f0881b935"
+
+[[sources]]
+path = "source/assets/brinecove/textures/moss.jpg"
+sha256 = "4dd38c6a456e1b5b02d69e2c30d8babd643c8b5b89b8eeb6e84de01d1475cd0b"
+
+[[sources]]
+path = "source/assets/brinecove/textures/ochre.jpg"
+sha256 = "e64f77d96cd5b3094bab72aa7c78ab86c134d71eeae8ec43034e5b3590845260"
+
+[[sources]]
+path = "source/assets/brinecove/textures/palm_frond.png"
+sha256 = "6c6f7f7f78e0d57a0f56c48eb4f56cb6f5312d3bc92ff73e4990d4571f57b2de"
+
+[[sources]]
+path = "source/assets/brinecove/textures/peach_wall.jpg"
+sha256 = "47bb5152a64feccbf5b390b0935b2bd36ca0464ac486d7b2915ea62197b59eb4"
+
+[[sources]]
+path = "source/assets/brinecove/textures/planks.jpg"
+sha256 = "828271c8186b8e759ce66e8d058d3ed8dad2c0b1d2e35d2873ec5a8bc636d23b"
+
+[[sources]]
+path = "source/assets/brinecove/textures/plaster.jpg"
+sha256 = "e54f8fd51f6bab99ed9ecf234a74ec8f40a213135670e1c37dc12724012ea8ff"
+
+[[sources]]
+path = "source/assets/brinecove/textures/roof_slate.jpg"
+sha256 = "227f593cd89667203219129c3ca640b52185469cc7c060684074350d02110225"
+
+[[sources]]
+path = "source/assets/brinecove/textures/roof_straw.jpg"
+sha256 = "8c276240dd27d0ec1627f089eba792d807321e39391a758efd303e8f42d3eb1b"
+
+[[sources]]
+path = "source/assets/brinecove/textures/roof_teal.jpg"
+sha256 = "0fcc93efc33ef768c7d32b74bf71b70a0a9df9c38c8460d7e9bb58181553645e"
+
+[[sources]]
+path = "source/assets/brinecove/textures/roof_terra.jpg"
+sha256 = "20e3ae3f040030cdca183651d68aa81919b5657a4d41e4d21e743ef5b738453f"
+
+[[sources]]
+path = "source/assets/brinecove/textures/roof_terra_light.jpg"
+sha256 = "35c204641082c270b4cceced5e1078d97c6a0679bc2dfca5b7009526f849b1e7"
+
+[[sources]]
+path = "source/assets/brinecove/textures/rose_wall.jpg"
+sha256 = "99bdcda50f5f5836a44c28807ffab5add00bca404924d19d20aa273546f0a235"
+
+[[sources]]
+path = "source/assets/brinecove/textures/sage_wall.jpg"
+sha256 = "2c735b7690ff96778e5b1968f6ea5799a5a9e2405f5d75e2f5c3f891abbf291f"
+
+[[sources]]
+path = "source/assets/brinecove/textures/sail.jpg"
+sha256 = "4e98a4d1301deba96a150460a76b06c01ce2d91161b16a33e3086ca026e9ee42"
+
+[[sources]]
+path = "source/assets/brinecove/textures/sail_dark.jpg"
+sha256 = "29b786e4c19c608b7ac24580a63ea721f23e9f8ec39f5e02eba7635a1a305d89"
+
+[[sources]]
+path = "source/assets/brinecove/textures/sand.jpg"
+sha256 = "bd046874d6f73d0d469907d9e579771d5c0cefdd4ad8e3755b499d494ef3f960"
+
+[[sources]]
+path = "source/assets/brinecove/textures/stone.jpg"
+sha256 = "bd156013583d6ac6c046bada663325ebee2116c2867b1908e3d8155f53f51d48"
+
+[[sources]]
+path = "source/assets/brinecove/textures/stone_dark.jpg"
+sha256 = "5bd02a977438b28a7f8e016bf7f0e457c26314dc049658225bfbafe9fb7a5e49"
+
+[[sources]]
+path = "source/assets/brinecove/textures/stone_light.jpg"
+sha256 = "7ba3d65c28bf5ce68ac11127e56bc1200bf6a69f3edab608c01b6aba17746165"
+
+[[sources]]
+path = "source/assets/brinecove/textures/teal_wall.jpg"
+sha256 = "6ea8b34c6164bc39cc0f62df20778478095dc277f28622a575fc3a0fa6f0d2c0"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_forest.jpg"
+sha256 = "3a42178dfaa675213f98866008530d5a5f2ec18a823052fb4cdc024c296e0528"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_forest_n.png"
+sha256 = "ad2de9c485a5f2a7eff33c3a1b178e8e918e947f34486b78d2b5462bb7a93dc1"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_meadow.jpg"
+sha256 = "ea7cd083a40acd45d6cb15ae6e65222fd60abf1f31536a50683d96314e3d86f0"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_meadow_n.png"
+sha256 = "61356da0e90244efa9d47c46e27bdeedd32c6effdc534f7f05b7765ce4be5afe"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_rock.jpg"
+sha256 = "85dc4788e23de4dc6223b2bcffe734d0295a30079e3709803bb2e814ced2b79d"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_rock_n.png"
+sha256 = "fa9a74079ebb579e0132b27f8b481d47662b82c2e602061a8b30f1b1828a323e"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_sand.jpg"
+sha256 = "0b5d9ec97c1eadddb75d0ac6ddddaa497808ad6b970830e4a6937d26fce0ebf8"
+
+[[sources]]
+path = "source/assets/brinecove/textures/terrain_sand_n.png"
+sha256 = "5d278383e4d84cc86cd6e00137873ecc47cc2e1d7563214410f33ad2b28c4469"
+
+[[sources]]
+path = "source/assets/brinecove/textures/textures.json"
+sha256 = "f7dbd3f465a2185d2f004a28eeeeb54c18daab109b0603e064dd962637ee71ad"
+
+[[sources]]
+path = "source/assets/brinecove/textures/water_mid.jpg"
+sha256 = "0f822fa528ee097d6d7c72a342ad3322f03478ca750818e7417ead9f7d3b921d"
+
+[[sources]]
+path = "source/assets/brinecove/textures/water_shallow.jpg"
+sha256 = "6622605e11fb462f587c6851ee4d1f93d25f7f6a1f8784403313fdb0f322f997"
+
+[[sources]]
+path = "source/assets/brinecove/textures/waterfall_streaks.png"
+sha256 = "10dcff8531ea9a042a609ecd207d977fe457dd74247657f4393f70b800bcdc19"
+
+[[sources]]
+path = "source/assets/brinecove/textures/wood.jpg"
+sha256 = "de61e246408067566e08718228ab369835ed15a856269c069d4f95932611220c"
+
+[[sources]]
+path = "source/assets/brinecove/textures/wood_dark.jpg"
+sha256 = "63cdac7deb801aaecd22f54df5af223c683dad73ef7f3667167c8a1ff68d3759"
+
+[[sources]]
+path = "source/assets/brinecove/textures/wood_light.jpg"
+sha256 = "ed879f684fe45e6ec11bbcd8abb14d1cf92f48eaaeb7a3b6d17aa61df623d700"
+
+[[sources]]
+path = "source/assets/brinecove/textures/yellow_wall.jpg"
+sha256 = "e6897e10d754ffe0dd8acbe33ac10421e27fbe6c1dd59b4203f6738c48d42e65"
 
 [[outputs]]
 package = "/Game/Brinecove/Textures/T_BC_autumn_olive"
@@ -52,51 +305,6 @@ package = "/Game/Brinecove/Textures/T_BC_foam_lace"
 
 [[outputs]]
 package = "/Game/Brinecove/Textures/T_BC_gold"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_galleon-hull_0"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_0"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_1"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_2"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_3"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_0"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_1"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_10"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_2"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_3"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_4"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_5"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_6"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_7"
-
-[[outputs]]
-package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_9"
 
 [[outputs]]
 package = "/Game/Brinecove/Textures/T_BC_hull"

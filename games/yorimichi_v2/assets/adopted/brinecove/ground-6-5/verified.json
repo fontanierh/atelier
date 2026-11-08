@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/brinecove/ground-6-5",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Ground_6_5.uasset": "3f4e7d9df2fae6c3d289ca5ae289e6a5c918c26af7948bbcaf5e6165ec5fb2e9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

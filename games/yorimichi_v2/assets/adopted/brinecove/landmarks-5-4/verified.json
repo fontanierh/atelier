@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/brinecove/landmarks-5-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_5_4.uasset": "f55923647534bf4b2947a98bfaf0652b49ca5b43e4262382cee28a75cd3a7434",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_5_4_Soft.uasset": "b00c877fc0ba2f032baa818507b9135a02160f712a7117a7e73d820da66eb5b7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

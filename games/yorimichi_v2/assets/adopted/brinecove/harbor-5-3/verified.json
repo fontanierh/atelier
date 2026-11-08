@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/brinecove/harbor-5-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Harbor_5_3.uasset": "536c88d5af898b5662d4b64866db9d7184c05de2d3912f634f924a193778830d",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Harbor_5_3_Soft.uasset": "a096d091ef828229a3636dbdbbf75be9309c1768df86c7e2ce8f5f5ae5fd071d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

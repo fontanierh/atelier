@@ -1,0 +1,23 @@
+{
+  "asset": "adopted/brinecove/market-4-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece000.uasset": "2b7a4c94df074b33916037d831f83309d08f7532879c339f47473bccf809c9e6",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece001.uasset": "10ce6b4abfca605e0b2f4b2fe9a58c486a28354c0f0d98854778b94d19084625",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece002.uasset": "1cb35f159860c676106daa3f761a9f64a2ad646a3325605c907a1a81b9ae670e",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece003.uasset": "66ff8f724d1e9adac77661cfacd49b532713294e088d3c35bdfcf224366bc046",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece010.uasset": "7642eb49da9b95aba66c3c1beb9c31f5bd4ac74227e1d6e3dd94a7703116953b",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece011.uasset": "ba7aced6e92966e7003cb528eef4892a4256e00124958d56f6cea9bf03a243bd",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece012.uasset": "da7673b4a64da05a36e6e342101b1dbba9fc8fabab061bcf22bce0308f6d898d",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece013.uasset": "60455b627787fa225b163bc7e336703c095725440c8f1aaca42f5b99cda81c9d",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece020.uasset": "39ef2caff9a6341f1fcd311e7507451d81b242ea78c937e323093cea3716bc54",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece021.uasset": "f7adc78806430128dc28373c1edfee2a0be90872cd6507f4585383e84d48481b",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece022.uasset": "97f99c0c2190e50ef8f18c6479b0138a59f4621180eb8aabfdd6bde8f8a431e4",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece023.uasset": "93541f36a28175da85dffe4a004f630fefacacdd0074c05327d0dfc76bfa33a8",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Piece03.uasset": "ac1a06467a7720b83e471cf2b5dde9fc743a0e36604c0b991b462209f28990c0",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Soft.uasset": "528fce7bed5071b74ad86aaddc1ffc3f947033cfb6002aae1c2f52b1ee9a84bd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

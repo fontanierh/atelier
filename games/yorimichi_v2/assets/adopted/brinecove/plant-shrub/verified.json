@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/brinecove/plant-shrub",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Shrub0.uasset": "9edbf6cec9d1665d0916c97f006e3d2426b5209d3de90e34e35c86adc9034eea",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Shrub1.uasset": "46d071b697986be1add8a2c7f1667de6ca7262a21db8879cabe47c57263ec4ed",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Shrub2.uasset": "d8393b4b413baca073d50c4ecf89639c2a62ec9f7611b9755a511f72bcc4cd73",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Shrub3.uasset": "cf71f357179d701730aa31a316c6d836f4ac6b1b92a34d60a309a55cf1644921",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Shrub4.uasset": "bfcbb8b6bc2dfe04011d29f3dc1852c210474e5aa73615241f008b45338b1e59"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+"""Explicit shared Brinecove authoring parameters; no geometry or exports."""
+
+
+FLAT_PAVING = []
+MARKET_FLOOR = (-98.0, 98.0, 94.0, 226.0)
+LOWER_ROADS = ((-260, 230, 34, 10), (240, 230, 34, 10), (-390, 120, 12, 58), (390, 120, 12, 58))
+LOWER_BANDS = ((137, 179), (210, 242), (266, 282))
+_STREET_SLABS = []
+TERRACE_STAIRS = ((0.0, 22.0), (-238.0, 8.0), (252.0, 8.0))
+TERRACE_CHEEKS = {0.0: 1.6, -238.0: 0.7, 252.0: 0.7}
+STAIR_FOOT_Y, STAIR_TOP_Y = 230.0, 279.0
+STAIR_RISE_MAX, STAIR_LANDING, STAIR_FLIGHT = 0.24, 2.2, 22
+NOSING_LIFT = 0.01
+STAIR_APRON = 2.4
+APRON_LIFT = 0.03

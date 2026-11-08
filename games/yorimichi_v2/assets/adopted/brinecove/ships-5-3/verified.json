@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/brinecove/ships-5-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Ships_5_3.uasset": "d11b672363daa6ea001ea4d559f133245bd6df97e32a6fc3bc2ce14a95ad69ea"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

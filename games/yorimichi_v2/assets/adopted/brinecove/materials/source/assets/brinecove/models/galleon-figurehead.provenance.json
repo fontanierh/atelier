@@ -1,0 +1,100 @@
+{
+  "slug": "galleon-figurehead",
+  "stage": "brinecove-trellis-processed",
+  "generated": "2026-10-18T11:20:19.543893+00:00",
+  "source": "build/yorimichi/pirate-coast/trellis/out/figurehead/head.glb",
+  "source_sha256": "1bac9ca1535de7c6b765f08386f2387b70014ccbc1873cc322520dbea50fc764",
+  "reference": "games/yorimichi/proposals/pirate-coast/references/props/galleon-figurehead.png",
+  "reference_sha256": "1301bb5b17a4cda99e803b57e06ebecd1df7ced5949417765a67ac8139064340",
+  "generation": {
+    "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+    "backend": "Microsoft TRELLIS.2 MLX",
+    "native_vertices": 1256174,
+    "native_triangles": 2636244,
+    "output_sha256": "1bac9ca1535de7c6b765f08386f2387b70014ccbc1873cc322520dbea50fc764",
+    "native_checkpoint_sha256": "a5c9e7b22a1b3c5650ccdcc0cdcd12ebdf7694dc717b4123974cc2b35c84669d",
+    "mesh_sha256": "a8a7f1ed625b4458b6a688d45f1577a87c4c21f7c99f6c510c6cf4ae1d13d799",
+    "all_native_triangles_and_winding_preserved": true,
+    "transform": "Only fixed Z-up to Y-up axis rotation performed by the pinned export",
+    "seconds": 524.583,
+    "strict_model_key_checks": [
+      {
+        "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+        "keys": 74,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 292,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 284,
+        "strict_complete_state": true
+      }
+    ],
+    "mlx_peak_bytes": 4661661466,
+    "quantize": 0,
+    "resolution_requested": 512,
+    "actual_mesh_grid_size": 512
+  },
+  "target_height_m": 6.5,
+  "notes": "siren figurehead for the two galleons",
+  "triangles_before": 2636242,
+  "triangles_after": 45000,
+  "pruned_faces": 0,
+  "shells": 0,
+  "filled_faces": 0,
+  "boundary_rim_edges": 0,
+  "bounds": {
+    "min": [
+      -3.2767,
+      -2.1819,
+      -0.017
+    ],
+    "max": [
+      3.2737,
+      2.191,
+      6.5195
+    ]
+  },
+  "output": "games/yorimichi/proposals/pirate-coast/assets/models/galleon-figurehead.glb",
+  "output_sha256": "93e0a4f07e4d44245e2b01262db31cf8a03059b2e671d9362d4045070ef54f17",
+  "checks": {
+    "triangles": 45000,
+    "vertices": 22388,
+    "uv_layers": 1,
+    "materials": 6,
+    "textured_materials": 5,
+    "images": 8
+  },
+  "texture_dilation": null,
+  "processing": [
+    "parent clear",
+    "transform apply",
+    "uniform scale to target height",
+    "solidify open surface",
+    "voxel remesh to a manifold shell",
+    "collapse decimate",
+    "smart UV unwrap",
+    "nearest-surface palette paint",
+    "UV/texture/material and finite-vertex validation",
+    "three Blender review renders"
+  ]
+}
