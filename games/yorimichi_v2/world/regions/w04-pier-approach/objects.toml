@@ -1,0 +1,11 @@
+# Single-instance objects of w04-pier-approach that take their existing area-patch actor ("promote", patch = V2Id from patches.json).
+# Each key has one placed instance in the source data and is the only patch of that key in this region.
+schema = 1
+tag = "pier"
+data = ""
+
+[[objects]]
+id = "object/pier/house-lot-3"
+patch = "f29af5e94a3ee4c2"
+model = "adopted/japan/assets/houselot"
+about = "the lot (grounds) of the pier-approach house"

@@ -1,0 +1,71 @@
+# Single-instance objects of w06-lake-treehouse that take their existing area-patch actor ("promote", patch = V2Id from patches.json).
+# Each key has one placed instance in the source data and is the only patch of that key in this region.
+schema = 1
+tag = "lake"
+data = ""
+
+[[objects]]
+id = "object/lake/cabin"
+patch = "75b7ca23dbdf548f"
+model = "adopted/japan/lake"
+about = "the lake cabin"
+
+[[objects]]
+id = "object/lake/frame"
+patch = "3af14d23131204f9"
+model = "adopted/japan/assets/treehouse"
+about = "the tree house frame"
+
+[[objects]]
+id = "object/lake/barrel"
+patch = "f5ed8c97d80dc543"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop barrel"
+
+[[objects]]
+id = "object/lake/basket"
+patch = "76b72f4af8689a93"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop basket"
+
+[[objects]]
+id = "object/lake/crate-desk"
+patch = "1cca9b91e5bbc61b"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop crate desk"
+
+[[objects]]
+id = "object/lake/globe"
+patch = "0c5a34928b96e180"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop globe"
+
+[[objects]]
+id = "object/lake/kamado"
+patch = "365ba644180d4262"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop kamado"
+
+[[objects]]
+id = "object/lake/log-table"
+patch = "06be1a9d983b0b08"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop log table"
+
+[[objects]]
+id = "object/lake/stump-kettle"
+patch = "302566c1f2b79de0"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop stump kettle"
+
+[[objects]]
+id = "object/lake/telescope"
+patch = "601ce71555f7f399"
+model = "adopted/japan/assets/treehouse"
+about = "tree house prop telescope"
+
+[[objects]]
+id = "object/lake/trunks"
+patch = "e6a7418330631a7c"
+model = "adopted/japan/assets/treehouse"
+about = "the tree house trunks"

@@ -1,0 +1,53 @@
+# Single-instance objects of w02-village that take their existing area-patch actor ("promote", patch = V2Id from patches.json).
+# Each key has one placed instance in the source data and is the only patch of that key in this region.
+schema = 1
+tag = "village"
+data = ""
+
+[[objects]]
+id = "object/village/house-lot-4"
+patch = "005f88bf938b6a0c"
+model = "adopted/japan/assets/houselot"
+about = "the lot (grounds) of the fourth road house"
+
+[[objects]]
+id = "object/village/house-lot-5"
+patch = "d9afdc6ddce929ec"
+model = "adopted/japan/assets/houselot"
+about = "the lot (grounds) of the fifth road house"
+
+[[objects]]
+id = "object/village/cottage-a"
+patch = "dc5c30ab83ed96db"
+model = "adopted/experiments/villageatomic"
+about = "Momiji Hamlet cottage A"
+
+[[objects]]
+id = "object/village/cottage-b"
+patch = "3004f4ef16d5840a"
+model = "adopted/experiments/villageatomic"
+about = "Momiji Hamlet cottage B"
+
+[[objects]]
+id = "object/village/garden"
+patch = "4364f64e7888ef22"
+model = "adopted/experiments/villageatomic"
+about = "the hamlet garden"
+
+[[objects]]
+id = "object/village/storehouse"
+patch = "05ed3a01c13d434b"
+model = "adopted/experiments/villageatomic"
+about = "the hamlet storehouse"
+
+[[objects]]
+id = "object/village/tea-house"
+patch = "68d16654e783a526"
+model = "adopted/experiments/villageatomic"
+about = "the hamlet tea house"
+
+[[objects]]
+id = "object/village/workshop"
+patch = "5a6894dee105d020"
+model = "adopted/experiments/villageatomic"
+about = "the hamlet workshop"

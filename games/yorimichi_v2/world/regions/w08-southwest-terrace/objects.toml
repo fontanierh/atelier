@@ -1,0 +1,17 @@
+# Single-instance objects of w08-southwest-terrace that take their existing area-patch actor ("promote", patch = V2Id from patches.json).
+# Each key has one placed instance in the source data and is the only patch of that key in this region.
+schema = 1
+tag = "swterrace"
+data = ""
+
+[[objects]]
+id = "object/swterrace/fisher-house-a"
+patch = "8786ba3e73a25ee6"
+model = "adopted/japan/southwest"
+about = "fisher house A"
+
+[[objects]]
+id = "object/swterrace/stone-stairs"
+patch = "518fb0312fd77083"
+model = "adopted/japan/southwest"
+about = "the stone stairs"
