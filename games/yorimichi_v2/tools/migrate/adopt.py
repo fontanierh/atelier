@@ -100,8 +100,10 @@ def slug(segment: str) -> str:
 
 class Units(dict):
     """A `[[units]]` rule: package -> unit name for every package under its folder, subfolders included, from a
-    committed JSON map (`{"packages": {...}, "units": {name: {"about": ..., "provenance": ...}}}`), for a folder whose
-    package names say nothing about what belongs together (Mega Park's content hashes)."""
+    committed JSON map (`{"packages": {...}, "units": {name: {"about": ..., "provenance": ..., "sources": [...],
+    "references": [...]}}}`), for a folder whose package names say nothing about what belongs together (Mega Park's
+    content hashes). A unit's `sources` are repository paths of its recoverable originals; adoption copies each into
+    the record's `source/` folder and pins its hash, so the record never reads the donor game again."""
 
     def __init__(self, packages: dict[str, str], info: dict[str, dict]):
         super().__init__(packages)
@@ -109,6 +111,20 @@ class Units(dict):
 
     def provenance(self, unit: str) -> str:
         return self.info.get(unit, {}).get('provenance', PROVENANCE)
+
+    def sources(self, unit: str) -> list[str]:
+        return list(self.info.get(unit, {}).get('sources', []))
+
+    def references(self, unit: str) -> list[str]:
+        return list(self.info.get(unit, {}).get('references', []))
+
+
+def source_copy(repo_path: str) -> str:
+    """Where a unit's source lands in its record folder: games/yorimichi/assets/x.png -> source/assets/x.png."""
+    parts = Path(repo_path).parts
+    if len(parts) < 3 or parts[0] != 'games' or '..' in parts:
+        raise AdoptError(f'source {repo_path!r} is not a path under games/<game>/')
+    return Path('source', *parts[2:]).as_posix()
 
 
 def load_groups(path: Path = GROUPS) -> dict[str, tuple[re.Pattern, dict[str, str]] | Units]:
@@ -242,11 +258,15 @@ def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP,
 
 
 def record_text(asset_id: str, owner: str, about: str, packages: list[str], license_text: str,
-                provenance: str = PROVENANCE) -> str:
+                provenance: str = PROVENANCE, sources: list[tuple[str, str]] = (), refs: list[str] = ()) -> str:
     lines = ['# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.',
              f'# Ownership unit: {about}', 'schema = 1', f'id = "{asset_id}"', 'kind = "adopted"',
              'authority = "editor"', f'owner = "{owner}"', f'provenance = "{provenance}"', f'license = "{license_text}"',
              '']
+    if refs:
+        lines[-1:-1] = ['references = [' + ', '.join(f'"{r}"' for r in refs) + ']']
+    for path, digest in sources:
+        lines += ['[[sources]]', f'path = "{path}"', f'sha256 = "{digest}"', '']
     for package in packages:
         lines += ['[[outputs]]', f'package = "{package}"', '']
     return '\n'.join(lines)
@@ -316,23 +336,39 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
     report['conflicts'] = problems
     if problems:
         raise AdoptError('; '.join(problems[:5]))
+    # Each mapped unit's recoverable originals, copied into its record (Units.sources).
+    repo = game.parents[1]
+    unit_of, originals = {}, []
+    for asset_id, (folder, *_rest) in plan.items():
+        mapped = rules.get('/Game/' + folder.strip('/') if not folder.startswith('/Game/') else folder.rstrip('/'))
+        if isinstance(mapped, Units):
+            unit_of[asset_id] = (mapped, next(u for u in mapped.info if slug(u) == asset_id.rsplit('/', 1)[1]))
+            for repo_path in mapped.sources(unit_of[asset_id][1]):
+                if not (repo / repo_path).is_file():
+                    raise AdoptError(f'{asset_id}: source {repo_path} is missing')
+                originals.append((repo / repo_path, game / 'assets' / asset_id / source_copy(repo_path)))
+    report['sources'] = len(originals)
     if check_only:
         return report
-    writes = [dest for _, dest in copies] + [game / 'assets' / a / 'asset.toml' for a in plan]
+    writes = ([dest for _, dest in copies] + [dest for _, dest in originals]
+              + [game / 'assets' / a / 'asset.toml' for a in plan])
     _authorize(game, writes, claim, 'adoption', {authority.scope_of(a) for a in plan})
     for path, dest in copies:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, dest)
+    for path, dest in originals:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if not dest.is_file() or records.sha256_file(dest) != records.sha256_file(path):
+            shutil.copy2(path, dest)
     for asset_id, (_, owner, about, packages) in sorted(plan.items()):
         record = game / 'assets' / asset_id / 'asset.toml'
         record.parent.mkdir(parents=True, exist_ok=True)
-        mapped = rules.get(plan[asset_id][0].rstrip('/') if plan[asset_id][0].startswith('/Game/') else
-                           '/Game/' + plan[asset_id][0].strip('/'))
-        provenance = PROVENANCE
-        if isinstance(mapped, Units):
-            unit = next(u for u in mapped.info if slug(u) == asset_id.rsplit('/', 1)[1])
-            provenance = mapped.provenance(unit)
-        text = record_text(asset_id, owner, about, packages, license_text, provenance)
+        provenance, sources, refs = PROVENANCE, [], []
+        if asset_id in unit_of:
+            mapped, unit = unit_of[asset_id]
+            provenance, refs = mapped.provenance(unit), mapped.references(unit)
+            sources = [(source_copy(s), records.sha256_file(record.parent / source_copy(s))) for s in mapped.sources(unit)]
+        text = record_text(asset_id, owner, about, packages, license_text, provenance, sources, refs)
         if not record.is_file() or record.read_text() != text:
             record.write_text(text)
     for folder, (_, packages) in found.items():
@@ -534,7 +570,7 @@ def main(argv=None) -> int:
     for ref, user in sorted(report['missing_references'].items())[:40]:
         print(f'  missing reference {ref} (from {user})')
     print(f'{sum(report["folders"].values())} package(s) in {len(report["records"])} record(s); '
-          f'{len(report["missing_references"])} missing reference(s); '
+          f'{len(report["missing_references"])} missing reference(s); {report.get("sources", 0)} source file(s); '
           f'{len(report["private_bytes"])} package(s) with private bytes (scrub before commit)')
     return 1 if report['missing_references'] else 0
 

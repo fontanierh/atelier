@@ -218,6 +218,40 @@ def test_a_units_map_groups_a_hashed_folder_across_its_subfolders(tmp_path):
         adopt.partition(['/Game/Park/Meshes/SM_MP_AB', '/Game/Park/Materials/MI_1'], 'Park', cap=1, groups=groups)
 
 
+def test_a_mapped_unit_carries_its_sources_into_its_record(tmp_path, monkeypatch):
+    """Each unit's originals are copied into its record and pinned there; units without own originals reference the
+    unit holding their generator. A missing original refuses the adoption."""
+    repo = tmp_path / 'repo'
+    game, content = repo / 'games/v2', tmp_path / 'donor'
+    write(content / 'Park/Meshes/SM_MP_AB.uasset')
+    write(content / 'Park/Materials/M_Base.uasset')
+    write(repo / 'games/old/assets/park/geometry/AB.npz', b'mesh')
+    write(repo / 'games/old/tools/importer.py', b'code')
+    (game / 'unreal/Content').mkdir(parents=True)
+    write(game / 'assets/adopted/park/units.json', json.dumps({
+        'units': {'cell': {'about': 'section', 'sources': ['games/old/assets/park/geometry/AB.npz'],
+                           'references': ['adopted/park/base']},
+                  'base': {'about': 'base', 'sources': ['games/old/tools/importer.py']}},
+        'packages': {'/Game/Park/Meshes/SM_MP_AB': 'cell', '/Game/Park/Materials/M_Base': 'base'}}).encode())
+    write(game / 'assets/adopted/groups.toml', b'[[units]]\nfolder = "/Game/Park"\nmap = "park/units.json"\n')
+    monkeypatch.setattr(adopt, 'references', lambda path: [])
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
+    assert adopt.adopt(game, content, ['Park'], [], 'x', check_only=True)['sources'] == 2
+    assert not (game / 'assets/adopted/park/cell').exists()
+    adopt.adopt(game, content, ['Park'], [], 'x', echo=lambda *_: None)
+    cell = records.load_asset(game / 'assets/adopted/park/cell/asset.toml')
+    assert [(s.path, s.sha256) for s in cell.sources] == [('source/assets/park/geometry/AB.npz',
+                                                           records.sha256_file(repo / 'games/old/assets/park/geometry/AB.npz'))]
+    assert (game / 'assets/adopted/park/cell/source/assets/park/geometry/AB.npz').read_bytes() == b'mesh'
+    assert cell.references == ['adopted/park/base']
+    base = records.load_asset(game / 'assets/adopted/park/base/asset.toml')
+    assert [s.path for s in base.sources] == ['source/tools/importer.py'] and base.references == []
+    (repo / 'games/old/tools/importer.py').unlink()
+    with pytest.raises(adopt.AdoptError, match='importer.py is missing'):
+        adopt.adopt(game, content, ['Park'], [], 'x', check_only=True)
+
+
 def test_group_rules_are_checked_and_colliding_group_names_refused(tmp_path):
     rules = tmp_path / 'groups.toml'
     rules.write_text('[[group]]\nfolder = "/Game/A"\nkey = "^BK_"\n')

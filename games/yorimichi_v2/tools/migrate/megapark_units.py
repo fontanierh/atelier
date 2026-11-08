@@ -11,9 +11,14 @@ packages' own references. A material instance several sections share goes to its
 (`shared-materials-<family>`: stone, concrete, wood, ... from the donor build's material names), and a shared texture
 to the family of the instances using it (`shared-textures-<family>`, or `shared-textures-common` across families), so a
 change to one surface's look stays in one unit. The retail base materials are `base-materials`, the standalone level
-`standalone-level`, and the footbridge seam `seam`. Each
-section names its original source files (geometry and collision npz, map.json asset IDs) in its provenance, apart
-from the saved Unreal packages that are now its source. The same donor content always gives the same file.
+`standalone-level`, and the footbridge seam `seam`.
+
+Each unit lists its recoverable originals as `sources` (repository paths under games/yorimichi; adopt.py copies them
+into the record and pins their hashes, so V2 never reads the old game): a section its geometry and collision npz and
+the source images of its own textures, a texture unit its images, and `base-materials` the generator that made every
+Mega Park package (the import and restyle scripts, the region scripts, map.json, the restyle images and the
+lettering font). Units whose packages that generator made from map.json alone (material instances, the seam, the
+level) reference `base-materials`. The same donor content always gives the same file.
 """
 from __future__ import annotations
 
@@ -30,7 +35,14 @@ REPO = GAME.parents[1]
 sys.path.insert(0, str(HERE))
 import adopt  # noqa: E402
 
-SOURCE = REPO / 'games' / 'yorimichi' / 'assets' / 'megapark' / 'map.json'
+DONOR = REPO / 'games' / 'yorimichi'
+SOURCE = DONOR / 'assets' / 'megapark' / 'map.json'
+DONOR_PATH = 'games/yorimichi/assets/megapark/'
+# The generator of every Mega Park package (donor build steps world.megapark, world.megapark_restyle, unreal.megapark).
+GENERATOR = ('megapark_atomic_build.py', 'tools/megapark_textures.py', 'unreal/Scripts/import_megapark.py',
+             'unreal/Scripts/park_atomic_native.py', 'world/regions/hidamari/fonts/NotoSansJP.ttf',
+             'assets/megapark/map.json', 'assets/megapark/provenance.json')
+GENERATOR_FOLDERS = ('world/regions/megapark', 'assets/megapark/restyle')
 OUT = GAME / 'assets' / 'adopted' / 'megapark' / 'units.json'
 ROOT = '/Game/MegaPark/'
 CELL = re.compile(r'^c(?:Pres|Sim)_(-?\d+)_(-?\d+)_')
@@ -122,6 +134,25 @@ def build(content: Path, source: dict, donor_build: dict) -> dict:
         'base-materials': {'about': 'Mega Park retail base materials (opaque, masked, translucent) and their textures'},
         'standalone-level': {'about': 'the standalone Super Ultra Mega Park level (F26)'},
         'seam': {'about': 'the seam meshes (render and collision) joining the park to the zeppelin footbridge'}})
+    # Recoverable originals, as repository paths: section meshes and collision, then each unit's texture images. One
+    # generator (base-materials' sources) made every package, the restyled textures from its images, so every other
+    # unit references it.
+    for cell, found in sources.items():
+        info[cell]['sources'] = sorted({DONOR_PATH + m['npz'] for m in found['models'] + found['collision']})
+    for tid, texture in source['textures'].items():
+        package = f'{ROOT}Textures/T_{tid[2:]}'
+        if package in unit:
+            info[unit[package]].setdefault('sources', []).append(DONOR_PATH + texture['png'])
+    generator = [f'games/yorimichi/{f}' for f in GENERATOR]
+    for folder in GENERATOR_FOLDERS:
+        generator += [f'games/yorimichi/{p.relative_to(DONOR).as_posix()}' for p in sorted((DONOR / folder).rglob('*'))
+                      if p.is_file() and '__pycache__' not in p.parts]
+    info['base-materials']['sources'] = sorted(set(generator + info['base-materials'].get('sources', [])))
+    for name, about in info.items():
+        if name != 'base-materials':
+            if 'sources' in about:
+                about['sources'] = sorted(set(about['sources']))
+            about['references'] = ['adopted/megapark/base-materials']
     return {'about': 'Mega Park editing units for tools/migrate/adopt.py (written by tools/migrate/megapark_units.py)',
             'units': dict(sorted(info.items())), 'packages': dict(sorted(unit.items()))}
 
