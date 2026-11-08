@@ -4,6 +4,8 @@
 
 This is an authoring audit, not a new gameplay acceptance report. A region can look right and play correctly while remaining difficult for two people to edit. Earlier estimates of playable-port progress do not measure the authoring work below.
 
+**Owner direction:** proper splitting and complete source coverage apply to the whole game. The wreck is a pilot to prove the workflow, not the final scope. Every useful object must be independently editable, and every asset must have an identified, recoverable authoritative source. Imported art needs its model, textures and applicable rig/animation inputs; generated art needs its generator, settings and inputs; work authored directly in Unreal can use its saved package as the source. Rendering may still batch repeated objects for performance. Missing sources remain open work until recovered or replaced; a source-path note alone does not close them.
+
 ## Scope and evidence
 
 Baseline: **`7b4f509762714b3eb4240f4e8cae8ffdbd9563ed`**. Counts below describe that revision, not the implementer's changing working tree.
@@ -125,9 +127,9 @@ Only `prop/lantern` has a registered external source and recipe. The current [im
 2. **External source located:** record the exact file and checksum, plus the narrow import/export route and output packages. Preserve the source in V2 or in an explicitly retained shared location before retiring V1.
 3. **Generator located:** record the generator, parameters and real inputs; support regenerating only this unit into temporary output.
 4. **Restricted source located:** use the existing pinned restricted-storage route and verify it can be recovered. Do not put restricted originals in the public repository merely to fill a source field.
-5. **Not located:** say so. Preserve the Unreal package and donor provenance; do not invent a source or claim reproducibility.
+5. **Not located:** say so and keep the item unfinished. Preserve the Unreal package and donor provenance; recover the source or create a usable replacement with truthful provenance. Do not invent an original source or claim reproducibility.
 
-Supporting source import must not overwrite accepted editor-owned changes. Keep package authority explicit: either a targeted importer owns a package, the editor owns it, or a split record separates those products. An emergency export from Unreal is a recovered derivative, not the original Blender scene or generator.
+Supporting source import must not overwrite accepted editor-owned changes. Keep package authority explicit: either a targeted importer owns a package, the editor owns it, or a split record separates those products. An emergency export from Unreal is a recovered derivative, not the original Blender scene or generator. Do not relabel an imported asset as native Unreal merely to avoid recovering its source. A deliberately adopted replacement must support the required edits and preserve the original's relevant appearance and behavior.
 
 Do not re-enable V1 tests or its full build as an acceptance requirement. Port a useful narrow importer/generator and its relevant checks into active V2 ownership when needed. Irrelevant old documentation and contracts may be retired; relevant source art and recipes must first be preserved.
 
@@ -237,7 +239,7 @@ The next delivery should be a small, working editing example, followed by the ot
 2. **Prove independent work:** another agent edits a nearby unrelated prop in a separate checkout. Integrate both changes, reopen and play. Fix the broad region scope/index bottleneck if it prevents this. No whole-world rebuild or shared mutable editor folders.
 3. **Apply the pattern:** Belmonte objects, Crater Park features, then fixed transport structures and camp/hippodrome/local dressing. Use the coverage table, preserve gameplay, and keep the Mega Park port moving with its improved units.
 4. **Recover sources in the same units:** use the source table; record native-authoritative, located, restricted or not-located status. Add targeted recipes only for the actual source types being edited. Keep donor source and provenance until transferred or deliberately retained.
-5. **Close the source inventory:** account for every asset record, including shared materials, animation banks and audio. The deliverable is an actionable source status and recovery path, not a promise that every package has an FBX. Resolve unknowns or state the accepted limitation explicitly.
+5. **Close the source inventory for every asset:** include shared materials, animation banks and audio. Retain all required source bytes, source hashes, settings and narrow recipes in V2, an explicitly retained shared library, or the existing pinned restricted storage as appropriate. Verify recovery from a clean checkout and reproduce representative products through each distinct recipe; a normal game checkout may consume committed packages without regenerating them. No asset may remain only a binary adopted from V1 with an unidentified source or an unchecked personal-cache dependency. Native Unreal originals remain valid sources. Recover or replace unknowns before declaring authoring complete.
 6. **Final collaboration proof:** human editor save/reopen and two physical machines, each using separate writer checkouts. Check conflict refusal, successful disjoint edits, handoff and preserved edits. Keep these honest final acceptance items; unavailable collaborators need not stop independent port work.
 
 For each migrated editing unit, report only: **what is now saved; what remains runtime; source/recovery status; ownership scope; what was actually edited and played**. Update the existing inventory rather than adding another competing progress system.
