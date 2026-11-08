@@ -1,0 +1,125 @@
+# Hidamari harbour objects that leave their area patches (tools/migrate/objects.py split; UV2Migration::SplitPatchObjects):
+# each is one placed instance of its key in city.json (metres), found within 50 cm of its source point.
+schema = 1
+tag = "harbour"
+data = ""
+
+[[objects]]
+id = "object/harbour/hd-house-00-01"
+split = {key = "HD_House_00", at = [440.85, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 1 of 20 in w07-hidamari-harbour, placed at (440.85, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-02"
+split = {key = "HD_House_00", at = [463.95, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 2 of 20 in w07-hidamari-harbour, placed at (463.95, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-03"
+split = {key = "HD_House_00", at = [486.85, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 3 of 20 in w07-hidamari-harbour, placed at (486.85, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-04"
+split = {key = "HD_House_00", at = [498.35, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 4 of 20 in w07-hidamari-harbour, placed at (498.35, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-05"
+split = {key = "HD_House_00", at = [521.35, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 5 of 20 in w07-hidamari-harbour, placed at (521.35, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-06"
+split = {key = "HD_House_00", at = [521.45, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 6 of 20 in w07-hidamari-harbour, placed at (521.45, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-07"
+split = {key = "HD_House_00", at = [521.55, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 7 of 20 in w07-hidamari-harbour, placed at (521.55, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-08"
+split = {key = "HD_House_00", at = [532.95, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 8 of 20 in w07-hidamari-harbour, placed at (532.95, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-09"
+split = {key = "HD_House_00", at = [577.44, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 9 of 20 in w07-hidamari-harbour, placed at (577.44, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-10"
+split = {key = "HD_House_00", at = [619.09, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 10 of 20 in w07-hidamari-harbour, placed at (619.09, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-11"
+split = {key = "HD_House_00", at = [648.43, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 11 of 20 in w07-hidamari-harbour, placed at (648.43, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-12"
+split = {key = "HD_House_00", at = [760.93, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 12 of 20 in w07-hidamari-harbour, placed at (760.93, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-13"
+split = {key = "HD_House_00", at = [783.93, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 13 of 20 in w07-hidamari-harbour, placed at (783.93, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-14"
+split = {key = "HD_House_00", at = [813.2, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 14 of 20 in w07-hidamari-harbour, placed at (813.2, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-15"
+split = {key = "HD_House_00", at = [840.87, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 15 of 20 in w07-hidamari-harbour, placed at (840.87, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-16"
+split = {key = "HD_House_00", at = [852.37, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 16 of 20 in w07-hidamari-harbour, placed at (852.37, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-17"
+split = {key = "HD_House_00", at = [857.74, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 17 of 20 in w07-hidamari-harbour, placed at (857.74, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-18"
+split = {key = "HD_House_00", at = [872.95, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 18 of 20 in w07-hidamari-harbour, placed at (872.95, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-19"
+split = {key = "HD_House_00", at = [886.87, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 19 of 20 in w07-hidamari-harbour, placed at (886.87, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-00-20"
+split = {key = "HD_House_00", at = [893.7, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+about = "HD_House_00 20 of 20 in w07-hidamari-harbour, placed at (893.7, -54.5) m"
