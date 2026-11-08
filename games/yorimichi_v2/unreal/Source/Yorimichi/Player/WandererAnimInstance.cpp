@@ -384,7 +384,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 Stance.KneePole[Side]=Point(FVector(-115+67*Reach,S*21+SeatShift,49));
             }
         }
-        // Seated grips, recline and planted feet belonged to the excluded kart; the sailboat leaves them off.
+        // Seated grips, recline and planted feet are for a seat that holds the rider; the sailboat leaves them off.
         Stance.bGripLeft = false;
         Stance.bPoseHands = true;
         Stance.TorsoRecline = 0.f;

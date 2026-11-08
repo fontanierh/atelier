@@ -22,6 +22,10 @@ class YORIMICHI_API AV2ScenePatch : public AActor
 public:
     AV2ScenePatch();
     virtual void BeginPlay() override;
+    /** Whether AdventureMoveSet::Climbable refuses this unit: the actor it came from never was a climbing hold (a service's
+     *  rails, towers, terminals, the ridden ramps and the parks). Reads the tags and the saved SourceKey, so patches saved
+     *  before the rule are covered as well. */
+    bool ClimbExempt() const;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
     /** The region record that owns this actor (games/yorimichi_v2/world/regions/<id>). */

@@ -51,6 +51,17 @@ AV2ScenePatch::AV2ScenePatch()
     RootComponent->SetMobility(EComponentMobility::Static);
 }
 
+bool AV2ScenePatch::ClimbExempt() const
+{
+    if (ActorHasTag(TEXT("NoClimb")) || ActorHasTag(TEXT("SkatePark"))) return true;
+    // The pier skatepark's saved patch, the mini Mega ramp (V2MigrationMisc), the railway, ferry and gondola units (SaveUnits in
+    // V2MigrationTravel) and the Mega and Crater parks' trees and props (V2MigrationParkDressing).
+    return SourceKey == TEXT("SkatePark") || SourceKey == TEXT("mega:ramp") ||
+        SourceKey.StartsWith(TEXT("railway:")) || SourceKey.StartsWith(TEXT("ferry:")) || SourceKey.StartsWith(TEXT("gondola:")) ||
+        SourceKey.StartsWith(TEXT("megapark:trees/")) || SourceKey.StartsWith(TEXT("megapark:props/")) ||
+        SourceKey.StartsWith(TEXT("craterpark:trees/")) || SourceKey.StartsWith(TEXT("craterpark:props/"));
+}
+
 void AV2ScenePatch::BeginPlay()
 {
     Super::BeginPlay();

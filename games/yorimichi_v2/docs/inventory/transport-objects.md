@@ -79,7 +79,9 @@ dock gates (move), track pieces and the train platforms (the ride and boarding r
 - Ferry, gondola world, gondola kit, zeppelin and train track each hold their meshes in one record, so one object is one
   claim for the whole system. Units like Brine Cove's `units.json` are needed per tower, station and terminal.
 - Hidamari's train platform and buffer have no mesh or source.
-- The service actors carry the `NoClimb` tag for all their parts; saved actors need it on each.
+- The service actors carried the `NoClimb` tag for all their parts. Saved units are not tagged; `AV2ScenePatch::ClimbExempt`
+  (`World/V2ScenePatch.cpp`) refuses them by their saved `SourceKey` (`railway:`, `ferry:`, `gondola:`, park trees and props, the
+  pier, the mini ramp), so patches saved before the rule are covered too.
 
 ## Ownership units (data)
 
