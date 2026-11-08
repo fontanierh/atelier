@@ -22,6 +22,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Misc/PackageName.h"
+#include "Misc/Paths.h"
+#include "AtelierData.h"
 #include "V2ScenePatch.h"
 
 ASuperUltraMegaPark::ASuperUltraMegaPark()
@@ -60,6 +62,97 @@ UStaticMeshComponent* ASuperUltraMegaPark::MakePiece(UObject* Outer, USceneCompo
     return C;
 }
 
+UHierarchicalInstancedStaticMeshComponent* ASuperUltraMegaPark::MakeTreeGroup(UObject* Outer, USceneComponent* Parent,
+    const FString& Key, UStaticMesh* Mesh)
+{
+    auto* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(Outer, *Key);
+    H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(Parent);
+    H->SetCanEverAffectNavigation(false);
+    H->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    // Like the island's trees, they fade where they hide Cairo (docs/CAMERA.md).
+    const int32 Fade = JapanSeeThrough::FadeMode(Key, Mesh);
+    if (Fade != JapanSeeThrough::FadeSolid) H->SetCustomPrimitiveDataFloat(0, float(Fade));
+    if (Key.StartsWith(TEXT("Bush"))) H->SetCullDistances(30000, 36000);
+    H->SetWorldPositionOffsetDisableDistance(18000);
+    return H;
+}
+
+bool ASuperUltraMegaPark::TreeTransform(const TSharedPtr<FJsonValue>& Value, FTransform& Out)
+{
+    const TArray<TSharedPtr<FJsonValue>>& A = Value->AsArray();
+    if (A.Num() < 5) return false;
+    Out = FTransform(FRotator(0., A[3]->AsNumber(), 0.), FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()),
+        FVector(A[4]->AsNumber()));
+    return true;
+}
+
+bool ASuperUltraMegaPark::LoadTreeOwners(const TSharedPtr<FJsonObject>& Root, const FString& ParkPath, FParkTreeOwners& Out)
+{
+    Out = FParkTreeOwners();
+    const auto Owners = AtelierReadJson(FPaths::Combine(FPaths::GetPath(ParkPath), TEXT("tree_units.json")));
+    const TSharedPtr<FJsonObject>* Pieces = nullptr;
+    if (!Owners || !Owners->TryGetObjectField(TEXT("pieces"), Pieces)) return false;
+    FParkTreeOwners Loaded;
+    if (const TArray<TSharedPtr<FJsonValue>>* Unsaved = nullptr; Owners->TryGetArrayField(TEXT("unsaved_trees"), Unsaved))
+        for (const TSharedPtr<FJsonValue>& Value : *Unsaved) Loaded.UnsavedSpecies.Add(Value->AsString());
+    for (const TCHAR* Kind : {TEXT("render"), TEXT("collision")})
+        for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(Kind))
+        {
+            const TSharedPtr<FJsonObject> Entry = Value->AsObject();
+            const FString Name = Entry->GetStringField(TEXT("name"));
+            FString Unit;
+            if (!(*Pieces)->TryGetStringField(Name, Unit) || Unit.IsEmpty()) return false;
+            const TArray<TSharedPtr<FJsonValue>>& Origin = Entry->GetArrayField(TEXT("origin_cm"));
+            Loaded.Pieces.Add({Unit, Origin[0]->AsNumber(), Origin[1]->AsNumber()});
+        }
+    Out = MoveTemp(Loaded);
+    return true;
+}
+
+FString ASuperUltraMegaPark::TreeUnit(const FParkTreeOwners& Owners, const FString& Species, const FVector& Location)
+{
+    if (Owners.UnsavedSpecies.Contains(Species)) return FString();
+    return NearestUnit(Owners, Location);
+}
+
+FString ASuperUltraMegaPark::NearestUnit(const FParkTreeOwners& Owners, const FVector& Location)
+{
+    FString Best;
+    double BestDistance = 0.;
+    for (const FParkTreeOwners::FPiece& Piece : Owners.Pieces)
+    {
+        // The strict comparison keeps the earlier piece on a tie, as parks.py's min over (distance, index) does.
+        const double Dx = Piece.X - Location.X, Dy = Piece.Y - Location.Y;
+        const double Distance = Dx * Dx + Dy * Dy;
+        if (Best.IsEmpty() || Distance < BestDistance) { Best = Piece.Unit; BestDistance = Distance; }
+    }
+    return Best;
+}
+
+namespace
+{
+    // A park-local point (or direction) moved with its unit: the unit moved by Moved in the world, which the park's placement
+    // carries into its own frame as ParkInverse * Moved * Park.
+    FTransform LocalMoveOf(const FTransform& Park, const FTransform& Moved)
+    {
+        return Park.Inverse().TransformFTransform(Moved).TransformFTransform(Park);
+    }
+}
+
+UStaticMeshComponent* ASuperUltraMegaPark::MakeProp(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
+    UStaticMesh* Mesh)
+{
+    const FString Name = Entry->GetStringField(TEXT("mesh"));
+    const FMatrix Basis = FRotationMatrix::MakeFromXZ(JsonVector(Entry->GetArrayField(TEXT("forward"))),
+                                                       JsonVector(Entry->GetArrayField(TEXT("up"))));
+    auto* C = NewObject<UStaticMeshComponent>(Outer, *Name);
+    C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(Parent);
+    C->SetRelativeTransform(FTransform(Basis.Rotator(), JsonVector(Entry->GetArrayField(TEXT("location_cm")))));
+    C->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+    C->SetCanEverAffectNavigation(false);
+    return C;
+}
+
 ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Path)
 {
     FString Text; TSharedPtr<FJsonObject> Root;
@@ -85,6 +178,35 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     const AV2WorldManifest* Manifest = AV2WorldManifest::Find(World);
     const FName SavedTag(*Tag.ToLower());
     int32 Meshes = 0, Missing = 0;
+    // A saved unit the editor moved (AV2ScenePatch::MovedBy from the placement the migration saved it at): its rails and zones
+    // follow it, below. An unmoved unit is absent here, so its rails and zones are built exactly as before.
+    TMap<FString, FTransform> MovedUnits;
+    bool bTreesSaved = false;
+    if (Manifest)
+    {
+        const FString Prefix = Tag.ToLower() + TEXT(":");
+        for (TActorIterator<AV2ScenePatch> It(World); It; ++It)
+        {
+            const FString Source = It->SourceKey;
+            if (!Source.StartsWith(Prefix)) continue;
+            const FString Unit = Source.Mid(Prefix.Len());
+            if (Unit.Contains(TEXT("/"))) continue;   // a unit's trees and props, not its pieces
+            const FTransform Moved = It->MovedBy();
+            if (!Moved.Equals(FTransform::Identity, 0.)) MovedUnits.Add(Unit, Moved);
+        }
+        const FString TreePrefix = Tag.ToLower() + TEXT(":trees/");
+        for (const FString& Group : Manifest->MigratedGroups)
+            if (Group.StartsWith(TreePrefix)) { bTreesSaved = true; break; }
+    }
+    // The unit owners (tree_units.json) place the saved trees and the rails and zones of a moved unit.
+    FParkTreeOwners TreeOwners;
+    bool bOwners = true;
+    if (bTreesSaved || !MovedUnits.IsEmpty()) bOwners = LoadTreeOwners(Root, Path, TreeOwners);
+    if (!bOwners)
+    {
+        // Without the owners the saved trees would spawn beside themselves, and a moved unit's rails would stay behind: not ready.
+        ++Missing; UE_LOG(LogTemp, Error, TEXT("%s has saved units but its tree_units.json does not name their pieces"), *Tag);
+    }
     for (const TCHAR* Kind : {TEXT("render"), TEXT("collision")})
     {
         const bool bCollision = FCString::Strcmp(Kind, TEXT("collision")) == 0;
@@ -111,6 +233,16 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         Rail.SourceId = Entry->GetStringField(TEXT("id")); Rail.Closed = Entry->GetBoolField(TEXT("closed"));
         for (const TSharedPtr<FJsonValue>& Point : Entry->GetArrayField(TEXT("points_cm"))) Rail.Points.Add(JsonVector(Point->AsArray()));
     }
+    // A rail follows the unit that owns it (the piece nearest its first point) when the editor moved that unit.
+    if (bOwners && !MovedUnits.IsEmpty())
+        for (FMegaParkRail& Rail : Park->Layout.Rails)
+        {
+            if (Rail.Points.IsEmpty()) continue;
+            const FTransform* Moved = MovedUnits.Find(NearestUnit(TreeOwners, Rail.Points[0]));
+            if (!Moved) continue;
+            const FTransform Local = LocalMoveOf(Placement, *Moved);
+            for (FVector& Point : Rail.Points) Point = Local.TransformPosition(Point);
+        }
     Park->RegisterRails();
     // Where the rider's vert assist is limited (docs/CRATERPARK.md, "Assist zones"): boxes in world centimetres, turned
     // yaw_deg about up. The kickers into a big gap's landing limit it, so the air goes forward, not back into the ramp.
@@ -136,6 +268,14 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
                 Zone.Id = FName(Entry->HasField(TEXT("id")) ? Entry->GetStringField(TEXT("id")) : FString::Printf(TEXT("zone_%d"), Zones + Boosts));
                 Zone.Centre = JsonVector(*Centre); Zone.HalfExtent = JsonVector(*Half);
                 Zone.YawDeg = Entry->HasField(TEXT("yaw_deg")) ? float(Entry->GetNumberField(TEXT("yaw_deg"))) : 0.f;
+                if (bOwners && !MovedUnits.IsEmpty())
+                    if (const FTransform* Moved = MovedUnits.Find(NearestUnit(TreeOwners, Zone.Centre)))
+                    {
+                        // The box follows its unit: its centre and yaw move; its extent does not.
+                        const FTransform Local = LocalMoveOf(Placement, *Moved);
+                        Zone.Centre = Local.TransformPosition(Zone.Centre);
+                        Zone.YawDeg += float(Local.Rotator().Yaw);
+                    }
                 if (bBoost) Zone.Boost = float(Number); else Zone.VertAssistMax = float(Number);
                 Zone.Owner = Park;
                 Assist->Add(MoveTemp(Zone)); ++(bBoost ? Boosts : Zones);
@@ -144,35 +284,43 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     if (Zones || Boosts) UE_LOG(LogTemp, Display, TEXT("%s: %d assist zones, %d boost zones"), *Tag, Zones, Boosts);
     // The island trees and bushes where the original desert plants stood. They have no collision, so the riding
     // surfaces and the skating snapshot stay the original ones (docs/MEGAPARK.md, "Restyle").
-    int32 Trees = 0;
+    // Trees a saved unit holds (UV2MigrationParkDressing::MigrateParkTrees) are not spawned again: TreeUnit names the unit a
+    // tree belongs to, and the manifest lists that unit as "<tag>:trees/<unit>". A standalone park map spawns every tree.
+    int32 Trees = 0, SavedTreeCount = 0;
     const TSharedPtr<FJsonObject>* TreeGroups = nullptr;
     if (Root->TryGetObjectField(TEXT("trees"), TreeGroups))
         for (const auto& Pair : (*TreeGroups)->Values)
         {
             const FString Key(Pair.Key);
+            TArray<FTransform> Xs;
+            bool bSkipped = false;
+            const TArray<TSharedPtr<FJsonValue>>& List = Pair.Value->AsArray();
+            for (int32 Index = 0; Index < List.Num(); ++Index)
+            {
+                FTransform X;
+                if (!TreeTransform(List[Index], X)) continue;
+                const FString Unit = bTreesSaved && bOwners ? TreeUnit(TreeOwners, Key, X.GetLocation()) : FString();
+                if (!Unit.IsEmpty() && Manifest->CoversGroup(SavedTag, FString(TEXT("trees/")) + Unit))
+                {
+                    ++SavedTreeCount; bSkipped = true;
+                    continue;
+                }
+                Xs.Add(X);
+            }
+            if (bSkipped && !FPackageName::DoesPackageExist(FString::Printf(TEXT("/Game/Japan/Assets/%s"), *Key)))
+            {
+                // Its saved unit draws it; its mesh must still be committed content (checked without loading it).
+                ++Missing; UE_LOG(LogTemp, Error, TEXT("%s missing saved tree mesh %s"), *Tag, *Key);
+            }
+            if (Xs.IsEmpty()) continue;
             UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
             if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing tree mesh %s"), *Key); continue; }
-            TArray<FTransform> Xs;
-            for (const TSharedPtr<FJsonValue>& Value : Pair.Value->AsArray())
-            {
-                const TArray<TSharedPtr<FJsonValue>>& A = Value->AsArray();
-                if (A.Num() < 5) continue;
-                Xs.Add(FTransform(FRotator(0., A[3]->AsNumber(), 0.), FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()),
-                    FVector(A[4]->AsNumber())));
-            }
-            auto* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(Park, *Key);
-            H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(Park->GetRootComponent());
-            H->SetCanEverAffectNavigation(false);
-            H->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-            // Like the island's trees, they fade where they hide Cairo (docs/CAMERA.md).
-            const int32 Fade = JapanSeeThrough::FadeMode(Key, Mesh);
-            if (Fade != JapanSeeThrough::FadeSolid) H->SetCustomPrimitiveDataFloat(0, float(Fade));
-            if (Key.StartsWith(TEXT("Bush"))) H->SetCullDistances(30000, 36000);
-            H->SetWorldPositionOffsetDisableDistance(18000);
+            auto* H = MakeTreeGroup(Park, Park->GetRootComponent(), Key, Mesh);
             H->RegisterComponent();
             H->AddInstances(Xs, false, false, false);
             Trees += Xs.Num();
         }
+    Trees += SavedTreeCount;
     // The kei cars in the car park's bays, where the original traffic cars stood. They are solid, so Cairo walks round
     // them and the board stops against them (docs/MEGAPARK.md, "Restyle").
     int32 Props = 0;
@@ -182,15 +330,16 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         {
             const TSharedPtr<FJsonObject> Entry = Value->AsObject();
             const FString Name = Entry->GetStringField(TEXT("mesh"));
+            // A kei car saved as its own object (UV2MigrationParkDressing::MigrateParkProps) is not spawned again.
+            if (Manifest && Manifest->CoversGroup(SavedTag, Name))
+            {
+                if (FPackageName::DoesPackageExist(FString::Printf(TEXT("/Game/Japan/Assets/%s"), *Name))) ++Props;
+                else { ++Missing; UE_LOG(LogTemp, Error, TEXT("%s missing saved prop %s"), *Tag, *Name); }
+                continue;
+            }
             UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name));
             if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing prop mesh %s"), *Name); continue; }
-            const FMatrix Basis = FRotationMatrix::MakeFromXZ(JsonVector(Entry->GetArrayField(TEXT("forward"))),
-                                                               JsonVector(Entry->GetArrayField(TEXT("up"))));
-            auto* C = NewObject<UStaticMeshComponent>(Park, *Name);
-            C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(Park->GetRootComponent());
-            C->SetRelativeTransform(FTransform(Basis.Rotator(), JsonVector(Entry->GetArrayField(TEXT("location_cm")))));
-            C->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
-            C->SetCanEverAffectNavigation(false);
+            UStaticMeshComponent* C = MakeProp(Park, Park->GetRootComponent(), Entry, Mesh);
             C->RegisterComponent(); ++Props;
         }
     const TSharedPtr<FJsonObject> Start = Root->GetObjectField(TEXT("spawn"));

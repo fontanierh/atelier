@@ -17,6 +17,10 @@
   ferries      [{region, tag, data, names, units}]: ferry terminals by key, each with its unit (MigrateFerryTerminals)
   gondolas     [{region, tag, data, names, units}]: the gondola's static entries by name, each with its unit
             (MigrateGondolaStatics)
+  trees     [{region, tag, data, units}]: the units of a park whose trees are saved, one actor per unit; the trees of
+            each unit are assigned by the runtime rule (UV2MigrationParkDressing.MigrateParkTrees)
+  props     [{region, tag, data, meshes, units}]: a park's props (the kei cars), each with its object (one actor per object;
+            UV2MigrationParkDressing.MigrateParkProps)
 UV2Migration.MigrateRegionGroups builds each patch with the runtime's own component code and lists the group in the
 map's manifest, so the runtime skips only those groups. A group already saved is kept as it is, edits included: a
 rerun creates nothing. Prints each object's actor package for its record.
@@ -99,6 +103,27 @@ for name, call, label in (
         created += actors
         kept += reused
         keys |= {f'{route["tag"]}:{unit}' for unit in route['units']}
+for trees in plan.get('trees', []):
+    count, actors, reused, error = U.V2MigrationParkDressing.migrate_park_trees(
+        world, U.Name(trees['region']), U.Name(trees['tag']), trees['data'], list(trees['units']))
+    if count < 0:
+        raise RuntimeError(f'MigrateParkTrees {trees["tag"]}: {error}')
+    for actor in actors:
+        # The runtime park's trees are placed with the island, whatever the distance: their units load with the map too.
+        actor.set_editor_property('is_spatially_loaded', False)
+    created += actors
+    kept += reused
+    keys |= {f'{trees["tag"]}:trees/{unit}' for unit in trees['units']}
+for props in plan.get('props', []):
+    count, actors, reused, error = U.V2MigrationParkDressing.migrate_park_props(
+        world, U.Name(props['region']), U.Name(props['tag']), props['data'], list(props['meshes']), list(props['units']))
+    if count < 0:
+        raise RuntimeError(f'MigrateParkProps {props["tag"]}: {error}')
+    for actor in actors:
+        actor.set_editor_property('is_spatially_loaded', False)
+    created += actors
+    kept += reused
+    keys |= {f'{props["tag"]}:props/{unit}' for unit in props['units']}
 for split in plan.get('splits', []):
     count, actors, changed, reused, error = U.V2Migration.split_patch_objects(
         world, U.Name(split['region']), U.Name(split['tag']), list(split['keys']), list(split['objects']),

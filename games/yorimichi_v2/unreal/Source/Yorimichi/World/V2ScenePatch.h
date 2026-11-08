@@ -33,6 +33,18 @@ public:
     /** What the migration saved here, one "mesh|tags|instances" entry per component, sorted. A saved patch whose
      *  components no longer match (a child deleted or swapped in the editor) fails the world's readiness. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") TArray<FString> ExpectedMembers;
+    /** The placement the migration saved this patch at (a park's or the course's). Unset is the identity, which no
+     *  placement is, so an unset patch counts as unmoved. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") FTransform OriginalTransform = FTransform::Identity;
+
+    /** How far the editor has moved this patch from OriginalTransform, in the world: the identity while it is unmoved (or
+     *  unset), so a runtime that follows the move takes the exact saved path when nothing moved. */
+    FTransform MovedBy() const
+    {
+        const FTransform Now = GetActorTransform();
+        if (OriginalTransform.Equals(FTransform::Identity, 0.) || Now.Equals(OriginalTransform, 0.)) return FTransform::Identity;
+        return Now.GetRelativeTransform(OriginalTransform);
+    }
 
     /** This patch's members as saved now, in ExpectedMembers' form. */
     TArray<FString> Members() const;
@@ -78,7 +90,21 @@ public:
      *  skip both use it, so a piece is never both saved and spawned. */
     static FVector2D OwnerPoint(const FTransform& Placement, const UStaticMesh* Mesh);
     bool CoversService(FName Service) const { return MigratedServices.Contains(Service); }
-    bool CoversGroup(FName Tag, const FString& MeshName) const { return MigratedGroups.Contains(Tag.ToString() + TEXT(":") + MeshName); }
+    bool CoversGroup(FName Tag, const FString& MeshName) const { return GroupSet().Contains(Tag.ToString() + TEXT(":") + MeshName); }
+    /** MigratedGroups as a set for CoversGroup, a transient cache (not saved): rebuilt when the list's length changes, which
+     *  is the only way the migration changes it (entries are added, never replaced). */
+    const TSet<FString>& GroupSet() const
+    {
+        if (GroupSetCount != MigratedGroups.Num())
+        {
+            GroupSetCache.Reset();
+            for (const FString& Group : MigratedGroups) GroupSetCache.Add(Group);
+            GroupSetCount = MigratedGroups.Num();
+        }
+        return GroupSetCache;
+    }
+    mutable TSet<FString> GroupSetCache;
+    mutable int32 GroupSetCount = -1;
     bool Runs(FName Service) const { return !bOnlyMigrated || RuntimeServices.Contains(Service); }
 };
 
