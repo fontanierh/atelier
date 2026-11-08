@@ -1006,7 +1006,7 @@ void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
     }
     // The menu's settings already applied reach the newcomer's components alone: re-applying them to every group for
     // each patch made arrival streaming quadratic (thousands of patches, about 20 s at 4 fps after a long travel).
-    bool bCityPiece = false;
+    bool bCityTreePiece = false;
     for (UStaticMeshComponent* C : Components)
     {
         if (auto* H = Cast<UHierarchicalInstancedStaticMeshComponent>(C))
@@ -1020,11 +1020,11 @@ void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
             if (C->ComponentHasTag(AV2ScenePatch::RoleShadowTwin)) ApplyPerformanceToTwin(H);
         }
         for (const FName& Tag : C->ComponentTags)
-            if (Tag.ToString().StartsWith(TEXT("CityPiece:"))) { bCityPiece = true; break; }
+            if (IsCityTreePiece(Tag)) { bCityTreePiece = true; break; }
         if (AppliedScreenSizeCull > 0.f) ApplyScreenSizeCullTo(C, AppliedScreenSizeCull);
     }
     if (AppliedScreenSizeCull <= 0.f) bScreenSizeCullDirty = true;
-    if (bCityPiece && RequestedTreeOptimization >= 0)
+    if (bCityTreePiece && RequestedTreeOptimization >= 0)
     {
         // The saved request, not the last success: a swap that failed before this patch arrived is retried too.
         AppliedTreeOptimization = -1;
