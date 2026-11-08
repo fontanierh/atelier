@@ -86,12 +86,17 @@ def native_run(plan_file: Path) -> str:
     return LOG.read_text(errors='replace') if LOG.is_file() else ''
 
 
-def migrate(game: Path, region_ids: list[str], environment: str, claim: str | None, *, editor=native_run,
+def migrate(game: Path, region_ids: list[str], environment: str, claim: str | None, *, only=None, editor=native_run,
             out: Path = REPO / 'build/yorimichi_v2/migrate', echo=print) -> dict[str, str]:
-    """Save the regions' objects and record each; returns {object id: actor package}."""
+    """Save the regions' objects (`only` these object IDs, when given) and record each; returns {object id: actor
+    package}. `editor` runs the guarded editor part on the plan file and returns its log (tools/editor/session.py
+    runs it in a warm editor)."""
     _, regions = records.discover(game)
     by_id = {r.id: r for r in regions}
     missing = [r for r in region_ids + [environment] if r not in by_id]
+    if only is not None and not set(only) <= {i['id'] for r in region_ids if r in by_id
+                                              for i in load_objects(by_id[r])['objects']}:
+        raise ObjectError(f'{sorted(only)}: not all are objects of {region_ids}')
     if missing:
         raise ObjectError(f'no region record for {missing}')
     maps = {m for r in region_ids for m in by_id[r].maps}
@@ -100,6 +105,10 @@ def migrate(game: Path, region_ids: list[str], environment: str, claim: str | No
     wanted, groups = {}, []
     for rid in region_ids:
         listed = load_objects(by_id[rid])
+        if only is not None:
+            listed['objects'] = [item for item in listed['objects'] if item['id'] in set(only)]
+            if not listed['objects']:
+                continue
         pairs = [(g, item['id'].rsplit('/', 1)[1]) for item in listed['objects'] for g in item['groups']]
         groups.append({'region': rid, 'tag': listed['tag'], 'data': listed['data'],
                        'meshes': [g for g, _ in pairs], 'objects': [o for _, o in pairs]})
@@ -149,9 +158,10 @@ def main(argv=None) -> int:
     parser.add_argument('regions', nargs='+', help='region IDs whose objects.toml to save')
     parser.add_argument('--environment', required=True, help="the region owning the map's manifest")
     parser.add_argument('--claim', help='claims task holding the regions and the environment')
+    parser.add_argument('--only', action='append', help='only this object ID (repeatable)')
     args = parser.parse_args(argv)
     try:
-        migrate(GAME, args.regions, args.environment, args.claim)
+        migrate(GAME, args.regions, args.environment, args.claim, only=args.only)
     except (ObjectError, authority.Unauthorized, save_validate.ValidationError, records.RecordError) as error:
         print(f'object migration failed: {error}', file=sys.stderr)
         return 1

@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "Dom/JsonObject.h"
 #include "Materials/MaterialInterface.h"
+#include "Misc/PackageName.h"
 #include "Misc/Paths.h"
 #include "StaticMeshResources.h"
 #include "Serialization/JsonSerializer.h"
@@ -152,7 +153,17 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     {
         const auto Entry = Value->AsObject();
         const FString Asset = Entry->GetStringField(TEXT("asset"));
-        if (Manifest && Manifest->CoversGroup(Tag, FPaths::GetBaseFilename(Asset))) { ++Saved; continue; }
+        if (Manifest && Manifest->CoversGroup(Tag, FPaths::GetBaseFilename(Asset)))
+        {
+            // Its saved patch draws it; its mesh must still be committed content (checked without loading it).
+            if (FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(Asset))) ++Saved;
+            else
+            {
+                ++Missing;
+                UE_LOG(LogTemp, Error, TEXT("%s missing saved-group mesh %s"), *Tag.ToString().ToUpper(), *Asset);
+            }
+            continue;
+        }
         auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
         if (!Mesh)
         {
@@ -201,7 +212,8 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
         Sign->SetCastShadow(false);
         Sign->RegisterComponent();
     }
-    Region->bGameplayReady = Missing == 0 && Region->SceneryInstances > 0;
+    // A region whose fixed scenery is all saved as objects is ready with no runtime scenery of its own.
+    Region->bGameplayReady = Missing == 0 && (Region->SceneryInstances > 0 || Saved > 0);
     UE_LOG(LogTemp, Display, TEXT("%s ready=%d scenery=%d plants=%d missing=%d outside=%d saved=%d at %s"),
            *Tag.ToString().ToUpper(), Region->bGameplayReady, Region->SceneryInstances, Region->PlantInstances, Missing, Outside, Saved, *Region->GetActorLocation().ToString());
     return Region;

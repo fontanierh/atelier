@@ -64,8 +64,25 @@ def py(code):
     return out.get('output', '').strip()
 
 
-def check(listed: dict, found: dict) -> dict:
-    """{object id: problems} from objects.toml's objects and the game's components per mesh."""
+def expected_instances(data: dict) -> dict[str, int]:
+    """{group mesh: instances the runtime places} from the region's runtime file, with ABelmonteRegion's own filter
+    (SceneryTransforms: inside the district's bounds plus 100 m), so a saved group drawing fewer is missing geometry."""
+    x0, y0, x1, y1 = data['bounds_m']
+    ox, oy, _ = data['origin_cm']
+    counts = {}
+    for entry in data['groups']:
+        mesh = entry['asset'].rsplit('/', 1)[-1].split('.', 1)[0]
+        inside = 0
+        for item in entry['transforms']:
+            x, y = (ox + item['translation_cm'][0]) / 100., -(oy + item['translation_cm'][1]) / 100.
+            inside += x0 - 100. <= x <= x1 + 100. and y0 - 100. <= y <= y1 + 100.
+        counts[mesh] = inside
+    return counts
+
+
+def check(listed: dict, found: dict, expected: dict[str, int]) -> dict:
+    """{object id: problems} from objects.toml's objects, the game's components per mesh and the instances each
+    group must draw (expected_instances)."""
     problems = {}
     for item in listed['objects']:
         key = f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'
@@ -76,6 +93,10 @@ def check(listed: dict, found: dict) -> dict:
             mine = [r for r in rows if r[0] == 'V2ScenePatch' and r[1] == key]
             if len(mine) != 1:
                 wrong.append(f'{mesh}: {len(mine)} saved copies')
+            elif mesh not in expected or expected[mesh] < 1:
+                wrong.append(f'{mesh}: the runtime file places no instance of it')
+            elif mine[0][2] != expected[mesh]:
+                wrong.append(f'{mesh}: {mine[0][2]} instance(s) drawn, {expected[mesh]} expected')
             others = [r for r in rows if r not in mine]
             if others:
                 wrong.append(f'{mesh}: also drawn by {", ".join(f"{r[0]} {r[1]}" for r in others[:3])}')
@@ -109,7 +130,8 @@ def main(argv=None):
         return 2
     time.sleep(args.settle)
     found = json.loads(py(f'print(objects_found({meshes!r}))'))
-    problems = check(listed, found)
+    expected = expected_instances(json.loads((GAME / 'unreal/Content/Data' / listed['data']).read_text()))
+    problems = check(listed, found, expected)
     for item in listed['objects']:
         key = f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'
         rows = [r for m in meshes for r in found.get(m, []) if r[1] == key]

@@ -107,3 +107,15 @@ def test_objects_toml_is_checked(game):
     with pytest.raises(objects.ObjectError, match='object/'):
         objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=editor(game), out=game / 'out',
                         echo=lambda *_: None)
+
+
+def test_only_names_a_subset_and_refuses_an_unknown_object(game):
+    path = game / 'world/regions/w09-cove/objects.toml'
+    path.write_text(path.read_text() + '\n[[objects]]\nid = "object/cove/fort"\ngroup = "SM_BC_Landmarks_3_5"\n'
+                    'model = "adopted/cove/fort"\nabout = "the fort"\n')
+    made = objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, only=['object/cove/wreck'],
+                           editor=editor(game), out=game / 'out', echo=lambda *_: None)
+    assert made == {'object/cove/wreck': WRECK} and not (game / 'assets/object/cove/fort').exists()
+    with pytest.raises(objects.ObjectError, match='not all are objects'):
+        objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, only=['object/cove/mast'],
+                        editor=editor(game), out=game / 'out', echo=lambda *_: None)
