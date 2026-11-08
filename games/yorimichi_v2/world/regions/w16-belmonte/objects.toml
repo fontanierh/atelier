@@ -646,6 +646,540 @@ model = "adopted/belmonte/north-country"
 about = "Belmonte north-country (108 groups)"
 
 [[objects]]
+id = "object/belmonte/plant-bush-flower-a"
+group = "Bush_Flower_A"
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-flower-a (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-0-10"
+groups = ["Bush_Green_B@0_43", "Bush_Green_B@1_41", "Bush_Green_B@1_42", "Bush_Green_B@2_40", "Bush_Green_B@2_41", "Bush_Green_B@2_42", "Bush_Green_B@2_43", "Bush_Green_B@3_40", "Bush_Green_B@3_41", "Bush_Green_B@3_42"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-0-10 (10 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-0-11"
+group = "Bush_Green_B@0_44"
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-0-11 (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-0-7"
+groups = ["Bush_Green_B@0_31", "Bush_Green_B@1_30", "Bush_Green_B@1_31", "Bush_Green_B@2_31", "Bush_Green_B@3_31"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-0-7 (5 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-0-8"
+groups = ["Bush_Green_B@0_32", "Bush_Green_B@0_33", "Bush_Green_B@1_33", "Bush_Green_B@1_34", "Bush_Green_B@1_35", "Bush_Green_B@2_32", "Bush_Green_B@2_33", "Bush_Green_B@2_34", "Bush_Green_B@3_32", "Bush_Green_B@3_33", "Bush_Green_B@3_34", "Bush_Green_B@3_35"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-0-8 (12 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-0-9"
+groups = ["Bush_Green_B@0_36", "Bush_Green_B@0_37", "Bush_Green_B@0_38", "Bush_Green_B@1_36", "Bush_Green_B@1_37", "Bush_Green_B@1_38", "Bush_Green_B@1_39", "Bush_Green_B@2_36", "Bush_Green_B@2_37", "Bush_Green_B@2_38", "Bush_Green_B@2_39", "Bush_Green_B@3_36", "Bush_Green_B@3_38", "Bush_Green_B@3_39"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-0-9 (14 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-1-10"
+groups = ["Bush_Green_B@4_41", "Bush_Green_B@5_40", "Bush_Green_B@5_41", "Bush_Green_B@6_40", "Bush_Green_B@6_41", "Bush_Green_B@6_42", "Bush_Green_B@6_43", "Bush_Green_B@7_40", "Bush_Green_B@7_42", "Bush_Green_B@7_43"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-1-10 (10 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-1-11"
+groups = ["Bush_Green_B@6_44", "Bush_Green_B@7_44"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-1-11 (2 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-1-7"
+groups = ["Bush_Green_B@4_31", "Bush_Green_B@5_30", "Bush_Green_B@5_31", "Bush_Green_B@6_30", "Bush_Green_B@6_31", "Bush_Green_B@7_30", "Bush_Green_B@7_31"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-1-7 (7 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-1-8"
+groups = ["Bush_Green_B@4_32", "Bush_Green_B@4_33", "Bush_Green_B@4_34", "Bush_Green_B@4_35", "Bush_Green_B@5_32", "Bush_Green_B@5_33", "Bush_Green_B@5_34", "Bush_Green_B@5_35", "Bush_Green_B@6_32", "Bush_Green_B@6_35", "Bush_Green_B@7_32", "Bush_Green_B@7_33", "Bush_Green_B@7_34", "Bush_Green_B@7_35"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-1-8 (14 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-1-9"
+groups = ["Bush_Green_B@4_36", "Bush_Green_B@4_37", "Bush_Green_B@4_38", "Bush_Green_B@4_39", "Bush_Green_B@5_36", "Bush_Green_B@6_36", "Bush_Green_B@6_37", "Bush_Green_B@6_38", "Bush_Green_B@6_39", "Bush_Green_B@7_36", "Bush_Green_B@7_38", "Bush_Green_B@7_39"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-1-9 (12 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-2-10"
+groups = ["Bush_Green_B@8_41", "Bush_Green_B@8_42", "Bush_Green_B@8_43", "Bush_Green_B@9_40", "Bush_Green_B@9_41", "Bush_Green_B@9_42", "Bush_Green_B@10_40", "Bush_Green_B@10_41", "Bush_Green_B@10_42", "Bush_Green_B@10_43", "Bush_Green_B@11_43"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-2-10 (11 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-2-11"
+groups = ["Bush_Green_B@10_44", "Bush_Green_B@11_44"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-2-11 (2 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-2-7"
+groups = ["Bush_Green_B@8_30", "Bush_Green_B@8_31", "Bush_Green_B@9_30", "Bush_Green_B@9_31", "Bush_Green_B@10_31", "Bush_Green_B@11_31"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-2-7 (6 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-2-8"
+groups = ["Bush_Green_B@8_32", "Bush_Green_B@8_34", "Bush_Green_B@8_35", "Bush_Green_B@9_32", "Bush_Green_B@9_34", "Bush_Green_B@9_35", "Bush_Green_B@10_32", "Bush_Green_B@10_34", "Bush_Green_B@10_35", "Bush_Green_B@11_32", "Bush_Green_B@11_34", "Bush_Green_B@11_35"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-2-8 (12 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-2-9"
+groups = ["Bush_Green_B@8_36", "Bush_Green_B@8_37", "Bush_Green_B@8_38", "Bush_Green_B@8_39", "Bush_Green_B@9_36", "Bush_Green_B@9_37", "Bush_Green_B@9_38", "Bush_Green_B@9_39", "Bush_Green_B@10_37", "Bush_Green_B@10_38", "Bush_Green_B@10_39", "Bush_Green_B@11_36", "Bush_Green_B@11_37", "Bush_Green_B@11_38"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-2-9 (14 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-3-8"
+groups = ["Bush_Green_B@12_32", "Bush_Green_B@12_35"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-3-8 (2 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-3-9"
+group = "Bush_Green_B@12_36"
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-3-9 (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-m1-10"
+groups = ["Bush_Green_B@-4_40", "Bush_Green_B@-4_41", "Bush_Green_B@-4_43", "Bush_Green_B@-3_40", "Bush_Green_B@-3_42", "Bush_Green_B@-2_41", "Bush_Green_B@-2_42", "Bush_Green_B@-1_40", "Bush_Green_B@-1_41", "Bush_Green_B@-1_42"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-m1-10 (10 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-m1-11"
+groups = ["Bush_Green_B@-3_44", "Bush_Green_B@-1_44"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-m1-11 (2 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-m1-7"
+groups = ["Bush_Green_B@-3_30", "Bush_Green_B@-3_31", "Bush_Green_B@-2_30", "Bush_Green_B@-2_31", "Bush_Green_B@-1_30", "Bush_Green_B@-1_31"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-m1-7 (6 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-m1-8"
+groups = ["Bush_Green_B@-4_33", "Bush_Green_B@-4_34", "Bush_Green_B@-3_32", "Bush_Green_B@-3_33", "Bush_Green_B@-3_34", "Bush_Green_B@-2_32", "Bush_Green_B@-2_33", "Bush_Green_B@-2_34", "Bush_Green_B@-1_32", "Bush_Green_B@-1_33", "Bush_Green_B@-1_34"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-m1-8 (11 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-bush-green-b-m1-9"
+groups = ["Bush_Green_B@-4_38", "Bush_Green_B@-4_39", "Bush_Green_B@-3_37", "Bush_Green_B@-3_38", "Bush_Green_B@-3_39", "Bush_Green_B@-2_37", "Bush_Green_B@-2_38", "Bush_Green_B@-2_39", "Bush_Green_B@-1_36", "Bush_Green_B@-1_37", "Bush_Green_B@-1_38", "Bush_Green_B@-1_39"]
+model = "adopted/japan/assets/bush"
+about = "Belmonte plant-bush-green-b-m1-9 (12 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-grass-a"
+group = "Grass_A"
+model = "adopted/japan/assets/grass"
+about = "Belmonte plant-grass-a (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-forest-ginkgo"
+group = "Tree_Forest_Ginkgo"
+model = "adopted/japan/assets/tree-forest"
+about = "Belmonte plant-tree-forest-ginkgo (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-forest-maple"
+group = "Tree_Forest_Maple"
+model = "adopted/japan/assets/tree-forest"
+about = "Belmonte plant-tree-forest-maple (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-forest-pine"
+group = "Tree_Forest_Pine"
+model = "adopted/japan/assets/tree-forest"
+about = "Belmonte plant-tree-forest-pine (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-cypress"
+group = "Tree_Tuscan_Cypress"
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-cypress (1 group)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-0-10"
+groups = ["Tree_Tuscan_Oak@0_40", "Tree_Tuscan_Oak@0_41", "Tree_Tuscan_Oak@0_42", "Tree_Tuscan_Oak@0_43", "Tree_Tuscan_Oak@1_41", "Tree_Tuscan_Oak@1_42", "Tree_Tuscan_Oak@1_43", "Tree_Tuscan_Oak@2_41", "Tree_Tuscan_Oak@2_42", "Tree_Tuscan_Oak@2_43", "Tree_Tuscan_Oak@3_40", "Tree_Tuscan_Oak@3_41", "Tree_Tuscan_Oak@3_42", "Tree_Tuscan_Oak@3_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-0-10 (14 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-0-11"
+groups = ["Tree_Tuscan_Oak@0_44", "Tree_Tuscan_Oak@0_45", "Tree_Tuscan_Oak@1_44", "Tree_Tuscan_Oak@1_45", "Tree_Tuscan_Oak@2_44", "Tree_Tuscan_Oak@2_45", "Tree_Tuscan_Oak@3_44", "Tree_Tuscan_Oak@3_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-0-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-0-7"
+groups = ["Tree_Tuscan_Oak@0_28", "Tree_Tuscan_Oak@0_29", "Tree_Tuscan_Oak@0_30", "Tree_Tuscan_Oak@0_31", "Tree_Tuscan_Oak@1_28", "Tree_Tuscan_Oak@1_29", "Tree_Tuscan_Oak@1_30", "Tree_Tuscan_Oak@1_31", "Tree_Tuscan_Oak@2_28", "Tree_Tuscan_Oak@2_29", "Tree_Tuscan_Oak@2_30", "Tree_Tuscan_Oak@2_31", "Tree_Tuscan_Oak@3_28", "Tree_Tuscan_Oak@3_29", "Tree_Tuscan_Oak@3_30", "Tree_Tuscan_Oak@3_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-0-7 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-0-8"
+groups = ["Tree_Tuscan_Oak@0_32", "Tree_Tuscan_Oak@0_33", "Tree_Tuscan_Oak@0_34", "Tree_Tuscan_Oak@0_35", "Tree_Tuscan_Oak@1_32", "Tree_Tuscan_Oak@1_33", "Tree_Tuscan_Oak@1_34", "Tree_Tuscan_Oak@1_35", "Tree_Tuscan_Oak@2_32", "Tree_Tuscan_Oak@2_33", "Tree_Tuscan_Oak@2_34", "Tree_Tuscan_Oak@2_35", "Tree_Tuscan_Oak@3_32", "Tree_Tuscan_Oak@3_33", "Tree_Tuscan_Oak@3_34", "Tree_Tuscan_Oak@3_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-0-8 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-0-9"
+groups = ["Tree_Tuscan_Oak@0_36", "Tree_Tuscan_Oak@0_37", "Tree_Tuscan_Oak@0_38", "Tree_Tuscan_Oak@0_39", "Tree_Tuscan_Oak@1_36", "Tree_Tuscan_Oak@1_37", "Tree_Tuscan_Oak@2_36", "Tree_Tuscan_Oak@2_37", "Tree_Tuscan_Oak@3_36", "Tree_Tuscan_Oak@3_37"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-0-9 (10 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-1-10"
+groups = ["Tree_Tuscan_Oak@4_40", "Tree_Tuscan_Oak@4_41", "Tree_Tuscan_Oak@4_42", "Tree_Tuscan_Oak@4_43", "Tree_Tuscan_Oak@5_40", "Tree_Tuscan_Oak@5_41", "Tree_Tuscan_Oak@5_42", "Tree_Tuscan_Oak@5_43", "Tree_Tuscan_Oak@6_40", "Tree_Tuscan_Oak@6_41", "Tree_Tuscan_Oak@6_42", "Tree_Tuscan_Oak@6_43", "Tree_Tuscan_Oak@7_40", "Tree_Tuscan_Oak@7_41", "Tree_Tuscan_Oak@7_42", "Tree_Tuscan_Oak@7_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-1-10 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-1-11"
+groups = ["Tree_Tuscan_Oak@4_44", "Tree_Tuscan_Oak@4_45", "Tree_Tuscan_Oak@5_44", "Tree_Tuscan_Oak@5_45", "Tree_Tuscan_Oak@6_44", "Tree_Tuscan_Oak@6_45", "Tree_Tuscan_Oak@7_44", "Tree_Tuscan_Oak@7_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-1-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-1-7"
+groups = ["Tree_Tuscan_Oak@4_28", "Tree_Tuscan_Oak@4_29", "Tree_Tuscan_Oak@4_30", "Tree_Tuscan_Oak@4_31", "Tree_Tuscan_Oak@5_28", "Tree_Tuscan_Oak@5_29", "Tree_Tuscan_Oak@5_30", "Tree_Tuscan_Oak@5_31", "Tree_Tuscan_Oak@6_28", "Tree_Tuscan_Oak@6_29", "Tree_Tuscan_Oak@6_30", "Tree_Tuscan_Oak@6_31", "Tree_Tuscan_Oak@7_28", "Tree_Tuscan_Oak@7_29", "Tree_Tuscan_Oak@7_30", "Tree_Tuscan_Oak@7_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-1-7 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-1-8"
+groups = ["Tree_Tuscan_Oak@4_32", "Tree_Tuscan_Oak@4_33", "Tree_Tuscan_Oak@4_34", "Tree_Tuscan_Oak@4_35", "Tree_Tuscan_Oak@5_32", "Tree_Tuscan_Oak@5_33", "Tree_Tuscan_Oak@5_34", "Tree_Tuscan_Oak@5_35", "Tree_Tuscan_Oak@6_32", "Tree_Tuscan_Oak@6_33", "Tree_Tuscan_Oak@6_34", "Tree_Tuscan_Oak@6_35", "Tree_Tuscan_Oak@7_32", "Tree_Tuscan_Oak@7_33", "Tree_Tuscan_Oak@7_34", "Tree_Tuscan_Oak@7_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-1-8 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-1-9"
+groups = ["Tree_Tuscan_Oak@4_36", "Tree_Tuscan_Oak@4_37", "Tree_Tuscan_Oak@5_36", "Tree_Tuscan_Oak@5_37", "Tree_Tuscan_Oak@5_38", "Tree_Tuscan_Oak@5_39", "Tree_Tuscan_Oak@6_37", "Tree_Tuscan_Oak@6_38", "Tree_Tuscan_Oak@6_39", "Tree_Tuscan_Oak@7_37", "Tree_Tuscan_Oak@7_38", "Tree_Tuscan_Oak@7_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-1-9 (12 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-2-10"
+groups = ["Tree_Tuscan_Oak@8_40", "Tree_Tuscan_Oak@8_41", "Tree_Tuscan_Oak@8_42", "Tree_Tuscan_Oak@8_43", "Tree_Tuscan_Oak@9_40", "Tree_Tuscan_Oak@9_41", "Tree_Tuscan_Oak@9_42", "Tree_Tuscan_Oak@9_43", "Tree_Tuscan_Oak@10_40", "Tree_Tuscan_Oak@10_41", "Tree_Tuscan_Oak@10_42", "Tree_Tuscan_Oak@10_43", "Tree_Tuscan_Oak@11_40", "Tree_Tuscan_Oak@11_41", "Tree_Tuscan_Oak@11_42", "Tree_Tuscan_Oak@11_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-2-10 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-2-11"
+groups = ["Tree_Tuscan_Oak@8_44", "Tree_Tuscan_Oak@8_45", "Tree_Tuscan_Oak@9_44", "Tree_Tuscan_Oak@9_45", "Tree_Tuscan_Oak@10_44", "Tree_Tuscan_Oak@10_45", "Tree_Tuscan_Oak@11_44", "Tree_Tuscan_Oak@11_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-2-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-2-7"
+groups = ["Tree_Tuscan_Oak@8_28", "Tree_Tuscan_Oak@8_29", "Tree_Tuscan_Oak@8_30", "Tree_Tuscan_Oak@8_31", "Tree_Tuscan_Oak@9_28", "Tree_Tuscan_Oak@9_29", "Tree_Tuscan_Oak@9_30", "Tree_Tuscan_Oak@9_31", "Tree_Tuscan_Oak@10_28", "Tree_Tuscan_Oak@10_29", "Tree_Tuscan_Oak@10_30", "Tree_Tuscan_Oak@10_31", "Tree_Tuscan_Oak@11_28", "Tree_Tuscan_Oak@11_29", "Tree_Tuscan_Oak@11_30", "Tree_Tuscan_Oak@11_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-2-7 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-2-8"
+groups = ["Tree_Tuscan_Oak@8_32", "Tree_Tuscan_Oak@8_33", "Tree_Tuscan_Oak@8_34", "Tree_Tuscan_Oak@8_35", "Tree_Tuscan_Oak@9_32", "Tree_Tuscan_Oak@9_33", "Tree_Tuscan_Oak@9_34", "Tree_Tuscan_Oak@9_35", "Tree_Tuscan_Oak@10_32", "Tree_Tuscan_Oak@10_33", "Tree_Tuscan_Oak@10_34", "Tree_Tuscan_Oak@10_35", "Tree_Tuscan_Oak@11_32", "Tree_Tuscan_Oak@11_33", "Tree_Tuscan_Oak@11_34", "Tree_Tuscan_Oak@11_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-2-8 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-2-9"
+groups = ["Tree_Tuscan_Oak@8_36", "Tree_Tuscan_Oak@8_37", "Tree_Tuscan_Oak@8_38", "Tree_Tuscan_Oak@8_39", "Tree_Tuscan_Oak@9_36", "Tree_Tuscan_Oak@9_37", "Tree_Tuscan_Oak@9_38", "Tree_Tuscan_Oak@9_39", "Tree_Tuscan_Oak@10_36", "Tree_Tuscan_Oak@10_37", "Tree_Tuscan_Oak@10_38", "Tree_Tuscan_Oak@10_39", "Tree_Tuscan_Oak@11_36", "Tree_Tuscan_Oak@11_37", "Tree_Tuscan_Oak@11_38", "Tree_Tuscan_Oak@11_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-2-9 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-3-10"
+groups = ["Tree_Tuscan_Oak@12_40", "Tree_Tuscan_Oak@12_41", "Tree_Tuscan_Oak@12_42", "Tree_Tuscan_Oak@12_43", "Tree_Tuscan_Oak@13_40", "Tree_Tuscan_Oak@13_41", "Tree_Tuscan_Oak@13_42", "Tree_Tuscan_Oak@13_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-3-10 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-3-11"
+groups = ["Tree_Tuscan_Oak@12_44", "Tree_Tuscan_Oak@12_45", "Tree_Tuscan_Oak@13_44"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-3-11 (3 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-3-7"
+groups = ["Tree_Tuscan_Oak@12_28", "Tree_Tuscan_Oak@12_29", "Tree_Tuscan_Oak@12_30", "Tree_Tuscan_Oak@12_31", "Tree_Tuscan_Oak@13_28", "Tree_Tuscan_Oak@13_29", "Tree_Tuscan_Oak@13_30", "Tree_Tuscan_Oak@13_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-3-7 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-3-8"
+groups = ["Tree_Tuscan_Oak@12_32", "Tree_Tuscan_Oak@12_33", "Tree_Tuscan_Oak@12_34", "Tree_Tuscan_Oak@12_35", "Tree_Tuscan_Oak@13_32", "Tree_Tuscan_Oak@13_33", "Tree_Tuscan_Oak@13_34", "Tree_Tuscan_Oak@13_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-3-8 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-3-9"
+groups = ["Tree_Tuscan_Oak@12_36", "Tree_Tuscan_Oak@12_37", "Tree_Tuscan_Oak@12_38", "Tree_Tuscan_Oak@12_39", "Tree_Tuscan_Oak@13_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-3-9 (5 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m1-10"
+groups = ["Tree_Tuscan_Oak@-4_40", "Tree_Tuscan_Oak@-4_41", "Tree_Tuscan_Oak@-4_42", "Tree_Tuscan_Oak@-4_43", "Tree_Tuscan_Oak@-3_40", "Tree_Tuscan_Oak@-3_41", "Tree_Tuscan_Oak@-3_42", "Tree_Tuscan_Oak@-3_43", "Tree_Tuscan_Oak@-2_40", "Tree_Tuscan_Oak@-2_41", "Tree_Tuscan_Oak@-2_42", "Tree_Tuscan_Oak@-2_43", "Tree_Tuscan_Oak@-1_40", "Tree_Tuscan_Oak@-1_41", "Tree_Tuscan_Oak@-1_42", "Tree_Tuscan_Oak@-1_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m1-10 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m1-11"
+groups = ["Tree_Tuscan_Oak@-4_44", "Tree_Tuscan_Oak@-4_45", "Tree_Tuscan_Oak@-3_44", "Tree_Tuscan_Oak@-3_45", "Tree_Tuscan_Oak@-2_44", "Tree_Tuscan_Oak@-2_45", "Tree_Tuscan_Oak@-1_44", "Tree_Tuscan_Oak@-1_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m1-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m1-7"
+groups = ["Tree_Tuscan_Oak@-4_28", "Tree_Tuscan_Oak@-4_29", "Tree_Tuscan_Oak@-4_30", "Tree_Tuscan_Oak@-4_31", "Tree_Tuscan_Oak@-3_28", "Tree_Tuscan_Oak@-3_29", "Tree_Tuscan_Oak@-3_30", "Tree_Tuscan_Oak@-3_31", "Tree_Tuscan_Oak@-2_28", "Tree_Tuscan_Oak@-2_29", "Tree_Tuscan_Oak@-2_30", "Tree_Tuscan_Oak@-2_31", "Tree_Tuscan_Oak@-1_28", "Tree_Tuscan_Oak@-1_29", "Tree_Tuscan_Oak@-1_30", "Tree_Tuscan_Oak@-1_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m1-7 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m1-8"
+groups = ["Tree_Tuscan_Oak@-4_32", "Tree_Tuscan_Oak@-4_33", "Tree_Tuscan_Oak@-4_34", "Tree_Tuscan_Oak@-4_35", "Tree_Tuscan_Oak@-3_32", "Tree_Tuscan_Oak@-3_33", "Tree_Tuscan_Oak@-3_34", "Tree_Tuscan_Oak@-3_35", "Tree_Tuscan_Oak@-2_32", "Tree_Tuscan_Oak@-2_33", "Tree_Tuscan_Oak@-2_34", "Tree_Tuscan_Oak@-2_35", "Tree_Tuscan_Oak@-1_32", "Tree_Tuscan_Oak@-1_33", "Tree_Tuscan_Oak@-1_34", "Tree_Tuscan_Oak@-1_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m1-8 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m1-9"
+groups = ["Tree_Tuscan_Oak@-4_36", "Tree_Tuscan_Oak@-4_37", "Tree_Tuscan_Oak@-4_38", "Tree_Tuscan_Oak@-4_39", "Tree_Tuscan_Oak@-3_36", "Tree_Tuscan_Oak@-3_37", "Tree_Tuscan_Oak@-3_38", "Tree_Tuscan_Oak@-3_39", "Tree_Tuscan_Oak@-2_36", "Tree_Tuscan_Oak@-2_37", "Tree_Tuscan_Oak@-2_38", "Tree_Tuscan_Oak@-2_39", "Tree_Tuscan_Oak@-1_36", "Tree_Tuscan_Oak@-1_37", "Tree_Tuscan_Oak@-1_38", "Tree_Tuscan_Oak@-1_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m1-9 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m2-10"
+groups = ["Tree_Tuscan_Oak@-6_40", "Tree_Tuscan_Oak@-6_41", "Tree_Tuscan_Oak@-6_42", "Tree_Tuscan_Oak@-6_43", "Tree_Tuscan_Oak@-5_40", "Tree_Tuscan_Oak@-5_41", "Tree_Tuscan_Oak@-5_42", "Tree_Tuscan_Oak@-5_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m2-10 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m2-11"
+groups = ["Tree_Tuscan_Oak@-6_44", "Tree_Tuscan_Oak@-5_44", "Tree_Tuscan_Oak@-5_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m2-11 (3 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m2-7"
+groups = ["Tree_Tuscan_Oak@-6_29", "Tree_Tuscan_Oak@-6_30", "Tree_Tuscan_Oak@-6_31", "Tree_Tuscan_Oak@-5_28", "Tree_Tuscan_Oak@-5_29", "Tree_Tuscan_Oak@-5_30", "Tree_Tuscan_Oak@-5_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m2-7 (7 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m2-8"
+groups = ["Tree_Tuscan_Oak@-6_32", "Tree_Tuscan_Oak@-6_34", "Tree_Tuscan_Oak@-6_35", "Tree_Tuscan_Oak@-5_32", "Tree_Tuscan_Oak@-5_33", "Tree_Tuscan_Oak@-5_34", "Tree_Tuscan_Oak@-5_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m2-8 (7 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-oak-m2-9"
+groups = ["Tree_Tuscan_Oak@-6_36", "Tree_Tuscan_Oak@-6_37", "Tree_Tuscan_Oak@-6_38", "Tree_Tuscan_Oak@-6_39", "Tree_Tuscan_Oak@-5_36", "Tree_Tuscan_Oak@-5_37", "Tree_Tuscan_Oak@-5_38", "Tree_Tuscan_Oak@-5_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-oak-m2-9 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-0-10"
+groups = ["Tree_Tuscan_Olive@0_40", "Tree_Tuscan_Olive@1_42", "Tree_Tuscan_Olive@1_43", "Tree_Tuscan_Olive@2_40", "Tree_Tuscan_Olive@2_42", "Tree_Tuscan_Olive@3_40", "Tree_Tuscan_Olive@3_41", "Tree_Tuscan_Olive@3_42", "Tree_Tuscan_Olive@3_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-0-10 (9 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-0-11"
+groups = ["Tree_Tuscan_Olive@0_44", "Tree_Tuscan_Olive@0_45", "Tree_Tuscan_Olive@1_44", "Tree_Tuscan_Olive@1_45", "Tree_Tuscan_Olive@2_44", "Tree_Tuscan_Olive@2_45", "Tree_Tuscan_Olive@3_44", "Tree_Tuscan_Olive@3_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-0-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-0-7"
+groups = ["Tree_Tuscan_Olive@0_28", "Tree_Tuscan_Olive@0_29", "Tree_Tuscan_Olive@0_30", "Tree_Tuscan_Olive@0_31", "Tree_Tuscan_Olive@1_28", "Tree_Tuscan_Olive@1_29", "Tree_Tuscan_Olive@1_30", "Tree_Tuscan_Olive@1_31", "Tree_Tuscan_Olive@2_28", "Tree_Tuscan_Olive@2_29", "Tree_Tuscan_Olive@2_30", "Tree_Tuscan_Olive@2_31", "Tree_Tuscan_Olive@3_28", "Tree_Tuscan_Olive@3_29", "Tree_Tuscan_Olive@3_30", "Tree_Tuscan_Olive@3_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-0-7 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-0-8"
+groups = ["Tree_Tuscan_Olive@0_32", "Tree_Tuscan_Olive@0_33", "Tree_Tuscan_Olive@0_35", "Tree_Tuscan_Olive@1_32", "Tree_Tuscan_Olive@1_33", "Tree_Tuscan_Olive@1_34", "Tree_Tuscan_Olive@1_35", "Tree_Tuscan_Olive@2_32", "Tree_Tuscan_Olive@2_33", "Tree_Tuscan_Olive@2_34", "Tree_Tuscan_Olive@2_35", "Tree_Tuscan_Olive@3_32", "Tree_Tuscan_Olive@3_33", "Tree_Tuscan_Olive@3_34", "Tree_Tuscan_Olive@3_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-0-8 (15 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-0-9"
+groups = ["Tree_Tuscan_Olive@0_36", "Tree_Tuscan_Olive@0_37", "Tree_Tuscan_Olive@0_38", "Tree_Tuscan_Olive@0_39", "Tree_Tuscan_Olive@1_36", "Tree_Tuscan_Olive@2_36", "Tree_Tuscan_Olive@2_37", "Tree_Tuscan_Olive@2_38", "Tree_Tuscan_Olive@2_39", "Tree_Tuscan_Olive@3_36", "Tree_Tuscan_Olive@3_37", "Tree_Tuscan_Olive@3_38", "Tree_Tuscan_Olive@3_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-0-9 (13 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-1-10"
+groups = ["Tree_Tuscan_Olive@4_41", "Tree_Tuscan_Olive@4_43", "Tree_Tuscan_Olive@5_40", "Tree_Tuscan_Olive@5_41", "Tree_Tuscan_Olive@5_42", "Tree_Tuscan_Olive@6_41", "Tree_Tuscan_Olive@6_42", "Tree_Tuscan_Olive@7_40", "Tree_Tuscan_Olive@7_41", "Tree_Tuscan_Olive@7_42", "Tree_Tuscan_Olive@7_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-1-10 (11 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-1-11"
+groups = ["Tree_Tuscan_Olive@4_44", "Tree_Tuscan_Olive@4_45", "Tree_Tuscan_Olive@5_44", "Tree_Tuscan_Olive@5_45", "Tree_Tuscan_Olive@6_44", "Tree_Tuscan_Olive@6_45", "Tree_Tuscan_Olive@7_44", "Tree_Tuscan_Olive@7_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-1-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-1-7"
+groups = ["Tree_Tuscan_Olive@4_28", "Tree_Tuscan_Olive@4_29", "Tree_Tuscan_Olive@4_30", "Tree_Tuscan_Olive@4_31", "Tree_Tuscan_Olive@5_28", "Tree_Tuscan_Olive@5_29", "Tree_Tuscan_Olive@5_30", "Tree_Tuscan_Olive@5_31", "Tree_Tuscan_Olive@6_28", "Tree_Tuscan_Olive@6_29", "Tree_Tuscan_Olive@6_30", "Tree_Tuscan_Olive@6_31", "Tree_Tuscan_Olive@7_28", "Tree_Tuscan_Olive@7_29", "Tree_Tuscan_Olive@7_30", "Tree_Tuscan_Olive@7_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-1-7 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-1-8"
+groups = ["Tree_Tuscan_Olive@4_33", "Tree_Tuscan_Olive@4_34", "Tree_Tuscan_Olive@4_35", "Tree_Tuscan_Olive@5_32", "Tree_Tuscan_Olive@5_33", "Tree_Tuscan_Olive@5_34", "Tree_Tuscan_Olive@5_35", "Tree_Tuscan_Olive@6_32", "Tree_Tuscan_Olive@6_33", "Tree_Tuscan_Olive@6_34", "Tree_Tuscan_Olive@6_35", "Tree_Tuscan_Olive@7_32", "Tree_Tuscan_Olive@7_33", "Tree_Tuscan_Olive@7_34", "Tree_Tuscan_Olive@7_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-1-8 (15 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-1-9"
+groups = ["Tree_Tuscan_Olive@4_36", "Tree_Tuscan_Olive@4_37", "Tree_Tuscan_Olive@4_38", "Tree_Tuscan_Olive@4_39", "Tree_Tuscan_Olive@5_36", "Tree_Tuscan_Olive@5_37", "Tree_Tuscan_Olive@5_38", "Tree_Tuscan_Olive@5_39", "Tree_Tuscan_Olive@6_36", "Tree_Tuscan_Olive@6_37", "Tree_Tuscan_Olive@6_38", "Tree_Tuscan_Olive@6_39", "Tree_Tuscan_Olive@7_36", "Tree_Tuscan_Olive@7_37", "Tree_Tuscan_Olive@7_38"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-1-9 (15 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-2-10"
+groups = ["Tree_Tuscan_Olive@8_40", "Tree_Tuscan_Olive@9_40", "Tree_Tuscan_Olive@9_43", "Tree_Tuscan_Olive@10_40", "Tree_Tuscan_Olive@10_43", "Tree_Tuscan_Olive@11_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-2-10 (6 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-2-11"
+groups = ["Tree_Tuscan_Olive@8_44", "Tree_Tuscan_Olive@8_45", "Tree_Tuscan_Olive@9_44", "Tree_Tuscan_Olive@9_45", "Tree_Tuscan_Olive@10_44", "Tree_Tuscan_Olive@10_45", "Tree_Tuscan_Olive@11_44", "Tree_Tuscan_Olive@11_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-2-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-2-7"
+groups = ["Tree_Tuscan_Olive@8_28", "Tree_Tuscan_Olive@8_29", "Tree_Tuscan_Olive@8_30", "Tree_Tuscan_Olive@8_31", "Tree_Tuscan_Olive@9_28", "Tree_Tuscan_Olive@9_29", "Tree_Tuscan_Olive@9_30", "Tree_Tuscan_Olive@10_28", "Tree_Tuscan_Olive@10_29", "Tree_Tuscan_Olive@10_30", "Tree_Tuscan_Olive@10_31", "Tree_Tuscan_Olive@11_28", "Tree_Tuscan_Olive@11_29", "Tree_Tuscan_Olive@11_30", "Tree_Tuscan_Olive@11_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-2-7 (15 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-2-8"
+groups = ["Tree_Tuscan_Olive@8_32", "Tree_Tuscan_Olive@8_34", "Tree_Tuscan_Olive@8_35", "Tree_Tuscan_Olive@9_34", "Tree_Tuscan_Olive@9_35", "Tree_Tuscan_Olive@10_34", "Tree_Tuscan_Olive@10_35", "Tree_Tuscan_Olive@11_32", "Tree_Tuscan_Olive@11_34", "Tree_Tuscan_Olive@11_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-2-8 (10 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-2-9"
+groups = ["Tree_Tuscan_Olive@8_36", "Tree_Tuscan_Olive@8_37", "Tree_Tuscan_Olive@8_38", "Tree_Tuscan_Olive@8_39", "Tree_Tuscan_Olive@9_36", "Tree_Tuscan_Olive@9_37", "Tree_Tuscan_Olive@9_38", "Tree_Tuscan_Olive@9_39", "Tree_Tuscan_Olive@10_36", "Tree_Tuscan_Olive@10_39", "Tree_Tuscan_Olive@11_36", "Tree_Tuscan_Olive@11_37", "Tree_Tuscan_Olive@11_38", "Tree_Tuscan_Olive@11_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-2-9 (14 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-3-10"
+groups = ["Tree_Tuscan_Olive@12_40", "Tree_Tuscan_Olive@12_41", "Tree_Tuscan_Olive@12_42", "Tree_Tuscan_Olive@12_43", "Tree_Tuscan_Olive@13_40", "Tree_Tuscan_Olive@13_41", "Tree_Tuscan_Olive@13_42", "Tree_Tuscan_Olive@13_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-3-10 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-3-11"
+groups = ["Tree_Tuscan_Olive@12_44", "Tree_Tuscan_Olive@12_45", "Tree_Tuscan_Olive@13_44"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-3-11 (3 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-3-7"
+groups = ["Tree_Tuscan_Olive@12_28", "Tree_Tuscan_Olive@12_29", "Tree_Tuscan_Olive@12_30", "Tree_Tuscan_Olive@12_31", "Tree_Tuscan_Olive@13_28", "Tree_Tuscan_Olive@13_29", "Tree_Tuscan_Olive@13_30", "Tree_Tuscan_Olive@13_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-3-7 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-3-8"
+groups = ["Tree_Tuscan_Olive@12_32", "Tree_Tuscan_Olive@12_33", "Tree_Tuscan_Olive@12_34", "Tree_Tuscan_Olive@12_35", "Tree_Tuscan_Olive@13_32", "Tree_Tuscan_Olive@13_33", "Tree_Tuscan_Olive@13_34", "Tree_Tuscan_Olive@13_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-3-8 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-3-9"
+groups = ["Tree_Tuscan_Olive@12_36", "Tree_Tuscan_Olive@12_37", "Tree_Tuscan_Olive@12_38", "Tree_Tuscan_Olive@12_39", "Tree_Tuscan_Olive@13_38", "Tree_Tuscan_Olive@13_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-3-9 (6 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m1-10"
+groups = ["Tree_Tuscan_Olive@-4_40", "Tree_Tuscan_Olive@-4_41", "Tree_Tuscan_Olive@-4_42", "Tree_Tuscan_Olive@-4_43", "Tree_Tuscan_Olive@-3_40", "Tree_Tuscan_Olive@-3_41", "Tree_Tuscan_Olive@-3_42", "Tree_Tuscan_Olive@-2_40", "Tree_Tuscan_Olive@-2_41", "Tree_Tuscan_Olive@-2_42", "Tree_Tuscan_Olive@-1_40", "Tree_Tuscan_Olive@-1_41"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m1-10 (12 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m1-11"
+groups = ["Tree_Tuscan_Olive@-4_44", "Tree_Tuscan_Olive@-4_45", "Tree_Tuscan_Olive@-3_44", "Tree_Tuscan_Olive@-3_45", "Tree_Tuscan_Olive@-2_44", "Tree_Tuscan_Olive@-2_45", "Tree_Tuscan_Olive@-1_44", "Tree_Tuscan_Olive@-1_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m1-11 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m1-7"
+groups = ["Tree_Tuscan_Olive@-4_28", "Tree_Tuscan_Olive@-4_29", "Tree_Tuscan_Olive@-4_30", "Tree_Tuscan_Olive@-4_31", "Tree_Tuscan_Olive@-3_28", "Tree_Tuscan_Olive@-3_29", "Tree_Tuscan_Olive@-3_30", "Tree_Tuscan_Olive@-3_31", "Tree_Tuscan_Olive@-2_28", "Tree_Tuscan_Olive@-2_29", "Tree_Tuscan_Olive@-2_30", "Tree_Tuscan_Olive@-2_31", "Tree_Tuscan_Olive@-1_28", "Tree_Tuscan_Olive@-1_29", "Tree_Tuscan_Olive@-1_30", "Tree_Tuscan_Olive@-1_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m1-7 (16 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m1-8"
+groups = ["Tree_Tuscan_Olive@-4_32", "Tree_Tuscan_Olive@-4_33", "Tree_Tuscan_Olive@-4_34", "Tree_Tuscan_Olive@-4_35", "Tree_Tuscan_Olive@-3_32", "Tree_Tuscan_Olive@-3_33", "Tree_Tuscan_Olive@-3_34", "Tree_Tuscan_Olive@-2_32", "Tree_Tuscan_Olive@-2_33", "Tree_Tuscan_Olive@-2_34", "Tree_Tuscan_Olive@-1_32", "Tree_Tuscan_Olive@-1_33"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m1-8 (12 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m1-9"
+groups = ["Tree_Tuscan_Olive@-4_36", "Tree_Tuscan_Olive@-4_37", "Tree_Tuscan_Olive@-4_38", "Tree_Tuscan_Olive@-4_39", "Tree_Tuscan_Olive@-3_36", "Tree_Tuscan_Olive@-3_37", "Tree_Tuscan_Olive@-3_38", "Tree_Tuscan_Olive@-3_39", "Tree_Tuscan_Olive@-2_36", "Tree_Tuscan_Olive@-2_37", "Tree_Tuscan_Olive@-2_39", "Tree_Tuscan_Olive@-1_36", "Tree_Tuscan_Olive@-1_37", "Tree_Tuscan_Olive@-1_38", "Tree_Tuscan_Olive@-1_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m1-9 (15 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m2-10"
+groups = ["Tree_Tuscan_Olive@-6_40", "Tree_Tuscan_Olive@-6_41", "Tree_Tuscan_Olive@-6_42", "Tree_Tuscan_Olive@-6_43", "Tree_Tuscan_Olive@-5_40", "Tree_Tuscan_Olive@-5_41", "Tree_Tuscan_Olive@-5_42", "Tree_Tuscan_Olive@-5_43"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m2-10 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m2-11"
+groups = ["Tree_Tuscan_Olive@-6_44", "Tree_Tuscan_Olive@-6_45", "Tree_Tuscan_Olive@-5_44", "Tree_Tuscan_Olive@-5_45"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m2-11 (4 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m2-7"
+groups = ["Tree_Tuscan_Olive@-6_30", "Tree_Tuscan_Olive@-6_31", "Tree_Tuscan_Olive@-5_28", "Tree_Tuscan_Olive@-5_29", "Tree_Tuscan_Olive@-5_30", "Tree_Tuscan_Olive@-5_31"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m2-7 (6 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m2-8"
+groups = ["Tree_Tuscan_Olive@-6_32", "Tree_Tuscan_Olive@-6_34", "Tree_Tuscan_Olive@-6_35", "Tree_Tuscan_Olive@-5_32", "Tree_Tuscan_Olive@-5_33", "Tree_Tuscan_Olive@-5_34", "Tree_Tuscan_Olive@-5_35"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m2-8 (7 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-olive-m2-9"
+groups = ["Tree_Tuscan_Olive@-6_36", "Tree_Tuscan_Olive@-6_37", "Tree_Tuscan_Olive@-6_38", "Tree_Tuscan_Olive@-6_39", "Tree_Tuscan_Olive@-5_36", "Tree_Tuscan_Olive@-5_37", "Tree_Tuscan_Olive@-5_38", "Tree_Tuscan_Olive@-5_39"]
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-olive-m2-9 (8 groups)"
+
+[[objects]]
+id = "object/belmonte/plant-tree-tuscan-pine"
+group = "Tree_Tuscan_Pine"
+model = "adopted/japan/assets/tree-tuscan"
+about = "Belmonte plant-tree-tuscan-pine (1 group)"
+
+[[objects]]
 id = "object/belmonte/prop-amphora"
 group = "SM_BM_BP_Amphora"
 model = "adopted/belmonte/prop-amphora"
@@ -1215,17 +1749,7 @@ group = "SM_BM_BVV_StoneWall"
 model = "adopted/belmonte/village-stone-wall"
 about = "Belmonte village-stone-wall (1 group)"
 
-# Not saved, by reason (the runtime keeps drawing these until the C++ side accepts them):
-# plant: Bush_Flower_A (136 transforms, not culled by bounds)
-# plant: Bush_Green_B (17123 transforms, not culled by bounds)
-# plant: Grass_A (153 transforms, not culled by bounds)
-# plant: Tree_Forest_Ginkgo (404 transforms, not culled by bounds)
-# plant: Tree_Forest_Maple (562 transforms, not culled by bounds)
-# plant: Tree_Forest_Pine (645 transforms, not culled by bounds)
-# plant: Tree_Tuscan_Cypress (3156 transforms, not culled by bounds)
-# plant: Tree_Tuscan_Oak (17538 transforms, not culled by bounds)
-# plant: Tree_Tuscan_Olive (10520 transforms, not culled by bounds)
-# plant: Tree_Tuscan_Pine (5570 transforms, not culled by bounds)
+# Not saved, by reason:
 # outside: SM_BM_BVV_Village_1 (no instance inside the district)
 # outside: SM_BM_BVV_Village_2 (no instance inside the district)
 # outside: SM_BM_BVV_Village_3 (no instance inside the district)

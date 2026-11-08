@@ -488,6 +488,24 @@ model = "adopted/brinecove/plant-broad"
 about = "Brine Cove plant-broad (8 groups)"
 
 [[objects]]
+id = "object/brinecove/plant-cover-fern"
+groups = ["SM_BC_Plant_CoverFern0#511", "SM_BC_Plant_CoverFern0#512", "SM_BC_Plant_CoverFern1#517", "SM_BC_Plant_CoverFern1#518", "SM_BC_Plant_CoverFern2#523", "SM_BC_Plant_CoverFern2#524"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern (6 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass"
+groups = ["SM_BC_Plant_CoverGrass0#513", "SM_BC_Plant_CoverGrass0#514", "SM_BC_Plant_CoverGrass1#519", "SM_BC_Plant_CoverGrass1#520", "SM_BC_Plant_CoverGrass2#525", "SM_BC_Plant_CoverGrass2#526"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass (6 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf"
+groups = ["SM_BC_Plant_CoverLeaf0#515", "SM_BC_Plant_CoverLeaf0#516", "SM_BC_Plant_CoverLeaf1#521", "SM_BC_Plant_CoverLeaf1#522", "SM_BC_Plant_CoverLeaf2#527", "SM_BC_Plant_CoverLeaf2#528"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf (6 groups)"
+
+[[objects]]
 id = "object/brinecove/plant-emergent"
 groups = ["SM_BC_Plant_Emergent0", "SM_BC_Plant_Emergent1", "SM_BC_Plant_Emergent2"]
 model = "adopted/brinecove/plant-emergent"
@@ -1195,13 +1213,4 @@ groups = ["SM_BC_Landmarks_5_3", "SM_BC_Landmarks_5_3_Soft_Piece1", "SM_BC_Landm
 model = "adopted/brinecove/waterfall-canyon"
 about = "Brine Cove waterfall-canyon (15 groups)"
 
-# Not saved, by reason (the runtime keeps drawing these until the C++ side accepts them):
-# duplicate name: SM_BC_Plant_CoverFern0 (2 groups, 32413 transforms)
-# duplicate name: SM_BC_Plant_CoverGrass0 (2 groups, 28953 transforms)
-# duplicate name: SM_BC_Plant_CoverLeaf0 (2 groups, 30656 transforms)
-# duplicate name: SM_BC_Plant_CoverFern1 (2 groups, 32509 transforms)
-# duplicate name: SM_BC_Plant_CoverGrass1 (2 groups, 29416 transforms)
-# duplicate name: SM_BC_Plant_CoverLeaf1 (2 groups, 30826 transforms)
-# duplicate name: SM_BC_Plant_CoverFern2 (2 groups, 32487 transforms)
-# duplicate name: SM_BC_Plant_CoverGrass2 (2 groups, 29141 transforms)
-# duplicate name: SM_BC_Plant_CoverLeaf2 (2 groups, 30559 transforms)
+# Not saved, by reason:

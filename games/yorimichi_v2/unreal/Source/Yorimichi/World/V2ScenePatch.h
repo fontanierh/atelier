@@ -100,12 +100,14 @@ public:
         const TArray<FBox2D>& HeldCm, const TArray<float>& PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated,
         int32& OutKept, FString& Error);
 
-    /** Saves runtime-region scenery groups (ABelmonteRegion's runtime.json `groups`, by mesh name) as objects: one
+    /** Saves runtime-region scenery groups (ABelmonteRegion's runtime.json `groups`, by their V2MigrationTowns::GroupKeys
+     *  key, or a plant group's cell piece "<key>@x_y") as objects: one
      *  AV2ScenePatch per object (Objects[i] names the object of Meshes[i]; a statue cut into cells is one object of
      *  several groups), owned by Region, at the region's origin, holding for each of its groups the component
      *  ABelmonteRegion::MakeGroup builds with the same instances. The groups are listed in the map's manifest
      *  MigratedGroups so the runtime skips only them. An object already saved (its V2Id: region, tag, object) is kept
-     *  as it is, edits included. Plant groups, which join the island's tree lists, are refused. Returns the number of
+     *  as it is, edits included. Plant groups are filtered as the runtime filters them (the gondola clearance) and tagged
+     *  RoleGroup, so RegisterScenePatch joins them to the island's tree lists as the runtime does. Returns the number of
      *  actors created, or -1 with Error set. */
     UFUNCTION(BlueprintCallable, Category = "V2 Migration", meta = (WorldContext = "WorldContext"))
     static int32 MigrateRegionGroups(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
