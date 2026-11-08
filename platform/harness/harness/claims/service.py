@@ -58,6 +58,7 @@ def _routes(store):
             body.get('branch'), body.get('base_revision'), body.get('depends_on'), body.get('reads'))),
         ('GET', r'/tasks/(?P<id>[^/]+)', lambda m, q, body: s.task(m['id'])),
         ('GET', r'/tasks/(?P<id>[^/]+)/coverage', lambda m, q, body: s.coverage(m['id'])),
+        ('POST', r'/tasks/(?P<id>[^/]+)/coverage', lambda m, q, body: s.coverage(m['id'], body.get('paths'))),
         ('POST', r'/tasks/(?P<id>[^/]+)/update', lambda m, q, body: s.update_task(
             body.get('actor'), m['id'], body.get('status'), body.get('branch'), body.get('base_revision'), body.get('note'))),
         ('POST', r'/tasks/(?P<id>[^/]+)/push', lambda m, q, body: s.record_push(

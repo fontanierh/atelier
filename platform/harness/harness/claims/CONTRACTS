@@ -11,8 +11,9 @@ Ownership MUST come from the claim, never from an LFS account match.
 
 @cc [owner:fontanierh,label:safety] fail-closed
 An unreachable or unverifiable service, LFS server or Git remote MUST refuse grants, activation and protected
-checks. Every protected check MUST re-verify the task's active claims live (each LFS lock's path, ID and owner on
-the remote, and the base against the target branch); stored state alone MUST NOT pass it. A restarted service
+checks. Every protected check MUST re-verify the task's active claims live for the paths it checks (the LFS lock
+of each checked path: its path, ID and owner on the remote; and each claim's base against the target branch);
+stored state alone MUST NOT pass it. A restarted service
 MUST refuse grants until a reconcile pass completed. Unprotected changes MAY pass.
 
 @cc [owner:fontanierh,label:safety] proven-own-unlock
