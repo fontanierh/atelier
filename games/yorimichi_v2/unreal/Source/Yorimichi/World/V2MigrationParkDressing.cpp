@@ -114,7 +114,29 @@ int32 UV2MigrationParkDressing::MigrateParkTrees(UObject* WorldContext, FName Re
     for (const FString& Unit : Units)
     {
         const FString Id = StableId({Region.ToString(), Tag.ToString(), TEXT("trees/") + Unit});
-        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        if (AV2ScenePatch** Kept = Existing.Find(Id))
+        {
+            // A kept unit was saved with its trees then (ExpectedMembers: "mesh|tags|instances" per species). Trees the
+            // unit gained since would be hidden by its listing and never saved: refuse when the counts differ. Later
+            // editor edits change Members(), not ExpectedMembers, so they never trip this.
+            TMap<FString, int32> Saved, Now;
+            for (const FString& Member : (*Kept)->ExpectedMembers)
+            {
+                TArray<FString> Parts;
+                Member.ParseIntoArray(Parts, TEXT("|"), false);
+                if (Parts.Num() == 3) Saved.FindOrAdd(Parts[0]) += FCString::Atoi(*Parts[2]);
+            }
+            const TMap<FString, TArray<FTransform>>& Groups = UnitTrees.FindChecked(Unit);
+            for (const FString& Sp : UnitSpecies.FindChecked(Unit))
+                Now.Add(FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Sp, *Sp), Groups.FindChecked(Sp).Num());
+            if (!Saved.OrderIndependentCompareEqual(Now))
+            {
+                Error = Unit + TEXT(": its trees changed since it was saved; delete its patch and rerun to remake it");
+                break;
+            }
+            ++OutKept;
+            continue;
+        }
         AV2ScenePatch* Made = SpawnUnitPatch(World, Region, Tag, Placement, Id, TagKey + TEXT(":trees/") + Unit);
         if (!Made) { Error = Unit + TEXT(": could not spawn its patch"); break; }
         OutCreated.Add(Made);
