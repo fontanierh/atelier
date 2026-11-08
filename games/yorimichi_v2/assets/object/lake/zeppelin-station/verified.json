@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/zeppelin-station",
+  "dependencies": {
+    "adopted/japan/assets/zeppelin": "68917ea1113cddbfa1331cd0f54cf9e52dc75aa8783dcfce79f4474673bded6a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/DP/UC41C1NEINY8NRQ1HW8CQZ.uasset": "b6ccfa2c3d55eafa0702e4740a709e921ef6281f08541e0ce0660dd62de9743b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

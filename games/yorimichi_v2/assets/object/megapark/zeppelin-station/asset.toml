@@ -1,0 +1,12 @@
+# One saved object of region/w11-megapark (tools/migrate/objects.py, from its objects.toml): the Mega Park zeppelin station (ZP_MegaPark).
+# Its placement is this actor package; its model is adopted/japan/assets/zeppelin. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/megapark/zeppelin-station"
+kind = "placement"
+authority = "editor"
+owner = "region/w11-megapark"
+references = ["adopted/japan/assets/zeppelin"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/8W/0POXB3YO9H0L041AMWNZ8X"

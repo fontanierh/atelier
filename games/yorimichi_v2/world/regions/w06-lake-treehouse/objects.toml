@@ -180,3 +180,9 @@ split = {key = "TH_P_planter", at = [-128.25, 191.4]}
 model = "adopted/japan/assets/treehouse"
 about = "TH_P_planter 4 of 4 in w06-lake-treehouse, placed at (-128.25, 191.4) m"
 
+# A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
+[[objects]]
+id = "object/lake/zeppelin-station"
+patch = "2df34a32589481b4"
+model = "adopted/japan/assets/zeppelin"
+about = "the Woodland zeppelin station (ZP_Woodland)"

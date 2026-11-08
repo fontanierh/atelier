@@ -426,3 +426,10 @@ id = "object/belmonte/block-39"
 groups = ["SM_BM_BT_blk_39_Piece0", "SM_BM_BT_blk_39_Piece1", "SM_BM_BT_blk_39_Piece2"]
 model = "adopted/belmonte/block-39"
 about = "town block 39"
+
+# A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
+[[objects]]
+id = "object/belmonte/zeppelin-station"
+patch = "b47babf88ff41834"
+model = "adopted/japan/assets/zeppelin"
+about = "the Belmonte zeppelin station (ZP_Belmonte)"

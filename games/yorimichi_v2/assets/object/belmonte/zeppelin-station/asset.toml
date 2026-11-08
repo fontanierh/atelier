@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): the Belmonte zeppelin station (ZP_Belmonte).
+# Its placement is this actor package; its model is adopted/japan/assets/zeppelin. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/zeppelin-station"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/japan/assets/zeppelin"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/YN/S38LB2NRDBCVH3W31D9KVZ"

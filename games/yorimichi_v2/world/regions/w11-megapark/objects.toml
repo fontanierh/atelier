@@ -4,3 +4,10 @@
 schema = 1
 tag = "megapark"
 data = ""
+
+# A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
+[[objects]]
+id = "object/megapark/zeppelin-station"
+patch = "474f0b2366558ad9"
+model = "adopted/japan/assets/zeppelin"
+about = "the Mega Park zeppelin station (ZP_MegaPark)"

@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): the zeppelin trail piece (ZP_Trail).
+# Its placement is this actor package; its model is adopted/japan/assets/zeppelin. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/zeppelin-trail"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/japan/assets/zeppelin"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/XX/KUGMY4QUAPD4BKFXT6ZRWX"

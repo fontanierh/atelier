@@ -3682,3 +3682,10 @@ id = "object/station/pole-lamp-24"
 split = {key = "Pole_Lamp", at = [1231.5, 70.7]}
 model = "adopted/japan/assets/pole"
 about = "Pole_Lamp 24 of 24 in w07-hidamari-station, placed at (1231.5, 70.7) m"
+
+# A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
+[[objects]]
+id = "object/station/zeppelin-station"
+patch = "0f79acf8e0bacc38"
+model = "adopted/japan/assets/zeppelin"
+about = "the City zeppelin station (ZP_City)"
