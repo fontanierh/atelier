@@ -1,0 +1,12 @@
+{
+  "asset": "prop/megapark/kei-wagon",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SM_Kei_Wagon.uasset": "46919c78e29114fe733ac0cec7baba5991b2f6551519d2cf9e43341ddcba6a22"
+  },
+  "input_fingerprint": "57ffbc738d09533ebde18b3496d23aa95d49ee506b730b8fbd55250bcffb39c6",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
