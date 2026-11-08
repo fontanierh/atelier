@@ -39,9 +39,28 @@ EAS = U.get_editor_subsystem(U.EditorActorSubsystem)
 
 if not LES.load_level(plan['map']):
     raise RuntimeError(f'cannot open {plan["map"]}')
-# World Partition loads only the always-loaded actors with the map: an unloaded patch would be made again.
+# World Partition loads only the always-loaded actors with the map: an unloaded patch would be made again. So every actor
+# that is not a scene patch is loaded (terrain, the manifest, services), and the scene patches of the plan's regions; the
+# other regions' patches stay unloaded, which keeps a job's editor inside its memory guard as the island grows. A patch's
+# label starts with its region ("<region>:<tag>:<object>:<id>"); a patch without that label is loaded.
 wpl = U.WorldPartitionBlueprintLibrary
-guids = [d.get_editor_property('guid') for d in wpl.get_actor_descs() or []]
+planned = {r['id'] for r in plan['regions']}
+planned |= {r.rsplit('/', 1)[-1] for r in planned}
+
+
+def wanted(desc):
+    try:
+        if 'V2ScenePatch' not in str(desc.get_editor_property('native_class')):
+            return True
+        region = str(desc.get_editor_property('label')).split(':', 1)[0]
+    except Exception:
+        return True
+    return not region or region in planned or region.rsplit('/', 1)[-1] in planned
+
+
+descs = wpl.get_actor_descs() or []
+guids = [d.get_editor_property('guid') for d in descs if wanted(d)]
+U.log(f'V2 MIGRATION loads {len(guids)} of {len(descs)} actors (regions {sorted(planned)})')
 if guids:
     wpl.load_actors(guids)
 world = U.get_editor_subsystem(U.UnrealEditorSubsystem).get_editor_world()
