@@ -42,10 +42,10 @@ def engine_identity() -> str:
     return f'{data["MajorVersion"]}.{data["MinorVersion"]}.{data["PatchVersion"]}-{data["Changelist"]}'
 
 
-def authorize(paths: list[str], claim: str | None, subject: str, game: Path = GAME):
+def authorize(paths: list[str], claim: str | None, subject: str, game: Path = GAME, scopes=None):
     try:
         authority.authorize([f'games/yorimichi_v2/{p}' for p in paths], claim, f'save validation of {subject}',
-                            scopes={authority.subject_scope(game, subject)})
+                            scopes=scopes or {authority.subject_scope(game, subject)})
     except authority.Unauthorized as error:
         raise ValidationError(str(error)) from None
 
@@ -106,8 +106,12 @@ def region_files(game: Path, region, others: dict[str, str], add: list[str], rem
     return sorted(members)
 
 
-def validate(game: Path, subject: str, *, claim=None, add=(), remove=(), echo=print) -> bool:
-    assets, regions = records.discover(game)
+def validate(game: Path, subject: str, *, claim=None, add=(), remove=(), echo=print, discovered=None,
+             collect=None, authorized=frozenset()) -> bool:
+    """Record the subject's saved package files. A batch passes `discovered` (records.discover, read once), first
+    with `collect` (the changed files are appended, nothing is written) and then with those files `authorized` by
+    one claims check: each check verifies the claim's LFS locks, too slow to repeat per object."""
+    assets, regions = discovered or records.discover(game)
     by_id = {a.id: a for a in assets}
     engine = engine_identity()
     if subject in by_id:
@@ -169,7 +173,10 @@ def validate(game: Path, subject: str, *, claim=None, add=(), remove=(), echo=pr
         files[rel] = records.sha256_file(path)
     previous_files = records.load_verified(target)['files'] if target.is_file() else {}
     changed = sorted(set(files) ^ set(previous_files) | {r for r in files if previous_files.get(r) != files[r]})
-    if changed:
+    if collect is not None:
+        collect.extend(changed)
+        return False
+    if changed and not set(changed) <= set(authorized):
         authorize(changed, claim, subject, game)
     body['files'] = {**generated, **files}
     if records.write_json(target, body):

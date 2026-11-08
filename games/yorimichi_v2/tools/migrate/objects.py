@@ -176,17 +176,8 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     if lost:
         raise ObjectError(f'the map holds no object for {lost}')
     created = sorted(set(authority.content_snapshot(game)) - set(before))
-    made = {}
-    for key, (rid, item) in sorted(wanted.items()):
-        record = game / 'assets' / item['id'] / 'asset.toml'
-        text = record_text(item, rid, saved[key])
-        if not record.is_file() or record.read_text() != text:
-            authority.authorize([f'games/yorimichi_v2/{record.relative_to(game).as_posix()}'], claim,
-                                f'object record {item["id"]}', scopes={rid})
-            record.parent.mkdir(parents=True, exist_ok=True)
-            record.write_text(text)
-        save_validate.validate(game, item['id'], claim=claim, echo=echo)
-        made[item['id']] = saved[key]
+    made = record_objects(game, [(rid, item, saved[key]) for key, (rid, item) in sorted(wanted.items())], claim,
+                          echo=echo)
     if groups:
         save_validate.validate(game, environment, claim=claim, echo=echo)   # the manifest lists the saved groups
     for split in splits:   # its area patches gave up the split objects' instances
@@ -198,6 +189,36 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
         raise ObjectError(f'{len(stray)} created file(s) belong to no object, e.g. {stray[0]}')
     echo(f'{len(made)} object(s) saved: ' + ', '.join(sorted(made)))
     return made
+
+
+def record_objects(game: Path, entries: list[tuple[str, dict, str]], claim: str | None, *, echo=print) -> dict:
+    """Write and validate the records of saved objects (region, objects.toml entry, actor package); returns {object
+    id: package}. One claims check covers the changed records and one the changed package files: each check
+    verifies the claim's LFS locks, which took seconds per object when checked one by one."""
+    due = {}
+    for rid, item, package in entries:
+        record = game / 'assets' / item['id'] / 'asset.toml'
+        text = record_text(item, rid, package)
+        if not record.is_file() or record.read_text() != text:
+            due[record] = text
+    if due:
+        authority.authorize(sorted(f'games/yorimichi_v2/{r.relative_to(game).as_posix()}' for r in due), claim,
+                            f'{len(due)} object record(s)', scopes={rid for rid, _, _ in entries})
+    for record, text in due.items():
+        record.parent.mkdir(parents=True, exist_ok=True)
+        record.write_text(text)
+    discovered = records.discover(game)
+    ids = [item['id'] for _, item, _ in entries]
+    changed = []
+    for oid in ids:
+        save_validate.validate(game, oid, claim=claim, echo=echo, discovered=discovered, collect=changed)
+    if changed:
+        by_id = {a.id: a for a in discovered[0]}
+        save_validate.authorize(sorted(set(changed)), claim, f'{len(ids)} object(s)', game,
+                                scopes={authority.asset_scope(by_id[oid]) for oid in ids})
+    for oid in ids:
+        save_validate.validate(game, oid, claim=claim, echo=echo, discovered=discovered, authorized=frozenset(changed))
+    return {item['id']: package for _, item, package in entries}
 
 
 def promote(game: Path, region_ids: list[str], claim: str | None, *, only=None, echo=print) -> dict[str, str]:
@@ -217,6 +238,7 @@ def promote(game: Path, region_ids: list[str], claim: str | None, *, only=None, 
             continue
         roster = region.folder / 'patches.json'
         patches = json.loads(roster.read_text()).get('patches', {}) if roster.is_file() else {}
+        entries = []
         for item in items:
             entry = patches.get(item['patch'])
             if entry is None:
@@ -224,16 +246,8 @@ def promote(game: Path, region_ids: list[str], claim: str | None, *, only=None, 
             rel = entry['package']
             if not rel.startswith('unreal/Content/') or not (game / rel).is_file():
                 raise ObjectError(f'{item["id"]}: its patch package {rel} is missing')
-            package = '/Game/' + rel[len('unreal/Content/'):].rsplit('.', 1)[0]
-            record = game / 'assets' / item['id'] / 'asset.toml'
-            text = record_text(item, rid, package)
-            if not record.is_file() or record.read_text() != text:
-                authority.authorize([f'games/yorimichi_v2/{record.relative_to(game).as_posix()}'], claim,
-                                    f'object record {item["id"]}', scopes={rid})
-                record.parent.mkdir(parents=True, exist_ok=True)
-                record.write_text(text)
-            save_validate.validate(game, item['id'], claim=claim, echo=echo)
-            made[item['id']] = package
+            entries.append((rid, item, '/Game/' + rel[len('unreal/Content/'):].rsplit('.', 1)[0]))
+        made.update(record_objects(game, entries, claim, echo=echo))
         save_validate.validate(game, rid, claim=claim, echo=echo)   # the region's verification drops them
     if only is not None and set(only) - set(made):
         raise ObjectError(f'{sorted(set(only) - set(made))}: no patch object of {region_ids}')

@@ -195,3 +195,23 @@ def test_a_split_needs_a_key_and_a_point(game):
     with pytest.raises(objects.ObjectError, match='split needs key'):
         objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=editor(game), out=game / 'out',
                         echo=lambda *_: None)
+
+
+def test_a_batch_of_objects_takes_one_claims_check_for_its_records_and_one_for_its_packages(game, monkeypatch):
+    calls = []
+    real = objects.authority.authorize
+    monkeypatch.setattr(objects.authority, 'authorize', lambda paths, *a, **k: (calls.append(paths), real(paths, *a, **k)))
+    entries = []
+    for n in range(5):
+        rel = f'{ACTORS}/D/{n}0/HOUSE{n}.uasset'
+        write(game / rel, f'house {n}'.encode())
+        entries.append(('region/w09-cove', {'id': f'object/cove/house-{n}', 'model': 'adopted/cove/wreck',
+                                            'about': f'house {n}'}, f'/Game/{rel[len("unreal/Content/"):-7]}'))
+    made = objects.record_objects(game, entries, None, echo=lambda *_: None)
+    assert sorted(made) == [f'object/cove/house-{n}' for n in range(5)]
+    assert [len(paths) for paths in calls] == [5, 5]   # the five records, then the five package files
+    for n in range(5):
+        record = records.load_asset(game / f'assets/object/cove/house-{n}/asset.toml')
+        assert list(records.load_verified(record.verified)['files']) == [f'{ACTORS}/D/{n}0/HOUSE{n}.uasset']
+    calls.clear()
+    assert objects.record_objects(game, entries, None, echo=lambda *_: None) == made and calls == []   # unchanged
