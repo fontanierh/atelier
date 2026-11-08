@@ -380,3 +380,61 @@ def test_reviewed_host_pool_profiles_preserve_actual_worker_accounting(client, m
     assert request['resources']['memory_mib'] == 10240
     assert request['performance'] is exclusive
     assert client[0].read_bytes() == before
+
+
+EDITOR = ['UnrealEditor-Cmd', 'Fixture.uproject', '-run=pythonscript', '-script=fixture.py', '-NullRHI', '-unattended']
+
+
+@pytest.mark.parametrize('pool,expected', [(1000, 4000), (10000, 5000), (10001, 5001)])
+@pytest.mark.parametrize('ceiling', [10., 12.])
+def test_shared_editor_reserves_full_memory_and_checkout_but_a_cpu_share(client, monkeypatch, pool, expected, ceiling):
+    configure_schema(client, monkeypatch, 2)
+    client[1]['profiles']['job']['resources']['cpu_millis'] = pool
+    client[2]()
+    before = client[0].read_bytes()
+    monkeypatch.setitem(sys.modules, 'atelier.harness.capacity_client', SimpleNamespace(
+        AdmissionSession=lambda socket, request, **kw: SimpleNamespace(request=request, mode='capacity', **kw)))
+    session = runtime.configured_session(kind='job', limit_gib=ceiling, script_memory_gib=ceiling,
+                                         timeout=900, command=EDITOR, small_gib=1.)
+    assert session.request['shared_editor'] is True and session.request['performance'] is False
+    assert 'workers' not in session.request
+    assert session.request['resources']['cpu_millis'] == expected
+    assert session.request['resources']['memory_mib'] == math.ceil(ceiling * 1024)
+    assert session.guard_limit_gib == ceiling and client[0].read_bytes() == before
+    runtime.validate_session_profile(session, kind='job', command=EDITOR, limit_gib=ceiling)
+
+
+@pytest.mark.parametrize('command', [EDITOR[:-1], EDITOR[:-2] + ['-unattended'],
+    ['sh', '-c', ' '.join(EDITOR)], ['UnrealEditor', *EDITOR[1:]],
+    *[EDITOR + [arg] for arg in ('-game', '-server', '-run=cook', '-AllowCommandletRendering', '-RenderOffscreen')]])
+def test_only_literal_non_rendering_editor_commandlets_can_share(client, monkeypatch, command):
+    configure_schema(client, monkeypatch, 2)
+    client[2]()
+    request = runtime.configured_session(kind='job', limit_gib=10, timeout=60, command=command)
+    assert request['performance'] is True and 'shared_editor' not in request
+    assert request['resources']['cpu_millis'] == 8000
+
+
+@pytest.mark.parametrize('kind,performance', [('game', False), ('compile', False), ('job', True)])
+def test_editor_flag_cannot_relax_game_compile_or_performance_exclusion(client, monkeypatch, kind, performance):
+    configure_schema(client, monkeypatch, 2)
+    client[2]()
+    request = runtime.configured_session(kind=kind, limit_gib=10, timeout=60, command=EDITOR, performance=performance)
+    assert request['performance'] is True and 'shared_editor' not in request
+    assert request['resources']['cpu_millis'] == 8000
+
+
+@pytest.mark.parametrize('changes,command,ceiling', [
+    ({'workers': 4}, EDITOR, 10), ({'performance': True}, EDITOR, 10),
+    ({'shared_editor': 1}, EDITOR, 10), ({}, ['sh', '-c', ' '.join(EDITOR)], 10),
+    ({'resources': {'memory_mib': 10240, 'cpu_millis': 3999}}, EDITOR, 10),
+    ({}, EDITOR, 12), ({'locks': []}, EDITOR, 10)])
+def test_explicit_shared_editor_cannot_bypass_command_memory_cpu_or_lock(client, monkeypatch, changes, command, ceiling):
+    configure_schema(client, monkeypatch, 2)
+    request = dict(phase='job', shared_editor=True, performance=False, checkout=str(runtime.REPO),
+                   locks=['checkout:' + str(runtime.REPO)], resources=dict(memory_mib=10240, cpu_millis=4000))
+    request.update(changes)
+    request['resources'] = dict(temp_mib=0, io_slots=0, gpu_mib=0) | request['resources']
+    admission = SimpleNamespace(mode='capacity', cutover=client[1]['cutover'], request=request)
+    with pytest.raises(ValueError):
+        runtime.validate_session_profile(admission, kind='job', command=command, limit_gib=ceiling)

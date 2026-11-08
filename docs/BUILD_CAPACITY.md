@@ -94,10 +94,30 @@ kernel throttle. A low average CPU reading alone does not establish a lower safe
 | Headless Blender generation with explicit `--threads N` | Exactly N CPU units; e.g. 3 threads requests 3 | Nominal guard ceiling, normally 10 GiB; automatic 4 GiB only with valid prior peak at most 3 GiB and a compatible GPU envelope | Ordinary bounded generation can share capacity when all budgets and named locks fit |
 | Blender rendering, baking or simulation | Explicit supported worker setting justified by that workload's measurements | Guard ceiling covering its measured peak and growth margin | Quiet window only when its capture/measurement contract requires one |
 | Editor compile | Currently the complete managed CPU pool, despite the existing three-action UBT cap | Normally 10 GiB, covering both guards | Currently automatic; compile classification is conservative |
-| Unreal imports, UAT cook/package, game and unclassified compound commands | Currently the complete managed CPU pool | Normal configured guard ceiling; an explicitly larger supported game limit must also fit its reservation | Currently automatic until a bounded profile has been validated |
+| Unattended Unreal Python commandlet with `-NullRHI` | Half the managed CPU pool, rounded up; a scheduling share, not a thread cap | Entire selected guard ceiling | Up to two in separate checkouts; disjoint package claims are still required |
+| Rendered editors, UAT cook/package, game and unclassified compound commands | The complete managed CPU pool | Normal configured guard ceiling; an explicitly larger supported game limit must also fit its reservation | Automatic |
 | Benchmark or capture that requires an otherwise quiet machine | Its normal command envelope | Its normal guard ceiling | Explicit performance window; do not use this for routine generation |
 
 The complete managed pool is the live CPU total minus host reserve: for example 10 minus 2 is 8 CPU units.
+
+Shared editors require the updated broker and launcher. The launcher recognizes only a literal
+`UnrealEditor-Cmd -run=pythonscript -NullRHI -unattended` command, without conflicting game, server
+or rendering switches. Wrappers remain exclusive. It uses half the larger of the sealed CPU budget
+and installed whole-pool profile; the broker independently requires at least half its live budget.
+Neither changes Unreal's thread count. Two editors may compete for CPU; measure combined completion
+time, not just their individual runtimes. One editor can also overlap bounded Blender preparation
+when the full memory/CPU vectors fit. Explicit performance windows remain exclusive.
+
+For V2 object migration, use `tools/editor/session.py JOBS.json --headless` for a bounded warm batch
+containing only `objects` jobs, including their no-op reruns. Other script jobs, especially captures,
+use the existing rendered session. Each editor needs its own checkout, Content, Saved and compiled
+outputs. Use disjoint claims for all output packages, including region and environment manifests;
+jobs that both change the same manifest stay in one sequential queue. Prepare inputs before opening
+the editor and close it when the ready batch is done. Never run two controllers in one checkout.
+
+Memory pressure, guard ceilings, queue fairness, deadlines and exact exit checks are unchanged.
+An older broker refuses the new shared-editor request before launching work; update it only at a
+coordinated drained boundary, using the existing supervision path and unchanged machine policy.
 The full-pool entries above describe the current fallback, not evidence that every such process consumes eight
 cores. Lowering only that number does not remove the separate exclusion flag. Known bounded workloads should
 get a measured profile instead of keeping a broad classification indefinitely.

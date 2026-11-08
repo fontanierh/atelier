@@ -85,7 +85,8 @@ class JobContext:
 
 class Session:
     def __init__(self, game: Path = GAME, *, out: Path = OUT, launch=launch_step, log: Path = LOG, echo=print,
-                 open_seconds: float = 3 * 3600):
+                 open_seconds: float = 3 * 3600, headless: bool = False):
+        self.headless = headless
         self.game, self.launch, self.log_path, self.echo = game, launch, log, echo
         self.nonce = uuid.uuid4().hex
         self.folder = out / self.nonce
@@ -95,7 +96,7 @@ class Session:
         self.code = None
         self.offset = 0
         self.text = ''
-        self.summary = {'nonce': self.nonce, 'jobs': []}
+        self.summary = {'nonce': self.nonce, 'headless': headless, 'jobs': []}
         self.checked: list[str] = []
         self.beating = threading.Event()
         self.build = None
@@ -142,7 +143,7 @@ class Session:
     def open(self):
         self.folder.mkdir(parents=True)
         self.code = code_digest(self.game)
-        self._write('session.json', {'nonce': self.nonce, 'code': self.code})
+        self._write('session.json', {'nonce': self.nonce, 'code': self.code, 'headless': self.headless})
         (self.folder / 'heartbeat').touch()
         threading.Thread(target=self._beat, daemon=True).start()
         started = time.monotonic()
@@ -177,6 +178,8 @@ class Session:
 
     def run(self, name: str, script: str, env: dict, *, seconds: float = 1800) -> str:
         """One job's editor part: its script with its environment; returns its section of the editor log."""
+        if self.headless and script != 'migrate_objects.py':
+            raise SessionError('a headless session accepts only object migration jobs; use a rendered session for scripts')
         if code_digest(self.game) != self.code:
             raise SessionError('unreal/Scripts or unreal/Source changed since the editor started; '
                                'start a new session for the changed code')
@@ -285,6 +288,8 @@ class _Log:
 
 
 def run_jobs(jobs: list[dict], session: Session) -> None:
+    if session.headless and any(job.get('kind') != 'objects' for job in jobs):
+        raise SessionError('a headless session accepts only object migration jobs')
     with session:
         for job in jobs:
             kind = job.get('kind')
@@ -300,12 +305,13 @@ def run_jobs(jobs: list[dict], session: Session) -> None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('jobs', type=Path, help='JSON file {"jobs": [...]}')
+    parser.add_argument('--headless', action='store_true', help='object jobs only; allow a second editor in a separate checkout')
     args = parser.parse_args(argv)
     import objects
     import records
     import save_validate
     jobs = json.loads(args.jobs.read_text())['jobs']
-    session = Session()
+    session = Session(headless=args.headless)
     try:
         run_jobs(jobs, session)
     except (SessionError, objects.ObjectError, authority.Unauthorized, save_validate.ValidationError,

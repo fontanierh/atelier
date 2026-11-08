@@ -600,7 +600,13 @@ class CapacityBroker:
         return True
 
     def _request(self, value):
-        wire.fields(value, ('id', 'resources'), ('locks', 'seconds', 'performance', 'checkout', 'owner', 'purpose', 'phase', 'workers'))
+        """@cc [owner:fontanierh,label:safety] shared-editor-scheduling-share
+        A shared editor request MUST be a nonexclusive full-mode job without a worker-count claim,
+        reserving at least half the managed CPU budget. At most two such editors can fit; this
+        allowance is a scheduling share, not a native thread cap. Memory, locks, pressure, guards,
+        exit evidence and exclusive work MUST retain their normal admission and release rules.
+        """
+        wire.fields(value, ('id', 'resources'), ('locks', 'seconds', 'performance', 'checkout', 'owner', 'purpose', 'phase', 'workers', 'shared_editor'))
         wire.text(value['id'])
         vector = wire.resources(value['resources'])
         locks = value.get('locks', [])
@@ -611,6 +617,12 @@ class CapacityBroker:
         performance = value.get('performance', False)
         if type(performance) is not bool:
             raise wire.CapacityError('Invalid performance-window request')
+        shared_editor = value.get('shared_editor', False)
+        if type(shared_editor) is not bool:
+            raise wire.CapacityError('Invalid shared-editor request')
+        if shared_editor and (self.mode != 'capacity' or value.get('phase') != 'job' or performance
+                              or value.get('workers') is not None):
+            raise wire.CapacityError('Shared editor requires a nonexclusive full-mode job without workers')
         if self.mode in ('capacity', 'sealed-maintenance'):
             checkout = wire.text(value.get('checkout'), maximum=4096)
             if not Path(checkout).is_absolute() or 'checkout:' + checkout not in locks:
@@ -624,10 +636,12 @@ class CapacityBroker:
                 wire.integer(workers, minimum=1, maximum=1024)
                 if vector.cpu_millis < workers * 1000:
                     raise wire.CapacityError('Capacity CPU reservation does not cover declared unchanged workers')
-            if (workers is None or value.get('phase') in ('game', 'compile')) and not performance:
+            if ((workers is None and not shared_editor) or value.get('phase') in ('game', 'compile')) and not performance:
                 raise wire.CapacityError('Games, compiles and unbounded compound profiles require exclusive capacity')
-            if workers is None and vector.cpu_millis < self.total.cpu_millis - self.reserve.cpu_millis:
-                raise wire.CapacityError('Unknown profiles must reserve the complete managed CPU budget')
+            budget = self.total.cpu_millis - self.reserve.cpu_millis
+            if workers is None and vector.cpu_millis < ((budget + 1) // 2 if shared_editor else budget):
+                raise wire.CapacityError('Shared editors must reserve half the managed CPU budget' if shared_editor else
+                                         'Unknown profiles must reserve the complete managed CPU budget')
             if value.get('phase') == 'compile' and vector.cpu_millis < 3000:
                 raise wire.CapacityError('Compile profiles must cover the existing three workers')
         for key in ('owner', 'checkout', 'purpose', 'phase'):

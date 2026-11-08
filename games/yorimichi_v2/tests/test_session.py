@@ -139,3 +139,35 @@ def test_a_job_needs_a_claim_and_its_own_inputs_only(tmp_path, game, monkeypatch
         with pytest.raises(S.SessionError, match='needs a claim'):
             session.objects(['region/w09-brinecove'], 'region/w00-island', None)
     assert editors[0].ran == []
+
+
+def test_headless_batch_rejects_script_before_starting_editor(tmp_path, game):
+    session, editors = make(tmp_path, game)
+    session.headless = True
+    with pytest.raises(S.SessionError, match='only object migration'):
+        S.run_jobs([{'kind': 'objects'}, {'kind': 'script', 'script': 'capture_poses.py'}], session)
+    assert editors == [] and not session.folder.exists()
+
+
+def test_headless_session_binds_mode_and_refuses_late_render_job(tmp_path, game, monkeypatch):
+    monkeypatch.setattr(S, 'load_build', lambda: None)
+    session, editors = make(tmp_path, game)
+    session.headless = True
+    with session:
+        assert json.loads((session.folder / 'session.json').read_text())['headless'] is True
+        session.run('objects', 'migrate_objects.py', {})
+        with pytest.raises(S.SessionError, match='only object migration'):
+            session.run('capture', 'capture_poses.py', {})
+    assert [name for name, _ in editors[0].ran] == ['objects']
+
+
+def test_editor_itself_refuses_a_render_script_in_headless_mode(monkeypatch):
+    import types
+    source = (GAME / 'unreal/Scripts/job_queue.py').read_text()
+    monkeypatch.setitem(sys.modules, 'unreal', types.ModuleType('unreal'))
+    namespace = {'__file__': str(GAME / 'unreal/Scripts/job_queue.py')}
+    exec(compile(source.rsplit('\nmain()', 1)[0], namespace['__file__'], 'exec'), namespace)
+    assert namespace['job_script']('migrate_objects.py', headless=True).name == 'migrate_objects.py'
+    assert namespace['job_script']('capture_poses.py').name == 'capture_poses.py'
+    with pytest.raises(RuntimeError, match='only object migration'):
+        namespace['job_script']('capture_poses.py', headless=True)

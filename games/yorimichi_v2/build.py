@@ -196,7 +196,11 @@ SESSION_BEFORE = {}
 
 
 def _session_script():
-    script = UnrealScript(UNREAL / 'Scripts/job_queue.py', 'V2 JOBS DONE')
+    import json
+    import os
+    folder = os.environ.get('V2_JOBS')
+    headless = bool(folder) and json.loads((Path(folder) / 'session.json').read_text()).get('headless') is True
+    script = UnrealScript(UNREAL / 'Scripts/job_queue.py', 'V2 JOBS DONE', null_rhi=headless)
     script.timeout = 4 * 3600   # the guard ends a session, a hung job included, after this
     return script
 

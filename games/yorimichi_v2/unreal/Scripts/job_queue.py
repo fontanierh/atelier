@@ -49,7 +49,9 @@ def dirty_packages():
     return sorted(p.get_name() for p in [*utils.get_dirty_content_packages(), *utils.get_dirty_map_packages()])
 
 
-def job_script(name):
+def job_script(name, *, headless=False):
+    if headless and name != 'migrate_objects.py':
+        raise RuntimeError('a headless session accepts only object migration jobs')
     script = (SCRIPTS / name).resolve()
     if script.parent != SCRIPTS or not script.is_file() or script.name in ('job_queue.py', 'import_asset.py'):
         raise RuntimeError(f'{name} is not a V2 editor script a session job may run')
@@ -62,6 +64,10 @@ def main():
     if not session or not os.environ.get('V2_SAVE_ALLOW') or not U.V2SaveGuard.is_active():
         raise RuntimeError('a job session needs its session.json and an active V2 save guard (editor.session)')
     nonce, base_env, base_path = session['nonce'], dict(os.environ), list(sys.path)
+    # Bind to the launch mode, not a later edit of session.json or a job's environment.
+    headless = '-nullrhi' in U.SystemLibrary.get_command_line().lower().split()
+    if headless != (session.get('headless') is True):
+        raise RuntimeError('editor rendering mode differs from session.json')
     write(folder / 'ready.json', {'nonce': nonce, 'pid': os.getpid()})
     U.log(f'V2 JOBS READY {nonce}')
     expected = 1
@@ -75,7 +81,7 @@ def main():
             continue
         if job.get('close'):
             break
-        script = job_script(job['script'])
+        script = job_script(job['script'], headless=headless)
         set_environment(base_env | {k: v for k, v in job['env'].items() if v is not None})
         for key in [k for k, v in job['env'].items() if v is None]:
             os.environ.pop(key, None)

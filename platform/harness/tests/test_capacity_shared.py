@@ -626,6 +626,41 @@ def test_full_actor_allows_only_resources_and_named_lock_compatible_overlap(acto
         offer(instance, (105, 10500), 'unsafe-game', phase='game')
 
 
+def test_two_shared_editors_fit_but_third_and_same_checkout_do_not(actor):
+    instance, _ = actor
+    cpu = (instance.total.cpu_millis - instance.reserve.cpu_millis + 1) // 2
+    options = dict(workers=None, shared_editor=True, performance=False,
+                   resources=asdict(Resources(memory_mib=1024, cpu_millis=cpu)))
+    for index in (1, 2):
+        owner = (100 + index, (100 + index) * 100)
+        message, response = offer(instance, owner, f'editor-{index}', **options)
+        assert response['selected']
+        gate_start(instance, owner, message, 200 + index)
+        if index == 1:
+            _, locked = offer(instance, (103, 10300), 'same-checkout', checkout='editor-1', **options)
+            assert not locked['selected']
+    _, third = offer(instance, (104, 10400), 'third-editor', **options)
+    assert not third['selected']
+    _, exclusive = offer(instance, (105, 10500), 'capture', workers=None, performance=True,
+                         resources=asdict(Resources(memory_mib=1024, cpu_millis=cpu * 2)))
+    assert not exclusive['selected']
+
+
+@pytest.mark.parametrize('changes', [dict(workers=3), dict(phase='game'), dict(phase='compile'),
+    dict(performance=True), dict(shared_editor=1),
+    dict(resources=asdict(Resources(memory_mib=1024, cpu_millis=5499)))])
+def test_broker_refuses_mislabelled_or_undersized_shared_editors(actor, changes):
+    instance, _ = actor
+    with pytest.raises(wire.CapacityError, match='editor'):
+        offer(instance, (101, 10100), 'bad-editor', **(dict(workers=None, shared_editor=True,
+            resources=asdict(Resources(memory_mib=1024, cpu_millis=5500))) | changes))
+
+
+def test_shared_editor_retains_existing_nonexclusive_release_rule(actor):
+    instance, _ = actor
+    assert instance._terminal_tree_exit({'request': {'shared_editor': True, 'performance': False}}) is None
+
+
 @pytest.mark.parametrize('failure,stage', [('guard', 'scan'), ('owner', 'scan'), ('guard', 'pressure'),
                                          ('seal', 'scan'), ('seal', 'pressure')])
 def test_existing_holder_failure_during_slow_observations_refuses_other_go(actor, barrier, failure, stage):
