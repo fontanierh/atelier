@@ -55,11 +55,12 @@ bool AV2ScenePatch::ClimbExempt() const
 {
     if (ActorHasTag(TEXT("NoClimb")) || ActorHasTag(TEXT("SkatePark"))) return true;
     // The pier skatepark's saved patch, the mini Mega ramp (V2MigrationMisc), the railway, ferry and gondola units (SaveUnits in
-    // V2MigrationTravel) and the Mega and Crater parks' trees and props (V2MigrationParkDressing).
+    // V2MigrationTravel), and every saved unit of the Mega and Crater parks: their ramp, rail and wall pieces (MigrateParkPieces)
+    // as well as their trees and props (V2MigrationParkDressing). At runtime those pieces belonged to ASuperUltraMegaPark,
+    // which UAdventureMoveSet::Climbable never climbs, so a saved piece must not become climbable either.
     return SourceKey == TEXT("SkatePark") || SourceKey == TEXT("mega:ramp") ||
         SourceKey.StartsWith(TEXT("railway:")) || SourceKey.StartsWith(TEXT("ferry:")) || SourceKey.StartsWith(TEXT("gondola:")) ||
-        SourceKey.StartsWith(TEXT("megapark:trees/")) || SourceKey.StartsWith(TEXT("megapark:props/")) ||
-        SourceKey.StartsWith(TEXT("craterpark:trees/")) || SourceKey.StartsWith(TEXT("craterpark:props/"));
+        SourceKey.StartsWith(TEXT("megapark:")) || SourceKey.StartsWith(TEXT("craterpark:"));
 }
 
 void AV2ScenePatch::BeginPlay()
