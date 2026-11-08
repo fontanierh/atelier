@@ -106,8 +106,9 @@ def main():
             target = dest / rel
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
+    # The bundle by its pinned hash and its file name, never the local folder it was copied from (portable records).
     (dest / "manifest.json").write_text(json.dumps({
-        "bundle": url, "sha256": lock["sha256"], "files": len(lock["files"]),
+        "bundle": bundle.name if bundle else url, "sha256": lock["sha256"], "files": len(lock["files"]),
     }, indent=2) + "\n")
     print(f"music cache ready: {dest} ({len(lock['files'])} files)")
 
