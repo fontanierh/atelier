@@ -123,3 +123,351 @@ id = "object/belmonte/estate-6"
 groups = ["SM_BM_BE_6_Accent", "SM_BM_BE_6_Grounds", "SM_BM_BE_6_Stables", "SM_BM_BE_6_Villa"]
 model = "adopted/belmonte/estate-6"
 about = "estate 6: villa, stables, grounds and accent"
+
+[[objects]]
+id = "object/belmonte/porta-nw"
+groups = ["SM_BM_BH_Porta_NW"]
+model = "adopted/belmonte/town-porta-nw"
+about = "the north-west town gate"
+
+[[objects]]
+id = "object/belmonte/porta-se"
+groups = ["SM_BM_BH_Porta_SE"]
+model = "adopted/belmonte/town-porta-se"
+about = "the south-east town gate"
+
+[[objects]]
+id = "object/belmonte/fontanella"
+groups = ["SM_BM_BH_Fontanella"]
+model = "adopted/belmonte/town-fontanella"
+about = "the small wall fountain"
+
+[[objects]]
+id = "object/belmonte/fountain-piazza"
+groups = ["SM_BM_BH_FountainPiazza"]
+model = "adopted/belmonte/town-fountain-piazza"
+about = "the piazza fountain"
+
+[[objects]]
+id = "object/belmonte/farm-cascine"
+groups = ["SM_BM_BVV_Farm_Cascine"]
+model = "adopted/belmonte/village-farm-cascine"
+about = "the Cascine farm"
+
+[[objects]]
+id = "object/belmonte/farm-levante"
+groups = ["SM_BM_BVV_Farm_Levante"]
+model = "adopted/belmonte/village-farm-levante"
+about = "the Levante farm"
+
+[[objects]]
+id = "object/belmonte/farm-poggio"
+groups = ["SM_BM_BVV_Farm_Poggio"]
+model = "adopted/belmonte/village-farm-poggio"
+about = "the Poggio farm"
+
+[[objects]]
+id = "object/belmonte/farm-ulivi"
+groups = ["SM_BM_BVV_Farm_Ulivi"]
+model = "adopted/belmonte/village-farm-ulivi"
+about = "the Ulivi farm"
+
+[[objects]]
+id = "object/belmonte/village-house-1"
+groups = ["SM_BM_BVV_Village_1"]
+model = "adopted/belmonte/village-house-1"
+about = "village house 1"
+
+[[objects]]
+id = "object/belmonte/village-house-2"
+groups = ["SM_BM_BVV_Village_2"]
+model = "adopted/belmonte/village-house-2"
+about = "village house 2"
+
+[[objects]]
+id = "object/belmonte/village-house-3"
+groups = ["SM_BM_BVV_Village_3"]
+model = "adopted/belmonte/village-house-3"
+about = "village house 3"
+
+[[objects]]
+id = "object/belmonte/village-house-4"
+groups = ["SM_BM_BVV_Village_4"]
+model = "adopted/belmonte/village-house-4"
+about = "village house 4"
+
+[[objects]]
+id = "object/belmonte/village-house-5"
+groups = ["SM_BM_BVV_Village_5"]
+model = "adopted/belmonte/village-house-5"
+about = "village house 5"
+
+[[objects]]
+id = "object/belmonte/village-house-6"
+groups = ["SM_BM_BVV_Village_6"]
+model = "adopted/belmonte/village-house-6"
+about = "village house 6"
+
+[[objects]]
+id = "object/belmonte/village-house-7"
+groups = ["SM_BM_BVV_Village_7"]
+model = "adopted/belmonte/village-house-7"
+about = "village house 7"
+
+[[objects]]
+id = "object/belmonte/village-house-8"
+groups = ["SM_BM_BVV_Village_8"]
+model = "adopted/belmonte/village-house-8"
+about = "village house 8"
+
+[[objects]]
+id = "object/belmonte/ponte"
+groups = ["SM_BM_BC_Ponte", "SM_BM_BC_Water_Ponte"]
+model = "adopted/belmonte/civil-ponte"
+about = "the bridge with its water surface"
+
+[[objects]]
+id = "object/belmonte/passerella"
+groups = ["SM_BM_BC_Passerella"]
+model = "adopted/belmonte/civil-passerella"
+about = "the footbridge"
+
+[[objects]]
+id = "object/belmonte/waterfall"
+groups = ["SM_BM_BC_Waterfall"]
+model = "adopted/belmonte/civil-waterfall"
+about = "the waterfall"
+
+[[objects]]
+id = "object/belmonte/block-01"
+groups = ["SM_BM_BT_blk_01"]
+model = "adopted/belmonte/block-01"
+about = "town block 1"
+
+[[objects]]
+id = "object/belmonte/block-02"
+groups = ["SM_BM_BT_blk_02"]
+model = "adopted/belmonte/block-02"
+about = "town block 2"
+
+[[objects]]
+id = "object/belmonte/block-03"
+groups = ["SM_BM_BT_blk_03"]
+model = "adopted/belmonte/block-03"
+about = "town block 3"
+
+[[objects]]
+id = "object/belmonte/block-04"
+groups = ["SM_BM_BT_blk_04"]
+model = "adopted/belmonte/block-04"
+about = "town block 4"
+
+[[objects]]
+id = "object/belmonte/block-05"
+groups = ["SM_BM_BT_blk_05"]
+model = "adopted/belmonte/block-05"
+about = "town block 5"
+
+[[objects]]
+id = "object/belmonte/block-06"
+groups = ["SM_BM_BT_blk_06"]
+model = "adopted/belmonte/block-06"
+about = "town block 6"
+
+[[objects]]
+id = "object/belmonte/block-07"
+groups = ["SM_BM_BT_blk_07"]
+model = "adopted/belmonte/block-07"
+about = "town block 7"
+
+[[objects]]
+id = "object/belmonte/block-08"
+groups = ["SM_BM_BT_blk_08"]
+model = "adopted/belmonte/block-08"
+about = "town block 8"
+
+[[objects]]
+id = "object/belmonte/block-09"
+groups = ["SM_BM_BT_blk_09_Piece0", "SM_BM_BT_blk_09_Piece1", "SM_BM_BT_blk_09_Piece2", "SM_BM_BT_blk_09_Piece3"]
+model = "adopted/belmonte/block-09"
+about = "town block 9"
+
+[[objects]]
+id = "object/belmonte/block-10"
+groups = ["SM_BM_BT_blk_10_Piece0", "SM_BM_BT_blk_10_Piece1", "SM_BM_BT_blk_10_Piece2", "SM_BM_BT_blk_10_Piece3"]
+model = "adopted/belmonte/block-10"
+about = "town block 10"
+
+[[objects]]
+id = "object/belmonte/block-11"
+groups = ["SM_BM_BT_blk_11_Piece0", "SM_BM_BT_blk_11_Piece1", "SM_BM_BT_blk_11_Piece2", "SM_BM_BT_blk_11_Piece3"]
+model = "adopted/belmonte/block-11"
+about = "town block 11"
+
+[[objects]]
+id = "object/belmonte/block-12"
+groups = ["SM_BM_BT_blk_12"]
+model = "adopted/belmonte/block-12"
+about = "town block 12"
+
+[[objects]]
+id = "object/belmonte/block-13"
+groups = ["SM_BM_BT_blk_13"]
+model = "adopted/belmonte/block-13"
+about = "town block 13"
+
+[[objects]]
+id = "object/belmonte/block-14"
+groups = ["SM_BM_BT_blk_14"]
+model = "adopted/belmonte/block-14"
+about = "town block 14"
+
+[[objects]]
+id = "object/belmonte/block-15"
+groups = ["SM_BM_BT_blk_15_Piece0", "SM_BM_BT_blk_15_Piece1", "SM_BM_BT_blk_15_Piece2", "SM_BM_BT_blk_15_Piece3"]
+model = "adopted/belmonte/block-15"
+about = "town block 15"
+
+[[objects]]
+id = "object/belmonte/block-16"
+groups = ["SM_BM_BT_blk_16"]
+model = "adopted/belmonte/block-16"
+about = "town block 16"
+
+[[objects]]
+id = "object/belmonte/block-17"
+groups = ["SM_BM_BT_blk_17_Piece0", "SM_BM_BT_blk_17_Piece1", "SM_BM_BT_blk_17_Piece2", "SM_BM_BT_blk_17_Piece3"]
+model = "adopted/belmonte/block-17"
+about = "town block 17"
+
+[[objects]]
+id = "object/belmonte/block-18"
+groups = ["SM_BM_BT_blk_18"]
+model = "adopted/belmonte/block-18"
+about = "town block 18"
+
+[[objects]]
+id = "object/belmonte/block-19"
+groups = ["SM_BM_BT_blk_19"]
+model = "adopted/belmonte/block-19"
+about = "town block 19"
+
+[[objects]]
+id = "object/belmonte/block-20"
+groups = ["SM_BM_BT_blk_20"]
+model = "adopted/belmonte/block-20"
+about = "town block 20"
+
+[[objects]]
+id = "object/belmonte/block-21"
+groups = ["SM_BM_BT_blk_21"]
+model = "adopted/belmonte/block-21"
+about = "town block 21"
+
+[[objects]]
+id = "object/belmonte/block-22"
+groups = ["SM_BM_BT_blk_22"]
+model = "adopted/belmonte/block-22"
+about = "town block 22"
+
+[[objects]]
+id = "object/belmonte/block-23"
+groups = ["SM_BM_BT_blk_23"]
+model = "adopted/belmonte/block-23"
+about = "town block 23"
+
+[[objects]]
+id = "object/belmonte/block-24"
+groups = ["SM_BM_BT_blk_24"]
+model = "adopted/belmonte/block-24"
+about = "town block 24"
+
+[[objects]]
+id = "object/belmonte/block-25"
+groups = ["SM_BM_BT_blk_25"]
+model = "adopted/belmonte/block-25"
+about = "town block 25"
+
+[[objects]]
+id = "object/belmonte/block-26"
+groups = ["SM_BM_BT_blk_26"]
+model = "adopted/belmonte/block-26"
+about = "town block 26"
+
+[[objects]]
+id = "object/belmonte/block-27"
+groups = ["SM_BM_BT_blk_27"]
+model = "adopted/belmonte/block-27"
+about = "town block 27"
+
+[[objects]]
+id = "object/belmonte/block-28"
+groups = ["SM_BM_BT_blk_28"]
+model = "adopted/belmonte/block-28"
+about = "town block 28"
+
+[[objects]]
+id = "object/belmonte/block-29"
+groups = ["SM_BM_BT_blk_29"]
+model = "adopted/belmonte/block-29"
+about = "town block 29"
+
+[[objects]]
+id = "object/belmonte/block-30"
+groups = ["SM_BM_BT_blk_30"]
+model = "adopted/belmonte/block-30"
+about = "town block 30"
+
+[[objects]]
+id = "object/belmonte/block-31"
+groups = ["SM_BM_BT_blk_31"]
+model = "adopted/belmonte/block-31"
+about = "town block 31"
+
+[[objects]]
+id = "object/belmonte/block-32"
+groups = ["SM_BM_BT_blk_32"]
+model = "adopted/belmonte/block-32"
+about = "town block 32"
+
+[[objects]]
+id = "object/belmonte/block-33"
+groups = ["SM_BM_BT_blk_33"]
+model = "adopted/belmonte/block-33"
+about = "town block 33"
+
+[[objects]]
+id = "object/belmonte/block-34"
+groups = ["SM_BM_BT_blk_34"]
+model = "adopted/belmonte/block-34"
+about = "town block 34"
+
+[[objects]]
+id = "object/belmonte/block-35"
+groups = ["SM_BM_BT_blk_35"]
+model = "adopted/belmonte/block-35"
+about = "town block 35"
+
+[[objects]]
+id = "object/belmonte/block-36"
+groups = ["SM_BM_BT_blk_36"]
+model = "adopted/belmonte/block-36"
+about = "town block 36"
+
+[[objects]]
+id = "object/belmonte/block-37"
+groups = ["SM_BM_BT_blk_37"]
+model = "adopted/belmonte/block-37"
+about = "town block 37"
+
+[[objects]]
+id = "object/belmonte/block-38"
+groups = ["SM_BM_BT_blk_38"]
+model = "adopted/belmonte/block-38"
+about = "town block 38"
+
+[[objects]]
+id = "object/belmonte/block-39"
+groups = ["SM_BM_BT_blk_39_Piece0", "SM_BM_BT_blk_39_Piece1", "SM_BM_BT_blk_39_Piece2"]
+model = "adopted/belmonte/block-39"
+about = "town block 39"
