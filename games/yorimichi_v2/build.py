@@ -36,8 +36,8 @@ def steps(ctx):
              about='the V2 editor target: Yorimichi, YorimichiAssets, YorimichiImport and enabled plugins'),
         Step('unreal.package', [Call('check_package_inputs', _check_package_inputs),
                                 UnrealPackage('YorimichiV2', out / 'package' / 'archive')],
-             inputs=[GAME / 'build.py', ctx.uproject, UNREAL / 'Config', UNREAL / 'Source', UNREAL / 'Plugins',
-                     UNREAL / 'Content', ctx.unreal_root / 'Engine/Build/Build.version'],
+             inputs=[GAME / 'build.py', GAME / 'tools/package', ctx.uproject, UNREAL / 'Config', UNREAL / 'Source',
+                     UNREAL / 'Plugins', UNREAL / 'Content', ctx.unreal_root / 'Engine/Build/Build.version'],
              needs=['unreal.compile'], heavy=True, explicit=True, outputs=[out / 'package' / 'archive'],
              about='explicit: cook and package the committed content for macOS (integration milestones, releases)'),
         # Explicit: the one-time static-world migration, run only by tools/migrate/run.py with its plan.
@@ -337,3 +337,12 @@ def _check_package_inputs(ctx, log):
     log.write(result.stdout + result.stderr)
     if result.returncode:
         raise RuntimeError('content check failed; fix the reported content before packaging')
+    # The cook configuration: every string-loaded root cooked, no excluded feature content, every map present and
+    # the V2 Mac identity (tools/package/cook_config.py; `--write` adds a missing always-cook root).
+    sys.path.insert(0, str(GAME / 'tools/package'))
+    import cook_config
+    failed = [p for p in cook_config.problems(GAME) if p.level == 'FAIL']
+    log.write(''.join(f'{p}\n' for p in failed) or 'cook configuration covers every loaded root\n')
+    if failed:
+        raise RuntimeError(f'cook configuration: {len(failed)} failure(s); see the log and '
+                           'tools/package/cook_config.py')
