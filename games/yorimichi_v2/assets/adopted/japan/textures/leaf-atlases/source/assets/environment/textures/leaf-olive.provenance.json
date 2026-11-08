@@ -1,0 +1,38 @@
+{
+  "revision": "r01",
+  "use": "textures",
+  "name": "leaf-olive",
+  "inputs": [],
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "prompt_sha256": "fedb09a879dcc63a14fe68d548f99b891cc60275629444c33ed3c6e32f13c8d5",
+  "status": "done",
+  "started_at": "2026-10-12T22:03:46.467979+00:00",
+  "output": "leaf-olive.png",
+  "output_sha256": "cc55ba243262696b438771e81c3536ad18536948df24f46df67862c29ce2bc17",
+  "usage": {
+    "input_tokens": 85,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 85
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1841
+  },
+  "elapsed_seconds": 32.1,
+  "finished_at": "2026-10-12T22:04:18.608193+00:00",
+  "prompt": "Game foliage atlas, exactly four distinct olive twig clusters in\nfour equal square cells (2 by 2). Each cluster has many small narrow silver-green\nolive leaves, irregular overlapping leaves and visible fine branching. Isolated\non pure black, black gaps between leaves, generous black cell-edge margins.\nFlat orthographic, neutral diffuse colour, no shadow, no text, no trunk or ground.",
+  "source": {
+    "file": "leaf-olive.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 94,
+    "chroma": "4:4:4"
+  },
+  "source_sha256": "d404aa679073729232ec30517cdc24abf10b60cb29a25d6e4314c36fea09968f"
+}

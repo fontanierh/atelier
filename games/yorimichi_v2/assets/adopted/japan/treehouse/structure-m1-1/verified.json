@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/treehouse/structure-m1-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/StructurePieces/TH_Structure_cell_-1_1.uasset": "8e1fdb22bb7843b014a5a31d15930cbffb366084026c1aeefc8d4f60100fe1de"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

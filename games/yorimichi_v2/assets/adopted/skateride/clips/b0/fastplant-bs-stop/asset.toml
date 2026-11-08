@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: FASTPLANT_BS_STOP in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/fastplant-bs-stop"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/fastplant-bs-stop"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/FASTPLANT_BS_STOP_A"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/FASTPLANT_BS_STOP_F"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/FASTPLANT_BS_STOP_G"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/FASTPLANT_BS_STOP_L"

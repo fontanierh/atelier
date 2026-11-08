@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_roof.uasset": "4ccc09bf558572444a242aa66c8e6768c360e2c679616e76c87236a21330b742",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_roof.uasset": "dd95cb12587f6f85c2da10301c3182504d5e866d5f9565f665f620908a82d3ff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

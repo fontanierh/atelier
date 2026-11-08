@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-pj-idle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_PJ_IDLE_STAT.uasset": "6826586f1828c064d35ff9ec391bf4e447dd88d35183ac6b0f15fe396981cf51"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-orcio",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Orcio.uasset": "7e8346a815309885ae04e12f1f0d4255b85eb0e2ce1932b7bcc62ef64e3de88b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Orcio_Collision.uasset": "f9086055f8608d16ab8fd807a3e410989f3126a2c23abd85316cb67f9ef50df4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

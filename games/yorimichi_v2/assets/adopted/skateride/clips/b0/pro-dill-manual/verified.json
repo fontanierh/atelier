@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-dill-manual",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_MANUAL_IDLE_N_0_CYC.uasset": "f99247ddc34facf72eaa4e264890a50f96d7757e79fca3d991fa1c6d728c00ac",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_MANUAL_NOSEIDLE_N_0_CYC.uasset": "755b50bd235841ecd1f0fc29c02912ed2021a0135ea30bc234fa20e7314f0975"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

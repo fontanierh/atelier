@@ -1,0 +1,108 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: 1FT_AIR_GRAB in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/1ft-air-grab"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/1ft-air-grab"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSL_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSL_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSL_MED_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSL_TO_BSR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSR_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSR_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSR_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_BSR_MED_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSL_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSL_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSL_MED_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSR_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSR_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSR_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_FSR_MED_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSEL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSEL_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSEL_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSEL_MED_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSER_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSER_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSER_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_NOSER_MED_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILL_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILL_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILL_MED_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILR_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILR_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILR_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/1FT_AIR_GRAB_N_TAILR_MED_OUT"

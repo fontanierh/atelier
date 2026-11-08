@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-paper",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_paper.uasset": "8573c7c0d8244ccd3a273f6205c9486777c37330861a1576af2146b2b307d39c",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_paper.uasset": "6a40874a001b3704cd04618d075ec94ea2f4ec86ee05ecab116450d29b210b39"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

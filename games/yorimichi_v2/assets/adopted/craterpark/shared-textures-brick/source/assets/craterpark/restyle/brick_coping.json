@@ -1,0 +1,39 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 shows the art direction of a stylised game: soft painterly shapes, flat matte colour. Paint a seamless tileable texture in that style, seen from directly above, perfectly flat and straight-on, filling the square edge to edge: no perspective, no horizon, no object outline, no shadows or lighting gradient, even brightness everywhere, no text, repeating seamlessly on all four sides. Hand-painted like the background art of a Japanese animated film, soft strokes, medium detail that holds up when repeated over a large area, no photographic grime or noise. The surface: a band of glazed terracotta brick coping as on the rim of the bowl in Image 1: one row of rounded bullnose terracotta bricks laid end to end from left to right across the whole frame, each brick about one eighth of the frame wide, warm orange-red glaze with soft highlights, thin pale cream grout lines between them; the brick row fills the frame top to bottom.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/style-bowls.png": "c6c8ebc978425e8fa6cb992fa8637388eb5a1655e03f0b84971db31e9f1e307c"
+  },
+  "texture": "textures/brick_coping.png",
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "c5b56e9167866355a27e129422130a1f97dceeb779093b81f75a4c36a05d477c",
+  "status": "done",
+  "started_at": "2026-10-15T16:45:43.309324+00:00",
+  "output": "brick_coping.png",
+  "output_sha256": "0282ce93d3421ff1080fc1141e95d4eea467bce6f86c3f5b47ba7fdd2f2c39b7",
+  "usage": {
+    "input_tokens": 914,
+    "input_tokens_details": {
+      "image_tokens": 704,
+      "text_tokens": 210
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 2670
+  },
+  "elapsed_seconds": 44.4,
+  "finished_at": "2026-10-15T16:46:27.704306+00:00",
+  "compact": {
+    "file": "brick_coping.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

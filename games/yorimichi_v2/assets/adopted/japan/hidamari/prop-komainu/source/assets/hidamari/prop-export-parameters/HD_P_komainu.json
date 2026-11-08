@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_komainu",
+  "parent": "HD_P_komainu",
+  "schema": 1,
+  "settings": null,
+  "size": 1.1,
+  "slug": "komainu",
+  "solid": true,
+  "target": 0.1,
+  "turn": -90,
+  "upright": false
+}

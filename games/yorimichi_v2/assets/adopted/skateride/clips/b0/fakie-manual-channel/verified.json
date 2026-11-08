@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/fakie-manual-channel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/FAKIE_MANUAL_CHANNEL_CYC.uasset": "dd2bd5230b0b2d3f90f9152d30ea14e4d087cb61aab191e8b46671c897e3733a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

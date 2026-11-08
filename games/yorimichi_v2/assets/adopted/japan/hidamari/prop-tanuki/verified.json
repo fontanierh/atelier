@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-tanuki",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_tanuki.uasset": "8a405bc48d440fe736de2b451cc85161fa31685dec07a5e2cc77caec9c7c022b",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_tanuki.uasset": "136efba9a04190b696cdd06e67e8685c21deb783049f4afe64739303a7bb1d5a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

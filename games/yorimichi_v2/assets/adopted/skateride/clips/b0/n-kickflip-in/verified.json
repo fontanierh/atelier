@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-kickflip-in",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_KICKFLIP_IN_HIGH_A.uasset": "8696938e3b1096bf9c8cd2fd8b0a232891742d623fb1f367f4500c21cea88b58",
+    "unreal/Content/SkateRide/Clips/B0/N_KICKFLIP_IN_HIGH_G.uasset": "6a6c6693f0fa2fd5d169cf8f4871457daa0eda91951c45e7dcd3d19bc304160f",
+    "unreal/Content/SkateRide/Clips/B0/N_KICKFLIP_IN_LOW_A.uasset": "1cb488a309b78e9d1e03fa33e56730d7eb1388d48d073088f1a0fe89dc5e591d",
+    "unreal/Content/SkateRide/Clips/B0/N_KICKFLIP_IN_LOW_G.uasset": "2279788193054a019e269d9c7881c3eff11f86579ca156ccb1e7a940beaedd23"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

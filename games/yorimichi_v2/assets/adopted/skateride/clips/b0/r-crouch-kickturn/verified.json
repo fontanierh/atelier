@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-crouch-kickturn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_CROUCH_KICKTURN_STAT_BS.uasset": "f23dc0ce44c085976bf43862aa91e61d6476dcc87c2432f74a05746ca9a9d3a3",
+    "unreal/Content/SkateRide/Clips/B0/R_CROUCH_KICKTURN_STAT_FS.uasset": "fc1389c3ba910d4308e287c8100d291eb692ac4e35a805aa477101ffa00bad22"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

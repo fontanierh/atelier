@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/craterpark/crater-floor-3-5",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_material_036_15_20.uasset": "453331afd07e79da20081b5536b3628486756227e294430127f9416ad741c7b8",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_material_044_15_20.uasset": "fabe0b69a82a40eac1d3f065bcf95bfdf773f6e7900f072a1b4e8952e749990f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

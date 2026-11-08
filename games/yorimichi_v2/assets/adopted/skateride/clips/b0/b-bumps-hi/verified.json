@@ -1,0 +1,25 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-bumps-hi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_BACKKNOCK_0_N.uasset": "9c8defb6814c4c9c2064522acad122946e3fa6034ec55e3f8a01fafb8ba9c2fb",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_BACKKNOCK_CR_N.uasset": "70f385a6144da711162d2ce40c2d45ba5c2955a3c9010d2c9e1adc6099fc216a",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_FRONTKNOCK_0_N.uasset": "ce634d592f898420c7a24eeeb90782835f6f582daa13d862d302c5c6c49790e6",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_FRONTKNOCK_CR_N.uasset": "e4f467d3aeb77f281d1d4cc8ddcadf684e765ee7c9a9f5aa463c5cb53feb9ad4",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_LBACKKNOCK_0_N.uasset": "43d6828450b6ff177caae498c24b6278c22fab0e334be152eda004972a5b5375",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_LBACKKNOCK_CR_N.uasset": "c509869478028327f4f41b203829a0a8264145e298fd705fef45ce4d62c94002",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_LEFTKNOCK_0_N.uasset": "212655a287be241f1d0f00756b692c5916fc5747933b472e5b89b1a96e03c957",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_LEFTKNOCK_CR_N.uasset": "ea71b3f7bea5a20b6ee088016792939a21ac20d73335ca4332925044ffe0a815",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_LFRONTKNOCK_0_N.uasset": "5a97ae23ce86b98f26969a606b803f9f3eee10db11c980836d8979a5aa4bf114",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_LFRONTKNOCK_CR_N.uasset": "fe0defdadb660d9702d68bd3d84bc35b63837f3e51e43ba44b859090cf362c18",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_RBACKKNOCK_0_N.uasset": "c8d0df3568810944e7cf0c084e16f57cc39fd0d9c30ee11e96b3a4de359f6e67",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_RBACKKNOCK_CR_N.uasset": "80179df9dfaa40d269de6da3041c59e0748da7e674fd20d3c074c4667f81ae8b",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_RFRONTKNOCK_0_N.uasset": "d756040a3ba77d525d655eed75215732c57ee138bcfc16935831ab3a0cf79942",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_RFRONTKNOCK_CR_N.uasset": "4bae6c2b5774b286abbdf3d60ba14826f2cb67e876c380648f4433304c6b8322",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_RIGHTKNOCK_0_N.uasset": "4f1c181f46d59c702f1889ffd04ab0939483a7810febf37b2d648c1a8eb419ba",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_HI_RIGHTKNOCK_CR_N.uasset": "05613c3424151d70d42d1adda2f931e913f228ee3ca1941b87fd02454d137421"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

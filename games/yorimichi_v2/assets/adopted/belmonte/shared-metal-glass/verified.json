@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/belmonte/shared-metal-glass",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_4ee3168b033c.uasset": "52f4f6b4c24926d53f36112b89207fe3947dab0f52bc9fafcf73a0596162485c",
+    "unreal/Content/Belmonte/Materials/MI_BM_69b755f9ad2a.uasset": "ec1c78816bb4b840ef65e1ae5916ef8c4522073a7fd3d58de335cf42a0785c79",
+    "unreal/Content/Belmonte/Materials/MI_BM_aa1a8d45375e.uasset": "1f39d5ce92041216151d701455497fa75d40d3511529e34e686d41f9662bdb35",
+    "unreal/Content/Belmonte/Materials/MI_BM_b5dfa6e6373d.uasset": "d6a5ddbce2c625fd7f0f321f005e5bb6d21463b68e47019c3756eb2225be84eb",
+    "unreal/Content/Belmonte/Materials/MI_BM_fae8893ff89f.uasset": "b088a09cd8cf3577a7fa1ea70df47ffd062ed14b61bc91f43e068a9ab646168e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

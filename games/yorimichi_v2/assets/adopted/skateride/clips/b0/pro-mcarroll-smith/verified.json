@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-mcarroll-smith",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BF_HI_0_CYC.uasset": "e0b765ebed0f7917588cff06eb31fc7043ae45113c2da18b7a9b55af87e3794e",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BF_HI_L_CYC.uasset": "b0417a9ccd27839917453cca92673869e328e69c37a8ad749a27db79a5dc7ae5",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BF_HI_R_CYC.uasset": "d41517ced0b78f6e10325232cdefb84960f860696deb251dde49f9e08870c9c1",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BF_LO_0_CYC.uasset": "04dbb44b541aae7254548f7056bf82e39cdad431c304fa93799a895ab42cec45",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BF_LO_L_CYC.uasset": "da44d28f4790ebd3e9710af1cc151f3bad0112fd3f25fc62e75bc4bf88fecea2",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BF_LO_R_CYC.uasset": "b41b4a1bd76d829b67c0210b2177ecf53f8d131afd5613f2ec711354a259c0e3",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BS_HI_0_CYC.uasset": "5f9767e4c4104264fc6ea76b7dd7715c5904b086d8ccc60640a4e632c17d4dbf",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BS_HI_L_CYC.uasset": "24f3c2884fb3ec4342264fd945ad22841bfbab324c220b114d989dee8f8ed6ad",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BS_HI_R_CYC.uasset": "b673c31987d4411490373430e90aa7695068915c969f84412f1c3dfec7e23268",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BS_LO_0_CYC.uasset": "5b50a2bdde6f50c695584030b9e17a6f971f1daa6d82cd2b53cf76d7ebb27956",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BS_LO_L_CYC.uasset": "3503fb6058bab370251dec47ac52671a3067786e8c14607483c60f043cb07639",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_SMITH_BS_LO_R_CYC.uasset": "aa2628935582c66fd52bca734c6b728227ea1a182c8843284b45582ce85af357"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

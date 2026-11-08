@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-scooter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_scooter.uasset": "50901246a15d12012d3534c531b9520fe3575cd2e596060781de28bbb5dc3792",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_scooter.uasset": "7e0ec7d409154e0708fce6c1a55b1ae23f25c0d7f5b18be13328af5e61c5d840"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant bay
+schema = 1
+id = "adopted/horses/coat-bay"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-bay"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/bay.png"
+sha256 = "51432e6b3e102cea7610112ab4330428389ea499863f4b72786590378c2a653c"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/bay.json"
+sha256 = "685e3a7fef6a8a9bc8fa8e0d1b252b5ebf52260d44a0a2516e318d33758b57d7"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/bay"

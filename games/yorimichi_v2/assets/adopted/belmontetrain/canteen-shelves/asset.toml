@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture canteen-shelves: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/canteen-shelves"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/canteen-shelves"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-shelves.glb"
+sha256 = "d500498e081068e2263b6daf13301e0edb82e5141f8c44c453a7ce9a8de6d27a"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-shelves.json"
+sha256 = "161a910e440c15148e5d82f886285f74e74a0cd332bd0e0f79dd769cb9d9d260"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenShelves"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/M_BT_CanteenShelves"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/canteen-shelves-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/canteen-shelves-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/canteen-shelves-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/M_BT_CanteenShelves_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/canteen-shelves-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/canteen-shelves-lod1-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/canteen-shelves-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenShelves/SM_BTF_CanteenShelves_LOD1"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-fountain-piazza",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_FountainPiazza.uasset": "7f85f44494796de0dc5ddb266c701c8044d91af65a6c9ffbe02870479904714b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_FountainPiazza_Collision.uasset": "9e581f0cfeab508534e8145ea04536d66453a140d3573c565c70db9ce2e3571f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

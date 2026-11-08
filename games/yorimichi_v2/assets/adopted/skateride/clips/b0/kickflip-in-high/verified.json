@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/kickflip-in-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_HIGH_A.uasset": "50744f97dbc4e8fa2416f82418e804fa5e8bef278978b6e1bcfa92c4314b2ad8",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_HIGH_G.uasset": "07a1e60276feeace4300cdfb3539f9da9d051ffcbc777e05a77ba3336288ab17"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

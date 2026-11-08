@@ -1,0 +1,38 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the Belmonte station: head house, sheds, coaches and forecourt (SM_ST_*; platforms are part of them)
+schema = 1
+id = "adopted/belmontetrack/station-belmonte"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrack/station-belmonte"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrack/materials"]
+
+[[sources]]
+path = "source/docs/BELMONTE_STATION.md"
+sha256 = "986dedceb99d2f5219250a4829724248b0bc2fb8643660ae706a1ca5b99444e3"
+
+[[sources]]
+path = "source/world/train/station.py"
+sha256 = "f3387f0603d00008ed07254fe74eea10da8c0d749275679c621af641436ec118"
+
+[[sources]]
+path = "source/world/train/station_render.py"
+sha256 = "c1f5ed1d0aa108792ce33790d83ed84ef3bfee489e35722b5fc84e555ebedf04"
+
+[[sources]]
+path = "source/world/train/station_site.py"
+sha256 = "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/SM_ST_Coaches"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/SM_ST_Forecourt"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/SM_ST_Headhouse"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/SM_ST_Sheds"

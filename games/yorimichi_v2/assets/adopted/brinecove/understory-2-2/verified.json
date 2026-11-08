@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/brinecove/understory-2-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Understory_2_2.uasset": "2dc946a1176d4ff1bcd5318947bfd77c284f00e729afc25dcf8c7fc3d00beda9",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Understory_2_2_Soft.uasset": "557853dcea30b098a94e1e8b42e8f509a9058803c5334e5af1a2cde1bc729157"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

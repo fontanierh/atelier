@@ -1,0 +1,16 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface flat: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-flat"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-flat"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_flat"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_flat"

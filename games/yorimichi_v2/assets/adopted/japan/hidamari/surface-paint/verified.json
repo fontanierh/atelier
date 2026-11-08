@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-paint",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_paint.uasset": "6b616aa80ed218c9df99304281bfec9933a76c0a90723a8db46497b87850dde8",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_paint.uasset": "9cf4ccb4e9d3b655b3eed1b147fbe088347e1986f448451ef7de28a061e94095"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

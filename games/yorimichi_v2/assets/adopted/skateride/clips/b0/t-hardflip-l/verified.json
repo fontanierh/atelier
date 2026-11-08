@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-hardflip-l",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HARDFLIP_L_CYC.uasset": "7497be52b97c1c2f940568807cc77398353671da33f58a28547dbc1c75c721d2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-dill-pushlsp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_PUSHLSP_HSTR_N_0_CYC1.uasset": "a9bbf6097cc0217be400135262957350f62fc90f65686ec3c1ba4e0e06c786ee",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_PUSHLSP_HSTR_N_0_CYC2.uasset": "360fd9b1ab3aa45fc26a0b5142b72b32bdbc61ee61d65109c970c429fd460525",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_PUSHLSP_HSTR_N_0_INTO.uasset": "ee5c8299140856d83c218f75e9b577ae6adf3f503b9d944fdfc4a5fcc51d4203",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_PUSHLSP_LSTR_N_0_CYC1.uasset": "faf7cde89937b6ccd29d1615d12dded5d7f96702ffa2cb0ef1b8ee09ddcd8f12",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_PUSHLSP_LSTR_N_0_CYC2.uasset": "ba99a0c03d540b9e31ae6b76a9ee763a704c2cc90088cbe72eb51bcda5d0897f",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_PUSHLSP_LSTR_N_0_INTO.uasset": "2e82d13816a707b3f7f36158d823722dff3d3d08b723d87cee2c0069436cce31"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

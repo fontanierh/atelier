@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-bicepflex",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_BOTH_CYC.uasset": "a8e1b4f21034e97c799356d528bb38a0c13f389e48cbbfd356a91a75605480be",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_BOTH_INTO.uasset": "9027f177787a0f5f9ce00f60e0117dc225f13ec5efff8c7e271f50cfb80a7927",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_BOTH_OUT.uasset": "d974cd6d77f5284687089ae4869cfabf4ab083ea4dbe77e889eec0df547c640c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_LEFT_CYC.uasset": "284d446741ebc4142ed480796ebcb12f8f033155d2735776549fee82375f10ad",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_LEFT_INTO.uasset": "a6b4d561847a5889d55a38fd6cd7d717609f737c118fb8951addb5d7e5e3d682",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_LEFT_OUT.uasset": "464379287c36a113e70b61bb40b7300df2f76f284f9d6639402af4088a9a7929",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_RIGHT_CYC.uasset": "ba6d2b00f1ae05e43da8a9ac34e97e697ea8da93fd6a877784e24b8dc277d0fb",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_RIGHT_INTO.uasset": "cd33d4eb99062751a051b8c42e1b6df84ceb0afa8d12743961754a0c3cfc8ce6",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BICEPFLEX_RIGHT_OUT.uasset": "f8b16cdbfa6172d6c39264c99bf6b542e63ce54df51543393ef338ef78184557"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

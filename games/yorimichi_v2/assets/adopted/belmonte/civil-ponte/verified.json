@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/civil-ponte",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Ponte.uasset": "6aba477482e2ce11fed73bcf169dafde37831d0192ab43969a6a2f4803b3ea0c",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Water_Ponte.uasset": "e0939fd41a955916a6808f16ee2f22a482b4db3b464ab1f5b38626be3d9fdbd3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

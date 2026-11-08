@@ -1,0 +1,190 @@
+{
+ "about": "Japan textures editing units for tools/migrate/adopt.py (written by tools/migrate/japan_units.py)",
+ "units": {
+  "bark": {
+   "about": "Japan bark textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/environment/textures/tree-bark.jpg"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "ground": {
+   "about": "Japan ground textures (7 package(s))",
+   "sources": [
+    "games/yorimichi/assets/environment/textures/tuscan-ground.jpg",
+    "games/yorimichi/assets/environment/textures/tuscan-ground.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "leaf-atlases": {
+   "about": "Japan leaf-atlases textures (14 package(s))",
+   "sources": [
+    "games/yorimichi/assets/environment/textures/leaf-cypress.jpg",
+    "games/yorimichi/assets/environment/textures/leaf-cypress.provenance.json",
+    "games/yorimichi/assets/environment/textures/leaf-oak.jpg",
+    "games/yorimichi/assets/environment/textures/leaf-oak.provenance.json",
+    "games/yorimichi/assets/environment/textures/leaf-olive.jpg",
+    "games/yorimichi/assets/environment/textures/leaf-olive.provenance.json",
+    "games/yorimichi/assets/environment/textures/leaf-pine.jpg",
+    "games/yorimichi/assets/environment/textures/leaf-pine.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "plaza-harbor": {
+   "about": "Japan plaza-harbor textures (4 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "rock": {
+   "about": "Japan rock textures (7 package(s))",
+   "sources": [
+    "games/yorimichi/assets/environment/textures/volcanic-rock.jpg",
+    "games/yorimichi/assets/environment/textures/volcanic-rock.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "sky-water": {
+   "about": "Japan sky-water textures (4 package(s))",
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-ginkgo": {
+   "about": "Japan tree-forest-ginkgo textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Ginkgo.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-maple": {
+   "about": "Japan tree-forest-maple textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Maple.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-oak": {
+   "about": "Japan tree-forest-oak textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Oak.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-pine": {
+   "about": "Japan tree-forest-pine textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Pine.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-cypress": {
+   "about": "Japan tree-tuscan-cypress textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Cypress.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-oak": {
+   "about": "Japan tree-tuscan-oak textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Oak.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-olive": {
+   "about": "Japan tree-tuscan-olive textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Olive.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-pine": {
+   "about": "Japan tree-tuscan-pine textures (2 package(s))",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Pine.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Japan/Textures/T_Arcade_paving": "plaza-harbor",
+  "/Game/Japan/Textures/T_Arcade_timber": "plaza-harbor",
+  "/Game/Japan/Textures/T_CoastRock": "rock",
+  "/Game/Japan/Textures/T_ForestNormalDefault": "ground",
+  "/Game/Japan/Textures/T_Harbor_paving": "plaza-harbor",
+  "/Game/Japan/Textures/T_Harbor_timber": "plaza-harbor",
+  "/Game/Japan/Textures/T_LeafCypress": "leaf-atlases",
+  "/Game/Japan/Textures/T_LeafOak": "leaf-atlases",
+  "/Game/Japan/Textures/T_LeafOlive": "leaf-atlases",
+  "/Game/Japan/Textures/T_LeafStonePine": "leaf-atlases",
+  "/Game/Japan/Textures/T_NorthCraterFloor": "rock",
+  "/Game/Japan/Textures/T_NorthCraterMask": "rock",
+  "/Game/Japan/Textures/T_NorthSnowMask": "rock",
+  "/Game/Japan/Textures/T_Tree_Forest_Ginkgo_colour": "tree-forest-ginkgo",
+  "/Game/Japan/Textures/T_Tree_Forest_Ginkgo_normal": "tree-forest-ginkgo",
+  "/Game/Japan/Textures/T_Tree_Forest_Maple_colour": "tree-forest-maple",
+  "/Game/Japan/Textures/T_Tree_Forest_Maple_normal": "tree-forest-maple",
+  "/Game/Japan/Textures/T_Tree_Forest_Oak_colour": "tree-forest-oak",
+  "/Game/Japan/Textures/T_Tree_Forest_Oak_normal": "tree-forest-oak",
+  "/Game/Japan/Textures/T_Tree_Forest_Pine_colour": "tree-forest-pine",
+  "/Game/Japan/Textures/T_Tree_Forest_Pine_normal": "tree-forest-pine",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Cypress_colour": "tree-tuscan-cypress",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Cypress_normal": "tree-tuscan-cypress",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Oak_colour": "tree-tuscan-oak",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Oak_normal": "tree-tuscan-oak",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Olive_colour": "tree-tuscan-olive",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Olive_normal": "tree-tuscan-olive",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Pine_colour": "tree-tuscan-pine",
+  "/Game/Japan/Textures/T_Tree_Tuscan_Pine_normal": "tree-tuscan-pine",
+  "/Game/Japan/Textures/T_VolcanicRock": "rock",
+  "/Game/Japan/Textures/T_bark": "bark",
+  "/Game/Japan/Textures/T_bark_olive": "bark",
+  "/Game/Japan/Textures/T_cloudmask": "sky-water",
+  "/Game/Japan/Textures/T_concrete": "rock",
+  "/Game/Japan/Textures/T_flower": "ground",
+  "/Game/Japan/Textures/T_grass": "ground",
+  "/Game/Japan/Textures/T_ground": "ground",
+  "/Game/Japan/Textures/T_ground_detail": "ground",
+  "/Game/Japan/Textures/T_leaf_amber": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_broad": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_cedar": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_crimson": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_ginkgo": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_maple": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_ochre": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_ochre_small": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_pine": "leaf-atlases",
+  "/Game/Japan/Textures/T_leaf_small": "leaf-atlases",
+  "/Game/Japan/Textures/T_litter": "ground",
+  "/Game/Japan/Textures/T_road": "ground",
+  "/Game/Japan/Textures/T_rooftile": "rock",
+  "/Game/Japan/Textures/T_sky": "sky-water",
+  "/Game/Japan/Textures/T_water": "sky-water",
+  "/Game/Japan/Textures/T_white": "sky-water"
+ }
+}

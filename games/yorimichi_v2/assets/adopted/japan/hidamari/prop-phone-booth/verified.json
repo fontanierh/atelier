@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-phone-booth",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_phone_booth.uasset": "36c1f6c2130db68ea5411749618bd3b18019bb5e5a5f0bfde75e6d7e2816126e",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_phone_booth.uasset": "076253c33c8f9dfcaf23fb088b6caa045862fb5e5cadc0167a3b79142c832740"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

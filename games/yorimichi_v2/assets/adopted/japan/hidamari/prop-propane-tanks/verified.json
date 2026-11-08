@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-propane-tanks",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_propane_tanks.uasset": "1c8f0af9c2af2a67f3d3ae1ead53fe8a152c476ef1b0feed8713f2134ebcf717",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_propane_tanks.uasset": "0bff9100b66f1efbad0766c9437689f852e1033fdfec605a504cc57d0cc4c8ba"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

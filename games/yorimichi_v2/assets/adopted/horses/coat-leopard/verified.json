@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-leopard",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/leopard.uasset": "7414b43621e4da9def337dcd01d8117e2622751ca105421a575d5f8aed5b1fd3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

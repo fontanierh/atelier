@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_town_bus",
+  "parent": "HD_P_town_bus",
+  "schema": 1,
+  "settings": null,
+  "size": 9.0,
+  "slug": "town_bus",
+  "solid": true,
+  "target": 0.12,
+  "turn": -90,
+  "upright": false
+}

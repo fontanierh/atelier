@@ -1,0 +1,66 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-water (8 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-water"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-water"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_0.glb"
+sha256 = "b93663dcaf1cd209eee971dffaac5df239d04cc1a3f2a23916945ae0ac175d5c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_1.glb"
+sha256 = "99e539f99fe9fd2bb135f2fe30f916da766f2571feedd85e077237854437c1e5"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_2.glb"
+sha256 = "0d2279f551fb6f6a9baa0841add8935ca5836cee43ef10f0e30b8a319b060886"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_3.glb"
+sha256 = "7686c67ee01b729727a3a69411d96c76e8f5d084a7553f627a09c52bf532fc66"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_4.glb"
+sha256 = "dfc3e55b2ff7ee95b94a9f3082fb9c1da2fb88d23b05fce1820e2481f67e782c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_5.glb"
+sha256 = "a98522ccf20590e97c727cbf76e34ac58129abeeb4e89ff61e49ab2761a06710"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_6.glb"
+sha256 = "86b2f45d507a04ef1be50312792b6e4c326c0ac1ca614cf3ad305fd3d274c15b"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_7.glb"
+sha256 = "ccfaf123aaea5a97f70eeee936f1f8860a80a7bb34486e4bfc5c13079ac8cda6"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_5"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_6"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_7"

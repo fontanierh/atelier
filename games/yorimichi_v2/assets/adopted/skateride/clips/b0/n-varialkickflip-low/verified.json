@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-varialkickflip-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_VARIALKICKFLIP_LOW_A.uasset": "71483f7b25e6e34c19293b96d793845572af07490bcb51bc2cdad25b0a0175ea",
+    "unreal/Content/SkateRide/Clips/B0/N_VARIALKICKFLIP_LOW_G.uasset": "80aac81e4133894a2e412f6618f7ce9072453bfcfe8772b0296153ede5ea8371"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

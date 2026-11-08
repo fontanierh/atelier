@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-church (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-church"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-church"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Church.glb"
+sha256 = "f590ad1ff0f5556ebb1992cfaf3881242bf6fd3b54457b8e7bfe6ab9db08d917"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_Church_Collision.glb"
+sha256 = "8853018e1b412dc0b15ffc1b9ace0ddd248e00d726583f225df7f48ae4d890ea"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Church"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_Church_Collision"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-sidewalk",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_sidewalk.uasset": "573fc04b086afd62d74aec81c72b0271845650b7bd1273699d0d07a5f8ecfe83",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_sidewalk.uasset": "83672434a4ccc2effeec92e42ab89064fdd5c3a9f4da7a8d736aeabc0853aa83"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

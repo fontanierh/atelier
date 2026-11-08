@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-getouttahere",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_BOTH_CYC.uasset": "62d99aef871e9a2d916ca1df6c4f47633522909e60e8c7f459223d4b8198ef4f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_BOTH_INTO.uasset": "2d91947597259404cd43ad7ff721b0d74aa0885b99faefcc5c036b085959c231",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_BOTH_OUT.uasset": "378293e533b3a0d7cbd2c0844e46ebac773a076b858e0db5ecc12c8083756c58",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_LEFT_CYC.uasset": "1f7d15e7ca22b52e46217a4d9621a3a43cb6d15f46582f8e888d25ddff42f1d4",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_LEFT_INTO.uasset": "a46b68ec1cc96748a93d6010424ced0ed99c9e162ed1d786994535ddf4dbdea9",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_LEFT_OUT.uasset": "14faab0e4a3ca56830e1a9111bbcf0a5283eb753bd6fee799069cfc63e3fb60b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_RIGHT_CYC.uasset": "7db8d9f200265496cc64756e08ec22ab6d806206d49e7fc7f10d15e518b1ba89",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_RIGHT_INTO.uasset": "9fccbbd4652d847a3ccd6c09ef09efb2150b586d03f43b3b51fc0fd9cfaaf1bd",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_GETOUTTAHERE_RIGHT_OUT.uasset": "a8d3361d2f46232cc64b442eb18a686d391c13d059ce62cd74d0783d79199126"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

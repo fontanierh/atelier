@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-basket",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_basket.uasset": "ab8f43fc260366b724d4eb75fdde2f0680d7a8761447a8a125a41f0edf15e3ba",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_basket.uasset": "ee4b464d967c4695b4e5efa0f76701edb4f4873e0edc1c439394baa770bcc072"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

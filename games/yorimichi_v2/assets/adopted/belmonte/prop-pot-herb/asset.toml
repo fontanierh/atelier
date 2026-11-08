@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-pot-herb (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-pot-herb"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-pot-herb"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotHerb.glb"
+sha256 = "a8042fac44545d90399d9d0ad3fa8025ad0d63c6bad09ec7959c580335d66de3"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotHerb_Collision.glb"
+sha256 = "334643b10acf3bbcca42f3fb072c181790ebd832a67c051ac746c5dc4084b388"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotHerb"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotHerb_Collision"

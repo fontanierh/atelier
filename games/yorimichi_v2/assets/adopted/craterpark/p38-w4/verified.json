@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/craterpark/p38-w4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_25_20.uasset": "26e3cb0657ded70b66b207f51e6b5733111d0caabccdc92eac19a7521bc99ea8",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_25_20.uasset": "013a4c9118373c0f232f1015496761ca9f68846a3852ee8a91cebaccecc7c1b7",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_25_20.uasset": "7d36f6ea962a2fe376919eb77a6c66bf6031b225a69e80b451c72d7934967b9c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

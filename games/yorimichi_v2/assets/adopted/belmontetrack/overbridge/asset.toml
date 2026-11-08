@@ -1,0 +1,25 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the Belmonte station overbridge
+schema = 1
+id = "adopted/belmontetrack/overbridge"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrack/overbridge"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrack/materials"]
+
+[[sources]]
+path = "source/world/train/overbridge.py"
+sha256 = "d3a24862f62fb25664a8a5ee79f71faf8cca966c81999a227b5351a08e0885f3"
+
+[[sources]]
+path = "source/world/train/station.py"
+sha256 = "f3387f0603d00008ed07254fe74eea10da8c0d749275679c621af641436ec118"
+
+[[sources]]
+path = "source/world/train/station_site.py"
+sha256 = "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/SM_ST_Overbridge"

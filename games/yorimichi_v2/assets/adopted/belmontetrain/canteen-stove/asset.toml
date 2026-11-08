@@ -1,0 +1,42 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture canteen-stove: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/canteen-stove"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/canteen-stove"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-stove.glb"
+sha256 = "058a39d649e865795004a907825b69817f74d76e2949472387ff3656d2990a49"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-stove.json"
+sha256 = "c7ab76dfddee5141a388b1ae464a235cdcb72065d9ee7f7c2aea1bfed3125748"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenStove"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD0/M_BT_CanteenStove"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD0/canteen-stove-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD0/canteen-stove-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD1/M_BT_CanteenStove_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD1/canteen-stove-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/LOD1/canteen-stove-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenStove/SM_BTF_CanteenStove_LOD1"

@@ -1,0 +1,23 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Quarter reins set 06 with its materials and images
+schema = 1
+id = "adopted/horses/quarter-reins-06"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/quarter-reins-06"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/quarter/tack/Reins_06.glb"
+sha256 = "fbe363e80e3439adfe7e8da8b38af52c161f6700a8b609eaa206c5c9f2663b9d"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Reins_06/Kestrel_Reins_06_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Reins_06/Reins_06_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Reins_06/SK_Horse_Quarter_Reins_06"

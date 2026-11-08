@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-kei-car",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_kei_car.uasset": "4e3d38ae6a4c87e0fd5f6f16cd72496e7d7b24f42a37a76fcdf094feaa2085b1",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_kei_car.uasset": "d2b29505bbfb48e0887efb8b950e71a6da6c555f11f7c5ac8cf56e9039d79642"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

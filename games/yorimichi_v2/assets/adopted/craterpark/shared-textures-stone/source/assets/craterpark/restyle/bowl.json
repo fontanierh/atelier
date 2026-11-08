@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: smooth dark slate-grey skate-bowl concrete with a faint cool blue cast, soft broad trowel strokes and very subtle mottling.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/bowl-source.png": "a933137bb0ea6aaf3b7a8d5e3046183114015836134970897ed4e7ef4e8d123e",
+    "build/yorimichi/craterpark/restyle/style-bowls.png": "c6c8ebc978425e8fa6cb992fa8637388eb5a1655e03f0b84971db31e9f1e307c"
+  },
+  "original": {
+    "textures/tex-0024.png": "ea303f3234f9203d371007e44c5f5ab5f5faf2f113d6b389fc87131bdebc94e2"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "9daf1bd6d5772739d9172143e624744b9e442be8f967d5b6e29c980e98a5b843",
+  "status": "done",
+  "started_at": "2026-10-13T21:47:18.266573+00:00",
+  "output": "bowl.png",
+  "output_sha256": "6310ba999ec21328239a84f982a06035f2fd3c3ffbbe98782c53f6a2692f1509",
+  "usage": {
+    "input_tokens": 1997,
+    "input_tokens_details": {
+      "image_tokens": 1728,
+      "text_tokens": 269
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3753
+  },
+  "elapsed_seconds": 52.1,
+  "finished_at": "2026-10-13T21:48:10.376983+00:00",
+  "compact": {
+    "file": "bowl.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

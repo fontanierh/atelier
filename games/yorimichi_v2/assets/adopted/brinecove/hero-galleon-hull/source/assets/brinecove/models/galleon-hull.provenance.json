@@ -1,0 +1,49 @@
+{
+  "slug": "galleon-hull",
+  "stage": "brinecove-tripo-processed",
+  "generated": "2026-10-18T14:34:21.119766+00:00",
+  "source": "build/yorimichi/pirate-coast/tripo/galleon/model-r2/raw/output_model_url.fbx",
+  "source_sha256": "b1b76a663befb2e6d41cac68eeac3d37631239369f5112d660d5e836015fd4ea",
+  "references": "build/yorimichi/pirate-coast/tripo/galleon/views-r1 (front, left, back, right; approval.json)",
+  "generation": {
+    "provider": "Tripo",
+    "endpoint": "https://openapi.tripo3d.ai/v3/generation/multiview-to-model",
+    "settings": {
+      "model": "P2-20260801",
+      "quad": true,
+      "face_limit": 25000,
+      "texture": true,
+      "pbr": true,
+      "texture_quality": "detailed",
+      "export_uv": true,
+      "model_seed": 9122026,
+      "texture_seed": 9122026
+    },
+    "task_id": "8ca17358-c4a5-4d59-ab4e-354354fbc856",
+    "credits_consumed": 120.0
+  },
+  "processing": {
+    "script": "games/yorimichi/proposals/pirate-coast/src/galleon_hull.py",
+    "removed_bow_wing_vertices": 595,
+    "midship_half_beam_source_units": 0.2805,
+    "scale": 61.389681,
+    "beam_factor": 0.55,
+    "height_factor": 0.78,
+    "frame": "+Y bow, stern y=-32, stem y=29, keel z=0",
+    "dimensions_m": [
+      19.67,
+      61.0,
+      26.3
+    ],
+    "deck_z": 14.61,
+    "top_z": 26.3,
+    "masts": [
+      -14.5,
+      -2.0,
+      11.5
+    ],
+    "vertices": 26768,
+    "triangles": 45965
+  },
+  "output_sha256": "72a7420354678f2d7d37073399a86d029b4a80cee6dc7101f6b8f110666ca1cb"
+}

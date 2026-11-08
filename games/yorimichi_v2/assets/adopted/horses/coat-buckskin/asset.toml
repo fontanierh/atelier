@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant buckskin
+schema = 1
+id = "adopted/horses/coat-buckskin"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-buckskin"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/buckskin.png"
+sha256 = "44f65913ab4f8e52e910e677efd9158c27a22f454dd5648230d1cf7c961ff715"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/buckskin.json"
+sha256 = "193383de8da9b7dcdf06ffca2fef823fb87b0ef2a72f56d3e21942aeb9836905"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/buckskin"

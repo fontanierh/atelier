@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-noseidle-crouch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_CYC.uasset": "7a0bc2c396008aeb9d9ea24a409392384af113f62084aab3780cc6f6e24df494",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_INTO.uasset": "91233aad236c0047d337cacd6614630f986bbb1c2596197fdc84a83b1ca7d32f",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_OUT.uasset": "d85d209fd6e8704b1f67b0cb2bc73bfec42d949b3763ad23a86756a2bc2001eb",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_TURN_BS_0_CYC.uasset": "b254c4a50130f73927696d416a0ce3f5b4d95838ce3cb55367eb96f3454b4dea",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_TURN_BS_0_INTO.uasset": "607a68243ff67689a23e0c3a3c14f6a987d789e043bb2ed5531cc951ebe428cd",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_TURN_BS_0_OUT.uasset": "aa24b2fae35996857850afd5f0c42a4b4d80aa6fe1d05638ec7017f1c5383b1f",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_TURN_FS_0_CYC.uasset": "64722ffa7c8cd2fa6f948044e74ec4dda7840aa287ee2c092b9c12e30bf4b4d3",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_TURN_FS_0_INTO.uasset": "ca358e4807d322f77a548608d102f4b7e49896c660cee26abf1925c44671cdbc",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_CROUCH_0_TURN_FS_0_OUT.uasset": "5de61616a4178c78b01f8ac55146be2dd32370d1a901385f391e48573f909016"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

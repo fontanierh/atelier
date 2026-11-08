@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface iron: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-iron"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-iron"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/iron.jpg"
+sha256 = "e317b7f28d7e4688c19cb7510ceffd79d61bc6c0fe6e4b43d4fdb839cf682370"
+
+[[sources]]
+path = "source/assets/treehouse/textures/iron.prompt.txt"
+sha256 = "dcbb1042d662d36533a91d7b51742df9e73d4311e973c39886da4b7d7612e7cd"
+
+[[sources]]
+path = "source/assets/treehouse/textures/iron.provenance.json"
+sha256 = "e272f635d18c267e3b3ffc8301d53933a9384f70cb5c35ec91583466b7fb51dd"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_iron"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_iron"

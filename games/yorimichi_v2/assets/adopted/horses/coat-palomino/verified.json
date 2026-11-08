@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-palomino",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/palomino.uasset": "521cf6d3a861967bd1fff2489777de790a5f453a81311f5e8fe4346e21ddc3fb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

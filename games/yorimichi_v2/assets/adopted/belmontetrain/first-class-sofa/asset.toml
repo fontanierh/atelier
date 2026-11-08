@@ -1,0 +1,42 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture first-class-sofa: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/first-class-sofa"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/first-class-sofa"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/first-class-sofa.glb"
+sha256 = "210441c9ab0570f1b53304ce2d53e458f638041d4f84e66b4a2c3f2a92fa8b81"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/first-class-sofa.json"
+sha256 = "21b22fba5f29c0d13f1a58a9bfaee4936ef2da7e0d8601755bc5327ff4b144eb"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_FirstClassSofa"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_FirstClassSofa/LOD0/M_BT_FirstClassSofa"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_FirstClassSofa/LOD0/first-class-sofa-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_FirstClassSofa/LOD0/first-class-sofa-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_FirstClassSofa/LOD1/M_BT_FirstClassSofa_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_FirstClassSofa/LOD1/first-class-sofa-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_FirstClassSofa/LOD1/first-class-sofa-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_FirstClassSofa/SM_BTF_FirstClassSofa_LOD1"

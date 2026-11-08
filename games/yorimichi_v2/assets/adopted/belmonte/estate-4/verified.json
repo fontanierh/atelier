@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/belmonte/estate-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_9b1e8dfc79be.uasset": "2d30176d2ff299ebc885f25d65423bf5b1c6f4b300a6d6f0c9f4b0374039c029",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Accent.uasset": "5c4475840d8e1e99f3d3a5da10657c6479d1dd050f71626d25825de7dffedf7f",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Grounds.uasset": "6f50bd10bea12920a69eff522333c3f25eae441d437cbb0a1dddead850ab5a68",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece1.uasset": "1dce46409e6a51a82950795d7bd971b5570452038dcc711c8ef975b180675542",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece1_Collision.uasset": "2e20ce9005b17475ca8687bf7107490c82a21445ac8a95446b53bc5a282e8ba7",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece2.uasset": "0e0956aab2b9df2a1ba3e53b3a4d2728b38ae2d1195463e316120fbe796cc5b8",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Stables_Piece3.uasset": "1c15658f54a57f003744e66c3cff088708e74646c94a5ae29ea79a695e04ce15",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Villa.uasset": "5d8d2a38bcb897cb64d6001b431c6563d90e2416c10066c06e37369f66bafb37",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_4_Villa_Collision.uasset": "49dd48aa3f48e67493bf471556a128d5fe987eb7690b148349b9e8ca77fb13db"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

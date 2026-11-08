@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-stand-fromlsbrake",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_FROMLSBRAKE_MONGO_0_TR.uasset": "f100be2356169b1552bb3ec34de618625d7d618c644003d28370d77b8897d6ba",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_FROMLSBRAKE_MONGO_CR_TR.uasset": "7935e76c0d8bb92cf7b69200b7f7ccea19478eb14fdf1076010c9089716ded3a",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_FROMLSBRAKE_N_0_TR.uasset": "92320dd4ff25e9f233f41a1f41aff01b999d60e5cc10e1b5e4a23816385f3377",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_FROMLSBRAKE_N_CR_TR.uasset": "67b522d96fb23b5dd808f0d0cf58fb65f42d88a50c23c11ca9e4b18f498f8928"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-ginkgo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Tree_Ginkgo/MI_Tree_Ginkgo_Crown.uasset": "1558c43c5df99fefeeaf5716ed7143670dc182e2c3e077019d5c4169887ec672",
+    "unreal/Content/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD1.uasset": "f10d5aa1b2b4f4f9513af5902dc31ceab77a811ecc57177dcdc01d2d45e44167",
+    "unreal/Content/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD2.uasset": "b904853f7be48bcd2e8df329f3bf3960c68ba5375a1ac82a763b41fcc7c4489c",
+    "unreal/Content/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD3.uasset": "f907582da039bcc19c0286deb60489a5ff9748706c559b99d65506ab6a87a86a",
+    "unreal/Content/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD4.uasset": "c63729fae844d212252fc89bf7c5302b284839fff1cd6ab5f02569b4617b27bf",
+    "unreal/Content/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD5.uasset": "a7b3af1f07bf4d46f6383329b00a5a04d2ba333afb926c920ae10ac4710a1c21"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-kite",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_kite.uasset": "010c27e1f12ecabd641ced981acbe3eb0c6a2312ae29b46fea05a1d4263aab05",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_kite.uasset": "31efb12909ae8adf2037927bb58419552e2d31553f0db9405f874f404e6478b6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

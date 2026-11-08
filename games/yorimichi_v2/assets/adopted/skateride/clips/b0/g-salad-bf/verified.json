@@ -1,0 +1,33 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-salad-bf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_GRAB_FS_CYC.uasset": "72d241841b4025ed4165eba04627cabd89ea02d2b4be46f52afd82783f564204",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_GRAB_FS_INTO.uasset": "fa8fba6d147b08e2bf16e4c1bdf5d4e8b4434c21c886d7761764f84594971852",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_GRAB_FS_OUT.uasset": "0692c9f3a0641287f2065ff4543b01c98fe32212e6e7f123cc5287c9ae232221",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_GRAB_NOSE_CYC.uasset": "424f40590a370b5820461a905127d81ded8783005a35df113fee1eba6241134a",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_GRAB_NOSE_INTO.uasset": "4ae32933e9979d2694d2e28c0aa5dbd1a8490de6e5023431721cc56a2a88c089",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_GRAB_NOSE_OUT.uasset": "4798c6412278092b9f65824088ddb0c167ae87cb3e1ae3fd77125e6c9fa43129",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_HI_0_CYC.uasset": "fd2293c457094daca63029e4011ec1e401c1fa91dce2834f386f718e0530ee3d",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_HI_L_CYC.uasset": "1bdbfbbb9baf1f02750dcf88fc88efd5bb384315c648037cbf26337e73c6dde6",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_HI_R_CYC.uasset": "0b415802042f51a1d9d11c851e67da25d29292c95884e1a4c83f6c3327dee24a",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_LOW_0_CYC.uasset": "6cb3eb3ff4f9e734f87deac306f8feb97005457959f987ec80d75af07b3f2a3a",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_LOW_L_CYC.uasset": "3210c96c09d79f22478cd77fdb2170c9bbb2dd5f664f937e2dc7b779f23682fc",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_BS_LOW_R_CYC.uasset": "2e27f51cddafad649237327293bcc689e497b9231775ed40d3fac8fa2bdc2b52",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_GRAB_FS_CYC.uasset": "8fe113a023fd69de21513d6e7b24af1d5754dc313d90ad1af7f44751ded1166f",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_GRAB_FS_INTO.uasset": "28a982f23f4fcf9de64a2ab8710aa48773caa0e2278c9289170cce6f22d638ca",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_GRAB_FS_OUT.uasset": "c84c3eed65116b0f705301bb5719a02326a4346031e39ad5c349429136e83c1c",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_GRAB_NOSE_CYC.uasset": "9dcc5783b54d89a8104c9e1a613dab762abe75227834205d6cff5f49c6bde797",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_GRAB_NOSE_INTO.uasset": "8d91a98fb41e79101969d3236bd8866ceb528bafbe62b9f431bf42ac1dacb2cb",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_GRAB_NOSE_OUT.uasset": "a8d140784567a9c0698c1ec1b7c7438db6d04b9db8b66d5d302ce661aaf58dda",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_HI_0_CYC.uasset": "44f2c488a39846578d4a1a0583de070cb4ffbb4a5170b7667c31112dc18e7a35",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_HI_L_CYC.uasset": "85b36a613271f6f179d8bd259f62fa7c4a7865cbb1aade1cec7b5ae87de24e73",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_HI_R_CYC.uasset": "83b1a63a47539f0cbda3771bf0ddcdbfe6587ca601f047542ac507f8c5395d39",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_LOW_0_CYC.uasset": "93f95c8459d39d14f7b6be67be1f576b2559df125023a35114deedc1d4ba700d",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_LOW_L_CYC.uasset": "26da8b22161e430d3c2dadb9805e7c284f9c12972045f6f2724e71bcebfe644e",
+    "unreal/Content/SkateRide/Clips/B0/G_SALAD_BF_FS_LOW_R_CYC.uasset": "7b23bd4473750db06867f5bc591e923130bf6a0bdd6d357ab116823929a5a6c0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

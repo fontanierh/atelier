@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-ponte (2 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-ponte"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-ponte"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Ponte.glb"
+sha256 = "63dcdc6f66122c05b540b27e9c9a640ea1b4f5b9c3204aee8af645ff6cc7c654"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Water_Ponte.glb"
+sha256 = "39e9c3b94d29f726f31d42a87b807916f7195a483f64432da6a92a64473018ae"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Ponte"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Water_Ponte"

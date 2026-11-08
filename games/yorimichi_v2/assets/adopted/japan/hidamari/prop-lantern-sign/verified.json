@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-lantern-sign",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_lantern_sign.uasset": "c51236d25b282c934683fe364a31990a2d4ce4a85c2665441d16300ce3008f41",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_lantern_sign.uasset": "9b6e671f972504c3abd9bc5cb90d1b826b3a44fcff6104ec7a14dd978fb95975"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

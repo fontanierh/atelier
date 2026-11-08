@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-stool (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-stool"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-stool"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Stool.glb"
+sha256 = "47d97e20546a48f077a76d634ccbf5d7ee541c7838ce4340157308dfd21b7d66"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Stool_Collision.glb"
+sha256 = "1aa33bb20a1536e34d41e7204a7e4a9166062c786ab6a99c34ce26a17d6466bd"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Stool"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Stool_Collision"

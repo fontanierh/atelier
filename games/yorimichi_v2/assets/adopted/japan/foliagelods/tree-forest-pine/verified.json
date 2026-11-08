@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-forest-pine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/MI_Tree_Forest_Pine_Crown.uasset": "60b844d43645e04290c9cee7a0b4f03711d9c85b67f470b2a00a383f7dcc18c9",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Pine_LOD1.uasset": "614bcf7f1ea4ea34a4f1d8bdc7d429542cfffa9472622a64560cd57cded9350a",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Pine_LOD2.uasset": "30b2603446ec6a9216176ce9cd7dd9adb066fcce203c7398b3d98dc1546cc9b0",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Pine_LOD3.uasset": "574f6285201a3986bebe79e5038b0f2938f4208aef65fea9c0a5dbc5acf552ab",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Pine_LOD4.uasset": "805975b7fd28019c3e5f03b5aa400270a5100938fc39b3c1f11d3eb438628670"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-ngrind-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_BS_HI_0_CYC.uasset": "1b90af4f0da72ac0b926bbcbd00a1ce15fd97bc0c19107ab346020b000e82c3d",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_BS_HI_L_CYC.uasset": "b476101326d2411c8425de4d392844517464fff368662943efd7649d5aea44fe",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_BS_HI_R_CYC.uasset": "2920342e8eb84ae6ba6256eeceaf29a28f2162d4961ba3c01657f1b9042aa071",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_BS_LOW_0_CYC.uasset": "d6b7208fcdbbc704532edfd835227e3dc8f1e894302d94f68f5ad0043a51f177",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_BS_LOW_L_CYC.uasset": "8c0f9d86e8f1132bc5b22c3601358bde09d734450b62ae9d1f6a813f29eac932",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_BS_LOW_R_CYC.uasset": "13c9bba38da137d7f944620e12732ea80cfba6936baf8f566167e3755e7e8c2f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

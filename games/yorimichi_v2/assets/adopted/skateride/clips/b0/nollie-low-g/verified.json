@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/nollie-low-g",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/NOLLIE_LOW_G.uasset": "cab344e93ab886a731d4e89be6a6170b0a0ebf9db020efea1f3ae8d4be520481"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

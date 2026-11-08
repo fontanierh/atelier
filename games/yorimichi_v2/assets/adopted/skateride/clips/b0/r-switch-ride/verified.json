@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-switch-ride",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_0_BS.uasset": "0065e641a30f40e2956d2d02d48608bc1bc1a74a55655128a2e56958bc8fd49f",
+    "unreal/Content/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_0_FS.uasset": "fb35278df48fd8f091ed0f9ffb839dce7797ebcf026e5d3a1c473d032233ddc3",
+    "unreal/Content/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_2_BS.uasset": "55082ddc57b815d52b7250c7a594ae52d3d9ef46b48b43e1efc9e6fba6bc4374",
+    "unreal/Content/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_2_FS.uasset": "182365e489017cac6350325f124f1b85c6a168c61660064136d8d25dfeff90b4",
+    "unreal/Content/SkateRide/Clips/B0/R_SWITCH_RIDE_N_0_N.uasset": "c2a0f76454fd5f5ae50f79f0ac5a6711432b8d803b5497e4dd20241e8ea809c2",
+    "unreal/Content/SkateRide/Clips/B0/R_SWITCH_RIDE_N_2_N.uasset": "c5449c1ac546f033d5494cd4b752c762ac4b5c52d11e51c268f7fe280f0095da"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

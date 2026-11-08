@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop backpack: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-backpack"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-backpack"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/backpack/asset.toml"
+sha256 = "c5cf1ed6e1f35c6dee062fcf48e1cdf43ef935c349e09f255b5cff7cbbc8e28b"
+
+[[sources]]
+path = "source/assets/treehouse/props/backpack/backpack.glb"
+sha256 = "0e4c6423fdd67d3f6fe4f8e29044773f71081c482bc813b1ac3431725ba7e2a6"
+
+[[sources]]
+path = "source/assets/treehouse/props/backpack/concept.jpg"
+sha256 = "2e555720604d2bc26ea1bf9f3ba23513c32f3c544dc07be899e9d65b434eee4a"
+
+[[sources]]
+path = "source/assets/treehouse/props/backpack/job.json"
+sha256 = "b332cf19d01c7b300d360ef766b4c375dbe542c79c2565f64a3974ea0f1db149"
+
+[[sources]]
+path = "source/assets/treehouse/props/backpack/prompt.txt"
+sha256 = "9d8979660df434a88ee767157d2c8a4b47ef8145ab07142b895f34f50337e5eb"
+
+[[sources]]
+path = "source/assets/treehouse/props/backpack/provenance.json"
+sha256 = "b265bbef9b5075d53c0d269e296f6fb8c6f960f0ea010d03554e31e7c08ff445"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_backpack.json"
+sha256 = "2fb16605da3b75cef41a7fb9d9f9ef530a1fcda3dc915cbeab91b87fd2111a0d"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_backpack"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_backpack"

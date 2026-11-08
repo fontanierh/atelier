@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/gondola/kit-towers",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/Kit/GD_Tower_10m.uasset": "ae830661e06de0ae9c93ec8f5a650135d3502a15ff20e90be6f3b8713aaaecf4",
+    "unreal/Content/Gondola/Kit/GD_Tower_10m_Collision.uasset": "e082ae7079fcf9c65934e4c027d88161c51b99d6e42308649952ddca097b1243",
+    "unreal/Content/Gondola/Kit/GD_Tower_13m.uasset": "36eb219d3a28c9177c285ac7a82e8095d9167690ff75b6b00eca55d95326dada",
+    "unreal/Content/Gondola/Kit/GD_Tower_13m_Collision.uasset": "adc109dc5cc02836b8c745bf8008992917ba8c12a6736a12714e802069eaf32a",
+    "unreal/Content/Gondola/Kit/GD_Tower_16m.uasset": "1a2e335394ef0119b983d28b347fc417d6438d97ca86afff38dc2689d42bac52",
+    "unreal/Content/Gondola/Kit/GD_Tower_16m_Collision.uasset": "6ed650bce806989f59cc4eefd00ef0596ab680892916338f494ca751bfcad234",
+    "unreal/Content/Gondola/Kit/GD_Tower_20m.uasset": "b0896bc5a20124af9e8e49d0992c9418f5cb77c845f91ef9b24ab6c82a96ac68",
+    "unreal/Content/Gondola/Kit/GD_Tower_20m_Collision.uasset": "7a1bd728f888e4617f190fd84554d03f88e6f9a213e280f784b6757d286619d4",
+    "unreal/Content/Gondola/Kit/GD_Tower_24m.uasset": "6839676a6fd15e9ee9e2b34c4dfb57cb1ec5804be79583ccb76d1c79454b61af",
+    "unreal/Content/Gondola/Kit/GD_Tower_24m_Collision.uasset": "ada1c6b19a83d4a04581fa3c380d24461241cf22e1fb9f8bba369ba52aa97eb7",
+    "unreal/Content/Gondola/Kit/GD_Tower_28m.uasset": "3f9c3ebc494d7d92e3316590945128f427ecdeabdd265f1aaf0f9f958116b5e3",
+    "unreal/Content/Gondola/Kit/GD_Tower_28m_Collision.uasset": "e3a22da3676196f57e694c8bdd908c273700789ca237193ea48448fd6a7e5fe5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

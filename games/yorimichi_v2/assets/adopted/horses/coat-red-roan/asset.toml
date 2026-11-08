@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant red-roan
+schema = 1
+id = "adopted/horses/coat-red-roan"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-red-roan"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/red-roan.png"
+sha256 = "6f9d6767a9c764d270b2319c34a30b045ca8d1d9c9bb1639ce0b1f18d16fca66"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/red-roan.json"
+sha256 = "6a4b649587ce0e489ac3c77c3b4dc1703feefd87c2416b9863e70a6feecbac2d"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/red-roan"

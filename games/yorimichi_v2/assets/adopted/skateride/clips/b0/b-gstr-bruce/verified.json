@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-bruce",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_BOTH_CYC.uasset": "03f43891522e76cb1a99e2c439aad03617ce453727a46a266a8ed8bb52249803",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_BOTH_INTO.uasset": "30f377da537b129cc7571bc6cc3f3a88e7a5ce766ed9632592531d09706816ac",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_BOTH_OUT.uasset": "6ae5c4e95ec828f260aba4416d0facb07d84cbd027e3b823d557ec3349db7454",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_LEFT_CYC.uasset": "adabb9384a5f7d6d816641757474a2e8acf807334b5ee13ed707684283bcafb6",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_LEFT_INTO.uasset": "d6bf0fad28968f66d52ec36f0064436cbeecb6ab943a2fb0296519af30fe5c87",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_LEFT_OUT.uasset": "23cd5d0306f8ffcedc8fdfecdce516fb48c3904b49084152112c95fc6718cb57",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_RIGHT_CYC.uasset": "13a8ed632d147a1734ac9153ee2819e6c1813d690621778817367cf9892fd0c0",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_RIGHT_INTO.uasset": "0956a2541c8ec3307e8658487a87027bb55f75f394bb4495845c847e98dee06b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BRUCE_LEE_RIGHT_OUT.uasset": "e01d65927c642bd8856859cb90e821c6057433c6f47c6181dad79f141adf3261"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

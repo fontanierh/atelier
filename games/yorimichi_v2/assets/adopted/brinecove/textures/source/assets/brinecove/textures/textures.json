@@ -1,0 +1,356 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "surface_sha256": {
+    "plaster": "5eb300af2b51bdbb9253de4fd8663b7fba0e0fad7a2832276b6c48139b27561f",
+    "roof": "b26881a27bf842e28aac860f33cc67ec53829b48d753292a9a2f26a5114ab5b1",
+    "stone": "a2906e1bb8e585f63553de9ef27f130ce1601362e759103e0e8e3ba5291f470f",
+    "cobble": "d3becd60dae288c0f8c593e29d3d2df4bb5b7e1ec8d9253e024650c4b080065e",
+    "wood": "e9276f32a3497845c09fdd0c1714082b0b8e441b83efaabc70a1534c8aa4ce89",
+    "canvas": "1a3b1530efe3de7cee3bd65e91403f4d251d7a5f7ab85c45e00b421ee2a08f16",
+    "iron": "956884ee2e5ea39e8e8e2310384d471c1f1b7d25aacd2a5af5d12276783c5506",
+    "foliage": "32c3b2a30109859d5d2e499cc61ead83552ee9df0bfb4b93a318eeb0366ec1c4",
+    "water": "e0520b3b95b8573571116a08f346bffbb15ff865050faad45598b1064c7820f5",
+    "cliff": "d086e612adc8f905af822553db8c694386cd5e58c680d6f9197667fd7f89a1cf",
+    "cliff_strata": "f1b41c495d439855ec442c89b248e700ccfe2586b0a27c1d22b1b91376fc965a",
+    "hull_planks": "be2b247db89963f2440f754988d0ae8b879a111902213945b6114fc04febc8e2",
+    "thatch": "6de563acfcbb4ab6f092602f1cfe45d562506dcc302fe17628de5d536323e27e",
+    "planks": "9d7e9d970a5f1c7d3c0f5cbb77fa4bdc77c227b266e728f71ef8b2821fa0dff8",
+    "sea_rock": "137abbd05e08a8cf7a4af5a8cc7b038885da9ca7d394edec793c3aa1f49712d5",
+    "cliff_block": "171637dde3f39b803008e42aa6e4613986e8a4abcb8ce8c96fbbf930e5c734f6",
+    "moss_rock": "fd102ff61f5e6f1e3586303ba064ebf0fff49aa6e949c76387ccb2d602ac5bb8",
+    "sand": "aa584f3e7c9d4b7ac0f25ba1a81888094b8faaf46e60b1a611780154e696d0a7"
+  },
+  "materials": {
+    "plaster": {
+      "file": "plaster.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "e54f8fd51f6bab99ed9ecf234a74ec8f40a213135670e1c37dc12724012ea8ff"
+    },
+    "cream": {
+      "file": "cream.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "fa69677fdbdf87ca3ddd3c960d7d4c0c14fe474803191f762b6c50c1e59fab72"
+    },
+    "ochre": {
+      "file": "ochre.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "e64f77d96cd5b3094bab72aa7c78ab86c134d71eeae8ec43034e5b3590845260"
+    },
+    "coral": {
+      "file": "coral.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "7a42da9f6730c364270b9e42aa57b2ed91c545eb147b256a947664fce8400c94"
+    },
+    "sage_wall": {
+      "file": "sage_wall.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "2c735b7690ff96778e5b1968f6ea5799a5a9e2405f5d75e2f5c3f891abbf291f"
+    },
+    "teal_wall": {
+      "file": "teal_wall.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "6ea8b34c6164bc39cc0f62df20778478095dc277f28622a575fc3a0fa6f0d2c0"
+    },
+    "azure_wall": {
+      "file": "azure_wall.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "e8d278062489e87c347b01a57271bc1ab0e97f2e0119f1ad6c46fe623f14361e"
+    },
+    "lime_wall": {
+      "file": "lime_wall.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "47b8ff4f6ab727cd960d3dbd84aeb0884ace8dc3ad98e8843be582689de7ff87"
+    },
+    "rose_wall": {
+      "file": "rose_wall.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "99bdcda50f5f5836a44c28807ffab5add00bca404924d19d20aa273546f0a235"
+    },
+    "yellow_wall": {
+      "file": "yellow_wall.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "e6897e10d754ffe0dd8acbe33ac10421e27fbe6c1dd59b4203f6738c48d42e65"
+    },
+    "peach_wall": {
+      "file": "peach_wall.jpg",
+      "surface": "plaster",
+      "scale": 2.8,
+      "sha256": "47bb5152a64feccbf5b390b0935b2bd36ca0464ac486d7b2915ea62197b59eb4"
+    },
+    "roof_terra": {
+      "file": "roof_terra.jpg",
+      "surface": "roof",
+      "scale": 1.9,
+      "sha256": "20e3ae3f040030cdca183651d68aa81919b5657a4d41e4d21e743ef5b738453f"
+    },
+    "roof_terra_light": {
+      "file": "roof_terra_light.jpg",
+      "surface": "roof",
+      "scale": 1.9,
+      "sha256": "35c204641082c270b4cceced5e1078d97c6a0679bc2dfca5b7009526f849b1e7"
+    },
+    "roof_teal": {
+      "file": "roof_teal.jpg",
+      "surface": "roof",
+      "scale": 1.9,
+      "sha256": "0fcc93efc33ef768c7d32b74bf71b70a0a9df9c38c8460d7e9bb58181553645e"
+    },
+    "roof_slate": {
+      "file": "roof_slate.jpg",
+      "surface": "roof",
+      "scale": 1.9,
+      "sha256": "227f593cd89667203219129c3ca640b52185469cc7c060684074350d02110225"
+    },
+    "roof_straw": {
+      "file": "roof_straw.jpg",
+      "surface": "thatch",
+      "scale": 1.6,
+      "sha256": "8c276240dd27d0ec1627f089eba792d807321e39391a758efd303e8f42d3eb1b"
+    },
+    "stone": {
+      "file": "stone.jpg",
+      "surface": "stone",
+      "scale": 3.2,
+      "sha256": "bd156013583d6ac6c046bada663325ebee2116c2867b1908e3d8155f53f51d48"
+    },
+    "stone_light": {
+      "file": "stone_light.jpg",
+      "surface": "stone",
+      "scale": 3.2,
+      "sha256": "7ba3d65c28bf5ce68ac11127e56bc1200bf6a69f3edab608c01b6aba17746165"
+    },
+    "stone_dark": {
+      "file": "stone_dark.jpg",
+      "surface": "stone",
+      "scale": 3.2,
+      "sha256": "5bd02a977438b28a7f8e016bf7f0e457c26314dc049658225bfbafe9fb7a5e49"
+    },
+    "cobble": {
+      "file": "cobble.jpg",
+      "surface": "cobble",
+      "scale": 2.0,
+      "sha256": "30aacabce4aa946eb040c6255784a7dc661ec08d526adf7602b4765814c0906c"
+    },
+    "cobble_dark": {
+      "file": "cobble_dark.jpg",
+      "surface": "cobble",
+      "scale": 2.0,
+      "sha256": "efecb2b79b66164528f4e705d651455884a3b5ef2be4072fc3d7789c7d657070"
+    },
+    "wood": {
+      "file": "wood.jpg",
+      "surface": "wood",
+      "scale": 1.5,
+      "sha256": "de61e246408067566e08718228ab369835ed15a856269c069d4f95932611220c"
+    },
+    "wood_dark": {
+      "file": "wood_dark.jpg",
+      "surface": "wood",
+      "scale": 1.5,
+      "sha256": "63cdac7deb801aaecd22f54df5af223c683dad73ef7f3667167c8a1ff68d3759"
+    },
+    "wood_light": {
+      "file": "wood_light.jpg",
+      "surface": "wood",
+      "scale": 1.5,
+      "sha256": "ed879f684fe45e6ec11bbcd8abb14d1cf92f48eaaeb7a3b6d17aa61df623d700"
+    },
+    "sail": {
+      "file": "sail.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "4e98a4d1301deba96a150460a76b06c01ce2d91161b16a33e3086ca026e9ee42"
+    },
+    "canvas": {
+      "file": "canvas.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "ed59cd18c8d5a7d33b7bd20219669f75f6eff9a3178477f9c64233f3517d3d43"
+    },
+    "canvas_red": {
+      "file": "canvas_red.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "82feb07040aa67cf00b619d69db7a6cbfc9d6cf03c5508063ba70a6f659fe305"
+    },
+    "sail_dark": {
+      "file": "sail_dark.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "29b786e4c19c608b7ac24580a63ea721f23e9f8ec39f5e02eba7635a1a305d89"
+    },
+    "canvas_teal": {
+      "file": "canvas_teal.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "ed248cc514c61fdc008abc173e232cc17a5d03174c9f5d6482d3a1d859519440"
+    },
+    "canvas_gold": {
+      "file": "canvas_gold.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "89ba6037fc4dd5ef733c8cb74634a7bf194b78969d8c16fbd11220498142e6b2"
+    },
+    "canvas_blue": {
+      "file": "canvas_blue.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "b8e21d80c55a96d15d8dee61bf6e183171e336b5e9ba9edf0e923be735e54339"
+    },
+    "canvas_green": {
+      "file": "canvas_green.jpg",
+      "surface": "canvas",
+      "scale": 2.2,
+      "sha256": "aeb71c2cd46fd3c7be9290578b1310b7ac73835c73dd5bee6f241dfff53040ef"
+    },
+    "metal": {
+      "file": "metal.jpg",
+      "surface": "iron",
+      "scale": 1.0,
+      "sha256": "f6e6973fab76e294b5f787e4516839e40a244d4ce8b0a7293281a1a088cfbfcd"
+    },
+    "gold": {
+      "file": "gold.jpg",
+      "surface": "iron",
+      "scale": 1.0,
+      "sha256": "0dd15c0808748c4ec8ad98da8337000cec34a0b894bd9e3e151a67e037a0ae71"
+    },
+    "water": {
+      "file": "water.jpg",
+      "surface": "water",
+      "scale": 26.0,
+      "sha256": "c9d42fdfe62a71ea9e1c5e46248fa431c1e00fac8725d647f243f5db39098378"
+    },
+    "water_shallow": {
+      "file": "water_shallow.jpg",
+      "surface": "water",
+      "scale": 18.0,
+      "sha256": "6622605e11fb462f587c6851ee4d1f93d25f7f6a1f8784403313fdb0f322f997"
+    },
+    "water_mid": {
+      "file": "water_mid.jpg",
+      "surface": "water",
+      "scale": 22.0,
+      "sha256": "0f822fa528ee097d6d7c72a342ad3322f03478ca750818e7417ead9f7d3b921d"
+    },
+    "rock": {
+      "file": "rock.jpg",
+      "surface": "cliff_block",
+      "scale": 22.0,
+      "sha256": "5e6c459fdcabe4e4474962a3adcd0568a8bf0d94bba3dced9f3617ca07c2d280"
+    },
+    "rock_light": {
+      "file": "rock_light.jpg",
+      "surface": "cliff_block",
+      "scale": 22.0,
+      "sha256": "878d74b5d3c89bac66fda8268df787db017fc1cdb3ec33115fbb006823414f49"
+    },
+    "rock_dark": {
+      "file": "rock_dark.jpg",
+      "surface": "cliff_block",
+      "scale": 22.0,
+      "sha256": "10a3caba5f0868d9e707cad91ccfa2be3fcc58f9c19f1143488f45baaa55aed5"
+    },
+    "rock_strata": {
+      "file": "rock_strata.jpg",
+      "surface": "cliff_strata",
+      "scale": 9.0,
+      "sha256": "3de738bb71170a7fd7be87b5a7ab404172a6ca00011c6f1eaddaf946a41df4b9"
+    },
+    "moss": {
+      "file": "moss.jpg",
+      "surface": "moss_rock",
+      "scale": 5.0,
+      "sha256": "4dd38c6a456e1b5b02d69e2c30d8babd643c8b5b89b8eeb6e84de01d1475cd0b"
+    },
+    "planks": {
+      "file": "planks.jpg",
+      "surface": "planks",
+      "scale": 1.5,
+      "sha256": "828271c8186b8e759ce66e8d058d3ed8dad2c0b1d2e35d2873ec5a8bc636d23b"
+    },
+    "hull": {
+      "file": "hull.jpg",
+      "surface": "hull_planks",
+      "scale": 2.0,
+      "sha256": "e8962726ecb637fdaf9c2b4cf84ad41e67552eabb51aa809598234a2836de2fc"
+    },
+    "deck_planks": {
+      "file": "deck_planks.jpg",
+      "surface": "hull_planks",
+      "scale": 1.8,
+      "sha256": "ea0ae64e9c48807e894ddbcd08cdc502c258252cabefdee28b3356033068c3ba"
+    },
+    "sand": {
+      "file": "sand.jpg",
+      "surface": "sand",
+      "scale": 4.5,
+      "sha256": "bd046874d6f73d0d469907d9e579771d5c0cefdd4ad8e3755b499d494ef3f960"
+    },
+    "earth": {
+      "file": "earth.jpg",
+      "surface": "sand",
+      "scale": 4.5,
+      "sha256": "dfe845a1d7c80b90833c119fb020db8912f0fca1280b199916a5c2b3cdb87554"
+    },
+    "jungle": {
+      "file": "jungle.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "449b0dec5bff355c5f93ea56f85407985c0d15b9894ba01f160b412b036616a3"
+    },
+    "jungle_light": {
+      "file": "jungle_light.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "f861692697133ed89b8aa483e873d494d3fcfaf005cc8bcd62f1374ea62c107a"
+    },
+    "jungle_dark": {
+      "file": "jungle_dark.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "28c39973170182e0a16e566a46472bebc05c55d73538dcafc122604b27de2d3b"
+    },
+    "palm": {
+      "file": "palm.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "7f8cff18915439f6ac451c48230f08048b0fe767559fb382780aa6f81c47daa1"
+    },
+    "palm_light": {
+      "file": "palm_light.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "8a08b5608e425abffcdfcd722c602981598426a6d25b7afbf84a79029b9b47d2"
+    },
+    "autumn_rust": {
+      "file": "autumn_rust.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "a64bbdea56d1a0788d39676b96ed6238f3cd2f54454f98b190056cf7690a7f4d"
+    },
+    "autumn_gold": {
+      "file": "autumn_gold.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "748da33b2fcb8ea034f28f3412d7c1e1f769df115808d38b716d23128beb2a02"
+    },
+    "autumn_olive": {
+      "file": "autumn_olive.jpg",
+      "surface": "foliage",
+      "scale": 3.0,
+      "sha256": "ef05db0c9d7981fd277b923e7ca44666e57dde0d7cc838defec5fc512be6cc55"
+    }
+  }
+}

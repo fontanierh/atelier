@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/dropin-bigstep",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/DROPIN_BIGSTEP_INTO.uasset": "3a255f66b2363434ddd3a5fdcadef629b79c73e073c83949c4629b096418a22e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

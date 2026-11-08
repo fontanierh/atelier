@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/materials/tree-forest-pine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Tree_Forest_Pine_Impostor.uasset": "48769276020cbf94ca60453471aa9f170f1abc254b1e99442d00cfc91e60069f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

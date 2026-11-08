@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/varialheelflip-dill-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/VARIALHEELFLIP_DILL_HIGH_A.uasset": "faeae204f36b679430081b15bf1d2ece015080ae32a9f958335281f616dfd9d3",
+    "unreal/Content/SkateRide/Clips/B0/VARIALHEELFLIP_DILL_HIGH_G.uasset": "e66533adc80de2ca7db4bf91f66c41f2b82020849497dc1fa7f198abf40d5b69"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

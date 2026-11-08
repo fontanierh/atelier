@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/craterpark/materials-base",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/M_CP_Flat.uasset": "d4c6c8751363c185974b8552bc2abf778a3ee3a5a96963cb55a7f8987b2ed2bc",
+    "unreal/Content/CraterPark/Materials/M_CP_Lacquer.uasset": "6266071e5c7948afe040184b90cb2fad830dd7ba56c5dd0d6ceb405a42fabbc0",
+    "unreal/Content/CraterPark/Materials/M_CP_Steel.uasset": "88506450a9bc2376ca482aa8027aa35d03b4fd3235f6184068dff0fb18a69170",
+    "unreal/Content/CraterPark/Materials/M_CP_Textured.uasset": "fc4e15d903cc258762707b4fc363d33d04462482222260baac85cd6001040839",
+    "unreal/Content/CraterPark/Materials/M_CP_World.uasset": "0a8afed8772abe9da2bb63d204d52ce0d828e1961ac6499d4bdeeac6cb5b63ff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

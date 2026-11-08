@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/skateride/clips/b0/ofb-footplant-bsl",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_0_ABSORB.uasset": "f0a71e35cd1d0aa4f13fb2fc82e318cd011e7370e0eacee54be5354c6aed4def",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_0_CYC.uasset": "e2eaaa4515effa3b44bff2158fdbf0cd052e415e154f954da553300008b9f439",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_HEAVY_ABSORB.uasset": "ddab2e0481f8fb90ef972403b318adb2a06f1a282644b688286e30cfedec9a64",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_OUT.uasset": "b28c498040524111daf6478ceb713ff720a51b8bb32ebdeb27cacce2a7b51fb7",
+    "unreal/Content/SkateRide/Clips/B0/OFB_FOOTPLANT_BSL_VERYFAST_ABSORB.uasset": "78fd7ec691a863c11e343fde331638411eda2dcb93d7ddfd21c1dfb31dcf622c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

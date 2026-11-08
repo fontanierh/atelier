@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/wires-1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_8_0.uasset": "b0a2e185c924472b4ae79d996d9929ac444ae92cbffc109551e6774f8a67d6df",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_8_1.uasset": "57cb839f34a3dbfff753694d83bec8cd019e554420794c7e463a164360309ca5",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_8_2.uasset": "97a127065a1a9eb32a8f6396ce2f2ba7fc00a61435783d7acd496dd8d7a4ddb2",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_9_0.uasset": "4b9120383de6673f145218b1fa06e5fb231ac3fc836b6b88a069b4dfc8ad4991",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_9_1.uasset": "a207c3c92eb726f6d9cf502da6590b5858096d37c3b85148d0e03cfc2956d84f",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_9_2.uasset": "8cbd0f54441e5ddb8f3334d32207ef5e6def610ede33cffb13eeaeefffa0b6a1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

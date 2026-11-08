@@ -1,0 +1,52 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove market-4-4 (14 mesh(es))
+schema = 1
+id = "adopted/brinecove/market-4-4"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/market-4-4"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece000"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece001"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece002"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece003"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece010"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece011"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece012"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece013"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece020"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece021"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece022"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece023"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece03"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Soft"

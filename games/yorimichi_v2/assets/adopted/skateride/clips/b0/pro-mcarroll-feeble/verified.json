@@ -1,0 +1,33 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-mcarroll-feeble",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_BS_HI_0_CYC.uasset": "9776362cf45107b6423ba1e53d0fb1eacbf1a4c2c916bd26c91ad0fd6996735b",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_BS_HI_L_CYC.uasset": "b0d97d91a228335b3f93a1df7a5cd65d98ffd5b109dc7629f4447469211b5ab3",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_BS_HI_R_CYC.uasset": "a2ee0e13247a9378a900bf773d6eed7235a91a0045276defe8cf0fe5df7d87aa",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_BS_LO_0_CYC.uasset": "ee9e8171eaf260cadfbc0795e547c429cf36d6cb050259a90934c0ddf0a25403",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_BS_LO_L_CYC.uasset": "fdf1b91f7155c1b9c9a3d0935d52170ffc7233d8a90bf95a3223ea6ef7dbdc0b",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_BS_LO_R_CYC.uasset": "186169e637b3ccd9c51a4358e020fc077a4bef5a0ca9346487b394c1dc73e674",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_FS_HI_0_CYC.uasset": "1e3289141fd25e2e1a2207e53495f723d6c1cf61fb371bda6a12aabc54e51f06",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_FS_HI_L_CYC.uasset": "0a927f8eb9bd60959680f9c9fc26d9bfc9b2955264f256dd322d5f8ef6978a27",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_FS_HI_R_CYC.uasset": "7348d78c9e0876e52281f862f0bc3a7d11e7edb859fdd90c948edfd805782b2c",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_FS_LO_0_CYC.uasset": "46ef2fb6824b8ebf469302d964ba3128661571b1f63d306af168e9569a859ead",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_FS_LO_L_CYC.uasset": "ac5cd7252a612dda77a6d2f42b4ce6eabc4a88d0f4fa62d6719f1c582f84545c",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BF_FS_LO_R_CYC.uasset": "b51d2c98159d4346f5416c05f77017f679c481a148676015d10444e0772128aa",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BS_HI_0_CYC.uasset": "c714d22b510c371f0297ac8b97e53cb56886d535ba64ef535c70d8d9a6927170",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BS_HI_L_CYC.uasset": "161892066e2a33d924366d689749237800e48f24532aa8546404f2e1d283ea01",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BS_HI_R_CYC.uasset": "8bbb2743e13a8dde84dd234e8e2661701477e1926e94c7b285753b74010eae3b",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BS_LO_0_CYC.uasset": "6a73ff72be18f448def477a3526788208aff87194216cc245cf08fdf49552445",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BS_LO_L_CYC.uasset": "6b99107fd47742f3610322568a9d61441b316d80bb320b3a2c8bd78e1a23a23f",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_BS_LO_R_CYC.uasset": "3a9014f6e83bd8f568be9e23e3dfcd47c81d83cc4741aef8fced8a5bc94ed533",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_FS_HI_0_CYC.uasset": "7ecbbec457fa97dd7a34b3d60ac8b13eebc128f5771d4cd7309cf5c45ea2bb64",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_FS_HI_L_CYC.uasset": "ffa4c838e01dd2f717441bd5eed2811358964ad7e07e82233df513dc850f1df1",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_FS_HI_R_CYC.uasset": "86ea99e109633d2aacfcfd91cba4b437ae3a5b7c8b79bf7337fcb80cfd9a3e62",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_FS_LO_0_CYC.uasset": "7a9a466589f31dc85205c5cae5913be4a621d66b59aa9453eb86ae526011a1be",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_FS_LO_L_CYC.uasset": "4b92e1bbb257897361f96753b2afe0f4383aa30dc1fc02bfb1705f41ac565798",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_FEEBLE_FS_LO_R_CYC.uasset": "aaf1a81d7f9450f96ef6d2354cfc8a1ce09ff49ac97c46bb7db276059215cfbb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

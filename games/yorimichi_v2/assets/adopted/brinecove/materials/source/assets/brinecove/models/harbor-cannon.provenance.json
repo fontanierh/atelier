@@ -1,0 +1,100 @@
+{
+  "slug": "harbor-cannon",
+  "stage": "brinecove-trellis-processed",
+  "generated": "2026-10-18T11:18:22.104558+00:00",
+  "source": "build/yorimichi/pirate-coast/trellis/out/cannon/head.glb",
+  "source_sha256": "a92555ea8ffe5fb4fb827c4db5a6a7ac067d1f769300d6b63550828c4eb49cb2",
+  "reference": "games/yorimichi/proposals/pirate-coast/references/props/harbor-cannon.png",
+  "reference_sha256": "149e03b4b1cdf763d30a54c6b8435606ed29eb0fdfa7f7669906ab461990deed",
+  "generation": {
+    "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+    "backend": "Microsoft TRELLIS.2 MLX",
+    "native_vertices": 1161817,
+    "native_triangles": 2375174,
+    "output_sha256": "a92555ea8ffe5fb4fb827c4db5a6a7ac067d1f769300d6b63550828c4eb49cb2",
+    "native_checkpoint_sha256": "5064380919ed4392d641f170a64859e99c09e5bdb8e6ed62de109a392490a350",
+    "mesh_sha256": "959fed6354b761a4dab0f95e0dbcd17349cc854b60b5323f46c903738b2ebcf9",
+    "all_native_triangles_and_winding_preserved": true,
+    "transform": "Only fixed Z-up to Y-up axis rotation performed by the pinned export",
+    "seconds": 588.759,
+    "strict_model_key_checks": [
+      {
+        "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+        "keys": 74,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 292,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 284,
+        "strict_complete_state": true
+      }
+    ],
+    "mlx_peak_bytes": 4661661466,
+    "quantize": 0,
+    "resolution_requested": 512,
+    "actual_mesh_grid_size": 512
+  },
+  "target_height_m": 4.8,
+  "notes": "iron cannon on oak carriage",
+  "triangles_before": 2375172,
+  "triangles_after": 20000,
+  "pruned_faces": 0,
+  "shells": 0,
+  "filled_faces": 0,
+  "boundary_rim_edges": 0,
+  "bounds": {
+    "min": [
+      -2.4015,
+      -4.1137,
+      -0.013
+    ],
+    "max": [
+      2.4022,
+      4.1154,
+      4.8146
+    ]
+  },
+  "output": "games/yorimichi/proposals/pirate-coast/assets/models/harbor-cannon.glb",
+  "output_sha256": "7b6b743b6ec6a85fbb69b7f8dec8e9f7dda12506cd671eadc48598060d7012b3",
+  "checks": {
+    "triangles": 20000,
+    "vertices": 9932,
+    "uv_layers": 1,
+    "materials": 5,
+    "textured_materials": 4,
+    "images": 7
+  },
+  "texture_dilation": null,
+  "processing": [
+    "parent clear",
+    "transform apply",
+    "uniform scale to target height",
+    "solidify open surface",
+    "voxel remesh to a manifold shell",
+    "collapse decimate",
+    "smart UV unwrap",
+    "nearest-surface palette paint",
+    "UV/texture/material and finite-vertex validation",
+    "three Blender review renders"
+  ]
+}

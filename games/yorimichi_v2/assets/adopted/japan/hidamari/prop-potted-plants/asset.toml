@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop potted_plants: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-potted-plants"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-potted-plants"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/potted_plants/concept.jpg"
+sha256 = "2b9d800f11c9e7b9e32e1856b32fc1371d1cfb5fc1dc46189d99f65fa4c802b3"
+
+[[sources]]
+path = "source/assets/hidamari/props/potted_plants/concept.json"
+sha256 = "a94a88b547e17e537f03658a88d70c63b4eec216d5c362878704565cca0a41fc"
+
+[[sources]]
+path = "source/assets/hidamari/props/potted_plants/job.json"
+sha256 = "d6ac60156509b965a7e66d4599f01a53966feef1d1e9d31d059ae926cb8ad2ec"
+
+[[sources]]
+path = "source/assets/hidamari/props/potted_plants/potted_plants.glb"
+sha256 = "f780e7ea47f94662f8acb36b742ebf39c8f9006dc45eeb01eaf36e0150bbe0db"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_potted_plants.json"
+sha256 = "1ceb224a670bcaa107cb12a48205731c9a36801d249ab8f8fc1131de07966eb9"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_potted_plants"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_potted_plants"

@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop bookshelf: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-bookshelf"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-bookshelf"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/bookshelf/asset.toml"
+sha256 = "a675d2ced21389db92f83b928b8e2544b21725c719397ae5c69ddbbae1f9ecd5"
+
+[[sources]]
+path = "source/assets/treehouse/props/bookshelf/bookshelf.glb"
+sha256 = "079a948b2cc7562c7fd1ea5edcf9d91bee34914f58d92184ef66ed9914085ccf"
+
+[[sources]]
+path = "source/assets/treehouse/props/bookshelf/concept.jpg"
+sha256 = "27ca62e0fcca7e8afecb97740d054c0cae3733c18e3da2d0b7ad1d55312a522a"
+
+[[sources]]
+path = "source/assets/treehouse/props/bookshelf/job.json"
+sha256 = "6986cc62f5db6908739787ceced2e3b423cad458faceb86fd6827cb605989179"
+
+[[sources]]
+path = "source/assets/treehouse/props/bookshelf/prompt.txt"
+sha256 = "38dca92949edeb4d3015c2922b8d294ada8a16cda38eeeef67a91b1cfc1c7aaf"
+
+[[sources]]
+path = "source/assets/treehouse/props/bookshelf/provenance.json"
+sha256 = "6a3e17a34688143117eebd7a169caaffbfcb53a24b7703ffbb275230a5ad2cd3"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_bookshelf.json"
+sha256 = "12a126c5cfb2e0c302cca1e90e48cfd854b81bd1be5efe00f84e0c100688c6d4"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_bookshelf"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_bookshelf"

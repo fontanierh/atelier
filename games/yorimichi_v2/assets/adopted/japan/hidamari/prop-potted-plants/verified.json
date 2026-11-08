@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-potted-plants",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_potted_plants.uasset": "15c05ae4935da319c0f7f5f0f09d7cc5d623c0d17d48e46bff9e1eb69ce788be",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_potted_plants.uasset": "7d4260c725be268e481260f5c6ad1a8d4165f0333c0ecfa32fea3fb380024d3c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

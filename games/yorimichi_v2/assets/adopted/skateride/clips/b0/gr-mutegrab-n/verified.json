@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-mutegrab-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_MUTEGRAB_N_0_CYC.uasset": "2bb904c4a028e64d4fe37e6d8d5bb1c5fbc9e487a31cb1caea2ca156dacc188a",
+    "unreal/Content/SkateRide/Clips/B0/GR_MUTEGRAB_N_0_INTO.uasset": "cb4d34b44c2a12c2447465292f70ab6ff986ab881dc2674ec84672be9d870d66",
+    "unreal/Content/SkateRide/Clips/B0/GR_MUTEGRAB_N_0_OUT.uasset": "ee9f8b0c3577682126f265aa476192f067972638835aeaede90cf254da107b86",
+    "unreal/Content/SkateRide/Clips/B0/GR_MUTEGRAB_N_0_OUT_IDLE.uasset": "97cf07ed5aae3be026da1425ed7d7a36428f9dd658d0e7c9ebd7e705ea5e9a29",
+    "unreal/Content/SkateRide/Clips/B0/GR_MUTEGRAB_N_1_CYC.uasset": "46e873d1c055c6585a580d22577a27298a5882312aaa0dce707ffd61d909bd4d",
+    "unreal/Content/SkateRide/Clips/B0/GR_MUTEGRAB_N_NOSE_CYC.uasset": "7e163b8457e60fe060ce6ecf439818214b65b4ac1f8e8777876fecaa8a6b5afe"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

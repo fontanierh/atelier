@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-rug-blue",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_rug_blue.uasset": "45823eba32e5f4e5c24312ada6694ba145ad034049052e46c14c3ec42aab1b4e",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_rug_blue.uasset": "59b2e26899bc80d1fe0282b0c0a15ad6b96d0d74dd1b49a0dc286e5d9ca670b8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

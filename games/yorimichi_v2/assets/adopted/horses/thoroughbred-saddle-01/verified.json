@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/horses/thoroughbred-saddle-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png.uasset": "b0f9700d8a35394365d26c6053e00597219d5c5bb53baad90a43d18a6eac1555",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png.uasset": "f00bea3c0084ceacf72220671b9467a6da609681ba0b2cf02597b4f4ee385063",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png.uasset": "d93964eec5f835ac51468a62cfb43a170de96efd6317c7a08ae08a1fbaa9c753",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png.uasset": "77cbff773ff3d107cd386fa3a8e0003bba4cf0d147dc1da4491985fb206f26f4",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/SK_Horse_Thoroughbred_Saddle_01.uasset": "f17e3754a3648e8019ef633b3ced1eea607159932fbb24532f7940f3f1e66eca",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Bag_A.uasset": "5c40c92ee7858776e823ca925bc463b27206a337e7a8b8ca7be9c80a9e663ace",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Bag_B.uasset": "15c38500b5275de3989fc62d9f9dce7a1048eda582ddab30bab133d8abf35a84",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Cloth.uasset": "07abfd8de2a8ff15e23a6844b80413ffa92ee36cf31bba95807282ebbb13360a",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Saddle.uasset": "f0b8123756b41468138aad323599a8bded98a09c2fa8ec15faec83b5bb798384"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

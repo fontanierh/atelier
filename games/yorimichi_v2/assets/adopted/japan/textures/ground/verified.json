@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/japan/textures/ground",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_ForestNormalDefault.uasset": "38a3495d89c90787e9af7dd9761842873be195788ace342a1d0e72057f0049a4",
+    "unreal/Content/Japan/Textures/T_flower.uasset": "f2e72f45527dfa216dece1dd72f0a9550ee30e7eb9e7884cfc90105eb1ad6090",
+    "unreal/Content/Japan/Textures/T_grass.uasset": "a4ec63cb48f39814546d9087db469ee164fae22cbe212eb720c8d1fdf9fdf77b",
+    "unreal/Content/Japan/Textures/T_ground.uasset": "53f75f5e548b2480e4ad2d62f5af04acd2b2aa82f0861fe3dc9f7b7ab42827c4",
+    "unreal/Content/Japan/Textures/T_ground_detail.uasset": "48a98e01987622f4a30c1f67e603454aa4c41e582fdae7d819e77c33e6a325f9",
+    "unreal/Content/Japan/Textures/T_litter.uasset": "b248a640e62ce0762c6e7c1608874900665a1ff506970a470b97c7f5559285d3",
+    "unreal/Content/Japan/Textures/T_road.uasset": "f74a11a52c35fc0d79b36fac8616c4443d511830f69ce8b0e425e3330abfe035"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

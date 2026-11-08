@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/ollie-high-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_HIGH_A.uasset": "c7d6b68ba07a76aa04b082f95f5b2fba14bf73d084617fdd2478a8f96d98b64e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

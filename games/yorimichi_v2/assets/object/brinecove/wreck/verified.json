@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/wreck",
+  "dependencies": {
+    "prop/brinecove/wreck": "8b48b3ed908c8b81b452acf6cd3b9d4f0e16a6d60a4863e882200d1b134c2905"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/QB/S7MUBJAWHEZHS0DNOILXS6.uasset": "2c6fd010996b29cc746320ea06f796a461f353e5792cd3e75c6d70e37c09ce53"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

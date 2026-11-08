@@ -1,0 +1,22 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan sky-water textures (4 package(s))
+schema = 1
+id = "adopted/japan/textures/sky-water"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/textures/sky-water"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_cloudmask"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_sky"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_water"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_white"

@@ -1,0 +1,115 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-pave (15 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-pave"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-pave"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_0_2.glb"
+sha256 = "e8350a3a999408aadf62f0b51eb7fc8dd5ddcb647c2043c398ab2710e31995a6"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_0_3.glb"
+sha256 = "251642a315ab512986543a4e176697aef8e02cec95071daadca6b32a5d71b99a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_0_4.glb"
+sha256 = "a068eda3cec8f048a37aa005748132d551457087d13e70ece3236c7076351efc"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_1_1.glb"
+sha256 = "2d458db64b0d91a846aeb71454d50e67362f338d37fa1a701fe537e3b0661822"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_1_2.glb"
+sha256 = "f65579e5418a1ebbc0b64ff33fe815c95311474143666f6495eb9c50c0216588"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_1_3.glb"
+sha256 = "0155fce6e3fb0ecca4f7205ce06a1a359ca1ca23a4d15369297ccd81a1b2731c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_1_4.glb"
+sha256 = "ee35b84258ea586badc3c66ef78f82865f33eeff11d569bd964519ef2de3e5a3"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_2_0.glb"
+sha256 = "0029d8ea7c1eb2e87d492793e0c6bbad6f132b1beee93dd9bc1f10dd775902ba"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_2_1.glb"
+sha256 = "330fff056dd4c7429bf83a87b4e7af7913b29cd6941009219e156b6576d4360d"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_2_2.glb"
+sha256 = "a71c2882146ecbb09bc7698f1bec98c7f7ff871d7df2438559ba899b584b1e26"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_2_3.glb"
+sha256 = "fd664da6157aca36000b148f7a9c1330e6327beeb8f00bdfec6a77e22b47e3ad"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_2_4.glb"
+sha256 = "833dfd6e672c84fd5db4aa7f7d2b0917b68c343a1f9208efaeb1360bb8bb4687"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_3_2.glb"
+sha256 = "2168a980a1b485200494348b28178dd1a1006095d5761d5d8b704c4c651c5b9c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_3_3.glb"
+sha256 = "51e24fac24f23ec342ec22c00659cd86587f39f28b190bcce63796148d598c8d"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Pave_3_4.glb"
+sha256 = "a41434e5eee9fe0a654ac4c1bce1a6a7fed3bc9a1e61d10b2c3cf3bd3049b3b0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_0_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_1_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_2_4"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Pave_3_4"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-bus-stop",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_bus_stop.uasset": "c82fa944fd1cd3ca0dae9c0dc567d224f3cbbe04b71edbfb7f7c84261154ec65",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_bus_stop.uasset": "9036fbb0465614a5987ea1fc23ff7d08d0f1153db8ef33c3c4be183cd8cea22e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

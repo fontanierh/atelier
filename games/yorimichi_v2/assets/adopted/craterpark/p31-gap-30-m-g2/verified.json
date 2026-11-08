@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/craterpark/p31-gap-30-m-g2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_20_22.uasset": "9a68aecd060f36be5503dcdc78dd3109b5b40bcb76cc6e3a202b02f4646a793e",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_20_23.uasset": "fa557a8a8d14eefb330ccf77bf22585ace9be79b5ae1f29954100adcbcd2ecfe",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_21_22.uasset": "c094276cd3e26068c799faf715b122928abcc45f875b2ce312a9eac9733b0fbc",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_21_23.uasset": "d7caa7c3387900818c362574dc2e94873bf2297e1cb64b3de1e0d1a47c0f5593",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_20_22.uasset": "d3dfd65e349d1d9a68d6da9f06b0acd93fabd8190b37333e40fc38b31f45dff1",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_20_23.uasset": "0d38c7840f8bfd31b91208b2f4f0f261528a8fb7ce0ae52a03bf4fe4aade400e",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_20_22.uasset": "0c20e10db5fee133fa7f3c9365af09979c90b0371fa874e1cd2edb02de9078c1",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_20_23.uasset": "62cb5d6abb4b2e5154135de4d2068ba281fd15d9dfc5b668a2037c4c11afe304",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_20_22.uasset": "5c4608380db0c076002f3e18a5264d850d5d4be4a4be3255543f354a2f0a0b98",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_20_23.uasset": "caed018139291b48d1e7319f3c4a7878bf4da3591d8bf1fdbb55ada4ff9da655"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

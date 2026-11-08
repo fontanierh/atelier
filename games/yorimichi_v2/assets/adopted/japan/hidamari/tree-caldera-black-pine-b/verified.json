@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/hidamari/tree-caldera-black-pine-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_B.uasset": "b25543868782b261212fb7a5d05f63fc01653c28c20c817603c09bf0ad3530e3",
+    "unreal/Content/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD1.uasset": "2801083d6e11b5781037e9e510299e3998c3fce0a9c6048b782ce3652aa2cc30",
+    "unreal/Content/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD2.uasset": "f7a5ed34390699eef3272c70b568b74c8bd0067f0920f8b4418b803039f7195c",
+    "unreal/Content/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD3.uasset": "225061660037468ac38f88855c563da23cb46030c0dd357b3c8234a60000f386",
+    "unreal/Content/Japan/Hidamari/Textures/T_Tree_Caldera_BlackPine_B.uasset": "2f115d3012a7dc9398571b485c183b08433c337dd33772e052edeecc43cbdb6f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

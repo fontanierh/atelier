@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/horses/clydesdale-saddle-03",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_03/Kestrel_Saddle_03_Alb.uasset": "8a2bb335b1436c9bd581c11166087ca2b21afc1749cb4469496ba11cc10a6614",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb.uasset": "2face2fb38ca1a6f12a904592e8a6aad0b396d8c53ac035525eb03e6760c97c7",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb.uasset": "d2d220a1e746c3c8fbf67cd7f57c50641ebae1f89d85fc0049b2302250640322",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_03/SK_Horse_Clydesdale_Saddle_03.uasset": "29736aee0f507ce5f7da35c1b535aabfdaa3446a37031722c69e023a7f9fc029",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_03/Saddle_03_Mt_Cloth.uasset": "980d1e6c087cf290b3c8b5f4c3fd63a83d84690aa1dd1394e4b60b469f6e0d3f",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_03/Saddle_03_Mt_Metal.uasset": "a65b3455751770dff7d268fa962e7533d66b97868e0918d1eac9b89fe922d704",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_03/Saddle_03_Mt_Saddle.uasset": "f264c449bd6755188145b7bfd52196814622b0e6e85b66c346320002ddd12128"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

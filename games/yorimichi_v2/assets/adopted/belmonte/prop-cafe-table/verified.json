@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-cafe-table",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_CafeTable.uasset": "df55bb55c28a73367177c8cbfdc8e0b77ea23dbdf3514a715ec944d65657a762",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_CafeTable_Collision.uasset": "34ebf0e07dda51e8ed202a45c328a0334e722520f68f250460814d450ab09dcc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

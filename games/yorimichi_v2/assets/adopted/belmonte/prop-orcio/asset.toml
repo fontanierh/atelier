@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-orcio (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-orcio"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-orcio"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Orcio.glb"
+sha256 = "ec698a510db5cb929c680143c03450c0b7e1298a9dcb0c85d54c9616b2aaa5ac"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Orcio_Collision.glb"
+sha256 = "5e111b8846609aeb0eedfe29b62b6419da332b11c87a76771e086cf21ef2020f"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Orcio"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Orcio_Collision"

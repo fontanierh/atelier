@@ -1,0 +1,25 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove plant-shrub (5 mesh(es))
+schema = 1
+id = "adopted/brinecove/plant-shrub"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/plant-shrub"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub0"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub1"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub2"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub3"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub4"

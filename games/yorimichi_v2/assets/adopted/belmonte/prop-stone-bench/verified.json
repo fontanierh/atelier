@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-stone-bench",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StoneBench.uasset": "dab7fab96bb48574ae2659572e0398ee5a6175703280da9319c303a6f47dd843",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StoneBench_Collision.uasset": "b25156482dc54a649fd533dda87985fee1df47e63ce48849a3ea393a141bc4ae"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

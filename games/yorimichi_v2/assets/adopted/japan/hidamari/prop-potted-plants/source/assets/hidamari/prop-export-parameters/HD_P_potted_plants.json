@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_potted_plants",
+  "parent": "HD_P_potted_plants",
+  "schema": 1,
+  "settings": null,
+  "size": 1.2,
+  "slug": "potted_plants",
+  "solid": false,
+  "target": 0.07,
+  "turn": -90,
+  "upright": false
+}

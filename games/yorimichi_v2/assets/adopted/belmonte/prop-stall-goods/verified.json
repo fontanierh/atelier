@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/belmonte/prop-stall-goods",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StallGoods_A.uasset": "687ee015a692ef70f3223efe2c95f3f3e9c48b8ea362901e422b90436d61f255",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StallGoods_B.uasset": "859eeaae89cafa70993862fdcbbd5c6006df408e694f6c603353b41810a067c5",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StallGoods_C.uasset": "c1992d49254921950710d50bf9a9097bc95db9f92c54e9fb63a702c7b0996e8b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StallGoods_D.uasset": "00c8cab0dcdea9c96611fb03c01522b444b816d9e313997dd415b699b79f9797",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StallGoods_E.uasset": "dbc2463b6e46c79c2cceaae380ca071fcf26f20a9b9c4aed09498b8ed3ce1d6f",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StallGoods_F.uasset": "feec4d24603c22dc9596cd7de4c414c25adb6701a7b0eb6fa92fc70adc39ca3e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StallGoods_G.uasset": "6dd276426d85ac8b8ae3c4b75339cfa07ef4dba5deae087b7b8717ce345cb64c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

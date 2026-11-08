@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-concrete",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_concrete.uasset": "c21790d1ab674fbcbfa8b144ea1c3308835a1bc518c3b8684a15cfee9a910166",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_concrete.uasset": "1985a128712c4e9e8b6187365fb5e6709ced920d13f3612ae4e576a3072c53a2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

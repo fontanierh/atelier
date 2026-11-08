@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-drystone",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_drystone.uasset": "6f3ef31df629b605821988638b0d23d881aab48e061410133308e2aa303af5ea",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_drystone.uasset": "71bafddec339afb69456f461d59727a01d4a12ebe953c3ab3df7b72f42e1be4e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

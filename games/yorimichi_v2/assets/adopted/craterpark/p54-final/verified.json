@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/craterpark/p54-final",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_23_13.uasset": "34eff8f8bda294e89c816dcf5e51688d02f6d9d3b619f7b8c82416c122833a67",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_23_13.uasset": "acd69138dbd744f1c93ffdefc308ccaf4c72434d71eb5caeea408ee1cb783344"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

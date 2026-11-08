@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-gonz-stalegrab",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_STALEGRAB_CYC.uasset": "107b22aa43abe7e6918d05e6be1c8f620291f48ff2388ff15c613c5c38eb0bab",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_STALEGRAB_INTO.uasset": "daaabddc7a3327ed6b0df0a32f1957f63dd42f09d4f38903337c21e172e86382",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_STALEGRAB_OUT.uasset": "b0d1e5370ad6d294071f04ce9f60ed436ade58d142cca0d00288cafe7e861733"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

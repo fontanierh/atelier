@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/bell-tower",
+  "dependencies": {
+    "adopted/belmonte/town-bell-tower": "517bff136b9188d2ac63a3cb118cc4d2b31e1ce46292335a51e4865ba0e6e5da"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/PX/YEM2D4D20RELFEEQRM2U20.uasset": "cb4aeee1036dcee9401f4bfcb409bfe8c48216cf98c36d366b458a14f577637c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

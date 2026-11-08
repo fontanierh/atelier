@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/church",
+  "dependencies": {
+    "adopted/belmonte/town-church": "afc54f6bc515c2d49ec7dfff9d271e55c60eaae73a65bfba09c92384f6b89185"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/MO/CGEE01XPVMFVIAJF5EGU0A.uasset": "8214b0f152ca840f451c7e1f3b9214cd89a485dddfea97ca63d31a02ac742200"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

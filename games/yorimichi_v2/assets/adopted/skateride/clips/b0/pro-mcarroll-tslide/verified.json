@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-mcarroll-tslide",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_TSLIDE_BS_HI_0_CYC.uasset": "96e171ac29b3ec080b323a3378a1807ff3f7af5a0719bacffc5455cda3446583",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_TSLIDE_BS_HI_L_CYC.uasset": "746f461c28736b375d16d7fd4d9cb82180ad91f9544bbb023ec6c11c54d9256d",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_TSLIDE_BS_HI_R_CYC.uasset": "b0784f677b6f63fe7dca3ec6e3c13b57c2aebe4236b75e7dd5ce21d051b6f697",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_TSLIDE_BS_LO_0_CYC.uasset": "470f2160337eff15b74df62e20b6114d3a70ed565eebd542d4318f9a2a52d5f0",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_TSLIDE_BS_LO_L_CYC.uasset": "948c53ab7ae52eb1a07388db5347412a644c1c0b8501e704a4b62bda6d37065a",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_TSLIDE_BS_LO_R_CYC.uasset": "b72c05dcae82d00ab5c1270856fb909081a575ce2372f5ca6d16a1a8466ddc6d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

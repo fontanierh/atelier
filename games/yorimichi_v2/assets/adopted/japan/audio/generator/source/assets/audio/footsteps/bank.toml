@@ -1,0 +1,5 @@
+id = "footsteps"
+cues = "footstep.<surface>"           # barefoot, dirt_gravel, grass, leaves, mud_water, stone, wood
+fetch = "fetch.py"                    # Sonniss masters -> ~/.cache/atelier/sonniss/footsteps
+build = "slice.py"                    # -> build/yorimichi/audio/footsteps (531 one-shots)
+licence = "Sonniss GDC bundles: may ship inside the game; the files are not redistributed here; no AI use"

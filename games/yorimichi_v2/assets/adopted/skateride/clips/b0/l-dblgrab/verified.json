@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/l-dblgrab",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/L_DBLGRAB.uasset": "90a46dc0d1a3288e4b2dfb4a5e7198dff133f131e4749b0813065be0435e1b22"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

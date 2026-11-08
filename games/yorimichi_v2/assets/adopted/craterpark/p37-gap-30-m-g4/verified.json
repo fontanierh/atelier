@@ -1,0 +1,22 @@
+{
+  "asset": "adopted/craterpark/p37-gap-30-m-g4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_24_21.uasset": "0a46fd486612073607f9b05b8f7ae98e3eb7cfa0bb9bdb533266aff728e09740",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_25_20.uasset": "8a05aa805b44f693b2fd670e0e08e1f36e86f2a47e042823d5474a854d23c156",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_25_21.uasset": "239f7af57e6abdd8332831012030d568bb9e32be5e85c72c384cf52b11618e7c",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_24_21.uasset": "132858e0f1ae42f5fb795ffd6ce727198caf2eec7344973e626ba96a659e96c1",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_25_21.uasset": "e2ef63899a267a6a4e6b9f43a0584308c75e2034ce560ffbe4c1d39acf7a1dab",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_23_21.uasset": "67542c482cc8b302c39e8fddc122de55af62d51d7aca0e842804f466e709e053",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_24_21.uasset": "32b995f5b284df342af3f0e52eb13881a510ef64f6798a2b808d5931d0a244de",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_24_22.uasset": "2861f55dc28bec2f3813ab8e589cd13376afd0cd3d8894079afe827ab0d8abe5",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_25_21.uasset": "79e7aecc172ce491489c9f5a3ed48c885646ce11ce62d9ab0f8372c1d3969c61",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_23_21.uasset": "2e68ed76fee85c25567633d715074846dbb8cb908664c29d212d2e2aee6589f1",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_24_21.uasset": "4045fd898046703fcbf1e9cfb277020cea5419b965600b8e368c1a44517a4916",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_24_22.uasset": "080ac67a193d0e2b4f0ea7e96a011489178a17a1f1f71f393b958e1a262a4ed1",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_25_21.uasset": "7057ce1063818556f028dabaae9d2e07de60970cb057ee140537f42673cbd8a6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

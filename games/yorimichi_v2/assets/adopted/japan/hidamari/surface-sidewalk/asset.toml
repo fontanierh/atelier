@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town surface sidewalk: material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/surface-sidewalk"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/surface-sidewalk"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/sidewalk.jpg"
+sha256 = "5c67ae942a3f882153814cbd2dcf3036bb015eeb79d8c78863ed4915dc0695d6"
+
+[[sources]]
+path = "source/assets/hidamari/textures/sidewalk.json"
+sha256 = "16bcdbe88e4af4c39d3f4ba65cc7b3f1534f95ed757e4800f619a79d66ceddf1"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_sidewalk"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_sidewalk"

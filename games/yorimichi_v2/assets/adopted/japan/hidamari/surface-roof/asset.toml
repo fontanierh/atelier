@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town surface roof: material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/surface-roof"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/surface-roof"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/roof.jpg"
+sha256 = "6af91045dacb7beac4c1db6817b12d333360c609652d9a276b7f11784ba11bc6"
+
+[[sources]]
+path = "source/assets/hidamari/textures/roof.json"
+sha256 = "6e0e05d8a00e87ee409bc524ca48b24d387544d805b377b1d67daf3903e8b463"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_roof"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_roof"

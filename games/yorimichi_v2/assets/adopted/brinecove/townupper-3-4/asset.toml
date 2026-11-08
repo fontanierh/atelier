@@ -1,0 +1,67 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove townupper-3-4 (19 mesh(es))
+schema = 1
+id = "adopted/brinecove/townupper-3-4"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/townupper-3-4"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece0"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece20"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece21"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece220"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece221"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece222"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece223"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece230"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece231"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece232"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece233"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece30"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece31"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece320"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece321"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece322"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece323"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece33"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Soft"

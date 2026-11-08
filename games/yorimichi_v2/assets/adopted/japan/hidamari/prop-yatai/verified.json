@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-yatai",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_yatai.uasset": "2c816ddf4c3dff18fdf22d85f9eaab4a14de3e618225200b4a3c8b5425f7f6ea",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_yatai.uasset": "55f9f1fd43e7bb278fdd458a1d7121d04b2eac053d5850eaa346dc6f74ef0e8a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

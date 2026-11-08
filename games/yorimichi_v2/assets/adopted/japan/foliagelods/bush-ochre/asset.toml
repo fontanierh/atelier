@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage bush-ochre (4 package(s)): LODs and crown material
+schema = 1
+id = "adopted/japan/foliagelods/bush-ochre"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods/bush-ochre"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Bush_Ochre_A.json"
+sha256 = "454763b7aa5a74de94da8071c7c77104d7a5a981da05caa63adb4e760b17d82d"
+
+[[sources]]
+path = "source/assets/foliage/Bush_Ochre_B.json"
+sha256 = "dfab8fb1619d8a07ea61e0f722325568969ac1856eb47787a9f95235b28537f1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD2"

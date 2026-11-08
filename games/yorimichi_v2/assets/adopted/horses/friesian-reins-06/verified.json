@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/horses/friesian-reins-06",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Friesian/Tack/Reins_06/Kestrel_Reins_06_Alb_png.uasset": "7b5fcce98a02d1de192b0db7ee3047f8621fe1962933fd5fab3ea83a69f77a98",
+    "unreal/Content/Horses/Friesian/Tack/Reins_06/Reins_06_Mt_Reins.uasset": "2a2571b54894e6ca0a887c9094f2ed4374811b4d97074c59140033afbea2024b",
+    "unreal/Content/Horses/Friesian/Tack/Reins_06/SK_Horse_Friesian_Reins_06.uasset": "cff8f298827bf017ce22fb637deaad2280b87e2679d5efb1abdfb9813cbdafc3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

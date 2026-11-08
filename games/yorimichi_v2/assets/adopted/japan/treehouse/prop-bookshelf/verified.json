@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-bookshelf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_bookshelf.uasset": "b1e37b87e3b94c42cbd85cb792348e3d8615b2c1470c9055948b8321b646fd10",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_bookshelf.uasset": "0eb042697d1afa0e8b8398aed70f009032fbe29810900ec87a2b297cb3d05c56"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

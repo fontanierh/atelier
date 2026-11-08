@@ -1,0 +1,66 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-mura (4 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-mura"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-mura"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_0.glb"
+sha256 = "14ff3c20fd33c45b49c3eb80c5a3276ee610c582a0b267d61e1a397dd83740c6"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_0_Collision.glb"
+sha256 = "ac5e99f86204089f48c2cf8ced6537b3c5277a6d4739696a1dd3addd0d881723"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_1.glb"
+sha256 = "e4005b6f05753c530fbf9d72c1bab9560eca527ba71899a3b33a265a94294fc6"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_1_Collision.glb"
+sha256 = "8097785e5d648861bc7f1ad386856d147baab5d9476178d10537216d2127c52a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_2.glb"
+sha256 = "4c3834124d270235f046951af6fbdd5ca719c71278287b5d9857c8b77202bdcb"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_2_Collision.glb"
+sha256 = "bee15f948765682b66d72e208179dfef03941004723de7aeeaebcb01534259c3"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_3.glb"
+sha256 = "70224eb3cffa098d95e32fcae612dd4524d5b50dc7a4263833a2a184beaf0b22"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Mura_3_Collision.glb"
+sha256 = "0e89409143d6cc21f54c472d5fab69f4626aa44d9122e907c8be4859780f96dc"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_0_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_1_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_2_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Mura_3_Collision"

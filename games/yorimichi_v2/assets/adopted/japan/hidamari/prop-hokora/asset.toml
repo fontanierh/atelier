@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop hokora: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-hokora"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-hokora"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/hokora/concept.jpg"
+sha256 = "db6c2eef7916d2f2e15c60d2b923893df363c557d46181cbac747928a365252f"
+
+[[sources]]
+path = "source/assets/hidamari/props/hokora/concept.json"
+sha256 = "d821e449fe360666fe1219775472338c9efc5a72095cdcf75595306d07b18765"
+
+[[sources]]
+path = "source/assets/hidamari/props/hokora/hokora.glb"
+sha256 = "f8f9842fbadfe02c7c9e032d4d1b90a3020cf001cfdeb26ce01906acb80019ff"
+
+[[sources]]
+path = "source/assets/hidamari/props/hokora/job.json"
+sha256 = "2f23dc5cbd0a0cac6703992c7ec933c5e7465b3301f588e3bd8871e7588c84d0"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_hokora.json"
+sha256 = "f3a01d7cb7657db1c41b08ced09afc6404497289c69f83072510489d216d19f6"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_hokora"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_hokora"

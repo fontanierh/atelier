@@ -1,0 +1,57 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: BR_STAND in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/br-stand"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/br-stand"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_INTO_MOUNT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_INTO_SPRINT_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_INTO_WALK_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_THIN_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_THIN_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_0_THIN_INTO_WALK_FWD_THIN"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_BWD_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_FAST_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_FWD_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_HI_READYPOSE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_LEFT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_READYPOSE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_RIGHT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_STAND_SLOW_CYC"

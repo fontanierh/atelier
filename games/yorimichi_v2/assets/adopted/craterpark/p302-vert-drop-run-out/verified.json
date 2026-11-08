@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/craterpark/p302-vert-drop-run-out",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_15_17.uasset": "7157aed3f98cb6d7635e29567cc1a30daded6caf6ec76b130ab10ebb20b9299b",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_15_17.uasset": "1cf8cbf253e3daab219385d8b242a6d3d2d5289ba03ad3bb72f0450ff175e570"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

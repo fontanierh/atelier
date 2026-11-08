@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/gondola/shell-rim",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/Kit/GD_StationRim_Building.uasset": "dfe679218c2f304c84ca0fb4ffc909ef07010ec523b252854a369777998c1287",
+    "unreal/Content/Gondola/Kit/GD_StationRim_Collision.uasset": "7dbe4a5c774d8fb12ed4fe5a26e91652ff9c0e833fb3756a508983b855a1a9ef",
+    "unreal/Content/Gondola/Kit/GD_StationRim_Fittings.uasset": "cd1994a3a0325f474412c7836816c3d91460803074fa861f1d1b06c1dcd138cc",
+    "unreal/Content/Gondola/Kit/GD_StationRim_Machinery.uasset": "b1963dd59693f48b53482f8174612620296722ec1608b02723a74bdfe206977a",
+    "unreal/Content/Gondola/Kit/GD_StationRim_Platform.uasset": "4464b58fcb92a752856832ee39332092357c328fda60bbfbf17c4645a537e887"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

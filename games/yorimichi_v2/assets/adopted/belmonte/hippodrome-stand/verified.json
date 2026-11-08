@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/belmonte/hippodrome-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StandGardens.uasset": "84da0a6b467f422ba54ad5e9e7883f7e38b8906f0fc98487aefe7946133a1d21",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StandGardens_Collision.uasset": "86d27b8db7b2a7d3246bd15c39c846c5ff86bcb74d4d13af3035488162396d71",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2.uasset": "cf89c96eb809cc3e7e5c6212a617675f797fac54fb724f7d5ef9efc3ad1f8eaf",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2_Collision.uasset": "cf36c212ef7380136e6db1d0439e5ee8c48210b78e860f23fe913dfa8297531c",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece3.uasset": "e6294da260e1082c6de8d4424e70004f6c23255b090e203d95acca2e33c319fd",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StandTerrace.uasset": "e78e1f1a67a6046d0805f469906e0115ad81cb83d00b1aef48a4c555d20a4595",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stand_Piece02.uasset": "d4792fcfab82c822f31c66649e0c92485b15d6f386d4655feaa70308324d1f42",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stand_Piece03.uasset": "a85c7fe9b9fcdc10e9bcd499f06c1c0df8ee6a04e44dd844070e0b0d4f8cf67e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stand_Piece12.uasset": "adaa31a4b320608003d7b0b83fb1c1f480888b40d175c73faa76523cce5fe37e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stand_Piece13.uasset": "36082d9414feb98814c581cd5df0fea57d85151206d2fa8cd02bedea671fe145",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stand_Piece2.uasset": "a5ed215ccaba9386005b43cb737889fff1d9a948aeee16b35c587bdb59b55a4a",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Stand_Piece3.uasset": "fcf6246b3a160b42ffbef65596f73bbae73b7663dd97c0280b09944bf741e482"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

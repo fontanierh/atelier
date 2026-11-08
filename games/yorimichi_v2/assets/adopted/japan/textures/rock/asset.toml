@@ -1,0 +1,39 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan rock textures (7 package(s))
+schema = 1
+id = "adopted/japan/textures/rock"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/textures/rock"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/environment/textures/volcanic-rock.jpg"
+sha256 = "9389cb40cf88f6962ad74e32c62d4a639144dc4ad2cb7cfefc50627155677473"
+
+[[sources]]
+path = "source/assets/environment/textures/volcanic-rock.provenance.json"
+sha256 = "1bcd6603e41147aa241e55da5e126aa73ec2f749650bbfdbd2a8494f031f961a"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_CoastRock"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_NorthCraterFloor"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_NorthCraterMask"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_NorthSnowMask"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_VolcanicRock"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_concrete"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_rooftile"

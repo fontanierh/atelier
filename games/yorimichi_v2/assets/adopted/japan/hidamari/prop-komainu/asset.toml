@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop komainu: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-komainu"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-komainu"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/komainu/concept.jpg"
+sha256 = "2d029f3ac709a2ec8f61363a0040a3b6cf3b6b45788b6a0bbc71adacc3f743e1"
+
+[[sources]]
+path = "source/assets/hidamari/props/komainu/concept.json"
+sha256 = "27292e3ee7afa92de1ac4a3d214b53bd9bcb17e8b15d453ee44f73fc3b48ab8c"
+
+[[sources]]
+path = "source/assets/hidamari/props/komainu/job.json"
+sha256 = "b1a1227284217b77db2f830c7e8cc0eab27c9e250e981fa1f2ada86018de185f"
+
+[[sources]]
+path = "source/assets/hidamari/props/komainu/komainu.glb"
+sha256 = "fb8ccd7be1e88891a0a31e531ed79e9467672acc4c5f56e8efe033eae32151d6"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_komainu.json"
+sha256 = "566eba04a8c7ef275035911ff71a13e9dff7851090d0249f9ef3b3463b9d0172"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_komainu"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_komainu"

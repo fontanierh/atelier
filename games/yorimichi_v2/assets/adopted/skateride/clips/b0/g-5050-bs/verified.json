@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-5050-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_5050_BS_GRAB_CYC.uasset": "fd0d17ff27cc6694e7f8f15a0e5b3a5ddcc84ed5e4bad91d9b02b97d28729712",
+    "unreal/Content/SkateRide/Clips/B0/G_5050_BS_GRAB_INTO.uasset": "9ebd6531352c3c1851989d96f92911d140d5fe2a54216082c4c856427b93d258",
+    "unreal/Content/SkateRide/Clips/B0/G_5050_BS_GRAB_OUT.uasset": "2e3c6eda61771708e757915b50729aa862e98825b43840c718a97ca62d51b57f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

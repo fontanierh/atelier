@@ -1,0 +1,41 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the terminus loop
+schema = 1
+id = "adopted/belmontetrack/loop"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrack/loop"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrack/materials"]
+
+[[sources]]
+path = "source/world/train/construct_track.py"
+sha256 = "28c0712d61ebe9782de325378a1da41990d123a0c6bbad433adfd490099f74d0"
+
+[[sources]]
+path = "source/world/train/export_track_piece.py"
+sha256 = "108e1b08afd55e2331ee536f6ddfc136603a2e3cc056743710fb4e32efebc6f4"
+
+[[sources]]
+path = "source/world/train/plan_track.py"
+sha256 = "837147b5f0abafe1b96ac88876c9d61b33470f259b64b932c4d729914bdb10a9"
+
+[[sources]]
+path = "source/world/train/route.py"
+sha256 = "21bbfbcd590d69e39097130ce355af903dd39a139b86e7d5ece730cf20a6766b"
+
+[[sources]]
+path = "source/world/train/track.py"
+sha256 = "d3ab9ac4ccd32a4c185f2f4e5eab6d78d5ef3d311a5bab25183121723aaf6f6a"
+
+[[sources]]
+path = "source/world/train/track_build.py"
+sha256 = "5e7994540533ffd3409d093fb0dce14b86e3a790e07ed470f9f1a3b1aefa3f76"
+
+[[sources]]
+path = "source/world/train/track_projection.py"
+sha256 = "4b125d4702588ba06b58848e5e27486df40ddd708e1091f655ae8ee183351177"
+
+[[outputs]]
+package = "/Game/BelmonteTrack/SM_TK_Loop"

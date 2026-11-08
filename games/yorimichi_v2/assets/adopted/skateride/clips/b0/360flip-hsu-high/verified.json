@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/360flip-hsu-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_HSU_HIGH_A.uasset": "bfc50b1d35cdbbe7fb568a6d70fa973be47bd930a24a7c5f157be82d6c72e47e",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_HSU_HIGH_G.uasset": "2b766418a47d7e713cd7be8405fde24efd10b26275641a23fc13c8928e80d172"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

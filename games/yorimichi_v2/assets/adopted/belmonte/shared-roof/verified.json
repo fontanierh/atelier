@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/shared-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_e17c9375ae80.uasset": "38e84074de6dfcc87c10b6f69d10ca847010ccb6b83d6eaf0c736ea9b801e6c1",
+    "unreal/Content/Belmonte/Textures/T_BM_b62cf5b69761.uasset": "852bc8b0883a234df5ebb0039dc3fe3f1f07fd354c325bb06cb423c820c0e6b8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

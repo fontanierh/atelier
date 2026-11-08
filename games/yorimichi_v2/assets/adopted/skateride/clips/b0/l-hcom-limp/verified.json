@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/l-hcom-limp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/L_HCOM_LIMP.uasset": "464845d02e4515581a46ee9ffbf7716b4bc2b9adc407ea3aa97e443ff06196a5",
+    "unreal/Content/SkateRide/Clips/B0/L_HCOM_LIMP_1.uasset": "ef5cdfb97e662327ae3223536f9d7c6a7e92aa197e2392c500827864bb195a87",
+    "unreal/Content/SkateRide/Clips/B0/L_HCOM_LIMP_2.uasset": "ab084b24bba1230f27dcff9f6637f978eb27b71fce8055d1db9b961be69b959c",
+    "unreal/Content/SkateRide/Clips/B0/L_HCOM_LIMP_3.uasset": "3e1c84e1490abcf8b3ef1babfca81619ac9d8bcb64b37fbdfff04125fd48a3e7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

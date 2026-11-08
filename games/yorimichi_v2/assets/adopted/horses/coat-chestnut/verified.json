@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-chestnut",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/chestnut.uasset": "eca04be3e687b18c0587f2cde5f1043c377a4f44c6f4f5d492da1edef7b928b7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

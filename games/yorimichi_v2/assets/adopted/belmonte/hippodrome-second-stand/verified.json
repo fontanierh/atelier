@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/hippodrome-second-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_SecondStand.uasset": "9d3dd587652cca25e3c217ef347478d7358da4b15417fa4b08751f5e493060c7",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_SecondStand_Collision.uasset": "cf21fca830773b4bbdf8d18a80de5f0133ec93681dc989de804b36fe8d229f2b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

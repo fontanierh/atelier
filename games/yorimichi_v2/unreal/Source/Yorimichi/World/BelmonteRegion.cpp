@@ -2,12 +2,15 @@
 #include "AtelierData.h"
 #include "JapanWorld.h"
 #include "SeeThrough.h"
+#include "V2ScenePatch.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Dom/JsonObject.h"
 #include "Materials/MaterialInterface.h"
+#include "Misc/PackageName.h"
+#include "Misc/Paths.h"
 #include "StaticMeshResources.h"
 #include "Serialization/JsonSerializer.h"
 #include "ShaderCompiler.h"
@@ -79,6 +82,60 @@ void ABelmonteRegion::Clear(const TSharedPtr<FJsonObject>& WorldData, const FStr
     }
 }
 
+UHierarchicalInstancedStaticMeshComponent* ABelmonteRegion::MakeGroup(UObject* Outer, USceneComponent* Parent,
+    const TSharedPtr<FJsonObject>& Entry, UStaticMesh* Mesh, FName Tag, int32& Missing)
+{
+    const bool Plant = Entry->GetBoolField(TEXT("plant"));
+    auto* Group = NewObject<UHierarchicalInstancedStaticMeshComponent>(Outer);
+    Group->SetStaticMesh(Mesh);
+    Group->SetMobility(EComponentMobility::Static);
+    Group->SetupAttachment(Parent);
+    Group->SetCanEverAffectNavigation(false);
+    Group->SetGenerateOverlapEvents(false);
+    Group->SetCollisionEnabled(Entry->GetBoolField(TEXT("collision")) ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+    Group->SetCastShadow(Entry->GetBoolField(TEXT("shadow")));
+    const int32 Cull = Entry->GetIntegerField(TEXT("cull_cm"));
+    Group->SetCullDistances(FMath::RoundToInt(Cull * .8f), Cull);
+    if (Plant && Mesh->GetName().StartsWith(TEXT("Grass_"))) Group->bAffectDistanceFieldLighting = false;
+    for (int32 Index = 0; Index < Entry->GetArrayField(TEXT("materials")).Num(); ++Index)
+    {
+        const FString MaterialPath = Entry->GetArrayField(TEXT("materials"))[Index]->AsString();
+        auto* Material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath);
+        if (Material) Group->SetMaterial(Index, Material);
+        else { ++Missing; UE_LOG(LogTemp, Error, TEXT("%s missing material %s"), *Tag.ToString().ToUpper(), *MaterialPath); }
+    }
+    if (Plant)
+    {
+        const int32 Fade = JapanSeeThrough::FadeMode(Mesh->GetName(), Mesh);
+        if (Fade != JapanSeeThrough::FadeSolid)
+        {
+            Group->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+            Group->SetCustomPrimitiveDataFloat(0, float(Fade));
+        }
+        Group->SetWorldPositionOffsetDisableDistance(18000);
+    }
+    return Group;
+}
+
+TArray<FTransform> ABelmonteRegion::SceneryTransforms(const TSharedPtr<FJsonObject>& Data, const TSharedPtr<FJsonObject>& Entry, int32& Outside)
+{
+    // The district's extent in metres (world X, north Y), with a 100 m margin.
+    const auto& B = Data->GetArrayField(TEXT("bounds_m"));
+    const FBox2D Bounds(FVector2D(B[0]->AsNumber() - 100., B[1]->AsNumber() - 100.), FVector2D(B[2]->AsNumber() + 100., B[3]->AsNumber() + 100.));
+    const FVector Origin = Vector(Data->GetArrayField(TEXT("origin_cm")));
+    TArray<FTransform> Instances;
+    for (const auto& Item : Entry->GetArrayField(TEXT("transforms")))
+    {
+        const FTransform Placement = Transform(Item->AsObject());
+        // The source scene's distant hill villages lie kilometres outside the district,
+        // where no ground carries them: they would hang in the sky over the whole map.
+        const FVector P = Origin + Placement.GetLocation();
+        if (!Bounds.IsInside(FVector2D(P.X / 100., -P.Y / 100.))) { ++Outside; continue; }
+        Instances.Add(Placement);
+    }
+    return Instances;
+}
+
 ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& Path, FName Tag)
 {
     const auto Data = AtelierReadJson(Path);
@@ -89,15 +146,24 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     Region->GetRootComponent()->SetMobility(EComponentMobility::Static);
     Region->Tags.Add(Tag);
     const auto GondolaClearance=AtelierReadJson(AtelierDataPath(TEXT("gondola/runtime.json")));
-    int32 Missing = 0, Outside = 0;
-    // The district's extent in metres (world X, north Y), with a 100 m margin.
-    const auto& B = Data->GetArrayField(TEXT("bounds_m"));
-    const FBox2D Bounds(FVector2D(B[0]->AsNumber() - 100., B[1]->AsNumber() - 100.), FVector2D(B[2]->AsNumber() + 100., B[3]->AsNumber() + 100.));
-    auto Inside = [&Bounds](const FVector& P) { return Bounds.IsInside(FVector2D(P.X / 100., -P.Y / 100.)); };
+    // Groups this map holds as saved patches (UV2Migration::MigrateRegionGroups) are not spawned again.
+    const AV2WorldManifest* Manifest = AV2WorldManifest::Find(Landscape->GetWorld());
+    int32 Missing = 0, Outside = 0, Saved = 0;
     for (const auto& Value : Data->GetArrayField(TEXT("groups")))
     {
         const auto Entry = Value->AsObject();
         const FString Asset = Entry->GetStringField(TEXT("asset"));
+        if (Manifest && Manifest->CoversGroup(Tag, FPaths::GetBaseFilename(Asset)))
+        {
+            // Its saved patch draws it; its mesh must still be committed content (checked without loading it).
+            if (FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(Asset))) ++Saved;
+            else
+            {
+                ++Missing;
+                UE_LOG(LogTemp, Error, TEXT("%s missing saved-group mesh %s"), *Tag.ToString().ToUpper(), *Asset);
+            }
+            continue;
+        }
         auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
         if (!Mesh)
         {
@@ -106,53 +172,22 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
             continue;
         }
         const bool Plant = Entry->GetBoolField(TEXT("plant"));
-        auto* Group = NewObject<UHierarchicalInstancedStaticMeshComponent>(Plant ? static_cast<UObject*>(Landscape) : Region);
-        Group->SetStaticMesh(Mesh);
-        Group->SetMobility(EComponentMobility::Static);
-        Group->SetupAttachment(Plant ? Landscape->GetRootComponent() : Region->GetRootComponent());
-        Group->SetCanEverAffectNavigation(false);
-        Group->SetGenerateOverlapEvents(false);
-        Group->SetCollisionEnabled(Entry->GetBoolField(TEXT("collision")) ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
-        Group->SetCastShadow(Entry->GetBoolField(TEXT("shadow")));
-        const int32 Cull = Entry->GetIntegerField(TEXT("cull_cm"));
-        Group->SetCullDistances(FMath::RoundToInt(Cull * .8f), Cull);
-        if (Plant && Mesh->GetName().StartsWith(TEXT("Grass_"))) Group->bAffectDistanceFieldLighting = false;
-        for (int32 Index = 0; Index < Entry->GetArrayField(TEXT("materials")).Num(); ++Index)
-        {
-            const FString MaterialPath = Entry->GetArrayField(TEXT("materials"))[Index]->AsString();
-            auto* Material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath);
-            if (Material) Group->SetMaterial(Index, Material);
-            else { ++Missing; UE_LOG(LogTemp, Error, TEXT("%s missing material %s"), *Tag.ToString().ToUpper(), *MaterialPath); }
-        }
-        if (Plant)
-        {
-            const int32 Fade = JapanSeeThrough::FadeMode(Mesh->GetName(), Mesh);
-            if (Fade != JapanSeeThrough::FadeSolid)
-            {
-                Group->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-                Group->SetCustomPrimitiveDataFloat(0, float(Fade));
-            }
-            Group->SetWorldPositionOffsetDisableDistance(18000);
-        }
+        // Plant components belong to JapanWorld, so the normal tree settings and LOD swaps apply to this district too.
+        auto* Group = MakeGroup(Plant ? static_cast<UObject*>(Landscape) : Region,
+            Plant ? Landscape->GetRootComponent() : Region->GetRootComponent(), Entry, Mesh, Tag, Missing);
         Group->bAutoRebuildTreeOnInstanceChanges = false;
         Group->RegisterComponent();
         TArray<FTransform> Instances;
-        for (const auto& Item : Entry->GetArrayField(TEXT("transforms")))
-        {
-            FTransform Placement = Transform(Item->AsObject());
-            // The source scene's distant hill villages lie kilometres outside the district,
-            // where no ground carries them: they would hang in the sky over the whole map.
-            if (!Plant && !Inside(Region->GetActorLocation() + Placement.GetLocation())) { ++Outside; continue; }
-            // Plant components belong to JapanWorld, so the normal tree settings
-            // and LOD swaps apply to this district too.
-            if (Plant)
+        if (Plant)
+            for (const auto& Item : Entry->GetArrayField(TEXT("transforms")))
             {
+                FTransform Placement = Transform(Item->AsObject());
                 Placement.AddToTranslation(Region->GetActorLocation());
                 const FVector P=Placement.GetLocation();
                 if(InClearance(GondolaClearance,P.X/100.,-P.Y/100.))continue;
+                Instances.Add(Placement);
             }
-            Instances.Add(Placement);
-        }
+        else Instances = SceneryTransforms(Data, Entry, Outside);
         Group->AddInstances(Instances, false, false, false);
         Group->BuildTreeIfOutdated(true, true);
         Group->bAutoRebuildTreeOnInstanceChanges = true;
@@ -177,9 +212,10 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
         Sign->SetCastShadow(false);
         Sign->RegisterComponent();
     }
-    Region->bGameplayReady = Missing == 0 && Region->SceneryInstances > 0;
-    UE_LOG(LogTemp, Display, TEXT("%s ready=%d scenery=%d plants=%d missing=%d outside=%d at %s"),
-           *Tag.ToString().ToUpper(), Region->bGameplayReady, Region->SceneryInstances, Region->PlantInstances, Missing, Outside, *Region->GetActorLocation().ToString());
+    // A region whose fixed scenery is all saved as objects is ready with no runtime scenery of its own.
+    Region->bGameplayReady = Missing == 0 && (Region->SceneryInstances > 0 || Saved > 0);
+    UE_LOG(LogTemp, Display, TEXT("%s ready=%d scenery=%d plants=%d missing=%d outside=%d saved=%d at %s"),
+           *Tag.ToString().ToUpper(), Region->bGameplayReady, Region->SceneryInstances, Region->PlantInstances, Missing, Outside, Saved, *Region->GetActorLocation().ToString());
     return Region;
 }
 

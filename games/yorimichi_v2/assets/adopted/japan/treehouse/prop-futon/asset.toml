@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop futon: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-futon"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-futon"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/futon/asset.toml"
+sha256 = "8c993283b4965b77efc0dba4925948095abf2ae400649b3a7cca5993b1d60974"
+
+[[sources]]
+path = "source/assets/treehouse/props/futon/concept.jpg"
+sha256 = "8f457e9fc21860b27b8a52c9d9e1546f2e7304c6c323f6e9eff7485226ea0d45"
+
+[[sources]]
+path = "source/assets/treehouse/props/futon/futon.glb"
+sha256 = "d49d5fbd2248cb2903cffd813accda0ea931fa600a547e4740dd6f98c548f06c"
+
+[[sources]]
+path = "source/assets/treehouse/props/futon/job.json"
+sha256 = "ad2fd692be99f42fb9f1ec5cb63eec53aa8d299c3bd5d49f773bd97981003eef"
+
+[[sources]]
+path = "source/assets/treehouse/props/futon/prompt.txt"
+sha256 = "a7238f0eb5143d862a6dda0842a60fb8bce200f234146a615bfb4f4bf38d0ad4"
+
+[[sources]]
+path = "source/assets/treehouse/props/futon/provenance.json"
+sha256 = "affc524aabad46f1768e6f3ffc51bd58f3b522e06eb9090acb8ac0c2a28b8b58"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_futon.json"
+sha256 = "bd38e4c036ebee9eb7b0615fe99c3dd8b66a39ccca71f5a9207d041cde150928"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_futon"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_futon"

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-pine-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Tree_Pine_B/MI_Tree_Pine_B_Crown.uasset": "55c2433f45446b84d505191e35c37846b0bfa6d068ab27652aa2b10594319ed3",
+    "unreal/Content/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD1.uasset": "cd7ae6bc0c244aec215597719dd527785651b94389f1bf06bb007506ab1526d0",
+    "unreal/Content/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD2.uasset": "db0be90fe036e3551f031da0b736b97fc817cbf0c8eba1beedc551402763073e",
+    "unreal/Content/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD3.uasset": "747f38195da284541bcb4ab955c0cbe373b251eb9f84154ea453f9410b789ebb",
+    "unreal/Content/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD4.uasset": "cf6b4afb57a58a13d5a7cf9e7b8e11e769e23b6e8edfa9ac2ee964c870c8fba4",
+    "unreal/Content/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD5.uasset": "78b78cc8f5584c819dded1143ec641f61620d7b522df2ade4591a5f5be75f8dd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

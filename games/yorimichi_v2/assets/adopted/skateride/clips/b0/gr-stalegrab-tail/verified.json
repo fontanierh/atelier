@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-stalegrab-tail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_STALEGRAB_TAIL_N_0_CYC.uasset": "832b21aef42b0984876539d89203b7b1af18c5373551d38f0085599d667c04a1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

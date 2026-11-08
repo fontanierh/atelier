@@ -1,0 +1,27 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family lacquer
+schema = 1
+id = "adopted/craterpark/shared-textures-lacquer"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-lacquer"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_planks.jpg"
+sha256 = "bf6c95e92867c122fdbce0a4e21821e7885626795c4b61210ea3b5fe0e6dcfdf"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_planks.json"
+sha256 = "9433908174510e6f6db429fa72e734ef4aa2ca9b525367ddfbc10d73a4ff7459"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_boost_magenta"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_boost_sun"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_boost_yellow"

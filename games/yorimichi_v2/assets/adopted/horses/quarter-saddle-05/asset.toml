@@ -1,0 +1,35 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Quarter saddle set 05 with its materials and images
+schema = 1
+id = "adopted/horses/quarter-saddle-05"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/quarter-saddle-05"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/quarter/tack/Saddle_05.glb"
+sha256 = "f115145232ae6afb2ed8099edabdeaa7f978d706f7c92d2878fd24de000ccc95"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Saddle_05/SK_Horse_Quarter_Saddle_05"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Gem"
+
+[[outputs]]
+package = "/Game/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Saddle"

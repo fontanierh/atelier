@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-straw",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_straw.uasset": "5b6804b7a961368898b95c8538a24d20733628b34ab7ed294fad043c19bef86c",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_straw.uasset": "e48062cd7fac15ca3112f44a2b0b6964ffdced514b93d53e82a1d0e69a12fde0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

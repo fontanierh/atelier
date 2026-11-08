@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-tile",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_tile.uasset": "4e6737f1ea1d73b722049b2dae692aedadf403bc76480e5721cd6ef10f9bf236",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_tile.uasset": "8ffa4101490e21714eac7eabdc8567c0c8b71ebe016fc6f31eb145b0443e3fe9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

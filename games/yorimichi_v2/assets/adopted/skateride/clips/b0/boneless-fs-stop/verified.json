@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/boneless-fs-stop",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_A.uasset": "e16adb706f3a6bdf1a14d29c27d2646335dd65292e426dfcf7c01f2713291f10",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_F.uasset": "9760571878e28b31ef1a9d30f2ce9df397e7a42a5ecc108dadcaa23517dc93e7",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_G.uasset": "cdc2d8deaf48627fbae5633c586ea2a576142f82cb1fbd2b550d3f8e4117bb25",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_STOP_L.uasset": "5d95327f81b5733f5e273dd6df18940d8faf4d9ce53b65bc8ebf5811f1a1f8d2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

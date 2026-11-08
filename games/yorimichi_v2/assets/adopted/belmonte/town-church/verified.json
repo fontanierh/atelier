@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-church",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Church.uasset": "4be301a996310513aa667828f9c3fb9b3892bc72387ebbabfae72b5e38567c04",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Church_Collision.uasset": "e0f36335ea8e00ab2e8c3dd888134d3203360366b676d06559b2f5f3c00ebe31"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

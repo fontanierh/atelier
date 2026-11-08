@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-infield",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Infield.uasset": "33fcb667c7f6716e02f3af7740591d7dfc0efc494bb97f85bea4094adc0d2e3e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

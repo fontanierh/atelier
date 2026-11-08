@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/civil-waterfall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Waterfall.uasset": "56aff8557b6295ec9aa800d177ee7250e0c622e67de861d02f2703126abf6ffb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

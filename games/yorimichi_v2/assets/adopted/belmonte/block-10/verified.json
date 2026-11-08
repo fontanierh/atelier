@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/belmonte/block-10",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_blk_10_Piece0.uasset": "cf80f43547aa33f1776b113d8807091597458e5148d66ef53be0da23e69973e0",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_blk_10_Piece0_Collision.uasset": "1118cba26f7c0b724226a31b56f043ed9802652a77279fcd2ba2bd28e32bcf45",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_blk_10_Piece1.uasset": "75eef65aa6932329bb631c62aa106d2a91f9f5a76bc6ee16c16432350c812e1b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_blk_10_Piece2.uasset": "e54f80a1c0aa18709440c3281c973d52d140d9cf3a7a8579aa002a4c685e94fe",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_blk_10_Piece3.uasset": "b8a15042054d1584480c3ace9d9c39cdfb03e9da4e9c8f4c1f5c808f441373de"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

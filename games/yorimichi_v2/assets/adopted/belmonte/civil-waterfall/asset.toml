@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-waterfall (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-waterfall"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-waterfall"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Waterfall.glb"
+sha256 = "85e78bd6394f51d603ed82f355c76f216abbd844523e0d0639a338433cca99d1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Waterfall"

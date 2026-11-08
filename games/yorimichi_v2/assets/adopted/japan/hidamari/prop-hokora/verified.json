@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-hokora",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_hokora.uasset": "c4b5685953a6cfe813831a99a5497fa22bd27e0c090cc6cc5e5a3f340c82593a",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_hokora.uasset": "d7c1fdd3dd33e9b2d0d25f246eaaad3ab824945e83c576c3d5a511f7757c2f7e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

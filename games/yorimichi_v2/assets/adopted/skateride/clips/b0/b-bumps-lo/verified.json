@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-bumps-lo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_LBACKKNOCK_0_N.uasset": "364b0eaf3f879ad5f9b31603a9b57244ec7d377dbb33f76f163aa54c47c4120b",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_LBACKKNOCK_CR_N.uasset": "f94564fa10de90002532212862230cc4626004378be021b5270965bae5589f93",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_LFRONTKNOCK_0_N.uasset": "1994642a518c4b900d413ccb9bbbc4d2a6b6fb6b133b50e802a22846970e9cb6",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_LFRONTKNOCK_CR_N.uasset": "e735fd546d536b1c150a913812e3bcf76fc2f379601ccd61103dbecb6fc70342",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_RBACKKNOCK_0_N.uasset": "533dff43c6a98efb6eb6b715b6b7a76a7d725fb1d2560ca4995f6f2742676f85",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_RBACKKNOCK_CR_N.uasset": "796f48f69ff3c3257ba7f10db54a3f07e54634e9c0b399533d4c204f8303bd1f",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_RFRONTKNOCK_0_N.uasset": "ac1556dcc72aa56dad9e72da6cd153f2ec744b2b80cd1f923fcd926e0fa434c0",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_LO_RFRONTKNOCK_CR_N.uasset": "d64212719c5cdcd0def92a01ad21df35d521f1aacc7b5a6b2b1f9abc3bb615eb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

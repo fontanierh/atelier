@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-noselean-turn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_NOSELEAN_TURN_BS_0_CYC.uasset": "d1efbeac8bb1fadda1087415e2f7587c6989a43d82f16f0e8d608eb3228099bc",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSELEAN_TURN_FS_0_CYC.uasset": "ae9aa4ad3ecfd0589208e2838a7908039e3d9bfdfcb8f8c602acd3a1ce2184cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

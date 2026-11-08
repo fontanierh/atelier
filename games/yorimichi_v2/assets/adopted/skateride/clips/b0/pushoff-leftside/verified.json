@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-leftside",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_LEFTSIDE.uasset": "1a8d2ddc5b629a7720f9c0cb7ab674eaad161f4edc66b5504f9288a63ba40057"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

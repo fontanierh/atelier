@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b1/ofb-throw",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/OFB_THROW_0.uasset": "aca8c82fe8f725174ab9350a8a83f181cd589c1f9459ad8b0a21ed69e3cab1b3",
+    "unreal/Content/SkateRide/Clips/B1/OFB_THROW_90.uasset": "e3bdc4988b2cb707970426b8092b2890549fae47ece761594e8d4d79a1e31725"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

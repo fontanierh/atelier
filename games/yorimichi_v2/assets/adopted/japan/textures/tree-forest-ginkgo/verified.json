@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/textures/tree-forest-ginkgo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Tree_Forest_Ginkgo_colour.uasset": "e07b2148e461288a44ac67e5afeb8c9b9f1954aeb6d85dc7bb366f7aa5a9d2a3",
+    "unreal/Content/Japan/Textures/T_Tree_Forest_Ginkgo_normal.uasset": "69d911a96bf95b434c90fc8990566346fe85067bdae00bfeb06b1b7d3799a508"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

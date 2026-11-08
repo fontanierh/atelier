@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/gondola/cabin",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/Kit/GD_Cabin.uasset": "c1c07b5b3b9bb7f1b6680616d30cf387d7d6e102fb229858a547716041e4da11",
+    "unreal/Content/Gondola/Kit/GD_CabinDoorLeft.uasset": "693c0eef96d7253f18e96c529e01ca04b61481b8ec5e15066a5a31659db10028",
+    "unreal/Content/Gondola/Kit/GD_CabinDoorRight.uasset": "c3767051ef662116268d91c2a2b3adf77137b115f3873253ba8fe58845e8154f",
+    "unreal/Content/Gondola/Kit/GD_CabinGrip.uasset": "7eaff7193f9373dcdad870fbf28db8dd3638a9416524a0228bf47b0dc2238af2",
+    "unreal/Content/Gondola/Kit/GD_CabinHanger.uasset": "03dc3406b06347fca8453507445bc21639237d94c05c9d34b4bb80cbc7eee1e7",
+    "unreal/Content/Gondola/Kit/GD_Cabin_Collision.uasset": "25f8d660aa2018b9843d2d27f99a66ecd1d8de3b48bf8ae75edd252663fbf1c5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

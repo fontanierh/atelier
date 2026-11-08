@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-noren-indigo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_noren_indigo.uasset": "95adc1271c36d72edd629a7f51c8956474864b02431fe00e1da7e61acac2f154",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_noren_indigo.uasset": "8a6e24839b76d44bf0f47a876ab527bf024e57178d8436dd6c861e20995b660c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

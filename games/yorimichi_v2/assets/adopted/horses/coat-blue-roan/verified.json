@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-blue-roan",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/blue-roan.uasset": "9a524f5e8d5b69b63830739c9d740984e369e0a2324480ec7b5505343c660ffb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

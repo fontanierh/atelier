@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop water_basin: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-water-basin"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-water-basin"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/water_basin/concept.jpg"
+sha256 = "ca3ca139e3090e91c3f8e171fbb4f7049f4e5a6591729120c6ddfa50458dcd5f"
+
+[[sources]]
+path = "source/assets/hidamari/props/water_basin/concept.json"
+sha256 = "848bea93e730aca96d36b2b9c35aac31051986d98ad706bf71cf66210a53131a"
+
+[[sources]]
+path = "source/assets/hidamari/props/water_basin/job.json"
+sha256 = "1725e767d53c82ac8ec8f9634e26f56d383980e7f3f31d7b5e39616f54f29dd1"
+
+[[sources]]
+path = "source/assets/hidamari/props/water_basin/water_basin.glb"
+sha256 = "6eaf3407cd323531bb2fbd81d7a76084fc8af562f42249e26ea0483f64160354"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_water_basin.json"
+sha256 = "a96a2c0877ccab0977695e51e2754265c89386cc319ca897910fbbdedeae8ba7"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_water_basin"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_water_basin"

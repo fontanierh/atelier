@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/hippodrome-members-bar",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_MembersBar.uasset": "1d0c74dfb984ed2e3a5f53089cddfab71da46773380d9f4a0e4cbc5420c5aec1",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_MembersBar_Collision.uasset": "791e4ddb894a4cc228810cd0bad84a62813714fdac932bc294ac34f69ba807d1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/horses/clydesdale-reins-06",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Clydesdale/Tack/Reins_06/Kestrel_Reins_06_Alb_png.uasset": "c5150810a66892ad8cec6f5358e68761213dea365623fb824ace0e0007f305ee",
+    "unreal/Content/Horses/Clydesdale/Tack/Reins_06/Reins_06_Mt_Reins.uasset": "ab96fc3dbad69a3be956f6744809bc06a488d46c05d12a60665f55aafc09676c",
+    "unreal/Content/Horses/Clydesdale/Tack/Reins_06/SK_Horse_Clydesdale_Reins_06.uasset": "d59c26badfa981f24ef54504382b8b96b03abf31e02f8387b400d3ebaef90822"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

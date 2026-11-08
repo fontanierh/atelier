@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-basket (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-basket"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-basket"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Basket.glb"
+sha256 = "fb2b2c8c645de7fabbac39e6d77073425faea6801e4a2fe9050ace0b1114b181"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Basket_Collision.glb"
+sha256 = "c28e546aca0b7e12c68c80f4a11877e596d3310f55c2c92f38cd7df6d363ae43"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Basket"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Basket_Collision"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-map",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_map.uasset": "1eddeb5080b907e4d705bf67abb8c659028c9ff66c5ba890ce674af5f1bdfc92",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_map.uasset": "50c2e8b4a4bb17d3febfd7590b9e0320318b5128289a0eaaa5fb6dd82f1cd6aa"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

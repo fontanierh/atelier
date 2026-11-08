@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-dsmnt-nofoot",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_NOFOOT_FS_0_CYC.uasset": "5c8fda6db663138b8b473c22e5e19eeb40af26ae6f22e8cd1dadcc2a1f1b75f7",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_NOFOOT_FS_0_INTO.uasset": "5d7eddbfbeb32a44f031320263639c593fc3952c3d71f48affc6d1b5573ca475",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_NOFOOT_FS_0_OUT.uasset": "c6525d064b07cb8c9d0bb197e474db71d0cf55efc49a5454c0f87acb2343d8ea",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_NOFOOT_FS_MED_OUT.uasset": "452ecc979c2cc5c19a1078943c2c5c000073cb3304b82a9d490dc1cfd94d9639"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

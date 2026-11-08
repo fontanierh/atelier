@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmonte/prop-stone-planter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StonePlanter_A.uasset": "caefda0202add9dbf1fee352675dbb8e73f8a511ae555c31d65e50410500960b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StonePlanter_A_Collision.uasset": "ff13d428963eb60e9e8b0269f14ee284bf7af65642fb2627fe1a5335089ec65f",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StonePlanter_B.uasset": "157c1640a1338aac1f42c9303de8265d3a99c138b7e86dc96c10c1a05a9ca825",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_StonePlanter_B_Collision.uasset": "88f97749ab6ddf527ef49ecb7ee607adc54a869e223fdfda767271ee43a16872"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

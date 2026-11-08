@@ -1,0 +1,18 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: G_5050_BS in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/g-5050-bs"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/g-5050-bs"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_5050_BS_GRAB_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_5050_BS_GRAB_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/G_5050_BS_GRAB_OUT"

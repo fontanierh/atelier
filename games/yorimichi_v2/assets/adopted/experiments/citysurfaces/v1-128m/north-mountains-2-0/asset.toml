@@ -1,0 +1,70 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Experiments citysurfaces north-mountains-2-0 (20 package(s))
+schema = 1
+id = "adopted/experiments/citysurfaces/v1-128m/north-mountains-2-0"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/citysurfaces/v1-128m/north-mountains-2-0"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/experiments/citysurfaces/v1-128m/generator"]
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_7"

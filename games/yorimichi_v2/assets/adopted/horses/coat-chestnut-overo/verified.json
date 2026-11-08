@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-chestnut-overo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/chestnut-overo.uasset": "7462b78823d5bb7df64a69b81ca70b2f01b6c57dbe1bebb3878ac51af3dc19c7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

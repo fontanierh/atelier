@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-barrel (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-barrel"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-barrel"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Barrel.glb"
+sha256 = "d1b9452f009f79f7c6aed155d5a07ed74b08c7a88559631745c4d899285f8b82"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Barrel_Collision.glb"
+sha256 = "f25b7fc7cf38286d4b7bc002be4397e2f5db11701025e7f292464ba3771784b1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Barrel"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Barrel_Collision"

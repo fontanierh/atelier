@@ -1,0 +1,27 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: L_LAND_HIGH in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/l-land-high"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/l-land-high"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/L_LAND_HIGH_AGGR_1_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/L_LAND_HIGH_AGGR_2_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/L_LAND_HIGH_AGGR_3_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/L_LAND_HIGH_LOOSE_1_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/L_LAND_HIGH_LOOSE_2_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/L_LAND_HIGH_LOOSE_3_N"

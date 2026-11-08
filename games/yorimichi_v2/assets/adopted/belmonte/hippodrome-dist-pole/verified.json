@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-dist-pole",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_DistPole.uasset": "dca07b7219afb0d3ebf338fd55b496414a7bec62066e8272771c6c3427a136e7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

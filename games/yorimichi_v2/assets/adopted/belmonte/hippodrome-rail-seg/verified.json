@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/hippodrome-rail-seg",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_RailSeg.uasset": "2aae859f3b66ab77dab817bd3918c531e2ba28d95c9da6b59224590bcb148721",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_RailSeg_Collision.uasset": "f6703ffe0dba7ceacd016bfd8b3e26d8d788ab8772586986dcbc2a1cec1d63e5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

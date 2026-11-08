@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-laserflip-h",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_LASERFLIP_H_CYC.uasset": "d645e9957b7ca5c93b9f7766de060d671d73f9c78d5c933ff82e0b0698ebdd07"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

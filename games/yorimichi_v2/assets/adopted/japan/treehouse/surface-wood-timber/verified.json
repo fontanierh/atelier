@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-wood-timber",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_wood_timber.uasset": "c9fdf21a3885784d891b49ef06d782a8a11b655aca1e9cd0fce0abb841f46dc7",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_wood_timber.uasset": "aa5f3f5a087c315eb16a33815cb9c721b312b85b910425cb2b248415f538ea1f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

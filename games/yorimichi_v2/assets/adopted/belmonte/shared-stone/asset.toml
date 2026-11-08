@@ -1,0 +1,63 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte shared stone materials and their textures
+schema = 1
+id = "adopted/belmonte/shared-stone"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/shared-stone"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_cobblestone_floor_08_D-3b6f631163.jpg"
+sha256 = "ed25fc481d89feb2834b784579e1f966ddacb62b08ff777140e9ace38b9e96bc"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_cobblestone_large_01_D-45cfccc09e.jpg"
+sha256 = "182be3b4068a04e3ed48888c4536078fdabb4ab784c2189b9121bbbbe253186c"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_medieval_blocks_03_D-2666290930.jpg"
+sha256 = "0f6e21d0708fa51e7e51058eec690f15340d33b7572ba57f1f75d5805964acd6"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_rock_wall_11_D-d45075f074.jpg"
+sha256 = "7f9f566e2706621d9047fa85661774851129a29540f846687a234da24c2b10a9"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_B_sandstone_blocks_05_D-377f16c8af.jpg"
+sha256 = "4e9231af75b4293454f9c45d759dc768dc6919853a25440391f5b2773287d314"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_424af3e6356a"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_5ac531c8f835"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_88275ca9defa"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_97411df1649f"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_cd9cdab3ba49"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_e740b7591ceb"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_0d86c8bae5dc"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_70491bcd4c11"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_8af1850d289a"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_96d3faa5f412"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_de86965ec07c"

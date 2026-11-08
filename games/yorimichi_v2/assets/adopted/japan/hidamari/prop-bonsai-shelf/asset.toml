@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop bonsai_shelf: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-bonsai-shelf"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-bonsai-shelf"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/bonsai_shelf/bonsai_shelf.glb"
+sha256 = "dd561863f165d694b1cbb37107a5cfae7423193e7b2dc65f7a19367af8c53e7e"
+
+[[sources]]
+path = "source/assets/hidamari/props/bonsai_shelf/concept.jpg"
+sha256 = "720e2c477e394371de1392731dbe83ffe9d76099f2dbd3feddea4780a08e1b40"
+
+[[sources]]
+path = "source/assets/hidamari/props/bonsai_shelf/concept.json"
+sha256 = "44007c31b2f0b2c2464c4f4e5ad1310c24da09dce3f468300cd2e7661a07e122"
+
+[[sources]]
+path = "source/assets/hidamari/props/bonsai_shelf/job.json"
+sha256 = "8344dcc665520909f3ceca4d01878239b90d9d25c80b1bf6364d537f65b3cda1"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_bonsai_shelf.json"
+sha256 = "2bd672d567e6bc2254cfb8d72467cd6e88074eeabd2ed4d6bea85290fd442015"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bonsai_shelf"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bonsai_shelf"

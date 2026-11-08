@@ -1,0 +1,27 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: 2FT_AIR_GRAB in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/2ft-air-grab"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/2ft-air-grab"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/2FT_AIR_GRAB_N_NOSE_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/2FT_AIR_GRAB_N_NOSE_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/2FT_AIR_GRAB_N_NOSE_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/2FT_AIR_GRAB_N_TAIL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/2FT_AIR_GRAB_N_TAIL_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/2FT_AIR_GRAB_N_TAIL_0_OUT"

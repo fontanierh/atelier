@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/brinecove/townlower-2-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_2_3.uasset": "f6ea3cbdf4f0b173491d22d782f3c1bc14c987e36f447cab034ad763b20f69e7",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_2_3_Soft.uasset": "954bd1bc9278a1c4a21e64507c03562e89a09fa620d6ce1afe52d174d058258b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: warm honey-brown plywood skate ramp boards with thin seams and smooth soft grain.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/ramp_boards-source.png": "e858d88aba396ddaa8beb2d86af2cd205275af08c14de11d252b35ca5d822018",
+    "build/yorimichi/craterpark/restyle/style-bowls.png": "c6c8ebc978425e8fa6cb992fa8637388eb5a1655e03f0b84971db31e9f1e307c"
+  },
+  "original": {
+    "textures/tex-0032.png": "02929a47edf9c0c6807269bc38c23ceb5875b08d4cfd52a454ffcbaf8da8fda5"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1536",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "943a7660cca3b91cdce3a798480a6af6277d2f534a69333df03574696605ab9c",
+  "status": "done",
+  "started_at": "2026-10-13T21:49:54.646646+00:00",
+  "output": "ramp_boards.png",
+  "output_sha256": "a2e757ea4770a9f93ec4725a6eca3fe7bb183ec7bf692632ebceb2817820cd68",
+  "usage": {
+    "input_tokens": 2498,
+    "input_tokens_details": {
+      "image_tokens": 2240,
+      "text_tokens": 258
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3870
+  },
+  "elapsed_seconds": 37.4,
+  "finished_at": "2026-10-13T21:50:32.044152+00:00",
+  "compact": {
+    "file": "ramp_boards.jpg",
+    "size": "1024x1536",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

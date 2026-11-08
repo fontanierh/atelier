@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmontetrain/canteen-mug",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenMug.uasset": "567b42cec686d7c36803c1b188d682eac4f1965b25ea4971a0ff7717ec96f8be",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/M_BT_CanteenMug.uasset": "c07a13a1f6ef68fb768df7ef69c6ceea0ffce799383d9b8c922ddd2cef16a4c2",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/canteen-mug-base.uasset": "ced49e645394a37514292db7aad648aa9507b0e893e90ef27ef9431fe31f773e",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/canteen-mug-normal.uasset": "f27ff161b1e69c15342efc1df8c80686b5291c70de08a8ddabab85369476343b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

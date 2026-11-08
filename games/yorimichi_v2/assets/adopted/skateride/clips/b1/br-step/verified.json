@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/br-step",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/BR_STEP_INTO_MOUNT.uasset": "85ba047266203548c356c169a04f4668cf642319148c32577754720be78dca8c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

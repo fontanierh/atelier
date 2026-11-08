@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-idle-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_LOW_READYPOSE.uasset": "1967b62bf38aa39215e9bf7712d9ec5a7237305a0e7684e41aee452949728524"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

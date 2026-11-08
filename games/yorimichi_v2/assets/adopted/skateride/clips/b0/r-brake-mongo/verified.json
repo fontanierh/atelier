@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-brake-mongo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_CYC.uasset": "2f4f04d9c9954d76b67928a193e0f943b5a86a06fc84993c53c82628bda68995",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_CYC1.uasset": "04adb5d410cca10a9d12b4d183614001e89e48de2c0a3fa64802c04c886bd27e",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_INTO.uasset": "494505ba0174494a88a4321c2c9d28ddddbc571f9cd3887888100e07f26d9407",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_CR_0_OUT.uasset": "658857b4335bd6d0ad2de9b5eea40b03aad2558477ee84593a0799dcc982531c",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_CYC.uasset": "c4f7c3fb602c2ed6b477410149c6f9998a6cbb08702940a2855ac1d05b5b7e9c",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_CYC1.uasset": "302ad54b5f399bd191a20590e21211eb45ad41eb9210b2cb4a9c021406e7ce6a",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_INTO.uasset": "f1bfc65df8b53e2305436e0a83ce97941217b70aa2796265f2928524e0fc7987",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_MONGO_N_0_OUT.uasset": "5155f6e2812a7b32d99f24d9b158b19b94d00e2484d27ab4f07d94c27132934b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

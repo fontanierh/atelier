@@ -1,0 +1,33 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-crpush-h",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_BACK.uasset": "f6ddcea16e7e4bca630947eae6a08f7b0808701b0482c3791aa20c600763b6a7",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_FRONT.uasset": "7abf116821e5ed9c6d89eb929f6435c2a2eed7f972f04d2b9891af545d57b346",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_MIDBACK.uasset": "40c0a823802c2beb6a5944499b8742293bb0899d312651a69bc7aad71268312e",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_MIDFRONT.uasset": "116cc1ee0d2d65cd7be86366c22fdb58fc3e6691fc40632fb741a32eb0149889",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_BACK.uasset": "7d831c463640db3368f13d56cfb367e6d9efd5105da1768a3f8d09839c28675b",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_FRONT.uasset": "b1ca0689def0af7a0ec6b1d64ff288a3c4b03c0be77af6119893ff9bf093f750",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_MIDBACK.uasset": "db9c066cb05e7b985f46968ce679ac646cb25a4e9e26461c86acb470a6632a04",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_MIDFRONT.uasset": "a83014c68fe0b1908b49b3cd1dcc9e16f4d54a5e6253d4bffc1363200400a442",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_BACK.uasset": "8885416b89cbf8cb3e84d6fe9845db97d99dfa134bc3510ed0d30d704d4892cb",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_FRONT.uasset": "c45d5079df9f1dbcadd8304da4fa0900d276d7d9ad6e50f4a751184c0e387646",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_MIDBACK.uasset": "933d845970125d01b471aaa846137e585b8c540403bfd369cd50e3104824e9e1",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_MIDFRONT.uasset": "3de20f39de68f0135b64798d5876712197ca7f3ec00019ad0a4a386080ab1672",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_BACK.uasset": "45676cf7ed41d0aa1c40081ca2da1863a33efa032e419c14ae3b031b42f3b311",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_FRONT.uasset": "bd56b9daa9e4e39fce9cfcd8adc21030725f4bc415f844e05206eb42b73cb69c",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_MIDBACK.uasset": "3e44b4819974dd819f5ef524ac436577e0d7e08294f6ff8df98c184236ad4fcb",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_MIDFRONT.uasset": "f0773e29b0075ac25bd2be97ba0f41dcfb991ba2e780fb5ab498ab34f5cca147",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_BACK.uasset": "014ca4ef45a06834f6528d0349743afdd27ffa08f350ad6398b5ce2a1b2f6b9e",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_FRONT.uasset": "cad3887b07901dbf465dcf48756af5584825a56a8993cc56e9427637b8b8c196",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_MIDBACK.uasset": "9cc0d80cca686d6590a16de7aa4f0b192e72fe9bab219feb6060f823dc95aed6",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_MIDFRONT.uasset": "88eb3713a9831c69196dea46edcff4d601c0952df6e6762bdcc6a6be001f08fa",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_BACK.uasset": "958305cb7a3a9e9c8b2277513fae5d773b852ffc1857758d3fce4f325b194dc7",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_FRONT.uasset": "9a10dbf658786d7d011b55c6d000452de84d2a80e414840f295b1656b2d12139",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_MIDBACK.uasset": "03bdd5636ab14762df915cf02f2a73f7aa95c2cfb3e85d94a85aecf9b81bd9da",
+    "unreal/Content/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_MIDFRONT.uasset": "3202f3b32726bf5c3e13449f45e2e0d9ccba484b899775e8264578538544bcd2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

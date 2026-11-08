@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-bumps-no",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_NO_BUMP.uasset": "dd199f798b6c1d0f5954ffe6fc0ad1501508b099f7afab757d19248bb638e60a",
+    "unreal/Content/SkateRide/Clips/B0/B_BUMPS_NO_BUMP_CR.uasset": "23b79a5e389f343ecce71e0e89ed9c080b8f38d44b4fad4cb276a9585914312e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

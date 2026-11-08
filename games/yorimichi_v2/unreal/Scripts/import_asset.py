@@ -36,6 +36,53 @@ def _fbx_static_mesh(settings):
     return ui
 
 
+def _gltf_static_mesh(name):
+    """glTF geometry only, the original region importers' Interchange route: every primitive combined into one mesh
+    with its material slots, and no material or texture created (the record binds its own, slot_materials)."""
+    generic = U.InterchangeGenericAssetsPipeline()
+    generic.set_editor_property('asset_name', name)
+    material = generic.get_editor_property('material_pipeline')
+    material.set_editor_property('import_materials', False)
+    material.get_editor_property('texture_pipeline').set_editor_property('import_textures', False)
+    mesh = generic.get_editor_property('mesh_pipeline')
+    _set(mesh, dict(import_static_meshes=True, import_skeletal_meshes=False, build_nanite=False,
+                    combine_static_meshes_behavior=U.InterchangeCombineStaticMeshesBehavior.ALL))
+    generic.get_editor_property('animation_pipeline').set_editor_property('import_animations', False)
+    stack = U.InterchangePipelineStackOverride()
+    stack.add_pipeline(generic)
+    stack.add_pipeline(U.InterchangeGLTFPipeline())
+    return stack
+
+
+def _apply_mesh_settings(asset, settings):
+    """The original region importers' mesh settings (import_brinecove.py), each only when the record names it:
+    materials bound by slot index, full-precision metre UVs, complex double-sided collision, the triangle count."""
+    slots = settings.get('slot_materials')
+    if slots is not None:
+        if len(asset.get_editor_property('static_materials')) != len(slots):
+            raise RuntimeError(f'{asset.get_path_name()} has {len(asset.get_editor_property("static_materials"))} '
+                               f'material slots, the record binds {len(slots)}')
+        for index, material in enumerate(slots):
+            loaded = EAL.load_asset(material)
+            if loaded is None:
+                raise RuntimeError(f'material {material} for slot {index} does not exist')
+            asset.set_material(index, loaded)
+    if settings.get('full_precision_uvs'):
+        U.load_module('StaticMeshEditor')
+        editor = U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
+        build = editor.get_lod_build_settings(asset, 0)
+        build.set_editor_property('use_full_precision_u_vs', True)
+        editor.set_lod_build_settings(asset, 0, build)
+    if settings.get('collision') == 'complex':
+        body = asset.get_editor_property('body_setup')
+        _set(body, dict(collision_trace_flag=U.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE, double_sided_geometry=True))
+    if 'triangles' in settings:
+        # Unreal drops a few degenerate slivers from a procedural kit; more than 2 % is a broken import.
+        count, wanted = asset.get_num_triangles(0), int(settings['triangles'])
+        if not wanted * .98 <= count <= wanted:
+            raise RuntimeError(f'{asset.get_path_name()} has {count} triangles, the source {wanted}')
+
+
 def _texture(settings):
     return None   # the texture factory's defaults; colour space and compression are applied after import
 
@@ -93,8 +140,15 @@ def main():
         raise RuntimeError('a V2 import plan pairs each source with one package')
     for source, portable, package in zip(plan['sources'], plan['portable_sources'], plan['packages']):
         if plan['importer'] == 'static-mesh':
-            asset = _import(source, package, _fbx_static_mesh(settings) if source.lower().endswith('.fbx') else None)
+            if source.lower().endswith('.fbx'):
+                options = _fbx_static_mesh(settings)
+            elif source.lower().endswith(('.glb', '.gltf')):
+                options = _gltf_static_mesh(package.rsplit('/', 1)[1])
+            else:
+                options = None
+            asset = _import(source, package, options)
             _apply_material_slots(asset, plan)
+            _apply_mesh_settings(asset, settings)
         elif plan['importer'] == 'texture':
             asset = _import(source, package, _texture(settings))
             _apply_texture_settings(asset, settings)

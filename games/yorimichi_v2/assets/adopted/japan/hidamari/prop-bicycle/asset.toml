@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop bicycle: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-bicycle"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-bicycle"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle/bicycle.glb"
+sha256 = "6f9d7b8bd272d0c031a3010300ce2a303e82fa352ea9ffc5bfa6d0255a696dec"
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle/concept.jpg"
+sha256 = "8773e89523cf5db4318870846dbe52c756d2ee2a61d08ada0d28b9caa568e91d"
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle/concept.json"
+sha256 = "039509e3c50047d9afbc4394e060717e7faa43f86c0c5a905353c8660b8b4169"
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle/job.json"
+sha256 = "14ff21d9ef9dc725d3486eb2cc9a010193ef9dce3a3e3dcea3ee16ad6731ae7c"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_bicycle.json"
+sha256 = "ade0d31c8d3e8ddf6d3e82a20962502df4c9bdd10d28ab724a088f3374a3c1dc"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bicycle"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-bench",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Bench.uasset": "fb131c0d0dedba6d82261d538c726356ab82c4baf4a537e61bf5ce9c6d559d4b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Bench_Collision.uasset": "61d7d00928f8a10bad9355d323e1fd9f41d8f6400864462e857007cc1f5ea4a9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

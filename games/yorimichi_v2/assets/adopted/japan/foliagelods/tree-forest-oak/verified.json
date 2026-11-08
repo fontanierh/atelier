@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-forest-oak",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/MI_Tree_Forest_Oak_Crown.uasset": "09e6bcd0da4cfdf1ca609323cbc6db9f2984f2978a1f88522a3dffa48a920df1",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Oak_LOD1.uasset": "82687982d9d6ca3eb8830a1c497d9c7290aa2355e15963f9b466b3ca4c60453f",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Oak_LOD2.uasset": "0f9a110ab2b308f637948773812d67381ea010996bc85b45a495a53bde9f59d1",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Oak_LOD3.uasset": "525a2df208edf0c0269ab1f2939a988c598bff36a999e63df7f638c049118ed9",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Oak_LOD4.uasset": "a74b638dbe15cde260726a29aa970814735ef61c155f09f937d8c49c7c35049d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

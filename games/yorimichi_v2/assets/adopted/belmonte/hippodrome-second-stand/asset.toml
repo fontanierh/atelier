@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-second-stand (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-second-stand"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-second-stand"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_SecondStand.glb"
+sha256 = "b38144c3d9bbfd046d120d7bd1317a927182ed467fd7a31aab1e873d21c9d8f4"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_SecondStand_Collision.glb"
+sha256 = "c0e142e8f1272415d726855a078a43b932937fed8878f7e2056093b411c71bed"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SecondStand"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_SecondStand_Collision"

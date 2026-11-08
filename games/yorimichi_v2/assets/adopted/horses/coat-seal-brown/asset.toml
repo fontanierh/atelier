@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant seal-brown
+schema = 1
+id = "adopted/horses/coat-seal-brown"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-seal-brown"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/seal-brown.png"
+sha256 = "fc6f22e1c27a652e9b9ba573aeed382611d110fc82ef5dff2e468b42a9eb0c75"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/seal-brown.json"
+sha256 = "3290c8a2b563008fd88d3a5a651732447486f74e6e0dd47574b64de4dc0a64e3"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/seal-brown"

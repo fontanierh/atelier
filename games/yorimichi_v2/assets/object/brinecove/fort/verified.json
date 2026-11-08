@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/fort",
+  "dependencies": {
+    "adopted/brinecove/fort": "c2939b0749782c83f790d566cc31b3bf667300813f2ae7eb9578f9152ae9b921"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/6E/MCWJDD1LK5AVW9FSROTYNT.uasset": "2b0e7d981a671d66fab067bbc2ff9513e64446baad9c70aff3e2d345f56b864d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

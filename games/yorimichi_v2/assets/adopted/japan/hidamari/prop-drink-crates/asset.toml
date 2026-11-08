@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop drink_crates: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-drink-crates"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-drink-crates"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/drink_crates/concept.jpg"
+sha256 = "f472b644fa80d7f1a0b5f599e27827bcf380adb6dc2ec35b38f972bb2690966a"
+
+[[sources]]
+path = "source/assets/hidamari/props/drink_crates/concept.json"
+sha256 = "e06ae0ecdcc1dce08ca99bcf4bd3b424b7409f0a48ca668cffb372e818e552cf"
+
+[[sources]]
+path = "source/assets/hidamari/props/drink_crates/drink_crates.glb"
+sha256 = "abdecd9921953a4e4cec2a11a6bde31ebd386888e3014fc3de56b2ab85f006e0"
+
+[[sources]]
+path = "source/assets/hidamari/props/drink_crates/job.json"
+sha256 = "ea3cf3c9b27785cfc7e0a8b5fd2fe03c263fddfe03bdff81308374d395244958"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_drink_crates.json"
+sha256 = "d6a60ffe706a1f3d99b9a7b9be193c765b248d693060bac0d7b5e73e4a9e0ab4"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_drink_crates"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_drink_crates"

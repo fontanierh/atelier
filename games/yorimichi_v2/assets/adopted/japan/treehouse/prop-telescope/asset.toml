@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop telescope: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-telescope"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-telescope"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/telescope/asset.toml"
+sha256 = "58aa0ecc7c2cb65f69dc104dad1ae3ca8c4aef3ccb7e37af0db900dece689015"
+
+[[sources]]
+path = "source/assets/treehouse/props/telescope/concept.jpg"
+sha256 = "f9691bf52e3e5c753bb90bf695d7a751ea4ef46857602b2a536feaf5b61afe03"
+
+[[sources]]
+path = "source/assets/treehouse/props/telescope/job.json"
+sha256 = "fec0dbfdc11a2fffd7b3b27415f86008dac7a7a126cc4d7004e7798dbd572160"
+
+[[sources]]
+path = "source/assets/treehouse/props/telescope/prompt.txt"
+sha256 = "10e7622a210c10797eaf9de85787afe379cbaacdccd47ccfe78cfb9f310e3996"
+
+[[sources]]
+path = "source/assets/treehouse/props/telescope/provenance.json"
+sha256 = "4801f816d3c9ccae7444d6591f65e0fccaa4c7c755c087880d29008957f1f16e"
+
+[[sources]]
+path = "source/assets/treehouse/props/telescope/telescope.glb"
+sha256 = "385edbbe2502d0135e29bf691598374fb30240bd152e352dadcaf70b325c8a4d"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_telescope.json"
+sha256 = "a760747f9aaaf6d4cb69767a2c996f3b0dc78afeae18f330d2fccbd72e032ff2"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_telescope"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_telescope"

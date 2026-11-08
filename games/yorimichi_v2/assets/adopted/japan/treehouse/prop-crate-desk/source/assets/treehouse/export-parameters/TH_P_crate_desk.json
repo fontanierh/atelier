@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_crate_desk",
+  "schema": 1,
+  "size": 1.4,
+  "slug": "crate_desk",
+  "solid": true,
+  "target": 0.055,
+  "turn": -90
+}

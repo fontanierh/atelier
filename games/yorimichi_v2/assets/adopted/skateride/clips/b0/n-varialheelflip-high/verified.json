@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-varialheelflip-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_VARIALHEELFLIP_HIGH_A.uasset": "60ca5dda623aeadcc82ce42bbc7d55bf93880cc644ed1859d6db28dbf05b9191",
+    "unreal/Content/SkateRide/Clips/B0/N_VARIALHEELFLIP_HIGH_G.uasset": "8b952eb15011535dc16ec419bff7b998626a21ebaafbeb6b10a791f07ff9e334"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

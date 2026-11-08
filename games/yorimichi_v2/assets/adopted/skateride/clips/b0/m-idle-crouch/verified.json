@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-idle-crouch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_IDLE_CROUCH_0_CYC.uasset": "7aaa6f0409a8372cd546dc9577e79735970256ad43db608d8ce3752f791986c9",
+    "unreal/Content/SkateRide/Clips/B0/M_IDLE_CROUCH_0_TURN_BS_0_CYC.uasset": "0e9f2a5ab8922119dcb37543c1b3c63f60080586a340041874759df2808fc9b0",
+    "unreal/Content/SkateRide/Clips/B0/M_IDLE_CROUCH_0_TURN_FS_0_CYC.uasset": "651a890792f87184d74bb103d57565ea35772e3ab39d686ee08e56d7c4a28d5c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

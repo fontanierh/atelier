@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/brinecove/plant-palm",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Palm0.uasset": "e38bee46800cc13e5855cfa6e089a1268627a4689fa2f0690f3c681c96ca8f7d",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Palm1.uasset": "9cec24894d44e61a0a8179ce8a85c4a0dde598f53e83a2007113c72b55e2f2b3",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Palm2.uasset": "eeda1239889691833141efa53f0adb6c46c8c38c2fadf1f1f59c580e062ccc17",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Palm3.uasset": "807402a5bbb3c942b9e4dc40caa5d0c5ae6d40404beb11ee4a84c4a26604ee61",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Palm4.uasset": "a0346514500b04bddbe0ed3867e8028bd749be455aca6c42cc0698d9250e133f",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Palm5.uasset": "79647959853d49ecd2bd371d036b1b9468f0e492e801c89400e0d27a88b8c7ee"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

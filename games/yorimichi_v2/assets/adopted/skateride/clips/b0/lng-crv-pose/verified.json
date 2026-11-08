@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/skateride/clips/b0/lng-crv-pose",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_0.uasset": "594a223a2f96f263bd9c088e8186e003e8f949fa6a30b615be08028f5d7264ca",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_1.uasset": "933226dbb2321baa3f660a5fe056c2aa742a7c980035172b7df9a950808c7f84",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_2.uasset": "5a9d912a0e7f0d0029342caebb654ec7ca92e79309147588c9a61672e7f924d0",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_3.uasset": "bf70f775648a2d13dd98dd208cbe1c708ad13ed16986ebaa4cc5937aa964d29a",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_4.uasset": "4f4383ee1e50f042f30b4ba81b63e809e4ed79867b7896576a4702ac8dd91996",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_5.uasset": "f912ea0d0cdd8b5205680009df0558e6cbd06ac90403d6982f6b8649fa5c4423",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_6.uasset": "0224bb2cb56a0c8a07a6b866855c4555539230c6fb6b80071f270b610cda2a87",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_7.uasset": "87b637ee6610caca7b4602d5b108935ac3008c52f3f1924cca736f110858ac94",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_8.uasset": "42169c42283f56e80cf9ac38a82ffa864495cb06f459d7cd83f0d095a9173c8f",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_POSE_9.uasset": "3437d7dc302822fdab23e73a8d032ca6864bbd9dd02491a6a1b4a55b06af2510"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

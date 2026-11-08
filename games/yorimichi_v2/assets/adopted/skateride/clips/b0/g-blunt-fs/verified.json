@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-blunt-fs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_GRAB_NOSE_CYC.uasset": "820de462ed97b457a3df11da3cebd8e11f17cd7c55289c064f8cf64948a7e622",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_GRAB_NOSE_INTO.uasset": "b371d81785821b1e4e94dcb97870df3bc1d75a079f2b1fb89d4fdce0428865af",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_GRAB_NOSE_OUT.uasset": "397eeb81d5aee3f1e8a32f1bb6af4989af88d46ee3653e62e5f8182346e53385",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_HI_0_CYC.uasset": "02ca1f0a640319a66f61277baf5a05c5f4f11d7615c2ad5c331c889831f427c1",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_HI_L_CYC.uasset": "4e8208898715075796fee522670d35f0fbc0ced31a2b1823fdc39694f0e1253b",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_HI_R_CYC.uasset": "f9df0d21466189041bfa48e993e8867ddb1c18c73bc5ac8716c23006e18f954b",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_LOW_0_CYC.uasset": "2d120d067ea2d2bcef7671b14509a99733b1aacd88632c8966c7cd918b1d3716",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_LOW_L_CYC.uasset": "5fe0f01e7484173597aba897e4ed554b72abd7b17327e9884c9e69b414ee7337",
+    "unreal/Content/SkateRide/Clips/B0/G_BLUNT_FS_LOW_R_CYC.uasset": "17a28949872713121d63588340e95b2b28486096ff78299e45e346ac79e1e7b1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

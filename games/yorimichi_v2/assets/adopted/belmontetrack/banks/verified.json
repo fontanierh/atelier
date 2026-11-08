@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/belmontetrack/banks",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_TK_Bank_00.uasset": "e7e5eda22baff5869dbf6714d717591ddecfb667563eb4ea98526f30cd8299aa",
+    "unreal/Content/BelmonteTrack/SM_TK_Bank_01.uasset": "af557b5f867e22bfd60621c44b14141e73675df31c3299bbb130b361602ed850",
+    "unreal/Content/BelmonteTrack/SM_TK_Bank_02.uasset": "e6de6249b30c75dcbadd5d136f239ef6e7a09cefaa550edaef7af1cb9b936c2a",
+    "unreal/Content/BelmonteTrack/SM_TK_Bank_03.uasset": "81c746ba06ec5a497e18f063bce01604260df34141b6b250314e459afac368be",
+    "unreal/Content/BelmonteTrack/SM_TK_Bank_04.uasset": "17548fcd1642a9838c1fb111e4377e4a16276c6377dac07df0443557baeb9920"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-stand-idle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE_MONGO_0_CYC.uasset": "2e3973c6cae01c88a18c04605dcfd2adc9c3b5b1f00d258f6402841cf11b0653",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE_MONGO_0_INTO.uasset": "4ebac08cb00792686c51d3335132f2512b0f4b8a2f262c9c0688bd4af82a822d",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE_MONGO_0_OUT.uasset": "fb4ebfd3ae4a55be937b01365d93ecd07cbd6bdd95941db0e7c1b2cc994e2792",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE_MONGO_CR_CYC.uasset": "184847b29afd0ff9c7a8029fb3ce3659d6a7d406b472c85b70d6e4ec5aee9198",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE_MONGO_CR_INTO.uasset": "99f3b5b5274b2fbeb79114574f10e19dc97966dbe3c0a9ba8fb68a78d5329778",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE_MONGO_CR_OUT.uasset": "7e0c56dbadf2262d8afa2e2368c383a8b83a9166aacdf310e2fe7c3461041c49"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

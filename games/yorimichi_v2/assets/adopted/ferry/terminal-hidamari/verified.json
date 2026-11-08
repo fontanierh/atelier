@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/ferry/terminal-hidamari",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Ferry/Terminals/FT_HD_Brow.uasset": "c404c7507575fb47b45a3ab06668a637a88ea3cac029760ea319ed6fc0954153",
+    "unreal/Content/Ferry/Terminals/FT_HD_Collision.uasset": "1b74b44a9a02afc02ce78c06c31ca7b49d7414b521613bc13177ea62939b8ecd",
+    "unreal/Content/Ferry/Terminals/FT_HD_Jetty.uasset": "39b611be20ea0293f7f7231941af56fe761f2a9e01d44ef56eee0e13726c2067",
+    "unreal/Content/Ferry/Terminals/FT_HD_Stage.uasset": "384dd7d1cf50652d61f5dd0c8233f447193a7f4e1d3685f7bf13547f6d9a91bf",
+    "unreal/Content/Ferry/Terminals/FT_HD_Timetable.uasset": "4c84d559d7edcf0090e7f5cbd8e0ecc8657ce7cfceb78ea3c827e1825722e9e1",
+    "unreal/Content/Ferry/Terminals/FT_HD_WaitingHouse.uasset": "03fb1a4d1256b4fef5db2b6d1cb71bdca24d98cca3468bee9c8a8c270b9f5878"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "jizo",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "03dbff56d478ac284083eeb3cc396ea3bf5a76203c277f1278736e38fb577362",
+  "concept_sha256": "03dbff56d478ac284083eeb3cc396ea3bf5a76203c277f1278736e38fb577362",
+  "submitted_at": "2026-10-04T21:32:51.819582+00:00",
+  "task_id": "f281eabc-c5ed-488e-9789-3cb701e98ced",
+  "status": "submitted",
+  "user_approval": "Henry (CEO), 2026-10-04: full greenlight for the Hidamari art pass, use all available Tripo credits",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-04T21:34:49.340948+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

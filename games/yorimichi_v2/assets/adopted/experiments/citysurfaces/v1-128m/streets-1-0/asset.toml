@@ -1,0 +1,37 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Experiments citysurfaces streets-1-0 (9 package(s))
+schema = 1
+id = "adopted/experiments/citysurfaces/v1-128m/streets-1-0"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/citysurfaces/v1-128m/streets-1-0"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/experiments/citysurfaces/v1-128m/generator"]
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_8_0"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_8_1_Piece0"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_8_1_Piece1"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_8_1_Piece2"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_8_1_Piece3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_8_2"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_9_0"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_9_1"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_9_2"

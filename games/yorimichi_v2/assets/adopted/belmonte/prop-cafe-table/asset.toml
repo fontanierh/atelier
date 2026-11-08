@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-cafe-table (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-cafe-table"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-cafe-table"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_CafeTable.glb"
+sha256 = "034e1680ed002795d302f0aec15a929ddc0f0a59d5c24fc88b618d39969f4916"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_CafeTable_Collision.glb"
+sha256 = "149e9f2d429bf095a030f72d5d2b2b4ba17a2350e5903411bdaabc9ff14034a3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_CafeTable"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_CafeTable_Collision"

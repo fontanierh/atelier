@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-plaster",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_plaster.uasset": "f6655a539da062d2cf7a656a1dbe374af099c7a03d979d2a3f9dcbd991dc6254",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_plaster.uasset": "c31082792639dcaa400044a0a85b6a04b6cfcd24546f77c36a51cc170e363db2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

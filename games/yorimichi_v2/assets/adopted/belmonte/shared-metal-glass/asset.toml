@@ -1,0 +1,25 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte shared metal-glass materials and their textures
+schema = 1
+id = "adopted/belmonte/shared-metal-glass"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/shared-metal-glass"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_4ee3168b033c"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_69b755f9ad2a"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_aa1a8d45375e"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_b5dfa6e6373d"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_fae8893ff89f"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-garden-pergola (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-garden-pergola"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-garden-pergola"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_GardenPergola.glb"
+sha256 = "7ee916d4a02ebd48572acf5d65ee34f2e41c6fbda5aeea1cc53d9ad8b6aac4c4"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_GardenPergola_Collision.glb"
+sha256 = "4b0dea4f4736e319be07c11db48720b5c545a16dc236fa7a1bd4be34bd53d8c6"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_GardenPergola"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_GardenPergola_Collision"

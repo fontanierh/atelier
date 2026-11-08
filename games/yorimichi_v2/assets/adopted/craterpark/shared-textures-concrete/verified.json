@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/craterpark/shared-textures-concrete",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Textures/T_CP_concrete_deck.uasset": "57ccdbe16fa9faf407ff3e3b7df759d24c5dc8a1ad7887981eb101852faae211",
+    "unreal/Content/CraterPark/Textures/T_CP_concrete_edge.uasset": "8cefa5d171abd4901b86d7160ccc79761cb532ce3e3be08475ce1626a9c446a2",
+    "unreal/Content/CraterPark/Textures/T_CP_ledge.uasset": "cd16426d513bb8f55afaa26438f8017e5829dacf344a6f2e3166f19f7f5f0cea",
+    "unreal/Content/CraterPark/Textures/T_CP_planter.uasset": "e371736ca4631e63253d71d0ff161a09a842cc373d7600b99ba788150e740ce3",
+    "unreal/Content/CraterPark/Textures/T_CP_pool.uasset": "95fbb93bb68f87d1e05745047ffd99a3046c9bb3563338f2c289264123d860b1",
+    "unreal/Content/CraterPark/Textures/T_CP_side_bank.uasset": "57bf5d768927c2ff886af27316aa34e54b690713298c2ce5dfc00a3852b3d342",
+    "unreal/Content/CraterPark/Textures/T_CP_stamped.uasset": "18894414fcbfc6dce2a93c7fd6855e00d71bc7a9c3e8b0b845a0d263adcecd64"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: /Game/Ferry/Materials
+# Ownership unit: ferry materials (terminal FT_*, ship FY_*), and the generator that made every ferry package
 schema = 1
 id = "adopted/ferry/materials"
 kind = "adopted"
@@ -7,6 +7,134 @@ authority = "editor"
 owner = "shared/ferry/materials"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/assets/source-library.json"
+sha256 = "56d7aa5142852e1304c7bf04a95e3acfcbac079ad5d2d2962800b10879eec1b6"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/README.md"
+sha256 = "8e78676957b94c21a6da223136311387972ad144c12911c41b39c6a67ea24b66"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/build.py"
+sha256 = "8fc1e755761ff37340dab3acb3b1ad9b772b29be1eea6308e054a781717c2279"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/compare.py"
+sha256 = "ba99fb86eebebc6cc9e35bff6749103efed7423d5c63a65aea2b05c49addc17e"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/render.py"
+sha256 = "99380a2ae04a3c837d0672fd4232ef47d4ac9224fe9afa5200b27f90360d9d28"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/build.py"
+sha256 = "404de5d1405ab53d71089a5ce1ca786f54b89996b5ae808e5c81b2bde4a8c0c3"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/compare.py"
+sha256 = "f35b497f7e5d70e17415027f6851d2a11c0f9e80b3ecd8867e7a307093920838"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/render.py"
+sha256 = "bd96c9a29468ed57933851de0e15493ba0b62e6fb550644f73a780ee87a14d5e"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/site.py"
+sha256 = "8ab8b2de58a790284b29700ac40a23da547edb29999e067b872e99f19637da78"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/walkcheck.py"
+sha256 = "231046b08e6db665a0e87f0ac9993c773f172c61f02299cda6e9a64faabe8c9b"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/terminals/world_probe.py"
+sha256 = "a9a3c93e52a7cf34b364dfe70bd739c369294a7225b11ec5487d97a0fc09851c"
+
+[[sources]]
+path = "source/assets/vehicles/ferry/walk.py"
+sha256 = "acd333bc88173ddcb2a15df87b9668fed7f5968c02dfe92e2478abea4b625f58"
+
+[[sources]]
+path = "source/world/region_plan_files.py"
+sha256 = "4c6466353527d0f62d0b89902efdc32dfa04c750f7fc11f0493a8e5320a5aac3"
+
+[[sources]]
+path = "source/world/regions/ferry/CONTRACTS"
+sha256 = "72135d5ac0dca0de40a43bf9764caa54991cb3bb5418c6896e22794a8bdc002d"
+
+[[sources]]
+path = "source/world/regions/ferry/__init__.py"
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[[sources]]
+path = "source/world/regions/ferry/export_ship_collision.py"
+sha256 = "61b09cc4181c1546a2e0b8c6c56bb7f46976d8af2ae8113362d0ffe101a46076"
+
+[[sources]]
+path = "source/world/regions/ferry/export_terminal_collision.py"
+sha256 = "ddb24cfe7bf9534235cbd13fff421796bdb6274e6cae7231a50e32bbc4aee91d"
+
+[[sources]]
+path = "source/world/regions/ferry/plan_ship.py"
+sha256 = "dd0426c71df34d184126fdb1b794003d7f338e5e2d405d8dceede8b64729c93c"
+
+[[sources]]
+path = "source/world/regions/ferry/plan_terminal.py"
+sha256 = "cab62fb22234e3a8d22be53e62aa14b8179004201da726ac7c75ab2240a14034"
+
+[[sources]]
+path = "source/world/regions/ferry/query_geometry.py"
+sha256 = "c4cce39299192fb59123537f20747080b3e17a4f22d7b3abee2a27c24cedc500"
+
+[[sources]]
+path = "source/world/regions/ferry/route.py"
+sha256 = "a32163d4e29250cf9d470cf7901367fd7778ca90c12d222e5d6a6f361041886d"
+
+[[sources]]
+path = "source/world/regions/ferry/service.py"
+sha256 = "7590364c322502da2c608cc1017bca5cfb5a11736ccfb3409dc56bd126fd151d"
+
+[[sources]]
+path = "source/world/regions/ferry/ship_audit.py"
+sha256 = "6b395e844f79c1a75c7477b98274eb611cebd686b93a25d6b2d7ad9a07cfa003"
+
+[[sources]]
+path = "source/world/regions/ferry/ship_sources.py"
+sha256 = "45541b00bbe4f77251986f355e84faf5dd048c10d9d0ab6534e1de8989890684"
+
+[[sources]]
+path = "source/world/regions/ferry/site_inputs.py"
+sha256 = "66e4740df9a2d5fad371613ecd37ac4b42f89a5f78c38aaebd9062254c465a7e"
+
+[[sources]]
+path = "source/world/regions/ferry/terminal_audit.py"
+sha256 = "f8805f8f8fef32a0200544be7f4f250d120f94eca14095e7770d2a0d84635f98"
+
+[[sources]]
+path = "source/world/regions/ferry/terminal_constructor.py"
+sha256 = "dd972f3e5b86184cb3f43b8ac6869661520e52681359074f12ebaa0ebd2506b7"
+
+[[sources]]
+path = "source/world/regions/ferry/terminal_sources.py"
+sha256 = "3f1ebf78877925ed0d5f482d9307c1d0e74fa222568268543a9082291259f383"
+
+[[sources]]
+path = "source/world/regions/ferry/timetable.py"
+sha256 = "c62a7f6235616aaa067e73690cef14e7cf665747b77ffe75ac78b8029a2d223e"
+
+[[sources]]
+path = "source/world/regions/hidamari/ferry_source.py"
+sha256 = "19b6d435168b3d5536cc9199601b483128cd1decdbc14a861f8f26db15102450"
+
+[[sources]]
+path = "source/world/source_registry.py"
+sha256 = "01eb1094164b3f518b3de9c40cb19afc8862e3635f4cc081be50af822b462edf"
+
+[[sources]]
+path = "source/world/walk_raster.py"
+sha256 = "9d898a1a524f239479c6b270040e48d330ec67e06e570170ea8c3057d14b21c0"
 
 [[outputs]]
 package = "/Game/Ferry/Materials/FT_Brass"

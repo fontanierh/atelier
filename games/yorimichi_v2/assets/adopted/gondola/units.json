@@ -1,0 +1,442 @@
+{
+ "about": "Gondola editing units for tools/migrate/adopt.py (written by tools/migrate/gondola_units.py)",
+ "units": {
+  "cabin": {
+   "about": "the gondola cabin kit: body, doors, grip, hanger and collision",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/cabin.py",
+    "games/yorimichi/assets/vehicles/gondola/params.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "kit-towers": {
+   "about": "the parametric support tower kit, 10 m to 28 m, with collisions (templates, not placed)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/params.py",
+    "games/yorimichi/assets/vehicles/gondola/tower.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "materials": {
+   "about": "gondola materials, and the generator that made every gondola package",
+   "sources": [
+    "games/yorimichi/assets/source-library.json",
+    "games/yorimichi/assets/vehicles/gondola/NOTES.md",
+    "games/yorimichi/assets/vehicles/gondola/README.md",
+    "games/yorimichi/assets/vehicles/gondola/build.py",
+    "games/yorimichi/assets/vehicles/gondola/cabin.py",
+    "games/yorimichi/assets/vehicles/gondola/cameras.json",
+    "games/yorimichi/assets/vehicles/gondola/checks.py",
+    "games/yorimichi/assets/vehicles/gondola/commands.py",
+    "games/yorimichi/assets/vehicles/gondola/compare.py",
+    "games/yorimichi/assets/vehicles/gondola/fbx-query-frame.json",
+    "games/yorimichi/assets/vehicles/gondola/fitcam.py",
+    "games/yorimichi/assets/vehicles/gondola/params.py",
+    "games/yorimichi/assets/vehicles/gondola/prove_atomic.py",
+    "games/yorimichi/assets/vehicles/gondola/render.py",
+    "games/yorimichi/assets/vehicles/gondola/rope.py",
+    "games/yorimichi/assets/vehicles/gondola/solid.py",
+    "games/yorimichi/assets/vehicles/gondola/stations.py",
+    "games/yorimichi/assets/vehicles/gondola/textures.py",
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/assets/vehicles/gondola/walk.py",
+    "games/yorimichi/world/gondola/__init__.py",
+    "games/yorimichi/world/gondola/clearance.py",
+    "games/yorimichi/world/gondola/clock.py",
+    "games/yorimichi/world/gondola/inputs.py",
+    "games/yorimichi/world/gondola/interactions.py",
+    "games/yorimichi/world/gondola/line.py",
+    "games/yorimichi/world/gondola/probe.py",
+    "games/yorimichi/world/gondola/products.py",
+    "games/yorimichi/world/gondola/query_frames.py",
+    "games/yorimichi/world/gondola/service.py",
+    "games/yorimichi/world/gondola/structure_probe.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/gondola/support.py",
+    "games/yorimichi/world/gondola/terrain.py",
+    "games/yorimichi/world/gondola/validation.py",
+    "games/yorimichi/world/regions/belmonte/gondola.py",
+    "games/yorimichi/world/regions/gondola/__init__.py",
+    "games/yorimichi/world/regions/gondola/export_kit_collision.py",
+    "games/yorimichi/world/regions/gondola/kit_actions.py",
+    "games/yorimichi/world/regions/gondola/kit_sources.py",
+    "games/yorimichi/world/regions/gondola/kit_textures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/plan_kit.py",
+    "games/yorimichi/world/regions/gondola/site.py",
+    "games/yorimichi/world/regions/hidamari/gondola.py",
+    "games/yorimichi/world/source_registry.py",
+    "games/yorimichi/world/walk_raster.py"
+   ]
+  },
+  "rope-l1": {
+   "about": "rope line l1: the haul-rope mesh (LOD 0)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/rope.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "rope-l2": {
+   "about": "rope line l2: the haul-rope mesh (LOD 0)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/rope.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "rope-l3": {
+   "about": "rope line l3: the haul-rope mesh (LOD 0)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/rope.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "shell-crater": {
+   "about": "the crater-floor station shell, used by the floor station",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/params.py",
+    "games/yorimichi/assets/vehicles/gondola/stations.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "shell-rim": {
+   "about": "the rim station shell, used by the Southeast, Northwest and Crater Park rim stations",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/params.py",
+    "games/yorimichi/assets/vehicles/gondola/stations.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "shell-valley": {
+   "about": "the valley station shell (building, fittings, machinery, platform, collision), used by Hidamari and Belmonte",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/params.py",
+    "games/yorimichi/assets/vehicles/gondola/stations.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "station-belmonte": {
+   "about": "belmonte station: its foundation and ground access meshes (the shell is shared)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/stations.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "station-floor": {
+   "about": "floor station: its foundation and ground access meshes (the shell is shared)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/stations.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "station-floor-rim": {
+   "about": "floor-rim station: its foundation and ground access meshes (the shell is shared)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/stations.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "station-hidamari": {
+   "about": "hidamari station: its foundation and ground access meshes (the shell is shared)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/stations.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "station-northwest": {
+   "about": "northwest station: its foundation and ground access meshes (the shell is shared)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/stations.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "station-southeast": {
+   "about": "southeast station: its foundation and ground access meshes (the shell is shared)",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/stations.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "textures": {
+   "about": "gondola shared textures",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/textures.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l1-0": {
+   "about": "support tower l1 0: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l1-1": {
+   "about": "support tower l1 1: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l1-2": {
+   "about": "support tower l1 2: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l1-3": {
+   "about": "support tower l1 3: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l2-0": {
+   "about": "support tower l2 0: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l2-1": {
+   "about": "support tower l2 1: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l2-2": {
+   "about": "support tower l2 2: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l2-3": {
+   "about": "support tower l2 3: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l3-0": {
+   "about": "support tower l3 0: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  },
+  "tower-l3-1": {
+   "about": "support tower l3 1: fitted mesh",
+   "sources": [
+    "games/yorimichi/assets/vehicles/gondola/tower.py",
+    "games/yorimichi/world/gondola/structures.py",
+    "games/yorimichi/world/regions/gondola/layout.py",
+    "games/yorimichi/world/regions/gondola/site.py"
+   ],
+   "references": [
+    "adopted/gondola/materials"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Gondola/Kit/GD_Cabin": "cabin",
+  "/Game/Gondola/Kit/GD_CabinDoorLeft": "cabin",
+  "/Game/Gondola/Kit/GD_CabinDoorRight": "cabin",
+  "/Game/Gondola/Kit/GD_CabinGrip": "cabin",
+  "/Game/Gondola/Kit/GD_CabinHanger": "cabin",
+  "/Game/Gondola/Kit/GD_Cabin_Collision": "cabin",
+  "/Game/Gondola/Kit/GD_StationCrater_Building": "shell-crater",
+  "/Game/Gondola/Kit/GD_StationCrater_Collision": "shell-crater",
+  "/Game/Gondola/Kit/GD_StationCrater_Fittings": "shell-crater",
+  "/Game/Gondola/Kit/GD_StationCrater_Machinery": "shell-crater",
+  "/Game/Gondola/Kit/GD_StationCrater_Platform": "shell-crater",
+  "/Game/Gondola/Kit/GD_StationRim_Building": "shell-rim",
+  "/Game/Gondola/Kit/GD_StationRim_Collision": "shell-rim",
+  "/Game/Gondola/Kit/GD_StationRim_Fittings": "shell-rim",
+  "/Game/Gondola/Kit/GD_StationRim_Machinery": "shell-rim",
+  "/Game/Gondola/Kit/GD_StationRim_Platform": "shell-rim",
+  "/Game/Gondola/Kit/GD_StationValley_Building": "shell-valley",
+  "/Game/Gondola/Kit/GD_StationValley_Collision": "shell-valley",
+  "/Game/Gondola/Kit/GD_StationValley_Fittings": "shell-valley",
+  "/Game/Gondola/Kit/GD_StationValley_Machinery": "shell-valley",
+  "/Game/Gondola/Kit/GD_StationValley_Platform": "shell-valley",
+  "/Game/Gondola/Kit/GD_Tower_10m": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_10m_Collision": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_13m": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_13m_Collision": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_16m": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_16m_Collision": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_20m": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_20m_Collision": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_24m": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_24m_Collision": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_28m": "kit-towers",
+  "/Game/Gondola/Kit/GD_Tower_28m_Collision": "kit-towers",
+  "/Game/Gondola/Materials/GD_Basalt": "materials",
+  "/Game/Gondola/Materials/GD_Bolt": "materials",
+  "/Game/Gondola/Materials/GD_Brass": "materials",
+  "/Game/Gondola/Materials/GD_Concrete": "materials",
+  "/Game/Gondola/Materials/GD_DarkIron": "materials",
+  "/Game/Gondola/Materials/GD_DeckTimber": "materials",
+  "/Game/Gondola/Materials/GD_Gasket": "materials",
+  "/Game/Gondola/Materials/GD_Glass": "materials",
+  "/Game/Gondola/Materials/GD_LampGlow": "materials",
+  "/Game/Gondola/Materials/GD_Paving": "materials",
+  "/Game/Gondola/Materials/GD_Plaster": "materials",
+  "/Game/Gondola/Materials/GD_RoofTile": "materials",
+  "/Game/Gondola/Materials/GD_Rope": "materials",
+  "/Game/Gondola/Materials/GD_Rubber": "materials",
+  "/Game/Gondola/Materials/GD_SafetyPaint": "materials",
+  "/Game/Gondola/Materials/GD_Shingle": "materials",
+  "/Game/Gondola/Materials/GD_SignBoard": "materials",
+  "/Game/Gondola/Materials/GD_Soil": "materials",
+  "/Game/Gondola/Materials/GD_Steel": "materials",
+  "/Game/Gondola/Materials/GD_Stone": "materials",
+  "/Game/Gondola/Materials/GD_Terracotta": "materials",
+  "/Game/Gondola/Materials/GD_Timber": "materials",
+  "/Game/Gondola/Materials/GD_TimberDark": "materials",
+  "/Game/Gondola/Materials/GD_TimberPanel": "materials",
+  "/Game/Gondola/Materials/GD_TimberPlank": "materials",
+  "/Game/Gondola/Materials/GD_WindowPane": "materials",
+  "/Game/Gondola/Textures/GD_deck_planks_color": "textures",
+  "/Game/Gondola/Textures/GD_deck_planks_rough": "textures",
+  "/Game/Gondola/Textures/GD_shingle_color": "textures",
+  "/Game/Gondola/Textures/GD_shingle_rough": "textures",
+  "/Game/Gondola/Textures/GD_wood_grain_color": "textures",
+  "/Game/Gondola/Textures/GD_wood_grain_dark_color": "textures",
+  "/Game/Gondola/Textures/GD_wood_grain_dark_rough": "textures",
+  "/Game/Gondola/Textures/GD_wood_grain_light_color": "textures",
+  "/Game/Gondola/Textures/GD_wood_grain_light_rough": "textures",
+  "/Game/Gondola/Textures/GD_wood_grain_rough": "textures",
+  "/Game/Gondola/Textures/GD_wood_panel_color": "textures",
+  "/Game/Gondola/Textures/GD_wood_panel_rough": "textures",
+  "/Game/Gondola/World/GD_L1_0_Tower": "tower-l1-0",
+  "/Game/Gondola/World/GD_L1_1_Tower": "tower-l1-1",
+  "/Game/Gondola/World/GD_L1_2_Tower": "tower-l1-2",
+  "/Game/Gondola/World/GD_L1_3_Tower": "tower-l1-3",
+  "/Game/Gondola/World/GD_L1_Rope_LOD0": "rope-l1",
+  "/Game/Gondola/World/GD_L2_0_Tower": "tower-l2-0",
+  "/Game/Gondola/World/GD_L2_1_Tower": "tower-l2-1",
+  "/Game/Gondola/World/GD_L2_2_Tower": "tower-l2-2",
+  "/Game/Gondola/World/GD_L2_3_Tower": "tower-l2-3",
+  "/Game/Gondola/World/GD_L2_Rope_LOD0": "rope-l2",
+  "/Game/Gondola/World/GD_L3_0_Tower": "tower-l3-0",
+  "/Game/Gondola/World/GD_L3_1_Tower": "tower-l3-1",
+  "/Game/Gondola/World/GD_L3_Rope_LOD0": "rope-l3",
+  "/Game/Gondola/World/GD_belmonte_Access": "station-belmonte",
+  "/Game/Gondola/World/GD_belmonte_Foundation": "station-belmonte",
+  "/Game/Gondola/World/GD_floor_Access": "station-floor",
+  "/Game/Gondola/World/GD_floor_Foundation": "station-floor",
+  "/Game/Gondola/World/GD_floor_rim_Access": "station-floor-rim",
+  "/Game/Gondola/World/GD_floor_rim_Foundation": "station-floor-rim",
+  "/Game/Gondola/World/GD_hidamari_Access": "station-hidamari",
+  "/Game/Gondola/World/GD_hidamari_Foundation": "station-hidamari",
+  "/Game/Gondola/World/GD_northwest_Access": "station-northwest",
+  "/Game/Gondola/World/GD_northwest_Foundation": "station-northwest",
+  "/Game/Gondola/World/GD_southeast_Access": "station-southeast",
+  "/Game/Gondola/World/GD_southeast_Foundation": "station-southeast"
+ }
+}

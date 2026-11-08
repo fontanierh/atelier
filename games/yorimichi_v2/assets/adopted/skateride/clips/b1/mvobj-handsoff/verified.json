@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b1/mvobj-handsoff",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSOFF_CRCH.uasset": "9c9db53a4c715cc2513f406d417f38f2028248c18140da1c1e2b9cf91f329ee1",
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSOFF_HIGH.uasset": "1f2cfa4be0c0c1409395c80999e7b6c8425a2abdba64d678664855e4a63e9516",
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSOFF_MED.uasset": "23acc7122086e77f730cb640c09cfa9f697cd5f58940be5ebc4687ebd2d2850f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-ds-fs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_DS_FS_HI_0_CYC.uasset": "05493f14b6e856c7c8c69cea40d9667a2837c0dc60b828f836faf2882eaca64b",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_FS_HI_L_CYC.uasset": "e065aa7c09e86998f8c9ab3708cfa8456024fa76654f94dea5bd4e3c85ca9049",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_FS_HI_R_CYC.uasset": "c9ef7f52f3151a3075f7295504d869d040469844a29fffb5613813e66d47a2c1",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_FS_LOW_0_CYC.uasset": "55f705667027fde3108450c2658f817085cb53396fda32c0d781fb3c805da7f9",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_FS_LOW_L_CYC.uasset": "d7fff697ef2a178fe21efe61e3a3a5ef2ad404ff1d92e4c8201d91f64f71cbc2",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_FS_LOW_R_CYC.uasset": "dff81a849a3e4f409d37a0035208cf34b116bbe99455e86c69aaca6a02160a9a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

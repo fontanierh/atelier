@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/craterpark/p47-half-bowl-u-turn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_22_15.uasset": "243805ae17d48a939a02064474ea075e6e1eff6e945c8d81b75184863d476c66",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_22_15.uasset": "38ca87b5962ef9a68a95f04e1a45c60bb43d6d65f5a3572c0ca635c01261149a",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_050_22_14.uasset": "d3804e5e59b84516d73b4cf2abf37ef850d98e39216603d11a7e4d07f20fea61",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_050_22_15.uasset": "167b8be4b2426eed09ea6e8a5f0b49851eb437c45349e465743d80f4538c0ecf",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_050_23_14.uasset": "06616dff125ef8f9bf2b5d9a00522cc04531a0d0e04220790b82c2bb20406289",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_051_22_15.uasset": "7aa256f53d1db7c526e1ff095015c4d297f98908ab10a6f2fef6129e6b05fa67",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_052_23_15.uasset": "8d4631a2ee50b3041c009b1d437df23db3856dea71cb5cd9b97df67084ecfd32",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_053_23_15.uasset": "e8351bceef0a082c2fb0c5c1804b801d7ea2b8044b3982ea06b088439bc1d58e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

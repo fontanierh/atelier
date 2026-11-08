@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/inwardheelflip-high-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/INWARDHEELFLIP_HIGH_A.uasset": "2813d72a6c5f7bfdb9e4740a8b60f4dce03113edc2269b738f8dc81927cda6e9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

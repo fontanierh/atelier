@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-hi-kick",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HI_KICK_CYC1.uasset": "1d4f880958723043d20030bfe745c5bca7412dddd3866a86804a161461149550",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_KICK_CYC2.uasset": "bff80eecc6335d31a85889a671f72f81ebc505d421838c31947927771cf55ae7",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_KICK_CYC3.uasset": "e9dd43bc561c7c825a29b4f641186a042bbb9a61b72334d7fbf96c1ef49934f0",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_KICK_OUT4.uasset": "8b1b0999c4165ba484b13d55fd6d315361638548ac4633e6f491d7bf2266422d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

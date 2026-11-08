@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/gonz-kickflip-hi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GONZ_KICKFLIP_HI_CYC.uasset": "f17d525dd761e05b06364ffdf05cea38e55e8c2f1a4f4d33bc70fd9f3928afa8",
+    "unreal/Content/SkateRide/Clips/B0/GONZ_KICKFLIP_HI_OUT.uasset": "d38a4b1a0f791d5a86fceb708f1183c2623e024b03c342facc05445213b73233"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

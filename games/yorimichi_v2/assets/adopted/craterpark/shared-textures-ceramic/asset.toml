@@ -1,0 +1,70 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family ceramic
+schema = 1
+id = "adopted/craterpark/shared-textures-ceramic"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-ceramic"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/coping_frieze.jpg"
+sha256 = "2ef3bc61fb62ec5f258bab5ec301ab60815819c68c295942be41e4fccee21699"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/coping_frieze.json"
+sha256 = "5606d13965a8afbcc1dcd4e654ec206783fcddd22c3d82909abe9724854fa224"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/coping_tile.jpg"
+sha256 = "62ff9cc5acee0876a1a52a3efcd7df5668131fcb0dcbef9cb4c96ec9466a849c"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/coping_tile.json"
+sha256 = "cf1f718a34125cedf549a9f33be19ba677c74d5ce47680f6f2b288ca2a5b45fd"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/tile_edge.jpg"
+sha256 = "b11919140e3d8441f5a34ddf31f18dbb8c36661d2214babe878326995dca942e"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/tile_edge.json"
+sha256 = "8992a0c8f1f2d29f17f55777047a44d962fef57b2d71bf8be2fdabbc5e2edcf6"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/turtle.jpg"
+sha256 = "511a371ca08c0c9d9cda4f0f70e5adb360cd7d5c8fcb8899e9d7cddc85c22e28"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/turtle.json"
+sha256 = "8b9e44d136c6b384af558e5bd112a5e639bd49ef72d3d48899888d3e92e184f6"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0001.png"
+sha256 = "26d9f2db90188b5fdd85ac4c8cad0921953ca8bd16f67224bd812dc2e0347c5f"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0006.png"
+sha256 = "e070c34b1f8c823ed5710c34e98b0ca84f16ed9ede4cd57d6ed64a1a5f4cef81"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0021.png"
+sha256 = "971b2e9111d636b22e2c6177c69d425232b3eccdcac1fd36163ab7c9ae8d89b9"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0058.png"
+sha256 = "487eee16442607713cdebc01280be8d749523abfb8c0a324119378bf5cf5b1ab"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_coping_frieze"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_coping_tile"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_tile_edge"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_turtle"

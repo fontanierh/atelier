@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-360flip-hi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_360FLIP_HI_DCATCH_OUT1.uasset": "ba7f9f6bb87dc85935f9f3400b2727a79592496a1b94cff32e2486a2c5948b00"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

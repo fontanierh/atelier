@@ -1,0 +1,29 @@
+{
+  "stage": "craterpark_shrine",
+  "slug": "nobori",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 6000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "4aadb3dd61aea4213c7a565ca3582cd935d766cb804ac809b87483c927ffe927",
+  "concept_sha256": "4aadb3dd61aea4213c7a565ca3582cd935d766cb804ac809b87483c927ffe927",
+  "submitted_at": "2026-10-16T09:57:59.520727+00:00",
+  "task_id": "a5cb1a34-bb62-4c4d-b5b8-8a6d055172a0",
+  "status": "submitted",
+  "user_approval": "project owner, 2026-10-16: picked tower-top concept C (shrine balcony) and asked for the remaining Tripo credits to be used for it",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-16T10:00:18.392169+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

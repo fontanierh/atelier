@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/brinecove/plant-cover-leaf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverLeaf0.uasset": "a73ef8f178749389da76acc15a5860e0f58fdeecb82f8374562dee2fb567b740",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverLeaf1.uasset": "70888ff17949cb60cd04179274415127bb9d7290300a538627f849feb3ecb17c",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverLeaf2.uasset": "d30d7ba42dd45ba61bf8484d22aaee44353943fc1ee93ff6c7ea2b854639117d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

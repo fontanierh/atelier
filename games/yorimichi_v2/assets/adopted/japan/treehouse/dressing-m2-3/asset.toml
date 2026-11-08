@@ -1,0 +1,13 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing mesh pieces of one cell (generated from the layout)
+schema = 1
+id = "adopted/japan/treehouse/dressing-m2-3"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/dressing-m2-3"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_3"

@@ -1,0 +1,100 @@
+{
+  "slug": "harbor-capstan",
+  "stage": "brinecove-trellis-processed",
+  "generated": "2026-10-18T11:21:19.126626+00:00",
+  "source": "build/yorimichi/pirate-coast/trellis/out/capstan/head.glb",
+  "source_sha256": "8d718f1dcea2940a2a5b018f28ac07975a6010e5448310da020f57c3cd171ad3",
+  "reference": "games/yorimichi/proposals/pirate-coast/references/props/harbor-capstan.png",
+  "reference_sha256": "85897104389ebbc43da1386b34520b46dbf1d6128dae68d042f589cd6b0cec01",
+  "generation": {
+    "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+    "backend": "Microsoft TRELLIS.2 MLX",
+    "native_vertices": 1592577,
+    "native_triangles": 3249504,
+    "output_sha256": "8d718f1dcea2940a2a5b018f28ac07975a6010e5448310da020f57c3cd171ad3",
+    "native_checkpoint_sha256": "d68c39e4ba0021b53970c876d7d7517e9c04a0ea1253851336de8687b8a4fa84",
+    "mesh_sha256": "75475316435b2387e51b70adc07d41256c7e9defa2c8df570b4d934a345734d5",
+    "all_native_triangles_and_winding_preserved": true,
+    "transform": "Only fixed Z-up to Y-up axis rotation performed by the pinned export",
+    "seconds": 595.072,
+    "strict_model_key_checks": [
+      {
+        "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+        "keys": 74,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 292,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 284,
+        "strict_complete_state": true
+      }
+    ],
+    "mlx_peak_bytes": 4704533982,
+    "quantize": 0,
+    "resolution_requested": 512,
+    "actual_mesh_grid_size": 512
+  },
+  "target_height_m": 2.8,
+  "notes": "working pier capstan",
+  "triangles_before": 3249495,
+  "triangles_after": 18000,
+  "pruned_faces": 0,
+  "shells": 0,
+  "filled_faces": 0,
+  "boundary_rim_edges": 0,
+  "bounds": {
+    "min": [
+      -1.7802,
+      -1.4966,
+      -0.0077
+    ],
+    "max": [
+      1.7797,
+      1.5003,
+      2.8075
+    ]
+  },
+  "output": "games/yorimichi/proposals/pirate-coast/assets/models/harbor-capstan.glb",
+  "output_sha256": "4416fbb5bde62ba068a7a7873082ba7a2d8c55de67eaa020a7741f6b57e68295",
+  "checks": {
+    "triangles": 18000,
+    "vertices": 8756,
+    "uv_layers": 1,
+    "materials": 5,
+    "textured_materials": 4,
+    "images": 7
+  },
+  "texture_dilation": null,
+  "processing": [
+    "parent clear",
+    "transform apply",
+    "uniform scale to target height",
+    "solidify open surface",
+    "voxel remesh to a manifold shell",
+    "collapse decimate",
+    "smart UV unwrap",
+    "nearest-surface palette paint",
+    "UV/texture/material and finite-vertex validation",
+    "three Blender review renders"
+  ]
+}

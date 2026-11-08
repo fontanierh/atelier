@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/skateride/clips/b0/f-flip-stale",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_STALE_GRAB_INTO_0_N.uasset": "de943777c5d0875dcbb858ba52596faceb0d446e5ee412d1a49d2e5ba39193d7",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_STALE_GRAB_OUT_N_GRAB.uasset": "b34d80e2cd60b52f3955f1b2fe353bf1a1ecf123477f6aa3c877c9fdcc93ebd8",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_STALE_GRAB_OUT_N_HIGH.uasset": "e543070028b5a8782d70eb512db36ddc607e011c4691f5cbdb56876284b04eb5",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_STALE_GRAB_OUT_N_LOW.uasset": "3747472633e0e952ea6e53fc72d296cb3750a44b73e62cc2414ca31c304d42dc",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_STALE_TO_FS_GRAB.uasset": "cec599931baa16ee3fdd9c93896bd18d06667661b1f3bce425f4de9860b872ef"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

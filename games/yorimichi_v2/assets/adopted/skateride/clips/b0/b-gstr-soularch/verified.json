@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-soularch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_BOTH_CYC.uasset": "0507168225cd852d3d460e6b1d9aa96883bf1fd969a4b73a26e4cab15e3d8788",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_BOTH_INTO.uasset": "3c09240ce7dc86630708543c46eb959b4b7ed79beb259e579d8b7201d4023fa9",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_BOTH_OUT.uasset": "093c32ad76e5bb5ef0195a74431da483992ba49fb6f0b294bff6ebfc5c4ec22e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_LEFT_CYC.uasset": "73671862741b2349e99efb65f67373694656d56f2454e135fd8152d22ee35517",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_LEFT_INTO.uasset": "b39d127f453b070598525030cecbefefe10225855df38596882d1783df73826a",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_LEFT_OUT.uasset": "58a1d1f5f45c40c01342ece65bf75c54d616295e6b51040092802a4ee09afd8a",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_RIGHT_CYC.uasset": "6a071c72d5ca774f4235f22047fb43c19953a69dd2ea20339cc797924606a5cc",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_RIGHT_INTO.uasset": "cb4d51872900ed3fa38cb1be6a6f65b2756aa4ba28972a229f255326dabbb24e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SOULARCH_RIGHT_OUT.uasset": "ee9ab64fd4e5af6b8d4e5e6459f4f9ceb6b0f616cf9de806b0585af27e923bc4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

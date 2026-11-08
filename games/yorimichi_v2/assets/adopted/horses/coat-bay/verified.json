@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-bay",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/bay.uasset": "d5786658a6730af3c7b18360e3f98ff9547eec60103fd86599bf0fcdc673e405"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-tslide-fs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_GRAB_NOSE_CYC.uasset": "6e40f3013c2cde68212f1f7be736a090d59bcc60075167e9f4430df667424bbe",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_GRAB_NOSE_INTO.uasset": "35d9400bc45518b618cf330c507b58e91b9b78f4006f0aa7ea82721aa0d119ba",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_GRAB_NOSE_OUT.uasset": "dfeb1e14dc9987dfc43912423a3e5756be9dfe0245830680f0aa42b760efe3cf",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_HI_0_CYC.uasset": "a3871e04956eb349d58a8bd5704d6b9750f141638ed98d98053c52e3ab94d159",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_HI_L_CYC.uasset": "68b23456894f6f57385a9a4f66d57e55a5a0db6ff35d6c9e65e9b8878451a2be",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_HI_R_CYC.uasset": "7256002a013306feeafa1b84e32bd4af6cc8a38a4c35c1c0024136e8ad4caead",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_LOW_0_CYC.uasset": "c80bebd039833da3ea5d24ba1dbf7ff06a37759fe90821daf4ec0430a1c64019",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_LOW_L_CYC.uasset": "1aaec2d826ffec11ec9a640fcde4509191799a56dfe4728d8cc3e464deb30aea",
+    "unreal/Content/SkateRide/Clips/B0/G_TSLIDE_FS_LOW_R_CYC.uasset": "d3d3cf2a62f1d302e2b7bf739ad553d442d496dd184f1e567617c20859481192"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

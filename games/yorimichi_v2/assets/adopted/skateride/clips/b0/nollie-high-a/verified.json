@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/nollie-high-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/NOLLIE_HIGH_A.uasset": "b58a0d0bac360b27f5b2b2de951a9a077ee5f0f6fbc2856752b720e1cb96d867"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-sack (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-sack"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-sack"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Sack.glb"
+sha256 = "4fd125b2ec69bc1d2168cc20c2efcd63eb4db2deb1b0a1a8f43ec4fdcfcad3d6"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Sack_Collision.glb"
+sha256 = "76c273f2d644689ac48e121f553158c1506c9c8f78f9e8601189a650c4a95163"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Sack"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Sack_Collision"

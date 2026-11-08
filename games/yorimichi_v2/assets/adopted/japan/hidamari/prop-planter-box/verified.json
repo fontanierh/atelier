@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-planter-box",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_planter_box.uasset": "babffb768957ee17b13f442a3756fd2ee4a4197a57b942f1334f158e242e4582",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_planter_box.uasset": "f1bdcfdbb55c10342f8c9070fc271ad102b2f53e1790db036b2f69fb603d92a6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

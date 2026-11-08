@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_bonsai_shelf",
+  "parent": "HD_P_bonsai_shelf",
+  "schema": 1,
+  "settings": null,
+  "size": 1.5,
+  "slug": "bonsai_shelf",
+  "solid": true,
+  "target": 0.09,
+  "turn": -90,
+  "upright": false
+}

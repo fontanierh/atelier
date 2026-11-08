@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/north-gate-m1-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthGate_cell_-1_11.uasset": "23d87abdd27b31815a763c7177c9c7e0962a868fdce61fa0a48bebcd51504aab",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthGate_cell_-1_12.uasset": "22e9b8690d2789dcd977e5d5f40dfb4051c24feb2af4d8b555192a8c3453691b",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthGate_cell_-2_11.uasset": "92ec2f952be7a8d64e1989a770dd1840a04a3be5a764935c3c3c1202d5bb2e9c",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthGate_cell_-2_12.uasset": "7c8ba410daeb45d280548fb332105444772c9bb923e3fc04ddbd19e6872a51f4",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthGate_cell_-3_11.uasset": "67d68728cae5c68587954c87c63133072aa781cf84bae9a74f2be2a315bb99d8",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthGate_cell_-3_12.uasset": "a8f74884c0f1e1a926c1eba2ee41f1e83ca8bca68ddc5fac45e7422e6d37547f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

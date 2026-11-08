@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-360popshuvit-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_360POPSHUVIT_LOW_A.uasset": "27b4a3915509fd4bcc75f9fb15ea2d4f9e7fe2228ba6ace89ea567fe8cc08c58",
+    "unreal/Content/SkateRide/Clips/B0/N_360POPSHUVIT_LOW_G.uasset": "b156db36a12a2f8e5e836abb0a066967141f9f83fd77440d596411e67c25a0d6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

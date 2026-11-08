@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-palazzo-comunale",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_PalazzoComunale.uasset": "74ab407e3db97785acab82e7ae3a075911a50c509c967bf4c5337c3f1742a020",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_PalazzoComunale_Collision.uasset": "e96ce4e33a119de0113ae48c13d705008095aec6f427847079d888f149aabf5d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

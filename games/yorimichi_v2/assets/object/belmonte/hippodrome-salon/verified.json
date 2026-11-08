@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-salon",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-salon": "216ec38504fa533293da9f4075ab513e1f91ce81272c34e539e329611c3c6c27"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/WT/BA45JKTFW79SNW1ZDBS97C.uasset": "523e5f549f453d98dd5646e6468ca8097eec202ada1d7cff322930aa7acc7a1e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

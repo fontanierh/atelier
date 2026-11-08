@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/hidamari/tree-caldera-cedar-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_B.uasset": "cf7818a214dc7e0f1576465f979008f852293ff0fcad989eee07867953604ba1",
+    "unreal/Content/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD1.uasset": "359dfb5616473d3bb599c3690fb00c1f7f21e067bf954e6c412e3a2495bc7adf",
+    "unreal/Content/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD2.uasset": "b8df6e98a675f0b170c78b9267707539e77aaf5b8738805a28575895ac61f3f5",
+    "unreal/Content/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD3.uasset": "e7f6071eb8c9c3d3a5c1c324120e88e37531d31b4c094aa03c2f01879aaa05bc",
+    "unreal/Content/Japan/Hidamari/Textures/T_Tree_Caldera_Cedar_B.uasset": "180f7513af4d1f6b312f473d958e6c02248092729ea1a693b12fd265d38a41cf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

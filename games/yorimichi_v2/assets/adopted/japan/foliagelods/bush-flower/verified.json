@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/japan/foliagelods/bush-flower",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Bush_Flower_A/Bush_Flower_A_LOD1.uasset": "c579f9e8a666a1d90459fafc458e94638305b191fa952d0c1b2a091bfebfb3a2",
+    "unreal/Content/Japan/FoliageLODs/Bush_Flower_A/Bush_Flower_A_LOD2.uasset": "240a60beb9685bb4f9cf5f1c17953f733992f4c92e16e4c30c06a11a4b016c0c",
+    "unreal/Content/Japan/FoliageLODs/Bush_Flower_B/Bush_Flower_B_LOD1.uasset": "8746135a0b87500b9adff3e766e6d5729fee668a5045a378457271dac7af3560",
+    "unreal/Content/Japan/FoliageLODs/Bush_Flower_B/Bush_Flower_B_LOD2.uasset": "412a0144fd20a11a653d007e53b520095ea871a75a1c53b3ad610a908153153a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

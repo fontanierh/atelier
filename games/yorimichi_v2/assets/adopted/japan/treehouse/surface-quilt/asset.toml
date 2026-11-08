@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface quilt: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-quilt"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-quilt"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/quilt.jpg"
+sha256 = "e96b85bf8d1d1a5cd363df07194535e1c365cfc09de7b1b636989c6feb795101"
+
+[[sources]]
+path = "source/assets/treehouse/textures/quilt.prompt.txt"
+sha256 = "5611ce3f9a0477c9c3f5dcbecb347cf1d6f0a674c0f27e13c64f69fa70eff594"
+
+[[sources]]
+path = "source/assets/treehouse/textures/quilt.provenance.json"
+sha256 = "fc7068fd6e48599d7104c639d60d0ee6bf1cf3ce9e913659b534caa832b1d3e9"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_quilt"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_quilt"

@@ -1,0 +1,19 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the galleon Nightjar and the eastern sloop, fused in ship tiles 4_2, 4_3 and 5_3
+schema = 1
+id = "adopted/brinecove/ships-nightjar-sloop"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/ships-nightjar-sloop"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Ships_4_2"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Ships_4_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Ships_5_3"

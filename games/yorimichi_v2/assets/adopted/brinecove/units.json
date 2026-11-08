@@ -1,0 +1,2214 @@
+{
+ "about": "Brine Cove editing units for tools/migrate/adopt.py (written by tools/migrate/brinecove_units.py)",
+ "units": {
+  "fort": {
+   "about": "the hillside fort: curtain walls, towers, keep, gatehouse and courtyard (landmarks tile 3_5)",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "galleon-adventure": {
+   "about": "the galleon Adventure in the harbour: rig, deck and guns (layout.SHIPS, tile 3_3 alone; its hull is the shared hero-galleon-hull)",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-0-0": {
+   "about": "Brine Cove ground-0-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-0-1": {
+   "about": "Brine Cove ground-0-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-0-2": {
+   "about": "Brine Cove ground-0-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-0-3": {
+   "about": "Brine Cove ground-0-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-0-4": {
+   "about": "Brine Cove ground-0-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-0-5": {
+   "about": "Brine Cove ground-0-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-0-6": {
+   "about": "Brine Cove ground-0-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-1-0": {
+   "about": "Brine Cove ground-1-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-1-1": {
+   "about": "Brine Cove ground-1-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-1-2": {
+   "about": "Brine Cove ground-1-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-1-3": {
+   "about": "Brine Cove ground-1-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-1-4": {
+   "about": "Brine Cove ground-1-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-1-5": {
+   "about": "Brine Cove ground-1-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-1-6": {
+   "about": "Brine Cove ground-1-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-2-0": {
+   "about": "Brine Cove ground-2-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-2-1": {
+   "about": "Brine Cove ground-2-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-2-2": {
+   "about": "Brine Cove ground-2-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-2-3": {
+   "about": "Brine Cove ground-2-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-2-4": {
+   "about": "Brine Cove ground-2-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-2-5": {
+   "about": "Brine Cove ground-2-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-2-6": {
+   "about": "Brine Cove ground-2-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-3-0": {
+   "about": "Brine Cove ground-3-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-3-1": {
+   "about": "Brine Cove ground-3-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-3-2": {
+   "about": "Brine Cove ground-3-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-3-3": {
+   "about": "Brine Cove ground-3-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-3-4": {
+   "about": "Brine Cove ground-3-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-3-5": {
+   "about": "Brine Cove ground-3-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-3-6": {
+   "about": "Brine Cove ground-3-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-4-0": {
+   "about": "Brine Cove ground-4-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-4-1": {
+   "about": "Brine Cove ground-4-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-4-2": {
+   "about": "Brine Cove ground-4-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-4-3": {
+   "about": "Brine Cove ground-4-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-4-4": {
+   "about": "Brine Cove ground-4-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-4-5": {
+   "about": "Brine Cove ground-4-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-4-6": {
+   "about": "Brine Cove ground-4-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-5-0": {
+   "about": "Brine Cove ground-5-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-5-1": {
+   "about": "Brine Cove ground-5-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-5-2": {
+   "about": "Brine Cove ground-5-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-5-3": {
+   "about": "Brine Cove ground-5-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-5-4": {
+   "about": "Brine Cove ground-5-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-5-5": {
+   "about": "Brine Cove ground-5-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-5-6": {
+   "about": "Brine Cove ground-5-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-6-0": {
+   "about": "Brine Cove ground-6-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-6-1": {
+   "about": "Brine Cove ground-6-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-6-2": {
+   "about": "Brine Cove ground-6-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-6-3": {
+   "about": "Brine Cove ground-6-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-6-4": {
+   "about": "Brine Cove ground-6-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-6-5": {
+   "about": "Brine Cove ground-6-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-6-6": {
+   "about": "Brine Cove ground-6-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-7-0": {
+   "about": "Brine Cove ground-7-0 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-7-1": {
+   "about": "Brine Cove ground-7-1 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-7-2": {
+   "about": "Brine Cove ground-7-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-7-3": {
+   "about": "Brine Cove ground-7-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-7-4": {
+   "about": "Brine Cove ground-7-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-7-5": {
+   "about": "Brine Cove ground-7-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ground-7-6": {
+   "about": "Brine Cove ground-7-6 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-2-3": {
+   "about": "Brine Cove harbor-2-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-2-4": {
+   "about": "Brine Cove harbor-2-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-3-2": {
+   "about": "Brine Cove harbor-3-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-3-3": {
+   "about": "Brine Cove harbor-3-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-3-4": {
+   "about": "Brine Cove harbor-3-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-4-2": {
+   "about": "Brine Cove harbor-4-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-4-3": {
+   "about": "Brine Cove harbor-4-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-4-4": {
+   "about": "Brine Cove harbor-4-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-5-3": {
+   "about": "Brine Cove harbor-5-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "harbor-5-4": {
+   "about": "Brine Cove harbor-5-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "hero-galleon-hull": {
+   "about": "Brine Cove hero model galleon-hull: its mesh cells, material instances and textures",
+   "sources": [
+    "games/yorimichi/assets/brinecove/models/galleon-hull.glb",
+    "games/yorimichi/assets/brinecove/models/galleon-hull.provenance.json"
+   ],
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "hero-harbor-capstan": {
+   "about": "Brine Cove hero model harbor-capstan: its mesh cells, material instances and textures",
+   "sources": [
+    "games/yorimichi/assets/brinecove/models/harbor-capstan.glb",
+    "games/yorimichi/assets/brinecove/models/harbor-capstan.provenance.json"
+   ],
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "hero-pirate-queen-statue": {
+   "about": "Brine Cove hero model pirate-queen-statue: its mesh cells, material instances and textures",
+   "sources": [
+    "games/yorimichi/assets/brinecove/models/pirate-queen-statue.glb",
+    "games/yorimichi/assets/brinecove/models/pirate-queen-statue.provenance.json"
+   ],
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "lighthouse": {
+   "about": "the lighthouse on the western headland (landmarks tile 1_3 alone, with its planting)",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "market-3-3": {
+   "about": "Brine Cove market-3-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "market-3-4": {
+   "about": "Brine Cove market-3-4 (11 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "market-4-3": {
+   "about": "Brine Cove market-4-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "market-4-4": {
+   "about": "Brine Cove market-4-4 (14 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "materials": {
+   "about": "Brine Cove shared materials, and the region generator that made every Brine Cove package",
+   "sources": [
+    "games/yorimichi/assets/brinecove/export-parameters/CONTRACTS",
+    "games/yorimichi/assets/brinecove/export-parameters/Harbor.json",
+    "games/yorimichi/assets/brinecove/export-parameters/Landmarks.json",
+    "games/yorimichi/assets/brinecove/export-parameters/Market.json",
+    "games/yorimichi/assets/brinecove/export-parameters/Props.json",
+    "games/yorimichi/assets/brinecove/export-parameters/README.md",
+    "games/yorimichi/assets/brinecove/export-parameters/Rocks.json",
+    "games/yorimichi/assets/brinecove/export-parameters/Ships.json",
+    "games/yorimichi/assets/brinecove/export-parameters/TownLower.json",
+    "games/yorimichi/assets/brinecove/export-parameters/TownUpper.json",
+    "games/yorimichi/assets/brinecove/export-parameters/Understory.json",
+    "games/yorimichi/assets/brinecove/models/galleon-figurehead.glb",
+    "games/yorimichi/assets/brinecove/models/galleon-figurehead.provenance.json",
+    "games/yorimichi/assets/brinecove/models/harbor-cannon.glb",
+    "games/yorimichi/assets/brinecove/models/harbor-cannon.provenance.json",
+    "games/yorimichi/assets/brinecove/models/ship-anchor.glb",
+    "games/yorimichi/assets/brinecove/models/ship-anchor.provenance.json",
+    "games/yorimichi/assets/brinecove/models/ships-wheel.glb",
+    "games/yorimichi/assets/brinecove/models/ships-wheel.provenance.json",
+    "games/yorimichi/assets/source-library.json",
+    "games/yorimichi/world/coast_water.py",
+    "games/yorimichi/world/coastal_surface.py",
+    "games/yorimichi/world/farhills_grid.py",
+    "games/yorimichi/world/mesh_pieces.py",
+    "games/yorimichi/world/random_stream.py",
+    "games/yorimichi/world/region_mesh_parts.py",
+    "games/yorimichi/world/region_mesh_set.py",
+    "games/yorimichi/world/region_plan_files.py",
+    "games/yorimichi/world/region_query.py",
+    "games/yorimichi/world/regions/belmonte/__init__.py",
+    "games/yorimichi/world/regions/belmonte/ground_names.py",
+    "games/yorimichi/world/regions/belmonte/layout.py",
+    "games/yorimichi/world/regions/belmonte/query_surface.py",
+    "games/yorimichi/world/regions/belmonte/source.py",
+    "games/yorimichi/world/regions/belmonte/terrain.py",
+    "games/yorimichi/world/regions/belmonte/terrain_bounds.py",
+    "games/yorimichi/world/regions/belmonte/terrain_palette.py",
+    "games/yorimichi/world/regions/brinecove/DESIGN.md",
+    "games/yorimichi/world/regions/brinecove/README.md",
+    "games/yorimichi/world/regions/brinecove/__init__.py",
+    "games/yorimichi/world/regions/brinecove/assemble.py",
+    "games/yorimichi/world/regions/brinecove/assembly_files.py",
+    "games/yorimichi/world/regions/brinecove/boundary.py",
+    "games/yorimichi/world/regions/brinecove/build.py",
+    "games/yorimichi/world/regions/brinecove/export_foliage_model.py",
+    "games/yorimichi/world/regions/brinecove/falls.py",
+    "games/yorimichi/world/regions/brinecove/ferry_terminal.py",
+    "games/yorimichi/world/regions/brinecove/flora.py",
+    "games/yorimichi/world/regions/brinecove/foliage_atlas.py",
+    "games/yorimichi/world/regions/brinecove/foliage_catalog.json",
+    "games/yorimichi/world/regions/brinecove/foliage_library.py",
+    "games/yorimichi/world/regions/brinecove/foliage_models.py",
+    "games/yorimichi/world/regions/brinecove/foliage_models/bloom_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/bloom_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_3.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_4.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_5.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_6.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/broad_7.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_fern_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_fern_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_fern_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_grass_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_grass_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_grass_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_leaf_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_leaf_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/cover_leaf_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/emergent_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/emergent_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/emergent_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/palm_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/palm_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/palm_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/palm_3.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/palm_4.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/palm_5.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/shrub_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/shrub_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/shrub_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/shrub_3.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/shrub_4.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/small_0.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/small_1.json",
+    "games/yorimichi/world/regions/brinecove/foliage_models/small_2.json",
+    "games/yorimichi/world/regions/brinecove/foliage_names.py",
+    "games/yorimichi/world/regions/brinecove/foliage_placements.py",
+    "games/yorimichi/world/regions/brinecove/galleon_hull.py",
+    "games/yorimichi/world/regions/brinecove/geom.py",
+    "games/yorimichi/world/regions/brinecove/geometry_finish.py",
+    "games/yorimichi/world/regions/brinecove/ground.py",
+    "games/yorimichi/world/regions/brinecove/ground_sampling.py",
+    "games/yorimichi/world/regions/brinecove/hero_assets.py",
+    "games/yorimichi/world/regions/brinecove/hero_math.py",
+    "games/yorimichi/world/regions/brinecove/hero_model.py",
+    "games/yorimichi/world/regions/brinecove/hero_placements.py",
+    "games/yorimichi/world/regions/brinecove/hero_sources.py",
+    "games/yorimichi/world/regions/brinecove/kit.py",
+    "games/yorimichi/world/regions/brinecove/landmarks.py",
+    "games/yorimichi/world/regions/brinecove/layout.py",
+    "games/yorimichi/world/regions/brinecove/logical_catalogue.py",
+    "games/yorimichi/world/regions/brinecove/modules.py",
+    "games/yorimichi/world/regions/brinecove/paths.py",
+    "games/yorimichi/world/regions/brinecove/paving_data.py",
+    "games/yorimichi/world/regions/brinecove/piece_inputs.py",
+    "games/yorimichi/world/regions/brinecove/placement_data.py",
+    "games/yorimichi/world/regions/brinecove/plan.py",
+    "games/yorimichi/world/regions/brinecove/plan_component.py",
+    "games/yorimichi/world/regions/brinecove/plan_ground.py",
+    "games/yorimichi/world/regions/brinecove/plan_hero.py",
+    "games/yorimichi/world/regions/brinecove/procedural/__init__.py",
+    "games/yorimichi/world/regions/brinecove/procedural/_falls_zone.py",
+    "games/yorimichi/world/regions/brinecove/procedural/cell_material.py",
+    "games/yorimichi/world/regions/brinecove/procedural/covered.py",
+    "games/yorimichi/world/regions/brinecove/procedural/falls_cliff.py",
+    "games/yorimichi/world/regions/brinecove/procedural/final_ground.py",
+    "games/yorimichi/world/regions/brinecove/procedural/foam_ring.py",
+    "games/yorimichi/world/regions/brinecove/procedural/geometry_policy.py",
+    "games/yorimichi/world/regions/brinecove/procedural/ground_face.py",
+    "games/yorimichi/world/regions/brinecove/procedural/harbor.py",
+    "games/yorimichi/world/regions/brinecove/procedural/hero_presence.py",
+    "games/yorimichi/world/regions/brinecove/procedural/landmarks.py",
+    "games/yorimichi/world/regions/brinecove/procedural/lighthouse.py",
+    "games/yorimichi/world/regions/brinecove/procedural/lower_street_slabs.py",
+    "games/yorimichi/world/regions/brinecove/procedural/lower_town.py",
+    "games/yorimichi/world/regions/brinecove/procedural/market.py",
+    "games/yorimichi/world/regions/brinecove/procedural/pave_band.py",
+    "games/yorimichi/world/regions/brinecove/procedural/paving.py",
+    "games/yorimichi/world/regions/brinecove/procedural/paving_grid.py",
+    "games/yorimichi/world/regions/brinecove/procedural/paving_material.py",
+    "games/yorimichi/world/regions/brinecove/procedural/props.py",
+    "games/yorimichi/world/regions/brinecove/procedural/random_state.py",
+    "games/yorimichi/world/regions/brinecove/procedural/rock_cluster.py",
+    "games/yorimichi/world/regions/brinecove/procedural/rowboat.py",
+    "games/yorimichi/world/regions/brinecove/procedural/ship.py",
+    "games/yorimichi/world/regions/brinecove/procedural/ships.py",
+    "games/yorimichi/world/regions/brinecove/procedural/shore_foam.py",
+    "games/yorimichi/world/regions/brinecove/procedural/shoreline_foam.py",
+    "games/yorimichi/world/regions/brinecove/procedural/split_lot.py",
+    "games/yorimichi/world/regions/brinecove/procedural/stair_apron.py",
+    "games/yorimichi/world/regions/brinecove/procedural/statue.py",
+    "games/yorimichi/world/regions/brinecove/procedural/terrace_stair.py",
+    "games/yorimichi/world/regions/brinecove/procedural/terrace_stair_plan.py",
+    "games/yorimichi/world/regions/brinecove/procedural/terrain.py",
+    "games/yorimichi/world/regions/brinecove/procedural/terrain_dressing.py",
+    "games/yorimichi/world/regions/brinecove/procedural/upper_town.py",
+    "games/yorimichi/world/regions/brinecove/procedural/vegetation.py",
+    "games/yorimichi/world/regions/brinecove/procedural/yard_material.py",
+    "games/yorimichi/world/regions/brinecove/process_assets.py",
+    "games/yorimichi/world/regions/brinecove/query_data.py",
+    "games/yorimichi/world/regions/brinecove/references/asset_sheet.py",
+    "games/yorimichi/world/regions/brinecove/references/bridge.py",
+    "games/yorimichi/world/regions/brinecove/references/galleon_tripo.py",
+    "games/yorimichi/world/regions/brinecove/references/generate.py",
+    "games/yorimichi/world/regions/brinecove/references/leaf_atlas.py",
+    "games/yorimichi/world/regions/brinecove/references/props.py",
+    "games/yorimichi/world/regions/brinecove/references/redesign.py",
+    "games/yorimichi/world/regions/brinecove/references/textures.py",
+    "games/yorimichi/world/regions/brinecove/references/water_atlas.py",
+    "games/yorimichi/world/regions/brinecove/region.py",
+    "games/yorimichi/world/regions/brinecove/review_build.py",
+    "games/yorimichi/world/regions/brinecove/review_sheets.py",
+    "games/yorimichi/world/regions/brinecove/rim_data.py",
+    "games/yorimichi/world/regions/brinecove/rim_schema.py",
+    "games/yorimichi/world/regions/brinecove/rocks.py",
+    "games/yorimichi/world/regions/brinecove/runtime_data.py",
+    "games/yorimichi/world/regions/brinecove/surface_mapping.py",
+    "games/yorimichi/world/regions/brinecove/surfaces.py",
+    "games/yorimichi/world/regions/brinecove/viewer/app.js",
+    "games/yorimichi/world/regions/brinecove/viewer/index.html",
+    "games/yorimichi/world/regions/brinecove/viewer/serve.py",
+    "games/yorimichi/world/regions/brinecove/viewer/style.css",
+    "games/yorimichi/world/regions/craterpark/__init__.py",
+    "games/yorimichi/world/regions/craterpark/placement.py",
+    "games/yorimichi/world/regions/craterpark/v2/__init__.py",
+    "games/yorimichi/world/regions/craterpark/v2/curves.py",
+    "games/yorimichi/world/regions/craterpark/v2/dsl.py",
+    "games/yorimichi/world/regions/craterpark/v2/profile.py",
+    "games/yorimichi/world/regions/craterpark/v2/v4_config.py",
+    "games/yorimichi/world/regions/craterpark/v2/v4_placement.py",
+    "games/yorimichi/world/regions/forest/__init__.py",
+    "games/yorimichi/world/regions/forest/ecotone.py",
+    "games/yorimichi/world/regions/forest/specs.py",
+    "games/yorimichi/world/regions/hidamari/__init__.py",
+    "games/yorimichi/world/regions/hidamari/arrival_placement.py",
+    "games/yorimichi/world/regions/hidamari/city_poles.py",
+    "games/yorimichi/world/regions/hidamari/forest_backdrop.py",
+    "games/yorimichi/world/regions/hidamari/house_gardens.py",
+    "games/yorimichi/world/regions/hidamari/layout.py",
+    "games/yorimichi/world/regions/hidamari/mountains.py",
+    "games/yorimichi/world/regions/hidamari/natural_terrain.py",
+    "games/yorimichi/world/regions/hidamari/park_grounds_placement.py",
+    "games/yorimichi/world/regions/hidamari/public_spaces.py",
+    "games/yorimichi/world/regions/hidamari/station_yard_placement.py",
+    "games/yorimichi/world/regions/hidamari/street_props.py",
+    "games/yorimichi/world/regions/hidamari/temple_precinct_placement.py",
+    "games/yorimichi/world/regions/hidamari_stable/__init__.py",
+    "games/yorimichi/world/regions/hidamari_stable/layout.py",
+    "games/yorimichi/world/regions/hippodrome/__init__.py",
+    "games/yorimichi/world/regions/hippodrome/build.py",
+    "games/yorimichi/world/regions/hippodrome/layout.py",
+    "games/yorimichi/world/regions/megapark/__init__.py",
+    "games/yorimichi/world/regions/megapark/forest.py",
+    "games/yorimichi/world/regions/megapark/gate.py",
+    "games/yorimichi/world/regions/megapark/placement.py",
+    "games/yorimichi/world/regions/megapark/plants.py",
+    "games/yorimichi/world/regions/megapark/trail.py",
+    "games/yorimichi/world/regions/treehouse/__init__.py",
+    "games/yorimichi/world/regions/treehouse/layout.py",
+    "games/yorimichi/world/regions/treehouse/screen.py",
+    "games/yorimichi/world/regions/village/__init__.py",
+    "games/yorimichi/world/regions/village/layout.py",
+    "games/yorimichi/world/regions/village/mesh.py",
+    "games/yorimichi/world/regions/zeppelin/__init__.py",
+    "games/yorimichi/world/regions/zeppelin/layout.py",
+    "games/yorimichi/world/shorelines.py",
+    "games/yorimichi/world/source_registry.py",
+    "games/yorimichi/world/terrain_product.py",
+    "games/yorimichi/world/terrain_query.py",
+    "games/yorimichi/world/train/__init__.py",
+    "games/yorimichi/world/train/corridor.py",
+    "games/yorimichi/world/train/earthworks.py",
+    "games/yorimichi/world/train/station_site.py",
+    "games/yorimichi/world/yori.py"
+   ]
+  },
+  "plant-bloom": {
+   "about": "Brine Cove plant-bloom (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-broad": {
+   "about": "Brine Cove plant-broad (8 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-cover-fern": {
+   "about": "Brine Cove plant-cover-fern (3 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-cover-grass": {
+   "about": "Brine Cove plant-cover-grass (3 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-cover-leaf": {
+   "about": "Brine Cove plant-cover-leaf (3 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-emergent": {
+   "about": "Brine Cove plant-emergent (3 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-palm": {
+   "about": "Brine Cove plant-palm (6 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-shrub": {
+   "about": "Brine Cove plant-shrub (5 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "plant-small": {
+   "about": "Brine Cove plant-small (3 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-2-2": {
+   "about": "Brine Cove props-2-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-2-3": {
+   "about": "Brine Cove props-2-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-2-4": {
+   "about": "Brine Cove props-2-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-3-2": {
+   "about": "Brine Cove props-3-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-3-3": {
+   "about": "Brine Cove props-3-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-3-4": {
+   "about": "Brine Cove props-3-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-3-5": {
+   "about": "Brine Cove props-3-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-4-2": {
+   "about": "Brine Cove props-4-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-4-3": {
+   "about": "Brine Cove props-4-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-4-4": {
+   "about": "Brine Cove props-4-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-4-5": {
+   "about": "Brine Cove props-4-5 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-5-2": {
+   "about": "Brine Cove props-5-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-5-3": {
+   "about": "Brine Cove props-5-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "props-5-4": {
+   "about": "Brine Cove props-5-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-0-1": {
+   "about": "Brine Cove rocks-0-1 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-0-2": {
+   "about": "Brine Cove rocks-0-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-0-3": {
+   "about": "Brine Cove rocks-0-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-0-4": {
+   "about": "Brine Cove rocks-0-4 (5 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-0-5": {
+   "about": "Brine Cove rocks-0-5 (5 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-0-6": {
+   "about": "Brine Cove rocks-0-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-1-0": {
+   "about": "Brine Cove rocks-1-0 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-1-1": {
+   "about": "Brine Cove rocks-1-1 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-1-2": {
+   "about": "Brine Cove rocks-1-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-1-3": {
+   "about": "Brine Cove rocks-1-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-1-5": {
+   "about": "Brine Cove rocks-1-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-1-6": {
+   "about": "Brine Cove rocks-1-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-2-2": {
+   "about": "Brine Cove rocks-2-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-2-3": {
+   "about": "Brine Cove rocks-2-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-2-4": {
+   "about": "Brine Cove rocks-2-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-2-5": {
+   "about": "Brine Cove rocks-2-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-2-6": {
+   "about": "Brine Cove rocks-2-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-3-2": {
+   "about": "Brine Cove rocks-3-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-3-4": {
+   "about": "Brine Cove rocks-3-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-3-5": {
+   "about": "Brine Cove rocks-3-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-3-6": {
+   "about": "Brine Cove rocks-3-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-4-1": {
+   "about": "Brine Cove rocks-4-1 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-4-2": {
+   "about": "Brine Cove rocks-4-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-4-4": {
+   "about": "Brine Cove rocks-4-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-4-5": {
+   "about": "Brine Cove rocks-4-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-4-6": {
+   "about": "Brine Cove rocks-4-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-5-2": {
+   "about": "Brine Cove rocks-5-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-5-3": {
+   "about": "Brine Cove rocks-5-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-5-4": {
+   "about": "Brine Cove rocks-5-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-5-5": {
+   "about": "Brine Cove rocks-5-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-5-6": {
+   "about": "Brine Cove rocks-5-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-6-0": {
+   "about": "Brine Cove rocks-6-0 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-6-1": {
+   "about": "Brine Cove rocks-6-1 (5 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-6-2": {
+   "about": "Brine Cove rocks-6-2 (5 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-6-3": {
+   "about": "Brine Cove rocks-6-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-6-4": {
+   "about": "Brine Cove rocks-6-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-6-5": {
+   "about": "Brine Cove rocks-6-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-6-6": {
+   "about": "Brine Cove rocks-6-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-7-3": {
+   "about": "Brine Cove rocks-7-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-7-4": {
+   "about": "Brine Cove rocks-7-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-7-5": {
+   "about": "Brine Cove rocks-7-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "rocks-7-6": {
+   "about": "Brine Cove rocks-7-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "ships-nightjar-sloop": {
+   "about": "the galleon Nightjar and the eastern sloop, fused in ship tiles 4_2, 4_3 and 5_3",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "textures": {
+   "about": "Brine Cove shared textures",
+   "sources": [
+    "games/yorimichi/assets/brinecove/textures/autumn_olive.jpg",
+    "games/yorimichi/assets/brinecove/textures/canvas.jpg",
+    "games/yorimichi/assets/brinecove/textures/canvas_blue.jpg",
+    "games/yorimichi/assets/brinecove/textures/canvas_gold.jpg",
+    "games/yorimichi/assets/brinecove/textures/canvas_green.jpg",
+    "games/yorimichi/assets/brinecove/textures/canvas_red.jpg",
+    "games/yorimichi/assets/brinecove/textures/canvas_teal.jpg",
+    "games/yorimichi/assets/brinecove/textures/cobble.jpg",
+    "games/yorimichi/assets/brinecove/textures/cobble_dark.jpg",
+    "games/yorimichi/assets/brinecove/textures/coral.jpg",
+    "games/yorimichi/assets/brinecove/textures/cream.jpg",
+    "games/yorimichi/assets/brinecove/textures/deck_planks.jpg",
+    "games/yorimichi/assets/brinecove/textures/earth.jpg",
+    "games/yorimichi/assets/brinecove/textures/foam_lace.png",
+    "games/yorimichi/assets/brinecove/textures/gold.jpg",
+    "games/yorimichi/assets/brinecove/textures/hull.jpg",
+    "games/yorimichi/assets/brinecove/textures/jungle.jpg",
+    "games/yorimichi/assets/brinecove/textures/jungle_light.jpg",
+    "games/yorimichi/assets/brinecove/textures/leaf_deep.png",
+    "games/yorimichi/assets/brinecove/textures/leaf_gold.png",
+    "games/yorimichi/assets/brinecove/textures/leaf_light.png",
+    "games/yorimichi/assets/brinecove/textures/leaf_mid.png",
+    "games/yorimichi/assets/brinecove/textures/leaf_rust.png",
+    "games/yorimichi/assets/brinecove/textures/leaf_sun.png",
+    "games/yorimichi/assets/brinecove/textures/leaf_warm.png",
+    "games/yorimichi/assets/brinecove/textures/metal.jpg",
+    "games/yorimichi/assets/brinecove/textures/mist.png",
+    "games/yorimichi/assets/brinecove/textures/moss.jpg",
+    "games/yorimichi/assets/brinecove/textures/ochre.jpg",
+    "games/yorimichi/assets/brinecove/textures/palm_frond.png",
+    "games/yorimichi/assets/brinecove/textures/peach_wall.jpg",
+    "games/yorimichi/assets/brinecove/textures/planks.jpg",
+    "games/yorimichi/assets/brinecove/textures/plaster.jpg",
+    "games/yorimichi/assets/brinecove/textures/roof_slate.jpg",
+    "games/yorimichi/assets/brinecove/textures/roof_straw.jpg",
+    "games/yorimichi/assets/brinecove/textures/roof_teal.jpg",
+    "games/yorimichi/assets/brinecove/textures/roof_terra.jpg",
+    "games/yorimichi/assets/brinecove/textures/roof_terra_light.jpg",
+    "games/yorimichi/assets/brinecove/textures/rose_wall.jpg",
+    "games/yorimichi/assets/brinecove/textures/sage_wall.jpg",
+    "games/yorimichi/assets/brinecove/textures/sail.jpg",
+    "games/yorimichi/assets/brinecove/textures/sail_dark.jpg",
+    "games/yorimichi/assets/brinecove/textures/sand.jpg",
+    "games/yorimichi/assets/brinecove/textures/stone.jpg",
+    "games/yorimichi/assets/brinecove/textures/stone_dark.jpg",
+    "games/yorimichi/assets/brinecove/textures/stone_light.jpg",
+    "games/yorimichi/assets/brinecove/textures/teal_wall.jpg",
+    "games/yorimichi/assets/brinecove/textures/terrain_forest.jpg",
+    "games/yorimichi/assets/brinecove/textures/terrain_forest_n.png",
+    "games/yorimichi/assets/brinecove/textures/terrain_meadow.jpg",
+    "games/yorimichi/assets/brinecove/textures/terrain_meadow_n.png",
+    "games/yorimichi/assets/brinecove/textures/terrain_rock.jpg",
+    "games/yorimichi/assets/brinecove/textures/terrain_rock_n.png",
+    "games/yorimichi/assets/brinecove/textures/terrain_sand.jpg",
+    "games/yorimichi/assets/brinecove/textures/terrain_sand_n.png",
+    "games/yorimichi/assets/brinecove/textures/textures.json",
+    "games/yorimichi/assets/brinecove/textures/water_mid.jpg",
+    "games/yorimichi/assets/brinecove/textures/water_shallow.jpg",
+    "games/yorimichi/assets/brinecove/textures/waterfall_streaks.png",
+    "games/yorimichi/assets/brinecove/textures/wood.jpg",
+    "games/yorimichi/assets/brinecove/textures/wood_dark.jpg",
+    "games/yorimichi/assets/brinecove/textures/wood_light.jpg",
+    "games/yorimichi/assets/brinecove/textures/yellow_wall.jpg"
+   ],
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-1-2": {
+   "about": "Brine Cove townlower-1-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-1-3": {
+   "about": "Brine Cove townlower-1-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-2-3": {
+   "about": "Brine Cove townlower-2-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-2-4": {
+   "about": "Brine Cove townlower-2-4 (19 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-3-3": {
+   "about": "Brine Cove townlower-3-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-3-4": {
+   "about": "Brine Cove townlower-3-4 (17 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-4-3": {
+   "about": "Brine Cove townlower-4-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-4-4": {
+   "about": "Brine Cove townlower-4-4 (11 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-5-3": {
+   "about": "Brine Cove townlower-5-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-5-4": {
+   "about": "Brine Cove townlower-5-4 (14 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-6-2": {
+   "about": "Brine Cove townlower-6-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townlower-6-3": {
+   "about": "Brine Cove townlower-6-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-2-4": {
+   "about": "Brine Cove townupper-2-4 (12 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-2-5": {
+   "about": "Brine Cove townupper-2-5 (7 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-3-4": {
+   "about": "Brine Cove townupper-3-4 (19 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-3-5": {
+   "about": "Brine Cove townupper-3-5 (8 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-4-4": {
+   "about": "Brine Cove townupper-4-4 (20 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-4-5": {
+   "about": "Brine Cove townupper-4-5 (11 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-5-4": {
+   "about": "Brine Cove townupper-5-4 (12 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "townupper-5-5": {
+   "about": "Brine Cove townupper-5-5 (7 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-0-2": {
+   "about": "Brine Cove understory-0-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-0-3": {
+   "about": "Brine Cove understory-0-3 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-0-4": {
+   "about": "Brine Cove understory-0-4 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-0-5": {
+   "about": "Brine Cove understory-0-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-1-1": {
+   "about": "Brine Cove understory-1-1 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-1-2": {
+   "about": "Brine Cove understory-1-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-1-3": {
+   "about": "Brine Cove understory-1-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-1-4": {
+   "about": "Brine Cove understory-1-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-1-5": {
+   "about": "Brine Cove understory-1-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-1-6": {
+   "about": "Brine Cove understory-1-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-2-2": {
+   "about": "Brine Cove understory-2-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-2-3": {
+   "about": "Brine Cove understory-2-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-2-4": {
+   "about": "Brine Cove understory-2-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-2-5": {
+   "about": "Brine Cove understory-2-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-2-6": {
+   "about": "Brine Cove understory-2-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-3-4": {
+   "about": "Brine Cove understory-3-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-3-5": {
+   "about": "Brine Cove understory-3-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-3-6": {
+   "about": "Brine Cove understory-3-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-4-4": {
+   "about": "Brine Cove understory-4-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-4-5": {
+   "about": "Brine Cove understory-4-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-4-6": {
+   "about": "Brine Cove understory-4-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-5-2": {
+   "about": "Brine Cove understory-5-2 (1 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-5-3": {
+   "about": "Brine Cove understory-5-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-5-4": {
+   "about": "Brine Cove understory-5-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-5-5": {
+   "about": "Brine Cove understory-5-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-5-6": {
+   "about": "Brine Cove understory-5-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-6-0": {
+   "about": "Brine Cove understory-6-0 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-6-1": {
+   "about": "Brine Cove understory-6-1 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-6-2": {
+   "about": "Brine Cove understory-6-2 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-6-3": {
+   "about": "Brine Cove understory-6-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-6-4": {
+   "about": "Brine Cove understory-6-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-6-5": {
+   "about": "Brine Cove understory-6-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-6-6": {
+   "about": "Brine Cove understory-6-6 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-7-3": {
+   "about": "Brine Cove understory-7-3 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-7-4": {
+   "about": "Brine Cove understory-7-4 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "understory-7-5": {
+   "about": "Brine Cove understory-7-5 (2 mesh(es))",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  },
+  "waterfall-canyon": {
+   "about": "the waterfall with the canyon river, rope bridge and ledge shrine (landmarks tiles 5_3, 5_4, 6_3 and 6_4)",
+   "references": [
+    "adopted/brinecove/materials"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Brinecove/Materials/MI_BC_autumn_olive": "materials",
+  "/Game/Brinecove/Materials/MI_BC_blossom": "materials",
+  "/Game/Brinecove/Materials/MI_BC_blossom_pale": "materials",
+  "/Game/Brinecove/Materials/MI_BC_canvas": "materials",
+  "/Game/Brinecove/Materials/MI_BC_canvas_blue": "materials",
+  "/Game/Brinecove/Materials/MI_BC_canvas_gold": "materials",
+  "/Game/Brinecove/Materials/MI_BC_canvas_green": "materials",
+  "/Game/Brinecove/Materials/MI_BC_canvas_red": "materials",
+  "/Game/Brinecove/Materials/MI_BC_canvas_teal": "materials",
+  "/Game/Brinecove/Materials/MI_BC_clay": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cobble": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cobble_dark": "materials",
+  "/Game/Brinecove/Materials/MI_BC_coral": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cover_fern": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cover_fern_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cover_grass": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cover_grass_dry": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cover_leaf": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cover_leaf_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_cream": "materials",
+  "/Game/Brinecove/Materials/MI_BC_deck_planks": "materials",
+  "/Game/Brinecove/Materials/MI_BC_earth": "materials",
+  "/Game/Brinecove/Materials/MI_BC_flag_black": "materials",
+  "/Game/Brinecove/Materials/MI_BC_flag_red": "materials",
+  "/Game/Brinecove/Materials/MI_BC_foam": "materials",
+  "/Game/Brinecove/Materials/MI_BC_glass": "materials",
+  "/Game/Brinecove/Materials/MI_BC_glass_warm": "materials",
+  "/Game/Brinecove/Materials/MI_BC_gold": "materials",
+  "/Game/Brinecove/Materials/MI_BC_hero_galleon-hull_0": "hero-galleon-hull",
+  "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_0": "hero-harbor-capstan",
+  "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_1": "hero-harbor-capstan",
+  "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_2": "hero-harbor-capstan",
+  "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_3": "hero-harbor-capstan",
+  "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_4": "hero-harbor-capstan",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_0": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_1": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_10": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_2": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_3": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_4": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_5": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_6": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_7": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_8": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_9": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Materials/MI_BC_hull": "materials",
+  "/Game/Brinecove/Materials/MI_BC_jungle": "materials",
+  "/Game/Brinecove/Materials/MI_BC_jungle_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_lantern": "materials",
+  "/Game/Brinecove/Materials/MI_BC_leaf_deep": "materials",
+  "/Game/Brinecove/Materials/MI_BC_leaf_gold": "materials",
+  "/Game/Brinecove/Materials/MI_BC_leaf_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_leaf_mid": "materials",
+  "/Game/Brinecove/Materials/MI_BC_leaf_rust": "materials",
+  "/Game/Brinecove/Materials/MI_BC_leaf_sun": "materials",
+  "/Game/Brinecove/Materials/MI_BC_leaf_warm": "materials",
+  "/Game/Brinecove/Materials/MI_BC_metal": "materials",
+  "/Game/Brinecove/Materials/MI_BC_mist": "materials",
+  "/Game/Brinecove/Materials/MI_BC_moss": "materials",
+  "/Game/Brinecove/Materials/MI_BC_ochre": "materials",
+  "/Game/Brinecove/Materials/MI_BC_palm_frond": "materials",
+  "/Game/Brinecove/Materials/MI_BC_palm_trunk": "materials",
+  "/Game/Brinecove/Materials/MI_BC_peach_wall": "materials",
+  "/Game/Brinecove/Materials/MI_BC_planks": "materials",
+  "/Game/Brinecove/Materials/MI_BC_plaster": "materials",
+  "/Game/Brinecove/Materials/MI_BC_rock": "materials",
+  "/Game/Brinecove/Materials/MI_BC_rock_dark": "materials",
+  "/Game/Brinecove/Materials/MI_BC_rock_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_roof_slate": "materials",
+  "/Game/Brinecove/Materials/MI_BC_roof_straw": "materials",
+  "/Game/Brinecove/Materials/MI_BC_roof_teal": "materials",
+  "/Game/Brinecove/Materials/MI_BC_roof_terra": "materials",
+  "/Game/Brinecove/Materials/MI_BC_roof_terra_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_rope": "materials",
+  "/Game/Brinecove/Materials/MI_BC_rose_wall": "materials",
+  "/Game/Brinecove/Materials/MI_BC_sage_wall": "materials",
+  "/Game/Brinecove/Materials/MI_BC_sail": "materials",
+  "/Game/Brinecove/Materials/MI_BC_sail_dark": "materials",
+  "/Game/Brinecove/Materials/MI_BC_sail_stripe": "materials",
+  "/Game/Brinecove/Materials/MI_BC_sand": "materials",
+  "/Game/Brinecove/Materials/MI_BC_seabed": "materials",
+  "/Game/Brinecove/Materials/MI_BC_shutter_blue": "materials",
+  "/Game/Brinecove/Materials/MI_BC_shutter_green": "materials",
+  "/Game/Brinecove/Materials/MI_BC_shutter_red": "materials",
+  "/Game/Brinecove/Materials/MI_BC_shutter_teal": "materials",
+  "/Game/Brinecove/Materials/MI_BC_stone": "materials",
+  "/Game/Brinecove/Materials/MI_BC_stone_dark": "materials",
+  "/Game/Brinecove/Materials/MI_BC_stone_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_teal_wall": "materials",
+  "/Game/Brinecove/Materials/MI_BC_terrain": "materials",
+  "/Game/Brinecove/Materials/MI_BC_water_deep": "materials",
+  "/Game/Brinecove/Materials/MI_BC_water_mid": "materials",
+  "/Game/Brinecove/Materials/MI_BC_water_shallow": "materials",
+  "/Game/Brinecove/Materials/MI_BC_waterfall": "materials",
+  "/Game/Brinecove/Materials/MI_BC_wood": "materials",
+  "/Game/Brinecove/Materials/MI_BC_wood_dark": "materials",
+  "/Game/Brinecove/Materials/MI_BC_wood_light": "materials",
+  "/Game/Brinecove/Materials/MI_BC_yellow_wall": "materials",
+  "/Game/Brinecove/Materials/M_Brinecove": "materials",
+  "/Game/Brinecove/Materials/M_BrinecoveMasked": "materials",
+  "/Game/Brinecove/Materials/M_BrinecoveSpray": "materials",
+  "/Game/Brinecove/Materials/M_BrinecoveTerrain": "materials",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_0_0": "ground-0-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_0_1": "ground-0-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_0_2": "ground-0-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_0_3": "ground-0-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_0_4": "ground-0-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_0_5": "ground-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_0_6": "ground-0-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_1_0": "ground-1-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_1_1": "ground-1-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_1_2": "ground-1-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_1_3": "ground-1-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_1_4": "ground-1-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_1_5": "ground-1-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_1_6": "ground-1-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_2_0": "ground-2-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_2_1": "ground-2-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_2_2": "ground-2-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_2_3": "ground-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_2_4": "ground-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_2_5": "ground-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_2_6": "ground-2-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_3_0": "ground-3-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_3_1": "ground-3-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_3_2": "ground-3-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_3_3": "ground-3-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_3_4": "ground-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_3_5": "ground-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_3_6": "ground-3-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_4_0": "ground-4-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_4_1": "ground-4-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_4_2": "ground-4-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_4_3": "ground-4-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_4_4": "ground-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_4_5": "ground-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_4_6": "ground-4-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_5_0": "ground-5-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_5_1": "ground-5-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_5_2": "ground-5-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_5_3": "ground-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_5_4": "ground-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_5_5": "ground-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_5_6": "ground-5-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_6_0": "ground-6-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_6_1": "ground-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_6_2": "ground-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_6_3": "ground-6-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_6_4": "ground-6-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_6_5": "ground-6-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_6_6": "ground-6-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_7_0": "ground-7-0",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_7_1": "ground-7-1",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_7_2": "ground-7-2",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_7_3": "ground-7-3",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_7_4": "ground-7-4",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_7_5": "ground-7-5",
+  "/Game/Brinecove/Meshes/SM_BC_Ground_7_6": "ground-7-6",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_2_3": "harbor-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_2_3_Soft": "harbor-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_2_4": "harbor-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_3_2": "harbor-3-2",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_3_3": "harbor-3-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_3_3_Soft": "harbor-3-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_3_4": "harbor-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_4_2": "harbor-4-2",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_4_3": "harbor-4-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_4_3_Soft": "harbor-4-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_4_4": "harbor-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_5_3": "harbor-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_5_3_Soft": "harbor-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Harbor_5_4": "harbor-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_-1_-1": "hero-galleon-hull",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_-1_0": "hero-galleon-hull",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_0_-1": "hero-galleon-hull",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_0_0": "hero-galleon-hull",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_HarborCapstan": "hero-harbor-capstan",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_-1_-1": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_-1_0": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_0_-1": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_0_0": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3": "lighthouse",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_1_3_Soft": "lighthouse",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_3_5": "fort",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece1": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_4": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_4_Soft": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece0": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece1": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece20": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece21": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece22": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece23": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece3": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_4": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_4_Soft": "waterfall-canyon",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_3": "market-3-3",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece10": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece110": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece111": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece112": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece113": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece12": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece130": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece131": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece132": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece133": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Soft": "market-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_3": "market-4-3",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_3_Soft": "market-4-3",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece000": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece001": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece002": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece003": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece010": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece011": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece012": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece013": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece020": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece021": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece022": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece023": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece03": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Soft": "market-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Bloom0": "plant-bloom",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Bloom1": "plant-bloom",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad0": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad1": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad2": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad3": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad4": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad5": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad6": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Broad7": "plant-broad",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern0": "plant-cover-fern",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern1": "plant-cover-fern",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern2": "plant-cover-fern",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverGrass0": "plant-cover-grass",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverGrass1": "plant-cover-grass",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverGrass2": "plant-cover-grass",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverLeaf0": "plant-cover-leaf",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverLeaf1": "plant-cover-leaf",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_CoverLeaf2": "plant-cover-leaf",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Emergent0": "plant-emergent",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Emergent1": "plant-emergent",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Emergent2": "plant-emergent",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Palm0": "plant-palm",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Palm1": "plant-palm",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Palm2": "plant-palm",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Palm3": "plant-palm",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Palm4": "plant-palm",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Palm5": "plant-palm",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub0": "plant-shrub",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub1": "plant-shrub",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub2": "plant-shrub",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub3": "plant-shrub",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub4": "plant-shrub",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Small0": "plant-small",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Small1": "plant-small",
+  "/Game/Brinecove/Meshes/SM_BC_Plant_Small2": "plant-small",
+  "/Game/Brinecove/Meshes/SM_BC_Props_2_2": "props-2-2",
+  "/Game/Brinecove/Meshes/SM_BC_Props_2_3": "props-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Props_2_4": "props-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Props_2_4_Soft": "props-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Props_3_2": "props-3-2",
+  "/Game/Brinecove/Meshes/SM_BC_Props_3_3": "props-3-3",
+  "/Game/Brinecove/Meshes/SM_BC_Props_3_4": "props-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Props_3_4_Soft": "props-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Props_3_5": "props-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_Props_4_2": "props-4-2",
+  "/Game/Brinecove/Meshes/SM_BC_Props_4_3": "props-4-3",
+  "/Game/Brinecove/Meshes/SM_BC_Props_4_4": "props-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Props_4_4_Soft": "props-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Props_4_5": "props-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_Props_5_2": "props-5-2",
+  "/Game/Brinecove/Meshes/SM_BC_Props_5_3": "props-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Props_5_4": "props-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Props_5_4_Soft": "props-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_1": "rocks-0-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_1_Soft": "rocks-0-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_2": "rocks-0-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_2_Soft": "rocks-0-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_3": "rocks-0-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_3_Soft": "rocks-0-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_4": "rocks-0-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_4_Soft_Piece0": "rocks-0-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_4_Soft_Piece1": "rocks-0-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_4_Soft_Piece2": "rocks-0-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_4_Soft_Piece3": "rocks-0-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_5": "rocks-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_5_Soft_Piece0": "rocks-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_5_Soft_Piece1": "rocks-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_5_Soft_Piece2": "rocks-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_5_Soft_Piece3": "rocks-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_6": "rocks-0-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_0_6_Soft": "rocks-0-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_0": "rocks-1-0",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_0_Soft": "rocks-1-0",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_1": "rocks-1-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_1_Soft": "rocks-1-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_2": "rocks-1-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_2_Soft": "rocks-1-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_3": "rocks-1-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_3_Soft": "rocks-1-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_5": "rocks-1-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_5_Soft": "rocks-1-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_6": "rocks-1-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_1_6_Soft": "rocks-1-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_2": "rocks-2-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_2_Soft": "rocks-2-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_3": "rocks-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_3_Soft": "rocks-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_4": "rocks-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_4_Soft": "rocks-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_5": "rocks-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_5_Soft": "rocks-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_6": "rocks-2-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_2_6_Soft": "rocks-2-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_2": "rocks-3-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_2_Soft": "rocks-3-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_4": "rocks-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_4_Soft": "rocks-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_5": "rocks-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_5_Soft": "rocks-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_6": "rocks-3-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_3_6_Soft": "rocks-3-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_1": "rocks-4-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_1_Soft": "rocks-4-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_2": "rocks-4-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_2_Soft": "rocks-4-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_4": "rocks-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_4_Soft": "rocks-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_5": "rocks-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_5_Soft": "rocks-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_6": "rocks-4-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_4_6_Soft": "rocks-4-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_2": "rocks-5-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_2_Soft": "rocks-5-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_3": "rocks-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_3_Soft": "rocks-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_4": "rocks-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_4_Soft": "rocks-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_5": "rocks-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_5_Soft": "rocks-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_6": "rocks-5-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_5_6_Soft": "rocks-5-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_0": "rocks-6-0",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_0_Soft": "rocks-6-0",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_1": "rocks-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_1_Soft_Piece0": "rocks-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_1_Soft_Piece1": "rocks-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_1_Soft_Piece2": "rocks-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_1_Soft_Piece3": "rocks-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_2": "rocks-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_2_Soft_Piece0": "rocks-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_2_Soft_Piece1": "rocks-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_2_Soft_Piece2": "rocks-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_2_Soft_Piece3": "rocks-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_3": "rocks-6-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_3_Soft": "rocks-6-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_4": "rocks-6-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_4_Soft": "rocks-6-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_5": "rocks-6-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_5_Soft": "rocks-6-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_6": "rocks-6-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_6_6_Soft": "rocks-6-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_3": "rocks-7-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_3_Soft": "rocks-7-3",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_4": "rocks-7-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_4_Soft": "rocks-7-4",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_5": "rocks-7-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_5_Soft": "rocks-7-5",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_6": "rocks-7-6",
+  "/Game/Brinecove/Meshes/SM_BC_Rocks_7_6_Soft": "rocks-7-6",
+  "/Game/Brinecove/Meshes/SM_BC_Ships_3_3": "galleon-adventure",
+  "/Game/Brinecove/Meshes/SM_BC_Ships_4_2": "ships-nightjar-sloop",
+  "/Game/Brinecove/Meshes/SM_BC_Ships_4_3": "ships-nightjar-sloop",
+  "/Game/Brinecove/Meshes/SM_BC_Ships_5_3": "ships-nightjar-sloop",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_1_2": "townlower-1-2",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_1_2_Soft": "townlower-1-2",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_1_3": "townlower-1-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_1_3_Soft": "townlower-1-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_3": "townlower-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_3_Soft": "townlower-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece00": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece01": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece02": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece030": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece031": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece032": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece033": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece10": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece110": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece111": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece112": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece113": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece12": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece13": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece20": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece21": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece30": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece31": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Soft": "townlower-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_3": "townlower-3-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece000": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece001": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece002": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece003": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece01": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece02": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece030": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece031": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece032": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece033": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece10": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece11": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece12": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece13": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece2": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Piece3": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_3_4_Soft": "townlower-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_3": "townlower-4-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece01": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece02": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece03": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece10": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece11": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece12": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece13": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece2": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece30": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece31": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Soft": "townlower-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_3": "townlower-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_3_Soft": "townlower-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece000": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece001": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece002": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece003": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece01": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece02": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece03": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece10": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece12": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece13": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece2": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece30": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece31": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Soft": "townlower-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_6_2": "townlower-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_6_2_Soft": "townlower-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_6_3": "townlower-6-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownLower_6_3_Soft": "townlower-6-3",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece20": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece21": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece22": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece230": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece231": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece232": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece233": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece30": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece31": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece32": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Piece33": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_4_Soft": "townupper-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_5_Piece0": "townupper-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_5_Piece10": "townupper-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_5_Piece11": "townupper-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_5_Piece12": "townupper-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_5_Piece13": "townupper-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_5_Piece3": "townupper-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_2_5_Soft": "townupper-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece0": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece20": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece21": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece220": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece221": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece222": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece223": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece230": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece231": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece232": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece233": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece30": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece31": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece320": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece321": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece322": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece323": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Piece33": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_4_Soft": "townupper-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Piece00": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Piece01": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Piece02": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Piece03": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Piece1": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Piece2": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Piece3": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Soft": "townupper-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece0": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece1": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece20": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece21": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece22": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece230": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece231": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece232": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece233": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece30": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece31": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece320": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece321": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece322": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece323": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece330": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece331": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece332": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece333": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Soft": "townupper-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece00": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece01": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece02": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece03": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece10": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece11": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece12": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece13": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece2": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece3": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Soft": "townupper-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece20": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece21": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece220": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece221": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece222": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece223": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece23": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece30": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece31": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece32": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Piece33": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_4_Soft": "townupper-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece00": "townupper-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece01": "townupper-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece02": "townupper-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece03": "townupper-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece1": "townupper-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece2": "townupper-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Soft": "townupper-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_0_2": "understory-0-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_0_2_Soft": "understory-0-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_0_3_Soft": "understory-0-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_0_4_Soft": "understory-0-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_0_5": "understory-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_0_5_Soft": "understory-0-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_1": "understory-1-1",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_1_Soft": "understory-1-1",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_2": "understory-1-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_2_Soft": "understory-1-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_3": "understory-1-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_3_Soft": "understory-1-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_4": "understory-1-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_4_Soft": "understory-1-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_5": "understory-1-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_5_Soft": "understory-1-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_6": "understory-1-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_1_6_Soft": "understory-1-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_2": "understory-2-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_2_Soft": "understory-2-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_3": "understory-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_3_Soft": "understory-2-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_4": "understory-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_4_Soft": "understory-2-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_5": "understory-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_5_Soft": "understory-2-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_6": "understory-2-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_2_6_Soft": "understory-2-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_3_4": "understory-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_3_4_Soft": "understory-3-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_3_5": "understory-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_3_5_Soft": "understory-3-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_3_6": "understory-3-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_3_6_Soft": "understory-3-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_4_4": "understory-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_4_4_Soft": "understory-4-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_4_5": "understory-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_4_5_Soft": "understory-4-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_4_6": "understory-4-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_4_6_Soft": "understory-4-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_2": "understory-5-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_3": "understory-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_3_Soft": "understory-5-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_4": "understory-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_4_Soft": "understory-5-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_5": "understory-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_5_Soft": "understory-5-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_6": "understory-5-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_5_6_Soft": "understory-5-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_0": "understory-6-0",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_0_Soft": "understory-6-0",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_1": "understory-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_1_Soft": "understory-6-1",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_2": "understory-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_2_Soft": "understory-6-2",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_3": "understory-6-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_3_Soft": "understory-6-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_4": "understory-6-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_4_Soft": "understory-6-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_5": "understory-6-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_5_Soft": "understory-6-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_6": "understory-6-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_6_6_Soft": "understory-6-6",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_7_3": "understory-7-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_7_3_Soft": "understory-7-3",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_7_4": "understory-7-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_7_4_Soft": "understory-7-4",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_7_5": "understory-7-5",
+  "/Game/Brinecove/Meshes/SM_BC_Understory_7_5_Soft": "understory-7-5",
+  "/Game/Brinecove/Textures/T_BC_autumn_olive": "textures",
+  "/Game/Brinecove/Textures/T_BC_canvas": "textures",
+  "/Game/Brinecove/Textures/T_BC_canvas_blue": "textures",
+  "/Game/Brinecove/Textures/T_BC_canvas_gold": "textures",
+  "/Game/Brinecove/Textures/T_BC_canvas_green": "textures",
+  "/Game/Brinecove/Textures/T_BC_canvas_red": "textures",
+  "/Game/Brinecove/Textures/T_BC_canvas_teal": "textures",
+  "/Game/Brinecove/Textures/T_BC_cobble": "textures",
+  "/Game/Brinecove/Textures/T_BC_cobble_dark": "textures",
+  "/Game/Brinecove/Textures/T_BC_coral": "textures",
+  "/Game/Brinecove/Textures/T_BC_cream": "textures",
+  "/Game/Brinecove/Textures/T_BC_deck_planks": "textures",
+  "/Game/Brinecove/Textures/T_BC_earth": "textures",
+  "/Game/Brinecove/Textures/T_BC_foam_lace": "textures",
+  "/Game/Brinecove/Textures/T_BC_gold": "textures",
+  "/Game/Brinecove/Textures/T_BC_hero_galleon-hull_0": "hero-galleon-hull",
+  "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_0": "hero-harbor-capstan",
+  "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_1": "hero-harbor-capstan",
+  "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_2": "hero-harbor-capstan",
+  "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_3": "hero-harbor-capstan",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_0": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_1": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_10": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_2": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_3": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_4": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_5": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_6": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_7": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_9": "hero-pirate-queen-statue",
+  "/Game/Brinecove/Textures/T_BC_hull": "textures",
+  "/Game/Brinecove/Textures/T_BC_jungle": "textures",
+  "/Game/Brinecove/Textures/T_BC_jungle_light": "textures",
+  "/Game/Brinecove/Textures/T_BC_leaf_deep": "textures",
+  "/Game/Brinecove/Textures/T_BC_leaf_gold": "textures",
+  "/Game/Brinecove/Textures/T_BC_leaf_light": "textures",
+  "/Game/Brinecove/Textures/T_BC_leaf_mid": "textures",
+  "/Game/Brinecove/Textures/T_BC_leaf_rust": "textures",
+  "/Game/Brinecove/Textures/T_BC_leaf_sun": "textures",
+  "/Game/Brinecove/Textures/T_BC_leaf_warm": "textures",
+  "/Game/Brinecove/Textures/T_BC_metal": "textures",
+  "/Game/Brinecove/Textures/T_BC_mist": "textures",
+  "/Game/Brinecove/Textures/T_BC_moss": "textures",
+  "/Game/Brinecove/Textures/T_BC_ochre": "textures",
+  "/Game/Brinecove/Textures/T_BC_palm_frond": "textures",
+  "/Game/Brinecove/Textures/T_BC_peach_wall": "textures",
+  "/Game/Brinecove/Textures/T_BC_planks": "textures",
+  "/Game/Brinecove/Textures/T_BC_plaster": "textures",
+  "/Game/Brinecove/Textures/T_BC_roof_slate": "textures",
+  "/Game/Brinecove/Textures/T_BC_roof_straw": "textures",
+  "/Game/Brinecove/Textures/T_BC_roof_teal": "textures",
+  "/Game/Brinecove/Textures/T_BC_roof_terra": "textures",
+  "/Game/Brinecove/Textures/T_BC_roof_terra_light": "textures",
+  "/Game/Brinecove/Textures/T_BC_rose_wall": "textures",
+  "/Game/Brinecove/Textures/T_BC_sage_wall": "textures",
+  "/Game/Brinecove/Textures/T_BC_sail": "textures",
+  "/Game/Brinecove/Textures/T_BC_sail_dark": "textures",
+  "/Game/Brinecove/Textures/T_BC_sand": "textures",
+  "/Game/Brinecove/Textures/T_BC_stone": "textures",
+  "/Game/Brinecove/Textures/T_BC_stone_dark": "textures",
+  "/Game/Brinecove/Textures/T_BC_stone_light": "textures",
+  "/Game/Brinecove/Textures/T_BC_teal_wall": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_forest": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_forest_n": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_meadow": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_meadow_n": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_rock": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_rock_n": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_sand": "textures",
+  "/Game/Brinecove/Textures/T_BC_terrain_sand_n": "textures",
+  "/Game/Brinecove/Textures/T_BC_water_mid": "textures",
+  "/Game/Brinecove/Textures/T_BC_water_shallow": "textures",
+  "/Game/Brinecove/Textures/T_BC_waterfall_streaks": "textures",
+  "/Game/Brinecove/Textures/T_BC_wood": "textures",
+  "/Game/Brinecove/Textures/T_BC_wood_dark": "textures",
+  "/Game/Brinecove/Textures/T_BC_wood_light": "textures",
+  "/Game/Brinecove/Textures/T_BC_yellow_wall": "textures"
+ }
+}

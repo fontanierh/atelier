@@ -1,0 +1,9 @@
+# Tree house prop: a low round table cut from a thick tree trunk with rough bark on the sides and a pale ring-cut top, on it a blue-and-white teapot, a mug, a wooden bowl of orange persimmons and a small jar of wild flowers.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-log-table"
+kind = "prop"
+model = "log_table.glb"               # fitted to 0.95 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs kitchen-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

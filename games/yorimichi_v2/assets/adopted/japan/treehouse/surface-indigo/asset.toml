@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface indigo: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-indigo"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-indigo"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/indigo.jpg"
+sha256 = "1aa0e97feb3611787701982fd7e4b171b461a166f82558cf12998cf46c6a35cf"
+
+[[sources]]
+path = "source/assets/treehouse/textures/indigo.prompt.txt"
+sha256 = "2646d57721a13ed6ca12fe5a1cbd6649305498394e2edc0a00ffc43bd7d47ba8"
+
+[[sources]]
+path = "source/assets/treehouse/textures/indigo.provenance.json"
+sha256 = "ff13f100216ca0ca3877358f5959e35c808cbef8cca139538b934efbfbb3fddf"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_indigo"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_indigo"

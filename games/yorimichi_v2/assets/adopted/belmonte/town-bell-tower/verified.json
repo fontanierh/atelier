@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-bell-tower",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_BellTower.uasset": "28b4a3ea42bc3215d722219dec4e287f62f512e43bd434189f6982c733791a2e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_BellTower_Collision.uasset": "674ab3f9ea6c31a1b77c5aa2d14d111373a905a9fa78ecc63998ff6836581873"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

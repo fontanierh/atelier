@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface moss: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-moss"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-moss"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/moss.jpg"
+sha256 = "67bfc44b106f4d366703ce8be6546838b973d5ea3be82c08819b501ff86bda5a"
+
+[[sources]]
+path = "source/assets/treehouse/textures/moss.prompt.txt"
+sha256 = "d935ff46bca115948749c832e9e7ccdadb5a7329f493dcb08b41a19436f60bac"
+
+[[sources]]
+path = "source/assets/treehouse/textures/moss.provenance.json"
+sha256 = "196f871a28183dcd7a550141660f17e5b9dc0189cd224fee8d08d169f0cac56d"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_moss"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_moss"

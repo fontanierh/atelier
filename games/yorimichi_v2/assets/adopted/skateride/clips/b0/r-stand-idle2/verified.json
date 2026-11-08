@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-stand-idle2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE2_N_0_CYC.uasset": "4d124a238cf8a42cff90a4875a6de51f111fb036b8c5541ecc7ad0d21b1a501d",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE2_N_0_INTO.uasset": "4626f89e602d3ec5a2ed6529c7b60e54fdd18ef91a03ab4e148ff946a912f620",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE2_N_0_OUT.uasset": "222c7c71600a4b3169726355b99b4dadd63bbdfb00dc01a86f59ffff67b0fcf3",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE2_N_CR_CYC.uasset": "2e785bae137469d018ea565802186e5b8f4a5f88a1f5c8c2520ed684dc9bc1e8",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE2_N_CR_INTO.uasset": "c32dd954c307eb08d76a62e79ec352d8c8c3ad7e7a94ec064caf6e35515ba5e6",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_IDLE2_N_CR_OUT.uasset": "c95165e7dd8cea13aa83c013053584d86afb3fd7e3abda5b412a84bce0e8ae63"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

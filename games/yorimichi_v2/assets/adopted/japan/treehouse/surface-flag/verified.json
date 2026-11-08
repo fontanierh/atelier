@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-flag",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_flag.uasset": "e80d4732c9b6fdd4f12188ae4b33a8918c07ab91adf6d53474730c49e41ae143",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_flag.uasset": "e70e8dad712c1cb0f4202adcf1e014840baeba9a6df70ad77204658ded35e00c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

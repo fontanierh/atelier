@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/textures/tree-tuscan-olive",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Olive_colour.uasset": "34a476ee68a2edbaa3530da2d4fd5f641d4c95629a4eb67e901c73512e0fa078",
+    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Olive_normal.uasset": "b0ec47f2d5cd1891ad62e26211dd1abfc2fdbacdefc2cef71c8ca7b2fa28ea9a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

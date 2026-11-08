@@ -1,0 +1,29 @@
+{
+  "stage": "craterpark_shrine",
+  "slug": "bell_pavilion",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 16000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "0c5afcac7228b20017c857a7f23e3dc2c4da13636ed39a666b664953a9254613",
+  "concept_sha256": "0c5afcac7228b20017c857a7f23e3dc2c4da13636ed39a666b664953a9254613",
+  "submitted_at": "2026-10-16T09:57:59.967847+00:00",
+  "task_id": "7a79ff4c-f0dc-41cf-a68a-1077a168c2ff",
+  "status": "submitted",
+  "user_approval": "project owner, 2026-10-16: picked tower-top concept C (shrine balcony) and asked for the remaining Tripo credits to be used for it",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-16T10:00:50.843671+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

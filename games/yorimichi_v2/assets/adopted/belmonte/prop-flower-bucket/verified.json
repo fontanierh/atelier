@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-flower-bucket",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_FlowerBucket.uasset": "c0f85e992ac213f220a1a20392143dec1108351912db8eaf7c90a339bd4749e4",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_FlowerBucket_Collision.uasset": "77fd2c72d3c8517985c33ed25e473b60b85f60867556537b19f4a65fcd150c83"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

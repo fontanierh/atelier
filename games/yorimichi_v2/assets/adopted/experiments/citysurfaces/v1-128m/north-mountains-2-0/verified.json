@@ -1,0 +1,29 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/north-mountains-2-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_3.uasset": "20e6b804b40bb5350aef290f158b76747e1f725aa4e9aa4815d51284cf15d6aa",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_4.uasset": "bf690b4e799fe5c7a1d15088cd79312f7fbfacfd6f432c1ad94b791402f4150c",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_5.uasset": "491bfa2136afb9794d30d8dc769581f6777b4b21535c6d3f88d501559a9c995d",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_6.uasset": "7bfc736a7f90d652c13cadd9fae600986d89e3219910fc710e5d050445ab21cf",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_16_7.uasset": "0fe78a01a1aa8df92e4b4fd15efb781baa4f7dda984fd7ecae87e39f62ef5153",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_3.uasset": "32aca13d9f5695246e8683eb80ce5ce8e3f9124cc00eacfad77744447701cc45",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_4.uasset": "60673b66ac94247193426b83db61a8491be1feab83ea11cd8c29335b2c1bf36b",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_5.uasset": "bc3d7133f314b98bbb56985c45de03fd8246d658a4c601969f0c71f336545f7b",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_6.uasset": "1c5c27dc9ba513be48778ecb9a727bf3eac226c5c5fcec16596dd9c507ae0d14",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_7.uasset": "be8b6f01602654c8c456a4bf1288aa7d05a97484fddba1d61b47ed6e94a3b726",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_3.uasset": "7519fe9ad12fb095957fc77ca7e44f4355728b2cd1f7fd76f427f4acf6563fb6",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_4.uasset": "65a51e092db2772741e97aaba208a97a9d24fdb1b0013728ddf1f8bd8b26442c",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_5.uasset": "d7fecacb4bcec1fb1cbced406b15a7d2cada83a56d3dd5aeaa9a83dfc89078a5",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_6.uasset": "e2c12a42c6d3391fcd67237734aba6f20b2f4b9e5f5c0ee204e9f5f242371d08",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_7.uasset": "d9a749e2ea7b21afdfb566462e4bed8c8426afcf30b70bd9943f9bab266f3d74",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_3.uasset": "9384e1ca7caf7830739034f7d785163d4b92395e8276b6802f4e3f433f2215cb",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_4.uasset": "14f50ffb634735be2820532ed85414fb7c5fcfe9f34ddc6d8b233ed44e65c57a",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_5.uasset": "af78524b9732ea6386df200fd3d40f4d12b426dc14ba4a5a65a184dc8d64f33c",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_6.uasset": "4c346a19dd70a28d2a04fc878f3a2f97087fedcca98d690b49d07004a379d8e6",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_19_7.uasset": "0508467faf3dadedfcf79e196f1e5a7e0485f073657aebe314f300fb36104c71"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

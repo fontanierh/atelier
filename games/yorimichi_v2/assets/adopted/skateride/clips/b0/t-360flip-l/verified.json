@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-360flip-l",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_360FLIP_L_CYC.uasset": "b16852a9bdb688443e13d8fc066ff2871a67abea73d5513e4f107f39c0bd5701"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

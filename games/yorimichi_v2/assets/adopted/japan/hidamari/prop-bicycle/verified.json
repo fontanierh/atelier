@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-bicycle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_bicycle.uasset": "d7584c48b8b2e84bc849ac0e67ccb78c3114b62da0a49a4d611588be6ffde62b",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_bicycle.uasset": "7de0a07e1c7dbdc42b3b0c5b71a1fa7d7c5592781b47e3903a53c3976c08dd04"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

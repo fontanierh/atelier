@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-pot-large (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-pot-large"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-pot-large"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotLarge.glb"
+sha256 = "637be787a8bce933535ebb9e04ee46f4f80bba82d8a4c3948ccd8bfeffefd409"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotLarge_Collision.glb"
+sha256 = "8cc7695f764f1b92ef243005dec6d2eadccfeedd1fc89ed117fd9684b808a97b"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotLarge"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotLarge_Collision"

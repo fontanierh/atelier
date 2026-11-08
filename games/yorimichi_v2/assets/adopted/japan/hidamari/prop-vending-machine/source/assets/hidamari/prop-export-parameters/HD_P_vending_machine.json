@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_vending_machine",
+  "parent": "HD_P_vending_machine",
+  "schema": 1,
+  "settings": null,
+  "size": 1.85,
+  "slug": "vending_machine",
+  "solid": true,
+  "target": 0.16,
+  "turn": -90,
+  "upright": false
+}

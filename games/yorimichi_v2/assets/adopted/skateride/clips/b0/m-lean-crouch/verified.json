@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-lean-crouch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_LEAN_CROUCH_0_CYC.uasset": "7d929ebedbadc628f7f3b1291fe2cad16cbe67d9e724ec49ee5b2a909e5d6d27",
+    "unreal/Content/SkateRide/Clips/B0/M_LEAN_CROUCH_0_TURN_BS_0_CYC.uasset": "f2e8e4a3f7547b658ac369bd0b2b04b0f7c83d3913763f1f710f12b526c766a4",
+    "unreal/Content/SkateRide/Clips/B0/M_LEAN_CROUCH_0_TURN_FS_0_CYC.uasset": "19e602b8bb5ac3961d7ac8a91c2288e755b45e9f4e220d9b4e96976d7618d512"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

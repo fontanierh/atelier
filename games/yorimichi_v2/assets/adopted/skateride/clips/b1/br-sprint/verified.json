@@ -1,0 +1,22 @@
+{
+  "asset": "adopted/skateride/clips/b1/br-sprint",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_0_INTO_MOUNT.uasset": "2e4078b29d00bf599e3b4d413e14efe4c93bd5570119a11e34190f39f3e2a334",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_0_INTO_STAND_0.uasset": "a62ad3c65c4f9e44f87d18c25cd7d79bfa756188ee2192b5945ca433d918497d",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_25_INTO_MOUNT.uasset": "ef53d19580921099eb52a428c34c06fa440db080fe6d0de1bf4492a4aea36a7e",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_25_INTO_STAND_0.uasset": "d12ed7626f0dd315b976197a9580251b00c317822d2e087e5f2a198654a081cd",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_50_INTO_MOUNT.uasset": "f7b77df278d35f48a1395e2d9a764a444f84b30bc010b75600da57c34f693193",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_50_INTO_STAND_0.uasset": "84cdefad7a7f3409eb37b10f55226ad18576842b70f82a6649be20bedf373199",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_75_INTO_MOUNT.uasset": "9a2805dcc3c6caec4eae2babc59a6a6b7a483d63815eb845a90f6b517c83afae",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_75_INTO_STAND_0.uasset": "cd7b1ea5d7980d8e8a4db2444e7de32b2d7fe6c015727924b39a8e7efb350043",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_CYC.uasset": "f8095af7c28f15d874fe70f775807a0d8528b7ee4124a3d84086c4b7459df693",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_RAMPDN15_CYC.uasset": "90bc1c7cc399c9ff9ed29e81da6b7849b7ceed58ffc41ee6b6fdd41cd02428d9",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_RAMPUP15_CYC.uasset": "cb950de33852d0888fa18219ee738ad084e08f815ef8255945aa4be78705bd86",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_STAIRDN30_CYC.uasset": "ac16bb4d8749af2cdc342a94cb6ae6370ffb142fd91df09fbfbe3368526af490",
+    "unreal/Content/SkateRide/Clips/B1/BR_SPRINT_FWD_STAIRUP30_CYC.uasset": "5c0ba67335b3e7e593e9195e2ab367e9374840942c89609f5cf87c37245909ad"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-point",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_BOTH_CYC.uasset": "2bb90649288726dad20a727cab21cbf4c78131bacea7fcc3305f657b53ecd701",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_BOTH_INTO.uasset": "a0464e195dc1e4b10400a41ba49833cb4826a6f7cd51a8cb7a7ace817ed0c68d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_BOTH_OUT.uasset": "080f725abb0db8ef66657b3fa290eb539fa5af6f4a87911fc4dbc0125111dd95",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_LEFT_CYC.uasset": "a6e6042fec5255b6d6411d44201cc88f2f7ef686552c40de9fc0ee7b20028f9d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_LEFT_INTO.uasset": "8d29b57f049987f82c36e01403d3819c549fa0d1ed7f38b4e4a8f079486584f3",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_LEFT_OUT.uasset": "a4af12e6e98ea9a55e1130e9c0d3a70b655c9bb17534989207ffd873b3a3402c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_RIGHT_CYC.uasset": "d1c894008b1b491d7309558084032a58020377b578408a0fad5ca68e1bb9f038",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_RIGHT_INTO.uasset": "1bf79c48ef879cdec6227f6b832127ffa23835d93cc365a4bb38bfd385669928",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_POINT_SKY_RIGHT_OUT.uasset": "58d32e560e7f357a96591a2155e96bc88aedae49becde82d7f3139504bce3193"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

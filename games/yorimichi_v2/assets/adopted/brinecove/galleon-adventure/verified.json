@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/brinecove/galleon-adventure",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Ships_3_3.uasset": "0bca9b82d4b896aff840bd448cd7364a99660f72ea8f83db151e6dd0d0a2d30d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

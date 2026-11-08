@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-rug",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_rug.uasset": "dbc4490ff9fe670a2bf78a4b77dbf1c632a2b732bfff725853ce69350fec9bf2",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_rug.uasset": "c0a74a4a3a30d9e36d429783b34105165d2f5d0c829fbfdaaf1f5ac29073a877"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

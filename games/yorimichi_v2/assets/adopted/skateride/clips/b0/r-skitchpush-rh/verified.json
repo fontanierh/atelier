@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-skitchpush-rh",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_FAST_CYC.uasset": "b7e2d350c0ee3da8b3d8b63f2e452d325505ed8bd706807adec713359757effe",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_FAST_INTO.uasset": "12ac2debf16f65154a26df8153cb616bd6c5a2ccdd460b570327fe233f7ba153",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_FAST_OUT.uasset": "ee3671b7b4dff8c59dbe1aca38e89ec959a9c48020908c37ead0265d65e17db9",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_SLOW_CYC.uasset": "bcfae33b6b83138224458f2821b61cb10c59962eed1da1f005fe0b0c38cc19bf",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_SLOW_INTO.uasset": "4adfeaf43b92cfd1f9818c6461a865048608be3557a7093bbf3897434c2be27b",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_SLOW_OUT.uasset": "466d430f3ea054c5ec8acde9772ed156cd02f4425a04046c59f7eb28c30174f7",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_FAST_CYC.uasset": "44e77fa64fb7ca5448831ed928bb4316d40c932bf7f47f2b6bc545176956c994",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_FAST_INTO.uasset": "3d4a7b33992cd7958d2242e8507a36466a432b2356251fa77fb76a2dac3d75a0",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_FAST_OUT.uasset": "3beed514f6cd37f58b6ddfbf99b152826541d091e29c6daca3313977d9d2d75e",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_SLOW_CYC.uasset": "d0058bc78084a454cfec21b39568e95b06a98592fc40ecad25f89948d2c91552",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_SLOW_INTO.uasset": "aaaa03e239895b9f73017e160b5f34a294abcfb00eacabee2c39d94043287244",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_SLOW_OUT.uasset": "dab2bde08e95b93b0d98994f24365ecd319ab8ed3ed097827c66b7dffc40656c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_kamado",
+  "schema": 1,
+  "size": 1.05,
+  "slug": "kamado",
+  "solid": true,
+  "target": 0.055,
+  "turn": -90
+}

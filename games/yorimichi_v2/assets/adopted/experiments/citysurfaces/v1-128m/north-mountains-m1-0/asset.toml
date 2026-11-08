@@ -1,0 +1,100 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Experiments citysurfaces north-mountains-m1-0 (30 package(s))
+schema = 1
+id = "adopted/experiments/citysurfaces/v1-128m/north-mountains-m1-0"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/citysurfaces/v1-128m/north-mountains-m1-0"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/experiments/citysurfaces/v1-128m/generator"]
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-1_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-1_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-1_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-1_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-1_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-2_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-2_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-2_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-2_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-2_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-3_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-3_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-3_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-3_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-3_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-4_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-4_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-4_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-4_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-4_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-5_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-5_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-5_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-5_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-5_7"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-6_3"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-6_4"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-6_5"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-6_6"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_-6_7"

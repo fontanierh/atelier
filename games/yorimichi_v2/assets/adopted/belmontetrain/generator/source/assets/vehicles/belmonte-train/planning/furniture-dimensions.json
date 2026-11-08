@@ -1,0 +1,462 @@
+{
+  "version": 3,
+  "status": "shell_blockout_v1_dimension_contract",
+  "units": "metres",
+  "furniture_local_axes": {
+    "X": "width",
+    "Y": "depth, front faces -Y",
+    "Z": "up"
+  },
+  "source": "Approved restaurant and private-cabin image direction; dimensions proposed for measured Blender fitting, not measured from generated images.",
+  "coaches": {
+    "length_over_couplers_m": 24,
+    "exterior_width_m": 3.6,
+    "height_above_rail_m": 4.3,
+    "clear_interior_height_m": 2.3,
+    "wall_thickness_each_side_m": 0.075,
+    "internal_width_m": 3.45,
+    "restaurant": {
+      "central_aisle_min_m": 0.95,
+      "dining_bays_draft": 4,
+      "tables_per_bay": 2,
+      "seats_per_table": 2,
+      "glazing_draft": {
+        "type": "large_panoramic_bays",
+        "sill_above_finished_floor_m": 0.65,
+        "upper_edge": "near ceiling; resolve top rail in measured blockout",
+        "frames": "slim walnut/brass with credible structural piers",
+        "roof": "opaque curved roof retained",
+        "status": "measured in shell blockout v1; banquette backs must be <= 0.14 m thick to stay in front of the piers",
+        "bay_glass_width_m": 2.16,
+        "pier_width_m": 0.3,
+        "head_above_finished_floor_m": 1.97
+      },
+      "central_aisle_m": 1.18,
+      "bar_and_galley_end": "B (+X)",
+      "note": "v3 (user, 2026-10-12): four larger dining bays (bay pitch 2.46 m), one panoramic bay of 2.16 m glass per dining bay centred on its tables, 0.30 m piers behind the meeting banquette backs, a fifth bay over a 2.8 m bar lounge."
+    },
+    "first_class": {
+      "compartments_draft": 4,
+      "compartment_length_m": 3,
+      "compartment_width_m": 2.2,
+      "side_corridor_width_m": 1.2,
+      "partition_thickness_m": 0.05,
+      "seats_per_compartment": 4,
+      "service_rooms": [
+        "wc-a 1.30",
+        "luggage 2.40",
+        "pantry 2.40",
+        "wc-b 1.30"
+      ],
+      "cabin_door_clear_m": 0.7
+    },
+    "frame": "metres; x along the coach (end A -X, end B +X), y across (+Y compartment/galley side), z up from the top of the rail; Unreal through atelier.conventions.to_unreal only",
+    "floor_height_above_rail_m": 1.25,
+    "ceiling_at_walls_m": 2.05,
+    "window_sill_above_floor_m": 0.8,
+    "window_head_above_floor_m": 1.72,
+    "window_width_m": 1.4,
+    "vestibule_clear_length_m": 1.6,
+    "exterior_door_clear_m": [
+      0.75,
+      1.95
+    ],
+    "gangway_door_clear_m": [
+      0.8,
+      2.0
+    ],
+    "interior_door_height_m": 1.95,
+    "body_length_over_end_walls_m": 23.2,
+    "bogie_centres_m": 17.0,
+    "wheelbase_m": 2.5,
+    "wheel_diameter_m": 0.92,
+    "validated_by_blockout": [
+      "clear height 2.30 at the centre",
+      "continuous passage gangway to gangway for a 1.75 m adult (r 0.28) and Cairo (r 0.22)",
+      "every room and exterior door reachable",
+      "internal width 3.45",
+      "first-class cabin 3.00 x 2.20",
+      "corridor 1.20",
+      "restaurant aisle 1.18"
+    ],
+    "assumptions_to_agree": [
+      "standard gauge 1.435 m",
+      "floor 1.25 m above rail (platform height and steps to agree with the map owner)",
+      "buffer height 1.065 m",
+      "length over buffers 24.0 m and coupling distance",
+      "curve limits and gangway articulation",
+      "camera behaviour in 0.90 m corridors"
+    ]
+  },
+  "assets": [
+    {
+      "id": "restaurant-banquette",
+      "name_fr": "Banquette restaurant — une place",
+      "dimensions_m": {
+        "width": 1.1,
+        "depth": 0.73,
+        "height": 1.15
+      },
+      "seat_height_m": 0.46,
+      "pivot": "floor_footprint_center",
+      "material_family": "burgundy-velvet-walnut-brass",
+      "quantity_draft": 16,
+      "back_thickness_max_m": 0.14,
+      "fitted_source": {
+        "file": "belmonte-train-sources/restaurant-banquette.glb outside the repo (Tripo Studio \"luxury velvet sofa 3d model.glb\", multiview, v2)",
+        "source_size_m": [
+          1.0,
+          0.665,
+          0.901
+        ],
+        "fit": "uniform scale to width 1.10; upper back (78-95 % of height) lengthened to 1.15 m; see-through gaps in both sides and the back closed with walnut patches behind the wood (fit_furniture.py --side-panels/--back-panel)"
+      }
+    },
+    {
+      "id": "restaurant-table",
+      "name_fr": "Table restaurant — deux convives face à face",
+      "dimensions_m": {
+        "width": 1.05,
+        "depth": 0.87,
+        "height": 0.75
+      },
+      "dimension_basis": "table body and tabletop; linen may overhang by at most 0.04 m per side",
+      "pivot": "floor_footprint_center",
+      "material_family": "walnut-brass-ivory-linen",
+      "quantity_draft": 8,
+      "placement_note": "placed with yaw 90/-90: its 1.05 m width runs across the coach (window to aisle) and the two diners sit on its 0.85 m faces",
+      "fitted_source": {
+        "file": "belmonte-train-sources/restaurant-table.glb outside the repo (Tripo Studio \"dining table 3d model.glb\")",
+        "source_size_m": [
+          1.0,
+          0.83,
+          0.652
+        ],
+        "fit": "uniform scale 1.05 to the width; pedestal lengthened 6.5 cm to 0.75 m; a walnut top, apron, head block and brackets built under the cloth (--table-top)"
+      }
+    },
+    {
+      "id": "first-class-sofa",
+      "name_fr": "Canapé cabine — deux places",
+      "dimensions_m": {
+        "width": 1.85,
+        "depth": 0.705,
+        "height": 0.758
+      },
+      "seat_height_m": 0.40,
+      "pivot": "floor_footprint_center",
+      "material_family": "emerald-velvet-walnut-brass",
+      "quantity_draft": 8,
+      "fitted_source": {
+        "file": "belmonte-train-sources/first-class-sofa.glb outside the repo (Tripo Studio \"green velvet sofa 3d model.glb\")",
+        "source_size_m": [
+          1.0,
+          0.381,
+          0.41
+        ],
+        "fit": "uniform scale 1.85 to the width, the model's own proportions (seat 0.39 m, back 0.76 m, under the 0.80 m window sill); green bleeding onto the walnut side panels repainted (--side-wood)"
+      }
+    },
+    {
+      "id": "first-class-table",
+      "name_fr": "Petite table de cabine",
+      "dimensions_m": {
+        "width": 0.65,
+        "depth": 0.4,
+        "height": 0.62
+      },
+      "base_diameter_m": 0.28,
+      "pivot": "floor_footprint_center",
+      "material_family": "walnut-brass",
+      "quantity_draft": 4,
+      "fitted_source": {
+        "file": "belmonte-train-sources/first-class-table.zip outside the repo (Tripo Studio \"golden table 3d model.zip\", FBX + basecolor)",
+        "source_size_m": [
+          0.9995,
+          0.6099,
+          0.7202
+        ],
+        "fit": "uniform scale 0.6503 to width 0.65, pedestal (15-85 % of height) lengthened by 0.152 m to height 0.62; base 0.285 m; 10,100 triangles",
+        "fitted_m": [
+          0.65,
+          0.397,
+          0.62
+        ],
+        "tool": "games/yorimichi/world/train/fit_furniture.py"
+      }
+    },
+    {
+      "id": "table-lamp",
+      "name_fr": "Lampe de table",
+      "dimensions_m": {
+        "width": 0.24,
+        "depth": 0.24,
+        "height": 0.456
+      },
+      "base_diameter_m": 0.14,
+      "pivot": "base_contact_center",
+      "material_family": "brass-ivory-fabric",
+      "quantity_draft": 12,
+      "fitted_source": {
+        "file": "belmonte-train-sources/table-lamp.glb outside the repo (Tripo Studio \"gold table lamp 3d model.glb\")",
+        "source_size_m": [
+          0.526,
+          0.526,
+          1.0
+        ],
+        "fit": "uniform scale 0.456 to the 0.24 m width (0.46 m tall); brass made metal (--metal)"
+      }
+    },
+    {
+      "id": "wall-sconce",
+      "name_fr": "Applique murale",
+      "dimensions_m": {
+        "width": 0.25,
+        "depth": 0.32,
+        "height": 0.4
+      },
+      "pivot": "wall_mount_center",
+      "material_family": "brass-ivory-fabric",
+      "quantity_draft": 24,
+      "fitted_source": {
+        "file": "belmonte-train-sources/wall-sconce.glb outside the repo (Tripo Studio \"golden wall lamp 3d model.glb\")",
+        "source_size_m": [
+          0.6224,
+          0.7893,
+          0.9904
+        ],
+        "fit": "turned -90 deg (back plate to +Y), uniform scale 0.404 to height 0.40"
+      }
+    },
+    {
+      "id": "second-class-bench",
+      "name_fr": "Banquette de 2e classe — deux places, bois à lattes",
+      "dimensions_m": {
+        "width": 1.2,
+        "depth": 0.55,
+        "height": 0.91
+      },
+      "seat_height_m": 0.45,
+      "pivot": "floor_footprint_center",
+      "material_family": "worn-slatted-wood-iron",
+      "quantity_draft": 31,
+      "fitted_source": {
+        "file": "belmonte-train-sources/second-class-bench.glb outside the repo (Tripo Studio \"rusty wooden bench 3d model.glb\"; the carved variant shares it)",
+        "source_size_m": [
+          1.0,
+          0.463,
+          0.683
+        ],
+        "fit": "uniform scale 1.2 to width; legs (5-38 % of height) lengthened by 0.094 m to bring the seat to 0.45 m; materials made double-sided (single-sided back slats); carved M+L initials erased from the texture (fit_furniture.py --erase)"
+      }
+    },
+    {
+      "id": "canteen-pot",
+      "name_fr": "Grosse marmite cabossée de la cantine",
+      "dimensions_m": {
+        "width": 0.755,
+        "depth": 0.674,
+        "height": 0.408
+      },
+      "pivot": "base_contact_center",
+      "material_family": "dented-aluminium",
+      "quantity_draft": 1,
+      "body_m": {
+        "diameter": 0.62,
+        "rim_height": 0.36
+      },
+      "dimension_basis": "bounding box including the handles and the porridge drips over the rim; the ladle is a separate asset (the ladle mount)",
+      "fitted_source": {
+        "file": "belmonte-train-sources/canteen-pot.glb outside the repo (Tripo Studio \"rusty cooking pot 3d model.glb\")",
+        "source_size_m": [
+          0.944,
+          1.0,
+          0.708
+        ],
+        "fit": "uniform scale 0.8: body 0.62 m across, rim at 0.36 m (squatter than the 0.60 x 0.55 target; proportions kept); Tripo's ladle (14 loose parts along its shaft, --drop-along) and lumpy porridge top (7 loose parts, --drop-islands) removed, the footprint re-centred; a separate modelled porridge surface (SM_BT_CanteenPot_PorridgeSurface, M_BT_Porridge, --porridge 0.355 0.30) for the game to animate"
+      }
+    },
+    {
+      "id": "second-class-bench-carved",
+      "name_fr": "Banquette de 2e classe gravée « M+L » (quête)",
+      "dimensions_m": {
+        "width": 1.2,
+        "depth": 0.55,
+        "height": 0.91
+      },
+      "seat_height_m": 0.45,
+      "pivot": "floor_footprint_center",
+      "material_family": "worn-slatted-wood-iron",
+      "quantity_draft": 1,
+      "fitted_source": {
+        "file": "belmonte-train-sources/second-class-bench.glb outside the repo (Tripo Studio \"rusty wooden bench 3d model.glb\"; the carved variant shares it)",
+        "source_size_m": [
+          1.0,
+          0.463,
+          0.683
+        ],
+        "fit": "uniform scale 1.2 to width; legs (5-38 % of height) lengthened by 0.094 m to bring the seat to 0.45 m; materials made double-sided (single-sided back slats)"
+      },
+      "variant_of": "second-class-bench",
+      "note": "Quest object: the one bench that keeps the carved M+L initials, front only. All other benches are clean."
+    },
+    {
+      "id": "canteen-stove",
+      "name_fr": "Vieux fourneau de la cantine (porte la marmite)",
+      "dimensions_m": {
+        "width": 1.494,
+        "depth": 0.899,
+        "height": 0.9
+      },
+      "pivot": "floor_footprint_center",
+      "material_family": "blackened-cast-iron-enamel",
+      "quantity_draft": 1,
+      "note": "the canteen pot stands on its large left hotplate (0.23 m left of centre) at 0.83 m; 0.90 m is the top of the brass rail",
+      "hob_height_m": 0.83,
+      "fitted_source": {
+        "file": "belmonte-train-sources/canteen-stove.glb outside the repo (Tripo Studio \"antique stove 3d model.glb\")",
+        "source_size_m": [
+          1.0,
+          0.601,
+          0.602
+        ],
+        "fit": "scaled by height (x1.495): the model is wider than the 1.00 m draft, proportions kept"
+      }
+    },
+    {
+      "id": "loco-backhead",
+      "name_fr": "Façade du foyer (cabine de la locomotive)",
+      "dimensions_m": {
+        "width": 1.9,
+        "depth": 0.412,
+        "height": 1.928
+      },
+      "pivot": "floor_footprint_center",
+      "material_family": "black-riveted-steel-brass-copper",
+      "quantity_draft": 1,
+      "note": "hung on the firebox in the cab, front towards the crew (-X, yaw -90), its pipes stopping just above the floor; the controls the driver moves stay separate objects",
+      "fitted_source": {
+        "file": "belmonte-train-sources/loco-backhead.glb outside the repo (Tripo Studio \"steampunk pipe system 3d model.glb\", from backhead.jpg)",
+        "source_size_m": [
+          0.985,
+          0.213,
+          1.0
+        ],
+        "fit": "uniform scale 1.93 to the 1.90 m width; pipework only, mounted on the riveted backhead plate"
+      }
+    },
+    {
+      "id": "canteen-counter",
+      "name_fr": "Comptoir de service de la cantine (passe-plat)",
+      "dimensions_m": {
+        "width": 2.15,
+        "depth": 0.976,
+        "height": 0.92
+      },
+      "pivot": "floor_footprint_center",
+      "material_family": "battered-steel-cream-enamel",
+      "quantity_draft": 1,
+      "note": "through the serving hatch, its front towards the saloon (+X, yaw 90): Tripo's flat steel tray ledge on brackets runs the whole length on the saloon side, just under the top (surface 0.771 m, 0.31 m in front of the body); open shelves on the kitchen side where the canteen lady stands; the depth includes the ledge",
+      "fitted_source": {
+        "file": "belmonte-train-sources/canteen-counter.glb outside the repo (Tripo Studio \"rusty bar counter 3d model.glb\", from 'Comptoir quatre vues, étagères complètement vides.png')",
+        "source_size_m": [
+          1.0,
+          0.454,
+          0.338
+        ],
+        "fit": "uniform scale 2.15 to the length; the cream body panels (26-58 % of the height) lengthened to reach 0.92 m; the ledge and the top keep their shape; nothing cut"
+      }
+    },
+    {
+      "id": "canteen-ladle",
+      "name_fr": "Grande louche de la cantinière",
+      "dimensions_m": {
+        "width": 0.225,
+        "depth": 0.194,
+        "height": 0.7
+      },
+      "pivot": "hook_top",
+      "material_family": "dull-steel-wood-handle",
+      "quantity_draft": 1,
+      "note": "hangs by its end hook on the canteen-ladle mount, bowl down, flat to the wall; a separate placement so the canteen lady can take it in her right hand (docs/BELMONTE_TRAIN_CANTEEN_LADY.md: 0.70 m)",
+      "dimension_basis": "hanging: height is the overall length, hook to bowl; width the bowl across, depth the bowl's depth",
+      "fitted_source": {
+        "file": "belmonte-train-sources/canteen-ladle.glb outside the repo (Tripo Studio image-to-model, from Paul's ChatGPT 'big spoon.png'; concept and job in build/yorimichi/belmonte-train/tripo-props/canteen-ladle/)",
+        "fit": "--hang (stood upright, bowl down, opening away from the wall), uniform scale to the 0.70 m length (--scale-by height); width and depth follow the model"
+      }
+    },
+    {
+      "id": "canteen-sink",
+      "name_fr": "Évier émaillé et égouttoir de la cantine",
+      "dimensions_m": {
+        "width": 1.0,
+        "depth": 0.709,
+        "height": 0.98
+      },
+      "pivot": "floor_footprint_center",
+      "material_family": "chipped-enamel-rusty-steel",
+      "quantity_draft": 1,
+      "note": "against the outer wall at the canteen's end, the cabinet door facing into the canteen, the draining board on the right seen from the front (towards the stove), the tap at the back of the basin; worktop about 0.88 m, the tap to 0.98 m",
+      "fitted_source": {
+        "file": "belmonte-train-sources/canteen-sink.glb outside the repo (Tripo Studio image-to-model; concept and job in build/yorimichi/belmonte-train/tripo-props/canteen-sink/)",
+        "fit": "--yaw -90 (the door to -Y), uniform scale to the 1.00 m width, the cabinet (25-55 % of the height) lengthened to bring the worktop from 0.58 to about 0.88 m; wider than the 0.70 m reservation it replaces, which kept Tripo's proportions"
+      }
+    },
+    {
+      "id": "canteen-shelves",
+      "name_fr": "Étagères rivetées de la cantine (vides)",
+      "dimensions_m": {
+        "width": 0.879,
+        "depth": 0.389,
+        "height": 1.9
+      },
+      "pivot": "floor_footprint_center",
+      "material_family": "riveted-steel-brass-hooks",
+      "quantity_draft": 1,
+      "note": "empty open riveted shelves: three steel trays and a top bar with five brass hooks at the front, the hooks facing into the canteen; mugs hang on the hooks and stand on the trays as separate canteen-mug placements; at Tripo's proportions it is 0.88 m wide, too wide for the 0.52 m reservation by the door, so it stands against the canteen's end wall",
+      "fitted_source": {
+        "file": "belmonte-train-sources/canteen-shelves.fbx outside the repo (Tripo multiview P2, raw FBX; references and job in build/yorimichi/belmonte-train/tripo-props/canteen-shelves/)",
+        "fit": "--yaw 180 (the hooks to -Y), uniform scale to the 1.90 m height (--scale-by height); width and depth follow the model"
+      }
+    },
+    {
+      "id": "canteen-mug",
+      "name_fr": "Quart émaillé blanc à liseré bleu",
+      "dimensions_m": {
+        "width": 0.128,
+        "depth": 0.095,
+        "height": 0.09
+      },
+      "pivot": "floor_footprint_center",
+      "material_family": "white-enamel-blue-rim",
+      "quantity_draft": 9,
+      "dimension_basis": "width includes the handle; the body is about 0.095 m across (Tripo's proportions at the 0.09 m height, a little wider than the 0.085 m asked) and 0.09 m tall",
+      "fitted_source": {
+        "file": "belmonte-train-sources/canteen-mug.glb outside the repo (Tripo Studio)",
+        "fit": "uniform scale to the 0.09 m height (--scale-by height)"
+      }
+    }
+  ],
+  "notes": [
+    "The earlier 2.05 m cabin-width concept target is adjusted to 2.00 m for this coherent draft envelope.",
+    "Counts and lengths are preliminary; Claude must reconcile exterior window spacing, vestibules and service areas in the measured floor plan.",
+    "Raster images convey appearance only. Scale and dimensional compliance must be checked on actual meshes in Blender.",
+    "Do not stretch or compress furniture independently by axis to force a fit; revise the mesh or the agreed target dimensions and report changes.",
+    "These records are planning targets, not an existing 3D model or Tripo credit spend.",
+    "v2 (2026-10-12): placements, seat markers and mounts are in build/yorimichi/belmonte-train/<coach>-placements.json from world/train/layout.py.",
+    "Internal width check (v3): 3.60 - 2*0.075 = 3.45 m; cabin 2.20 + partition 0.05 + corridor 1.20 = 3.45 m."
+  ],
+  "shell_changes_v2": [
+    "Restaurant: 5 dining bays (20 seats) instead of 4, one panoramic bay per dining bay plus one over the bar; affects restaurant-banquette (16->20), restaurant-table (8->10), table-lamp (12->14).",
+    "Wall sconces counted: 10 in the restaurant piers + 4 per cabin on the bulkheads = 26.",
+    "No furniture dimension changed: every object fits its reservation with knee gaps of 0.10 m (restaurant) and 0.385 m (cabin sofa front to table)."
+  ],
+  "shell_changes_v3": [
+    "Restaurant furniture enlarged at the user's request: banquette 0.90x0.65x1.15 -> 0.95x0.72x1.25 m, table 0.80x0.65 -> 0.90x0.80 m; four dining bays (16 seats) instead of five; quantities banquettes 16, tables 8, table lamps 12, sconces 24. First class unchanged.",
+    "Envelope widened at the user's request for roomy luxury corridors: exterior 3.10 -> 3.60 m (interior 3.45), first-class corridor 0.90 -> 1.20 m, cabins 2.00 -> 2.20 m, restaurant aisle 0.98 -> 1.48 m. Heights, coupling and gauge unchanged.",
+    "Restaurant furniture widened into the new width (user): banquette 1.10 x 0.72 x 1.25 m, table 1.05 x 0.85 x 0.75 m; aisle 1.18 m; bay pitch 2.51 m.",
+    "Restaurant banquette set to the Tripo Studio model: 1.10 x 0.76 x 1.15 m (back lengthened from 0.94 m); bay pitch 2.59 m.",
+    "Wall sconce set to the Tripo Studio model: 0.25 x 0.32 x 0.40 m; cabin sconces raised to 1.62 m to clear seated heads.",
+    "Canteen stove set to the Tripo Studio model: 1.49 x 0.90 x 0.90 m, hob at 0.83 m; stove centred at x -9.08 against the outer wall, the pot on its large hotplate; sink moved to x -8.25..-7.55."
+  ]
+}

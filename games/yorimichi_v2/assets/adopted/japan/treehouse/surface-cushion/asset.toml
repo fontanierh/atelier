@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface cushion: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-cushion"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-cushion"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/cushion.jpg"
+sha256 = "6e1703131c16e36ae3a894f44c028249ee619efcbe5024b280451bfbdbebc8c3"
+
+[[sources]]
+path = "source/assets/treehouse/textures/cushion.prompt.txt"
+sha256 = "685fee86e39207191cf79b331e46d3ac8256401b522c8fd4b9b71cea59ba6c4e"
+
+[[sources]]
+path = "source/assets/treehouse/textures/cushion.provenance.json"
+sha256 = "23eee1e346ccaff34d4cdc0b30605125dabf0becc023363f6ed3283371b508e6"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_cushion"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_cushion"

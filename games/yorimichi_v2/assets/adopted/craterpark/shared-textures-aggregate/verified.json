@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/shared-textures-aggregate",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Textures/T_CP_aggregate.uasset": "424c567d3ffeb0505da4e954abe2de059d6215eae3609796f56f52b01d3cd858"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

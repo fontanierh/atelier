@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-course",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Course.uasset": "d530252a349cdd90bc92a67873b580ed055de28feda6b22f435b1aa3fd0c7c37"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop bell: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-bell"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-bell"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/bell/asset.toml"
+sha256 = "03ecc53f0c5e322f59ef44529bef6fcda15b65d601e614e22a6692b809f07d4e"
+
+[[sources]]
+path = "source/assets/treehouse/props/bell/bell.glb"
+sha256 = "8cb32d10a28420a7aa42e838787997d1ab8b5d6542e117f95ff4ced3461d867b"
+
+[[sources]]
+path = "source/assets/treehouse/props/bell/concept.jpg"
+sha256 = "3ee47c89fc9fb018f89888d12a2e0977f685ee4986a98547da29e14b9c2d5262"
+
+[[sources]]
+path = "source/assets/treehouse/props/bell/job.json"
+sha256 = "3f30168bb569b642225358b54dc83758412ce36a9c3a103a6ea8d6271be4afa5"
+
+[[sources]]
+path = "source/assets/treehouse/props/bell/prompt.txt"
+sha256 = "5e8e2e8a6d09b0acad34ac0c0e054eaa32c4a91a92c8812813014da8deb41e02"
+
+[[sources]]
+path = "source/assets/treehouse/props/bell/provenance.json"
+sha256 = "9fb6820452c78fbb291b85335015952e64e5081ce698faf40d063867578882bf"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_bell.json"
+sha256 = "dfdc4261eff7b0890b1b100e6680fd86a5e5e4578e72487786b98a12cd488b23"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_bell"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_bell"

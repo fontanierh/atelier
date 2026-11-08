@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/tkdwn-low-250",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/TKDWN_LOW_250_R_SWIPE.uasset": "d3b0881900d105c67cd065c3f64d8e32cd91787d8b20b744667a14d20e787bec"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

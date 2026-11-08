@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/horses/andalusian-reins-03",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Andalusian/Tack/Reins_03/Kestrel_Reins_03_Alb.uasset": "0574fc843709e7e2a177e8483d7efc70cc855bc0469e360b79ce768bd52f40f6",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb.uasset": "fe62e3792f54e0b3c172610f71e29c197ac518db61e8ce2e6bfcfe4050b1f073",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_03/Reins_03_Mt_Belt.uasset": "46fc4949957a003cc568197771e156b13c51a21061c52019ec7cdbf140df26af",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_03/Reins_03_Mt_Metal.uasset": "7550828b5bd2b1290453be466a6088b9b3a3f3eb3484a156960733d44d115bdf",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_03/SK_Horse_Andalusian_Reins_03.uasset": "0e06c8621a366952770156cd833f22c124f5c460e86867724b7278c0e5a5f66c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

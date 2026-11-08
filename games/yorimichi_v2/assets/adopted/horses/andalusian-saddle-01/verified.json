@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/horses/andalusian-saddle-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png.uasset": "70cb5c70eaeddc234d0aebb30f6a1a37199d6021c2813d79d9ac136de1d9414e",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png.uasset": "3bcbc83bf22adfdbbc3e01a7b93dac11dc721590915f7fbba1b0a09ef3fd8b10",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png.uasset": "c7d1fd5588158d10b452ab9cce0f38d8665effa92c9d4e90077630a5f110da84",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png.uasset": "af43a05fc65936ffbd82052a65c2c710bc60f6f41079d16e148020996bb5852c",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/SK_Horse_Andalusian_Saddle_01.uasset": "7fbb72e5d41e74c1fff8b0d75cf8bd15da0a989c0c3e0b745503f99af9594171",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Bag_A.uasset": "f17a6e944be5d03ac033be667a687182e91f638689d29a8f6248fe192192e587",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Bag_B.uasset": "b484cef26542112b6e296bb454c1b454444ecbf9c6a574e5d4bab6b7d1892516",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Cloth.uasset": "ae6598167599ae4ff2d4e8cd518fa745b19a4ccc47eb3ca514768a89cc6f61f2",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Saddle.uasset": "402aa71bddb06a7c884fa7ec0d12481de2a971f0084de4a70ebca9cf2bbfe5a4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

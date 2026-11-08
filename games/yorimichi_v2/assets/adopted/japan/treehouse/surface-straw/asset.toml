@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface straw: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-straw"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-straw"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/straw.jpg"
+sha256 = "d7c200a74fc0bd3028df4e24c9fdd502134ededa84517364bf5babad5b08e8f6"
+
+[[sources]]
+path = "source/assets/treehouse/textures/straw.prompt.txt"
+sha256 = "0786cd45d3ddbb6f5dd89eb1389decd1fe973d7fd8c4625cf91cc256c5f64188"
+
+[[sources]]
+path = "source/assets/treehouse/textures/straw.provenance.json"
+sha256 = "30e46150cd0ac4269aeaae887fa36d574f5ef09991f78e093001558de9ef6a12"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_straw"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_straw"

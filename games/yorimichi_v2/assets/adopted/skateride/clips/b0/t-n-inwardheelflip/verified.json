@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-n-inwardheelflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_N_INWARDHEELFLIP_H_CYC.uasset": "a6b745b7983d9a3320e772ff10fb918a11a30e37492f434d3e3b9ca4fae8fdfb",
+    "unreal/Content/SkateRide/Clips/B0/T_N_INWARDHEELFLIP_L_CYC.uasset": "bead0c60205c11e1ac2ddeec9ed421554541d1ac3f0b6c109467f818562383d4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

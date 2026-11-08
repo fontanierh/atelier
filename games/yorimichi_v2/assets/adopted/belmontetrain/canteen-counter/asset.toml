@@ -1,0 +1,42 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture canteen-counter: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/canteen-counter"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/canteen-counter"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-counter.glb"
+sha256 = "95701bf580b1fef2b063fb174880554ad479a2818081ccc882ebab020f06cdf0"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-counter.json"
+sha256 = "d91c001d5702496865f58c4fd4abe8ea5ea8a1b942e26e2f90c6790a63f30716"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenCounter"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD0/M_BT_CanteenCounter"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD0/canteen-counter-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD0/canteen-counter-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD1/M_BT_CanteenCounter_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD1/canteen-counter-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenCounter/LOD1/canteen-counter-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenCounter/SM_BTF_CanteenCounter_LOD1"

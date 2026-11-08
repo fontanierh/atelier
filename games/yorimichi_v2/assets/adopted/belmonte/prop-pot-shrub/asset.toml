@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-pot-shrub (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-pot-shrub"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-pot-shrub"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotShrub.glb"
+sha256 = "2d0dd156491f222391ba681c10fb91a6c04d217d1303d7e21f564320a697a96f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_PotShrub_Collision.glb"
+sha256 = "bf180d6a71142051bd7f05932bd6144ad45583db0ce89438250cb52566aef467"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotShrub"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_PotShrub_Collision"

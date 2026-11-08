@@ -1,0 +1,16 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park run "Vert drop: bend right" (piece p307, line L2): its render meshes (with its supports and coping), the collision pieces it fills, and the material instances and textures only it uses
+schema = 1
+id = "adopted/craterpark/p307-vert-drop-bend-right"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/p307-vert-drop-bend-right"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_039_15_16"

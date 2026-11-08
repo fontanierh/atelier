@@ -1,0 +1,29 @@
+{
+  "stage": "crater-tree",
+  "tree": "black_pine_v1",
+  "asset_name": "Tree_Sugi_BlackPine_B",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 10000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "reference_v1.jpg",
+  "input_sha256": "85a16137a971c3460f718dd6e7b46b89476b1191c47504a12ea4635b603444aa",
+  "submitted_at": "2026-10-16T09:40:52.758726+00:00",
+  "task_id": "baf4aadb-31b9-494d-bf35-247177fb557a",
+  "status": "submitted",
+  "user_approval": "coordinator authorized with new credits",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-16T09:42:57.214958+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

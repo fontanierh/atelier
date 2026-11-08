@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-late-shuvithigh",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_0_N.uasset": "49bfa7d2fca50f01059621cfe0d3ddfd50d53400927a9a0d6904a1d323067892",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_FROMBS.uasset": "e9475b9836e5d78d9902f08fa4eac9834615a67cc6341da918c54808e580bd3a",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_FROMBS_NOSE.uasset": "f4f13f318213cc57ad776f339aa004a5d9e3da4efb736566b0730952043f9618",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_FROMBS_TAIL.uasset": "f0d68ec855d5cc58b59650f26e91544ce521b53406ed9ac272f2e916a9a77af9",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_0_N.uasset": "4c069586edf4d125199a6dbaa089c68cac32db342f1680ba5ed751d75807d887",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_FROMFS.uasset": "5bf3892339a3f5e63859fca5daeec967a10c1974c20bf6682b4e5cdcee770842",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_FROMFS_NOSE.uasset": "efcf00b57a0b2b27bc29d70f156367ff1e200b1c39c58a8c0ecee828720fcc50",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_FROMFS_TAIL.uasset": "b8c1908a0fba60c79c01bea06391942fa9cc3dcb58af8e878b213031b1dd38ca"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

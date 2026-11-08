@@ -1,0 +1,12 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: GR_MELON_N in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/gr-melon-n"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/gr-melon-n"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_MELON_N_BS_0_CYC"

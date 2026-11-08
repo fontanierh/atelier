@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/estate-trough",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_Trough.uasset": "9579e84974b56172b01ff3f8ae7c76d79e25ec8713c1c7f2e01d80696d477971",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_Trough_Collision.uasset": "e5c7f157471c54dafd96e8493ff64b3dbfdb42664f75cdf2149bb6cd6f67b92f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

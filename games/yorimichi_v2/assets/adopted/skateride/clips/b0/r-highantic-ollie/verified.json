@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-highantic-ollie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_L_0_CYC.uasset": "9f882a16e11d7e131bcf05bc1ff3ecf5fcd0981f781afa73b5441c59b44c55e9",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_L_0_INTO.uasset": "c3cba4e4a8336b5319d87a85ddb72b64c167de3d95ed86381da44db7f6d542f4",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_L_0_OUT.uasset": "ccb32dd32308d83f9fa2a13363e2b6477fe97ee7994e79e5767cd430d3ade638",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_N_0_CYC.uasset": "ceff3997ec7819129e6634982810629bedf2f9347ef6b1cf3090f58a46dbe0cc",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_N_0_INTO.uasset": "00428a51366d2c9ea900e444c45957cfa12f425e3cad12644c2147c0d820f2a1",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_N_0_OUT.uasset": "934756a81911f80e7d61fe0e325972d44f92d8a5dc95de7b4d4417a63b0bd6d7",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_R_0_CYC.uasset": "8455016db3fe03cbe4a0b09725fa626f08627fdced0fe6058e26500b4bf84193",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_R_0_INTO.uasset": "dbac91a584324808897643a6b52d179b7efc244a163c4b6162db7ebbadfea65e",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_OLLIE_R_0_OUT.uasset": "e3481adde66afedc23b465ab43bf8535c90bc341019fc07101374deb5640289e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

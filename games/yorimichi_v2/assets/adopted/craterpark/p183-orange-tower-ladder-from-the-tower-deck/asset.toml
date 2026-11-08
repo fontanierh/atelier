@@ -1,0 +1,149 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park deck "Orange tower (ladder from the tower deck)" (piece p183, line S): its render meshes (with its supports and coping), the collision pieces it fills, and the material instances and textures only it uses
+schema = 1
+id = "adopted/craterpark/p183-orange-tower-ladder-from-the-tower-deck"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/p183-orange-tower-ladder-from-the-tower-deck"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/shrine/bell_pavilion/bell_pavilion.glb"
+sha256 = "e119bf391c8817d65c91ec4501d7d6f3b66a9a96f3192bc87929ffb7efa1ffff"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/bell_pavilion/concept.jpg"
+sha256 = "918b9342c91471e608860c076720e4f91cfcd817afc667c3295c8b04d031bc59"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/bell_pavilion/concept.json"
+sha256 = "b0c946a082f32d492af7f2cd16ff4140f80061aa37c83d6adcb66cf163fc1413"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/bell_pavilion/job.json"
+sha256 = "6e78993e2597daf3248b02206d9560f966e40f1815adec56c6d28f8a0b80f805"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/nobori/concept.jpg"
+sha256 = "54ea0b713c2eacf84a6d62d78d35cfeebd6ebf91c52be7b787612a9e3723c8f7"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/nobori/concept.json"
+sha256 = "8a99e4681f464000f54cecf5cd8b1fb1c5eaf3ac17d69a02cc2016df94264e95"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/nobori/job.json"
+sha256 = "4de52fd7299d0b5b9e0b699c8833bc0e23ed411676720aacf5ed316021581a1c"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/nobori/nobori.glb"
+sha256 = "fc89c4e80f88b7ee2daf628c2e6d7899ec831f4102e58b7581e664fbf08f837e"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/stone_lantern/concept.jpg"
+sha256 = "71346bab2008c250ca8fe5481e6d330473b1dd8d2f386cfb8969b5b6035a193e"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/stone_lantern/concept.json"
+sha256 = "4425fc880dc1751608340c5353fa3de9e44a29333e15faef1f019d3e8c65194d"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/stone_lantern/job.json"
+sha256 = "0da9f74abb757421649579147c766f69cc62631f5b535c7619d4a14cb66a5f95"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/stone_lantern/stone_lantern.glb"
+sha256 = "0174e8f8a05ac5f059e418cb4916dc49070e27a24bf7d096970d8af6e12108ef"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/torii/concept.jpg"
+sha256 = "eb5fef60088cc4c8c0a5a7c6fd2f8d9dd118cec6a4eb2245546b4e92d65e2ac2"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/torii/concept.json"
+sha256 = "c73233008d894af6a30ac7e562df8064b9cc051ef402c719d531ee704e772fb2"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/torii/job.json"
+sha256 = "840369a1b237ea9d573730f332d8955fc325d1d516ae5aee362bceaee4434f99"
+
+[[sources]]
+path = "source/assets/craterpark/shrine/torii/torii.glb"
+sha256 = "fa5899dcbfbeb1396738b8345e68839d55745d29176ca6f8b78d52ca79b2bd24"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_038"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_041"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_046"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_047"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_048"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_049"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_046_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_046_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_047_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_048_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_049_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_038_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_038_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_039_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_039_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_041_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_041_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_045_12_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_045_13_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_bell_pavilion"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_nobori"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_stone_lantern"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_shrine_torii"

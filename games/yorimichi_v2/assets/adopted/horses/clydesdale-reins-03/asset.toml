@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Clydesdale reins set 03 with its materials and images
+schema = 1
+id = "adopted/horses/clydesdale-reins-03"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/clydesdale-reins-03"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/clydesdale/tack/Reins_03.glb"
+sha256 = "2e440f94806689bc9a16d225efe98498d8de56e952c73346fd56b4f441c557ab"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_03/Kestrel_Reins_03_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_03/Reins_03_Mt_Belt"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_03/Reins_03_Mt_Metal"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_03/SK_Horse_Clydesdale_Reins_03"

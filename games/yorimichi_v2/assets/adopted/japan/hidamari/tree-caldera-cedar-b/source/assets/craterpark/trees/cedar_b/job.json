@@ -1,0 +1,29 @@
+{
+  "stage": "crater-tree",
+  "tree": "cedar_v2",
+  "asset_name": "Tree_Sugi_Cedar_B",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 10000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "reference_v2.jpg",
+  "input_sha256": "fca787f0d08cfae14989a9950064eac5445c6cb24b5788a6f2d2781bdfac7f62",
+  "submitted_at": "2026-10-16T09:40:54.436330+00:00",
+  "task_id": "868b07c2-d182-4631-9191-6c9e90e2a1eb",
+  "status": "submitted",
+  "user_approval": "coordinator authorized with new credits",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-16T09:43:03.742196+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

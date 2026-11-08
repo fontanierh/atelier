@@ -1,0 +1,20 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-kickflip-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_4FLIPS_0_OUT1.uasset": "b2d5e76527b070abe1a18bc28c08371a872221ec37a9eb16a56e418fa3a29f33",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_4FLIPS_0_OUT2.uasset": "c352c6bddc7c9ee743b71334dabba6b629aa5d57ef3e07e7d5b35235f1c586c8",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_4FLIPS_0_OUT3.uasset": "3285c781bdc50e29fb330315efb450d2a81d32163c4f59d62c0d564e86cf7f78",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_DCATCH_0_OUT1.uasset": "f5d08e52c79235d2ef80df29b35b7c3b4f781c73c4d67bede710595b95a5a311",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_DCATCH_0_OUT2.uasset": "a46e60a1789507643bc60daa59cee4a92c428ce04095c0e40d87a71b5dbb8924",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_DCATCH_0_OUT3.uasset": "da495fe738743ccad677e9f73f1f2bc8334b3e393ce4b3f97fd536554e9ad9af",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_DCATCH_0_OUT4.uasset": "42e383ac492fdca7147d94b9def56f259e7be8514f721553862a27f40c82a4f8",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_UFLIP_0_OUT1.uasset": "13e8e575720168c2a803ff727908f9c2d7429edea99bf0f37fdfa1af624f3c12",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_UFLIP_0_OUT2.uasset": "22024e926a0c92c9832c1cda478875cc583fc98198e8a77817d0042378bcc443",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_UFLIP_0_OUT3.uasset": "466402149b04d94082402c7d7816919aa6187306f391676595168724d2c0b055",
+    "unreal/Content/SkateRide/Clips/B0/T_KICKFLIP_LOW_UFLIP_0_OUT4.uasset": "b61b5d0a31469039cf04245fffe042f216fff9be88af917108be275948303675"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

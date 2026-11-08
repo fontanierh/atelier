@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmontetrack/overbridge",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_ST_Overbridge.uasset": "a95a58c3a1943fc9c64a32e35bcb6f1627454d95f9efd2f2b8f7b2f77229d85b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

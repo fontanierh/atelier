@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-n-varialheelflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_N_VARIALHEELFLIP_H_CYC.uasset": "3701dc73bada3a1f04169fc8fc21434fda319e64a2b84cadd11e2118063aaa09",
+    "unreal/Content/SkateRide/Clips/B0/T_N_VARIALHEELFLIP_L_CYC.uasset": "cc55fd210fd8052eb26ae232460f3b2b474273b2d061881ffa6bd9581899623e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

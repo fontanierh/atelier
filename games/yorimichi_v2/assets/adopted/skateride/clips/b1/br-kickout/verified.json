@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b1/br-kickout",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/BR_KICKOUT_HI_INTO_NB_AIR.uasset": "23ad739830257cd20e2fdecf22e9dbf97ff273d881538216bd12e85f046051b7",
+    "unreal/Content/SkateRide/Clips/B1/BR_KICKOUT_LO_INTO_NB_AIR.uasset": "a3476bbdad0f39ddadac8352f95ee02bf9b4a9b9fb4e8b1f27d5eb09b42125cd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

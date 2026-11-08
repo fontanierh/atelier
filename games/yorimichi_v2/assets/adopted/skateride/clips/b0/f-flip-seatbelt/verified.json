@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/f-flip-seatbelt",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_SEATBELT_TO_NOSE_GRAB.uasset": "87c5abeea60c53e1a9fa12e50c902d4a54a1367a3d61426660745bb5865c8ffc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

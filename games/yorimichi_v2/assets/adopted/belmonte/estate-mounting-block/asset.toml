@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte estate-mounting-block (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/estate-mounting-block"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/estate-mounting-block"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_MountingBlock.glb"
+sha256 = "781f2422688a8ec3a610d09934af8357f26cf84bb2562ed4b89b776996e64164"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_MountingBlock_Collision.glb"
+sha256 = "2b2545b2e5a6f6e5812ece1f46e7116c732da78fe852d5640bd5568bdbe1b4d1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_MountingBlock"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_MountingBlock_Collision"

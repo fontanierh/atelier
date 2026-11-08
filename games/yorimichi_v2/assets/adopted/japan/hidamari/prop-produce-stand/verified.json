@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-produce-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_produce_stand.uasset": "dd3422a11152c283dcc8412020a48d6a94a3275a866f01583e147d687c567161",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_produce_stand.uasset": "53eb553dc57d4d97e45a33caeddc5ed0a215dea91501af277bc8f47a614935c4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

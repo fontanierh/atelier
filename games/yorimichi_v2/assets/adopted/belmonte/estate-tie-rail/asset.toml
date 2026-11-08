@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte estate-tie-rail (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/estate-tie-rail"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/estate-tie-rail"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_TieRail.glb"
+sha256 = "6c9789bb15c063e3bbfdbeef2480611d495a4cc1767f2485fc7329ed09dc59ae"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_TieRail_Collision.glb"
+sha256 = "880f66082ee3ae5d626d084381fe1792c9913c62f4388b8760c3e3a91f992d7b"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_TieRail"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_TieRail_Collision"

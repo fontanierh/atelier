@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-finish-post",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_FinishPost.uasset": "476f85934240fc44d8f3d053aac5d11ae00344a15eb4caa6e8e042e1b2970722"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

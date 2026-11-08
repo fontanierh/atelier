@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/nocomply-l-fast",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_FAST_INTO_A.uasset": "111963e8040fa08ef35dcea2843201e68d1829912c28e82fce913590aae23d80",
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_FAST_INTO_F.uasset": "023fe9b8b7a0ce10ee224e6ab0f84963dcf36f9c5a93c8f7d4a28077dfcceb8d",
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_FAST_INTO_L.uasset": "f84569dc65b8d818baa98e4e9cecf9a10a8951914a886347130e9e0a4dd0f419"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

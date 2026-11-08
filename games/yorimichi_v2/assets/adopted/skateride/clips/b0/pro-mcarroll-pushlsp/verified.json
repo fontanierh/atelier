@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-mcarroll-pushlsp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_PUSHLSP_HSTR_CYC1.uasset": "eec2bed779a3dc2d65aabfbce19822f63416d63f463648e7fa93e04fe3da656b",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_PUSHLSP_HSTR_CYC2.uasset": "12afdee32f80668c08cf7d330483314b24a87862a0caf75eb81bdf5494078075",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_PUSHLSP_HSTR_INTO.uasset": "f2a92655c75a49f01a36b770c9fff191c06504479ffe8e644d7177de772f1435",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_PUSHLSP_LSTR_CYC1.uasset": "145579f6f4b6db486bcb6fd1f816472990d88fe1a33d5019569228b050fe7c24",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_PUSHLSP_LSTR_CYC2.uasset": "06eac9e7c6abf80bcdf2bcdcf7900a5910e4a5a9311761232f5cc3508cc2a776",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_PUSHLSP_LSTR_INTO.uasset": "07904cf8c2afd5c57ec567a612ae03883274d8a911bd68ef6d3f3f269c00d538"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

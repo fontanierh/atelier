@@ -1,0 +1,24 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/wires-0-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_3_0.uasset": "3a400aade1fd8cb7390709bf5c2349ba53b96f4f1e83e1825d51d195da2f0119",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_3_1.uasset": "065e87293aea05864724d506065c77bd5bb19818e7820851189cbd8ab39f3069",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_3_2.uasset": "fa21c90c0c0dd843995b001238f1e06daa3555628c8e36d3371ea75e725653af",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_4_0.uasset": "462f1e8e4fcf6ac27966da9c7282924223d7fd9977b9e2a66c803a4c8f79707c",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_4_1.uasset": "73f4b7b0a49e27c455c237b7d2dd0cb6cb172969f976992947e4032905d12231",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_4_2.uasset": "1acfcffec8d7a83b5c6205170a6596554b942326f03c2fd194585d0f2824cd3c",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_5_0.uasset": "7969640d5effc64b24d5a5bb1231fea7e9a3a057a283dc6a2f10b1b633d19b26",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_5_1.uasset": "0d4c78a8fd72b13a47d7bec2e74d2c8a9bc16c62f2d55521a1fdec6b64dff433",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_5_2.uasset": "8c457c9acfc3bb8d128ed2c93197f938c5bf7ec0161a6e661bb67277dba45c49",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_6_0.uasset": "384d234cbeb8d11f98c3523269bfa73f2784e9326a268fa077e2ecc9d371cd06",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_6_1.uasset": "5da394f6a1963ddc359e4fe2ae8e32a222d9e087a02f144d996f3ae0e7b51a08",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_6_2.uasset": "21b0a1da385e56483e71be8b007005176450ae93dcbfb25acd737e17df0ace0d",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_7_0.uasset": "3f4b10ba42d2eba3cdaeee6bdb04f8218eb1046f8d0c30bd09f1f5a705bfd542",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_7_1.uasset": "451efb046bee557b7dcb46a24430528bc747ec8c23d9460ce33ad94e65af1624",
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_7_2.uasset": "be24ebbd824e283515269b3da678cc16d2b40d3e6d9910ba53a354ab48d4d5cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-low-kick",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_KICK_CYC1.uasset": "d367500067c7e69602e05591b0801b9503b2776e5ab490fa956e61197392e5b9",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_KICK_CYC2.uasset": "036ddcbcf2b07ba48d88bf9b867a48b29d658f4b1da8a0e7e907f45e7bd6cc56",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_KICK_CYC3.uasset": "4a4ce68cae76a2f2c7654a651a8cf93c968c6b426261ac879d607123de9f6908",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_KICK_OUT4.uasset": "9f6d1f6753c7e9b46a5d902f8b9daceaf53b5b686df99962887a45f5a9e43402"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

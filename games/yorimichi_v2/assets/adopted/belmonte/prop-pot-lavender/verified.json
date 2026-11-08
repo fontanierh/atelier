@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-pot-lavender",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotLavender.uasset": "5baf8c6cf0b4aee56540a002e49f6f42ad2b17935193327b16b392d29cb1e244",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotLavender_Collision.uasset": "e812ef55bfc825dc944588de50f6af957c44026acfc417e3527ecd62436feb14"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

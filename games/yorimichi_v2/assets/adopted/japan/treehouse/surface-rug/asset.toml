@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface rug: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-rug"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-rug"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/rug.jpg"
+sha256 = "10b07b6b4f9851e0a59aa33abfc061fc70f562afc1829b290854ad7ec775a9a2"
+
+[[sources]]
+path = "source/assets/treehouse/textures/rug.prompt.txt"
+sha256 = "295bb8ada6bb4ed05498515812d76fb29f3c918218ecd8f585458ed3d812bda9"
+
+[[sources]]
+path = "source/assets/treehouse/textures/rug.provenance.json"
+sha256 = "d539be8c04a219bf2b71abbb3138c993792fd154d0016a2c9d101d7bc7d0ae11"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_rug"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_rug"

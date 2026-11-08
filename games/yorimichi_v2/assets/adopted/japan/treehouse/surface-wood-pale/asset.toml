@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface wood_pale: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-wood-pale"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-wood-pale"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_pale.jpg"
+sha256 = "17a6a9b7871cc1fc9968e62b947000bbc5fc667a8cfb75d53ccca337ecddb3b2"
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_pale.prompt.txt"
+sha256 = "4151e6a3a57c998d450b2f549f48599bc77232b04920ed7c1242068f69501859"
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_pale.provenance.json"
+sha256 = "a89373c02864cf945908b0adb1c958b51b57a2892369559a648d1d5d9f74a2fc"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_wood_pale"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_wood_pale"

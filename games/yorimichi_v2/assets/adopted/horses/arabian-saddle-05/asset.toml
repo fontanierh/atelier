@@ -1,0 +1,35 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Arabian saddle set 05 with its materials and images
+schema = 1
+id = "adopted/horses/arabian-saddle-05"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/arabian-saddle-05"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/arabian/tack/Saddle_05.glb"
+sha256 = "3fbbd3ab9366af6808e327c0b37c2ed64c7d9b1c88735e488335f6f34440adb6"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/SK_Horse_Arabian_Saddle_05"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Gem"
+
+[[outputs]]
+package = "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Saddle"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-palazzo-comunale (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-palazzo-comunale"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-palazzo-comunale"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_PalazzoComunale.glb"
+sha256 = "04e5a90685c29556505df00ac7860c58f62427b96918680b846feb67429d8b60"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_PalazzoComunale_Collision.glb"
+sha256 = "b658e371d4aa05d65ccd8aa15276c47a8644e9405c5a1bfa93dddb160429b9e0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_PalazzoComunale"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_PalazzoComunale_Collision"

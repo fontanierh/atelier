@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: glazed terracotta tiles in warm orange-brown with thin cream grout lines and a rounded terracotta bullnose band, as in Image 1.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/tile_edge-source.png": "46ede6949fb6305e0a16223035762ea193b7092c2dd8f9ae383c9e5b768f6cdb",
+    "build/yorimichi/craterpark/restyle/style-plaza.png": "3070efa80d769928edb516ac8d9eff7d8642fbc4965dd19a2022cf53e19fc54b"
+  },
+  "original": {
+    "textures/tex-0006.png": "e070c34b1f8c823ed5710c34e98b0ca84f16ed9ede4cd57d6ed64a1a5f4cef81"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "b661a37cad297881462bf5defe3c6f7745e152f2a0428435a8bbb5c8c79d77fa",
+  "status": "done",
+  "started_at": "2026-10-13T21:48:10.508823+00:00",
+  "output": "tile_edge.png",
+  "output_sha256": "7261b21ba4e3dc07601a7d41131ddd8d44ab854283de587e573d0c973ae3e5b7",
+  "usage": {
+    "input_tokens": 1911,
+    "input_tokens_details": {
+      "image_tokens": 1640,
+      "text_tokens": 271
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3283
+  },
+  "elapsed_seconds": 31.9,
+  "finished_at": "2026-10-13T21:48:42.392384+00:00",
+  "compact": {
+    "file": "tile_edge.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

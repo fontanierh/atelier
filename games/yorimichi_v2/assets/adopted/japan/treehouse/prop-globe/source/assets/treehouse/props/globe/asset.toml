@@ -1,0 +1,9 @@
+# Tree house prop: a small desk globe on a turned wooden stand with a brass half-meridian ring, the globe painted with soft blue seas and green-and-sand islands.
+# Sunburst concept painted from the tree house references, then a Tripo model (tools/treehouse_props.py).
+id = "treehouse-globe"
+kind = "prop"
+model = "globe.glb"                   # fitted to 0.45 m by world/regions/treehouse; texture 1024 JPEG
+concept = "concept.jpg"               # gpt-image-2.5-sunburst, quality high, from refs library-inside (provenance.json, prompt.txt)
+tripo_job = "job.json"                # image-to-model P2, 9000 faces, 120 credits
+approved = "2026-09-29"
+licence = "own"

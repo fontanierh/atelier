@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/village-hay-roll",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_HayRoll.uasset": "33249c688d2edae31c74823b6194dc97f17c1594044d43c91ca9b1043dabfbd0",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_HayRoll_Collision.uasset": "6f27d657780bf913295323a216d250f64b3186a4a073260633563edc85f5207c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

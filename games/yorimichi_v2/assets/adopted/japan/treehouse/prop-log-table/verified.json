@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-log-table",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_log_table.uasset": "38a8473ed60db63077d0fa00ccd4b041d14774921383841e02db25648877e19f",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_log_table.uasset": "e40e1abb4436034022f92fb28293dc5e502a23aa7329e22c438e4bd0498018ff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

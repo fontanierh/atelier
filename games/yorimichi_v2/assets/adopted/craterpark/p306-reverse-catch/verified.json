@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/craterpark/p306-reverse-catch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_15_15.uasset": "37c0bb5e114a899b378ac19aa764c50e3563147d3314719a405ed3bfe1d2f468",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_15_15.uasset": "ee427a12d488207c733dea095e56f8e4f1ea226ebdecbd3a8bb646fc7fd12a6c",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_15_16.uasset": "facb6295153fa5c558ebd39992d19316530b505fa4826db87e3975f2d323b437",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_16_16.uasset": "02972af5979f674f2a514ecb31163080cec87c604accc2ec64c8b136df17e7f2",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_15_15.uasset": "7ab51b04a930eb5a6fc74003d4ee65c3019c68ddd6e18e7be17c4c47d22e9e33",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_16_15.uasset": "7ce0d3b1a1678dfd4bba7731eacfe695689104513974bb1b81e623fae7d31750",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_16_16.uasset": "8afe55f0a8c55c2edc3b536f93ff35f31d82239979b22c720d536f4099f32b7e",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_15_15.uasset": "92583c4d6cfc917ae8d7b1d5b60c12c2af44eb767f62a3c4d0efb5dd0cd3b9c3",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_16_15.uasset": "f0e7c325c5ceec63d6e6a50716bb91cb28a54329dc85e0d67df0a33884a30f46",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_16_16.uasset": "ff1813b9b4183b4f45381f7e33f7977e040d9ff4b6c7fdd05dbacef9b975407b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

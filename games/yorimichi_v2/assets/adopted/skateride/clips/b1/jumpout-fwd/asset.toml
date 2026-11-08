@@ -1,0 +1,39 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: JUMPOUT_FWD in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/jumpout-fwd"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/jumpout-fwd"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_HI_TO_JUMPOUT_FWD1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_HI_TO_JUMPOUT_FWD2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_HI_TO_JUMPOUT_FWD4"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_HI_TO_JUMPOUT_FWD6"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_HI_TO_JUMPOUT_FWD7"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_LO_TO_JUMPOUT_FWD1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_LO_TO_JUMPOUT_FWD2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_LO_TO_JUMPOUT_FWD4"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_LO_TO_JUMPOUT_FWD6"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_FWD_LO_TO_JUMPOUT_FWD7"

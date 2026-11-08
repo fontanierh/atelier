@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/prop-flower-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_FlowerStand.uasset": "a4afbeb6b8f0abef1efedf9964f6892c7527badd791965ff8bc5921428657c4a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

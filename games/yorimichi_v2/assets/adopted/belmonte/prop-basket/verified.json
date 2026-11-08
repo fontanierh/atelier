@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-basket",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Basket.uasset": "a930801f3f73cd5f2a58739d20fcfb40db7395e2383f5a67ce6c00e2dd6bd93f",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Basket_Collision.uasset": "2e1e45b231e9a3016ea46cb280359886aadf041fb0163d2cf2ad31ec624c063c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

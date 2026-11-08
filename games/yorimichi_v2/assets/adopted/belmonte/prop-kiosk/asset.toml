@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-kiosk (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-kiosk"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-kiosk"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Kiosk.glb"
+sha256 = "7f454ce65da4498f03a8cce826c13b90e136655a4a1d7d1db7e8869e6d96452a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Kiosk_Collision.glb"
+sha256 = "f44d057adde36349bced1726b16bb8b9fa3dbc41bb30d5372ef76574b0eeed32"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Kiosk"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Kiosk_Collision"

@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture canteen-mug: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/canteen-mug"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/canteen-mug"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-mug.glb"
+sha256 = "c28fe4514b183433f6ea7437245a06120e9183943cd60c7ffef7bf8ae46a83a4"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-mug.json"
+sha256 = "1cef58a0cec14b3fbf504397013366e8b3314c6383b864178c672c1ff9625565"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenMug"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/M_BT_CanteenMug"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/canteen-mug-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenMug/LOD0/canteen-mug-normal"

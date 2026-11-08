@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-futon",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_futon.uasset": "6ec7635e066a2f8ee390bdd8bb92853abfd9e02fe888d100072865c3c8b8e501",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_futon.uasset": "1f413d94abd6e6689c867214b9120630b1adbfbee46f01b7504b2363c3d0a88f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

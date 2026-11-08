@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-street-bench",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_street_bench.uasset": "a80b1157450a9f65c144c0a482177a18fe2db31cd4e9fa76871499d09c7d72a8",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_street_bench.uasset": "b169351e04954baa833134aff09c35a45234a99654c7ca57f116e38f0b879d63"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

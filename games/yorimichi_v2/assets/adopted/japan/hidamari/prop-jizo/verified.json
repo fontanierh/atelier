@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-jizo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_jizo.uasset": "9ba8194bf5cbf3be49bdb7244b55c8a5221bb6dbd2d4c9adb216e56f99392ec4",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_jizo.uasset": "e601339d1aa91613fe4ae493e3cb7233811c22c1e20ad7412a6d6e7623d231f2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

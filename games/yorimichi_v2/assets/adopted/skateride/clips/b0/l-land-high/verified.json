@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/l-land-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/L_LAND_HIGH_AGGR_1_N.uasset": "ecfb57525677f31429b5f4d39c2ac48b9751652516c658cf381c820191b389b8",
+    "unreal/Content/SkateRide/Clips/B0/L_LAND_HIGH_AGGR_2_N.uasset": "7b37c0fea662a9274d1838b8ad424f364f5f765e896362c1c09963831cf18982",
+    "unreal/Content/SkateRide/Clips/B0/L_LAND_HIGH_AGGR_3_N.uasset": "a1b3686158f4cc350d3a4d8bb840f44ffa09c729ea9e9bf3b67ddcc2a62af57a",
+    "unreal/Content/SkateRide/Clips/B0/L_LAND_HIGH_LOOSE_1_N.uasset": "564af56152d98b694378a825394ab449dd94b098538b4614e2f9a02ec4a0f2b7",
+    "unreal/Content/SkateRide/Clips/B0/L_LAND_HIGH_LOOSE_2_N.uasset": "c2b834f2fd00fb3fb9f9e5223b451a6725ac70ade6ad6e658d0d2984b427bfca",
+    "unreal/Content/SkateRide/Clips/B0/L_LAND_HIGH_LOOSE_3_N.uasset": "765b2fac5c114dfe8c209363c0dfc345fa70b72e99ef134ca1df7806fe6eb8d5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

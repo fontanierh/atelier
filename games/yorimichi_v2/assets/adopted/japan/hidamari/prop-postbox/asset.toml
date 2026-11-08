@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop postbox: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-postbox"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-postbox"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/postbox/concept.jpg"
+sha256 = "912d8a86c779ecc8281d6160bfb61700eca2ce6550f5d477df34d650c05a8c24"
+
+[[sources]]
+path = "source/assets/hidamari/props/postbox/concept.json"
+sha256 = "af0ad3261622856998214da24f1af301726b3be4d5ca173f65694f9525039800"
+
+[[sources]]
+path = "source/assets/hidamari/props/postbox/job.json"
+sha256 = "a81d4cf60a2261eb1f1cd44e791e23fa5d6c143f69a6f6f06c016041fd0cd0ce"
+
+[[sources]]
+path = "source/assets/hidamari/props/postbox/postbox.glb"
+sha256 = "e8ee0a08665e26d9f19549a707496a77306fcd5bef0d3980b419ea67a0f97efe"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_postbox.json"
+sha256 = "85385538a09f74147a51a9c2d11a8fcdd026e87bec1e300c6bce2e972671ab74"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_postbox"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_postbox"

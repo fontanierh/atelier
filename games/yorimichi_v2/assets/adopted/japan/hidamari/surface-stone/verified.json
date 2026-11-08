@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-stone",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_stone.uasset": "e3313e2e4e484fedac1c34f3ceb934067ccfafbd1dd4b44a4d3b6c758f57b619",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_stone.uasset": "0c19c21c677952c0e50c033f4e07e1f66570d82f1daa46add98e6b9fa8fecf22"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

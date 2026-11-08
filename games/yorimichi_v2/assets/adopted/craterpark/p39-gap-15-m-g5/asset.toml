@@ -1,0 +1,40 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park jump "Gap 15 m · g5" (piece p39, line L1): its render meshes (with its supports and coping), the collision pieces it fills, and the material instances and textures only it uses
+schema = 1
+id = "adopted/craterpark/p39-gap-15-m-g5"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/p39-gap-15-m-g5"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_26_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_26_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_25_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_26_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_26_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_25_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_26_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_26_20"

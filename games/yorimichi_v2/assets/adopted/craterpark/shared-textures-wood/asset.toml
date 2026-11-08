@@ -1,0 +1,62 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family wood
+schema = 1
+id = "adopted/craterpark/shared-textures-wood"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-wood"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/masonite.jpg"
+sha256 = "f8e603fed325f7c95408bd751987a3c396e62e49bf0d99871190896692272194"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/masonite.json"
+sha256 = "3597d3ea2ae5b8afbf9677a7de0d3fa1fbeb95b74bcccec0772c1362706f1846"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_boards.jpg"
+sha256 = "39724567401c22dee17d1bd9d37923536c14819bc29a67ddf7d98e5661174853"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_boards.json"
+sha256 = "4429e5231168ca0e804415e75ae58d293ad567baa7823107e7d6001689b36649"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_fascia.jpg"
+sha256 = "f7f980689a7a2f6f84e225a057e9303564a734c0dad462698af18f4aed2ebde0"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_fascia.json"
+sha256 = "c42bbbf9ebab249aa27450f8a741929f807ec67e4262d29f1ea6531cbccfa615"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_planks.jpg"
+sha256 = "bf6c95e92867c122fdbce0a4e21821e7885626795c4b61210ea3b5fe0e6dcfdf"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ramp_planks.json"
+sha256 = "9433908174510e6f6db429fa72e734ef4aa2ca9b525367ddfbc10d73a4ff7459"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0032.png"
+sha256 = "02929a47edf9c0c6807269bc38c23ceb5875b08d4cfd52a454ffcbaf8da8fda5"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0060.png"
+sha256 = "16023a25e80cb7eb793f235f020f8bd8f19e3ee41bb54441556f24ba8d9be4c0"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_masonite"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ramp_boards"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ramp_fascia"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ramp_planks"

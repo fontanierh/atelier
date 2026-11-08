@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-seal-brown",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/seal-brown.uasset": "98dc464ffba884b9f2e64113a8ef6f87bf6b8100eb501def5473daa6493ea56a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,40 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park landing "Reverse catch" (piece p306, line L2): its render meshes (with its supports and coping), the collision pieces it fills, and the material instances and textures only it uses
+schema = 1
+id = "adopted/craterpark/p306-reverse-catch"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/p306-reverse-catch"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_15_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_15_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_16_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_039_15_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_039_16_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_039_16_16"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_045_15_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_045_16_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_045_16_16"

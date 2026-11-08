@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-360inwardheelflip-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_360INWARDHEELFLIP_LOW_A.uasset": "e9beee5fe5ddcb431ef457a0fa5665246783a9da0990ae6154c6cda0c5712a73",
+    "unreal/Content/SkateRide/Clips/B0/N_360INWARDHEELFLIP_LOW_G.uasset": "96341dcd4d38c0e27295114df76d56798d5b60d872939d53788c2530c84da603"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

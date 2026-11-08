@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-hsu-pushlsp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_HSU_PUSHLSP_HSTR_N_0_CYC1.uasset": "9ef154f233889447e34a5510b171cb6c37671d38ba5da3676a64aac0a90cef95",
+    "unreal/Content/SkateRide/Clips/B0/PRO_HSU_PUSHLSP_HSTR_N_0_CYC2.uasset": "8620d9ff45d0c9ba0ce19ecfa99dc07a942933ad0db25552ca8f224ae35afdcb",
+    "unreal/Content/SkateRide/Clips/B0/PRO_HSU_PUSHLSP_HSTR_N_0_INTO.uasset": "c66cf266f702ccbca0116ac6df6f3a50a2e12ec238a40562eb4efa4565ce074a",
+    "unreal/Content/SkateRide/Clips/B0/PRO_HSU_PUSHLSP_LSTR_N_0_CYC1.uasset": "32a98f97e83fedc59c5e630cfd6dc7aad44fafaa8d8d904202e99e30608c628e",
+    "unreal/Content/SkateRide/Clips/B0/PRO_HSU_PUSHLSP_LSTR_N_0_CYC2.uasset": "7e1ebe43d12e87f3f55a4bf931981373f52256e1498727f6ef1cc4985f8159ca",
+    "unreal/Content/SkateRide/Clips/B0/PRO_HSU_PUSHLSP_LSTR_N_0_INTO.uasset": "a50f84680827653482aa816846ce7f00c1bdaa08b8fc3512850b994cf5707848"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

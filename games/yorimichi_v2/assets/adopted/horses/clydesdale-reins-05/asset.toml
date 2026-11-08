@@ -1,0 +1,38 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Clydesdale reins set 05 with its materials and images
+schema = 1
+id = "adopted/horses/clydesdale-reins-05"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/clydesdale-reins-05"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/clydesdale/tack/Reins_05.glb"
+sha256 = "10f9147e1687279abd7c0f91123519d0d17ae07ffc3da8b11db0b6d6073ea151"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/Kestrel_Reins_05_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Jem"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins1"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins2"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins3"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Reins_05/SK_Horse_Clydesdale_Reins_05"

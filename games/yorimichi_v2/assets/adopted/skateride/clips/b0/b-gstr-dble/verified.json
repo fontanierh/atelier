@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-dble",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_BOTH_CYC.uasset": "3bc129126272c0f3d742d41636b3d92603fda9cf1dd15a03e96aa53af9302425",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_BOTH_INTO.uasset": "7c7a118750aa7b4ade8c3f04475a714a3e0e88fe8f9acef61348596e9d6ff7e5",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_BOTH_OUT.uasset": "7bf5ae0dfa6af8fd45d4d19197cc47db9e79317d5afe88fe5bf4a00ead7e92f9",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_LEFT_CYC.uasset": "d7a24cc3593e0b0fcc46e16e8bd6e71328219ee5fe20ec433544260783b3028e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_LEFT_INTO.uasset": "b1f3fd634721dd495702dd623d097a842c36fdc8c9776862fd713ad70404e13f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_LEFT_OUT.uasset": "8757da542d3956c926701053f4cb49403a638b4fd9937e95489c0e3cfb252341",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_RIGHT_CYC.uasset": "2dc3757dc66668b7a8eaf2c4e121ddded2eb0bc175169e5f3bdb12d311b74419",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_RIGHT_INTO.uasset": "2a65a49b6a481dcca91adfeca247fbe5cc58c2caa0ea4bdd7977fe44e765fae0",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_RIGHT_OUT.uasset": "11d696d3b1b95c5de45deb85147e6d41764d7080aecd00f974b07957aa8fb16c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

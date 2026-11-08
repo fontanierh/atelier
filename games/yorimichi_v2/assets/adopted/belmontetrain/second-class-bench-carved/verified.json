@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/belmontetrain/second-class-bench-carved",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_SecondClassBenchCarved.uasset": "0816e24d53f72eb4f1231f0c3f7737fb5f9d23881dfbdaf55271f7864c751feb",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_SecondClassBenchCarved/LOD0/M_BT_SecondClassBenchCarved.uasset": "dcd383b269056e68bf5eee41ea02e6a840801413a0c7b20459385929bd07b81c",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_SecondClassBenchCarved/LOD0/second-class-bench-carved-base.uasset": "612a8685977c10b056e8da2e3e2f1026a7c62fc5f4f35c17a99493eeb83742cf",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_SecondClassBenchCarved/LOD0/second-class-bench-carved-normal.uasset": "398e6ff97ca617d784bd2abafbe55c114d8202f46234ac2ba9e13fe079bc379f",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_SecondClassBenchCarved/LOD1/M_BT_SecondClassBenchCarved_LOD1.uasset": "ca0bad24a7dce89e0dea6839614e267c1cbf5197d8a87001101c37a278c23bfe",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_SecondClassBenchCarved/LOD1/second-class-bench-carved-lod1-base.uasset": "e6f599d8935136efd32bd9fe288a890b465b05f3cecc7941460e6f14f0b0cf08",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_SecondClassBenchCarved/LOD1/second-class-bench-carved-lod1-normal.uasset": "f89debf00950ecb0547149db0aa77e4776522ce169bb615d0108aa9ed08db239",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_SecondClassBenchCarved/SM_BTF_SecondClassBenchCarved_LOD1.uasset": "548db46609f947dabcdaaac3f6a16799c29db6c7d5b3d0482a2f8d553b9edf68"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

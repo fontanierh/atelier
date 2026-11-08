@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/tkdwn-360-slam",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/TKDWN_360_SLAM.uasset": "85db6b85b5bfe6b7f333043f45621bfb73daae9f6c312dd2a476e8753fc52d97"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-ground-fs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_FS_CARVE_L_CYC.uasset": "aa7a5087a8424df555342cc430f1e7285a920922198e0504767dcc6e71b682ee",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_FS_CARVE_L_OUT.uasset": "e539ec29807e0db5022ddb5c51abaa542bf2b91abf993159443bea4f2e4001e3",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_FS_CARVE_R_CYC.uasset": "e90c782d1819a72ad8426fe34562ab3821782ca9f164cf3e174a0b7393157e61",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_FS_CARVE_R_OUT.uasset": "50a83e02a910443ae3bc3dd5286ce9c7e90947dc3fc8513de72855848b1df2e0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

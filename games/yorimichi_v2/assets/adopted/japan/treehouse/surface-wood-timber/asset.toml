@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface wood_timber: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-wood-timber"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-wood-timber"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_timber.jpg"
+sha256 = "8de60cf7892e108b9815e6954d8e157100c3929b25a4b2b88c44457746b41ec3"
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_timber.prompt.txt"
+sha256 = "5f8b487e906b67a6cd28186a2458940ce71f61a8cb07f8270b23aa4bdbc9671b"
+
+[[sources]]
+path = "source/assets/treehouse/textures/wood_timber.provenance.json"
+sha256 = "8cf07d995bc58e5aaf8e367dbd8482a49cc1216b67fea86b7fe6520a23d08c90"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_wood_timber"

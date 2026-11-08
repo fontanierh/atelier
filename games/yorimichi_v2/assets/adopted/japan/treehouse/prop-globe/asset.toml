@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop globe: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-globe"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-globe"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/globe/asset.toml"
+sha256 = "597684ca78c1981179d9b004f4f917880726e9f7cbf404e58137390f65618148"
+
+[[sources]]
+path = "source/assets/treehouse/props/globe/concept.jpg"
+sha256 = "7e1cf58cc9fd9d4ecb98166aeb366b0ccb029c30a6acd98fbc53f9f2760195a9"
+
+[[sources]]
+path = "source/assets/treehouse/props/globe/globe.glb"
+sha256 = "a1a8cb52d8b150695b7d4efc4089a79ffa560e3c4f98d8c0122ef23e619abb31"
+
+[[sources]]
+path = "source/assets/treehouse/props/globe/job.json"
+sha256 = "54b527b0b3dad0b091bda67a3fc7e9e60a58a185a3ce27849022e8193dbbd50f"
+
+[[sources]]
+path = "source/assets/treehouse/props/globe/prompt.txt"
+sha256 = "22a520c7c732317d8a677c3e1112d4e451b663170de100e16a073b93d3623c3e"
+
+[[sources]]
+path = "source/assets/treehouse/props/globe/provenance.json"
+sha256 = "ddbc141452de542b5538968f09da1a246def11e904d61abb655c0915ecb74046"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_globe.json"
+sha256 = "3b3b10d4e8d23b865020bc4cfd8c6f0230803447de59d2a2f379771c3691d81e"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_globe"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_globe"

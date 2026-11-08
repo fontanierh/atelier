@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-n-varialkickflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_N_VARIALKICKFLIP_H_CYC.uasset": "c0e3535a09248a4ee3729fd14d3120ba97feccbb04db71f90681b049d6a606a6",
+    "unreal/Content/SkateRide/Clips/B0/T_N_VARIALKICKFLIP_L_CYC.uasset": "6b6ec07b3b0ea3db938c5f2a124191250ee59b5ec0767c0534173f5e50710f55"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

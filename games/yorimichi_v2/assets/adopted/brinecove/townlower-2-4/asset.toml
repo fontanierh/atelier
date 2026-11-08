@@ -1,0 +1,67 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove townlower-2-4 (19 mesh(es))
+schema = 1
+id = "adopted/brinecove/townlower-2-4"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/townlower-2-4"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece00"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece01"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece02"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece030"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece031"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece032"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece033"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece10"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece110"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece111"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece112"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece113"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece12"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece13"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece20"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece21"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece30"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Piece31"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLower_2_4_Soft"

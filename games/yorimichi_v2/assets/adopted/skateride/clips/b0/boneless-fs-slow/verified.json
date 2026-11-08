@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/boneless-fs-slow",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_A.uasset": "e11b0dfd41e77df684e45186acf23f74f71fcb9e64e1dcf731a67af49c3744f7",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_F.uasset": "f89ee36cc20cdc6f9726c259d4cbac0351516ed0c05732390da4f322e290c38d",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_G.uasset": "2387fa2afe454e4c0d02047191156a8d036665add21c1d6437d00fcc31eaf256",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_FS_SLOW_L.uasset": "74afec22e2aea57fc5a19f359a3b605e2654e585440ef1736f591d955f3b9a6d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

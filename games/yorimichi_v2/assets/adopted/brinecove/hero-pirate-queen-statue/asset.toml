@@ -1,0 +1,93 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove hero model pirate-queen-statue: its mesh cells, material instances and textures
+schema = 1
+id = "adopted/brinecove/hero-pirate-queen-statue"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/hero-pirate-queen-statue"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "source/assets/brinecove/models/pirate-queen-statue.glb"
+sha256 = "498021584d713cf1f0faf690fb905be5d3967ffd8f1a20204c1328a0d31250fb"
+
+[[sources]]
+path = "source/assets/brinecove/models/pirate-queen-statue.provenance.json"
+sha256 = "5158179b087ffb2cd4af5d931e9d2af4c11d9d68b46764abd157d0a4240db864"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_1"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_10"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_2"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_4"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_5"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_6"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_7"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_8"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_pirate-queen-statue_9"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_-1_-1"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_-1_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_PirateQueenStatue_cell_0_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_1"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_10"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_2"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_4"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_5"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_6"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_7"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_pirate-queen-statue_9"

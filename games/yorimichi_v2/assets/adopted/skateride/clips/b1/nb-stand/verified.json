@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b1/nb-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_0_CYC.uasset": "f596a021719f05f6160b9fbb4fa43988e0fafd0ef91ad01560bfd87cb28837a5",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_0_INTO_RUN_FWD.uasset": "5e92a084fdb9c5b6d2cddcb759a77b9ed271fb361caaa922f151de0a2459311a",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_0_INTO_SPRINT_FWD.uasset": "d6a4f98115f87ed731e7c0fc7396c2e9b0791f5e0880ceb854af972d0266672c",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_0_INTO_WALK_FWD.uasset": "2f2f72442e3ec3fb9170e99d3b702ee922d173bd4dd83ea49cd03faf7e301bc4",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_0_THIN_CYC.uasset": "5a27b8c2b4cb5808d03e388b5b7b5ca737ee5b2d6572cacdc0e6f79bcc45e713",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_0_THIN_INTO_RUN_FWD.uasset": "e040d4edf2bafb084e0f4a76879343208770e96f71ca60cf9cea6d4e8df30e34",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_0_THIN_INTO_WALK_FWD_THIN.uasset": "b762751c6365435c4bf0e72eb93be0fb326dfd071907ca676fc33439662e88e9",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_HI_READYPOSE.uasset": "718fbd615b9647c0ae42ec742b5a938606da412c4240339a7ef447213bcdffc8",
+    "unreal/Content/SkateRide/Clips/B1/NB_STAND_READYPOSE.uasset": "b65b4211655847bd3c70cd069bba1ad5accbd38d52163985aa867fe4e61c501f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

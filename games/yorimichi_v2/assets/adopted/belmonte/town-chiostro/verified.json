@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-chiostro",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Chiostro.uasset": "c040cc71f69966bbd44122f55a42e94f8b924eda1338779ed4e8adf6d95fd94a",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Chiostro_Collision.uasset": "29303a4c65cafa296bb30a2d496af6e2194a3c7f7521fdb005b7e5fb7ff967d9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

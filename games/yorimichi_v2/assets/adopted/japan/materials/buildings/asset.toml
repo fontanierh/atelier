@@ -1,0 +1,34 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan buildings materials (8 package(s))
+schema = 1
+id = "adopted/japan/materials/buildings"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials/buildings"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Lattice"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Metal"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Paint"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Plaster"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_RoofTile"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tile"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Vermilion"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Wood"

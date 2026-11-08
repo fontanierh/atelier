@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-wood-plank",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_wood_plank.uasset": "1a6b10c949095113630f0b57f2db766ec766311c6f49bd3774382da7225f51c0",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_wood_plank.uasset": "aba9ec61b51288050109998f0c676ea589af7ab20215b0ae967adb180794ceaf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

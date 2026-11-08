@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-fire-buckets",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_fire_buckets.uasset": "c0fe137668f2e01882a6ed176479627c9cac19b80b9b669a5423788a7bb01ef0",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_fire_buckets.uasset": "8e764d36ee3742074e529c8efb0eebcda605b53808feb5b3c2a72c79102e46f0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

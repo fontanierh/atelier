@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-finish-post (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-finish-post"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-finish-post"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_FinishPost.glb"
+sha256 = "c000e02632b0bcc9c33c84cabba3027f1b17102a611835cbf597d85a900d5cf1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_FinishPost"

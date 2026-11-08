@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/fastplant-bs-stop",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_BS_STOP_A.uasset": "68d29918f41f60716a43fe77d0d9fa0c513ef2e6137b48163eb8a0a9d9f2123b",
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_BS_STOP_F.uasset": "31d56bf05baf4fc253b6abd5fa09020ed94f2cd49cc2570e5153ae6b4de70195",
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_BS_STOP_G.uasset": "4b7ef9432202a47af0b293a8f16a6e4fa376262683db575fdc4e9ebf646a4e96",
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_BS_STOP_L.uasset": "ee8c9ced0c674da804f9195faa7fe4e334984ad22043d733efbc6d2bce645dc6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

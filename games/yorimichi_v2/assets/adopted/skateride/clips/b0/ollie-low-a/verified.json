@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/ollie-low-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/OLLIE_LOW_A.uasset": "7ebe0d0b32e8333ced9157faa5076a734519285ef64ecded322ca1ddeff43be9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

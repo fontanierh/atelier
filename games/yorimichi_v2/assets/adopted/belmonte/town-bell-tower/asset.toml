@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte town-bell-tower (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/town-bell-tower"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/town-bell-tower"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_BellTower.glb"
+sha256 = "a93b4c4d4a1f42abdebb51662a21c92e9df7460a50cc2657d3ef06788967f29a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BH_BellTower_Collision.glb"
+sha256 = "89957d303ec76c0c96b1f2ac1fa523ae6c30add10c93f3b1d5eb2ac4d018588d"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_BellTower"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BH_BellTower_Collision"

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/belmonte/emblems",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_fd5f4f4381ce.uasset": "16f89f09c54a82d472366f73cf103ae3d877de7a5f0e8a23819799e4f2d3c083",
+    "unreal/Content/Belmonte/Meshes/SM_BM_HV_Emblem_Crown.uasset": "4bb5e999c5379daf1dc601ffe6d7c162136740414cba5148da1312a5572ea148",
+    "unreal/Content/Belmonte/Meshes/SM_BM_HV_Emblem_Diamond.uasset": "2d39b0b85abee88bafb73d7233d8a74ec46ce5fb6ba4d9668a4b534a0948db31",
+    "unreal/Content/Belmonte/Meshes/SM_BM_HV_Emblem_Laurel.uasset": "4a92e25913469aeaa3fba3be440e5ed287d6099ead386b4f9d217ccb14b23195",
+    "unreal/Content/Belmonte/Meshes/SM_BM_HV_Emblem_Moon.uasset": "c52cbebf6ebae582200cd8829bcc4515859001ed3389307a3d46e77d648b2026",
+    "unreal/Content/Belmonte/Meshes/SM_BM_HV_Emblem_Star.uasset": "66e888c20e576194f98762ef8c85e69366ef0562db047d23aeae4264614e8ad0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-maple-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Tree_Maple_A/MI_Tree_Maple_A_Crown.uasset": "2c6611b946812a7eaf390d00fdb50a283edd4f4f192d0198d20f6f936245363b",
+    "unreal/Content/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD1.uasset": "051268056a21935ee81add5411a20063ba0c36a5d60f97d5b2fa2f1dfbcef2ab",
+    "unreal/Content/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD2.uasset": "c5c40f0185ff8fe1e44d5965d4b69deee6a3bd221f1073c2d21f84eabf3a7d37",
+    "unreal/Content/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD3.uasset": "5ca2b00a86acc0e897a764000cd1e5c9d5681ddb7593cd47aeea2a764bf3455d",
+    "unreal/Content/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD4.uasset": "812efaeab953fe546e49355fc43b0055d0a7afe8a38922bc40df04f3d9c720ae",
+    "unreal/Content/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD5.uasset": "9491f979091f6f5fcf2643c5696ba85aa9e29a1b3c9e8583557841e81bb52699"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

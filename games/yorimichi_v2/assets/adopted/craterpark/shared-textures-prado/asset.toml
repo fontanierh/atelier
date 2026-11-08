@@ -1,0 +1,25 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family prado
+schema = 1
+id = "adopted/craterpark/shared-textures-prado"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-prado"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/concepts/editor/prado-plan.png"
+sha256 = "c200a8f377f41fcad1c9fd8991e90ce4db9332cee9780689201ce3c04878b212"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/prado.jpg"
+sha256 = "c6d918188cf57c30b213ace43c169a959974f3ec05c6cbef5a5d2adac0f0ffb9"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/prado.json"
+sha256 = "92f642ab069a4a43de2822ae2c8c38753ce8108b179470ebab402d60405709cb"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_prado"

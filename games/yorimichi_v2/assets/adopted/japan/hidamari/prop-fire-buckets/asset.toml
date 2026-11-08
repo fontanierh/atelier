@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop fire_buckets: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-fire-buckets"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-fire-buckets"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/fire_buckets/concept.jpg"
+sha256 = "237cee5de4e5ce4d3a5a50f9f127962994c36384f756ebd77970878ad095e51c"
+
+[[sources]]
+path = "source/assets/hidamari/props/fire_buckets/concept.json"
+sha256 = "7f07a8d3741216643a545a9308ef2da49bcd491c3eed761ba4927cc5df2215b7"
+
+[[sources]]
+path = "source/assets/hidamari/props/fire_buckets/fire_buckets.glb"
+sha256 = "a00125d400a75658e7b729ba1e3aa427fcb7d193a4c9020607bc8a94e13b6cfe"
+
+[[sources]]
+path = "source/assets/hidamari/props/fire_buckets/job.json"
+sha256 = "610b03482e5a80ae6c0ed73c81906174eb2870c0169510ffa613091f0e20b8a3"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_fire_buckets.json"
+sha256 = "69075a968b882a5e20b69d1e071839da71346f80f0da2a221f1211c1ecca06a3"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_fire_buckets"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_fire_buckets"

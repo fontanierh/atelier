@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface pictures: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-pictures"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-pictures"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/pictures.jpg"
+sha256 = "2723e6d28888f4f1326b93de687fa931caaf6d0cf84a240317ae6e4e175f1667"
+
+[[sources]]
+path = "source/assets/treehouse/textures/pictures.prompt.txt"
+sha256 = "54cc79436ea42066098a468452328ab6381546ef12fcbe4c3e843eb453c0afb3"
+
+[[sources]]
+path = "source/assets/treehouse/textures/pictures.provenance.json"
+sha256 = "890a9c5aa759fa4b61aef46821dc8161ae1ea1d917c23fd6bd3335ba61f81284"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_pictures"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_pictures"

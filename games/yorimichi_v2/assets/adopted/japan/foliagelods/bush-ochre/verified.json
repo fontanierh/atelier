@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/japan/foliagelods/bush-ochre",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD1.uasset": "568850c4bbf60f07598a17ece2af24319143a669022560a2ce7c6405e3996379",
+    "unreal/Content/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD2.uasset": "5fccb3e98ae13db98127dd12c647fffbcaae30e7b74bb8dc8627011161961657",
+    "unreal/Content/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD1.uasset": "3d872c06f8864e72ffa3ed12c9473e72cbda52ce69b08330d292db3300d23241",
+    "unreal/Content/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD2.uasset": "bb1acbb3460e16f9e1fa6f4b64f297419e1a297191d3078976f826ceba675b77"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

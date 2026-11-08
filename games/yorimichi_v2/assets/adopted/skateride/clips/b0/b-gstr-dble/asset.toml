@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: B_GSTR_DBLE in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/b-gstr-dble"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/b-gstr-dble"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_BOTH_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_BOTH_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_BOTH_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_LEFT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_LEFT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_LEFT_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_RIGHT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_RIGHT_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_GSTR_DBLE_GUN_RIGHT_OUT"

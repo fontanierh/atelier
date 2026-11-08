@@ -1,0 +1,97 @@
+{
+  "slug": "pirate-queen-statue",
+  "stage": "brinecove-trellis-processed",
+  "generated": "2026-10-18T11:11:13.614647+00:00",
+  "source": "build/yorimichi/pirate-coast/trellis/out/statue/head.glb",
+  "source_sha256": "4ff7296c62eba229e362aea2014b537447ce80304b77177586f0bed49ec981f2",
+  "reference": "games/yorimichi/proposals/pirate-coast/references/props/pirate-queen-statue.png",
+  "reference_sha256": "397bfa8a5bd6b2260fe8daceb34d9a7803c5e84cf8cad626b25114382b38e95d",
+  "generation": {
+    "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+    "backend": "Microsoft TRELLIS.2 MLX",
+    "native_vertices": 631841,
+    "native_triangles": 1279218,
+    "output_sha256": "4ff7296c62eba229e362aea2014b537447ce80304b77177586f0bed49ec981f2",
+    "native_checkpoint_sha256": "44cf9a56e71a53de1a0884d6392ed076d5fbc4976cff6a6cfee0f020c78f2b7d",
+    "mesh_sha256": "03a9843f5dfeead04b34a8c506f9aaee2025ce9a98fd832a69776ac290d8c192",
+    "all_native_triangles_and_winding_preserved": true,
+    "transform": "Only fixed Z-up to Y-up axis rotation performed by the pinned export",
+    "seconds": 396.827,
+    "strict_model_key_checks": [
+      {
+        "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+        "keys": 74,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 292,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 284,
+        "strict_complete_state": true
+      }
+    ],
+    "mlx_peak_bytes": 4661694234,
+    "quantize": 0,
+    "resolution_requested": 512,
+    "actual_mesh_grid_size": 512
+  },
+  "target_height_m": 22.0,
+  "notes": "harbor statue; full figure and plinth; dilated learned stone texture",
+  "triangles_before": 1279214,
+  "triangles_after": 40000,
+  "pruned_faces": 0,
+  "shells": 0,
+  "filled_faces": 0,
+  "boundary_rim_edges": 0,
+  "bounds": {
+    "min": [
+      -6.1756,
+      -3.7741,
+      -0.0651
+    ],
+    "max": [
+      6.181,
+      3.7498,
+      22.0164
+    ]
+  },
+  "output": "games/yorimichi/proposals/pirate-coast/assets/models/pirate-queen-statue.glb",
+  "output_sha256": "498021584d713cf1f0faf690fb905be5d3967ffd8f1a20204c1328a0d31250fb",
+  "checks": {
+    "triangles": 40000,
+    "vertices": 19956,
+    "uv_layers": 1,
+    "materials": 13,
+    "textured_materials": 11,
+    "images": 14
+  },
+  "texture_dilation": null,
+  "processing": [
+    "parent clear",
+    "transform apply",
+    "uniform scale to target height",
+    "centre XY and seat min Z at 0",
+    "collapse decimate with UV preservation",
+    "UV/texture/material and finite-vertex validation",
+    "three Blender review renders"
+  ]
+}

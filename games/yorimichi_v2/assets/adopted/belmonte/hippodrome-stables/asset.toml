@@ -1,0 +1,40 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-stables (2 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-stables"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-stables"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_StableYard.glb"
+sha256 = "f72e46ebc9664a163773108f019bb485cee45d631dac13f0fef3044f3289ac11"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Stables.glb"
+sha256 = "3dfca6fcf457cfcf811572bb579e76e4d29640d4a10ee7c53693d19c9d5d73b3"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Stables_Collision.glb"
+sha256 = "47192d1fefe30a47571952a8de054c1e02c0895a0c9882ed0595149433c146e9"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StableYard"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece0_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stables_Piece3"

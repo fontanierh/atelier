@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/mvobj-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HIGH_STILL_0_CYC.uasset": "542337ef459c76f6a9b2d798b927b857b0d2d60e71df6a7318d72eee845a8f8e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

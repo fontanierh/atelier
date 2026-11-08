@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/estate-tie-rail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_TieRail.uasset": "5b7a6cc59e7abf7f41a5ef6cd0b1101131607e4c012a5c5b2ff69a3a12121fed",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_TieRail_Collision.uasset": "90736c5c2ebb8ce182dea1f76534a7c5eaeb76722aaec28b750308fac0602ea6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

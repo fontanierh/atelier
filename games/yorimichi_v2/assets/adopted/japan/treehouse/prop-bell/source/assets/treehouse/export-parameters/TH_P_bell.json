@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_bell",
+  "schema": 1,
+  "size": 0.75,
+  "slug": "bell",
+  "solid": false,
+  "target": 0.07,
+  "turn": -90
+}

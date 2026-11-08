@@ -1,0 +1,258 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan parent materials and the wind collection, and the generator: shared material, texture and foliage scripts that made the materials, textures and foliage LODs
+schema = 1
+id = "adopted/japan/materials/base-materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials/base-materials"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/forest_atomic_build.py"
+sha256 = "01667ebedb6ab840e9d5df379b2586165417a53f18d023205b5177e735d15259"
+
+[[sources]]
+path = "source/unreal/Scripts/atmosphere.py"
+sha256 = "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+
+[[sources]]
+path = "source/unreal/Scripts/city_parent_transition.py"
+sha256 = "f6a572594945dc4d23cf6ac7047a1b077a6147fd842f083602edb31031217821"
+
+[[sources]]
+path = "source/unreal/Scripts/foliage_material.py"
+sha256 = "70fbd4b6ad988d7192b78b227711c6ccb30fe40928301d98a4c18288b338249a"
+
+[[sources]]
+path = "source/unreal/Scripts/foliage_package_repair.py"
+sha256 = "90a923ef949e7e4ba5139ebf0c3c6b60ffc52ff5084ead34bdc6543912ed427b"
+
+[[sources]]
+path = "source/unreal/Scripts/foliage_slots.py"
+sha256 = "018c973e71af9033a18a0f9fb476f9d7579de6d03f87cb3319a3135df95cf72a"
+
+[[sources]]
+path = "source/unreal/Scripts/forest_impostor_material.py"
+sha256 = "c7aa76c7b9b9385129b19937fdb639d5d6eff8d57ec0b84ccd9e92164e76c505"
+
+[[sources]]
+path = "source/unreal/Scripts/forest_lake_material.py"
+sha256 = "0a5a3ac62cde21e3cc5174a19e2067c41eeb9cb1e5a8a8de52fc127fe4e8674d"
+
+[[sources]]
+path = "source/unreal/Scripts/forest_native.py"
+sha256 = "37c32ee4d939c177409c090bf710bade455daac24e8e90b6b1a4b1697d2f6be8"
+
+[[sources]]
+path = "source/unreal/Scripts/ground_grain.py"
+sha256 = "c802eea4323f749fd84b5b99cb3d0a1e6196d79f2c7ce99d8e468d2feead6206"
+
+[[sources]]
+path = "source/unreal/Scripts/import_foliage.py"
+sha256 = "cbf3a5e2466195c52e21cb87cabd199ef10398c5553b2a03fc21d784ac17bee9"
+
+[[sources]]
+path = "source/unreal/Scripts/import_foliage_lods.py"
+sha256 = "0a9650d53181c670fee40733ace3649f2ca1092c0a674920f2d88294135ebc6b"
+
+[[sources]]
+path = "source/unreal/Scripts/import_forest.py"
+sha256 = "54df366cd7ddcd3cc3900352e055c5b1c4522cf4f2affaff0fec3ab4c1b2f4f2"
+
+[[sources]]
+path = "source/unreal/Scripts/material_assets.py"
+sha256 = "4f48db1203b44c5abca932291ce323f7247a655753167a5f72dfefe5ac4be50f"
+
+[[sources]]
+path = "source/unreal/Scripts/mesh_import.py"
+sha256 = "371f2e5b7dc10ddbca659662475bba4b26db69585a9e99f7206ba228e9ba11ad"
+
+[[sources]]
+path = "source/unreal/Scripts/mountain_material.py"
+sha256 = "21238502c415c255cb5081801368871b0c96e9d81b1315812ae1a63d39087185"
+
+[[sources]]
+path = "source/unreal/Scripts/painterly_kernel.py"
+sha256 = "70f9be7d03f23727829837b2334f3a84691de5bda4189a164c09868feac48077"
+
+[[sources]]
+path = "source/unreal/Scripts/plaza_material.py"
+sha256 = "c25bcab39975ab556a564ef3b3725a62ca296eb0f9f406ac0573c26c89c3b85e"
+
+[[sources]]
+path = "source/unreal/Scripts/sea_look.py"
+sha256 = "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa"
+
+[[sources]]
+path = "source/unreal/Scripts/see_through.py"
+sha256 = "9d7da40163a6e4023d91e8fc2aaacdd2578bf07ef02f05b4e10dcc1c4c8fd105"
+
+[[sources]]
+path = "source/unreal/Scripts/shared_materials.py"
+sha256 = "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+
+[[sources]]
+path = "source/world/assemble_forest.py"
+sha256 = "ffb0b4cd0be2f811bbfa33e44a8398156b371a5ccaacb5877e9e1ce51663c149"
+
+[[sources]]
+path = "source/world/asset_catalog.py"
+sha256 = "c56a3afcea30d1cb71dccf8784ad29a64396e6303229d45a048e49cde07ad677"
+
+[[sources]]
+path = "source/world/asset_mesh.py"
+sha256 = "7c6af2c51e01f17220c3cbe3acb25816d5216aaacaafbb108a15f38f4358caa5"
+
+[[sources]]
+path = "source/world/bake_forest_tree.py"
+sha256 = "17cad203d1ebbc0a58385e421563872f4090f7023804ab39808966544e5d8048"
+
+[[sources]]
+path = "source/world/build_foliage_lods.py"
+sha256 = "2e336e59ff4cf18ba7ccf8c713a977e17072b9ec448c8d61053f877e77337aca"
+
+[[sources]]
+path = "source/world/export_foliage_piece.py"
+sha256 = "4b5c5a162e93b323305a478b1dcf2ea80ac6a93d874a3abfbada58f533a499bf"
+
+[[sources]]
+path = "source/world/far_crown.py"
+sha256 = "2173f816453b4c2c495306121f6d60bde2a8ef62779a943c978876732fd624ae"
+
+[[sources]]
+path = "source/world/foliage_geometry.py"
+sha256 = "b971ae0fdd8830bb6be3babe385e82a6bd07dac5298080d968c93688ee89982e"
+
+[[sources]]
+path = "source/world/foliage_selected_source.py"
+sha256 = "17404db5903bde6cb4b681de8ff884aca8066e7b06665ff2d2653e8843cf0da6"
+
+[[sources]]
+path = "source/world/forest_impostors.py"
+sha256 = "b1a4ba24e86fa693fc42b06b97cff588761b8392b21175d705b725a40cc07b7d"
+
+[[sources]]
+path = "source/world/forest_parameters.py"
+sha256 = "803e219a00ed64e3e2b8e9678887f1a647d16a7b2e8fc9931203bb22458e8e8e"
+
+[[sources]]
+path = "source/world/forest_source.py"
+sha256 = "d3671565e4be1155afb10074d9ae160b01a89c564f3112d21575251cd84215ef"
+
+[[sources]]
+path = "source/world/forest_trees.py"
+sha256 = "5602e6ee956eaa19f96250c3908d1eb8942834e149fea7441005ec5052b8374d"
+
+[[sources]]
+path = "source/world/gen_textures.py"
+sha256 = "5b8b93fe242873529e1a781a994fd3be9309a6aa3af56fb3b7d07b971e27aaf6"
+
+[[sources]]
+path = "source/world/material_specs.py"
+sha256 = "9ab9af14980cc22f9618eef86a9cdc130c5f6006e321d468f4ea46c5d1b0dbcf"
+
+[[sources]]
+path = "source/world/mesh_pieces.py"
+sha256 = "079b32da3e360442e9bb780de7bd74fe32fb68b7d8aabefe5978843f8aebc782"
+
+[[sources]]
+path = "source/world/region_mesh_parts.py"
+sha256 = "bb3c22091ecdcb80a592b21cc27eff475c0a5157a7360381dbe139fbdca23aa0"
+
+[[sources]]
+path = "source/world/region_plan_files.py"
+sha256 = "4c6466353527d0f62d0b89902efdc32dfa04c750f7fc11f0493a8e5320a5aac3"
+
+[[sources]]
+path = "source/world/surface_textures.py"
+sha256 = "f677939afca576d3cfa147f294a472b55ce056c0ac941370ebcc0b218591969f"
+
+[[sources]]
+path = "source/world/texture_catalog.py"
+sha256 = "9cdf913ab4dac3439e48eafd02048b91196982757d17aca1d2b7be4d2ee0a9b1"
+
+[[sources]]
+path = "source/world/yori.py"
+sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MPC_Wind"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Arcade"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ArcadePaving"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Bike"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_CloudShadow"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_CoastRock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Foliage"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestGround"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestImpostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestLakeWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Grass"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Harbor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_HarborWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_NorthGate"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_NorthMountains"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Painted"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Painterly"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PlazaPaving"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PlazaWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PondWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_SailboatCloth"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_SailboatWake"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sea"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sky"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Village"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_VillageResident"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ZeppelinFabric"

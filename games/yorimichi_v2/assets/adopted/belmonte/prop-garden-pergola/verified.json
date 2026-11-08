@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-garden-pergola",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_GardenPergola.uasset": "e8b46327ad564393238b0ecc022f191d8346f866ad3ec89ffd2e4d836c8fa839",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_GardenPergola_Collision.uasset": "89f871776d119ae4246a95d68af569e85aad2bc01c668bcd871e5c440555d2fb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

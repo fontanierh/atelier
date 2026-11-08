@@ -1,0 +1,70 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-stand (4 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-stand"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-stand"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_Stand.glb"
+sha256 = "85ffa864d17edf6a148fae115af305c624319fa64ff1c2921ca71983e5da4791"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_StandGardens.glb"
+sha256 = "1c8270fca01e99b72c109baad3aca5739d2c2cf6a22d29e96e05e76d755c8110"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_StandGardens_Collision.glb"
+sha256 = "cb71718670c531f564be249fa65c8f1d8b7e30516ed66c386289a1f63c5b73d4"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_StandShell.glb"
+sha256 = "93cbc6c8d3cdb12d8a17138248b8f4b8560fd442b09e537f5952fbd665ac63a8"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_StandShell_Collision.glb"
+sha256 = "29db9e93944d51f90d1e5cff5547e9477581830d00307c548396c25629f20cc0"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_StandTerrace.glb"
+sha256 = "7096e7a7d086d65fc7ac2fee286e0178342613a226ae2eb248f16a7af315eb8a"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandGardens"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandGardens_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece2_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandShell_Piece3"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_StandTerrace"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece02"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece03"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece12"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece13"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_Stand_Piece3"

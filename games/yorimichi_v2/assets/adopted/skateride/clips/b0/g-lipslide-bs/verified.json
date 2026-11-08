@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-lipslide-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_LIPSLIDE_BS_HI_0_CYC.uasset": "296de2f785c6b719b21d0d61fffaaff25c1fd5bb0ea6aa383c73952433d1e809",
+    "unreal/Content/SkateRide/Clips/B0/G_LIPSLIDE_BS_HI_L_CYC.uasset": "d4973e3dcd05d05b0cff99caf4e26f4055549c4a62e6d4bf89047279b5a94e73",
+    "unreal/Content/SkateRide/Clips/B0/G_LIPSLIDE_BS_HI_R_CYC.uasset": "9810c09ef1e1f554c11add758e32db95a9835483f6ec112bfc21858a27332cf8",
+    "unreal/Content/SkateRide/Clips/B0/G_LIPSLIDE_BS_LOW_0_CYC.uasset": "6acf9c6e0c9e943897573731aef8619167c3e708e7843d3e3180d4c1f93a8d4e",
+    "unreal/Content/SkateRide/Clips/B0/G_LIPSLIDE_BS_LOW_L_CYC.uasset": "ae645f5c51f2da7f650d3fbde755d20a6a3d7bc3bea8d81e259ab1d753bb5a7e",
+    "unreal/Content/SkateRide/Clips/B0/G_LIPSLIDE_BS_LOW_R_CYC.uasset": "fa5dfc2a487b628d2d9a162f3c267796c9a5fb1c5885aee3358d68487e57a5af"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

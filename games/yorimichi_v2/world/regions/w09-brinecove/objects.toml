@@ -1,0 +1,37 @@
+# Brine Cove objects a person edits on their own (tools/migrate/objects.py), one saved actor each. Their groups hold them alone;
+# docs/inventory/brinecove-objects.md lists the objects that are fused with others and what extracting them needs.
+# `model` is the record of the object's mesh: its unit in assets/adopted/brinecove/units.json, or (the wreck) its
+# generated model with a committed source.
+schema = 1
+tag = "brinecove"
+data = "brinecove/runtime.json"
+
+[[objects]]
+id = "object/brinecove/wreck"
+group = "SM_BC_Ships_2_2"
+model = "prop/brinecove/wreck"
+about = "the broken, unfinished galleon hull on the western rocks"
+
+[[objects]]
+id = "object/brinecove/galleon-adventure"
+group = "SM_BC_Ships_3_3"
+model = "adopted/brinecove/galleon-adventure"
+about = "the galleon Adventure moored in the harbour: rig, deck and guns (its hull is a shared hero model)"
+
+[[objects]]
+id = "object/brinecove/lighthouse"
+group = "SM_BC_Landmarks_1_3"
+model = "adopted/brinecove/lighthouse"
+about = "the lighthouse on the western headland (its planting is the separate SM_BC_Landmarks_1_3_Soft group)"
+
+[[objects]]
+id = "object/brinecove/fort"
+group = "SM_BC_Landmarks_3_5"
+model = "adopted/brinecove/fort"
+about = "the hillside fort: curtain walls, towers, keep, gatehouse and courtyard"
+
+[[objects]]
+id = "object/brinecove/pirate-queen-statue"
+groups = ["SM_BC_Hero_PirateQueenStatue_cell_-1_-1", "SM_BC_Hero_PirateQueenStatue_cell_-1_0", "SM_BC_Hero_PirateQueenStatue_cell_0_-1", "SM_BC_Hero_PirateQueenStatue_cell_0_0"]
+model = "adopted/brinecove/hero-pirate-queen-statue"
+about = "the pirate queen statue (its hero model cut into four cells, one actor)"

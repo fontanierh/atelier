@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop crate_desk: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-crate-desk"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-crate-desk"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/crate_desk/asset.toml"
+sha256 = "bf708f906a1f3a03bb4f986c507bc96050136b01f4d376b8fba2aff9519c2bb7"
+
+[[sources]]
+path = "source/assets/treehouse/props/crate_desk/concept.jpg"
+sha256 = "3cf02f531ea91b33216e2f865a5a3ad3dca1bd459592adcaade6182f05d3f29d"
+
+[[sources]]
+path = "source/assets/treehouse/props/crate_desk/crate_desk.glb"
+sha256 = "7d18db3aa8b57e6b13d2ea3ef6def75b4990053828a639b2114a678daa767583"
+
+[[sources]]
+path = "source/assets/treehouse/props/crate_desk/job.json"
+sha256 = "8d3fcdf8364a4256b7197df78bbd2136a95d4a7566b33a41f22b9db531973173"
+
+[[sources]]
+path = "source/assets/treehouse/props/crate_desk/prompt.txt"
+sha256 = "a1f7b0bc77c25a3e6d2cedecccf2117a11ae5e91693572b45babdfa128c3c410"
+
+[[sources]]
+path = "source/assets/treehouse/props/crate_desk/provenance.json"
+sha256 = "59e6a0719513eaa16f9fd1eeee289b7965e0b7e2e066ff7bf4d969fdcd53c34b"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_crate_desk.json"
+sha256 = "fd263136e93693ff03764d84b5787e315a18984053cb7614814c87844caa9953"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_crate_desk"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_crate_desk"

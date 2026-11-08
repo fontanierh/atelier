@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/belmonte/civil-mura",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_0.uasset": "7af63be379bf5b3bced1fc5365657249f8b9a0561718808d02e697a1823b2958",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_0_Collision.uasset": "361181d45ea35b0e0681f3bcd3c4714cc935abd3b57daad66824b8c872e9a641",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_1.uasset": "4a879cfcea9dd1036aa03e9979b0301b5d4887fd778061fa6decc0af501e9738",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_1_Collision.uasset": "4abd7abd597322b85b01082d2e2cd448e1f8eac67df7ed613cc8a1a525e5ddbe",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_2.uasset": "cf361484625e37444985d284369494689b2e767ba18b9004a992e79019628526",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_2_Collision.uasset": "d1d5eb811e7c09e52f8735e78cef9023fac757d13664c40dfc72c7c0c6ce10fd",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_3.uasset": "47181c45d176505a83a5417e68d2cd43503f31e731820225f540170d20a73017",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Mura_3_Collision.uasset": "267340366ecc85bcacc199f7b4955accf8565d8d11df93fe10f9481b0cbf84a9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

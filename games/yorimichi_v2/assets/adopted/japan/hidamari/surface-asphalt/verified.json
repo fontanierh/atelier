@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-asphalt",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_asphalt.uasset": "2734b82e503a2455a5eb3bf3b3db0282f666477db5e0371afdb3a29c072a1550",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_asphalt.uasset": "e913fb6a60c42e56f949a9461ef7555fa997c738ff0a7378092a2805faba8075"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

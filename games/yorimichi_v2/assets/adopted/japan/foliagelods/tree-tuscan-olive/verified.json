@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-tuscan-olive",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/MI_Tree_Tuscan_Olive_Crown.uasset": "6cfd7f58abcafb882eeeee04dc8666553fa21e5f368bc41cdcb15dc672b07b07",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD1.uasset": "c1db230eb3a7ae38129cb08dc98dc5561ecc2659df6ff27e2e2ee47babfbf214",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD2.uasset": "921dc14d0588874bf3274f85228e9ad4075e0ac3000d10decf7320f0af073b77",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD3.uasset": "600cd10ab80229d8fadd16b332364eb82840d989a41706b1e4631eb8f2a71dee",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD4.uasset": "bb6dc553f153eb02f1717bb9b373e98c7dab4badbb32ec47b46f1efa8cf4d537"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,36 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "Paint ONE object alone for 3D reconstruction: shown whole, in a three-quarter front view from slightly above, centred with a clear margin all round, on a plain flat light-grey background, soft even light, no cast shadow, no floor, no ground, no landscape, no text, letters or logos anywhere, nothing else in the picture. Image 1 is the approved art direction: the top of a skate start tower with a small shrine behind it. Paint the object exactly in the look of the shrine pieces in image 1: the same warm hand-painted style, vermilion lacquer with light wear, dark weathered timber, pale grey weathered granite, dark grey roof tiles, matte colours with soft variation, chunky readable shapes, believable real-world proportions, no photographic noise, no glossy highlights. Every part must be solid and connected; nothing floating. The object: a single tall Japanese nobori shrine banner on its own pole: a thin dark lacquered wooden pole standing in a small square grey stone base, a long narrow vertical cloth banner in vermilion red hanging from a short crossbar at the top of the pole and tied to the pole down one side, a simple white circle crest of three swirling commas (mitsudomoe) near its top, a thin white border, the cloth hanging almost straight with a gentle ripple; the banner is about four times as tall as it is wide.",
+  "references": {
+    "games/yorimichi/assets/craterpark/concepts/editor/tower-top-shrine-balcony.jpg": "12a6e577d99ac0741915a6e204cc1d5643be289f6f50e65285e6cc71ae9038a0"
+  },
+  "execution": "games/yorimichi/tools/craterpark_shrine_props.py",
+  "purpose": "Crater Park tower-top shrine reference sheet for Tripo",
+  "status": "done",
+  "started_at": "2026-10-16T09:56:31.310153+00:00",
+  "usage": {
+    "input_tokens": 1381,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 301
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3137
+  },
+  "concept_sha256": "4aadb3dd61aea4213c7a565ca3582cd935d766cb804ac809b87483c927ffe927",
+  "seconds": 35.7,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-16T09:57:07.045268+00:00"
+}

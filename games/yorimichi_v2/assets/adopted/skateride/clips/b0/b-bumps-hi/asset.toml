@@ -1,0 +1,57 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: B_BUMPS_HI in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/b-bumps-hi"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/b-bumps-hi"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_BACKKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_BACKKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_FRONTKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_FRONTKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_LBACKKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_LBACKKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_LEFTKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_LEFTKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_LFRONTKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_LFRONTKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_RBACKKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_RBACKKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_RFRONTKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_RFRONTKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_RIGHTKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_HI_RIGHTKNOCK_CR_N"

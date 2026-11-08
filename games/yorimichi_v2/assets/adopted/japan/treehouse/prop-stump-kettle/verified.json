@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-stump-kettle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_stump_kettle.uasset": "252893143d7af84bd165e8bbb64cef783b1814438a86e9095b7bb825b8fc7888",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_stump_kettle.uasset": "4cba5cfa4ed6a09d0b27d52d0fe7c8832eb5855c090b47a0694989d97ae833ed"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

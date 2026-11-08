@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-hippyjump-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HIPPYJUMP_HIGH_N_0_ANTIC.uasset": "05a97b0b600cc65b7dfc9c9c10fbe50b71bc0bcc1a64330877611cc5c7e52f9c",
+    "unreal/Content/SkateRide/Clips/B0/T_HIPPYJUMP_HIGH_N_0_CYC.uasset": "a5336d623851e6e815d4eb93df3cd37347f2eec38518bac3f340df72c8e6bd31",
+    "unreal/Content/SkateRide/Clips/B0/T_HIPPYJUMP_HIGH_N_0_INTO.uasset": "7bcf23242d122acc9288dc4305b506424da701c0e03b48b6c6107c8f98a2a908"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-peace",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_BOTH_CYC.uasset": "7bdd2391afc4afd8dd1fcb447cbc0ea0a2cea307bc9248670762cd63825f4c4e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_BOTH_INTO.uasset": "e4e397d0bf92365611d1f1455e88b67fca7abcfb51df28a943f3edacd14af865",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_BOTH_OUT.uasset": "c02cfcd8b82a23aa06728f6f577b3884952160e17fe5a28ec6ff331c727f6f25",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_LEFT_CYC.uasset": "3c514abf2fb6b1fe7c8c0bcf34e4f9d635192b59bae935d2631b6eb3abe499c2",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_LEFT_INTO.uasset": "580b33e2fa6683ce28940a1ce526038af0212f90da5785f2c011d4978d3d0565",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_LEFT_OUT.uasset": "8ed82ed26ff7bf59bbd7624eadff99fe3dd7f623e5a9be4e434fe3528ac86a8b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_RIGHT_CYC.uasset": "ff40b9d80bcab841e34b0fed2d5480ed9714655177f2de60660672aadb0d2ba2",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_RIGHT_INTO.uasset": "7bd5fe7a99249d980212904fa7c212fe3c93e516c19ce6b67d7c02bbf2b8cdb4",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PEACE_RIGHT_OUT.uasset": "427f24dcc21075af0d5ec95b660bb5c05989eddc55b892f5df7268038e9afea5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

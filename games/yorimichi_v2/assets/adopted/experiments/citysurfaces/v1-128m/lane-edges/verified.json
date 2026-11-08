@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/lane-edges",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_LaneEdges.uasset": "f32ae451bef8b4507533ea6bbe5edd2a6650402728f719594605f6a2413a2c05"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

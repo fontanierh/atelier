@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-gravel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_gravel.uasset": "a121ebc88fd40e412b602dcaa286be70dfbbaf33ae073f9ffbeef66c665f84bf",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_gravel.uasset": "bb568bfd0303a46aeb3979848f492d141e39e0f2850b377fa39aa7dc3c4e124e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

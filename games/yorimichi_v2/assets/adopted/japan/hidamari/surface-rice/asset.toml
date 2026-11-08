@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town surface rice: material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/surface-rice"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/surface-rice"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/rice.jpg"
+sha256 = "1cfb28c2b56f8d229758552985f9fb70d3fcd25dc7f05bc4b4bce37475f61763"
+
+[[sources]]
+path = "source/assets/hidamari/textures/rice.json"
+sha256 = "452fb9ca4e17461d662f496566fba66725e2c33ba3f2775799017f288fc9fe57"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_rice"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_rice"

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/terrain-0-6",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BT_Terrain_0_6.uasset": "eccadb71770dc22fe92fdb46cecb78fc0404770d321367083c549dff37798728"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

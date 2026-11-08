@@ -1,0 +1,157 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Experiments islandterrain far-hills-0-m1 (49 package(s))
+schema = 1
+id = "adopted/experiments/islandterrain/v1-atomic/far-hills-0-m1"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/islandterrain/v1-atomic/far-hills-0-m1"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/experiments/islandterrain/v1-atomic/generator"]
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_0_-1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_0_-2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_0_-3"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_0_-4"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_0_-5"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_0_-6"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_0_-7"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_1_-1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_1_-2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_1_-3"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_1_-4"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_1_-5"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_1_-6"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_1_-7"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_2_-1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_2_-2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_2_-3"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_2_-4"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_2_-5"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_2_-6"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_2_-7"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_3_-1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_3_-2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_3_-3"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_3_-4"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_3_-5"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_3_-6"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_3_-7"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_4_-1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_4_-2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_4_-3"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_4_-4"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_4_-5"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_4_-6"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_4_-7"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_-1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_-2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_-3"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_-4"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_-5"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_-6"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_-7"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_6_-1"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_6_-2"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_6_-3"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_6_-4"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_6_-5"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_6_-6"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_6_-7"

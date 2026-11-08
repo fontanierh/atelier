@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/heelflip-in-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/HEELFLIP_IN_LOW_A.uasset": "47fcc34d5d5392d4df48799a032929e5dbd12aa8fd0e415628702411a30302ad",
+    "unreal/Content/SkateRide/Clips/B0/HEELFLIP_IN_LOW_G.uasset": "d476f10fbf059b248134b15f0a5b8ac195b43a8fe3a6693a96659d4d0f51a056"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-town-bus",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_town_bus.uasset": "9d94153a580965acb5e540a489ea148d54fafa3bbeeb6b117130ba7061833140",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_town_bus.uasset": "7eea33162c2a171dbceca95e8094f5ea2f121f872a36899f63f92d288eed372f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

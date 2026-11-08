@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Friesian reins set 03 with its materials and images
+schema = 1
+id = "adopted/horses/friesian-reins-03"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/friesian-reins-03"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/friesian/tack/Reins_03.glb"
+sha256 = "8ac931a4aefe2ce41373417f38677383ff0d9ff9dfdce08a39ef125ac81dee06"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_03/Kestrel_Reins_03_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_03/Reins_03_Mt_Belt"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_03/Reins_03_Mt_Metal"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_03/SK_Horse_Friesian_Reins_03"

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-gonz-pushhsp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_PUSHHSP_HSTR_CYC1.uasset": "7d92dc9a99488642fd2447875a22be830fe6455732fee8c922ca89958d18a5ec",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_PUSHHSP_HSTR_CYC2.uasset": "d27fd24766bb26c091672f08c8dfa590725762252ec7f127f94939c565fbaee0",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_PUSHHSP_HSTR_INTO.uasset": "820d9f163cdcd03f9cc2bf8935e3926ed2a3258c7c118af164409248e51fab43",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_PUSHHSP_LSTR_CYC1.uasset": "b64b4ed937396c45823b4f806a631ff6968b24c914cf29095ec0f8b45719bf06",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_PUSHHSP_LSTR_CYC2.uasset": "f5b318c5609cd06c918a1a01d6eef97de3bbe3be2d30270dae1e28a34569a284",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_PUSHHSP_LSTR_INTO.uasset": "d542a254a6d9e6f41ee8d47a222365ea4ebf9c905b5ae87e12dfa7026f45e59b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

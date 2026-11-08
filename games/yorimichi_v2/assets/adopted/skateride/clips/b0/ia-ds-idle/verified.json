@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/ia-ds-idle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/IA_DS_IDLE_LO_N_0_CYC.uasset": "caa5a93efc393573c353850f5e4cd536bd941003c46325e78dbc070b616bf5cf",
+    "unreal/Content/SkateRide/Clips/B0/IA_DS_IDLE_N_N_0_CYC.uasset": "9adb462fdc66f020cea84db426ad621fff34f5c6786bc87b4a92f2bc390c4138"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

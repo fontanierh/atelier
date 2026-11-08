@@ -1,0 +1,55 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte estate-1 (4 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/estate-1"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/estate-1"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_1_Accent.glb"
+sha256 = "1b6476be54a94c28f9e744623fcd351f4c065f61009e8a757d380f8ce915e91f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_1_Grounds.glb"
+sha256 = "fe610d7d40668ac8393ec1e28348a24ff76c9517459b3b5a5572340a446be64a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_1_Stables.glb"
+sha256 = "6481363e35617a7dcb60d5fba91b11934da87fd22e41425e997504d408ab7da8"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_1_Stables_Collision.glb"
+sha256 = "fcd5fcd7e6714869dbf5c80daa082a75fb698b4753f5c76f2963e9fa9242b873"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_1_Villa.glb"
+sha256 = "62b222028ff7fe5ac6229d683cfed4f177a41bb62948e304fd6ee08846d2a56f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_1_Villa_Collision.glb"
+sha256 = "3e76b89cb9830239d7e942e658a4a050834ecfc7c7d12265b25f3067f7e9209e"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_588c21ca63ae"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Accent"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Grounds"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Stables"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Stables_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Villa"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_1_Villa_Collision"

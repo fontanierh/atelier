@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/horses/arabian-saddle-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png.uasset": "57c2732075bae967ab28253aca3ed8ba47c8ae747fcbcdade707f58ca18e20b3",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png.uasset": "9045ff833a05c28aa9dcd559a9edd20dc1e8a5476baf5f300f79b65ffee26e5d",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png.uasset": "228312b3a16e97094c72af3435a3284040e3dfaa9b0464d4582effd83a571f38",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png.uasset": "d615f968f3494cd321ae3b3a1e78673461f6897a139ca68bcf5dc0a7b30665cc",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/SK_Horse_Arabian_Saddle_01.uasset": "ba6932d654240dec0c4bac09a7c7178d575730fa348e7b1a78ab7d69f8ae013f",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Bag_A.uasset": "ff7754de2cdf71cc020d05c280b72ebfd58de3654a9fef86b9218f6b49ef60d3",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Bag_B.uasset": "6645d82c9bb3a0f812ad2c9952249bb8dbc9b06abfa59d968b46dbc55cf1ee76",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Cloth.uasset": "bdfab6ed45131deffd5725dcd4ee90bd4915c035f61795e538764c23c2389159",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Saddle.uasset": "9b5f0f41ff3c8885d7cf4fe6a306b0aa046fc90be2f3311bf13babaa2a5e93cd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-plaster",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_plaster.uasset": "76e3e35672ef141965ec1f942f2abec3363bcba1710050846e0af86ff659a1d4",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_plaster.uasset": "02317f14f1f84b3ee933b97da9f3fea6bd911a195cce5f4ee65a0ff88d53f012"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

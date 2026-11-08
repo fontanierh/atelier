@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage tree-tuscan-pine (5 package(s)): LODs and crown material
+schema = 1
+id = "adopted/japan/foliagelods/tree-tuscan-pine"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods/tree-tuscan-pine"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/forest/export-parameters/Tree_Tuscan_Pine.json"
+sha256 = "6a9a9ebdd13cdcac2451fbeb797fb8f1ac4aac6b6454a25b5ff167345aedd8f6"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Pine_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD4"

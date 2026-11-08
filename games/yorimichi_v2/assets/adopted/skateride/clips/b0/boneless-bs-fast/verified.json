@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/boneless-bs-fast",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_A.uasset": "2468180665825ac874d8204d5c2ec639e79742bb06f5709c97e22fc607654df7",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_F.uasset": "66fa53c4ddda7267644853d19f76eb9a10d9e88cb9f0e67bf2d3817456295cea",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_G.uasset": "019cb4a815780af1b4e0b8245718d7a91e15f5859b60b3811e958ba99658a248",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_FAST_L.uasset": "891e0b32c5e76f2ef394a68ba7ea3f1b674ccf8c93da47bea34688104c5087f2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

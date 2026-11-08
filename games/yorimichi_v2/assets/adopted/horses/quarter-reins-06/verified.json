@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/horses/quarter-reins-06",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Quarter/Tack/Reins_06/Kestrel_Reins_06_Alb_png.uasset": "78a084337d2f7391cc8de86fa86ce752e7f8370390821993d3400a213f19af1e",
+    "unreal/Content/Horses/Quarter/Tack/Reins_06/Reins_06_Mt_Reins.uasset": "0fff412bf72e218328bc75a9ea319554f7e7372447bab2296a84d05005f124b9",
+    "unreal/Content/Horses/Quarter/Tack/Reins_06/SK_Horse_Quarter_Reins_06.uasset": "5e7b45422aaa5e0cb80dab9a66001b31d7873b9785745df715158c66df6eb2ef"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

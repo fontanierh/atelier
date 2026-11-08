@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan tree-forest-ginkgo materials (1 package(s))
+schema = 1
+id = "adopted/japan/materials/tree-forest-ginkgo"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials/tree-forest-ginkgo"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/forest/export-parameters/Tree_Forest_Ginkgo.json"
+sha256 = "fc21e458d058e76d347e170fb27317d2867a3deb8668341946dbbbef64ce8b70"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tree_Forest_Ginkgo_Impostor"

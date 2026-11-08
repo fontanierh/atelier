@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop phone_booth: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-phone-booth"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-phone-booth"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/phone_booth/concept.jpg"
+sha256 = "caa9f9bd0b783b262f31420baec85dc7338619b5ac1d6bac31f0252784a8f1c4"
+
+[[sources]]
+path = "source/assets/hidamari/props/phone_booth/concept.json"
+sha256 = "7f009495cc6ac348bc003905cfff21387dfe5a181ae281be8b225aefeaf5de16"
+
+[[sources]]
+path = "source/assets/hidamari/props/phone_booth/job.json"
+sha256 = "96722001aadaa324f39f1146fe0dec86d41e8032eb3df3d2e34a0a802a1b326f"
+
+[[sources]]
+path = "source/assets/hidamari/props/phone_booth/phone_booth.glb"
+sha256 = "437ce3f23b0a09554139f50745050521bbd3f339386e5bae7c61b1064c9acfe4"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_phone_booth.json"
+sha256 = "259276f63d2abad77622159cac835d738246bfc7f42430218391a52ff965134b"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_phone_booth"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_phone_booth"

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmontetrack/loop",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_TK_Loop.uasset": "aae87b846c51ddd7e0bc3de47d7d429f8af5b148fa250a369b491ca921532ca2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

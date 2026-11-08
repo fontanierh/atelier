@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/belmonte/shared-ground",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_296da39ab8d2.uasset": "b0299b90e4a8dd153277fb18b16d234a5690d1c3128158f748d392aa471c7185",
+    "unreal/Content/Belmonte/Materials/MI_BM_447b2bfac41d.uasset": "d0308ac9eede571be2e4c4bacf7453a6d0eaf583f003973d4239113084e5f8bf",
+    "unreal/Content/Belmonte/Materials/MI_BM_5abe3878aa19.uasset": "fc0553524b092ebe5f2b408b25129db0098df6a55021681915fadd138270e279",
+    "unreal/Content/Belmonte/Materials/MI_BM_6826135717c4.uasset": "54d99363c2e461212469c3cfb5729c74dbfca85d4774f7a3c385b60dfdad67a4",
+    "unreal/Content/Belmonte/Materials/MI_BM_8c7322bc790c.uasset": "6953fe93b5506d90f17c1ff0e9153439816646c8868c105145682f82f230dd9a",
+    "unreal/Content/Belmonte/Materials/MI_BM_bd97e7f1dd81.uasset": "81e22ff7fafcdcc8179d2afd473dd01ad6f6e5e80086c9fa4398beef9c922aa8",
+    "unreal/Content/Belmonte/Textures/T_BM_0fe86703fe93.uasset": "1a79deec5c1e4fc179f70a6ca0496afbbcc31974cf31e5b3844f21f176b9fdd2",
+    "unreal/Content/Belmonte/Textures/T_BM_3a9a9b320ef7.uasset": "da4dff50f4ff583b6849216def1f453397fd8b84b647e359f91d275be2f7be37",
+    "unreal/Content/Belmonte/Textures/T_BM_3b3b593ecaf2.uasset": "fddb9a802ea1ea82e20aa505bbad6752cc369cfbe5b2052e5dd410b1fa3ad7ad",
+    "unreal/Content/Belmonte/Textures/T_BM_4621dbb4ad29.uasset": "4aaf99744d08d1867bb9ebda213b4dd8e20cb7df887fe76830221e43755a866f",
+    "unreal/Content/Belmonte/Textures/T_BM_68613c1d3edd.uasset": "41dc7b189562f9177c1836be661bc641c77075e0c1d47de745622bfd95a9a63b",
+    "unreal/Content/Belmonte/Textures/T_BM_f4df37bcee65.uasset": "ad881996902a731b020a0b62296cfe97501c997c4b2f465f97c92d6a6647c346"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

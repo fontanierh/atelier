@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: herringbone terracotta brick paving in warm orange-brown, crossed by bands of charcoal-grey bricks exactly as in Image 1, thin pale joints.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/herringbone-source.png": "c09b7475210bae8ce930844caaffa7365215b2af658aaef459d8cc059221c13f",
+    "build/yorimichi/craterpark/restyle/style-plaza.png": "3070efa80d769928edb516ac8d9eff7d8642fbc4965dd19a2022cf53e19fc54b"
+  },
+  "original": {
+    "textures/tex-0030.png": "ffd7de742ea0b1a5c3be765489a5898401b62aeb0c37e35a08d493deb1b742f0"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "b53d74ccc1645ac7cc1063c275fecbb3da2c839a394fc9c97a8450c421a99c32",
+  "status": "done",
+  "started_at": "2026-10-13T21:49:14.957610+00:00",
+  "output": "herringbone.png",
+  "output_sha256": "b6c5712a5275e0947a11d22f973c8727709f8bb42108081685e4159fa6b320c0",
+  "usage": {
+    "input_tokens": 1857,
+    "input_tokens_details": {
+      "image_tokens": 1584,
+      "text_tokens": 273
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3613
+  },
+  "elapsed_seconds": 39.5,
+  "finished_at": "2026-10-13T21:49:54.503282+00:00",
+  "compact": {
+    "file": "herringbone.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

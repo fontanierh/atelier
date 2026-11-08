@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-stall-b (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-stall-b"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-stall-b"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Stall_B.glb"
+sha256 = "ab619e766728593e1671ff6122df3cf6ecf51c293cd321e08a8cea2086bff377"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_Stall_B_Collision.glb"
+sha256 = "2e7afda5015366fb5d8af0c758ebba5659aa05c40ee4763d804cfbef60b7a014"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Stall_B"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_Stall_B_Collision"

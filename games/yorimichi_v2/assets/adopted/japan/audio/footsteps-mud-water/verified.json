@@ -1,0 +1,30 @@
+{
+  "asset": "adopted/japan/audio/footsteps-mud-water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_01.uasset": "19117453001a21cda131c41bbfbb7f8188993ebd5c4d93809d4921e28bbd35f1",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_02.uasset": "90a12c6573badb9a1be77b4c6b7fca7d27e0694fb6d75b12f89be3aea18a294e",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_03.uasset": "0596dd96a6c1f305cbe16f9e259bebbc17bee6a7bbc684438f72e6da539ab570",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_04.uasset": "683aa2aae30e242b1441b9802a296bc7a835d310610bc733108408bdf52a4206",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_ryk_mud_walk_loop_05.uasset": "e5da1d1ee1407d801076dbbcab5c72046b7ae37c7e1f3714340e9a7f1e47e1e7",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_01.uasset": "ffcbebe3380543aff304b558597870a2ce8ab6f1d1960880c68437d337c94dd0",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_02.uasset": "ec55fa51edd615e43c36f3239f71fbd0ead33a07324cde57705158b0c546e00d",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_03.uasset": "22c636296ac4d7d9a56204c56d495580d3a64679806ed62b2eaa7bd0a6da6045",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_04.uasset": "47d3a0b263bfb826361f97b751007c1e41ada2078b2060cd12cbbe88fcde1c68",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_05.uasset": "37a32603a62f99e3199ca8c1526f9aa449263ff8a8df3fd98ce1cf8f999b32e0",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_06.uasset": "4b37b93db931328a8ccfc8f11770ac59cc77e46318fe7f2dc02473d5c142a976",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_07.uasset": "14676b82df3877374e101d1365d59787778c3b14053163057548af81e23c0c00",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_08.uasset": "59cddf745edf2368cc5b2ad8ad7409c52dcc54dcfc246850bc8a5d06db7a0d10",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_09.uasset": "fefb5997ad8089260e536e8a8cb1a6dfe27e8f89e60fb0a7a206491632dd937f",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_10.uasset": "7e82b4bf12b33b51b93150cca0ffd3c23d75b4bad5094e23ee51a9d0c7fa58cd",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_11.uasset": "258f25b9cd59672e1de644c255a75230d6dfabc07f7c037eb47f3d36021e740d",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_12.uasset": "00655c9008397ce93b29f9ce0576789d9692ce2aa0189036afb547880197554b",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_13.uasset": "86f07336af086ff4e9bba024512618c43cdb3959b0341d11e8cd61a549dc49ed",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_14.uasset": "8c98ebf8a19ec58317c8508c39e95290022c8c6147126c3844a817566593e13f",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_15.uasset": "e4059d0db5b84cdb0f2565c07e9ea1c3df15087976e1f421cc8b2b7630916234",
+    "unreal/Content/Japan/Audio/Footsteps/mud_water/mud_water_wavjunction_puddle_splashes_16.uasset": "dafa5d4f4ce348a181f113306007c31162d5ea1c0563aa8602cd5d5d431cd869"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

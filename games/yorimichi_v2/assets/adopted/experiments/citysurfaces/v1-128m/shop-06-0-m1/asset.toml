@@ -1,0 +1,13 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Experiments citysurfaces shop-06-0-m1 (1 package(s))
+schema = 1
+id = "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1"
+kind = "adopted"
+authority = "editor"
+owner = "shared/experiments/citysurfaces/v1-128m/shop-06-0-m1"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/experiments/citysurfaces/v1-128m/generator"]
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Shop_06_cell_0_-1"

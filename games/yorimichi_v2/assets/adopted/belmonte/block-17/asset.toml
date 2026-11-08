@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte block-17 (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/block-17"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/block-17"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BT_blk_17.glb"
+sha256 = "b10f9f12f89c02de2234c6fac70f9f0949b074361d09c5116ef396483b339f96"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BT_blk_17_Collision.glb"
+sha256 = "6374a7ccfd7b1c85821804a1374b0f0113d851b7a9d898c3327d35f8ee36b77c"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece0"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece0_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece1"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BT_blk_17_Piece3"

@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte village-farm-poggio (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/village-farm-poggio"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/village-farm-poggio"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_Farm_Poggio.glb"
+sha256 = "f862d7c98a1b805a09dd79fda0d34bd921a35ac716a5bdfba581c82fc5493575"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BVV_Farm_Poggio_Collision.glb"
+sha256 = "75f241cd192065017415bbcf417695d9ab0fa99258f55b19bbcf630dd5e0e220"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Poggio"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BVV_Farm_Poggio_Collision"

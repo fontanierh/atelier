@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-nosegrab-shifty",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_SHIFTY_BS_0_CYC.uasset": "2e65a4c7cde4e8487625fc2eea037187a89ff214f1d533be0d1056538d76fe50",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_SHIFTY_BS_0_INTO.uasset": "0a6b0ff0f1ff4f9dabc5da4afa722d0207d6f27a19137b9e79e12ae042c05e65",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_SHIFTY_BS_0_OUT.uasset": "a334ef9e9b184f0d9b599ce1b2316f5455f138e7846f72de95110b9a3e6a7d64",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_SHIFTY_FS_0_CYC.uasset": "e815942c517a612d07c3265ccd14f0534cb9b838820fb0b38284eb0ba4dbcef5",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_SHIFTY_FS_0_INTO.uasset": "ed6b279ba0dc7569431cd6d978d3457579d84dae326f7ce0c5ebfb22b472130f",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_SHIFTY_FS_0_OUT.uasset": "095932052dd88bdf731d030e8225ae4768377be5681713cb7bcf06af0d43e388"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

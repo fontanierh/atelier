@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/f-flip-crail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_CRAIL_TO_TAIL_GRAB.uasset": "e303f5577a2fad7656084b078b3937393badc74e34c2aa2968c19f4014f9d1da"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-forno",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Forno.uasset": "de5448a8ba11fc8ab502c39eae847fe3870f4c2499929f88bb9cba3757e0a987",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Forno_Collision.uasset": "dccfc7e7bba838cce5e7d9b5c79ec641adb2b22e7040d04b59c58bdae57ad9de"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

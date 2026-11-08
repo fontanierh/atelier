@@ -1,0 +1,25 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park material instances several units share, surface family flat
+schema = 1
+id = "adopted/craterpark/shared-materials-flat"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-materials-flat"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_001"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_008"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_039"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_040"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/MI_CP_material_043"

@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface tile: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-tile"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-tile"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/tile.jpg"
+sha256 = "fd5619d419b36859839c580dced9611cebd639b47b9ee2e69f3f71ead482a3db"
+
+[[sources]]
+path = "source/assets/treehouse/textures/tile.prompt.txt"
+sha256 = "d736fed0d02755db69eb5a4442ee06ceb16e59c80cb6f211d856a1d36aa38c2e"
+
+[[sources]]
+path = "source/assets/treehouse/textures/tile.provenance.json"
+sha256 = "206df620cf65f47235b95337df6af706bf4ba680dac1aa759b15d3439520aaf1"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_tile"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_tile"

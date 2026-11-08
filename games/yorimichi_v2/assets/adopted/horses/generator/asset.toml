@@ -1,0 +1,49 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horses generator: the manifest, rig measurement and clip sampling scripts, the Unreal import scripts and the shared horse materials
+schema = 1
+id = "adopted/horses/generator"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/generator"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/assets/horses/build.py"
+sha256 = "02daa4ae7dcdf68b0e2b9693dcec4b217dc08905b7d5052fea3a70835dfd3f73"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/manifest.json"
+sha256 = "7dbee202a2ee6d50893de00186ddaa25d6673831fac8e7133f1fab81ab449df2"
+
+[[sources]]
+path = "source/assets/horses/manifest.json"
+sha256 = "3f3f4f9efe553072fcf8fce448b7210df8579927a538703851609336205085f2"
+
+[[sources]]
+path = "source/assets/horses/rider.py"
+sha256 = "f5e9129f1dbc826773a552c91c63d5b47d080e15861beac7f7c68a33f823c8fa"
+
+[[sources]]
+path = "source/assets/horses/turn.py"
+sha256 = "18a16d808ded86f5ad53255e215bcef31130cbe23da30fb280a2d3b3b7088f41"
+
+[[sources]]
+path = "source/unreal/Scripts/horse_data.py"
+sha256 = "1398c071ee20bc6bb2d22448b7ffa4f24a84ba26a05c7449967b866c05924e90"
+
+[[sources]]
+path = "source/unreal/Scripts/import_horses.py"
+sha256 = "2216d1cb44d4203e6808afaa031abe573490a4c664ece57c7f3436c0919f5b0c"
+
+[[outputs]]
+package = "/Game/Horses/M_HorseCoat"
+
+[[outputs]]
+package = "/Game/Horses/M_HorseHair"
+
+[[outputs]]
+package = "/Game/Horses/M_HorseTack"
+
+[[outputs]]
+package = "/Game/Horses/M_HorseTackMasked"

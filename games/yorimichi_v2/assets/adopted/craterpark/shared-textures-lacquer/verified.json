@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/craterpark/shared-textures-lacquer",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Textures/T_CP_boost_magenta.uasset": "577d631dfd2ba4058bdf9aaa4d89059dce99156336b2e84009bf1126c0b3b785",
+    "unreal/Content/CraterPark/Textures/T_CP_boost_sun.uasset": "2f58f5e8276944eb9f58a95c3f70b895b3e71661659953ff4c3c8e240a36f281",
+    "unreal/Content/CraterPark/Textures/T_CP_boost_yellow.uasset": "01f2ec0c7130e47cffa3e5f6df55adb83f678d331c53213f2fcfa66c07430fbf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

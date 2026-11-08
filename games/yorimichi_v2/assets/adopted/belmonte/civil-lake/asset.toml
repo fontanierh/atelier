@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte civil-lake (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/civil-lake"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/civil-lake"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BC_Lake.glb"
+sha256 = "c054ef4556fefc589b5d45911f548b897f88f313c5998f682ed74a03be3364d2"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BC_Lake"

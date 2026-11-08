@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-sorrel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/sorrel.uasset": "b7c627770addacc4ef26a400c6287b02628016f0b9f70181b5df42cde52b1138"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

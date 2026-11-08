@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/gondola/shell-crater",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/Kit/GD_StationCrater_Building.uasset": "6b0357095789e3d8836ca4f87ec692c01f4170494f1e208383d0e37b049ea3b7",
+    "unreal/Content/Gondola/Kit/GD_StationCrater_Collision.uasset": "6c25cfb7a09ec1739983ea02ea1fdb7eca45d857ad5bb906414d02014774d308",
+    "unreal/Content/Gondola/Kit/GD_StationCrater_Fittings.uasset": "c8e05a665383d29602d62ff8d369fb4bde49d0b7d5520005540f3ef68a5a8d58",
+    "unreal/Content/Gondola/Kit/GD_StationCrater_Machinery.uasset": "fe18a1a5883d08e36131ddef94fcba844bf9aab419b8e2cc3eea26b6f3a6aa99",
+    "unreal/Content/Gondola/Kit/GD_StationCrater_Platform.uasset": "62e28c3b1a91e69223aebd456b804931e94bdc4e04dd05744645f24605f04012"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

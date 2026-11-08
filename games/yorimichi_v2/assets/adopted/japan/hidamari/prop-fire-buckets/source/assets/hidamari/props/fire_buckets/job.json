@@ -1,0 +1,29 @@
+{
+  "stage": "hidamari_prop",
+  "slug": "fire_buckets",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 12000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "52757f38b969d4634a3dc71890398b746f7f3e539377a3fd24634bd3518d0b05",
+  "concept_sha256": "52757f38b969d4634a3dc71890398b746f7f3e539377a3fd24634bd3518d0b05",
+  "submitted_at": "2026-10-05T11:34:16.800407+00:00",
+  "task_id": "3546c99f-89df-4542-b12a-21073a150d24",
+  "status": "submitted",
+  "user_approval": "Henry (CEO): use all Tripo credits; topped up 2026-10-05",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-05T11:36:35.828606+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

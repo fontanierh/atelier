@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove hero model harbor-capstan: its mesh cells, material instances and textures
+schema = 1
+id = "adopted/brinecove/hero-harbor-capstan"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/hero-harbor-capstan"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "source/assets/brinecove/models/harbor-capstan.glb"
+sha256 = "4416fbb5bde62ba068a7a7873082ba7a2d8c55de67eaa020a7741f6b57e68295"
+
+[[sources]]
+path = "source/assets/brinecove/models/harbor-capstan.provenance.json"
+sha256 = "0e4f6cd11b846aa3136a1da891368056ebbe0bdcaf038442607d3ebb98069407"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_1"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_2"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Materials/MI_BC_hero_harbor-capstan_4"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Hero_HarborCapstan"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_0"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_1"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_2"
+
+[[outputs]]
+package = "/Game/Brinecove/Textures/T_BC_hero_harbor-capstan_3"

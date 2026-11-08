@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-airplane",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_BOTH_CYC.uasset": "316de10d4b16b87c771259dc9c50dda6865e9844a0dea3c5ede3334af10d4e5e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_BOTH_INTO.uasset": "5f95480547e82010bd319135a54caeb831d623eae3914b0ebc88c6673cb0ca29",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_BOTH_OUT.uasset": "b6c7353f97708be6917f5a7383648c0b87e9879689f7a5752d8f39f883d7c04c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_LEFT_CYC.uasset": "fb0a9a1c6db011e69fe83c368e2ea8f8d30da5a428b4b2eed590ccb6be0d91c7",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_LEFT_INTO.uasset": "a655902b29eb62b46a1f14a22296ef47b7a6f4532b00969d0677a4ad61ef9d79",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_LEFT_OUT.uasset": "f125970e98a2c0ace1dc6c5d0c682a7cdc0970622829cae4971d592a76d1c158",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_RIGHT_CYC.uasset": "8e37c36c82bc10ddbf511b722f68b9e39b898813893093421d0615a858c1f21f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_RIGHT_INTO.uasset": "09af67d69c1a70af9cf5cd10fd1cfb81a31d4caa947d5e1ac19bb98d384aedfe",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRPLANE_RIGHT_OUT.uasset": "6e5ee5db6ffa5cd933640fe6338e0d4048c41a54e4a6749c726a220811d52e85"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

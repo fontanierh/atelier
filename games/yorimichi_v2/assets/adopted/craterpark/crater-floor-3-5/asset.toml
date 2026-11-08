@@ -1,0 +1,16 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park crater floor, area block (3, 5): the volcano's ground inside the crater, cut by the park, 64 m tiles x 12 to 15, z 20 to 23 (render meshes only)
+schema = 1
+id = "adopted/craterpark/crater-floor-3-5"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/crater-floor-3-5"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_036_15_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_15_20"

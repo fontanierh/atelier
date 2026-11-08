@@ -145,7 +145,7 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
     absent: set[str] = set()
     pins = dict(restricted=restricted, pinned=pinned, absent=absent)
     assets, regions = [], []
-    for path in sorted((game / 'assets').glob('**/asset.toml')):
+    for path in records.record_paths(game):
         try:
             assets.append(records.load_asset(path))
         except RecordError as error:

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-komainu",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_komainu.uasset": "977b604b09e32a987df483e180b19c8f8a86012414336ca8bddf0bda0f5d6737",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_komainu.uasset": "03ba0b3381ca6c7c10bc3a6160b63eae08f113ac3a651492dfcf9ea3cc048171"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

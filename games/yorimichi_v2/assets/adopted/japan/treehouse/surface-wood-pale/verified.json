@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-wood-pale",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_wood_pale.uasset": "737ebdad901000a13f81556867d520dbcb6232be3bce41e2dfd6a7955c6af6ce",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_wood_pale.uasset": "0b32041cdbc7cf71962fcfc8698cd8a60f16a101ca53131a119cd8c6b58ced54"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

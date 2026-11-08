@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102a32">
+<link rel="icon" href="data:,">
+<title>Brinecove — pirate coastal city proposal</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="view" aria-label="Interactive Brinecove proposal. Drag to orbit, scroll to zoom, right-drag to pan."></canvas>
+  <div id="vignette"></div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">Yorimichi · unbuilt district proposal</div>
+      <h1>Brinecove</h1>
+      <p>A pirate port in a horseshoe cove. Lower quay, three piers, Rum Row, market square, two cliff terraces,
+        watchtower, lighthouse and waterfall.</p>
+    </div>
+    <div class="top-actions">
+      <button id="tour" class="primary">Guided tour</button>
+      <button id="gallery-open">Sunburst references</button>
+      <button id="fullscreen">Fullscreen</button>
+    </div>
+  </header>
+  <aside class="panel" id="panel">
+    <div class="panel-head">
+      <div><div class="eyebrow">Explore</div><h2>Camera & layers</h2></div>
+      <button id="panel-close" class="icon" aria-label="Close panel">×</button>
+    </div>
+    <div class="views" id="views"></div>
+    <div class="section">
+      <div class="eyebrow">Modules</div>
+      <div id="layers" class="layers"></div>
+      <p class="micro" id="module-note">Each layer is a separate GLB from the same assembled Blender scene.</p>
+    </div>
+    <div class="section">
+      <div class="eyebrow">Light</div>
+      <div class="mood-row">
+        <input id="mood" type="range" min="0" max="2" step="0.01" value="0.18" aria-label="Time of day">
+        <span id="mood-label">Late afternoon</span>
+      </div>
+      <label class="switch"><input id="spin" type="checkbox"> Turntable</label>
+      <label class="switch"><input id="labels" type="checkbox" checked> District labels</label>
+    </div>
+    <div class="section">
+      <div class="eyebrow">Canopy</div>
+      <div class="mood-row">
+        <input id="density" type="range" min="0.1" max="1" step="0.05" value="1" aria-label="Foliage density">
+        <span id="density-label">All trees</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="eyebrow">Painted plan</div>
+      <img id="mini-map" class="mini-map" src="refs/13-map.png" alt="Painted plan of Brinecove">
+      <p class="micro">Click the plan to open the full painted sheet.</p>
+    </div>
+    <div class="section">
+      <div class="eyebrow">Proposal facts</div>
+      <dl class="facts">
+        <dt>Basin</dt><dd>1.6 × 1.2 km</dd>
+        <dt>Waterfront</dt><dd>≈ 780 m of quay</dd>
+        <dt>Built town</dt><dd>≈ 900 × 500 m</dd>
+        <dt>Modules</dt><dd id="fact-modules">9</dd>
+        <dt>Triangles</dt><dd id="fact-tris">—</dd>
+        <dt>Status</dt><dd>Proposal only · not in game</dd>
+      </dl>
+      <div class="downloads">
+        <a href="scene/brinecove.blend" download>Blender scene .blend</a>
+        <a href="models/01_terrain.glb" download>Terrain GLB</a>
+        <a href="brinecove-models.zip" download>All nine module GLBs (.zip)</a>
+        <a href="scene/brinecove.glb" download>Assembled scene GLB</a>
+      </div>
+    </div>
+  </aside>
+  <button id="panel-open" class="floating" aria-label="Open controls">Controls</button>
+  <div id="labels-layer" class="labels"></div>
+  <div id="loading"><div class="spinner"></div><span id="loading-text">Loading the cove…</span></div>
+  <footer class="bottombar">
+    <div class="legend">
+      <span><i class="dot quay"></i>Quay & piers</span>
+      <span><i class="dot town"></i>Lower town</span>
+      <span><i class="dot upper"></i>Upper terraces</span>
+      <span><i class="dot wild"></i>Headlands</span>
+    </div>
+    <div class="hint">Drag to orbit · scroll / pinch to zoom · right-drag or two fingers to pan · H hides UI</div>
+    <div id="fps" class="fps">—</div>
+  </footer>
+</div>
+
+<div id="gallery" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <div><div class="eyebrow">gpt-image-2.5-sunburst · quality high</div><h2>The reference set</h2></div>
+      <button id="gallery-close" class="icon" aria-label="Close gallery">×</button>
+    </div>
+    <p class="modal-intro">Thirteen concept paintings, all painted from the same geography and building kit.
+      The model is a low-poly translation of these masses, not a literal match of every brushstroke.</p>
+    <div id="gallery-grid" class="gallery-grid"></div>
+  </div>
+</div>
+<div id="lightbox" class="modal lightbox" hidden>
+  <button id="lightbox-close" class="icon" aria-label="Close image">×</button>
+  <img id="lightbox-img" alt="">
+  <div id="lightbox-caption"></div>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

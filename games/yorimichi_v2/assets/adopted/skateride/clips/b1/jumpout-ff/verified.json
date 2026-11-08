@@ -1,0 +1,23 @@
+{
+  "asset": "adopted/skateride/clips/b1/jumpout-ff",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_HI_TO_JUMPOUT_FF2.uasset": "20d5c325ea30c9a674984c2af20ab7e02e21de2da00328493bb2a9e94715c253",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_HI_TO_JUMPOUT_FF3.uasset": "b3e3c3bd797cdb92f89c865171ca3c5ba94ef97e8835371fd4ddbd07aa209c49",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_HI_TO_JUMPOUT_FF4.uasset": "852f8d4cfc8a84f1553331b7cf5422e2e9e5eb19406db6115038b52d3ad3e5cd",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_HI_TO_JUMPOUT_FF5.uasset": "4985b3c27e901963456ca995f15a67608f03afebbdec8d2e686565e285ced914",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_HI_TO_JUMPOUT_FF6.uasset": "0893784ae1fce3e8583488edab71872c159064c67b4db8a70fb3f38f21b8e528",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_HI_TO_JUMPOUT_FF7.uasset": "43c10dfc264afb4c18f3f424c5f369b44f5a801047da328a8b9a77b8bc27765b",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_HI_TO_JUMPOUT_FF8.uasset": "a34bc377e19f6860b399260facdfed999e992dcf07679e9799c2978ef47c32f4",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_LO_TO_JUMPOUT_FF2.uasset": "a7fd70a9c9e9aadd60727ccba81e314b7b7dc3fc0d0c543592120c020dac21b6",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_LO_TO_JUMPOUT_FF3.uasset": "e9afcd9329a407e357473bf08fb3dbf2814897e340753882c3afc875ddc23c1d",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_LO_TO_JUMPOUT_FF4.uasset": "ce197e51833083364b397a648acddd5101a199412b5bef012dd51c4930029f0b",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_LO_TO_JUMPOUT_FF5.uasset": "23f9ab5a968e8d289e7bc8fa27632120c6e0b7c47e78af55101eefc430d4c316",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_LO_TO_JUMPOUT_FF6.uasset": "b11d80cb3acdca468f9f949599ee7200d97a87722fe85293463422fcd04271af",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_LO_TO_JUMPOUT_FF7.uasset": "9d7e4000cf0e0622e6e8a156d9310bd7c0fdb7a4fa9f929e15bf87114d7ff869",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_FF_LO_TO_JUMPOUT_FF8.uasset": "805b7a71c0cd7aa4425e62a8ba2019e31f9c56505e5d07e38aa3c805e17cc81d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

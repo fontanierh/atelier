@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-darktolight-kickflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_DARKTOLIGHT_KICKFLIP_HI.uasset": "d67af87e6634881289ae62e8f6f92b3e3c94f2006978ab51f0531cc1a70fb357",
+    "unreal/Content/SkateRide/Clips/B0/T_DARKTOLIGHT_KICKFLIP_LOW.uasset": "bdf931f0ce7504ad9ed6f337ab43f5a79010b00712c0bd072abeeb4cd8ac298d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

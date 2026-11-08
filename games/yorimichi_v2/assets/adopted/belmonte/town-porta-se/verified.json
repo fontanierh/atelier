@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/town-porta-se",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Porta_SE.uasset": "054cec28217ab4b8b55c97530d63b1e97b7456ddd248c3f35e9956e06231f933",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Porta_SE_Collision.uasset": "addad97c8ba02a81aed8f7727a158f10100fbe7a147328dcae635555fe1ed6f9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-brick",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_brick.uasset": "cee5617b67e2b7946135e3a84a645ba6d46f9d1d45387651443d3fe3ce7f56d3",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_brick.uasset": "ae314c47e836f89af6a9e3f63c4d987b80c07a505fc0b4d9a1d621581b108c64"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

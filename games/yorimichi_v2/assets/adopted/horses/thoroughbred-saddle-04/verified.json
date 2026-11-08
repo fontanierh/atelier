@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/horses/thoroughbred-saddle-04",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Alb.uasset": "22650e98cb7491ca7b0a9499ca341d2fcfee30db245c979dbb20a7e15433fd05",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb.uasset": "7c4ca42dcbb58eb770a015bb0ccc9dd916c805eec4b86fa1e71731aef826fd69",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb.uasset": "3564596e55a0e10925d9b2671cc2f3f3545cd9ecb9ee1a9618068501b0eb3236",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_04/SK_Horse_Thoroughbred_Saddle_04.uasset": "ed8871c7d35b204e900638868d07554a2b12238aaae1082eecc90c8c53ecfad2",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Cloth.uasset": "0b54080e90371eea3717b28ef441d8091c0c8bb77a84d09d643cd4d2edf0a4d2",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Parts.uasset": "07b39856699d5d084a2501d392706a0dce47b88c81227e2e213d4da67522456d",
+    "unreal/Content/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Saddle.uasset": "5eb872908b87b1eec695b1a32ad075d8e83a0114ae8cd8021550c7ee1af57af6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

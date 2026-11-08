@@ -1,0 +1,35 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Thoroughbred saddle set 04 with its materials and images
+schema = 1
+id = "adopted/horses/thoroughbred-saddle-04"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/thoroughbred-saddle-04"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/thoroughbred/tack/Saddle_04.glb"
+sha256 = "cf0c954d823661144ed7915d3776bb853bbbc4ac5d63e01bbb28e4adfc9236c0"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Saddle_04/SK_Horse_Thoroughbred_Saddle_04"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Parts"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Saddle"

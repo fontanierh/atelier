@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-highantic-fs360shuvit",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_FS360SHUVIT_L_0_CYC.uasset": "f3409afb3ce3f021f183bcccdec440c9fb91ef1db97f8b22620a866fdfbd6862",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_FS360SHUVIT_N_0_CYC.uasset": "c8aeee12dee1ee282bef2a2d2290c521c1b8b742daccd256e575e08326c02f0d",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_FS360SHUVIT_R_0_CYC.uasset": "041ba0b93fc0a0ff04b10129464c577b4a1d2e90ec8028ee56c96f4ebc17df06"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

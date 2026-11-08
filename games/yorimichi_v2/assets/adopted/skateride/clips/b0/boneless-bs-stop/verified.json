@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/boneless-bs-stop",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_A.uasset": "110a9247fab7c912714f7003af5dca7186b9028ed37a6ac50e120eb03d9e4901",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_F.uasset": "dd6929c7b5ad454b36805806b961b4d3f5414f4d887abd2c7426b0fd5d79228a",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_G.uasset": "b585763c2b59ee832c8416248762e724c9b484ad25be9c5218a24399f533c878",
+    "unreal/Content/SkateRide/Clips/B0/BONELESS_BS_STOP_L.uasset": "2287f9aa50a52a922082f0f82f934922b898e665e68e4e5dd865886ec72cb067"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

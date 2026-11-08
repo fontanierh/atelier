@@ -1,0 +1,39 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 shows the art direction of a stylised game: soft painterly shapes, flat matte colour. Paint a seamless tileable texture in that style, seen from directly above, perfectly flat and straight-on, filling the square edge to edge: no perspective, no horizon, no object outline, no shadows or lighting gradient, even brightness everywhere, no text, repeating seamlessly on all four sides. Hand-painted like the background art of a Japanese animated film, soft strokes, medium detail that holds up when repeated over a large area, no photographic grime or noise. The surface: the smooth wooden riding surface of a big skate ramp exactly as in Image 1: soft warm honey and pale golden wood, six long boards stacked from top to bottom, each running unbroken across the whole frame from left to right with no butt joints, the seams between them only faint thin lines a little darker than the wood, gentle broad painterly variation in tone from board to board, barely visible soft straight grain; calm and smooth, no knots, no nails, no screws, no stripes of strong contrast.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/style-ramps.png": "19f9f9ebf8cc7eba0b09549fb3cf133463451b340e207db49b33b574682376d6"
+  },
+  "texture": "textures/ramp_planks.png",
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "b139d186baeb45b3db6978beb53208fa648f4f928fed31c695bd1a1807756e7e",
+  "status": "done",
+  "started_at": "2026-10-15T16:36:44.374947+00:00",
+  "output": "ramp_planks.png",
+  "output_sha256": "070f0c749030b7744f4a14457a59019cab90b2a87904fc83181f080320547cbe",
+  "usage": {
+    "input_tokens": 760,
+    "input_tokens_details": {
+      "image_tokens": 525,
+      "text_tokens": 235
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 2516
+  },
+  "elapsed_seconds": 46.3,
+  "finished_at": "2026-10-15T16:37:30.717462+00:00",
+  "compact": {
+    "file": "ramp_planks.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

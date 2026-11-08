@@ -1,0 +1,54 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the parametric support tower kit, 10 m to 28 m, with collisions (templates, not placed)
+schema = 1
+id = "adopted/gondola/kit-towers"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/kit-towers"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/gondola/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/gondola/params.py"
+sha256 = "f1ede294471475d24305b68a1bd22d651fdd172c723dd646255763105b0ce25b"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/tower.py"
+sha256 = "aba93c86ead1914e10f8aba08973a0bc06c8cc23aefaafb06b43142ad9a89ef5"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_10m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_10m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_13m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_13m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_16m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_16m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_20m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_20m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_24m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_24m_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_28m"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Tower_28m_Collision"

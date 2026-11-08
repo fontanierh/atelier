@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-bicycle-shelter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_bicycle_shelter.uasset": "59720a1ce7d0e3049d0fd1bebdd0cd9e7ac550f5177399ec668dd20d2dc93630",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_bicycle_shelter.uasset": "d705489c7e13c31f64e552f97c483725d92684f3fab822dcfea2de9e31fc54e2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

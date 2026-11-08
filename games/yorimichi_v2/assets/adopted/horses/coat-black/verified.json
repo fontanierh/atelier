@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-black",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/black.uasset": "81983d520d719f77fbee717da3f0fa7880f02e8c7a06dd8337a8ed10226aca04"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

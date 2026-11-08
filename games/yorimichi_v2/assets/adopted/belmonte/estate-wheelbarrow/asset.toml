@@ -1,0 +1,17 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte estate-wheelbarrow (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/estate-wheelbarrow"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/estate-wheelbarrow"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_Wheelbarrow.glb"
+sha256 = "6b24b3c99760f602175ac74c7b780df02be69767fd3f5a369ffe8d55e71855f5"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_Wheelbarrow"

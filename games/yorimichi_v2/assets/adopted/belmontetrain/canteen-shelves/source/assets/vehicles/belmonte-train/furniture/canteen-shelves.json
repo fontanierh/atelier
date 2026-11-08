@@ -1,0 +1,38 @@
+{
+  "asset": "canteen-shelves",
+  "source": "canteen-shelves.fbx",
+  "source_sha256": "84c3c0ac6e7f947815a7a4c1918ec0a53387398f00f5ebf2df88d63ef845aab9",
+  "target_m": {
+    "width": 0.879,
+    "depth": 0.389,
+    "height": 1.9
+  },
+  "source_size": [
+    0.2046,
+    0.4624,
+    0.9995
+  ],
+  "quarter_turn": true,
+  "uniform_scale": 1.90093,
+  "column_fraction": null,
+  "column_stretch_m": 0.0,
+  "fitted_m": {
+    "width": 0.879,
+    "depth": 0.3889,
+    "height": 1.9
+  },
+  "errors_m": {
+    "width": 0.0,
+    "depth": 0.0001,
+    "height": 0.0
+  },
+  "ok": true,
+  "triangles": 15041,
+  "pivot": "floor_footprint_center",
+  "glb": {
+    "file": "canteen-shelves.glb",
+    "bytes": 1569088,
+    "sha256": "d500498e081068e2263b6daf13301e0edb82e5141f8c44c453a7ce9a8de6d27a"
+  },
+  "output_id": "canteen-shelves"
+}

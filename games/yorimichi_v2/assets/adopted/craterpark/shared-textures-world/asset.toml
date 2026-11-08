@@ -1,0 +1,79 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family world
+schema = 1
+id = "adopted/craterpark/shared-textures-world"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-world"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/basalt.jpg"
+sha256 = "8fd5a8f2f3e5b4c10c38ea60e2ebc2e7aaedfb932191dba5263bdb52a60a92fc"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/basalt.json"
+sha256 = "56f08eea8a639093a110ef301cd89f5c5564ff7aec62539f84946b0854a4d246"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/cast_concrete.jpg"
+sha256 = "523f72b14fbd25abee7270e410a971ef492a97b69ed02b8fbed3d9ec49b06763"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/cast_concrete.json"
+sha256 = "67079c1b330d8c3b23663a289f825a9fc9c170f848140303af3b41755c33b0d3"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ground.jpg"
+sha256 = "7fd516f7427f22b6881908df74c23f7ed7068eee3851872efd4557ab0112e1ad"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ground.json"
+sha256 = "c6115e0fc115f0536156a948f7180bbd6cbe60e9e6e69880b1bb8188bb164e65"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/keyaki.jpg"
+sha256 = "6995346aced98c9b6268fc70a5d5968887bf2e2a65c3e862e9ada224edee9857"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/keyaki.json"
+sha256 = "95ee0bc92a8c29343db4de44801a3fdfd884d241855af5bee7ac62a279725666"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/masonry.jpg"
+sha256 = "ea49637a514a45466b6d177f229d79900b5a1082aee460b8654c20162d98c0be"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/masonry.json"
+sha256 = "cb44dae23c48e632a2b1a84265bdfc9fccfaba0af11b9623a922f231d7f965e8"
+
+[[sources]]
+path = "source/assets/megapark/restyle/rock.jpg"
+sha256 = "4a4afa5ec21d15ef27f10d04d112f584c7ab00c02777f625b2d3261f5834cb50"
+
+[[sources]]
+path = "source/assets/megapark/restyle/rock.json"
+sha256 = "633792e174b8373a9f314fe89b9df6dd55930572a1638cf859113af3848d56ed"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_024"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_025"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_026"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_027"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_028"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_029"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_material_045"

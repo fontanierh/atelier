@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-360hardflip-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_360HARDFLIP_HIGH_A.uasset": "53443eb3dac72028615a59b4d727d115d015bb0ba87f5b4f8ace43463b7d22ce",
+    "unreal/Content/SkateRide/Clips/B0/N_360HARDFLIP_HIGH_G.uasset": "c97cae741bf8ca5e7bdb401df8dbbc17c18f6f61d85e001880efff86d2571e9f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

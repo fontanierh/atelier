@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-ds-late",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_DS_LATE_HEELFLIP_HI_0_N.uasset": "f503b313c2838e34f74bac6c96a1ddfe51954a16207d91ac821f54bdc9c8cad0",
+    "unreal/Content/SkateRide/Clips/B0/T_DS_LATE_HEELFLIP_LOW_0_N.uasset": "62a3f55174d8e31d7093b19c02d436f88df736b1a135ab92d14c2ada90e188c9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

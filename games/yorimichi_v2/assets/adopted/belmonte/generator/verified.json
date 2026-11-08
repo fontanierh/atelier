@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/belmonte/generator",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_Ground.uasset": "2ecca675bfff012a3e15c3515eee0e55740ac3d8d6b55325b9857d259d22b00b",
+    "unreal/Content/Belmonte/Materials/M_Belmonte.uasset": "1cb3679c8ff2bdb00e87ee2b6ef02251925bc120c69a38034c995ef34a05dbf6",
+    "unreal/Content/Belmonte/Materials/M_BelmonteJoin.uasset": "b1ed8a86d65c476a2d3e795a3cb5bcb424cf654bea401c8001cd454d4672f095"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

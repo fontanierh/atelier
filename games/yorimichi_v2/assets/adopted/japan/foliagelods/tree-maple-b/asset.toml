@@ -1,0 +1,32 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage tree-maple-b (6 package(s)): LODs and crown material
+schema = 1
+id = "adopted/japan/foliagelods/tree-maple-b"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods/tree-maple-b"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Tree_Maple_B.json"
+sha256 = "242c013a92f21d1327eb7b0915b8f7241f54decb96a001e67a2b56381c396eb1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/MI_Tree_Maple_B_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD5"

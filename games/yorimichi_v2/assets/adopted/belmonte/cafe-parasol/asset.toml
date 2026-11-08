@@ -1,0 +1,34 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte cafe-parasol (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/cafe-parasol"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/cafe-parasol"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_AT_CafeParasol.glb"
+sha256 = "0c80f1b0020afd96132206a33354f3e831d99098da36a625eeeeb78e22cad04a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_AT_CafeParasol_Collision.glb"
+sha256 = "66fca11ad612e5a9edf0955de08940c8e63e1210e449728b63c240fb575f741c"
+
+[[sources]]
+path = "source/assets/belmonte/textures/T_AT_CafeParasol_D-f96ef4ce80.jpg"
+sha256 = "73de9d2e88251427f38bd178985a105d47cf67d89f1d38620b9ceaa97d051510"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_eaef11a76e4c"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeParasol"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_AT_CafeParasol_Collision"
+
+[[outputs]]
+package = "/Game/Belmonte/Textures/T_BM_1776fd88d0c7"

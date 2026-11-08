@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/craterpark/shared-textures-wood",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Textures/T_CP_masonite.uasset": "2fb5cc3bbd52d0103b50b550aa961ce6d45c7d283cb212d44e7d589b96c489e4",
+    "unreal/Content/CraterPark/Textures/T_CP_ramp_boards.uasset": "d2d81c97d00b2c0d1389c34bf4a09a36c5c306036f9112ae69a739bb8374204d",
+    "unreal/Content/CraterPark/Textures/T_CP_ramp_fascia.uasset": "21947392a8dc042ae277638d5afb713553cb6d64f704e15666ab21e62bb2d295",
+    "unreal/Content/CraterPark/Textures/T_CP_ramp_planks.uasset": "49ae66041bbd53b36a8f280ed59b8b5d6f37a3b05659a66b642ea13fcec69301"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

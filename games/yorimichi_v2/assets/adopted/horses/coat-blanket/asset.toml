@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant blanket
+schema = 1
+id = "adopted/horses/coat-blanket"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-blanket"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/blanket.png"
+sha256 = "348e9faf8d160e2372674116842b160a337dc5751458783a2931fc0ca5318ebf"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/blanket.json"
+sha256 = "16157e9b44abd2cdcdfe1bfd7f13b96b9f3c6775fc2b4022760bc71ac6511772"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/blanket"

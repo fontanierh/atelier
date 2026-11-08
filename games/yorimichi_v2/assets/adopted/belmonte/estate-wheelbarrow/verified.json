@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/estate-wheelbarrow",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_Wheelbarrow.uasset": "65f9075fe99422dea554e1bb9a3e4f7ac195b655ffdd656bf9c315c38fd50a9b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

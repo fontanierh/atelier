@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-handcart",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Handcart.uasset": "059773eaee02fc4e000000fa3ae38164d9593f889c4a4fd372bb91e621849e69",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Handcart_Collision.uasset": "c5c162319a3031945db2a1872deb6b9a5b29bcfe7eabf01f4c2604c8725c387c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

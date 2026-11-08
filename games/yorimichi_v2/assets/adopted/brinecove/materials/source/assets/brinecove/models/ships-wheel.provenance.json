@@ -1,0 +1,100 @@
+{
+  "slug": "ships-wheel",
+  "stage": "brinecove-trellis-processed",
+  "generated": "2026-10-18T11:17:10.660853+00:00",
+  "source": "build/yorimichi/pirate-coast/trellis/out/wheel/head.glb",
+  "source_sha256": "cbf13a9e724e9d586c40d22ee8717d0108a3c10a00c1a9668b12ac23b41e50c4",
+  "reference": "games/yorimichi/proposals/pirate-coast/references/props/ships-wheel.png",
+  "reference_sha256": "8a5ff3da7dbcd64bb667c1a27994a60f695b3364bc243291ed5246ad9731c981",
+  "generation": {
+    "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+    "backend": "Microsoft TRELLIS.2 MLX",
+    "native_vertices": 539045,
+    "native_triangles": 1090966,
+    "output_sha256": "cbf13a9e724e9d586c40d22ee8717d0108a3c10a00c1a9668b12ac23b41e50c4",
+    "native_checkpoint_sha256": "1aebad690cd61e8d64347459b049a82d8281574910e964b79dc20621ae08b012",
+    "mesh_sha256": "e0461555542e819890fa782fd41bbda7d50936ade2b45ac50ddca457d477ae89",
+    "all_native_triangles_and_winding_preserved": true,
+    "transform": "Only fixed Z-up to Y-up axis rotation performed by the pinned export",
+    "seconds": 171.929,
+    "strict_model_key_checks": [
+      {
+        "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+        "keys": 74,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 292,
+        "strict_complete_state": true
+      },
+      {
+        "file": "slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+        "keys": 640,
+        "strict_complete_state": true
+      },
+      {
+        "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+        "keys": 284,
+        "strict_complete_state": true
+      }
+    ],
+    "mlx_peak_bytes": 4661661466,
+    "quantize": 0,
+    "resolution_requested": 512,
+    "actual_mesh_grid_size": 512
+  },
+  "target_height_m": 2.8,
+  "notes": "ship's wheel for the stern deck",
+  "triangles_before": 1090966,
+  "triangles_after": 12000,
+  "pruned_faces": 0,
+  "shells": 0,
+  "filled_faces": 0,
+  "boundary_rim_edges": 0,
+  "bounds": {
+    "min": [
+      -0.3622,
+      -1.4078,
+      -0.0087
+    ],
+    "max": [
+      0.3637,
+      1.408,
+      2.8082
+    ]
+  },
+  "output": "games/yorimichi/proposals/pirate-coast/assets/models/ships-wheel.glb",
+  "output_sha256": "ac3bef3c3216356ff6c8ae814eab4f3c586fe8736aa087bf72916cd59c88b99d",
+  "checks": {
+    "triangles": 12000,
+    "vertices": 5972,
+    "uv_layers": 1,
+    "materials": 6,
+    "textured_materials": 5,
+    "images": 8
+  },
+  "texture_dilation": null,
+  "processing": [
+    "parent clear",
+    "transform apply",
+    "uniform scale to target height",
+    "solidify open surface",
+    "voxel remesh to a manifold shell",
+    "collapse decimate",
+    "smart UV unwrap",
+    "nearest-surface palette paint",
+    "UV/texture/material and finite-vertex validation",
+    "three Blender review renders"
+  ]
+}

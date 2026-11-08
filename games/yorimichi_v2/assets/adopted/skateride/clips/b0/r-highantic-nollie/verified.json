@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-highantic-nollie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_L_0_CYC.uasset": "6c95d61cb43d7a2c8d3c4fd1d92bf643cb526e7c8b2affe40228a39b70c4edc1",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_L_0_INTO.uasset": "80bd0e58a94ba8162f6374aba1cba17d3b0f161f1079f63c2c63fbeb888d16cf",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_L_0_OUT.uasset": "cbb3e90aece380ff90b4729ec0f30fa73ee9aae5a5a1f175b15af730407dbd3d",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_N_0_CYC.uasset": "76f2f78485e293d6812b85486b6e46f75c9d394d0b8a5d73fc26a7405ffdb97c",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_N_0_INTO.uasset": "44bacb7a3c6ef0222c747eb7857b2d763307d2fcec50170a7b39a88194217747",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_N_0_OUT.uasset": "c03d89e9699af7252b85828c84342b6a12d3b3d0184a450918b3f92a40f51e50",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_R_0_CYC.uasset": "87d5e9d49e55b0879317ca591091cfff1170aa2b38fe4add32e7eb494e8413ed",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_R_0_INTO.uasset": "7318e5bba993270c24ef8186ba77547039b06c93407c117212477dc467e5c176",
+    "unreal/Content/SkateRide/Clips/B0/R_HIGHANTIC_NOLLIE_R_0_OUT.uasset": "9607c0a5b30ea3ded0c764032a2e502872009c207f63c4c920535eec462c91f1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

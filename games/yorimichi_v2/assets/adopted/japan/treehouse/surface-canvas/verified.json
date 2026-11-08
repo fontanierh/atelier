@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-canvas",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_canvas.uasset": "23e3f3e3dcda665faf4cd75b9fe7fb08f7efa22bdb4aa60cae220fcd77cb1931",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_canvas.uasset": "0e6be5e3ae1f9913b9e9e17abbb758b1944789f97c3a6936f0f4316cf0cba51d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

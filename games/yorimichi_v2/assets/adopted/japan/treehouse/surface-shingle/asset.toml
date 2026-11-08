@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface shingle: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-shingle"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-shingle"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/shingle.jpg"
+sha256 = "9f6421fae5d4b529e4b25b891686c260587018e0e2ddf3dba2580131c0799c05"
+
+[[sources]]
+path = "source/assets/treehouse/textures/shingle.prompt.txt"
+sha256 = "356cc62855c2989eb60050c3d95af35cafa8ebc9ff70325d059102715d1f2a13"
+
+[[sources]]
+path = "source/assets/treehouse/textures/shingle.provenance.json"
+sha256 = "0ec497985ed8ee327960d90e11a6c8cbb3979599d3ac257e5ceb8fe5427b1d93"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_shingle"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_shingle"

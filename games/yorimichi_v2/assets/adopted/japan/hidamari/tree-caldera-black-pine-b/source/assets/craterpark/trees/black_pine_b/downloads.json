@@ -1,0 +1,16 @@
+[
+  {
+    "output_field": "output_model_url",
+    "file": "raw/output_model_url.glb",
+    "sha256": "2e0c378b68c9fa96d46ee31ba31a479108a5a9b2399f39d645fe8388e41d2e01",
+    "bytes": 3314468,
+    "downloaded_at": "2026-10-16T09:42:58.732438+00:00"
+  },
+  {
+    "output_field": "output_rendered_image_url",
+    "file": "raw/output_rendered_image_url.webp",
+    "sha256": "ea10d3b5254b1ff544458e2921001f7473a7b6cef6d3bbdae88f70e6e6b23b9b",
+    "bytes": 181889,
+    "downloaded_at": "2026-10-16T09:42:59.651228+00:00"
+  }
+]

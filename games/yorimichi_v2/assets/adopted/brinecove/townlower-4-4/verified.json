@@ -1,0 +1,20 @@
+{
+  "asset": "adopted/brinecove/townlower-4-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece01.uasset": "3f3e79d73721efd96a5682f33ef8ad76c282b281d48770b319f3fc8bc2c1412a",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece02.uasset": "cc4d9ffc146232ee29fb658f8fec0f175391bbf19b882506861a4c93e13a4f2c",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece03.uasset": "ecd1374134472f0aac1e1c9affdb95cb02dce3d4561bfe3047c29690842e5a70",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece10.uasset": "1f7d4e037e49817700f46fb98bc65a7dd7d8e297d9a0979aa2b32c57bd865f6f",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece11.uasset": "f3eefa0532f934088b4eeb8ebe13ed362377e643bd058a5aa751cbfe333336c2",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece12.uasset": "cdaeec16ef1f823373ca436a35564dc9345c981edb395665a573e8791873a262",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece13.uasset": "cb0b1528ac5d5aaa1bc2ae80ea5ddb6e00b46fbe389e511d01ea60fc31f4c1ca",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece2.uasset": "90bee4f6211374c02b5b8cfc04988394d85014e99ca88ba6b8946422edd7a34e",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece30.uasset": "20013f567467bbb3faa123b0543d9807c6ba80f31801462c8cebaccd85e481ab",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Piece31.uasset": "1496385e68c40794d4baf364f08f012bafa000d6b76346014ea59f91f0f4d078",
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Soft.uasset": "8d9d586c0ee32218c2b9f85dbaecd34e169898b08b438c10cb7bc261cc7e7d7b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-wings",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_BOTH_CYC.uasset": "8a14da5b834e0759977df1d809bd279002da94aeab8106ebb4c289126dc93e55",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_BOTH_INTO.uasset": "7c5ca76dad699bbab9ae0aedcd3fda11112c3e12ae5640365ca04da96f665979",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_BOTH_OUT.uasset": "6f7e61c5744184fa46d5d0b45d0b234e3ccf5a609ee8c0342f52f9ebf1e442b3",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_LEFT_CYC.uasset": "56758d33df572c8585ad74c8e06e0ae7c61fe764ee8ab9a818260dcdc68ff95f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_LEFT_INTO.uasset": "0d57985ea6c73267ba160d60e3974d51ccd7ad2af777a97a386341d0a3d947e7",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_LEFT_OUT.uasset": "85dc3088a8d12fff3ae8e59a7327ac6074fbac990d920a3b9792c3e91772a4ee",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_RIGHT_CYC.uasset": "8abcdd739f81e8bb9824d7887346ce357014541dbceb60ae8aaa882a641f06f7",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_RIGHT_INTO.uasset": "8faa1dcf1d5b47cf2d601e220f8fee1694747aaca16a0fa163282c158e06afb8",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WINGS_RIGHT_OUT.uasset": "dc33202099ab66550a52940a1ca766897c46fe8f7ee50a35e42690245225edbf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

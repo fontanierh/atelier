@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-barrel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_barrel.uasset": "8f878a06bdfe0c4b462b1cbd35cad530c36eb00bb9a097d1ed3a09ad16fde0c2",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_barrel.uasset": "a9f75a025b2439e6de9e7d448e11b1d56318f5c51d9e05dc4794d21c21083fe0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

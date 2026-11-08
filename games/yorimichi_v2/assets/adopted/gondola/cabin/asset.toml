@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the gondola cabin kit: body, doors, grip, hanger and collision
+schema = 1
+id = "adopted/gondola/cabin"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/cabin"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/gondola/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/gondola/cabin.py"
+sha256 = "0bd4f8d4c8e140824405a0747b92aedc882f505cf99744c0361cf0dbec9b95e2"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/params.py"
+sha256 = "f1ede294471475d24305b68a1bd22d651fdd172c723dd646255763105b0ce25b"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Cabin"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinDoorLeft"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinDoorRight"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinGrip"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_CabinHanger"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_Cabin_Collision"

@@ -1,0 +1,45 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: R_SKITCHPUSH_RH in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/r-skitchpush-rh"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/r-skitchpush-rh"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_FAST_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_FAST_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_FAST_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_SLOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_SLOW_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_H_SLOW_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_FAST_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_FAST_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_FAST_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_SLOW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_SLOW_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SKITCHPUSH_RH_LO_SLOW_OUT"

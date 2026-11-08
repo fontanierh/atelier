@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_globe",
+  "schema": 1,
+  "size": 0.45,
+  "slug": "globe",
+  "solid": false,
+  "target": 0.09,
+  "turn": 0.0
+}

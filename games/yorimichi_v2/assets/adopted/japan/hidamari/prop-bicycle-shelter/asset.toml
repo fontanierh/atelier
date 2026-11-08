@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop bicycle_shelter: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-bicycle-shelter"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-bicycle-shelter"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle_shelter/bicycle_shelter.glb"
+sha256 = "9eb6f928f1bcba77dc35060898ef4b009cff8e8e388adceb831ccf88ec0d660f"
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle_shelter/concept.jpg"
+sha256 = "98a85db8b59e9978e958ba39f49d5bdcda13ed7ff98f3d030d695794df509453"
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle_shelter/concept.json"
+sha256 = "36c26361c3ddd65fc7763b0970e55c7702ed11376891cd575b5a44bb8291937d"
+
+[[sources]]
+path = "source/assets/hidamari/props/bicycle_shelter/job.json"
+sha256 = "1d90c882f238d11775b179836379159cc16588eb415da0c2cbac7b68996fe186"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_bicycle_shelter.json"
+sha256 = "c9d5012668ea96cc5920fae1ceb53b3da641ebc66a7c0674b08257f8d1eb76a6"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle_shelter"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bicycle_shelter"

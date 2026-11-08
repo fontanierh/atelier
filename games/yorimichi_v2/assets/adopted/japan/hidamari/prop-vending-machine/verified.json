@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-vending-machine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_vending_machine.uasset": "463adb722ac6252ef47989dd0f4a23b528112985a6cbd5cdf3626ed747360260",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_vending_machine.uasset": "685a404e53b657789e72f70bef18329ca874b79bbd5d9daafaf446a836b72347"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

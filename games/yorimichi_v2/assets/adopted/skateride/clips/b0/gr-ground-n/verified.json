@@ -1,0 +1,25 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-ground-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_BS_0_CYC.uasset": "3137823af66b254c9c8f3fe057f284fb604b5a6f1b6aca1288a5586c89bc4bc9",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_BS_0_OUT.uasset": "3983ef713a3d5d00d8ac6e37ec78188ecc7341353f67e2bb720168d767c6d7fe",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_0_CYC.uasset": "8b4bbd2a31049b10ad35e8852abf1e0afffdc7123adf6e3341983437704c9d0a",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_0_INTO.uasset": "cdca6aa9349006756409ea6215defb09be3a93e5afde57e516ba184e8e4cba66",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_0_OUT.uasset": "d2f8cf93af013495c6a83b3ed29162f2ed738acd61cb2fd8ba8cdb5679a46555",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_2HGRAB_OUT.uasset": "602673a0fb52c4de0b4aa34af1b183f97ed250100d3148c2aa2ad21ea77b5395",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_BSGRAB_OUT.uasset": "905de6cad25ed2893fd090f44035780044bd60f5e23ab26c7db69870b823e7fb",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_FSGRAB_OUT.uasset": "98f69bb1e73e795a9f34a5269d38c712c3b81788e85e9bbe93fab464f8df822f",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_LEFT_CYC.uasset": "0fceb491f91631bd0a3be5f2880259ffecd59a3d17bd96a1ee236093fa6d8f88",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_RIGHT_CYC.uasset": "daf9f2e045ba991e649ac67a9c4320ae8a7de19cdb56a29b4e28db68aef40f1d",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_DBL_0_CYC.uasset": "c5c4a5e9907c6256a69832c27f84793564fabad90d239721e53e85709649a773",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_DBL_0_OUT.uasset": "f1e2df3363654c04af7f5a46c946481c3b08071be292bcfb15c678e1de4a2f89",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_DBL_CARVE_L_CYC.uasset": "bb180b668d9865c300a13b9cc2905458f9aa09adf3c7f86a376a3da68c208d90",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_DBL_CARVE_R_CYC.uasset": "89a4f4943760324587268dbd87004249b5b22793cc7943338116bc32d76de790",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_FS_0_CYC.uasset": "8308e3586c9834f2c1d724c61be0c594eee0b18418d484c578345124f0c4ba47",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_N_FS_0_OUT.uasset": "68c74e3727ee164d8fb8b8b5acf5ae174445f2015a41fade64c33a27c3a787af"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

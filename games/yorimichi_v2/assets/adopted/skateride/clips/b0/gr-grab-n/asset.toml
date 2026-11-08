@@ -1,0 +1,69 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: GR_GRAB_N in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/gr-grab-n"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/gr-grab-n"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_BS2DBL_0_TR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_BS2FS_0_TR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_BS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_BS_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_BS_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_BS_METHOD_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL2BS_0_TR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL2FS_0_TR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL_BACKTW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL_FRONTTW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL_LEFTTW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_DBL_RIGHTTW_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_FS2BS_0_TR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_FS2DBL_0_TR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_FS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_FS_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GRAB_N_FS_0_OUT"

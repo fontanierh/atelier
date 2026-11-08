@@ -1,0 +1,494 @@
+<title>Train de Belmonte</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a full-window 3D stage with one docked panel (left on desktop, bottom sheet on phones). Livery palette. */
+:root {
+  --bg: #e9ecf2;
+  --panel: #fbfbfd;
+  --ink: #131a2c;
+  --muted: #5a6377;
+  --line: #d3d8e2;
+  --brass: #9a6d22;
+  --blue: #1b2a4d;
+  --ivory: #efe4cc;
+  --planned: #8b93a6;
+  --display: "Poiret One", "Didot", "Bodoni 72", Georgia, serif;
+  --body: "Figtree", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1120; --panel: #131a2c; --ink: #ece4d2; --muted: #9aa2b6; --line: #253049;
+    --brass: #d6a94f; --blue: #2b3f70; --ivory: #efe4cc; --planned: #6b7389; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1120; --panel: #131a2c; --ink: #ece4d2; --muted: #9aa2b6; --line: #253049;
+  --brass: #d6a94f; --blue: #2b3f70; --ivory: #efe4cc; --planned: #6b7389; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); overflow: hidden; }
+#app { position: relative; height: 100%; display: grid; grid-template-columns: 340px 1fr; }
+#stage { position: relative; min-width: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; outline: none; }
+#panel {
+  background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto;
+  padding: 20px 18px 24px; display: flex; flex-direction: column; gap: 18px; min-width: 0;
+}
+h1 { font-family: var(--display); font-weight: 400; font-size: 2rem; line-height: 1.05; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: .86rem; line-height: 1.45; margin: 6px 0 0; }
+.label { font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.strip { width: 100%; height: auto; display: block; }
+.strip .veh { cursor: pointer; }
+.strip .veh:focus-visible rect { stroke: var(--brass); stroke-width: 2.5; }
+.list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.list button {
+  width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: baseline;
+  background: none; border: 0; border-radius: 6px; padding: 7px 8px; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.list button:hover, .list button:focus-visible { background: color-mix(in srgb, var(--brass) 12%, transparent); outline: none; }
+.list .name { font-size: .92rem; }
+.list .meta { font-family: var(--mono); font-size: .74rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; }
+.pill.built { background: color-mix(in srgb, var(--brass) 22%, transparent); color: var(--brass); }
+.pill.planned { border: 1px dashed var(--planned); color: var(--planned); }
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.toggles label {
+  display: flex; align-items: center; gap: 8px; font-size: .86rem; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
+}
+.toggles input { accent-color: var(--brass); }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.modes button {
+  flex: 1 1 auto; font: inherit; font-size: .86rem; padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.modes button[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: var(--ivory); }
+.modes button:focus-visible, .toggles label:focus-within { outline: 2px solid var(--brass); outline-offset: 1px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { border-top: 1px solid var(--line); padding-top: 6px; }
+.stat b { display: block; font-family: var(--mono); font-weight: 500; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.stat span { font-size: .72rem; color: var(--muted); }
+.note { font-size: .8rem; color: var(--muted); line-height: 1.5; margin: 0; }
+.note code { font-family: var(--mono); font-size: .76rem; }
+#hud {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: .82rem; color: var(--ink); max-width: calc(100% - 32px); text-align: center;
+}
+#cross { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--brass); pointer-events: none; }
+#loading { position: absolute; top: 14px; right: 16px; font-family: var(--mono); font-size: .75rem; color: var(--muted); }
+#pad { position: absolute; right: 16px; bottom: 70px; display: grid; gap: 6px; }
+#pad button { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 1.2rem; }
+@media (max-width: 760px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  #panel { border-right: 0; border-top: 1px solid var(--line); max-height: 44vh; order: 2; padding: 14px 16px 18px; }
+  #stage { order: 1; }
+  h1 { font-size: 1.6rem; }
+}
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="app">
+  <aside id="panel" aria-label="Train controls">
+    <header>
+      <h1>Belmonte train</h1>
+      <p class="sub">Train consist, coupled buffer to buffer. Dashed coaches are still to be built.</p>
+    </header>
+    <section>
+      <p class="label">Consist · <span id="len"></span></p>
+      <svg id="strip" class="strip" role="list" aria-label="Vehicle order"></svg>
+    </section>
+    <section>
+      <ul id="list" class="list"></ul>
+    </section>
+    <section>
+      <p class="label">Display</p>
+      <div class="toggles">
+        <label><input type="checkbox" id="t-roof"> Roofs removed</label>
+        <label><input type="checkbox" id="t-doors"> Doors open</label>
+        <label><input type="checkbox" id="t-res" checked> Reservations</label>
+        <label><input type="checkbox" id="t-planned" checked> Planned</label>
+      </div>
+    </section>
+    <section>
+      <p class="label">Mode</p>
+      <div class="modes">
+        <button id="m-orbit" aria-pressed="true">Free view</button>
+        <button id="m-adult" aria-pressed="false">On foot · adult</button>
+        <button id="m-cairo" aria-pressed="false">On foot · Cairo</button>
+      </div>
+    </section>
+    <section>
+      <p class="label">Furniture</p>
+      <div class="stats">
+        <div class="stat"><b id="s-fit">0</b><span>fitted models</span></div>
+        <div class="stat"><b id="s-res">0</b><span>reserved spots</span></div>
+        <div class="stat"><b id="s-seat">0</b><span>seats</span></div>
+      </div>
+    </section>
+    <p class="note">Axes: x along the train (front toward +x), z up from the rail, metres. The same <code>consist.json</code> and GLBs feed the Unreal import.</p>
+  </aside>
+  <main id="stage">
+    <div id="loading">Loading…</div>
+    <div id="hud">Drag to orbit · wheel to zoom · click a vehicle in the list to go there, then On foot to enter</div>
+    <div id="cross" hidden></div>
+    <div id="pad" hidden><button id="p-f" aria-label="Forward">▲</button><button id="p-b" aria-label="Back">▼</button></div>
+  </main>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const $ = (id) => document.getElementById(id);
+const P = (x, y, z) => new THREE.Vector3(x, z, -y);          // train frame (z up) -> three (y up)
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+const consist = await (await fetch('consist.json')).json();
+const F = consist.floor_z;
+
+// --- renderer, scene, camera --------------------------------------------------------------------
+const stage = $('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+const camera = new THREE.PerspectiveCamera(45, 1, .05, 600);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xfff4e0, 0x223044, .9));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(30, 50, 40); scene.add(sun);
+// a warm lamp that travels with the walker: the coaches' own lamps are separate assets still to come
+const lamp = new THREE.PointLight(0xffdcae, 9, 7, 1.4); lamp.visible = false; camera.add(lamp); scene.add(camera);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(consist.length_m + 40, 9), new THREE.MeshStandardMaterial({ roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.position.set(-consist.length_m / 2, -.01, 0); scene.add(ground);
+function paintTheme() {
+  scene.background = new THREE.Color(css('--bg'));
+  ground.material.color = new THREE.Color(css('--line'));
+}
+paintTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme);
+new MutationObserver(paintTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+// rails, to read the gauge
+const railMat = new THREE.MeshStandardMaterial({ color: 0x777b82, metalness: .8, roughness: .4 });
+for (const s of [-1, 1]) {
+  const r = new THREE.Mesh(new THREE.BoxGeometry(consist.length_m + 20, .15, .07), railMat);
+  r.position.set(-consist.length_m / 2, -.075, s * .7525); scene.add(r);
+}
+
+// --- vehicles -------------------------------------------------------------------------------------
+const loader = new GLTFLoader();
+const groups = {}, roofs = [], doors = [], reserved = [], plannedMeshes = [];
+const obstacles = [];   // world-space circles-vs-boxes for walking: [x0, x1, y0, y1]
+let loading = 0, fitted = 0, reservedCount = 0, seats = 0;
+const resMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, transparent: true, opacity: .45, roughness: .8, depthWrite: false });
+const plannedMat = new THREE.MeshStandardMaterial({ color: 0x8b93a6, transparent: true, opacity: .22, roughness: .9, depthWrite: false });
+function setLoading(d) { loading += d; $('loading').textContent = loading ? `Loading… ${loading}` : ''; }
+
+function footprint(p) {
+  const d = consist.furniture[p.asset].dimensions_m;
+  let w = d.width, dep = d.depth;
+  if (Math.round(p.yaw / 90) % 2) [w, dep] = [dep, w];
+  return [p.x - w / 2, p.x + w / 2, p.y - dep / 2, p.y + dep / 2];
+}
+
+function placeFurniture(group, v, p, template) {
+  const spec = consist.furniture[p.asset];
+  let obj;
+  if (template) {
+    obj = template.clone(true);
+    fitted++;
+  } else {
+    const d = spec.dimensions_m;
+    const geo = new THREE.BoxGeometry(d.width, d.height, d.depth);
+    if (spec.pivot === 'wall_mount_center') geo.translate(0, 0, d.depth / 2);
+    else if (spec.pivot === 'hook_top') geo.translate(0, -d.height / 2, 0);
+    else geo.translate(0, d.height / 2, 0);
+    obj = new THREE.Mesh(geo, resMat);
+    obj.userData.reservation = true;
+    reserved.push(obj);
+    reservedCount++;
+  }
+  obj.position.copy(P(p.x, p.y, p.z));
+  obj.rotation.y = THREE.MathUtils.degToRad(p.yaw);
+  obj.name = p.id;
+  group.add(obj);
+}
+
+const templates = {};
+async function furnitureTemplate(asset) {
+  const spec = consist.furniture[asset];
+  if (!spec.glb) return null;
+  if (!templates[asset]) {
+    setLoading(1);
+    templates[asset] = loader.loadAsync(spec.web || spec.glb).then((g) => { setLoading(-1); return g.scene; });
+  }
+  return templates[asset];
+}
+
+for (const v of consist.vehicles) {
+  const g = new THREE.Group();
+  g.position.x = v.x;
+  g.name = v.id;
+  scene.add(g);
+  groups[v.id] = g;
+  if (v.status !== 'built') {
+    const h = v.id === 'tender' ? 3.4 : 4.3;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(v.length - .3, h - .5, 3.0), plannedMat);
+    m.position.y = .5 + (h - .5) / 2;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: 0xc9a14f }));
+    m.add(edges);
+    g.add(m);
+    plannedMeshes.push(m);
+    continue;
+  }
+  setLoading(1);
+  loader.load(v.web || v.glb, (gltf) => {
+    gltf.scene.traverse((o) => {
+      if (/_Roof$/.test(o.name)) roofs.push(o);
+      if (o.isMesh && o.material && o.material.transparent) o.material.depthWrite = false;
+    });
+    for (const d of v.doors) {
+      const node = gltf.scene.getObjectByName(d.name);
+      if (!node) continue;
+      doors.push({ node, rec: d, base: node.position.clone(), baseRot: node.rotation.y, t: 0 });
+    }
+    g.add(gltf.scene);
+    applyToggles();
+    setLoading(-1);
+  }, undefined, () => { setLoading(-1); $('loading').textContent = `${v.glb} introuvable`; });
+  seats += v.seats.length;
+  for (const p of v.placements) {
+    furnitureTemplate(p.asset).then((t) => { placeFurniture(g, v, p, t); updateStats(); applyToggles(); });
+    if (Math.abs(p.z - F) < .05) {
+      const [x0, x1, y0, y1] = footprint(p);
+      obstacles.push([x0 + v.x, x1 + v.x, y0, y1]);
+    }
+  }
+  for (const b of v.collision) {
+    if (b[5] > F + .2 && b[4] < F + 1.7) obstacles.push([b[0] + v.x, b[1] + v.x, b[2], b[3]]);
+  }
+  for (const r of v.reservations) {
+    if (r.z0 - F < 1.0) obstacles.push([r.x0 + v.x, r.x1 + v.x, r.y0, r.y1]);
+  }
+  for (const r of v.railings || []) obstacles.push([r[0] + v.x, r[1] + v.x, r[2], r[3]]);
+}
+function updateStats() {
+  $('s-fit').textContent = fitted;
+  $('s-res').textContent = reservedCount;
+  $('s-seat').textContent = seats;
+}
+updateStats();
+
+// --- panel: strip, list, toggles ----------------------------------------------------------------------
+$('len').textContent = `${consist.length_m.toFixed(0)} m, ${consist.vehicles.length} vehicles`;
+const strip = $('strip');
+const W = 300, H = 46, scale = W / consist.length_m;
+strip.setAttribute('viewBox', `0 0 ${W} ${H}`);
+let sx = 0;
+for (const v of consist.vehicles) {
+  const w = v.length * scale;
+  const gEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  gEl.setAttribute('class', 'veh'); gEl.setAttribute('tabindex', '0'); gEl.setAttribute('role', 'listitem');
+  gEl.setAttribute('aria-label', `${v.title}, ${v.length} m`);
+  const built = v.status === 'built';
+  gEl.innerHTML = `<rect x="${sx + .6}" y="10" width="${w - 1.2}" height="20" rx="2.5"
+      fill="${built ? 'var(--blue)' : 'none'}" stroke="${built ? 'var(--blue)' : 'var(--planned)'}" stroke-dasharray="${built ? '' : '3 2'}"/>
+    ${built ? `<rect x="${sx + .6}" y="10" width="${w - 1.2}" height="8" rx="2.5" fill="var(--ivory)"/>` : ''}
+    <text x="${sx + w / 2}" y="42" font-size="7" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)">${v.length}</text>`;
+  gEl.addEventListener('click', () => focusVehicle(v));
+  gEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') focusVehicle(v); });
+  strip.appendChild(gEl);
+  sx += w;
+}
+const list = $('list');
+for (const v of consist.vehicles) {
+  const li = document.createElement('li');
+  const built = v.status === 'built';
+  li.innerHTML = `<button><span class="name">${v.title}<span class="pill ${built ? 'built' : 'planned'}">${built ? 'built' : 'planned'}</span></span>
+    <span class="meta">${v.length.toFixed(0)} m${built ? ` · ${v.seats.length} seats` : ''}</span></button>`;
+  li.querySelector('button').addEventListener('click', () => focusVehicle(v));
+  list.appendChild(li);
+}
+// the page reads the checkboxes every time, so restored form values and late-loading models stay in step
+let doorsOpen = false;
+function applyToggles() {
+  roofs.forEach((r) => (r.visible = !$('t-roof').checked));
+  reserved.forEach((r) => (r.visible = $('t-res').checked));
+  plannedMeshes.forEach((m) => (m.visible = $('t-planned').checked));
+  doorsOpen = $('t-doors').checked;
+}
+for (const id of ['t-roof', 't-res', 't-planned', 't-doors']) $(id).addEventListener('change', applyToggles);
+applyToggles();
+
+let flight = null, selected = null;
+function focusVehicle(v) {
+  selected = v;
+  setMode('orbit');
+  const target = new THREE.Vector3(v.x, 2.2, 0);
+  const dist = Math.max(14, v.length * 1.05);
+  flight = { t: 0, fromT: controls.target.clone(), fromP: camera.position.clone(), toT: target,
+             toP: new THREE.Vector3(v.x + dist * .55, 5 + dist * .25, dist * .85) };
+}
+
+// --- walking -----------------------------------------------------------------------------------------------
+const built = consist.vehicles.filter((v) => v.status === 'built');
+const IN = consist.interior_half_width, INX = consist.interior_half_length, BX = consist.body_half_length;
+function inside(x, y, r) {
+  for (const v of built) {
+    const lx = x - v.x, [lo, hi] = v.walk;
+    if (lx >= lo + r && lx <= hi - r && Math.abs(y) <= (v.walk_y ?? IN) - r) return true;
+  }
+  // gangways between two built vehicles that touch, both ends being gangways (or both footplates: tender and cab)
+  for (let i = 0; i + 1 < consist.vehicles.length; i++) {
+    const a = consist.vehicles[i], b = consist.vehicles[i + 1];
+    if (a.status !== 'built' || b.status !== 'built' || a.ends[0] !== b.ends[1] || !['gangway', 'footplate'].includes(a.ends[0])) continue;
+    const hi = a.x + a.walk[0] + r + .02, lo = b.x + b.walk[1] - r - .02;   // overlaps each vehicle's own standing range
+    const half = a.ends[0] === 'gangway' ? consist.gangway.width / 2 : Math.min(a.walk_y, b.walk_y);
+    if (x <= hi && x >= lo && Math.abs(y) <= half - r * .5) return true;
+  }
+  return false;
+}
+function hits(x, y, r) {
+  for (const [x0, x1, y0, y1] of obstacles) {
+    const dx = Math.max(x0 - x, 0, x - x1), dy = Math.max(y0 - y, 0, y - y1);
+    if (dx * dx + dy * dy < r * r) return true;
+  }
+  return false;
+}
+const walker = { on: false, x: 0, y: 0, yaw: 0, pitch: 0, eye: 1.62, r: .28, keys: new Set(), pad: 0 };
+function spawn(v) {
+  // the first free standing point found from the middle of the vehicle outwards, on the centre line or a corridor
+  const [lo, hi] = v.walk, mid = (lo + hi) / 2;
+  for (let d = 0; d < (hi - lo) / 2; d += .25) {
+    for (const sgn of [1, -1]) {
+      for (const y of [0, -IN + .6, IN - .6]) {
+        const x = v.x + mid + sgn * d;
+        if (inside(x, y, walker.r) && !hits(x, y, walker.r)) {
+          walker.x = x; walker.y = y; walker.yaw = sgn > 0 ? 0 : Math.PI; walker.pitch = -.05;
+          return;
+        }
+      }
+    }
+  }
+}
+function setMode(m) {
+  for (const [id, mode] of [['m-orbit', 'orbit'], ['m-adult', 'adult'], ['m-cairo', 'cairo']]) $(id).setAttribute('aria-pressed', String(m === mode));
+  walker.on = m !== 'orbit';
+  controls.enabled = !walker.on;
+  $('cross').hidden = !walker.on;
+  lamp.visible = walker.on;
+  const touch = matchMedia('(pointer: coarse)').matches;
+  $('pad').hidden = !(walker.on && touch);
+  if (walker.on) {
+    const human = m === 'adult' ? consist.human.adult : consist.human.cairo;
+    walker.r = human.radius; walker.eye = human.height * .92;
+    // enter the vehicle picked in the list, or else the built one nearest to the view
+    const target = selected && selected.status === 'built' ? selected
+      : built.reduce((best, q) => (Math.abs(q.x - controls.target.x) < Math.abs(best.x - controls.target.x) ? q : best), built[0]);
+    const here = built.find((q) => { const lx = walker.x - q.x; return lx >= q.walk[0] && lx <= q.walk[1]; });
+    if (here !== target || !inside(walker.x, walker.y, walker.r) || hits(walker.x, walker.y, walker.r)) spawn(target);
+    $('hud').textContent = touch ? 'Drag to look · ▲ ▼ to move' : 'Click to look with the mouse · WASD or arrows · Shift to run · Esc to release';
+  } else {
+    if (document.pointerLockElement) document.exitPointerLock();
+    $('hud').textContent = 'Drag to orbit · wheel to zoom · click a vehicle in the list to go there, then On foot to enter';
+  }
+}
+$('m-orbit').addEventListener('click', () => setMode('orbit'));
+$('m-adult').addEventListener('click', () => setMode('adult'));
+$('m-cairo').addEventListener('click', () => setMode('cairo'));
+renderer.domElement.addEventListener('click', () => {
+  if (walker.on && !document.pointerLockElement && !matchMedia('(pointer: coarse)').matches) {
+    try { const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* drag fallback below */ }
+  }
+});
+addEventListener('mousemove', (e) => {
+  if (walker.on && document.pointerLockElement === renderer.domElement) look(e.movementX, e.movementY);
+});
+let drag = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { if (walker.on && !document.pointerLockElement) drag = { x: e.clientX, y: e.clientY }; });
+addEventListener('pointermove', (e) => { if (drag) { look(e.clientX - drag.x, e.clientY - drag.y); drag = { x: e.clientX, y: e.clientY }; } });
+addEventListener('pointerup', () => (drag = null));
+function look(dx, dy) {
+  walker.yaw -= dx * .0025;
+  walker.pitch = Math.max(-1.2, Math.min(1.2, walker.pitch - dy * .0025));
+}
+addEventListener('keydown', (e) => { if (walker.on) { walker.keys.add(e.code); if (e.code.startsWith('Arrow')) e.preventDefault(); } });
+addEventListener('keyup', (e) => walker.keys.delete(e.code));
+for (const [id, dir] of [['p-f', 1], ['p-b', -1]]) {
+  $(id).addEventListener('pointerdown', () => (walker.pad = dir));
+  $(id).addEventListener('pointerup', () => (walker.pad = 0));
+  $(id).addEventListener('pointerleave', () => (walker.pad = 0));
+}
+function walk(dt) {
+  const k = walker.keys;
+  let f = (k.has('KeyW') || k.has('KeyZ') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) + walker.pad;
+  let s = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('KeyQ') || k.has('ArrowLeft') ? 1 : 0);
+  const speed = (k.has('ShiftLeft') || k.has('ShiftRight') ? 3.2 : 1.5) * dt;
+  // yaw 0 looks along +x (towards the head of the train); +y is to the left
+  const fx = Math.cos(walker.yaw), fy = Math.sin(walker.yaw);
+  const dx = (f * fx + s * fy) * speed, dy = (f * fy - s * fx) * speed;
+  const ok = (x, y) => inside(x, y, walker.r) && !hits(x, y, walker.r);
+  if (ok(walker.x + dx, walker.y)) walker.x += dx;
+  if (ok(walker.x, walker.y + dy)) walker.y += dy;
+  const eye = P(walker.x, walker.y, F + walker.eye);
+  camera.position.copy(eye);
+  const dir = P(Math.cos(walker.yaw) * Math.cos(walker.pitch), Math.sin(walker.yaw) * Math.cos(walker.pitch), Math.sin(walker.pitch));
+  camera.lookAt(eye.clone().add(dir));
+}
+
+// --- loop ----------------------------------------------------------------------------------------------------
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(1, h);
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+new ResizeObserver(resize).observe(stage);
+resize();
+const restaurant = consist.vehicles.find((v) => v.id === 'restaurant');
+controls.target.set(restaurant.x - 12, 2, 0);
+camera.position.set(restaurant.x + 18, 11, 30);
+const clock = new THREE.Clock();
+window.trainDebug = { doors, roofs, walker, obstacles, camera, controls };   // camera/controls: free inspection views
+const ease = (t) => t * t * (3 - 2 * t);
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), .05);
+  for (const d of doors) {
+    d.t += (doorsOpen ? 1 : -1) * dt * 1.6;
+    d.t = Math.max(0, Math.min(1, d.t));
+    const e = ease(d.t);
+    if (d.rec.kind === 'sliding') {
+      const o = d.rec.open_offset_m;
+      d.node.position.copy(d.base).add(P(o[0] * e, o[1] * e, o[2] * e));
+    } else {
+      d.node.rotation.y = d.baseRot + THREE.MathUtils.degToRad(d.rec.swing_deg) * e;
+    }
+  }
+  if (flight) {
+    flight.t = Math.min(1, flight.t + dt / 1.2);
+    const e = ease(flight.t);
+    controls.target.lerpVectors(flight.fromT, flight.toT, e);
+    camera.position.lerpVectors(flight.fromP, flight.toP, e);
+    if (flight.t >= 1) flight = null;
+  }
+  if (walker.on) walk(dt); else controls.update();
+  renderer.render(scene, camera);
+});
+</script>

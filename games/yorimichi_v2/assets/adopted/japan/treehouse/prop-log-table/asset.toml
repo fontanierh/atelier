@@ -1,0 +1,44 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House dressing prop log_table: its material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/prop-log-table"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/prop-log-table"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/props/log_table/asset.toml"
+sha256 = "ade1bf3fbe5d138a58ce9b042252ef69295f02c05f463885074035939a693ce3"
+
+[[sources]]
+path = "source/assets/treehouse/props/log_table/concept.jpg"
+sha256 = "b200f7fc00fd702541d7148955f0601440e84ea12db9332fb83a5fae9ebc7cd9"
+
+[[sources]]
+path = "source/assets/treehouse/props/log_table/job.json"
+sha256 = "3fab2b14b2ef291a1e08109e75b08eddaef045fd872de944259b712f879359e5"
+
+[[sources]]
+path = "source/assets/treehouse/props/log_table/log_table.glb"
+sha256 = "5ddbc061fb7d2dec5808e298a65fa2e9b95497fa9c50e2406070d664cc6492e7"
+
+[[sources]]
+path = "source/assets/treehouse/props/log_table/prompt.txt"
+sha256 = "b2326e106a2273b6b6ad4a5db71149eccc321c2d17a907170981643ea692f9e3"
+
+[[sources]]
+path = "source/assets/treehouse/props/log_table/provenance.json"
+sha256 = "2fdd7855dec60afa7a127f892c4c2c6ad166538f61c85d0f7cc1315a1a42a05e"
+
+[[sources]]
+path = "source/assets/treehouse/export-parameters/TH_P_log_table.json"
+sha256 = "8e7184a862acc5cacaaa272002944f405101b7bef696e9a59902d21eed2c21cf"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_P_log_table"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_P_log_table"

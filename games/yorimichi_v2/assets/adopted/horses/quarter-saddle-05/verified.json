@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/horses/quarter-saddle-05",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png.uasset": "0e349f6d05287139252ee4616e5f30e1c475cdae1858d42a97e06eec9ab236e7",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png.uasset": "2aac12d8be69ed8d8aed19b2ae3e78dca38c33dbcf9356237c75d8c2337b4d32",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png.uasset": "6d4df6334699e3aff0d083e1c63144c8f307f2c70b032f3398abeca358a9d35d",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_05/SK_Horse_Quarter_Saddle_05.uasset": "3990cde33e7b44f8bedd3599ae8c23d9dfd65c824c3cd3440d8ea7fdb23d242d",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Cloth.uasset": "f7567dbaf0ccbad407a20d44948bba81d116e2e1db34ab11dd3cd13a64da9bc3",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Gem.uasset": "a801e69bacac73527cfbe345ac83b105ee484f3c58068d168a59146d02299a49",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Saddle.uasset": "06382e99c0bcbdb994fde1de5a542a0312c6749967ab08b877ba7067e80ce2f6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

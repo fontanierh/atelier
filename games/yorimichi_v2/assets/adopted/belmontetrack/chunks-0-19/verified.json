@@ -1,0 +1,29 @@
+{
+  "asset": "adopted/belmontetrack/chunks-0-19",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_00.uasset": "c4f4474fdbed21452e2095a85e4516148fca53d5d8c8ec0bd9da7ba76ad933de",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_01.uasset": "5a9bb6e84f6047dad3d509bc97b62ed54b7dff2fcd49b5c458d4e54b6d15958e",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_02.uasset": "9e0968fd9d0bcbdcc2c2db68a8e106779ab63907cb918d457e3ebbd450617afb",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_03.uasset": "6b79756bb91b2b20443f9b24eade53b8298d82b27cee6da595e3a748f63c42f2",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_04.uasset": "7460469886ceebe8bf14afcaa77cf8722a0e2c4dc319d1730602d09af626c260",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_05.uasset": "e71bbb77745e3f8c2c749f93699f78bffa25b52ae11c1a58676cc9afcb53c1a9",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_06.uasset": "5db9c95f5d3d6ddaba30c798e97d9caad297c295864442160c517d1f7cc7eae0",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_07.uasset": "21b81411a8d7d5ea28c722cab326f337a8c12d0214660b17352010f4b2369c39",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_08.uasset": "0c78f37275a4d87b88a4c7ac1b6ec52af15c3d86ec436206f1b2834be3051104",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_09.uasset": "51096a9d9162deaeab5cf2623638858e555e57941c0342ac1a8e756845dc7d0c",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_10.uasset": "69341db014ebc74e801eb73c82ea710a54bed37d2f90264d9e802b2b6bb648d3",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_11.uasset": "b808b5cc423f7dfdd3054973c50e1e816ae2f3b6210b61a64a593b76aad41ed2",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_12.uasset": "ecb74fd80ff2fc7a6e410f5e3b737fc6e5fc4204502ca3ab21b4a4febb2faf30",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_13.uasset": "4b4f38ecdf0952e3ef2c03029c789af81c89c3f3e6956aea514bf319fd0f5949",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_14.uasset": "fe590a1bc3af097c75db3fd3c7a9983635d76b6bafc6ab949d032a72f882f0c1",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_15.uasset": "40a35898c12db56539228739d270e9e80a3c46df6ffe9ca3400aa5bbf10cca53",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_16.uasset": "b808eb0450cdce2ff5c4494617920f1906ea0401a75a671d6ec6158e683dc119",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_17.uasset": "dc23025308354546ff21e9dfabf8e6859da65f479468f7ba7316798a96e0475f",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_18.uasset": "ba07ae94e7acdd3132fb4b00197b587bee401ae95b72bc7e4a61090a9f257768",
+    "unreal/Content/BelmonteTrack/SM_TK_Chunk_19.uasset": "137791ab35d832018d31a5a6cc73cc11fe72b2204b21cff9b8473ebd8d5c088e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

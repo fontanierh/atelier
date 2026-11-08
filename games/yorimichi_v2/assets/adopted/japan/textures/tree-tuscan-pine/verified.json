@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/textures/tree-tuscan-pine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Pine_colour.uasset": "8ee591f0f2ff94af2f1719815344b40b58b7a1cb42b71e8a5e3b09765634c41a",
+    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Pine_normal.uasset": "58eb14f9a241e22fa8fb0c6471bb37280176b1c0a2c78400b665059249bf2ac3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

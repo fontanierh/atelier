@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-yardsale",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_BOTH_CYC.uasset": "5e1bcb0a955d4f54b665f4ce85eabed142476d1f4c14eefd90fbc6c6958ca08b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_BOTH_INTO.uasset": "8349878eace157f434d27641df4b24767889c3d65fc7e43bd0c63924438e8a6c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_BOTH_OUT.uasset": "bc41bb1b4a46f39d1eb0474875fa877ce63c358540feaf6af07874998d74897b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_LEFT_CYC.uasset": "3375a6d57d3820a7e92ec660089a3332417a694e6fe4d1d71e8c6cb844cedce1",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_LEFT_INTO.uasset": "ea1c1c415021cb6bfe1453ededbd610b5ea4de7486c0ded0b09b8b3bbb30fd2b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_LEFT_OUT.uasset": "442603619e3661ee89f574a59b6fb0c6d502166c4f50d986e74ee3fd7e4c7a12",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_RIGHT_CYC.uasset": "0d2c93e09e723b2b7931906e47976b2643416f1c4706c865c55376584fb4e955",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_RIGHT_INTO.uasset": "0b37c8598e3edce45e3e6a4443951b43720d15f154eb84b5ddbd4418f943fc2a",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_YARDSALE_RIGHT_OUT.uasset": "fc36d9fd47c423d57e9dada4fefbf240d1c10a8c87760b36d41bb2306f90ce65"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/heelflip-in-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/HEELFLIP_IN_HIGH_A.uasset": "2d8bb660df8abdda8ff895e6201d2ee86d9d6d6153b008c2db9e226904e3a008",
+    "unreal/Content/SkateRide/Clips/B0/HEELFLIP_IN_HIGH_G.uasset": "3ec1bc8f6f9dbb874648afb9dbc873062e8e082d73cd3f523fdf532b264c0fd2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

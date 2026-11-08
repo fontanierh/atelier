@@ -1,0 +1,39 @@
+{
+  "stage": "treehouse-prop-concept",
+  "slug": "planter",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_props.py",
+  "prompt_sha256": "b756ec86207fe2b50bb0cda80030452d0a16f656ef6fdaede87cc4a988abfbee",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/kitchen-approach.jpg": "df1d045584f70f21ddc3b54a268b8ad39367c52383f4164bfb26e37db3882baf",
+    "games/yorimichi/assets/treehouse/refs/chimes-approach.jpg": "ede5721d5a7874afc57698955a08c41009611fd13e306408aaf8e42358602241"
+  },
+  "started_at": "2026-09-29T21:18:02.086918+00:00",
+  "finished_at": "2026-09-29T21:18:35.622153+00:00",
+  "elapsed_seconds": 33.5,
+  "usage": {
+    "input_tokens": 2396,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 236
+    },
+    "output_tokens": 1756,
+    "total_tokens": 4152,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "concept_sha256": "218c68c89c583d9856aa4cf325097a88329f9e4b819d4d10ecf6ff7ab6615c82",
+  "error": null,
+  "compact_copy": {
+    "file": "concept.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 90,
+    "chroma": "4:2:0"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

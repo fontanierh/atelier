@@ -1,0 +1,38 @@
+{
+  "stage": "treehouse-texture",
+  "slug": "kite",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/tools/treehouse_textures.py",
+  "prompt_sha256": "39b49aa33790c6f4960a4ea387eb46228aecae2d3552a3dfcb58e7d156288c4a",
+  "reference_files": {
+    "games/yorimichi/assets/treehouse/refs/heart-inside.jpg": "1fb76e3958c2e3b8c5a4c8ebeb82703a60f5698ab8551eb10aa205421465c27f"
+  },
+  "started_at": "2026-09-29T21:23:01.818002+00:00",
+  "finished_at": "2026-09-29T21:23:37.896761+00:00",
+  "elapsed_seconds": 36.1,
+  "usage": {
+    "input_tokens": 1211,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 131
+    },
+    "output_tokens": 1756,
+    "total_tokens": 2967,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    }
+  },
+  "output_sha256": "5978ae15970ae62cb746cbba563aa1bb8c3dbcd9c975294c37a21f850faaf49f",
+  "error": null,
+  "compact_copy": {
+    "file": "kite.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size originals are kept outside the repository"
+}

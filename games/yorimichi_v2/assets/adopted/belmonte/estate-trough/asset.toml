@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte estate-trough (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/estate-trough"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/estate-trough"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_Trough.glb"
+sha256 = "e285a6e9468abea2d482bf4388ebd1fa362d78c908d56e8a124922ea7568b65a"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BE_Trough_Collision.glb"
+sha256 = "92460b82b84d7f969981e64bf81bbe2c5e5ab7240acd562c6500a97577ae8ded"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_Trough"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BE_Trough_Collision"

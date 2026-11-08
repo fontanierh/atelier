@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "futon",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "44709adbc4af730f6a77438a366c4ec6fa52a5370b3076b81d540c17203e1b7d",
+  "submitted_at": "2026-09-29T21:22:11.782129+00:00",
+  "task_id": "ac6ddcdc-6e99-46c2-a0e6-897eaf4b5446",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:23:58.920336+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

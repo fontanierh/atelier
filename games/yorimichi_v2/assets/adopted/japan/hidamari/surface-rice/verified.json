@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-rice",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_rice.uasset": "d62dc78c57484c27bc7d5dac5adb3e22e6f2ecfe1da95105085f73017e217dde",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_rice.uasset": "f2bb502107216fc4d6072b9d5f94cac96b059e585ca54d165cfe28f72f6224ae"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

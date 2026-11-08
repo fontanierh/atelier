@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-blockwall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_blockwall.uasset": "f57ed624258df1b8c01608f64003c2d614bf8047ac9aca2fd83aa42a9736c37a",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_blockwall.uasset": "df7062eb2593666b227d20ce1475327dae601f46c0e83751116aa8e1a653e082"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

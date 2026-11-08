@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-50-fs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_50_FS_HI_GRAB_CYC.uasset": "eb9d2b4c43fb3fd1d40e4d15f1f68918d5bd8710ed43a5e09a1d02c831f289e4",
+    "unreal/Content/SkateRide/Clips/B0/G_50_FS_HI_GRAB_INTO.uasset": "159d5b29a1dcbea7165066d78c90c50d37c1cd5c06492dcf6d322ca00375a628",
+    "unreal/Content/SkateRide/Clips/B0/G_50_FS_HI_GRAB_OUT.uasset": "3421ba514777b6b89ae5d7157b6bd017e747e8530b198924346a2060d5fbb756"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

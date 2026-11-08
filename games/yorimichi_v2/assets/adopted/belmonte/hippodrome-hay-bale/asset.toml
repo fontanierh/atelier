@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte hippodrome-hay-bale (1 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/hippodrome-hay-bale"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/hippodrome-hay-bale"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_HayBale.glb"
+sha256 = "0eae353aac9275f9de5bdccf0f3609373159c1935ccf61961803fe67d8006c6c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BHip_HayBale_Collision.glb"
+sha256 = "9ae58e088f7c4c80f64ef9033cb51c8b1a608fd9a7e585798b4297fb9791a32d"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_HayBale"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BHip_HayBale_Collision"

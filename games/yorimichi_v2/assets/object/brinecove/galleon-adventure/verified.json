@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/galleon-adventure",
+  "dependencies": {
+    "adopted/brinecove/galleon-adventure": "716bc90d17b489176d7f3d2674a818862cb0a14b212408ece5a3e9aac06d4872"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/WW/B9OWDL22SGB302S52H8LOT.uasset": "ca22a16166303f50d1b29223116c8acb9e6524fb46bf5b0020199ef9ea3d3905"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

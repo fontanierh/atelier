@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface hull: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-hull"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-hull"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/hull.jpg"
+sha256 = "c31151e6cac0521d1e234a5e1da5ae1db5c67d912f897e3deb9b902dd0e2b663"
+
+[[sources]]
+path = "source/assets/treehouse/textures/hull.prompt.txt"
+sha256 = "c70770f5caa12d9e60a51cd242eeec6c0626bb7ada80b29f86d349abccf7ad0f"
+
+[[sources]]
+path = "source/assets/treehouse/textures/hull.provenance.json"
+sha256 = "a289e0302ab584633d6457653a041651fca59febb05cf16ffd5fbe2a9fd86a37"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_hull"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_hull"

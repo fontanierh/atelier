@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-tuscan-cypress",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/MI_Tree_Tuscan_Cypress_Crown.uasset": "564a66b4f780c1c2402db75267a425aba5a246eff40618f8f8b4a56c315dafdb",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD1.uasset": "45d4c7d33ba3ae4ff1f1ed0a5ebfb3d39cf95b8426551963fa22e824d4aafc57",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD2.uasset": "aac50612670086f22a1bccc976ecc16d6c129d69d8a71838df558b8775e04a85",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD3.uasset": "56c888fd5ff11e77980651ce1bfac2b6c0ef9abfc10d10e76fbc07f9647e0da1",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD4.uasset": "b2c2dec186a87f911f65ed509ef9a0eb0a84746ed0c30d463ae429a159cceff9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

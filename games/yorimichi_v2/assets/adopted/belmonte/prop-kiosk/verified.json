@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-kiosk",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Kiosk.uasset": "d506a04ffd3627889b858e06605db6e850e3d0632d6601b978a7df6379d6b4c8",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_Kiosk_Collision.uasset": "9312cd69ac7205e201aac54814c7680788a8a3ca5189bb887b0adb3032756601"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

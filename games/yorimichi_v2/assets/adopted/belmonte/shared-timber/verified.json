@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmonte/shared-timber",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_4ac86121edbc.uasset": "8a553504bdc39cae00141f62e51a24f8870fd7244493725e2341675f8f8630ec",
+    "unreal/Content/Belmonte/Materials/MI_BM_7ebfea974bb1.uasset": "4375b56001272c86e98ce865dfee837647f40a015cd93e8af4a5234f0a0151df",
+    "unreal/Content/Belmonte/Textures/T_BM_545174045712.uasset": "6dd7767207b4c989ee9a000b400c0231d1c20e86e7cec02cda9c98766a29f345",
+    "unreal/Content/Belmonte/Textures/T_BM_bb1c8b9d4039.uasset": "bb9e4b65bb08faf5f31f35e238b191325d55b5052d3392f5a8079e14a116e48e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

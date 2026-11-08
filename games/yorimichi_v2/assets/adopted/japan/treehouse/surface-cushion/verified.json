@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-cushion",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_cushion.uasset": "701cd3ae896a5c2656f9de4faf134d53c828468b5fdd9a6f462c8b02b57df165",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_cushion.uasset": "c0a64c2053c9058d2f2f39ebf22ee32fad2546a8061405990de1a80099f62ffe"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

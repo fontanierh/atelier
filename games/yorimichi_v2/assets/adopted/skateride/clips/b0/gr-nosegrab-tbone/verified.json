@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-nosegrab-tbone",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_TBONE_N_0_CYC.uasset": "b72892b9891e0c58572e02c64268fa308a8d11a959f2ea0777738da130977fcf",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_TBONE_N_0_INTO.uasset": "37525fd37bfaba61694974e897b866cadb79b2e81cf8906f7c8a81e690faafc3",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_TBONE_N_0_OUT.uasset": "3215a51abddd53e1adaf4dae8df59f5126735a940714b21e679ec4f4505905b9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-hippyjump-antic",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HIPPYJUMP_ANTIC_CYC.uasset": "8ffe28c3fa71092ff174e7c6db765ca1588bbfade49c0ef86e27f32fcc591683"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/med-crv-carr",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_L0_DN1.uasset": "fd5ccbb481df47df384adfeb0e09c47489ff0d94b32b1c2c1668dda62680baf6",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_L0_DP1.uasset": "244dde542d76bf5f225b2fdeda0bea1e37ca3890cd3f9d21d44c97689e3fc6da",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LN1_D0.uasset": "1ebfffa8bba193a3af78bee367ba1209f11135c5d0f03737080815fb31c084a9",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LN1_DN1.uasset": "f366e5f5715e99f3640b9e6bab4639cc55ba5dce2f4e320a62ef6ed0aceaa6e1",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LP1_D0.uasset": "5366814eae9bc9f42e9594bf9db7c1cd5a2641c0c5629907cf4bac32cad71bd5",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_CARR_POSE_LP1_DP1.uasset": "f056837138861f9363f53eb33d1cf54da5cdf248a01f73a45cc9a7745f874620"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

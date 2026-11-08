@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-red-roan",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/red-roan.uasset": "647dba5f5bbed658f53fe7e5e92731aa6638abbe16436a3a8f38515da21e8ebc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

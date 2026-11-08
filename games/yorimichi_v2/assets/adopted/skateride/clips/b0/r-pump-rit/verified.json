@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-pump-rit",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_PUMP_RIT_CROUCH_0_N.uasset": "4301c7effa11ff50813efbf1c26fb48dba7c985f52329c21b4d19079c8f7b10b",
+    "unreal/Content/SkateRide/Clips/B0/R_PUMP_RIT_HCOM_0_N.uasset": "11bb1758e5824f30a46e550e4ec5782d93e73ea26302f7a356a80c6119577a65"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

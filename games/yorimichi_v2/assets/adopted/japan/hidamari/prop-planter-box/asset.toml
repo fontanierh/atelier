@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop planter_box: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-planter-box"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-planter-box"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/planter_box/concept.jpg"
+sha256 = "4010f5ee92bda63873f93817f3e811169ca143ef62a7f9932b4ddf575ba76e9c"
+
+[[sources]]
+path = "source/assets/hidamari/props/planter_box/concept.json"
+sha256 = "d239bea1d18a39d04ef230763e9e466a1ab53ea7252f64255c9d32b9fd3e36c6"
+
+[[sources]]
+path = "source/assets/hidamari/props/planter_box/job.json"
+sha256 = "982ee8819bb2b2849328a01227ebb125015eb56f47e05684db74cf90545546aa"
+
+[[sources]]
+path = "source/assets/hidamari/props/planter_box/planter_box.glb"
+sha256 = "2d2447b7594921e0aad6988db6bbe465b430ae1c0ba82c39697d68276105a141"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_planter_box.json"
+sha256 = "de8d96dc41e02ccb1827b51c9333bca1768b4c673838ff7b7192c15ec445201b"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_planter_box"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_planter_box"

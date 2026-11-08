@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-wave",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_BOTH_CYC.uasset": "870a33efd2622247357b3b3b9d8ae273489d13ed7ea8f86f1af234604bad18b8",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_BOTH_INTO.uasset": "3e1528d63ec4fe6da81d8e0326f424730132b6c66837d14ffba6835cc1cd0249",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_BOTH_OUT.uasset": "39cda1cec6572cf4156888e795cfad1fe70310c489137ef8607fb4a6839c8e49",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_LEFT_CYC.uasset": "e3578cbbe1813f387005aaa66a8b60821e2559a1a688f7ab19c848b6929cd7d5",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_LEFT_INTO.uasset": "8e9670bfc8d05b1b1c4061f1cd709afbafcf0773ebdbbf91a6852bcbd33af0f8",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_LEFT_OUT.uasset": "168c853d19496a69e9d9b6888ada0fbcec544e04ac440a09aa80ba6917057080",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_RIGHT_CYC.uasset": "f2ba263568d1eb624ac78713a2ce5c0571474c6103ca321dd7208f81b5fc9247",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_RIGHT_INTO.uasset": "2f79a94c0dd80884c89af1163966a63257e0f3b1011390ab728a8ac164c9d8e3",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_WAVE_RIGHT_OUT.uasset": "85f77d94d8dc4f55ebf529bbf6e6a57ca84f4105b5640656dadf54dd14f9255e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-laundry-basket",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_LaundryBasket.uasset": "07e231a5706842ab1c16ec503fd4e64ed57f1d0aea8dc6261ed0cd4a0a9bc427",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_LaundryBasket_Collision.uasset": "a8cc23ca46241231753d19ecd316ee1ab20bc41e87d1073ffae023cf7176f80f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

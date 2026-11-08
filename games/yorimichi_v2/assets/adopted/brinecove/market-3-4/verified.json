@@ -1,0 +1,20 @@
+{
+  "asset": "adopted/brinecove/market-3-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece10.uasset": "70145c96f305ff6424161bcb3ae44c3b8642f7cd445c6b1ebc65509b3062cc73",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece110.uasset": "bcc8ec746d6896dbdec3cd326f776b9dbfe9a41f3b805f3cd6f975ba38bfa9e6",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece111.uasset": "60ba4c331ea2a29303efb119dfca75a70b0c9467452b8d111277083c2fb723e9",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece112.uasset": "d043a28f17fc8273c315b0cb2832a4235e7c0f9fbff35604766b3411c0c49c9d",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece113.uasset": "7b4d999675c305dcf5b591b59730d753f6d013081e50afc4042424eb77158071",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece12.uasset": "e0e08a458fdb040290c4678f0eea3bbcdb4471cd9603272eeb73b5af93bf9292",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece130.uasset": "e4df627b5b721bd60b9a669d8170144e4841ddd72faf8f110c139d75037919a5",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece131.uasset": "ee2404c98cd85400fb3bfd3bda1b0f6ffea90a47865a0d89891e5cfdd7c433df",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece132.uasset": "c3910b659b586b8e19cd6c99859beeb69845c6a4769bda55d7b81398dd5e4425",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Piece133.uasset": "22dcb3054487ededca276adc0a4e9df9ce310edb4fb691c658ed0e2452e2745b",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_3_4_Soft.uasset": "1d0941fd644e191898eb85126437ea9f6bd0b615befd154d9b6fecc27004d869"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

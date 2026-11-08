@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-mcarroll-mongo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_HSPD_HSTR_CYC1.uasset": "8244d9e50c4c5fd8950bf943aa5ac51974db3b326e4d1b4f1cd5e6b78f7ff82e",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_HSPD_HSTR_CYC2.uasset": "f93e55dd77e0bc44748d3fa5518d569deef3caab58d4eadc54b9154a3d6a9983",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_HSPD_HSTR_INTO.uasset": "12afb9ade6468b32209173800fbcff581340f3ba4551c0b3eb9cf16d0ae5c2e8",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_HSPD_LSTR_CYC1.uasset": "6fe1309ed6729e2e2146f1bdf1d2a38dc42552abac6ce0d21cfe70e91c1cb68e",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_HSPD_LSTR_CYC2.uasset": "5b110e187ac57edae8719e48ab6a58cf87bb4e8c0476425e928cc84907172572",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_HSPD_LSTR_INTO.uasset": "3f48d0087d64e7febf9ffcb03b56a0f671628ab9c64596687a41e33127303eae",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_LSPD_HSTR_CYC1.uasset": "8a764e6d12544a959502f4579b76f252a849361088b8ababc189b76beb003f4f",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_LSPD_HSTR_CYC2.uasset": "993bd697eaa726eb1643ac739c89c9dd81bd19d69a97fcc8db7f8bdd2414ee97",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_LSPD_HSTR_INTO.uasset": "4a7222c195d54b08cfb6ab4136334150907e82e3559700836c9af959d3f9a16b",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_LSPD_LSTR_CYC1.uasset": "90078980660694409161b6567356530698731a186c07c1d6a26fc9f2d5b18aca",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_LSPD_LSTR_CYC2.uasset": "4ca80291a2d777350c97f1d627557359f23a169e94d108e9ddf9b9bbcda6db31",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_MONGO_LSPD_LSTR_INTO.uasset": "175725fd57a86923e785d53727964420703e51d4bfbe26d0ec550de29f861b39"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

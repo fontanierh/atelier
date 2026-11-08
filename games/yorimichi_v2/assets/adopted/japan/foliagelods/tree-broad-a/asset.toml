@@ -1,0 +1,32 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage tree-broad-a (6 package(s)): LODs and crown material
+schema = 1
+id = "adopted/japan/foliagelods/tree-broad-a"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods/tree-broad-a"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/foliage/Tree_Broad_A.json"
+sha256 = "4e8f13c2902ab96cde3ba4e791d82f22adab80c58e87a25f55469fcd3048fc0a"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/MI_Tree_Broad_A_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD4"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD5"

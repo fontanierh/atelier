@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/gondola/station-hidamari",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Gondola/World/GD_hidamari_Access.uasset": "d816d7904dc9cf945cbe477d4eb5751f85b810d5fd4b9dfe9226971a4f96455c",
+    "unreal/Content/Gondola/World/GD_hidamari_Foundation.uasset": "9e7daaad2c7fb2ac0e164aff8377f205e69d3a07b0280d272d5864624f95c630"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

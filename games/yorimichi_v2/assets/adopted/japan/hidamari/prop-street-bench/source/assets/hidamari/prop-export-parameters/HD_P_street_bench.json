@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_street_bench",
+  "parent": "HD_P_street_bench",
+  "schema": 1,
+  "settings": null,
+  "size": 1.8,
+  "slug": "street_bench",
+  "solid": true,
+  "target": 0.07,
+  "turn": -90,
+  "upright": false
+}

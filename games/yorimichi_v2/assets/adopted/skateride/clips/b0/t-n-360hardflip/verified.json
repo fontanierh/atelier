@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-n-360hardflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_N_360HARDFLIP_HI_DCATCH_OUT1.uasset": "bc66f19c6338d4820734e296559a625cf68e72df5eede21f6bbbf4ab86046a2d",
+    "unreal/Content/SkateRide/Clips/B0/T_N_360HARDFLIP_H_CYC.uasset": "403ce6b50c8fa59ff254fa49127b5013f7438e8c34f1e51a78d7844bf78a064e",
+    "unreal/Content/SkateRide/Clips/B0/T_N_360HARDFLIP_LOW_DCATCH_OUT1.uasset": "5224775b766fe6814f4d51d1adb7cd519cf9b3f36146c1e0a748c73d871a9984",
+    "unreal/Content/SkateRide/Clips/B0/T_N_360HARDFLIP_L_CYC.uasset": "73acb25d3fedbec7b89c9dacbe0feeef5bd05a7308a533d8b80ee7a10f99c5b7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

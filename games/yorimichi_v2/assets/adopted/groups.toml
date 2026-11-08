@@ -13,24 +13,25 @@ folder = "/Game/Japan/Assets"
 key = '^(BK|SB|TH|ZP|Bird|Bush|Grass|Rock|HouseLot|House|Mega|Pole|Tree_(?:Caldera|Canopy|Forest|Tuscan|Broad|Cedar|Ginkgo|Maple|Pine))(?:_|$|(?=[A-Z]))'
 names = { BK = "bike", SB = "sailboat", TH = "treehouse", ZP = "zeppelin", Mega = "mega-park-pieces" }
 
-# Skate clips: one record per move family, the name's first token (R, G, B, T, PRO, TKDWN, ...); a family over 200
-# clips splits into numbered parts.
+# Skate clips: one record per complete move family (docs/inventory/ownership-audit.md), the name's first three
+# tokens in B0 and two in B1 (`INVERT_HANDPLANT_BS`, `MVOBJ_PULL`), which keeps every family under the 200 cap.
 [[group]]
 folder = "/Game/SkateRide/Clips/B0"
-key = '^([0-9A-Z]+)_'
+key = '^([0-9A-Z]+_[0-9A-Z]+_[0-9A-Z]+)(?:_|$)'
 
 [[group]]
 folder = "/Game/SkateRide/Clips/B1"
-key = '^([0-9A-Z]+)_'
+key = '^([0-9A-Z]+_[0-9A-Z]+)(?:_|$)'
 
-# Atomic terrain and city surfaces: one record per area (the name before `_cell`).
-[[group]]
+# Atomic terrain and city surfaces: one record per 1024 m area of each layer (8 x 8 cells), each lone mesh its own,
+# and a generator unit holding the cell scripts (tools/migrate/experiments_units.py).
+[[units]]
 folder = "/Game/Experiments/CitySurfaces/v1_128m"
-key = '^(.*?)_cell'
+map = "experiments/citysurfaces/units.json"
 
-[[group]]
+[[units]]
 folder = "/Game/Experiments/IslandTerrain/v1_atomic"
-key = '^(.*?)_cell'
+map = "experiments/islandterrain/units.json"
 
 # Mega Park (DECISIONS D05 group 3, cleared 2026-11-08): its packages are named by content hash, so a committed map
 # (written by tools/migrate/megapark_units.py from its source map.json and the packages' references) puts each in one
@@ -39,3 +40,83 @@ key = '^(.*?)_cell'
 [[units]]
 folder = "/Game/MegaPark"
 map = "megapark/units.json"
+
+# Brine Cove (audit A1/A3): its generator bakes scenery into meshes by feature and 256 m tile, so a committed map
+# (written by tools/migrate/brinecove_units.py) makes each feature tile one unit with its soft and split pieces, names
+# the ship tiles that hold one ship alone (wreck, galleon-adventure), gives each plant family and hero model (with its
+# material instances and textures) its own unit, and keeps the shared materials and textures.
+[[units]]
+folder = "/Game/Brinecove"
+map = "brinecove/units.json"
+
+# Belmonte (audit A3): a committed map (written by tools/migrate/belmonte_units.py) makes each imported source model
+# (a town block, an estate, a building, a furniture piece) one unit with its collision, slices and own materials,
+# each terrain tile and civil-works family a bounded unit, shared surfaces by family, and the generator unit holding
+# the region generator and its inputs, which every other unit references.
+[[units]]
+folder = "/Game/Belmonte"
+map = "belmonte/units.json"
+
+# Crater Park (audit A3): a committed map (written by tools/migrate/craterpark_units.py from the shipped park design
+# and the generator's per-face feature names, kept in craterpark_ownership.json) makes each park piece one unit with
+# its supports and copings, the crater floor 4 x 4 tile areas, shared surfaces by family, and materials-base the
+# generator every unit references. Collision the generator slices across pieces stays in collision-mixed (open gap:
+# per-feature collision needs the generator to emit it per piece).
+[[units]]
+folder = "/Game/CraterPark"
+map = "craterpark/units.json"
+
+# Transport (audit A1/A3, docs/inventory/transport-objects.md): each gondola tower, station (with its foundation and
+# ground access) and rope line, each ferry terminal and the ship, and each Belmonte track section, station and tunnel
+# is one unit (tools/migrate/gondola_units.py, ferry_units.py, train_units.py); the materials unit of each system
+# holds its generator, which every other unit references.
+[[units]]
+folder = "/Game/Gondola"
+map = "gondola/units.json"
+
+[[units]]
+folder = "/Game/Ferry"
+map = "ferry/units.json"
+
+[[units]]
+folder = "/Game/BelmonteTrack"
+map = "belmontetrack/units.json"
+
+# Horses, Hidamari and the Tree House (docs/inventory/ownership-audit.md): each breed, tack set and coat; each
+# Hidamari prop, surface and Caldera tree; each Tree House prop, surface and cell-piece group is one unit with its
+# sources, and each folder's generator unit holds its generator (tools/migrate/horses_units.py, hidamari_units.py,
+# treehouse_units.py over unit_tools.py).
+[[units]]
+folder = "/Game/Horses"
+map = "horses/units.json"
+
+[[units]]
+folder = "/Game/Japan/Hidamari"
+map = "japan/hidamari/units.json"
+
+[[units]]
+folder = "/Game/Japan/Treehouse"
+map = "japan/treehouse/units.json"
+
+# The Belmonte train and Japan's shared materials, textures, foliage LODs and audio (docs/inventory/ownership-audit.md):
+# each rolling-stock model, material family, texture set, LOD set and sound bank is one unit with its sources
+# (tools/migrate/belmontetrain_units.py, japan_units.py).
+[[units]]
+folder = "/Game/BelmonteTrain"
+map = "belmontetrain/units.json"
+
+[[units]]
+folder = "/Game/Japan/Materials"
+map = "japan/materials/units.json"
+
+[[units]]
+folder = "/Game/Japan/Textures"
+map = "japan/textures/units.json"
+
+[[units]]
+folder = "/Game/Japan/FoliageLODs"
+map = "japan/foliagelods/units.json"
+
+[[units]]
+folder = "/Game/Japan/Audio"
+map = "japan/audio/units.json"

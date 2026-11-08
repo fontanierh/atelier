@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop jizo: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-jizo"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-jizo"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/jizo/concept.jpg"
+sha256 = "4de67ac0f16876a4a9a0b0de910865306dc4dee16b619e3672cd3ae640f56e1e"
+
+[[sources]]
+path = "source/assets/hidamari/props/jizo/concept.json"
+sha256 = "62e4d90dd9dbf857089ca546d20c3e5664c7b275b51bb4ab3b32d1f404f2b6f9"
+
+[[sources]]
+path = "source/assets/hidamari/props/jizo/jizo.glb"
+sha256 = "4321cc8f8681d69600262d45f406e338033ae5554b6e1e1dde7aaa03db4aad10"
+
+[[sources]]
+path = "source/assets/hidamari/props/jizo/job.json"
+sha256 = "f816a7a6d7844907ce38de4f5eba064fe89794c0c87512b1bfc0cb5527e659be"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_jizo.json"
+sha256 = "52c9342207b77a4ac1345016fef5a7e96f2df9ed279af975270871c9a181122d"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_jizo"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_jizo"

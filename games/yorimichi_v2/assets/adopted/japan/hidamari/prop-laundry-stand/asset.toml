@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop laundry_stand: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-laundry-stand"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-laundry-stand"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/laundry_stand/concept.jpg"
+sha256 = "76066d6cdc38b36436e57dc1e5bce3c9df136735b5122b3f7476d6491356cd32"
+
+[[sources]]
+path = "source/assets/hidamari/props/laundry_stand/concept.json"
+sha256 = "6770dabec963ddc53a4f1136ee8725cbd380f9f93f5186aa65930f9a03284dd3"
+
+[[sources]]
+path = "source/assets/hidamari/props/laundry_stand/job.json"
+sha256 = "b052dc87a60a43e0eeb84261c45c6ff7531aba3104aae22e96af4687db0dbf68"
+
+[[sources]]
+path = "source/assets/hidamari/props/laundry_stand/laundry_stand.glb"
+sha256 = "bf016ba58c1f54800aac741fec2f91dce206252c67371b8b90be09649b55d649"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_laundry_stand.json"
+sha256 = "2d62472ffa0b21bffae185997a2c4f41321a6f50670f7d34e9e5d4b11feac722"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_laundry_stand"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_laundry_stand"

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/craterpark/shared-textures-brick",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Textures/T_CP_brick_coping.uasset": "a362bd0d9f2e3022ac1f539dd3823330970ff6c16dd87c87e5156db4ad5df816",
+    "unreal/Content/CraterPark/Textures/T_CP_herringbone.uasset": "e0e510bfb254df7d65baed1207572d05f756147bb750dd2f2a484eb6593dddb3",
+    "unreal/Content/CraterPark/Textures/T_CP_paving.uasset": "3ebf52ce49af7e821983aec3a99bf77e20ae8ade195c5436438da0b4b0933e86",
+    "unreal/Content/CraterPark/Textures/T_CP_stair_brick.uasset": "3360b99467bee66f79a9e519f0f0a844e57f495c6c01162e57605d95164f8286"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

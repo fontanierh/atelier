@@ -1,0 +1,45 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat masks
+schema = 1
+id = "adopted/horses/coat-masks"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-masks"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/T_Coat_Overo_Mask.png"
+sha256 = "ea4299996fdadb7cc612493745151684ddfb1c8e92dc0231f9a93fb47f969aca"
+
+[[sources]]
+path = "source/assets/horses/coats/T_Coat_Pangare_Mask.png"
+sha256 = "1483dd19d97a3b5dd700cf37b433f60e0cb78cdc31a7ca387adc1016e43c5086"
+
+[[sources]]
+path = "source/assets/horses/coats/T_Coat_Solid_Mask.png"
+sha256 = "9bac33234e2386142d5ccbceaa7176765552945aee6d42284b64518cad886009"
+
+[[sources]]
+path = "source/assets/horses/coats/T_Coat_Spots_Mask.png"
+sha256 = "474227e860ea50152d29e9e511bed43320386b32d221a5b06640543e455e5faf"
+
+[[sources]]
+path = "source/assets/horses/coats/T_Coat_Tobiano_Mask.png"
+sha256 = "3590182eeb8e457767cf88ce42881c1602c22fcb77bfbac0f5ea85f4d2ae90d4"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Overo_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Pangare_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Solid_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Spots_Mask"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Masks/T_Coat_Tobiano_Mask"

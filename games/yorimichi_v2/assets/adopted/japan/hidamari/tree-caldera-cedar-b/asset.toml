@@ -1,0 +1,41 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Caldera tree cedar B: LOD meshes, material and texture
+schema = 1
+id = "adopted/japan/hidamari/tree-caldera-cedar-b"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/tree-caldera-cedar-b"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_b/downloads.json"
+sha256 = "37ed862794ed68801f1c9aaaba7eb3dbf54be86b402bea7e72ed7a12afd4f314"
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_b/job.json"
+sha256 = "6100d23fa09c082dcfe4895b5e790adb67bdb62162eb8844910e4c41470d57ed"
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_b/raw/output_model_url.glb"
+sha256 = "72394cfc367e812e4f377aed42671552fddb601b7aa7d92902420733442ac7ad"
+
+[[sources]]
+path = "source/assets/craterpark/trees/cedar_b/raw/output_rendered_image_url.webp"
+sha256 = "a59d92341fae41d5ec5e81fcce361b626627e1022f8003993c97522c75787305"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_B"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_Cedar_B"

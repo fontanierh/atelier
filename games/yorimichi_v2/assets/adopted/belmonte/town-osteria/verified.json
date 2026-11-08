@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/belmonte/town-osteria",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Osteria.uasset": "58de11239347da7463493de52c7e601fba72399ee9d33d565300fd33f4d5c605",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_OsteriaPergola.uasset": "60bff9abe9160697526be0b1b56ffa43f4a213743efc1089b831172f8a46ec3d",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_OsteriaPergola_Collision.uasset": "7d497389be59647e1b12b9d6671c95b3ac578ba580b8feb52b9c4d0deb062c16",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Osteria_Collision.uasset": "59c294b7de609d2c30ce0fa714e25964ba73870be61997fa2b2f341bde71dcbf",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BH_Osteria_Taproom.uasset": "6039d2829b729e8d7d74aa577cc9bfaaadb07aac85cf4781f067481b9abb02c0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

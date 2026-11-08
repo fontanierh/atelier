@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/brinecove/rocks-3-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Rocks_3_2.uasset": "edb4ae5540145a4da9b98733bdf19b532b8c40d92250b5a5d153b048f4331241",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Rocks_3_2_Soft.uasset": "3075442c2df7130834208f9de12bb0601c628ff92d7257ac3336c0041e0d24bb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

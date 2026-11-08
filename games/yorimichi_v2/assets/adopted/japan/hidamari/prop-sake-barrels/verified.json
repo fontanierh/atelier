@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-sake-barrels",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_sake_barrels.uasset": "edbd1630b4f33fc9fb5bd79f1184fa4cc2eaa669dbe45f938716f1321fd5b543",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_sake_barrels.uasset": "c371461c289ecdeac1b81d53c537a3cabb134790582885ddb60206cedb1db8cc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

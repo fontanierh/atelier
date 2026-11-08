@@ -1,0 +1,583 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan footstep bank leaves (191 one-shots), cut from licensed masters kept out of the repository
+schema = 1
+id = "adopted/japan/audio/footsteps-leaves"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/audio/footsteps-leaves"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/audio/generator"]
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_06"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_07"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_08"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_09"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_10"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_11"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_12"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_13"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_14"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_15"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_16"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_17"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_18"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_19"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_20"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_21"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_22"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_23"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_24"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_25"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_26"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_27"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_28"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_29"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_30"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_31"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_32"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_33"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_34"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_35"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_36"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_37"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_38"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_39"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_40"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_41"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_42"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_43"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_44"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_45"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_46"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_47"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_48"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_49"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_50"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_51"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_52"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_53"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_54"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_55"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_56"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_57"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_58"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_59"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_60"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_61"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_62"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_63"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_64"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_65"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_66"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_67"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_68"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_69"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_70"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_71"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_72"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_73"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_74"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_75"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_76"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_77"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_78"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_79"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_80"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_81"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_82"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_83"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_84"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_85"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_86"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_87"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_88"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_89"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_90"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_91"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_92"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_run_93"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_shuffle_slow_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_shuffle_slow_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_shuffle_slow_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_shuffle_slow_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_shuffle_slow_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_shuffle_slow_06"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_shuffle_slow_07"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_06"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_07"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_08"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_09"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_10"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_11"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_12"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_13"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_14"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_15"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_16"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_17"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_18"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_19"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_20"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_21"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_22"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_23"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_24"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_25"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_26"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_27"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_28"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_29"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_30"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_31"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_32"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_33"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_34"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_35"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_36"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_37"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_38"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_39"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_40"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_41"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_42"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_43"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_44"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_45"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_46"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_47"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_48"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_49"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_50"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_51"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_52"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_53"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_54"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_55"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_56"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_57"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_58"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_59"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_60"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_61"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_62"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_63"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_64"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_65"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_66"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_67"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_68"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_69"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_70"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_71"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_72"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_73"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_74"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_75"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_76"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_77"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_78"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_79"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_80"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_81"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_82"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_83"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_84"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_85"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_86"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_87"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_88"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_89"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_90"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/leaves/leaves_sv_leaves_walk_fast_91"

@@ -1,0 +1,20 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan tree-forest-oak textures (2 package(s))
+schema = 1
+id = "adopted/japan/textures/tree-forest-oak"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/textures/tree-forest-oak"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "source/assets/forest/export-parameters/Tree_Forest_Oak.json"
+sha256 = "8184fdb29d78973617e69848f10cf46e3dc7f878ba27c40e7e868504a9ada22a"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Tree_Forest_Oak_colour"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Tree_Forest_Oak_normal"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-mcarroll-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_STAND_IDLE_ARMSUP_CYC.uasset": "60e616853264fdc15b6fad84500551dc2705760b56d7c75f4f65e2454a3b8fe1",
+    "unreal/Content/SkateRide/Clips/B0/PRO_MCARROLL_STAND_IDLE_LOOKBACK_CYC.uasset": "4a8f44da052183728abac7b9907f6c71e532bd22e945be8b7a108e0ab35d3b4e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

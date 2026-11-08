@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/prop-pot-large",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotLarge.uasset": "0a42b29cdf2446cfa3a43e690d6942cda64df2797e98d7a4430db45fa9c24ad5",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BP_PotLarge_Collision.uasset": "c534a83e027c6d68898f11cb485263e541430f30798f9d8d0e46dd0264af08ea"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

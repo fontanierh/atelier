@@ -1,0 +1,34 @@
+# The Brine Cove wreck's model: the broken hull on the western rocks, alone in tile 2_2 of the donor's ships layer.
+# Its source is the donor generator's own export of that tile (games/yorimichi/world/regions/brinecove/build.py,
+# modules.ships(): build/yorimichi/brinecove/glb/SM_BC_Ships_2_2.glb, 3080 triangles, 11 material slots), committed
+# here, so the wreck is edited and reimported from V2 alone (tools/import/run.py). The settings are those of the donor's
+# import (import_brinecove.py): slot materials by index, full-precision metre UVs, complex double-sided collision.
+# Its placement is the saved object object/brinecove/wreck.
+schema = 1
+id = "prop/brinecove/wreck"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/wreck"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Ships_2_2.glb"
+sha256 = "44a7b84f5f99ec53fa4b6704d778ac907a4b39af6d550f2a4dfb06340f5cfdc7"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_deck_planks", "/Game/Brinecove/Materials/MI_BC_glass",
+                  "/Game/Brinecove/Materials/MI_BC_glass_warm", "/Game/Brinecove/Materials/MI_BC_gold",
+                  "/Game/Brinecove/Materials/MI_BC_hull", "/Game/Brinecove/Materials/MI_BC_lantern",
+                  "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_rope",
+                  "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark",
+                  "/Game/Brinecove/Materials/MI_BC_wood_light"]
+full_precision_uvs = true
+collision = "complex"
+triangles = 3080
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Ships_2_2"

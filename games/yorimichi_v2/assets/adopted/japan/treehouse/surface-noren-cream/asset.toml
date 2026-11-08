@@ -1,0 +1,28 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Tree House surface noren_cream: material instance and texture
+schema = 1
+id = "adopted/japan/treehouse/surface-noren-cream"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/treehouse/surface-noren-cream"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/treehouse/generator"]
+
+[[sources]]
+path = "source/assets/treehouse/textures/noren_cream.jpg"
+sha256 = "9526d1c31d3ad462f2151ad2b1abce3cfc833f0620acd7af397ab8a7ee7954db"
+
+[[sources]]
+path = "source/assets/treehouse/textures/noren_cream.prompt.txt"
+sha256 = "f7bae67434d41e462877ae6c9817d13adfa18e611537b8bc6f098811fe8c08dc"
+
+[[sources]]
+path = "source/assets/treehouse/textures/noren_cream.provenance.json"
+sha256 = "b63d27437e99663429705105c9423ac2230bf60ced12e78bcdeaa10c12efe5d6"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_noren_cream"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_noren_cream"

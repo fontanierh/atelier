@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/fspopshuvit-carr-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/FSPOPSHUVIT_CARR_LOW_A.uasset": "93852e6e36fac6206070ce10dd500bf9a6337ed9cba7868fc6825dbb27330391",
+    "unreal/Content/SkateRide/Clips/B0/FSPOPSHUVIT_CARR_LOW_G.uasset": "27e7f0b895d41cb9c8e2ff8e2e32cca24a3dfc1cc07c97d8adee7f652c1e0ca3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

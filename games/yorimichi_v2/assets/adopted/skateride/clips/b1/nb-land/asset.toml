@@ -1,0 +1,132 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: NB_LAND in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/nb-land"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/nb-land"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_DN_0_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_DN_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_FWD_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_FWD_25_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_FWD_75_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_GRND_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_UP_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_UP_25_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_BIG_UP_75_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BF_TO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BF_TO_RUN_FWD4"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BWD_TO_RUN_FWD1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BWD_TO_RUN_FWD4"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BWD_TO_RUN_FWD6"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BWD_TO_RUN_FWD7"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BWD_TO_RUN_FWD8"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_BWD_TO_WIPEOUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD3"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD4"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD5"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD6"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD7"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FF_TO_RUN_FWD8"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FWD_TO_RUN_FWD1"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FWD_TO_RUN_FWD2"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FWD_TO_RUN_FWD4"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FWD_TO_RUN_FWD6"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_JUMPOUT_FWD_TO_RUN_FWD7"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_DN_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_DN_25_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_DN_75_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_FWD_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_FWD_25_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_FWD_75_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_GRND_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_UP_0_INTO_STAND"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_UP_25_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_SML_UP_75_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/NB_LAND_THIN_INTO_STAND_0_THIN"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-ground-dbl",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_DBL_CARVE_L_OUT.uasset": "452d71df8c17e322e258b5122e50b75bc01ef0aa327af55ddfd1c44200ba021d",
+    "unreal/Content/SkateRide/Clips/B0/GR_GROUND_DBL_CARVE_R_OUT.uasset": "a5dfb707db7fd599ca35a3c5782527d81acc53fbcc854cb04c327fa442e09c93"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

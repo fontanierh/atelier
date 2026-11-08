@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/brinecove/plant-cover-fern",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverFern0.uasset": "b140bee9a6734f2e71a43fc70a3cec597241b4b09ea52bd0874276ae0489aa70",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverFern1.uasset": "ba17c725f20cd45babd92f009e0e7e714d93163d8a62401c15c9dbd0255460a9",
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverFern2.uasset": "9c39afed4abd8bdb90e7948826e0466b8cee50536875aff4b45d2e048a5e7516"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,42 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: BR_DISMOUNT in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/br-dismount"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/br-dismount"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_BS_INTO_BR_AIR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_DBL_INTO_BR_AIR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_FAST_HI_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_FAST_LO_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_FS_INTO_BR_AIR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_HI_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_HI_INTO_STAND_0"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_LO_INTO_RUN_FWD"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_LO_INTO_STAND_0"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_MUTE_INTO_BR_AIR"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_DISMOUNT_STALE_INTO_BR_AIR"

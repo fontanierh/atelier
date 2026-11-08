@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-metal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_metal.uasset": "2d2e928ee289ab292428c2f0a42b3740c33e38b5bbf450f9a428ee5ea157c6ef",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_metal.uasset": "74e12d7f9a32105402184db8fcdfd84328912d60409bf3e152e95eec86f9899e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

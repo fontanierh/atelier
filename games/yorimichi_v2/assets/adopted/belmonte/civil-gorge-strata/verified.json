@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/belmonte/civil-gorge-strata",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_GorgeStrata_0.uasset": "b1b5b32e54bf7d30a671ace0ff11cbc3c9de20de963b94c8d64577bc3d49abf6",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_GorgeStrata_1.uasset": "73be612b018757bc8f26b3b21572173a0464253414fc64acc83cef7146ef94b9",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_GorgeStrata_2.uasset": "1a0926e8c7d1273e1cdf49edf5a15a62d2daabebfe26c85ccf98e126c32275f6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

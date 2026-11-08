@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-devil",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_BOTH_CYC.uasset": "fed1e3831bc8356bc981d6102a8152762cdc4acccf827ee32c60ea4116577049",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_BOTH_INTO.uasset": "dec51a6024ece1363a6f3760d01f9276f4b87632f37b08c2010ff6aa95ad4a39",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_BOTH_OUT.uasset": "89cf5a1a08698aa425ecee799e8b3428ab27cecdc0ba882477f025f2fc02b474",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_LEFT_CYC.uasset": "0c77fab0124586cfd19e990d85df40b09321f5ae8c8d718bbf1333918ca2025e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_LEFT_INTO.uasset": "2b8ce462a5ae724981e9aaa40b5e2878f7d371f9ca06b4946b6fcd47054ffb13",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_LEFT_OUT.uasset": "1919cb0b207bb06b25683038cb8835cf14bf1978ff07f5e5ddf027e6ef218821",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_RIGHT_CYC.uasset": "b65578c74680ee50789392a87dd274242f6d96cd1c9cc3e26ff802fc3a873f08",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_RIGHT_INTO.uasset": "4db23e056d846c81104f48caf509f08c1aac39a72f5a764adb56673838ab7d52",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DEVIL_RIGHT_OUT.uasset": "fe09e2bce6f3e16a5ddafb470f2cfd89a3f7d8c7d174f621e625a9194af38ef4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

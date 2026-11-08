@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-starting-stalls",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_StartingStalls.uasset": "cb390b2cd792d25d2e1136e73e46c6eed4185f67f89194004c24c92715ea3bea"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

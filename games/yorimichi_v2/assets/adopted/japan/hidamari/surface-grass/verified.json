@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-grass",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_grass.uasset": "0d485d5dd44f678dfc41296a7e74252ede8fda945d38fd375fa1a65ee53cd73f",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_grass.uasset": "77e7bbfe744a181f0ae9b322d1c63c2d0184a5d3df04e1de72b7d837cddd6b80"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

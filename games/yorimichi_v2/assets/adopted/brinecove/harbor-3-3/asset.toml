@@ -1,0 +1,16 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Brine Cove harbor-3-3 (2 mesh(es))
+schema = 1
+id = "adopted/brinecove/harbor-3-3"
+kind = "adopted"
+authority = "editor"
+owner = "shared/brinecove/harbor-3-3"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/brinecove/materials"]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Harbor_3_3"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Harbor_3_3_Soft"

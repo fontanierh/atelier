@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/civil-quay-wall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_QuayWall.uasset": "c612d1240930ba2dd3bb59663ddae70181be8df9a67ed5b02439c5f479bfbaac"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop bus_stop: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-bus-stop"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-bus-stop"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/bus_stop/bus_stop.glb"
+sha256 = "95c1d4132a11261afadcbe672aa70d0e91ed1617d4bd3dee43de2c50fe778956"
+
+[[sources]]
+path = "source/assets/hidamari/props/bus_stop/concept.jpg"
+sha256 = "e3ed1726d7a9acd8454d72bc1c5e7eadcfc14a3847b0cc1486b23021ddd99149"
+
+[[sources]]
+path = "source/assets/hidamari/props/bus_stop/concept.json"
+sha256 = "0d9f5e95749d7c0482aceafd170803c31c26ee6b2aae73a248e43da66f9a76b1"
+
+[[sources]]
+path = "source/assets/hidamari/props/bus_stop/job.json"
+sha256 = "cf609751c270e15190e774ac27e121d06f852225251dbc53759a96d9bb3bf7bb"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_bus_stop.json"
+sha256 = "11feac33d5df3bf0a363c2bd8b9e268255191b69a352e840851a15657a1c1ffb"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_bus_stop"

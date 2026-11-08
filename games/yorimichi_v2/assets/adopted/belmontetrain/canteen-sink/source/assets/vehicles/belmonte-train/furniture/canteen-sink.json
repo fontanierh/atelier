@@ -1,0 +1,41 @@
+{
+  "asset": "canteen-sink",
+  "source": "canteen-sink.glb",
+  "source_sha256": "e59a0a07f3276b6d8b2e6e9ec6aa7a1a466fd11d445cad5fa07298f2fee82d42",
+  "target_m": {
+    "width": 1.0,
+    "depth": 0.709,
+    "height": 0.98
+  },
+  "source_size": [
+    0.9995,
+    0.7095,
+    0.6782
+  ],
+  "quarter_turn": false,
+  "uniform_scale": 1.00049,
+  "column_fraction": [
+    0.25,
+    0.55
+  ],
+  "column_stretch_m": 0.3014,
+  "fitted_m": {
+    "width": 1.0,
+    "depth": 0.7098,
+    "height": 0.98
+  },
+  "errors_m": {
+    "width": 0.0,
+    "depth": 0.0008,
+    "height": 0.0
+  },
+  "ok": true,
+  "triangles": 7731,
+  "pivot": "floor_footprint_center",
+  "glb": {
+    "file": "canteen-sink.glb",
+    "bytes": 648904,
+    "sha256": "316cb8c7e13f6cf3a98dcdcaeb6dcf154e14422c6043488668afb8fca2e35f0d"
+  },
+  "output_id": "canteen-sink"
+}

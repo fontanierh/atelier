@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town surface stone: material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/surface-stone"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/surface-stone"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/stone.jpg"
+sha256 = "c15c6a231a5f8b6e5cdb50d14b25490bcf76cbf31fbbdc1b3f330707de3c2959"
+
+[[sources]]
+path = "source/assets/hidamari/textures/stone.json"
+sha256 = "76d897e987a8299559663dd4f05a3decc120e0ae1bb82ee81de5b60205866daa"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_stone"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_stone"

@@ -47,6 +47,13 @@ def steps(ctx):
              inputs=[UNREAL / 'Scripts/migrate_map.py'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'migrate.map' in RAN,
              about='one-time migration of regions into a World Partition map (use tools/migrate/run.py)'),
+        # Explicit: saving runtime-region scenery groups as their own objects, run only by tools/migrate/objects.py.
+        Step('migrate.objects', [Call('authorize migration', _authorize_migration),
+                                 UnrealScript(UNREAL / 'Scripts/migrate_objects.py', 'V2 OBJECTS DONE'),
+                                 Call('check migration writes', _check_migration_writes), ran('migrate.objects')],
+             inputs=[UNREAL / 'Scripts/migrate_objects.py'], after=['unreal.compile'], heavy=True, explicit=True,
+             verify=lambda: 'migrate.objects' in RAN,
+             about='save runtime-region scenery groups as their own actors (use tools/migrate/objects.py)'),
         # Explicit: one named bootstrap-writer editor script (unreal/Scripts), guarded like every editor write.
         Step('editor.run', [Call('authorize editor script', _authorize_editor),
                             UnrealScript(UNREAL / 'Scripts/run_named.py', 'V2 EDITOR SCRIPT DONE'),
@@ -55,6 +62,13 @@ def steps(ctx):
              verify=lambda: 'editor.run' in RAN,
              about='one named editor script (V2_EDITOR_SCRIPT; V2_EDITOR_CLAIM + V2_EDITOR_PATHS for a claimed write, '
                    'V2_EDITOR_READ_ONLY=1 to save nothing)'),
+        # Explicit: one warm editor running a batch of separately claimed jobs, run only by tools/editor/session.py.
+        Step('editor.session', [Call('open editor session', _open_session), _session_script(),
+                                Call('close editor session', _close_session), ran('editor.session')],
+             inputs=[UNREAL / 'Scripts'], after=['unreal.compile'], heavy=True, explicit=True,
+             verify=lambda: 'editor.session' in RAN,
+             about='one warm editor for a batch of claimed jobs, each authorized and checked on its own '
+                   '(use tools/editor/session.py)'),
     ] + import_steps()
 
 
@@ -69,7 +83,7 @@ def import_steps():
     import records
     script = UNREAL / 'Scripts/import_asset.py'
     found = []
-    for record in sorted((GAME / 'assets').glob('**/asset.toml')):
+    for record in records.record_paths(GAME):
         try:
             asset = records.load_asset(record)
         except records.RecordError:
@@ -176,6 +190,55 @@ def _check_editor_writes(ctx, log):
             raise RuntimeError(f'the editor script wrote outside its claimed paths: {", ".join(outside[:8])}')
     if changed:
         log.write('record these packages with tools/content/save_validate.py before committing\n')
+
+
+SESSION_BEFORE = {}
+
+
+def _session_script():
+    script = UnrealScript(UNREAL / 'Scripts/job_queue.py', 'V2 JOBS DONE')
+    script.timeout = 4 * 3600   # the guard ends a session, a hung job included, after this
+    return script
+
+
+def _session_folder(ctx):
+    import json
+    import os
+    folder = Path(os.environ.get('V2_JOBS', '')).resolve()
+    root = (ctx.out / 'editor-session').resolve()
+    if folder.parent != root or not (folder / 'session.json').is_file():
+        raise RuntimeError('editor.session runs only through tools/editor/session.py (V2_JOBS)')
+    if json.loads((folder / 'session.json').read_text()).get('nonce') != folder.name:
+        raise RuntimeError(f'{folder} does not hold this session')
+    return folder
+
+
+def _open_session(ctx, log):
+    """Between jobs the editor may save nothing: an empty allow list and the generated packages denied. Each job's
+    own lists, authorized by the controller just before it runs, replace these for that job only."""
+    authority = _authority()
+    folder = _session_folder(ctx)
+    authority.allow_saves([], folder / 'save-allow.txt')
+    authority.deny_saves(authority.generated_paths(GAME), folder / 'save-deny.txt')
+    SESSION_BEFORE.clear()
+    SESSION_BEFORE.update(authority.content_snapshot(GAME))
+    log.write(f'editor session {folder.name} opened: saves refused between jobs\n')
+
+
+def _close_session(ctx, log):
+    """Everything the session wrote must be a file some job's own check accepted (OUT/checked.json)."""
+    import json
+    import os
+    authority = _authority()
+    folder = _session_folder(ctx)
+    os.environ.pop('V2_SAVE_ALLOW', None)
+    os.environ.pop('V2_SAVE_DENY', None)
+    checked = set(json.loads((folder / 'checked.json').read_text())) if (folder / 'checked.json').is_file() else set()
+    written = sorted('games/yorimichi_v2/' + rel for rel in authority.written(SESSION_BEFORE, authority.content_snapshot(GAME)))
+    outside = [path for path in written if path not in checked]
+    if outside:
+        raise RuntimeError(f'the editor session wrote {len(outside)} file(s) no job check accepted: {", ".join(outside[:8])}')
+    log.write(f'editor session {folder.name} closed: {len(written)} file(s) written, each checked by its job\n')
 
 
 def _migration_plan():

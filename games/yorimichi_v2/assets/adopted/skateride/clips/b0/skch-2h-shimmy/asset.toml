@@ -1,0 +1,45 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: SKCH_2H_SHIMMY in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/skch-2h-shimmy"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/skch-2h-shimmy"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_L_HI_FAST"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_L_HI_MED"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_L_HI_SLOW"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_L_LO_FAST"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_L_LO_MED"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_L_LO_SLOW"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_R_HI_FAST"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_R_HI_MED"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_R_HI_SLOW"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_R_LO_FAST"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_R_LO_MED"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/SKCH_2H_SHIMMY_R_LO_SLOW"

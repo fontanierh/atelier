@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/horses/quarter-saddle-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png.uasset": "6a387b5db1d2ba66e03e46b1cacaf3cfe8ff02839d6af1fcdd0923ef47d694db",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png.uasset": "e64deae0b055124ec39918b4a2b02b6569fef742588e38c8d293d49e6f7208f6",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png.uasset": "02fc2251c74364274202630b0f6b8dae836c92b543564298db92f1d699eb4498",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png.uasset": "d4437b462c675ba8eb86176ac603cdf7ab759f35770650bb1803174bc3d02650",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/SK_Horse_Quarter_Saddle_01.uasset": "19d837470ab65fe2e7796a97fa687c26ff89f77e142f431aea4b2b7daf660b89",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Bag_A.uasset": "e32817b6ccf1bd175a2ca5c2cbfbc60c4c8eda1c220be387c0b734f7936ac121",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Bag_B.uasset": "bbbe768498122fc82e43380150d453c1fa0bfdd6738a422bc0b17795ef7dd46f",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Cloth.uasset": "9801ba3ddbea87794b416a1bce0be8510bbceb359174257636820c08149f8621",
+    "unreal/Content/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Saddle.uasset": "649aff762d6e44ba3811cef7bd7e88f8582219159e1269126da32b3bc9f71669"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/village-hay-stack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_HayStack.uasset": "079914d099bdf7c8af8df5733a3829057d7b7aa7978785ab3cc6ea8f8c208e32",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_HayStack_Collision.uasset": "2b38ab548107c20d4082b1aa113a15f7fb4ad68d7aa36c4ca3fc040bb2b844a7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

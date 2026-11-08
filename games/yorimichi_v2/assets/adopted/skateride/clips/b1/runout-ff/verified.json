@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b1/runout-ff",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/RUNOUT_FF_HI_M1_TO_RUN_FWD.uasset": "e98c653ddb0c2bf1c6326065cf98b335a084b9bee8bc9d41f4071a0a4e5dcc57",
+    "unreal/Content/SkateRide/Clips/B1/RUNOUT_FF_HI_M2_TO_RUN_FWD.uasset": "ff17726e738e2c0181a2161977de4fc0617ce64a5deddd452a0832d7c2d1b370",
+    "unreal/Content/SkateRide/Clips/B1/RUNOUT_FF_HI_S2_TO_RUN_FWD.uasset": "0a5606af9c138240e6fc1c155a782161f1724936be3c8fab8cdf8780b09d4eb8",
+    "unreal/Content/SkateRide/Clips/B1/RUNOUT_FF_LO_M1_TO_RUN_FWD.uasset": "c277e7473f8911b0b67d5af030303b0c5f51b77b634b74ea730c66c2c4f4ef2f",
+    "unreal/Content/SkateRide/Clips/B1/RUNOUT_FF_LO_M2_TO_RUN_FWD.uasset": "1de70fdf4680d7c3bad5815a8b76ada3cd6237dff99b2952be3c587a2a3e39ea",
+    "unreal/Content/SkateRide/Clips/B1/RUNOUT_FF_LO_S2_TO_RUN_FWD.uasset": "7ebafa656dc8db0afef0c5f1cd539bc10a83f12a7d7fa942336460145ceb5f16"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

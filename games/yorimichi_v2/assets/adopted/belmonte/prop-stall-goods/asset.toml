@@ -1,0 +1,59 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte prop-stall-goods (7 model(s)) with its collision hulls, pieces and own materials
+schema = 1
+id = "adopted/belmonte/prop-stall-goods"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmonte/prop-stall-goods"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StallGoods_A.glb"
+sha256 = "b27a65f9474441e4c845ba796702c25a371b7da46c62a7d21534544dd87890fd"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StallGoods_B.glb"
+sha256 = "bd98980f482fce3f8a8eb0143d1b881171bbb0ca99df1bcd609e4d3de76f9e5f"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StallGoods_C.glb"
+sha256 = "8e9527a885131e785ec6c4c69fa18adee8ab7682bbdf244b270f4e1da9e20b73"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StallGoods_D.glb"
+sha256 = "68ccf43cd9460adf314fd31903d527950e5533c68ddac076a97591ff0cd7156c"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StallGoods_E.glb"
+sha256 = "58d7ea7aa0125cf9d6873f9025560bf30bc5bf60b4756263f37daadb81257f5b"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StallGoods_F.glb"
+sha256 = "73e40e9c89b9d679744fc3b8411796c3682837c5c3711df4bcafbd8872649844"
+
+[[sources]]
+path = "source/assets/belmonte/meshes/SM_BM_BP_StallGoods_G.glb"
+sha256 = "c35721ec9396b7020c29d9602f6bba8d0ad1cbd221bc60cee67a37a3283a920f"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_A"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_B"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_C"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_D"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_E"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_F"
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_BP_StallGoods_G"

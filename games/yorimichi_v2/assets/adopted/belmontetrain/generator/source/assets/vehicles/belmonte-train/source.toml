@@ -1,0 +1,101 @@
+version = 1
+licence = "own"
+source = "Tripo Studio exports fitted by world/train/fit_furniture.py"
+contribution = "https://github.com/Polozer/atelier/pull/1"
+revision = "a9dedb4588c13fc0f3ac0dc5d236c680aae331e9"
+
+[assets.canteen-counter]
+path = "furniture/canteen-counter.glb"
+sha256 = "95701bf580b1fef2b063fb174880554ad479a2818081ccc882ebab020f06cdf0"
+report = "furniture/canteen-counter.json"
+report_sha256 = "d91c001d5702496865f58c4fd4abe8ea5ea8a1b942e26e2f90c6790a63f30716"
+
+[assets.canteen-ladle]
+path = "furniture/canteen-ladle.glb"
+sha256 = "4dd0a25281471aceadde718f73f6d92bfd63e38a7839b19c5cbd415e2f27b0ee"
+report = "furniture/canteen-ladle.json"
+report_sha256 = "72a6b3d24f5061fe70bc068af2751861521a1042a19e4d74b424494f8d834f43"
+
+[assets.canteen-mug]
+path = "furniture/canteen-mug.glb"
+sha256 = "c28fe4514b183433f6ea7437245a06120e9183943cd60c7ffef7bf8ae46a83a4"
+report = "furniture/canteen-mug.json"
+report_sha256 = "1cef58a0cec14b3fbf504397013366e8b3314c6383b864178c672c1ff9625565"
+
+[assets.canteen-pot]
+path = "furniture/canteen-pot.glb"
+sha256 = "af864859f3c19e6ae4f1926c002f2705e638581b3ee6961b3484dcd26b39c941"
+report = "furniture/canteen-pot.json"
+report_sha256 = "fe835b452ef07b3d2d38e005aba5b9fceccfb135abefc79c6539e16047436850"
+
+[assets.canteen-shelves]
+path = "furniture/canteen-shelves.glb"
+sha256 = "d500498e081068e2263b6daf13301e0edb82e5141f8c44c453a7ce9a8de6d27a"
+report = "furniture/canteen-shelves.json"
+report_sha256 = "161a910e440c15148e5d82f886285f74e74a0cd332bd0e0f79dd769cb9d9d260"
+
+[assets.canteen-sink]
+path = "furniture/canteen-sink.glb"
+sha256 = "316cb8c7e13f6cf3a98dcdcaeb6dcf154e14422c6043488668afb8fca2e35f0d"
+report = "furniture/canteen-sink.json"
+report_sha256 = "0383e344cf50ece501843b258c3b9078ca77b994cde340175893214f36e2f825"
+
+[assets.canteen-stove]
+path = "furniture/canteen-stove.glb"
+sha256 = "058a39d649e865795004a907825b69817f74d76e2949472387ff3656d2990a49"
+report = "furniture/canteen-stove.json"
+report_sha256 = "c7ab76dfddee5141a388b1ae464a235cdcb72065d9ee7f7c2aea1bfed3125748"
+
+[assets.first-class-sofa]
+path = "furniture/first-class-sofa.glb"
+sha256 = "210441c9ab0570f1b53304ce2d53e458f638041d4f84e66b4a2c3f2a92fa8b81"
+report = "furniture/first-class-sofa.json"
+report_sha256 = "21b22fba5f29c0d13f1a58a9bfaee4936ef2da7e0d8601755bc5327ff4b144eb"
+
+[assets.first-class-table]
+path = "furniture/first-class-table.glb"
+sha256 = "e2bc07f9b564be741521db94a104531a32e648ea14c5adc6ece161bf1c73f4c7"
+report = "furniture/first-class-table.json"
+report_sha256 = "38fb3842dd2af4440617cbde0f9dc6ec8a195f71868d8ca0698c4d7fc5cbb93f"
+
+[assets.loco-backhead]
+path = "furniture/loco-backhead.glb"
+sha256 = "565838cf1e067c230dc31a37c6fb274c50226331e6fafb2e2ea73d54e56d7bb2"
+report = "furniture/loco-backhead.json"
+report_sha256 = "4ab9e1a73d80ab168f2f2f788d2b1dc249dd0d1599e1eedb52b2488f3fee1224"
+
+[assets.restaurant-banquette]
+path = "furniture/restaurant-banquette.glb"
+sha256 = "0757fc487154eedcc481f383fdefa9ef7ce27a71f2bbf69b088a8a61fec39f09"
+report = "furniture/restaurant-banquette.json"
+report_sha256 = "8abba8f1f87a6e5af9e23cdd59af6314a9993ddcc783ae78fa7a3465c85b6545"
+
+[assets.restaurant-table]
+path = "furniture/restaurant-table.glb"
+sha256 = "ef393a824e3defd57f0a5fbda620e2171c91d06d6f4247b03e9308a6da135e7f"
+report = "furniture/restaurant-table.json"
+report_sha256 = "9347abb3a5b5d8403c837e95ee58daa6fdc05664807b8359b47857134be48afa"
+
+[assets.second-class-bench-carved]
+path = "furniture/second-class-bench-carved.glb"
+sha256 = "065902fed4e9fabb25c35bce334f15bd0bb58fa8d183b039a2ddf178943c0aad"
+report = "furniture/second-class-bench-carved.json"
+report_sha256 = "456db63d8e3e7de378b3dd652d84acb50ab291602c48fb37b4740b94373c48b8"
+
+[assets.second-class-bench]
+path = "furniture/second-class-bench.glb"
+sha256 = "3699e983b9a68ca0fc4615e095e923950f92f48c2e72ed301c905c05076ee618"
+report = "furniture/second-class-bench.json"
+report_sha256 = "02111f273f353b74ed457b38a9748258e2c95f9e3dd8248dfa69acd0930ade01"
+
+[assets.table-lamp]
+path = "furniture/table-lamp.glb"
+sha256 = "cd453f793ca29d4b2899902103c72f533a7a8aebd601fdc4184f5308707a34f0"
+report = "furniture/table-lamp.json"
+report_sha256 = "3b37d5056ffc157defb24ece5d19635e32e2d8b9efdfd4c57849f3ac95f3e08c"
+
+[assets.wall-sconce]
+path = "furniture/wall-sconce.glb"
+sha256 = "5c7e2a1545b57e356f9ce3dbc9bdf7ba527d493bd5ce8fac0d85bbc9bfffa875"
+report = "furniture/wall-sconce.json"
+report_sha256 = "082830e624927b5ef034a414bfa71243f438da0024c97e011179f4d91999b0ba"

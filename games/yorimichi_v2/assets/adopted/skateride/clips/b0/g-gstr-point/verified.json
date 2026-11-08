@@ -1,0 +1,27 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-gstr-point",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_CR_CYC.uasset": "d5f9490f258f561cc9e853cbc9a79b3a67c6ce86cff8135f5dc5268cb665d77b",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_CR_INTO.uasset": "7ee8700078fc61d1cf174f5091dc2b8d1e3c1c1e713896bc88e2928cffb2955b",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_CR_OUT.uasset": "ab3e042a608bbb8641c188f29bb97c59d18362f0e491cf4ebae46e84da8cc939",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_N_CYC.uasset": "594cc48ca276fdbf01d60fe2efcb40e0aa8b62d968068418ff059382807dad06",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_N_INTO.uasset": "8518afa59ac8882d02d222d90f0b77fafce0dd954764180f64c2e1926a7ece4c",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_BOTH_N_OUT.uasset": "6c47006990e50e4cc8942baf0abfb1e6b22507b0072f5651349ef7dc8e1ef258",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_CR_CYC.uasset": "a96e5f49c2d7e5dea466751d4c4d40b36fe73a2b9eb3eb48b09fa3cd3da4815e",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_CR_INTO.uasset": "9e9aebfc7384df7c0bb672c74cbd6bb7e9231ae45822f0bacbf187256ab2d6e4",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_CR_OUT.uasset": "618f65e6a5dd36ea9c261428ce90363a2f230809114f7f6bc3cddd90d87e826b",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_N_CYC.uasset": "8864f2f4e3ec290a95a63645611ced06b72fc3d685b3e69c9e65d96d7d1470e9",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_N_INTO.uasset": "d0aebea8c785999960a4406388968a284ad84442e66dfac3b5440e843d97c192",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_LEFT_N_OUT.uasset": "29eeed55633a14ab00a52233cfe22f7c3ae456817ceb1e18c914ccb1002dc9a0",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_CR_CYC.uasset": "e413dd71a3ec7c60f56adbcdeb49859f9e55e6f5205d3aab944dbba95bb5b775",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_CR_INTO.uasset": "4da83bdc58a7444610b38969f4f7d02614089b6148e3adcf9cff53caa7ff8f80",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_CR_OUT.uasset": "ea008280adb9582c3192eebb202c8843faeda01d9a695cdfaae6682b0d65ab9d",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_N_CYC.uasset": "c0a051387b71a42b84ce2361ac7e95f4cadccddbdd14ee4b54531f514716b47d",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_N_INTO.uasset": "59848f3f652f7dd33037d9eb6e90096474f44120b04a0e356bf04b885726b580",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_POINT_RIGHT_N_OUT.uasset": "18af2e46ba2f9bb9ae9b64a01106e28580dd337d2c8441b35af92321b70636a3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

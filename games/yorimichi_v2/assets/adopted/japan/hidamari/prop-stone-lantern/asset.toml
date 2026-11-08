@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop stone_lantern: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-stone-lantern"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-stone-lantern"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/props/stone_lantern/concept.jpg"
+sha256 = "6319d9b1894704c16130d9de60b0bba85c54b685daacd8b4f329b4988873576f"
+
+[[sources]]
+path = "source/assets/hidamari/props/stone_lantern/concept.json"
+sha256 = "54b289aa688ff444794516616c1b0480ea94f492f47d54a9b6af159a33dfcc7a"
+
+[[sources]]
+path = "source/assets/hidamari/props/stone_lantern/job.json"
+sha256 = "7909aa23f2a9596562bb8f1f96d8c8a87417992e31be665d308f0621b7b9d8b4"
+
+[[sources]]
+path = "source/assets/hidamari/props/stone_lantern/stone_lantern.glb"
+sha256 = "5e9248f15092265cc1d4dd968ac3df3556c390ff3e22e6f586b129321265d6b9"
+
+[[sources]]
+path = "source/assets/hidamari/prop-export-parameters/HD_P_stone_lantern.json"
+sha256 = "bbeab22609571c7205d29141b1a61ddb61b9b4c3c2e07dabfabc6204ee6990b4"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_stone_lantern"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_stone_lantern"

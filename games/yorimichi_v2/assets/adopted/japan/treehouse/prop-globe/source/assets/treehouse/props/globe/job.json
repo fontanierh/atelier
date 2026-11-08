@@ -1,0 +1,28 @@
+{
+  "stage": "treehouse_prop",
+  "slug": "globe",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 9000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "fd1e0cd46d350ec6d39440a4bdebafac430c470845a6bbbd2a67ce1072396a2f",
+  "submitted_at": "2026-09-29T21:21:16.560883+00:00",
+  "task_id": "c4fa5dcf-f1c7-412b-a178-438f3a3f274f",
+  "status": "submitted",
+  "user_approval": "treehouse_goal_2026-09-29 (up to 1,890 credits)",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-09-29T21:23:46.498076+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

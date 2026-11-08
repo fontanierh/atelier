@@ -1,0 +1,29 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-grab-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_BS2DBL_0_TR.uasset": "28b328234d73b159446abc34a37ec5593619643104f054f8438b061833847fce",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_BS2FS_0_TR.uasset": "b607178d954b1d5291e0573d8ef2ef0d1f947f2b580f6a89eddaac7210679242",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_BS_0_CYC.uasset": "4a8930d81354299ba7bc3316eb62b11cefbd806547190f64a19124112aa52895",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_BS_0_INTO.uasset": "bccb814e5246415d66a75b0c8ed909710695bbac5b43343e9862cdeb4209f0b8",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_BS_0_OUT.uasset": "66b0be22f2861c0d4047760ab94107a82cf0e6e95593d334b223c1ab99061548",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_BS_METHOD_CYC.uasset": "a1edbeeb68dee346549ce61734861bd9d677677578e3b6764bd9186bea3dbca4",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL2BS_0_TR.uasset": "03fde2373857ff38fa788b6dcec5517c34dbbc6e603e2bbb8ae4d923aaf39330",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL2FS_0_TR.uasset": "f6035da011273f6c1e31768355cb780fae1706a5bfc2021482acea0125ad0d62",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL_0_CYC.uasset": "acd20d98031cccf17932dee022e9897ad6d1626f5ba14391a24ea43bb09928ac",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL_0_INTO.uasset": "a14883e87e714b36beb5f3c57563500931b7fcc99f7cbcc07eab42593da03f95",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL_0_OUT.uasset": "7b7c6e78cca0883ffbab23039c7095a25cc3c4740ead5531a2b1a407280d8384",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL_BACKTW_CYC.uasset": "b0aa7b99935e391a598df708b8f8d0acd605d7d2547509c517bb74016f9bbbae",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL_FRONTTW_CYC.uasset": "f31ee446571582213c395d051e0a596f595fc04f8ffd811b04eb28a8878c86d8",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL_LEFTTW_CYC.uasset": "7a4ac2771d8cf86a13bdde6b5b10a8ed1f037ba565631c407cf3a1a70fea785f",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_DBL_RIGHTTW_CYC.uasset": "65f6afb4a893e59481742fbb403caa3add47e887067ce0c9d77a89fa0b7b1a93",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_FS2BS_0_TR.uasset": "3b6e94e6da9fda7cf67eb355f9d3b3eaaabbc7b1bfc65a85c8cac312d29be16f",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_FS2DBL_0_TR.uasset": "ac0976168b36f4a965ba34538dbb9f442da3e07dc0bcfb50b705b27a6bea6b0f",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_FS_0_CYC.uasset": "884c59337ccc52d46b772b67934d91d77f6083568c033ce8ae515284072b2dc8",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_FS_0_INTO.uasset": "7b6b2d1ee041d37f6bdba445b8acd79d8bbd5249fd2658502666ef288fa03845",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRAB_N_FS_0_OUT.uasset": "652118a3591e91e2613a97dc14de2cf8e8cefa049c24764177b289197066db3b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-hi-heel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HI_HEEL_CYC1.uasset": "1a92fadda940d4df265c7f3592173ec617e6f551506dfe6c7b52db2a325fd323",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_HEEL_CYC2.uasset": "c45fe9d6a51aa63089e96b2d9ccb785d66d5c5ce35790058ac419e9ad84e31a6",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_HEEL_CYC3.uasset": "dceb8c5f58cacd0cd5f856462be598d7f6d9edd343b6e7ef8419d5c797a2ffc6",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_HEEL_OUT4.uasset": "11f91de70521236415fc7e5d954112117f8a734fdbe2263a40d312fe36353222"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

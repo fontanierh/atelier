@@ -1,0 +1,25 @@
+{
+  "asset": "adopted/skateride/clips/b1/br-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_CYC.uasset": "72531ce22e1a21ba40ea4976e23cbfa27548660015a387600fe4e3873f314ea4",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_INTO_MOUNT.uasset": "4744a0368146e13df39240b891d03f8f26e9479f5b6bba797e8079e99bcf2780",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_INTO_RUN_FWD.uasset": "b8213380fa9094974e3fa75f0d4435c34b0e30321b98873f97f5f463e54ddb93",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_INTO_SPRINT_FWD.uasset": "7907621c7c5ba2d836e7159d83c942600c2e46fd50f2b0bfe259d286f5369c82",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_INTO_WALK_FWD.uasset": "4195d6405f1ece483d247849a3dae907d1fa783bf49bed77a15f0bf44e869fb9",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_THIN_CYC.uasset": "7d12a1110c5b0421b94caf8b1909d6559a5719405fab726e69bc8aa993572b2d",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_THIN_INTO_RUN_FWD.uasset": "d573ace6c9f127b8aa3b9f35401dea5e153357cfece62e6b670db0be9b255041",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_0_THIN_INTO_WALK_FWD_THIN.uasset": "407ec4d7a0191082d1b3ee94d99e34ebd0bb5518310ccea6a373676f3e39b2fa",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_BWD_CYC.uasset": "84bc0155471816b63221219d0d8417922d22002ab40b8851ac0dfd5024e8435a",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_FAST_CYC.uasset": "2527dac8f36401e726c2f62e420a92fdcfd37f1a346807e346e1264ae575251a",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_FWD_CYC.uasset": "0d30b38bd258ff8277f25fbbca2e7dac3749d3bb1c9a21904b77915336456cc1",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_HI_READYPOSE.uasset": "379754897cdacdb6afebf4776842416b33ce1ce034162baaefc9f75ed761936c",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_LEFT_CYC.uasset": "ba55302b91af1c8fab91f790acb7e94d8046f79d93a877c041f9a1322c81dda6",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_READYPOSE.uasset": "59295c90bafab7d21ea575c04a54461449d94b3b0c699f201ae50a5480e3b831",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_RIGHT_CYC.uasset": "7ad4ac4633f6453200aa8a0cab11d5a02fb40285590d85069ba85f91dc915ab9",
+    "unreal/Content/SkateRide/Clips/B1/BR_STAND_SLOW_CYC.uasset": "d97a9749fae3e463eb97fce8b15a6fd990179e168a5f2c295bc373da24af7a70"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

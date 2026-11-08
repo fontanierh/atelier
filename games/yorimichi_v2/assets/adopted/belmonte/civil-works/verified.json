@@ -1,0 +1,22 @@
+{
+  "asset": "adopted/belmonte/civil-works",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_0_2.uasset": "765d20997392cac6ce9009bbba7de089ae3f983acb8532154d0c75655522ea83",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_0_3.uasset": "44dfd2a4f34f8f2978bc727755d5a8c1c8aee4c185348cebe8e30b3b72794b22",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_1_1.uasset": "a74ff2bc5ad866e134e07f4aa897ee6c37bb6070a914b99af3363d337b76e281",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_1_2.uasset": "dcdce1b69a2cd230498339bfcb9d629b8bc7fa6d475b5431b8216711ae50c50a",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_1_3.uasset": "38bd86b0f393f8631763261b0ecf95b34d41e3d0c4a650df0341b2dc17d66865",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_1_4.uasset": "fff8593cda78a77477aec45257badc4e325c2df250752b57f2b5cb8b542b97f0",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_2_1.uasset": "b7be4d2a9288f5e48242d8ba19727a909af1604a55a996476a8a9c7f6318c379",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_2_2.uasset": "d6443a52580d5cb0db8923a87011014e9d9c72246b5e9400d7c1b84db61b84fd",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_2_3.uasset": "3d57a0e880eaf3053ce1598b49b1bc5d91851ee049f132b67d83b4df392a2cac",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_2_4.uasset": "e10f17670d2c6e4d1604d72b6816d27026afe892d00729a922d1825215ab625d",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_3_2.uasset": "b8f3cd65bde94359b46ebe7f6823e30dcdaea84d69591de104c9fb554f882d6e",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_3_3.uasset": "c9c275833177c59dbe1af3261a23407274b54e6b4be36e3e4495e960ee72c9a4",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BC_Works_3_4.uasset": "38a0056c65dc9afbbbb7b7f7928747db514c3b075dc5d1241e50543b76892bc9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

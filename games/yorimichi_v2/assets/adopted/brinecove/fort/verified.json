@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/brinecove/fort",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_3_5.uasset": "a439797d4323009570fadbfd20a7848129e29a98b39ff4e88cd9f9b329893692"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/village-farm-cascine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Cascine.uasset": "60d6083328f9ce1d192df0c304f55e7939b1dbfaa2e30b43faf40b48b93ccac3",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BVV_Farm_Cascine_Collision.uasset": "51657ddc95383532e0b6fa7a233f21af05e9abf9880ee841a752b2a31a310e4a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

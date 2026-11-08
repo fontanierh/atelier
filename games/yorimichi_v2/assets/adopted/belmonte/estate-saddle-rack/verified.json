@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/estate-saddle-rack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_SaddleRack.uasset": "02378b1cc985edc3a5a41605ffac3205f81fdc37700c86cb97a35843215fbea2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

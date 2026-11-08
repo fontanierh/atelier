@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/temple-0-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Temple_cell_0_0.uasset": "38bce4fbb2653987c5cff1e7ee9cd977ed9bd47f5387f22276da96ee5dea7117"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

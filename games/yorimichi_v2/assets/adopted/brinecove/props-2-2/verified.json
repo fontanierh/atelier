@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/brinecove/props-2-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Props_2_2.uasset": "6c76625ea3980ae521f4a4b2849f822d0e5f2c2bb47818c4207ef8b5a30d16de"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

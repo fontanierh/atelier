@@ -1,0 +1,33 @@
+{
+  "asset": "adopted/skateride/clips/b1/br-walk",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_0_INTO_ABRUPT_STAND_0.uasset": "072c854a978203fa2745d2f8acb8667f9b07399fd661ffd1a488769e64b95d70",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_0_INTO_MOUNT.uasset": "20ef81fa25ee7ac405555ad1cc2e3ff6fe85e58191a6e9212aafb29fc1a99742",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_0_INTO_STAND_0.uasset": "6ddd131030b3e6a85d515f356f4c355d356e5c3bd971ed5262eaaf6ec12dadc6",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_0_THIN_INTO_STAND_0_THIN.uasset": "69cf07c76c73e839898013c8cfbc1ca5a1e972734b9fc0ccd3114c1be9a92ae9",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_25_INTO_ABRUPT_STAND_0.uasset": "b61a3c16c4523ccdb24a2145e033f33d6254c6ba9d0ea55afaf1138338b5f49c",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_25_INTO_MOUNT.uasset": "85b1e014700ae90504796a67426648f04a38c3c56680494dd305deb0b0b3bfda",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_25_INTO_STAND_0.uasset": "0882af87005ea211f346b22c264ddd5c51188dffa476be0d13555ed8dc075ab3",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_25_THIN_INTO_STAND_0_THI.uasset": "ad16bc49e30ffa9340c59ecbdd04c5619bd8369e5a8afceaa9f3d25f0cf5750d",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_50_INTO_ABRUPT_STAND_0.uasset": "cf2a32f1cc056f5a35e4f577daae32a7f99c43e41d329699edfea14daf5ba4c7",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_50_INTO_MOUNT.uasset": "8fdff6016dac5010be3533e42473935a96cb7355e6ca47cfee17e3186491cbf3",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_50_INTO_STAND_0.uasset": "35691029ee98a7d358161afe58ef5963a4b67c91865f1d27ccb1ef2635fd9f5c",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_50_THIN_INTO_STAND_0_THI.uasset": "e73569da9616e849a12039cedaa11e6066272f23ed3c8486344d887c25d29449",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_75_INTO_ABRUPT_STAND_0.uasset": "29c25b28fae3c90fc5d69936b3a72532ec3e2d936e01d492496904792bef2fb9",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_75_INTO_MOUNT.uasset": "2710251cfb850d425ea9bea4a43465012d0fdb5dbe6dd15e6712fe598868145a",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_75_INTO_STAND_0.uasset": "949138a7b262196b9ec562f51cd799fe241d96494291d6ace6767d59f387cd53",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_75_THIN_INTO_STAND_0_THI.uasset": "ddc80cd28a574bd9acc6f119fd31c947a09eb3dea8033a0a71a3adcc2fc1c52f",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_CYC.uasset": "741d349634fc66e1101530af7989d2a46303543d53cdca222588b2a6a757ffcf",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_RAMPDN15_CYC.uasset": "e95c4768c13bb5ef9d71f840015c894f2131aae7f92506919b5d7e6a96299c9f",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_RAMPDN45_CYC.uasset": "d6e5881171a6306d528ef9296cea42869f2e3dae0aa68a90108a3942a3ae4b99",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_RAMPUP15_CYC.uasset": "300797b997d7d8f43c5042d938be876175c05eb6649e6b78c285b69f85b8300a",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_RAMPUP45_CYC.uasset": "56b33a6c0c88e21f3614a05faef45569d52dbc3970229731b0a934edba6ee6af",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_STAIRDN30_CYC.uasset": "c346e323e692a7151820e114e02c08d29ebeb19fa87828b784a309424f6a66d7",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_STAIRUP30_CYC.uasset": "c0327d5a1c239bddda5985d9a053b5a10327a6229ca0c0006eba5515d28c3536",
+    "unreal/Content/SkateRide/Clips/B1/BR_WALK_FWD_THIN_CYC.uasset": "e5483a4568fb2ccbb7860f4a350cf55c635fcf1f339b99e557edc77df6561550"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

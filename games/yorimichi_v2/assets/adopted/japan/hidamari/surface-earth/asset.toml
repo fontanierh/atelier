@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town surface earth: material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/surface-earth"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/surface-earth"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/japan/hidamari/generator"]
+
+[[sources]]
+path = "source/assets/hidamari/textures/earth.jpg"
+sha256 = "0129401dc92621d55b5dc6dd7e604b22aafbfa2770ccbdce0f28421f66d3d61a"
+
+[[sources]]
+path = "source/assets/hidamari/textures/earth.json"
+sha256 = "aaa87275f5d64ad73fd5892b124911f31e7e6042c2a0bdf53d5412656f6fb40c"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_earth"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_earth"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/skch-2h-idle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/SKCH_2H_IDLE.uasset": "46da662727dd8887ad5788d10f90663337e22d1ba2f466c22035fc82e01cd718",
+    "unreal/Content/SkateRide/Clips/B0/SKCH_2H_IDLE_HI.uasset": "95137a75b593c124f522ee1cb289c34cff1aafb38b0a661de7b161be11b6e23f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

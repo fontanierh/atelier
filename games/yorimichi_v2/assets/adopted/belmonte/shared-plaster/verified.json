@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmonte/shared-plaster",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_99b3c7fe8da6.uasset": "07ea630878f1f8c8cfe4a27a8ba1fdc2da9bafec03ed9398745000d698484c7f",
+    "unreal/Content/Belmonte/Materials/MI_BM_9c599add99e7.uasset": "219642dc0deb89ab8e70e4a137a2cb8a7ada0509f2c6744853208a556642f991",
+    "unreal/Content/Belmonte/Textures/T_BM_a1f5113d77e1.uasset": "ef428cbf0889d6edeeb87426296067db2bd30f9f52d57abc21187a7fcbac7808",
+    "unreal/Content/Belmonte/Textures/T_BM_a85386eda38e.uasset": "9ef013a095069fc31d88f32577b61a43b59600a1323bdbda4bfcd8116978dac2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

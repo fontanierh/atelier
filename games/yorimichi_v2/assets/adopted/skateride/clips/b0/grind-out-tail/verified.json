@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/grind-out-tail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GRIND_OUT_TAIL.uasset": "9851d38b0b9dcb040fe3a47213e75d2cd8d82bbc35c0d171d5c495994bad3629"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

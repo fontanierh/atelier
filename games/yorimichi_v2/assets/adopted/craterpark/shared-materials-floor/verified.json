@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/craterpark/shared-materials-floor",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_034.uasset": "9cfd0ca4c482f82dedcedb3ed2e03223bd437a465b8fcbacd92260fe7b1ba0da",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_035.uasset": "c58f8b50b54507d7c8e4687cf5a77862e746048cdbd93b7d69b09a6faf9e0827",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_036.uasset": "96e17b462ee839bee07890ed4c3870394a5d4c6a7b73a0382ad9e991ccbea199",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_037.uasset": "cd084e81daf565e32658590539795e8909507be67d6ff2818831b41e4871ca11",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_042.uasset": "322d8b1ec81b62460c59bdcabbfb40ced0d90a8599c20c073510141ff5719496",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_044.uasset": "bb6fd0355250cc45579479049f06f1ad6d4473304c0ed04331c0f6648d88f4cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

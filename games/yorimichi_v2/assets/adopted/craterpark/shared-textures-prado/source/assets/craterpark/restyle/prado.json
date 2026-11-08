@@ -1,0 +1,40 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is the exact top-down plan of a concrete skate bowl called Prado, seen straight down: the flat floor is light, the curved transition walls darken toward the rim, the mid-grey ring round it is the flat deck, the thin dark line near the bottom is a spine, and everything black is outside the bowl. Image 2 is the approved design for its graphics. Paint the bowl's surface as a flat texture that fits Image 1 exactly, straight down, no perspective, no shadows, no lighting, keeping every edge exactly where it is: a smooth pale warm cream concrete floor; a big golden-yellow sun with soft rays on the floor in the upper wide part; sweeping deep blue and teal wave bands with a few orange accents following the walls all round; the word PRADO in big rounded navy-blue letters across the middle of the floor, reading left to right, upright with the top of the image at the top; a band of glazed terracotta tiles right along the rim where the walls meet the deck; the deck ring pale grey concrete; outside the bowl plain black. Hand-painted like the background art of a Japanese animated film, clean, soft, flat matte colour.",
+  "references": {
+    "games/yorimichi/assets/craterpark/concepts/editor/prado-plan.png": "c200a8f377f41fcad1c9fd8991e90ce4db9332cee9780689201ce3c04878b212",
+    "games/yorimichi/assets/craterpark/concepts/editor/prado-graphics-layout.jpg": "6a23e62dc50fb7b4ad879edb6f5a451b2267e08a7689fa2f3f7fb0ade392d611"
+  },
+  "texture": "textures/prado.png",
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1536",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "e51d97b1adf8bfe1b278ef85336cbae57bd6f400d9c37807992510483320a7de",
+  "status": "done",
+  "started_at": "2026-10-15T16:28:58.980237+00:00",
+  "output": "prado.png",
+  "output_sha256": "ee9b1fb5c9b809dd7c2d5ceeb93f61c62405d0baec257f1cfd29f5c4144df852",
+  "usage": {
+    "input_tokens": 2883,
+    "input_tokens_details": {
+      "image_tokens": 2616,
+      "text_tokens": 267
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4255
+  },
+  "elapsed_seconds": 36.3,
+  "finished_at": "2026-10-15T16:29:35.347540+00:00",
+  "compact": {
+    "file": "prado.jpg",
+    "size": "1024x1536",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

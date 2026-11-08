@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture loco-backhead: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/loco-backhead"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/loco-backhead"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/loco-backhead.glb"
+sha256 = "565838cf1e067c230dc31a37c6fb274c50226331e6fafb2e2ea73d54e56d7bb2"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/loco-backhead.json"
+sha256 = "4ab9e1a73d80ab168f2f2f788d2b1dc249dd0d1599e1eedb52b2488f3fee1224"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_LocoBackhead"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD0/M_BT_LocoBackhead"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD0/loco-backhead-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD0/loco-backhead-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD0/loco-backhead-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD1/M_BT_LocoBackhead_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD1/loco-backhead-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD1/loco-backhead-lod1-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/LOD1/loco-backhead-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_LocoBackhead/SM_BTF_LocoBackhead_LOD1"

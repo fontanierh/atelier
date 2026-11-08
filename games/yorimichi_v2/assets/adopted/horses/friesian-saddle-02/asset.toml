@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Friesian saddle set 02 with its materials and images
+schema = 1
+id = "adopted/horses/friesian-saddle-02"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/friesian-saddle-02"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/friesian/tack/Saddle_02.glb"
+sha256 = "fc9740f32c9c990ceba2e03b749ba4e4b4ca3a224cc7ecf272796293df257d5d"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_02/SK_Horse_Friesian_Saddle_02"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_02/Saddle_02_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_02/Saddle_02_Mt_Saddle"

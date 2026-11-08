@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/belmonte/hippodrome-pond",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BHip_Pond.uasset": "f19eba3474a3c487f1abe8df53ef5ad5c3e50694817fdbdec3df6817c4c44c32"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

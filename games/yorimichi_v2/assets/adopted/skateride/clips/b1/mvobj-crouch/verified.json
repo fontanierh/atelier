@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/mvobj-crouch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_CROUCH_STILL_0_CYC.uasset": "0c652c0b381961965f3f5362ada24e6ef98d3a079df0ac9af371d1aa6ecb4e58"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

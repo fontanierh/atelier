@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/materials/tree-forest-oak",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Tree_Forest_Oak_Impostor.uasset": "51d5e5fcf8625c115a989b25edf73872da89191bbc52518ad94b1baa238cfd9b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

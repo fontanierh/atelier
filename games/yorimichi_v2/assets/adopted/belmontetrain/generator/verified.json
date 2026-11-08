@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmontetrain/generator",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Materials/M_BT_BoardText.uasset": "1376e017845990720762b21f7f335902e270d7a323059ce6e54b44518d720d5f",
+    "unreal/Content/BelmonteTrain/Materials/M_Default_ISM.uasset": "827b341338a49b9f5188ed1572f40125acb2292bedea31d2e1e54852d260467a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

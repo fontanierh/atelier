@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/craterpark/p309-kicker-run-up",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_14_14.uasset": "ea0541af4a6221872d807d7832a897fe5688813d33b8c174b64620a5ea978377",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_14_15.uasset": "1f3927729e796e6dd236bfcf0b54815555e1054fc5afaa859e7eea8772492a53",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_15_14.uasset": "e80a12be697af5fa355385caeb1ce71d3b2a73646b36b45cd78de7bc347240dd",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_15_15.uasset": "875cb95abcf366effd68292da86a9c2219f549b0cf6c3a8642e55a0cbe4110dd",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_14_13.uasset": "04e5cfe420796a55b80f95fd180e6f5e9020643c6d6469364a0446e776210707",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_14_13.uasset": "967c01b27b9e4d339f31798e6d073b144b445fafef3d933347176321fec4c4f6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

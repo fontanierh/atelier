@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/craterpark/p41-w5-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_25_18.uasset": "b33dede7e9cc8585c58986df7b2477d2af12be5663cc261dcfbfdc189f5b4272",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_25_19.uasset": "6ac2340a05da862ee7ddf2465f068b6e05436cc8bf8cda83428d1c04589986c0",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_26_19.uasset": "f52ac10d4dbcbafb98fe62f749f00eae8bb788275ddec2f9f463e259e7df6d08"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

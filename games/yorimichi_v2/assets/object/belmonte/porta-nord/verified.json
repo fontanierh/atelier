@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/porta-nord",
+  "dependencies": {
+    "adopted/belmonte/town-porta-nord": "781bdd46a85f666c81b3c01fa1525f3e5b88129e2bc833164d264d96c85e2244"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/4Y/JDJ51TLYIDX07U5794C1AT.uasset": "9d2eb01d20dcbebfd61cf44dcc1a90ff9b4f49efaa17404d05d4827fa5b2684c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

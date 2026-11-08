@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-stone",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_stone.uasset": "5167d8968b843773dfad9d747c28984befc31780d59baecb7594ccaabc1af4dd",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_stone.uasset": "f7f84013d8996b3ac6ea4811bbab6f8cbc88bfe6a56510ae5874fd25b592f67f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

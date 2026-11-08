@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/belmonte/estate-mounting-block",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_MountingBlock.uasset": "fffe269dd557d781613a0acd4f26e9e987d8cb5022a50547719b664c2f18a75b",
+    "unreal/Content/Belmonte/Meshes/SM_BM_BE_MountingBlock_Collision.uasset": "d18e93bf7cedfc2d591c23bac74ac2bc9e9cb697c41d66edc368b6b4fef2270f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

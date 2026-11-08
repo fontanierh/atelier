@@ -1,0 +1,23 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-slide-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_HSP_CYC.uasset": "c9bb44051ee29606a734433814b00724a1d3b99dd9af6f13795837229e46ec12",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_HSP_EARLYOUT.uasset": "f36a1256e7bb63fd384b8de422ea76340520eddce055767c9fc79a7d91a6b2e4",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_HSP_INTO.uasset": "32aaedb27c9431e4ef3fb46cc73798d463949fe169eeb01aa048e26c81c8ea7e",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_HSP_MIDOUT.uasset": "d0812f11a22ceb9254c2996ac0259d0512b534addeea8f1f4fb6410870410c68",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_HSP_OUT_000.uasset": "3fb24c9e0f6a62f702ee7c796595628cb1d89034b35e99c4b3ceb8cfac4df402",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_HSP_OUT_090.uasset": "6af5773122cd867bc05771be12264871eb4183c06c9c4d501a00fe0fe4bb8102",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_HSP_OUT_180.uasset": "57358c57942d56c8bdd77682dc97eb9c4041d1b41984ae8d648b2bbca9b49404",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_LSP_CYC.uasset": "9b715f7001a2177540cdbf77af7eb892a7a5731bfd8d143066262e7c23a3893a",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_LSP_EARLYOUT.uasset": "cd036ba403fc0671aa821e2fdc839c0c3685e68846fce24f2fd7600f10479a17",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_LSP_INTO.uasset": "6c716bd57e44de7de01f5448946755f2607ad62c391299ff0b710755e79f20f8",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_LSP_MIDOUT.uasset": "58e3639e5c5c8303100d12591ad278eaa9c16351c4d2e8c57f3d527729ba5c2f",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_LSP_OUT_000.uasset": "7f9239f0a68fd2f175fe1a0ae5c57422d85f4f86f6dca54a5543c5656b8a6534",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_LSP_OUT_090.uasset": "5e1d305b202d4f432d22fe97d61062a9015f97999cf53435a4d7934da410eb30",
+    "unreal/Content/SkateRide/Clips/B0/R_SLIDE_BS_LSP_OUT_180.uasset": "64af35697b54fc6acbd04e5eb7225be264945771ea07d4d2a1f1ffca3d2978fa"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

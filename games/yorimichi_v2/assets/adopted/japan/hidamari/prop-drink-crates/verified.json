@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-drink-crates",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_drink_crates.uasset": "db8aea072903a9a5f7bc02a1354cd62252123be076212ca3136385cb38994bf5",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_drink_crates.uasset": "86fa337b463451c79def7c0e65cf654845c0533e3e2528023a8e1e4e83e9cc1e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

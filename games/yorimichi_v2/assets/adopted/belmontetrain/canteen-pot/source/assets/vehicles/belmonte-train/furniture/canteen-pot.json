@@ -1,0 +1,38 @@
+{
+  "asset": "canteen-pot",
+  "source": "canteen-pot.glb",
+  "source_sha256": "ffac98ad25572b8a01af0cf250dd37b01c7da9dafb88a65d0b282441e3c62ebf",
+  "target_m": {
+    "width": 0.755,
+    "depth": 0.674,
+    "height": 0.408
+  },
+  "source_size": [
+    0.9438,
+    0.9995,
+    0.7085
+  ],
+  "quarter_turn": false,
+  "uniform_scale": 0.79992,
+  "column_fraction": null,
+  "column_stretch_m": 0.0,
+  "fitted_m": {
+    "width": 0.755,
+    "depth": 0.6745,
+    "height": 0.4082
+  },
+  "errors_m": {
+    "width": 0.0,
+    "depth": 0.0005,
+    "height": 0.0002
+  },
+  "ok": true,
+  "triangles": 16831,
+  "pivot": "base_contact_center",
+  "glb": {
+    "file": "canteen-pot.glb",
+    "bytes": 882692,
+    "sha256": "af864859f3c19e6ae4f1926c002f2705e638581b3ee6961b3484dcd26b39c941"
+  },
+  "output_id": "canteen-pot"
+}

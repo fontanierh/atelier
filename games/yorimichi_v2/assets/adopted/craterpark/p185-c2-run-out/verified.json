@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/craterpark/p185-c2-run-out",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_23_14.uasset": "44d785b04c0faa6b9d67e6a213989e814bc239e35ca134ce2b07acd68a52fae8",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_24_14.uasset": "be30853d61b5a10730d119b1b5a69a2694fe3b0b0f036997c0e352d72e10aee8",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_23_14.uasset": "ec43a9f1ca8b5a6de879a81852c391432785f671a67fb89f48a5f8e8b8543c40",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_24_14.uasset": "6cb559ebec550166c23b8875646ac7d90c38918ace4ab0f2df0478599bdc0f97",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_24_14.uasset": "618a09470326fb453ae308b5ca7645f7c2065c16b73c6618455488828c435b3c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

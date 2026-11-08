@@ -1,0 +1,42 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture second-class-bench: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/second-class-bench"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/second-class-bench"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/second-class-bench.glb"
+sha256 = "3699e983b9a68ca0fc4615e095e923950f92f48c2e72ed301c905c05076ee618"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/second-class-bench.json"
+sha256 = "02111f273f353b74ed457b38a9748258e2c95f9e3dd8248dfa69acd0930ade01"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_SecondClassBench"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD0/M_BT_SecondClassBench"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD0/second-class-bench-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD0/second-class-bench-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD1/M_BT_SecondClassBench_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD1/second-class-bench-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/LOD1/second-class-bench-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_SecondClassBench/SM_BTF_SecondClassBench_LOD1"

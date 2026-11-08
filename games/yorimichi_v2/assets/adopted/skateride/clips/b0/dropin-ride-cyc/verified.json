@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/dropin-ride-cyc",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/DROPIN_RIDE_CYC.uasset": "4b01c0962f5deb5e6a10c1c7dcf403a00e982e26f5b9e3c48be4c6a495b3ac77"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

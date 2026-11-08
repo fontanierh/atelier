@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: the crater-floor station shell, used by the floor station
+schema = 1
+id = "adopted/gondola/shell-crater"
+kind = "adopted"
+authority = "editor"
+owner = "shared/gondola/shell-crater"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/gondola/materials"]
+
+[[sources]]
+path = "source/assets/vehicles/gondola/params.py"
+sha256 = "f1ede294471475d24305b68a1bd22d651fdd172c723dd646255763105b0ce25b"
+
+[[sources]]
+path = "source/assets/vehicles/gondola/stations.py"
+sha256 = "e396b689f7f20c4b690080ed3b9ba2b88c21b0ba84bcc663902b7271636299c9"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Building"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Collision"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Fittings"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Machinery"
+
+[[outputs]]
+package = "/Game/Gondola/Kit/GD_StationCrater_Platform"

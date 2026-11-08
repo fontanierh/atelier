@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-tuck-facedown",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_FACEDOWN.uasset": "e245364c7e28cb87cb6636cc3e73e905cce1ed138b8bd408c53a74fcc6ddb689"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

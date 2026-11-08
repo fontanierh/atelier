@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeShop_00.uasset": "27ffd1e842763e9e8877094bdda31212b4266307e8cba1d728343fef3f199c30"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
