@@ -125,12 +125,12 @@ def write_region(tmp_path, body):
 
 def test_static_meshes_are_refused_when_unknown_or_repeated(tmp_path):
     unknown = write_region(tmp_path / 'a', '[[objects]]\nid = "object/x/a"\nstatic = ["SM_Nope"]\n'
-                                           'model = "m"\nabout = "a"\n')
+                                           'model = "adopted/x/m"\nabout = "a"\n')
     with pytest.raises(objects.ObjectError, match='static needs'):
         objects.load_objects(unknown)
     repeated = write_region(tmp_path / 'b', '[[objects]]\nid = "object/x/a"\nstatic = ["Mega_Ramp"]\n'
-                                            'model = "m"\nabout = "a"\n[[objects]]\nid = "object/x/b"\n'
-                                            'static = ["Mega_Ramp"]\nmodel = "m"\nabout = "b"\n')
+                                            'model = "adopted/x/m"\nabout = "a"\n[[objects]]\nid = "object/x/b"\n'
+                                            'static = ["Mega_Ramp"]\nmodel = "adopted/x/m"\nabout = "b"\n')
     with pytest.raises(objects.ObjectError, match='listed twice'):
         objects.load_objects(repeated)
 

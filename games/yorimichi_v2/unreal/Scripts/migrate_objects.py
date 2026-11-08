@@ -12,6 +12,11 @@
             UV2Migration.MigrateHippodromePieces)
   statics   [{region, tag, meshes, units}]: the mini Mega ramp's and the Ronin camp's static meshes, each with its unit
             (one actor per unit; UV2MigrationMisc.MigrateStaticMeshes)
+  railways     [{region, tag, data, names, units}]: the Belmonte track's pieces and "<mesh>#<key>" instanced groups, each with
+            its unit (UV2MigrationTravel.MigrateRailwayPieces)
+  ferries      [{region, tag, data, names, units}]: ferry terminals by key, each with its unit (MigrateFerryTerminals)
+  gondolas     [{region, tag, data, names, units}]: the gondola's static entries by name, each with its unit
+            (MigrateGondolaStatics)
 UV2Migration.MigrateRegionGroups builds each patch with the runtime's own component code and lists the group in the
 map's manifest, so the runtime skips only those groups. A group already saved is kept as it is, edits included: a
 rerun creates nothing. Prints each object's actor package for its record.
@@ -79,6 +84,21 @@ for static in plan.get('statics', []):
     created += actors
     kept += reused
     keys |= {f'{static["tag"]}:{unit}' for unit in static['units']}
+for name, call, label in (
+        ('railways', U.V2MigrationTravel.migrate_railway_pieces, 'MigrateRailwayPieces'),
+        ('ferries', U.V2MigrationTravel.migrate_ferry_terminals, 'MigrateFerryTerminals'),
+        ('gondolas', U.V2MigrationTravel.migrate_gondola_statics, 'MigrateGondolaStatics')):
+    for route in plan.get(name, []):
+        count, actors, reused, error = call(
+            world, U.Name(route['region']), U.Name(route['tag']), route['data'], list(route['names']), list(route['units']))
+        if count < 0:
+            raise RuntimeError(f'{label} {route["tag"]}: {error}')
+        for actor in actors:
+            # A route's saved units load with the map: the runtime service is spawned with the world, whatever the distance.
+            actor.set_editor_property('is_spatially_loaded', False)
+        created += actors
+        kept += reused
+        keys |= {f'{route["tag"]}:{unit}' for unit in route['units']}
 for split in plan.get('splits', []):
     count, actors, changed, reused, error = U.V2Migration.split_patch_objects(
         world, U.Name(split['region']), U.Name(split['tag']), list(split['keys']), list(split['objects']),
