@@ -1,0 +1,12 @@
+# One saved object of region/w01-start (tools/migrate/objects.py, from its objects.toml): house B on the start road.
+# Its placement is this actor package; its model is adopted/japan/assets/house. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/start/house-b"
+kind = "placement"
+authority = "editor"
+owner = "region/w01-start"
+references = ["adopted/japan/assets/house"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/WH/AC9BXRPHFYF6ZIKCHTCH2D"

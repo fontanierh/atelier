@@ -106,6 +106,9 @@ namespace
         Copy->SetupAttachment(Patch->GetRootComponent());
         Copy->SetRelativeTransform(FTransform::Identity);
         Patch->AddInstanceComponent(Copy);
+        // A copy of a saved patch's component (an Instance component) is not owned at construction
+        // (UActorComponent::PostInitProperties leaves Instance components to their owner's initialization).
+        Patch->AddOwnedComponent(Copy);
         return Copy;
     }
 }
@@ -422,6 +425,173 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
         Manifest->MarkPackageDirty();
     }
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s groups: created %d patches, kept %d"), *Tag.ToString(), OutCreated.Num(), OutKept);
+    return OutCreated.Num();
+#else
+    Error = TEXT("editor only");
+    return -1;
+#endif
+}
+
+int32 UV2Migration::SplitPatchObjects(UObject* WorldContext, FName Region, FName Tag, const TArray<FString>& Keys,
+    const TArray<FString>& Objects, const TArray<FVector2D>& PointsCm, float ToleranceCm, TArray<AActor*>& OutCreated,
+    TArray<AActor*>& OutChanged, int32& OutKept, FString& Error)
+{
+    OutCreated.Reset(); OutChanged.Reset(); OutKept = 0;
+#if WITH_EDITOR
+    UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+    if (!World || World->IsGameWorld()) { Error = TEXT("needs the editor world"); return -1; }
+    if (Region.IsNone() || Tag.IsNone() || Objects.IsEmpty() || Keys.Num() != Objects.Num() || PointsCm.Num() != Objects.Num()
+        || ToleranceCm <= 0.f)
+    {
+        Error = TEXT("needs a region, its tag, a positive tolerance and one key and point per object");
+        return -1;
+    }
+    TMap<FString, AV2ScenePatch*> Existing;
+    TArray<AV2ScenePatch*> Sources;
+    for (TActorIterator<AV2ScenePatch> It(World); It; ++It)
+    {
+        Existing.Add(It->V2Id, *It);
+        if (It->Region == Region && Keys.Contains(It->SourceKey)) Sources.Add(*It);
+    }
+    // Plan every move before changing anything: each object takes, from every component of its key's patches, the
+    // instances within the tolerance of its point. An object found nowhere, or an instance two objects would take,
+    // stops the run with the world as it was.
+    struct FMove { UHierarchicalInstancedStaticMeshComponent* From; TArray<int32> Indices; };
+    TMap<FString, TArray<FMove>> Moves;   // object -> its instances
+    TMap<UHierarchicalInstancedStaticMeshComponent*, TSet<int32>> Taken;
+    TArray<int32> Todo;
+    const double Tolerance2 = double(ToleranceCm) * ToleranceCm;
+    for (int32 O = 0; O < Objects.Num(); ++O)
+    {
+        const FString Id = StableId({Region.ToString(), Keys[O], TEXT("object"), Objects[O]});
+        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        Todo.Add(O);
+        int32 Found = 0;
+        for (AV2ScenePatch* Patch : Sources)
+        {
+            if (Patch->SourceKey != Keys[O]) continue;
+            TArray<UHierarchicalInstancedStaticMeshComponent*> Parts;
+            Patch->GetComponents(Parts);
+            for (UHierarchicalInstancedStaticMeshComponent* C : Parts)
+            {
+                FMove Move{C, {}};
+                for (int32 I = 0; I < C->GetInstanceCount(); ++I)
+                {
+                    FTransform X;
+                    C->GetInstanceTransform(I, X, true);
+                    if (FVector2D::DistSquared(FVector2D(X.GetLocation()), PointsCm[O]) > Tolerance2) continue;
+                    bool bAlready = false;
+                    Taken.FindOrAdd(C).Add(I, &bAlready);
+                    if (bAlready)
+                    {
+                        Error = FString::Printf(TEXT("%s: an instance of %s at (%.0f, %.0f) is within %.0f cm of two objects"),
+                            *Objects[O], *Patch->V2Id, X.GetLocation().X, X.GetLocation().Y, ToleranceCm);
+                        return -1;
+                    }
+                    Move.Indices.Add(I);
+                }
+                if (!Move.Indices.IsEmpty()) { Found += Move.Indices.Num(); Moves.FindOrAdd(Objects[O]).Add(MoveTemp(Move)); }
+            }
+        }
+        if (!Found)
+        {
+            Error = FString::Printf(TEXT("%s: no %s instance of %s lies within %.0f cm of (%.0f, %.0f)"), *Objects[O],
+                *Keys[O], *Region.ToString(), ToleranceCm, PointsCm[O].X, PointsCm[O].Y);
+            return -1;
+        }
+    }
+    int64 Before = 0;
+    for (AV2ScenePatch* Patch : Sources)
+    {
+        TArray<UHierarchicalInstancedStaticMeshComponent*> Parts;
+        Patch->GetComponents(Parts);
+        for (const auto* C : Parts) Before += C->GetInstanceCount();
+    }
+    // Each object: a new patch at its point holding a copy of each source component (every setting and tag the
+    // migration saved) with its instances alone; the sources then drop them. An emptied component or patch stays,
+    // saved with no instances, so a rerun of the map migration finds its V2Id and never makes it again.
+    TSet<AV2ScenePatch*> Changed;
+    for (int32 O : Todo)
+    {
+        const FString Id = StableId({Region.ToString(), Keys[O], TEXT("object"), Objects[O]});
+        FActorSpawnParameters Params;
+        Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
+        AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(FVector(PointsCm[O], 0.0), FRotator::ZeroRotator, Params);
+        if (!Made)
+        {
+            Error = Objects[O] + TEXT(": could not spawn its patch");
+            for (AActor* Spawned : OutCreated) Spawned->Destroy();   // no instance has left a source yet
+            OutCreated.Reset();
+            return -1;
+        }
+        // The key stays the source's: the map migration then counts this key and mesh as saved in this region.
+        Made->Region = Region; Made->SourceKey = Keys[O]; Made->V2Id = Id;
+        Made->SetActorLabel(FString::Printf(TEXT("%s:%s:object:%s:%s"), *Region.ToString(), *Keys[O], *Objects[O], *Id));
+        Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
+        Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
+        Made->Tags.Add(FName(*(TEXT("V2Object:") + Tag.ToString() + TEXT(":") + Objects[O])));
+        for (const FMove& Move : Moves[Objects[O]])
+        {
+            TArray<FTransform> Placed;
+            for (int32 I : Move.Indices)
+            {
+                FTransform X;
+                Move.From->GetInstanceTransform(I, X, true);
+                Placed.Add(X);
+            }
+            UHierarchicalInstancedStaticMeshComponent* C = CopyInto(Made, Move.From);
+            C->ClearInstances();
+            C->bAutoRebuildTreeOnInstanceChanges = false;
+            C->RegisterComponent();
+            C->AddInstances(Placed, false, true, false);
+            C->BuildTreeIfOutdated(false, true);
+            C->bAutoRebuildTreeOnInstanceChanges = true;
+            Changed.Add(CastChecked<AV2ScenePatch>(Move.From->GetOwner()));
+        }
+        OutCreated.Add(Made);
+    }
+    for (auto& Pair : Taken)
+    {
+        UHierarchicalInstancedStaticMeshComponent* C = Pair.Key;
+        if (!Changed.Contains(CastChecked<AV2ScenePatch>(C->GetOwner()))) continue;
+        C->Modify();
+        TArray<int32> Indices = Pair.Value.Array();
+        C->RemoveInstances(Indices);   // sorts and removes from the highest index down
+        C->BuildTreeIfOutdated(false, true);
+    }
+    int64 After = 0;
+    for (AV2ScenePatch* Patch : Sources)
+    {
+        TArray<UHierarchicalInstancedStaticMeshComponent*> Parts;
+        Patch->GetComponents(Parts);
+        for (const auto* C : Parts) After += C->GetInstanceCount();
+    }
+    for (AActor* Made : OutCreated)
+    {
+        TArray<UHierarchicalInstancedStaticMeshComponent*> Parts;
+        Made->GetComponents(Parts);
+        for (const auto* C : Parts) After += C->GetInstanceCount();
+    }
+    if (After != Before)
+    {
+        Error = FString::Printf(TEXT("the split would change the instance count from %lld to %lld"), Before, After);
+        return -1;   // nothing is saved: the script refuses to save after an error
+    }
+    for (AActor* Made : OutCreated)
+    {
+        AV2ScenePatch* Saved = CastChecked<AV2ScenePatch>(Made);
+        Saved->ExpectedMembers = Saved->Members();
+        Made->MarkPackageDirty();
+    }
+    for (AV2ScenePatch* Patch : Changed)
+    {
+        Patch->Modify();
+        Patch->ExpectedMembers = Patch->Members();
+        Patch->MarkPackageDirty();
+        OutChanged.Add(Patch);
+    }
+    UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s split: created %d objects from %d patches, kept %d"), *Region.ToString(),
+        OutCreated.Num(), OutChanged.Num(), OutKept);
     return OutCreated.Num();
 #else
     Error = TEXT("editor only");

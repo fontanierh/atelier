@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/frame",
+  "dependencies": {
+    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/HC/RIJ1GLG9BGWW5NZPXMTZ4X.uasset": "2c7c653fbf2e891e50d85f0d1c26b24745529a311bb3884359cd091874c0db75"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

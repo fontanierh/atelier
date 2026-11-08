@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_Pavilion 1 of 2 in w07-hidamari-station, placed at (985, 265) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/pavilion. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-pavilion-01"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/experiments/citysurfaces/v1-128m/pavilion"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/17/K73H0BXLH1TPZPTQ1IGVD1"

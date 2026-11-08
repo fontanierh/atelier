@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_House_01 12 of 20 in w07-hidamari-station, placed at (1020.86, -38.5) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/house-01. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-house-01-12"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/experiments/citysurfaces/v1-128m/house-01"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/F/13/ZSK228QIVDRV3IM6S4PAVD"

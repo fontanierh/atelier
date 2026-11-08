@@ -108,4 +108,17 @@ public:
     static int32 MigrateRegionGroups(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
         const TArray<FString>& Meshes, const TArray<FString>& Objects, TArray<AActor*>& OutCreated, int32& OutKept,
         FString& Error);
+    /** Splits placed things out of the region's area patches (MigrateStaticScenery's, one key and mesh per cell): for
+     *  each Objects[i], every component of the region's patches whose SourceKey is Keys[i] gives up its instances
+     *  within ToleranceCm (in the plane) of PointsCm[i] to one new patch at that point (V2Id: region, key, "object",
+     *  Objects[i]; tagged V2Object:<Tag>:<object>), a copy of each such component with those instances alone. The new
+     *  patch keeps the key, so a rerun of the map migration counts that key and mesh as saved; an emptied source
+     *  stays saved with no instances, keeping its V2Id. Every move is planned first: an object found nowhere or an
+     *  instance two objects would take changes nothing. The instance count over all those patches is unchanged
+     *  (checked). An object already saved is kept. OutChanged lists the sources that gave up instances. Returns the
+     *  number of patches created, or -1 with Error set. */
+    UFUNCTION(BlueprintCallable, Category = "V2 Migration", meta = (WorldContext = "WorldContext"))
+    static int32 SplitPatchObjects(UObject* WorldContext, FName Region, FName Tag, const TArray<FString>& Keys,
+        const TArray<FString>& Objects, const TArray<FVector2D>& PointsCm, float ToleranceCm, TArray<AActor*>& OutCreated,
+        TArray<AActor*>& OutChanged, int32& OutKept, FString& Error);
 };

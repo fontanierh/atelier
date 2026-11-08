@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/log-table",
+  "dependencies": {
+    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/C9/TGILHNIBRSA6WN1ROUUSS7.uasset": "83944de5e0be653765e9c7ed718a12b4168377d81c022ea40f5efd1ede29cfae"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

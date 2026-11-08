@@ -1,0 +1,12 @@
+{
+  "asset": "object/start/house-b",
+  "dependencies": {
+    "adopted/japan/assets/house": "4ab7372e7dafec6053758a946133d1d7d94480168a902e281565c1b86720ee43"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/WH/AC9BXRPHFYF6ZIKCHTCH2D.uasset": "56acbe10eb0447601b67e370a9c6c8dd238c7bbe228e606e4da1e3447c3a0f79"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

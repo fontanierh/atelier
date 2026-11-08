@@ -1,0 +1,12 @@
+# One saved object of region/w04-pier-approach (tools/migrate/objects.py, from its objects.toml): the lot (grounds) of the pier-approach house.
+# Its placement is this actor package; its model is adopted/japan/assets/houselot. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/pier/house-lot-3"
+kind = "placement"
+authority = "editor"
+owner = "region/w04-pier-approach"
+references = ["adopted/japan/assets/houselot"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/3/HX/2G1NH9QZGP5WYHY29FW08I"

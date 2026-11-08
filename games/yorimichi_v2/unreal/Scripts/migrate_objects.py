@@ -4,6 +4,8 @@
   groups    [{region, tag, data, meshes, objects}]: the region that owns them, ABelmonteRegion's runtime tag
             (brinecove), its runtime file under Content/Data, the group meshes to save and the object each belongs to
             (one actor per object)
+  splits    [{region, tag, keys, objects, points_cm, tolerance_cm}]: placed things of the region's area patches (each
+            object's source key and point) that become actors of their own (UV2Migration.SplitPatchObjects)
 UV2Migration.MigrateRegionGroups builds each patch with the runtime's own component code and lists the group in the
 map's manifest, so the runtime skips only those groups. A group already saved is kept as it is, edits included: a
 rerun creates nothing. Prints each object's actor package for its record.
@@ -27,7 +29,7 @@ if guids:
     wpl.load_actors(guids)
 world = U.get_editor_subsystem(U.UnrealEditorSubsystem).get_editor_world()
 created, kept, keys = [], 0, set()
-for group in plan['groups']:
+for group in plan.get('groups', []):
     count, actors, reused, error = U.V2Migration.migrate_region_groups(
         world, U.Name(group['region']), U.Name(group['tag']), group['data'], list(group['meshes']),
         list(group['objects']))
@@ -36,9 +38,25 @@ for group in plan['groups']:
     created += actors
     kept += reused
     keys |= {f'{group["tag"]}:{name}' for name in group['objects']}
+for split in plan.get('splits', []):
+    count, actors, changed, reused, error = U.V2Migration.split_patch_objects(
+        world, U.Name(split['region']), U.Name(split['tag']), list(split['keys']), list(split['objects']),
+        [U.Vector2D(x, y) for x, y in split['points_cm']], float(split['tolerance_cm']))
+    if count < 0:
+        raise RuntimeError(f'SplitPatchObjects {split["region"]}: {error}')
+    created += actors
+    kept += reused
+    keys |= {f'{split["tag"]}:{name}' for name in split['objects']}
+    for actor in changed:
+        U.log(f'V2 SPLIT FROM {actor.get_package().get_name()}')
 if not U.EditorLoadingAndSavingUtils.save_dirty_packages(True, True):
     raise RuntimeError('could not save the objects and the manifest')
 for actor in EAS.get_all_level_actors():
-    if actor.get_class().get_name() == 'V2ScenePatch' and str(actor.get_editor_property('source_key')) in keys:
-        U.log(f'V2 OBJECT {actor.get_package().get_name()} {actor.get_editor_property("source_key")}')
+    if actor.get_class().get_name() != 'V2ScenePatch':
+        continue
+    # A split object shares its source key with the area patches: its V2Object tag names it.
+    named = [str(t)[len('V2Object:'):] for t in actor.tags if str(t).startswith('V2Object:')]
+    key = named[0] if named else str(actor.get_editor_property('source_key'))
+    if key in keys:
+        U.log(f'V2 OBJECT {actor.get_package().get_name()} {key}')
 U.log(f'{MARKER} created={len(created)} kept={kept}')

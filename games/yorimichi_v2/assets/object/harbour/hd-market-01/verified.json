@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-market-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/market": "61ec7e509248e5d962f8fcbfaf1445b863bd9453e847254093ef4a18d3a70f32"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/8F/0J36VRKSMN04YLPE1J5QD8.uasset": "9632f2458cbeb1c0657963743829a242e2ef9286040a485d8719626daf938949"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

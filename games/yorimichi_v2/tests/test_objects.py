@@ -119,3 +119,99 @@ def test_only_names_a_subset_and_refuses_an_unknown_object(game):
     with pytest.raises(objects.ObjectError, match='not all are objects'):
         objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, only=['object/cove/mast'],
                         editor=editor(game), out=game / 'out', echo=lambda *_: None)
+
+
+def test_a_patch_object_takes_its_saved_patch_and_the_region_lets_it_go(game):
+    """A patch holding one object alone becomes that object's record; the region's verification drops it, and the
+    content check's roster accepts the patch as held by the region's object."""
+    patch_rel = 'unreal/Content/__ExternalActors__/V2/Maps/Slice/A/4O/STOREHOUSE.uasset'
+    write(game / patch_rel, b'storehouse patch')
+    village = region(game, 'w02-village', [0, 0, 1000, 1000], [patch_rel])
+    (village / 'patches.json').write_text(json.dumps({'schema': 1, 'region': 'region/w02-village', 'patches': {
+        '05ed3a01c13d434b': {'key': 'Village_Storehouse', 'package': patch_rel}}}))
+    (village / 'objects.toml').write_text(
+        'schema = 1\ntag = "village"\ndata = ""\n\n[[objects]]\nid = "object/village/storehouse"\n'
+        'patch = "05ed3a01c13d434b"\nmodel = "adopted/japan/assets"\nabout = "the storehouse"\n')
+    objects.save_validate.validate(game, 'region/w02-village', add=[patch_rel], echo=lambda *_: None)
+    assert patch_rel in records.load_verified(village / 'actors.verified.json')['files']
+    made = objects.promote(game, ['region/w02-village'], None, echo=lambda *_: None)
+    package = '/Game/__ExternalActors__/V2/Maps/Slice/A/4O/STOREHOUSE'
+    assert made == {'object/village/storehouse': package}
+    record = records.load_asset(game / 'assets/object/village/storehouse/asset.toml')
+    assert (record.kind, record.owner, [o.package for o in record.outputs]) == ('placement', 'region/w02-village', [package])
+    assert list(records.load_verified(record.verified)['files']) == [patch_rel]
+    assert patch_rel not in records.load_verified(village / 'actors.verified.json')['files']
+    assert objects.promote(game, ['region/w02-village'], None, echo=lambda *_: None) == made   # a rerun writes nothing
+    # A runtime-group migration of the same region skips its patch objects.
+    with pytest.raises(objects.ObjectError, match='not all are objects'):
+        objects.migrate(game, ['region/w02-village'], 'region/w00-island', None, only=['object/village/storehouse'],
+                        editor=editor(game), out=game / 'out', echo=lambda *_: None)
+
+
+def test_a_split_object_leaves_its_area_patch_for_an_actor_of_its_own(game):
+    """A placed thing of an area patch (key and source point) becomes its own actor and record; the area patch, which
+    gave up its instance, is re-verified by its region, and the claim locks every patch of the key."""
+    area_rel = f'{ACTORS}/C/3D/HOUSES.uasset'
+    other_rel = f'{ACTORS}/C/3E/HOUSES2.uasset'
+    house_rel = f'{ACTORS}/C/3D/HOUSE7.uasset'
+    for rel in (area_rel, other_rel):
+        write(game / rel, b'four houses')
+    harbour = region(game, 'w07-harbour', [0, -100000, 100000, 0], [area_rel, other_rel])
+    (harbour / 'patches.json').write_text(json.dumps({'schema': 1, 'region': 'region/w07-harbour', 'patches': {
+        'aaaa000000000001': {'key': 'HD_House_02', 'package': area_rel},
+        'aaaa000000000002': {'key': 'HD_House_02', 'package': other_rel},
+        'aaaa000000000003': {'key': 'HD_Lamp', 'package': f'{ACTORS}/C/3F/LAMPS.uasset'}}}))
+    (harbour / 'objects.toml').write_text(
+        'schema = 1\ntag = "harbour"\ndata = ""\n\n[[objects]]\nid = "object/harbour/house-02-7"\n'
+        'split = {key = "HD_House_02", at = [455.5, -71]}\nmodel = "adopted/japan/hidamari"\nabout = "a harbour house"\n')
+
+    def run(plan_file):
+        plan = json.loads(plan_file.read_text())
+        assert plan['groups'] == []
+        assert plan['splits'] == [{'region': 'region/w07-harbour', 'tag': 'harbour', 'keys': ['HD_House_02'],
+                                   'objects': ['house-02-7'], 'points_cm': [[45550.0, 7100.0]], 'tolerance_cm': 50.0}]
+        write(game / house_rel, b'one house')
+        write(game / area_rel, b'three houses')
+        return (f'V2 SPLIT FROM /Game/{area_rel[len("unreal/Content/"):-len(".uasset")]}\n'
+                f'V2 OBJECT /Game/{house_rel[len("unreal/Content/"):-len(".uasset")]} harbour:house-02-7\n'
+                'V2 OBJECTS DONE created=1 kept=0\n')
+
+    assert objects.claim_paths(game, ['region/w07-harbour'])['lock'] == [f'games/yorimichi_v2/{area_rel}',
+                                                                         f'games/yorimichi_v2/{other_rel}']
+    made = objects.migrate(game, ['region/w07-harbour'], 'region/w00-island', None, editor=run, out=game / 'out',
+                           echo=lambda *_: None)
+    package = f'/Game/{house_rel[len("unreal/Content/"):-len(".uasset")]}'
+    assert made == {'object/harbour/house-02-7': package}
+    record = records.load_asset(game / 'assets/object/harbour/house-02-7/asset.toml')
+    assert list(records.load_verified(record.verified)['files']) == [house_rel]
+    files = records.load_verified(harbour / 'actors.verified.json')['files']
+    assert house_rel not in files and files[area_rel] == records.sha256_file(game / area_rel)
+
+
+def test_a_split_needs_a_key_and_a_point(game):
+    (game / 'world/regions/w09-cove/objects.toml').write_text(
+        'schema = 1\ntag = "brinecove"\ndata = ""\n\n[[objects]]\nid = "object/cove/rock"\n'
+        'split = {key = "SW_Rock"}\nmodel = "adopted/cove/rock"\nabout = "a rock"\n')
+    with pytest.raises(objects.ObjectError, match='split needs key'):
+        objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=editor(game), out=game / 'out',
+                        echo=lambda *_: None)
+
+
+def test_a_batch_of_objects_takes_one_claims_check_for_its_records_and_one_for_its_packages(game, monkeypatch):
+    calls = []
+    real = objects.authority.authorize
+    monkeypatch.setattr(objects.authority, 'authorize', lambda paths, *a, **k: (calls.append(paths), real(paths, *a, **k)))
+    entries = []
+    for n in range(5):
+        rel = f'{ACTORS}/D/{n}0/HOUSE{n}.uasset'
+        write(game / rel, f'house {n}'.encode())
+        entries.append(('region/w09-cove', {'id': f'object/cove/house-{n}', 'model': 'adopted/cove/wreck',
+                                            'about': f'house {n}'}, f'/Game/{rel[len("unreal/Content/"):-7]}'))
+    made = objects.record_objects(game, entries, None, echo=lambda *_: None)
+    assert sorted(made) == [f'object/cove/house-{n}' for n in range(5)]
+    assert [len(paths) for paths in calls] == [5, 5]   # the five records, then the five package files
+    for n in range(5):
+        record = records.load_asset(game / f'assets/object/cove/house-{n}/asset.toml')
+        assert list(records.load_verified(record.verified)['files']) == [f'{ACTORS}/D/{n}0/HOUSE{n}.uasset']
+    calls.clear()
+    assert objects.record_objects(game, entries, None, echo=lambda *_: None) == made and calls == []   # unchanged

@@ -1,0 +1,12 @@
+{
+  "asset": "object/swcoast/temple",
+  "dependencies": {
+    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/WI/T076PWAU1KOM1F12D76WAS.uasset": "8b18ea46d65d76783db182b9cd26fd543ca1876c6a52cdb3a06196369609c8be"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

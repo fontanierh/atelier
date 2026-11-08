@@ -1,0 +1,12 @@
+# One saved object of region/w08-southwest-coast (tools/migrate/objects.py, from its objects.toml): the coconut stand.
+# Its placement is this actor package; its model is adopted/japan/southwest. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/swcoast/coconut-stand"
+kind = "placement"
+authority = "editor"
+owner = "region/w08-southwest-coast"
+references = ["adopted/japan/southwest"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/ZP/WOXHN5HW6GKT3FO6FUOGVL"

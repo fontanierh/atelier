@@ -1,0 +1,12 @@
+{
+  "asset": "object/lake/barrel",
+  "dependencies": {
+    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/CX/U79JRTESAFSE60MFQ6JEDC.uasset": "e1f0f97ac71d2f13c1dfc6fc5a7ee37d3e75f27c50714697219dec2a9e896d87"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

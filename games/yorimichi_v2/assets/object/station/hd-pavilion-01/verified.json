@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-pavilion-01",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/pavilion": "29238edae13d063116ffb686c518f96cc32e0377b2cdc5e94618ea5777b63132"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/17/K73H0BXLH1TPZPTQ1IGVD1.uasset": "995ea8cfa04294769c408d60bf26fcef2da0735c02832fe1bedbd272eeff6634"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
