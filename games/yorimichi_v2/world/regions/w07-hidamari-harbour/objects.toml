@@ -5723,3 +5723,19 @@ id = "object/harbour/zeppelin-trail"
 patch = "028fae5694d6f2a6"
 model = "adopted/japan/assets/zeppelin"
 about = "the zeppelin trail piece (ZP_Trail)"
+
+# A building cut into cells: its cell patches each hold a piece of it alone; promoted together, bytes unchanged.
+[[objects]]
+id = "object/harbour/clock-hall"
+patch = ["0b0439244af1482f", "8aed27d4802b7554", "b719d3a9aed13496", "e882ce5f492436d8"]
+model = ["adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-m1", "adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-0", "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-m1", "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-0"]
+about = "the clock hall (HD_ClockHall: one placement, cut into four cells)"
+
+
+# A building cut into cells: its cell patches each hold a piece of it alone; promoted together, bytes unchanged.
+[[objects]]
+id = "object/harbour/temples"
+patch = ["0693a2738084a992", "329b7ee1d27de3a7", "4b71d1f6c203e34d", "7180b7adacaaf06e", "8cadb81065707564", "9855ee30983c941d", "daa114f6b256e806", "ddf215e45cfbf9b7"]
+model = ["adopted/experiments/citysurfaces/v1-128m/temple-m1-m1", "adopted/experiments/citysurfaces/v1-128m/temple-m1-0", "adopted/experiments/citysurfaces/v1-128m/temple-0-m1", "adopted/experiments/citysurfaces/v1-128m/temple-0-0"]
+about = "the two harbour temples (HD_Temple: two placements, cut into eight cell patches)"
+

@@ -54,7 +54,8 @@ SPLIT_TOLERANCE_CM = 50.0   # a placed thing is found within this of its source 
 def load_objects(region) -> dict:
     """The region's objects.toml: {tag, data, objects: [{id, groups, patch, split, park, model, about}]}. An object names one
     runtime `group` or several `groups` (a statue cut into cells), each group belonging to one object; or the `patch`
-    (its V2Id in the region's patches.json) the migration already saved holding it alone, which it takes over; or a
+    (its V2Id in the region's patches.json) the migration already saved holding it alone, which it takes over (a list
+    of V2Ids: a building cut into cells, each cell patch holding a piece of it alone); or a
     `split` = {key, at = [x, y]}: the instances of that source key placed at that source point (metres, as in
     world.json and city.json), which leave the area patches holding them for an actor of their own; or a `park` = [the
     render and collision mesh names of one park unit], read from the region's `data` park file."""
@@ -77,13 +78,17 @@ def load_objects(region) -> dict:
             raise ObjectError(f'{path}: {item["id"]}: park needs a list of mesh names, not {park}')
         if park is not None and not data['data']:
             raise ObjectError(f'{path}: {item["id"]}: a park object needs data = "<park>/park.json"')
+        patch = item.get('patch')
+        if patch is not None and not (isinstance(patch, str) and patch or isinstance(patch, list) and patch
+                                      and all(isinstance(v, str) and v for v in patch)):
+            raise ObjectError(f'{path}: {item["id"]}: patch needs a V2Id or a list of them, not {patch}')
         split = item.get('split')
         if split is not None and (not isinstance(split, dict) or set(split) != {'key', 'at'}
                                   or not isinstance(split['key'], str) or len(split['at']) != 2
                                   or not all(isinstance(v, (int, float)) for v in split['at'])):
             raise ObjectError(f'{path}: {item["id"]}: split needs key = "..." and at = [x, y], not {split}')
         item['groups'] = [item.pop('group')] if 'group' in item else list(item.get('groups', []))
-    for values in ([i['patch'] for i in objects if 'patch' in i],
+    for values in ([v for i in objects if 'patch' in i for v in patch_ids(i)],
                    [(i['split']['key'], *i['split']['at']) for i in objects if 'split' in i]):
         if len(values) != len(set(values)):
             raise ObjectError(f'{path}: a patch or a split placement is listed twice')
@@ -97,13 +102,27 @@ def load_objects(region) -> dict:
     return {'tag': data['tag'], 'data': data['data'], 'objects': objects}
 
 
-def record_text(item: dict, region: str, package: str) -> str:
+def patch_ids(item: dict) -> list[str]:
+    """A patch object's V2Ids: one, or the cells of a building cut into cells."""
+    return [item['patch']] if isinstance(item['patch'], str) else list(item['patch'])
+
+
+def models(item: dict) -> list[str]:
+    """The records an object's placement references: one model, or the cell records of a building cut into cells."""
+    return [item['model']] if isinstance(item['model'], str) else list(item['model'])
+
+
+def record_text(item: dict, region: str, package) -> str:
+    """The record of a saved object: one actor package, or a list of them (the cell patches of one building)."""
+    packages = [package] if isinstance(package, str) else list(package)
+    where = 'this actor package' if len(packages) == 1 else f'these {len(packages)} actor packages (its cells)'
     return '\n'.join([
         f'# One saved object of {region} (tools/migrate/objects.py, from its objects.toml): {item["about"]}.',
-        f'# Its placement is this actor package; its model is {item["model"]}. Edit it in the editor and save-validate',
+        f'# Its placement is {where}; its model is {", ".join(models(item))}. Edit it in the editor and save-validate',
         '# this record: the region\'s other objects and actors are not part of it.',
         'schema = 1', f'id = "{item["id"]}"', 'kind = "placement"', 'authority = "editor"', f'owner = "{region}"',
-        f'references = ["{item["model"]}"]', '', '[[outputs]]', f'package = "{package}"', ''])
+        'references = [' + ', '.join(f'"{m}"' for m in models(item)) + ']', '', *(line for p in packages for line in ('[[outputs]]', f'package = "{p}"', '')),
+        ''][:-1])
 
 
 def claim_paths(game: Path, region_ids: list[str], *, only=None) -> dict[str, list[str]]:
@@ -283,13 +302,16 @@ def promote(game: Path, region_ids: list[str], claim: str | None, *, only=None, 
         patches = json.loads(roster.read_text()).get('patches', {}) if roster.is_file() else {}
         entries = []
         for item in items:
-            entry = patches.get(item['patch'])
-            if entry is None:
-                raise ObjectError(f'{item["id"]}: patch {item["patch"]} is not in {rid}\'s patches.json')
-            rel = entry['package']
-            if not rel.startswith('unreal/Content/') or not (game / rel).is_file():
-                raise ObjectError(f'{item["id"]}: its patch package {rel} is missing')
-            entries.append((rid, item, '/Game/' + rel[len('unreal/Content/'):].rsplit('.', 1)[0]))
+            packages = []
+            for v2id in patch_ids(item):
+                entry = patches.get(v2id)
+                if entry is None:
+                    raise ObjectError(f'{item["id"]}: patch {v2id} is not in {rid}\'s patches.json')
+                rel = entry['package']
+                if not rel.startswith('unreal/Content/') or not (game / rel).is_file():
+                    raise ObjectError(f'{item["id"]}: its patch package {rel} is missing')
+                packages.append('/Game/' + rel[len('unreal/Content/'):].rsplit('.', 1)[0])
+            entries.append((rid, item, packages[0] if isinstance(item['patch'], str) else packages))
         made.update(record_objects(game, entries, claim, echo=echo))
         save_validate.validate(game, rid, claim=claim, echo=echo)   # the region's verification drops them
     if only is not None and set(only) - set(made):

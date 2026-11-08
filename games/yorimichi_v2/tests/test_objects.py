@@ -215,3 +215,29 @@ def test_a_batch_of_objects_takes_one_claims_check_for_its_records_and_one_for_i
         assert list(records.load_verified(record.verified)['files']) == [f'{ACTORS}/D/{n}0/HOUSE{n}.uasset']
     calls.clear()
     assert objects.record_objects(game, entries, None, echo=lambda *_: None) == made and calls == []   # unchanged
+
+
+def test_a_building_cut_into_cells_takes_all_its_cell_patches(game):
+    """`patch` as a list: the cell patches each holding a piece of one building alone become that one object, with an
+    output per cell; the region lets them all go, and the same V2Id cannot be listed by two objects."""
+    cells = [f'unreal/Content/__ExternalActors__/V2/Maps/Slice/B/{n}C/STATIONCELL{n}.uasset' for n in range(4)]
+    for rel in cells:
+        write(game / rel, rel.encode())
+    harbour = region(game, 'w07-harbour', [0, 0, 1000, 1000], cells)
+    ids = [f'cccc00000000000{n}' for n in range(4)]
+    (harbour / 'patches.json').write_text(json.dumps({'schema': 1, 'region': 'region/w07-harbour', 'patches': {
+        v: {'key': 'HD_Station', 'package': rel} for v, rel in zip(ids, cells)}}))
+    entry = ('schema = 1\ntag = "harbour"\ndata = ""\n\n[[objects]]\nid = "object/harbour/station-building"\n'
+             f'patch = {json.dumps(ids)}\nmodel = "adopted/experiments/citysurfaces/v1-128m"\nabout = "the station"\n')
+    (harbour / 'objects.toml').write_text(entry)
+    made = objects.promote(game, ['region/w07-harbour'], None, echo=lambda *_: None)
+    packages = [f'/Game/{rel[len("unreal/Content/"):-len(".uasset")]}' for rel in cells]
+    assert made == {'object/harbour/station-building': packages}
+    record = records.load_asset(game / 'assets/object/harbour/station-building/asset.toml')
+    assert [o.package for o in record.outputs] == packages
+    assert sorted(records.load_verified(record.verified)['files']) == sorted(cells)
+    assert not set(cells) & set(records.load_verified(harbour / 'actors.verified.json')['files'])
+    assert objects.promote(game, ['region/w07-harbour'], None, echo=lambda *_: None) == made   # a rerun writes nothing
+    (harbour / 'objects.toml').write_text(entry + entry.split('\n\n', 1)[1].replace('station-building', 'station-again'))
+    with pytest.raises(objects.ObjectError, match='listed twice'):
+        objects.load_objects(records.discover(game)[1][[r.id for r in records.discover(game)[1]].index('region/w07-harbour')])
