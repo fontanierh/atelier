@@ -243,3 +243,13 @@ def test_the_default_session_refuses_to_start_when_it_has_no_import_job_kind(gam
     report = batch(game, ['prop/a'], run.run_session)
     assert report['imported'] == [] and report['interrupted']
     assert content(game, 'a') == b'old a' and not recorded(game, 'a')
+
+
+def test_a_batch_is_authorized_by_one_check_before_any_write(game, monkeypatch):
+    """Each protected check reads the claim's locks from the remote: a batch makes one check for all its writes."""
+    calls = []
+    monkeypatch.setattr(run.authority, 'authorize', lambda paths, claim, what, scopes=(): calls.append((paths, scopes)))
+    report = run.import_batch(game, ['prop/a', 'prop/b', 'prop/c'], engine='5.8.2-1', claim='T1', batch_size=2,
+                              runner=FakeSession(game), echo=lambda *_: None)
+    assert report['imported'] == ['prop/a', 'prop/b', 'prop/c']
+    assert len(calls) == 1 and len(calls[0][1]) == 3

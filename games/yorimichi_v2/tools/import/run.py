@@ -132,9 +132,14 @@ def up_to_date(game, asset, fingerprint) -> bool:
 
 def authorize(game, asset, claim):
     """Protected writes need the claim's exact paths with verified locks, or the recorded bootstrap writer."""
-    paths = [f'games/yorimichi_v2/{records.content_relative(game, f)}' for f in generated_files(game, asset)]
+    authorize_all(game, [asset], claim, f'import of {asset.id}')
+
+
+def authorize_all(game, assets, claim, what):
+    """authorize for many assets in one protected check: each check reads the claim's locks from the remote."""
+    paths = [f'games/yorimichi_v2/{records.content_relative(game, f)}' for a in assets for f in generated_files(game, a)]
     try:
-        authority.authorize(paths, claim, f'import of {asset.id}', scopes={authority.asset_scope(asset)})
+        authority.authorize(paths, claim, what, scopes={authority.asset_scope(a) for a in assets})
     except authority.Unauthorized as error:
         raise ImportError_(str(error)) from None
 
@@ -406,8 +411,9 @@ class _Prepared:
         self.plan_file, self.deps, self.hashes, self.fingerprint = plan_file, deps, hashes, fingerprint
 
 
-def _prepare_batch(game, asset, by_id, *, claim, echo):
-    """import_one's steps before its editor run: fingerprint, authorize, journal, plan. None when up to date."""
+def _prepare_batch(game, asset, by_id, *, claim, echo, authorized=False):
+    """import_one's steps before its editor run: fingerprint, authorize (unless the batch already did), journal,
+    plan. None when up to date."""
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
     stale = [d for d, s in deps.items() if s is None]
     if stale:
@@ -417,7 +423,8 @@ def _prepare_batch(game, asset, by_id, *, claim, echo):
     if up_to_date(game, asset, fingerprint):
         echo(f'unchanged  {asset.id}')
         return None
-    authorize(game, asset, claim)
+    if not authorized:
+        authorize(game, asset, claim)
     kind = IMPORTERS.get(asset.kind)
     if kind is None or asset.recipe.get('importer') != kind[0] or asset.recipe.get('version') != kind[1]:
         raise ImportError_(f'{asset.id}: no importer {asset.recipe.get("importer")}@{asset.recipe.get("version")} '
@@ -481,6 +488,9 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
     ordered, _ = plan(game, asset_ids)
     report = {'imported': [], 'unchanged': [], 'failed': {}, 'interrupted': None, 'not_run': []}
     by_id = {a.id: a for a in records.discover(game)[0]}
+    # One check for every write of the batch, before any: a check per asset cost a remote lock listing per asset.
+    # Each job is still re-authorized by its session immediately before it runs.
+    authorize_all(game, [by_id[a.id] for a in ordered], claim, f'batch import of {len(ordered)} asset(s)')
     queue = [a.id for a in ordered]
     session_no = 0
     while queue:
@@ -503,7 +513,7 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
                 break
             queue.pop(0)
             try:
-                prepared = _prepare_batch(game, asset, by_id, claim=claim, echo=echo)
+                prepared = _prepare_batch(game, asset, by_id, claim=claim, echo=echo, authorized=True)
             except ImportError_ as error:
                 report['failed'][asset_id] = str(error)
                 echo(f'failed     {asset_id}: {error}; no record written')
