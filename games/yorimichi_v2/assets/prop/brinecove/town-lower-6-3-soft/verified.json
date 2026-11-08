@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/town-lower-6-3-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_6_3_Soft.uasset": "45abc5c20f7de75c2e48162d3f0da5981f265880d597020b8f65999354cfdaaa"
+  },
+  "input_fingerprint": "c78d02f746d17a58e31c1976f596e591d19f9baf82492fa39ca0eb6ff99fba22",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLower_6_3_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
