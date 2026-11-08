@@ -155,6 +155,9 @@ Donor `7eec0f98dd` (desktop profile) and V2 `1d9ac65d77` (`jim5/yv2-statics-run`
 - At 8 s V2 was still streaming Hidamari's city cells and the corridor forest in (flat sea plane where the town stands,
   bare slopes); at 30 s the same views score 0.78 to 0.96. The capture default is now 30 s.
 - The three still below 0.75 show the same scenery by eye. The teahouse and camp cameras stood inside the canopy, so
-  leaf motion dominated the score; they now stand 30 and 35 m above their targets (make_island_poses.py). The ferry
-  pier differs only by the ferry, docked in the V2 frame and away in the donor's: a moving service, not scenery.
+  leaf motion dominated the score; they now stand 30 and 35 m above their targets (make_island_poses.py), and both
+  pass from there (teahouse 0.81, Ronin camp 0.76; donor and V2 recaptured at 30 s). The ferry pier differs only by
+  the ferry, docked in the V2 frame and away in the donor's: a moving service, not scenery.
+
+Result: 53 of 54 poses at SSIM >= 0.75; the one below is the ferry's schedule position.
 
