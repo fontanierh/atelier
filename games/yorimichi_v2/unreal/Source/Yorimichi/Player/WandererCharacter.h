@@ -134,6 +134,8 @@ public:
     /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there
      *  (the highest surface from Above cm over the position down). Above is finite, 0–6000 cm, and preserved on host travel. */
     bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
+    /** True while a travel holds the player at a target whose ground has not streamed in yet (TravelTo). */
+    bool IsWaitingForTravelGround() const { return GetWorldTimerManager().IsTimerActive(TravelGroundWait); }
     uint32 GetActivityEpoch() const { return NetworkActivity.Epoch; }
     EJapanActivity GetNetworkActivity() const { return NetworkActivity.Kind; }
     void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false, uint8 ClockCorrection = 0,
