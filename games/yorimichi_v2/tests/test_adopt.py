@@ -316,6 +316,35 @@ def test_repartition_keeps_membership_exactly_passes_the_check_and_is_idempotent
     assert stamps == {p: p.stat().st_mtime_ns for p in (game / 'assets').rglob('*') if p.is_file()}
 
 
+def test_repartition_into_a_units_map_copies_each_units_sources_and_passes_the_check(tmp_path, monkeypatch):
+    """A batch-partitioned region split by a units map: every unit keeps its packages and verified files, takes its
+    sources into its record (pinned) and its references; a second run changes nothing."""
+    repo = tmp_path / 'repo'
+    game = repo / 'games/v2'
+    monkeypatch.setenv('ATELIER_AGENT', adopt.authority.BOOTSTRAP_WRITER)
+    monkeypatch.delenv('ATELIER_CLAIMS_TASK', raising=False)
+    packages = ['/Game/Cove/Meshes/SM_Ships_2_2', '/Game/Cove/Meshes/SM_Rocks_1_1', '/Game/Cove/Materials/MI_Wood']
+    files = coarse_tree(game, packages, 'adopted/cove/loose_files_01')
+    write(repo / 'games/old/regions/cove/build.py', b'generator')
+    write(game / 'assets/adopted/cove/units.json', json.dumps({
+        'units': {'wreck': {'about': 'the wreck', 'references': ['adopted/cove/materials']},
+                  'rocks-1-1': {'about': 'rocks', 'references': ['adopted/cove/materials']},
+                  'materials': {'about': 'materials and the generator', 'sources': ['games/old/regions/cove/build.py']}},
+        'packages': {packages[0]: 'wreck', packages[1]: 'rocks-1-1', packages[2]: 'materials'}}).encode())
+    write(game / 'assets/adopted/groups.toml', b'[[units]]\nfolder = "/Game/Cove"\nmap = "cove/units.json"\n')
+    report = adopt.repartition(game, echo=lambda *_: None)
+    assert sorted(report['records']) == ['adopted/cove/materials', 'adopted/cove/rocks-1-1', 'adopted/cove/wreck']
+    assert 'assets/adopted/cove/materials/source/regions/cove/build.py' in report['write']
+    materials = records.load_asset(game / 'assets/adopted/cove/materials/asset.toml')
+    assert [(s.path, s.sha256) for s in materials.sources] == [
+        ('source/regions/cove/build.py', records.sha256_file(repo / 'games/old/regions/cove/build.py'))]
+    wreck = records.load_asset(game / 'assets/adopted/cove/wreck/asset.toml')
+    assert wreck.references == ['adopted/cove/materials'] and [o.package for o in wreck.outputs] == packages[:1]
+    assert membership(game)[2] == files
+    again = adopt.repartition(game, echo=lambda *_: None)
+    assert again['write'] == [] and again['delete'] == []
+
+
 def test_repartition_refuses_double_ownership_and_lost_packages_writing_nothing(donor, monkeypatch):
     game, _ = donor
     coarse_tree(game, TREE[:3])

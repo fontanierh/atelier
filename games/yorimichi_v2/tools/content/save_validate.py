@@ -6,7 +6,7 @@
 Editor-owned content is never imported (plan §5): after its edit is saved, this records the complete package set
 it now has, with hashes, engine identity and the state of the dependencies it references, in `verified.json`
 (assets) or `actors.verified.json` (regions). A region's actors are its current record's packages that still
-exist, plus packages under its maps' `__ExternalActors__`/`__ExternalObjects__` folders whose actor label starts
+exist (never one an asset record owns, such as a saved object's placement), plus packages under its maps' `__ExternalActors__`/`__ExternalObjects__` folders whose actor label starts
 with the region ID (`region/<name>:...`, the migration's labels) or, unlabelled by a region, whose saved
 location lies inside the region's bounds, plus explicit `--add`. A package another region
 already owns, or one that no longer exists, is refused or dropped explicitly. No change writes nothing.
@@ -147,6 +147,13 @@ def validate(game: Path, subject: str, *, claim=None, add=(), remove=(), echo=pr
             if other.id != subject and other.actors.is_file():
                 for rel in records.load_verified(other.actors)['files']:
                     others[rel] = other.id
+        # A saved object's actor package is its own record's (kind placement), never its region's.
+        for asset in assets:
+            for output in asset.outputs:
+                for path in records.package_files(game, output.package):
+                    stem = path.with_suffix('')
+                    for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS:
+                        others[records.content_relative(game, stem.with_suffix(ext))] = asset.id
         files = dict.fromkeys(region_files(game, region, others, list(add), list(remove)))
         if not files and not region.actors.is_file():
             raise ValidationError(f'{subject} owns no saved actor packages; add them with --add')

@@ -39,3 +39,11 @@ key = '^(.*?)_cell'
 [[units]]
 folder = "/Game/MegaPark"
 map = "megapark/units.json"
+
+# Brine Cove (audit A1/A3): its generator bakes scenery into meshes by feature and 256 m tile, so a committed map
+# (written by tools/migrate/brinecove_units.py) makes each feature tile one unit with its soft and split pieces, names
+# the ship tiles that hold one ship alone (wreck, galleon-adventure), gives each plant family and hero model (with its
+# material instances and textures) its own unit, and keeps the shared materials and textures.
+[[units]]
+folder = "/Game/Brinecove"
+map = "brinecove/units.json"

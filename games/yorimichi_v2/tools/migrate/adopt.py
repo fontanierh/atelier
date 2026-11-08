@@ -119,6 +119,31 @@ class Units(dict):
         return list(self.info.get(unit, {}).get('references', []))
 
 
+def mapped_unit(rules: dict, folder: str, asset_id: str):
+    """(Units, unit name) when a `[[units]]` map partitions `folder` (a /Game folder or its top name), else None."""
+    mapped = rules.get(folder.rstrip('/') if folder.startswith('/Game/') else '/Game/' + folder.strip('/'))
+    if not isinstance(mapped, Units):
+        return None
+    return mapped, next(u for u in mapped.info if slug(u) == asset_id.rsplit('/', 1)[1])
+
+
+def unit_record(game: Path, asset_id: str, owner: str, about: str, packages: list[str], license_text: str,
+                provenance: str, found) -> tuple[str, list[tuple[Path, Path]]]:
+    """A record's text and the (original, copy) pairs of its unit's sources (`found` from mapped_unit, or None).
+    Sources are hashed from the originals, so the text is right before the copies are made."""
+    refs, copies = [], []
+    if found:
+        mapped, unit = found
+        provenance, refs = mapped.provenance(unit), mapped.references(unit)
+        repo = game.parents[1]
+        for repo_path in mapped.sources(unit):
+            if not (repo / repo_path).is_file():
+                raise AdoptError(f'{asset_id}: source {repo_path} is missing')
+            copies.append((repo / repo_path, game / 'assets' / asset_id / source_copy(repo_path)))
+    sources = [(dest.relative_to(game / 'assets' / asset_id).as_posix(), records.sha256_file(src)) for src, dest in copies]
+    return record_text(asset_id, owner, about, packages, license_text, provenance, sources, refs), copies
+
+
 def source_copy(repo_path: str) -> str:
     """Where a unit's source lands in its record folder: games/yorimichi/assets/x.png -> source/assets/x.png."""
     parts = Path(repo_path).parts
@@ -337,16 +362,11 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
     if problems:
         raise AdoptError('; '.join(problems[:5]))
     # Each mapped unit's recoverable originals, copied into its record (Units.sources).
-    repo = game.parents[1]
-    unit_of, originals = {}, []
-    for asset_id, (folder, *_rest) in plan.items():
-        mapped = rules.get('/Game/' + folder.strip('/') if not folder.startswith('/Game/') else folder.rstrip('/'))
-        if isinstance(mapped, Units):
-            unit_of[asset_id] = (mapped, next(u for u in mapped.info if slug(u) == asset_id.rsplit('/', 1)[1]))
-            for repo_path in mapped.sources(unit_of[asset_id][1]):
-                if not (repo / repo_path).is_file():
-                    raise AdoptError(f'{asset_id}: source {repo_path} is missing')
-                originals.append((repo / repo_path, game / 'assets' / asset_id / source_copy(repo_path)))
+    texts, originals = {}, []
+    for asset_id, (folder, owner, about, packages) in plan.items():
+        texts[asset_id], copies_of = unit_record(game, asset_id, owner, about, packages, license_text, PROVENANCE,
+                                                 mapped_unit(rules, folder, asset_id))
+        originals += copies_of
     report['sources'] = len(originals)
     if check_only:
         return report
@@ -360,15 +380,9 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
         dest.parent.mkdir(parents=True, exist_ok=True)
         if not dest.is_file() or records.sha256_file(dest) != records.sha256_file(path):
             shutil.copy2(path, dest)
-    for asset_id, (_, owner, about, packages) in sorted(plan.items()):
+    for asset_id, text in sorted(texts.items()):
         record = game / 'assets' / asset_id / 'asset.toml'
         record.parent.mkdir(parents=True, exist_ok=True)
-        provenance, sources, refs = PROVENANCE, [], []
-        if asset_id in unit_of:
-            mapped, unit = unit_of[asset_id]
-            provenance, refs = mapped.provenance(unit), mapped.references(unit)
-            sources = [(source_copy(s), records.sha256_file(record.parent / source_copy(s))) for s in mapped.sources(unit)]
-        text = record_text(asset_id, owner, about, packages, license_text, provenance, sources, refs)
         if not record.is_file() or record.read_text() != text:
             record.write_text(text)
     for folder, (_, packages) in found.items():
@@ -417,6 +431,7 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
                          f'{len(members) - len(set(members))} package(s); nothing written')
     verified = {a.id: records.load_verified(a.verified) for a in adopted if a.verified.is_file()}
     writes: dict[Path, tuple[str, str]] = {}      # path -> (unit ID, text)
+    originals: list[tuple[Path, Path, str]] = []   # (original, copy in the record, unit ID): Units.sources
     placed: set[tuple[str, str]] = set()           # (source record, verified file) carried into a unit
     for unit_id, (owner, about, packages) in sorted(units.items()):
         from_ids = {source[p].id for p in packages}
@@ -428,7 +443,10 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
             continue
         license_text, provenance = terms.pop()
         folder = game / 'assets' / unit_id
-        writes[folder / 'asset.toml'] = (unit_id, record_text(unit_id, owner, about, packages, license_text, provenance))
+        text, copies_of = unit_record(game, unit_id, owner, about, packages, license_text, provenance,
+                                      mapped_unit(rules, packages[0].split('/')[2], unit_id))
+        writes[folder / 'asset.toml'] = (unit_id, text)
+        originals += [(src, dest, unit_id) for src, dest in copies_of]
         checked = [s.id for s in sources if s.id in verified]
         if not checked:
             if (folder / 'verified.json').is_file():
@@ -458,13 +476,20 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
         raise AdoptError('; '.join(problems[:5]))
     deletes = [(a, path) for a in adopted if a.id not in units for path in (a.record, a.verified) if path.is_file()]
     changed = {p: w for p, w in writes.items() if not p.is_file() or p.read_text() != w[1]}
+    copies = [(src, dest, u) for src, dest, u in originals
+              if not dest.is_file() or records.sha256_file(dest) != records.sha256_file(src)]
     report = {'records': {u: len(units[u][2]) for u in sorted(units)}, 'packages': len(source),
-              'write': sorted(p.relative_to(game).as_posix() for p in changed),
+              'write': sorted(p.relative_to(game).as_posix() for p in [*changed, *(d for _, d, _ in copies)]),
               'delete': sorted(p.relative_to(game).as_posix() for _, p in deletes)}
-    if check_only or not (changed or deletes):
+    if check_only or not (changed or deletes or copies):
         return report
-    scopes = {authority.scope_of(u) for u, _ in changed.values()} | {authority.asset_scope(a) for a, _ in deletes}
-    _authorize(game, sorted(changed) + [p for _, p in deletes], claim, 'adoption repartition', scopes)
+    scopes = ({authority.scope_of(u) for u, _ in changed.values()} | {authority.scope_of(u) for _, _, u in copies}
+              | {authority.asset_scope(a) for a, _ in deletes})
+    _authorize(game, sorted(changed) + [d for _, d, _ in copies] + [p for _, p in deletes], claim,
+               'adoption repartition', scopes)
+    for src, dest, _ in copies:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
     for path, (_, text) in sorted(changed.items()):
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + '.tmp')
@@ -477,7 +502,7 @@ def repartition(game: Path, *, depth: int = DEPTH, cap: int = CAP, check_only=Fa
             folder.rmdir()
             folder = folder.parent
     echo(f'repartitioned {len(source)} adopted package(s) into {len(units)} record(s): '
-         f'{len(changed)} file(s) written, {len(deletes)} deleted')
+         f'{len(changed)} file(s) written, {len(copies)} source(s) copied, {len(deletes)} deleted')
     return report
 
 

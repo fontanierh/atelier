@@ -36,7 +36,7 @@ DONOR = REPO / 'games' / 'yorimichi'
 ASSETS = 'games/yorimichi/assets/brinecove/'
 OUT = GAME / 'assets' / 'adopted' / 'brinecove' / 'units.json'
 ROOT = '/Game/Brinecove/'
-MESH = re.compile(r'^SM_BC_(?:Hero_([A-Za-z]+)_cell|(Plant_[A-Za-z]+?)\d+$|([A-Za-z]+)_(-?\d+)_(-?\d+)(?:_|$))')
+MESH = re.compile(r'^SM_BC_(?:Hero_([A-Za-z]+)(?:_cell|$)|(Plant_[A-Za-z]+?)\d+$|([A-Za-z]+)_(-?\d+)_(-?\d+)(?:_|$))')
 HERO = re.compile(r'^(?:MI|T)_BC_hero_([a-z-]+)_\d+$')
 # Ship tiles holding a single ship (modules.ships(): the face centres of each ship alone).
 NAMED = {'ships-2-2': 'wreck', 'ships-3-3': 'galleon-adventure'}

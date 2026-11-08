@@ -24,7 +24,10 @@ KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'm
          'audio', 'map', 'blueprint', 'data', 'level-instance', 'foliage', 'physics',
          # One ownership unit of donor packages taken once as they are (tools/migrate/adopt.py, nested IDs such as
          # adopted/japan/hidamari), editor-owned from then on.
-         'adopted')
+         'adopted',
+         # One saved object of a map (its actor package): an editing unit of its own inside its region, recorded and
+         # validated apart from the region's other actors (tools/migrate/objects.py).
+         'placement')
 VERIFIED_KINDS = ('imported', 'editor-saved')
 LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
 ID = re.compile(r'^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9._-]*)+$')

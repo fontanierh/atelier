@@ -47,6 +47,13 @@ def steps(ctx):
              inputs=[UNREAL / 'Scripts/migrate_map.py'], after=['unreal.compile'], heavy=True, explicit=True,
              verify=lambda: 'migrate.map' in RAN,
              about='one-time migration of regions into a World Partition map (use tools/migrate/run.py)'),
+        # Explicit: saving runtime-region scenery groups as their own objects, run only by tools/migrate/objects.py.
+        Step('migrate.objects', [Call('authorize migration', _authorize_migration),
+                                 UnrealScript(UNREAL / 'Scripts/migrate_objects.py', 'V2 OBJECTS DONE'),
+                                 Call('check migration writes', _check_migration_writes), ran('migrate.objects')],
+             inputs=[UNREAL / 'Scripts/migrate_objects.py'], after=['unreal.compile'], heavy=True, explicit=True,
+             verify=lambda: 'migrate.objects' in RAN,
+             about='save runtime-region scenery groups as their own actors (use tools/migrate/objects.py)'),
         # Explicit: one named bootstrap-writer editor script (unreal/Scripts), guarded like every editor write.
         Step('editor.run', [Call('authorize editor script', _authorize_editor),
                             UnrealScript(UNREAL / 'Scripts/run_named.py', 'V2 EDITOR SCRIPT DONE'),
