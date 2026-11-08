@@ -43,10 +43,15 @@ class ObjectError(RuntimeError):
     pass
 
 
+SPLIT_TOLERANCE_CM = 50.0   # a placed thing is found within this of its source point; placements lie metres apart
+
+
 def load_objects(region) -> dict:
-    """The region's objects.toml: {tag, data, objects: [{id, groups, patch, model, about}]}. An object names one
+    """The region's objects.toml: {tag, data, objects: [{id, groups, patch, split, model, about}]}. An object names one
     runtime `group` or several `groups` (a statue cut into cells), each group belonging to one object; or the `patch`
-    (its V2Id in the region's patches.json) the migration already saved holding it alone, which it takes over."""
+    (its V2Id in the region's patches.json) the migration already saved holding it alone, which it takes over; or a
+    `split` = {key, at = [x, y]}: the instances of that source key placed at that source point (metres, as in
+    world.json and city.json), which leave the area patches holding them for an actor of their own."""
     path = region.folder / 'objects.toml'
     if not path.is_file():
         raise ObjectError(f'{region.id} has no objects.toml')
@@ -55,15 +60,21 @@ def load_objects(region) -> dict:
         raise ObjectError(f'{path}: needs schema = {records.SCHEMA}, tag and data')
     objects = data.get('objects', [])
     for item in objects:
-        keys = set(item) - {'group', 'groups', 'patch'}
-        if keys != {'id', 'model', 'about'} or len({'group', 'groups', 'patch'} & set(item)) != 1 \
+        keys = set(item) - {'group', 'groups', 'patch', 'split'}
+        if keys != {'id', 'model', 'about'} or len({'group', 'groups', 'patch', 'split'} & set(item)) != 1 \
                 or not records.ID.match(item['id']) or not item['id'].startswith('object/'):
-            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", one of group, groups or patch, model '
-                              f'and about, not {item}')
+            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", one of group, groups, patch or '
+                              f'split, model and about, not {item}')
+        split = item.get('split')
+        if split is not None and (not isinstance(split, dict) or set(split) != {'key', 'at'}
+                                  or not isinstance(split['key'], str) or len(split['at']) != 2
+                                  or not all(isinstance(v, (int, float)) for v in split['at'])):
+            raise ObjectError(f'{path}: {item["id"]}: split needs key = "..." and at = [x, y], not {split}')
         item['groups'] = [item.pop('group')] if 'group' in item else list(item.get('groups', []))
-    for values in ([i['patch'] for i in objects if 'patch' in i],):
+    for values in ([i['patch'] for i in objects if 'patch' in i],
+                   [(i['split']['key'], *i['split']['at']) for i in objects if 'split' in i]):
         if len(values) != len(set(values)):
-            raise ObjectError(f'{path}: a patch is listed twice')
+            raise ObjectError(f'{path}: a patch or a split placement is listed twice')
     for values in ([i['id'] for i in objects], [i['id'].rsplit('/', 1)[1] for i in objects],
                    [g for i in objects for g in i['groups']]):
         if len(values) != len(set(values)):
@@ -80,6 +91,22 @@ def record_text(item: dict, region: str, package: str) -> str:
         f'references = ["{item["model"]}"]', '', '[[outputs]]', f'package = "{package}"', ''])
 
 
+def claim_paths(game: Path, region_ids: list[str], *, only=None) -> dict[str, list[str]]:
+    """What a claim for these regions' objects locks and lists: {"lock": the area patch packages their split
+    objects leave (every patch of each split key in patches.json), "path": each object record's two files}."""
+    _, regions = records.discover(game)
+    by_id = {r.id: r for r in regions}
+    lock, path = set(), set()
+    for rid in region_ids:
+        items = [i for i in load_objects(by_id[rid])['objects'] if only is None or i['id'] in set(only)]
+        keys = {i['split']['key'] for i in items if 'split' in i}
+        roster = by_id[rid].folder / 'patches.json'
+        patches = json.loads(roster.read_text()).get('patches', {}) if roster.is_file() else {}
+        lock |= {f'games/yorimichi_v2/{e["package"]}' for e in patches.values() if e['key'] in keys}
+        path |= {f'games/yorimichi_v2/assets/{i["id"]}/{name}' for i in items for name in ('asset.toml', 'verified.json')}
+    return {'lock': sorted(lock), 'path': sorted(path)}
+
+
 def native_run(plan_file: Path) -> str:
     env = {**os.environ, 'V2_MIGRATE_PLAN': str(plan_file)}
     LOG.unlink(missing_ok=True)
@@ -90,41 +117,53 @@ def native_run(plan_file: Path) -> str:
     return LOG.read_text(errors='replace') if LOG.is_file() else ''
 
 
-def migrate(game: Path, region_ids: list[str], environment: str, claim: str | None, *, only=None, editor=native_run,
+def migrate(game: Path, region_ids: list[str], environment: str | None, claim: str | None, *, only=None, editor=native_run,
             out: Path = REPO / 'build/yorimichi_v2/migrate', echo=print) -> dict[str, str]:
     """Save the regions' objects (`only` these object IDs, when given) and record each; returns {object id: actor
     package}. `editor` runs the guarded editor part on the plan file and returns its log (tools/editor/session.py
-    runs it in a warm editor)."""
+    runs it in a warm editor). `environment`, the region owning the map's manifest, is needed only for runtime-group
+    objects (the manifest lists their groups); split objects touch only their own regions."""
     _, regions = records.discover(game)
     by_id = {r.id: r for r in regions}
-    missing = [r for r in region_ids + [environment] if r not in by_id]
+    missing = [r for r in region_ids + ([environment] if environment else []) if r not in by_id]
     if only is not None and not set(only) <= {i['id'] for r in region_ids if r in by_id
-                                              for i in load_objects(by_id[r])['objects'] if i['groups']}:
+                                              for i in load_objects(by_id[r])['objects'] if 'patch' not in i}:
         raise ObjectError(f'{sorted(only)}: not all are objects of {region_ids}')
     if missing:
         raise ObjectError(f'no region record for {missing}')
     maps = {m for r in region_ids for m in by_id[r].maps}
     if len(maps) != 1:
         raise ObjectError(f'the regions must share exactly one map, not {sorted(maps)}')
-    wanted, groups = {}, []
+    wanted, groups, splits = {}, [], []
     for rid in region_ids:
         listed = load_objects(by_id[rid])
-        listed['objects'] = [item for item in listed['objects'] if item['groups']]   # patch objects: promote()
+        listed['objects'] = [item for item in listed['objects'] if 'patch' not in item]   # patch objects: promote()
         if only is not None:
             listed['objects'] = [item for item in listed['objects'] if item['id'] in set(only)]
         if not listed['objects']:
             continue
         pairs = [(g, item['id'].rsplit('/', 1)[1]) for item in listed['objects'] for g in item['groups']]
-        groups.append({'region': rid, 'tag': listed['tag'], 'data': listed['data'],
-                       'meshes': [g for g, _ in pairs], 'objects': [o for _, o in pairs]})
+        if pairs:
+            groups.append({'region': rid, 'tag': listed['tag'], 'data': listed['data'],
+                           'meshes': [g for g, _ in pairs], 'objects': [o for _, o in pairs]})
+        cut = [item for item in listed['objects'] if 'split' in item]
+        if cut:
+            # Source metres to Unreal cm: (100 x, -100 y), as the migration placed them (inventory/world.md §1).
+            splits.append({'region': rid, 'tag': listed['tag'], 'keys': [i['split']['key'] for i in cut],
+                           'objects': [i['id'].rsplit('/', 1)[1] for i in cut],
+                           'points_cm': [[100.0 * i['split']['at'][0], -100.0 * i['split']['at'][1]] for i in cut],
+                           'tolerance_cm': SPLIT_TOLERANCE_CM})
         for item in listed['objects']:
             wanted[f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'] = (rid, item)
+    if groups and not environment:
+        raise ObjectError('--environment is needed to save runtime-group objects (the manifest lists their groups)')
+    environment = environment if groups else None
     if claim:
-        authority.creation_claim(claim, region_ids + [environment], 'object migration')
+        authority.creation_claim(claim, region_ids + ([environment] if environment else []), 'object migration')
     else:
         authority.authorize([], None, 'object migration')
     plan = {'map': maps.pop(), 'claim': claim, 'regions': [{'id': r} for r in region_ids], 'environment': environment,
-            'groups': groups}
+            'groups': groups, 'splits': splits}
     out.mkdir(parents=True, exist_ok=True)
     plan_file = out / 'objects-plan.json'
     plan_file.write_text(json.dumps(plan, indent=2, sort_keys=True) + '\n')
@@ -148,7 +187,10 @@ def migrate(game: Path, region_ids: list[str], environment: str, claim: str | No
             record.write_text(text)
         save_validate.validate(game, item['id'], claim=claim, echo=echo)
         made[item['id']] = saved[key]
-    save_validate.validate(game, environment, claim=claim, echo=echo)   # the manifest lists the saved groups
+    if groups:
+        save_validate.validate(game, environment, claim=claim, echo=echo)   # the manifest lists the saved groups
+    for split in splits:   # its area patches gave up the split objects' instances
+        save_validate.validate(game, split['region'], claim=claim, echo=echo)
     owned = {records.content_relative(game, p) for package in made.values()
              for p in records.package_files(game, package)}
     stray = [rel for rel in created if rel.rsplit('.', 1)[0] not in {o.rsplit('.', 1)[0] for o in owned}]
@@ -207,12 +249,14 @@ def main(argv=None) -> int:
                         help='record the `patch` objects (no editor): their saved patches become their own records')
     parser.add_argument('--claim', help='claims task holding the regions and the environment')
     parser.add_argument('--only', action='append', help='only this object ID (repeatable)')
+    parser.add_argument('--claim-paths', action='store_true',
+                        help='print (JSON) the lock paths and paths a claim for these objects needs, and exit')
     args = parser.parse_args(argv)
     try:
-        if args.promote:
+        if args.claim_paths:
+            print(json.dumps(claim_paths(GAME, args.regions, only=args.only), indent=1))
+        elif args.promote:
             promote(GAME, args.regions, args.claim, only=args.only)
-        elif not args.environment:
-            raise ObjectError('--environment is needed to migrate runtime-group objects')
         else:
             migrate(GAME, args.regions, args.environment, args.claim, only=args.only)
     except (ObjectError, authority.Unauthorized, save_validate.ValidationError, records.RecordError) as error:
