@@ -6,6 +6,7 @@
 #include "Hippodrome.h"
 #include "AtelierData.h"
 #include "BelmonteRegion.h"
+#include "V2MigrationTowns.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -351,24 +352,36 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
     if (!Manifest) { Error = TEXT("the map has no AV2WorldManifest"); return -1; }
     const auto Data = AtelierReadJson(AtelierDataPath(DataFile));
     if (!Data) { Error = DataFile + TEXT(" is missing or unreadable"); return -1; }
-    // Every listed mesh is one non-plant group of this runtime file, or nothing is made.
-    TMap<FString, TSharedPtr<FJsonObject>> Entries;
-    for (const auto& Value : Data->GetArrayField(TEXT("groups")))
+    // Every listed key is one group of this runtime file (V2MigrationTowns::GroupKeys), or a cell piece "<key>@x_y" of
+    // one: the piece holds the group's instances in that 128 m cell. Each listed key is saved once.
+    struct FSource
     {
-        const auto Entry = Value->AsObject();
-        const FString Name = FPaths::GetBaseFilename(Entry->GetStringField(TEXT("asset")));
-        if (Meshes.Contains(Name)) Entries.Add(Name, Entry);
-    }
-    TMap<FString, TArray<FString>> Groups;   // object -> its meshes, in the order given
+        TSharedPtr<FJsonObject> Entry;
+        bool bPiece = false;
+        int32 CellX = 0, CellY = 0;
+    };
+    const TArray<FString> Keys = V2MigrationTowns::GroupKeys(Data);
+    const TArray<TSharedPtr<FJsonValue>>& GroupValues = Data->GetArrayField(TEXT("groups"));
+    TMap<FString, int32> IndexOf;
+    for (int32 I = 0; I < Keys.Num(); ++I) IndexOf.Add(Keys[I], I);
+    TMap<FString, FSource> Entries;
+    TMap<FString, TArray<FString>> Groups;   // object -> its listed keys, in the order given
     TArray<FString> Order;
     for (int32 I = 0; I < Meshes.Num(); ++I)
     {
-        const FString& Name = Meshes[I];
-        if (!Entries.Contains(Name)) { Error = Name + TEXT(" is no group of ") + DataFile; return -1; }
-        if (Entries[Name]->GetBoolField(TEXT("plant"))) { Error = Name + TEXT(" is a plant group: plants join the island's tree lists"); return -1; }
+        const FString& Listed = Meshes[I];
+        if (Entries.Contains(Listed)) { Error = Listed + TEXT(" is listed twice"); return -1; }
+        FSource Source;
+        FString Key = Listed;
+        Source.bPiece = V2MigrationTowns::ParsePieceKey(Listed, Key, Source.CellX, Source.CellY);
+        const int32* Index = IndexOf.Find(Key);
+        if (!Index) { Error = Listed + TEXT(" is no group of ") + DataFile; return -1; }
+        Source.Entry = GroupValues[*Index]->AsObject();
+        Entries.Add(Listed, Source);
         if (!Groups.Contains(Objects[I])) Order.Add(Objects[I]);
-        Groups.FindOrAdd(Objects[I]).Add(Name);
+        Groups.FindOrAdd(Objects[I]).Add(Listed);
     }
+    const auto Clearance = V2MigrationTowns::GondolaClearance();
     TMap<FString, AV2ScenePatch*> Existing;
     for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
     const auto& O = Data->GetArrayField(TEXT("origin_cm"));
@@ -386,21 +399,36 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
         Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Object, *Id));
         Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
         Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
-        for (const FString& Name : Groups[Object])
+        for (const FString& Listed : Groups[Object])
         {
-            const auto& Entry = Entries[Name];
+            const FSource& Source = Entries[Listed];
+            const auto& Entry = Source.Entry;
             auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Entry->GetStringField(TEXT("asset")));
-            if (!Mesh) { Error = Name + TEXT(": its mesh is missing from V2 Content"); break; }
+            if (!Mesh) { Error = Listed + TEXT(": its mesh is missing from V2 Content"); break; }
+            const bool bPlant = Entry->GetBoolField(TEXT("plant"));
             int32 Missing = 0, Outside = 0;
             UHierarchicalInstancedStaticMeshComponent* C = ABelmonteRegion::MakeGroup(Made, Made->GetRootComponent(), Entry, Mesh, Tag, Missing);
             C->CreationMethod = EComponentCreationMethod::Instance;
             Made->AddInstanceComponent(C);
             C->bAutoRebuildTreeOnInstanceChanges = false;
+            // A saved plant group joins the island's tree lists as the runtime's own plant groups do: RegisterScenePatch
+            // adds a RoleGroup component to Landscape->Groups, once, and the runtime never spawns a saved group again.
+            if (bPlant) C->ComponentTags.AddUnique(AV2ScenePatch::RoleGroup);
             C->RegisterComponent();
-            C->AddInstances(ABelmonteRegion::SceneryTransforms(Data, Entry, Outside), false, false, false);
+            // The runtime's own filters: plants by the gondola clearance, other groups by the district's bounds.
+            TArray<FTransform> Placements = bPlant ? ABelmonteRegion::PlantTransforms(Data, Entry, Clearance)
+                                                   : ABelmonteRegion::SceneryTransforms(Data, Entry, Outside);
+            if (Source.bPiece)
+                Placements.RemoveAll([&](const FTransform& T)
+                {
+                    int32 X = 0, Y = 0;
+                    V2MigrationTowns::CellOf(Origin, T, X, Y);
+                    return X != Source.CellX || Y != Source.CellY;
+                });
+            C->AddInstances(Placements, false, false, false);
             C->BuildTreeIfOutdated(false, true);
             C->bAutoRebuildTreeOnInstanceChanges = true;
-            if (Missing || !C->GetInstanceCount()) { Error = Name + TEXT(": missing materials or no instance inside the district"); break; }
+            if (Missing || !C->GetInstanceCount()) { Error = Listed + TEXT(": missing materials or no instance inside the district"); break; }
         }
         if (!Error.IsEmpty()) break;
     }

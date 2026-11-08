@@ -3,6 +3,7 @@
 #include "JapanWorld.h"
 #include "SeeThrough.h"
 #include "V2ScenePatch.h"
+#include "V2MigrationTowns.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
@@ -136,6 +137,20 @@ TArray<FTransform> ABelmonteRegion::SceneryTransforms(const TSharedPtr<FJsonObje
     return Instances;
 }
 
+TArray<FTransform> ABelmonteRegion::PlantTransforms(const TSharedPtr<FJsonObject>& Data, const TSharedPtr<FJsonObject>& Entry, const TSharedPtr<FJsonObject>& Clearance)
+{
+    const FVector Origin = Vector(Data->GetArrayField(TEXT("origin_cm")));
+    TArray<FTransform> Instances;
+    for (const auto& Item : Entry->GetArrayField(TEXT("transforms")))
+    {
+        const FTransform Placement = Transform(Item->AsObject());
+        const FVector P = Origin + Placement.GetLocation();
+        if (InClearance(Clearance, P.X / 100., -P.Y / 100.)) continue;
+        Instances.Add(Placement);
+    }
+    return Instances;
+}
+
 ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& Path, FName Tag)
 {
     const auto Data = AtelierReadJson(Path);
@@ -145,15 +160,20 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     Region->SetActorLocation(Vector(Data->GetArrayField(TEXT("origin_cm"))));
     Region->GetRootComponent()->SetMobility(EComponentMobility::Static);
     Region->Tags.Add(Tag);
-    const auto GondolaClearance=AtelierReadJson(AtelierDataPath(TEXT("gondola/runtime.json")));
-    // Groups this map holds as saved patches (UV2Migration::MigrateRegionGroups) are not spawned again.
+    const auto GondolaClearance = V2MigrationTowns::GondolaClearance();
+    // Groups this map holds as saved patches (UV2Migration::MigrateRegionGroups) are not spawned again, by their key
+    // (V2MigrationTowns::GroupKeys); a plant group's cell pieces that are saved are left out of it.
     const AV2WorldManifest* Manifest = AV2WorldManifest::Find(Landscape->GetWorld());
+    const TArray<FString> Keys = V2MigrationTowns::GroupKeys(Data);
+    const TArray<TSharedPtr<FJsonValue>>& Groups = Data->GetArrayField(TEXT("groups"));
+    const FVector Origin = Vector(Data->GetArrayField(TEXT("origin_cm")));
     int32 Missing = 0, Outside = 0, Saved = 0;
-    for (const auto& Value : Data->GetArrayField(TEXT("groups")))
+    for (int32 Index = 0; Index < Groups.Num(); ++Index)
     {
-        const auto Entry = Value->AsObject();
+        const auto Entry = Groups[Index]->AsObject();
         const FString Asset = Entry->GetStringField(TEXT("asset"));
-        if (Manifest && Manifest->CoversGroup(Tag, FPaths::GetBaseFilename(Asset)))
+        const FString& Key = Keys[Index];
+        if (Manifest && Manifest->CoversGroup(Tag, Key))
         {
             // Its saved patch draws it; its mesh must still be committed content (checked without loading it).
             if (FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(Asset))) ++Saved;
@@ -179,12 +199,12 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
         Group->RegisterComponent();
         TArray<FTransform> Instances;
         if (Plant)
-            for (const auto& Item : Entry->GetArrayField(TEXT("transforms")))
+            for (FTransform Placement : PlantTransforms(Data, Entry, GondolaClearance))
             {
-                FTransform Placement = Transform(Item->AsObject());
+                int32 CellX = 0, CellY = 0;
+                V2MigrationTowns::CellOf(Origin, Placement, CellX, CellY);
+                if (Manifest && Manifest->CoversGroup(Tag, V2MigrationTowns::PieceKey(Key, CellX, CellY))) continue;
                 Placement.AddToTranslation(Region->GetActorLocation());
-                const FVector P=Placement.GetLocation();
-                if(InClearance(GondolaClearance,P.X/100.,-P.Y/100.))continue;
                 Instances.Add(Placement);
             }
         else Instances = SceneryTransforms(Data, Entry, Outside);

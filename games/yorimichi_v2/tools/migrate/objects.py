@@ -53,6 +53,8 @@ REPO = GAME.parents[1]
 sys.path.insert(0, str(GAME / 'tools/content'))
 import authority  # noqa: E402
 import records  # noqa: E402
+sys.path.insert(0, str(HERE))
+import towns  # noqa: E402
 import save_validate  # noqa: E402
 
 LOG = REPO / 'build/yorimichi_v2/logs/migrate.objects.guard/stdout.log'   # the guarded editor's output
@@ -313,6 +315,12 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
             continue
         pairs = [(g, item['id'].rsplit('/', 1)[1]) for item in listed['objects'] for g in item['groups']]
         if pairs:
+            data_path = game / 'unreal/Content/Data' / listed['data']
+            if data_path.is_file() and not records.is_lfs_pointer(data_path):   # a key is a group of the runtime file,
+                try:                                                             # or a cell piece of a plant group
+                    towns.check_group_keys(listed['tag'], [g for g, _ in pairs], json.loads(data_path.read_text()))
+                except (towns.TownError, ValueError) as error:
+                    raise ObjectError(f'{rid}: {error}') from None
             groups.append({'region': rid, 'tag': listed['tag'], 'data': listed['data'],
                            'meshes': [g for g, _ in pairs], 'objects': [o for _, o in pairs]})
         cut = [item for item in listed['objects'] if 'split' in item]
