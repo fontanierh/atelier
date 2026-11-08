@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): the starting stalls.
+# Its placement is this actor package; its model is adopted/belmonte/hippodrome-starting-stalls. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/hippodrome-starting-stalls"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/hippodrome-starting-stalls"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/IF/PCRKE1VUVTB9U2IBCBALHI"

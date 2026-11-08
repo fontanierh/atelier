@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/porta-nw",
+  "dependencies": {
+    "adopted/belmonte/town-porta-nw": "4efd0479e266be486a5f46aa20c5938e5222c5bc5bd87b6db858547c0e4bf7bd"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/4G/40F14TMB4O57EVX9KFF81F.uasset": "e4b0f4a646a087470e8f0bf6404c6dd0f2ebaa31dfff27484856c4e47c7a7660"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

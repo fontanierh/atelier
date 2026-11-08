@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-second-stand",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-second-stand": "b69b69ed68ee7e9ef6f3215e6557b36b137ca112272d240cf84862aa48e84084"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/DS/UYGUAEJORSZRYAHBWBYGUP.uasset": "dd7a1580834dcce4f8f8034b186e9151dacac72f5a80d68e16a8f1e4bc656aa2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

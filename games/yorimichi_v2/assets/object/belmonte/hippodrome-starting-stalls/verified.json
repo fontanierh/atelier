@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-starting-stalls",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-starting-stalls": "70233ced05154abd7a65958f446ad16d174d77c529b4393336be60c5730deae5"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/IF/PCRKE1VUVTB9U2IBCBALHI.uasset": "7f76f69ffd9f4af0504abc9e51037d8e5db0719ca525140b679c94f568ed76df"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

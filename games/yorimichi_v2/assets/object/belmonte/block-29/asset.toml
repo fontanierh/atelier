@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): town block 29.
+# Its placement is this actor package; its model is adopted/belmonte/block-29. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/block-29"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/block-29"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/8/N3/VGB1VN5SQQO3M6HVYE252Y"
