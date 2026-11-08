@@ -12,6 +12,11 @@ its own record, `assets/<object id>/asset.toml` (kind placement, owner the regio
 validated on its own: two objects of one region are two claims and two verification files, so two people can edit
 them at once. A rerun keeps every saved object as it is, edits included, and creates nothing.
 
+A `park` object is one unit of a park (Mega Park's stream cells, Crater Park's pieces): the render and collision meshes
+of its park file (unreal/Content/Data/<park>/park.json) that the unit owns. UV2Migration::MigrateParkPieces saves them
+as the unit's AV2ScenePatch at the park's placement, and ASuperUltraMegaPark::Spawn skips exactly those pieces. The
+entries are written by tools/migrate/parks.py.
+
 The claim holds the region's and the environment's scopes, the manifest's actor package, and each object record's
 two files; the created actor packages are bound to it by the build step.
 """
@@ -47,11 +52,12 @@ SPLIT_TOLERANCE_CM = 50.0   # a placed thing is found within this of its source 
 
 
 def load_objects(region) -> dict:
-    """The region's objects.toml: {tag, data, objects: [{id, groups, patch, split, model, about}]}. An object names one
+    """The region's objects.toml: {tag, data, objects: [{id, groups, patch, split, park, model, about}]}. An object names one
     runtime `group` or several `groups` (a statue cut into cells), each group belonging to one object; or the `patch`
     (its V2Id in the region's patches.json) the migration already saved holding it alone, which it takes over; or a
     `split` = {key, at = [x, y]}: the instances of that source key placed at that source point (metres, as in
-    world.json and city.json), which leave the area patches holding them for an actor of their own."""
+    world.json and city.json), which leave the area patches holding them for an actor of their own; or a `park` = [the
+    render and collision mesh names of one park unit], read from the region's `data` park file."""
     path = region.folder / 'objects.toml'
     if not path.is_file():
         raise ObjectError(f'{region.id} has no objects.toml')
@@ -59,12 +65,18 @@ def load_objects(region) -> dict:
     if data.get('schema') != records.SCHEMA or not isinstance(data.get('tag'), str) or not isinstance(data.get('data'), str):
         raise ObjectError(f'{path}: needs schema = {records.SCHEMA}, tag and data')
     objects = data.get('objects', [])
+    kinds = {'group', 'groups', 'patch', 'split', 'park'}
     for item in objects:
-        keys = set(item) - {'group', 'groups', 'patch', 'split'}
-        if keys != {'id', 'model', 'about'} or len({'group', 'groups', 'patch', 'split'} & set(item)) != 1 \
+        keys = set(item) - kinds
+        if keys != {'id', 'model', 'about'} or len(kinds & set(item)) != 1 \
                 or not records.ID.match(item['id']) or not item['id'].startswith('object/'):
-            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", one of group, groups, patch or '
-                              f'split, model and about, not {item}')
+            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", one of group, groups, patch, split or '
+                              f'park, model and about, not {item}')
+        park = item.get('park')
+        if park is not None and (not isinstance(park, list) or not park or not all(isinstance(n, str) and n for n in park)):
+            raise ObjectError(f'{path}: {item["id"]}: park needs a list of mesh names, not {park}')
+        if park is not None and not data['data']:
+            raise ObjectError(f'{path}: {item["id"]}: a park object needs data = "<park>/park.json"')
         split = item.get('split')
         if split is not None and (not isinstance(split, dict) or set(split) != {'key', 'at'}
                                   or not isinstance(split['key'], str) or len(split['at']) != 2
@@ -75,6 +87,9 @@ def load_objects(region) -> dict:
                    [(i['split']['key'], *i['split']['at']) for i in objects if 'split' in i]):
         if len(values) != len(set(values)):
             raise ObjectError(f'{path}: a patch or a split placement is listed twice')
+    parks = [p for i in objects for p in i.get('park', [])]
+    if len(parks) != len(set(parks)):
+        raise ObjectError(f'{path}: a park piece is listed twice')
     for values in ([i['id'] for i in objects], [i['id'].rsplit('/', 1)[1] for i in objects],
                    [g for i in objects for g in i['groups']]):
         if len(values) != len(set(values)):
@@ -107,6 +122,31 @@ def claim_paths(game: Path, region_ids: list[str], *, only=None) -> dict[str, li
     return {'lock': sorted(lock), 'path': sorted(path)}
 
 
+def park_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> dict:
+    """The plan entry of a region's park objects: each piece's mesh name, whether the park file makes it a collision
+    piece, and the unit it joins. Every name must be a render or collision entry of the park file, and listed once (the
+    load checks that too). The park file is read here, so an unknown name is refused before the editor runs."""
+    path = game / 'unreal/Content/Data' / data
+    if not path.is_file() or records.is_lfs_pointer(path):
+        raise ObjectError(f'{region}: {path} is missing or still a Git LFS pointer; fetch the park data first')
+    try:
+        spec = json.loads(path.read_text())
+    except ValueError as error:
+        raise ObjectError(f'{region}: {path} is not JSON: {error}') from None
+    kinds = {entry['name']: collision for kind, collision in (('render', False), ('collision', True))
+             for entry in spec.get(kind, [])}
+    pieces, is_collision, joined = [], [], []
+    for item in units:
+        unit = item['id'].rsplit('/', 1)[1]
+        for name in item['park']:
+            if name not in kinds:
+                raise ObjectError(f'{item["id"]}: {name} is no render or collision piece of {data}')
+            pieces.append(name)
+            is_collision.append(kinds[name])
+            joined.append(unit)
+    return {'region': region, 'tag': tag, 'data': data, 'pieces': pieces, 'is_collision': is_collision, 'units': joined}
+
+
 def native_run(plan_file: Path) -> str:
     env = {**os.environ, 'V2_MIGRATE_PLAN': str(plan_file)}
     LOG.unlink(missing_ok=True)
@@ -134,7 +174,7 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     maps = {m for r in region_ids for m in by_id[r].maps}
     if len(maps) != 1:
         raise ObjectError(f'the regions must share exactly one map, not {sorted(maps)}')
-    wanted, groups, splits = {}, [], []
+    wanted, groups, splits, parks = {}, [], [], []
     for rid in region_ids:
         listed = load_objects(by_id[rid])
         listed['objects'] = [item for item in listed['objects'] if 'patch' not in item]   # patch objects: promote()
@@ -153,17 +193,20 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
                            'objects': [i['id'].rsplit('/', 1)[1] for i in cut],
                            'points_cm': [[100.0 * i['split']['at'][0], -100.0 * i['split']['at'][1]] for i in cut],
                            'tolerance_cm': SPLIT_TOLERANCE_CM})
+        units = [item for item in listed['objects'] if 'park' in item]
+        if units:
+            parks.append(park_plan(rid, listed['tag'], listed['data'], units, game))
         for item in listed['objects']:
             wanted[f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'] = (rid, item)
-    if groups and not environment:
-        raise ObjectError('--environment is needed to save runtime-group objects (the manifest lists their groups)')
-    environment = environment if groups else None
+    if (groups or parks) and not environment:
+        raise ObjectError('--environment is needed to save runtime-group and park objects (the manifest lists their meshes)')
+    environment = environment if groups or parks else None
     if claim:
         authority.creation_claim(claim, region_ids + ([environment] if environment else []), 'object migration')
     else:
         authority.authorize([], None, 'object migration')
     plan = {'map': maps.pop(), 'claim': claim, 'regions': [{'id': r} for r in region_ids], 'environment': environment,
-            'groups': groups, 'splits': splits}
+            'groups': groups, 'splits': splits, 'parks': parks}
     out.mkdir(parents=True, exist_ok=True)
     plan_file = out / 'objects-plan.json'
     plan_file.write_text(json.dumps(plan, indent=2, sort_keys=True) + '\n')
@@ -178,8 +221,8 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     created = sorted(set(authority.content_snapshot(game)) - set(before))
     made = record_objects(game, [(rid, item, saved[key]) for key, (rid, item) in sorted(wanted.items())], claim,
                           echo=echo)
-    if groups:
-        save_validate.validate(game, environment, claim=claim, echo=echo)   # the manifest lists the saved groups
+    if groups or parks:
+        save_validate.validate(game, environment, claim=claim, echo=echo)   # the manifest lists the saved groups and pieces
     for split in splits:   # its area patches gave up the split objects' instances
         save_validate.validate(game, split['region'], claim=claim, echo=echo)
     owned = {records.content_relative(game, p) for package in made.values()
