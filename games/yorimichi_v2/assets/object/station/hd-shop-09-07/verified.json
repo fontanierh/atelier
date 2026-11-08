@@ -1,0 +1,15 @@
+{
+  "asset": "object/station/hd-shop-09-07",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/shop-09-0-0": "2c0794a9ec623183cb1057e479dfe86d8fcdc57c7af604af3f02a2207bc13d71",
+    "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1": "54233c48e8100e70a8b0930741eb857f7f02d97714182f7a41fe6082b46fcd97",
+    "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0": "cb5d2293d9184f8daef9eb356cf4078a357fa5c252a3fcc4ea18ecf7caa405b9",
+    "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1": "597872de9053bb64006ee8029140ce514ab8b947cd37c7f5b875e81f8379d617"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/GM/6L93WDQMZ6L7S2HTHNZWVJ.uasset": "5cc1c493aaca8f20f32cad873431f2d82753c2446eca72647812e02170158377"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

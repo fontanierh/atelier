@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-station (tools/migrate/objects.py, from its objects.toml): HD_Shop_09 3 of 7 in w07-hidamari-station, placed at (993.667, 211) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/shop-09-0-0, adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1, adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0, adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/station/hd-shop-09-03"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-station"
+references = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/Q7/1V0CM58ODN7FATSC0NYK7M"

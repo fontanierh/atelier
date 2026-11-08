@@ -92,6 +92,11 @@ def load_objects(region) -> dict:
                                   or not isinstance(split['key'], str) or len(split['at']) != 2
                                   or not all(isinstance(v, (int, float)) for v in split['at'])):
             raise ObjectError(f'{path}: {item["id"]}: split needs key = "..." and at = [x, y], not {split}')
+        models = [item['model']] if isinstance(item['model'], str) else item['model']
+        if (not isinstance(models, list) or not models or len(set(models)) != len(models)
+                or not all(isinstance(m, str) and records.ID.match(m) for m in models)):
+            raise ObjectError(f'{path}: {item["id"]}: model is one record id or a list of distinct record ids, not {item["model"]}')
+        item['models'] = models
         item['groups'] = [item.pop('group')] if 'group' in item else list(item.get('groups', []))
     for values in ([v for i in objects if 'patch' in i for v in patch_ids(i)],
                    [(i['split']['key'], *i['split']['at']) for i in objects if 'split' in i]):
