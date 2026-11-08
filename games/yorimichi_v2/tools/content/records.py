@@ -85,6 +85,7 @@ class Region:
     neighbours: list[str]
     maps: list[str]                                 # /Game/... maps whose external actors this region may own
     shared: list[str] = field(default_factory=list)  # shared scopes it reads (sky, sea material, ...)
+    patch_m: float | None = None                    # its saved scenery patch size, when not the migration default
 
     @property
     def actors(self) -> Path:
@@ -152,7 +153,7 @@ def _portable(value: str, where: Path, key: str) -> str:
 
 ASSET_KEYS = {'schema', 'id', 'kind', 'authority', 'owner', 'sources', 'recipe', 'references', 'input_dependencies',
               'outputs', 'license', 'provenance', 'validation'}
-REGION_KEYS = {'schema', 'id', 'bounds_cm', 'neighbours', 'maps', 'shared', 'about'}
+REGION_KEYS = {'schema', 'id', 'bounds_cm', 'neighbours', 'maps', 'shared', 'about', 'patch_m'}
 
 
 def _known(data: dict, keys: set, where: Path, table: str = ''):
@@ -245,8 +246,12 @@ def load_region(path: Path) -> Region:
     for package in maps:
         if not PACKAGE.match(package):
             raise RecordError(f'{path}: map {package!r} must be a /Game package path')
+    patch_m = data.get('patch_m')
+    if patch_m is not None and (isinstance(patch_m, bool) or not isinstance(patch_m, (int, float)) or patch_m < 1):
+        raise RecordError(f'{path}: patch_m must be a size of 1 m or more')
     return Region(region_id, path.parent.resolve(), tuple(float(v) for v in bounds),
-                  list(data.get('neighbours', [])), maps, list(data.get('shared', [])))
+                  list(data.get('neighbours', [])), maps, list(data.get('shared', [])),
+                  None if patch_m is None else float(patch_m))
 
 
 def load_verified(path: Path) -> dict:

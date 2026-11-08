@@ -65,9 +65,11 @@ def make_plan(game: Path, ids: list[str], environment: str, services, only_migra
         for b in mapped[index + 1:]:
             if overlap(a.bounds_cm, b.bounds_cm) and (a.id in ids or b.id in ids):
                 raise MigrationError(f'{a.id} and {b.id} overlap on {next(iter(maps))}: their scenery would be copied twice')
-    return {'map': maps.pop(), 'environment': environment, 'services': list(services), 'patch_m': patch_m,
+    # A region keeps the patch size its scenery was saved at (region.toml patch_m): the map was migrated in parts.
+    size = lambda i: by_id[i].patch_m or patch_m  # noqa: E731
+    return {'map': maps.pop(), 'environment': environment, 'services': list(services), 'patch_m': size(environment),
             'only_migrated': only_migrated, 'runtime_services': list(runtime_services),
-            'regions': [{'id': i, 'bounds_cm': list(by_id[i].bounds_cm)} for i in ids],
+            'regions': [{'id': i, 'bounds_cm': list(by_id[i].bounds_cm), 'patch_m': size(i)} for i in ids],
             'held_cm': [list(r.bounds_cm) for r in mapped]}
 
 
@@ -177,7 +179,8 @@ def main(argv=None) -> int:
     parser.add_argument('--runtime-service', nargs='+', action='extend', default=[],
                         help='with --only-migrated: services that run (repeatable; every name is kept)')
     parser.add_argument('--patch-m', type=float, default=128.0,
-                        help='scene patch size; the Slice map was cut at 128 m, and another size is refused')
+                        help='scene patch size of a region with no patch_m; the Slice map was cut at 128 m '
+                             '(w01/w04 at 32 m, their region.toml says so); a size that duplicates is refused')
     parser.add_argument('--claim', help='claims task holding every touched region (else the D04 bootstrap writer)')
     args = parser.parse_args(argv)
     if not args.resume and not (args.regions and args.environment):

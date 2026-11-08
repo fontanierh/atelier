@@ -90,7 +90,7 @@ def test_plan_uses_record_bounds_and_one_map(tmp_path):
     region(tmp_path, 'w00', '[-1000, -1000, 1000, 1000]')
     plan = run.make_plan(tmp_path, ['region/w01'], 'region/w00', ['Sea'], True, ['SkatePark'], 32.0)
     assert plan['map'] == '/Game/V2/Maps/Slice'
-    assert plan['regions'] == [{'id': 'region/w01', 'bounds_cm': [-200.0, 0.0, -100.0, 100.0]}]
+    assert plan['regions'] == [{'id': 'region/w01', 'bounds_cm': [-200.0, 0.0, -100.0, 100.0], 'patch_m': 32.0}]
     assert plan['services'] == ['Sea'] and plan['only_migrated'] and plan['runtime_services'] == ['SkatePark']
     assert plan['held_cm'] == [[-200.0, 0.0, -100.0, 100.0]]
     # A region of the map this run leaves out still holds its box: the environment takes only what none holds.
@@ -102,6 +102,19 @@ def test_plan_uses_record_bounds_and_one_map(tmp_path):
         run.make_plan(tmp_path, ['region/w01', 'region/w02'], 'region/w00', [], False, [], 32.0)
     with pytest.raises(run.MigrationError, match='no region record'):
         run.make_plan(tmp_path, ['region/w09'], 'region/w00', [], False, [], 32.0)
+
+
+def test_plan_keeps_each_regions_saved_patch_size(tmp_path):
+    region(tmp_path, 'w00', '[-1000, -1000, 1000, 1000]')
+    region(tmp_path, 'w01', '[-200, 0, -100, 100]')
+    path = tmp_path / 'world/regions/w01/region.toml'
+    path.write_text(path.read_text() + 'patch_m = 32\n')
+    region(tmp_path, 'w03', '[300, 300, 400, 400]')
+    plan = run.make_plan(tmp_path, ['region/w01', 'region/w03'], 'region/w00', [], False, [], 128.0)
+    assert [r['patch_m'] for r in plan['regions']] == [32.0, 128.0] and plan['patch_m'] == 128.0
+    path.write_text(path.read_text().replace('patch_m = 32', 'patch_m = 0'))
+    with pytest.raises(run.records.RecordError):
+        run.make_plan(tmp_path, ['region/w01'], 'region/w00', [], False, [], 128.0)
 
 
 def test_plan_refuses_overlapping_regions_of_one_map(tmp_path):

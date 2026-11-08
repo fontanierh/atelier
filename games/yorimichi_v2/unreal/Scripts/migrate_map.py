@@ -2,11 +2,12 @@
 
 Editor side, run by tools/migrate/run.py (guarded) with V2_MIGRATE_PLAN naming:
   map          the World Partition map to add to (created when missing)
-  regions      [{id, bounds_cm}]: the regions to migrate, bounds half-open [min x, min y, max x, max y] in cm
+  regions      [{id, bounds_cm, patch_m}]: the regions to migrate, bounds half-open [min x, min y, max x, max y] in cm
   environment  the region ID that owns the map-wide actors (sun, sky light, fog, post process, player start,
                the AV2WorldManifest) and, when listed in services, the sky dome and sea
   services     whole-world runtime pieces to save: SkyDome, Sea
-  patch_m      the scenery patch size in metres (bounded patches, not one actor per tree or one per region)
+  patch_m      the environment's scenery patch size in metres (bounded patches, not one actor per tree or one per
+               region); each region item carries its own
   only_migrated, runtime_services   the manifest's slice mode: no runtime instance scenery at all, and only
                these region services still start (e.g. SkatePark)
 
@@ -259,7 +260,8 @@ def scenery(world, env):
              for b in (item['bounds_cm'] for item in plan['regions'])]
     count, actors, reused, error = U.V2Migration.migrate_static_scenery(
         world, [U.Name(item['id']) for item in plan['regions']], boxes, [box2d(b) for b in plan.get('held_cm', [])],
-        float(plan.get('patch_m', 32)) * 100.0,
+        [float(item.get('patch_m', plan.get('patch_m', 32))) * 100.0 for item in plan['regions']]
+        + [float(plan.get('patch_m', 32)) * 100.0],
         U.Name(env), [U.Name(s) for s in plan.get('services', [])])
     if count < 0:
         raise RuntimeError(f'MigrateStaticScenery: {error}')
