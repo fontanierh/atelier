@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/megapark/shared-textures-pavement",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_00008ccc03e3870a.uasset": "e1ee3f2567827b631fe3517b2a453c0ddfe98165b6bffa85fba8c8677c815660",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00040017.uasset": "75efbed8959d723549375e5420a78ab0f819036ec3bfcdde3ab713a4cd6aca56",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00040018.uasset": "e4591d27f6771d1392ff25d51331ac22563e69e4c25872c82268eeeef22a8976",
+    "unreal/Content/MegaPark/Textures/T_2c70170a000400cc.uasset": "25f8aca02f7bee2222a324f444b5543bff60ff3ae651d45a2077cc7f310c8de8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

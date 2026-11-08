@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/megapark/shared-textures-dirtgravel",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d00aa.uasset": "6e4660d5f2ee288cd723ae78dd2d17a092a20ce5e63f2d8f0dff456ea0350659",
+    "unreal/Content/MegaPark/Textures/T_8f426b4a873045a1.uasset": "28eee98e09f6ec571d635f656cf46826f2f893c0e45762bb49566f52775a7408"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

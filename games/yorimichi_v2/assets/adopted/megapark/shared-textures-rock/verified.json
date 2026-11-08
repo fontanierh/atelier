@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/megapark/shared-textures-rock",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d00fe.uasset": "e7c7f364a7c5f9d84b1a109327d4c510a662ebc2de6b3696a7333bd4e2799600",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0132.uasset": "7f82ca57ec0acbff55c33e0e528bc04626695bfaca18ea3d522202d146aaf008",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0133.uasset": "dfcb237d6aa30b4c36694867448fda0f2dca66a11a1ae5accf1e3844e04122d7",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0134.uasset": "9a5d730e31aca238ad95f81eb2500f6154f40ee71e31c2f021188ada789ff440",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0135.uasset": "3e0d89371f2b0770cf3f6013316d81dfe0758cc029073fb6acac3a05d8debd6a",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0136.uasset": "cc89d8087b0f76572fbe4b2460f101c322f750e870b182f5b1940a4c11e24fe6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

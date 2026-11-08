@@ -1,0 +1,39 @@
+{
+  "asset": "adopted/megapark/shared-materials-rock",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_01f5f92bc66cc77a.uasset": "fb4b72829b53a42b5c31afd46a3de7f8e2d94877f49becb4145363dc64871336",
+    "unreal/Content/MegaPark/Materials/MI_12007b4f13a723ad.uasset": "a26ab47091dfbda1d6f725faf4c0aa8de1d60b66ad7fcafb4e26b31bdff20558",
+    "unreal/Content/MegaPark/Materials/MI_124827c3038ecee4.uasset": "17654fe9362c5285b13c4cdf8fbdad38d7ee2a74cf56148d88279149ce60db6d",
+    "unreal/Content/MegaPark/Materials/MI_1894c42ae15872c9.uasset": "89f85932ee306c611d10932a483443813d31a1c9ca9d43dd0611a05bcba6ce84",
+    "unreal/Content/MegaPark/Materials/MI_2e08c035ddc15961.uasset": "f87af136338d4e138448ab14ee2173c46b7c1d5fb8c36f25d9b1d9f83202c211",
+    "unreal/Content/MegaPark/Materials/MI_2fcc09ae79f8671e.uasset": "1987b8b204385e9bce28a8b0ec55c9a496348976ab81a0ee556150d0232e5f2c",
+    "unreal/Content/MegaPark/Materials/MI_392a5a2b9c83017a.uasset": "333c0c22ba8380099aa257b91bd1ac3ddcc50d3b76e41ca0cd128fd222d9503f",
+    "unreal/Content/MegaPark/Materials/MI_3d827c79e1032c5a.uasset": "2addd7fb33002ae820b68c090969596b914d457e06ce53586a6cf681bb60ac14",
+    "unreal/Content/MegaPark/Materials/MI_3db3fa18416e95dc.uasset": "1c7e26d963da283350b4a509d870c115dd9caef8ed1198feaefb51248726d0ea",
+    "unreal/Content/MegaPark/Materials/MI_3f7a7b3f36bd5330.uasset": "07ec7884a0227c1520e67fe7aaf50e7d723b6a97c0737e97196a6009d9c2a36d",
+    "unreal/Content/MegaPark/Materials/MI_4788bce2f62c1c87.uasset": "d4b3e3b4541e6560a014692ec740001cf86274339d7ca2549b19cdb15c3eeb19",
+    "unreal/Content/MegaPark/Materials/MI_4cf9a24edb238231.uasset": "a857076b780f400053359df11cba2ec20558758729321edafe1e9e337522aee0",
+    "unreal/Content/MegaPark/Materials/MI_5062059fc367a923.uasset": "c6f71f921841c06517b7078a53d544a0ccb824beaf6e952ec462806855e8737d",
+    "unreal/Content/MegaPark/Materials/MI_53d4f03c585794ec.uasset": "9148da4c76f4f27e13f03f2db2b893d5bc3b495e3421328516136c2bd2d87ff0",
+    "unreal/Content/MegaPark/Materials/MI_5b65de1600e19d55.uasset": "4d9b2ea63c6553237fea843700af82b98f98e1051b9377df1ac35496faedea03",
+    "unreal/Content/MegaPark/Materials/MI_602f4348d90ec8d9.uasset": "83b07e7bef112ddff36baeec20a21b910029baa3962897ab106753e5fca56285",
+    "unreal/Content/MegaPark/Materials/MI_85d7cc70e7a6963c.uasset": "4adab1d39c36da632af117c3186a799bd830ed2553b8f6006ff283f81b4e9e7f",
+    "unreal/Content/MegaPark/Materials/MI_919533701f2ee22e.uasset": "7fe131d09460e671333408f0b6f0faef31977627b62d9ef168b87cf798492e24",
+    "unreal/Content/MegaPark/Materials/MI_addeb766a393f358.uasset": "3b68224d314049e1c4875ff7212ad72108a7f15cb0b94d0192d9605cd50cabca",
+    "unreal/Content/MegaPark/Materials/MI_b9802872d2abfd68.uasset": "e78b128fe927e1f9c61b8e04a05e9d3d34e4cebaf9a44fa5fdccc4b7a4c482c3",
+    "unreal/Content/MegaPark/Materials/MI_c70af7bd9b50df30.uasset": "3fa5badea9247e6aa46ad92aa9e3e632ddf6ca1e4806bdbe70317b6e923fabe5",
+    "unreal/Content/MegaPark/Materials/MI_cdfa6a401c2d9518.uasset": "52944e63d75e99fd40b4d35e9aa4ec1b3b855ab4383f7aa5a26b513c526a081f",
+    "unreal/Content/MegaPark/Materials/MI_ce32e6daea00cd7b.uasset": "494f64d4b3b1359221e1cd278ed751b0d568ecec4937457330d1fd0ea3f4bc27",
+    "unreal/Content/MegaPark/Textures/T_1f265ee4ef1b12c5.uasset": "a96c8b1e9484e28020f24a68c2929dd330f2cb3c0d16ab590e7190683613cf39",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0137.uasset": "5042e3318e5aa4d894f2fd4078d4d739c54acc7730467368b511388ba7de22e7",
+    "unreal/Content/MegaPark/Textures/T_83686e88db561e3b.uasset": "034f918a1b316fd99ba847f2a8009f172aebba8d366d35057cd7db1f202c8e11",
+    "unreal/Content/MegaPark/Textures/T_a36e65f8943a61a7.uasset": "8873d43fab52d70d29e0d5611a6425a541472f21d4883199140ea8d27c1f7283",
+    "unreal/Content/MegaPark/Textures/T_bca5257e6dc45a4c.uasset": "94768b66773eb6332524ec8716fedf927958380be90da2c3fc1c118ee381ddb9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

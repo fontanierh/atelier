@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/megapark/shared-textures-grass",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_00008d6a03e3870a.uasset": "f1ebd96df110957052cb22dc8d275008a9120396f9812d9de9d40319414e762e",
+    "unreal/Content/MegaPark/Textures/T_00008d6b03e3870a.uasset": "df582f2287ca0931ee3afe604aa2fed922f9ad2d73958bc3e7891bb5570e0b4f",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d00f2.uasset": "f0f1cb6bef606ba5d8a50eb6c1fb72e67a07b0103d2606a027062028878508da"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

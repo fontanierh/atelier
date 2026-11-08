@@ -1,0 +1,52 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park textures shared by more than one section, surface family rock
+schema = 1
+id = "adopted/megapark/shared-textures-rock"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-textures-rock"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d00fe.png"
+sha256 = "55ff784912341acc7abbbb577117fbc472b48d17bdd34d59aad3fb36ab5b489a"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0132.png"
+sha256 = "e273928659e994895189c0584599de261eba234ebca37ba2a6a78063f262cf95"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0133.png"
+sha256 = "460ea2192a218af88809d59afbc3f377d9e10a8824f8169be37f693591d3494c"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0134.png"
+sha256 = "1fbed41e663bb720127c99f760536e91313f397bbeb3bfccce4ad0dbfaaa2597"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0135.png"
+sha256 = "2033904b7cb7493f399236fe997ddc100d3de350207aaabdac0f178127e69ffc"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0136.png"
+sha256 = "86af3000eb97c8324ccdf14adc7e231f82b1b19769d72dee6a577c3987da34eb"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d00fe"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0132"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0133"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0134"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0135"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0136"

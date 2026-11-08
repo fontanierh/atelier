@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/megapark/shared-materials-metal",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_50154985eb80297a.uasset": "3cda29a2a5b39b8f487145777c1cbb351a0c6543e86f3cff2ef0d9d19dbd457a",
+    "unreal/Content/MegaPark/Materials/MI_8833a462318d0f36.uasset": "189b6b6277b8f1ae8b2e879aa9441b2c4bc714fa4deab87e9c78eb4884ecb420",
+    "unreal/Content/MegaPark/Materials/MI_e42c5fbb0d12910b.uasset": "3d40baa56353ddc0b04c430d58ccf17066ec14c390644b50d64151455712afac",
+    "unreal/Content/MegaPark/Textures/T_1388a8ee83f05a88.uasset": "51089d6ace7a5d51604e3ec8089a3fc3732f6f646d328abe69f71b304e8d7468"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

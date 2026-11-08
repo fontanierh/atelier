@@ -1,0 +1,33 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "prompt": "Image 1 shows the art direction of a stylised game set on a Japanese volcanic island in autumn: soft painterly shapes, flat matte colour, warm light. Paint a flat straight-on image in that style, filling the whole frame edge to edge, to be printed on a sign in a skate park: no frame, no perspective, no shadows, no lettering or text of any kind. The image: one round emblem in the style of a Japanese family crest, the circle touching the edges of the square: a single maple leaf above three stylised curling waves inside a thin ring, bold flat shapes in warm cream on a deep indigo disc, slightly worn like hand-painted stencil; plain white outside the circle.",
+  "references": {
+    "build/yorimichi/megapark/restyle/style.png": "c28c71c95f91f0eacb156aaf85a7ad3150b783701d99e3111d20d964926e3fa2"
+  },
+  "purpose": "Mega Park restyle texture",
+  "status": "done",
+  "started_at": "2026-09-30T23:49:42.759845+00:00",
+  "usage": {
+    "input_tokens": 736,
+    "input_tokens_details": {
+      "image_tokens": 576,
+      "text_tokens": 160
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 2492
+  },
+  "png_sha256": "5efe60ea79d1e7b0980acd8ef9826dce82f738ac77de082eac07131584033497",
+  "output": {
+    "file": "emblem.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  },
+  "finished_at": "2026-09-30T23:50:20.299949+00:00"
+}
