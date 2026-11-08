@@ -106,6 +106,12 @@ public:
     void ApplyScreenSizeCull();
     /** An owner rewrote Component's cull distances: take them as its new uncapped base on the next pass. */
     void ForgetScreenSizeCull(UStaticMeshComponent* Component);
+    /** The applied performance settings on one forest group or one shadow twin, and the screen-size cull on one
+     *  component: what a patch streamed in later gets, without revisiting every group (ApplyPerformanceSettings and
+     *  ApplyScreenSizeCull run these over all). */
+    void ApplyPerformanceToGroup(UHierarchicalInstancedStaticMeshComponent* Group);
+    void ApplyPerformanceToTwin(UHierarchicalInstancedStaticMeshComponent* Twin);
+    bool ApplyScreenSizeCullTo(UStaticMeshComponent* Component, float Multiple);
 
     // Camera see-through (SeeThrough.h, docs/CAMERA.md): the tree house's instance groups (tagged
     // JapanSeeThrough::Tag) and its rooms from treehouse/runtime.json.
