@@ -60,6 +60,9 @@ public:
     UPROPERTY(EditAnywhere, Category = "V2") TArray<FName> MigratedServices;
     /** With bOnlyMigrated: the region services that still start (AJapanWorld::Load's names, e.g. SkatePark). */
     UPROPERTY(EditAnywhere, Category = "V2") TArray<FName> RuntimeServices;
+    /** Runtime-region scenery groups saved in this map as one patch each, "<region tag>:<mesh name>" (for example
+     *  brinecove:SM_BC_Ships_2_2, the wreck): ABelmonteRegion::Spawn skips only these, and its service still runs. */
+    UPROPERTY(EditAnywhere, Category = "V2") TArray<FString> MigratedGroups;
 
     static const AV2WorldManifest* Find(const UWorld* World);
     static bool InsideHalfOpen(const FBox2D& Box, const FVector2D& P)
@@ -72,6 +75,7 @@ public:
      *  skip both use it, so a piece is never both saved and spawned. */
     static FVector2D OwnerPoint(const FTransform& Placement, const UStaticMesh* Mesh);
     bool CoversService(FName Service) const { return MigratedServices.Contains(Service); }
+    bool CoversGroup(FName Tag, const FString& MeshName) const { return MigratedGroups.Contains(Tag.ToString() + TEXT(":") + MeshName); }
     bool Runs(FName Service) const { return !bOnlyMigrated || RuntimeServices.Contains(Service); }
 };
 
@@ -92,4 +96,13 @@ public:
     static int32 MigrateStaticScenery(UObject* WorldContext, const TArray<FName>& Regions, const TArray<FBox2D>& BoundsCm,
         const TArray<FBox2D>& HeldCm, const TArray<float>& PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated,
         int32& OutKept, FString& Error);
+
+    /** Saves runtime-region scenery groups (ABelmonteRegion's runtime.json `groups`, by mesh name) as one AV2ScenePatch
+     *  each, owned by Region, at the region's origin with the component ABelmonteRegion::MakeGroup builds and the
+     *  same instances, then lists them in the map's manifest MigratedGroups so the runtime skips only them. A
+     *  group already saved (its V2Id: region, tag, mesh) is kept as it is, edits included. Plant groups, which join
+     *  the island's tree lists, are refused. Returns the number of actors created, or -1 with Error set. */
+    UFUNCTION(BlueprintCallable, Category = "V2 Migration", meta = (WorldContext = "WorldContext"))
+    static int32 MigrateRegionGroups(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
+        const TArray<FString>& Meshes, TArray<AActor*>& OutCreated, int32& OutKept, FString& Error);
 };

@@ -3,11 +3,14 @@
 #include "JapanGameplayCollisionWorld.h"
 #include "SkatePark.h"
 #include "AtelierData.h"
+#include "BelmonteRegion.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Dom/JsonObject.h"
+#include "Misc/Paths.h"
 #include "Misc/SecureHash.h"
 #if WITH_EDITOR
 #include "StaticMeshCompiler.h"
@@ -319,6 +322,88 @@ int32 UV2Migration::MigrateStaticScenery(UObject* WorldContext, const TArray<FNa
     }
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION created %d patches, kept %d, dropped %d floating backdrop trees"),
         OutCreated.Num(), OutKept, Floating);
+    return OutCreated.Num();
+#else
+    Error = TEXT("editor only");
+    return -1;
+#endif
+}
+
+int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
+    const TArray<FString>& Meshes, TArray<AActor*>& OutCreated, int32& OutKept, FString& Error)
+{
+    OutCreated.Reset(); OutKept = 0;
+#if WITH_EDITOR
+    UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+    if (!World || World->IsGameWorld()) { Error = TEXT("needs the editor world"); return -1; }
+    if (Region.IsNone() || Tag.IsNone() || Meshes.IsEmpty()) { Error = TEXT("needs a region, its runtime tag and at least one mesh"); return -1; }
+    AV2WorldManifest* Manifest = nullptr;
+    for (TActorIterator<AV2WorldManifest> It(World); It; ++It) Manifest = *It;
+    if (!Manifest) { Error = TEXT("the map has no AV2WorldManifest"); return -1; }
+    const auto Data = AtelierReadJson(AtelierDataPath(DataFile));
+    if (!Data) { Error = DataFile + TEXT(" is missing or unreadable"); return -1; }
+    // Every listed mesh is one non-plant group of this runtime file, or nothing is made.
+    TMap<FString, TSharedPtr<FJsonObject>> Entries;
+    for (const auto& Value : Data->GetArrayField(TEXT("groups")))
+    {
+        const auto Entry = Value->AsObject();
+        const FString Name = FPaths::GetBaseFilename(Entry->GetStringField(TEXT("asset")));
+        if (Meshes.Contains(Name)) Entries.Add(Name, Entry);
+    }
+    for (const FString& Name : Meshes)
+    {
+        if (!Entries.Contains(Name)) { Error = Name + TEXT(" is no group of ") + DataFile; return -1; }
+        if (Entries[Name]->GetBoolField(TEXT("plant"))) { Error = Name + TEXT(" is a plant group: plants join the island's tree lists"); return -1; }
+    }
+    TMap<FString, AV2ScenePatch*> Existing;
+    for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
+    const FVector Origin(Data->GetArrayField(TEXT("origin_cm"))[0]->AsNumber(), Data->GetArrayField(TEXT("origin_cm"))[1]->AsNumber(),
+        Data->GetArrayField(TEXT("origin_cm"))[2]->AsNumber());
+    for (const FString& Name : Meshes)
+    {
+        const FString Id = StableId({Region.ToString(), Tag.ToString(), Name});
+        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        const auto& Entry = Entries[Name];
+        auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Entry->GetStringField(TEXT("asset")));
+        if (!Mesh) { Error = Name + TEXT(": its mesh is missing from V2 Content"); break; }
+        FActorSpawnParameters Params;
+        Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
+        AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Origin, FRotator::ZeroRotator, Params);
+        if (!Made) { Error = Name + TEXT(": could not spawn its patch"); break; }
+        Made->Region = Region; Made->SourceKey = Tag.ToString() + TEXT(":") + Name; Made->V2Id = Id;
+        Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Name, *Id));
+        Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
+        Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
+        int32 Missing = 0, Outside = 0;
+        UHierarchicalInstancedStaticMeshComponent* C = ABelmonteRegion::MakeGroup(Made, Made->GetRootComponent(), Entry, Mesh, Tag, Missing);
+        C->CreationMethod = EComponentCreationMethod::Instance;
+        Made->AddInstanceComponent(C);
+        C->bAutoRebuildTreeOnInstanceChanges = false;
+        C->RegisterComponent();
+        C->AddInstances(ABelmonteRegion::SceneryTransforms(Data, Entry, Outside), false, false, false);
+        C->BuildTreeIfOutdated(false, true);
+        C->bAutoRebuildTreeOnInstanceChanges = true;
+        OutCreated.Add(Made);
+        if (Missing || !C->GetInstanceCount()) { Error = Name + TEXT(": missing materials or no instance inside the district"); break; }
+    }
+    if (!Error.IsEmpty())
+    {
+        for (AActor* Made : OutCreated) Made->Destroy();
+        OutCreated.Reset();
+        return -1;
+    }
+    for (AActor* Made : OutCreated)
+    {
+        AV2ScenePatch* Saved = CastChecked<AV2ScenePatch>(Made);
+        Saved->ExpectedMembers = Saved->Members();
+        Made->MarkPackageDirty();
+    }
+    // Kept groups stay listed too: the runtime must never spawn a group this map saved.
+    Manifest->Modify();
+    for (const FString& Name : Meshes) Manifest->MigratedGroups.AddUnique(Tag.ToString() + TEXT(":") + Name);
+    Manifest->MigratedGroups.Sort();
+    Manifest->MarkPackageDirty();
+    UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s groups: created %d patches, kept %d"), *Tag.ToString(), OutCreated.Num(), OutKept);
     return OutCreated.Num();
 #else
     Error = TEXT("editor only");
