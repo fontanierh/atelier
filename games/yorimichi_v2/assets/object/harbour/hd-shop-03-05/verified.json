@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-shop-03-05",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/shop-03": "252b7c76d37d664d2c62b6f7f627edbf053c7eb10e4b1d95ee868fd9b78ed853"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/SS/FZ4BIDBHVQD35SME6UYRUJ.uasset": "cd1d595b5c26f6bdf39611ced72ff1ce28ed2c1f2f9660e592a0c0ed2b89a733"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

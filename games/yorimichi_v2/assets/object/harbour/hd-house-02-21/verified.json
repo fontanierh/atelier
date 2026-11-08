@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-house-02-21",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/house-02": "bb7348f024a084c62056d91de02cac15f25c28a9c75b8fdbc53a1c22171b4a3d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/KY/L85A6O9B045B3F04W1O2HE.uasset": "80f56969d470663d3172999cd53d42acffcf6e45324e3ebc5808b3dfbe516c45"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

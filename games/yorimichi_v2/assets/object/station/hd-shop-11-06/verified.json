@@ -1,0 +1,12 @@
+{
+  "asset": "object/station/hd-shop-11-06",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/shop-11": "4020084bb491f6facdf7e50fad8cea353deeca6ef5c874929defdca76d5c847a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/X3/VH0IQINZCGDJ0TEOFL830X.uasset": "dd2ce22193eb477ba2e64184b5b04cbf28d63c87acafc2e74384a6af57054ae3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

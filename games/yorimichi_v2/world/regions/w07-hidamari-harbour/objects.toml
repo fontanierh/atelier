@@ -1,5 +1,6 @@
 # Hidamari harbour objects that leave their area patches (tools/migrate/objects.py split; UV2Migration::SplitPatchObjects):
 # each is one placed instance of its key in city.json (metres), found within 50 cm of its source point.
+# The fused city-surface pieces (HD_Shop_* _cell_ meshes, streets, squares) stay area patches.
 schema = 1
 tag = "harbour"
 data = ""
@@ -123,3 +124,1131 @@ id = "object/harbour/hd-house-00-20"
 split = {key = "HD_House_00", at = [893.7, -54.5]}
 model = "adopted/experiments/citysurfaces/v1-128m/house-00"
 about = "HD_House_00 20 of 20 in w07-hidamari-harbour, placed at (893.7, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-01"
+split = {key = "HD_House_01", at = [441.05, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 1 of 25 in w07-hidamari-harbour, placed at (441.05, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-02"
+split = {key = "HD_House_01", at = [452.46, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 2 of 25 in w07-hidamari-harbour, placed at (452.46, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-03"
+split = {key = "HD_House_01", at = [455.34, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 3 of 25 in w07-hidamari-harbour, placed at (455.34, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-04"
+split = {key = "HD_House_01", at = [463.85, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 4 of 25 in w07-hidamari-harbour, placed at (463.85, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-05"
+split = {key = "HD_House_01", at = [463.96, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 5 of 25 in w07-hidamari-harbour, placed at (463.96, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-06"
+split = {key = "HD_House_01", at = [475.45, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 6 of 25 in w07-hidamari-harbour, placed at (475.45, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-07"
+split = {key = "HD_House_01", at = [475.46, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 7 of 25 in w07-hidamari-harbour, placed at (475.46, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-08"
+split = {key = "HD_House_01", at = [478.34, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 8 of 25 in w07-hidamari-harbour, placed at (478.34, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-09"
+split = {key = "HD_House_01", at = [483.94, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 9 of 25 in w07-hidamari-harbour, placed at (483.94, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-10"
+split = {key = "HD_House_01", at = [494.38, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 10 of 25 in w07-hidamari-harbour, placed at (494.38, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-11"
+split = {key = "HD_House_01", at = [501.34, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 11 of 25 in w07-hidamari-harbour, placed at (501.34, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-12"
+split = {key = "HD_House_01", at = [506.94, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 12 of 25 in w07-hidamari-harbour, placed at (506.94, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-13"
+split = {key = "HD_House_01", at = [510.05, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 13 of 25 in w07-hidamari-harbour, placed at (510.05, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-14"
+split = {key = "HD_House_01", at = [518.44, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 14 of 25 in w07-hidamari-harbour, placed at (518.44, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-15"
+split = {key = "HD_House_01", at = [529.94, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 15 of 25 in w07-hidamari-harbour, placed at (529.94, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-16"
+split = {key = "HD_House_01", at = [538.2, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 16 of 25 in w07-hidamari-harbour, placed at (538.2, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-17"
+split = {key = "HD_House_01", at = [577.24, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 17 of 25 in w07-hidamari-harbour, placed at (577.24, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-18"
+split = {key = "HD_House_01", at = [577.7, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 18 of 25 in w07-hidamari-harbour, placed at (577.7, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-19"
+split = {key = "HD_House_01", at = [587.95, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 19 of 25 in w07-hidamari-harbour, placed at (587.95, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-20"
+split = {key = "HD_House_01", at = [594.04, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 20 of 25 in w07-hidamari-harbour, placed at (594.04, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-21"
+split = {key = "HD_House_01", at = [605.54, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 21 of 25 in w07-hidamari-harbour, placed at (605.54, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-22"
+split = {key = "HD_House_01", at = [617.04, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 22 of 25 in w07-hidamari-harbour, placed at (617.04, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-23"
+split = {key = "HD_House_01", at = [682.93, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 23 of 25 in w07-hidamari-harbour, placed at (682.93, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-24"
+split = {key = "HD_House_01", at = [705.93, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 24 of 25 in w07-hidamari-harbour, placed at (705.93, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-01-25"
+split = {key = "HD_House_01", at = [772.51, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+about = "HD_House_01 25 of 25 in w07-hidamari-harbour, placed at (772.51, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-01"
+split = {key = "HD_House_02", at = [442.12, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 1 of 38 in w07-hidamari-harbour, placed at (442.12, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-02"
+split = {key = "HD_House_02", at = [443.84, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 2 of 38 in w07-hidamari-harbour, placed at (443.84, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-03"
+split = {key = "HD_House_02", at = [452.35, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 3 of 38 in w07-hidamari-harbour, placed at (452.35, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-04"
+split = {key = "HD_House_02", at = [453.62, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 4 of 38 in w07-hidamari-harbour, placed at (453.62, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-05"
+split = {key = "HD_House_02", at = [464.05, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 5 of 38 in w07-hidamari-harbour, placed at (464.05, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-06"
+split = {key = "HD_House_02", at = [472.44, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 6 of 38 in w07-hidamari-harbour, placed at (472.44, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-07"
+split = {key = "HD_House_02", at = [475.35, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 7 of 38 in w07-hidamari-harbour, placed at (475.35, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-08"
+split = {key = "HD_House_02", at = [498.45, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 8 of 38 in w07-hidamari-harbour, placed at (498.45, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-09"
+split = {key = "HD_House_02", at = [498.55, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 9 of 38 in w07-hidamari-harbour, placed at (498.55, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-10"
+split = {key = "HD_House_02", at = [509.85, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 10 of 38 in w07-hidamari-harbour, placed at (509.85, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-11"
+split = {key = "HD_House_02", at = [524.34, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 11 of 38 in w07-hidamari-harbour, placed at (524.34, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-12"
+split = {key = "HD_House_02", at = [532.85, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 12 of 38 in w07-hidamari-harbour, placed at (532.85, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-13"
+split = {key = "HD_House_02", at = [541.44, 265.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 13 of 38 in w07-hidamari-harbour, placed at (541.44, 265.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-14"
+split = {key = "HD_House_02", at = [576.45, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 14 of 38 in w07-hidamari-harbour, placed at (576.45, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-15"
+split = {key = "HD_House_02", at = [588.74, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 15 of 38 in w07-hidamari-harbour, placed at (588.74, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-16"
+split = {key = "HD_House_02", at = [600.24, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 16 of 38 in w07-hidamari-harbour, placed at (600.24, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-17"
+split = {key = "HD_House_02", at = [606.96, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 17 of 38 in w07-hidamari-harbour, placed at (606.96, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-18"
+split = {key = "HD_House_02", at = [622.87, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 18 of 38 in w07-hidamari-harbour, placed at (622.87, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-19"
+split = {key = "HD_House_02", at = [633.01, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 19 of 38 in w07-hidamari-harbour, placed at (633.01, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-20"
+split = {key = "HD_House_02", at = [636.93, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 20 of 38 in w07-hidamari-harbour, placed at (636.93, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-21"
+split = {key = "HD_House_02", at = [667.51, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 21 of 38 in w07-hidamari-harbour, placed at (667.51, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-22"
+split = {key = "HD_House_02", at = [679.01, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 22 of 38 in w07-hidamari-harbour, placed at (679.01, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-23"
+split = {key = "HD_House_02", at = [749.43, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 23 of 38 in w07-hidamari-harbour, placed at (749.43, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-24"
+split = {key = "HD_House_02", at = [749.51, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 24 of 38 in w07-hidamari-harbour, placed at (749.51, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-25"
+split = {key = "HD_House_02", at = [761.01, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 25 of 38 in w07-hidamari-harbour, placed at (761.01, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-26"
+split = {key = "HD_House_02", at = [784.01, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 26 of 38 in w07-hidamari-harbour, placed at (784.01, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-27"
+split = {key = "HD_House_02", at = [801.7, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 27 of 38 in w07-hidamari-harbour, placed at (801.7, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-28"
+split = {key = "HD_House_02", at = [812.28, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 28 of 38 in w07-hidamari-harbour, placed at (812.28, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-29"
+split = {key = "HD_House_02", at = [817.87, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 29 of 38 in w07-hidamari-harbour, placed at (817.87, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-30"
+split = {key = "HD_House_02", at = [823.78, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 30 of 38 in w07-hidamari-harbour, placed at (823.78, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-31"
+split = {key = "HD_House_02", at = [829.37, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 31 of 38 in w07-hidamari-harbour, placed at (829.37, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-32"
+split = {key = "HD_House_02", at = [830.66, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 32 of 38 in w07-hidamari-harbour, placed at (830.66, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-33"
+split = {key = "HD_House_02", at = [833.63, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 33 of 38 in w07-hidamari-harbour, placed at (833.63, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-34"
+split = {key = "HD_House_02", at = [842.16, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 34 of 38 in w07-hidamari-harbour, placed at (842.16, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-35"
+split = {key = "HD_House_02", at = [856.63, 281.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 35 of 38 in w07-hidamari-harbour, placed at (856.63, 281.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-36"
+split = {key = "HD_House_02", at = [882.2, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 36 of 38 in w07-hidamari-harbour, placed at (882.2, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-37"
+split = {key = "HD_House_02", at = [885.51, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 37 of 38 in w07-hidamari-harbour, placed at (885.51, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-02-38"
+split = {key = "HD_House_02", at = [888.52, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+about = "HD_House_02 38 of 38 in w07-hidamari-harbour, placed at (888.52, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-01"
+split = {key = "HD_House_03", at = [440.95, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 1 of 19 in w07-hidamari-harbour, placed at (440.95, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-02"
+split = {key = "HD_House_03", at = [440.96, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 2 of 19 in w07-hidamari-harbour, placed at (440.96, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-03"
+split = {key = "HD_House_03", at = [466.84, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 3 of 19 in w07-hidamari-harbour, placed at (466.84, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-04"
+split = {key = "HD_House_03", at = [475.55, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 4 of 19 in w07-hidamari-harbour, placed at (475.55, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-05"
+split = {key = "HD_House_03", at = [505.88, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 5 of 19 in w07-hidamari-harbour, placed at (505.88, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-06"
+split = {key = "HD_House_03", at = [509.95, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 6 of 19 in w07-hidamari-harbour, placed at (509.95, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-07"
+split = {key = "HD_House_03", at = [512.84, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 7 of 19 in w07-hidamari-harbour, placed at (512.84, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-08"
+split = {key = "HD_House_03", at = [537.74, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 8 of 19 in w07-hidamari-harbour, placed at (537.74, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-09"
+split = {key = "HD_House_03", at = [539.94, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 9 of 19 in w07-hidamari-harbour, placed at (539.94, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-10"
+split = {key = "HD_House_03", at = [589.2, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 10 of 19 in w07-hidamari-harbour, placed at (589.2, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-11"
+split = {key = "HD_House_03", at = [620.51, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 11 of 19 in w07-hidamari-harbour, placed at (620.51, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-12"
+split = {key = "HD_House_03", at = [634.37, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 12 of 19 in w07-hidamari-harbour, placed at (634.37, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-13"
+split = {key = "HD_House_03", at = [643.51, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 13 of 19 in w07-hidamari-harbour, placed at (643.51, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-14"
+split = {key = "HD_House_03", at = [659.93, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 14 of 19 in w07-hidamari-harbour, placed at (659.93, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-15"
+split = {key = "HD_House_03", at = [694.43, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 15 of 19 in w07-hidamari-harbour, placed at (694.43, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-16"
+split = {key = "HD_House_03", at = [772.43, -54.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 16 of 19 in w07-hidamari-harbour, placed at (772.43, -54.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-17"
+split = {key = "HD_House_03", at = [795.51, -38.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 17 of 19 in w07-hidamari-harbour, placed at (795.51, -38.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-18"
+split = {key = "HD_House_03", at = [861.45, 175.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 18 of 19 in w07-hidamari-harbour, placed at (861.45, 175.5) m"
+
+[[objects]]
+id = "object/harbour/hd-house-03-19"
+split = {key = "HD_House_03", at = [863.87, 191.5]}
+model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+about = "HD_House_03 19 of 19 in w07-hidamari-harbour, placed at (863.87, 191.5) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-01"
+split = {key = "HD_Shop_03", at = [455, 56]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 1 of 11 in w07-hidamari-harbour, placed at (455, 56) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-02"
+split = {key = "HD_Shop_03", at = [455, 94]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 2 of 11 in w07-hidamari-harbour, placed at (455, 94) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-03"
+split = {key = "HD_Shop_03", at = [536, -71]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 3 of 11 in w07-hidamari-harbour, placed at (536, -71) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-04"
+split = {key = "HD_Shop_03", at = [590, 121]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 4 of 11 in w07-hidamari-harbour, placed at (590, 121) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-05"
+split = {key = "HD_Shop_03", at = [590, 159]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 5 of 11 in w07-hidamari-harbour, placed at (590, 159) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-06"
+split = {key = "HD_Shop_03", at = [779, -4]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 6 of 11 in w07-hidamari-harbour, placed at (779, -4) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-07"
+split = {key = "HD_Shop_03", at = [779, 34]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 7 of 11 in w07-hidamari-harbour, placed at (779, 34) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-08"
+split = {key = "HD_Shop_03", at = [833, 211]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 8 of 11 in w07-hidamari-harbour, placed at (833, 211) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-09"
+split = {key = "HD_Shop_03", at = [833, 249]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 9 of 11 in w07-hidamari-harbour, placed at (833, 249) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-10"
+split = {key = "HD_Shop_03", at = [887, 56]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 10 of 11 in w07-hidamari-harbour, placed at (887, 56) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-03-11"
+split = {key = "HD_Shop_03", at = [887, 94]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+about = "HD_Shop_03 11 of 11 in w07-hidamari-harbour, placed at (887, 94) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-01"
+split = {key = "HD_Shop_05", at = [455, 211]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 1 of 9 in w07-hidamari-harbour, placed at (455, 211) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-02"
+split = {key = "HD_Shop_05", at = [455, 249]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 2 of 9 in w07-hidamari-harbour, placed at (455, 249) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-03"
+split = {key = "HD_Shop_05", at = [509, 56]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 3 of 9 in w07-hidamari-harbour, placed at (509, 56) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-04"
+split = {key = "HD_Shop_05", at = [509, 94]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 4 of 9 in w07-hidamari-harbour, placed at (509, 94) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-05"
+split = {key = "HD_Shop_05", at = [590, -71]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 5 of 9 in w07-hidamari-harbour, placed at (590, -71) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-06"
+split = {key = "HD_Shop_05", at = [644, 121]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 6 of 9 in w07-hidamari-harbour, placed at (644, 121) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-07"
+split = {key = "HD_Shop_05", at = [644, 159]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 7 of 9 in w07-hidamari-harbour, placed at (644, 159) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-08"
+split = {key = "HD_Shop_05", at = [833, 34]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 8 of 9 in w07-hidamari-harbour, placed at (833, 34) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-05-09"
+split = {key = "HD_Shop_05", at = [887, 211]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+about = "HD_Shop_05 9 of 9 in w07-hidamari-harbour, placed at (887, 211) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-07-01"
+split = {key = "HD_Shop_07", at = [455, -4]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+about = "HD_Shop_07 1 of 7 in w07-hidamari-harbour, placed at (455, -4) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-07-02"
+split = {key = "HD_Shop_07", at = [455, 34]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+about = "HD_Shop_07 2 of 7 in w07-hidamari-harbour, placed at (455, 34) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-07-03"
+split = {key = "HD_Shop_07", at = [509, 211]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+about = "HD_Shop_07 3 of 7 in w07-hidamari-harbour, placed at (509, 211) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-07-04"
+split = {key = "HD_Shop_07", at = [509, 249]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+about = "HD_Shop_07 4 of 7 in w07-hidamari-harbour, placed at (509, 249) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-07-05"
+split = {key = "HD_Shop_07", at = [644, -71]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+about = "HD_Shop_07 5 of 7 in w07-hidamari-harbour, placed at (644, -71) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-07-06"
+split = {key = "HD_Shop_07", at = [887, -4]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+about = "HD_Shop_07 6 of 7 in w07-hidamari-harbour, placed at (887, -4) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-07-07"
+split = {key = "HD_Shop_07", at = [887, 34]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+about = "HD_Shop_07 7 of 7 in w07-hidamari-harbour, placed at (887, 34) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-11-01"
+split = {key = "HD_Shop_11", at = [617, 211]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+about = "HD_Shop_11 1 of 4 in w07-hidamari-harbour, placed at (617, 211) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-11-02"
+split = {key = "HD_Shop_11", at = [752, -71]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+about = "HD_Shop_11 2 of 4 in w07-hidamari-harbour, placed at (752, -71) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-11-03"
+split = {key = "HD_Shop_11", at = [860, 316]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+about = "HD_Shop_11 3 of 4 in w07-hidamari-harbour, placed at (860, 316) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-11-04"
+split = {key = "HD_Shop_11", at = [860, 351]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+about = "HD_Shop_11 4 of 4 in w07-hidamari-harbour, placed at (860, 351) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-13-01"
+split = {key = "HD_Shop_13", at = [482, 316]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+about = "HD_Shop_13 1 of 7 in w07-hidamari-harbour, placed at (482, 316) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-13-02"
+split = {key = "HD_Shop_13", at = [482, 351]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+about = "HD_Shop_13 2 of 7 in w07-hidamari-harbour, placed at (482, 351) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-13-03"
+split = {key = "HD_Shop_13", at = [617, -4]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+about = "HD_Shop_13 3 of 7 in w07-hidamari-harbour, placed at (617, -4) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-13-04"
+split = {key = "HD_Shop_13", at = [617, 34]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+about = "HD_Shop_13 4 of 7 in w07-hidamari-harbour, placed at (617, 34) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-13-05"
+split = {key = "HD_Shop_13", at = [806, -71]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+about = "HD_Shop_13 5 of 7 in w07-hidamari-harbour, placed at (806, -71) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-13-06"
+split = {key = "HD_Shop_13", at = [860, 121]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+about = "HD_Shop_13 6 of 7 in w07-hidamari-harbour, placed at (860, 121) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-13-07"
+split = {key = "HD_Shop_13", at = [860, 159]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+about = "HD_Shop_13 7 of 7 in w07-hidamari-harbour, placed at (860, 159) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-01"
+split = {key = "HD_Shop_15", at = [482, 121]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 1 of 8 in w07-hidamari-harbour, placed at (482, 121) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-02"
+split = {key = "HD_Shop_15", at = [482, 159]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 2 of 8 in w07-hidamari-harbour, placed at (482, 159) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-03"
+split = {key = "HD_Shop_15", at = [536, 316]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 3 of 8 in w07-hidamari-harbour, placed at (536, 316) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-04"
+split = {key = "HD_Shop_15", at = [536, 351]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 4 of 8 in w07-hidamari-harbour, placed at (536, 351) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-05"
+split = {key = "HD_Shop_15", at = [671, -4]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 5 of 8 in w07-hidamari-harbour, placed at (671, -4) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-06"
+split = {key = "HD_Shop_15", at = [671, 34]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 6 of 8 in w07-hidamari-harbour, placed at (671, 34) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-07"
+split = {key = "HD_Shop_15", at = [779, 56]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 7 of 8 in w07-hidamari-harbour, placed at (779, 56) m"
+
+[[objects]]
+id = "object/harbour/hd-shop-15-08"
+split = {key = "HD_Shop_15", at = [779, 94]}
+model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+about = "HD_Shop_15 8 of 8 in w07-hidamari-harbour, placed at (779, 94) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-01"
+split = {key = "HD_ArcadeShop_00", at = [614.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 1 of 11 in w07-hidamari-harbour, placed at (614.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-02"
+split = {key = "HD_ArcadeShop_00", at = [621.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 2 of 11 in w07-hidamari-harbour, placed at (621.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-03"
+split = {key = "HD_ArcadeShop_00", at = [656.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 3 of 11 in w07-hidamari-harbour, placed at (656.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-04"
+split = {key = "HD_ArcadeShop_00", at = [663, 185]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 4 of 11 in w07-hidamari-harbour, placed at (663, 185) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-05"
+split = {key = "HD_ArcadeShop_00", at = [663.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 5 of 11 in w07-hidamari-harbour, placed at (663.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-06"
+split = {key = "HD_ArcadeShop_00", at = [677, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 6 of 11 in w07-hidamari-harbour, placed at (677, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-07"
+split = {key = "HD_ArcadeShop_00", at = [698.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 7 of 11 in w07-hidamari-harbour, placed at (698.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-08"
+split = {key = "HD_ArcadeShop_00", at = [705.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 8 of 11 in w07-hidamari-harbour, placed at (705.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-09"
+split = {key = "HD_ArcadeShop_00", at = [712, 130]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 9 of 11 in w07-hidamari-harbour, placed at (712, 130) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-10"
+split = {key = "HD_ArcadeShop_00", at = [761, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 10 of 11 in w07-hidamari-harbour, placed at (761, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-00-11"
+split = {key = "HD_ArcadeShop_00", at = [775, 176]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+about = "HD_ArcadeShop_00 11 of 11 in w07-hidamari-harbour, placed at (775, 176) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-01"
+split = {key = "HD_ArcadeShop_01", at = [614.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 1 of 12 in w07-hidamari-harbour, placed at (614.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-02"
+split = {key = "HD_ArcadeShop_01", at = [621.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 2 of 12 in w07-hidamari-harbour, placed at (621.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-03"
+split = {key = "HD_ArcadeShop_01", at = [628.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 3 of 12 in w07-hidamari-harbour, placed at (628.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-04"
+split = {key = "HD_ArcadeShop_01", at = [663, 150]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 4 of 12 in w07-hidamari-harbour, placed at (663, 150) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-05"
+split = {key = "HD_ArcadeShop_01", at = [663, 192]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 5 of 12 in w07-hidamari-harbour, placed at (663, 192) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-06"
+split = {key = "HD_ArcadeShop_01", at = [663.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 6 of 12 in w07-hidamari-harbour, placed at (663.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-07"
+split = {key = "HD_ArcadeShop_01", at = [670.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 7 of 12 in w07-hidamari-harbour, placed at (670.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-08"
+split = {key = "HD_ArcadeShop_01", at = [683.5, 149]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 8 of 12 in w07-hidamari-harbour, placed at (683.5, 149) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-09"
+split = {key = "HD_ArcadeShop_01", at = [684, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 9 of 12 in w07-hidamari-harbour, placed at (684, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-10"
+split = {key = "HD_ArcadeShop_01", at = [705.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 10 of 12 in w07-hidamari-harbour, placed at (705.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-11"
+split = {key = "HD_ArcadeShop_01", at = [768, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 11 of 12 in w07-hidamari-harbour, placed at (768, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-01-12"
+split = {key = "HD_ArcadeShop_01", at = [796, 185]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+about = "HD_ArcadeShop_01 12 of 12 in w07-hidamari-harbour, placed at (796, 185) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-01"
+split = {key = "HD_ArcadeShop_02", at = [628.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 1 of 10 in w07-hidamari-harbour, placed at (628.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-02"
+split = {key = "HD_ArcadeShop_02", at = [663, 157]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 2 of 10 in w07-hidamari-harbour, placed at (663, 157) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-03"
+split = {key = "HD_ArcadeShop_02", at = [663, 199]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 3 of 10 in w07-hidamari-harbour, placed at (663, 199) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-04"
+split = {key = "HD_ArcadeShop_02", at = [670.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 4 of 10 in w07-hidamari-harbour, placed at (670.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-05"
+split = {key = "HD_ArcadeShop_02", at = [677.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 5 of 10 in w07-hidamari-harbour, placed at (677.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-06"
+split = {key = "HD_ArcadeShop_02", at = [690.5, 163]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 6 of 10 in w07-hidamari-harbour, placed at (690.5, 163) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-07"
+split = {key = "HD_ArcadeShop_02", at = [691, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 7 of 10 in w07-hidamari-harbour, placed at (691, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-08"
+split = {key = "HD_ArcadeShop_02", at = [775, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 8 of 10 in w07-hidamari-harbour, placed at (775, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-09"
+split = {key = "HD_ArcadeShop_02", at = [796, 150]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 9 of 10 in w07-hidamari-harbour, placed at (796, 150) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-02-10"
+split = {key = "HD_ArcadeShop_02", at = [796, 192]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+about = "HD_ArcadeShop_02 10 of 10 in w07-hidamari-harbour, placed at (796, 192) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-01"
+split = {key = "HD_ArcadeShop_03", at = [607.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 1 of 10 in w07-hidamari-harbour, placed at (607.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-02"
+split = {key = "HD_ArcadeShop_03", at = [642.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 2 of 10 in w07-hidamari-harbour, placed at (642.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-03"
+split = {key = "HD_ArcadeShop_03", at = [663, 164]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 3 of 10 in w07-hidamari-harbour, placed at (663, 164) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-04"
+split = {key = "HD_ArcadeShop_03", at = [663, 206]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 4 of 10 in w07-hidamari-harbour, placed at (663, 206) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-05"
+split = {key = "HD_ArcadeShop_03", at = [677.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 5 of 10 in w07-hidamari-harbour, placed at (677.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-06"
+split = {key = "HD_ArcadeShop_03", at = [698, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 6 of 10 in w07-hidamari-harbour, placed at (698, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-07"
+split = {key = "HD_ArcadeShop_03", at = [782, 176]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 7 of 10 in w07-hidamari-harbour, placed at (782, 176) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-08"
+split = {key = "HD_ArcadeShop_03", at = [782, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 8 of 10 in w07-hidamari-harbour, placed at (782, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-09"
+split = {key = "HD_ArcadeShop_03", at = [796, 157]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 9 of 10 in w07-hidamari-harbour, placed at (796, 157) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-03-10"
+split = {key = "HD_ArcadeShop_03", at = [796, 199]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+about = "HD_ArcadeShop_03 10 of 10 in w07-hidamari-harbour, placed at (796, 199) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-01"
+split = {key = "HD_ArcadeShop_04", at = [607.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 1 of 9 in w07-hidamari-harbour, placed at (607.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-02"
+split = {key = "HD_ArcadeShop_04", at = [642.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 2 of 9 in w07-hidamari-harbour, placed at (642.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-03"
+split = {key = "HD_ArcadeShop_04", at = [649.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 3 of 9 in w07-hidamari-harbour, placed at (649.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-04"
+split = {key = "HD_ArcadeShop_04", at = [663, 171]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 4 of 9 in w07-hidamari-harbour, placed at (663, 171) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-05"
+split = {key = "HD_ArcadeShop_04", at = [691.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 5 of 9 in w07-hidamari-harbour, placed at (691.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-06"
+split = {key = "HD_ArcadeShop_04", at = [705, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 6 of 9 in w07-hidamari-harbour, placed at (705, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-07"
+split = {key = "HD_ArcadeShop_04", at = [789, 176]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 7 of 9 in w07-hidamari-harbour, placed at (789, 176) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-08"
+split = {key = "HD_ArcadeShop_04", at = [796, 164]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 8 of 9 in w07-hidamari-harbour, placed at (796, 164) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-04-09"
+split = {key = "HD_ArcadeShop_04", at = [796, 206]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+about = "HD_ArcadeShop_04 9 of 9 in w07-hidamari-harbour, placed at (796, 206) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-05-01"
+split = {key = "HD_ArcadeShop_05", at = [649.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+about = "HD_ArcadeShop_05 1 of 6 in w07-hidamari-harbour, placed at (649.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-05-02"
+split = {key = "HD_ArcadeShop_05", at = [656.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+about = "HD_ArcadeShop_05 2 of 6 in w07-hidamari-harbour, placed at (656.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-05-03"
+split = {key = "HD_ArcadeShop_05", at = [663, 178]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+about = "HD_ArcadeShop_05 3 of 6 in w07-hidamari-harbour, placed at (663, 178) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-05-04"
+split = {key = "HD_ArcadeShop_05", at = [691.5, 61.6]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+about = "HD_ArcadeShop_05 4 of 6 in w07-hidamari-harbour, placed at (691.5, 61.6) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-05-05"
+split = {key = "HD_ArcadeShop_05", at = [698.5, 88.4]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+about = "HD_ArcadeShop_05 5 of 6 in w07-hidamari-harbour, placed at (698.5, 88.4) m"
+
+[[objects]]
+id = "object/harbour/hd-arcadeshop-05-06"
+split = {key = "HD_ArcadeShop_05", at = [754, 208]}
+model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+about = "HD_ArcadeShop_05 6 of 6 in w07-hidamari-harbour, placed at (754, 208) m"
+
+[[objects]]
+id = "object/harbour/hd-market-01"
+split = {key = "HD_Market", at = [600, -113]}
+model = "adopted/experiments/citysurfaces/v1-128m/market"
+about = "HD_Market 1 of 2 in w07-hidamari-harbour, placed at (600, -113) m"
+
+[[objects]]
+id = "object/harbour/hd-market-02"
+split = {key = "HD_Market", at = [730, -113]}
+model = "adopted/experiments/citysurfaces/v1-128m/market"
+about = "HD_Market 2 of 2 in w07-hidamari-harbour, placed at (730, -113) m"

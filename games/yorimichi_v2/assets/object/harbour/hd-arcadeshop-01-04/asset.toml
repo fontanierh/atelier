@@ -1,0 +1,12 @@
+# One saved object of region/w07-hidamari-harbour (tools/migrate/objects.py, from its objects.toml): HD_ArcadeShop_01 4 of 12 in w07-hidamari-harbour, placed at (663, 150) m.
+# Its placement is this actor package; its model is adopted/experiments/citysurfaces/v1-128m/arcade-shop-01. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/harbour/hd-arcadeshop-01-04"
+kind = "placement"
+authority = "editor"
+owner = "region/w07-hidamari-harbour"
+references = ["adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/X7/SSGYFNCL7ID6Y73LZ2C25Q"

@@ -1,0 +1,12 @@
+{
+  "asset": "object/harbour/hd-arcadeshop-03-10",
+  "dependencies": {
+    "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03": "ee71201e2ad9addb4b5962d307ec94df7d9e26d98f6737ca779644e0bfcdfcd2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/J3/L401UFWTK6RDHUTBKOVWOB.uasset": "ad3b653fbce2f40c73bc5b8c2a74a8dbf888ebf44699976da4126e5a31f33a9f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
