@@ -1057,3 +1057,40 @@ def test_a_lock_request_that_never_left_is_retried_then_failed_not_unknown(monke
         raise remote.Unavailable('slow') from TimeoutError('timed out')
     monkeypatch.setattr(remote.LfsHttp, '_call', timed_out)
     assert remote.LfsHttp('http://lfs.invalid').lock('a.uasset', backoff=0).outcome == 'unknown'
+
+
+class Counting:
+    """Counts the remote reads a store makes through ``inner``."""
+
+    def __init__(self, inner, counts, name):
+        self.inner, self.counts, self.name = inner, counts, name
+
+    def __getattr__(self, attr):
+        method = getattr(self.inner, attr)
+
+        def counted(*args, **kwargs):
+            key = f'{self.name}.{attr}' + ('.all' if attr == 'locks' and not args and not kwargs else '')
+            self.counts[key] = self.counts.get(key, 0) + 1
+            return method(*args, **kwargs)
+        return counted
+
+
+def test_a_check_reads_the_remotes_once_for_all_claims_of_its_task(world, monkeypatch):
+    """A task holding several claims is verified with one lock listing and one target-branch read per check, and
+    every claim is still verified (a lock missing from the remote still fails its claim)."""
+    monkeypatch.setattr('atelier.harness.claims.store.LIST_ALL_LOCKS_ABOVE', 0)
+    a = world.agent('a', 'alice')
+    world.task(a, 'ta')
+    one = world.request(a, 'ta', scopes=['asset/prop/bench-01'], lock_paths=[BENCH])
+    two = world.request(a, 'ta', scopes=['shared/material/M_Sea'], lock_paths=[SEA])
+    for claim in (one, two):
+        assert acquire(a, claim['id'], a.locker)['state'] == 'active'
+    counts = {}
+    monkeypatch.setattr(world.store, 'lfs', Counting(world.store.lfs, counts, 'lfs'))
+    monkeypatch.setattr(world.store, 'git', Counting(world.store.git, counts, 'git'))
+    view = coverage(a, 'ta')
+    assert [c['verified'] for c in view['claims']] == [True, True]
+    assert counts.get('lfs.locks.all') == 1 and counts.get('git.head') == 1, counts
+    assert evaluate([Change('M', BENCH), Change('M', SEA)], {BENCH: 'lockable', SEA: 'lockable'}, view, 'publish') == []
+    world.lfs.locks.pop(next(iter(world.lfs.locks)))   # one lock gone from the remote: its claim fails, not the other
+    assert sorted(c['verified'] for c in coverage(a, 'ta')['claims']) == [False, True]
