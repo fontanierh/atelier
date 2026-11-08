@@ -1,0 +1,325 @@
+{
+ "about": "Japan FoliageLODs editing units for tools/migrate/adopt.py (written by tools/migrate/japan_units.py)",
+ "units": {
+  "bush-flower": {
+   "about": "Japan foliage bush-flower (4 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Bush_Flower_A.json",
+    "games/yorimichi/assets/foliage/Bush_Flower_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "bush-green": {
+   "about": "Japan foliage bush-green (4 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Bush_Green_A.json",
+    "games/yorimichi/assets/foliage/Bush_Green_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "bush-ochre": {
+   "about": "Japan foliage bush-ochre (4 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Bush_Ochre_A.json",
+    "games/yorimichi/assets/foliage/Bush_Ochre_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "grass": {
+   "about": "Japan foliage grass (4 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Grass_A.json",
+    "games/yorimichi/assets/foliage/Grass_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-broad-a": {
+   "about": "Japan foliage tree-broad-a (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Broad_A.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-broad-b": {
+   "about": "Japan foliage tree-broad-b (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Broad_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-broad-c": {
+   "about": "Japan foliage tree-broad-c (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Broad_C.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-cedar-a": {
+   "about": "Japan foliage tree-cedar-a (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Cedar_A.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-cedar-b": {
+   "about": "Japan foliage tree-cedar-b (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Cedar_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-ginkgo": {
+   "about": "Japan foliage tree-forest-ginkgo (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Ginkgo.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-maple": {
+   "about": "Japan foliage tree-forest-maple (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Maple.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-oak": {
+   "about": "Japan foliage tree-forest-oak (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Oak.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-forest-pine": {
+   "about": "Japan foliage tree-forest-pine (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Forest_Pine.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-ginkgo": {
+   "about": "Japan foliage tree-ginkgo (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Ginkgo.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-maple-a": {
+   "about": "Japan foliage tree-maple-a (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Maple_A.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-maple-b": {
+   "about": "Japan foliage tree-maple-b (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Maple_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-pine-a": {
+   "about": "Japan foliage tree-pine-a (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Pine_A.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-pine-b": {
+   "about": "Japan foliage tree-pine-b (6 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/foliage/Tree_Pine_B.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-cypress": {
+   "about": "Japan foliage tree-tuscan-cypress (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Cypress.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-oak": {
+   "about": "Japan foliage tree-tuscan-oak (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Oak.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-olive": {
+   "about": "Japan foliage tree-tuscan-olive (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Olive.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  },
+  "tree-tuscan-pine": {
+   "about": "Japan foliage tree-tuscan-pine (5 package(s)): LODs and crown material",
+   "sources": [
+    "games/yorimichi/assets/forest/export-parameters/Tree_Tuscan_Pine.json"
+   ],
+   "references": [
+    "adopted/japan/materials/base-materials"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Japan/FoliageLODs/Bush_Flower_A/Bush_Flower_A_LOD1": "bush-flower",
+  "/Game/Japan/FoliageLODs/Bush_Flower_A/Bush_Flower_A_LOD2": "bush-flower",
+  "/Game/Japan/FoliageLODs/Bush_Flower_B/Bush_Flower_B_LOD1": "bush-flower",
+  "/Game/Japan/FoliageLODs/Bush_Flower_B/Bush_Flower_B_LOD2": "bush-flower",
+  "/Game/Japan/FoliageLODs/Bush_Green_A/Bush_Green_A_LOD1": "bush-green",
+  "/Game/Japan/FoliageLODs/Bush_Green_A/Bush_Green_A_LOD2": "bush-green",
+  "/Game/Japan/FoliageLODs/Bush_Green_B/Bush_Green_B_LOD1": "bush-green",
+  "/Game/Japan/FoliageLODs/Bush_Green_B/Bush_Green_B_LOD2": "bush-green",
+  "/Game/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD1": "bush-ochre",
+  "/Game/Japan/FoliageLODs/Bush_Ochre_A/Bush_Ochre_A_LOD2": "bush-ochre",
+  "/Game/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD1": "bush-ochre",
+  "/Game/Japan/FoliageLODs/Bush_Ochre_B/Bush_Ochre_B_LOD2": "bush-ochre",
+  "/Game/Japan/FoliageLODs/Grass_A/Grass_A_LOD1": "grass",
+  "/Game/Japan/FoliageLODs/Grass_A/Grass_A_LOD2": "grass",
+  "/Game/Japan/FoliageLODs/Grass_B/Grass_B_LOD1": "grass",
+  "/Game/Japan/FoliageLODs/Grass_B/Grass_B_LOD2": "grass",
+  "/Game/Japan/FoliageLODs/MI_Tree_Forest_Ginkgo_Crown": "tree-forest-ginkgo",
+  "/Game/Japan/FoliageLODs/MI_Tree_Forest_Maple_Crown": "tree-forest-maple",
+  "/Game/Japan/FoliageLODs/MI_Tree_Forest_Oak_Crown": "tree-forest-oak",
+  "/Game/Japan/FoliageLODs/MI_Tree_Forest_Pine_Crown": "tree-forest-pine",
+  "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Cypress_Crown": "tree-tuscan-cypress",
+  "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Oak_Crown": "tree-tuscan-oak",
+  "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Olive_Crown": "tree-tuscan-olive",
+  "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Pine_Crown": "tree-tuscan-pine",
+  "/Game/Japan/FoliageLODs/Tree_Broad_A/MI_Tree_Broad_A_Crown": "tree-broad-a",
+  "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD1": "tree-broad-a",
+  "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD2": "tree-broad-a",
+  "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD3": "tree-broad-a",
+  "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD4": "tree-broad-a",
+  "/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD5": "tree-broad-a",
+  "/Game/Japan/FoliageLODs/Tree_Broad_B/MI_Tree_Broad_B_Crown": "tree-broad-b",
+  "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD1": "tree-broad-b",
+  "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD2": "tree-broad-b",
+  "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD3": "tree-broad-b",
+  "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD4": "tree-broad-b",
+  "/Game/Japan/FoliageLODs/Tree_Broad_B/Tree_Broad_B_LOD5": "tree-broad-b",
+  "/Game/Japan/FoliageLODs/Tree_Broad_C/MI_Tree_Broad_C_Crown": "tree-broad-c",
+  "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD1": "tree-broad-c",
+  "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD2": "tree-broad-c",
+  "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD3": "tree-broad-c",
+  "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD4": "tree-broad-c",
+  "/Game/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD5": "tree-broad-c",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_A/MI_Tree_Cedar_A_Crown": "tree-cedar-a",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD1": "tree-cedar-a",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD2": "tree-cedar-a",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD3": "tree-cedar-a",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD4": "tree-cedar-a",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD5": "tree-cedar-a",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_B/MI_Tree_Cedar_B_Crown": "tree-cedar-b",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD1": "tree-cedar-b",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD2": "tree-cedar-b",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD3": "tree-cedar-b",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD4": "tree-cedar-b",
+  "/Game/Japan/FoliageLODs/Tree_Cedar_B/Tree_Cedar_B_LOD5": "tree-cedar-b",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD1": "tree-forest-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD2": "tree-forest-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD3": "tree-forest-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Ginkgo_LOD4": "tree-forest-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD1": "tree-forest-maple",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD2": "tree-forest-maple",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD3": "tree-forest-maple",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Maple_LOD4": "tree-forest-maple",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD1": "tree-forest-oak",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD2": "tree-forest-oak",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD3": "tree-forest-oak",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Oak_LOD4": "tree-forest-oak",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD1": "tree-forest-pine",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD2": "tree-forest-pine",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD3": "tree-forest-pine",
+  "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD4": "tree-forest-pine",
+  "/Game/Japan/FoliageLODs/Tree_Ginkgo/MI_Tree_Ginkgo_Crown": "tree-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD1": "tree-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD2": "tree-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD3": "tree-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD4": "tree-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Ginkgo/Tree_Ginkgo_LOD5": "tree-ginkgo",
+  "/Game/Japan/FoliageLODs/Tree_Maple_A/MI_Tree_Maple_A_Crown": "tree-maple-a",
+  "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD1": "tree-maple-a",
+  "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD2": "tree-maple-a",
+  "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD3": "tree-maple-a",
+  "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD4": "tree-maple-a",
+  "/Game/Japan/FoliageLODs/Tree_Maple_A/Tree_Maple_A_LOD5": "tree-maple-a",
+  "/Game/Japan/FoliageLODs/Tree_Maple_B/MI_Tree_Maple_B_Crown": "tree-maple-b",
+  "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD1": "tree-maple-b",
+  "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD2": "tree-maple-b",
+  "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD3": "tree-maple-b",
+  "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD4": "tree-maple-b",
+  "/Game/Japan/FoliageLODs/Tree_Maple_B/Tree_Maple_B_LOD5": "tree-maple-b",
+  "/Game/Japan/FoliageLODs/Tree_Pine_A/MI_Tree_Pine_A_Crown": "tree-pine-a",
+  "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD1": "tree-pine-a",
+  "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD2": "tree-pine-a",
+  "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD3": "tree-pine-a",
+  "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD4": "tree-pine-a",
+  "/Game/Japan/FoliageLODs/Tree_Pine_A/Tree_Pine_A_LOD5": "tree-pine-a",
+  "/Game/Japan/FoliageLODs/Tree_Pine_B/MI_Tree_Pine_B_Crown": "tree-pine-b",
+  "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD1": "tree-pine-b",
+  "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD2": "tree-pine-b",
+  "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD3": "tree-pine-b",
+  "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD4": "tree-pine-b",
+  "/Game/Japan/FoliageLODs/Tree_Pine_B/Tree_Pine_B_LOD5": "tree-pine-b",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD1": "tree-tuscan-cypress",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD2": "tree-tuscan-cypress",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD3": "tree-tuscan-cypress",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD4": "tree-tuscan-cypress",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD1": "tree-tuscan-oak",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD2": "tree-tuscan-oak",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD3": "tree-tuscan-oak",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD4": "tree-tuscan-oak",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD1": "tree-tuscan-olive",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD2": "tree-tuscan-olive",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD3": "tree-tuscan-olive",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Olive_LOD4": "tree-tuscan-olive",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD1": "tree-tuscan-pine",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD2": "tree-tuscan-pine",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD3": "tree-tuscan-pine",
+  "/Game/Japan/FoliageLODs/Tree_Tuscan_Pine_LOD4": "tree-tuscan-pine"
+ }
+}
