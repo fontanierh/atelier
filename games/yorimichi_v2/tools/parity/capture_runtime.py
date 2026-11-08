@@ -113,7 +113,9 @@ def receipt(source, checkout, done, poses_file, names, sizes, settle, launched, 
     return {'schema': 1, 'source': source, 'revision': revision(checkout, launched, how), 'map': done['map'], 'size': sizes[0],
             'warmup': int(round(settle)), 'poses_sha256': hashlib.sha256(poses_file.read_bytes()).hexdigest(),
             'poses': names, 'captured_utc': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'engine_version': done['engine_version'], 'render': done['render']}
+            'engine_version': done['engine_version'], 'render': done['render'],
+            # V2 only: seconds each pose waited past the settle for assets still compiling ({} when none did)
+            'compile_waits_s': done.get('compile_waits_s')}
 
 
 def main(argv=None) -> int:

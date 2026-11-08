@@ -15,6 +15,9 @@ L = U.LiveLibrary
 OUT = Path(PARAMS['out'])
 POSES = PARAMS['poses']
 SETTLE = float(PARAMS.get('settle_s', 8))
+COMPILE_WAIT_S = 300.   # after the settle, the longest wait for assets still compiling before a pose is refused
+# V2 counts the assets still compiling (the "Preparing Static Meshes" message); the donor has no such verb.
+PENDING = getattr(getattr(U, 'YorimichiLive', None), 'pending_asset_compiles', None)
 QUALITY = ('r.ForwardShading', 'r.ScreenPercentage', 'sg.ResolutionQuality', 'sg.ViewDistanceQuality', 'sg.AntiAliasingQuality',
            'sg.ShadowQuality', 'sg.GlobalIlluminationQuality', 'sg.ReflectionQuality', 'sg.PostProcessQuality',
            'sg.TextureQuality', 'sg.EffectsQuality', 'sg.FoliageQuality', 'sg.ShadingQuality')
@@ -28,7 +31,8 @@ camera = L.spawn_model('parity_camera', PARAMS['camera_glb'], U.Vector(0, 0, 0),
 camera.set_actor_hidden_in_game(True)
 manager = controller.player_camera_manager
 default_fov = manager.get_editor_property('default_fov')
-state = {'pose': 0, 'phase': 'place', 'until': 0.0, 'shot': None}
+state = {'pose': 0, 'phase': 'place', 'until': 0.0, 'shot': None, 'compiled_by': 0.0}
+waits = {}   # pose -> seconds it waited past the settle for compiling assets (V2)
 
 
 def hide_pawn():
@@ -73,13 +77,24 @@ def tick(_dt):
         if state['pose'] >= len(POSES):
             finish({'render': {'renderer': 'runtime viewport screenshot (LiveLibrary.Screenshot)',
                                'quality': {c: U.SystemLibrary.get_console_variable_float_value(c) for c in QUALITY}},
-                    'map': world.get_path_name().split('.')[0], 'engine_version': U.SystemLibrary.get_engine_version()})
+                    'map': world.get_path_name().split('.')[0], 'engine_version': U.SystemLibrary.get_engine_version(),
+                    'compile_waits_s': waits if PENDING else None})
             return
         pose = POSES[state['pose']]
         if state['phase'] == 'place':
             place(pose)
             state.update(phase='settle', until=now + SETTLE)
         elif state['phase'] == 'settle' and now >= state['until']:
+            # A view is finished only when nothing is still compiling: a mesh being prepared renders as a proxy or not at all.
+            if PENDING and PENDING() > 0:
+                if not state['compiled_by']:
+                    state['compiled_by'] = now + COMPILE_WAIT_S
+                elif now >= state['compiled_by']:
+                    raise RuntimeError(f'{pose["name"]}: {PENDING()} asset(s) still compiling {COMPILE_WAIT_S:.0f} s after the settle')
+                return
+            if state['compiled_by']:
+                waits[pose['name']] = round(now - (state['compiled_by'] - COMPILE_WAIT_S), 1)
+            state['compiled_by'] = 0.0
             hide_pawn()
             controller.set_view_target_with_blend(camera, 0.0)
             state['shot'] = OUT / f'{pose["name"]}.png'
