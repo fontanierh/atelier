@@ -49,11 +49,19 @@ def dirty_packages():
     return sorted(p.get_name() for p in [*utils.get_dirty_content_packages(), *utils.get_dirty_map_packages()])
 
 
-def job_script(name, *, headless=False):
+def job_script(name, *, headless=False, kind='script', env=None):
+    importing = kind == 'import' and name == 'import_asset.py'
+    if kind == 'import' and not importing:
+        raise RuntimeError('an import job runs only import_asset.py')
+    if name == 'import_asset.py' and not importing:
+        raise RuntimeError('import_asset.py needs a prepared import job')
     if headless and name != 'migrate_objects.py':
-        raise RuntimeError('a headless session accepts only object migration jobs')
+        plan_file = (env or {}).get('V2_IMPORT_PLAN') if importing else None
+        plan = read(Path(plan_file)) if plan_file else None
+        if not plan or plan.get('kind') != 'static-mesh' or plan.get('importer') != 'static-mesh':
+            raise RuntimeError('a headless session accepts only object migrations and static-mesh imports')
     script = (SCRIPTS / name).resolve()
-    if script.parent != SCRIPTS or not script.is_file() or script.name in ('job_queue.py', 'import_asset.py'):
+    if script.parent != SCRIPTS or not script.is_file() or script.name == 'job_queue.py':
         raise RuntimeError(f'{name} is not a V2 editor script a session job may run')
     return script
 
@@ -81,7 +89,7 @@ def main():
             continue
         if job.get('close'):
             break
-        script = job_script(job['script'], headless=headless)
+        script = job_script(job['script'], headless=headless, kind=job.get('kind', 'script'), env=job['env'])
         set_environment(base_env | {k: v for k, v in job['env'].items() if v is not None})
         for key in [k for k, v in job['env'].items() if v is None]:
             os.environ.pop(key, None)
