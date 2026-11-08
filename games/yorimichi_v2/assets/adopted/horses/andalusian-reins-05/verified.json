@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/horses/andalusian-reins-05",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/Kestrel_Reins_05_Alb_png.uasset": "69673783ecd97c2f5e7a20b9251f3ef9f0303307fecb6fa6aea4db29537a4986",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png.uasset": "358325bb793dd99e1268b72be8884a1c4b101b65eb4cf263016348719aebabb1",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Jem.uasset": "9140d4eae6d049689066c164bdc2d5cc1570d1d5dbcfb06a081cb871e065f4e6",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins.uasset": "3016d787080ec6a5d36b769c5139669001692e220521511c11c362d992850218",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins1.uasset": "7f5fbf3af49224341aa7d18f0e3842c03fe868d8038b79c333dc84ce42257ec7",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins2.uasset": "cbf323d31d1bdb764ac4faefe2472b88631443a1fdb9a76d502e68e77324eebd",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins3.uasset": "0174d84c1c98ad60ee746ce9ce09f71ff6f722e608b0031d32379e5d90ff87e0",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_05/SK_Horse_Andalusian_Reins_05.uasset": "0dd80fd6a8bdece2da79dfa5a719812c9093867723e805fc4431e9717ab73a0e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

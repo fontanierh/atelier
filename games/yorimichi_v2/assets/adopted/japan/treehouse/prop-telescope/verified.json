@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-telescope",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_telescope.uasset": "d1c198b9493be27880ae411ecd279e1776237bfc12d57180a6a2f32603b2f37e",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_telescope.uasset": "4bbf7278513964bb6d59ce2593e49f784b1aae5a076f0f65a0b4083348c7b761"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

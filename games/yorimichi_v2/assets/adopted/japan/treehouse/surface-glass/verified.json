@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-glass",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_glass.uasset": "5dd26a7f197e39631c7a6eac26316abbb3420349cc34e07029e055be7d1bac9f",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_glass.uasset": "114a50799bbd90d777955996706998378c41ba541e5767d6d2403d069a658a26"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

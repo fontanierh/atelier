@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-postbox",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_postbox.uasset": "abc1227c56ac00f35ea0b8c441f1054884a9e0b844ece2c9c02745a7aa9bd7d9",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_postbox.uasset": "cf0776622c5d7354fbb9a7ff4231c83e43f252fbd5c8bf9b85ab332b51b1deb7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/horses/andalusian-saddle-03",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_03/Kestrel_Saddle_03_Alb.uasset": "32175495eea3cd2652a0ac18a49937ebc0d671dd8850aabd694285c0d927f882",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb.uasset": "1e49fff2b0797da0d9a9aa69b4f9a00ea8b083324e2315aa233786aff831e101",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb.uasset": "90ef381eb10111abafd5948355f3c79bb73a7f7951b920ef3bb0fc689024f3e9",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_03/SK_Horse_Andalusian_Saddle_03.uasset": "f7e38c20dfec2328e9b134fc0d5faf1088c5fcb0e40e0b9fdcc1de24e58e3e5d",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_03/Saddle_03_Mt_Cloth.uasset": "d682e37eba26d64976113084205750bf17c23fc4855f8467850230a72439498e",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_03/Saddle_03_Mt_Metal.uasset": "a46af3ac7e995b1d2200ff276a508aeb6a3a04a2414688daf4f7f5cec609591d",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_03/Saddle_03_Mt_Saddle.uasset": "cc367679614528eaf621b337f648d042a54f04ff70e0a2f7c942acab88a31abc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

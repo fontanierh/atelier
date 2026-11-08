@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-siding",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_siding.uasset": "d44d28393bb52ed051aa34bea50581745215fa7a93ad50e8ae0a81be8931522e",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_siding.uasset": "9c85ea90e8f5d4f06dbb873b006ba9d4431f5dfdd6c629f6188b1ba9f72cb490"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

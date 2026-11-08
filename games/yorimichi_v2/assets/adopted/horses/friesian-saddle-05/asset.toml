@@ -1,0 +1,35 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Friesian saddle set 05 with its materials and images
+schema = 1
+id = "adopted/horses/friesian-saddle-05"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/friesian-saddle-05"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/friesian/tack/Saddle_05.glb"
+sha256 = "d48c1504c606bfcca4713ae308f69df4ec91199c91e82e23447d6a746199e02e"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_05/SK_Horse_Friesian_Saddle_05"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_05/Saddle_05_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_05/Saddle_05_Mt_Gem"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Saddle_05/Saddle_05_Mt_Saddle"

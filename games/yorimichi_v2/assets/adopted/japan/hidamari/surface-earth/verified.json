@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-earth",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_earth.uasset": "870ca8460a7f9a2557e42365c883935667a10493661c3f2d0939ec22f50feb0b",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_earth.uasset": "e56e3d993bad445d8796375d6a1f4a7f094cc833ee0a1ed8f59b741ece017a81"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

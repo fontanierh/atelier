@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-moss",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_moss.uasset": "d406bd7ad4684104e9a3a9e7651ad376e445268672352004425b9997aa67a48a",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_moss.uasset": "b20b356108bd217dbe307ea22cad2af502b26be0bf4de65dd8fee10b2467609b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

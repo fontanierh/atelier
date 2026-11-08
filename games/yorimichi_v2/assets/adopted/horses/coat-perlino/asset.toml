@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant perlino
+schema = 1
+id = "adopted/horses/coat-perlino"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-perlino"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/perlino.png"
+sha256 = "b54710d475585ddf1cad837234c835e5b07589e5018a286e861fa72e3cf5ef7b"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/perlino.json"
+sha256 = "592045f8d18f39c12077627318f38bcb2b6fa1207e45352c00c1a2ce4c4d1cd7"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/perlino"

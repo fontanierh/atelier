@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/horses/thoroughbred-reins-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_01/Kestrel_Reins_01_Alb_png.uasset": "c293c02fdeba5d3f216beb016691e157ae66c9fafdbf9e9461ac88c7ff8ac505",
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_01/Reins_01_Mt_Reins.uasset": "3218f8d7b27b1ce5c2e2df58961200baa6b2c73683373eb95fb3d31f5674094b",
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_01/SK_Horse_Thoroughbred_Reins_01.uasset": "753bae517172dec079a1ec73a706e892ec3b99e75a6e5ece1688b9602734f705"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-bay-tobiano",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/bay-tobiano.uasset": "03534dbe5b9f88b4427c9381952ce92380d86d811f539b495f998f68a853a352"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

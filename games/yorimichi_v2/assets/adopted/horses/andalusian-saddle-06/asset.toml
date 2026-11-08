@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Andalusian saddle set 06 with its materials and images
+schema = 1
+id = "adopted/horses/andalusian-saddle-06"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/andalusian-saddle-06"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/andalusian/tack/Saddle_06.glb"
+sha256 = "4c2ff86a36622374bb8bde2db6d60129393a356314a08c0a8afa63ac1bc3e5e4"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_06/SK_Horse_Andalusian_Saddle_06"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_06/Saddle_06_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_06/Saddle_06_Mt_Saddle"

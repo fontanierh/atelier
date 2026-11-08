@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town prop komainu: its material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/prop-komainu"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/prop-komainu"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_P_komainu"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_P_komainu"

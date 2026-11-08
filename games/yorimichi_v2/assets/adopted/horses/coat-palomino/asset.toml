@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant palomino
+schema = 1
+id = "adopted/horses/coat-palomino"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-palomino"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/palomino.png"
+sha256 = "c2a5aa36053f8627e73700d11708d439406bedae71c9be7f935ec72b034adafd"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/palomino.json"
+sha256 = "fc8aa1ad550050aa1e58721b4402ff0bc686860468d0db2a83b7498380c03d86"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/palomino"

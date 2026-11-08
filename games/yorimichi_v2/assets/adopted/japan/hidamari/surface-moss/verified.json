@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-moss",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_moss.uasset": "47b6213c06f985b1263bee1b4577963bc410b4c120bb63a5b86193ee799e3b0a",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_moss.uasset": "3064dbfe1df64ab71172e830b968ba74fdd55e17d729662ed164399c97c4fb9e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

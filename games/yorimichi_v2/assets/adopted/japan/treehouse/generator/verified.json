@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/generator",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/M_TH_Light.uasset": "651e5756887788f4ffe813e0021bf9375b7b78ac25f44c146021aa0fa0443a39",
+    "unreal/Content/Japan/Treehouse/Materials/M_TreeHouse.uasset": "e485a46d3bddec77f6a6322ce46a2acbb0bc03fd06e75ac98f7216475e249b04"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

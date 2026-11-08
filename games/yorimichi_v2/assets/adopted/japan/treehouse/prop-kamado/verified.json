@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-kamado",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_kamado.uasset": "6305006b2d018e4e0f539c8723ed7228b034bcc1ee3d73997fb5e7d62e697c34",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_kamado.uasset": "1144a60ace91b3f97ced2d31bb95be7febf2ef88ba13f1392dad5b3e627bc5aa"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

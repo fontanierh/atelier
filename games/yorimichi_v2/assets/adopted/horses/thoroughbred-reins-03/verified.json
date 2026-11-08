@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/horses/thoroughbred-reins-03",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_03/Kestrel_Reins_03_Alb.uasset": "29f005f27e023efefaf956c88f064a31468d6b420fe9bb60c01b65d1e3ff98d2",
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb.uasset": "2958aadd956e1e135b6ba815ccff27f3c6f96bff7c90354f1742b9aa3c1cfbae",
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_03/Reins_03_Mt_Belt.uasset": "35b952d6781726fdb2a6279ced42999c8240c0d3cd6a81408ca836c408d65f2d",
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_03/Reins_03_Mt_Metal.uasset": "0339c88cbb7986002f9c1ec8abaface48ecc86ed638c13f08b5a644ef9a5c946",
+    "unreal/Content/Horses/Thoroughbred/Tack/Reins_03/SK_Horse_Thoroughbred_Reins_03.uasset": "b3ca8d5a1de2562b645af0a5c475fae412312b4bc40af16cf7f135d4f177bf6c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

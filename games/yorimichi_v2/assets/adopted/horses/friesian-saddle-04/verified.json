@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/horses/friesian-saddle-04",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Friesian/Tack/Saddle_04/Kestrel_Saddle_04_Alb.uasset": "0d13e4aea205da023c1158e6a68a84867466fda861a45506365eb1a9fa3d4c26",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb.uasset": "bd437bdb788854066ab968c5f83bce0ffef03dd8a183d232fe2a9c9f9ca944c6",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb.uasset": "a2eb07f059f0d14b346eb9ca485917b547bfb3b168cf3e1bffc30aad2bbd15b6",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_04/SK_Horse_Friesian_Saddle_04.uasset": "39a616b015004a45906200ac9ded3aaa95ada5098c6d7e64fbcf567ad1ca126f",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_04/Saddle_04_Mt_Cloth.uasset": "79a2cb7e511e912314b81537cf0c67ffd55f3553c48f5c5925ce2778587f05b7",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_04/Saddle_04_Mt_Parts.uasset": "b6705ea6038d9570ea3851d6bdbeda331bf51c85c977d3c7fbd6233ef86f496a",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_04/Saddle_04_Mt_Saddle.uasset": "8732ec05a3f36ad97240ae7904048b0ac55e985273fe7d6efff42eb78e3baa1c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

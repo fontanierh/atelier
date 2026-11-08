@@ -80,3 +80,19 @@ map = "ferry/units.json"
 [[units]]
 folder = "/Game/BelmonteTrack"
 map = "belmontetrack/units.json"
+
+# Horses, Hidamari and the Tree House (docs/inventory/ownership-audit.md): each breed, tack set and coat; each
+# Hidamari prop, surface and Caldera tree; each Tree House prop, surface and cell-piece group is one unit with its
+# sources, and each folder's generator unit holds its generator (tools/migrate/horses_units.py, hidamari_units.py,
+# treehouse_units.py over unit_tools.py).
+[[units]]
+folder = "/Game/Horses"
+map = "horses/units.json"
+
+[[units]]
+folder = "/Game/Japan/Hidamari"
+map = "japan/hidamari/units.json"
+
+[[units]]
+folder = "/Game/Japan/Treehouse"
+map = "japan/treehouse/units.json"

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-quilt",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_quilt.uasset": "2ba55806c7498ce5efb7eab0e7fcdef99c5110076a8141e1fc814d60c0020eb9",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_quilt.uasset": "2d47bf067c00a8c04b3cca82fbfda230b321602afed254aee97a7def9634319e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

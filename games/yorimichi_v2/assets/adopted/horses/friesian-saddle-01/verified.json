@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/horses/friesian-saddle-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png.uasset": "87a26430b12d304f40542f30bc4b81cce2c9d3c764b0badc975fe0fe96fbd175",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png.uasset": "41ca74cc97b306812d119aa74277504e35df9ee58d09bb0cc4104c48c5fb469d",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png.uasset": "6d1d1bc1f393c60699bc9e7f2f870c43e8174dadccc30ef1447c3194fbee527d",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png.uasset": "065bf24df9362db57d769dfd875d0653bbb5638f4d81e52e08e0577cd311531e",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/SK_Horse_Friesian_Saddle_01.uasset": "45307903355918205fca9f3b3c84528357984edb18e83117bd4b06fb6f5c6187",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Bag_A.uasset": "73f5d13da66b944cd987bff218ffe85e459d5e4c9fc8f50fd8140451445716a2",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Bag_B.uasset": "7fa67e986e08c394ec29077a023882cecaa41650ea18c530ffaa93564fbaf905",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Cloth.uasset": "a01810daa9e96da760f9f2828f6e143efd99a23c7912b4d79ee5037018c0c88c",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Saddle.uasset": "8eb4501e02d758ee956c185c3bc5047b45421c7e34789465c91e298a0e288bcd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

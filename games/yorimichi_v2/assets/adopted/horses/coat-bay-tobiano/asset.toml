@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant bay-tobiano
+schema = 1
+id = "adopted/horses/coat-bay-tobiano"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-bay-tobiano"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/bay-tobiano.png"
+sha256 = "e515179f94dbeadc6025777094e460fa58ea92fe6198bbe9a618b08fd441282c"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/bay-tobiano.json"
+sha256 = "13265107fc4661c7baad0491009760b49092a51d38fc6ef27294fd0805a5226a"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/bay-tobiano"

@@ -1,0 +1,35 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Clydesdale saddle set 04 with its materials and images
+schema = 1
+id = "adopted/horses/clydesdale-saddle-04"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/clydesdale-saddle-04"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/clydesdale/tack/Saddle_04.glb"
+sha256 = "62423588217da3e60d3c33f55ab06ac0ca14b7222af956f6fa2fdf44b53e16bb"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Saddle_04/Kestrel_Saddle_04_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Saddle_04/SK_Horse_Clydesdale_Saddle_04"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Saddle_04/Saddle_04_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Saddle_04/Saddle_04_Mt_Parts"
+
+[[outputs]]
+package = "/Game/Horses/Clydesdale/Tack/Saddle_04/Saddle_04_Mt_Saddle"

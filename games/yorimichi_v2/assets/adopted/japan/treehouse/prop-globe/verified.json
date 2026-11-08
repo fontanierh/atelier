@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-globe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_globe.uasset": "ede64a28c6121a1dec16c7270dffb963797db5a0938f2e4a02d68fa01a113b5d",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_globe.uasset": "73f1f41c1f378c10feca6855e4ed9fa08789357798f9d287bfe3afef90a80ebd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

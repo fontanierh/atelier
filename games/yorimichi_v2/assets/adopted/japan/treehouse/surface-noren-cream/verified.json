@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-noren-cream",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_noren_cream.uasset": "929c67a0bc62a0ab893d94d4cd46b028870cfd8432dc1ac700363247750639a3",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_noren_cream.uasset": "a54231478aca13332449f7fe6cd059c5d9e44280d03ece204a53170e5727ee85"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

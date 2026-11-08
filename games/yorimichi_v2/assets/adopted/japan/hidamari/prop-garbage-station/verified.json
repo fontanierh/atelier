@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-garbage-station",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_garbage_station.uasset": "9eac693c9dd4086581f1b4c66b18f457dbb66a92c5f7ba414b78ed47de5fcc82",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_garbage_station.uasset": "77af31d014a4afd01edf92b811612d152d44b937be8f6110b968b83547e937a5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-shingle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_shingle.uasset": "19c05ff9cb78051e3e5ebea42c22d3ea2750e6d250a15f7797385fb3b477c74c",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_shingle.uasset": "529b2064a8937e9369f48c6f6e26601d10b82c5cc7f90666f8dcd568079716bb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

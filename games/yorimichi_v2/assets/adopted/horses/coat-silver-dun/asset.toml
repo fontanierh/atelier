@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant silver-dun
+schema = 1
+id = "adopted/horses/coat-silver-dun"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-silver-dun"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/silver-dun.png"
+sha256 = "421a0d8d06311a2f9d36ab3faca11cc34c73b7330ade103fdd2d50534087d711"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/silver-dun.json"
+sha256 = "fa444299df106b895716f0ebd291627584235c99d523f60eed3adc8e92818b99"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/silver-dun"

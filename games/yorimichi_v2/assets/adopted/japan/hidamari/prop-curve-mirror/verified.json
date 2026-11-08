@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-curve-mirror",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_curve_mirror.uasset": "5ecbb837799833b1c364a4052679c0dc5f63b77486580e9ace4a8f1b75c7dbfa",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_curve_mirror.uasset": "eb6e43559c77dc487e50c4e79c9da63076f0524862f11cd48baf1781de902687"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

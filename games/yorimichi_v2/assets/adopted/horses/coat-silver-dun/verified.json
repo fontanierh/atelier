@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-silver-dun",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/silver-dun.uasset": "b60eed52bdc8d1ff5661ca5b72ab17c424ded469162a10fa8578230d51f1d66f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

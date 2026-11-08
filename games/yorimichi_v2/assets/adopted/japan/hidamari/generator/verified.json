@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/hidamari/generator",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/M_HDCity.uasset": "47dee31df7cd3c6e9e8baa9b9025ae17179515367b6c33cbef56971db29ed612"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-indigo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_indigo.uasset": "8e62ed72be25b46a581f3019be018aa9fa29063bc0d57ee1edddddc9c8db8be0",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_indigo.uasset": "14822887cd34acf9b197c383129d70ca21ae86544d9e9ba1c6bfce656f1a7787"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

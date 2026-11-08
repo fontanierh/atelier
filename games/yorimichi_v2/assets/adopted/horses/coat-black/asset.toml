@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant black
+schema = 1
+id = "adopted/horses/coat-black"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-black"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/black.png"
+sha256 = "810847f744404a7807e9a66227ed1cc7a95398804eb9675cb731a59959658455"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/black.json"
+sha256 = "de3e020a55d42f2a3a7fd058941810cf85957d2fef5fa26a6a088eb41a469f76"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/black"

@@ -1,0 +1,29 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Andalusian reins set 04 with its materials and images
+schema = 1
+id = "adopted/horses/andalusian-reins-04"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/andalusian-reins-04"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/andalusian/tack/Reins_04.glb"
+sha256 = "72fa72d2bc442c04eba8c0f8080a5857ff05e21c4fb03de88555e6194f4718b8"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Reins_04/Kestrel_Reins_04_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Reins_04/Reins_04_Mt_Belt"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Reins_04/Reins_04_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Reins_04/SK_Horse_Andalusian_Reins_04"

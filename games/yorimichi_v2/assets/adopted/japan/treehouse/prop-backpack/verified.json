@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-backpack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_backpack.uasset": "67b44b097d4395f07d17f0110244b6bf9174bbb2e2da91ec56794822c40ca15e",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_backpack.uasset": "9eb24d5d60afb8c75823e812adf7211aac968c1eb0b2d38212b283124c54bd9d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

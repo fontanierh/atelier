@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-ac-unit",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_ac_unit.uasset": "3f8a855fa59642eeee6448f5c851ec1d1ca79dde5abfac0ee0e6d83f3741e350",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_ac_unit.uasset": "d7fc816a7a06740033fac09592bad04463a85690aa3ed8bbcf87143e1be14606"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

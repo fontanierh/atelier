@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-bonsai-shelf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_bonsai_shelf.uasset": "014b3b7ccfa6919736994ae643bce5079ba331f360a75128ba93fc7acae2cd37",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_bonsai_shelf.uasset": "8a3103467e0a8219997ad3281cb16adaad1d71cef12342c3c00b1d3cc060bf7a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

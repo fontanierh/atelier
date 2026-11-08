@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/horses/andalusian-reins-02",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Andalusian/Tack/Reins_02/Kestrel_Reins_02_Alb_png.uasset": "cef8296dcd9e1905a624c714e803e110dce4e326b44034cc8701e375dd4d5268",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_02/Reins_02_Mt_Reins.uasset": "049ad689606b9529152efe19ff698a32b141e2b0019ad7f88982b2b9cda3e80a",
+    "unreal/Content/Horses/Andalusian/Tack/Reins_02/SK_Horse_Andalusian_Reins_02.uasset": "5c6fa9e145305785befbc07f2ccb6f6167a16a0b48cc9484c6d4b510080fb31b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

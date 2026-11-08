@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/horses/clydesdale-saddle-02",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png.uasset": "6e49768c477ab961003905e32646ac6c8bd98e58f1627527df1567b01b5928d6",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png.uasset": "01b548f1551e3193a58c5d5875afb6dcd99d0c318382e95d9e5eb22dd4aaedc5",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_02/SK_Horse_Clydesdale_Saddle_02.uasset": "990c74426afd42949265fe9a407a159b6324df3a656ae6b00dee674bea1f9caf",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_02/Saddle_02_Mt_Cloth.uasset": "2e1911846446acb50c9144062b97c46668d99723f17085caf2bcb0423020ec4b",
+    "unreal/Content/Horses/Clydesdale/Tack/Saddle_02/Saddle_02_Mt_Saddle.uasset": "38db6aeaa02aea9f78bddde39a64019d29912498aa6b514b4d5d40dd32580714"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

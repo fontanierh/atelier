@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-planter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_planter.uasset": "9ad18fbe1d8c63669c65ad06f29983b600946c340a0c5c5fff9616451fe17b96",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_planter.uasset": "4116984d0b3ebf588914a14adfd26c26bfe2f1904a05799e5af9694ee9e9763e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

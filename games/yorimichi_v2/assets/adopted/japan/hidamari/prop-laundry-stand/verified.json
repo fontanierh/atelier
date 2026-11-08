@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-laundry-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_laundry_stand.uasset": "9c13f623ed01315b44480218d2bf529a8fd817360ade13e13caa38be74d95a85",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_laundry_stand.uasset": "2ca2d4be12799924a45545df70511b56b4ac0451cecd10e7e568aed8af5a7110"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,35 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Andalusian saddle set 04 with its materials and images
+schema = 1
+id = "adopted/horses/andalusian-saddle-04"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/andalusian-saddle-04"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/andalusian/tack/Saddle_04.glb"
+sha256 = "d3648dcc0443ede363e62e468521c2c746fefaae20d582b1c75e8ba703b22f87"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_04/SK_Horse_Andalusian_Saddle_04"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Cloth"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Parts"
+
+[[outputs]]
+package = "/Game/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Saddle"

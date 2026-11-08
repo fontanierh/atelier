@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-iron",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_iron.uasset": "c566cd92332313891e9323ba7cfa8988c5a81104acbd2eb613efbdadb6a3ca08",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_iron.uasset": "f4f92d8daa36e8ebec214dcb02264b0a1a8899c069979c5fdf5079f99959a8c5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

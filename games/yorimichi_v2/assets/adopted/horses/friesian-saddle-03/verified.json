@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/horses/friesian-saddle-03",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Friesian/Tack/Saddle_03/Kestrel_Saddle_03_Alb.uasset": "43cb4bf1d73dd4be8beb92faf3cfb954a41712b053a4d6af236233029fc75924",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb.uasset": "494bb9866ab724cf2361966b30bab666d64a2116b44563cec4f0fb9b12830d44",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb.uasset": "9dcdc1ddee610907bb2e5f004e1f2ba3dff4ef7b9d3ea69d8077b88b6b2c12c2",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_03/SK_Horse_Friesian_Saddle_03.uasset": "b6088d5dbe33f0331d8d654386b7a0e022288a55614972b8a15e44718a068130",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_03/Saddle_03_Mt_Cloth.uasset": "a6a6f469e303d0ec8dcfbc75e8573f374995d49cb253a30d86f5c85d22416b41",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_03/Saddle_03_Mt_Metal.uasset": "a4c1306eb90a4f9031ed21b4e51bf71265e43fb49c11861c74927f5e304e366f",
+    "unreal/Content/Horses/Friesian/Tack/Saddle_03/Saddle_03_Mt_Saddle.uasset": "011d81d2369a3eef29e64e4e55c5d9dff14e228fabc77f29d7be4e65973ed823"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

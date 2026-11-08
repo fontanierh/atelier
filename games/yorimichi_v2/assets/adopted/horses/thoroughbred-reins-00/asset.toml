@@ -1,0 +1,23 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Thoroughbred reins set 00 with its materials and images
+schema = 1
+id = "adopted/horses/thoroughbred-reins-00"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/thoroughbred-reins-00"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/thoroughbred/tack/Reins_00.glb"
+sha256 = "ea1c74d78af7bd3ee65b2fb2c264279abfd6b9a70d3a37405ee1ea7479e75797"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Reins_00/Kestrel_Reins_00_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Reins_00/Reins_00_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Thoroughbred/Tack/Reins_00/SK_Horse_Thoroughbred_Reins_00"

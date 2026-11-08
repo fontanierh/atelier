@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-blanket",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/blanket.uasset": "e4add774fece1ee22e3efab4dc44868363a24a6ed52106263b916f9f8b374d44"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

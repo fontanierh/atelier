@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Hidamari town surface asphalt: material instance and texture
+schema = 1
+id = "adopted/japan/hidamari/surface-asphalt"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/hidamari/surface-asphalt"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Textures/T_HD_asphalt"

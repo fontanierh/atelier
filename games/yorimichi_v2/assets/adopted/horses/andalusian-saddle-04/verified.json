@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/horses/andalusian-saddle-04",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Alb.uasset": "a383492c8b71dfc6519cdfb60ec14465796a4b2fc3ac7b3bfc37ef36cad64e6d",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb.uasset": "4226181017fc52494e7fd6dc5b5052c6d5b4f662da0f6edc283faa29c0337e3a",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb.uasset": "130ee489291293ae4dcbd65b43586922c4ed7132b39e7df739df13314f1020e0",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_04/SK_Horse_Andalusian_Saddle_04.uasset": "5a63da1cf63a78bfdaf6bc95a7c38b1d266e8ae1ea478b503ed211c6598a028d",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Cloth.uasset": "8077a2040a25c78d035404a5d02e52d34e445592d85380f22f703c040560a9c5",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Parts.uasset": "1c3f786c7c6f7fee20caadf715f89cda824d6cf4242b8cee207153611d04fe9c",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Saddle.uasset": "4c177be622d13d1d2a5fd54a380440659ce5fa42c493f08ab831aed2754619d7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

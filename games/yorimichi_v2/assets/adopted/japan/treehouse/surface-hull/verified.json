@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-hull",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_hull.uasset": "0cec7acc96401e99dadeb35e657c394445aaf2308527bb133a5356d633a6e425",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_hull.uasset": "527fadfda8adfd35ee14759582a6ed9b02e48dd01baecb76120accfd329f58c0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

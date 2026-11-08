@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant dapple-grey
+schema = 1
+id = "adopted/horses/coat-dapple-grey"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-dapple-grey"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/dapple-grey.png"
+sha256 = "f009e0390860bda39ee078c3dfbd1041c7dc657f97e46237c3fff3dba7dbd577"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/dapple-grey.json"
+sha256 = "20425614e8b991c1cfdb431a077b26b12915ccc981bbc82c5aed655fded4b1d8"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/dapple-grey"

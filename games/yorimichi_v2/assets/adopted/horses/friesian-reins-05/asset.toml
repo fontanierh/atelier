@@ -1,0 +1,38 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Friesian reins set 05 with its materials and images
+schema = 1
+id = "adopted/horses/friesian-reins-05"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/friesian-reins-05"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/friesian/tack/Reins_05.glb"
+sha256 = "d8a98fe8aea5a5e9d0399daef3775dd6d5cf2b846590feaa0c5d00823ddb9faf"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/Kestrel_Reins_05_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Jem"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins1"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins2"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins3"
+
+[[outputs]]
+package = "/Game/Horses/Friesian/Tack/Reins_05/SK_Horse_Friesian_Reins_05"

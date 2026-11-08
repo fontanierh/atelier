@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/horses/andalusian-saddle-06",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png.uasset": "f34dd8f42f0e30e39256eb48a96d880fc1df8b4c623c2ba4ff58ad059c6e7236",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png.uasset": "f3bf7a44bcc13a1f64a57ec2b5c03b11dd8ee50bac0b8dd8e695c74d6688fe1c",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_06/SK_Horse_Andalusian_Saddle_06.uasset": "265b88798a8fdea193045b2c6ceacc397b29d9665e31362bcbfe237b89864fdf",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_06/Saddle_06_Mt_Cloth.uasset": "48a1407c55e412d3a495917b3b34763e9d07fb90286dc37954a1b2655ba55ff3",
+    "unreal/Content/Horses/Andalusian/Tack/Saddle_06/Saddle_06_Mt_Saddle.uasset": "472ac6b383aaf6cb5e1f74f89d35b1ae5a864dddd6b3b9d4295eb916c35751dd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

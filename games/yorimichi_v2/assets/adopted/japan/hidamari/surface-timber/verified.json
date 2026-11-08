@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/surface-timber",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_timber.uasset": "81aba28af49c3c92159f361080901e26e11d519cb8422e6e0824951de1c6ce6c",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_timber.uasset": "812463f3975e68044192e4ba61d568c216e15b9f0e911f952b9b22159b14203b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

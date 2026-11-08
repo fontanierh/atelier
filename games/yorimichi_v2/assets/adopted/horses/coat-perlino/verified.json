@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-perlino",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/perlino.uasset": "5561d0f021efdc8e2bd65731ea15016d48cc5d6787e98291f6f1f369435b5d2a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

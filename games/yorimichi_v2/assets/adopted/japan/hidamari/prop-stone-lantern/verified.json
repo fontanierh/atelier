@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-stone-lantern",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_stone_lantern.uasset": "8bfceae16a0b1e0d1fec606aacdc3593fc1563f095692dbfdc7ae5ac44478ca3",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_stone_lantern.uasset": "31f80660ef75815ea066825a61d7b075dc68c634509f017878217ccd944fa3d3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

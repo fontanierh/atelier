@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/horses/quarter-reins-05",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/Kestrel_Reins_05_Alb_png.uasset": "9abbe116faaad4231c7ca58580d1f4394bf7aae82d5b45adb7bb0a20b5de7e70",
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png.uasset": "e9ee1ea5217fa87f06f0ef49bbf3370bbcd4245f27632f628156565aff2578f2",
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Jem.uasset": "66ceba48603f01506761ebba2319b9efbb09092a39baba5d503a7d519902a5d3",
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins.uasset": "8a9574a431b88a62c85efde0eac518b32f9494fe11a43c9a58644e70fecb8828",
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins1.uasset": "40f358af9c60446438b82d0d40da7bd6cd0271b91043ea8f3a0c47970a2dda4e",
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins2.uasset": "184899a39cccd44cd9ecc118652ced20b56a8107e5efbe29fe4d6548eba13686",
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins3.uasset": "290f89d082b80b2d5d4ed1b074c064146652ab1dce4224beed686bf27a3af071",
+    "unreal/Content/Horses/Quarter/Tack/Reins_05/SK_Horse_Quarter_Reins_05.uasset": "8bdcadeb4cd628b2d1ab7d17af665a17f0600ad84bef05525a19e675e2457c5c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

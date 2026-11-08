@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/hidamari/surface-flat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_flat.uasset": "a5fa4096ff62a927efb2ca6815f9bc54e78f631ab059461a2b34b5f969432319"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

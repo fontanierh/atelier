@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant leopard
+schema = 1
+id = "adopted/horses/coat-leopard"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-leopard"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/leopard.png"
+sha256 = "3d2a284d337fb39abb4af61a411b0e5a56be5bf2b60a453d10309cb7c2bd2510"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/leopard.json"
+sha256 = "8a65d162e9e217646e5f0f8ba264b59f9d254a9e1f101fe122f053be8d02c7d9"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/leopard"

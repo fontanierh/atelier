@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-taxi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_taxi.uasset": "809bb72edee23ede32fa27f630efffc0e97324749ee0f1eae4969802e3f94ea2",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_taxi.uasset": "cd0b0586a519cfe6604b69be2380214b4b06886df460051601da6fa52bcda1a2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

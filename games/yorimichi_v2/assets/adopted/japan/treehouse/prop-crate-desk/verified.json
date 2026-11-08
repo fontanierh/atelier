@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-crate-desk",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_crate_desk.uasset": "5a47c30d968f4adee3c3b5208ac822cb5e790731e44999c0c663acd394db3230",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_crate_desk.uasset": "9ecfcbeaf8fcb044ce80e90271ce1d0f6000b17834134078fa523e60b8797bc0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

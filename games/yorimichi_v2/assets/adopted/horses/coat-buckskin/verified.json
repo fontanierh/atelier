@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-buckskin",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/buckskin.uasset": "77ceb6a758703ad096049554720af8ae3edf5e64a401b54712cf481a77b3964b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

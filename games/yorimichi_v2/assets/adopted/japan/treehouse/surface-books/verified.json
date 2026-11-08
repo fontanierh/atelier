@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-books",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_books.uasset": "edca00d1692d420ad7c547e48b6b298f40a99aae0a855f466c1fc35bf67dcb39",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_books.uasset": "33231ae4ab49cd37de24676df0cac7fd7e87ee0010db8dfcd8fb9cf09a354a24"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

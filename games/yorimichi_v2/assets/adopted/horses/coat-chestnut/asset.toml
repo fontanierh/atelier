@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Horse coat variant chestnut
+schema = 1
+id = "adopted/horses/coat-chestnut"
+kind = "adopted"
+authority = "editor"
+owner = "shared/horses/coat-chestnut"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/horses/generator"]
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/chestnut.png"
+sha256 = "a678d883baf8af53071e041e7303960f6857a0c3a52bb1405d8f220389273165"
+
+[[sources]]
+path = "source/assets/horses/coats/variants/kestrel/chestnut.json"
+sha256 = "88c42458da7101d25a2e7cb989ec6cb34bed6f41ec9a1fc3ae55b77029998cbb"
+
+[[outputs]]
+package = "/Game/Horses/Coats/Variants/chestnut"

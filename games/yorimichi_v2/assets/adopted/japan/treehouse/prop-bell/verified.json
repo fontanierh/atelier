@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/prop-bell",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_P_bell.uasset": "93d6de953466b4ba3618e717951b8c70b98f5c1c576d46c4a82dd2e121b78d44",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_P_bell.uasset": "8f5ecf1d0949714dae3b69c6a30c2007543f8bb38e8a8f8d69e8d7c27f366d30"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

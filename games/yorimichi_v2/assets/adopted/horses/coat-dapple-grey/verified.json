@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/horses/coat-dapple-grey",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Coats/Variants/dapple-grey.uasset": "7dc623132a8cbd471a513dedcb08ea1cf19ff24a011613fad54210147f6cb61b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

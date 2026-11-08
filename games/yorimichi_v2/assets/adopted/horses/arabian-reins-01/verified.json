@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/horses/arabian-reins-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Arabian/Tack/Reins_01/Kestrel_Reins_01_Alb_png.uasset": "9c44ba2aed9a16dab79a5e8810029fa8b6b1ef6a61b883d10c12e4e4b50e06d7",
+    "unreal/Content/Horses/Arabian/Tack/Reins_01/Reins_01_Mt_Reins.uasset": "b202b49440d9d06f1c77ed0eec21f591d7ed8ca90728ed60f2f65223650c02fb",
+    "unreal/Content/Horses/Arabian/Tack/Reins_01/SK_Horse_Arabian_Reins_01.uasset": "cbd15aa4e3526c88295918bd6cdc4b46eff8bae3d799df0abd7f63a1b7750319"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

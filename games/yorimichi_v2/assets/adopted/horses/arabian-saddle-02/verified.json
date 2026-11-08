@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/horses/arabian-saddle-02",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Horses/Arabian/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png.uasset": "56ea3299459789a1d2f8b222c2bebe44cbbfa968f42aaa9ac015dcdfb159c756",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png.uasset": "7fe8c9e7f6a7662749b8e14a3675710a6c5f4a8fe390d0d9b9c98a4623f9600e",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_02/SK_Horse_Arabian_Saddle_02.uasset": "3b9194c8810eef034e92a25448698ba398215a4b6fac0213d34692ca5e0a8175",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_02/Saddle_02_Mt_Cloth.uasset": "4ba437a7a5ec5d4e9d443d8d32fa07dbd63489f91b9093c5529421554a033b91",
+    "unreal/Content/Horses/Arabian/Tack/Saddle_02/Saddle_02_Mt_Saddle.uasset": "a92adaa0a27e0bb775c5abb63c90765c859377784eac0cdb7c7d9e0df021a7a6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/hidamari/prop-kei-truck",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_P_kei_truck.uasset": "f74ab0d8b6e4de83aa1fcd22854f29ce660a9792695425eeb8a1e92abc405f62",
+    "unreal/Content/Japan/Hidamari/Textures/T_HD_P_kei_truck.uasset": "55895e3d9248359162aced9df5b48c5ae1f308679582d06d40d49e678d5e9323"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

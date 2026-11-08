@@ -1,0 +1,826 @@
+{
+ "about": "Hidamari editing units for tools/migrate/adopt.py (written by tools/migrate/hidamari_units.py)",
+ "units": {
+  "generator": {
+   "about": "Hidamari prop and surface generator: build graph, roster, texture tool, Unreal import scripts and the city base material",
+   "sources": [
+    "games/yorimichi/city_tile_products.py",
+    "games/yorimichi/hidamari_prop_build.py",
+    "games/yorimichi/tools/hidamari_textures.py",
+    "games/yorimichi/tools/treehouse_art.py",
+    "games/yorimichi/tools/treehouse_textures.py",
+    "games/yorimichi/unreal/Scripts/arcade_material.py",
+    "games/yorimichi/unreal/Scripts/atmosphere.py",
+    "games/yorimichi/unreal/Scripts/city_material.py",
+    "games/yorimichi/unreal/Scripts/city_parent_transition.py",
+    "games/yorimichi/unreal/Scripts/ground_grain.py",
+    "games/yorimichi/unreal/Scripts/harbor_material.py",
+    "games/yorimichi/unreal/Scripts/import_hidamari.py",
+    "games/yorimichi/unreal/Scripts/import_village.py",
+    "games/yorimichi/unreal/Scripts/import_village_atomic.py",
+    "games/yorimichi/unreal/Scripts/mesh_import.py",
+    "games/yorimichi/unreal/Scripts/mesh_materials.py",
+    "games/yorimichi/unreal/Scripts/mountain_material.py",
+    "games/yorimichi/unreal/Scripts/plaza_material.py",
+    "games/yorimichi/unreal/Scripts/sea_look.py",
+    "games/yorimichi/village_atomic_products.py",
+    "games/yorimichi/world/coast_water.py",
+    "games/yorimichi/world/mesh_pieces.py",
+    "games/yorimichi/world/region_mesh_parts.py",
+    "games/yorimichi/world/region_plan_files.py",
+    "games/yorimichi/world/regions/hidamari/__init__.py",
+    "games/yorimichi/world/regions/hidamari/logical_catalogue.py",
+    "games/yorimichi/world/regions/hidamari/prop_roster.py",
+    "games/yorimichi/world/regions/village/__init__.py",
+    "games/yorimichi/world/regions/village/catalogue.py",
+    "games/yorimichi/world/yori.py"
+   ]
+  },
+  "prop-ac-unit": {
+   "about": "Hidamari town prop ac_unit: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/ac_unit/ac_unit.glb",
+    "games/yorimichi/assets/hidamari/props/ac_unit/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/ac_unit/concept.json",
+    "games/yorimichi/assets/hidamari/props/ac_unit/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_ac_unit.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-bicycle": {
+   "about": "Hidamari town prop bicycle: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/bicycle/bicycle.glb",
+    "games/yorimichi/assets/hidamari/props/bicycle/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/bicycle/concept.json",
+    "games/yorimichi/assets/hidamari/props/bicycle/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_bicycle.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-bicycle-shelter": {
+   "about": "Hidamari town prop bicycle_shelter: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/bicycle_shelter/bicycle_shelter.glb",
+    "games/yorimichi/assets/hidamari/props/bicycle_shelter/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/bicycle_shelter/concept.json",
+    "games/yorimichi/assets/hidamari/props/bicycle_shelter/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_bicycle_shelter.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-bonsai-shelf": {
+   "about": "Hidamari town prop bonsai_shelf: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/bonsai_shelf/bonsai_shelf.glb",
+    "games/yorimichi/assets/hidamari/props/bonsai_shelf/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/bonsai_shelf/concept.json",
+    "games/yorimichi/assets/hidamari/props/bonsai_shelf/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_bonsai_shelf.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-bus-stop": {
+   "about": "Hidamari town prop bus_stop: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/bus_stop/bus_stop.glb",
+    "games/yorimichi/assets/hidamari/props/bus_stop/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/bus_stop/concept.json",
+    "games/yorimichi/assets/hidamari/props/bus_stop/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_bus_stop.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-curve-mirror": {
+   "about": "Hidamari town prop curve_mirror: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/curve_mirror/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/curve_mirror/concept.json",
+    "games/yorimichi/assets/hidamari/props/curve_mirror/curve_mirror.glb",
+    "games/yorimichi/assets/hidamari/props/curve_mirror/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_curve_mirror.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-drink-crates": {
+   "about": "Hidamari town prop drink_crates: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/drink_crates/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/drink_crates/concept.json",
+    "games/yorimichi/assets/hidamari/props/drink_crates/drink_crates.glb",
+    "games/yorimichi/assets/hidamari/props/drink_crates/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_drink_crates.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-fire-buckets": {
+   "about": "Hidamari town prop fire_buckets: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/fire_buckets/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/fire_buckets/concept.json",
+    "games/yorimichi/assets/hidamari/props/fire_buckets/fire_buckets.glb",
+    "games/yorimichi/assets/hidamari/props/fire_buckets/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_fire_buckets.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-garbage-station": {
+   "about": "Hidamari town prop garbage_station: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/garbage_station/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/garbage_station/concept.json",
+    "games/yorimichi/assets/hidamari/props/garbage_station/garbage_station.glb",
+    "games/yorimichi/assets/hidamari/props/garbage_station/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_garbage_station.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-hokora": {
+   "about": "Hidamari town prop hokora: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/hokora/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/hokora/concept.json",
+    "games/yorimichi/assets/hidamari/props/hokora/hokora.glb",
+    "games/yorimichi/assets/hidamari/props/hokora/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_hokora.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-jizo": {
+   "about": "Hidamari town prop jizo: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/jizo/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/jizo/concept.json",
+    "games/yorimichi/assets/hidamari/props/jizo/jizo.glb",
+    "games/yorimichi/assets/hidamari/props/jizo/job.json",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_jizo.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-kei-car": {
+   "about": "Hidamari town prop kei_car: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/kei_car/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/kei_car/concept.json",
+    "games/yorimichi/assets/hidamari/props/kei_car/job.json",
+    "games/yorimichi/assets/hidamari/props/kei_car/kei_car.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_kei_car.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-kei-truck": {
+   "about": "Hidamari town prop kei_truck: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/kei_truck/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/kei_truck/concept.json",
+    "games/yorimichi/assets/hidamari/props/kei_truck/job.json",
+    "games/yorimichi/assets/hidamari/props/kei_truck/kei_truck.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_kei_truck.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-komainu": {
+   "about": "Hidamari town prop komainu: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/komainu/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/komainu/concept.json",
+    "games/yorimichi/assets/hidamari/props/komainu/job.json",
+    "games/yorimichi/assets/hidamari/props/komainu/komainu.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_komainu.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-lantern-sign": {
+   "about": "Hidamari town prop lantern_sign: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/lantern_sign/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/lantern_sign/concept.json",
+    "games/yorimichi/assets/hidamari/props/lantern_sign/job.json",
+    "games/yorimichi/assets/hidamari/props/lantern_sign/lantern_sign.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_lantern_sign.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-laundry-stand": {
+   "about": "Hidamari town prop laundry_stand: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/laundry_stand/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/laundry_stand/concept.json",
+    "games/yorimichi/assets/hidamari/props/laundry_stand/job.json",
+    "games/yorimichi/assets/hidamari/props/laundry_stand/laundry_stand.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_laundry_stand.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-phone-booth": {
+   "about": "Hidamari town prop phone_booth: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/phone_booth/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/phone_booth/concept.json",
+    "games/yorimichi/assets/hidamari/props/phone_booth/job.json",
+    "games/yorimichi/assets/hidamari/props/phone_booth/phone_booth.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_phone_booth.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-planter-box": {
+   "about": "Hidamari town prop planter_box: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/planter_box/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/planter_box/concept.json",
+    "games/yorimichi/assets/hidamari/props/planter_box/job.json",
+    "games/yorimichi/assets/hidamari/props/planter_box/planter_box.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_planter_box.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-postbox": {
+   "about": "Hidamari town prop postbox: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/postbox/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/postbox/concept.json",
+    "games/yorimichi/assets/hidamari/props/postbox/job.json",
+    "games/yorimichi/assets/hidamari/props/postbox/postbox.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_postbox.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-potted-plants": {
+   "about": "Hidamari town prop potted_plants: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/potted_plants/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/potted_plants/concept.json",
+    "games/yorimichi/assets/hidamari/props/potted_plants/job.json",
+    "games/yorimichi/assets/hidamari/props/potted_plants/potted_plants.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_potted_plants.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-produce-stand": {
+   "about": "Hidamari town prop produce_stand: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/produce_stand/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/produce_stand/concept.json",
+    "games/yorimichi/assets/hidamari/props/produce_stand/job.json",
+    "games/yorimichi/assets/hidamari/props/produce_stand/produce_stand.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_produce_stand.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-propane-tanks": {
+   "about": "Hidamari town prop propane_tanks: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/propane_tanks/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/propane_tanks/concept.json",
+    "games/yorimichi/assets/hidamari/props/propane_tanks/job.json",
+    "games/yorimichi/assets/hidamari/props/propane_tanks/propane_tanks.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_propane_tanks.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-sake-barrels": {
+   "about": "Hidamari town prop sake_barrels: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/sake_barrels/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/sake_barrels/concept.json",
+    "games/yorimichi/assets/hidamari/props/sake_barrels/job.json",
+    "games/yorimichi/assets/hidamari/props/sake_barrels/sake_barrels.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_sake_barrels.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-scooter": {
+   "about": "Hidamari town prop scooter: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/scooter/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/scooter/concept.json",
+    "games/yorimichi/assets/hidamari/props/scooter/job.json",
+    "games/yorimichi/assets/hidamari/props/scooter/scooter.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_scooter.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-stone-lantern": {
+   "about": "Hidamari town prop stone_lantern: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/stone_lantern/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/stone_lantern/concept.json",
+    "games/yorimichi/assets/hidamari/props/stone_lantern/job.json",
+    "games/yorimichi/assets/hidamari/props/stone_lantern/stone_lantern.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_stone_lantern.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-street-bench": {
+   "about": "Hidamari town prop street_bench: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/street_bench/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/street_bench/concept.json",
+    "games/yorimichi/assets/hidamari/props/street_bench/job.json",
+    "games/yorimichi/assets/hidamari/props/street_bench/street_bench.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_street_bench.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-tanuki": {
+   "about": "Hidamari town prop tanuki: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/tanuki/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/tanuki/concept.json",
+    "games/yorimichi/assets/hidamari/props/tanuki/job.json",
+    "games/yorimichi/assets/hidamari/props/tanuki/tanuki.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_tanuki.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-taxi": {
+   "about": "Hidamari town prop taxi: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/taxi/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/taxi/concept.json",
+    "games/yorimichi/assets/hidamari/props/taxi/job.json",
+    "games/yorimichi/assets/hidamari/props/taxi/taxi.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_taxi.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-town-bus": {
+   "about": "Hidamari town prop town_bus: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/town_bus/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/town_bus/concept.json",
+    "games/yorimichi/assets/hidamari/props/town_bus/job.json",
+    "games/yorimichi/assets/hidamari/props/town_bus/town_bus.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_town_bus.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-vending-machine": {
+   "about": "Hidamari town prop vending_machine: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/vending_machine/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/vending_machine/concept.json",
+    "games/yorimichi/assets/hidamari/props/vending_machine/job.json",
+    "games/yorimichi/assets/hidamari/props/vending_machine/vending_machine.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_vending_machine.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-water-basin": {
+   "about": "Hidamari town prop water_basin: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/water_basin/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/water_basin/concept.json",
+    "games/yorimichi/assets/hidamari/props/water_basin/job.json",
+    "games/yorimichi/assets/hidamari/props/water_basin/water_basin.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_water_basin.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "prop-yatai": {
+   "about": "Hidamari town prop yatai: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/props/yatai/concept.jpg",
+    "games/yorimichi/assets/hidamari/props/yatai/concept.json",
+    "games/yorimichi/assets/hidamari/props/yatai/job.json",
+    "games/yorimichi/assets/hidamari/props/yatai/yatai.glb",
+    "games/yorimichi/assets/hidamari/prop-export-parameters/HD_P_yatai.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-asphalt": {
+   "about": "Hidamari town surface asphalt: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/asphalt.jpg",
+    "games/yorimichi/assets/hidamari/textures/asphalt.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-blockwall": {
+   "about": "Hidamari town surface blockwall: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/blockwall.jpg",
+    "games/yorimichi/assets/hidamari/textures/blockwall.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-brick": {
+   "about": "Hidamari town surface brick: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/brick.jpg",
+    "games/yorimichi/assets/hidamari/textures/brick.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-concrete": {
+   "about": "Hidamari town surface concrete: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/concrete.jpg",
+    "games/yorimichi/assets/hidamari/textures/concrete.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-drystone": {
+   "about": "Hidamari town surface drystone: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/drystone.jpg",
+    "games/yorimichi/assets/hidamari/textures/drystone.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-earth": {
+   "about": "Hidamari town surface earth: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/earth.jpg",
+    "games/yorimichi/assets/hidamari/textures/earth.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-flagstone": {
+   "about": "Hidamari town surface flagstone: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/flagstone.jpg",
+    "games/yorimichi/assets/hidamari/textures/flagstone.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-flat": {
+   "about": "Hidamari town surface flat: material instance and texture",
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-grass": {
+   "about": "Hidamari town surface grass: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/grass.jpg",
+    "games/yorimichi/assets/hidamari/textures/grass.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-gravel": {
+   "about": "Hidamari town surface gravel: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/gravel.jpg",
+    "games/yorimichi/assets/hidamari/textures/gravel.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-metal": {
+   "about": "Hidamari town surface metal: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/metal.jpg",
+    "games/yorimichi/assets/hidamari/textures/metal.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-moss": {
+   "about": "Hidamari town surface moss: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/moss.jpg",
+    "games/yorimichi/assets/hidamari/textures/moss.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-paint": {
+   "about": "Hidamari town surface paint: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/paint.jpg",
+    "games/yorimichi/assets/hidamari/textures/paint.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-plaster": {
+   "about": "Hidamari town surface plaster: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/plaster.jpg",
+    "games/yorimichi/assets/hidamari/textures/plaster.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-rice": {
+   "about": "Hidamari town surface rice: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/rice.jpg",
+    "games/yorimichi/assets/hidamari/textures/rice.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-roof": {
+   "about": "Hidamari town surface roof: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/roof.jpg",
+    "games/yorimichi/assets/hidamari/textures/roof.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-sidewalk": {
+   "about": "Hidamari town surface sidewalk: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/sidewalk.jpg",
+    "games/yorimichi/assets/hidamari/textures/sidewalk.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-siding": {
+   "about": "Hidamari town surface siding: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/siding.jpg",
+    "games/yorimichi/assets/hidamari/textures/siding.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-stone": {
+   "about": "Hidamari town surface stone: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/stone.jpg",
+    "games/yorimichi/assets/hidamari/textures/stone.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "surface-timber": {
+   "about": "Hidamari town surface timber: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/hidamari/textures/timber.jpg",
+    "games/yorimichi/assets/hidamari/textures/timber.json"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "tree-caldera-black-pine-a": {
+   "about": "Caldera tree black-pine A: LOD meshes",
+   "sources": [
+    "games/yorimichi/assets/craterpark/trees/black_pine_a/downloads.json",
+    "games/yorimichi/assets/craterpark/trees/black_pine_a/job.json",
+    "games/yorimichi/assets/craterpark/trees/black_pine_a/raw/output_model_url.glb",
+    "games/yorimichi/assets/craterpark/trees/black_pine_a/raw/output_rendered_image_url.webp"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "tree-caldera-black-pine-b": {
+   "about": "Caldera tree black-pine B: LOD meshes",
+   "sources": [
+    "games/yorimichi/assets/craterpark/trees/black_pine_b/downloads.json",
+    "games/yorimichi/assets/craterpark/trees/black_pine_b/job.json",
+    "games/yorimichi/assets/craterpark/trees/black_pine_b/raw/output_model_url.glb",
+    "games/yorimichi/assets/craterpark/trees/black_pine_b/raw/output_rendered_image_url.webp"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "tree-caldera-cedar-a": {
+   "about": "Caldera tree cedar A: LOD meshes, material and texture",
+   "sources": [
+    "games/yorimichi/assets/craterpark/trees/cedar_a/downloads.json",
+    "games/yorimichi/assets/craterpark/trees/cedar_a/job.json",
+    "games/yorimichi/assets/craterpark/trees/cedar_a/raw/output_model_url.glb",
+    "games/yorimichi/assets/craterpark/trees/cedar_a/raw/output_rendered_image_url.webp"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  },
+  "tree-caldera-cedar-b": {
+   "about": "Caldera tree cedar B: LOD meshes, material and texture",
+   "sources": [
+    "games/yorimichi/assets/craterpark/trees/cedar_b/downloads.json",
+    "games/yorimichi/assets/craterpark/trees/cedar_b/job.json",
+    "games/yorimichi/assets/craterpark/trees/cedar_b/raw/output_model_url.glb",
+    "games/yorimichi/assets/craterpark/trees/cedar_b/raw/output_rendered_image_url.webp"
+   ],
+   "references": [
+    "adopted/japan/hidamari/generator"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_ac_unit": "prop-ac-unit",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle": "prop-bicycle",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle_shelter": "prop-bicycle-shelter",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_bonsai_shelf": "prop-bonsai-shelf",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop": "prop-bus-stop",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_curve_mirror": "prop-curve-mirror",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_drink_crates": "prop-drink-crates",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_fire_buckets": "prop-fire-buckets",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_garbage_station": "prop-garbage-station",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_hokora": "prop-hokora",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_jizo": "prop-jizo",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_car": "prop-kei-car",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_truck": "prop-kei-truck",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_komainu": "prop-komainu",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_lantern_sign": "prop-lantern-sign",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_laundry_stand": "prop-laundry-stand",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_phone_booth": "prop-phone-booth",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_planter_box": "prop-planter-box",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_postbox": "prop-postbox",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_potted_plants": "prop-potted-plants",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_produce_stand": "prop-produce-stand",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_propane_tanks": "prop-propane-tanks",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_sake_barrels": "prop-sake-barrels",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_scooter": "prop-scooter",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_stone_lantern": "prop-stone-lantern",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_street_bench": "prop-street-bench",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_tanuki": "prop-tanuki",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_taxi": "prop-taxi",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_town_bus": "prop-town-bus",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_vending_machine": "prop-vending-machine",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_water_basin": "prop-water-basin",
+  "/Game/Japan/Hidamari/Materials/MI_HD_P_yatai": "prop-yatai",
+  "/Game/Japan/Hidamari/Materials/MI_HD_asphalt": "surface-asphalt",
+  "/Game/Japan/Hidamari/Materials/MI_HD_blockwall": "surface-blockwall",
+  "/Game/Japan/Hidamari/Materials/MI_HD_brick": "surface-brick",
+  "/Game/Japan/Hidamari/Materials/MI_HD_concrete": "surface-concrete",
+  "/Game/Japan/Hidamari/Materials/MI_HD_drystone": "surface-drystone",
+  "/Game/Japan/Hidamari/Materials/MI_HD_earth": "surface-earth",
+  "/Game/Japan/Hidamari/Materials/MI_HD_flagstone": "surface-flagstone",
+  "/Game/Japan/Hidamari/Materials/MI_HD_flat": "surface-flat",
+  "/Game/Japan/Hidamari/Materials/MI_HD_grass": "surface-grass",
+  "/Game/Japan/Hidamari/Materials/MI_HD_gravel": "surface-gravel",
+  "/Game/Japan/Hidamari/Materials/MI_HD_metal": "surface-metal",
+  "/Game/Japan/Hidamari/Materials/MI_HD_moss": "surface-moss",
+  "/Game/Japan/Hidamari/Materials/MI_HD_paint": "surface-paint",
+  "/Game/Japan/Hidamari/Materials/MI_HD_plaster": "surface-plaster",
+  "/Game/Japan/Hidamari/Materials/MI_HD_rice": "surface-rice",
+  "/Game/Japan/Hidamari/Materials/MI_HD_roof": "surface-roof",
+  "/Game/Japan/Hidamari/Materials/MI_HD_sidewalk": "surface-sidewalk",
+  "/Game/Japan/Hidamari/Materials/MI_HD_siding": "surface-siding",
+  "/Game/Japan/Hidamari/Materials/MI_HD_stone": "surface-stone",
+  "/Game/Japan/Hidamari/Materials/MI_HD_timber": "surface-timber",
+  "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_A": "tree-caldera-black-pine-a",
+  "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_B": "tree-caldera-black-pine-b",
+  "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_A": "tree-caldera-cedar-a",
+  "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_B": "tree-caldera-cedar-b",
+  "/Game/Japan/Hidamari/Materials/M_HDCity": "generator",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_A/Tree_Caldera_BlackPine_A_LOD1": "tree-caldera-black-pine-a",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_A/Tree_Caldera_BlackPine_A_LOD2": "tree-caldera-black-pine-a",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_A/Tree_Caldera_BlackPine_A_LOD3": "tree-caldera-black-pine-a",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD1": "tree-caldera-black-pine-b",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD2": "tree-caldera-black-pine-b",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_BlackPine_B/Tree_Caldera_BlackPine_B_LOD3": "tree-caldera-black-pine-b",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_A/Tree_Caldera_Cedar_A_LOD1": "tree-caldera-cedar-a",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_A/Tree_Caldera_Cedar_A_LOD2": "tree-caldera-cedar-a",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_A/Tree_Caldera_Cedar_A_LOD3": "tree-caldera-cedar-a",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD1": "tree-caldera-cedar-b",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD2": "tree-caldera-cedar-b",
+  "/Game/Japan/Hidamari/PropLODs/Tree_Caldera_Cedar_B/Tree_Caldera_Cedar_B_LOD3": "tree-caldera-cedar-b",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_ac_unit": "prop-ac-unit",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_bicycle": "prop-bicycle",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_bicycle_shelter": "prop-bicycle-shelter",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_bonsai_shelf": "prop-bonsai-shelf",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_bus_stop": "prop-bus-stop",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_curve_mirror": "prop-curve-mirror",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_drink_crates": "prop-drink-crates",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_fire_buckets": "prop-fire-buckets",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_garbage_station": "prop-garbage-station",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_hokora": "prop-hokora",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_jizo": "prop-jizo",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_kei_car": "prop-kei-car",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_kei_truck": "prop-kei-truck",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_komainu": "prop-komainu",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_lantern_sign": "prop-lantern-sign",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_laundry_stand": "prop-laundry-stand",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_phone_booth": "prop-phone-booth",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_planter_box": "prop-planter-box",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_postbox": "prop-postbox",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_potted_plants": "prop-potted-plants",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_produce_stand": "prop-produce-stand",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_propane_tanks": "prop-propane-tanks",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_sake_barrels": "prop-sake-barrels",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_scooter": "prop-scooter",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_stone_lantern": "prop-stone-lantern",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_street_bench": "prop-street-bench",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_tanuki": "prop-tanuki",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_taxi": "prop-taxi",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_town_bus": "prop-town-bus",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_vending_machine": "prop-vending-machine",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_water_basin": "prop-water-basin",
+  "/Game/Japan/Hidamari/Textures/T_HD_P_yatai": "prop-yatai",
+  "/Game/Japan/Hidamari/Textures/T_HD_asphalt": "surface-asphalt",
+  "/Game/Japan/Hidamari/Textures/T_HD_blockwall": "surface-blockwall",
+  "/Game/Japan/Hidamari/Textures/T_HD_brick": "surface-brick",
+  "/Game/Japan/Hidamari/Textures/T_HD_concrete": "surface-concrete",
+  "/Game/Japan/Hidamari/Textures/T_HD_drystone": "surface-drystone",
+  "/Game/Japan/Hidamari/Textures/T_HD_earth": "surface-earth",
+  "/Game/Japan/Hidamari/Textures/T_HD_flagstone": "surface-flagstone",
+  "/Game/Japan/Hidamari/Textures/T_HD_grass": "surface-grass",
+  "/Game/Japan/Hidamari/Textures/T_HD_gravel": "surface-gravel",
+  "/Game/Japan/Hidamari/Textures/T_HD_metal": "surface-metal",
+  "/Game/Japan/Hidamari/Textures/T_HD_moss": "surface-moss",
+  "/Game/Japan/Hidamari/Textures/T_HD_paint": "surface-paint",
+  "/Game/Japan/Hidamari/Textures/T_HD_plaster": "surface-plaster",
+  "/Game/Japan/Hidamari/Textures/T_HD_rice": "surface-rice",
+  "/Game/Japan/Hidamari/Textures/T_HD_roof": "surface-roof",
+  "/Game/Japan/Hidamari/Textures/T_HD_sidewalk": "surface-sidewalk",
+  "/Game/Japan/Hidamari/Textures/T_HD_siding": "surface-siding",
+  "/Game/Japan/Hidamari/Textures/T_HD_stone": "surface-stone",
+  "/Game/Japan/Hidamari/Textures/T_HD_timber": "surface-timber",
+  "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_BlackPine_A": "tree-caldera-black-pine-a",
+  "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_BlackPine_B": "tree-caldera-black-pine-b",
+  "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_Cedar_A": "tree-caldera-cedar-a",
+  "/Game/Japan/Hidamari/Textures/T_Tree_Caldera_Cedar_B": "tree-caldera-cedar-b"
+ }
+}

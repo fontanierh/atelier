@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/treehouse/surface-bark",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_bark.uasset": "c718ed9554efb5db087e96f2726a1b98b30ea2b9f5a1dd2f4ad2f0a55e6dc8cf",
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_bark.uasset": "22c42ee1a9be4b02a2dae2acb132b5e4ef0b2281b23d41fa20b7ac59ef09f489"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
