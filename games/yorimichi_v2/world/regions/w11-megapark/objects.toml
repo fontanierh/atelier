@@ -1,0 +1,6 @@
+# Super Ultra Mega Park objects (split entries for the editor's objects.toml, see tools/migrate/objects.py).
+# Source data: unreal/Content/Data/megapark/park.json (render, collision, props). ZP_MegaPark is one fused park patch,
+# so it is not split: fused, needs per-piece export. HD_NorthGate is a fused _cell_ surface tile (6 cells), not split.
+schema = 1
+tag = "megapark"
+data = ""

@@ -1,0 +1,6 @@
+# Hippodrome objects (split entries for the editor's objects.toml, see tools/migrate/objects.py).
+# Source data: unreal/Content/Data/hippodrome/hippodrome.json (meshes: grandstand, judges tower, finish post, tote board,
+# ground, track). No stand, stable, gate, fence or building key is in this region's patches, so nothing is split.
+schema = 1
+tag = "hippodrome"
+data = ""
