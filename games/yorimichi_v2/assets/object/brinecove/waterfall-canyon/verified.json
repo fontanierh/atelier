@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/waterfall-canyon",
+  "dependencies": {
+    "adopted/brinecove/waterfall-canyon": "98b790bd001f151f5d83cb20648fa3631ec80da8b47dd059ef21bdad0c4cfb20"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/VD/KZVMBKOSHTGBX3NQ8TLRKF.uasset": "08eaf33d5676e236118c86fd20f4698d9415eceef9f06b1478ef3bf8bc8c5179"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

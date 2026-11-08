@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/plant-tree-forest-ginkgo",
+  "dependencies": {
+    "adopted/japan/assets/tree-forest": "f406209899b88716201c2f8f723885c21cad852d67994b3a2d8fced2f7e16ef7"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/SS/V5ZOEICC2ASVCKARQ05122.uasset": "bcee3f98808be046dd6e542723c537026cf8f6272a2672539b7d02f2ee5ea0fb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

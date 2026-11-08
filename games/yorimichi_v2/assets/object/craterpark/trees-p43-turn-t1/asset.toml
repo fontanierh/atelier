@@ -1,0 +1,12 @@
+# One saved object of region/w12-craterpark (tools/migrate/objects.py, from its objects.toml): the trees and bushes of the Crater Park piece p43 (turn-t1).
+# Its placement is this actor package; its model is adopted/japan/assets/tree-caldera. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/craterpark/trees-p43-turn-t1"
+kind = "placement"
+authority = "editor"
+owner = "region/w12-craterpark"
+references = ["adopted/japan/assets/tree-caldera"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/YL/P572PVRF35DCXL6OLXPC3E"

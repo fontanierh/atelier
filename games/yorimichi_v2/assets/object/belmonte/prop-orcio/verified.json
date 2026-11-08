@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-orcio",
+  "dependencies": {
+    "adopted/belmonte/prop-orcio": "4f3f68d621edd72c564b525bd74046c56ca6298f3fd9c695304ff181124f4b48"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/48/KTKMLTI6V5MPU48CNAMWT2.uasset": "923fab9628cdf505c5588ea1c028510bdbbce36eb69d22e093fa50288d30cc8b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

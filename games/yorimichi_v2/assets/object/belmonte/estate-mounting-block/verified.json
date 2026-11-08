@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-mounting-block",
+  "dependencies": {
+    "adopted/belmonte/estate-mounting-block": "dd1ad5f9d0c168c918287d1167a5c730dad77cd228b6654b40aea7e3c0cd30bf"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/PK/2C5GHVUFCAZCEKIRX7PQRN.uasset": "2f02540db20c3db68e9588d3beaffc965d8e0703fcb4577e8f2e5ed07bbd3cc7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

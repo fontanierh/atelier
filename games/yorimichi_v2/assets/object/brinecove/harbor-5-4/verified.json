@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-5-4",
+  "dependencies": {
+    "adopted/brinecove/harbor-5-4": "93be829cb51c82db94e145943ad90c33b3a500652014f87ec46ca48410b1ffef"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/V8/A73HT29LL2L3BO68XJIIG9.uasset": "f4aa4f80afe4819555167e78e8363a1fd53f0aa8063b38c5095426ba223b8cdc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

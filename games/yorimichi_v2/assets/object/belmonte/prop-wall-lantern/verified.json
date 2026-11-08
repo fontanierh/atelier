@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-wall-lantern",
+  "dependencies": {
+    "adopted/belmonte/prop-wall-lantern": "946a7f8ca5353ce3422b555ee56ae7f56a8b0052d44cf0f3ff2b4f541a50f466"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/27/CQWODPYTWR5H4GSZVYNJN9.uasset": "9f789d7760e85352743c737597a40e51bb4e5ad724b2a38b5797dd2853fe5c3f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

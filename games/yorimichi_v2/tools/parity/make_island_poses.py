@@ -321,7 +321,7 @@ def build_poses():
     add('w02_hamlet_overview', village_centroid(), 300, 110, 55, 'the hamlet cluster from the west over its roofs')
     add('w02_hamlet_teahouse', Target(*WORLD['village']['buildings'][0]['position'],
                                       'unreal/Content/Data/world.json village.buildings[0] (Village_TeaHouse)'),
-        200, 35, 12, 'the tea house and the lane in front of it')
+        200, 35, 30, 'the tea house and the lane in front of it, from above the trees that hide it lower down')
     # W03 mini Mega ramp
     add('w03_mini_ramp_overview', mega_origin, 250, 90, 40, 'the mini Mega ramp from the south-west')
     add('w03_mega_trail_foot', mega_trail, 60, 55, 18, 'the foot of the ramp trail where it leaves the hamlet')
@@ -360,7 +360,7 @@ def build_poses():
     add('w12_volcano_south_trail', trail_city, 200, 180, 60, 'the north trail from Hidamari up the volcano south flank')
     add('w12_volcano_west_flank', w12_w, 270, 300, 150, 'the volcano west flank above Mega Park')
     # W13 sword camp
-    add('w13_ronin_camp', camp, 200, 45, 15, 'the Ronin camp clearing')
+    add('w13_ronin_camp', camp, 200, 45, 35, 'the Ronin camp clearing, from above the canopy around it')
     add('w13_ronin_road', camp_road, 330, 60, 20, 'the road bend beside the camp')
     # W14 Hidamari stable (disabled at baseline: the site must render empty of a stable)
     add('w14_stable_site', hd_stable, 200, 90, 30, 'the disabled stable site, which must render without a stable')

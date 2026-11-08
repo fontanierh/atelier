@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-gorge-strata",
+  "dependencies": {
+    "adopted/belmonte/civil-gorge-strata": "a72a8c8dc81f4e89857bffe7bdb013ed6820c4a273d2481e2ba942984450cb85"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/NJ/8HRL804Y1S79UPCB4UGK03.uasset": "db7d78ddd4e24a563b641249ce617ed50de7dc3e53c700a8cd48864299e5e1e2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

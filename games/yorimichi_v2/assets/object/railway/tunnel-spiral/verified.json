@@ -1,0 +1,13 @@
+{
+  "asset": "object/railway/tunnel-spiral",
+  "dependencies": {
+    "adopted/belmontetrack/track-small": "e9eae30e7ee4b25c096f9d8cd64dfacc39fa5c8e416de7cfe94eb597abea5205",
+    "adopted/belmontetrack/tunnel-spiral": "848d0e36ca865559aba622a9d24d48f471c3a8c4b399359521a91f87f7bc5b09"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/IA/R5TK6PKI4SNB6S1FT4ETXT.uasset": "a1d113bccf47d5f5d3ef9cfbe0ff9d66faeb9486684973f6d24b2e1ee9744132"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

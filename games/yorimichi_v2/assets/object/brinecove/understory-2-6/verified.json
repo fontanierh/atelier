@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/understory-2-6",
+  "dependencies": {
+    "adopted/brinecove/understory-2-6": "b138c2bf04f25b30a6d42165c566fa7ec8da8e406922795da5f0490435d66d4b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/66/PJNYDRTZVBECDGHRX1QIW5.uasset": "defb4b612b815c779bcabdeb43ccb81cd0d578d557d868206b68b96c63c85837"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

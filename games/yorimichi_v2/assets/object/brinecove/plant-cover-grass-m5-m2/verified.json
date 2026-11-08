@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-cover-grass-m5-m2",
+  "dependencies": {
+    "adopted/brinecove/plant-cover-grass": "7832219eaa530b766d0d94577d3e8bf38d4daa2fd346090ebf4c5e18682fc221"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/J5/798L88GK7BUOMLM1UJ8I0V.uasset": "feda6226908566d9e8eaf2f87e49c90af2fe37edde18eabed49df37d92296758"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

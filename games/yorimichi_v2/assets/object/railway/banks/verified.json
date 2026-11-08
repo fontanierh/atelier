@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/banks",
+  "dependencies": {
+    "adopted/belmontetrack/banks": "7e3875722c4a77b82cc4a11c6de698a2b1787d90002e94f8e400f1bc0712989a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/M0/BCC2RBHV7OL8Y5V2BNQB44.uasset": "5bce2c3142356ed1d768065ebefb881ee00077f374b927c513205d28eee1b188"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

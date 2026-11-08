@@ -7,6 +7,10 @@ JOBS.json is {"jobs": [...]}; each job is one of
      "only": ["object/belmonte/fountain"]}                    tools/migrate/objects.py's migration, these objects only
     {"kind": "script", "script": "move_actor.py", "claim": "TASK", "paths": [...], "scopes": [...], "env": {"V2_..."}}
                                                                one named unreal/Scripts editor script, like editor.run
+    {"kind": "import", "asset": "prop/bench", "claim": "TASK", "plan": ".../ImportJournal/prop__bench/plan.json",
+     "write_paths": [...]}                                      a journaled tools/import/run.py import
+Static-mesh imports and object migrations may share a --headless session. The import runner owns source
+fingerprints, journals, final records and recovery after the editor exits; this queue checks each job's writes.
 Other agents prepare jobs and their inputs in their own checkouts; only this controller writes this checkout and
 drives its editor. The explicit build step `editor.session` (unreal/Scripts/job_queue.py) supplies the one guarded,
 admitted editor; the build's lock and memory guard own its whole life. The controller authorizes each job just before
@@ -47,6 +51,10 @@ class SessionError(RuntimeError):
     pass
 
 
+def say(text):
+    print(text, flush=True)
+
+
 def code_digest(game: Path = GAME) -> str:
     """The editor scripts and C++ the session loaded, the game's and the platform's plugins included (each plugin's
     descriptor and Source): a change ends the batch before its next job."""
@@ -84,7 +92,7 @@ class JobContext:
 
 
 class Session:
-    def __init__(self, game: Path = GAME, *, out: Path = OUT, launch=launch_step, log: Path = LOG, echo=print,
+    def __init__(self, game: Path = GAME, *, out: Path = OUT, launch=launch_step, log: Path = LOG, echo=say,
                  open_seconds: float = 3 * 3600, headless: bool = False):
         self.headless = headless
         self.game, self.launch, self.log_path, self.echo = game, launch, log, echo
@@ -144,6 +152,8 @@ class Session:
         self.folder.mkdir(parents=True)
         self.code = code_digest(self.game)
         self._write('session.json', {'nonce': self.nonce, 'code': self.code, 'headless': self.headless})
+        self._write('summary.json', self.summary)
+        self.echo(f'editor session {self.nonce[:8]} summary {self.folder / "summary.json"}')
         (self.folder / 'heartbeat').touch()
         threading.Thread(target=self._beat, daemon=True).start()
         started = time.monotonic()
@@ -171,21 +181,33 @@ class Session:
         return code
 
     def __enter__(self):
-        return self.open()
+        try:
+            return self.open()
+        except BaseException:
+            self.close()  # a failed __enter__ does not call __exit__; recovery must still wait for native exit
+            raise
 
-    def __exit__(self, *_):
-        self.close()
+    def __exit__(self, error_type, *_):
+        code = self.close()
+        if error_type is None and code:
+            raise SessionError(f'the editor session ended with exit {code}; see {self.log_path}')
 
-    def run(self, name: str, script: str, env: dict, *, seconds: float = 1800) -> str:
+    def run(self, name: str, script: str, env: dict, *, seconds: float = 1800, kind: str = 'script') -> str:
         """One job's editor part: its script with its environment; returns its section of the editor log."""
+        if script == 'import_asset.py' and kind != 'import':
+            raise SessionError('import_asset.py needs a prepared import job')
+        if kind == 'import' and script != 'import_asset.py':
+            raise SessionError('an import job runs only import_asset.py')
         if self.headless and script != 'migrate_objects.py':
-            raise SessionError('a headless session accepts only object migration jobs; use a rendered session for scripts')
+            if kind != 'import' or json.loads(Path(env['V2_IMPORT_PLAN']).read_text()).get('importer') != 'static-mesh':
+                raise SessionError('a headless session accepts only object migrations and static-mesh imports')
         if code_digest(self.game) != self.code:
             raise SessionError('unreal/Scripts or unreal/Source changed since the editor started; '
                                'start a new session for the changed code')
         self.seq += 1
         seq = self.seq
-        self._write('next.json', {'nonce': self.nonce, 'seq': seq, 'name': name, 'script': script, 'env': env})
+        self._write('next.json', {'nonce': self.nonce, 'seq': seq, 'name': name, 'kind': kind,
+                                 'script': script, 'env': env})
         receipt = self._wait(f'job {seq} {name}', lambda: (r := self._read(f'{seq}.receipt.json')) and
                              r.get('nonce') == self.nonce and r, seconds)
         end = f'V2 JOB END {seq} '
@@ -211,6 +233,93 @@ class Session:
 
     def _job_env(self, keys):
         return {k: os.environ.get(k) for k in keys}
+
+    def import_plan(self, job):
+        """A prepared import is bound to this checkout's journal, not an arbitrary script or save list."""
+        asset, claim = job.get('asset'), job.get('claim')
+        if not isinstance(asset, str) or not asset or not isinstance(claim, str) or not claim:
+            raise SessionError('an import job needs an asset and a claim')
+        if (job.get('script', 'import_asset.py') != 'import_asset.py'
+                or job.get('name', f'import {asset}') != f'import {asset}'):
+            raise SessionError('an import job runs import_asset.py under its asset name')
+        if not isinstance(job.get('plan'), str) or not job['plan']:
+            raise SessionError('an import job needs its prepared plan path')
+        plan_file = Path(job['plan']).resolve()
+        expected = (self.game / 'unreal/Saved/ImportJournal' / asset.replace('/', '__') / 'plan.json').resolve()
+        if plan_file != expected:
+            raise SessionError('an import job needs its own checkout journal plan')
+        plan = json.loads(plan_file.read_text())
+        paths = job.get('write_paths', [])
+        if (plan.get('asset') != asset or plan.get('claim') != claim or not paths
+                or set(plan.get('write_paths', [])) != set(paths)):
+            raise SessionError('import job identity, claim or write paths differ from its plan')
+        extra = job.get('env', {})
+        if set(extra) - {'V2_IMPORT_PLAN'} or (extra.get('V2_IMPORT_PLAN') is not None
+                                             and Path(extra['V2_IMPORT_PLAN']).resolve() != plan_file):
+            raise SessionError('an import job sets only its own V2_IMPORT_PLAN')
+        journal = json.loads(plan_file.with_name('journal.json').read_text())
+        if (journal.get('asset') != asset or set(paths) !=
+                {'games/yorimichi_v2/' + rel for rel in journal.get('files', {})}):
+            raise SessionError('import job has no matching recovery journal')
+        if self.headless and (plan.get('kind') != 'static-mesh' or plan.get('importer') != 'static-mesh'):
+            raise SessionError('a headless session accepts only object migrations and static-mesh imports')
+        return plan_file, plan
+
+    def import_asset(self, job):
+        """@cc [owner:fontanierh,label:correctness] warm-import-write-boundary
+        A prepared import MUST reauthorize through the cold import's route immediately before its job.
+        Only that route's save list MAY be written; every planned package MUST be written and present.
+        A failed job MUST stop the editor before the caller restores journals. Successful jobs MUST be
+        recorded durably before the next job, without consuming the caller's journals or verified records.
+        """
+        import records
+        seq, started = self.seq + 1, time.monotonic()
+        saved = self._job_env(['V2_IMPORT_PLAN', 'V2_SAVE_ALLOW', 'V2_SAVE_DENY'])
+        try:
+            plan_file, plan = self.import_plan(job)
+            os.environ['V2_IMPORT_PLAN'] = str(plan_file)
+            context, log = JobContext(self.folder / f'job-{seq}'), _Log()
+            self.build._authorize_import(context, log)
+            # Read the authorization's derived list, never widen it to the caller's requested paths.
+            repo = self.game.parents[1]
+            allowed = {Path(p).relative_to(repo).as_posix()
+                       for p in Path(os.environ['V2_SAVE_ALLOW']).read_text().splitlines()}
+            if not allowed <= set(job['write_paths']):
+                raise SessionError('the recovery journal does not cover every import destination')
+            before = authority.content_snapshot(self.game)
+            env = self._job_env(['V2_IMPORT_PLAN', 'V2_SAVE_ALLOW']) | {'V2_SAVE_DENY': None}
+            text = self.run(f'import {job["asset"]}', 'import_asset.py', env, kind='import')
+            checking = time.monotonic()
+            if 'V2 IMPORT DONE' not in text:
+                raise SessionError('the import did not report completion')
+            written = sorted('games/yorimichi_v2/' + rel for rel in
+                             authority.written(before, authority.content_snapshot(self.game)))
+            outside = sorted(set(written) - allowed)
+            if outside:
+                raise SessionError(f'the import wrote outside its declared packages: {", ".join(outside[:8])}')
+            for package in plan['packages']:
+                if not any(p.is_file() and 'games/yorimichi_v2/' + p.relative_to(self.game).as_posix() in written
+                           for p in records.package_files(self.game, package)):
+                    raise SessionError(f'{package} was not written by its import job')
+            self.checked += written
+            self._write('checked.json', sorted(set(self.checked)))
+            self.summary['jobs'][-1].update(asset=job['asset'], written=written,
+                                            total_seconds=round(time.monotonic() - started, 1),
+                                            check_seconds=round(time.monotonic() - checking, 1))
+            self._write('summary.json', self.summary)
+            self.echo(f'checked import job {seq}: {job["asset"]}, {len(written)} file(s), '
+                      f'{time.monotonic() - started:.1f} s')
+            return text
+        except Exception as error:
+            if self.summary['jobs'] and self.summary['jobs'][-1]['seq'] == seq:
+                self.summary['jobs'][-1]['error'] = str(error)
+            raise SessionError(f'job {seq} import {job.get("asset", "?")}: {error}') from error
+        finally:
+            for key, value in saved.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
 
     def objects(self, regions, environment, claim, only=None):
         """tools/migrate/objects.py's migration of these objects, its editor part a session job."""
@@ -288,8 +397,11 @@ class _Log:
 
 
 def run_jobs(jobs: list[dict], session: Session) -> None:
-    if session.headless and any(job.get('kind') != 'objects' for job in jobs):
-        raise SessionError('a headless session accepts only object migration jobs')
+    for job in jobs:
+        if job.get('kind') == 'import':
+            session.import_plan(job)  # refuse unsupported or unprepared work before starting an editor
+        elif session.headless and job.get('kind') != 'objects':
+            raise SessionError('a headless session accepts only object migrations and static-mesh imports')
     with session:
         for job in jobs:
             kind = job.get('kind')
@@ -298,6 +410,8 @@ def run_jobs(jobs: list[dict], session: Session) -> None:
             elif kind == 'script':
                 session.script(job['script'], job.get('claim'), job.get('paths', []), job.get('scopes', ()),
                                job.get('env'))
+            elif kind == 'import':
+                session.import_asset(job)
             else:
                 raise SessionError(f'unknown job kind {kind!r}')
 
@@ -305,7 +419,8 @@ def run_jobs(jobs: list[dict], session: Session) -> None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('jobs', type=Path, help='JSON file {"jobs": [...]}')
-    parser.add_argument('--headless', action='store_true', help='object jobs only; allow a second editor in a separate checkout')
+    parser.add_argument('--headless', action='store_true',
+                        help='objects and static-mesh imports only; allow a second editor in a separate checkout')
     args = parser.parse_args(argv)
     import objects
     import records
@@ -315,11 +430,11 @@ def main(argv=None) -> int:
     try:
         run_jobs(jobs, session)
     except (SessionError, objects.ObjectError, authority.Unauthorized, save_validate.ValidationError,
-            records.RecordError, RuntimeError) as error:
+            records.RecordError, RuntimeError, OSError, ValueError) as error:
         print(f'editor session failed: {error}', file=sys.stderr)
         return 1
     finally:
-        done = session.summary['jobs']
+        done = [job for job in session.summary['jobs'] if not job.get('error')]
         print(f'{len(done)} of {len(jobs)} job(s) done; editor start {session.summary.get("startup_seconds")} s; '
               + ', '.join(f'{j["name"]} {j["seconds"]:.0f}+{j.get("check_seconds", 0):.0f} s' for j in done))
     return 0

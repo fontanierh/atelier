@@ -1,0 +1,13 @@
+{
+  "asset": "object/railway/chunks-0-19",
+  "dependencies": {
+    "adopted/belmontetrack/chunks-0-19": "e6be1357d5b6f1f87d6885c8d558d4e803a0152af444c8ad9106d0e28bc2e8c6",
+    "adopted/belmontetrack/track-small": "e9eae30e7ee4b25c096f9d8cd64dfacc39fa5c8e416de7cfe94eb597abea5205"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/1F/064KU2JQ3727XMVI6N4X51.uasset": "9fa1710c6eb8f01d76fe51aa6c959345875593d84a5c5aefbbc92f3ba70eccc4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

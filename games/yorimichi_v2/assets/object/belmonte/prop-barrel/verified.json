@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-barrel",
+  "dependencies": {
+    "adopted/belmonte/prop-barrel": "a18223f4536514b2f7a2294ad76fc9f5f98a8bc8dc36b0e7c2ba82eac79f1c63"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/J8/EN4Y71MJQ1YIXHPBBPUDH4.uasset": "959c758dc85b0d5b2e3fe8295f8f5664371fa5442a90c321e940e26f162aa096"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

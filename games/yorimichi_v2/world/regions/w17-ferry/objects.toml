@@ -1,0 +1,18 @@
+# Objects of this route region, saved by tools/migrate/objects.py (see its docstring).
+# Ferry terminal objects (tools/migrate/objects.py). `route` names terminals of service.json by key.
+schema = 1
+tag = "ferry"
+data = "ferry/service/service.json"
+
+
+[[objects]]
+id = "object/ferry/terminal-hidamari"
+route = ["hidamari"]
+model = "adopted/ferry/terminal-hidamari"
+about = "the Hidamari ferry terminal: jetty, stage, waiting house, timetable board and collision"
+
+[[objects]]
+id = "object/ferry/terminal-brinecove"
+route = ["brinecove"]
+model = "adopted/ferry/terminal-brinecove"
+about = "the Brine Cove ferry terminal: landing, pavilion, ticket hut, fenders, props and collision"

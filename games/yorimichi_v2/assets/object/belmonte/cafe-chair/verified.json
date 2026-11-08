@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/cafe-chair",
+  "dependencies": {
+    "adopted/belmonte/cafe-chair": "6eb95d74951d9ca067e1235f089c811c6f7a8d3337febb7996ec94becb543d22"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/DV/2SFGH49GFZSAUP2YD9Y9YS.uasset": "959ae56d0e71e715089bb3b92ed87daac252ed833bd8df11c5617246c2842ad2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

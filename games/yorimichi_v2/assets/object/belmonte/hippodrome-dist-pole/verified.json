@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-dist-pole",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-dist-pole": "f4705973015dde89251a9d69aa36fd67ef32695a3bee034e17c9bea596724bd0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/5L/FQ4XPVTC19OPLGJHHYMLMD.uasset": "0a22b50a9566a2676cbd5d5fd7dbd889c79c5ebc536ee5a52d9f063a8887285a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

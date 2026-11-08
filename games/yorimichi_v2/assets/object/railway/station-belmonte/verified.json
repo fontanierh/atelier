@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/station-belmonte",
+  "dependencies": {
+    "adopted/belmontetrack/station-belmonte": "71f66d37c8012ff7e76f32fbcc4462b84fd2957d1f7b4d486b2421c293e6a588"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/VO/S2AQUXFZ7U4MVA8F4H6NZT.uasset": "2e9a0683bf1bef802ef3424f66139f79ebbbeef5941f3a021f39faa557c4e7a0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

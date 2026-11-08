@@ -113,7 +113,9 @@ def receipt(source, checkout, done, poses_file, names, sizes, settle, launched, 
     return {'schema': 1, 'source': source, 'revision': revision(checkout, launched, how), 'map': done['map'], 'size': sizes[0],
             'warmup': int(round(settle)), 'poses_sha256': hashlib.sha256(poses_file.read_bytes()).hexdigest(),
             'poses': names, 'captured_utc': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'engine_version': done['engine_version'], 'render': done['render']}
+            'engine_version': done['engine_version'], 'render': done['render'],
+            # V2 only: seconds each pose waited past the settle for assets still compiling ({} when none did)
+            'compile_waits_s': done.get('compile_waits_s')}
 
 
 def main(argv=None) -> int:
@@ -128,7 +130,8 @@ def main(argv=None) -> int:
     parser.add_argument('--poses', type=Path, default=DEFAULT_POSES)
     parser.add_argument('--only', action='append', help='capture only the poses named by this glob (e.g. w07_*), '
                         'comma separated or repeated; the receipt then names only those poses')
-    parser.add_argument('--settle', type=float, default=8., help='seconds at each pose before its screenshot')
+    parser.add_argument('--settle', type=float, default=30., help='seconds at each pose before its screenshot '
+                        '(far city cells and forests are still streaming in after 8 s)')
     parser.add_argument('--timeout', type=float, default=900)
     args = parser.parse_args(argv)
     out = args.out.resolve()

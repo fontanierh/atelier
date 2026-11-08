@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove plant-palm (6 groups).
+# Its placement is this actor package; its model is adopted/brinecove/plant-palm. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/plant-palm"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["adopted/brinecove/plant-palm"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/4W/0Z2BTVN5X73LSSSGVVYFFQ"

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-infield",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-infield": "cdf09d2e34e64ed4b415ad4594e5d57f2577f0f80ecb0d29dc67cde75032c2fe"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/J5/MU3N7MMI88W649LSAG9EYZ.uasset": "04900fcfdbb0c380fa16af1015e85aab863310fd18583ef12e662cd6afe95d3d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

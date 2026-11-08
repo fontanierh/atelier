@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-hay-bale",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-hay-bale": "a8627a0b47fc1afa89cb6b097232697036905a35ba320d0096eda2f943c9a606"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/MD/EQLNNRETGORYRZ1A2CGJGL.uasset": "8775b002bd915d71ef0dfc5cbbbaea94732aa176b3d840ca8bbe428a55e9e8ee"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

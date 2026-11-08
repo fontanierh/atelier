@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-flower-bucket",
+  "dependencies": {
+    "adopted/belmonte/prop-flower-bucket": "21ad1e1a7acee68fb722437d52f61f80f80529028476277788240c6aca8e59de"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/HT/84G2ERQ4T84APPA4N9OHVN.uasset": "9b5b47b976041c914f7e44b65dda415ef8d85d9a6bc70c87f27e19248c855a8c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

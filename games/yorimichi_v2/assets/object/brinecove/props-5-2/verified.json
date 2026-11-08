@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-5-2",
+  "dependencies": {
+    "adopted/brinecove/props-5-2": "c59a28596fba2b048cd3aa5252f72a87070cb42c6055caf0c01e030242d969d2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/ST/W43XHA4ENDWYYSCEMIHHQT.uasset": "a8ad3cb5d24af4edf3efd6f3ca7d5ba162dff2fe35bb660d03be777177af7dd5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

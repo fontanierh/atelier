@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/viaducts",
+  "dependencies": {
+    "adopted/belmontetrack/viaducts": "095ad7bb1aab293a520f99a4208cf9756a217598f8881556f1da2f9d1533cf7f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/EU/X45W5C4AKVZWB8YBNDJ30B.uasset": "e1bec90c44e350400f5241fa73666be634ad0fc8ec1791271aa095c2468690f5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/swordcamp/fire-pit",
+  "dependencies": {
+    "adopted/swordcamp/assets": "a49109bdbf13dd73922213a547cb8a544e5db7a09ab33247494e39f86e49ac79"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/TH/LPMG3HRC24I2FAGFX3TAW2.uasset": "d7f6c60151653f04fd91b386144ffcc516ac4a7a1c2b282f8d745f46a3283a7b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

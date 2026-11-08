@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-small",
+  "dependencies": {
+    "adopted/brinecove/plant-small": "6e564e50db76a22cc5412d6b54a376b6ce8be5a07df893344f992fb4289a4667"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/XE/2XOKWA6RBN2LMMVKFDYO9V.uasset": "f4db66070e42736a7f032225c008dd4219fded74d5447902dd268cce8165d40f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

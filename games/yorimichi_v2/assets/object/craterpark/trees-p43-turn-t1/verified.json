@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/trees-p43-turn-t1",
+  "dependencies": {
+    "adopted/japan/assets/tree-caldera": "fe1f9348001b4c2789fdd5c40e3aa76e5b7898690067db19ca612c8cc21c22a3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/YL/P572PVRF35DCXL6OLXPC3E.uasset": "1df83a6d012b94a4b380f6f7dfbb03d5641d921bb2a569b2258071ea8bce01f6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

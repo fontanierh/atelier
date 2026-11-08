@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/town-pozzo",
+  "dependencies": {
+    "adopted/belmonte/town-pozzo": "ba110cd0f634ffd398d65e3ee3f8b2578f141be30ed890a90894056742973b17"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/O8/34W1R9824J75FX07F32N05.uasset": "5c7bcc3a62f3e6a0f70e7a9fefa9d3c155f029327306126516dd721053f00c3e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

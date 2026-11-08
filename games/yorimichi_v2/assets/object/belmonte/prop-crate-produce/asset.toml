@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte prop-crate-produce (2 groups).
+# Its placement is this actor package; its model is adopted/belmonte/prop-crate-produce. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/prop-crate-produce"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/prop-crate-produce"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/1A/80YRRK6MR74DZ6XI4R56PZ"

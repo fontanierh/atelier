@@ -12,6 +12,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Misc/Paths.h"
+#include "Misc/PackageName.h"
+#include "V2ScenePatch.h"
 
 static FVector TrackVector(const TArray<TSharedPtr<FJsonValue>>& A, int32 First = 0)
 {
@@ -58,6 +60,53 @@ static FTransform BoxFrame(const TSharedPtr<FJsonObject>& B, FVector& Half)
     return FTransform(FRotator(0., B->GetNumberField(TEXT("yaw")), 0.), TrackVector(B->GetArrayField(TEXT("centre"))));
 }
 
+FString ABelmonteTrack::MeshName(const FString& Asset)
+{
+    FString Name = Asset;
+    int32 Slash = INDEX_NONE;
+    if (Name.FindLastChar('/', Slash)) Name = Name.RightChop(Slash + 1);
+    int32 Dot = INDEX_NONE;
+    if (Name.FindChar('.', Dot)) Name = Name.Left(Dot);
+    return Name;
+}
+
+FString ABelmonteTrack::GroupName(const TSharedPtr<FJsonObject>& Group)
+{
+    return MeshName(Group->GetStringField(TEXT("mesh"))) + TEXT("#") + Group->GetStringField(TEXT("key"));
+}
+
+UStaticMeshComponent* ABelmonteTrack::MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& CullCm,
+    const TSharedPtr<FJsonObject>& P, UStaticMesh* Mesh)
+{
+    auto* C = NewObject<UStaticMeshComponent>(Outer, *P->GetStringField(TEXT("name")));
+    C->SetupAttachment(Parent);
+    C->SetStaticMesh(Mesh);
+    const FString Kind = P->GetStringField(TEXT("kind"));
+    // The linings stay inside the hills (no sun shadow worth casting); the viaduct and banks do cast.
+    Common(C, float(CullCm->GetNumberField(TEXT("piece"))), P->GetIntegerField(TEXT("collision")) >= 0, Kind != TEXT("lining") && Kind != TEXT("chunk") && Kind != TEXT("loop"));
+    C->SetWorldLocation(TrackVector(P->GetArrayField(TEXT("at"))));
+    return C;
+}
+
+UInstancedStaticMeshComponent* ABelmonteTrack::MakeGroup(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& G, UStaticMesh* Mesh)
+{
+    const FString Name = FString::Printf(TEXT("%s_%s_%s"), *G->GetStringField(TEXT("kind")), *Mesh->GetName(), *G->GetStringField(TEXT("key")));
+    UInstancedStaticMeshComponent* C = G->GetBoolField(TEXT("hierarchical"))
+        ? NewObject<UHierarchicalInstancedStaticMeshComponent>(Outer, *Name) : NewObject<UInstancedStaticMeshComponent>(Outer, *Name);
+    C->SetupAttachment(Parent);
+    C->SetStaticMesh(Mesh);
+    const float Distance = float(G->GetNumberField(TEXT("cull_cm")));
+    Common(C, Distance, G->GetBoolField(TEXT("collision")), G->GetBoolField(TEXT("shadow")));
+    C->InstanceEndCullDistance = int32(Distance);
+    for (const auto& Row : G->GetArrayField(TEXT("instances")))
+    {
+        const auto& A = Row->AsArray();
+        if (A.Num() < 5) continue;
+        C->AddInstance(FTransform(FRotator(0., A[3]->AsNumber(), 0.), TrackVector(A), FVector(1., A[4]->AsNumber(), 1.)), true);
+    }
+    return C;
+}
+
 bool ABelmonteTrack::Initialize(const FString& Path)
 {
     const TSharedPtr<FJsonObject> Root = AtelierReadJson(Path);
@@ -72,41 +121,43 @@ bool ABelmonteTrack::Initialize(const FString& Path)
         if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("BELMONTE TRACK missing %s"), *Asset); }
         return Mesh;
     };
+    // Pieces and groups a saved unit holds (UV2MigrationTravel::MigrateRailwayPieces) are not built again: the map's manifest
+    // lists them as "railway:<name>". A standalone map has no manifest and builds every one, as before.
+    const AV2WorldManifest* Manifest = AV2WorldManifest::Find(GetWorld());
+    const FName RailwayTag(TEXT("railway"));
+    int32 Saved = 0;
+    auto IsSaved = [&](const FString& Name, const FString& Asset) -> bool
+    {
+        if (!Manifest || !Manifest->CoversGroup(RailwayTag, Name)) return false;
+        // Its mesh must still be committed content (checked without loading it).
+        FString Package = Asset;
+        int32 Dot = INDEX_NONE;
+        if (Package.FindChar('.', Dot)) Package = Package.Left(Dot);
+        if (!FPackageName::DoesPackageExist(Package))
+            UE_LOG(LogTemp, Error, TEXT("BELMONTE TRACK saved %s is missing its mesh %s"), *Name, *Asset);
+        ++Saved;
+        return true;
+    };
     for (const auto& Value : Root->GetArrayField(TEXT("pieces")))
     {
         const auto P = Value->AsObject();
-        UStaticMesh* Mesh = Load(P->GetStringField(TEXT("mesh")));
+        const FString Asset = P->GetStringField(TEXT("mesh"));
+        if (IsSaved(P->GetStringField(TEXT("name")), Asset)) continue;
+        UStaticMesh* Mesh = Load(Asset);
         if (!Mesh) continue;
-        auto* C = NewObject<UStaticMeshComponent>(this, *P->GetStringField(TEXT("name")));
-        C->SetupAttachment(RootComponent);
-        C->SetStaticMesh(Mesh);
-        const FString Kind = P->GetStringField(TEXT("kind"));
-        // The linings stay inside the hills (no sun shadow worth casting); the viaduct and banks do cast.
-        Common(C, float(Cull->GetNumberField(TEXT("piece"))), P->GetIntegerField(TEXT("collision")) >= 0, Kind != TEXT("lining") && Kind != TEXT("chunk") && Kind != TEXT("loop"));
-        C->SetWorldLocation(TrackVector(P->GetArrayField(TEXT("at"))));
+        auto* C = MakePiece(this, RootComponent, Cull, P, Mesh);
         C->RegisterComponent();
         Parts.Add(C); ++Pieces;
     }
     for (const auto& Value : Root->GetArrayField(TEXT("instances")))
     {
         const auto G = Value->AsObject();
-        UStaticMesh* Mesh = Load(G->GetStringField(TEXT("mesh")));
+        const FString Asset = G->GetStringField(TEXT("mesh"));
+        if (IsSaved(GroupName(G), Asset)) continue;
+        UStaticMesh* Mesh = Load(Asset);
         if (!Mesh) continue;
-        const FString Name = FString::Printf(TEXT("%s_%s_%s"), *G->GetStringField(TEXT("kind")), *Mesh->GetName(), *G->GetStringField(TEXT("key")));
-        UInstancedStaticMeshComponent* C = G->GetBoolField(TEXT("hierarchical"))
-            ? NewObject<UHierarchicalInstancedStaticMeshComponent>(this, *Name) : NewObject<UInstancedStaticMeshComponent>(this, *Name);
-        C->SetupAttachment(RootComponent);
-        C->SetStaticMesh(Mesh);
-        const float Distance = float(G->GetNumberField(TEXT("cull_cm")));
-        Common(C, Distance, G->GetBoolField(TEXT("collision")), G->GetBoolField(TEXT("shadow")));
-        C->InstanceEndCullDistance = int32(Distance);
-        for (const auto& Row : G->GetArrayField(TEXT("instances")))
-        {
-            const auto& A = Row->AsArray();
-            if (A.Num() < 5) continue;
-            C->AddInstance(FTransform(FRotator(0., A[3]->AsNumber(), 0.), TrackVector(A), FVector(1., A[4]->AsNumber(), 1.)), true);
-            ++Instances;
-        }
+        UInstancedStaticMeshComponent* C = MakeGroup(this, RootComponent, G, Mesh);
+        Instances += C->GetInstanceCount();
         C->RegisterComponent();
         Parts.Add(C);
     }
@@ -180,8 +231,8 @@ bool ABelmonteTrack::Initialize(const FString& Path)
             Tunnel.Lights.Add(Lamp); AllLights.Add(Lamp);
         }
     }
-    UE_LOG(LogTemp, Display, TEXT("BELMONTE TRACK ready pieces=%d groups=%d instances=%d tunnels=%d lights=%d exposure_boxes=%d missing=%d"),
-        Pieces, Parts.Num() - Pieces - Looked, Instances, Tunnels.Num(), AllLights.Num(), Looked, Missing);
+    UE_LOG(LogTemp, Display, TEXT("BELMONTE TRACK ready pieces=%d groups=%d instances=%d saved=%d tunnels=%d lights=%d exposure_boxes=%d missing=%d"),
+        Pieces, Parts.Num() - Pieces - Looked, Instances, Saved, Tunnels.Num(), AllLights.Num(), Looked, Missing);
     return Pieces > 0;
 }
 

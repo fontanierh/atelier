@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-saddle-rack",
+  "dependencies": {
+    "adopted/belmonte/estate-saddle-rack": "50fb10ee1bb00781887c519513adc8d87e58a8ca4bd95f3ab1b6c9dc61531665"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/5Y/FYSZA0E31CCNEPCM6I5SQM.uasset": "6a6b3eed216975576073f56504860ed864ed9f66fbeedd3d069498f0a2996266"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

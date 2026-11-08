@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-chalkboard",
+  "dependencies": {
+    "adopted/belmonte/prop-chalkboard": "9c1dded62d427163c8a859f415dc4832d342051ad809608fddd098e4a907fad3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/AF/8KY4VHHLMMNM21PYP1PNFX.uasset": "db3e6b0bc502aae1538f7f649fe486352de65635caeb7621fa72cb4aea555f2e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

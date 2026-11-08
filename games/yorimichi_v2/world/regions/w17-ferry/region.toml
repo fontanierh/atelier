@@ -1,0 +1,10 @@
+# W17 ferry: the two ferry terminals (unreal/Content/Data/ferry/service/service.json, FerryService.cpp). Each terminal
+# is one object: its static parts and collision. The ship, its brows and wake, and the terminal brows stay runtime.
+# Bounds: the two terminal anchors, 20 m margin, Unreal cm (the route crosses the sea between them).
+schema = 1
+id = "region/w17-ferry"
+about = "The ferry route: its two terminals (Hidamari and Brine Cove); the ships stay runtime"
+bounds_cm = [-176500, 7480, 85980, 15880]
+neighbours = ["region/w07-hidamari-harbour", "region/w09-brinecove"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

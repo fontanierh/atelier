@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/plant-tree-tuscan-oak-m1-8",
+  "dependencies": {
+    "adopted/japan/assets/tree-tuscan": "5e2ce7d9c39eb80b9ad591116c41b5a5243e1758aebb96b8a87801fcfd7e3f65"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/X9/CWE48LFML51BIQ1SJ7EEBU.uasset": "80b23bf40ffed1a791bcacb36ee3b6ee4e0ab4eaf6b7ad40a1b73f8fc343718a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

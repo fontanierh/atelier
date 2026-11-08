@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-wheelbarrow",
+  "dependencies": {
+    "adopted/belmonte/estate-wheelbarrow": "951bb701e17bea79d2e1d7dce34cfe710cb33588984765a558aeaf6ad88d5adf"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/71/3YZG18SNBVTXLQRWUPW3Y3.uasset": "de3ff87e85e0e3c11f149de787e50b72139813bc3d4a21e4c0dea38ea6b308de"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

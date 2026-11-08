@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/ground-4-1",
+  "dependencies": {
+    "adopted/brinecove/ground-4-1": "3e89e130fd9c56e1cf4db5b01039fb49c94d63dfad4581872201174be42e4331"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/LS/E8Z3EROC3SMW24JRZUC9HN.uasset": "b8fed0a9640a9d460140cff083e705053e6e93eb914b14d4d945cd54d9b7badd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

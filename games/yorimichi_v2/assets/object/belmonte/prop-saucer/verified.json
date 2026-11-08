@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-saucer",
+  "dependencies": {
+    "adopted/belmonte/prop-saucer": "88e7724bb3148767b64bf7373022d344ad26343e8f61fbff214d2e044f34de50"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/4X/CHIZJI81JQPBUINHE1KA05.uasset": "5a14098fe2697a2a51c76800a03a0a78f8a9857975232e737406944a7441fe5b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

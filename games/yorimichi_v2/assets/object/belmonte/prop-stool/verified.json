@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-stool",
+  "dependencies": {
+    "adopted/belmonte/prop-stool": "8e448c81d3010263eba3df240b8bf70a8715bb6d2b50918aa0d78f375e2d0b6f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/AE/2CKDXN7FEJUYYD7EGPHKCP.uasset": "257b54cde9837269d61a7888f8e46b2fd2d10456e9879f27f14b250d7dbc6d8a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

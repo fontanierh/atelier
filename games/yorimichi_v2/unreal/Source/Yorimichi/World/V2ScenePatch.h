@@ -22,6 +22,10 @@ class YORIMICHI_API AV2ScenePatch : public AActor
 public:
     AV2ScenePatch();
     virtual void BeginPlay() override;
+    /** Whether AdventureMoveSet::Climbable refuses this unit: the actor it came from never was a climbing hold (a service's
+     *  rails, towers, terminals, the ridden ramps and the parks). Reads the tags and the saved SourceKey, so patches saved
+     *  before the rule are covered as well. */
+    bool ClimbExempt() const;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
     /** The region record that owns this actor (games/yorimichi_v2/world/regions/<id>). */
@@ -33,6 +37,19 @@ public:
     /** What the migration saved here, one "mesh|tags|instances" entry per component, sorted. A saved patch whose
      *  components no longer match (a child deleted or swapped in the editor) fails the world's readiness. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") TArray<FString> ExpectedMembers;
+    /** The placement the migration saved this patch at (a park's or the course's). Unset is the identity, which no
+     *  placement is, so an unset patch counts as unmoved. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "V2") FTransform OriginalTransform = FTransform::Identity;
+
+    /** How far the editor has moved this patch from OriginalTransform, as a world transform to apply after a saved world
+     *  transform (UE order: Saved * MovedBy()): the identity while it is unmoved (or
+     *  unset), so a runtime that follows the move takes the exact saved path when nothing moved. */
+    FTransform MovedBy() const
+    {
+        const FTransform Now = GetActorTransform();
+        if (OriginalTransform.Equals(FTransform::Identity, 0.) || Now.Equals(OriginalTransform, 0.)) return FTransform::Identity;
+        return OriginalTransform.Inverse() * Now;   // x * Original = w  =>  x * Now = w * (Original^-1 * Now)
+    }
 
     /** This patch's members as saved now, in ExpectedMembers' form. */
     TArray<FString> Members() const;
@@ -68,6 +85,10 @@ public:
     UPROPERTY(EditAnywhere, Category = "V2") TArray<FString> MigratedGroups;
 
     static const AV2WorldManifest* Find(const UWorld* World);
+    /** A migration rerun keeps a saved unit as it is: true when each of its requested manifest Keys is already listed
+     *  (it was saved with them). A key not listed yet is an entry the unit gained since: it has no saved geometry, and
+     *  listing it would stop the runtime building it, so this fails with Error instead (CONTRACTS targeted-authoring). */
+    bool KeptUnitCovers(const FString& Unit, const TArray<FString>& Keys, FString& Error) const;
     static bool InsideHalfOpen(const FBox2D& Box, const FVector2D& P)
     {
         return P.X >= Box.Min.X && P.X < Box.Max.X && P.Y >= Box.Min.Y && P.Y < Box.Max.Y;
@@ -78,7 +99,21 @@ public:
      *  skip both use it, so a piece is never both saved and spawned. */
     static FVector2D OwnerPoint(const FTransform& Placement, const UStaticMesh* Mesh);
     bool CoversService(FName Service) const { return MigratedServices.Contains(Service); }
-    bool CoversGroup(FName Tag, const FString& MeshName) const { return MigratedGroups.Contains(Tag.ToString() + TEXT(":") + MeshName); }
+    bool CoversGroup(FName Tag, const FString& MeshName) const { return GroupSet().Contains(Tag.ToString() + TEXT(":") + MeshName); }
+    /** MigratedGroups as a set for CoversGroup, a transient cache (not saved): rebuilt when the list's length changes, which
+     *  is the only way the migration changes it (entries are added, never replaced). */
+    const TSet<FString>& GroupSet() const
+    {
+        if (GroupSetCount != MigratedGroups.Num())
+        {
+            GroupSetCache.Reset();
+            for (const FString& Group : MigratedGroups) GroupSetCache.Add(Group);
+            GroupSetCount = MigratedGroups.Num();
+        }
+        return GroupSetCache;
+    }
+    mutable TSet<FString> GroupSetCache;
+    mutable int32 GroupSetCount = -1;
     bool Runs(FName Service) const { return !bOnlyMigrated || RuntimeServices.Contains(Service); }
 };
 
@@ -100,12 +135,14 @@ public:
         const TArray<FBox2D>& HeldCm, const TArray<float>& PatchCm, FName ServicesRegion, const TArray<FName>& Services, TArray<AActor*>& OutCreated,
         int32& OutKept, FString& Error);
 
-    /** Saves runtime-region scenery groups (ABelmonteRegion's runtime.json `groups`, by mesh name) as objects: one
+    /** Saves runtime-region scenery groups (ABelmonteRegion's runtime.json `groups`, by their V2MigrationTowns::GroupKeys
+     *  key, or a plant group's cell piece "<key>@x_y") as objects: one
      *  AV2ScenePatch per object (Objects[i] names the object of Meshes[i]; a statue cut into cells is one object of
      *  several groups), owned by Region, at the region's origin, holding for each of its groups the component
      *  ABelmonteRegion::MakeGroup builds with the same instances. The groups are listed in the map's manifest
      *  MigratedGroups so the runtime skips only them. An object already saved (its V2Id: region, tag, object) is kept
-     *  as it is, edits included. Plant groups, which join the island's tree lists, are refused. Returns the number of
+     *  as it is, edits included. Plant groups are filtered as the runtime filters them (the gondola clearance) and tagged
+     *  RoleGroup, so RegisterScenePatch joins them to the island's tree lists as the runtime does. Returns the number of
      *  actors created, or -1 with Error set. */
     UFUNCTION(BlueprintCallable, Category = "V2 Migration", meta = (WorldContext = "WorldContext"))
     static int32 MigrateRegionGroups(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,

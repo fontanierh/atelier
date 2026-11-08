@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-palm",
+  "dependencies": {
+    "adopted/brinecove/plant-palm": "e6d4de2dcfa89329ed05d100152fdd0cd3be410d4c67d9f76bda04096199a1f8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/4W/0Z2BTVN5X73LSSSGVVYFFQ.uasset": "74ecf78f2695b0e35a204a4739e68c6bb296e91195f36f1de92459c93a11e98e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

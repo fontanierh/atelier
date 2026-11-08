@@ -20,6 +20,8 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "Misc/PackageName.h"
+#include "V2ScenePatch.h"
 #include "Net/UnrealNetwork.h"
 
 static TAutoConsoleVariable<float> CVarFerryTimeScale(TEXT("ferry.TimeScale"), 1.f,
@@ -244,9 +246,17 @@ double AFerryService::ServiceTime() const
 
 UStaticMeshComponent* AFerryService::MeshPart(const FString& Name, const FString& Asset, USceneComponent* Parent, bool bCollision, bool bMovable)
 {
+    UStaticMeshComponent* C = MakeMeshPart(this, Parent, Name, Asset, bCollision, bMovable);
+    if (C) Components.Add(C);
+    return C;
+}
+
+UStaticMeshComponent* AFerryService::MakeMeshPart(UObject* Outer, USceneComponent* Parent, const FString& Name, const FString& Asset,
+    bool bCollision, bool bMovable)
+{
     UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
     if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("FERRY SERVICE missing mesh %s"), *Asset); return nullptr; }
-    auto* C = NewObject<UStaticMeshComponent>(this, *Name);
+    auto* C = NewObject<UStaticMeshComponent>(Outer, *Name);
     C->SetMobility(bMovable ? EComponentMobility::Movable : EComponentMobility::Static);
     C->SetupAttachment(Parent);
     C->SetStaticMesh(Mesh);
@@ -257,8 +267,28 @@ UStaticMeshComponent* AFerryService::MeshPart(const FString& Name, const FString
     C->PrimaryComponentTick.bCanEverTick = false;
     // Stable names on every machine: a deck or a brow is a network movement base.
     C->SetNetAddressable();
-    Components.Add(C);
     return C;
+}
+
+void AFerryService::MakeTerminal(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& T,
+    TArray<UStaticMeshComponent*>& OutParts, UStaticMeshComponent*& OutCollision, int32& OutMissing)
+{
+    const FString Key = T->GetStringField(TEXT("key"));
+    const FVector Anchor = JsonVector(T->GetArrayField(TEXT("anchor_cm")));
+    OutParts.Reset(); OutCollision = nullptr;
+    for (const auto& Part : T->GetArrayField(TEXT("parts")))
+    {
+        const auto P = Part->AsObject();
+        UStaticMeshComponent* C = MakeMeshPart(Outer, Parent, Key + TEXT("_") + P->GetStringField(TEXT("name")), P->GetStringField(TEXT("mesh")), false, false);
+        if (!C) { ++OutMissing; continue; }
+        C->SetWorldLocation(Anchor);
+        OutParts.Add(C);
+    }
+    OutCollision = MakeMeshPart(Outer, Parent, Key + TEXT("_Collision"), T->GetStringField(TEXT("collision")), true, false);
+    if (!OutCollision) { ++OutMissing; return; }
+    OutCollision->SetWorldLocation(Anchor);
+    OutCollision->SetCollisionProfileName(TEXT("BlockAll"));
+    OutCollision->SetVisibility(false);
 }
 
 bool AFerryService::Initialize(const FString& Path)
@@ -268,7 +298,7 @@ bool AFerryService::Initialize(const FString& Path)
     const TSharedPtr<FJsonObject> Root = AtelierReadJson(Path);
     FString Error;
     if (!Line.Parse(Root, Error)) { bInitFailed = true; UE_LOG(LogTemp, Error, TEXT("FERRY SERVICE cannot read %s: %s"), *Path, *Error); return false; }
-    int32 Missing = 0;
+    int32 Missing = 0, Saved = 0;
     // The terminals: static meshes at their anchors, their collision (hidden), and each brow on its hinge.
     for (const auto& Value : Root->GetArrayField(TEXT("terminals")))
     {
@@ -277,23 +307,38 @@ bool AFerryService::Initialize(const FString& Path)
         Terminal.Key = T->GetStringField(TEXT("key")); Terminal.Name = T->GetStringField(TEXT("name"));
         Terminal.Anchor = JsonVector(T->GetArrayField(TEXT("anchor_cm")));
         Terminal.bStarboard = T->GetStringField(TEXT("side")) == TEXT("starboard");
-        for (const auto& Part : T->GetArrayField(TEXT("parts")))
+        // A terminal a saved unit holds (UV2MigrationTravel::MigrateFerryTerminals) is not built again: the map's manifest lists
+        // it as "ferry:<key>", and its meshes must still be committed content. Its brow stays runtime either way.
+        const AV2WorldManifest* Manifest = AV2WorldManifest::Find(GetWorld());
+        if (Manifest && Manifest->CoversGroup(FName(TEXT("ferry")), Terminal.Key))
         {
-            const auto P = Part->AsObject();
-            UStaticMeshComponent* C = MeshPart(Terminal.Key + TEXT("_") + P->GetStringField(TEXT("name")), P->GetStringField(TEXT("mesh")), RootComponent, false, false);
-            if (!C) { ++Missing; continue; }
-            C->SetWorldLocation(Terminal.Anchor);
-            C->RegisterComponent();
-            Terminal.Parts.Add(C);
+            ++Saved;
+            TArray<FString> Assets = {T->GetStringField(TEXT("collision"))};
+            for (const auto& Part : T->GetArrayField(TEXT("parts"))) Assets.Add(Part->AsObject()->GetStringField(TEXT("mesh")));
+            for (FString Asset : Assets)
+            {
+                int32 Dot = INDEX_NONE;
+                if (Asset.FindChar('.', Dot)) Asset = Asset.Left(Dot);
+                if (!FPackageName::DoesPackageExist(Asset)) UE_LOG(LogTemp, Error, TEXT("FERRY SERVICE saved terminal %s is missing %s"), *Terminal.Key, *Asset);
+            }
         }
-        if (UStaticMeshComponent* C = MeshPart(Terminal.Key + TEXT("_Collision"), T->GetStringField(TEXT("collision")), RootComponent, true, false))
+        else
         {
-            C->SetWorldLocation(Terminal.Anchor);
-            C->SetCollisionProfileName(TEXT("BlockAll"));
-            C->SetVisibility(false);
-            C->RegisterComponent();
+            TArray<UStaticMeshComponent*> Parts;
+            UStaticMeshComponent* Collision = nullptr;
+            MakeTerminal(this, RootComponent, T, Parts, Collision, Missing);
+            for (UStaticMeshComponent* C : Parts)
+            {
+                Components.Add(C);
+                C->RegisterComponent();
+                Terminal.Parts.Add(C);
+            }
+            if (Collision)
+            {
+                Components.Add(Collision);
+                Collision->RegisterComponent();
+            }
         }
-        else ++Missing;
         const auto Brow = T->GetObjectField(TEXT("brow"));
         Terminal.HingeAt = JsonVector(Brow->GetArrayField(TEXT("hinge_cm")));
         const FVector To = JsonVector(Brow->GetArrayField(TEXT("to_cm")));
@@ -415,8 +460,8 @@ bool AFerryService::Initialize(const FString& Path)
     bInitialized = Missing == 0 && Ships.Num() == 1 && Terminals.Num() == 2;
     bInitFailed = !bInitialized;
     if (bInitialized && HasAuthority()) PublishNetworkState();
-    UE_LOG(LogTemp, Display, TEXT("FERRY SERVICE ready ships=%d terminals=%d cycle=%.1f samples=%d phases=%d missing=%d"),
-        Ships.Num(), Terminals.Num(), Line.Cycle, Line.Samples.Num(), Line.Phases.Num(), Missing);
+    UE_LOG(LogTemp, Display, TEXT("FERRY SERVICE ready ships=%d terminals=%d saved=%d cycle=%.1f samples=%d phases=%d missing=%d"),
+        Ships.Num(), Terminals.Num(), Saved, Line.Cycle, Line.Samples.Num(), Line.Phases.Num(), Missing);
     return bInitialized;
 }
 

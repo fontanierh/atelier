@@ -1,0 +1,12 @@
+# One saved object of region/w20-railway (tools/migrate/objects.py, from its objects.toml): the five grass bank sections.
+# Its placement is this actor package; its model is adopted/belmontetrack/banks. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/railway/banks"
+kind = "placement"
+authority = "editor"
+owner = "region/w20-railway"
+references = ["adopted/belmontetrack/banks"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/M0/BCC2RBHV7OL8Y5V2BNQB44"

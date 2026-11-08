@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-dist-marker",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-dist-marker": "f6672fe786f8daad9eaa3a5c15349fb418fbebf552b19af14c9b06524e3a95a2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/A1/S46L6UNDFFPSR51RSZ0WKU.uasset": "afdaa854282242c55c63702d1680ef02155e64cca9f73b47ec29c43cdcf3a037"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

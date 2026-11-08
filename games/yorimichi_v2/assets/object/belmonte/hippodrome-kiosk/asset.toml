@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte hippodrome-kiosk (1 group).
+# Its placement is this actor package; its model is adopted/belmonte/hippodrome-kiosk. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/hippodrome-kiosk"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/hippodrome-kiosk"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/IY/2GIVKU7AKO2KHTI1RCXK3U"

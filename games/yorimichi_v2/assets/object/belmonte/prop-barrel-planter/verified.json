@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-barrel-planter",
+  "dependencies": {
+    "adopted/belmonte/prop-barrel-planter": "495a70b7be3a04dc58dd881ecf6f9eb60f49d3791d1e1c3fa086ead13cfc449c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/7I/EOPRP5PONBZ6E3JWULISZP.uasset": "4f2252590f8d1e998ac5fec04c2f38db894e3c43118318cd8c00d5ade8a05779"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

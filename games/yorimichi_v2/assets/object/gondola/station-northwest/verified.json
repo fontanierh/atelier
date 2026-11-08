@@ -1,0 +1,13 @@
+{
+  "asset": "object/gondola/station-northwest",
+  "dependencies": {
+    "adopted/gondola/shell-rim": "7ac70469ba0846b8f8e9cbc92f618234f15456e03ed2a943b2cd9d5280843e45",
+    "adopted/gondola/station-northwest": "5be865cac18a6a2c09e43f84de831797de7a95ee7ad27298103258846498930d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/XJ/2P757ZXPODEXRSCW7WYIN4.uasset": "4cbc2af3410fabd6b4b741b068741dd6b85f3dd61637dca2bec5a53611687030"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/ferry/terminal-brinecove",
+  "dependencies": {
+    "adopted/ferry/terminal-brinecove": "0a1a71b1290cebbdb13925ed2d69ac2a6136d3ba95cc95c4f8ed8178ce9ba833"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/O3/E2B0HS5O2N8HEQQU2WILWE.uasset": "c0fbcb9e9f0f3adae7ca7df28104edef533b73f3db03a5442edf741f192320e5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

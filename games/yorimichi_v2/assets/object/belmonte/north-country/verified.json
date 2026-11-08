@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/north-country",
+  "dependencies": {
+    "adopted/belmonte/north-country": "987d15448e85865b57c44e408a6d473cc6165af6a8d5e0bcf353e3d2f60cf9d2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/L5/ITCEV9DNHFDMFBPTISCXZ8.uasset": "a2ef595f639af3da966e7690439c3d5b6a5cd42a36b35f2b232e900022a047b9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

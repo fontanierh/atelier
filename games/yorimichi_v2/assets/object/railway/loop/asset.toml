@@ -1,0 +1,12 @@
+# One saved object of region/w20-railway (tools/migrate/objects.py, from its objects.toml): the terminus loop.
+# Its placement is this actor package; its model is adopted/belmontetrack/loop. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/railway/loop"
+kind = "placement"
+authority = "editor"
+owner = "region/w20-railway"
+references = ["adopted/belmontetrack/loop"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/NR/LJNDNY2I32CYFNKS804C8A"

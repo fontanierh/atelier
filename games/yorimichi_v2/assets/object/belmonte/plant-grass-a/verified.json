@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/plant-grass-a",
+  "dependencies": {
+    "adopted/japan/assets/grass": "60f3f8204cfc4f08cd2032b311e5cc4be577a25bb55ef2cc0b5bbddc639295cb"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/AH/94CTJ8U5HSM3E644WCR9A4.uasset": "281abecb76bb5f2a9862211128a76db6ff8f4aa05a11571ee425fc4c7ef2227a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

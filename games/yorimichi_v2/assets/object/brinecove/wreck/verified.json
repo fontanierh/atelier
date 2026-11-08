@@ -1,7 +1,7 @@
 {
   "asset": "object/brinecove/wreck",
   "dependencies": {
-    "prop/brinecove/wreck": "8b48b3ed908c8b81b452acf6cd3b9d4f0e16a6d60a4863e882200d1b134c2905"
+    "prop/brinecove/wreck": "c8e3a216d89dd135e68c71f8e5e82d1657e050c5e7b3b330e72cbbd8a22a85a6"
   },
   "engine": "5.8.2-56702186",
   "files": {

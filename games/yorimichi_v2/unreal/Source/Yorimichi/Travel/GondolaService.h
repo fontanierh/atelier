@@ -79,6 +79,11 @@ public:
     FVector Point(const FString& What) const;
     struct FSeat { FString Id; FVector Location=FVector::ZeroVector; float Yaw=0.f; };
     static void BuildCabinSeats(const FVector& CabinSize,float CabinFloorZ,TArray<FSeat>& OutSeats);
+    /** The builders the saved gondola units share (UV2MigrationTravel::MigrateGondolaStatics) with Initialize: a static or
+     *  movable mesh part (the caller registers it, and adds it to its Components), and a static entry of runtime.json's
+     *  `static` list (its location, yaw and hidden collision), built exactly as Initialize builds it. */
+    static UStaticMeshComponent* MakeMeshPart(UObject* Outer,USceneComponent* Parent,const FString& Name,const FString& Path,bool Collision,bool Movable);
+    static UStaticMeshComponent* MakeStatic(UObject* Outer,USceneComponent* Parent,const TSharedPtr<FJsonObject>& Entry);
 private:
     struct FCabin
     {

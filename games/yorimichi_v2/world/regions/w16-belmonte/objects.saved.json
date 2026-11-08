@@ -1,0 +1,3862 @@
+{
+  "objects": {
+    "object/belmonte/bell-tower": {
+      "groups": [
+        "SM_BM_BH_BellTower"
+      ],
+      "id": "object/belmonte/bell-tower",
+      "model": "adopted/belmonte/town-bell-tower",
+      "models": [
+        "adopted/belmonte/town-bell-tower"
+      ]
+    },
+    "object/belmonte/block-01": {
+      "groups": [
+        "SM_BM_BT_blk_01"
+      ],
+      "id": "object/belmonte/block-01",
+      "model": "adopted/belmonte/block-01",
+      "models": [
+        "adopted/belmonte/block-01"
+      ]
+    },
+    "object/belmonte/block-02": {
+      "groups": [
+        "SM_BM_BT_blk_02"
+      ],
+      "id": "object/belmonte/block-02",
+      "model": "adopted/belmonte/block-02",
+      "models": [
+        "adopted/belmonte/block-02"
+      ]
+    },
+    "object/belmonte/block-03": {
+      "groups": [
+        "SM_BM_BT_blk_03"
+      ],
+      "id": "object/belmonte/block-03",
+      "model": "adopted/belmonte/block-03",
+      "models": [
+        "adopted/belmonte/block-03"
+      ]
+    },
+    "object/belmonte/block-04": {
+      "groups": [
+        "SM_BM_BT_blk_04"
+      ],
+      "id": "object/belmonte/block-04",
+      "model": "adopted/belmonte/block-04",
+      "models": [
+        "adopted/belmonte/block-04"
+      ]
+    },
+    "object/belmonte/block-05": {
+      "groups": [
+        "SM_BM_BT_blk_05"
+      ],
+      "id": "object/belmonte/block-05",
+      "model": "adopted/belmonte/block-05",
+      "models": [
+        "adopted/belmonte/block-05"
+      ]
+    },
+    "object/belmonte/block-06": {
+      "groups": [
+        "SM_BM_BT_blk_06"
+      ],
+      "id": "object/belmonte/block-06",
+      "model": "adopted/belmonte/block-06",
+      "models": [
+        "adopted/belmonte/block-06"
+      ]
+    },
+    "object/belmonte/block-07": {
+      "groups": [
+        "SM_BM_BT_blk_07"
+      ],
+      "id": "object/belmonte/block-07",
+      "model": "adopted/belmonte/block-07",
+      "models": [
+        "adopted/belmonte/block-07"
+      ]
+    },
+    "object/belmonte/block-08": {
+      "groups": [
+        "SM_BM_BT_blk_08"
+      ],
+      "id": "object/belmonte/block-08",
+      "model": "adopted/belmonte/block-08",
+      "models": [
+        "adopted/belmonte/block-08"
+      ]
+    },
+    "object/belmonte/block-09": {
+      "groups": [
+        "SM_BM_BT_blk_09_Piece0",
+        "SM_BM_BT_blk_09_Piece1",
+        "SM_BM_BT_blk_09_Piece2",
+        "SM_BM_BT_blk_09_Piece3"
+      ],
+      "id": "object/belmonte/block-09",
+      "model": "adopted/belmonte/block-09",
+      "models": [
+        "adopted/belmonte/block-09"
+      ]
+    },
+    "object/belmonte/block-10": {
+      "groups": [
+        "SM_BM_BT_blk_10_Piece0",
+        "SM_BM_BT_blk_10_Piece1",
+        "SM_BM_BT_blk_10_Piece2",
+        "SM_BM_BT_blk_10_Piece3"
+      ],
+      "id": "object/belmonte/block-10",
+      "model": "adopted/belmonte/block-10",
+      "models": [
+        "adopted/belmonte/block-10"
+      ]
+    },
+    "object/belmonte/block-11": {
+      "groups": [
+        "SM_BM_BT_blk_11_Piece0",
+        "SM_BM_BT_blk_11_Piece1",
+        "SM_BM_BT_blk_11_Piece2",
+        "SM_BM_BT_blk_11_Piece3"
+      ],
+      "id": "object/belmonte/block-11",
+      "model": "adopted/belmonte/block-11",
+      "models": [
+        "adopted/belmonte/block-11"
+      ]
+    },
+    "object/belmonte/block-12": {
+      "groups": [
+        "SM_BM_BT_blk_12"
+      ],
+      "id": "object/belmonte/block-12",
+      "model": "adopted/belmonte/block-12",
+      "models": [
+        "adopted/belmonte/block-12"
+      ]
+    },
+    "object/belmonte/block-13": {
+      "groups": [
+        "SM_BM_BT_blk_13"
+      ],
+      "id": "object/belmonte/block-13",
+      "model": "adopted/belmonte/block-13",
+      "models": [
+        "adopted/belmonte/block-13"
+      ]
+    },
+    "object/belmonte/block-14": {
+      "groups": [
+        "SM_BM_BT_blk_14"
+      ],
+      "id": "object/belmonte/block-14",
+      "model": "adopted/belmonte/block-14",
+      "models": [
+        "adopted/belmonte/block-14"
+      ]
+    },
+    "object/belmonte/block-15": {
+      "groups": [
+        "SM_BM_BT_blk_15_Piece0",
+        "SM_BM_BT_blk_15_Piece1",
+        "SM_BM_BT_blk_15_Piece2",
+        "SM_BM_BT_blk_15_Piece3"
+      ],
+      "id": "object/belmonte/block-15",
+      "model": "adopted/belmonte/block-15",
+      "models": [
+        "adopted/belmonte/block-15"
+      ]
+    },
+    "object/belmonte/block-16": {
+      "groups": [
+        "SM_BM_BT_blk_16"
+      ],
+      "id": "object/belmonte/block-16",
+      "model": "adopted/belmonte/block-16",
+      "models": [
+        "adopted/belmonte/block-16"
+      ]
+    },
+    "object/belmonte/block-17": {
+      "groups": [
+        "SM_BM_BT_blk_17_Piece0",
+        "SM_BM_BT_blk_17_Piece1",
+        "SM_BM_BT_blk_17_Piece2",
+        "SM_BM_BT_blk_17_Piece3"
+      ],
+      "id": "object/belmonte/block-17",
+      "model": "adopted/belmonte/block-17",
+      "models": [
+        "adopted/belmonte/block-17"
+      ]
+    },
+    "object/belmonte/block-18": {
+      "groups": [
+        "SM_BM_BT_blk_18"
+      ],
+      "id": "object/belmonte/block-18",
+      "model": "adopted/belmonte/block-18",
+      "models": [
+        "adopted/belmonte/block-18"
+      ]
+    },
+    "object/belmonte/block-19": {
+      "groups": [
+        "SM_BM_BT_blk_19"
+      ],
+      "id": "object/belmonte/block-19",
+      "model": "adopted/belmonte/block-19",
+      "models": [
+        "adopted/belmonte/block-19"
+      ]
+    },
+    "object/belmonte/block-20": {
+      "groups": [
+        "SM_BM_BT_blk_20"
+      ],
+      "id": "object/belmonte/block-20",
+      "model": "adopted/belmonte/block-20",
+      "models": [
+        "adopted/belmonte/block-20"
+      ]
+    },
+    "object/belmonte/block-21": {
+      "groups": [
+        "SM_BM_BT_blk_21"
+      ],
+      "id": "object/belmonte/block-21",
+      "model": "adopted/belmonte/block-21",
+      "models": [
+        "adopted/belmonte/block-21"
+      ]
+    },
+    "object/belmonte/block-22": {
+      "groups": [
+        "SM_BM_BT_blk_22"
+      ],
+      "id": "object/belmonte/block-22",
+      "model": "adopted/belmonte/block-22",
+      "models": [
+        "adopted/belmonte/block-22"
+      ]
+    },
+    "object/belmonte/block-23": {
+      "groups": [
+        "SM_BM_BT_blk_23"
+      ],
+      "id": "object/belmonte/block-23",
+      "model": "adopted/belmonte/block-23",
+      "models": [
+        "adopted/belmonte/block-23"
+      ]
+    },
+    "object/belmonte/block-24": {
+      "groups": [
+        "SM_BM_BT_blk_24"
+      ],
+      "id": "object/belmonte/block-24",
+      "model": "adopted/belmonte/block-24",
+      "models": [
+        "adopted/belmonte/block-24"
+      ]
+    },
+    "object/belmonte/block-25": {
+      "groups": [
+        "SM_BM_BT_blk_25"
+      ],
+      "id": "object/belmonte/block-25",
+      "model": "adopted/belmonte/block-25",
+      "models": [
+        "adopted/belmonte/block-25"
+      ]
+    },
+    "object/belmonte/block-26": {
+      "groups": [
+        "SM_BM_BT_blk_26"
+      ],
+      "id": "object/belmonte/block-26",
+      "model": "adopted/belmonte/block-26",
+      "models": [
+        "adopted/belmonte/block-26"
+      ]
+    },
+    "object/belmonte/block-27": {
+      "groups": [
+        "SM_BM_BT_blk_27"
+      ],
+      "id": "object/belmonte/block-27",
+      "model": "adopted/belmonte/block-27",
+      "models": [
+        "adopted/belmonte/block-27"
+      ]
+    },
+    "object/belmonte/block-28": {
+      "groups": [
+        "SM_BM_BT_blk_28"
+      ],
+      "id": "object/belmonte/block-28",
+      "model": "adopted/belmonte/block-28",
+      "models": [
+        "adopted/belmonte/block-28"
+      ]
+    },
+    "object/belmonte/block-29": {
+      "groups": [
+        "SM_BM_BT_blk_29"
+      ],
+      "id": "object/belmonte/block-29",
+      "model": "adopted/belmonte/block-29",
+      "models": [
+        "adopted/belmonte/block-29"
+      ]
+    },
+    "object/belmonte/block-30": {
+      "groups": [
+        "SM_BM_BT_blk_30"
+      ],
+      "id": "object/belmonte/block-30",
+      "model": "adopted/belmonte/block-30",
+      "models": [
+        "adopted/belmonte/block-30"
+      ]
+    },
+    "object/belmonte/block-31": {
+      "groups": [
+        "SM_BM_BT_blk_31"
+      ],
+      "id": "object/belmonte/block-31",
+      "model": "adopted/belmonte/block-31",
+      "models": [
+        "adopted/belmonte/block-31"
+      ]
+    },
+    "object/belmonte/block-32": {
+      "groups": [
+        "SM_BM_BT_blk_32"
+      ],
+      "id": "object/belmonte/block-32",
+      "model": "adopted/belmonte/block-32",
+      "models": [
+        "adopted/belmonte/block-32"
+      ]
+    },
+    "object/belmonte/block-33": {
+      "groups": [
+        "SM_BM_BT_blk_33"
+      ],
+      "id": "object/belmonte/block-33",
+      "model": "adopted/belmonte/block-33",
+      "models": [
+        "adopted/belmonte/block-33"
+      ]
+    },
+    "object/belmonte/block-34": {
+      "groups": [
+        "SM_BM_BT_blk_34"
+      ],
+      "id": "object/belmonte/block-34",
+      "model": "adopted/belmonte/block-34",
+      "models": [
+        "adopted/belmonte/block-34"
+      ]
+    },
+    "object/belmonte/block-35": {
+      "groups": [
+        "SM_BM_BT_blk_35"
+      ],
+      "id": "object/belmonte/block-35",
+      "model": "adopted/belmonte/block-35",
+      "models": [
+        "adopted/belmonte/block-35"
+      ]
+    },
+    "object/belmonte/block-36": {
+      "groups": [
+        "SM_BM_BT_blk_36"
+      ],
+      "id": "object/belmonte/block-36",
+      "model": "adopted/belmonte/block-36",
+      "models": [
+        "adopted/belmonte/block-36"
+      ]
+    },
+    "object/belmonte/block-37": {
+      "groups": [
+        "SM_BM_BT_blk_37"
+      ],
+      "id": "object/belmonte/block-37",
+      "model": "adopted/belmonte/block-37",
+      "models": [
+        "adopted/belmonte/block-37"
+      ]
+    },
+    "object/belmonte/block-38": {
+      "groups": [
+        "SM_BM_BT_blk_38"
+      ],
+      "id": "object/belmonte/block-38",
+      "model": "adopted/belmonte/block-38",
+      "models": [
+        "adopted/belmonte/block-38"
+      ]
+    },
+    "object/belmonte/block-39": {
+      "groups": [
+        "SM_BM_BT_blk_39_Piece0",
+        "SM_BM_BT_blk_39_Piece1",
+        "SM_BM_BT_blk_39_Piece2"
+      ],
+      "id": "object/belmonte/block-39",
+      "model": "adopted/belmonte/block-39",
+      "models": [
+        "adopted/belmonte/block-39"
+      ]
+    },
+    "object/belmonte/cafe-chair": {
+      "groups": [
+        "SM_BM_AT_CafeChair"
+      ],
+      "id": "object/belmonte/cafe-chair",
+      "model": "adopted/belmonte/cafe-chair",
+      "models": [
+        "adopted/belmonte/cafe-chair"
+      ]
+    },
+    "object/belmonte/cafe-parasol": {
+      "groups": [
+        "SM_BM_AT_CafeParasol"
+      ],
+      "id": "object/belmonte/cafe-parasol",
+      "model": "adopted/belmonte/cafe-parasol",
+      "models": [
+        "adopted/belmonte/cafe-parasol"
+      ]
+    },
+    "object/belmonte/chiostro": {
+      "groups": [
+        "SM_BM_BH_Chiostro"
+      ],
+      "id": "object/belmonte/chiostro",
+      "model": "adopted/belmonte/town-chiostro",
+      "models": [
+        "adopted/belmonte/town-chiostro"
+      ]
+    },
+    "object/belmonte/church": {
+      "groups": [
+        "SM_BM_BH_Church"
+      ],
+      "id": "object/belmonte/church",
+      "model": "adopted/belmonte/town-church",
+      "models": [
+        "adopted/belmonte/town-church"
+      ]
+    },
+    "object/belmonte/civil-gorge-strata": {
+      "groups": [
+        "SM_BM_BC_GorgeStrata_0",
+        "SM_BM_BC_GorgeStrata_1",
+        "SM_BM_BC_GorgeStrata_2"
+      ],
+      "id": "object/belmonte/civil-gorge-strata",
+      "model": "adopted/belmonte/civil-gorge-strata",
+      "models": [
+        "adopted/belmonte/civil-gorge-strata"
+      ]
+    },
+    "object/belmonte/civil-lake": {
+      "groups": [
+        "SM_BM_BC_Lake"
+      ],
+      "id": "object/belmonte/civil-lake",
+      "model": "adopted/belmonte/civil-lake",
+      "models": [
+        "adopted/belmonte/civil-lake"
+      ]
+    },
+    "object/belmonte/civil-mura": {
+      "groups": [
+        "SM_BM_BC_Mura_0",
+        "SM_BM_BC_Mura_1",
+        "SM_BM_BC_Mura_2",
+        "SM_BM_BC_Mura_3"
+      ],
+      "id": "object/belmonte/civil-mura",
+      "model": "adopted/belmonte/civil-mura",
+      "models": [
+        "adopted/belmonte/civil-mura"
+      ]
+    },
+    "object/belmonte/civil-pave": {
+      "groups": [
+        "SM_BM_BC_Pave_0_2",
+        "SM_BM_BC_Pave_0_3",
+        "SM_BM_BC_Pave_0_4",
+        "SM_BM_BC_Pave_1_1",
+        "SM_BM_BC_Pave_1_2",
+        "SM_BM_BC_Pave_1_3",
+        "SM_BM_BC_Pave_1_4",
+        "SM_BM_BC_Pave_2_0",
+        "SM_BM_BC_Pave_2_1",
+        "SM_BM_BC_Pave_2_2",
+        "SM_BM_BC_Pave_2_3",
+        "SM_BM_BC_Pave_2_4",
+        "SM_BM_BC_Pave_3_2",
+        "SM_BM_BC_Pave_3_3",
+        "SM_BM_BC_Pave_3_4"
+      ],
+      "id": "object/belmonte/civil-pave",
+      "model": "adopted/belmonte/civil-pave",
+      "models": [
+        "adopted/belmonte/civil-pave"
+      ]
+    },
+    "object/belmonte/civil-piazza": {
+      "groups": [
+        "SM_BM_BC_Piazza"
+      ],
+      "id": "object/belmonte/civil-piazza",
+      "model": "adopted/belmonte/civil-piazza",
+      "models": [
+        "adopted/belmonte/civil-piazza"
+      ]
+    },
+    "object/belmonte/civil-quay-wall": {
+      "groups": [
+        "SM_BM_BC_QuayWall"
+      ],
+      "id": "object/belmonte/civil-quay-wall",
+      "model": "adopted/belmonte/civil-quay-wall",
+      "models": [
+        "adopted/belmonte/civil-quay-wall"
+      ]
+    },
+    "object/belmonte/civil-rocks": {
+      "groups": [
+        "SM_BM_BC_Rock_A",
+        "SM_BM_BC_Rock_B",
+        "SM_BM_BC_Rock_C"
+      ],
+      "id": "object/belmonte/civil-rocks",
+      "model": "adopted/belmonte/civil-rocks",
+      "models": [
+        "adopted/belmonte/civil-rocks"
+      ]
+    },
+    "object/belmonte/civil-water": {
+      "groups": [
+        "SM_BM_BC_Water_0",
+        "SM_BM_BC_Water_1",
+        "SM_BM_BC_Water_2",
+        "SM_BM_BC_Water_3",
+        "SM_BM_BC_Water_4",
+        "SM_BM_BC_Water_5",
+        "SM_BM_BC_Water_6",
+        "SM_BM_BC_Water_7"
+      ],
+      "id": "object/belmonte/civil-water",
+      "model": "adopted/belmonte/civil-water",
+      "models": [
+        "adopted/belmonte/civil-water"
+      ]
+    },
+    "object/belmonte/civil-water-foam": {
+      "groups": [
+        "SM_BM_BC_WaterFoam"
+      ],
+      "id": "object/belmonte/civil-water-foam",
+      "model": "adopted/belmonte/civil-water-foam",
+      "models": [
+        "adopted/belmonte/civil-water-foam"
+      ]
+    },
+    "object/belmonte/civil-works": {
+      "groups": [
+        "SM_BM_BC_Works_0_2",
+        "SM_BM_BC_Works_0_3",
+        "SM_BM_BC_Works_1_1",
+        "SM_BM_BC_Works_1_2",
+        "SM_BM_BC_Works_1_3",
+        "SM_BM_BC_Works_1_4",
+        "SM_BM_BC_Works_2_1",
+        "SM_BM_BC_Works_2_2",
+        "SM_BM_BC_Works_2_3",
+        "SM_BM_BC_Works_2_4",
+        "SM_BM_BC_Works_3_2",
+        "SM_BM_BC_Works_3_3",
+        "SM_BM_BC_Works_3_4"
+      ],
+      "id": "object/belmonte/civil-works",
+      "model": "adopted/belmonte/civil-works",
+      "models": [
+        "adopted/belmonte/civil-works"
+      ]
+    },
+    "object/belmonte/emblems": {
+      "groups": [
+        "SM_BM_HV_Emblem_Laurel",
+        "SM_BM_HV_Emblem_Star",
+        "SM_BM_HV_Emblem_Moon",
+        "SM_BM_HV_Emblem_Diamond",
+        "SM_BM_HV_Emblem_Crown"
+      ],
+      "id": "object/belmonte/emblems",
+      "model": "adopted/belmonte/emblems",
+      "models": [
+        "adopted/belmonte/emblems"
+      ]
+    },
+    "object/belmonte/estate-0": {
+      "groups": [
+        "SM_BM_BE_0_Accent",
+        "SM_BM_BE_0_Grounds",
+        "SM_BM_BE_0_Stables",
+        "SM_BM_BE_0_Villa"
+      ],
+      "id": "object/belmonte/estate-0",
+      "model": "adopted/belmonte/estate-0",
+      "models": [
+        "adopted/belmonte/estate-0"
+      ]
+    },
+    "object/belmonte/estate-1": {
+      "groups": [
+        "SM_BM_BE_1_Accent",
+        "SM_BM_BE_1_Grounds",
+        "SM_BM_BE_1_Stables",
+        "SM_BM_BE_1_Villa"
+      ],
+      "id": "object/belmonte/estate-1",
+      "model": "adopted/belmonte/estate-1",
+      "models": [
+        "adopted/belmonte/estate-1"
+      ]
+    },
+    "object/belmonte/estate-2": {
+      "groups": [
+        "SM_BM_BE_2_Accent",
+        "SM_BM_BE_2_Grounds",
+        "SM_BM_BE_2_Stables",
+        "SM_BM_BE_2_Villa"
+      ],
+      "id": "object/belmonte/estate-2",
+      "model": "adopted/belmonte/estate-2",
+      "models": [
+        "adopted/belmonte/estate-2"
+      ]
+    },
+    "object/belmonte/estate-3": {
+      "groups": [
+        "SM_BM_BE_3_Accent",
+        "SM_BM_BE_3_Grounds",
+        "SM_BM_BE_3_Stables",
+        "SM_BM_BE_3_Villa"
+      ],
+      "id": "object/belmonte/estate-3",
+      "model": "adopted/belmonte/estate-3",
+      "models": [
+        "adopted/belmonte/estate-3"
+      ]
+    },
+    "object/belmonte/estate-4": {
+      "groups": [
+        "SM_BM_BE_4_Accent",
+        "SM_BM_BE_4_Grounds",
+        "SM_BM_BE_4_Stables_Piece1",
+        "SM_BM_BE_4_Stables_Piece2",
+        "SM_BM_BE_4_Stables_Piece3",
+        "SM_BM_BE_4_Villa"
+      ],
+      "id": "object/belmonte/estate-4",
+      "model": "adopted/belmonte/estate-4",
+      "models": [
+        "adopted/belmonte/estate-4"
+      ]
+    },
+    "object/belmonte/estate-5": {
+      "groups": [
+        "SM_BM_BE_5_Accent",
+        "SM_BM_BE_5_Grounds",
+        "SM_BM_BE_5_Stables",
+        "SM_BM_BE_5_Villa"
+      ],
+      "id": "object/belmonte/estate-5",
+      "model": "adopted/belmonte/estate-5",
+      "models": [
+        "adopted/belmonte/estate-5"
+      ]
+    },
+    "object/belmonte/estate-6": {
+      "groups": [
+        "SM_BM_BE_6_Accent",
+        "SM_BM_BE_6_Grounds",
+        "SM_BM_BE_6_Stables",
+        "SM_BM_BE_6_Villa"
+      ],
+      "id": "object/belmonte/estate-6",
+      "model": "adopted/belmonte/estate-6",
+      "models": [
+        "adopted/belmonte/estate-6"
+      ]
+    },
+    "object/belmonte/estate-bale-stack": {
+      "groups": [
+        "SM_BM_BE_BaleStack"
+      ],
+      "id": "object/belmonte/estate-bale-stack",
+      "model": "adopted/belmonte/estate-bale-stack",
+      "models": [
+        "adopted/belmonte/estate-bale-stack"
+      ]
+    },
+    "object/belmonte/estate-hay-cart": {
+      "groups": [
+        "SM_BM_BE_HayCart"
+      ],
+      "id": "object/belmonte/estate-hay-cart",
+      "model": "adopted/belmonte/estate-hay-cart",
+      "models": [
+        "adopted/belmonte/estate-hay-cart"
+      ]
+    },
+    "object/belmonte/estate-mounting-block": {
+      "groups": [
+        "SM_BM_BE_MountingBlock"
+      ],
+      "id": "object/belmonte/estate-mounting-block",
+      "model": "adopted/belmonte/estate-mounting-block",
+      "models": [
+        "adopted/belmonte/estate-mounting-block"
+      ]
+    },
+    "object/belmonte/estate-saddle-rack": {
+      "groups": [
+        "SM_BM_BE_SaddleRack"
+      ],
+      "id": "object/belmonte/estate-saddle-rack",
+      "model": "adopted/belmonte/estate-saddle-rack",
+      "models": [
+        "adopted/belmonte/estate-saddle-rack"
+      ]
+    },
+    "object/belmonte/estate-tie-rail": {
+      "groups": [
+        "SM_BM_BE_TieRail"
+      ],
+      "id": "object/belmonte/estate-tie-rail",
+      "model": "adopted/belmonte/estate-tie-rail",
+      "models": [
+        "adopted/belmonte/estate-tie-rail"
+      ]
+    },
+    "object/belmonte/estate-trough": {
+      "groups": [
+        "SM_BM_BE_Trough"
+      ],
+      "id": "object/belmonte/estate-trough",
+      "model": "adopted/belmonte/estate-trough",
+      "models": [
+        "adopted/belmonte/estate-trough"
+      ]
+    },
+    "object/belmonte/estate-wheelbarrow": {
+      "groups": [
+        "SM_BM_BE_Wheelbarrow"
+      ],
+      "id": "object/belmonte/estate-wheelbarrow",
+      "model": "adopted/belmonte/estate-wheelbarrow",
+      "models": [
+        "adopted/belmonte/estate-wheelbarrow"
+      ]
+    },
+    "object/belmonte/farm-cascine": {
+      "groups": [
+        "SM_BM_BVV_Farm_Cascine"
+      ],
+      "id": "object/belmonte/farm-cascine",
+      "model": "adopted/belmonte/village-farm-cascine",
+      "models": [
+        "adopted/belmonte/village-farm-cascine"
+      ]
+    },
+    "object/belmonte/farm-levante": {
+      "groups": [
+        "SM_BM_BVV_Farm_Levante"
+      ],
+      "id": "object/belmonte/farm-levante",
+      "model": "adopted/belmonte/village-farm-levante",
+      "models": [
+        "adopted/belmonte/village-farm-levante"
+      ]
+    },
+    "object/belmonte/farm-poggio": {
+      "groups": [
+        "SM_BM_BVV_Farm_Poggio"
+      ],
+      "id": "object/belmonte/farm-poggio",
+      "model": "adopted/belmonte/village-farm-poggio",
+      "models": [
+        "adopted/belmonte/village-farm-poggio"
+      ]
+    },
+    "object/belmonte/farm-ulivi": {
+      "groups": [
+        "SM_BM_BVV_Farm_Ulivi"
+      ],
+      "id": "object/belmonte/farm-ulivi",
+      "model": "adopted/belmonte/village-farm-ulivi",
+      "models": [
+        "adopted/belmonte/village-farm-ulivi"
+      ]
+    },
+    "object/belmonte/fontanella": {
+      "groups": [
+        "SM_BM_BH_Fontanella"
+      ],
+      "id": "object/belmonte/fontanella",
+      "model": "adopted/belmonte/town-fontanella",
+      "models": [
+        "adopted/belmonte/town-fontanella"
+      ]
+    },
+    "object/belmonte/forno": {
+      "groups": [
+        "SM_BM_BH_Forno"
+      ],
+      "id": "object/belmonte/forno",
+      "model": "adopted/belmonte/town-forno",
+      "models": [
+        "adopted/belmonte/town-forno"
+      ]
+    },
+    "object/belmonte/fountain-piazza": {
+      "groups": [
+        "SM_BM_BH_FountainPiazza"
+      ],
+      "id": "object/belmonte/fountain-piazza",
+      "model": "adopted/belmonte/town-fountain-piazza",
+      "models": [
+        "adopted/belmonte/town-fountain-piazza"
+      ]
+    },
+    "object/belmonte/hippodrome-arenas": {
+      "groups": [
+        "SM_BM_BHip_Arenas"
+      ],
+      "id": "object/belmonte/hippodrome-arenas",
+      "model": "adopted/belmonte/hippodrome-arenas",
+      "models": [
+        "adopted/belmonte/hippodrome-arenas"
+      ]
+    },
+    "object/belmonte/hippodrome-course": {
+      "groups": [
+        "SM_BM_BHip_Course"
+      ],
+      "id": "object/belmonte/hippodrome-course",
+      "model": "adopted/belmonte/hippodrome-course",
+      "models": [
+        "adopted/belmonte/hippodrome-course"
+      ]
+    },
+    "object/belmonte/hippodrome-dist-marker": {
+      "groups": [
+        "SM_BM_BHip_DistMarker"
+      ],
+      "id": "object/belmonte/hippodrome-dist-marker",
+      "model": "adopted/belmonte/hippodrome-dist-marker",
+      "models": [
+        "adopted/belmonte/hippodrome-dist-marker"
+      ]
+    },
+    "object/belmonte/hippodrome-dist-pole": {
+      "groups": [
+        "SM_BM_BHip_DistPole"
+      ],
+      "id": "object/belmonte/hippodrome-dist-pole",
+      "model": "adopted/belmonte/hippodrome-dist-pole",
+      "models": [
+        "adopted/belmonte/hippodrome-dist-pole"
+      ]
+    },
+    "object/belmonte/hippodrome-finish-post": {
+      "groups": [
+        "SM_BM_BHip_FinishPost"
+      ],
+      "id": "object/belmonte/hippodrome-finish-post",
+      "model": "adopted/belmonte/hippodrome-finish-post",
+      "models": [
+        "adopted/belmonte/hippodrome-finish-post"
+      ]
+    },
+    "object/belmonte/hippodrome-gate-pier": {
+      "groups": [
+        "SM_BM_BHip_GatePier"
+      ],
+      "id": "object/belmonte/hippodrome-gate-pier",
+      "model": "adopted/belmonte/hippodrome-gate-pier",
+      "models": [
+        "adopted/belmonte/hippodrome-gate-pier"
+      ]
+    },
+    "object/belmonte/hippodrome-hay-bale": {
+      "groups": [
+        "SM_BM_BHip_HayBale"
+      ],
+      "id": "object/belmonte/hippodrome-hay-bale",
+      "model": "adopted/belmonte/hippodrome-hay-bale",
+      "models": [
+        "adopted/belmonte/hippodrome-hay-bale"
+      ]
+    },
+    "object/belmonte/hippodrome-infield": {
+      "groups": [
+        "SM_BM_BHip_Infield"
+      ],
+      "id": "object/belmonte/hippodrome-infield",
+      "model": "adopted/belmonte/hippodrome-infield",
+      "models": [
+        "adopted/belmonte/hippodrome-infield"
+      ]
+    },
+    "object/belmonte/hippodrome-jump": {
+      "groups": [
+        "SM_BM_BHip_Jump"
+      ],
+      "id": "object/belmonte/hippodrome-jump",
+      "model": "adopted/belmonte/hippodrome-jump",
+      "models": [
+        "adopted/belmonte/hippodrome-jump"
+      ]
+    },
+    "object/belmonte/hippodrome-kiosk": {
+      "groups": [
+        "SM_BM_BHip_Kiosk"
+      ],
+      "id": "object/belmonte/hippodrome-kiosk",
+      "model": "adopted/belmonte/hippodrome-kiosk",
+      "models": [
+        "adopted/belmonte/hippodrome-kiosk"
+      ]
+    },
+    "object/belmonte/hippodrome-members-bar": {
+      "groups": [
+        "SM_BM_BHip_MembersBar"
+      ],
+      "id": "object/belmonte/hippodrome-members-bar",
+      "model": "adopted/belmonte/hippodrome-members-bar",
+      "models": [
+        "adopted/belmonte/hippodrome-members-bar"
+      ]
+    },
+    "object/belmonte/hippodrome-pond": {
+      "groups": [
+        "SM_BM_BHip_Pond"
+      ],
+      "id": "object/belmonte/hippodrome-pond",
+      "model": "adopted/belmonte/hippodrome-pond",
+      "models": [
+        "adopted/belmonte/hippodrome-pond"
+      ]
+    },
+    "object/belmonte/hippodrome-rail-seg": {
+      "groups": [
+        "SM_BM_BHip_RailSeg"
+      ],
+      "id": "object/belmonte/hippodrome-rail-seg",
+      "model": "adopted/belmonte/hippodrome-rail-seg",
+      "models": [
+        "adopted/belmonte/hippodrome-rail-seg"
+      ]
+    },
+    "object/belmonte/hippodrome-salon": {
+      "groups": [
+        "SM_BM_BHip_Salon",
+        "SM_BM_BHip_SalonGrounds",
+        "SM_BM_BHip_SalonHall"
+      ],
+      "id": "object/belmonte/hippodrome-salon",
+      "model": "adopted/belmonte/hippodrome-salon",
+      "models": [
+        "adopted/belmonte/hippodrome-salon"
+      ]
+    },
+    "object/belmonte/hippodrome-second-stand": {
+      "groups": [
+        "SM_BM_BHip_SecondStand"
+      ],
+      "id": "object/belmonte/hippodrome-second-stand",
+      "model": "adopted/belmonte/hippodrome-second-stand",
+      "models": [
+        "adopted/belmonte/hippodrome-second-stand"
+      ]
+    },
+    "object/belmonte/hippodrome-stables": {
+      "groups": [
+        "SM_BM_BHip_StableYard",
+        "SM_BM_BHip_Stables_Piece0",
+        "SM_BM_BHip_Stables_Piece1",
+        "SM_BM_BHip_Stables_Piece2",
+        "SM_BM_BHip_Stables_Piece3"
+      ],
+      "id": "object/belmonte/hippodrome-stables",
+      "model": "adopted/belmonte/hippodrome-stables",
+      "models": [
+        "adopted/belmonte/hippodrome-stables"
+      ]
+    },
+    "object/belmonte/hippodrome-stand": {
+      "groups": [
+        "SM_BM_BHip_StandGardens",
+        "SM_BM_BHip_StandShell_Piece2",
+        "SM_BM_BHip_StandShell_Piece3",
+        "SM_BM_BHip_StandTerrace",
+        "SM_BM_BHip_Stand_Piece02",
+        "SM_BM_BHip_Stand_Piece03",
+        "SM_BM_BHip_Stand_Piece12",
+        "SM_BM_BHip_Stand_Piece13",
+        "SM_BM_BHip_Stand_Piece2",
+        "SM_BM_BHip_Stand_Piece3"
+      ],
+      "id": "object/belmonte/hippodrome-stand",
+      "model": "adopted/belmonte/hippodrome-stand",
+      "models": [
+        "adopted/belmonte/hippodrome-stand"
+      ]
+    },
+    "object/belmonte/hippodrome-starting-stalls": {
+      "groups": [
+        "SM_BM_BHip_StartingStalls"
+      ],
+      "id": "object/belmonte/hippodrome-starting-stalls",
+      "model": "adopted/belmonte/hippodrome-starting-stalls",
+      "models": [
+        "adopted/belmonte/hippodrome-starting-stalls"
+      ]
+    },
+    "object/belmonte/hippodrome-tie-rail": {
+      "groups": [
+        "SM_BM_BHip_TieRail"
+      ],
+      "id": "object/belmonte/hippodrome-tie-rail",
+      "model": "adopted/belmonte/hippodrome-tie-rail",
+      "models": [
+        "adopted/belmonte/hippodrome-tie-rail"
+      ]
+    },
+    "object/belmonte/north-apron": {
+      "groups": [
+        "SM_BM_NorthApron_Piece00",
+        "SM_BM_NorthApron_Piece01",
+        "SM_BM_NorthApron_Piece02",
+        "SM_BM_NorthApron_Piece10",
+        "SM_BM_NorthApron_Piece11",
+        "SM_BM_NorthApron_Piece13",
+        "SM_BM_NorthApron_Piece2",
+        "SM_BM_NorthApron_Piece3"
+      ],
+      "id": "object/belmonte/north-apron",
+      "model": "adopted/belmonte/north-apron",
+      "models": [
+        "adopted/belmonte/north-apron"
+      ]
+    },
+    "object/belmonte/north-country": {
+      "groups": [
+        "SM_BM_NorthCountry_Piece000",
+        "SM_BM_NorthCountry_Piece001",
+        "SM_BM_NorthCountry_Piece002",
+        "SM_BM_NorthCountry_Piece003",
+        "SM_BM_NorthCountry_Piece01",
+        "SM_BM_NorthCountry_Piece020",
+        "SM_BM_NorthCountry_Piece0210",
+        "SM_BM_NorthCountry_Piece0211",
+        "SM_BM_NorthCountry_Piece0212",
+        "SM_BM_NorthCountry_Piece0213",
+        "SM_BM_NorthCountry_Piece022",
+        "SM_BM_NorthCountry_Piece0230",
+        "SM_BM_NorthCountry_Piece0231",
+        "SM_BM_NorthCountry_Piece0232",
+        "SM_BM_NorthCountry_Piece0233",
+        "SM_BM_NorthCountry_Piece03",
+        "SM_BM_NorthCountry_Piece10",
+        "SM_BM_NorthCountry_Piece110",
+        "SM_BM_NorthCountry_Piece111",
+        "SM_BM_NorthCountry_Piece1120",
+        "SM_BM_NorthCountry_Piece1121",
+        "SM_BM_NorthCountry_Piece1122",
+        "SM_BM_NorthCountry_Piece1123",
+        "SM_BM_NorthCountry_Piece113",
+        "SM_BM_NorthCountry_Piece12",
+        "SM_BM_NorthCountry_Piece1300",
+        "SM_BM_NorthCountry_Piece1301",
+        "SM_BM_NorthCountry_Piece1302",
+        "SM_BM_NorthCountry_Piece1303",
+        "SM_BM_NorthCountry_Piece131",
+        "SM_BM_NorthCountry_Piece1320",
+        "SM_BM_NorthCountry_Piece1321",
+        "SM_BM_NorthCountry_Piece1322",
+        "SM_BM_NorthCountry_Piece1323",
+        "SM_BM_NorthCountry_Piece133",
+        "SM_BM_NorthCountry_Piece200",
+        "SM_BM_NorthCountry_Piece2010",
+        "SM_BM_NorthCountry_Piece2011",
+        "SM_BM_NorthCountry_Piece2012",
+        "SM_BM_NorthCountry_Piece2013",
+        "SM_BM_NorthCountry_Piece202",
+        "SM_BM_NorthCountry_Piece2030",
+        "SM_BM_NorthCountry_Piece2031",
+        "SM_BM_NorthCountry_Piece2032",
+        "SM_BM_NorthCountry_Piece2033",
+        "SM_BM_NorthCountry_Piece210",
+        "SM_BM_NorthCountry_Piece211",
+        "SM_BM_NorthCountry_Piece2120",
+        "SM_BM_NorthCountry_Piece2121",
+        "SM_BM_NorthCountry_Piece2122",
+        "SM_BM_NorthCountry_Piece2123",
+        "SM_BM_NorthCountry_Piece2130",
+        "SM_BM_NorthCountry_Piece2131",
+        "SM_BM_NorthCountry_Piece2132",
+        "SM_BM_NorthCountry_Piece2133",
+        "SM_BM_NorthCountry_Piece220",
+        "SM_BM_NorthCountry_Piece2210",
+        "SM_BM_NorthCountry_Piece2211",
+        "SM_BM_NorthCountry_Piece2212",
+        "SM_BM_NorthCountry_Piece2213",
+        "SM_BM_NorthCountry_Piece222",
+        "SM_BM_NorthCountry_Piece223",
+        "SM_BM_NorthCountry_Piece2300",
+        "SM_BM_NorthCountry_Piece2301",
+        "SM_BM_NorthCountry_Piece2302",
+        "SM_BM_NorthCountry_Piece2303",
+        "SM_BM_NorthCountry_Piece2310",
+        "SM_BM_NorthCountry_Piece2311",
+        "SM_BM_NorthCountry_Piece2312",
+        "SM_BM_NorthCountry_Piece2313",
+        "SM_BM_NorthCountry_Piece232",
+        "SM_BM_NorthCountry_Piece233",
+        "SM_BM_NorthCountry_Piece301",
+        "SM_BM_NorthCountry_Piece3020",
+        "SM_BM_NorthCountry_Piece3021",
+        "SM_BM_NorthCountry_Piece3022",
+        "SM_BM_NorthCountry_Piece3023",
+        "SM_BM_NorthCountry_Piece3030",
+        "SM_BM_NorthCountry_Piece3031",
+        "SM_BM_NorthCountry_Piece3032",
+        "SM_BM_NorthCountry_Piece3033",
+        "SM_BM_NorthCountry_Piece3100",
+        "SM_BM_NorthCountry_Piece3101",
+        "SM_BM_NorthCountry_Piece3102",
+        "SM_BM_NorthCountry_Piece3103",
+        "SM_BM_NorthCountry_Piece311",
+        "SM_BM_NorthCountry_Piece3120",
+        "SM_BM_NorthCountry_Piece3121",
+        "SM_BM_NorthCountry_Piece3122",
+        "SM_BM_NorthCountry_Piece3123",
+        "SM_BM_NorthCountry_Piece313",
+        "SM_BM_NorthCountry_Piece3200",
+        "SM_BM_NorthCountry_Piece3201",
+        "SM_BM_NorthCountry_Piece3202",
+        "SM_BM_NorthCountry_Piece3203",
+        "SM_BM_NorthCountry_Piece3210",
+        "SM_BM_NorthCountry_Piece3211",
+        "SM_BM_NorthCountry_Piece3212",
+        "SM_BM_NorthCountry_Piece3213",
+        "SM_BM_NorthCountry_Piece322",
+        "SM_BM_NorthCountry_Piece323",
+        "SM_BM_NorthCountry_Piece3300",
+        "SM_BM_NorthCountry_Piece3301",
+        "SM_BM_NorthCountry_Piece3302",
+        "SM_BM_NorthCountry_Piece3303",
+        "SM_BM_NorthCountry_Piece331",
+        "SM_BM_NorthCountry_Piece332",
+        "SM_BM_NorthCountry_Piece333"
+      ],
+      "id": "object/belmonte/north-country",
+      "model": "adopted/belmonte/north-country",
+      "models": [
+        "adopted/belmonte/north-country"
+      ]
+    },
+    "object/belmonte/osteria": {
+      "groups": [
+        "SM_BM_BH_Osteria",
+        "SM_BM_BH_OsteriaPergola",
+        "SM_BM_BH_Osteria_Taproom"
+      ],
+      "id": "object/belmonte/osteria",
+      "model": "adopted/belmonte/town-osteria",
+      "models": [
+        "adopted/belmonte/town-osteria"
+      ]
+    },
+    "object/belmonte/palazzo-comunale": {
+      "groups": [
+        "SM_BM_BH_PalazzoComunale"
+      ],
+      "id": "object/belmonte/palazzo-comunale",
+      "model": "adopted/belmonte/town-palazzo-comunale",
+      "models": [
+        "adopted/belmonte/town-palazzo-comunale"
+      ]
+    },
+    "object/belmonte/passerella": {
+      "groups": [
+        "SM_BM_BC_Passerella"
+      ],
+      "id": "object/belmonte/passerella",
+      "model": "adopted/belmonte/civil-passerella",
+      "models": [
+        "adopted/belmonte/civil-passerella"
+      ]
+    },
+    "object/belmonte/plant-bush-flower-a": {
+      "groups": [
+        "Bush_Flower_A"
+      ],
+      "id": "object/belmonte/plant-bush-flower-a",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-0-10": {
+      "groups": [
+        "Bush_Green_B@0_43",
+        "Bush_Green_B@1_41",
+        "Bush_Green_B@1_42",
+        "Bush_Green_B@2_40",
+        "Bush_Green_B@2_41",
+        "Bush_Green_B@2_42",
+        "Bush_Green_B@2_43",
+        "Bush_Green_B@3_40",
+        "Bush_Green_B@3_41",
+        "Bush_Green_B@3_42"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-0-10",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-0-11": {
+      "groups": [
+        "Bush_Green_B@0_44"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-0-11",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-0-7": {
+      "groups": [
+        "Bush_Green_B@0_31",
+        "Bush_Green_B@1_30",
+        "Bush_Green_B@1_31",
+        "Bush_Green_B@2_31",
+        "Bush_Green_B@3_31"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-0-7",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-0-8": {
+      "groups": [
+        "Bush_Green_B@0_32",
+        "Bush_Green_B@0_33",
+        "Bush_Green_B@1_33",
+        "Bush_Green_B@1_34",
+        "Bush_Green_B@1_35",
+        "Bush_Green_B@2_32",
+        "Bush_Green_B@2_33",
+        "Bush_Green_B@2_34",
+        "Bush_Green_B@3_32",
+        "Bush_Green_B@3_33",
+        "Bush_Green_B@3_34",
+        "Bush_Green_B@3_35"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-0-8",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-0-9": {
+      "groups": [
+        "Bush_Green_B@0_36",
+        "Bush_Green_B@0_37",
+        "Bush_Green_B@0_38",
+        "Bush_Green_B@1_36",
+        "Bush_Green_B@1_37",
+        "Bush_Green_B@1_38",
+        "Bush_Green_B@1_39",
+        "Bush_Green_B@2_36",
+        "Bush_Green_B@2_37",
+        "Bush_Green_B@2_38",
+        "Bush_Green_B@2_39",
+        "Bush_Green_B@3_36",
+        "Bush_Green_B@3_38",
+        "Bush_Green_B@3_39"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-0-9",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-1-10": {
+      "groups": [
+        "Bush_Green_B@4_41",
+        "Bush_Green_B@5_40",
+        "Bush_Green_B@5_41",
+        "Bush_Green_B@6_40",
+        "Bush_Green_B@6_41",
+        "Bush_Green_B@6_42",
+        "Bush_Green_B@6_43",
+        "Bush_Green_B@7_40",
+        "Bush_Green_B@7_42",
+        "Bush_Green_B@7_43"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-1-10",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-1-11": {
+      "groups": [
+        "Bush_Green_B@6_44",
+        "Bush_Green_B@7_44"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-1-11",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-1-7": {
+      "groups": [
+        "Bush_Green_B@4_31",
+        "Bush_Green_B@5_30",
+        "Bush_Green_B@5_31",
+        "Bush_Green_B@6_30",
+        "Bush_Green_B@6_31",
+        "Bush_Green_B@7_30",
+        "Bush_Green_B@7_31"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-1-7",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-1-8": {
+      "groups": [
+        "Bush_Green_B@4_32",
+        "Bush_Green_B@4_33",
+        "Bush_Green_B@4_34",
+        "Bush_Green_B@4_35",
+        "Bush_Green_B@5_32",
+        "Bush_Green_B@5_33",
+        "Bush_Green_B@5_34",
+        "Bush_Green_B@5_35",
+        "Bush_Green_B@6_32",
+        "Bush_Green_B@6_35",
+        "Bush_Green_B@7_32",
+        "Bush_Green_B@7_33",
+        "Bush_Green_B@7_34",
+        "Bush_Green_B@7_35"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-1-8",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-1-9": {
+      "groups": [
+        "Bush_Green_B@4_36",
+        "Bush_Green_B@4_37",
+        "Bush_Green_B@4_38",
+        "Bush_Green_B@4_39",
+        "Bush_Green_B@5_36",
+        "Bush_Green_B@6_36",
+        "Bush_Green_B@6_37",
+        "Bush_Green_B@6_38",
+        "Bush_Green_B@6_39",
+        "Bush_Green_B@7_36",
+        "Bush_Green_B@7_38",
+        "Bush_Green_B@7_39"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-1-9",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-2-10": {
+      "groups": [
+        "Bush_Green_B@8_41",
+        "Bush_Green_B@8_42",
+        "Bush_Green_B@8_43",
+        "Bush_Green_B@9_40",
+        "Bush_Green_B@9_41",
+        "Bush_Green_B@9_42",
+        "Bush_Green_B@10_40",
+        "Bush_Green_B@10_41",
+        "Bush_Green_B@10_42",
+        "Bush_Green_B@10_43",
+        "Bush_Green_B@11_43"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-2-10",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-2-11": {
+      "groups": [
+        "Bush_Green_B@10_44",
+        "Bush_Green_B@11_44"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-2-11",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-2-7": {
+      "groups": [
+        "Bush_Green_B@8_30",
+        "Bush_Green_B@8_31",
+        "Bush_Green_B@9_30",
+        "Bush_Green_B@9_31",
+        "Bush_Green_B@10_31",
+        "Bush_Green_B@11_31"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-2-7",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-2-8": {
+      "groups": [
+        "Bush_Green_B@8_32",
+        "Bush_Green_B@8_34",
+        "Bush_Green_B@8_35",
+        "Bush_Green_B@9_32",
+        "Bush_Green_B@9_34",
+        "Bush_Green_B@9_35",
+        "Bush_Green_B@10_32",
+        "Bush_Green_B@10_34",
+        "Bush_Green_B@10_35",
+        "Bush_Green_B@11_32",
+        "Bush_Green_B@11_34",
+        "Bush_Green_B@11_35"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-2-8",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-2-9": {
+      "groups": [
+        "Bush_Green_B@8_36",
+        "Bush_Green_B@8_37",
+        "Bush_Green_B@8_38",
+        "Bush_Green_B@8_39",
+        "Bush_Green_B@9_36",
+        "Bush_Green_B@9_37",
+        "Bush_Green_B@9_38",
+        "Bush_Green_B@9_39",
+        "Bush_Green_B@10_37",
+        "Bush_Green_B@10_38",
+        "Bush_Green_B@10_39",
+        "Bush_Green_B@11_36",
+        "Bush_Green_B@11_37",
+        "Bush_Green_B@11_38"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-2-9",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-3-8": {
+      "groups": [
+        "Bush_Green_B@12_32",
+        "Bush_Green_B@12_35"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-3-8",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-3-9": {
+      "groups": [
+        "Bush_Green_B@12_36"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-3-9",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-m1-10": {
+      "groups": [
+        "Bush_Green_B@-4_40",
+        "Bush_Green_B@-4_41",
+        "Bush_Green_B@-4_43",
+        "Bush_Green_B@-3_40",
+        "Bush_Green_B@-3_42",
+        "Bush_Green_B@-2_41",
+        "Bush_Green_B@-2_42",
+        "Bush_Green_B@-1_40",
+        "Bush_Green_B@-1_41",
+        "Bush_Green_B@-1_42"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-m1-10",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-m1-11": {
+      "groups": [
+        "Bush_Green_B@-3_44",
+        "Bush_Green_B@-1_44"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-m1-11",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-m1-7": {
+      "groups": [
+        "Bush_Green_B@-3_30",
+        "Bush_Green_B@-3_31",
+        "Bush_Green_B@-2_30",
+        "Bush_Green_B@-2_31",
+        "Bush_Green_B@-1_30",
+        "Bush_Green_B@-1_31"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-m1-7",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-m1-8": {
+      "groups": [
+        "Bush_Green_B@-4_33",
+        "Bush_Green_B@-4_34",
+        "Bush_Green_B@-3_32",
+        "Bush_Green_B@-3_33",
+        "Bush_Green_B@-3_34",
+        "Bush_Green_B@-2_32",
+        "Bush_Green_B@-2_33",
+        "Bush_Green_B@-2_34",
+        "Bush_Green_B@-1_32",
+        "Bush_Green_B@-1_33",
+        "Bush_Green_B@-1_34"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-m1-8",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-bush-green-b-m1-9": {
+      "groups": [
+        "Bush_Green_B@-4_38",
+        "Bush_Green_B@-4_39",
+        "Bush_Green_B@-3_37",
+        "Bush_Green_B@-3_38",
+        "Bush_Green_B@-3_39",
+        "Bush_Green_B@-2_37",
+        "Bush_Green_B@-2_38",
+        "Bush_Green_B@-2_39",
+        "Bush_Green_B@-1_36",
+        "Bush_Green_B@-1_37",
+        "Bush_Green_B@-1_38",
+        "Bush_Green_B@-1_39"
+      ],
+      "id": "object/belmonte/plant-bush-green-b-m1-9",
+      "model": "adopted/japan/assets/bush",
+      "models": [
+        "adopted/japan/assets/bush"
+      ]
+    },
+    "object/belmonte/plant-grass-a": {
+      "groups": [
+        "Grass_A"
+      ],
+      "id": "object/belmonte/plant-grass-a",
+      "model": "adopted/japan/assets/grass",
+      "models": [
+        "adopted/japan/assets/grass"
+      ]
+    },
+    "object/belmonte/plant-tree-forest-ginkgo": {
+      "groups": [
+        "Tree_Forest_Ginkgo"
+      ],
+      "id": "object/belmonte/plant-tree-forest-ginkgo",
+      "model": "adopted/japan/assets/tree-forest",
+      "models": [
+        "adopted/japan/assets/tree-forest"
+      ]
+    },
+    "object/belmonte/plant-tree-forest-maple": {
+      "groups": [
+        "Tree_Forest_Maple"
+      ],
+      "id": "object/belmonte/plant-tree-forest-maple",
+      "model": "adopted/japan/assets/tree-forest",
+      "models": [
+        "adopted/japan/assets/tree-forest"
+      ]
+    },
+    "object/belmonte/plant-tree-forest-pine": {
+      "groups": [
+        "Tree_Forest_Pine"
+      ],
+      "id": "object/belmonte/plant-tree-forest-pine",
+      "model": "adopted/japan/assets/tree-forest",
+      "models": [
+        "adopted/japan/assets/tree-forest"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-cypress": {
+      "groups": [
+        "Tree_Tuscan_Cypress"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-cypress",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-0-10": {
+      "groups": [
+        "Tree_Tuscan_Oak@0_40",
+        "Tree_Tuscan_Oak@0_41",
+        "Tree_Tuscan_Oak@0_42",
+        "Tree_Tuscan_Oak@0_43",
+        "Tree_Tuscan_Oak@1_41",
+        "Tree_Tuscan_Oak@1_42",
+        "Tree_Tuscan_Oak@1_43",
+        "Tree_Tuscan_Oak@2_41",
+        "Tree_Tuscan_Oak@2_42",
+        "Tree_Tuscan_Oak@2_43",
+        "Tree_Tuscan_Oak@3_40",
+        "Tree_Tuscan_Oak@3_41",
+        "Tree_Tuscan_Oak@3_42",
+        "Tree_Tuscan_Oak@3_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-0-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-0-11": {
+      "groups": [
+        "Tree_Tuscan_Oak@0_44",
+        "Tree_Tuscan_Oak@0_45",
+        "Tree_Tuscan_Oak@1_44",
+        "Tree_Tuscan_Oak@1_45",
+        "Tree_Tuscan_Oak@2_44",
+        "Tree_Tuscan_Oak@2_45",
+        "Tree_Tuscan_Oak@3_44",
+        "Tree_Tuscan_Oak@3_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-0-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-0-7": {
+      "groups": [
+        "Tree_Tuscan_Oak@0_28",
+        "Tree_Tuscan_Oak@0_29",
+        "Tree_Tuscan_Oak@0_30",
+        "Tree_Tuscan_Oak@0_31",
+        "Tree_Tuscan_Oak@1_28",
+        "Tree_Tuscan_Oak@1_29",
+        "Tree_Tuscan_Oak@1_30",
+        "Tree_Tuscan_Oak@1_31",
+        "Tree_Tuscan_Oak@2_28",
+        "Tree_Tuscan_Oak@2_29",
+        "Tree_Tuscan_Oak@2_30",
+        "Tree_Tuscan_Oak@2_31",
+        "Tree_Tuscan_Oak@3_28",
+        "Tree_Tuscan_Oak@3_29",
+        "Tree_Tuscan_Oak@3_30",
+        "Tree_Tuscan_Oak@3_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-0-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-0-8": {
+      "groups": [
+        "Tree_Tuscan_Oak@0_32",
+        "Tree_Tuscan_Oak@0_33",
+        "Tree_Tuscan_Oak@0_34",
+        "Tree_Tuscan_Oak@0_35",
+        "Tree_Tuscan_Oak@1_32",
+        "Tree_Tuscan_Oak@1_33",
+        "Tree_Tuscan_Oak@1_34",
+        "Tree_Tuscan_Oak@1_35",
+        "Tree_Tuscan_Oak@2_32",
+        "Tree_Tuscan_Oak@2_33",
+        "Tree_Tuscan_Oak@2_34",
+        "Tree_Tuscan_Oak@2_35",
+        "Tree_Tuscan_Oak@3_32",
+        "Tree_Tuscan_Oak@3_33",
+        "Tree_Tuscan_Oak@3_34",
+        "Tree_Tuscan_Oak@3_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-0-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-0-9": {
+      "groups": [
+        "Tree_Tuscan_Oak@0_36",
+        "Tree_Tuscan_Oak@0_37",
+        "Tree_Tuscan_Oak@0_38",
+        "Tree_Tuscan_Oak@0_39",
+        "Tree_Tuscan_Oak@1_36",
+        "Tree_Tuscan_Oak@1_37",
+        "Tree_Tuscan_Oak@2_36",
+        "Tree_Tuscan_Oak@2_37",
+        "Tree_Tuscan_Oak@3_36",
+        "Tree_Tuscan_Oak@3_37"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-0-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-1-10": {
+      "groups": [
+        "Tree_Tuscan_Oak@4_40",
+        "Tree_Tuscan_Oak@4_41",
+        "Tree_Tuscan_Oak@4_42",
+        "Tree_Tuscan_Oak@4_43",
+        "Tree_Tuscan_Oak@5_40",
+        "Tree_Tuscan_Oak@5_41",
+        "Tree_Tuscan_Oak@5_42",
+        "Tree_Tuscan_Oak@5_43",
+        "Tree_Tuscan_Oak@6_40",
+        "Tree_Tuscan_Oak@6_41",
+        "Tree_Tuscan_Oak@6_42",
+        "Tree_Tuscan_Oak@6_43",
+        "Tree_Tuscan_Oak@7_40",
+        "Tree_Tuscan_Oak@7_41",
+        "Tree_Tuscan_Oak@7_42",
+        "Tree_Tuscan_Oak@7_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-1-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-1-11": {
+      "groups": [
+        "Tree_Tuscan_Oak@4_44",
+        "Tree_Tuscan_Oak@4_45",
+        "Tree_Tuscan_Oak@5_44",
+        "Tree_Tuscan_Oak@5_45",
+        "Tree_Tuscan_Oak@6_44",
+        "Tree_Tuscan_Oak@6_45",
+        "Tree_Tuscan_Oak@7_44",
+        "Tree_Tuscan_Oak@7_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-1-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-1-7": {
+      "groups": [
+        "Tree_Tuscan_Oak@4_28",
+        "Tree_Tuscan_Oak@4_29",
+        "Tree_Tuscan_Oak@4_30",
+        "Tree_Tuscan_Oak@4_31",
+        "Tree_Tuscan_Oak@5_28",
+        "Tree_Tuscan_Oak@5_29",
+        "Tree_Tuscan_Oak@5_30",
+        "Tree_Tuscan_Oak@5_31",
+        "Tree_Tuscan_Oak@6_28",
+        "Tree_Tuscan_Oak@6_29",
+        "Tree_Tuscan_Oak@6_30",
+        "Tree_Tuscan_Oak@6_31",
+        "Tree_Tuscan_Oak@7_28",
+        "Tree_Tuscan_Oak@7_29",
+        "Tree_Tuscan_Oak@7_30",
+        "Tree_Tuscan_Oak@7_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-1-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-1-8": {
+      "groups": [
+        "Tree_Tuscan_Oak@4_32",
+        "Tree_Tuscan_Oak@4_33",
+        "Tree_Tuscan_Oak@4_34",
+        "Tree_Tuscan_Oak@4_35",
+        "Tree_Tuscan_Oak@5_32",
+        "Tree_Tuscan_Oak@5_33",
+        "Tree_Tuscan_Oak@5_34",
+        "Tree_Tuscan_Oak@5_35",
+        "Tree_Tuscan_Oak@6_32",
+        "Tree_Tuscan_Oak@6_33",
+        "Tree_Tuscan_Oak@6_34",
+        "Tree_Tuscan_Oak@6_35",
+        "Tree_Tuscan_Oak@7_32",
+        "Tree_Tuscan_Oak@7_33",
+        "Tree_Tuscan_Oak@7_34",
+        "Tree_Tuscan_Oak@7_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-1-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-1-9": {
+      "groups": [
+        "Tree_Tuscan_Oak@4_36",
+        "Tree_Tuscan_Oak@4_37",
+        "Tree_Tuscan_Oak@5_36",
+        "Tree_Tuscan_Oak@5_37",
+        "Tree_Tuscan_Oak@5_38",
+        "Tree_Tuscan_Oak@5_39",
+        "Tree_Tuscan_Oak@6_37",
+        "Tree_Tuscan_Oak@6_38",
+        "Tree_Tuscan_Oak@6_39",
+        "Tree_Tuscan_Oak@7_37",
+        "Tree_Tuscan_Oak@7_38",
+        "Tree_Tuscan_Oak@7_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-1-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-2-10": {
+      "groups": [
+        "Tree_Tuscan_Oak@8_40",
+        "Tree_Tuscan_Oak@8_41",
+        "Tree_Tuscan_Oak@8_42",
+        "Tree_Tuscan_Oak@8_43",
+        "Tree_Tuscan_Oak@9_40",
+        "Tree_Tuscan_Oak@9_41",
+        "Tree_Tuscan_Oak@9_42",
+        "Tree_Tuscan_Oak@9_43",
+        "Tree_Tuscan_Oak@10_40",
+        "Tree_Tuscan_Oak@10_41",
+        "Tree_Tuscan_Oak@10_42",
+        "Tree_Tuscan_Oak@10_43",
+        "Tree_Tuscan_Oak@11_40",
+        "Tree_Tuscan_Oak@11_41",
+        "Tree_Tuscan_Oak@11_42",
+        "Tree_Tuscan_Oak@11_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-2-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-2-11": {
+      "groups": [
+        "Tree_Tuscan_Oak@8_44",
+        "Tree_Tuscan_Oak@8_45",
+        "Tree_Tuscan_Oak@9_44",
+        "Tree_Tuscan_Oak@9_45",
+        "Tree_Tuscan_Oak@10_44",
+        "Tree_Tuscan_Oak@10_45",
+        "Tree_Tuscan_Oak@11_44",
+        "Tree_Tuscan_Oak@11_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-2-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-2-7": {
+      "groups": [
+        "Tree_Tuscan_Oak@8_28",
+        "Tree_Tuscan_Oak@8_29",
+        "Tree_Tuscan_Oak@8_30",
+        "Tree_Tuscan_Oak@8_31",
+        "Tree_Tuscan_Oak@9_28",
+        "Tree_Tuscan_Oak@9_29",
+        "Tree_Tuscan_Oak@9_30",
+        "Tree_Tuscan_Oak@9_31",
+        "Tree_Tuscan_Oak@10_28",
+        "Tree_Tuscan_Oak@10_29",
+        "Tree_Tuscan_Oak@10_30",
+        "Tree_Tuscan_Oak@10_31",
+        "Tree_Tuscan_Oak@11_28",
+        "Tree_Tuscan_Oak@11_29",
+        "Tree_Tuscan_Oak@11_30",
+        "Tree_Tuscan_Oak@11_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-2-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-2-8": {
+      "groups": [
+        "Tree_Tuscan_Oak@8_32",
+        "Tree_Tuscan_Oak@8_33",
+        "Tree_Tuscan_Oak@8_34",
+        "Tree_Tuscan_Oak@8_35",
+        "Tree_Tuscan_Oak@9_32",
+        "Tree_Tuscan_Oak@9_33",
+        "Tree_Tuscan_Oak@9_34",
+        "Tree_Tuscan_Oak@9_35",
+        "Tree_Tuscan_Oak@10_32",
+        "Tree_Tuscan_Oak@10_33",
+        "Tree_Tuscan_Oak@10_34",
+        "Tree_Tuscan_Oak@10_35",
+        "Tree_Tuscan_Oak@11_32",
+        "Tree_Tuscan_Oak@11_33",
+        "Tree_Tuscan_Oak@11_34",
+        "Tree_Tuscan_Oak@11_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-2-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-2-9": {
+      "groups": [
+        "Tree_Tuscan_Oak@8_36",
+        "Tree_Tuscan_Oak@8_37",
+        "Tree_Tuscan_Oak@8_38",
+        "Tree_Tuscan_Oak@8_39",
+        "Tree_Tuscan_Oak@9_36",
+        "Tree_Tuscan_Oak@9_37",
+        "Tree_Tuscan_Oak@9_38",
+        "Tree_Tuscan_Oak@9_39",
+        "Tree_Tuscan_Oak@10_36",
+        "Tree_Tuscan_Oak@10_37",
+        "Tree_Tuscan_Oak@10_38",
+        "Tree_Tuscan_Oak@10_39",
+        "Tree_Tuscan_Oak@11_36",
+        "Tree_Tuscan_Oak@11_37",
+        "Tree_Tuscan_Oak@11_38",
+        "Tree_Tuscan_Oak@11_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-2-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-3-10": {
+      "groups": [
+        "Tree_Tuscan_Oak@12_40",
+        "Tree_Tuscan_Oak@12_41",
+        "Tree_Tuscan_Oak@12_42",
+        "Tree_Tuscan_Oak@12_43",
+        "Tree_Tuscan_Oak@13_40",
+        "Tree_Tuscan_Oak@13_41",
+        "Tree_Tuscan_Oak@13_42",
+        "Tree_Tuscan_Oak@13_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-3-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-3-11": {
+      "groups": [
+        "Tree_Tuscan_Oak@12_44",
+        "Tree_Tuscan_Oak@12_45",
+        "Tree_Tuscan_Oak@13_44"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-3-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-3-7": {
+      "groups": [
+        "Tree_Tuscan_Oak@12_28",
+        "Tree_Tuscan_Oak@12_29",
+        "Tree_Tuscan_Oak@12_30",
+        "Tree_Tuscan_Oak@12_31",
+        "Tree_Tuscan_Oak@13_28",
+        "Tree_Tuscan_Oak@13_29",
+        "Tree_Tuscan_Oak@13_30",
+        "Tree_Tuscan_Oak@13_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-3-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-3-8": {
+      "groups": [
+        "Tree_Tuscan_Oak@12_32",
+        "Tree_Tuscan_Oak@12_33",
+        "Tree_Tuscan_Oak@12_34",
+        "Tree_Tuscan_Oak@12_35",
+        "Tree_Tuscan_Oak@13_32",
+        "Tree_Tuscan_Oak@13_33",
+        "Tree_Tuscan_Oak@13_34",
+        "Tree_Tuscan_Oak@13_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-3-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-3-9": {
+      "groups": [
+        "Tree_Tuscan_Oak@12_36",
+        "Tree_Tuscan_Oak@12_37",
+        "Tree_Tuscan_Oak@12_38",
+        "Tree_Tuscan_Oak@12_39",
+        "Tree_Tuscan_Oak@13_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-3-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m1-10": {
+      "groups": [
+        "Tree_Tuscan_Oak@-4_40",
+        "Tree_Tuscan_Oak@-4_41",
+        "Tree_Tuscan_Oak@-4_42",
+        "Tree_Tuscan_Oak@-4_43",
+        "Tree_Tuscan_Oak@-3_40",
+        "Tree_Tuscan_Oak@-3_41",
+        "Tree_Tuscan_Oak@-3_42",
+        "Tree_Tuscan_Oak@-3_43",
+        "Tree_Tuscan_Oak@-2_40",
+        "Tree_Tuscan_Oak@-2_41",
+        "Tree_Tuscan_Oak@-2_42",
+        "Tree_Tuscan_Oak@-2_43",
+        "Tree_Tuscan_Oak@-1_40",
+        "Tree_Tuscan_Oak@-1_41",
+        "Tree_Tuscan_Oak@-1_42",
+        "Tree_Tuscan_Oak@-1_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m1-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m1-11": {
+      "groups": [
+        "Tree_Tuscan_Oak@-4_44",
+        "Tree_Tuscan_Oak@-4_45",
+        "Tree_Tuscan_Oak@-3_44",
+        "Tree_Tuscan_Oak@-3_45",
+        "Tree_Tuscan_Oak@-2_44",
+        "Tree_Tuscan_Oak@-2_45",
+        "Tree_Tuscan_Oak@-1_44",
+        "Tree_Tuscan_Oak@-1_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m1-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m1-7": {
+      "groups": [
+        "Tree_Tuscan_Oak@-4_28",
+        "Tree_Tuscan_Oak@-4_29",
+        "Tree_Tuscan_Oak@-4_30",
+        "Tree_Tuscan_Oak@-4_31",
+        "Tree_Tuscan_Oak@-3_28",
+        "Tree_Tuscan_Oak@-3_29",
+        "Tree_Tuscan_Oak@-3_30",
+        "Tree_Tuscan_Oak@-3_31",
+        "Tree_Tuscan_Oak@-2_28",
+        "Tree_Tuscan_Oak@-2_29",
+        "Tree_Tuscan_Oak@-2_30",
+        "Tree_Tuscan_Oak@-2_31",
+        "Tree_Tuscan_Oak@-1_28",
+        "Tree_Tuscan_Oak@-1_29",
+        "Tree_Tuscan_Oak@-1_30",
+        "Tree_Tuscan_Oak@-1_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m1-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m1-8": {
+      "groups": [
+        "Tree_Tuscan_Oak@-4_32",
+        "Tree_Tuscan_Oak@-4_33",
+        "Tree_Tuscan_Oak@-4_34",
+        "Tree_Tuscan_Oak@-4_35",
+        "Tree_Tuscan_Oak@-3_32",
+        "Tree_Tuscan_Oak@-3_33",
+        "Tree_Tuscan_Oak@-3_34",
+        "Tree_Tuscan_Oak@-3_35",
+        "Tree_Tuscan_Oak@-2_32",
+        "Tree_Tuscan_Oak@-2_33",
+        "Tree_Tuscan_Oak@-2_34",
+        "Tree_Tuscan_Oak@-2_35",
+        "Tree_Tuscan_Oak@-1_32",
+        "Tree_Tuscan_Oak@-1_33",
+        "Tree_Tuscan_Oak@-1_34",
+        "Tree_Tuscan_Oak@-1_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m1-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m1-9": {
+      "groups": [
+        "Tree_Tuscan_Oak@-4_36",
+        "Tree_Tuscan_Oak@-4_37",
+        "Tree_Tuscan_Oak@-4_38",
+        "Tree_Tuscan_Oak@-4_39",
+        "Tree_Tuscan_Oak@-3_36",
+        "Tree_Tuscan_Oak@-3_37",
+        "Tree_Tuscan_Oak@-3_38",
+        "Tree_Tuscan_Oak@-3_39",
+        "Tree_Tuscan_Oak@-2_36",
+        "Tree_Tuscan_Oak@-2_37",
+        "Tree_Tuscan_Oak@-2_38",
+        "Tree_Tuscan_Oak@-2_39",
+        "Tree_Tuscan_Oak@-1_36",
+        "Tree_Tuscan_Oak@-1_37",
+        "Tree_Tuscan_Oak@-1_38",
+        "Tree_Tuscan_Oak@-1_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m1-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m2-10": {
+      "groups": [
+        "Tree_Tuscan_Oak@-6_40",
+        "Tree_Tuscan_Oak@-6_41",
+        "Tree_Tuscan_Oak@-6_42",
+        "Tree_Tuscan_Oak@-6_43",
+        "Tree_Tuscan_Oak@-5_40",
+        "Tree_Tuscan_Oak@-5_41",
+        "Tree_Tuscan_Oak@-5_42",
+        "Tree_Tuscan_Oak@-5_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m2-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m2-11": {
+      "groups": [
+        "Tree_Tuscan_Oak@-6_44",
+        "Tree_Tuscan_Oak@-5_44",
+        "Tree_Tuscan_Oak@-5_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m2-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m2-7": {
+      "groups": [
+        "Tree_Tuscan_Oak@-6_29",
+        "Tree_Tuscan_Oak@-6_30",
+        "Tree_Tuscan_Oak@-6_31",
+        "Tree_Tuscan_Oak@-5_28",
+        "Tree_Tuscan_Oak@-5_29",
+        "Tree_Tuscan_Oak@-5_30",
+        "Tree_Tuscan_Oak@-5_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m2-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m2-8": {
+      "groups": [
+        "Tree_Tuscan_Oak@-6_32",
+        "Tree_Tuscan_Oak@-6_34",
+        "Tree_Tuscan_Oak@-6_35",
+        "Tree_Tuscan_Oak@-5_32",
+        "Tree_Tuscan_Oak@-5_33",
+        "Tree_Tuscan_Oak@-5_34",
+        "Tree_Tuscan_Oak@-5_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m2-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-oak-m2-9": {
+      "groups": [
+        "Tree_Tuscan_Oak@-6_36",
+        "Tree_Tuscan_Oak@-6_37",
+        "Tree_Tuscan_Oak@-6_38",
+        "Tree_Tuscan_Oak@-6_39",
+        "Tree_Tuscan_Oak@-5_36",
+        "Tree_Tuscan_Oak@-5_37",
+        "Tree_Tuscan_Oak@-5_38",
+        "Tree_Tuscan_Oak@-5_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-oak-m2-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-0-10": {
+      "groups": [
+        "Tree_Tuscan_Olive@0_40",
+        "Tree_Tuscan_Olive@1_42",
+        "Tree_Tuscan_Olive@1_43",
+        "Tree_Tuscan_Olive@2_40",
+        "Tree_Tuscan_Olive@2_42",
+        "Tree_Tuscan_Olive@3_40",
+        "Tree_Tuscan_Olive@3_41",
+        "Tree_Tuscan_Olive@3_42",
+        "Tree_Tuscan_Olive@3_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-0-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-0-11": {
+      "groups": [
+        "Tree_Tuscan_Olive@0_44",
+        "Tree_Tuscan_Olive@0_45",
+        "Tree_Tuscan_Olive@1_44",
+        "Tree_Tuscan_Olive@1_45",
+        "Tree_Tuscan_Olive@2_44",
+        "Tree_Tuscan_Olive@2_45",
+        "Tree_Tuscan_Olive@3_44",
+        "Tree_Tuscan_Olive@3_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-0-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-0-7": {
+      "groups": [
+        "Tree_Tuscan_Olive@0_28",
+        "Tree_Tuscan_Olive@0_29",
+        "Tree_Tuscan_Olive@0_30",
+        "Tree_Tuscan_Olive@0_31",
+        "Tree_Tuscan_Olive@1_28",
+        "Tree_Tuscan_Olive@1_29",
+        "Tree_Tuscan_Olive@1_30",
+        "Tree_Tuscan_Olive@1_31",
+        "Tree_Tuscan_Olive@2_28",
+        "Tree_Tuscan_Olive@2_29",
+        "Tree_Tuscan_Olive@2_30",
+        "Tree_Tuscan_Olive@2_31",
+        "Tree_Tuscan_Olive@3_28",
+        "Tree_Tuscan_Olive@3_29",
+        "Tree_Tuscan_Olive@3_30",
+        "Tree_Tuscan_Olive@3_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-0-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-0-8": {
+      "groups": [
+        "Tree_Tuscan_Olive@0_32",
+        "Tree_Tuscan_Olive@0_33",
+        "Tree_Tuscan_Olive@0_35",
+        "Tree_Tuscan_Olive@1_32",
+        "Tree_Tuscan_Olive@1_33",
+        "Tree_Tuscan_Olive@1_34",
+        "Tree_Tuscan_Olive@1_35",
+        "Tree_Tuscan_Olive@2_32",
+        "Tree_Tuscan_Olive@2_33",
+        "Tree_Tuscan_Olive@2_34",
+        "Tree_Tuscan_Olive@2_35",
+        "Tree_Tuscan_Olive@3_32",
+        "Tree_Tuscan_Olive@3_33",
+        "Tree_Tuscan_Olive@3_34",
+        "Tree_Tuscan_Olive@3_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-0-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-0-9": {
+      "groups": [
+        "Tree_Tuscan_Olive@0_36",
+        "Tree_Tuscan_Olive@0_37",
+        "Tree_Tuscan_Olive@0_38",
+        "Tree_Tuscan_Olive@0_39",
+        "Tree_Tuscan_Olive@1_36",
+        "Tree_Tuscan_Olive@2_36",
+        "Tree_Tuscan_Olive@2_37",
+        "Tree_Tuscan_Olive@2_38",
+        "Tree_Tuscan_Olive@2_39",
+        "Tree_Tuscan_Olive@3_36",
+        "Tree_Tuscan_Olive@3_37",
+        "Tree_Tuscan_Olive@3_38",
+        "Tree_Tuscan_Olive@3_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-0-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-1-10": {
+      "groups": [
+        "Tree_Tuscan_Olive@4_41",
+        "Tree_Tuscan_Olive@4_43",
+        "Tree_Tuscan_Olive@5_40",
+        "Tree_Tuscan_Olive@5_41",
+        "Tree_Tuscan_Olive@5_42",
+        "Tree_Tuscan_Olive@6_41",
+        "Tree_Tuscan_Olive@6_42",
+        "Tree_Tuscan_Olive@7_40",
+        "Tree_Tuscan_Olive@7_41",
+        "Tree_Tuscan_Olive@7_42",
+        "Tree_Tuscan_Olive@7_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-1-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-1-11": {
+      "groups": [
+        "Tree_Tuscan_Olive@4_44",
+        "Tree_Tuscan_Olive@4_45",
+        "Tree_Tuscan_Olive@5_44",
+        "Tree_Tuscan_Olive@5_45",
+        "Tree_Tuscan_Olive@6_44",
+        "Tree_Tuscan_Olive@6_45",
+        "Tree_Tuscan_Olive@7_44",
+        "Tree_Tuscan_Olive@7_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-1-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-1-7": {
+      "groups": [
+        "Tree_Tuscan_Olive@4_28",
+        "Tree_Tuscan_Olive@4_29",
+        "Tree_Tuscan_Olive@4_30",
+        "Tree_Tuscan_Olive@4_31",
+        "Tree_Tuscan_Olive@5_28",
+        "Tree_Tuscan_Olive@5_29",
+        "Tree_Tuscan_Olive@5_30",
+        "Tree_Tuscan_Olive@5_31",
+        "Tree_Tuscan_Olive@6_28",
+        "Tree_Tuscan_Olive@6_29",
+        "Tree_Tuscan_Olive@6_30",
+        "Tree_Tuscan_Olive@6_31",
+        "Tree_Tuscan_Olive@7_28",
+        "Tree_Tuscan_Olive@7_29",
+        "Tree_Tuscan_Olive@7_30",
+        "Tree_Tuscan_Olive@7_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-1-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-1-8": {
+      "groups": [
+        "Tree_Tuscan_Olive@4_33",
+        "Tree_Tuscan_Olive@4_34",
+        "Tree_Tuscan_Olive@4_35",
+        "Tree_Tuscan_Olive@5_32",
+        "Tree_Tuscan_Olive@5_33",
+        "Tree_Tuscan_Olive@5_34",
+        "Tree_Tuscan_Olive@5_35",
+        "Tree_Tuscan_Olive@6_32",
+        "Tree_Tuscan_Olive@6_33",
+        "Tree_Tuscan_Olive@6_34",
+        "Tree_Tuscan_Olive@6_35",
+        "Tree_Tuscan_Olive@7_32",
+        "Tree_Tuscan_Olive@7_33",
+        "Tree_Tuscan_Olive@7_34",
+        "Tree_Tuscan_Olive@7_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-1-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-1-9": {
+      "groups": [
+        "Tree_Tuscan_Olive@4_36",
+        "Tree_Tuscan_Olive@4_37",
+        "Tree_Tuscan_Olive@4_38",
+        "Tree_Tuscan_Olive@4_39",
+        "Tree_Tuscan_Olive@5_36",
+        "Tree_Tuscan_Olive@5_37",
+        "Tree_Tuscan_Olive@5_38",
+        "Tree_Tuscan_Olive@5_39",
+        "Tree_Tuscan_Olive@6_36",
+        "Tree_Tuscan_Olive@6_37",
+        "Tree_Tuscan_Olive@6_38",
+        "Tree_Tuscan_Olive@6_39",
+        "Tree_Tuscan_Olive@7_36",
+        "Tree_Tuscan_Olive@7_37",
+        "Tree_Tuscan_Olive@7_38"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-1-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-2-10": {
+      "groups": [
+        "Tree_Tuscan_Olive@8_40",
+        "Tree_Tuscan_Olive@9_40",
+        "Tree_Tuscan_Olive@9_43",
+        "Tree_Tuscan_Olive@10_40",
+        "Tree_Tuscan_Olive@10_43",
+        "Tree_Tuscan_Olive@11_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-2-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-2-11": {
+      "groups": [
+        "Tree_Tuscan_Olive@8_44",
+        "Tree_Tuscan_Olive@8_45",
+        "Tree_Tuscan_Olive@9_44",
+        "Tree_Tuscan_Olive@9_45",
+        "Tree_Tuscan_Olive@10_44",
+        "Tree_Tuscan_Olive@10_45",
+        "Tree_Tuscan_Olive@11_44",
+        "Tree_Tuscan_Olive@11_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-2-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-2-7": {
+      "groups": [
+        "Tree_Tuscan_Olive@8_28",
+        "Tree_Tuscan_Olive@8_29",
+        "Tree_Tuscan_Olive@8_30",
+        "Tree_Tuscan_Olive@8_31",
+        "Tree_Tuscan_Olive@9_28",
+        "Tree_Tuscan_Olive@9_29",
+        "Tree_Tuscan_Olive@9_30",
+        "Tree_Tuscan_Olive@10_28",
+        "Tree_Tuscan_Olive@10_29",
+        "Tree_Tuscan_Olive@10_30",
+        "Tree_Tuscan_Olive@10_31",
+        "Tree_Tuscan_Olive@11_28",
+        "Tree_Tuscan_Olive@11_29",
+        "Tree_Tuscan_Olive@11_30",
+        "Tree_Tuscan_Olive@11_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-2-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-2-8": {
+      "groups": [
+        "Tree_Tuscan_Olive@8_32",
+        "Tree_Tuscan_Olive@8_34",
+        "Tree_Tuscan_Olive@8_35",
+        "Tree_Tuscan_Olive@9_34",
+        "Tree_Tuscan_Olive@9_35",
+        "Tree_Tuscan_Olive@10_34",
+        "Tree_Tuscan_Olive@10_35",
+        "Tree_Tuscan_Olive@11_32",
+        "Tree_Tuscan_Olive@11_34",
+        "Tree_Tuscan_Olive@11_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-2-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-2-9": {
+      "groups": [
+        "Tree_Tuscan_Olive@8_36",
+        "Tree_Tuscan_Olive@8_37",
+        "Tree_Tuscan_Olive@8_38",
+        "Tree_Tuscan_Olive@8_39",
+        "Tree_Tuscan_Olive@9_36",
+        "Tree_Tuscan_Olive@9_37",
+        "Tree_Tuscan_Olive@9_38",
+        "Tree_Tuscan_Olive@9_39",
+        "Tree_Tuscan_Olive@10_36",
+        "Tree_Tuscan_Olive@10_39",
+        "Tree_Tuscan_Olive@11_36",
+        "Tree_Tuscan_Olive@11_37",
+        "Tree_Tuscan_Olive@11_38",
+        "Tree_Tuscan_Olive@11_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-2-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-3-10": {
+      "groups": [
+        "Tree_Tuscan_Olive@12_40",
+        "Tree_Tuscan_Olive@12_41",
+        "Tree_Tuscan_Olive@12_42",
+        "Tree_Tuscan_Olive@12_43",
+        "Tree_Tuscan_Olive@13_40",
+        "Tree_Tuscan_Olive@13_41",
+        "Tree_Tuscan_Olive@13_42",
+        "Tree_Tuscan_Olive@13_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-3-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-3-11": {
+      "groups": [
+        "Tree_Tuscan_Olive@12_44",
+        "Tree_Tuscan_Olive@12_45",
+        "Tree_Tuscan_Olive@13_44"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-3-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-3-7": {
+      "groups": [
+        "Tree_Tuscan_Olive@12_28",
+        "Tree_Tuscan_Olive@12_29",
+        "Tree_Tuscan_Olive@12_30",
+        "Tree_Tuscan_Olive@12_31",
+        "Tree_Tuscan_Olive@13_28",
+        "Tree_Tuscan_Olive@13_29",
+        "Tree_Tuscan_Olive@13_30",
+        "Tree_Tuscan_Olive@13_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-3-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-3-8": {
+      "groups": [
+        "Tree_Tuscan_Olive@12_32",
+        "Tree_Tuscan_Olive@12_33",
+        "Tree_Tuscan_Olive@12_34",
+        "Tree_Tuscan_Olive@12_35",
+        "Tree_Tuscan_Olive@13_32",
+        "Tree_Tuscan_Olive@13_33",
+        "Tree_Tuscan_Olive@13_34",
+        "Tree_Tuscan_Olive@13_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-3-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-3-9": {
+      "groups": [
+        "Tree_Tuscan_Olive@12_36",
+        "Tree_Tuscan_Olive@12_37",
+        "Tree_Tuscan_Olive@12_38",
+        "Tree_Tuscan_Olive@12_39",
+        "Tree_Tuscan_Olive@13_38",
+        "Tree_Tuscan_Olive@13_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-3-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m1-10": {
+      "groups": [
+        "Tree_Tuscan_Olive@-4_40",
+        "Tree_Tuscan_Olive@-4_41",
+        "Tree_Tuscan_Olive@-4_42",
+        "Tree_Tuscan_Olive@-4_43",
+        "Tree_Tuscan_Olive@-3_40",
+        "Tree_Tuscan_Olive@-3_41",
+        "Tree_Tuscan_Olive@-3_42",
+        "Tree_Tuscan_Olive@-2_40",
+        "Tree_Tuscan_Olive@-2_41",
+        "Tree_Tuscan_Olive@-2_42",
+        "Tree_Tuscan_Olive@-1_40",
+        "Tree_Tuscan_Olive@-1_41"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m1-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m1-11": {
+      "groups": [
+        "Tree_Tuscan_Olive@-4_44",
+        "Tree_Tuscan_Olive@-4_45",
+        "Tree_Tuscan_Olive@-3_44",
+        "Tree_Tuscan_Olive@-3_45",
+        "Tree_Tuscan_Olive@-2_44",
+        "Tree_Tuscan_Olive@-2_45",
+        "Tree_Tuscan_Olive@-1_44",
+        "Tree_Tuscan_Olive@-1_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m1-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m1-7": {
+      "groups": [
+        "Tree_Tuscan_Olive@-4_28",
+        "Tree_Tuscan_Olive@-4_29",
+        "Tree_Tuscan_Olive@-4_30",
+        "Tree_Tuscan_Olive@-4_31",
+        "Tree_Tuscan_Olive@-3_28",
+        "Tree_Tuscan_Olive@-3_29",
+        "Tree_Tuscan_Olive@-3_30",
+        "Tree_Tuscan_Olive@-3_31",
+        "Tree_Tuscan_Olive@-2_28",
+        "Tree_Tuscan_Olive@-2_29",
+        "Tree_Tuscan_Olive@-2_30",
+        "Tree_Tuscan_Olive@-2_31",
+        "Tree_Tuscan_Olive@-1_28",
+        "Tree_Tuscan_Olive@-1_29",
+        "Tree_Tuscan_Olive@-1_30",
+        "Tree_Tuscan_Olive@-1_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m1-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m1-8": {
+      "groups": [
+        "Tree_Tuscan_Olive@-4_32",
+        "Tree_Tuscan_Olive@-4_33",
+        "Tree_Tuscan_Olive@-4_34",
+        "Tree_Tuscan_Olive@-4_35",
+        "Tree_Tuscan_Olive@-3_32",
+        "Tree_Tuscan_Olive@-3_33",
+        "Tree_Tuscan_Olive@-3_34",
+        "Tree_Tuscan_Olive@-2_32",
+        "Tree_Tuscan_Olive@-2_33",
+        "Tree_Tuscan_Olive@-2_34",
+        "Tree_Tuscan_Olive@-1_32",
+        "Tree_Tuscan_Olive@-1_33"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m1-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m1-9": {
+      "groups": [
+        "Tree_Tuscan_Olive@-4_36",
+        "Tree_Tuscan_Olive@-4_37",
+        "Tree_Tuscan_Olive@-4_38",
+        "Tree_Tuscan_Olive@-4_39",
+        "Tree_Tuscan_Olive@-3_36",
+        "Tree_Tuscan_Olive@-3_37",
+        "Tree_Tuscan_Olive@-3_38",
+        "Tree_Tuscan_Olive@-3_39",
+        "Tree_Tuscan_Olive@-2_36",
+        "Tree_Tuscan_Olive@-2_37",
+        "Tree_Tuscan_Olive@-2_39",
+        "Tree_Tuscan_Olive@-1_36",
+        "Tree_Tuscan_Olive@-1_37",
+        "Tree_Tuscan_Olive@-1_38",
+        "Tree_Tuscan_Olive@-1_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m1-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m2-10": {
+      "groups": [
+        "Tree_Tuscan_Olive@-6_40",
+        "Tree_Tuscan_Olive@-6_41",
+        "Tree_Tuscan_Olive@-6_42",
+        "Tree_Tuscan_Olive@-6_43",
+        "Tree_Tuscan_Olive@-5_40",
+        "Tree_Tuscan_Olive@-5_41",
+        "Tree_Tuscan_Olive@-5_42",
+        "Tree_Tuscan_Olive@-5_43"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m2-10",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m2-11": {
+      "groups": [
+        "Tree_Tuscan_Olive@-6_44",
+        "Tree_Tuscan_Olive@-6_45",
+        "Tree_Tuscan_Olive@-5_44",
+        "Tree_Tuscan_Olive@-5_45"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m2-11",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m2-7": {
+      "groups": [
+        "Tree_Tuscan_Olive@-6_30",
+        "Tree_Tuscan_Olive@-6_31",
+        "Tree_Tuscan_Olive@-5_28",
+        "Tree_Tuscan_Olive@-5_29",
+        "Tree_Tuscan_Olive@-5_30",
+        "Tree_Tuscan_Olive@-5_31"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m2-7",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m2-8": {
+      "groups": [
+        "Tree_Tuscan_Olive@-6_32",
+        "Tree_Tuscan_Olive@-6_34",
+        "Tree_Tuscan_Olive@-6_35",
+        "Tree_Tuscan_Olive@-5_32",
+        "Tree_Tuscan_Olive@-5_33",
+        "Tree_Tuscan_Olive@-5_34",
+        "Tree_Tuscan_Olive@-5_35"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m2-8",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-olive-m2-9": {
+      "groups": [
+        "Tree_Tuscan_Olive@-6_36",
+        "Tree_Tuscan_Olive@-6_37",
+        "Tree_Tuscan_Olive@-6_38",
+        "Tree_Tuscan_Olive@-6_39",
+        "Tree_Tuscan_Olive@-5_36",
+        "Tree_Tuscan_Olive@-5_37",
+        "Tree_Tuscan_Olive@-5_38",
+        "Tree_Tuscan_Olive@-5_39"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-olive-m2-9",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/plant-tree-tuscan-pine": {
+      "groups": [
+        "Tree_Tuscan_Pine"
+      ],
+      "id": "object/belmonte/plant-tree-tuscan-pine",
+      "model": "adopted/japan/assets/tree-tuscan",
+      "models": [
+        "adopted/japan/assets/tree-tuscan"
+      ]
+    },
+    "object/belmonte/ponte": {
+      "groups": [
+        "SM_BM_BC_Ponte",
+        "SM_BM_BC_Water_Ponte"
+      ],
+      "id": "object/belmonte/ponte",
+      "model": "adopted/belmonte/civil-ponte",
+      "models": [
+        "adopted/belmonte/civil-ponte"
+      ]
+    },
+    "object/belmonte/porta-nord": {
+      "groups": [
+        "SM_BM_BH_Porta_Nord"
+      ],
+      "id": "object/belmonte/porta-nord",
+      "model": "adopted/belmonte/town-porta-nord",
+      "models": [
+        "adopted/belmonte/town-porta-nord"
+      ]
+    },
+    "object/belmonte/porta-nw": {
+      "groups": [
+        "SM_BM_BH_Porta_NW"
+      ],
+      "id": "object/belmonte/porta-nw",
+      "model": "adopted/belmonte/town-porta-nw",
+      "models": [
+        "adopted/belmonte/town-porta-nw"
+      ]
+    },
+    "object/belmonte/porta-se": {
+      "groups": [
+        "SM_BM_BH_Porta_SE"
+      ],
+      "id": "object/belmonte/porta-se",
+      "model": "adopted/belmonte/town-porta-se",
+      "models": [
+        "adopted/belmonte/town-porta-se"
+      ]
+    },
+    "object/belmonte/prop-amphora": {
+      "groups": [
+        "SM_BM_BP_Amphora"
+      ],
+      "id": "object/belmonte/prop-amphora",
+      "model": "adopted/belmonte/prop-amphora",
+      "models": [
+        "adopted/belmonte/prop-amphora"
+      ]
+    },
+    "object/belmonte/prop-barrel": {
+      "groups": [
+        "SM_BM_BP_Barrel"
+      ],
+      "id": "object/belmonte/prop-barrel",
+      "model": "adopted/belmonte/prop-barrel",
+      "models": [
+        "adopted/belmonte/prop-barrel"
+      ]
+    },
+    "object/belmonte/prop-barrel-planter": {
+      "groups": [
+        "SM_BM_BP_BarrelPlanter"
+      ],
+      "id": "object/belmonte/prop-barrel-planter",
+      "model": "adopted/belmonte/prop-barrel-planter",
+      "models": [
+        "adopted/belmonte/prop-barrel-planter"
+      ]
+    },
+    "object/belmonte/prop-basket": {
+      "groups": [
+        "SM_BM_BP_Basket"
+      ],
+      "id": "object/belmonte/prop-basket",
+      "model": "adopted/belmonte/prop-basket",
+      "models": [
+        "adopted/belmonte/prop-basket"
+      ]
+    },
+    "object/belmonte/prop-bench": {
+      "groups": [
+        "SM_BM_BP_Bench"
+      ],
+      "id": "object/belmonte/prop-bench",
+      "model": "adopted/belmonte/prop-bench",
+      "models": [
+        "adopted/belmonte/prop-bench"
+      ]
+    },
+    "object/belmonte/prop-bucket": {
+      "groups": [
+        "SM_BM_BP_Bucket"
+      ],
+      "id": "object/belmonte/prop-bucket",
+      "model": "adopted/belmonte/prop-bucket",
+      "models": [
+        "adopted/belmonte/prop-bucket"
+      ]
+    },
+    "object/belmonte/prop-cafe-table": {
+      "groups": [
+        "SM_BM_BP_CafeTable"
+      ],
+      "id": "object/belmonte/prop-cafe-table",
+      "model": "adopted/belmonte/prop-cafe-table",
+      "models": [
+        "adopted/belmonte/prop-cafe-table"
+      ]
+    },
+    "object/belmonte/prop-chalkboard": {
+      "groups": [
+        "SM_BM_BP_Chalkboard"
+      ],
+      "id": "object/belmonte/prop-chalkboard",
+      "model": "adopted/belmonte/prop-chalkboard",
+      "models": [
+        "adopted/belmonte/prop-chalkboard"
+      ]
+    },
+    "object/belmonte/prop-crate": {
+      "groups": [
+        "SM_BM_BP_Crate"
+      ],
+      "id": "object/belmonte/prop-crate",
+      "model": "adopted/belmonte/prop-crate",
+      "models": [
+        "adopted/belmonte/prop-crate"
+      ]
+    },
+    "object/belmonte/prop-crate-produce": {
+      "groups": [
+        "SM_BM_BP_CrateProduce_A",
+        "SM_BM_BP_CrateProduce_B"
+      ],
+      "id": "object/belmonte/prop-crate-produce",
+      "model": "adopted/belmonte/prop-crate-produce",
+      "models": [
+        "adopted/belmonte/prop-crate-produce"
+      ]
+    },
+    "object/belmonte/prop-crate-stack": {
+      "groups": [
+        "SM_BM_BP_CrateStack"
+      ],
+      "id": "object/belmonte/prop-crate-stack",
+      "model": "adopted/belmonte/prop-crate-stack",
+      "models": [
+        "adopted/belmonte/prop-crate-stack"
+      ]
+    },
+    "object/belmonte/prop-flower-bucket": {
+      "groups": [
+        "SM_BM_BP_FlowerBucket"
+      ],
+      "id": "object/belmonte/prop-flower-bucket",
+      "model": "adopted/belmonte/prop-flower-bucket",
+      "models": [
+        "adopted/belmonte/prop-flower-bucket"
+      ]
+    },
+    "object/belmonte/prop-flower-stand": {
+      "groups": [
+        "SM_BM_BP_FlowerStand"
+      ],
+      "id": "object/belmonte/prop-flower-stand",
+      "model": "adopted/belmonte/prop-flower-stand",
+      "models": [
+        "adopted/belmonte/prop-flower-stand"
+      ]
+    },
+    "object/belmonte/prop-garden-pergola": {
+      "groups": [
+        "SM_BM_BP_GardenPergola"
+      ],
+      "id": "object/belmonte/prop-garden-pergola",
+      "model": "adopted/belmonte/prop-garden-pergola",
+      "models": [
+        "adopted/belmonte/prop-garden-pergola"
+      ]
+    },
+    "object/belmonte/prop-handcart": {
+      "groups": [
+        "SM_BM_BP_Handcart"
+      ],
+      "id": "object/belmonte/prop-handcart",
+      "model": "adopted/belmonte/prop-handcart",
+      "models": [
+        "adopted/belmonte/prop-handcart"
+      ]
+    },
+    "object/belmonte/prop-kiosk": {
+      "groups": [
+        "SM_BM_BP_Kiosk"
+      ],
+      "id": "object/belmonte/prop-kiosk",
+      "model": "adopted/belmonte/prop-kiosk",
+      "models": [
+        "adopted/belmonte/prop-kiosk"
+      ]
+    },
+    "object/belmonte/prop-lantern-post": {
+      "groups": [
+        "SM_BM_BP_LanternPost"
+      ],
+      "id": "object/belmonte/prop-lantern-post",
+      "model": "adopted/belmonte/prop-lantern-post",
+      "models": [
+        "adopted/belmonte/prop-lantern-post"
+      ]
+    },
+    "object/belmonte/prop-laundry-basket": {
+      "groups": [
+        "SM_BM_BP_LaundryBasket"
+      ],
+      "id": "object/belmonte/prop-laundry-basket",
+      "model": "adopted/belmonte/prop-laundry-basket",
+      "models": [
+        "adopted/belmonte/prop-laundry-basket"
+      ]
+    },
+    "object/belmonte/prop-orcio": {
+      "groups": [
+        "SM_BM_BP_Orcio"
+      ],
+      "id": "object/belmonte/prop-orcio",
+      "model": "adopted/belmonte/prop-orcio",
+      "models": [
+        "adopted/belmonte/prop-orcio"
+      ]
+    },
+    "object/belmonte/prop-pot-geranium": {
+      "groups": [
+        "SM_BM_BP_PotGeranium"
+      ],
+      "id": "object/belmonte/prop-pot-geranium",
+      "model": "adopted/belmonte/prop-pot-geranium",
+      "models": [
+        "adopted/belmonte/prop-pot-geranium"
+      ]
+    },
+    "object/belmonte/prop-pot-herb": {
+      "groups": [
+        "SM_BM_BP_PotHerb"
+      ],
+      "id": "object/belmonte/prop-pot-herb",
+      "model": "adopted/belmonte/prop-pot-herb",
+      "models": [
+        "adopted/belmonte/prop-pot-herb"
+      ]
+    },
+    "object/belmonte/prop-pot-large": {
+      "groups": [
+        "SM_BM_BP_PotLarge"
+      ],
+      "id": "object/belmonte/prop-pot-large",
+      "model": "adopted/belmonte/prop-pot-large",
+      "models": [
+        "adopted/belmonte/prop-pot-large"
+      ]
+    },
+    "object/belmonte/prop-pot-lavender": {
+      "groups": [
+        "SM_BM_BP_PotLavender"
+      ],
+      "id": "object/belmonte/prop-pot-lavender",
+      "model": "adopted/belmonte/prop-pot-lavender",
+      "models": [
+        "adopted/belmonte/prop-pot-lavender"
+      ]
+    },
+    "object/belmonte/prop-pot-shrub": {
+      "groups": [
+        "SM_BM_BP_PotShrub"
+      ],
+      "id": "object/belmonte/prop-pot-shrub",
+      "model": "adopted/belmonte/prop-pot-shrub",
+      "models": [
+        "adopted/belmonte/prop-pot-shrub"
+      ]
+    },
+    "object/belmonte/prop-sack": {
+      "groups": [
+        "SM_BM_BP_Sack"
+      ],
+      "id": "object/belmonte/prop-sack",
+      "model": "adopted/belmonte/prop-sack",
+      "models": [
+        "adopted/belmonte/prop-sack"
+      ]
+    },
+    "object/belmonte/prop-saucer": {
+      "groups": [
+        "SM_BM_BP_Saucer"
+      ],
+      "id": "object/belmonte/prop-saucer",
+      "model": "adopted/belmonte/prop-saucer",
+      "models": [
+        "adopted/belmonte/prop-saucer"
+      ]
+    },
+    "object/belmonte/prop-stall-a": {
+      "groups": [
+        "SM_BM_BP_Stall_A"
+      ],
+      "id": "object/belmonte/prop-stall-a",
+      "model": "adopted/belmonte/prop-stall-a",
+      "models": [
+        "adopted/belmonte/prop-stall-a"
+      ]
+    },
+    "object/belmonte/prop-stall-b": {
+      "groups": [
+        "SM_BM_BP_Stall_B"
+      ],
+      "id": "object/belmonte/prop-stall-b",
+      "model": "adopted/belmonte/prop-stall-b",
+      "models": [
+        "adopted/belmonte/prop-stall-b"
+      ]
+    },
+    "object/belmonte/prop-stall-c": {
+      "groups": [
+        "SM_BM_BP_Stall_C"
+      ],
+      "id": "object/belmonte/prop-stall-c",
+      "model": "adopted/belmonte/prop-stall-c",
+      "models": [
+        "adopted/belmonte/prop-stall-c"
+      ]
+    },
+    "object/belmonte/prop-stall-goods": {
+      "groups": [
+        "SM_BM_BP_StallGoods_A",
+        "SM_BM_BP_StallGoods_B",
+        "SM_BM_BP_StallGoods_C",
+        "SM_BM_BP_StallGoods_D",
+        "SM_BM_BP_StallGoods_E",
+        "SM_BM_BP_StallGoods_F",
+        "SM_BM_BP_StallGoods_G"
+      ],
+      "id": "object/belmonte/prop-stall-goods",
+      "model": "adopted/belmonte/prop-stall-goods",
+      "models": [
+        "adopted/belmonte/prop-stall-goods"
+      ]
+    },
+    "object/belmonte/prop-stone-bench": {
+      "groups": [
+        "SM_BM_BP_StoneBench"
+      ],
+      "id": "object/belmonte/prop-stone-bench",
+      "model": "adopted/belmonte/prop-stone-bench",
+      "models": [
+        "adopted/belmonte/prop-stone-bench"
+      ]
+    },
+    "object/belmonte/prop-stone-planter": {
+      "groups": [
+        "SM_BM_BP_StonePlanter_A",
+        "SM_BM_BP_StonePlanter_B"
+      ],
+      "id": "object/belmonte/prop-stone-planter",
+      "model": "adopted/belmonte/prop-stone-planter",
+      "models": [
+        "adopted/belmonte/prop-stone-planter"
+      ]
+    },
+    "object/belmonte/prop-stool": {
+      "groups": [
+        "SM_BM_BP_Stool"
+      ],
+      "id": "object/belmonte/prop-stool",
+      "model": "adopted/belmonte/prop-stool",
+      "models": [
+        "adopted/belmonte/prop-stool"
+      ]
+    },
+    "object/belmonte/prop-wall-lantern": {
+      "groups": [
+        "SM_BM_BP_WallLantern"
+      ],
+      "id": "object/belmonte/prop-wall-lantern",
+      "model": "adopted/belmonte/prop-wall-lantern",
+      "models": [
+        "adopted/belmonte/prop-wall-lantern"
+      ]
+    },
+    "object/belmonte/prop-watering-can": {
+      "groups": [
+        "SM_BM_BP_WateringCan"
+      ],
+      "id": "object/belmonte/prop-watering-can",
+      "model": "adopted/belmonte/prop-watering-can",
+      "models": [
+        "adopted/belmonte/prop-watering-can"
+      ]
+    },
+    "object/belmonte/terrain-0-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_0_0"
+      ],
+      "id": "object/belmonte/terrain-0-0",
+      "model": "adopted/belmonte/terrain-0-0",
+      "models": [
+        "adopted/belmonte/terrain-0-0"
+      ]
+    },
+    "object/belmonte/terrain-0-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_0_1"
+      ],
+      "id": "object/belmonte/terrain-0-1",
+      "model": "adopted/belmonte/terrain-0-1",
+      "models": [
+        "adopted/belmonte/terrain-0-1"
+      ]
+    },
+    "object/belmonte/terrain-0-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_0_2"
+      ],
+      "id": "object/belmonte/terrain-0-2",
+      "model": "adopted/belmonte/terrain-0-2",
+      "models": [
+        "adopted/belmonte/terrain-0-2"
+      ]
+    },
+    "object/belmonte/terrain-0-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_0_3"
+      ],
+      "id": "object/belmonte/terrain-0-3",
+      "model": "adopted/belmonte/terrain-0-3",
+      "models": [
+        "adopted/belmonte/terrain-0-3"
+      ]
+    },
+    "object/belmonte/terrain-0-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_0_4"
+      ],
+      "id": "object/belmonte/terrain-0-4",
+      "model": "adopted/belmonte/terrain-0-4",
+      "models": [
+        "adopted/belmonte/terrain-0-4"
+      ]
+    },
+    "object/belmonte/terrain-0-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_0_5"
+      ],
+      "id": "object/belmonte/terrain-0-5",
+      "model": "adopted/belmonte/terrain-0-5",
+      "models": [
+        "adopted/belmonte/terrain-0-5"
+      ]
+    },
+    "object/belmonte/terrain-0-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_0_6"
+      ],
+      "id": "object/belmonte/terrain-0-6",
+      "model": "adopted/belmonte/terrain-0-6",
+      "models": [
+        "adopted/belmonte/terrain-0-6"
+      ]
+    },
+    "object/belmonte/terrain-1-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_1_0"
+      ],
+      "id": "object/belmonte/terrain-1-0",
+      "model": "adopted/belmonte/terrain-1-0",
+      "models": [
+        "adopted/belmonte/terrain-1-0"
+      ]
+    },
+    "object/belmonte/terrain-1-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_1_1"
+      ],
+      "id": "object/belmonte/terrain-1-1",
+      "model": "adopted/belmonte/terrain-1-1",
+      "models": [
+        "adopted/belmonte/terrain-1-1"
+      ]
+    },
+    "object/belmonte/terrain-1-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_1_2"
+      ],
+      "id": "object/belmonte/terrain-1-2",
+      "model": "adopted/belmonte/terrain-1-2",
+      "models": [
+        "adopted/belmonte/terrain-1-2"
+      ]
+    },
+    "object/belmonte/terrain-1-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_1_3"
+      ],
+      "id": "object/belmonte/terrain-1-3",
+      "model": "adopted/belmonte/terrain-1-3",
+      "models": [
+        "adopted/belmonte/terrain-1-3"
+      ]
+    },
+    "object/belmonte/terrain-1-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_1_4"
+      ],
+      "id": "object/belmonte/terrain-1-4",
+      "model": "adopted/belmonte/terrain-1-4",
+      "models": [
+        "adopted/belmonte/terrain-1-4"
+      ]
+    },
+    "object/belmonte/terrain-1-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_1_5"
+      ],
+      "id": "object/belmonte/terrain-1-5",
+      "model": "adopted/belmonte/terrain-1-5",
+      "models": [
+        "adopted/belmonte/terrain-1-5"
+      ]
+    },
+    "object/belmonte/terrain-1-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_1_6"
+      ],
+      "id": "object/belmonte/terrain-1-6",
+      "model": "adopted/belmonte/terrain-1-6",
+      "models": [
+        "adopted/belmonte/terrain-1-6"
+      ]
+    },
+    "object/belmonte/terrain-2-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_2_0"
+      ],
+      "id": "object/belmonte/terrain-2-0",
+      "model": "adopted/belmonte/terrain-2-0",
+      "models": [
+        "adopted/belmonte/terrain-2-0"
+      ]
+    },
+    "object/belmonte/terrain-2-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_2_1"
+      ],
+      "id": "object/belmonte/terrain-2-1",
+      "model": "adopted/belmonte/terrain-2-1",
+      "models": [
+        "adopted/belmonte/terrain-2-1"
+      ]
+    },
+    "object/belmonte/terrain-2-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_2_2"
+      ],
+      "id": "object/belmonte/terrain-2-2",
+      "model": "adopted/belmonte/terrain-2-2",
+      "models": [
+        "adopted/belmonte/terrain-2-2"
+      ]
+    },
+    "object/belmonte/terrain-2-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_2_3"
+      ],
+      "id": "object/belmonte/terrain-2-3",
+      "model": "adopted/belmonte/terrain-2-3",
+      "models": [
+        "adopted/belmonte/terrain-2-3"
+      ]
+    },
+    "object/belmonte/terrain-2-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_2_4"
+      ],
+      "id": "object/belmonte/terrain-2-4",
+      "model": "adopted/belmonte/terrain-2-4",
+      "models": [
+        "adopted/belmonte/terrain-2-4"
+      ]
+    },
+    "object/belmonte/terrain-2-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_2_5"
+      ],
+      "id": "object/belmonte/terrain-2-5",
+      "model": "adopted/belmonte/terrain-2-5",
+      "models": [
+        "adopted/belmonte/terrain-2-5"
+      ]
+    },
+    "object/belmonte/terrain-2-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_2_6"
+      ],
+      "id": "object/belmonte/terrain-2-6",
+      "model": "adopted/belmonte/terrain-2-6",
+      "models": [
+        "adopted/belmonte/terrain-2-6"
+      ]
+    },
+    "object/belmonte/terrain-3-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_3_0"
+      ],
+      "id": "object/belmonte/terrain-3-0",
+      "model": "adopted/belmonte/terrain-3-0",
+      "models": [
+        "adopted/belmonte/terrain-3-0"
+      ]
+    },
+    "object/belmonte/terrain-3-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_3_1"
+      ],
+      "id": "object/belmonte/terrain-3-1",
+      "model": "adopted/belmonte/terrain-3-1",
+      "models": [
+        "adopted/belmonte/terrain-3-1"
+      ]
+    },
+    "object/belmonte/terrain-3-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_3_2"
+      ],
+      "id": "object/belmonte/terrain-3-2",
+      "model": "adopted/belmonte/terrain-3-2",
+      "models": [
+        "adopted/belmonte/terrain-3-2"
+      ]
+    },
+    "object/belmonte/terrain-3-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_3_3"
+      ],
+      "id": "object/belmonte/terrain-3-3",
+      "model": "adopted/belmonte/terrain-3-3",
+      "models": [
+        "adopted/belmonte/terrain-3-3"
+      ]
+    },
+    "object/belmonte/terrain-3-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_3_4"
+      ],
+      "id": "object/belmonte/terrain-3-4",
+      "model": "adopted/belmonte/terrain-3-4",
+      "models": [
+        "adopted/belmonte/terrain-3-4"
+      ]
+    },
+    "object/belmonte/terrain-3-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_3_5"
+      ],
+      "id": "object/belmonte/terrain-3-5",
+      "model": "adopted/belmonte/terrain-3-5",
+      "models": [
+        "adopted/belmonte/terrain-3-5"
+      ]
+    },
+    "object/belmonte/terrain-3-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_3_6"
+      ],
+      "id": "object/belmonte/terrain-3-6",
+      "model": "adopted/belmonte/terrain-3-6",
+      "models": [
+        "adopted/belmonte/terrain-3-6"
+      ]
+    },
+    "object/belmonte/terrain-4-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_4_0"
+      ],
+      "id": "object/belmonte/terrain-4-0",
+      "model": "adopted/belmonte/terrain-4-0",
+      "models": [
+        "adopted/belmonte/terrain-4-0"
+      ]
+    },
+    "object/belmonte/terrain-4-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_4_1"
+      ],
+      "id": "object/belmonte/terrain-4-1",
+      "model": "adopted/belmonte/terrain-4-1",
+      "models": [
+        "adopted/belmonte/terrain-4-1"
+      ]
+    },
+    "object/belmonte/terrain-4-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_4_2"
+      ],
+      "id": "object/belmonte/terrain-4-2",
+      "model": "adopted/belmonte/terrain-4-2",
+      "models": [
+        "adopted/belmonte/terrain-4-2"
+      ]
+    },
+    "object/belmonte/terrain-4-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_4_3"
+      ],
+      "id": "object/belmonte/terrain-4-3",
+      "model": "adopted/belmonte/terrain-4-3",
+      "models": [
+        "adopted/belmonte/terrain-4-3"
+      ]
+    },
+    "object/belmonte/terrain-4-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_4_4"
+      ],
+      "id": "object/belmonte/terrain-4-4",
+      "model": "adopted/belmonte/terrain-4-4",
+      "models": [
+        "adopted/belmonte/terrain-4-4"
+      ]
+    },
+    "object/belmonte/terrain-4-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_4_5"
+      ],
+      "id": "object/belmonte/terrain-4-5",
+      "model": "adopted/belmonte/terrain-4-5",
+      "models": [
+        "adopted/belmonte/terrain-4-5"
+      ]
+    },
+    "object/belmonte/terrain-4-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_4_6"
+      ],
+      "id": "object/belmonte/terrain-4-6",
+      "model": "adopted/belmonte/terrain-4-6",
+      "models": [
+        "adopted/belmonte/terrain-4-6"
+      ]
+    },
+    "object/belmonte/terrain-5-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_5_0"
+      ],
+      "id": "object/belmonte/terrain-5-0",
+      "model": "adopted/belmonte/terrain-5-0",
+      "models": [
+        "adopted/belmonte/terrain-5-0"
+      ]
+    },
+    "object/belmonte/terrain-5-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_5_1"
+      ],
+      "id": "object/belmonte/terrain-5-1",
+      "model": "adopted/belmonte/terrain-5-1",
+      "models": [
+        "adopted/belmonte/terrain-5-1"
+      ]
+    },
+    "object/belmonte/terrain-5-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_5_2"
+      ],
+      "id": "object/belmonte/terrain-5-2",
+      "model": "adopted/belmonte/terrain-5-2",
+      "models": [
+        "adopted/belmonte/terrain-5-2"
+      ]
+    },
+    "object/belmonte/terrain-5-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_5_3"
+      ],
+      "id": "object/belmonte/terrain-5-3",
+      "model": "adopted/belmonte/terrain-5-3",
+      "models": [
+        "adopted/belmonte/terrain-5-3"
+      ]
+    },
+    "object/belmonte/terrain-5-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_5_4"
+      ],
+      "id": "object/belmonte/terrain-5-4",
+      "model": "adopted/belmonte/terrain-5-4",
+      "models": [
+        "adopted/belmonte/terrain-5-4"
+      ]
+    },
+    "object/belmonte/terrain-5-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_5_5"
+      ],
+      "id": "object/belmonte/terrain-5-5",
+      "model": "adopted/belmonte/terrain-5-5",
+      "models": [
+        "adopted/belmonte/terrain-5-5"
+      ]
+    },
+    "object/belmonte/terrain-5-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_5_6"
+      ],
+      "id": "object/belmonte/terrain-5-6",
+      "model": "adopted/belmonte/terrain-5-6",
+      "models": [
+        "adopted/belmonte/terrain-5-6"
+      ]
+    },
+    "object/belmonte/terrain-6-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_6_0"
+      ],
+      "id": "object/belmonte/terrain-6-0",
+      "model": "adopted/belmonte/terrain-6-0",
+      "models": [
+        "adopted/belmonte/terrain-6-0"
+      ]
+    },
+    "object/belmonte/terrain-6-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_6_1"
+      ],
+      "id": "object/belmonte/terrain-6-1",
+      "model": "adopted/belmonte/terrain-6-1",
+      "models": [
+        "adopted/belmonte/terrain-6-1"
+      ]
+    },
+    "object/belmonte/terrain-6-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_6_2"
+      ],
+      "id": "object/belmonte/terrain-6-2",
+      "model": "adopted/belmonte/terrain-6-2",
+      "models": [
+        "adopted/belmonte/terrain-6-2"
+      ]
+    },
+    "object/belmonte/terrain-6-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_6_3"
+      ],
+      "id": "object/belmonte/terrain-6-3",
+      "model": "adopted/belmonte/terrain-6-3",
+      "models": [
+        "adopted/belmonte/terrain-6-3"
+      ]
+    },
+    "object/belmonte/terrain-6-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_6_4"
+      ],
+      "id": "object/belmonte/terrain-6-4",
+      "model": "adopted/belmonte/terrain-6-4",
+      "models": [
+        "adopted/belmonte/terrain-6-4"
+      ]
+    },
+    "object/belmonte/terrain-6-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_6_5"
+      ],
+      "id": "object/belmonte/terrain-6-5",
+      "model": "adopted/belmonte/terrain-6-5",
+      "models": [
+        "adopted/belmonte/terrain-6-5"
+      ]
+    },
+    "object/belmonte/terrain-6-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_6_6"
+      ],
+      "id": "object/belmonte/terrain-6-6",
+      "model": "adopted/belmonte/terrain-6-6",
+      "models": [
+        "adopted/belmonte/terrain-6-6"
+      ]
+    },
+    "object/belmonte/terrain-7-0": {
+      "groups": [
+        "SM_BM_BT_Terrain_7_0"
+      ],
+      "id": "object/belmonte/terrain-7-0",
+      "model": "adopted/belmonte/terrain-7-0",
+      "models": [
+        "adopted/belmonte/terrain-7-0"
+      ]
+    },
+    "object/belmonte/terrain-7-1": {
+      "groups": [
+        "SM_BM_BT_Terrain_7_1"
+      ],
+      "id": "object/belmonte/terrain-7-1",
+      "model": "adopted/belmonte/terrain-7-1",
+      "models": [
+        "adopted/belmonte/terrain-7-1"
+      ]
+    },
+    "object/belmonte/terrain-7-2": {
+      "groups": [
+        "SM_BM_BT_Terrain_7_2"
+      ],
+      "id": "object/belmonte/terrain-7-2",
+      "model": "adopted/belmonte/terrain-7-2",
+      "models": [
+        "adopted/belmonte/terrain-7-2"
+      ]
+    },
+    "object/belmonte/terrain-7-3": {
+      "groups": [
+        "SM_BM_BT_Terrain_7_3"
+      ],
+      "id": "object/belmonte/terrain-7-3",
+      "model": "adopted/belmonte/terrain-7-3",
+      "models": [
+        "adopted/belmonte/terrain-7-3"
+      ]
+    },
+    "object/belmonte/terrain-7-4": {
+      "groups": [
+        "SM_BM_BT_Terrain_7_4"
+      ],
+      "id": "object/belmonte/terrain-7-4",
+      "model": "adopted/belmonte/terrain-7-4",
+      "models": [
+        "adopted/belmonte/terrain-7-4"
+      ]
+    },
+    "object/belmonte/terrain-7-5": {
+      "groups": [
+        "SM_BM_BT_Terrain_7_5"
+      ],
+      "id": "object/belmonte/terrain-7-5",
+      "model": "adopted/belmonte/terrain-7-5",
+      "models": [
+        "adopted/belmonte/terrain-7-5"
+      ]
+    },
+    "object/belmonte/terrain-7-6": {
+      "groups": [
+        "SM_BM_BT_Terrain_7_6"
+      ],
+      "id": "object/belmonte/terrain-7-6",
+      "model": "adopted/belmonte/terrain-7-6",
+      "models": [
+        "adopted/belmonte/terrain-7-6"
+      ]
+    },
+    "object/belmonte/town-pozzo": {
+      "groups": [
+        "SM_BM_BH_Pozzo"
+      ],
+      "id": "object/belmonte/town-pozzo",
+      "model": "adopted/belmonte/town-pozzo",
+      "models": [
+        "adopted/belmonte/town-pozzo"
+      ]
+    },
+    "object/belmonte/village-hay-roll": {
+      "groups": [
+        "SM_BM_BVV_HayRoll"
+      ],
+      "id": "object/belmonte/village-hay-roll",
+      "model": "adopted/belmonte/village-hay-roll",
+      "models": [
+        "adopted/belmonte/village-hay-roll"
+      ]
+    },
+    "object/belmonte/village-hay-stack": {
+      "groups": [
+        "SM_BM_BVV_HayStack"
+      ],
+      "id": "object/belmonte/village-hay-stack",
+      "model": "adopted/belmonte/village-hay-stack",
+      "models": [
+        "adopted/belmonte/village-hay-stack"
+      ]
+    },
+    "object/belmonte/village-stone-wall": {
+      "groups": [
+        "SM_BM_BVV_StoneWall"
+      ],
+      "id": "object/belmonte/village-stone-wall",
+      "model": "adopted/belmonte/village-stone-wall",
+      "models": [
+        "adopted/belmonte/village-stone-wall"
+      ]
+    },
+    "object/belmonte/waterfall": {
+      "groups": [
+        "SM_BM_BC_Waterfall"
+      ],
+      "id": "object/belmonte/waterfall",
+      "model": "adopted/belmonte/civil-waterfall",
+      "models": [
+        "adopted/belmonte/civil-waterfall"
+      ]
+    }
+  },
+  "schema": 1
+}

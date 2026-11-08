@@ -28,6 +28,9 @@ public:
         const TSharedPtr<FJsonObject>& Entry, UStaticMesh* Mesh, FName Tag, int32& Missing);
     /** A non-plant group's instances relative to the region's origin, without those outside the district. */
     static TArray<FTransform> SceneryTransforms(const TSharedPtr<FJsonObject>& Data, const TSharedPtr<FJsonObject>& Entry, int32& Outside);
+    /** A plant group's instances relative to the region's origin, without those on the gondola's clearance (InClearance
+     *  with Clearance, the gondola's data). Plants are not culled by the district's bounds. */
+    static TArray<FTransform> PlantTransforms(const TSharedPtr<FJsonObject>& Data, const TSharedPtr<FJsonObject>& Entry, const TSharedPtr<FJsonObject>& Clearance);
     UFUNCTION(BlueprintCallable, Category = "Review") static int32 ReviewPendingShaderJobs();
     UFUNCTION(BlueprintCallable, Category = "Review") static FString ReviewMeshColours(const FString& Name);
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Environment") bool bGameplayReady = false;

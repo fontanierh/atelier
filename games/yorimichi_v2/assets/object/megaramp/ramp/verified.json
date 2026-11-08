@@ -1,0 +1,12 @@
+{
+  "asset": "object/megaramp/ramp",
+  "dependencies": {
+    "adopted/japan/assets/mega-park-pieces": "93483ff0ef9af74e9e381d300676c71c6f249300ae447617f38c17a920fa65f2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/Q7/Y7N2FPA9K59DDUBF1X9SWH.uasset": "f9b8d9be5f4030cad88426144b01254fe97ee44ec64616386c016c203ae55a88"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

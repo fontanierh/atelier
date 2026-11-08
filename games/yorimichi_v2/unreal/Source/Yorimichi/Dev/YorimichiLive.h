@@ -32,6 +32,9 @@ public:
      *  Gamepad_RightX...) moves to Value and stays there; a button (Gamepad_RightTrigger...) goes down above .5 and
      *  up otherwise. Whatever has focus gets it (the open menu, or the game viewport). Refuses keys that aren't the pad's. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool PadInput(const FString& Key, float Value);
+    /** Assets (static meshes, textures, materials...) still compiling now, the work the "Preparing Static Meshes (N)"
+     *  message counts. A view is finished only at 0: parity captures wait for it before their screenshot. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static int32 PendingAssetCompiles();
     /** The key of the settings menu control with focus (a setting's key, or a button's name such as resume); empty when closed. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString MenuFocus();
     /** Change a setting as the Esc menu does (UJapanPreferences::SetValue, saved); false for an unknown key. */

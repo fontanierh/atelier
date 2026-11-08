@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-broad",
+  "dependencies": {
+    "adopted/brinecove/plant-broad": "64773d5b7ae51355d55ff01214d2aff9969529abf2725a1fc4098b3f9fe9cd1e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/95/F1O2V0EFRE4WT05RMLCJV6.uasset": "fcd12bc6ec0bf5b57e9b46ca2a001fb70c693eb462fddb43bf1a5f2c2d614fc5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

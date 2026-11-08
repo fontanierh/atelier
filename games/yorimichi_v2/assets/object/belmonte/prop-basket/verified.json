@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-basket",
+  "dependencies": {
+    "adopted/belmonte/prop-basket": "a577a36ae7c3277ef7489dfc7aa54c423d031143c3350bce44ca05c01d567c46"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/VN/EPMA1ITXM9F5H8SFGYJQC4.uasset": "1129df0cfcfd7268c712d924011d55c6ae72bb7bd988abdf4c7d53a166a33d23"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

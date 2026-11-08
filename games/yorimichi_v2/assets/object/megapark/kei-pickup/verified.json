@@ -1,0 +1,12 @@
+{
+  "asset": "object/megapark/kei-pickup",
+  "dependencies": {
+    "prop/megapark/kei-pickup": "776580f75e1f54c173c0695ee82d692e3ce0bb0ad1b9cead35cdf10e05da3db1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/JZ/F9BALGECRGOEPF5QYY4LE4.uasset": "457d2f9cf80a243366ece9c5cbf7951f6d056451d97330ae5dd610567b2b3811"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

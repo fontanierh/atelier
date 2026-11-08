@@ -1,0 +1,13 @@
+{
+  "asset": "object/gondola/station-floor-rim",
+  "dependencies": {
+    "adopted/gondola/shell-rim": "7ac70469ba0846b8f8e9cbc92f618234f15456e03ed2a943b2cd9d5280843e45",
+    "adopted/gondola/station-floor-rim": "57af7639aadc4d52b22e350d64a3b07f887a59ed0b2daa1d2dc11a173726668d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/XQ/81QKJFK0ER48JSNVHY235I.uasset": "c176098803a0e5ced1de2cfa0e7476260508099c640cda041c9a702160e17fab"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

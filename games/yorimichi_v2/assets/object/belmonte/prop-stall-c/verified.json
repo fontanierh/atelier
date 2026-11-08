@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-stall-c",
+  "dependencies": {
+    "adopted/belmonte/prop-stall-c": "d483d28543c7745ee891f490917b75ceeaa0178af964d6ab2ffb1869df356269"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/1M/F20NV8HWOG8JOQG682DYDF.uasset": "f442fea73d6213873130dac17d4d1350f2f47ad7086ba0741716fd7d096f2866"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

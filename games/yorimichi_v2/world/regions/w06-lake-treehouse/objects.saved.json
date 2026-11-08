@@ -1,0 +1,275 @@
+{
+  "objects": {
+    "object/lake/th-p-backpack-01": {
+      "groups": [],
+      "id": "object/lake/th-p-backpack-01",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -147.156,
+          184.087
+        ],
+        "key": "TH_P_backpack"
+      }
+    },
+    "object/lake/th-p-backpack-02": {
+      "groups": [],
+      "id": "object/lake/th-p-backpack-02",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -129.283,
+          199.67
+        ],
+        "key": "TH_P_backpack"
+      }
+    },
+    "object/lake/th-p-backpack-03": {
+      "groups": [],
+      "id": "object/lake/th-p-backpack-03",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -124.591,
+          167.723
+        ],
+        "key": "TH_P_backpack"
+      }
+    },
+    "object/lake/th-p-bell-01": {
+      "groups": [],
+      "id": "object/lake/th-p-bell-01",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -147.637,
+          138.531
+        ],
+        "key": "TH_P_bell"
+      }
+    },
+    "object/lake/th-p-bell-02": {
+      "groups": [],
+      "id": "object/lake/th-p-bell-02",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -123.01,
+          160.311
+        ],
+        "key": "TH_P_bell"
+      }
+    },
+    "object/lake/th-p-bookshelf-01": {
+      "groups": [],
+      "id": "object/lake/th-p-bookshelf-01",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -146.215,
+          184.987
+        ],
+        "key": "TH_P_bookshelf"
+      }
+    },
+    "object/lake/th-p-bookshelf-02": {
+      "groups": [],
+      "id": "object/lake/th-p-bookshelf-02",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -145.582,
+          185.683
+        ],
+        "key": "TH_P_bookshelf"
+      }
+    },
+    "object/lake/th-p-bookshelf-03": {
+      "groups": [],
+      "id": "object/lake/th-p-bookshelf-03",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -144.829,
+          186.511
+        ],
+        "key": "TH_P_bookshelf"
+      }
+    },
+    "object/lake/th-p-bookshelf-04": {
+      "groups": [],
+      "id": "object/lake/th-p-bookshelf-04",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -144.196,
+          187.206
+        ],
+        "key": "TH_P_bookshelf"
+      }
+    },
+    "object/lake/th-p-bookshelf-05": {
+      "groups": [],
+      "id": "object/lake/th-p-bookshelf-05",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -123.453,
+          167.589
+        ],
+        "key": "TH_P_bookshelf"
+      }
+    },
+    "object/lake/th-p-bookshelf-06": {
+      "groups": [],
+      "id": "object/lake/th-p-bookshelf-06",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -122.651,
+          166.992
+        ],
+        "key": "TH_P_bookshelf"
+      }
+    },
+    "object/lake/th-p-futon-01": {
+      "groups": [],
+      "id": "object/lake/th-p-futon-01",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -162.242,
+          172.289
+        ],
+        "key": "TH_P_futon"
+      }
+    },
+    "object/lake/th-p-futon-02": {
+      "groups": [],
+      "id": "object/lake/th-p-futon-02",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -162.062,
+          173.476
+        ],
+        "key": "TH_P_futon"
+      }
+    },
+    "object/lake/th-p-futon-03": {
+      "groups": [],
+      "id": "object/lake/th-p-futon-03",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -161.882,
+          174.662
+        ],
+        "key": "TH_P_futon"
+      }
+    },
+    "object/lake/th-p-planter-01": {
+      "groups": [],
+      "id": "object/lake/th-p-planter-01",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -168.45,
+          168.627
+        ],
+        "key": "TH_P_planter"
+      }
+    },
+    "object/lake/th-p-planter-02": {
+      "groups": [],
+      "id": "object/lake/th-p-planter-02",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -152.88,
+          186.861
+        ],
+        "key": "TH_P_planter"
+      }
+    },
+    "object/lake/th-p-planter-03": {
+      "groups": [],
+      "id": "object/lake/th-p-planter-03",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -133.036,
+          144.621
+        ],
+        "key": "TH_P_planter"
+      }
+    },
+    "object/lake/th-p-planter-04": {
+      "groups": [],
+      "id": "object/lake/th-p-planter-04",
+      "model": "adopted/japan/assets/treehouse",
+      "models": [
+        "adopted/japan/assets/treehouse"
+      ],
+      "split": {
+        "at": [
+          -128.25,
+          191.4
+        ],
+        "key": "TH_P_planter"
+      }
+    }
+  },
+  "schema": 1
+}

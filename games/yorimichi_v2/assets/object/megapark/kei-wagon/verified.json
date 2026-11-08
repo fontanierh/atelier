@@ -1,0 +1,12 @@
+{
+  "asset": "object/megapark/kei-wagon",
+  "dependencies": {
+    "prop/megapark/kei-wagon": "0fbba285c33d93219305175a928aa08eab24e2426aa7c20958dcd6e4b7339cbf"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/64/1BRJVAE97NZ6QMOVE23GXZ.uasset": "7b2f4d9cc95f821f3b3624b4196bb096c743abcb6bbbbcb1df8e80fa940cfa72"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
