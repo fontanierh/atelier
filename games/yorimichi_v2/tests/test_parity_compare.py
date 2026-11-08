@@ -226,3 +226,20 @@ def test_real_poses_file_is_well_formed():
 def _roundtrip(tmp_path, img, name='a'):
     save(tmp_path / 'roundtrip', name, img)
     return tmp_path / 'roundtrip' / f'{name}.png'
+
+
+def test_only_compares_a_subset_of_the_poses_file(tmp_path):
+    """--only names the poses to compare: the other poses of the file need no capture, and the receipts name the subset."""
+    img = scene()
+    save(tmp_path / 'donor', 'coast', img)
+    save(tmp_path / 'v2', 'coast', img)
+    poses = write_poses(tmp_path / 'poses.json', ['coast', 'pier'])
+    write_receipt(tmp_path / 'donor', poses, source='donor-runtime', poses=['coast'])
+    write_receipt(tmp_path / 'v2', poses, poses=['coast'])
+    args = [str(tmp_path / 'donor'), str(tmp_path / 'v2'), '--out', str(tmp_path / 'out'), '--min-ssim', '0.5',
+            '--poses', str(poses)]
+    assert compare.main([*args, '--only', 'coast']) == 0
+    report = json.loads((tmp_path / 'out' / 'report.json').read_text())
+    assert report['passed'] and [row['name'] for row in report['poses']] == ['coast']
+    assert compare.main([*args]) == 1   # without --only, pier has no capture
+    assert compare.main([*args, '--only', 'nothing_*']) == 2

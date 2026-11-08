@@ -1,7 +1,7 @@
 """Visual parity of the slice (plan P3.6): compare donor and V2 captures of the same named poses.
 
     uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim 0.8 \
-        [--max-mad 0.05] [--poses games/yorimichi_v2/tools/parity/poses.json]
+        [--max-mad 0.05] [--poses games/yorimichi_v2/tools/parity/poses.json] [--only 'w07_*']
 
 Each folder holds one `<pose>.png` per pose and the capture receipt `capture.json` (unreal/Scripts/capture_poses.py
 writes both). The expected poses always come from --poses (default: poses.json next to this script). For every pose
@@ -30,6 +30,9 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from poseset import load_poses, select  # noqa: E402
 
 SIGMA, RADIUS = 1.5, 5
 C1, C2 = 0.01 ** 2, 0.03 ** 2   # SSIM's stabilisers for a dynamic range of 1
@@ -105,8 +108,8 @@ def compare_pose(name, donor_dir, v2_dir, out, min_ssim, max_mad, gain):
     return row
 
 
-def pose_names(poses):
-    return [p['name'] for p in json.loads(poses.read_text())['poses']]
+def pose_names(poses, only=None):
+    return [p['name'] for p in select(load_poses(poses), only)]
 
 
 def read_receipt(folder):
@@ -185,8 +188,14 @@ def main(argv=None) -> int:
     parser.add_argument('--poses', type=Path, default=DEFAULT_POSES,
                         help='poses.json: the poses that must be present (default: the one next to this script)')
     parser.add_argument('--gain', type=float, default=4., help='amplification of the difference image')
+    parser.add_argument('--only', action='append', help='compare only the poses named by this glob (e.g. w07_*), '
+                        'comma separated or repeated; the captures must then hold exactly those poses')
     args = parser.parse_args(argv)
-    names = pose_names(args.poses)
+    try:
+        names = pose_names(args.poses, args.only)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
     if not names:
         print(f'no poses in {args.poses}', file=sys.stderr)
         return 2
