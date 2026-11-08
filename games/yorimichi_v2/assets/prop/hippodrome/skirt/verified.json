@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hippodrome/skirt",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/SM_HD_Skirt.uasset": "66a562fcb938d2d9ecb47e75dc9aad40da79019d070f640a174adacc7f87c5cc"
+  },
+  "input_fingerprint": "97f13ec10e0b7cc96600489b4fa49b76ddac4f01549068092244a1de3cb33897",
+  "kind": "imported",
+  "lods": {
+    "/Game/Hippodrome/SM_HD_Skirt": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

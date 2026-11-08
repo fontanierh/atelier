@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hippodrome/track",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/SM_HD_Track.uasset": "4eb84751a4ca653c4f58d4e8011274dc4c68fcee2354719c276156314c1b25ab"
+  },
+  "input_fingerprint": "40433ca849d8e54b8294935d37f09a93056fda8e203403272bf69811cc18d00a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Hippodrome/SM_HD_Track": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
