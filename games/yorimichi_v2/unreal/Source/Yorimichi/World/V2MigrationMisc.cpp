@@ -108,18 +108,9 @@ int32 UV2MigrationMisc::MigrateStaticMeshes(UObject* WorldContext, FName Region,
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
         if (Existing.Contains(Id))
         {
-            // A kept unit holds the meshes it was saved with, all listed in the manifest; a mesh it gained since would
-            // be listed without geometry (the runtime would stop building it), so refuse instead.
-            for (const FString& Mesh : Its)
-            {
-                if (!Manifest->MigratedGroups.Contains(Tag.ToString() + TEXT(":") + Mesh))
-                {
-                    Error = FString::Printf(TEXT("%s was saved without %s; delete its patch and rerun to remake it"),
-                        *Unit, *Mesh);
-                    break;
-                }
-            }
-            if (!Error.IsEmpty()) break;
+            TArray<FString> Keys;
+            for (const FString& Mesh : Its) Keys.Add(Tag.ToString() + TEXT(":") + Mesh);
+            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
             ++OutKept;
             continue;
         }

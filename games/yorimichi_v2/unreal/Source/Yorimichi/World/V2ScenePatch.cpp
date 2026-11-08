@@ -400,7 +400,14 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
     for (const FString& Object : Order)
     {
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Object});
-        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        if (Existing.Contains(Id))
+        {
+            TArray<FString> Keys;
+            for (const FString& Listed : Groups[Object]) Keys.Add(Tag.ToString() + TEXT(":") + Listed);
+            if (!Manifest->KeptUnitCovers(Object, Keys, Error)) break;
+            ++OutKept;
+            continue;
+        }
         FActorSpawnParameters Params;
         Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
         AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Origin, FRotator::ZeroRotator, Params);
@@ -475,6 +482,19 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
 
 // A unit saved before patches recorded their placement keeps no OriginalTransform, so a later move of it would not carry its
 // rails and zones. A kept unit still standing at its placement records it now; one already moved is left alone and logged.
+bool AV2WorldManifest::KeptUnitCovers(const FString& Unit, const TArray<FString>& Keys, FString& Error) const
+{
+    for (const FString& Key : Keys)
+    {
+        if (!MigratedGroups.Contains(Key))
+        {
+            Error = FString::Printf(TEXT("%s was saved without %s; delete its patch and rerun to remake it"), *Unit, *Key);
+            return false;
+        }
+    }
+    return true;
+}
+
 static void KeepOriginal(AV2ScenePatch* Kept, const FTransform& Placement)
 {
     if (!Kept->OriginalTransform.Equals(FTransform::Identity, 0.)) return;
@@ -544,7 +564,15 @@ int32 UV2Migration::MigrateParkPieces(UObject* WorldContext, FName Region, FName
     for (const FString& Unit : Order)
     {
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
-        if (AV2ScenePatch** Kept = Existing.Find(Id)) { ++OutKept; KeepOriginal(*Kept, Placement); continue; }
+        if (AV2ScenePatch** Kept = Existing.Find(Id))
+        {
+            TArray<FString> Keys;
+            for (const int32 I : ByUnit[Unit]) Keys.Add(Tag.ToString() + TEXT(":") + Pieces[I]);
+            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+            ++OutKept;
+            KeepOriginal(*Kept, Placement);
+            continue;
+        }
         FActorSpawnParameters Params;
         Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
         AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Placement.GetLocation(), Placement.Rotator(), Params);
@@ -645,7 +673,15 @@ int32 UV2Migration::MigrateHippodromePieces(UObject* WorldContext, FName Region,
     for (const FString& Unit : Order)
     {
         const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
-        if (AV2ScenePatch** Kept = Existing.Find(Id)) { ++OutKept; KeepOriginal(*Kept, FTransform(FRotator::ZeroRotator, Placement)); continue; }
+        if (AV2ScenePatch** Kept = Existing.Find(Id))
+        {
+            TArray<FString> Keys;
+            for (const int32 I : ByUnit[Unit]) Keys.Add(Tag.ToString() + TEXT(":") + Pieces[I]);
+            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+            ++OutKept;
+            KeepOriginal(*Kept, FTransform(FRotator::ZeroRotator, Placement));
+            continue;
+        }
         FActorSpawnParameters Params;
         Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
         AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Placement, FRotator::ZeroRotator, Params);

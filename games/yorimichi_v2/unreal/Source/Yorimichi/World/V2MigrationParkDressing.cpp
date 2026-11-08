@@ -202,7 +202,14 @@ int32 UV2MigrationParkDressing::MigrateParkProps(UObject* WorldContext, FName Re
     for (const FString& Unit : Order)
     {
         const FString Id = StableId({Region.ToString(), Tag.ToString(), TEXT("props/") + Unit});
-        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        if (Existing.Contains(Id))
+        {
+            TArray<FString> Keys;
+            for (const int32 I : UnitPicks[Unit]) Keys.Add(TagKey + TEXT(":") + Meshes[I]);
+            if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
+            ++OutKept;
+            continue;
+        }
         AV2ScenePatch* Made = SpawnUnitPatch(World, Region, Tag, Placement, Id, TagKey + TEXT(":props/") + Unit);
         if (!Made) { Error = Unit + TEXT(": could not spawn its patch"); break; }
         OutCreated.Add(Made);

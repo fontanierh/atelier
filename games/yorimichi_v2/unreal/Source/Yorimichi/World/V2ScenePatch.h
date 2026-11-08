@@ -85,6 +85,10 @@ public:
     UPROPERTY(EditAnywhere, Category = "V2") TArray<FString> MigratedGroups;
 
     static const AV2WorldManifest* Find(const UWorld* World);
+    /** A migration rerun keeps a saved unit as it is: true when each of its requested manifest Keys is already listed
+     *  (it was saved with them). A key not listed yet is an entry the unit gained since: it has no saved geometry, and
+     *  listing it would stop the runtime building it, so this fails with Error instead (CONTRACTS targeted-authoring). */
+    bool KeptUnitCovers(const FString& Unit, const TArray<FString>& Keys, FString& Error) const;
     static bool InsideHalfOpen(const FBox2D& Box, const FVector2D& P)
     {
         return P.X >= Box.Min.X && P.X < Box.Max.X && P.Y >= Box.Min.Y && P.Y < Box.Max.Y;

@@ -67,18 +67,9 @@ namespace
             const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
             if (Existing.Contains(Id))
             {
-                // A kept unit was saved with every entry it then had, all listed in the manifest. An entry it gained
-                // since is not in its components, so listing it would hide geometry nobody saved: refuse instead.
-                for (const FString& Name : ByUnit[Unit])
-                {
-                    if (!Manifest->MigratedGroups.Contains(Tag.ToString() + TEXT(":") + Name))
-                    {
-                        Error = FString::Printf(TEXT("%s was saved without %s; delete its patch and rerun to remake it"),
-                            *Unit, *Name);
-                        break;
-                    }
-                }
-                if (!Error.IsEmpty()) break;
+                TArray<FString> Keys;
+                for (const FString& Name : ByUnit[Unit]) Keys.Add(Tag.ToString() + TEXT(":") + Name);
+                if (!Manifest->KeptUnitCovers(Unit, Keys, Error)) break;
                 ++OutKept;
                 continue;
             }
