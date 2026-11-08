@@ -98,6 +98,7 @@ V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/move_actor.py V2_MOVE_AC
 uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen                # the slice game; prints its live session ID
 uv run python games/yorimichi_v2/tools/test/route.py --session ID --out DIR     # walk + skate route in that game, report.json
 uv run python games/yorimichi_v2/tools/test/train_ride.py --session ID --out DIR   # board, ride and leave the Belmonte train
+uv run python games/yorimichi_v2/tools/test/ferry_ride.py --session ID --start hidamari   # board, cross and leave the ferry
 uv run python games/yorimichi_v2/tools/test/budgets.py open --out DIR           # a plan §15 budget: warm-up + 5 runs, receipt
 ```
 
