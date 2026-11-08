@@ -139,4 +139,35 @@ names only the subset, and compare.py needs the same `--only`:
         build/yorimichi_v2/parity/island-v2 --out build/yorimichi_v2/parity/island-report --min-ssim 0.75 \
         --poses games/yorimichi_v2/tools/parity/island_poses.json --only 'w07_*'
 
-Omit `--only` for all 54. Nothing here has been captured yet: the donor and V2 captures are the next step.
+Omit `--only` for all 54.
+
+### First whole-island run (2026-11-08)
+
+Donor `7eec0f98dd` (desktop profile) and V2 `1d9ac65d77` (`jim5/yv2-statics-run`, clean), 2560x1440, all 54 poses,
+`compare.py --min-ssim 0.75`. Both games ran under the normal play guard; whole-island V2 needs `--memory-gib 22`
+(it peaks near 20 GiB while far tiles stream in; 10 and 16 GiB stop it during startup).
+
+| Settle per pose | Pass | Below 0.75 |
+|---|---:|---|
+| 8 s (the old default) | 47 / 54 | w07 harbour pier, w07 station yard, w20 Hidamari platform, w20 corridor viaduct, w17 Hidamari ferry pier, w02 teahouse, w13 Ronin camp |
+| 30 s (the 7, plus w05 far northeast as a control) | 51 / 54 | w17 Hidamari ferry pier 0.71, w13 Ronin camp 0.70, w02 teahouse 0.59 |
+
+- At 8 s V2 was still streaming Hidamari's city cells and the corridor forest in (flat sea plane where the town stands,
+  bare slopes); at 30 s the same views score 0.78 to 0.96. The capture default is now 30 s.
+- The three still below 0.75 show the same scenery by eye. The teahouse and camp cameras stood inside the canopy, so
+  leaf motion dominated the score; they now stand 30 and 35 m above their targets (make_island_poses.py), and both
+  pass from there (teahouse 0.81, Ronin camp 0.76; donor and V2 recaptured at 30 s). The ferry pier differs only by
+  the ferry, docked in the V2 frame and away in the donor's: a moving service, not scenery.
+
+Result: 53 of 54 poses at SSIM >= 0.75; the one below is the ferry's schedule position.
+
+**Unfinished views.** Eight first-run V2 shots still showed "Preparing Static Meshes (N)" (w05 far east, w09 Brine Cove
+ferry, w11 Mega Park overview, w12 volcano west flank, w13 Ronin camp, w18 gondola Belmonte station, w19 zeppelin
+Hidamari), several of them passing on score. A score is no proof that a view finished, so V2 captures now also wait,
+after the settle, until `YorimichiLive.PendingAssetCompiles()` is 0, refuse a pose still compiling 300 s later, and
+record each pose's extra wait in the receipt (`compile_waits_s`; the donor has no such verb). Those eight, recaptured on
+both games with the revised poses at 30 s: no message in any V2 shot, no extra wait needed, six pass at 0.85 to 0.98.
+The teahouse and Ronin camp views scored 0.72 and 0.73 in this run, against 0.81 and 0.76 in the previous one: the
+hamlet, its houses, paths and trees match, and the near canopy's leaves move between frames. Treat those two as
+foliage-limited views around the threshold, not as content differences.
+
