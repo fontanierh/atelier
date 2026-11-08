@@ -158,3 +158,15 @@ def test_recorded_evidence_carries_no_time(tmp_path, tools):
     app, evidence = make_app(tmp_path), tmp_path / 'e.json'
     acceptance.record(app, evidence, 'first_launch', 'pass', 'ok', reset=False)
     assert json.loads(evidence.read_text())['items']['first_launch'] == {'status': 'pass', 'note': 'ok'}
+
+
+def test_manual_notes_are_portable_when_recorded_and_reported(tmp_path, tools):
+    """A tester's note naming a local folder keeps only its last part, in the ledger and in the report."""
+    app, evidence = make_app(tmp_path), tmp_path / 'e.json'
+    acceptance.record(app, evidence, 'save_persistence', 'pass', 'restored from /Volumes/Alice/Saved/SaveGames', reset=False)
+    assert json.loads(evidence.read_text())['items']['save_persistence']['note'] == 'restored from SaveGames'
+    ledger = json.loads(evidence.read_text())
+    ledger['items']['first_launch'] = {'status': 'pass', 'note': 'ran /Volumes/Alice/YorimichiV2.app'}
+    evidence.write_text(json.dumps(ledger))
+    report = acceptance.verify(app, evidence, multiplayer=False)
+    assert '/Volumes/' not in json.dumps(report)

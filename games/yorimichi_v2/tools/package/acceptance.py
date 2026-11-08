@@ -201,7 +201,7 @@ def record(app: Path, evidence: Path, item: str, status: str, note: str, reset: 
         raise SystemExit(f'{evidence} is bound to another package ({ledger["package"][:12]}); use --reset to start over')
     if ledger.get('package') != current:
         ledger = {'package': current, 'items': {}}
-    ledger['items'][item] = {'status': status, 'note': note}
+    ledger['items'][item] = {'status': status, 'note': portable(note, app)}
     write_ledger(evidence, ledger)
     return f'{item}: {status} recorded for package {current[:12]}'
 
@@ -218,7 +218,7 @@ def verify(app: Path, evidence: Path, multiplayer: bool) -> dict:
         elif entry is None:
             ok, detail = False, 'not recorded'
         else:
-            ok, detail = entry['status'] == 'pass', f"{entry['status']}: {entry['note']}"
+            ok, detail = entry['status'] == 'pass', portable(f"{entry['status']}: {entry['note']}", app)
         checks.append(Check(f'manual.{item}', ok, detail))
     failed = [c.name for c in checks if not c.ok]
     return {'verdict': 'pass' if not failed else 'fail', 'failed': failed, 'package': current,
