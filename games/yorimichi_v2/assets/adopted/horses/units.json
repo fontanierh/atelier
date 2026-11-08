@@ -1,0 +1,1639 @@
+{
+ "about": "Horses editing units for tools/migrate/adopt.py (written by tools/migrate/horses_units.py)",
+ "units": {
+  "andalusian": {
+   "about": "Andalusian horse: skeletal mesh, skeleton, clips, materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/horse.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-reins-00": {
+   "about": "Andalusian reins set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Reins_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-reins-01": {
+   "about": "Andalusian reins set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Reins_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-reins-02": {
+   "about": "Andalusian reins set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Reins_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-reins-03": {
+   "about": "Andalusian reins set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Reins_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-reins-04": {
+   "about": "Andalusian reins set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Reins_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-reins-05": {
+   "about": "Andalusian reins set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Reins_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-reins-06": {
+   "about": "Andalusian reins set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Reins_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-saddle-00": {
+   "about": "Andalusian saddle set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Saddle_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-saddle-01": {
+   "about": "Andalusian saddle set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Saddle_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-saddle-02": {
+   "about": "Andalusian saddle set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Saddle_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-saddle-03": {
+   "about": "Andalusian saddle set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Saddle_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-saddle-04": {
+   "about": "Andalusian saddle set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Saddle_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-saddle-05": {
+   "about": "Andalusian saddle set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Saddle_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "andalusian-saddle-06": {
+   "about": "Andalusian saddle set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/andalusian/tack/Saddle_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian": {
+   "about": "Arabian horse: skeletal mesh, skeleton, clips, materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/horse.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-reins-00": {
+   "about": "Arabian reins set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Reins_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-reins-01": {
+   "about": "Arabian reins set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Reins_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-reins-02": {
+   "about": "Arabian reins set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Reins_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-reins-03": {
+   "about": "Arabian reins set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Reins_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-reins-04": {
+   "about": "Arabian reins set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Reins_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-reins-05": {
+   "about": "Arabian reins set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Reins_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-reins-06": {
+   "about": "Arabian reins set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Reins_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-saddle-00": {
+   "about": "Arabian saddle set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Saddle_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-saddle-01": {
+   "about": "Arabian saddle set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Saddle_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-saddle-02": {
+   "about": "Arabian saddle set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Saddle_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-saddle-03": {
+   "about": "Arabian saddle set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Saddle_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-saddle-04": {
+   "about": "Arabian saddle set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Saddle_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-saddle-05": {
+   "about": "Arabian saddle set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Saddle_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "arabian-saddle-06": {
+   "about": "Arabian saddle set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/arabian/tack/Saddle_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale": {
+   "about": "Clydesdale horse: skeletal mesh, skeleton, clips, materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/horse.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-reins-00": {
+   "about": "Clydesdale reins set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Reins_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-reins-01": {
+   "about": "Clydesdale reins set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Reins_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-reins-02": {
+   "about": "Clydesdale reins set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Reins_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-reins-03": {
+   "about": "Clydesdale reins set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Reins_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-reins-04": {
+   "about": "Clydesdale reins set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Reins_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-reins-05": {
+   "about": "Clydesdale reins set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Reins_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-reins-06": {
+   "about": "Clydesdale reins set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Reins_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-saddle-00": {
+   "about": "Clydesdale saddle set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Saddle_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-saddle-01": {
+   "about": "Clydesdale saddle set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Saddle_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-saddle-02": {
+   "about": "Clydesdale saddle set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Saddle_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-saddle-03": {
+   "about": "Clydesdale saddle set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Saddle_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-saddle-04": {
+   "about": "Clydesdale saddle set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Saddle_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-saddle-05": {
+   "about": "Clydesdale saddle set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Saddle_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "clydesdale-saddle-06": {
+   "about": "Clydesdale saddle set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/clydesdale/tack/Saddle_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-bay": {
+   "about": "Horse coat variant bay",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/bay.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/bay.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-bay-tobiano": {
+   "about": "Horse coat variant bay-tobiano",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/bay-tobiano.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/bay-tobiano.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-black": {
+   "about": "Horse coat variant black",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/black.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/black.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-blanket": {
+   "about": "Horse coat variant blanket",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/blanket.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/blanket.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-blue-roan": {
+   "about": "Horse coat variant blue-roan",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/blue-roan.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/blue-roan.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-buckskin": {
+   "about": "Horse coat variant buckskin",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/buckskin.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/buckskin.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-chestnut": {
+   "about": "Horse coat variant chestnut",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/chestnut.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/chestnut.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-chestnut-overo": {
+   "about": "Horse coat variant chestnut-overo",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/chestnut-overo.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/chestnut-overo.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-dapple-grey": {
+   "about": "Horse coat variant dapple-grey",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/dapple-grey.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/dapple-grey.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-leopard": {
+   "about": "Horse coat variant leopard",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/leopard.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/leopard.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-masks": {
+   "about": "Horse coat masks",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/T_Coat_Overo_Mask.png",
+    "games/yorimichi/assets/horses/coats/T_Coat_Pangare_Mask.png",
+    "games/yorimichi/assets/horses/coats/T_Coat_Solid_Mask.png",
+    "games/yorimichi/assets/horses/coats/T_Coat_Spots_Mask.png",
+    "games/yorimichi/assets/horses/coats/T_Coat_Tobiano_Mask.png"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-palomino": {
+   "about": "Horse coat variant palomino",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/palomino.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/palomino.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-perlino": {
+   "about": "Horse coat variant perlino",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/perlino.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/perlino.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-red-roan": {
+   "about": "Horse coat variant red-roan",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/red-roan.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/red-roan.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-seal-brown": {
+   "about": "Horse coat variant seal-brown",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/seal-brown.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/seal-brown.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-silver-dun": {
+   "about": "Horse coat variant silver-dun",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/silver-dun.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/silver-dun.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "coat-sorrel": {
+   "about": "Horse coat variant sorrel",
+   "sources": [
+    "games/yorimichi/assets/horses/coats/variants/kestrel/sorrel.png",
+    "games/yorimichi/assets/horses/coats/variants/kestrel/sorrel.json"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian": {
+   "about": "Friesian horse: skeletal mesh, skeleton, clips, materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/horse.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-reins-00": {
+   "about": "Friesian reins set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Reins_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-reins-01": {
+   "about": "Friesian reins set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Reins_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-reins-02": {
+   "about": "Friesian reins set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Reins_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-reins-03": {
+   "about": "Friesian reins set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Reins_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-reins-04": {
+   "about": "Friesian reins set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Reins_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-reins-05": {
+   "about": "Friesian reins set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Reins_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-reins-06": {
+   "about": "Friesian reins set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Reins_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-saddle-00": {
+   "about": "Friesian saddle set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Saddle_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-saddle-01": {
+   "about": "Friesian saddle set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Saddle_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-saddle-02": {
+   "about": "Friesian saddle set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Saddle_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-saddle-03": {
+   "about": "Friesian saddle set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Saddle_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-saddle-04": {
+   "about": "Friesian saddle set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Saddle_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-saddle-05": {
+   "about": "Friesian saddle set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Saddle_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "friesian-saddle-06": {
+   "about": "Friesian saddle set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/friesian/tack/Saddle_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "generator": {
+   "about": "Horses generator: the manifest, rig measurement and clip sampling scripts, the Unreal import scripts and the shared horse materials",
+   "sources": [
+    "games/yorimichi/assets/horses/build.py",
+    "games/yorimichi/assets/horses/coats/variants/manifest.json",
+    "games/yorimichi/assets/horses/manifest.json",
+    "games/yorimichi/assets/horses/rider.py",
+    "games/yorimichi/assets/horses/turn.py",
+    "games/yorimichi/unreal/Scripts/horse_data.py",
+    "games/yorimichi/unreal/Scripts/import_horses.py"
+   ]
+  },
+  "quarter": {
+   "about": "Quarter horse: skeletal mesh, skeleton, clips, materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/horse.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-reins-00": {
+   "about": "Quarter reins set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Reins_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-reins-01": {
+   "about": "Quarter reins set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Reins_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-reins-02": {
+   "about": "Quarter reins set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Reins_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-reins-03": {
+   "about": "Quarter reins set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Reins_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-reins-04": {
+   "about": "Quarter reins set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Reins_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-reins-05": {
+   "about": "Quarter reins set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Reins_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-reins-06": {
+   "about": "Quarter reins set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Reins_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-saddle-00": {
+   "about": "Quarter saddle set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Saddle_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-saddle-01": {
+   "about": "Quarter saddle set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Saddle_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-saddle-02": {
+   "about": "Quarter saddle set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Saddle_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-saddle-03": {
+   "about": "Quarter saddle set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Saddle_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-saddle-04": {
+   "about": "Quarter saddle set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Saddle_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-saddle-05": {
+   "about": "Quarter saddle set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Saddle_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "quarter-saddle-06": {
+   "about": "Quarter saddle set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/quarter/tack/Saddle_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred": {
+   "about": "Thoroughbred horse: skeletal mesh, skeleton, clips, materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/horse.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-reins-00": {
+   "about": "Thoroughbred reins set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Reins_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-reins-01": {
+   "about": "Thoroughbred reins set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Reins_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-reins-02": {
+   "about": "Thoroughbred reins set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Reins_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-reins-03": {
+   "about": "Thoroughbred reins set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Reins_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-reins-04": {
+   "about": "Thoroughbred reins set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Reins_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-reins-05": {
+   "about": "Thoroughbred reins set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Reins_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-reins-06": {
+   "about": "Thoroughbred reins set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Reins_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-saddle-00": {
+   "about": "Thoroughbred saddle set 00 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Saddle_00.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-saddle-01": {
+   "about": "Thoroughbred saddle set 01 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Saddle_01.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-saddle-02": {
+   "about": "Thoroughbred saddle set 02 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Saddle_02.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-saddle-03": {
+   "about": "Thoroughbred saddle set 03 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Saddle_03.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-saddle-04": {
+   "about": "Thoroughbred saddle set 04 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Saddle_04.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-saddle-05": {
+   "about": "Thoroughbred saddle set 05 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Saddle_05.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  },
+  "thoroughbred-saddle-06": {
+   "about": "Thoroughbred saddle set 06 with its materials and images",
+   "sources": [
+    "games/yorimichi/assets/horses/thoroughbred/tack/Saddle_06.glb"
+   ],
+   "references": [
+    "adopted/horses/generator"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_Canter": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_Gallop": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_Idle": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_IdleAffection": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_IdleFlehmen": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_IdleGraze": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_IdleLook": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_IdleShake": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_Jump": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_Sprint": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_Trot": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_TurnLeft": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_TurnRight": "andalusian",
+  "/Game/Horses/Andalusian/A_Horse_Andalusian_Walk": "andalusian",
+  "/Game/Horses/Andalusian/Andalusian_Eyeball_Alb_png": "andalusian",
+  "/Game/Horses/Andalusian/Andalusian_Hair_Alb_png": "andalusian",
+  "/Game/Horses/Andalusian/Andalusian_Metal_Alb_png": "andalusian",
+  "/Game/Horses/Andalusian/Coat": "andalusian",
+  "/Game/Horses/Andalusian/Eye": "andalusian",
+  "/Game/Horses/Andalusian/Foot": "andalusian",
+  "/Game/Horses/Andalusian/Hoof": "andalusian",
+  "/Game/Horses/Andalusian/Mane": "andalusian",
+  "/Game/Horses/Andalusian/SKEL_Horse_Andalusian": "andalusian",
+  "/Game/Horses/Andalusian/SK_Horse_Andalusian": "andalusian",
+  "/Game/Horses/Andalusian/Tack/Reins_00/Kestrel_Reins_00_Alb_png": "andalusian-reins-00",
+  "/Game/Horses/Andalusian/Tack/Reins_00/Reins_00_Mt_Reins": "andalusian-reins-00",
+  "/Game/Horses/Andalusian/Tack/Reins_00/SK_Horse_Andalusian_Reins_00": "andalusian-reins-00",
+  "/Game/Horses/Andalusian/Tack/Reins_01/Kestrel_Reins_01_Alb_png": "andalusian-reins-01",
+  "/Game/Horses/Andalusian/Tack/Reins_01/Reins_01_Mt_Reins": "andalusian-reins-01",
+  "/Game/Horses/Andalusian/Tack/Reins_01/SK_Horse_Andalusian_Reins_01": "andalusian-reins-01",
+  "/Game/Horses/Andalusian/Tack/Reins_02/Kestrel_Reins_02_Alb_png": "andalusian-reins-02",
+  "/Game/Horses/Andalusian/Tack/Reins_02/Reins_02_Mt_Reins": "andalusian-reins-02",
+  "/Game/Horses/Andalusian/Tack/Reins_02/SK_Horse_Andalusian_Reins_02": "andalusian-reins-02",
+  "/Game/Horses/Andalusian/Tack/Reins_03/Kestrel_Reins_03_Alb": "andalusian-reins-03",
+  "/Game/Horses/Andalusian/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb": "andalusian-reins-03",
+  "/Game/Horses/Andalusian/Tack/Reins_03/Reins_03_Mt_Belt": "andalusian-reins-03",
+  "/Game/Horses/Andalusian/Tack/Reins_03/Reins_03_Mt_Metal": "andalusian-reins-03",
+  "/Game/Horses/Andalusian/Tack/Reins_03/SK_Horse_Andalusian_Reins_03": "andalusian-reins-03",
+  "/Game/Horses/Andalusian/Tack/Reins_04/Kestrel_Reins_04_Alb": "andalusian-reins-04",
+  "/Game/Horses/Andalusian/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb": "andalusian-reins-04",
+  "/Game/Horses/Andalusian/Tack/Reins_04/Reins_04_Mt_Belt": "andalusian-reins-04",
+  "/Game/Horses/Andalusian/Tack/Reins_04/Reins_04_Mt_Cloth": "andalusian-reins-04",
+  "/Game/Horses/Andalusian/Tack/Reins_04/SK_Horse_Andalusian_Reins_04": "andalusian-reins-04",
+  "/Game/Horses/Andalusian/Tack/Reins_05/Kestrel_Reins_05_Alb_png": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Jem": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins1": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins2": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_05/Reins_05_Mt_Reins3": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_05/SK_Horse_Andalusian_Reins_05": "andalusian-reins-05",
+  "/Game/Horses/Andalusian/Tack/Reins_06/Kestrel_Reins_06_Alb_png": "andalusian-reins-06",
+  "/Game/Horses/Andalusian/Tack/Reins_06/Reins_06_Mt_Reins": "andalusian-reins-06",
+  "/Game/Horses/Andalusian/Tack/Reins_06/SK_Horse_Andalusian_Reins_06": "andalusian-reins-06",
+  "/Game/Horses/Andalusian/Tack/Saddle_00/Kestrel_Saddle_00_Alb_png": "andalusian-saddle-00",
+  "/Game/Horses/Andalusian/Tack/Saddle_00/Kestrel_Saddle_Cloth_00_Alb_png": "andalusian-saddle-00",
+  "/Game/Horses/Andalusian/Tack/Saddle_00/SK_Horse_Andalusian_Saddle_00": "andalusian-saddle-00",
+  "/Game/Horses/Andalusian/Tack/Saddle_00/Saddle_00_Mt_Cloth": "andalusian-saddle-00",
+  "/Game/Horses/Andalusian/Tack/Saddle_00/Saddle_00_Mt_Saddle": "andalusian-saddle-00",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/SK_Horse_Andalusian_Saddle_01": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Bag_A": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Bag_B": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Cloth": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_01/Saddle_01_Mt_Saddle": "andalusian-saddle-01",
+  "/Game/Horses/Andalusian/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png": "andalusian-saddle-02",
+  "/Game/Horses/Andalusian/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png": "andalusian-saddle-02",
+  "/Game/Horses/Andalusian/Tack/Saddle_02/SK_Horse_Andalusian_Saddle_02": "andalusian-saddle-02",
+  "/Game/Horses/Andalusian/Tack/Saddle_02/Saddle_02_Mt_Cloth": "andalusian-saddle-02",
+  "/Game/Horses/Andalusian/Tack/Saddle_02/Saddle_02_Mt_Saddle": "andalusian-saddle-02",
+  "/Game/Horses/Andalusian/Tack/Saddle_03/Kestrel_Saddle_03_Alb": "andalusian-saddle-03",
+  "/Game/Horses/Andalusian/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb": "andalusian-saddle-03",
+  "/Game/Horses/Andalusian/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb": "andalusian-saddle-03",
+  "/Game/Horses/Andalusian/Tack/Saddle_03/SK_Horse_Andalusian_Saddle_03": "andalusian-saddle-03",
+  "/Game/Horses/Andalusian/Tack/Saddle_03/Saddle_03_Mt_Cloth": "andalusian-saddle-03",
+  "/Game/Horses/Andalusian/Tack/Saddle_03/Saddle_03_Mt_Metal": "andalusian-saddle-03",
+  "/Game/Horses/Andalusian/Tack/Saddle_03/Saddle_03_Mt_Saddle": "andalusian-saddle-03",
+  "/Game/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Alb": "andalusian-saddle-04",
+  "/Game/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb": "andalusian-saddle-04",
+  "/Game/Horses/Andalusian/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb": "andalusian-saddle-04",
+  "/Game/Horses/Andalusian/Tack/Saddle_04/SK_Horse_Andalusian_Saddle_04": "andalusian-saddle-04",
+  "/Game/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Cloth": "andalusian-saddle-04",
+  "/Game/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Parts": "andalusian-saddle-04",
+  "/Game/Horses/Andalusian/Tack/Saddle_04/Saddle_04_Mt_Saddle": "andalusian-saddle-04",
+  "/Game/Horses/Andalusian/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png": "andalusian-saddle-05",
+  "/Game/Horses/Andalusian/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png": "andalusian-saddle-05",
+  "/Game/Horses/Andalusian/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png": "andalusian-saddle-05",
+  "/Game/Horses/Andalusian/Tack/Saddle_05/SK_Horse_Andalusian_Saddle_05": "andalusian-saddle-05",
+  "/Game/Horses/Andalusian/Tack/Saddle_05/Saddle_05_Mt_Cloth": "andalusian-saddle-05",
+  "/Game/Horses/Andalusian/Tack/Saddle_05/Saddle_05_Mt_Gem": "andalusian-saddle-05",
+  "/Game/Horses/Andalusian/Tack/Saddle_05/Saddle_05_Mt_Saddle": "andalusian-saddle-05",
+  "/Game/Horses/Andalusian/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png": "andalusian-saddle-06",
+  "/Game/Horses/Andalusian/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png": "andalusian-saddle-06",
+  "/Game/Horses/Andalusian/Tack/Saddle_06/SK_Horse_Andalusian_Saddle_06": "andalusian-saddle-06",
+  "/Game/Horses/Andalusian/Tack/Saddle_06/Saddle_06_Mt_Cloth": "andalusian-saddle-06",
+  "/Game/Horses/Andalusian/Tack/Saddle_06/Saddle_06_Mt_Saddle": "andalusian-saddle-06",
+  "/Game/Horses/Andalusian/Tail": "andalusian",
+  "/Game/Horses/Andalusian/coat_Andalusian_Mt_Body_png": "andalusian",
+  "/Game/Horses/Andalusian/coat_Andalusian_Mt_Foot_png": "andalusian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_Canter": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_Gallop": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_Idle": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_IdleAffection": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_IdleFlehmen": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_IdleGraze": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_IdleLook": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_IdleShake": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_Jump": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_Sprint": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_Trot": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_TurnLeft": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_TurnRight": "arabian",
+  "/Game/Horses/Arabian/A_Horse_Arabian_Walk": "arabian",
+  "/Game/Horses/Arabian/Arabian_Eyeball_Alb_png": "arabian",
+  "/Game/Horses/Arabian/Arabian_Hair_Alb_png": "arabian",
+  "/Game/Horses/Arabian/Arabian_Metal_Alb_png": "arabian",
+  "/Game/Horses/Arabian/Coat": "arabian",
+  "/Game/Horses/Arabian/Eye": "arabian",
+  "/Game/Horses/Arabian/Foot": "arabian",
+  "/Game/Horses/Arabian/Hoof": "arabian",
+  "/Game/Horses/Arabian/Mane": "arabian",
+  "/Game/Horses/Arabian/SKEL_Horse_Arabian": "arabian",
+  "/Game/Horses/Arabian/SK_Horse_Arabian": "arabian",
+  "/Game/Horses/Arabian/Tack/Reins_00/Kestrel_Reins_00_Alb_png": "arabian-reins-00",
+  "/Game/Horses/Arabian/Tack/Reins_00/Reins_00_Mt_Reins": "arabian-reins-00",
+  "/Game/Horses/Arabian/Tack/Reins_00/SK_Horse_Arabian_Reins_00": "arabian-reins-00",
+  "/Game/Horses/Arabian/Tack/Reins_01/Kestrel_Reins_01_Alb_png": "arabian-reins-01",
+  "/Game/Horses/Arabian/Tack/Reins_01/Reins_01_Mt_Reins": "arabian-reins-01",
+  "/Game/Horses/Arabian/Tack/Reins_01/SK_Horse_Arabian_Reins_01": "arabian-reins-01",
+  "/Game/Horses/Arabian/Tack/Reins_02/Kestrel_Reins_02_Alb_png": "arabian-reins-02",
+  "/Game/Horses/Arabian/Tack/Reins_02/Reins_02_Mt_Reins": "arabian-reins-02",
+  "/Game/Horses/Arabian/Tack/Reins_02/SK_Horse_Arabian_Reins_02": "arabian-reins-02",
+  "/Game/Horses/Arabian/Tack/Reins_03/Kestrel_Reins_03_Alb": "arabian-reins-03",
+  "/Game/Horses/Arabian/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb": "arabian-reins-03",
+  "/Game/Horses/Arabian/Tack/Reins_03/Reins_03_Mt_Belt": "arabian-reins-03",
+  "/Game/Horses/Arabian/Tack/Reins_03/Reins_03_Mt_Metal": "arabian-reins-03",
+  "/Game/Horses/Arabian/Tack/Reins_03/SK_Horse_Arabian_Reins_03": "arabian-reins-03",
+  "/Game/Horses/Arabian/Tack/Reins_04/Kestrel_Reins_04_Alb": "arabian-reins-04",
+  "/Game/Horses/Arabian/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb": "arabian-reins-04",
+  "/Game/Horses/Arabian/Tack/Reins_04/Reins_04_Mt_Belt": "arabian-reins-04",
+  "/Game/Horses/Arabian/Tack/Reins_04/Reins_04_Mt_Cloth": "arabian-reins-04",
+  "/Game/Horses/Arabian/Tack/Reins_04/SK_Horse_Arabian_Reins_04": "arabian-reins-04",
+  "/Game/Horses/Arabian/Tack/Reins_05/Kestrel_Reins_05_Alb_png": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Jem": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins1": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins2": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_05/Reins_05_Mt_Reins3": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_05/SK_Horse_Arabian_Reins_05": "arabian-reins-05",
+  "/Game/Horses/Arabian/Tack/Reins_06/Kestrel_Reins_06_Alb_png": "arabian-reins-06",
+  "/Game/Horses/Arabian/Tack/Reins_06/Reins_06_Mt_Reins": "arabian-reins-06",
+  "/Game/Horses/Arabian/Tack/Reins_06/SK_Horse_Arabian_Reins_06": "arabian-reins-06",
+  "/Game/Horses/Arabian/Tack/Saddle_00/Kestrel_Saddle_00_Alb_png": "arabian-saddle-00",
+  "/Game/Horses/Arabian/Tack/Saddle_00/Kestrel_Saddle_Cloth_00_Alb_png": "arabian-saddle-00",
+  "/Game/Horses/Arabian/Tack/Saddle_00/SK_Horse_Arabian_Saddle_00": "arabian-saddle-00",
+  "/Game/Horses/Arabian/Tack/Saddle_00/Saddle_00_Mt_Cloth": "arabian-saddle-00",
+  "/Game/Horses/Arabian/Tack/Saddle_00/Saddle_00_Mt_Saddle": "arabian-saddle-00",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/SK_Horse_Arabian_Saddle_01": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Bag_A": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Bag_B": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Cloth": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_01/Saddle_01_Mt_Saddle": "arabian-saddle-01",
+  "/Game/Horses/Arabian/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png": "arabian-saddle-02",
+  "/Game/Horses/Arabian/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png": "arabian-saddle-02",
+  "/Game/Horses/Arabian/Tack/Saddle_02/SK_Horse_Arabian_Saddle_02": "arabian-saddle-02",
+  "/Game/Horses/Arabian/Tack/Saddle_02/Saddle_02_Mt_Cloth": "arabian-saddle-02",
+  "/Game/Horses/Arabian/Tack/Saddle_02/Saddle_02_Mt_Saddle": "arabian-saddle-02",
+  "/Game/Horses/Arabian/Tack/Saddle_03/Kestrel_Saddle_03_Alb": "arabian-saddle-03",
+  "/Game/Horses/Arabian/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb": "arabian-saddle-03",
+  "/Game/Horses/Arabian/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb": "arabian-saddle-03",
+  "/Game/Horses/Arabian/Tack/Saddle_03/SK_Horse_Arabian_Saddle_03": "arabian-saddle-03",
+  "/Game/Horses/Arabian/Tack/Saddle_03/Saddle_03_Mt_Cloth": "arabian-saddle-03",
+  "/Game/Horses/Arabian/Tack/Saddle_03/Saddle_03_Mt_Metal": "arabian-saddle-03",
+  "/Game/Horses/Arabian/Tack/Saddle_03/Saddle_03_Mt_Saddle": "arabian-saddle-03",
+  "/Game/Horses/Arabian/Tack/Saddle_04/Kestrel_Saddle_04_Alb": "arabian-saddle-04",
+  "/Game/Horses/Arabian/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb": "arabian-saddle-04",
+  "/Game/Horses/Arabian/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb": "arabian-saddle-04",
+  "/Game/Horses/Arabian/Tack/Saddle_04/SK_Horse_Arabian_Saddle_04": "arabian-saddle-04",
+  "/Game/Horses/Arabian/Tack/Saddle_04/Saddle_04_Mt_Cloth": "arabian-saddle-04",
+  "/Game/Horses/Arabian/Tack/Saddle_04/Saddle_04_Mt_Parts": "arabian-saddle-04",
+  "/Game/Horses/Arabian/Tack/Saddle_04/Saddle_04_Mt_Saddle": "arabian-saddle-04",
+  "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png": "arabian-saddle-05",
+  "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png": "arabian-saddle-05",
+  "/Game/Horses/Arabian/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png": "arabian-saddle-05",
+  "/Game/Horses/Arabian/Tack/Saddle_05/SK_Horse_Arabian_Saddle_05": "arabian-saddle-05",
+  "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Cloth": "arabian-saddle-05",
+  "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Gem": "arabian-saddle-05",
+  "/Game/Horses/Arabian/Tack/Saddle_05/Saddle_05_Mt_Saddle": "arabian-saddle-05",
+  "/Game/Horses/Arabian/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png": "arabian-saddle-06",
+  "/Game/Horses/Arabian/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png": "arabian-saddle-06",
+  "/Game/Horses/Arabian/Tack/Saddle_06/SK_Horse_Arabian_Saddle_06": "arabian-saddle-06",
+  "/Game/Horses/Arabian/Tack/Saddle_06/Saddle_06_Mt_Cloth": "arabian-saddle-06",
+  "/Game/Horses/Arabian/Tack/Saddle_06/Saddle_06_Mt_Saddle": "arabian-saddle-06",
+  "/Game/Horses/Arabian/Tail": "arabian",
+  "/Game/Horses/Arabian/coat_Arabian_Mt_Body_png": "arabian",
+  "/Game/Horses/Arabian/coat_Arabian_Mt_Foot_png": "arabian",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_Canter": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_Gallop": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_Idle": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_IdleAffection": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_IdleFlehmen": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_IdleGraze": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_IdleLook": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_IdleShake": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_Jump": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_Sprint": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_Trot": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_TurnLeft": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_TurnRight": "clydesdale",
+  "/Game/Horses/Clydesdale/A_Horse_Clydesdale_Walk": "clydesdale",
+  "/Game/Horses/Clydesdale/Clydesdale_Eyeball_Alb_png": "clydesdale",
+  "/Game/Horses/Clydesdale/Clydesdale_Hair_Alb_png": "clydesdale",
+  "/Game/Horses/Clydesdale/Clydesdale_Metal_Alb_png": "clydesdale",
+  "/Game/Horses/Clydesdale/Coat": "clydesdale",
+  "/Game/Horses/Clydesdale/Eye": "clydesdale",
+  "/Game/Horses/Clydesdale/Foot": "clydesdale",
+  "/Game/Horses/Clydesdale/Hoof": "clydesdale",
+  "/Game/Horses/Clydesdale/Mane": "clydesdale",
+  "/Game/Horses/Clydesdale/SKEL_Horse_Clydesdale": "clydesdale",
+  "/Game/Horses/Clydesdale/SK_Horse_Clydesdale": "clydesdale",
+  "/Game/Horses/Clydesdale/Tack/Reins_00/Kestrel_Reins_00_Alb_png": "clydesdale-reins-00",
+  "/Game/Horses/Clydesdale/Tack/Reins_00/Reins_00_Mt_Reins": "clydesdale-reins-00",
+  "/Game/Horses/Clydesdale/Tack/Reins_00/SK_Horse_Clydesdale_Reins_00": "clydesdale-reins-00",
+  "/Game/Horses/Clydesdale/Tack/Reins_01/Kestrel_Reins_01_Alb_png": "clydesdale-reins-01",
+  "/Game/Horses/Clydesdale/Tack/Reins_01/Reins_01_Mt_Reins": "clydesdale-reins-01",
+  "/Game/Horses/Clydesdale/Tack/Reins_01/SK_Horse_Clydesdale_Reins_01": "clydesdale-reins-01",
+  "/Game/Horses/Clydesdale/Tack/Reins_02/Kestrel_Reins_02_Alb_png": "clydesdale-reins-02",
+  "/Game/Horses/Clydesdale/Tack/Reins_02/Reins_02_Mt_Reins": "clydesdale-reins-02",
+  "/Game/Horses/Clydesdale/Tack/Reins_02/SK_Horse_Clydesdale_Reins_02": "clydesdale-reins-02",
+  "/Game/Horses/Clydesdale/Tack/Reins_03/Kestrel_Reins_03_Alb": "clydesdale-reins-03",
+  "/Game/Horses/Clydesdale/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb": "clydesdale-reins-03",
+  "/Game/Horses/Clydesdale/Tack/Reins_03/Reins_03_Mt_Belt": "clydesdale-reins-03",
+  "/Game/Horses/Clydesdale/Tack/Reins_03/Reins_03_Mt_Metal": "clydesdale-reins-03",
+  "/Game/Horses/Clydesdale/Tack/Reins_03/SK_Horse_Clydesdale_Reins_03": "clydesdale-reins-03",
+  "/Game/Horses/Clydesdale/Tack/Reins_04/Kestrel_Reins_04_Alb": "clydesdale-reins-04",
+  "/Game/Horses/Clydesdale/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb": "clydesdale-reins-04",
+  "/Game/Horses/Clydesdale/Tack/Reins_04/Reins_04_Mt_Belt": "clydesdale-reins-04",
+  "/Game/Horses/Clydesdale/Tack/Reins_04/Reins_04_Mt_Cloth": "clydesdale-reins-04",
+  "/Game/Horses/Clydesdale/Tack/Reins_04/SK_Horse_Clydesdale_Reins_04": "clydesdale-reins-04",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/Kestrel_Reins_05_Alb_png": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Jem": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins1": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins2": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/Reins_05_Mt_Reins3": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_05/SK_Horse_Clydesdale_Reins_05": "clydesdale-reins-05",
+  "/Game/Horses/Clydesdale/Tack/Reins_06/Kestrel_Reins_06_Alb_png": "clydesdale-reins-06",
+  "/Game/Horses/Clydesdale/Tack/Reins_06/Reins_06_Mt_Reins": "clydesdale-reins-06",
+  "/Game/Horses/Clydesdale/Tack/Reins_06/SK_Horse_Clydesdale_Reins_06": "clydesdale-reins-06",
+  "/Game/Horses/Clydesdale/Tack/Saddle_00/Kestrel_Saddle_00_Alb_png": "clydesdale-saddle-00",
+  "/Game/Horses/Clydesdale/Tack/Saddle_00/Kestrel_Saddle_Cloth_00_Alb_png": "clydesdale-saddle-00",
+  "/Game/Horses/Clydesdale/Tack/Saddle_00/SK_Horse_Clydesdale_Saddle_00": "clydesdale-saddle-00",
+  "/Game/Horses/Clydesdale/Tack/Saddle_00/Saddle_00_Mt_Cloth": "clydesdale-saddle-00",
+  "/Game/Horses/Clydesdale/Tack/Saddle_00/Saddle_00_Mt_Saddle": "clydesdale-saddle-00",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/SK_Horse_Clydesdale_Saddle_01": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Saddle_01_Mt_Bag_A": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Saddle_01_Mt_Bag_B": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Saddle_01_Mt_Cloth": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_01/Saddle_01_Mt_Saddle": "clydesdale-saddle-01",
+  "/Game/Horses/Clydesdale/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png": "clydesdale-saddle-02",
+  "/Game/Horses/Clydesdale/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png": "clydesdale-saddle-02",
+  "/Game/Horses/Clydesdale/Tack/Saddle_02/SK_Horse_Clydesdale_Saddle_02": "clydesdale-saddle-02",
+  "/Game/Horses/Clydesdale/Tack/Saddle_02/Saddle_02_Mt_Cloth": "clydesdale-saddle-02",
+  "/Game/Horses/Clydesdale/Tack/Saddle_02/Saddle_02_Mt_Saddle": "clydesdale-saddle-02",
+  "/Game/Horses/Clydesdale/Tack/Saddle_03/Kestrel_Saddle_03_Alb": "clydesdale-saddle-03",
+  "/Game/Horses/Clydesdale/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb": "clydesdale-saddle-03",
+  "/Game/Horses/Clydesdale/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb": "clydesdale-saddle-03",
+  "/Game/Horses/Clydesdale/Tack/Saddle_03/SK_Horse_Clydesdale_Saddle_03": "clydesdale-saddle-03",
+  "/Game/Horses/Clydesdale/Tack/Saddle_03/Saddle_03_Mt_Cloth": "clydesdale-saddle-03",
+  "/Game/Horses/Clydesdale/Tack/Saddle_03/Saddle_03_Mt_Metal": "clydesdale-saddle-03",
+  "/Game/Horses/Clydesdale/Tack/Saddle_03/Saddle_03_Mt_Saddle": "clydesdale-saddle-03",
+  "/Game/Horses/Clydesdale/Tack/Saddle_04/Kestrel_Saddle_04_Alb": "clydesdale-saddle-04",
+  "/Game/Horses/Clydesdale/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb": "clydesdale-saddle-04",
+  "/Game/Horses/Clydesdale/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb": "clydesdale-saddle-04",
+  "/Game/Horses/Clydesdale/Tack/Saddle_04/SK_Horse_Clydesdale_Saddle_04": "clydesdale-saddle-04",
+  "/Game/Horses/Clydesdale/Tack/Saddle_04/Saddle_04_Mt_Cloth": "clydesdale-saddle-04",
+  "/Game/Horses/Clydesdale/Tack/Saddle_04/Saddle_04_Mt_Parts": "clydesdale-saddle-04",
+  "/Game/Horses/Clydesdale/Tack/Saddle_04/Saddle_04_Mt_Saddle": "clydesdale-saddle-04",
+  "/Game/Horses/Clydesdale/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png": "clydesdale-saddle-05",
+  "/Game/Horses/Clydesdale/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png": "clydesdale-saddle-05",
+  "/Game/Horses/Clydesdale/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png": "clydesdale-saddle-05",
+  "/Game/Horses/Clydesdale/Tack/Saddle_05/SK_Horse_Clydesdale_Saddle_05": "clydesdale-saddle-05",
+  "/Game/Horses/Clydesdale/Tack/Saddle_05/Saddle_05_Mt_Cloth": "clydesdale-saddle-05",
+  "/Game/Horses/Clydesdale/Tack/Saddle_05/Saddle_05_Mt_Gem": "clydesdale-saddle-05",
+  "/Game/Horses/Clydesdale/Tack/Saddle_05/Saddle_05_Mt_Saddle": "clydesdale-saddle-05",
+  "/Game/Horses/Clydesdale/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png": "clydesdale-saddle-06",
+  "/Game/Horses/Clydesdale/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png": "clydesdale-saddle-06",
+  "/Game/Horses/Clydesdale/Tack/Saddle_06/SK_Horse_Clydesdale_Saddle_06": "clydesdale-saddle-06",
+  "/Game/Horses/Clydesdale/Tack/Saddle_06/Saddle_06_Mt_Cloth": "clydesdale-saddle-06",
+  "/Game/Horses/Clydesdale/Tack/Saddle_06/Saddle_06_Mt_Saddle": "clydesdale-saddle-06",
+  "/Game/Horses/Clydesdale/Tail": "clydesdale",
+  "/Game/Horses/Clydesdale/coat_Clydesdale_Mt_Body_png": "clydesdale",
+  "/Game/Horses/Clydesdale/coat_Clydesdale_Mt_Foot_png": "clydesdale",
+  "/Game/Horses/Coats/Masks/T_Coat_Overo_Mask": "coat-masks",
+  "/Game/Horses/Coats/Masks/T_Coat_Pangare_Mask": "coat-masks",
+  "/Game/Horses/Coats/Masks/T_Coat_Solid_Mask": "coat-masks",
+  "/Game/Horses/Coats/Masks/T_Coat_Spots_Mask": "coat-masks",
+  "/Game/Horses/Coats/Masks/T_Coat_Tobiano_Mask": "coat-masks",
+  "/Game/Horses/Coats/Variants/bay": "coat-bay",
+  "/Game/Horses/Coats/Variants/bay-tobiano": "coat-bay-tobiano",
+  "/Game/Horses/Coats/Variants/black": "coat-black",
+  "/Game/Horses/Coats/Variants/blanket": "coat-blanket",
+  "/Game/Horses/Coats/Variants/blue-roan": "coat-blue-roan",
+  "/Game/Horses/Coats/Variants/buckskin": "coat-buckskin",
+  "/Game/Horses/Coats/Variants/chestnut": "coat-chestnut",
+  "/Game/Horses/Coats/Variants/chestnut-overo": "coat-chestnut-overo",
+  "/Game/Horses/Coats/Variants/dapple-grey": "coat-dapple-grey",
+  "/Game/Horses/Coats/Variants/leopard": "coat-leopard",
+  "/Game/Horses/Coats/Variants/palomino": "coat-palomino",
+  "/Game/Horses/Coats/Variants/perlino": "coat-perlino",
+  "/Game/Horses/Coats/Variants/red-roan": "coat-red-roan",
+  "/Game/Horses/Coats/Variants/seal-brown": "coat-seal-brown",
+  "/Game/Horses/Coats/Variants/silver-dun": "coat-silver-dun",
+  "/Game/Horses/Coats/Variants/sorrel": "coat-sorrel",
+  "/Game/Horses/Friesian/A_Horse_Friesian_Canter": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_Gallop": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_Idle": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_IdleAffection": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_IdleFlehmen": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_IdleGraze": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_IdleLook": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_IdleShake": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_Jump": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_Sprint": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_Trot": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_TurnLeft": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_TurnRight": "friesian",
+  "/Game/Horses/Friesian/A_Horse_Friesian_Walk": "friesian",
+  "/Game/Horses/Friesian/Coat": "friesian",
+  "/Game/Horses/Friesian/Eye": "friesian",
+  "/Game/Horses/Friesian/Foot": "friesian",
+  "/Game/Horses/Friesian/Friesian_Eyeball_Alb_png": "friesian",
+  "/Game/Horses/Friesian/Friesian_Hair_Alb_png": "friesian",
+  "/Game/Horses/Friesian/Friesian_Metal_Alb_png": "friesian",
+  "/Game/Horses/Friesian/Hoof": "friesian",
+  "/Game/Horses/Friesian/Mane": "friesian",
+  "/Game/Horses/Friesian/SKEL_Horse_Friesian": "friesian",
+  "/Game/Horses/Friesian/SK_Horse_Friesian": "friesian",
+  "/Game/Horses/Friesian/Tack/Reins_00/Kestrel_Reins_00_Alb_png": "friesian-reins-00",
+  "/Game/Horses/Friesian/Tack/Reins_00/Reins_00_Mt_Reins": "friesian-reins-00",
+  "/Game/Horses/Friesian/Tack/Reins_00/SK_Horse_Friesian_Reins_00": "friesian-reins-00",
+  "/Game/Horses/Friesian/Tack/Reins_01/Kestrel_Reins_01_Alb_png": "friesian-reins-01",
+  "/Game/Horses/Friesian/Tack/Reins_01/Reins_01_Mt_Reins": "friesian-reins-01",
+  "/Game/Horses/Friesian/Tack/Reins_01/SK_Horse_Friesian_Reins_01": "friesian-reins-01",
+  "/Game/Horses/Friesian/Tack/Reins_02/Kestrel_Reins_02_Alb_png": "friesian-reins-02",
+  "/Game/Horses/Friesian/Tack/Reins_02/Reins_02_Mt_Reins": "friesian-reins-02",
+  "/Game/Horses/Friesian/Tack/Reins_02/SK_Horse_Friesian_Reins_02": "friesian-reins-02",
+  "/Game/Horses/Friesian/Tack/Reins_03/Kestrel_Reins_03_Alb": "friesian-reins-03",
+  "/Game/Horses/Friesian/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb": "friesian-reins-03",
+  "/Game/Horses/Friesian/Tack/Reins_03/Reins_03_Mt_Belt": "friesian-reins-03",
+  "/Game/Horses/Friesian/Tack/Reins_03/Reins_03_Mt_Metal": "friesian-reins-03",
+  "/Game/Horses/Friesian/Tack/Reins_03/SK_Horse_Friesian_Reins_03": "friesian-reins-03",
+  "/Game/Horses/Friesian/Tack/Reins_04/Kestrel_Reins_04_Alb": "friesian-reins-04",
+  "/Game/Horses/Friesian/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb": "friesian-reins-04",
+  "/Game/Horses/Friesian/Tack/Reins_04/Reins_04_Mt_Belt": "friesian-reins-04",
+  "/Game/Horses/Friesian/Tack/Reins_04/Reins_04_Mt_Cloth": "friesian-reins-04",
+  "/Game/Horses/Friesian/Tack/Reins_04/SK_Horse_Friesian_Reins_04": "friesian-reins-04",
+  "/Game/Horses/Friesian/Tack/Reins_05/Kestrel_Reins_05_Alb_png": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Jem": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins1": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins2": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_05/Reins_05_Mt_Reins3": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_05/SK_Horse_Friesian_Reins_05": "friesian-reins-05",
+  "/Game/Horses/Friesian/Tack/Reins_06/Kestrel_Reins_06_Alb_png": "friesian-reins-06",
+  "/Game/Horses/Friesian/Tack/Reins_06/Reins_06_Mt_Reins": "friesian-reins-06",
+  "/Game/Horses/Friesian/Tack/Reins_06/SK_Horse_Friesian_Reins_06": "friesian-reins-06",
+  "/Game/Horses/Friesian/Tack/Saddle_00/Kestrel_Saddle_00_Alb_png": "friesian-saddle-00",
+  "/Game/Horses/Friesian/Tack/Saddle_00/Kestrel_Saddle_Cloth_00_Alb_png": "friesian-saddle-00",
+  "/Game/Horses/Friesian/Tack/Saddle_00/SK_Horse_Friesian_Saddle_00": "friesian-saddle-00",
+  "/Game/Horses/Friesian/Tack/Saddle_00/Saddle_00_Mt_Cloth": "friesian-saddle-00",
+  "/Game/Horses/Friesian/Tack/Saddle_00/Saddle_00_Mt_Saddle": "friesian-saddle-00",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/SK_Horse_Friesian_Saddle_01": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Bag_A": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Bag_B": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Cloth": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_01/Saddle_01_Mt_Saddle": "friesian-saddle-01",
+  "/Game/Horses/Friesian/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png": "friesian-saddle-02",
+  "/Game/Horses/Friesian/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png": "friesian-saddle-02",
+  "/Game/Horses/Friesian/Tack/Saddle_02/SK_Horse_Friesian_Saddle_02": "friesian-saddle-02",
+  "/Game/Horses/Friesian/Tack/Saddle_02/Saddle_02_Mt_Cloth": "friesian-saddle-02",
+  "/Game/Horses/Friesian/Tack/Saddle_02/Saddle_02_Mt_Saddle": "friesian-saddle-02",
+  "/Game/Horses/Friesian/Tack/Saddle_03/Kestrel_Saddle_03_Alb": "friesian-saddle-03",
+  "/Game/Horses/Friesian/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb": "friesian-saddle-03",
+  "/Game/Horses/Friesian/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb": "friesian-saddle-03",
+  "/Game/Horses/Friesian/Tack/Saddle_03/SK_Horse_Friesian_Saddle_03": "friesian-saddle-03",
+  "/Game/Horses/Friesian/Tack/Saddle_03/Saddle_03_Mt_Cloth": "friesian-saddle-03",
+  "/Game/Horses/Friesian/Tack/Saddle_03/Saddle_03_Mt_Metal": "friesian-saddle-03",
+  "/Game/Horses/Friesian/Tack/Saddle_03/Saddle_03_Mt_Saddle": "friesian-saddle-03",
+  "/Game/Horses/Friesian/Tack/Saddle_04/Kestrel_Saddle_04_Alb": "friesian-saddle-04",
+  "/Game/Horses/Friesian/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb": "friesian-saddle-04",
+  "/Game/Horses/Friesian/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb": "friesian-saddle-04",
+  "/Game/Horses/Friesian/Tack/Saddle_04/SK_Horse_Friesian_Saddle_04": "friesian-saddle-04",
+  "/Game/Horses/Friesian/Tack/Saddle_04/Saddle_04_Mt_Cloth": "friesian-saddle-04",
+  "/Game/Horses/Friesian/Tack/Saddle_04/Saddle_04_Mt_Parts": "friesian-saddle-04",
+  "/Game/Horses/Friesian/Tack/Saddle_04/Saddle_04_Mt_Saddle": "friesian-saddle-04",
+  "/Game/Horses/Friesian/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png": "friesian-saddle-05",
+  "/Game/Horses/Friesian/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png": "friesian-saddle-05",
+  "/Game/Horses/Friesian/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png": "friesian-saddle-05",
+  "/Game/Horses/Friesian/Tack/Saddle_05/SK_Horse_Friesian_Saddle_05": "friesian-saddle-05",
+  "/Game/Horses/Friesian/Tack/Saddle_05/Saddle_05_Mt_Cloth": "friesian-saddle-05",
+  "/Game/Horses/Friesian/Tack/Saddle_05/Saddle_05_Mt_Gem": "friesian-saddle-05",
+  "/Game/Horses/Friesian/Tack/Saddle_05/Saddle_05_Mt_Saddle": "friesian-saddle-05",
+  "/Game/Horses/Friesian/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png": "friesian-saddle-06",
+  "/Game/Horses/Friesian/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png": "friesian-saddle-06",
+  "/Game/Horses/Friesian/Tack/Saddle_06/SK_Horse_Friesian_Saddle_06": "friesian-saddle-06",
+  "/Game/Horses/Friesian/Tack/Saddle_06/Saddle_06_Mt_Cloth": "friesian-saddle-06",
+  "/Game/Horses/Friesian/Tack/Saddle_06/Saddle_06_Mt_Saddle": "friesian-saddle-06",
+  "/Game/Horses/Friesian/Tail": "friesian",
+  "/Game/Horses/Friesian/coat_Friesian_Mt_Body_png": "friesian",
+  "/Game/Horses/Friesian/coat_Friesian_Mt_Foot_png": "friesian",
+  "/Game/Horses/M_HorseCoat": "generator",
+  "/Game/Horses/M_HorseHair": "generator",
+  "/Game/Horses/M_HorseTack": "generator",
+  "/Game/Horses/M_HorseTackMasked": "generator",
+  "/Game/Horses/Quarter/A_Horse_Quarter_Canter": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_Gallop": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_Idle": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_IdleAffection": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_IdleFlehmen": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_IdleGraze": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_IdleLook": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_IdleShake": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_Jump": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_Sprint": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_Trot": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_TurnLeft": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_TurnRight": "quarter",
+  "/Game/Horses/Quarter/A_Horse_Quarter_Walk": "quarter",
+  "/Game/Horses/Quarter/Coat": "quarter",
+  "/Game/Horses/Quarter/Eye": "quarter",
+  "/Game/Horses/Quarter/Foot": "quarter",
+  "/Game/Horses/Quarter/Hoof": "quarter",
+  "/Game/Horses/Quarter/Mane": "quarter",
+  "/Game/Horses/Quarter/Quarter_Eyeball_Alb_png": "quarter",
+  "/Game/Horses/Quarter/Quarter_Hair_Alb_png": "quarter",
+  "/Game/Horses/Quarter/Quarter_Metal_Alb_png": "quarter",
+  "/Game/Horses/Quarter/SKEL_Horse_Quarter": "quarter",
+  "/Game/Horses/Quarter/SK_Horse_Quarter": "quarter",
+  "/Game/Horses/Quarter/Tack/Reins_00/Kestrel_Reins_00_Alb_png": "quarter-reins-00",
+  "/Game/Horses/Quarter/Tack/Reins_00/Reins_00_Mt_Reins": "quarter-reins-00",
+  "/Game/Horses/Quarter/Tack/Reins_00/SK_Horse_Quarter_Reins_00": "quarter-reins-00",
+  "/Game/Horses/Quarter/Tack/Reins_01/Kestrel_Reins_01_Alb_png": "quarter-reins-01",
+  "/Game/Horses/Quarter/Tack/Reins_01/Reins_01_Mt_Reins": "quarter-reins-01",
+  "/Game/Horses/Quarter/Tack/Reins_01/SK_Horse_Quarter_Reins_01": "quarter-reins-01",
+  "/Game/Horses/Quarter/Tack/Reins_02/Kestrel_Reins_02_Alb_png": "quarter-reins-02",
+  "/Game/Horses/Quarter/Tack/Reins_02/Reins_02_Mt_Reins": "quarter-reins-02",
+  "/Game/Horses/Quarter/Tack/Reins_02/SK_Horse_Quarter_Reins_02": "quarter-reins-02",
+  "/Game/Horses/Quarter/Tack/Reins_03/Kestrel_Reins_03_Alb": "quarter-reins-03",
+  "/Game/Horses/Quarter/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb": "quarter-reins-03",
+  "/Game/Horses/Quarter/Tack/Reins_03/Reins_03_Mt_Belt": "quarter-reins-03",
+  "/Game/Horses/Quarter/Tack/Reins_03/Reins_03_Mt_Metal": "quarter-reins-03",
+  "/Game/Horses/Quarter/Tack/Reins_03/SK_Horse_Quarter_Reins_03": "quarter-reins-03",
+  "/Game/Horses/Quarter/Tack/Reins_04/Kestrel_Reins_04_Alb": "quarter-reins-04",
+  "/Game/Horses/Quarter/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb": "quarter-reins-04",
+  "/Game/Horses/Quarter/Tack/Reins_04/Reins_04_Mt_Belt": "quarter-reins-04",
+  "/Game/Horses/Quarter/Tack/Reins_04/Reins_04_Mt_Cloth": "quarter-reins-04",
+  "/Game/Horses/Quarter/Tack/Reins_04/SK_Horse_Quarter_Reins_04": "quarter-reins-04",
+  "/Game/Horses/Quarter/Tack/Reins_05/Kestrel_Reins_05_Alb_png": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Jem": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins1": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins2": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_05/Reins_05_Mt_Reins3": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_05/SK_Horse_Quarter_Reins_05": "quarter-reins-05",
+  "/Game/Horses/Quarter/Tack/Reins_06/Kestrel_Reins_06_Alb_png": "quarter-reins-06",
+  "/Game/Horses/Quarter/Tack/Reins_06/Reins_06_Mt_Reins": "quarter-reins-06",
+  "/Game/Horses/Quarter/Tack/Reins_06/SK_Horse_Quarter_Reins_06": "quarter-reins-06",
+  "/Game/Horses/Quarter/Tack/Saddle_00/Kestrel_Saddle_00_Alb_png": "quarter-saddle-00",
+  "/Game/Horses/Quarter/Tack/Saddle_00/Kestrel_Saddle_Cloth_00_Alb_png": "quarter-saddle-00",
+  "/Game/Horses/Quarter/Tack/Saddle_00/SK_Horse_Quarter_Saddle_00": "quarter-saddle-00",
+  "/Game/Horses/Quarter/Tack/Saddle_00/Saddle_00_Mt_Cloth": "quarter-saddle-00",
+  "/Game/Horses/Quarter/Tack/Saddle_00/Saddle_00_Mt_Saddle": "quarter-saddle-00",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/SK_Horse_Quarter_Saddle_01": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Bag_A": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Bag_B": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Cloth": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_01/Saddle_01_Mt_Saddle": "quarter-saddle-01",
+  "/Game/Horses/Quarter/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png": "quarter-saddle-02",
+  "/Game/Horses/Quarter/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png": "quarter-saddle-02",
+  "/Game/Horses/Quarter/Tack/Saddle_02/SK_Horse_Quarter_Saddle_02": "quarter-saddle-02",
+  "/Game/Horses/Quarter/Tack/Saddle_02/Saddle_02_Mt_Cloth": "quarter-saddle-02",
+  "/Game/Horses/Quarter/Tack/Saddle_02/Saddle_02_Mt_Saddle": "quarter-saddle-02",
+  "/Game/Horses/Quarter/Tack/Saddle_03/Kestrel_Saddle_03_Alb": "quarter-saddle-03",
+  "/Game/Horses/Quarter/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb": "quarter-saddle-03",
+  "/Game/Horses/Quarter/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb": "quarter-saddle-03",
+  "/Game/Horses/Quarter/Tack/Saddle_03/SK_Horse_Quarter_Saddle_03": "quarter-saddle-03",
+  "/Game/Horses/Quarter/Tack/Saddle_03/Saddle_03_Mt_Cloth": "quarter-saddle-03",
+  "/Game/Horses/Quarter/Tack/Saddle_03/Saddle_03_Mt_Metal": "quarter-saddle-03",
+  "/Game/Horses/Quarter/Tack/Saddle_03/Saddle_03_Mt_Saddle": "quarter-saddle-03",
+  "/Game/Horses/Quarter/Tack/Saddle_04/Kestrel_Saddle_04_Alb": "quarter-saddle-04",
+  "/Game/Horses/Quarter/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb": "quarter-saddle-04",
+  "/Game/Horses/Quarter/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb": "quarter-saddle-04",
+  "/Game/Horses/Quarter/Tack/Saddle_04/SK_Horse_Quarter_Saddle_04": "quarter-saddle-04",
+  "/Game/Horses/Quarter/Tack/Saddle_04/Saddle_04_Mt_Cloth": "quarter-saddle-04",
+  "/Game/Horses/Quarter/Tack/Saddle_04/Saddle_04_Mt_Parts": "quarter-saddle-04",
+  "/Game/Horses/Quarter/Tack/Saddle_04/Saddle_04_Mt_Saddle": "quarter-saddle-04",
+  "/Game/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png": "quarter-saddle-05",
+  "/Game/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png": "quarter-saddle-05",
+  "/Game/Horses/Quarter/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png": "quarter-saddle-05",
+  "/Game/Horses/Quarter/Tack/Saddle_05/SK_Horse_Quarter_Saddle_05": "quarter-saddle-05",
+  "/Game/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Cloth": "quarter-saddle-05",
+  "/Game/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Gem": "quarter-saddle-05",
+  "/Game/Horses/Quarter/Tack/Saddle_05/Saddle_05_Mt_Saddle": "quarter-saddle-05",
+  "/Game/Horses/Quarter/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png": "quarter-saddle-06",
+  "/Game/Horses/Quarter/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png": "quarter-saddle-06",
+  "/Game/Horses/Quarter/Tack/Saddle_06/SK_Horse_Quarter_Saddle_06": "quarter-saddle-06",
+  "/Game/Horses/Quarter/Tack/Saddle_06/Saddle_06_Mt_Cloth": "quarter-saddle-06",
+  "/Game/Horses/Quarter/Tack/Saddle_06/Saddle_06_Mt_Saddle": "quarter-saddle-06",
+  "/Game/Horses/Quarter/Tail": "quarter",
+  "/Game/Horses/Quarter/coat_Quarter_Mt_Body_png": "quarter",
+  "/Game/Horses/Quarter/coat_Quarter_Mt_Foot_png": "quarter",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_Canter": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_Gallop": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_Idle": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_IdleAffection": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_IdleFlehmen": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_IdleGraze": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_IdleLook": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_IdleShake": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_Jump": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_Sprint": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_Trot": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_TurnLeft": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_TurnRight": "thoroughbred",
+  "/Game/Horses/Thoroughbred/A_Horse_Thoroughbred_Walk": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Coat": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Eye": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Foot": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Hoof": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Mane": "thoroughbred",
+  "/Game/Horses/Thoroughbred/SKEL_Horse_Thoroughbred": "thoroughbred",
+  "/Game/Horses/Thoroughbred/SK_Horse_Thoroughbred": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Tack/Reins_00/Kestrel_Reins_00_Alb_png": "thoroughbred-reins-00",
+  "/Game/Horses/Thoroughbred/Tack/Reins_00/Reins_00_Mt_Reins": "thoroughbred-reins-00",
+  "/Game/Horses/Thoroughbred/Tack/Reins_00/SK_Horse_Thoroughbred_Reins_00": "thoroughbred-reins-00",
+  "/Game/Horses/Thoroughbred/Tack/Reins_01/Kestrel_Reins_01_Alb_png": "thoroughbred-reins-01",
+  "/Game/Horses/Thoroughbred/Tack/Reins_01/Reins_01_Mt_Reins": "thoroughbred-reins-01",
+  "/Game/Horses/Thoroughbred/Tack/Reins_01/SK_Horse_Thoroughbred_Reins_01": "thoroughbred-reins-01",
+  "/Game/Horses/Thoroughbred/Tack/Reins_02/Kestrel_Reins_02_Alb_png": "thoroughbred-reins-02",
+  "/Game/Horses/Thoroughbred/Tack/Reins_02/Reins_02_Mt_Reins": "thoroughbred-reins-02",
+  "/Game/Horses/Thoroughbred/Tack/Reins_02/SK_Horse_Thoroughbred_Reins_02": "thoroughbred-reins-02",
+  "/Game/Horses/Thoroughbred/Tack/Reins_03/Kestrel_Reins_03_Alb": "thoroughbred-reins-03",
+  "/Game/Horses/Thoroughbred/Tack/Reins_03/Kestrel_Reins_03_Metal_Alb": "thoroughbred-reins-03",
+  "/Game/Horses/Thoroughbred/Tack/Reins_03/Reins_03_Mt_Belt": "thoroughbred-reins-03",
+  "/Game/Horses/Thoroughbred/Tack/Reins_03/Reins_03_Mt_Metal": "thoroughbred-reins-03",
+  "/Game/Horses/Thoroughbred/Tack/Reins_03/SK_Horse_Thoroughbred_Reins_03": "thoroughbred-reins-03",
+  "/Game/Horses/Thoroughbred/Tack/Reins_04/Kestrel_Reins_04_Alb": "thoroughbred-reins-04",
+  "/Game/Horses/Thoroughbred/Tack/Reins_04/Kestrel_Reins_04_Cloth_Alb": "thoroughbred-reins-04",
+  "/Game/Horses/Thoroughbred/Tack/Reins_04/Reins_04_Mt_Belt": "thoroughbred-reins-04",
+  "/Game/Horses/Thoroughbred/Tack/Reins_04/Reins_04_Mt_Cloth": "thoroughbred-reins-04",
+  "/Game/Horses/Thoroughbred/Tack/Reins_04/SK_Horse_Thoroughbred_Reins_04": "thoroughbred-reins-04",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/Kestrel_Reins_05_Alb_png": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/Kestrel_Reins_05_Gem_Alb_png": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/Reins_05_Mt_Jem": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/Reins_05_Mt_Reins": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/Reins_05_Mt_Reins1": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/Reins_05_Mt_Reins2": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/Reins_05_Mt_Reins3": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_05/SK_Horse_Thoroughbred_Reins_05": "thoroughbred-reins-05",
+  "/Game/Horses/Thoroughbred/Tack/Reins_06/Kestrel_Reins_06_Alb_png": "thoroughbred-reins-06",
+  "/Game/Horses/Thoroughbred/Tack/Reins_06/Reins_06_Mt_Reins": "thoroughbred-reins-06",
+  "/Game/Horses/Thoroughbred/Tack/Reins_06/SK_Horse_Thoroughbred_Reins_06": "thoroughbred-reins-06",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_00/Kestrel_Saddle_00_Alb_png": "thoroughbred-saddle-00",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_00/Kestrel_Saddle_Cloth_00_Alb_png": "thoroughbred-saddle-00",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_00/SK_Horse_Thoroughbred_Saddle_00": "thoroughbred-saddle-00",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_00/Saddle_00_Mt_Cloth": "thoroughbred-saddle-00",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_00/Saddle_00_Mt_Saddle": "thoroughbred-saddle-00",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Bag_A_01_Alb_png": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Bag_B_01_Alb_png": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Cloth_01_Alb_png": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Kestrel_Saddle_01_Alb_png": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/SK_Horse_Thoroughbred_Saddle_01": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Bag_A": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Bag_B": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Cloth": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_01/Saddle_01_Mt_Saddle": "thoroughbred-saddle-01",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_02/Kestrel_Saddle_02_Alb_png": "thoroughbred-saddle-02",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_02/Kestrel_Saddle_Cloth_02_Alb_png": "thoroughbred-saddle-02",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_02/SK_Horse_Thoroughbred_Saddle_02": "thoroughbred-saddle-02",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_02/Saddle_02_Mt_Cloth": "thoroughbred-saddle-02",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_02/Saddle_02_Mt_Saddle": "thoroughbred-saddle-02",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_03/Kestrel_Saddle_03_Alb": "thoroughbred-saddle-03",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_03/Kestrel_Saddle_03_Cloth_Alb": "thoroughbred-saddle-03",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_03/Kestrel_Saddle_03_Metal_Alb": "thoroughbred-saddle-03",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_03/SK_Horse_Thoroughbred_Saddle_03": "thoroughbred-saddle-03",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_03/Saddle_03_Mt_Cloth": "thoroughbred-saddle-03",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_03/Saddle_03_Mt_Metal": "thoroughbred-saddle-03",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_03/Saddle_03_Mt_Saddle": "thoroughbred-saddle-03",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Alb": "thoroughbred-saddle-04",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Cloth_Alb": "thoroughbred-saddle-04",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_04/Kestrel_Saddle_04_Parts_Alb": "thoroughbred-saddle-04",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_04/SK_Horse_Thoroughbred_Saddle_04": "thoroughbred-saddle-04",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Cloth": "thoroughbred-saddle-04",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Parts": "thoroughbred-saddle-04",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_04/Saddle_04_Mt_Saddle": "thoroughbred-saddle-04",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_05/Kestrel_Saddle_05_Alb_png": "thoroughbred-saddle-05",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_05/Kestrel_Saddle_05_Cloth_Alb_png": "thoroughbred-saddle-05",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_05/Kestrel_Saddle_05_Gem_Alb_png": "thoroughbred-saddle-05",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_05/SK_Horse_Thoroughbred_Saddle_05": "thoroughbred-saddle-05",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_05/Saddle_05_Mt_Cloth": "thoroughbred-saddle-05",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_05/Saddle_05_Mt_Gem": "thoroughbred-saddle-05",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_05/Saddle_05_Mt_Saddle": "thoroughbred-saddle-05",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_06/Kestrel_Saddle_06_Alb_png": "thoroughbred-saddle-06",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_06/Kestrel_Saddle_Cloth_06_Alb_png": "thoroughbred-saddle-06",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_06/SK_Horse_Thoroughbred_Saddle_06": "thoroughbred-saddle-06",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_06/Saddle_06_Mt_Cloth": "thoroughbred-saddle-06",
+  "/Game/Horses/Thoroughbred/Tack/Saddle_06/Saddle_06_Mt_Saddle": "thoroughbred-saddle-06",
+  "/Game/Horses/Thoroughbred/Tail": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Thoroughbred_Eyeball_Alb_png": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Thoroughbred_Hair_Alb_png": "thoroughbred",
+  "/Game/Horses/Thoroughbred/Thoroughbred_Metal_Alb_png": "thoroughbred",
+  "/Game/Horses/Thoroughbred/coat_Thoroughbred_Mt_Body_png": "thoroughbred",
+  "/Game/Horses/Thoroughbred/coat_Thoroughbred_Mt_Foot_png": "thoroughbred"
+ }
+}

@@ -1,0 +1,715 @@
+{
+ "about": "Tree House editing units for tools/migrate/adopt.py (written by tools/migrate/treehouse_units.py)",
+ "units": {
+  "dressing-m2-2": {
+   "about": "Tree House dressing mesh pieces of one cell (generated from the layout)",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "dressing-m2-3": {
+   "about": "Tree House dressing mesh pieces of one cell (generated from the layout)",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "dressing-m3-2": {
+   "about": "Tree House dressing mesh pieces of one cell (generated from the layout)",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "dressing-m3-3": {
+   "about": "Tree House dressing mesh pieces of one cell (generated from the layout)",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "generator": {
+   "about": "Tree House generator: build graph, region scripts, texture and prop tools, Unreal import scripts and the base materials",
+   "sources": [
+    "games/yorimichi/tools/treehouse_art.py",
+    "games/yorimichi/tools/treehouse_props.py",
+    "games/yorimichi/tools/treehouse_textures.py",
+    "games/yorimichi/treehouse_atomic_build.py",
+    "games/yorimichi/treehouse_pieces.py",
+    "games/yorimichi/treehouse_surfaces.py",
+    "games/yorimichi/unreal/Scripts/city_parent_transition.py",
+    "games/yorimichi/unreal/Scripts/forest_native.py",
+    "games/yorimichi/unreal/Scripts/import_treehouse.py",
+    "games/yorimichi/unreal/Scripts/import_treehouse_pieces.py",
+    "games/yorimichi/unreal/Scripts/mesh_import.py",
+    "games/yorimichi/unreal/Scripts/see_through.py",
+    "games/yorimichi/unreal/Scripts/treehouse_atomic_native.py",
+    "games/yorimichi/world/asset_mesh.py",
+    "games/yorimichi/world/material_specs.py",
+    "games/yorimichi/world/mesh_pieces.py",
+    "games/yorimichi/world/region_mesh_parts.py",
+    "games/yorimichi/world/region_plan_files.py",
+    "games/yorimichi/world/regions/megapark/__init__.py",
+    "games/yorimichi/world/regions/megapark/placement.py",
+    "games/yorimichi/world/regions/treehouse/README.md",
+    "games/yorimichi/world/regions/treehouse/__init__.py",
+    "games/yorimichi/world/regions/treehouse/assemble_atomic.py",
+    "games/yorimichi/world/regions/treehouse/atomic_parameters.py",
+    "games/yorimichi/world/regions/treehouse/build.py",
+    "games/yorimichi/world/regions/treehouse/canopy.py",
+    "games/yorimichi/world/regions/treehouse/canopy_data.py",
+    "games/yorimichi/world/regions/treehouse/dressing.py",
+    "games/yorimichi/world/regions/treehouse/geometry_data.py",
+    "games/yorimichi/world/regions/treehouse/layout.py",
+    "games/yorimichi/world/regions/treehouse/plan_prop.py",
+    "games/yorimichi/world/regions/treehouse/plan_surface.py",
+    "games/yorimichi/world/regions/treehouse/plan_tree.py",
+    "games/yorimichi/world/regions/treehouse/plan_views.py",
+    "games/yorimichi/world/regions/treehouse/preview.py",
+    "games/yorimichi/world/regions/treehouse/prop_geometry.py",
+    "games/yorimichi/world/regions/treehouse/props.py",
+    "games/yorimichi/world/regions/treehouse/screen.py",
+    "games/yorimichi/world/regions/treehouse/tmesh.py",
+    "games/yorimichi/world/regions/treehouse/trees.py",
+    "games/yorimichi/world/regions/treehouse/zfight.py",
+    "games/yorimichi/world/regions/village/__init__.py",
+    "games/yorimichi/world/regions/village/layout.py",
+    "games/yorimichi/world/regions/village/mesh.py",
+    "games/yorimichi/world/regions/zeppelin/__init__.py",
+    "games/yorimichi/world/regions/zeppelin/layout.py",
+    "games/yorimichi/world/yori.py"
+   ]
+  },
+  "prop-backpack": {
+   "about": "Tree House dressing prop backpack: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/backpack/asset.toml",
+    "games/yorimichi/assets/treehouse/props/backpack/backpack.glb",
+    "games/yorimichi/assets/treehouse/props/backpack/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/backpack/job.json",
+    "games/yorimichi/assets/treehouse/props/backpack/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/backpack/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_backpack.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-barrel": {
+   "about": "Tree House dressing prop barrel: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/barrel/asset.toml",
+    "games/yorimichi/assets/treehouse/props/barrel/barrel.glb",
+    "games/yorimichi/assets/treehouse/props/barrel/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/barrel/job.json",
+    "games/yorimichi/assets/treehouse/props/barrel/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/barrel/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_barrel.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-basket": {
+   "about": "Tree House dressing prop basket: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/basket/asset.toml",
+    "games/yorimichi/assets/treehouse/props/basket/basket.glb",
+    "games/yorimichi/assets/treehouse/props/basket/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/basket/job.json",
+    "games/yorimichi/assets/treehouse/props/basket/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/basket/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_basket.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-bell": {
+   "about": "Tree House dressing prop bell: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/bell/asset.toml",
+    "games/yorimichi/assets/treehouse/props/bell/bell.glb",
+    "games/yorimichi/assets/treehouse/props/bell/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/bell/job.json",
+    "games/yorimichi/assets/treehouse/props/bell/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/bell/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_bell.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-bookshelf": {
+   "about": "Tree House dressing prop bookshelf: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/bookshelf/asset.toml",
+    "games/yorimichi/assets/treehouse/props/bookshelf/bookshelf.glb",
+    "games/yorimichi/assets/treehouse/props/bookshelf/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/bookshelf/job.json",
+    "games/yorimichi/assets/treehouse/props/bookshelf/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/bookshelf/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_bookshelf.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-crate-desk": {
+   "about": "Tree House dressing prop crate_desk: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/crate_desk/asset.toml",
+    "games/yorimichi/assets/treehouse/props/crate_desk/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/crate_desk/crate_desk.glb",
+    "games/yorimichi/assets/treehouse/props/crate_desk/job.json",
+    "games/yorimichi/assets/treehouse/props/crate_desk/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/crate_desk/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_crate_desk.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-futon": {
+   "about": "Tree House dressing prop futon: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/futon/asset.toml",
+    "games/yorimichi/assets/treehouse/props/futon/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/futon/futon.glb",
+    "games/yorimichi/assets/treehouse/props/futon/job.json",
+    "games/yorimichi/assets/treehouse/props/futon/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/futon/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_futon.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-globe": {
+   "about": "Tree House dressing prop globe: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/globe/asset.toml",
+    "games/yorimichi/assets/treehouse/props/globe/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/globe/globe.glb",
+    "games/yorimichi/assets/treehouse/props/globe/job.json",
+    "games/yorimichi/assets/treehouse/props/globe/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/globe/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_globe.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-kamado": {
+   "about": "Tree House dressing prop kamado: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/kamado/asset.toml",
+    "games/yorimichi/assets/treehouse/props/kamado/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/kamado/job.json",
+    "games/yorimichi/assets/treehouse/props/kamado/kamado.glb",
+    "games/yorimichi/assets/treehouse/props/kamado/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/kamado/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_kamado.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-log-table": {
+   "about": "Tree House dressing prop log_table: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/log_table/asset.toml",
+    "games/yorimichi/assets/treehouse/props/log_table/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/log_table/job.json",
+    "games/yorimichi/assets/treehouse/props/log_table/log_table.glb",
+    "games/yorimichi/assets/treehouse/props/log_table/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/log_table/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_log_table.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-planter": {
+   "about": "Tree House dressing prop planter: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/planter/asset.toml",
+    "games/yorimichi/assets/treehouse/props/planter/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/planter/job.json",
+    "games/yorimichi/assets/treehouse/props/planter/planter.glb",
+    "games/yorimichi/assets/treehouse/props/planter/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/planter/provenance.json",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_planter.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-stump-kettle": {
+   "about": "Tree House dressing prop stump_kettle: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/stump_kettle/asset.toml",
+    "games/yorimichi/assets/treehouse/props/stump_kettle/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/stump_kettle/job.json",
+    "games/yorimichi/assets/treehouse/props/stump_kettle/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/stump_kettle/provenance.json",
+    "games/yorimichi/assets/treehouse/props/stump_kettle/stump_kettle.glb",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_stump_kettle.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "prop-telescope": {
+   "about": "Tree House dressing prop telescope: its material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/props/telescope/asset.toml",
+    "games/yorimichi/assets/treehouse/props/telescope/concept.jpg",
+    "games/yorimichi/assets/treehouse/props/telescope/job.json",
+    "games/yorimichi/assets/treehouse/props/telescope/prompt.txt",
+    "games/yorimichi/assets/treehouse/props/telescope/provenance.json",
+    "games/yorimichi/assets/treehouse/props/telescope/telescope.glb",
+    "games/yorimichi/assets/treehouse/export-parameters/TH_P_telescope.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "structure-m1-1": {
+   "about": "Tree House structure mesh pieces of one cell (generated from the layout)",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "structure-m2-1": {
+   "about": "Tree House structure mesh pieces of one cell (generated from the layout)",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-bark": {
+   "about": "Tree House surface bark: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/bark.jpg",
+    "games/yorimichi/assets/treehouse/textures/bark.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/bark.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-books": {
+   "about": "Tree House surface books: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/books.jpg",
+    "games/yorimichi/assets/treehouse/textures/books.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/books.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-canvas": {
+   "about": "Tree House surface canvas: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/canvas.jpg",
+    "games/yorimichi/assets/treehouse/textures/canvas.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/canvas.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-cushion": {
+   "about": "Tree House surface cushion: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/cushion.jpg",
+    "games/yorimichi/assets/treehouse/textures/cushion.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/cushion.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-flag": {
+   "about": "Tree House surface flag: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/flag.jpg",
+    "games/yorimichi/assets/treehouse/textures/flag.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/flag.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-flat": {
+   "about": "Tree House surface flat: material instance and texture",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-glass": {
+   "about": "Tree House surface glass: material instance and texture",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-hull": {
+   "about": "Tree House surface hull: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/hull.jpg",
+    "games/yorimichi/assets/treehouse/textures/hull.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/hull.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-indigo": {
+   "about": "Tree House surface indigo: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/indigo.jpg",
+    "games/yorimichi/assets/treehouse/textures/indigo.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/indigo.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-iron": {
+   "about": "Tree House surface iron: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/iron.jpg",
+    "games/yorimichi/assets/treehouse/textures/iron.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/iron.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-kite": {
+   "about": "Tree House surface kite: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/kite.jpg",
+    "games/yorimichi/assets/treehouse/textures/kite.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/kite.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-map": {
+   "about": "Tree House surface map: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/map.jpg",
+    "games/yorimichi/assets/treehouse/textures/map.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/map.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-moss": {
+   "about": "Tree House surface moss: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/moss.jpg",
+    "games/yorimichi/assets/treehouse/textures/moss.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/moss.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-noren-cream": {
+   "about": "Tree House surface noren_cream: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/noren_cream.jpg",
+    "games/yorimichi/assets/treehouse/textures/noren_cream.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/noren_cream.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-noren-indigo": {
+   "about": "Tree House surface noren_indigo: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/noren_indigo.jpg",
+    "games/yorimichi/assets/treehouse/textures/noren_indigo.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/noren_indigo.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-pane": {
+   "about": "Tree House surface pane: material instance and texture",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-paper": {
+   "about": "Tree House surface paper: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/paper.jpg",
+    "games/yorimichi/assets/treehouse/textures/paper.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/paper.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-pictures": {
+   "about": "Tree House surface pictures: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/pictures.jpg",
+    "games/yorimichi/assets/treehouse/textures/pictures.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/pictures.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-plaster": {
+   "about": "Tree House surface plaster: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/plaster.jpg",
+    "games/yorimichi/assets/treehouse/textures/plaster.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/plaster.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-quilt": {
+   "about": "Tree House surface quilt: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/quilt.jpg",
+    "games/yorimichi/assets/treehouse/textures/quilt.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/quilt.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-rope": {
+   "about": "Tree House surface rope: material instance and texture",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-rug": {
+   "about": "Tree House surface rug: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/rug.jpg",
+    "games/yorimichi/assets/treehouse/textures/rug.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/rug.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-rug-blue": {
+   "about": "Tree House surface rug_blue: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/rug_blue.jpg",
+    "games/yorimichi/assets/treehouse/textures/rug_blue.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/rug_blue.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-shingle": {
+   "about": "Tree House surface shingle: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/shingle.jpg",
+    "games/yorimichi/assets/treehouse/textures/shingle.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/shingle.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-stone": {
+   "about": "Tree House surface stone: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/stone.jpg",
+    "games/yorimichi/assets/treehouse/textures/stone.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/stone.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-straw": {
+   "about": "Tree House surface straw: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/straw.jpg",
+    "games/yorimichi/assets/treehouse/textures/straw.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/straw.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-tile": {
+   "about": "Tree House surface tile: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/tile.jpg",
+    "games/yorimichi/assets/treehouse/textures/tile.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/tile.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-trunk": {
+   "about": "Tree House surface trunk: material instance and texture",
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-wood-pale": {
+   "about": "Tree House surface wood_pale: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/wood_pale.jpg",
+    "games/yorimichi/assets/treehouse/textures/wood_pale.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/wood_pale.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-wood-plank": {
+   "about": "Tree House surface wood_plank: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/wood_plank.jpg",
+    "games/yorimichi/assets/treehouse/textures/wood_plank.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/wood_plank.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  },
+  "surface-wood-timber": {
+   "about": "Tree House surface wood_timber: material instance and texture",
+   "sources": [
+    "games/yorimichi/assets/treehouse/textures/wood_timber.jpg",
+    "games/yorimichi/assets/treehouse/textures/wood_timber.prompt.txt",
+    "games/yorimichi/assets/treehouse/textures/wood_timber.provenance.json"
+   ],
+   "references": [
+    "adopted/japan/treehouse/generator"
+   ]
+  }
+ },
+ "packages": {
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_backpack": "prop-backpack",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_barrel": "prop-barrel",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_basket": "prop-basket",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_bell": "prop-bell",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_bookshelf": "prop-bookshelf",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_crate_desk": "prop-crate-desk",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_futon": "prop-futon",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_globe": "prop-globe",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_kamado": "prop-kamado",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_log_table": "prop-log-table",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_planter": "prop-planter",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_stump_kettle": "prop-stump-kettle",
+  "/Game/Japan/Treehouse/Materials/MI_TH_P_telescope": "prop-telescope",
+  "/Game/Japan/Treehouse/Materials/MI_TH_bark": "surface-bark",
+  "/Game/Japan/Treehouse/Materials/MI_TH_books": "surface-books",
+  "/Game/Japan/Treehouse/Materials/MI_TH_canvas": "surface-canvas",
+  "/Game/Japan/Treehouse/Materials/MI_TH_cushion": "surface-cushion",
+  "/Game/Japan/Treehouse/Materials/MI_TH_flag": "surface-flag",
+  "/Game/Japan/Treehouse/Materials/MI_TH_flat": "surface-flat",
+  "/Game/Japan/Treehouse/Materials/MI_TH_glass": "surface-glass",
+  "/Game/Japan/Treehouse/Materials/MI_TH_hull": "surface-hull",
+  "/Game/Japan/Treehouse/Materials/MI_TH_indigo": "surface-indigo",
+  "/Game/Japan/Treehouse/Materials/MI_TH_iron": "surface-iron",
+  "/Game/Japan/Treehouse/Materials/MI_TH_kite": "surface-kite",
+  "/Game/Japan/Treehouse/Materials/MI_TH_map": "surface-map",
+  "/Game/Japan/Treehouse/Materials/MI_TH_moss": "surface-moss",
+  "/Game/Japan/Treehouse/Materials/MI_TH_noren_cream": "surface-noren-cream",
+  "/Game/Japan/Treehouse/Materials/MI_TH_noren_indigo": "surface-noren-indigo",
+  "/Game/Japan/Treehouse/Materials/MI_TH_pane": "surface-pane",
+  "/Game/Japan/Treehouse/Materials/MI_TH_paper": "surface-paper",
+  "/Game/Japan/Treehouse/Materials/MI_TH_pictures": "surface-pictures",
+  "/Game/Japan/Treehouse/Materials/MI_TH_plaster": "surface-plaster",
+  "/Game/Japan/Treehouse/Materials/MI_TH_quilt": "surface-quilt",
+  "/Game/Japan/Treehouse/Materials/MI_TH_rope": "surface-rope",
+  "/Game/Japan/Treehouse/Materials/MI_TH_rug": "surface-rug",
+  "/Game/Japan/Treehouse/Materials/MI_TH_rug_blue": "surface-rug-blue",
+  "/Game/Japan/Treehouse/Materials/MI_TH_shingle": "surface-shingle",
+  "/Game/Japan/Treehouse/Materials/MI_TH_stone": "surface-stone",
+  "/Game/Japan/Treehouse/Materials/MI_TH_straw": "surface-straw",
+  "/Game/Japan/Treehouse/Materials/MI_TH_tile": "surface-tile",
+  "/Game/Japan/Treehouse/Materials/MI_TH_trunk": "surface-trunk",
+  "/Game/Japan/Treehouse/Materials/MI_TH_wood_pale": "surface-wood-pale",
+  "/Game/Japan/Treehouse/Materials/MI_TH_wood_plank": "surface-wood-plank",
+  "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber": "surface-wood-timber",
+  "/Game/Japan/Treehouse/Materials/M_TH_Light": "generator",
+  "/Game/Japan/Treehouse/Materials/M_TreeHouse": "generator",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_2_Piece0": "dressing-m2-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_2_Piece20": "dressing-m2-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_2_Piece21": "dressing-m2-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_2_Piece22": "dressing-m2-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_2_Piece23": "dressing-m2-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_3": "dressing-m2-3",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece10": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece11": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece12": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece13": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece2": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece30": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece31": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece32": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece33": "dressing-m3-2",
+  "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_3": "dressing-m3-3",
+  "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-1_1": "structure-m1-1",
+  "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece11": "structure-m2-1",
+  "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece12": "structure-m2-1",
+  "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece13": "structure-m2-1",
+  "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece3": "structure-m2-1",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_backpack": "prop-backpack",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_barrel": "prop-barrel",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_basket": "prop-basket",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_bell": "prop-bell",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_bookshelf": "prop-bookshelf",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_crate_desk": "prop-crate-desk",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_futon": "prop-futon",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_globe": "prop-globe",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_kamado": "prop-kamado",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_log_table": "prop-log-table",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_planter": "prop-planter",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_stump_kettle": "prop-stump-kettle",
+  "/Game/Japan/Treehouse/Textures/T_TH_P_telescope": "prop-telescope",
+  "/Game/Japan/Treehouse/Textures/T_TH_bark": "surface-bark",
+  "/Game/Japan/Treehouse/Textures/T_TH_books": "surface-books",
+  "/Game/Japan/Treehouse/Textures/T_TH_canvas": "surface-canvas",
+  "/Game/Japan/Treehouse/Textures/T_TH_cushion": "surface-cushion",
+  "/Game/Japan/Treehouse/Textures/T_TH_flag": "surface-flag",
+  "/Game/Japan/Treehouse/Textures/T_TH_flat": "surface-flat",
+  "/Game/Japan/Treehouse/Textures/T_TH_glass": "surface-glass",
+  "/Game/Japan/Treehouse/Textures/T_TH_hull": "surface-hull",
+  "/Game/Japan/Treehouse/Textures/T_TH_indigo": "surface-indigo",
+  "/Game/Japan/Treehouse/Textures/T_TH_iron": "surface-iron",
+  "/Game/Japan/Treehouse/Textures/T_TH_kite": "surface-kite",
+  "/Game/Japan/Treehouse/Textures/T_TH_map": "surface-map",
+  "/Game/Japan/Treehouse/Textures/T_TH_moss": "surface-moss",
+  "/Game/Japan/Treehouse/Textures/T_TH_noren_cream": "surface-noren-cream",
+  "/Game/Japan/Treehouse/Textures/T_TH_noren_indigo": "surface-noren-indigo",
+  "/Game/Japan/Treehouse/Textures/T_TH_paper": "surface-paper",
+  "/Game/Japan/Treehouse/Textures/T_TH_pictures": "surface-pictures",
+  "/Game/Japan/Treehouse/Textures/T_TH_plaster": "surface-plaster",
+  "/Game/Japan/Treehouse/Textures/T_TH_quilt": "surface-quilt",
+  "/Game/Japan/Treehouse/Textures/T_TH_rope": "surface-rope",
+  "/Game/Japan/Treehouse/Textures/T_TH_rug": "surface-rug",
+  "/Game/Japan/Treehouse/Textures/T_TH_rug_blue": "surface-rug-blue",
+  "/Game/Japan/Treehouse/Textures/T_TH_shingle": "surface-shingle",
+  "/Game/Japan/Treehouse/Textures/T_TH_stone": "surface-stone",
+  "/Game/Japan/Treehouse/Textures/T_TH_straw": "surface-straw",
+  "/Game/Japan/Treehouse/Textures/T_TH_tile": "surface-tile",
+  "/Game/Japan/Treehouse/Textures/T_TH_wood_pale": "surface-wood-pale",
+  "/Game/Japan/Treehouse/Textures/T_TH_wood_plank": "surface-wood-plank",
+  "/Game/Japan/Treehouse/Textures/T_TH_wood_timber": "surface-wood-timber"
+ }
+}
