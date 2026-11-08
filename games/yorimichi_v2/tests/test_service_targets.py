@@ -139,7 +139,7 @@ EXCLUDED = ('PixelStreaming', 'AtelierStream', 'YorimichiPhone', 'kart', 'CarRid
 
 
 def test_phone_and_kart_exclusions_are_gone_from_code_and_config():
-    """X01 (phone streaming) and X02 (go-kart): no C++, config, build or tool refers to them; their plugins are disabled."""
+    """X01/X02 have no runtime references and their plugins are disabled; the package checker names forbidden roots."""
     project = json.loads((ROOT / 'unreal/YorimichiV2.uproject').read_text())
     plugins = {p['Name']: p.get('Enabled') for p in project['Plugins']}
     for name in ('Driving', 'AtelierStream', 'PixelStreaming2'):
@@ -149,7 +149,8 @@ def test_phone_and_kart_exclusions_are_gone_from_code_and_config():
     scanned += [ROOT / 'build.py', ROOT / 'game.toml']
     hits = []
     for path in scanned:
-        if 'tests' in path.parts:
+        if 'tests' in path.parts or path == ROOT / 'tools/package/cook_config.py':
+            # The packaging check must name these features to reject their content (test_package_config covers it).
             continue
         text = path.read_text(errors='replace')
         hits += [f'{path.relative_to(ROOT)}: {word}' for word in EXCLUDED if word in text]
