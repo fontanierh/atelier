@@ -175,8 +175,10 @@ class AdmissionSession:
     """@cc [owner:fontanierh,label:safety] guard-facing-broker-admission
     Offers MUST be uncharged. Only the server's committed gate MAY release useful work; the
     client MUST never own a writer or fall back on broker failure. Close MUST obtain affirmative
-    release evidence under the broker's exact or exclusive terminal-tree policy, or raise while
-    the durable reservation stays held.
+    release evidence under the broker's exact retained-exit, exclusive terminal-tree, or scoped
+    shared-editor terminal-tree policy, or raise while the durable reservation stays held.
+    The shared-editor witness MUST satisfy the broker's monitored-terminal-tree-release contract;
+    it proves owned-tree cleanup, never successful output or individual historical kernel exits.
     A Popen witness proves the direct child's exit only, never an undiscovered process tree.
     """
     def __init__(self, socket_path, request, *, timeout=2., cutover=None, guard_limit_gib=None, mode=None, seal_policy_sha256=None):
