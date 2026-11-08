@@ -9,8 +9,11 @@
 #include "SuperUltraMegaPark.generated.h"
 
 class FJsonObject;
+class FJsonValue;
+class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
+class USceneComponent;
 
 /** The park's grind paths. In the standalone level, render and collision geometry are ordinary StaticMeshActors and
  *  the game mode spawns this actor from the level's AMegaParkLayout; in the island, Spawn places the park from its
@@ -31,6 +34,18 @@ public:
      *  UV2Migration::MigrateParkPieces, so a piece is saved as an object or spawned at runtime, never both. */
     static UStaticMeshComponent* MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
         UStaticMesh* Mesh, bool bCollision);
+    /** One species of park.json's trees as an instanced component of Parent, with the settings Spawn gives every tree of
+     *  it (fade, cull, no collision). The caller registers it and adds its instances. Shared with
+     *  UV2MigrationParkDressing::MigrateParkTrees, so a unit's trees are saved as the runtime builds them. */
+    static UHierarchicalInstancedStaticMeshComponent* MakeTreeGroup(UObject* Outer, USceneComponent* Parent, const FString& Key,
+        UStaticMesh* Mesh);
+    /** One tree entry of park.json, [x, y, z, yaw, scale], as the instance transform Spawn places it with. False when the
+     *  entry is too short to be a tree. */
+    static bool TreeTransform(const TSharedPtr<FJsonValue>& Value, FTransform& Out);
+    /** One kei car of park.json's props as a component of Parent: its basis and location, blocking collision. The caller
+     *  adds and registers it. Shared with UV2MigrationParkDressing::MigrateParkProps. */
+    static UStaticMeshComponent* MakeProp(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
+        UStaticMesh* Mesh);
     bool bGameplayReady = false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Source") FMegaParkLayoutData Layout;
 private:
