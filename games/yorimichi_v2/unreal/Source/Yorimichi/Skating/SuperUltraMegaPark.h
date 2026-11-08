@@ -8,6 +8,10 @@
 #include "MegaParkLayout.h"
 #include "SuperUltraMegaPark.generated.h"
 
+class FJsonObject;
+class UStaticMesh;
+class UStaticMeshComponent;
+
 /** The park's grind paths. In the standalone level, render and collision geometry are ordinary StaticMeshActors and
  *  the game mode spawns this actor from the level's AMegaParkLayout; in the island, Spawn places the park from its
  *  manifest and owns the meshes as components (docs/MEGAPARK.md). */
@@ -22,6 +26,11 @@ public:
      *  collision meshes (with the seam's) from /Game/MegaPark/Meshes, the original grind paths, the island trees that
      *  replace the original plants and the kei cars that replace its traffic cars. Null if the file is missing. */
     static ASuperUltraMegaPark* Spawn(UWorld* World, const FString& Path);
+    /** One render or collision entry of park.json as a component of Parent, at its origin_cm: the settings Spawn gives
+     *  every piece (collision: BlockAll, hidden; render: no collision). The caller adds and registers it. Shared with
+     *  UV2Migration::MigrateParkPieces, so a piece is saved as an object or spawned at runtime, never both. */
+    static UStaticMeshComponent* MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Entry,
+        UStaticMesh* Mesh, bool bCollision);
     bool bGameplayReady = false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Source") FMegaParkLayoutData Layout;
 private:

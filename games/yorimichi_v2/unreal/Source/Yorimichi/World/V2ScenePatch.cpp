@@ -2,6 +2,7 @@
 #include "JapanWorld.h"
 #include "JapanGameplayCollisionWorld.h"
 #include "SkatePark.h"
+#include "SuperUltraMegaPark.h"
 #include "AtelierData.h"
 #include "BelmonteRegion.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -425,6 +426,114 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
         Manifest->MarkPackageDirty();
     }
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s groups: created %d patches, kept %d"), *Tag.ToString(), OutCreated.Num(), OutKept);
+    return OutCreated.Num();
+#else
+    Error = TEXT("editor only");
+    return -1;
+#endif
+}
+
+int32 UV2Migration::MigrateParkPieces(UObject* WorldContext, FName Region, FName Tag, const FString& DataFile,
+    const TArray<FString>& Pieces, const TArray<bool>& IsCollision, const TArray<FString>& Units, TArray<AActor*>& OutCreated,
+    int32& OutKept, FString& Error)
+{
+    OutCreated.Reset(); OutKept = 0;
+#if WITH_EDITOR
+    UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+    if (!World || World->IsGameWorld()) { Error = TEXT("needs the editor world"); return -1; }
+    if (Region.IsNone() || Tag.IsNone() || Pieces.IsEmpty() || IsCollision.Num() != Pieces.Num() || Units.Num() != Pieces.Num())
+    {
+        Error = TEXT("needs a region, its runtime tag, and one unit and kind per piece");
+        return -1;
+    }
+    AV2WorldManifest* Manifest = nullptr;
+    for (TActorIterator<AV2WorldManifest> It(World); It; ++It) Manifest = *It;
+    if (!Manifest) { Error = TEXT("the map has no AV2WorldManifest"); return -1; }
+    const auto Data = AtelierReadJson(AtelierDataPath(DataFile));
+    if (!Data) { Error = DataFile + TEXT(" is missing or unreadable"); return -1; }
+    FString MeshRoot = TEXT("/Game/MegaPark/Meshes");
+    Data->TryGetStringField(TEXT("mesh_root"), MeshRoot);
+    // Every listed piece is one render or collision entry of this park file, listed once and of the kind the file gives it.
+    TMap<FString, TSharedPtr<FJsonObject>> Entries;
+    TSet<FString> CollisionNames;
+    for (const TCHAR* Kind : {TEXT("render"), TEXT("collision")})
+    {
+        for (const auto& Value : Data->GetArrayField(Kind))
+        {
+            const auto Entry = Value->AsObject();
+            const FString Name = Entry->GetStringField(TEXT("name"));
+            Entries.Add(Name, Entry);
+            if (FCString::Strcmp(Kind, TEXT("collision")) == 0) CollisionNames.Add(Name);
+        }
+    }
+    TMap<FString, TArray<int32>> ByUnit;   // unit -> the indices of its pieces, in the order given
+    TArray<FString> Order;
+    TSet<FString> Seen;
+    for (int32 I = 0; I < Pieces.Num(); ++I)
+    {
+        const FString& Name = Pieces[I];
+        if (!Entries.Contains(Name)) { Error = Name + TEXT(" is no render or collision piece of ") + DataFile; return -1; }
+        if (Seen.Contains(Name)) { Error = Name + TEXT(" is listed twice"); return -1; }
+        if (CollisionNames.Contains(Name) != IsCollision[I]) { Error = Name + TEXT(" is not the kind ") + DataFile + TEXT(" gives it"); return -1; }
+        if (Units[I].IsEmpty()) { Error = Name + TEXT(" has no unit"); return -1; }
+        Seen.Add(Name);
+        if (!ByUnit.Contains(Units[I])) Order.Add(Units[I]);
+        ByUnit.FindOrAdd(Units[I]).Add(I);
+    }
+    // The park's placement, as ASuperUltraMegaPark::Spawn places it: its pieces are relative to it.
+    const auto& L = Data->GetArrayField(TEXT("location_cm"));
+    const FTransform Placement(FRotator(0., Data->GetNumberField(TEXT("yaw_deg")), 0.),
+        FVector(L[0]->AsNumber(), L[1]->AsNumber(), L[2]->AsNumber()));
+    TMap<FString, AV2ScenePatch*> Existing;
+    for (TActorIterator<AV2ScenePatch> It(World); It; ++It) Existing.Add(It->V2Id, *It);
+    for (const FString& Unit : Order)
+    {
+        const FString Id = StableId({Region.ToString(), Tag.ToString(), Unit});
+        if (Existing.Contains(Id)) { ++OutKept; continue; }
+        FActorSpawnParameters Params;
+        Params.Name = MakeUniqueObjectName(World->PersistentLevel, AV2ScenePatch::StaticClass(), FName(*(TEXT("V2Patch_") + Id)));
+        AV2ScenePatch* Made = World->SpawnActor<AV2ScenePatch>(Placement.GetLocation(), Placement.Rotator(), Params);
+        if (!Made) { Error = Unit + TEXT(": could not spawn its patch"); break; }
+        OutCreated.Add(Made);
+        Made->Region = Region; Made->SourceKey = Tag.ToString() + TEXT(":") + Unit; Made->V2Id = Id;
+        Made->SetActorLabel(FString::Printf(TEXT("%s:%s:%s:%s"), *Region.ToString(), *Tag.ToString(), *Unit, *Id));
+        Made->Tags.Add(FName(*(TEXT("V2Id:") + Id)));
+        Made->Tags.Add(FName(*(TEXT("V2Region:") + Region.ToString())));
+        for (const int32 I : ByUnit[Unit])
+        {
+            const FString& Name = Pieces[I];
+            auto* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *MeshRoot, *Name, *Name));
+            if (!Mesh) { Error = Name + TEXT(": its mesh is missing from V2 Content"); break; }
+            UStaticMeshComponent* C = ASuperUltraMegaPark::MakePiece(Made, Made->GetRootComponent(), Entries[Name], Mesh, IsCollision[I]);
+            C->CreationMethod = EComponentCreationMethod::Instance;
+            Made->AddInstanceComponent(C);
+            C->RegisterComponent();
+        }
+        if (!Error.IsEmpty()) break;
+    }
+    if (!Error.IsEmpty())
+    {
+        for (AActor* Made : OutCreated) Made->Destroy();
+        OutCreated.Reset();
+        return -1;
+    }
+    for (AActor* Made : OutCreated)
+    {
+        AV2ScenePatch* Saved = CastChecked<AV2ScenePatch>(Made);
+        Saved->ExpectedMembers = Saved->Members();
+        Made->MarkPackageDirty();
+    }
+    // Saved pieces stay listed, kept units too: the runtime must never spawn a piece this map saved.
+    TArray<FString> Listed = Manifest->MigratedGroups;
+    for (const FString& Name : Pieces) Listed.AddUnique(Tag.ToString() + TEXT(":") + Name);
+    Listed.Sort();
+    if (Listed != Manifest->MigratedGroups)
+    {
+        Manifest->Modify();
+        Manifest->MigratedGroups = MoveTemp(Listed);
+        Manifest->MarkPackageDirty();
+    }
+    UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s park: created %d, kept %d"), *Tag.ToString(), OutCreated.Num(), OutKept);
     return OutCreated.Num();
 #else
     Error = TEXT("editor only");
