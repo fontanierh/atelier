@@ -1,0 +1,6 @@
+# Mega region objects (split entries for the editor's objects.toml, see tools/migrate/objects.py).
+# Source data: none needed; this region's non-foliage patch keys are Mega_Trail (1 path patch) and Village_Planting
+# (1 planting patch). Both are kept in the area patches. No placed object of this region is split yet.
+schema = 1
+tag = "mega"
+data = ""

@@ -1,0 +1,6 @@
+# Volcano and forest objects that leave their area patches (tools/migrate/objects.py split).
+# No entries: every placed instance of this region's patch keys in hidamari/city.json (and world.json for the
+# Tree_Broad_A and Bush_* keys in world.json) is foliage, scatter, terrain or a backdrop; none is a split object.
+schema = 1
+tag = "volcano-south"
+data = ""

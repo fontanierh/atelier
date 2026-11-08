@@ -33,3 +33,125 @@ id = "object/swcoast/temple"
 patch = "b6f9ee4932af5800"
 model = "adopted/japan/southwest"
 about = "the temple"
+
+# Split entries (Yorimichi V2 object prep): placed instances left in the area patches, each one actor of its own.
+# Source: games/yorimichi_v2/unreal/Content/Data/world.json instances (metres).
+[[objects]]
+id = "object/swcoast/sw-boat-01"
+split = {key = "SW_Boat", at = [-259, -157]}
+model = "adopted/japan/southwest"
+about = "SW_Boat 1 of 2 in w08-southwest-coast, placed at (-259, -157) m"
+
+[[objects]]
+id = "object/swcoast/sw-boat-02"
+split = {key = "SW_Boat", at = [-226.5, -158.5]}
+model = "adopted/japan/southwest"
+about = "SW_Boat 2 of 2 in w08-southwest-coast, placed at (-226.5, -158.5) m"
+
+[[objects]]
+id = "object/swcoast/sw-stonewall-01"
+split = {key = "SW_StoneWall", at = [-272, -132.5]}
+model = "adopted/japan/southwest"
+about = "SW_StoneWall 1 of 3 in w08-southwest-coast, placed at (-272, -132.5) m"
+
+[[objects]]
+id = "object/swcoast/sw-stonewall-02"
+split = {key = "SW_StoneWall", at = [-266, -133]}
+model = "adopted/japan/southwest"
+about = "SW_StoneWall 2 of 3 in w08-southwest-coast, placed at (-266, -133) m"
+
+[[objects]]
+id = "object/swcoast/sw-stonewall-03"
+split = {key = "SW_StoneWall", at = [-247, -134.5]}
+model = "adopted/japan/southwest"
+about = "SW_StoneWall 3 of 3 in w08-southwest-coast, placed at (-247, -134.5) m"
+
+[[objects]]
+id = "object/swcoast/torii-01"
+split = {key = "Torii", at = [-204.05, -472.26]}
+model = "adopted/japan/assets/torii"
+about = "Torii 1 of 5 in w08-southwest-coast, placed at (-204.05, -472.26) m"
+
+[[objects]]
+id = "object/swcoast/torii-02"
+split = {key = "Torii", at = [-199.87, -446.87]}
+model = "adopted/japan/assets/torii"
+about = "Torii 2 of 5 in w08-southwest-coast, placed at (-199.87, -446.87) m"
+
+[[objects]]
+id = "object/swcoast/torii-03"
+split = {key = "Torii", at = [-194.43, -510.24]}
+model = "adopted/japan/assets/torii"
+about = "Torii 3 of 5 in w08-southwest-coast, placed at (-194.43, -510.24) m"
+
+[[objects]]
+id = "object/swcoast/torii-04"
+split = {key = "Torii", at = [-152.82, -482.77]}
+model = "adopted/japan/assets/torii"
+about = "Torii 4 of 5 in w08-southwest-coast, placed at (-152.82, -482.77) m"
+
+[[objects]]
+id = "object/swcoast/torii-05"
+split = {key = "Torii", at = [-136.17, -464.4]}
+model = "adopted/japan/assets/torii"
+about = "Torii 5 of 5 in w08-southwest-coast, placed at (-136.17, -464.4) m"
+
+[[objects]]
+id = "object/swcoast/lantern-01"
+split = {key = "Lantern", at = [-204.31, -470.08]}
+model = "prop/lantern"
+about = "Lantern 1 of 10 in w08-southwest-coast, placed at (-204.31, -470.08) m"
+
+[[objects]]
+id = "object/swcoast/lantern-02"
+split = {key = "Lantern", at = [-203.8, -474.45]}
+model = "prop/lantern"
+about = "Lantern 2 of 10 in w08-southwest-coast, placed at (-203.8, -474.45) m"
+
+[[objects]]
+id = "object/swcoast/lantern-03"
+split = {key = "Lantern", at = [-201.93, -446.08]}
+model = "prop/lantern"
+about = "Lantern 3 of 10 in w08-southwest-coast, placed at (-201.93, -446.08) m"
+
+[[objects]]
+id = "object/swcoast/lantern-04"
+split = {key = "Lantern", at = [-197.82, -447.65]}
+model = "prop/lantern"
+about = "Lantern 4 of 10 in w08-southwest-coast, placed at (-197.82, -447.65) m"
+
+[[objects]]
+id = "object/swcoast/lantern-05"
+split = {key = "Lantern", at = [-194.46, -512.44]}
+model = "prop/lantern"
+about = "Lantern 5 of 10 in w08-southwest-coast, placed at (-194.46, -512.44) m"
+
+[[objects]]
+id = "object/swcoast/lantern-06"
+split = {key = "Lantern", at = [-194.41, -508.04]}
+model = "prop/lantern"
+about = "Lantern 6 of 10 in w08-southwest-coast, placed at (-194.41, -508.04) m"
+
+[[objects]]
+id = "object/swcoast/lantern-07"
+split = {key = "Lantern", at = [-153.81, -480.81]}
+model = "prop/lantern"
+about = "Lantern 7 of 10 in w08-southwest-coast, placed at (-153.81, -480.81) m"
+
+[[objects]]
+id = "object/swcoast/lantern-08"
+split = {key = "Lantern", at = [-151.83, -484.74]}
+model = "prop/lantern"
+about = "Lantern 8 of 10 in w08-southwest-coast, placed at (-151.83, -484.74) m"
+
+[[objects]]
+id = "object/swcoast/lantern-09"
+split = {key = "Lantern", at = [-136.42, -462.21]}
+model = "prop/lantern"
+about = "Lantern 9 of 10 in w08-southwest-coast, placed at (-136.42, -462.21) m"
+
+[[objects]]
+id = "object/swcoast/lantern-10"
+split = {key = "Lantern", at = [-135.91, -466.58]}
+model = "prop/lantern"
+about = "Lantern 10 of 10 in w08-southwest-coast, placed at (-135.91, -466.58) m"
