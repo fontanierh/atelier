@@ -152,15 +152,24 @@ def check_runtime_data(app: Path, game: Path | None = None) -> list[Check]:
     return [Check('runtime_data', not missing and not changed, detail)]
 
 
+def portable(text: str, app: Path) -> str:
+    """Check details as shareable evidence records them (CONTRACTS yorimichi-v2-portable-records): the bundle by its name,
+    never the folder it was extracted to, and no home path."""
+    text = text.replace(str(app.resolve()), app.name).replace(str(app), app.name)
+    return text.replace(str(Path.home()), '~')
+
+
 def automated(app: Path) -> list[Check]:
     if not (app / 'Contents/Info.plist').is_file():
-        return [Check('app', False, f'{app} is not an app bundle')]
-    out = [Check('app', True, str(app))]
+        return [Check('app', False, f'{app.name} is not an app bundle')]
+    out = [Check('app', True, app.name)]
     out += check_identity(app)
     out += check_signatures(app)
     out += check_bundled_deps(app)
     out += check_excluded(app)
     out += check_runtime_data(app)
+    for check in out:
+        check.detail = portable(str(check.detail), app)
     return out
 
 

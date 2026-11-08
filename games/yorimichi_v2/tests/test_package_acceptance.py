@@ -141,3 +141,10 @@ def test_failed_item_and_multiplayer_stay_required(tmp_path, tools):
 def test_unknown_item_is_refused(tmp_path, tools):
     with pytest.raises(SystemExit):
         acceptance.record(make_app(tmp_path), tmp_path / 'e.json', 'vibes', 'pass', '', reset=False)
+
+
+def test_check_details_name_the_bundle_not_its_folder(tmp_path):
+    """Shareable evidence carries no extraction folder or home path (CONTRACTS yorimichi-v2-portable-records)."""
+    app = tmp_path / 'deep' / 'YorimichiV2.app'
+    text = f'{app}/Contents/MacOS/YorimichiV2: code object is not signed; {Path.home()}/x'
+    assert acceptance.portable(text, app) == 'YorimichiV2.app/Contents/MacOS/YorimichiV2: code object is not signed; ~/x'
