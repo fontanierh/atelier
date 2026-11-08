@@ -161,3 +161,13 @@ Donor `7eec0f98dd` (desktop profile) and V2 `1d9ac65d77` (`jim5/yv2-statics-run`
 
 Result: 53 of 54 poses at SSIM >= 0.75; the one below is the ferry's schedule position.
 
+**Unfinished views.** Eight first-run V2 shots still showed "Preparing Static Meshes (N)" (w05 far east, w09 Brine Cove
+ferry, w11 Mega Park overview, w12 volcano west flank, w13 Ronin camp, w18 gondola Belmonte station, w19 zeppelin
+Hidamari), several of them passing on score. A score is no proof that a view finished, so V2 captures now also wait,
+after the settle, until `YorimichiLive.PendingAssetCompiles()` is 0, refuse a pose still compiling 300 s later, and
+record each pose's extra wait in the receipt (`compile_waits_s`; the donor has no such verb). Those eight, recaptured on
+both games with the revised poses at 30 s: no message in any V2 shot, no extra wait needed, six pass at 0.85 to 0.98.
+The teahouse and Ronin camp views scored 0.72 and 0.73 in this run, against 0.81 and 0.76 in the previous one: the
+hamlet, its houses, paths and trees match, and the near canopy's leaves move between frames. Treat those two as
+foliage-limited views around the threshold, not as content differences.
+
