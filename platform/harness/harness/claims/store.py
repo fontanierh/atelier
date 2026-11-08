@@ -336,10 +336,11 @@ class Store:
                                   'task': row['task'], 'principal': row['principal'], 'state': row['state']})
         return found
 
-    def _base_check(self, target_branch, base, items):
-        """Remote read outside the lock: target head and every changed claimed/read path since base."""
+    def _base_check(self, target_branch, base, items, head=None):
+        """Remote read outside the lock: target head (or the one the caller just read) and every changed
+        claimed/read path since base."""
         try:
-            head = self.git.head(target_branch)
+            head = head or self.git.head(target_branch)
             if not self.git.is_ancestor(base, head):
                 refuse('stale_base', f'base {base} is not part of {target_branch} at {head}; update the workspace',
                        head=head)
@@ -537,14 +538,16 @@ class Store:
                         row['task'], claim, {'target_head': head, 'locks': {l['path']: l['lock_id'] for l in locks}})
             return self._claim_view(db, claim)
 
-    def _lock_problems(self, locks, account):
+    def _lock_problems(self, locks, account, listed=None):
         """Remote read: each recorded lock must be on the remote with its path, ID and the claimant's account.
-        Raises (fail closed) when the LFS server cannot be asked."""
+        `listed` is a full listing the caller read for this same check. Raises (fail closed) when the LFS server
+        cannot be asked."""
         problems = []
         try:
             # Many locks: one listing of the remote's locks (paginated), not one request per lock. Either way each
             # recorded lock is read from the remote now.
-            listed = self.lfs.locks() if len(locks) > LIST_ALL_LOCKS_ABOVE else None
+            if listed is None and len(locks) > LIST_ALL_LOCKS_ABOVE:
+                listed = self.lfs.locks()
             for lock in locks:
                 found = listed if listed is not None else self.lfs.locks(path=lock['path']) if lock['lock_id'] else []
                 remote = [l for l in found if l.id == lock['lock_id']] if lock['lock_id'] else []
@@ -848,13 +851,25 @@ class Store:
         result = {'service': 'ready' if ready else 'reconciling', 'task': task, 'status': view['status'], 'claims': claims}
         if not ready:
             return result
-        for c in claims:
-            if c['state'] != 'active':
-                continue
-            problems = self._lock_problems(c['locks'], accounts[c['id']])
+        active = [c for c in claims if c['state'] == 'active']
+        # One remote read per check, shared by its claims: a task of many claims costs one lock listing and one
+        # target-branch fetch, not one of each per claim. Every lock and base is still read from the remotes now.
+        listed, head = None, None
+        if sum(len(c['locks']) for c in active) > LIST_ALL_LOCKS_ABOVE:
+            try:
+                listed = self.lfs.locks()
+            except Unavailable as error:
+                refuse('lfs_unavailable', f'cannot verify LFS locks: {error}', 503)
+        if len(active) > 1:
+            try:
+                head = self.git.head(view['target_branch'])
+            except Unavailable as error:
+                refuse('git_unavailable', f'cannot verify the base revision: {error}', 503)
+        for c in active:
+            problems = self._lock_problems(c['locks'], accounts[c['id']], listed)
             items = [(i['kind'], i['value']) for i in c['items'] if i['kind'] != 'scope']
             try:
-                self._base_check(view['target_branch'], c['base_revision'], items + reads)
+                self._base_check(view['target_branch'], c['base_revision'], items + reads, head)
             except ClaimError as error:
                 if error.code != 'stale_base':
                     raise
