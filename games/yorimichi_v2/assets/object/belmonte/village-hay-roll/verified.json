@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/village-hay-roll",
+  "dependencies": {
+    "adopted/belmonte/village-hay-roll": "ae74173325a63fbaae9978e7fdbca647b7c091775a6f57eb02927ee3d2999b0c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/BX/7FMVOZLU5K1WSGZW1UY0Q7.uasset": "bf16d47902b9abef473eb377fa188455861406c3b4f59248750ad65f18a90672"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

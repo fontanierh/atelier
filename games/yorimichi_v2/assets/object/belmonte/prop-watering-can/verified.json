@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-watering-can",
+  "dependencies": {
+    "adopted/belmonte/prop-watering-can": "f6812f6277d45db847a32efbfe1298721732d858c5f8b98e929bd1285a11591d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/3V/HGTFX76G5WFI1IBE8HNX9H.uasset": "2dfb059b891f7565e81195e3188ecfc052f63a2030c9c5e5af751ba51b356c07"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

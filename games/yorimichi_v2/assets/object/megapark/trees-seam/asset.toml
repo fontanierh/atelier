@@ -1,0 +1,12 @@
+# One saved object of region/w11-megapark (tools/migrate/objects.py, from its objects.toml): the trees and bushes of the Mega Park seam meshes joining the park to the zeppelin footbridge.
+# Its placement is this actor package; its model is adopted/japan/assets/bush, adopted/japan/assets/tree-cedar, adopted/japan/assets/tree-ginkgo, adopted/japan/assets/tree-maple, adopted/japan/assets/tree-pine. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/megapark/trees-seam"
+kind = "placement"
+authority = "editor"
+owner = "region/w11-megapark"
+references = ["adopted/japan/assets/bush", "adopted/japan/assets/tree-cedar", "adopted/japan/assets/tree-ginkgo", "adopted/japan/assets/tree-maple", "adopted/japan/assets/tree-pine"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/J6/22ZKZEO43FMQVZ8VW59NPW"

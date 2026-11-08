@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/rocks-3-5",
+  "dependencies": {
+    "adopted/brinecove/rocks-3-5": "8907d8e00fe2e012cdbc7c4afae42e4aa137333fcce2cc88bdd9cd595ab519b9"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/5B/CS8V3MW6U4E2OA8SV1ZD9F.uasset": "093955b5d9631e12c35abf6743b696630ff4572c1ca01d6f4799f944ea9ef835"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

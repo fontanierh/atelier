@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/ships-nightjar-sloop",
+  "dependencies": {
+    "adopted/brinecove/ships-nightjar-sloop": "9c56621c8e832cfe83d5db3bd2ef39e5fc8c6c8cfe0bb6e7cb5746a8078a134e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/RH/QSB99NGEX27RF32C1SHDZ7.uasset": "195c98e492d1ed85f6a520d264fa39640bd6deb50616245dc1454bbf39d55a08"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

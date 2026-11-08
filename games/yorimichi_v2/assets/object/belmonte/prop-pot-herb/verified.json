@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-pot-herb",
+  "dependencies": {
+    "adopted/belmonte/prop-pot-herb": "d3154b017fdca0e79423db4e53c0038ca3e83063239600dba35bcfd3f7ea274a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/M7/V978GKCERZ43A2NDJ316DQ.uasset": "f0c81bce777d0ac9f9db05c423166d298d1377baad6f0be3913a431ee234adec"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,31 @@
+# Ronin camp objects (split entries for the editor's objects.toml, see tools/migrate/objects.py).
+# Source: SwordTrainer::SpawnRoninCamp places four static props (SM_Camp*, /Game/SwordCamp/Assets) at the camp centre
+# (-54, -94) by SwordTrainer::FindRoninCampProp's table, each on the ground under it. The camp's Kasa Ronin and the
+# combat trainers stay runtime. The camp's instanced trees are cleared only at runtime (15.5 m); see docs/DECISIONS.md D10.
+schema = 1
+tag = "swordcamp"
+data = ""
+
+[[objects]]
+id = "object/swordcamp/fire-pit"
+static = ["SM_CampFirePit"]
+model = "adopted/swordcamp/assets"
+about = "the Ronin camp's fire pit, at the camp centre, by which the camp captain sits"
+
+[[objects]]
+id = "object/swordcamp/jinmaku"
+static = ["SM_CampJinmaku"]
+model = "adopted/swordcamp/assets"
+about = "the Ronin camp's jinmaku curtain, about six metres behind the fire, away from the road"
+
+[[objects]]
+id = "object/swordcamp/weapon-rack"
+static = ["SM_CampWeaponRack"]
+model = "adopted/swordcamp/assets"
+about = "the Ronin camp's weapon rack, beside the fire on its left, a little behind it"
+
+[[objects]]
+id = "object/swordcamp/bales"
+static = ["SM_CampBales"]
+model = "adopted/swordcamp/assets"
+about = "the Ronin camp's straw bales, behind and to the right of the fire"

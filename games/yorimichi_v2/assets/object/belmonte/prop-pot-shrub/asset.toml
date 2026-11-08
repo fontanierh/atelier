@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte prop-pot-shrub (1 group).
+# Its placement is this actor package; its model is adopted/belmonte/prop-pot-shrub. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/prop-pot-shrub"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/prop-pot-shrub"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/3/P4/HQ4LSQSX3QH5FP7EAR2MZT"

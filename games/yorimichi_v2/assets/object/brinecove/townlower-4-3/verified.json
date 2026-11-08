@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/townlower-4-3",
+  "dependencies": {
+    "adopted/brinecove/townlower-4-3": "73717454d152d5577ef92d8cc32d8ecc53b75679d06d9f23f3794294d6ae9c80"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/UI/HVVFGKJ8H6BV47RL47ZKUZ.uasset": "6aa9c9dcda5c6680f240cd8b2052abd13c0b1faa2b0b42db670b9c3777f978a1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

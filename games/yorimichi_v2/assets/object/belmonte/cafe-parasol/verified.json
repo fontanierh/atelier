@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/cafe-parasol",
+  "dependencies": {
+    "adopted/belmonte/cafe-parasol": "072711f7deba4ef5cd369d9135636c6ef35047b405fd21d7e367efe546b157ae"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/I2/ZYA4C9KEK7ZG1C5T187URS.uasset": "c3ce86cda8cad0fed7b8a1d61be81397e4b99bb4e83277d8dcf9c009db836fc8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

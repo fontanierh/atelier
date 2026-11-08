@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-cover-leaf-m5-m2",
+  "dependencies": {
+    "adopted/brinecove/plant-cover-leaf": "4ff3459b1868c1a89bce301b6c44061c929e1392d3ee4509c2f767a813d3d80e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/I9/HOZ6AHO1C4SOH5KLXIMHTT.uasset": "a26cb5d8dc1af3c2e5cfc6c874339c5503e79c07f5c818e152f0c593a496b5b5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

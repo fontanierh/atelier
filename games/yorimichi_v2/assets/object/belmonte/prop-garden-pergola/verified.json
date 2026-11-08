@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-garden-pergola",
+  "dependencies": {
+    "adopted/belmonte/prop-garden-pergola": "8397ccab9d08b8db9d16b2d828cab3c7cd3ca6feb30cc14ae20b6deed50631c1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/NY/FAO1D48QOX8BF0LS4IYYGE.uasset": "ca6e7f8d69f5afebcbad9cae6e55a963eac03857be6a53f928ee6ffe31f93407"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

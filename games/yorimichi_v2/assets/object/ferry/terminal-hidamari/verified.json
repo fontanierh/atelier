@@ -1,0 +1,12 @@
+{
+  "asset": "object/ferry/terminal-hidamari",
+  "dependencies": {
+    "adopted/ferry/terminal-hidamari": "6db25bb6bda442022cf3e03b8da643ef5e122a5394134c4b520a215b6a50c16f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/VJ/N659XFPCVOT3AT21Q3BQ0K.uasset": "af902404fca04446be0795550a0f68d9d8105f0aa2fd90f1dff9859805163571"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove townlower-5-3 (2 groups).
+# Its placement is this actor package; its model is adopted/brinecove/townlower-5-3. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/townlower-5-3"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["adopted/brinecove/townlower-5-3"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/32/BD3A4R4OATURKS9A3MKUK1"

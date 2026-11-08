@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-quay-wall",
+  "dependencies": {
+    "adopted/belmonte/civil-quay-wall": "19288cb64201ea276ac1779b3ea57dfe751d9f43c49662dbb6f222e52b8a1b5c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/HC/C7LH8ILOYDG4WF6SNMP45D.uasset": "d2f1596991cf36ba147aa0270d33db695e51f0d72275d103b8540d85e12863cf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

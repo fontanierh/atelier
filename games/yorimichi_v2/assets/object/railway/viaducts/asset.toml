@@ -1,0 +1,12 @@
+# One saved object of region/w20-railway (tools/migrate/objects.py, from its objects.toml): the seven viaduct sections.
+# Its placement is this actor package; its model is adopted/belmontetrack/viaducts. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/railway/viaducts"
+kind = "placement"
+authority = "editor"
+owner = "region/w20-railway"
+references = ["adopted/belmontetrack/viaducts"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/D/EU/X45W5C4AKVZWB8YBNDJ30B"

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-finish-post",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-finish-post": "013cb601738a3d05841aa47742f409136cbbcdc315220d7ca599ee56cfc241f0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/SB/ZIGYRZDPMKHIUEQBSFTG1P.uasset": "41c9aeb4dde751b6a925f1b4e110f3c074d954e355e990f3e0069fb685a2fb51"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

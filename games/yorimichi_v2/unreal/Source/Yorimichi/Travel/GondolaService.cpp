@@ -18,6 +18,8 @@
 #include "HAL/IConsoleManager.h"
 #include "Math/RotationMatrix.h"
 #include "Misc/Paths.h"
+#include "Misc/PackageName.h"
+#include "V2ScenePatch.h"
 #include "Net/UnrealNetwork.h"
 #include "Serialization/JsonSerializer.h"
 
@@ -133,13 +135,28 @@ void AGondolaService::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 UStaticMeshComponent* AGondolaService::MeshPart(const FString& Name,const FString& Path,bool Collision,bool Movable)
 {
+    auto* C=MakeMeshPart(this,RootComponent,Name,Path,Collision,Movable);if(!C)return nullptr;
+    Components.Add(C);if(Movable)C->RegisterComponent();return C;
+}
+
+UStaticMeshComponent* AGondolaService::MakeMeshPart(UObject* Outer,USceneComponent* Parent,const FString& Name,const FString& Path,bool Collision,bool Movable)
+{
     auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);if(!Mesh){UE_LOG(LogTemp,Error,TEXT("GONDOLA missing mesh %s"),*Path);return nullptr;}
-    auto* C=NewObject<UStaticMeshComponent>(this,*Name);C->SetupAttachment(RootComponent);
+    auto* C=NewObject<UStaticMeshComponent>(Outer,*Name);C->SetupAttachment(Parent);
     C->SetMobility(Movable?EComponentMobility::Movable:EComponentMobility::Static);C->SetStaticMesh(Mesh);
     C->SetCollisionEnabled(Collision?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
     C->SetCollisionObjectType(Movable?ECC_Vehicle:ECC_WorldStatic);C->SetGenerateOverlapEvents(false);
     C->SetCanEverAffectNavigation(false);C->SetAffectDistanceFieldLighting(false);C->SetNetAddressable();
-    C->PrimaryComponentTick.bCanEverTick=false;Components.Add(C);if(Movable)C->RegisterComponent();return C;
+    C->PrimaryComponentTick.bCanEverTick=false;return C;
+}
+
+UStaticMeshComponent* AGondolaService::MakeStatic(UObject* Outer,USceneComponent* Parent,const TSharedPtr<FJsonObject>& R)
+{
+    const FString Name=R->GetStringField(TEXT("name"));
+    auto* C=MakeMeshPart(Outer,Parent,Name,R->GetStringField(TEXT("mesh")),R->GetBoolField(TEXT("collision")),false);if(!C)return nullptr;
+    C->SetWorldLocationAndRotation(Vector(R->GetArrayField(TEXT("location_cm"))),FRotator(0,R->GetNumberField(TEXT("yaw")),0));
+    if(Name.EndsWith(TEXT("_Collision")))C->SetVisibility(false);
+    return C;
 }
 
 void AGondolaService::BuildCabinSeats(const FVector& CabinSize,float CabinFloorZ,TArray<FSeat>& OutSeats)
@@ -166,13 +183,24 @@ bool AGondolaService::Initialize(const FString& Path)
     for(const auto& V:Root->GetArrayField(TEXT("lines")))
     {FGondolaLine L;if(!L.Parse(V->AsObject()))return false;Lines.Add(MoveTemp(L));}
     if(Lines.Num()!=3)return false;
+    // A static entry a saved unit holds (UV2MigrationTravel::MigrateGondolaStatics) is not built again: the map's manifest lists
+    // it as "gondola:<name>", and its mesh must still be committed content.
+    const AV2WorldManifest* Manifest=AV2WorldManifest::Find(GetWorld());
+    int32 Saved=0;
     for(const auto& V:Root->GetArrayField(TEXT("static")))
     {
         const auto R=V->AsObject();if(!R)return false;
-        const FString Name=R->GetStringField(TEXT("name"));auto* C=MeshPart(Name,R->GetStringField(TEXT("mesh")),R->GetBoolField(TEXT("collision")),false);if(!C)return false;
-        C->SetWorldLocationAndRotation(Vector(R->GetArrayField(TEXT("location_cm"))),FRotator(0,R->GetNumberField(TEXT("yaw")),0));
-        if(Name.EndsWith(TEXT("_Collision")))C->SetVisibility(false);C->RegisterComponent();
+        const FString Name=R->GetStringField(TEXT("name"));
+        if(Manifest&&Manifest->CoversGroup(FName(TEXT("gondola")),Name))
+        {
+            FString Package=R->GetStringField(TEXT("mesh"));int32 Dot=INDEX_NONE;if(Package.FindChar('.',Dot))Package=Package.Left(Dot);
+            if(!FPackageName::DoesPackageExist(Package))UE_LOG(LogTemp,Error,TEXT("GONDOLA saved %s is missing %s"),*Name,*Package);
+            ++Saved;continue;
+        }
+        auto* C=MakeStatic(this,RootComponent,R);if(!C)return false;
+        Components.Add(C);C->RegisterComponent();
     }
+    if(Saved>0)UE_LOG(LogTemp,Display,TEXT("GONDOLA static entries saved as objects: %d"),Saved);
     for(const auto& V:Root->GetArrayField(TEXT("stations")))
     {
         const auto R=V->AsObject();FStation& S=Stations.AddDefaulted_GetRef();S.Id=R->GetStringField(TEXT("id"));

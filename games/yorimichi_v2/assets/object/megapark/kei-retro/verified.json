@@ -1,0 +1,12 @@
+{
+  "asset": "object/megapark/kei-retro",
+  "dependencies": {
+    "prop/megapark/kei-retro": "dfca296c19e3222dd3b2f16a17dc9426bd81a2d96aff8bd6c873f3339cfb42c4"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/1Z/Z260TNKI8BKX1D3U0IMHM3.uasset": "d1f2f25733943f143d792574c0cdadef521b10c7c9fe3a329219c72c9246ba5b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

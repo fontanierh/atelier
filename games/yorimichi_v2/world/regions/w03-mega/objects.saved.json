@@ -1,0 +1,17 @@
+{
+  "objects": {
+    "object/megaramp/ramp": {
+      "groups": [],
+      "id": "object/megaramp/ramp",
+      "model": "adopted/japan/assets/mega-park-pieces",
+      "models": [
+        "adopted/japan/assets/mega-park-pieces"
+      ],
+      "static": [
+        "Mega_Ramp",
+        "Mega_Trim"
+      ]
+    }
+  },
+  "schema": 1
+}

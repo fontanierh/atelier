@@ -1,0 +1,381 @@
+{
+  "objects": {
+    "object/railway/banks": {
+      "groups": [],
+      "id": "object/railway/banks",
+      "model": "adopted/belmontetrack/banks",
+      "models": [
+        "adopted/belmontetrack/banks"
+      ],
+      "route": [
+        "SM_TK_Bank_00",
+        "SM_TK_Bank_01",
+        "SM_TK_Bank_02",
+        "SM_TK_Bank_03",
+        "SM_TK_Bank_04"
+      ]
+    },
+    "object/railway/chunks-0-19": {
+      "groups": [],
+      "id": "object/railway/chunks-0-19",
+      "model": [
+        "adopted/belmontetrack/chunks-0-19",
+        "adopted/belmontetrack/track-small"
+      ],
+      "models": [
+        "adopted/belmontetrack/chunks-0-19",
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Chunk_00",
+        "SM_TK_Chunk_01",
+        "SM_TK_Chunk_02",
+        "SM_TK_Chunk_03",
+        "SM_TK_Chunk_04",
+        "SM_TK_Chunk_05",
+        "SM_TK_Chunk_06",
+        "SM_TK_Chunk_07",
+        "SM_TK_Chunk_08",
+        "SM_TK_Chunk_09",
+        "SM_TK_Chunk_10",
+        "SM_TK_Chunk_11",
+        "SM_TK_Chunk_12",
+        "SM_TK_Chunk_13",
+        "SM_TK_Chunk_14",
+        "SM_TK_Chunk_15",
+        "SM_TK_Chunk_16",
+        "SM_TK_Chunk_17",
+        "SM_TK_Chunk_18",
+        "SM_TK_Chunk_19",
+        "SM_TK_Sleeper#0",
+        "SM_TK_Sleeper#1",
+        "SM_TK_Sleeper#2",
+        "SM_TK_Sleeper#3",
+        "SM_TK_Sleeper#4",
+        "SM_TK_Sleeper#5",
+        "SM_TK_Sleeper#6",
+        "SM_TK_Sleeper#7",
+        "SM_TK_Sleeper#8",
+        "SM_TK_Sleeper#9",
+        "SM_TK_Sleeper#10",
+        "SM_TK_Sleeper#11",
+        "SM_TK_Sleeper#12",
+        "SM_TK_Sleeper#13",
+        "SM_TK_Sleeper#14",
+        "SM_TK_Sleeper#15",
+        "SM_TK_Sleeper#16",
+        "SM_TK_Sleeper#17",
+        "SM_TK_Sleeper#18",
+        "SM_TK_Sleeper#19"
+      ]
+    },
+    "object/railway/chunks-20-39": {
+      "groups": [],
+      "id": "object/railway/chunks-20-39",
+      "model": [
+        "adopted/belmontetrack/chunks-20-39",
+        "adopted/belmontetrack/track-small"
+      ],
+      "models": [
+        "adopted/belmontetrack/chunks-20-39",
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Chunk_20",
+        "SM_TK_Chunk_21",
+        "SM_TK_Chunk_22",
+        "SM_TK_Chunk_23",
+        "SM_TK_Chunk_24",
+        "SM_TK_Chunk_25",
+        "SM_TK_Chunk_26",
+        "SM_TK_Chunk_27",
+        "SM_TK_Chunk_28",
+        "SM_TK_Chunk_29",
+        "SM_TK_Chunk_30",
+        "SM_TK_Chunk_31",
+        "SM_TK_Chunk_32",
+        "SM_TK_Chunk_33",
+        "SM_TK_Chunk_34",
+        "SM_TK_Chunk_35",
+        "SM_TK_Chunk_36",
+        "SM_TK_Chunk_37",
+        "SM_TK_Chunk_38",
+        "SM_TK_Chunk_39",
+        "SM_TK_Sleeper#20",
+        "SM_TK_Sleeper#21",
+        "SM_TK_Sleeper#22",
+        "SM_TK_Sleeper#23",
+        "SM_TK_Sleeper#24",
+        "SM_TK_Sleeper#25",
+        "SM_TK_Sleeper#26",
+        "SM_TK_Sleeper#27",
+        "SM_TK_Sleeper#28",
+        "SM_TK_Sleeper#29",
+        "SM_TK_Sleeper#30",
+        "SM_TK_Sleeper#31",
+        "SM_TK_Sleeper#32",
+        "SM_TK_Sleeper#33",
+        "SM_TK_Sleeper#34",
+        "SM_TK_Sleeper#35",
+        "SM_TK_Sleeper#36",
+        "SM_TK_Sleeper#37",
+        "SM_TK_Sleeper#38",
+        "SM_TK_Sleeper#39"
+      ]
+    },
+    "object/railway/chunks-40-59": {
+      "groups": [],
+      "id": "object/railway/chunks-40-59",
+      "model": [
+        "adopted/belmontetrack/chunks-40-59",
+        "adopted/belmontetrack/track-small"
+      ],
+      "models": [
+        "adopted/belmontetrack/chunks-40-59",
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Chunk_40",
+        "SM_TK_Chunk_41",
+        "SM_TK_Chunk_42",
+        "SM_TK_Chunk_43",
+        "SM_TK_Chunk_44",
+        "SM_TK_Chunk_45",
+        "SM_TK_Chunk_46",
+        "SM_TK_Chunk_47",
+        "SM_TK_Chunk_48",
+        "SM_TK_Chunk_49",
+        "SM_TK_Chunk_50",
+        "SM_TK_Chunk_51",
+        "SM_TK_Chunk_52",
+        "SM_TK_Chunk_53",
+        "SM_TK_Chunk_54",
+        "SM_TK_Chunk_55",
+        "SM_TK_Chunk_56",
+        "SM_TK_Chunk_57",
+        "SM_TK_Chunk_58",
+        "SM_TK_Chunk_59",
+        "SM_TK_Sleeper#40",
+        "SM_TK_Sleeper#41",
+        "SM_TK_Sleeper#42",
+        "SM_TK_Sleeper#43",
+        "SM_TK_Sleeper#44",
+        "SM_TK_Sleeper#45",
+        "SM_TK_Sleeper#46",
+        "SM_TK_Sleeper#47",
+        "SM_TK_Sleeper#48",
+        "SM_TK_Sleeper#49",
+        "SM_TK_Sleeper#50",
+        "SM_TK_Sleeper#51",
+        "SM_TK_Sleeper#52",
+        "SM_TK_Sleeper#53",
+        "SM_TK_Sleeper#54",
+        "SM_TK_Sleeper#55",
+        "SM_TK_Sleeper#56",
+        "SM_TK_Sleeper#57",
+        "SM_TK_Sleeper#58",
+        "SM_TK_Sleeper#59"
+      ]
+    },
+    "object/railway/chunks-60-79": {
+      "groups": [],
+      "id": "object/railway/chunks-60-79",
+      "model": [
+        "adopted/belmontetrack/chunks-60-79",
+        "adopted/belmontetrack/track-small"
+      ],
+      "models": [
+        "adopted/belmontetrack/chunks-60-79",
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Chunk_60",
+        "SM_TK_Chunk_61",
+        "SM_TK_Chunk_62",
+        "SM_TK_Chunk_63",
+        "SM_TK_Chunk_64",
+        "SM_TK_Chunk_65",
+        "SM_TK_Chunk_66",
+        "SM_TK_Chunk_67",
+        "SM_TK_Chunk_68",
+        "SM_TK_Chunk_69",
+        "SM_TK_Chunk_70",
+        "SM_TK_Chunk_71",
+        "SM_TK_Chunk_72",
+        "SM_TK_Chunk_73",
+        "SM_TK_Chunk_74",
+        "SM_TK_Chunk_75",
+        "SM_TK_Chunk_76",
+        "SM_TK_Chunk_77",
+        "SM_TK_Chunk_78",
+        "SM_TK_Chunk_79",
+        "SM_TK_Sleeper#60",
+        "SM_TK_Sleeper#61",
+        "SM_TK_Sleeper#62",
+        "SM_TK_Sleeper#63",
+        "SM_TK_Sleeper#64",
+        "SM_TK_Sleeper#65",
+        "SM_TK_Sleeper#66",
+        "SM_TK_Sleeper#67",
+        "SM_TK_Sleeper#68",
+        "SM_TK_Sleeper#69",
+        "SM_TK_Sleeper#70",
+        "SM_TK_Sleeper#71",
+        "SM_TK_Sleeper#72",
+        "SM_TK_Sleeper#73",
+        "SM_TK_Sleeper#74",
+        "SM_TK_Sleeper#75",
+        "SM_TK_Sleeper#76",
+        "SM_TK_Sleeper#77",
+        "SM_TK_Sleeper#78",
+        "SM_TK_Sleeper#79"
+      ]
+    },
+    "object/railway/loop": {
+      "groups": [],
+      "id": "object/railway/loop",
+      "model": "adopted/belmontetrack/loop",
+      "models": [
+        "adopted/belmontetrack/loop"
+      ],
+      "route": [
+        "SM_TK_Loop"
+      ]
+    },
+    "object/railway/overbridge": {
+      "groups": [],
+      "id": "object/railway/overbridge",
+      "model": "adopted/belmontetrack/overbridge",
+      "models": [
+        "adopted/belmontetrack/overbridge"
+      ],
+      "route": [
+        "SM_ST_Overbridge"
+      ]
+    },
+    "object/railway/station-belmonte": {
+      "groups": [],
+      "id": "object/railway/station-belmonte",
+      "model": "adopted/belmontetrack/station-belmonte",
+      "models": [
+        "adopted/belmontetrack/station-belmonte"
+      ],
+      "route": [
+        "SM_ST_Headhouse",
+        "SM_ST_Sheds",
+        "SM_ST_Coaches",
+        "SM_ST_Forecourt"
+      ]
+    },
+    "object/railway/track-fittings": {
+      "groups": [],
+      "id": "object/railway/track-fittings",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_BufferStop#",
+        "SM_TK_StopBoard#",
+        "SM_TK_Turnout#",
+        "SM_TK_Portal#"
+      ]
+    },
+    "object/railway/tunnel-spiral": {
+      "groups": [],
+      "id": "object/railway/tunnel-spiral",
+      "model": [
+        "adopted/belmontetrack/tunnel-spiral",
+        "adopted/belmontetrack/track-small"
+      ],
+      "models": [
+        "adopted/belmontetrack/tunnel-spiral",
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Tunnel_Spiral_00",
+        "SM_TK_Tunnel_Spiral_01",
+        "SM_TK_Tunnel_Spiral_02",
+        "SM_TK_Tunnel_Spiral_03",
+        "SM_TK_Tunnel_Spiral_04",
+        "SM_TK_Tunnel_Spiral_05",
+        "SM_TK_Tunnel_Spiral_06",
+        "SM_TK_Tunnel_Spiral_07",
+        "SM_TK_Tunnel_Spiral_08",
+        "SM_TK_Tunnel_Spiral_09",
+        "SM_TK_Tunnel_Spiral_10",
+        "SM_TK_Tunnel_Spiral_11",
+        "SM_TK_Tunnel_Spiral_12",
+        "SM_TK_Tunnel_Spiral_13",
+        "SM_TK_Tunnel_Spiral_14",
+        "SM_TK_Tunnel_Spiral_15",
+        "SM_TK_Tunnel_Spiral_16",
+        "SM_TK_Tunnel_Spiral_17",
+        "SM_TK_Tunnel_Spiral_18",
+        "SM_TK_Tunnel_Spiral_19",
+        "SM_TK_Tunnel_Spiral_20",
+        "SM_TK_Tunnel_Spiral_21",
+        "SM_TK_Tunnel_Spiral_22",
+        "SM_TK_Tunnel_Spiral_23",
+        "SM_TK_Tunnel_Spiral_24",
+        "SM_TK_Tunnel_Spiral_25",
+        "SM_TK_TunnelLamp#Spiral"
+      ]
+    },
+    "object/railway/tunnel-t1": {
+      "groups": [],
+      "id": "object/railway/tunnel-t1",
+      "model": [
+        "adopted/belmontetrack/tunnel-t1",
+        "adopted/belmontetrack/track-small"
+      ],
+      "models": [
+        "adopted/belmontetrack/tunnel-t1",
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Tunnel_T1_00",
+        "SM_TK_Tunnel_T1_01",
+        "SM_TK_Tunnel_T1_02",
+        "SM_TK_Tunnel_T1_03",
+        "SM_TK_TunnelLamp#T1"
+      ]
+    },
+    "object/railway/tunnel-t2": {
+      "groups": [],
+      "id": "object/railway/tunnel-t2",
+      "model": [
+        "adopted/belmontetrack/tunnel-t2",
+        "adopted/belmontetrack/track-small"
+      ],
+      "models": [
+        "adopted/belmontetrack/tunnel-t2",
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Tunnel_T2_00",
+        "SM_TK_Tunnel_T2_01",
+        "SM_TK_Tunnel_T2_02",
+        "SM_TK_TunnelLamp#T2"
+      ]
+    },
+    "object/railway/viaducts": {
+      "groups": [],
+      "id": "object/railway/viaducts",
+      "model": "adopted/belmontetrack/viaducts",
+      "models": [
+        "adopted/belmontetrack/viaducts"
+      ],
+      "route": [
+        "SM_TK_Viaduct_00",
+        "SM_TK_Viaduct_01",
+        "SM_TK_Viaduct_10",
+        "SM_TK_Viaduct_11",
+        "SM_TK_Viaduct_12",
+        "SM_TK_Viaduct_13",
+        "SM_TK_Viaduct_20"
+      ]
+    }
+  },
+  "schema": 1
+}

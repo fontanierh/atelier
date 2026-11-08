@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/trees-crater-floor-5-4",
+  "dependencies": {
+    "adopted/japan/assets/tree-caldera": "fe1f9348001b4c2789fdd5c40e3aa76e5b7898690067db19ca612c8cc21c22a3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/9N/LIPDTK321EF2LZHRYBCV37.uasset": "3b75dacccbd8cc725a17eb9652169cbe060bc769f10ffa5e96c5b8f06fbf2edc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,290 @@
+{
+  "objects": {
+    "object/village/house-a-01": {
+      "groups": [],
+      "id": "object/village/house-a-01",
+      "model": "adopted/japan/assets/house",
+      "models": [
+        "adopted/japan/assets/house"
+      ],
+      "split": {
+        "at": [
+          26.26,
+          -55.58
+        ],
+        "key": "House_A"
+      }
+    },
+    "object/village/house-c-01": {
+      "groups": [],
+      "id": "object/village/house-c-01",
+      "model": "adopted/japan/assets/house",
+      "models": [
+        "adopted/japan/assets/house"
+      ],
+      "split": {
+        "at": [
+          47.76,
+          -19.02
+        ],
+        "key": "House_C"
+      }
+    },
+    "object/village/lantern-01": {
+      "groups": [],
+      "id": "object/village/lantern-01",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          28.15,
+          -46.92
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/village/lantern-02": {
+      "groups": [],
+      "id": "object/village/lantern-02",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          45.12,
+          -27.02
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/village/lantern-03": {
+      "groups": [],
+      "id": "object/village/lantern-03",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          187.45,
+          82.99
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/village/lantern-04": {
+      "groups": [],
+      "id": "object/village/lantern-04",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          189.99,
+          77.55
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/village/pole-01": {
+      "groups": [],
+      "id": "object/village/pole-01",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          35.3,
+          -33.01
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/village/pole-02": {
+      "groups": [],
+      "id": "object/village/pole-02",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          64.93,
+          -26.51
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/village/pole-03": {
+      "groups": [],
+      "id": "object/village/pole-03",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          124.74,
+          -21.6
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/village/pole-04": {
+      "groups": [],
+      "id": "object/village/pole-04",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          153.21,
+          -14.45
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/village/pole-05": {
+      "groups": [],
+      "id": "object/village/pole-05",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          207.14,
+          9.04
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/village/pole-06": {
+      "groups": [],
+      "id": "object/village/pole-06",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          232.28,
+          25.21
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/village/pole-lamp-01": {
+      "groups": [],
+      "id": "object/village/pole-lamp-01",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          6.21,
+          -41.77
+        ],
+        "key": "Pole_Lamp"
+      }
+    },
+    "object/village/pole-lamp-02": {
+      "groups": [],
+      "id": "object/village/pole-lamp-02",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          95.38,
+          -23.65
+        ],
+        "key": "Pole_Lamp"
+      }
+    },
+    "object/village/pole-lamp-03": {
+      "groups": [],
+      "id": "object/village/pole-lamp-03",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          180.98,
+          -4.26
+        ],
+        "key": "Pole_Lamp"
+      }
+    },
+    "object/village/torii-01": {
+      "groups": [],
+      "id": "object/village/torii-01",
+      "model": "adopted/japan/assets/torii",
+      "models": [
+        "adopted/japan/assets/torii"
+      ],
+      "split": {
+        "at": [
+          186,
+          79
+        ],
+        "key": "Torii"
+      }
+    },
+    "object/village/village-sign-01": {
+      "groups": [],
+      "id": "object/village/village-sign-01",
+      "model": "adopted/experiments/villageatomic",
+      "models": [
+        "adopted/experiments/villageatomic"
+      ],
+      "split": {
+        "at": [
+          90.1,
+          -22.4
+        ],
+        "key": "Village_Sign"
+      }
+    },
+    "object/village/village-sign-02": {
+      "groups": [],
+      "id": "object/village/village-sign-02",
+      "model": "adopted/experiments/villageatomic",
+      "models": [
+        "adopted/experiments/villageatomic"
+      ],
+      "split": {
+        "at": [
+          118,
+          106
+        ],
+        "key": "Village_Sign"
+      }
+    },
+    "object/village/village-threshold-01": {
+      "groups": [],
+      "id": "object/village/village-threshold-01",
+      "model": "adopted/experiments/villageatomic",
+      "models": [
+        "adopted/experiments/villageatomic"
+      ],
+      "split": {
+        "at": [
+          125.803,
+          107.863
+        ],
+        "key": "Village_Threshold"
+      }
+    }
+  },
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-water-foam",
+  "dependencies": {
+    "adopted/belmonte/civil-water-foam": "6ac9b93c9da0ef975d36813edbe1e7f079cdc8651b48142d3bdcbf43aca45208"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/5M/2AV9E8O7M46WD2H0Y4OX1D.uasset": "566fe271ed0edd91b83a196e5ade181d58ebdb122b30bb50376ea958dfa670a1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

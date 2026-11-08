@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte prop-stall-a (1 group).
+# Its placement is this actor package; its model is adopted/belmonte/prop-stall-a. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/prop-stall-a"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/prop-stall-a"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/67/DL64DSTLMRNM8JDAUFBKV4"

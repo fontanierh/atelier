@@ -1,0 +1,12 @@
+# W20 railway: the Belmonte track (unreal/Content/Data/belmonte_track/track.json: 131 pieces and 87 instanced groups;
+# BelmonteTrack.cpp). Units are the adopted belmontetrack records; the small track parts (buffer stops, stop boards, turnouts,
+# portals) are one group each, so they are one object. Sleepers join the chunk run of their key (key = chunk index).
+# Tunnel volumes, lights, exposure boxes and the train stay runtime.
+# Bounds: the track's own footprint (its pieces and instances), 20 m margin, Unreal cm.
+schema = 1
+id = "region/w20-railway"
+about = "The Belmonte railway: its track, station and tunnels (the train service stays runtime)"
+bounds_cm = [80340, -470928, 304856, -28180]
+neighbours = ["region/w16-belmonte"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

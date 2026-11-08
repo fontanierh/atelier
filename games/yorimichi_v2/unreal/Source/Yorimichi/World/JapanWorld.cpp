@@ -39,6 +39,7 @@
 #include "GullFlock.h"
 #include "VillageLife.h"
 #include "MegaRamp.h"
+#include "V2MigrationMisc.h"
 #include "SkatePark.h"
 #include "SuperUltraMegaPark.h"
 #include "CraterCloud.h"
@@ -845,9 +846,15 @@ void AJapanWorld::Load()
     if (!ServiceRuns(TEXT("MegaRamp"))) {}
     else if(Root->TryGetObjectField(TEXT("mega"),Mega))
     {
-        auto* Ramp=GetWorld()->SpawnActor<AMegaRamp>();
-        if (Ramp) Ramp->Initialize(*Mega);
-        if (!Ramp || !Ramp->bGameplayReady) Incomplete.Add(TEXT("mini-mega"));
+        // Saved as the object megaramp/ramp (W03): both meshes stand in the map, so the runtime ramp is not spawned again.
+        const bool bSaved = V2StaticSaved(Manifest, TEXT("mega"), TEXT("Mega_Ramp"), TEXT("/Game/Japan/Assets"))
+            && V2StaticSaved(Manifest, TEXT("mega"), TEXT("Mega_Trim"), TEXT("/Game/Japan/Assets"));
+        if (!bSaved)
+        {
+            auto* Ramp=GetWorld()->SpawnActor<AMegaRamp>();
+            if (Ramp) Ramp->Initialize(*Mega);
+            if (!Ramp || !Ramp->bGameplayReady) Incomplete.Add(TEXT("mini-mega"));
+        }
     }
     else Incomplete.Add(TEXT("mini-mega data"));
     auto InstallPark = [&](const FString& Path, const TCHAR* Label)

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-pave",
+  "dependencies": {
+    "adopted/belmonte/civil-pave": "a9a2777c7a5547470cb5a63dd2cc842d29b67fea93ec92bcd337fb16ac4d594f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/GE/3UI8WJVCACDQTKWUW3N2WS.uasset": "b147d6171aedda0d3be967587cc5de7289c7463362eed159da2c74b20cb40790"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

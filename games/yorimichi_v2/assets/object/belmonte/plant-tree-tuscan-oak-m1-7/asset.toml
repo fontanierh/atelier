@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte plant-tree-tuscan-oak-m1-7 (16 groups).
+# Its placement is this actor package; its model is adopted/japan/assets/tree-tuscan. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/plant-tree-tuscan-oak-m1-7"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/japan/assets/tree-tuscan"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/CQ/NVMXWZ4F6CCITBMHNII94N"

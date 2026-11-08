@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-pot-lavender",
+  "dependencies": {
+    "adopted/belmonte/prop-pot-lavender": "ff008387f8eb26156137cb878cc4fe7abe8c6813263da1f10a1e61f75d5e353a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/W4/T6BIBMA0FHXITMALX7LMU5.uasset": "f756c073f608d4f6747503b3d587a31370e32f59ecbd2efc7f8f8e9c21b06580"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

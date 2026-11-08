@@ -1,0 +1,20 @@
+{
+  "objects": {
+    "object/swterrace/pole-01": {
+      "groups": [],
+      "id": "object/swterrace/pole-01",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -282.53,
+          -92.12
+        ],
+        "key": "Pole"
+      }
+    }
+  },
+  "schema": 1
+}

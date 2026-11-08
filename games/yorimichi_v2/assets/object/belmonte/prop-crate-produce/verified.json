@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-crate-produce",
+  "dependencies": {
+    "adopted/belmonte/prop-crate-produce": "ef21d192ba8f96c61382592b4e0ca91bffce5f2bc8919280d71ccd043702da08"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/1A/80YRRK6MR74DZ6XI4R56PZ.uasset": "4469fc2a905a2f26c7c222e62d308fe2cba4cc8ba53d3b7d49005db06ed04096"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

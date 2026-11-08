@@ -1,0 +1,95 @@
+{
+  "objects": {
+    "object/pier/house-c-01": {
+      "groups": [],
+      "id": "object/pier/house-c-01",
+      "model": "adopted/japan/assets/house",
+      "models": [
+        "adopted/japan/assets/house"
+      ],
+      "split": {
+        "at": [
+          -125.06,
+          -57.36
+        ],
+        "key": "House_C"
+      }
+    },
+    "object/pier/lantern-01": {
+      "groups": [],
+      "id": "object/pier/lantern-01",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -127.77,
+          -65.37
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/pier/pole-01": {
+      "groups": [],
+      "id": "object/pier/pole-01",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -107.53,
+          -65.42
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/pier/pole-02": {
+      "groups": [],
+      "id": "object/pier/pole-02",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -48.45,
+          -65.23
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/pier/pole-03": {
+      "groups": [],
+      "id": "object/pier/pole-03",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -21.51,
+          -54.39
+        ],
+        "key": "Pole"
+      }
+    },
+    "object/pier/pole-lamp-01": {
+      "groups": [],
+      "id": "object/pier/pole-lamp-01",
+      "model": "adopted/japan/assets/pole",
+      "models": [
+        "adopted/japan/assets/pole"
+      ],
+      "split": {
+        "at": [
+          -76.9,
+          -66.56
+        ],
+        "key": "Pole_Lamp"
+      }
+    }
+  },
+  "schema": 1
+}

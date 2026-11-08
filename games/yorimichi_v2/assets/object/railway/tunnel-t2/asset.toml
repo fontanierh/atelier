@@ -1,0 +1,12 @@
+# One saved object of region/w20-railway (tools/migrate/objects.py, from its objects.toml): tunnel T2 linings and its lamps.
+# Its placement is this actor package; its model is adopted/belmontetrack/tunnel-t2, adopted/belmontetrack/track-small. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/railway/tunnel-t2"
+kind = "placement"
+authority = "editor"
+owner = "region/w20-railway"
+references = ["adopted/belmontetrack/tunnel-t2", "adopted/belmontetrack/track-small"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/NG/HJAVWPXWI3VBSV8AVRFPKR"

@@ -1,0 +1,13 @@
+{
+  "asset": "object/gondola/station-floor",
+  "dependencies": {
+    "adopted/gondola/shell-crater": "f84d71e1462333a25282475aa797af4632af54e5cf0ae6df0f74507f33d0bb51",
+    "adopted/gondola/station-floor": "4e5d80842a199d69622cb5c7459c9fdb7503aaf3da5fbd63d91f8e3f99a68766"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/W5/TUFLP1RPI45LL3X5NHKZJ5.uasset": "78714e542252195e9178369a843f5ac2f4861328ae8afda1c42528e012f04592"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

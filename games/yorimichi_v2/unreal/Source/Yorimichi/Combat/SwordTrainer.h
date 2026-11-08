@@ -4,6 +4,7 @@
 #include "SwordTrainer.generated.h"
 
 class AJapanWorld;
+class UWorld;
 class SWidget;
 class FJsonObject;
 class UStaticMeshComponent;
@@ -49,6 +50,12 @@ public:
     static ASwordTrainer* SpawnInVillage(AJapanWorld* World, const TSharedPtr<FJsonObject>& Village);
     /** The coastal bluff Kasa Ronin mini-camp (-54, -94): four procedural camp props and three hostile Kasa Ronin. */
     static void SpawnRoninCamp(AJapanWorld* World);
+    /** One static prop of that camp: its mesh (/Game/SwordCamp/Assets), metres forward (toward the road) and left of the
+     *  camp centre, and its yaw. The saved camp objects (V2MigrationMisc) place their props with the same table. */
+    struct FRoninCampProp { const TCHAR* Mesh; double ForwardM; double LeftM; float YawDeg; };
+    static const FRoninCampProp* FindRoninCampProp(const TCHAR* Mesh);
+    /** Where a camp prop stands (its ground point, UE cm) and its rotation, as SpawnRoninCamp places it. */
+    static FVector RoninCampPropPlacement(UWorld* World, const FRoninCampProp& Prop, FRotator& OutRotation);
     static ASwordTrainer* Find(const UObject* WorldContext);
     /** The player's Interact: talks to her when she is near and free (her menu); false when she is not there. */
     static bool TryInteract(AWandererCharacter* Player);

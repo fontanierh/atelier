@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/emblems",
+  "dependencies": {
+    "adopted/belmonte/emblems": "177b4f6bcb40fe3f21503365e1b436ec6b4101af67d0738b7b5a4071e6e10467"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/X6/RKUOGVHOQ1WPW5V5M0SLF2.uasset": "f501761ce783392f1b6588a28f7269d1d7cb9950f788aa579bd08306fc3590f9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

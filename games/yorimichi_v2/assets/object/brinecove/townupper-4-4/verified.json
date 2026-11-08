@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/townupper-4-4",
+  "dependencies": {
+    "adopted/brinecove/townupper-4-4": "a27d20b463b7e7409f1e38b007ee70da000489dd7ce0908d15a7524f435eaf7a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/1L/FGM7UJ7MM293ZXHFPGKKX2.uasset": "958523fcd89abb0b318dee5397e69591285cc6bb1c9cdeef080f9a05f68ac251"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

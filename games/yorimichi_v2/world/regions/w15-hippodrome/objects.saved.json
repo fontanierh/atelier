@@ -1,0 +1,65 @@
+{
+  "objects": {
+    "object/hippodrome/course": {
+      "groups": [],
+      "id": "object/hippodrome/course",
+      "model": "adopted/hippodrome/loose_files",
+      "models": [
+        "adopted/hippodrome/loose_files"
+      ],
+      "park": [
+        "SM_HD_Ground",
+        "SM_HD_Skirt",
+        "SM_HD_Track",
+        "SM_HD_Rails",
+        "SM_HD_Lane",
+        "SM_HD_LaneSkirt"
+      ]
+    },
+    "object/hippodrome/finish-post": {
+      "groups": [],
+      "id": "object/hippodrome/finish-post",
+      "model": "adopted/hippodrome/loose_files",
+      "models": [
+        "adopted/hippodrome/loose_files"
+      ],
+      "park": [
+        "SM_HD_FinishPost"
+      ]
+    },
+    "object/hippodrome/grandstand": {
+      "groups": [],
+      "id": "object/hippodrome/grandstand",
+      "model": "adopted/hippodrome/loose_files",
+      "models": [
+        "adopted/hippodrome/loose_files"
+      ],
+      "park": [
+        "SM_HD_Grandstand"
+      ]
+    },
+    "object/hippodrome/judges-tower": {
+      "groups": [],
+      "id": "object/hippodrome/judges-tower",
+      "model": "adopted/hippodrome/loose_files",
+      "models": [
+        "adopted/hippodrome/loose_files"
+      ],
+      "park": [
+        "SM_HD_JudgesTower"
+      ]
+    },
+    "object/hippodrome/tote-board": {
+      "groups": [],
+      "id": "object/hippodrome/tote-board",
+      "model": "adopted/hippodrome/loose_files",
+      "models": [
+        "adopted/hippodrome/loose_files"
+      ],
+      "park": [
+        "SM_HD_ToteBoard"
+      ]
+    }
+  },
+  "schema": 1
+}

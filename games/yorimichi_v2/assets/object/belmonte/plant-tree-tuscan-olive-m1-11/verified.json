@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/plant-tree-tuscan-olive-m1-11",
+  "dependencies": {
+    "adopted/japan/assets/tree-tuscan": "5e2ce7d9c39eb80b9ad591116c41b5a5243e1758aebb96b8a87801fcfd7e3f65"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/MN/W790YRX127EZR5TPOFR2IM.uasset": "5ec4dd8802b30c3554c1328b2db2436a7a6ae1bd8f71099bdfdbb74e1fb95318"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

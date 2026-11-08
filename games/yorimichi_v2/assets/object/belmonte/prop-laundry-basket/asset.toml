@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte prop-laundry-basket (1 group).
+# Its placement is this actor package; its model is adopted/belmonte/prop-laundry-basket. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/prop-laundry-basket"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/prop-laundry-basket"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/D/BO/RV69RQV5TJB0HQUZAMHWEJ"

@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-shrub",
+  "dependencies": {
+    "adopted/brinecove/plant-shrub": "7113cfb618c6a4659d5ecc1dabb01880a110cf1834cd4dbf5205536719aae29a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/0Q/8SVC4BQ1TBK81M2UM93DEY.uasset": "94dd8368e8a86e1004559baccc57c0ccbbae0edbb0d7b3c301943585cac78b26"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -119,6 +119,20 @@ bool AHippodrome::Initialize(const FString& Path)
     const FName SavedTag(TEXT("hippodrome"));
     int32 Placed = 0;
     Course.Grounds = FBox(ForceInit);
+    // The saved patch that holds a mesh (one of its components names it) and how far the editor has moved it since the
+    // migration saved it (AV2ScenePatch::MovedBy). Identity while unmoved, so the bounds below are the course's own.
+    auto SavedMove = [this](const FString& MeshName) -> FTransform
+    {
+        for (TActorIterator<AV2ScenePatch> It(GetWorld()); It; ++It)
+        {
+            if (!It->SourceKey.StartsWith(TEXT("hippodrome:"))) continue;
+            TArray<UStaticMeshComponent*> Components;
+            It->GetComponents(Components);
+            for (const UStaticMeshComponent* C : Components)
+                if (C->GetStaticMesh() && C->GetStaticMesh()->GetName() == MeshName) return It->MovedBy();
+        }
+        return FTransform::Identity;
+    };
     for (const TSharedPtr<FJsonValue>& Entry : Root_->GetArrayField(TEXT("meshes")))
     {
         const TSharedPtr<FJsonObject>& M = Entry->AsObject();
@@ -139,7 +153,12 @@ bool AHippodrome::Initialize(const FString& Path)
             if (bGround)
             {
                 if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name)))
-                    Course.Grounds += Mesh->GetBounds().TransformBy(FTransform(PieceRotation(M), GetActorLocation() + PieceOffset(M))).GetBox();
+                {
+                    FTransform Place(PieceRotation(M), GetActorLocation() + PieceOffset(M));
+                    const FTransform Moved = SavedMove(Name);
+                    if (!Moved.Equals(FTransform::Identity, 0.)) Place = Place * Moved;
+                    Course.Grounds += Mesh->GetBounds().TransformBy(Place).GetBox();
+                }
             }
             continue;
         }

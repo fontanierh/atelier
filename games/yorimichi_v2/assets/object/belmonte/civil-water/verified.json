@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-water",
+  "dependencies": {
+    "adopted/belmonte/civil-water": "12a062f8a96d57648803077aed69771b556be1450836546ac4f369ea5083d0dc"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/JK/UTVFYI996N6ATDSCB7PL1W.uasset": "9ac7a6449f1718dc0e55b3f617e472fd6fc252b8aaec88abff57cc2e0046edf7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

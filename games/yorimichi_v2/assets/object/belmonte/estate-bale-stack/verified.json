@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-bale-stack",
+  "dependencies": {
+    "adopted/belmonte/estate-bale-stack": "06d44ccbac0f471d02390a0e752313d305ec563b353ef12f106ea5e5d233a80c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/UL/ASDH7DH8WFIYMWWOOR0AL2.uasset": "4efe5c7be7960de91558dfbaefe9e128c5975bcc694b11996c573ad392b1d07c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+# One saved object of region/w11-megapark (tools/migrate/objects.py, from its objects.toml): the Mega Park car park prop SM_Kei_Pickup.
+# Its placement is this actor package; its model is prop/megapark/kei-pickup. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/megapark/kei-pickup"
+kind = "placement"
+authority = "editor"
+owner = "region/w11-megapark"
+references = ["prop/megapark/kei-pickup"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/D/JZ/F9BALGECRGOEPF5QYY4LE4"

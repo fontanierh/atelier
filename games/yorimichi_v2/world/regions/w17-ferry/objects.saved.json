@@ -1,0 +1,27 @@
+{
+  "objects": {
+    "object/ferry/terminal-brinecove": {
+      "groups": [],
+      "id": "object/ferry/terminal-brinecove",
+      "model": "adopted/ferry/terminal-brinecove",
+      "models": [
+        "adopted/ferry/terminal-brinecove"
+      ],
+      "route": [
+        "brinecove"
+      ]
+    },
+    "object/ferry/terminal-hidamari": {
+      "groups": [],
+      "id": "object/ferry/terminal-hidamari",
+      "model": "adopted/ferry/terminal-hidamari",
+      "models": [
+        "adopted/ferry/terminal-hidamari"
+      ],
+      "route": [
+        "hidamari"
+      ]
+    }
+  },
+  "schema": 1
+}

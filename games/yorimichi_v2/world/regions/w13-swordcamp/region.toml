@@ -1,0 +1,11 @@
+# W13 sword camp: SwordTrainer::SpawnRoninCamp (Combat/SwordTrainer.cpp), the coastal bluff Kasa Ronin camp at
+# (-54, -94) source metres, facing the road bend at (-55, -71). Its four static props reach 6.2 m from the centre.
+# Source x -54 m, y -94 m; Unreal = (100 x, -100 y) cm, so the centre is (-5400, 9400) cm (half-open bounds, inventory/world.md §1).
+# This box sits inside w04-pier-approach's bounds; the camp's objects are labelled region/w13-swordcamp, not owned by bounds.
+schema = 1
+id = "region/w13-swordcamp"
+about = "The coastal bluff Kasa Ronin camp: its static props (the camp's trainers and squad are combat and stay runtime)"
+bounds_cm = [-7000, 6800, -3800, 12000]
+neighbours = ["region/w02-village", "region/w04-pier-approach"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

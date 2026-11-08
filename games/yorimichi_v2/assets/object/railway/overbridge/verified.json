@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/overbridge",
+  "dependencies": {
+    "adopted/belmontetrack/overbridge": "bbee69054b85d0c8689df97acde6bd0a8112e0a1414f04f9a2e14ea3e6525fc8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/J1/HU0HL2RD4Q9ASJG9CWKOWC.uasset": "b99add09764401c9e487e9f5e2e6add78520e3de56578f2a6ee7243fd8d80b0b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

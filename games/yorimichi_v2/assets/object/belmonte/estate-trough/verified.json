@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-trough",
+  "dependencies": {
+    "adopted/belmonte/estate-trough": "68a51fdccd1ab7f096fa746d6a50825cafdb2db28d13b25833591e6ea343d844"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/RS/M4XIJX0M1WYWY2ER6S82DP.uasset": "b70c860a105bf4c81b4b2692c0fd8885919f570feeb27812afa6d04f302654e3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

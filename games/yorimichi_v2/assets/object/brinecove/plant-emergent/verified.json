@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-emergent",
+  "dependencies": {
+    "adopted/brinecove/plant-emergent": "df8c734c7631cf7853d6817b224b0b49d3086254144c56850ae6b26708aa6a1a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/Z9/XLBY46BS6Y7RRM0EEQNZJU.uasset": "a83b8a4952b3203e95ad815879de97e9e484df9ac529aeba47ee2cf2ff28d5da"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

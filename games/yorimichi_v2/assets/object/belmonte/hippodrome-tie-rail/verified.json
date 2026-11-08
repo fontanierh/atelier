@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-tie-rail",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-tie-rail": "b07cc3df29128814d5c5a40d1927a22749ffd08bb75474906825a6178875508d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/83/E9WZCGL5222LES43IY4HMZ.uasset": "f1cb5bd67546480b5c26c2ee06a2d5356f041c1a03b071a09b6f94c4bcc8695f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

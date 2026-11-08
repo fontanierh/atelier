@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-jump",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-jump": "405d8b8acd6107198bf07dbedaf6c743549d1e9aaeb0258de3ce5c736291987e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/FG/F652WEXQEUCRWW9WNDMP0J.uasset": "eded95416cb2fad1aa69707207ea95954af19d3e3d5bd3b2b2471c79905776c7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

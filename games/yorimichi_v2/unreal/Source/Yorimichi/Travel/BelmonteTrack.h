@@ -3,8 +3,11 @@
 #include "GameFramework/Actor.h"
 #include "BelmonteTrack.generated.h"
 
+class FJsonObject;
+class UInstancedStaticMeshComponent;
 class UPointLightComponent;
 class UPostProcessComponent;
+class UStaticMesh;
 class UStaticMeshComponent;
 
 /**
@@ -28,6 +31,18 @@ public:
     static ABelmonteTrack* Spawn(UWorld* World, const FString& Path);
     virtual void Tick(float DeltaSeconds) override;
     int32 NumLightsOn() const { return LightsOn; }
+
+    /** The track's component builders, shared with the saved railway units (UV2MigrationTravel::MigrateRailwayPieces), so a
+     *  saved piece or group is built and collides exactly as Initialize builds it. The caller attaches and registers it.
+     *  CullCm is track.json's cull_cm. */
+    static UStaticMeshComponent* MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& CullCm,
+        const TSharedPtr<FJsonObject>& Piece, UStaticMesh* Mesh);
+    static UInstancedStaticMeshComponent* MakeGroup(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Group,
+        UStaticMesh* Mesh);
+    /** A piece is named by its own name; an instanced group by its mesh and key, "SM_TK_Sleeper#17" (its manifest name). */
+    static FString GroupName(const TSharedPtr<FJsonObject>& Group);
+    /** The short mesh name of an asset path: "/Game/BelmonteTrack/SM_TK_Chunk_00.SM_TK_Chunk_00" is "SM_TK_Chunk_00". */
+    static FString MeshName(const FString& Asset);
 
 private:
     struct FTunnelBox { FTransform Frame; FVector Half; };

@@ -1,0 +1,305 @@
+{
+  "objects": {
+    "object/swcoast/lantern-01": {
+      "groups": [],
+      "id": "object/swcoast/lantern-01",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -204.31,
+          -470.08
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-02": {
+      "groups": [],
+      "id": "object/swcoast/lantern-02",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -203.8,
+          -474.45
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-03": {
+      "groups": [],
+      "id": "object/swcoast/lantern-03",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -201.93,
+          -446.08
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-04": {
+      "groups": [],
+      "id": "object/swcoast/lantern-04",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -197.82,
+          -447.65
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-05": {
+      "groups": [],
+      "id": "object/swcoast/lantern-05",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -194.46,
+          -512.44
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-06": {
+      "groups": [],
+      "id": "object/swcoast/lantern-06",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -194.41,
+          -508.04
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-07": {
+      "groups": [],
+      "id": "object/swcoast/lantern-07",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -153.81,
+          -480.81
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-08": {
+      "groups": [],
+      "id": "object/swcoast/lantern-08",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -151.83,
+          -484.74
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-09": {
+      "groups": [],
+      "id": "object/swcoast/lantern-09",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -136.42,
+          -462.21
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/lantern-10": {
+      "groups": [],
+      "id": "object/swcoast/lantern-10",
+      "model": "prop/lantern",
+      "models": [
+        "prop/lantern"
+      ],
+      "split": {
+        "at": [
+          -135.91,
+          -466.58
+        ],
+        "key": "Lantern"
+      }
+    },
+    "object/swcoast/sw-boat-01": {
+      "groups": [],
+      "id": "object/swcoast/sw-boat-01",
+      "model": "adopted/japan/southwest",
+      "models": [
+        "adopted/japan/southwest"
+      ],
+      "split": {
+        "at": [
+          -259,
+          -157
+        ],
+        "key": "SW_Boat"
+      }
+    },
+    "object/swcoast/sw-boat-02": {
+      "groups": [],
+      "id": "object/swcoast/sw-boat-02",
+      "model": "adopted/japan/southwest",
+      "models": [
+        "adopted/japan/southwest"
+      ],
+      "split": {
+        "at": [
+          -226.5,
+          -158.5
+        ],
+        "key": "SW_Boat"
+      }
+    },
+    "object/swcoast/sw-stonewall-01": {
+      "groups": [],
+      "id": "object/swcoast/sw-stonewall-01",
+      "model": "adopted/japan/southwest",
+      "models": [
+        "adopted/japan/southwest"
+      ],
+      "split": {
+        "at": [
+          -272,
+          -132.5
+        ],
+        "key": "SW_StoneWall"
+      }
+    },
+    "object/swcoast/sw-stonewall-02": {
+      "groups": [],
+      "id": "object/swcoast/sw-stonewall-02",
+      "model": "adopted/japan/southwest",
+      "models": [
+        "adopted/japan/southwest"
+      ],
+      "split": {
+        "at": [
+          -266,
+          -133
+        ],
+        "key": "SW_StoneWall"
+      }
+    },
+    "object/swcoast/sw-stonewall-03": {
+      "groups": [],
+      "id": "object/swcoast/sw-stonewall-03",
+      "model": "adopted/japan/southwest",
+      "models": [
+        "adopted/japan/southwest"
+      ],
+      "split": {
+        "at": [
+          -247,
+          -134.5
+        ],
+        "key": "SW_StoneWall"
+      }
+    },
+    "object/swcoast/torii-01": {
+      "groups": [],
+      "id": "object/swcoast/torii-01",
+      "model": "adopted/japan/assets/torii",
+      "models": [
+        "adopted/japan/assets/torii"
+      ],
+      "split": {
+        "at": [
+          -204.05,
+          -472.26
+        ],
+        "key": "Torii"
+      }
+    },
+    "object/swcoast/torii-02": {
+      "groups": [],
+      "id": "object/swcoast/torii-02",
+      "model": "adopted/japan/assets/torii",
+      "models": [
+        "adopted/japan/assets/torii"
+      ],
+      "split": {
+        "at": [
+          -199.87,
+          -446.87
+        ],
+        "key": "Torii"
+      }
+    },
+    "object/swcoast/torii-03": {
+      "groups": [],
+      "id": "object/swcoast/torii-03",
+      "model": "adopted/japan/assets/torii",
+      "models": [
+        "adopted/japan/assets/torii"
+      ],
+      "split": {
+        "at": [
+          -194.43,
+          -510.24
+        ],
+        "key": "Torii"
+      }
+    },
+    "object/swcoast/torii-04": {
+      "groups": [],
+      "id": "object/swcoast/torii-04",
+      "model": "adopted/japan/assets/torii",
+      "models": [
+        "adopted/japan/assets/torii"
+      ],
+      "split": {
+        "at": [
+          -152.82,
+          -482.77
+        ],
+        "key": "Torii"
+      }
+    },
+    "object/swcoast/torii-05": {
+      "groups": [],
+      "id": "object/swcoast/torii-05",
+      "model": "adopted/japan/assets/torii",
+      "models": [
+        "adopted/japan/assets/torii"
+      ],
+      "split": {
+        "at": [
+          -136.17,
+          -464.4
+        ],
+        "key": "Torii"
+      }
+    }
+  },
+  "schema": 1
+}

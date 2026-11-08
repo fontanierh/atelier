@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-course",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-course": "0b6f1962f0dc3bc69aa3e7610766b83f3f0126020ff3513594cfa05551529050"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/X4/VTA3FCTSHR8H0ZS5918Y7G.uasset": "2dedce106ea4c02162886df29a866614c0ead49af9dab6e19f95433a9d1bf444"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
