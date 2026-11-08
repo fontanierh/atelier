@@ -70,7 +70,11 @@ def make(tmp_path, game, **kw):
 
 @pytest.fixture
 def game(tmp_path):
-    root = tmp_path / 'game'
+    root = tmp_path / 'repo/games/yorimichi_v2'
+    plugin = tmp_path / 'repo/platform/engine/Plugins/Core'
+    (plugin / 'Source').mkdir(parents=True)
+    (plugin / 'Core.uplugin').write_text('{}\n')
+    (plugin / 'Source/Core.cpp').write_text('// core\n')
     (root / 'unreal/Scripts').mkdir(parents=True)
     (root / 'unreal/Source').mkdir(parents=True)
     (root / 'unreal/Scripts/move_actor.py').write_text('pass\n')
@@ -109,6 +113,17 @@ def test_changed_editor_code_ends_the_batch_before_the_next_job(tmp_path, game, 
         with session:
             session.run('one', 'move_actor.py', {})
             (game / 'unreal/Scripts/move_actor.py').write_text('print(1)\n')
+            session.run('two', 'move_actor.py', {})
+    assert [name for name, _ in editors[0].ran] == ['one']
+
+
+def test_changed_plugin_code_ends_the_batch_before_the_next_job(tmp_path, game, monkeypatch):
+    monkeypatch.setattr(S, 'load_build', lambda: None)
+    session, editors = make(tmp_path, game)
+    with pytest.raises(S.SessionError, match='changed since the editor started'):
+        with session:
+            session.run('one', 'move_actor.py', {})
+            (tmp_path / 'repo/platform/engine/Plugins/Core/Source/Core.cpp').write_text('// core v2\n')
             session.run('two', 'move_actor.py', {})
     assert [name for name, _ in editors[0].ran] == ['one']
 

@@ -123,8 +123,12 @@ def main(argv=None):
         return 2
     os.environ['ATELIER_LIVE_SESSION'] = args.session
     listed = tomllib.loads((GAME / 'world' / 'regions' / args.region / 'objects.toml').read_text())
-    # Runtime-group objects only: a promoted `patch` object is the migration's own saved patch, bytes unchanged.
-    listed['objects'] = [i for i in listed.get('objects', []) if 'patch' not in i]
+    # Runtime-group objects that have their record are saved; the rest are still the runtime's (not migrated yet).
+    groups = [i for i in listed['objects'] if 'group' in i or 'groups' in i]
+    listed['objects'] = [i for i in groups if (GAME / 'assets' / i['id'] / 'asset.toml').is_file()]
+    if len(listed['objects']) < len(groups):
+        print(f'PENDING {len(groups) - len(listed["objects"])} object(s) of {args.region} have no record yet: '
+              'the runtime still draws them', flush=True)
     meshes = sorted({m for i in listed['objects'] for m in (i['groups'] if 'groups' in i else [i['group']])})
     py(HELPERS)
     if py(f'print(objects_travel({args.zone!r}))') != 'True':

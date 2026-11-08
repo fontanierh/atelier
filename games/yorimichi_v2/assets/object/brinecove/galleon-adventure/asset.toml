@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the galleon Adventure moored in the harbour: rig, deck and guns (its hull is a shared hero model).
+# Its placement is this actor package; its model is adopted/brinecove/galleon-adventure. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/galleon-adventure"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["adopted/brinecove/galleon-adventure"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/WW/B9OWDL22SGB302S52H8LOT"

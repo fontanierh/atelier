@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): the north town gate.
+# Its placement is this actor package; its model is adopted/belmonte/town-porta-nord. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/porta-nord"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/town-porta-nord"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/4Y/JDJ51TLYIDX07U5794C1AT"

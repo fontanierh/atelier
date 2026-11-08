@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/fountain-piazza",
+  "dependencies": {
+    "adopted/belmonte/town-fountain-piazza": "aeb1f32dbcb871d3abd4b90b0cd7b9667d799cc40dd4966638053143d92fbcce"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/Y4/GWM3EGBVE73PAT09SQFR30.uasset": "7c70dba27f813a9e92df2e0f7276596b6228eee19cdf5515315cc705aa8114ed"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

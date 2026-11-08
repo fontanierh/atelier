@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the lighthouse on the western headland (its planting is the separate SM_BC_Landmarks_1_3_Soft group).
+# Its placement is this actor package; its model is adopted/brinecove/lighthouse. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/lighthouse"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["adopted/brinecove/lighthouse"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/LA/POEO7KWQN58EJ5I092WTHN"

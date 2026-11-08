@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/palazzo-comunale",
+  "dependencies": {
+    "adopted/belmonte/town-palazzo-comunale": "129afa069e73452e9f8d168cede1886def122924b3222420fa88f5f6613f1dfc"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/MR/BE9EDFHCMXULKYSN4B9CJQ.uasset": "b8e2fca5aa8c480786359459216558e40d339edc27b72484f6ece30b71950d20"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

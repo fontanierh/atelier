@@ -48,11 +48,17 @@ class SessionError(RuntimeError):
 
 
 def code_digest(game: Path = GAME) -> str:
-    """The editor scripts and C++ the session loaded: a change ends the batch before its next job."""
+    """The editor scripts and C++ the session loaded, the game's and the platform's plugins included (each plugin's
+    descriptor and Source): a change ends the batch before its next job."""
+    repo = game.parents[1]
+    plugins = [d.parent for base in (game / 'unreal/Plugins', repo / 'platform/engine/Plugins')
+               for d in base.rglob('*.uplugin')]
+    roots = [game / 'unreal/Scripts', game / 'unreal/Source', *(plugin / 'Source' for plugin in plugins)]
+    files = [*(d for plugin in plugins for d in plugin.glob('*.uplugin')),
+             *(p for root in roots for p in root.rglob('*') if p.is_file() and '__pycache__' not in p.parts)]
     digest = hashlib.sha256()
-    for root in (game / 'unreal/Scripts', game / 'unreal/Source'):
-        for path in sorted(p for p in root.rglob('*') if p.is_file() and '__pycache__' not in p.parts):
-            digest.update(path.relative_to(game).as_posix().encode() + b'\0' + path.read_bytes() + b'\0')
+    for path in sorted(set(files)):
+        digest.update(path.relative_to(repo).as_posix().encode() + b'\0' + path.read_bytes() + b'\0')
     return digest.hexdigest()
 
 

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/forno",
+  "dependencies": {
+    "adopted/belmonte/town-forno": "67aa29034c13755400c882bda1873752ae83ed234a60fa361acd10d98c3e7821"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/OA/SH3FPQYPQ3F8Q8GXQG4UC1.uasset": "32b61f2efb14f049826dd3b432517b8f2ad6632c9814b0f3ee0e97fd30e98770"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
