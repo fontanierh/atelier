@@ -14,6 +14,7 @@
 #include "SwordTrainer.h"
 #include "MegaRamp.h"
 #include "SuperUltraMegaPark.h"
+#include "V2ScenePatch.h"
 #include "Animation/AnimSequence.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -914,8 +915,10 @@ bool UAdventureMoveSet::Climbable(const FHitResult& Hit) const
     if (Hit.ImpactNormal.Z >= Steep || Hit.ImpactNormal.Z < -.35f) return false;
     // Not people, creatures or props, and not the skate parks' ramps and rails.
     const AActor* A = Hit.GetActor();
+    const AV2ScenePatch* Patch = Cast<AV2ScenePatch>(A);
     return !(A && (A->IsA<APawn>() || A->IsA<ASwordDummy>() || A->IsA<AMegaRamp>() ||
-        A->IsA<ASuperUltraMegaPark>() || A->ActorHasTag(TEXT("SkatePark")) || A->ActorHasTag(TEXT("NoClimb"))));
+        A->IsA<ASuperUltraMegaPark>() || A->ActorHasTag(TEXT("SkatePark")) || A->ActorHasTag(TEXT("NoClimb")) ||
+        (Patch && Patch->ClimbExempt())));
 }
 
 bool UAdventureMoveSet::IsTargetable(AActor* Actor) const
