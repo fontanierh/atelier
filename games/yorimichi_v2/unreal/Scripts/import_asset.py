@@ -8,10 +8,13 @@ absolute path of this checkout (CONTRACTS yorimichi-v2-portable-records).
 """
 import json
 import os
+from pathlib import Path
 
 import unreal as U
+import lod_preservation
 
 MARKER = 'V2 IMPORT DONE'
+LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
 EAL = U.EditorAssetLibrary
 TOOLS = U.AssetToolsHelpers.get_asset_tools()
 
@@ -137,6 +140,25 @@ def _apply_material_slots(asset, plan):
         asset.set_material(index, loaded)
 
 
+def _static_mesh_editor():
+    U.load_module('StaticMeshEditor')
+    return U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
+
+
+def _reduction_options(lods):
+    """The editor's reduction options for a recipe's plan: [[percent, screen], ...], LOD0 first (donor generate_lods)."""
+    options = U.StaticMeshReductionOptions()
+    options.set_editor_property('auto_compute_lod_screen_size', False)
+    levels = []
+    for percent, screen in lods:
+        level = U.StaticMeshReductionSettings()
+        level.set_editor_property('percent_triangles', percent)
+        level.set_editor_property('screen_size', screen)
+        levels.append(level)
+    options.set_editor_property('reduction_settings', levels)
+    return options
+
+
 def main():
     if not U.V2SaveGuard.is_active():
         raise RuntimeError('the V2 save guard is not active (V2_SAVE_ALLOW); an import runs only through its build step')
@@ -144,6 +166,7 @@ def main():
     settings = plan['settings']
     if len(plan['sources']) != len(plan['packages']):
         raise RuntimeError('a V2 import plan pairs each source with one package')
+    lod_results = {}
     for source, portable, package in zip(plan['sources'], plan['portable_sources'], plan['packages']):
         if plan['importer'] == 'static-mesh':
             if source.lower().endswith('.fbx'):
@@ -152,9 +175,15 @@ def main():
                 options = _gltf_static_mesh(package.rsplit('/', 1)[1])
             else:
                 options = None
+            # The chain the package had before this import; a new package has none.
+            existing = EAL.load_asset(package)
+            before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
             asset = _import(source, package, options)
             _apply_material_slots(asset, plan)
             _apply_mesh_settings(asset, settings)
+            after = lod_preservation.preserve(_static_mesh_editor(), asset, before, settings.get('lods'),
+                                              _reduction_options)
+            lod_results[package] = {'before': before, 'after': after}
         elif plan['importer'] == 'texture':
             asset = _import(source, package, _texture(settings))
             _apply_texture_settings(asset, settings)
@@ -164,6 +193,8 @@ def main():
         if not EAL.save_asset(package, only_if_is_dirty=False):
             raise RuntimeError(f'could not save {package}')
         U.log(f'V2 import wrote {package} from {portable}')
+    if lod_results:   # read back by tools/import/run.py, which records the chains in verified.json
+        Path(os.environ['V2_IMPORT_PLAN']).with_name(LOD_RESULT).write_text(json.dumps(lod_results, indent=1) + '\n')
     U.log(MARKER)
 
 

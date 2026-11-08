@@ -85,6 +85,10 @@ class FakeSession:
             if self.stray and asset == self.stray[0]:
                 write(self.game / self.stray[1], b'stray')
                 written.append('games/yorimichi_v2/' + self.stray[1])
+            if plan['importer'] == 'static-mesh':
+                one = {'count': 1, 'screen_sizes': [1.0], 'reductions': [1.0]}
+                write(Path(job['plan']).with_name('lod-result.json'), json.dumps(
+                    {package: {'before': None, 'after': one} for package in plan['packages']}))
             results[asset] = {'status': 'done', 'error': None, 'written': written}
         return results
 

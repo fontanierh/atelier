@@ -30,7 +30,9 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS / 'content'))
+sys.path.insert(0, str(TOOLS.parent / 'unreal' / 'Scripts'))
 import authority  # noqa: E402
+import lod_preservation  # noqa: E402
 import records  # noqa: E402
 from records import RecordError  # noqa: E402
 
@@ -42,6 +44,7 @@ IMPORTERS = {   # asset kind -> importer name and version understood by unreal/S
     'texture': ('texture', 1),
 }
 BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
+LOD_RESULT = 'lod-result.json'   # written beside the plan by unreal/Scripts/import_asset.py
 
 
 class ImportError_(RuntimeError):
@@ -217,6 +220,30 @@ def write_plan(game, asset, by_id, kind, claim, write_set, plan_file: Path):
     }, indent=2))
 
 
+def read_lod_result(plan_file: Path, asset) -> dict | None:
+    """The LOD chain each generated static-mesh package had before its import and has after, checked again here: a chain
+    that had several LODs must have the same count and screen sizes (within tolerance). None for other kinds."""
+    if asset.kind != 'static-mesh':
+        return None
+    path = plan_file.with_name(LOD_RESULT)
+    if not path.is_file():
+        raise ImportError_(f'{asset.id}: the editor wrote no LOD record')
+    result = json.loads(path.read_text())
+    lods = {}
+    for output in asset.outputs:
+        if output.writer != 'generated':
+            continue
+        entry = result.get(output.package)
+        if entry is None:
+            raise ImportError_(f'{asset.id}: the editor recorded no LOD chain for {output.package}')
+        try:
+            lod_preservation.verify_record(entry)
+        except lod_preservation.LodError as error:
+            raise ImportError_(f'{asset.id}: {output.package}: {error}') from None
+        lods[output.package] = entry
+    return lods
+
+
 def recorded_files(game, asset, write_set) -> dict:
     """The verified file hashes of an import that wrote its packages: every generated package must exist."""
     files = {}
@@ -275,6 +302,7 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
     write_plan(game, asset, by_id, kind, claim, write_set, plan_file)
     try:
         importer(game, asset, plan_file)
+        lods = read_lod_result(plan_file, asset)
         after = content_snapshot(game)
         changed = {rel for rel in set(before) | set(after) if before.get(rel) != after.get(rel)}
         outside = sorted(rel for rel in changed - allowed if not rel.startswith('unreal/Saved/'))
@@ -289,7 +317,7 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
     records.write_json(asset.verified, {
         'schema': records.SCHEMA, 'kind': 'imported', 'asset': asset.id, 'engine': engine,
         'tool': f'{kind[0]}@{kind[1]}', 'input_fingerprint': fingerprint, 'files': files,
-        'dependencies': {d: s for d, s in sorted(deps.items())}})
+        'dependencies': {d: s for d, s in sorted(deps.items())}, **({'lods': lods} if lods else {})})
     journal.close()
     echo(f'imported   {asset.id}: {len(files)} file(s)')
     return True
@@ -408,12 +436,13 @@ def _verify_batch(game, prepared, result, *, engine, echo):
             rel = records.content_relative(game, path)
             if rel in existed and 'games/yorimichi_v2/' + rel not in result['written']:
                 raise ImportError_(f'{asset.id}: {output.package} was not written by its job')
+    lods = read_lod_result(prepared.plan_file, asset)
     files = recorded_files(game, asset, prepared.write_set)
     update_source_hashes(asset, prepared.hashes)
     records.write_json(asset.verified, {
         'schema': records.SCHEMA, 'kind': 'imported', 'asset': asset.id, 'engine': engine,
         'tool': f'{asset.recipe["importer"]}@{asset.recipe["version"]}', 'input_fingerprint': prepared.fingerprint,
-        'files': files, 'dependencies': {d: s for d, s in sorted(prepared.deps.items())}})
+        'files': files, 'dependencies': {d: s for d, s in sorted(prepared.deps.items())}, **({'lods': lods} if lods else {})})
     prepared.journal.close()
     echo(f'imported   {asset.id}: {len(files)} file(s)')
 
