@@ -31,3 +31,11 @@ key = '^(.*?)_cell'
 [[group]]
 folder = "/Game/Experiments/IslandTerrain/v1_atomic"
 key = '^(.*?)_cell'
+
+# Mega Park (DECISIONS D05 group 3, cleared 2026-11-08): its packages are named by content hash, so a committed map
+# (written by tools/migrate/megapark_units.py from its source map.json and the packages' references) puts each in one
+# park section (a 100 m stream cell: its meshes, collision, and the materials and textures only it uses), a shared
+# surface family, the base materials, the seam or the standalone level.
+[[units]]
+folder = "/Game/MegaPark"
+map = "megapark/units.json"

@@ -98,13 +98,43 @@ def slug(segment: str) -> str:
     return name
 
 
-def load_groups(path: Path = GROUPS) -> dict[str, tuple[re.Pattern, dict[str, str]]]:
-    """Folder -> (the regex whose first group names a package's logical group, readable names for some groups), from
-    `assets/adopted/groups.toml`."""
+class Units(dict):
+    """A `[[units]]` rule: package -> unit name for every package under its folder, subfolders included, from a
+    committed JSON map (`{"packages": {...}, "units": {name: {"about": ..., "provenance": ...}}}`), for a folder whose
+    package names say nothing about what belongs together (Mega Park's content hashes)."""
+
+    def __init__(self, packages: dict[str, str], info: dict[str, dict]):
+        super().__init__(packages)
+        self.info = info
+
+    def provenance(self, unit: str) -> str:
+        return self.info.get(unit, {}).get('provenance', PROVENANCE)
+
+
+def load_groups(path: Path = GROUPS) -> dict[str, tuple[re.Pattern, dict[str, str]] | Units]:
+    """Folder -> (the regex whose first group names a package's logical group, readable names for some groups), or
+    folder -> Units for a `[[units]]` map, from `assets/adopted/groups.toml`."""
     if not path.is_file():
         return {}
     rules = {}
-    for rule in tomllib.loads(path.read_text()).get('group', []):
+    data = tomllib.loads(path.read_text())
+    for rule in data.get('units', []):
+        folder, mapping = rule.get('folder'), rule.get('map')
+        if not isinstance(folder, str) or not folder.startswith('/Game/') or not isinstance(mapping, str):
+            raise AdoptError(f'{path.name}: each [[units]] needs folder = "/Game/..." and map = "<file under {path.parent.name}>"')
+        source = path.parent / records._portable(mapping, path, 'units.map')
+        try:
+            loaded = json.loads(source.read_text())
+            units = Units(loaded['packages'], loaded['units'])
+        except (OSError, ValueError, KeyError) as error:
+            raise AdoptError(f'{path.name}: the units map {mapping} of {folder} is unreadable ({error})') from None
+        unnamed = sorted(set(units.values()) - set(units.info))
+        if unnamed:
+            raise AdoptError(f'{mapping}: units {unnamed[:3]} have no entry under "units"')
+        if folder.rstrip('/') in rules:
+            raise AdoptError(f'{path.name}: {folder} has two rules')
+        rules[folder.rstrip('/')] = units
+    for rule in data.get('group', []):
         folder, key = rule.get('folder'), rule.get('key')
         if not isinstance(folder, str) or not folder.startswith('/Game/') or not isinstance(key, str):
             raise AdoptError(f'{path.name}: each [[group]] needs folder = "/Game/..." and key = "<regex>"')
@@ -133,6 +163,8 @@ def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP,
     A folder with a `groups` rule always splits its own packages by logical group instead: the rule's first capture
     group on the package name names the unit (`adopted/<folder slugs>/<group slug>`, or the rule's readable name for
     that group); a package it does not match is a unit of its own, named after the package. A group over `cap` splits into sorted chunks `<group>_01`, ...
+    A folder with a `[[units]]` map puts every package under it, subfolders included, in its mapped unit
+    (`adopted/<folder slugs>/<unit slug>`); a package the map does not name, or a unit over `cap`, is refused.
     """
     if cap < 1 or depth < 1:
         raise AdoptError('partition needs depth >= 1 and cap >= 1')
@@ -143,6 +175,23 @@ def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP,
 
     def split(parts, names, members):
         folder = '/Game/' + '/'.join(parts)
+        rule = (groups or {}).get(folder)
+        if isinstance(rule, Units):
+            by_unit: dict[str, list[str]] = {}
+            for package in members:
+                if package not in rule:
+                    raise AdoptError(f'{package} is in no unit of the {folder} units map')
+                by_unit.setdefault(rule[package], []).append(package)
+            seen = {}
+            for unit in sorted(by_unit):
+                name = slug(unit)
+                if name in seen:
+                    raise AdoptError(f'{folder}: units {unit} and {seen[name]} would share the record name {name}')
+                if len(by_unit[unit]) > cap:
+                    raise AdoptError(f'{folder}: unit {unit} holds {len(by_unit[unit])} packages, over {cap}; split it')
+                seen[name] = unit
+                add(names + (name,), rule.info[unit].get('about', f'{unit} in {folder}'), by_unit[unit])
+            return
         here, below = [], {}
         for package in members:
             rest = package[len(folder) + 1:].split('/')
@@ -150,7 +199,6 @@ def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP,
                 here.append(package)
             else:
                 below.setdefault(rest[0], []).append(package)
-        rule = (groups or {}).get(folder)
         if rule is None and (len(parts) >= depth or not below) and len(members) <= cap:
             return add(names, folder, members)
         seen = {}
@@ -278,7 +326,13 @@ def adopt(game: Path, content: Path, folders: list[str], excludes: list[str], li
     for asset_id, (_, owner, about, packages) in sorted(plan.items()):
         record = game / 'assets' / asset_id / 'asset.toml'
         record.parent.mkdir(parents=True, exist_ok=True)
-        text = record_text(asset_id, owner, about, packages, license_text)
+        mapped = rules.get(plan[asset_id][0].rstrip('/') if plan[asset_id][0].startswith('/Game/') else
+                           '/Game/' + plan[asset_id][0].strip('/'))
+        provenance = PROVENANCE
+        if isinstance(mapped, Units):
+            unit = next(u for u in mapped.info if slug(u) == asset_id.rsplit('/', 1)[1])
+            provenance = mapped.provenance(unit)
+        text = record_text(asset_id, owner, about, packages, license_text, provenance)
         if not record.is_file() or record.read_text() != text:
             record.write_text(text)
     for folder, (_, packages) in found.items():

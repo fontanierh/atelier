@@ -1,5 +1,6 @@
 """Adoption copies donor packages once under their paths, records them editor-owned, and reports gaps."""
 import importlib.util
+import json
 import sys
 import tomllib
 from pathlib import Path
@@ -191,6 +192,30 @@ def test_a_group_rule_splits_a_mixed_folder_by_what_its_packages_are(tmp_path):
     assert adopt.partition(list(reversed(mixed)), 'Japan/Assets', cap=3, groups=groups) == units
     # Without the rule the same folder is one record, as before.
     assert sorted(adopt.partition(mixed, 'Japan/Assets', cap=200)) == ['adopted/japan/assets']
+
+
+def test_a_units_map_groups_a_hashed_folder_across_its_subfolders(tmp_path):
+    """Mega Park's way: a committed map puts each package, whatever its subfolder, in a named unit with its provenance."""
+    (tmp_path / 'park').mkdir()
+    (tmp_path / 'park/units.json').write_text(json.dumps({
+        'units': {'cell-x150-zm850': {'about': 'section (150, -850)', 'provenance': 'from geometry/AB.npz'},
+                  'shared-materials-stone': {'about': 'shared stone'}},
+        'packages': {'/Game/Park/Meshes/SM_MP_AB': 'cell-x150-zm850', '/Game/Park/Materials/MI_1': 'cell-x150-zm850',
+                     '/Game/Park/Materials/MI_2': 'shared-materials-stone'}}))
+    rules = tmp_path / 'groups.toml'
+    rules.write_text('[[units]]\nfolder = "/Game/Park"\nmap = "park/units.json"\n')
+    groups = adopt.load_groups(rules)
+    units = adopt.partition(['/Game/Park/Meshes/SM_MP_AB', '/Game/Park/Materials/MI_1', '/Game/Park/Materials/MI_2'],
+                            'Park', groups=groups)
+    assert {u: (v[1], sorted(v[2])) for u, v in units.items()} == {
+        'adopted/park/cell-x150-zm850': ('section (150, -850)', ['/Game/Park/Materials/MI_1', '/Game/Park/Meshes/SM_MP_AB']),
+        'adopted/park/shared-materials-stone': ('shared stone', ['/Game/Park/Materials/MI_2'])}
+    assert groups['/Game/Park'].provenance('cell-x150-zm850') == 'from geometry/AB.npz'
+    assert groups['/Game/Park'].provenance('shared-materials-stone') == adopt.PROVENANCE
+    with pytest.raises(adopt.AdoptError, match='in no unit'):
+        adopt.partition(['/Game/Park/Meshes/SM_MP_CD'], 'Park', groups=groups)
+    with pytest.raises(adopt.AdoptError, match='over 1; split it'):
+        adopt.partition(['/Game/Park/Meshes/SM_MP_AB', '/Game/Park/Materials/MI_1'], 'Park', cap=1, groups=groups)
 
 
 def test_group_rules_are_checked_and_colliding_group_names_refused(tmp_path):
