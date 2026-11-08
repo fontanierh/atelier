@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-idle-ride",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_RIDE_AGGR_0_CYC.uasset": "deba43efa3b8f2c582b03a0525abc75ad4a95dc8c785dc60745471da889f7f6a",
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_RIDE_LOOSE_0_CYC.uasset": "5f6e78714c28583e326114ff6412f43bae4979812e32013672f2d186d8a8040f",
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_RIDE_N_0_CYC.uasset": "0993a845fa55a613a624656bf30eb9f3bb4185961907977967a78dc4a9176e72",
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_RIDE_N_2_CYC.uasset": "37358642dc84b9efcd001424896d476c9695eac7545734fb848285c0dae94193"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

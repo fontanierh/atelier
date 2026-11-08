@@ -1,0 +1,41 @@
+{
+  "asset": "second-class-bench",
+  "source": "bench.glb",
+  "source_sha256": "215a297075ae58b6ab46ef1008b9968e828e4ba02298522a899394b054a8bb8a",
+  "target_m": {
+    "width": 1.2,
+    "depth": 0.55,
+    "height": 0.91
+  },
+  "source_size": [
+    0.9995,
+    0.4634,
+    0.6831
+  ],
+  "quarter_turn": false,
+  "uniform_scale": 1.20059,
+  "column_fraction": [
+    0.05,
+    0.38
+  ],
+  "column_stretch_m": 0.0899,
+  "fitted_m": {
+    "width": 1.2,
+    "depth": 0.5563,
+    "height": 0.91
+  },
+  "errors_m": {
+    "width": 0.0,
+    "depth": 0.0063,
+    "height": 0.0
+  },
+  "ok": true,
+  "triangles": 23445,
+  "pivot": "floor_footprint_center",
+  "glb": {
+    "file": "second-class-bench.glb",
+    "bytes": 1281372,
+    "sha256": "3699e983b9a68ca0fc4615e095e923950f92f48c2e72ed301c905c05076ee618"
+  },
+  "output_id": "second-class-bench"
+}

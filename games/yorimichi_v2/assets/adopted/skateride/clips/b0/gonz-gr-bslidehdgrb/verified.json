@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/gonz-gr-bslidehdgrb",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GONZ_GR_BSLIDEHDGRB_BS_HI.uasset": "2b04ed6c6ae6556b1ff18515025f23c67ff7b356f953ed653abecbc4e693a870",
+    "unreal/Content/SkateRide/Clips/B0/GONZ_GR_BSLIDEHDGRB_BS_LO.uasset": "67df44dde3c9bf11e86f05c7cf87bd6c42429f04c714c15f68dd992cff0deb98"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

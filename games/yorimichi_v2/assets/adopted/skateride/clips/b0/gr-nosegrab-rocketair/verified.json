@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-nosegrab-rocketair",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_ROCKETAIR_N_0_CYC.uasset": "5de7be63d56537faf40ab6f06172fb5d020c1056b8a233391037e2a0a3cba9fb",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_ROCKETAIR_N_0_INTO.uasset": "e593a370056e80edee90c91f5a5a7f0328f6ad9542061c872f546042837b0b64",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_ROCKETAIR_N_0_OUT.uasset": "36954d2a4d277eec54051cc9bd5c8d8664f300e93f40a660237fa48802da0796"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

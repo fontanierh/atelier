@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b1/jumpout-bwd",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_HI_TO_JUMPOUT_BWD1.uasset": "1ed2b9833ba4d5aae0e787df0e85d73d0e1651bf31d8b83b2342504000b8ca8a",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_HI_TO_JUMPOUT_BWD4.uasset": "a976cdd8f487bb2642db352de9181178191dc2fefb08e93d3c617e54c46811fe",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_HI_TO_JUMPOUT_BWD6.uasset": "78ca0843cbadf9ba24b197b00e964b1af50f4a17868b1cdfc73ee23b0bbe756c",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_HI_TO_JUMPOUT_BWD7.uasset": "ed55d7fc892a2a13f0a174d14109aecba0ea5d50e74b8ef3c68eaf8941e301d8",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_HI_TO_JUMPOUT_BWD8.uasset": "3cc0bfc2a61184e2266309afcff757ea95bbe0a28b4bf944b93cbc319e1a92c3",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_HI_TO_WIPEOUT_BWD.uasset": "4fa9934710ab1f683066cfea95a6d556b51c14e62cad30692d2e7c21e33a2085",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_LO_TO_JUMPOUT_BWD1.uasset": "03fe1ba22cca764921c712934fa8bd051b9472e33f514cfe5fe169ecb1432522",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_LO_TO_JUMPOUT_BWD4.uasset": "950909bb3f5bed9664ef0d2204f329af62b556fb9d3841f7f22ec2edd7981dc7",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_LO_TO_JUMPOUT_BWD6.uasset": "c5202e09e92c72c725d44584c451dc1cb3b52474e870a5a2632d4784e9049a0a",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_LO_TO_JUMPOUT_BWD7.uasset": "dddbd29500d1f4a1f092ed7010da464d3ee16efce928184e42f8d75d96026fd4",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_LO_TO_JUMPOUT_BWD8.uasset": "b1e68bee7f70a11971297deeed52c9798cfab13c647ef61bf5f5f40fc3d4cf52",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BWD_LO_TO_WIPEOUT_BWD.uasset": "790d79434b169338ba22f9e6b105661ee327e9a158cc3839df4a3510714bd928"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

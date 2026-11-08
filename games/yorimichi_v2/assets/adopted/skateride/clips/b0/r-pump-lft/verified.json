@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-pump-lft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_PUMP_LFT_CROUCH_0_N.uasset": "081c62bfd7c6b98f2218812484393117450fc01218ad40435959a4906e2175d7",
+    "unreal/Content/SkateRide/Clips/B0/R_PUMP_LFT_HCOM_0_N.uasset": "bf79eddc7e75108326ff45c2020b7f9a5ed592d4e28c5547406e80fecd69eab0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

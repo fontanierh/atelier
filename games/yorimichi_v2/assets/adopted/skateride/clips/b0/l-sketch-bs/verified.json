@@ -1,0 +1,24 @@
+{
+  "asset": "adopted/skateride/clips/b0/l-sketch-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_HIMP.uasset": "3bde346179b759d44e279762a2ecc3f0c8bdbad61a7f0c3831b068873b8402e0",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_HIMP1.uasset": "1e4726c9509179104f8447d19025e5054fcdd6aa429b43069b93cb729b900ec5",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_HIMP2.uasset": "3430873ab56b1e7ed393397352e87906da781db4f2ebe766e020afdfcf96a95e",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_HIMP3.uasset": "0d8d1afe50ba5dbdba2a212866dbb55105b47dccb30ff98b331c18b30b46b8de",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_HIMP4.uasset": "f2279c018d5c8095c8104151029373474d8abcc627d4a47f359e871814b950d6",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_LIMP.uasset": "729d43a9215459fed299f0436b4568cccaabbbd0a198038e373082c53a8813f7",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_LIMP1.uasset": "d6dd4e4165902da23070fe65eb26f145b497704d48bfbdd5d82bf82835cf5c17",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_LIMP2.uasset": "225225e63f7f0ab84b8feeeca74c0a0c6f7b4f696d38f2ffbdae5f49d468a7bd",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_LIMP3.uasset": "6b3ec9979134571502836ba555c47f850dd942651cfd17d98c5266cfb1b8ebfc",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_HCOM_LIMP4.uasset": "ea4cfa231b897b2c2f4ba880e1566bc45b7026112d4b6ef8dca9065517013382",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_LCOM.uasset": "efb3c1c35e817f732a9c637a974190f2643e9ef67c18edb1142179a8978bad93",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_LCOM1.uasset": "82076e6cf313fd92833cae7e64071cf8c214281bf261f67a9fe934cf543faf90",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_LCOM2.uasset": "ad3bdf86b6f2838ff7f83ee300e481564f4b6a9208e84af0c035355ea2d8fc28",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_LCOM3.uasset": "80291a40418fc030de6c1b4f6d33c57c3c571aa9aad649bcb711411d515207e0",
+    "unreal/Content/SkateRide/Clips/B0/L_SKETCH_BS_LCOM4.uasset": "f94360ba5cf0c0c83f29d40bacdd61c6648735b37a5788315f1ae519b0eb79e5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

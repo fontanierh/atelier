@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: T_LATE_SHUVITHIGH in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/t-late-shuvithigh"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/t-late-shuvithigh"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_FROMBS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_FROMBS_NOSE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_BS_FROMBS_TAIL"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_FROMFS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_FROMFS_NOSE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/T_LATE_SHUVITHIGH_FS_FROMFS_TAIL"

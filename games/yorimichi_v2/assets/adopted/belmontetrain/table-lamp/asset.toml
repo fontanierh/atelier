@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture table-lamp: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/table-lamp"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/table-lamp"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/table-lamp.glb"
+sha256 = "cd453f793ca29d4b2899902103c72f533a7a8aebd601fdc4184f5308707a34f0"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/table-lamp.json"
+sha256 = "3b37d5056ffc157defb24ece5d19635e32e2d8b9efdfd4c57849f3ac95f3e08c"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_TableLamp"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/M_BT_TableLamp"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/table-lamp-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/table-lamp-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_TableLamp/LOD0/table-lamp-normal"

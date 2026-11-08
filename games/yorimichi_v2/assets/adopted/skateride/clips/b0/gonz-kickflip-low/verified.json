@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/gonz-kickflip-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GONZ_KICKFLIP_LOW_CYC.uasset": "e7752fcf45f925bb4cda8e1a7cdc98db60a97afd93e9884a354a46105552f98c",
+    "unreal/Content/SkateRide/Clips/B0/GONZ_KICKFLIP_LOW_OUT.uasset": "d0578d2008adc50fa9036b3b52a3724d9da35b342d8e8be6b8cd0d4c3479446b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

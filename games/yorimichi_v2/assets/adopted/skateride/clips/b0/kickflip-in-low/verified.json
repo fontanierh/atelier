@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/kickflip-in-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_LOW_A.uasset": "8a7bf4afa8057b0035b7d00e88f341900c785915a4a650d35e25b8e8dbb96ad9",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_IN_LOW_G.uasset": "24975609b170fabe38a9719e77dd43c78265905a65eaa038b3df2245636c4160"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-nosegrab-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_N_BS_0_CYC.uasset": "59b07388d975d3cdc831b3e346814772353fe7ab6ec08087b123ac9ff5e46ef4",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_N_BS_0_INTO.uasset": "06e9679298c03e6be40306a45f594788d88a079d3b303aee0ace63399005d81d",
+    "unreal/Content/SkateRide/Clips/B0/GR_NOSEGRAB_N_BS_0_OUT.uasset": "2af3b0f8c26b3908dada7efba554318b8e51cdd11a7877ad264935e272cdfb42"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

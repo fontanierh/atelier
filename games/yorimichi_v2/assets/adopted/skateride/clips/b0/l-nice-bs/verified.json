@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/l-nice-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/L_NICE_BS_HCOM_HSP_HIMP.uasset": "32f60096b8a845ea4cfdcdc82c7b689fb127d50458121083c0f4d8792b85e385",
+    "unreal/Content/SkateRide/Clips/B0/L_NICE_BS_HCOM_HSP_LIMP.uasset": "0382b72f6ac0559cb3d0545aa004f1093f97d3d83c20c4214c1eabc6d2c0e3c3",
+    "unreal/Content/SkateRide/Clips/B0/L_NICE_BS_LCOM_HSP.uasset": "f5a7bb8a701e39625e19f8b1b477e39b49b9490b64894be0438c0f537254eb59"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

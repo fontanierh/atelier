@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: JUMPOUT_BF in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/jumpout-bf"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/jumpout-bf"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_BF_HI_TO_JUMPOUT_BF"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_BF_HI_TO_JUMPOUT_BF4"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_BF_LO_TO_JUMPOUT_BF"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/JUMPOUT_BF_LO_TO_JUMPOUT_BF4"

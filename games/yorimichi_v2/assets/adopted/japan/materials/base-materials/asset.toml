@@ -1,0 +1,90 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan parent materials and the wind collection, and the generator: shared material, texture and foliage scripts that made the materials, textures and foliage LODs
+schema = 1
+id = "adopted/japan/materials/base-materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials/base-materials"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MPC_Wind"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Arcade"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ArcadePaving"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Bike"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_CloudShadow"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_CoastRock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Foliage"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestGround"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestImpostor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestLakeWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Grass"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Harbor"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_HarborWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_NorthGate"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_NorthMountains"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Painted"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Painterly"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PlazaPaving"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PlazaWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PondWater"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_SailboatCloth"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_SailboatWake"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sea"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sky"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Village"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_VillageResident"
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ZeppelinFabric"

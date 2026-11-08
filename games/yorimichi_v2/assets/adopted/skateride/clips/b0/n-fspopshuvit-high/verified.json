@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-fspopshuvit-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_FSPOPSHUVIT_HIGH_A.uasset": "288214236d7776d3fd8dfc943a20d0b1428c7af73337606b5ac28de21b569349",
+    "unreal/Content/SkateRide/Clips/B0/N_FSPOPSHUVIT_HIGH_G.uasset": "aac0cbc9ed6a63b1bb065a43b41ec5a195d3e16216702285be0814cca6a70300"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-dsmnt-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_N_CHRIST_TO_SUPER.uasset": "a1441fd000d1d9200ed08bfdbd24388153829f0ca1a2cca304ec88b6a8277ea3",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_N_NOFOOT_TO_SUPER.uasset": "febb4c285197f4934e016ec7b74be2b2d19e8f2be625b333991c953b9065b43f",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_N_SUPER_TO_CHRIST.uasset": "74b3b977027e5af36b595c2f07f31ef646baca0e64a0ff769f4f7ae23cb3d100",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_N_SUPER_TO_NOFOOT.uasset": "2a5aafa65a5c2913db7397eb9e5e2003845f11085281f5679a2b2d79b39030b7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

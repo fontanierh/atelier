@@ -1,0 +1,246 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan footstep bank grass (79 one-shots), cut from licensed masters kept out of the repository
+schema = 1
+id = "adopted/japan/audio/footsteps-grass"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/audio/footsteps-grass"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_pmsfx_drygrass_single_113_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_pmsfx_drygrass_skid_drag_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_pmsfx_drygrass_skid_drag_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_pmsfx_drygrass_skid_drag_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_ryk_grass_single_03_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_01"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_02"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_03"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_04"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_05"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_06"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_07"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_08"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_09"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_10"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_11"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_12"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_13"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_14"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_15"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_16"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_17"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_18"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_19"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_20"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_21"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_22"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_23"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_24"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_25"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_26"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_27"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_28"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_29"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_30"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_31"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_32"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_33"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_34"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_35"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_36"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_37"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_38"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_39"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_40"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_41"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_42"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_43"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_44"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_45"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_46"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_47"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_48"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_49"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_50"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_51"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_52"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_53"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_54"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_55"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_56"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_57"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_58"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_59"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_60"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_61"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_62"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_63"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_64"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_65"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_66"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_67"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_68"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_69"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_70"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_71"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_72"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_73"
+
+[[outputs]]
+package = "/Game/Japan/Audio/Footsteps/grass/grass_tovusound_grass_walk_run_jog_74"

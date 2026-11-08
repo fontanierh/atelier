@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-checktime",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_BOTH_CYC.uasset": "952d7f76e271980a1e409cec4c4bf4a2ea55c15765a52a36f4443c1fce77afdc",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_BOTH_INTO.uasset": "5b126475c615f0602b2f603369e05928a185477635876bd2cfd352ea1a1f2027",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_BOTH_OUT.uasset": "590ba8530486cc214be198428608e606b050ab2b37752baaf1f3b601c8af6c26",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_LEFT_CYC.uasset": "027c72cee37113256d9a7465ea2f363af4d9c1954d5343b36dfe57b6b7c17ff6",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_LEFT_INTO.uasset": "52aba773cf1ea7c46377178ab4d14a148e68b2f478087d90fff1df4ca60dcb74",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_LEFT_OUT.uasset": "c48329b0a0a4f3749ee2dc9f2ae2ab6a568a4cf5501770aca67a1a9a6b43854b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_RIGHT_CYC.uasset": "ade945be78066e59d5d202465f7789d4800147c58af12f3e533b1a99f0a58ae8",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_RIGHT_INTO.uasset": "6d86f141efb322b5665eff375c8a6dc125fed4d380a3367fe985abcbb8222135",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_CHECKTIME_RIGHT_OUT.uasset": "a9ac6ca2bf1022e0e9b90356b4af94f1287ec18a29b986f42d1116fe706d3178"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

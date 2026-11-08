@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-tuscan-oak",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/MI_Tree_Tuscan_Oak_Crown.uasset": "f085d6ddedbbaa74dd3f64579da101f5395548bde0763b880bf6029bd41f4d13",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD1.uasset": "2a5c337086398b28af6559f1254680a9075459b3d2f8e571c47936b855f0ac82",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD2.uasset": "5d8298323bb69ff3082fd84734927cf78ee6aef406b561b8632bf02462ba9de0",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD3.uasset": "e199fd2265c5e0c6a28ffad2990eb8248e1928c0b88b761f092dad7e1b352a52",
+    "unreal/Content/Japan/FoliageLODs/Tree_Tuscan_Oak_LOD4.uasset": "a03f90101307a68154ad9e08c3a712b901f36f6e90ed6210efacd97f66c6220b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

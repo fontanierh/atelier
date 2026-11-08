@@ -1,0 +1,66 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage materials (19 package(s))
+schema = 1
+id = "adopted/japan/materials/foliage"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials/foliage"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_FarForest"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Feather"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_FeatherDark"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Flower"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Grass"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafAmber"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafBroad"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCedar"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCrimson"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCypress"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafGinkgo"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafMaple"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOak"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOchre"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOchreSmall"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOlive"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafPine"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafSmall"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafStonePine"

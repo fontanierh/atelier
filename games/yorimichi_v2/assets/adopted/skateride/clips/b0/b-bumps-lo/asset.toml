@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: B_BUMPS_LO in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/b-bumps-lo"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/b-bumps-lo"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_LBACKKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_LBACKKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_LFRONTKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_LFRONTKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_RBACKKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_RBACKKNOCK_CR_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_RFRONTKNOCK_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/B_BUMPS_LO_RFRONTKNOCK_CR_N"

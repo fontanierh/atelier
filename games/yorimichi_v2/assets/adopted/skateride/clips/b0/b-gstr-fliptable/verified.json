@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-fliptable",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_BOTH_CYC.uasset": "14dbb0537bd75648c5ef2aa9836226a37a95e5b6a7582b88ef67573633881854",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_BOTH_INTO.uasset": "571cb14956eb6f021c43fb77b5a1f9a714d93949a33ab486bcce17c1daca27ce",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_BOTH_OUT.uasset": "d56b691858505046d357a2959e5da6d303dbe5811de2c676d8d5eb7a2863e240",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_LEFT_CYC.uasset": "f64a1e88ecf0307b9d3146e5d02d7b542625e5d5e44c4a0863be6046fd0bd88d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_LEFT_INTO.uasset": "bc3815ab3cbe91ba508e71ee8c9c02912beccc7fe90cfe0af2ca3e93d951040f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_LEFT_OUT.uasset": "c84a39ef0c5d2e03444177c40acd1f2a5ec59eef58b3f47780e7e8178c602ba7",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_RIGHT_CYC.uasset": "85a07a734aafab57d3340074c4ab6b01a96578a27b8c1f7c698b436a9c588c4e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_RIGHT_INTO.uasset": "a4f61cf2cada554644476693ff05a816a0a31336b00015ff6b179852325471ec",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FLIPTABLE_RIGHT_OUT.uasset": "ee753de54359158ba626995dcb93fe2ff0738c23fe4a12786b9bc5e5ab4f1a79"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

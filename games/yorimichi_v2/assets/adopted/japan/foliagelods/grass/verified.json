@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/japan/foliagelods/grass",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Grass_A/Grass_A_LOD1.uasset": "6005e32d8bed580a3878f799cc3bf27fbbb0e152f65bbc9b12065329747bbdcb",
+    "unreal/Content/Japan/FoliageLODs/Grass_A/Grass_A_LOD2.uasset": "734585bef7140e4d9dcbd14fed38d064ec56fc2e31844080e4d921fbabce0456",
+    "unreal/Content/Japan/FoliageLODs/Grass_B/Grass_B_LOD1.uasset": "7aa5e38c3a4a3b43deac78b19b7cadb322921be58b129d36be574ec066b7553d",
+    "unreal/Content/Japan/FoliageLODs/Grass_B/Grass_B_LOD2.uasset": "ff2b86919654542ed564ade30d13f0feeebeef1e53d2c3c898cae806ec4208c4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

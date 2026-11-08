@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b1/hippyout-fwd",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/HIPPYOUT_FWD_HI_TO_BIG_FWD_25.uasset": "f9a6e870c2d09a904f89568318c14b7e1b62106879aac073d23c4cf53da55e16",
+    "unreal/Content/SkateRide/Clips/B1/HIPPYOUT_FWD_LO_TO_BIG_FWD_25.uasset": "e5cec5c44d955ba021df00c1b7690506e0f9f51915c0eddbcde9886830793e4d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

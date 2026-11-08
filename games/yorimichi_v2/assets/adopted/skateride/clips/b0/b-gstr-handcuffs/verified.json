@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-handcuffs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_BOTH_CYC.uasset": "75e41d62f9226c60ba9bca3f6b3c980c286b54d4c0779a01a452c4741e5097c8",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_BOTH_INTO.uasset": "f75968eac54453148b6171862c0bef0922b80ae36e752eebda25f81066504595",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_BOTH_OUT.uasset": "a6e17ae258cc9909ffea346418a5da82ce7c9e45e012bdd7364158fc7469b410",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_LEFT_CYC.uasset": "ea7248dc377768c4e1703e62841f555895974355f5c38441e284ab8e3f12df37",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_LEFT_INTO.uasset": "105c1762c175b9ab6e100bf1439971298156fe2308babe2dd1894f0fbbce6db8",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_LEFT_OUT.uasset": "fa9398ae20948cc8ed32dd41a2ec3162bf5f9e6534634d4bb602e6f465537651",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_RIGHT_CYC.uasset": "d67858c4252fbb498aa3a50e0eb8ad08c49d636d907bbcf746fbf99fa532ba8c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_RIGHT_INTO.uasset": "9f51dba340dbe2adb61f05c5ebf5f8936fee549f1f626a8c728c52417bf14724",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HANDCUFFS_RIGHT_OUT.uasset": "cf1bebf83f426aab8fbc4c8cfd1dacd626b2cdaa6d57a0c976d526f1e6e038f8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

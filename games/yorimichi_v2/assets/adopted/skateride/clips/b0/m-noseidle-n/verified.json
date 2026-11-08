@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-noseidle-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_N_0_CYC.uasset": "fd082a12a8aa3209b2a6a190757eb2f50df096a27aed82cdf975981673d110a0",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_N_0_INTO.uasset": "c0fb1c8d9cf1c12badedbdaf2157cb62f2eba55ae4be2b5fa789e6908f5f58db",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_N_0_OUT.uasset": "61aa9ef101751e0e5aeb86d9324d24fa5898d550ffabe78ab111ecc4b38b69ad",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_N_0_TURN_BS_0_CYC.uasset": "75d47212bacf085783df7b31efb024ad7ae9b87e421b7de2a239feb5ff5f0c61",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEIDLE_N_0_TURN_FS_0_CYC.uasset": "9765c20a21b9e0ed1ba6d9968c85dd07d216732239e4a570498d76ea3433b7df"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

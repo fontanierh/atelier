@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture canteen-ladle: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/canteen-ladle"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/canteen-ladle"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-ladle.glb"
+sha256 = "4dd0a25281471aceadde718f73f6d92bfd63e38a7839b19c5cbd415e2f27b0ee"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-ladle.json"
+sha256 = "72a6b3d24f5061fe70bc068af2751861521a1042a19e4d74b424494f8d834f43"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenLadle"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenLadle/LOD0/M_BT_CanteenLadle"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenLadle/LOD0/canteen-ladle-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenLadle/LOD0/canteen-ladle-normal"

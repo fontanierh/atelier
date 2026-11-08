@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture canteen-pot: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/canteen-pot"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/canteen-pot"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-pot.glb"
+sha256 = "af864859f3c19e6ae4f1926c002f2705e638581b3ee6961b3484dcd26b39c941"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-pot.json"
+sha256 = "fe835b452ef07b3d2d38e005aba5b9fceccfb135abefc79c6539e16047436850"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenPot"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenPot/LOD0/M_BT_CanteenPot"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenPot/LOD0/M_BT_Porridge"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenPot/LOD0/canteen-pot-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenPot/LOD0/canteen-pot-normal"

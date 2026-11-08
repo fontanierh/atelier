@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/f-flip-nose",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_NOSE_GRAB_INTO_0_N.uasset": "db686db294d85d69545f8a82c0c2ecccbb560f37e8baf0ff9c82520aa7e9fc8b",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_NOSE_GRAB_OUT_N_GRAB.uasset": "49d2cdf1bd83cabdfc2abc77ab671e8db3d1779f9cd312dbd3ec8798340774e8",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_NOSE_GRAB_OUT_N_HIGH.uasset": "78f964f7868ee3fb125d3b5924fa8851836d053ee70a96282b02151d9b1f2a8a",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_NOSE_GRAB_OUT_N_LOW.uasset": "b59da4543c9abeaba2000b875f89fd01501876a7981f246aa7b13c31d0d1821a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

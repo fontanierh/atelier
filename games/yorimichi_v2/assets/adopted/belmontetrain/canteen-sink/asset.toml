@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture canteen-sink: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/canteen-sink"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/canteen-sink"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-sink.glb"
+sha256 = "316cb8c7e13f6cf3a98dcdcaeb6dcf154e14422c6043488668afb8fca2e35f0d"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/canteen-sink.json"
+sha256 = "0383e344cf50ece501843b258c3b9078ca77b994cde340175893214f36e2f825"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_CanteenSink"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenSink/LOD0/M_BT_CanteenSink"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenSink/LOD0/canteen-sink-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_CanteenSink/LOD0/canteen-sink-normal"

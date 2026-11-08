@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-stand-stat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_STAT_VER1_N_0_CYC.uasset": "2c724c8c9962b87ee37cc43063357432b0ffd87fa885b014ec3eb5badbb9f92d",
+    "unreal/Content/SkateRide/Clips/B0/R_STAND_STAT_VER2_N_0_CYC.uasset": "07e125439a9cc08a55a49a7ec76e3eda340c4f54d0cd80fcb38a3c5f354637fb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

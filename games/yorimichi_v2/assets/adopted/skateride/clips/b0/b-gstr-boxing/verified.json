@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-boxing",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_BOTH_CYC.uasset": "10c6a36a2e1fcd9852761a92ac43b8f2eebd61508b5548522d630ac33a40da72",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_BOTH_INTO.uasset": "a69ae5168f2c4836776a1f425840d4c573af816848aa36d8db8d79903d375553",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_BOTH_OUT.uasset": "b667840190793b05fef018f30b4cb7ee14d087c5efa67df874a5a624d38c722a",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_LEFT_CYC.uasset": "0313444267188c19ec1703e929c6853d8c60ef465318577bbce9fc22e9e5e7b6",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_LEFT_INTO.uasset": "cac6ba1d08ad9d195e13ecda2114781839ed33137752a369d580ab6fd9f0684d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_LEFT_OUT.uasset": "44ab7f2167d8ebdf221e492022365381c165360d3c7052decbc99e2667d4910d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_RIGHT_CYC.uasset": "3d21788b9e3d47e35fa1e723fcb23bb43b8a7be23327df39715f438ffda352ff",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_RIGHT_INTO.uasset": "1d8e47148ca8352d1ac9beb52919457d5be68478370f849c7e08f7eb5254ece0",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_BOXING_RIGHT_OUT.uasset": "bb9389a8ed7d787f36e3d25bc45f3eaa71132d03efd330b02896c98535aff86c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

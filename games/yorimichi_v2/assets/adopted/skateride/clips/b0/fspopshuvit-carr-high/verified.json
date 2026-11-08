@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/fspopshuvit-carr-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/FSPOPSHUVIT_CARR_HIGH_A.uasset": "1d1902287db809eb082b9ad89b3afc38b3b5cb5850ca9409232e2d75cc840022",
+    "unreal/Content/SkateRide/Clips/B0/FSPOPSHUVIT_CARR_HIGH_G.uasset": "09981ee30262eb149f87577ee16ece898c9b4b892eb824728f34835e823eb359"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

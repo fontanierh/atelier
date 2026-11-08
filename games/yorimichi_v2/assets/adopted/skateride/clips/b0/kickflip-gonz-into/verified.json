@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/kickflip-gonz-into",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_HIGH_A.uasset": "b546b92611e1b6c3ced2cf0da3fff2b5950862aa6054aa432c772de0e8b1a4c5",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_HIGH_G.uasset": "4888e48a2ff5077218ec43d2911c172508d4d0c039006708859b108e2f082ee2",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_LOW_A.uasset": "b16882a1a49d7f3558f517b4a6d46d7b3a4baf115e9f1c21adaf25e21c3b53c8",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_GONZ_INTO_LOW_G.uasset": "751bd7cbd616b444b1573252ce9e9809db55a68064889ac63b1a4149bd278ff4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

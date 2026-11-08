@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b1/nb-sprint",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_0_INTO_STAND_0.uasset": "87b4ef7630114eb2efc16161329acce9a1468d98e5ff422e13d534405c2ef77b",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_25_INTO_STAND_0.uasset": "3b84a697fc5d09bf1dd42ffbc411528d40782181cbb1a1b3a25a2b63021160c6",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_50_INTO_STAND_0.uasset": "18386f35c447ea74275dfa93241faf7214436689c668913ec482c645d5d8d760",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_75_INTO_STAND_0.uasset": "3a232e51cc4be76469930589a92dd0cdb88ac7b2a2858b017bdc6c1922d7ea22",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_CYC.uasset": "a3a9e0af8e4ee3f9b2822d8c71ea2410f25c0a7b5088c62354b9a9aad75d8b31",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_RAMPDN15_CYC.uasset": "a63503d09a9e5714b4a62314ec51c7e310c62f6f42d1e44a0c2873bbf3873d71",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_RAMPUP15_CYC.uasset": "98173724a268364a54a397acdd0decfaa5f8ebc38681b2e6b441a09f33552b00",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_STAIRDN30_CYC.uasset": "cef7baa52bf76dd2999e09decfcdc2130e759842dd5e202138d3af6c663318c5",
+    "unreal/Content/SkateRide/Clips/B1/NB_SPRINT_FWD_STAIRUP30_CYC.uasset": "9f986345e1157de8362e674599da6311d632f612def7c3e278a0942b77d875e2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

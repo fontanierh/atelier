@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-way-rocketair",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_WAY_ROCKETAIR_CYC.uasset": "0342fafbd27e415eab2429a411a8d4ca1d8476240ed9802c7e9196155d08a3cb",
+    "unreal/Content/SkateRide/Clips/B0/PRO_WAY_ROCKETAIR_INTO.uasset": "d3c0f541875e0b19dabf0467a2d1010f989acad664b3fa08ff330b2a9389fdb7",
+    "unreal/Content/SkateRide/Clips/B0/PRO_WAY_ROCKETAIR_OUT.uasset": "fe946e00ccdbf265f1ada4c1d2bb05dd2ca02548a40ee37b656d0153a4ad6ae0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: BR_SPRINT in /Game/SkateRide/Clips/B1
+schema = 1
+id = "adopted/skateride/clips/b1/br-sprint"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b1/br-sprint"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_0_INTO_MOUNT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_0_INTO_STAND_0"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_25_INTO_MOUNT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_25_INTO_STAND_0"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_50_INTO_MOUNT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_50_INTO_STAND_0"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_75_INTO_MOUNT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_75_INTO_STAND_0"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_RAMPDN15_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_RAMPUP15_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_STAIRDN30_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B1/BR_SPRINT_FWD_STAIRUP30_CYC"

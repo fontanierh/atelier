@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-tail-snap",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_TAIL_SNAP_BS_CR.uasset": "0e702b38370dfab5f056447241c5cc4bfdfb305b69a2d7f3be8215cbf6cad46c",
+    "unreal/Content/SkateRide/Clips/B0/M_TAIL_SNAP_BS_N.uasset": "d819f0d31c32699f17e04ee42074ba73ebc8e3b1872215cc1d2db94554cc0a0e",
+    "unreal/Content/SkateRide/Clips/B0/M_TAIL_SNAP_FS_CR.uasset": "d11294950ce160c12f9ba099e3ed6916de5ce63050a05143fa88cb59d1d58e9b",
+    "unreal/Content/SkateRide/Clips/B0/M_TAIL_SNAP_FS_N.uasset": "207a2638c522bbbd8915e16e29b217235338e1eac00d840c4143cf690405678c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

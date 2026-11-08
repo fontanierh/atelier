@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-crailgrab-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_N_0_CYC.uasset": "753084f74788982f1f3e423856c7d9378eeeecdb25ae04e83170ee3dfac5e6e8",
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_N_0_INTO.uasset": "3eeb00d352450cdfd7e82ca4d8d08e3c7184adfbd63b763b611a7cf7e180df7a",
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_N_0_OUT.uasset": "ed2460d1bbd45e8ab6fd14bc59073b546954185dc0e7c2624d6f9154328c53bb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-stiffy-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_STIFFY_N_FS_0_CYC.uasset": "f14e5c9596840bd32005bfc7b1ccef729a70d512821038645ecbf4f44fdb3755",
+    "unreal/Content/SkateRide/Clips/B0/GR_STIFFY_N_FS_INTO_CYC.uasset": "3711cec1e319d89645a343c8006cf94c6228536c7fb85cd1cfb1a4e579da2c4b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

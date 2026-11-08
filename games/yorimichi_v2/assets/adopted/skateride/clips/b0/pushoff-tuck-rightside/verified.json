@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-tuck-rightside",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_RIGHTSIDE.uasset": "7c04109459ea25ee41ebe2824d0683fc56408d30222e0e8be94678fb00650fb7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

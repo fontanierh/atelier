@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-throwarms",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_BOTH_CYC.uasset": "dd013a923571763cd57ed19a3a1fbf44b4fa6eb4b3d1a817a4aa9cba19ed0315",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_BOTH_INTO.uasset": "2a6fa2ed080f80099516dc32f01a5ca2a16251e62a1407c84f6faf8bbe104eaa",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_BOTH_OUT.uasset": "cb70284c0b9f9e796272719d764a7b9188f08ac01522b274742b2241cdea24b1",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_LEFT_CYC.uasset": "7a86c6cbfb88c742335b04ffdadc48b55381e578ad7b0ce68ba5383180e6a815",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_LEFT_INTO.uasset": "ddab1392651c71b9fc0f1fc5e9255482d2731a6e1ff6c2aafdd7aa1a77c93669",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_LEFT_OUT.uasset": "f33fd1b83c548a66f6dff2fd39cfc00cf3a918d91496d979ec5a239d3dae6c65",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_RIGHT_CYC.uasset": "27951d8e251e93b35cb8faa061edad1eb2f587674fc44832934281f8eb5775a5",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_RIGHT_INTO.uasset": "7f8aa316e70801ec9fb7eba1954814cdfa2191c4046824c55a02ad6b475af269",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_THROWARMS_RIGHT_OUT.uasset": "9679cd31f5cc6b5cb9139a23bc303418c21f41aaeb36784cc0fea6939af38660"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

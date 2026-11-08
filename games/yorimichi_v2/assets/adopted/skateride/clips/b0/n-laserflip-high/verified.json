@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-laserflip-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_LASERFLIP_HIGH_A.uasset": "4d2d5cf0521860409e241054e25d3025b097d34f11d6db0bfeff319aceb85744",
+    "unreal/Content/SkateRide/Clips/B0/N_LASERFLIP_HIGH_G.uasset": "d7f003ba570efa6cd2c57be93f4f710273e8bddcbf7bb6d719b9e64ed335398f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

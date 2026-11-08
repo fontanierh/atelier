@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/med-crv-gonz",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_L0_DN1.uasset": "e7c82cf0b03cd0b4e4b62c7119d081df17206529f009b6628e815acfce617d5f",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_L0_DP1.uasset": "afe3d1708cb1ed95a2cc274bdb27c1b62f6e4353e5d4d84907379cf719d8be98",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LN1_D0.uasset": "805f77d34048e77c91b81b2aa3f73b616856420b085071675b2807b61146749d",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LN1_DN1.uasset": "2ace17daeb1a6c6f11d191d3f46ead80f1d2f2d39575f43770687dd1e738c900",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LP1_D0.uasset": "49f1939477b3e8bcac032775a06e3e0292373a3eda467d883b72adff1405029a",
+    "unreal/Content/SkateRide/Clips/B0/MED_CRV_GONZ_POSE_LP1_DP1.uasset": "0e480fd318908bd69d07fa35cc0fbfb5cd12ad7f6db54c6ea1252cfb8ef8e298"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

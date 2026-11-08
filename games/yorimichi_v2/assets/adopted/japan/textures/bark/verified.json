@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/textures/bark",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_bark.uasset": "16a56b67ff1af89403e76efc67861810f7d06cfb9400a6542bbb40fd25f9b675",
+    "unreal/Content/Japan/Textures/T_bark_olive.uasset": "f8b27246c80f230ee46d713827dd2344ca6ef649abd12dbfb49237d75cfad945"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

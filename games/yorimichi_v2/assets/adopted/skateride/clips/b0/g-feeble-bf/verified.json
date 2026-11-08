@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-feeble-bf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_BS_HI_0_CYC.uasset": "c176bde155559aee824617e2e6a81f93cad4368267e5ab5ac603e74352f9f0ac",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_BS_HI_L_CYC.uasset": "2bd362e3ff678466aad24c8f77cb61c37f7cb1ee1134004ef125abf0c6219470",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_BS_HI_R_CYC.uasset": "6f0590a5fa3e38344ee831ecfd341b66e786788fc412375d3ba057b895cf2f4f",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_BS_LOW_0_CYC.uasset": "db13ba9b1a5035f9011b984a11980a37f047ba16119497cb4a7dae17c808daf8",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_BS_LOW_L_CYC.uasset": "bdc9f00bd252c670c1e972a7defba1f66311c559488118c233c3c8b60c3aa338",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_BS_LOW_R_CYC.uasset": "561a833a4442ee9d6c2e987e12ca967d176c152288d20316fa63559bedff705a",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_FS_HI_0_CYC.uasset": "a1d9f28a9d345ce120d2b7cbc4769699ed2bc5bf422b00f128dc54deb98e665a",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_FS_HI_L_CYC.uasset": "efe2e0b9dc5f19b5cc83b27ca0a6981d1d086c57e46405bd666f1ead5df0dec2",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_FS_HI_R_CYC.uasset": "f3571bfed5e42178cab4eae3bf176063d4311850aff96306942d7c0875926179",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_FS_LOW_0_CYC.uasset": "0e63c449af45bc616d22d5ac3bd1570ca2560ab7bcf20e20844389d6314f3ad3",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_FS_LOW_L_CYC.uasset": "00fe591ed8f3f67acb47ef01a43215394434e11aa3966eb8d36928ec487b74d6",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BF_FS_LOW_R_CYC.uasset": "abeecb8b6fbc06177c350a095da332fb2a9182854cb066b00f797df2883b151b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

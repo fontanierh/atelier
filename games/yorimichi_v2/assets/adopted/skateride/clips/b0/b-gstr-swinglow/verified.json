@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-swinglow",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_BOTH_CYC.uasset": "f42ce65764a0888d693c8c532db3f10916dfe9b4830b67794cf1b36f7c719540",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_BOTH_INTO.uasset": "1680b0f35837c560faec2b8aa6655c495bd65d390e7ea7d483dc8261e970680f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_BOTH_OUT.uasset": "d091ffd7b3e8889fd653c94b94d75a27cf625b55da04243d10105a81b67d9c87",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_LEFT_CYC.uasset": "fe580a86ab1f09fe6ac2717815bedb10256895faab4fe73506fcc815e199fbc2",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_LEFT_INTO.uasset": "4424cf8a58a9b4cb2cc4efaf28157dd18b643c9f9fe9488f55fee52cc6e4e8dc",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_LEFT_OUT.uasset": "aae3f1b0707e858bd9ae4c341bdb36a2ca2a6c2ff4de3fe26e6d6522a62ed642",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_RIGHT_CYC.uasset": "80dc04e4babf6538736b75218de006ba1e6a864373e566de7fae05f92d782ec5",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_RIGHT_INTO.uasset": "b1ed09f18bfddadfd96a9c926bbb72cad6f5ae9b030595b2ae1d4d44cd4dd380",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGLOW_RIGHT_OUT.uasset": "146abd6692dd481610a1f77cfd878f334fe2f709cc84674b7ee65e173a45bfcf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

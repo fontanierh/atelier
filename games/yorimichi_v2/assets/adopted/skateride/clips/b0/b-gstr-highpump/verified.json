@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-highpump",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_BOTH_CYC.uasset": "b9101e8aaa8c48a0b24a98024a42867089a0ea035b7573b4948bc518f492565d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_BOTH_INTO.uasset": "217655f44bb5fd3ebd0c1542bfdc79bb5bb73c80536800304a29c9e63e753da8",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_BOTH_OUT.uasset": "ef662f742c1b51c99975d6a11d07cffd34edcddd328637e762186785fc40a8ba",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_LEFT_CYC.uasset": "fc6f87569e85f622c91e1a0652d148e6740f4c5d1ed35845352fcbf85dd133fd",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_LEFT_INTO.uasset": "b634f78d8cd2a79e0ecb2f90f67d76c25c2ba645a647120f62b9525f0a5f2971",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_LEFT_OUT.uasset": "e802890363ebd4112be3dcc4c40bc3b0be39707d3ad88bf7466f6f993163d647",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_RIGHT_CYC.uasset": "870fe48b14658c217822eabbbf4b6b26d7a1fa103db3d4278ebeccf19d1b4f45",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_RIGHT_INTO.uasset": "f58566028e75629804ce52fd82db546912e5e4dd9868ad09cc191cdf224d4154",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_HIGHPUMP_RIGHT_OUT.uasset": "c38b7d8f015d220c75ff13c30abab94c08654eeaa6ce70a8f71002c271f6213c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/jnb-kickout",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/JNB_KICKOUT_TO_SML_FWD_75.uasset": "eec20f6b6b68595ac5d73cb9034e4e209ee3be5f9e93dabf6ccda741e3f16781"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-feeble-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BS_HI_0_CYC.uasset": "af999943d0391afe5a7afb3d446ef3761e2a8063a4d19f095c704449a8c8b8b5",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BS_HI_L_CYC.uasset": "86e63a012596b0cce91ee81113a49969d2270e0c45b647bfdf7dc1c81b6f094a",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BS_HI_R_CYC.uasset": "3602cd5e729b4cd821279676ab804525eb9ece1b52fad16f084168af28361267",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BS_LOW_0_CYC.uasset": "78483947d229171ad6371cc33dd5a3cba26eedb8e62e4dd194fe98531d4c10b5",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BS_LOW_L_CYC.uasset": "e0c7a1e20a281a22d821b62f8c776bace5611388327af38d92aab6b15b866a30",
+    "unreal/Content/SkateRide/Clips/B0/G_FEEBLE_BS_LOW_R_CYC.uasset": "78448f11db45b468078c280d5e636d0451010eea0668ff52fc289eb98ca8714c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-seatbeltgrab-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_N_0_CYC.uasset": "cfa9337c03850d973d5164f091fec631f03105042379e5f85e24c6ea73efd48f",
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_N_0_INTO.uasset": "5a74da1c75fab2b5036ac524271b77d74f1fefb7af9f16a26603eeef6c53f111",
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_N_0_OUT.uasset": "b014d49aaa9e6babb414a9b6ed39bc2b7ae81f7f24b3f323416a1d7ec5479c8d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

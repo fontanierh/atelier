@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/dropin-ride-fakie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/DROPIN_RIDE_FAKIE_CYC.uasset": "a5f54f960739cab6a63815d0f51736d9dc11fd8f9aee90423f28fed57a78e13c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,20 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-heelflip-hi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_4FLIPS_0_OUT1.uasset": "5cec1594698a05faabe54cf7fc0aa4f8a98c5daa1cbb6b496aba31834d20341c",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_4FLIPS_0_OUT2.uasset": "f9e24c07368b3ebe82c100fccb3178c353c003b72f248399f566b0243c4648e2",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_4FLIPS_0_OUT3.uasset": "f5e466736d7aa234a5dd0da5a8127dd1b7a48bd78660a89c798388d3a5f963dc",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_DCATCH_OUT1.uasset": "759ac02866d66144ddefe987db498fdc23c581971bfa66370373414f76a4386d",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_DCATCH_OUT2.uasset": "3421173c44ae6d621521664f43948bb73b1b34e5244ff13f1c9a85cb1b9642fa",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_DCATCH_OUT3.uasset": "fa6693f556beba46fdd2fd7b01495b8f9af9bf41694329b1a357595f7b4551e3",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_DCATCH_OUT4.uasset": "88c54afbd0c3e06794f7143f822d76976a48eb64c35d3d607a0dfdedd28cd0f8",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_UFLIP_OUT1.uasset": "e272f6bf869e6334a20e3c06477c5e1a476d57c2524bf511ce0eb26a4e083715",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_UFLIP_OUT2.uasset": "e216a376853fcbe9626061ab9ef416762ae9b688697929e5edec98e5f750aa89",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_UFLIP_OUT3.uasset": "4bc6d1fd8cb1289226c070f593b2015bcd290965799948eb771eadf741604699",
+    "unreal/Content/SkateRide/Clips/B0/T_HEELFLIP_HI_UFLIP_OUT4.uasset": "63324ec87a39b30b65fac458bd17318c484b7fc7e5a50082177ff44a24d233e8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

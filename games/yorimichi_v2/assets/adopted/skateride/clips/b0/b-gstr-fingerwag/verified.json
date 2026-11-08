@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-fingerwag",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_BOTH_CYC.uasset": "5b320cfcbdefa588f25c0c14f1ff6a2910ed0d8ea985d29092ae7ee3a68ba21c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_BOTH_INTO.uasset": "a48124677f4b0e84a08546e2ee2a87cfc29f15b2356763eb4ad7e7087a36a619",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_BOTH_OUT.uasset": "55359535d9a03426bb1867470f05d56d57c8cb5fb9ee45a6a798521e622164c6",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_LEFT_CYC.uasset": "fadba115cbef3fe5866fddedf4ea00f63388a73d125da4c9269d6513e783b0f0",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_LEFT_INTO.uasset": "65fbf5313e1de70026571df6aab9add5345f7171d62616cd86f92181a1f99443",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_LEFT_OUT.uasset": "196af8e18d1685c54e32681e52d8fffc5c3ccb75d012e8a5e7630a607905c59e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_RIGHT_CYC.uasset": "67395add9323dd00703daa8cdaa9d5dcfa44185597f62c3fe59ff4a53c108b86",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_RIGHT_INTO.uasset": "6d34b5fb64bbc4d82851c770b12e13289aff760fd9067e77a4d9311c2eeea4c2",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FINGERWAG_RIGHT_OUT.uasset": "4ce442a9d12b4f7af61101dec116b62d0cacf1c61a53513341f10b3299953548"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/japan/materials/bark",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Bark.uasset": "58d5e89f6e80907b1300ebb82be82cad79a652b1636ce3ebed3448baf35d3503",
+    "unreal/Content/Japan/Materials/MI_BarkOlive.uasset": "8526572a0319a297cb4630f1f0d6b311d05481180cf3a00c873f6ee92c47b232",
+    "unreal/Content/Japan/Materials/MI_BarkTuscan.uasset": "74206901dfeb72adf0c0f6397b1a41917e684eadf83fb47b9bd0805de4ae2af2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

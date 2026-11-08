@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-n-360popshuvit",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_N_360POPSHUVIT_H_CYC.uasset": "3f0e7bf7d85f57c73dcaedf28e08fa5f113c50e0dc18e8cbd9b9aa7a07cb198e",
+    "unreal/Content/SkateRide/Clips/B0/T_N_360POPSHUVIT_L_CYC.uasset": "c1c9661737c4eec80b74811273de699bcd9728a87be52caeb8707747c3666c8c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

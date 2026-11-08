@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/mongo-push-to",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/MONGO_PUSH_TO_ANTIC.uasset": "a89d2a286d22a842f8c349d7a956fbc8282e16c9d4775d8a47f113fefa548c4e",
+    "unreal/Content/SkateRide/Clips/B0/MONGO_PUSH_TO_NANTIC.uasset": "605d16aa2fc24d3c295832b1ce409b0ec3fe2507a15469eff6937507202a8691"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

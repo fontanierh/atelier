@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-popshuvit-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_POPSHUVIT_HIGH_A.uasset": "c02503b885034da45aa7a7287f6a66aa8aa06e21f356daa816876c3087d2a85a",
+    "unreal/Content/SkateRide/Clips/B0/N_POPSHUVIT_HIGH_G.uasset": "1e8eb44f9c67f669a368ca8fc8d73cdac6307b8248c27688579b216b5f5fb8cd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

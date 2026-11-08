@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: IA_DS_IDLE in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/ia-ds-idle"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/ia-ds-idle"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_DS_IDLE_LO_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/IA_DS_IDLE_N_N_0_CYC"

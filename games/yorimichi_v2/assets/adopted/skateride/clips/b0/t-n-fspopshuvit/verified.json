@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-n-fspopshuvit",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_N_FSPOPSHUVIT_HI_UFLIP_OUT1.uasset": "dfc5898c28e31c0947c66f246dff97ab3144a7f05042da0554ad98755d59058f",
+    "unreal/Content/SkateRide/Clips/B0/T_N_FSPOPSHUVIT_H_CYC.uasset": "853228bc71ba1a08eec46d219c8b601a8bc5cbbe3624440df23fc97663e64541",
+    "unreal/Content/SkateRide/Clips/B0/T_N_FSPOPSHUVIT_LOW_UFLIP_OUT1.uasset": "7ecab744a8c56d13587e018fa5b8db870e5e24f980754da7194db451e95eca2d",
+    "unreal/Content/SkateRide/Clips/B0/T_N_FSPOPSHUVIT_L_CYC.uasset": "6d36ca2071f4ce34a25e8d90534e5f149307113c7d6270b75e68610e73c2964e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

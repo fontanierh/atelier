@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-antic-ollie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_L_0_CYC.uasset": "1b008767052cdda3f899e30fa94a0a21037285a539f56268bbe014f811950bf0",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_L_0_INTO.uasset": "4756cae6a37bb9b9d20fefb340deb1825396e4e073e33f7ae122a059172f6b6d",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_L_0_OUT.uasset": "76cc97033291b31be3dd53b4d43eb3e381f8c94f7805fcd80c76aab410cd1cd3",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_N_0_CYC.uasset": "b17cb3295dccb501061ad6f99eb19f1c4aae30a80570d407ba0a60e75698cf08",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_N_0_INTO.uasset": "9544dc3e3b9970b4636006e242fcdede685e90ae1f82ce06ade7ff1af8c41a42",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_N_0_OUT.uasset": "b9128357bce74e4ae7fd3cf1cbd5beef82a5d39fa9e53e8360480aad83546686",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_R_0_CYC.uasset": "1e2adbd278a1f377f8c5597eb93d14c94b00ff89bdb643f19d37f26193e08805",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_R_0_INTO.uasset": "f7f3770c3999c445790cc6578de00800c9253096d8e1afd8dfbce6c7836fa040",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_OLLIE_R_0_OUT.uasset": "b70cd38a3b6f9910ffd7e9d2f1a10446c3150aef6b4da4f3e99a0e0e0aec04a1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/hardflip-low-g",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/HARDFLIP_LOW_G.uasset": "a87df03309f52a3782cd013b41bfc4ce0dbd543b7e11f8cccaabd1099f204aef"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

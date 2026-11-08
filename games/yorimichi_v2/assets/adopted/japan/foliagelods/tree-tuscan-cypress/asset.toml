@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage tree-tuscan-cypress (5 package(s)): LODs and crown material
+schema = 1
+id = "adopted/japan/foliagelods/tree-tuscan-cypress"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods/tree-tuscan-cypress"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Cypress_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Tuscan_Cypress_LOD4"

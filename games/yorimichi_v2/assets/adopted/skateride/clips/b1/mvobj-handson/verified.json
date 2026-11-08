@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b1/mvobj-handson",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSON_CRCH.uasset": "7c3c22daf8e5f9791dfa47ec6ffc7de67a4af72560abc876b4984ef8478e6d1e",
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSON_CRCH_CYC.uasset": "2f3d3384b2c0de6f6a56706192f5a3e9f0cc1915b8f2d2447692d7102f17dda7",
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSON_HIGH.uasset": "345db2fe374f4af7a9e84970fb3f78caf4593fd1f54b7befb4c66875c6a21816",
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSON_HIGH_CYC.uasset": "0a060bd68f01e243f1ecf13ee36a922d33b075811e3c1c091d7afa0ee10da3ac",
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSON_MED.uasset": "362078562d1f05d042a46a77c10e8637c4b9c5750240711a8fdfdb51a43b3be6",
+    "unreal/Content/SkateRide/Clips/B1/MVOBJ_HANDSON_MED_CYC.uasset": "c3e826cc9d6ffcb7c130227d9d7cb61ad218f8f1e7d6a257c2df44116d009a7f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

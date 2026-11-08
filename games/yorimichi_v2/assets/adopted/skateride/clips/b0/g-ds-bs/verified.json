@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-ds-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_DS_BS_HI_0_CYC.uasset": "beee828d47fb67a48fa53066c9fde8bf73bf7d0065fc324a13f80b6afc3e1bbe",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_BS_HI_L_CYC.uasset": "c6e9916b8567a5021ed507010be7364332424c90e8ed65231af763d99a152363",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_BS_HI_R_CYC.uasset": "04237f4c8631d723aa339f4c443295fcc9d7edbb69d4071ea146fec21e791375",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_BS_LOW_0_CYC.uasset": "d274025467d502ddcd846b92e59daa734be70c98cfdde00eaf95eb40ad0af905",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_BS_LOW_L_CYC.uasset": "dacddd85c8bca4556d5846974059ac89af78f779c471a47cae9eff50004051ce",
+    "unreal/Content/SkateRide/Clips/B0/G_DS_BS_LOW_R_CYC.uasset": "da663a5066b24ebf6ccfcded952c532473c2390620b823f88047312ed625c649"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

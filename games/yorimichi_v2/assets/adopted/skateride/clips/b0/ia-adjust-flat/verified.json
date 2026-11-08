@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/ia-adjust-flat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_FLAT_BS_0_CYC.uasset": "a947198cec93bdfa7f8725f5a2de6f7e8cb5153d3ba0e0cb4f5efedb8e0b004e",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_FLAT_BS_LOW_CYC.uasset": "f994c954332fb000b80dc9d9e6314c2c6e3117f32ac3cbb218a6a5d556ca51d3",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_FLAT_FS_0_CYC.uasset": "87f9f85c648546c8253f6dbfb89701185e843d6405bf824a0270f25bf956f543",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_FLAT_FS_LOW_CYC.uasset": "ef5b21225a0b2944eb687f556f61f141bba04633b95b35538db40d106953bb06"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

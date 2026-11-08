@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/ia-bodyspin-ollie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/IA_BODYSPIN_OLLIE_BS_0_N.uasset": "654c80ac4abe0fb9d7b8a60e4541ca82834042f8edca08520acf52477f58e741",
+    "unreal/Content/SkateRide/Clips/B0/IA_BODYSPIN_OLLIE_FS_0_N.uasset": "5aff159dc8d469ea26fb81a3fd3273dbe91a2d5681bc574047c8c6df3dca767c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

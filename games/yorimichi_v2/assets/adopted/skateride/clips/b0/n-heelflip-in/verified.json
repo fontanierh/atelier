@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/n-heelflip-in",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/N_HEELFLIP_IN_HIGH_A.uasset": "9b9965456822bc5ed5f54833ae5928ba8cf79bc46a324c83b8c9eb23d2552a41",
+    "unreal/Content/SkateRide/Clips/B0/N_HEELFLIP_IN_HIGH_G.uasset": "acedd21e1956a50a22bf543d319b49e530ec4b6cafefdd2855a7615c30840e33",
+    "unreal/Content/SkateRide/Clips/B0/N_HEELFLIP_IN_LOW_A.uasset": "f908ddca96b18e57da4c223994db13def024c4c1b75b0cbbc820a133f145346e",
+    "unreal/Content/SkateRide/Clips/B0/N_HEELFLIP_IN_LOW_G.uasset": "e7fb19d85e77669480206be3517750dc54b9f7523e98bcee8b237100b6232398"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

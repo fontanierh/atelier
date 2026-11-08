@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b1/dropin-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/DROPIN_STAND_CYC.uasset": "4f59b8e04cd2ff0938cdf4d16e48d476cf1916ad1d247fb5d9ca77568f91567c",
+    "unreal/Content/SkateRide/Clips/B1/DROPIN_STAND_INTO.uasset": "04ec279b669250b9935d8029a9a7f900e3ebca1bd2b18188101c9f352f735bde",
+    "unreal/Content/SkateRide/Clips/B1/DROPIN_STAND_INTO_STAND_0.uasset": "b9732926f6d54e2b05bfb019a0dc150e0af3b02465c1d16a0bcbc848aab3283f",
+    "unreal/Content/SkateRide/Clips/B1/DROPIN_STAND_OUT.uasset": "2de078715359ba44acbd185f20f38791c436782e2516f942883e857369da9802"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

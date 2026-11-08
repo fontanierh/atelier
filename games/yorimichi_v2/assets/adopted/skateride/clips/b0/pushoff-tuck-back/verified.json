@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-tuck-back",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_BACK.uasset": "2baa17b704597d8104121bb59a61d355910c3ef42398503602e87fadcf0d4254"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

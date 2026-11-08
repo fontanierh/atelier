@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-freedom",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_BOTH_CYC.uasset": "5c4c310301c05707ed852220efa6848afec875d2728c43687f21a419da216451",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_BOTH_INTO.uasset": "a44466e95fdabaf8f78e5458f79d4fd56734d718894c091a7c4d7ed529f106ee",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_BOTH_OUT.uasset": "6d4546c737edc096dd9c88685f56e20f3a4f33bf1d1d3295603189df872c5540",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_LEFT_CYC.uasset": "a2484710ee12f1606e8ef4c560e59b64b49f2439ce6fb62946be61fde405e7aa",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_LEFT_INTO.uasset": "49e6e2ec05a3ef974ad70624626d375e00940a8f9ab8afb6bb9c2d21c9254387",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_LEFT_OUT.uasset": "6031df50f2af384c4cf8c6c9199e9e961f9cc641233e69da662af8069f748641",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_RIGHT_CYC.uasset": "b831e44d1bcd2cfd43d24e14a9338f9c606bcd64ed75b8754aa9bbdd98c6f1e2",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_RIGHT_INTO.uasset": "987b432f175950bfd067affa46f85302c17b6561e2613507d3e67d5417fb68fd",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_FREEDOM_RIGHT_OUT.uasset": "375dbf6acf51d2e62c845065fc89d89816f2eb24359f5db9afc08eb15348cfc4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

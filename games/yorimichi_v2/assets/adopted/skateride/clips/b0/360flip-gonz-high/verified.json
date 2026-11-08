@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/360flip-gonz-high",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_HIGH_A.uasset": "16a13ac360eb112328ff88a0eb46ac46207e0180ac1b3b4a4d92dfd8bda310ed",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_HIGH_G.uasset": "d30a429fb49ee646dee6112c11c492a1a5b46b6026f67b8b097c5b0ef9820945"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

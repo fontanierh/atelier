@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-hi-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_HEEL_CYC1.uasset": "6d5cf864bd7d8502ed3d5887377422b62fee67296dcda4e91e4ff4e924662a78",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_HEEL_CYC2.uasset": "91693386883431b823d4cdca037410aa547a1ab16745683e69a95eef289fc382",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_HEEL_CYC3.uasset": "09ae013c93dcc3ff4b332491f4fb1964e88698d37710039f36031e60fa03cb62",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_HEEL_OUT4.uasset": "79309e9d3baaa70be043cc5d8a3bd0f455d80e16212bf4b1e58ea65eccfd35fc",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_KICK_CYC1.uasset": "064d898fdbe090739ce783ea2a90046e53b63c81690e9fe5d9127a07710079ba",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_KICK_CYC2.uasset": "5807a5cc6f22bfad2292131789f16984b36f468ac5cde61e7db68af9f3d6a719",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_KICK_CYC3.uasset": "5d9ce8b1ffb7d173e9c5f47d9236235b6b504a26c1424d2562f9ff6b938c38c2",
+    "unreal/Content/SkateRide/Clips/B0/T_HI_N_KICK_OUT4.uasset": "82cb16988d0ff5d16221eeda70eb3ea06c6c2c54c20363ef35eb71cf69de442b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

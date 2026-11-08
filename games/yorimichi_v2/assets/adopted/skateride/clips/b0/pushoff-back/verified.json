@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-back",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_BACK.uasset": "a9ad7269e19d8fa652e12952dfcf248c9525af2d4dc65356539312f36162c8bd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

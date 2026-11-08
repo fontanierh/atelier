@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-turn-180slide",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_TURN_180SLIDE_BS_CR_0_N.uasset": "911b6aa35048dedef60da09d45482947abb6fe48cf3b3c11801418b1d127fd8a",
+    "unreal/Content/SkateRide/Clips/B0/R_TURN_180SLIDE_BS_N_0_N.uasset": "1e2dc7a17790aced471138602edfac043a8449e20ffb4cb8bf1f5d3927a4919c",
+    "unreal/Content/SkateRide/Clips/B0/R_TURN_180SLIDE_FS_CR_0_N.uasset": "842bd1a08cb2102c7a56e04f3dc0b8879749e38899e5f8d0ea3a64165d4c6e96",
+    "unreal/Content/SkateRide/Clips/B0/R_TURN_180SLIDE_FS_N_0_N.uasset": "261ddb9b5119ad5739b6ed83c278d8468c26b9f6d951ec21ced46ccb5b02dec8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

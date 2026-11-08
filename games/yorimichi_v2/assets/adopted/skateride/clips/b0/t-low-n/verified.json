@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-low-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_HEEL_CYC1.uasset": "11954379c83ce93896e39caa78ce7345784b46c0869b947622bbf36dae9e5f96",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_HEEL_CYC2.uasset": "e219479885f58fec3836d330d450ef1b77ad60962d16111d035e32860224b729",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_HEEL_CYC3.uasset": "1490e7448f458214c2b360e17d9da31d47afbe447bcae7c781e63d04c9ba84da",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_HEEL_OUT4.uasset": "d6359f1a714748722e67389e3dbc9500787494ca6a2c61e6a4257b61d4872c83",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_KICK_CYC1.uasset": "305db11989becae50bc1d3b6f393b9453a342bdf8056a577bee285d1938012d0",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_KICK_CYC2.uasset": "bb95605cfaf88557a5f33043cbf743134360f4d4d98318a07e4c7e5cd11ae5ec",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_KICK_CYC3.uasset": "b7984e45a7e7c375f681e26aeacf08abccfa4c2682fdc880a809de90fd9ad73f",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_N_KICK_OUT4.uasset": "7699a6834a2083bc00973af1842c25ad928ab98cab080141f287d2b17ad84318"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

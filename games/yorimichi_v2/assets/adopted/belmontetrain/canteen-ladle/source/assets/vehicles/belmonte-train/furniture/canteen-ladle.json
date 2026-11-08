@@ -1,0 +1,38 @@
+{
+  "asset": "canteen-ladle",
+  "source": "canteen-ladle.glb",
+  "source_sha256": "d8f5b8d31dd6359b12cfb5fd91758f639c9f1c130359ff4e76f3ac5ddb6997ca",
+  "target_m": {
+    "width": 0.225,
+    "depth": 0.194,
+    "height": 0.7
+  },
+  "source_size": [
+    0.4091,
+    0.3525,
+    1.2718
+  ],
+  "quarter_turn": false,
+  "uniform_scale": 0.55042,
+  "column_fraction": null,
+  "column_stretch_m": 0.0,
+  "fitted_m": {
+    "width": 0.2252,
+    "depth": 0.194,
+    "height": 0.7
+  },
+  "errors_m": {
+    "width": 0.0002,
+    "depth": 0.0,
+    "height": 0.0
+  },
+  "ok": true,
+  "triangles": 5942,
+  "pivot": "hook_top",
+  "glb": {
+    "file": "canteen-ladle.glb",
+    "bytes": 595396,
+    "sha256": "4dd0a25281471aceadde718f73f6d92bfd63e38a7839b19c5cbd415e2f27b0ee"
+  },
+  "output_id": "canteen-ladle"
+}

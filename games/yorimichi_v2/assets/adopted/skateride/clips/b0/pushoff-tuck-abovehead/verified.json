@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-tuck-abovehead",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_ABOVEHEAD.uasset": "552038318a6ea5d6decc4fd6f71e93d91d641dbff4558f92cdcdf2e82bcaffe7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

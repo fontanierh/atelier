@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-dunno",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_BOTH_CYC.uasset": "5dab2cf27a91d1702ea0463806d10f8ef73bd8ecabb818b494d7714fb565992a",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_BOTH_INTO.uasset": "88006481ab7927ded4c61f73e3fcea8ed3398c42529050250ce163c6c7cc4451",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_BOTH_OUT.uasset": "c8d32e6e9cd17409e2b804d2c57aff32a677a088ac32ea355aff73dfe4262b54",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_LEFT_CYC.uasset": "0b46300568499da890b811f6eb23a8825a6d4e9e83c7f377ee5ad24b2a85c743",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_LEFT_INTO.uasset": "5d66f2afbb472a7d293522b72dc8695e5a93d7358aaa0d57623f002ab6a40d79",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_LEFT_OUT.uasset": "75739603fc97762ca67b2a26e4bc00d729f344a9e51f28d1b167c05208fe2af3",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_RIGHT_CYC.uasset": "d4d00de50ea8485ab053cdb20f8d9e09021cfa46f03000bce8945a4532376bf9",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_RIGHT_INTO.uasset": "7c599682ebc4395d80d7dcf39a9662587332fdfaae3f820d34298449fc5c977f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_DUNNO_RIGHT_OUT.uasset": "a8e75ce6637cd1351e4448eefab33ef53b32732100fc905f1fe8a6c7bc3457ba"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: F_FLIP_BS in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/f-flip-bs"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/f-flip-bs"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_INTO_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_OUT_N_GRAB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_OUT_N_HIGH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_OUT_N_LOW"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_TO_MUTE"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_VARIAL_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_VARIAL_OUT_GRAB"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_VARIAL_OUT_HIGH"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/F_FLIP_BS_GRAB_VARIAL_OUT_LOW"

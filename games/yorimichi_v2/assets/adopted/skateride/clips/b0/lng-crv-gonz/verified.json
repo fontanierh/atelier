@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/lng-crv-gonz",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_L0_DN1.uasset": "e76588d988e780bfc8f07d0a97b4f61fbfbee0afd88680229588d83ac32bcf71",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_L0_DP1.uasset": "6fa89552eb3b8e2c1f8e1f8410fc715aa1839f709e8ab82ab42a795ddbb53fff",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_LN1_D0.uasset": "df70bbafd3ac4bfa8b31d231e85d73b24f28dc1947b464a0c6ebd2a872c65f8f",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_LN1_DN1.uasset": "6177beafd201a2a0854682fd22e6762026f89fa0f29198dde9e7b72e435a3aec",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_LN1_DP1.uasset": "0ebcd4985e6b97566c12bfc241fae82709ca06e7a53fe69adfaa1fdef7362c76",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_LP1_D0.uasset": "5f65f63a91c0e7fc5cd994ede34897be2520f9a1fe93a723829ca6e3fd73317e",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_LP1_DN1.uasset": "b74a8e5394aa4329dafc0ed5ac1309df703cb6b84bf77162dc29792f74afe41a",
+    "unreal/Content/SkateRide/Clips/B0/LNG_CRV_GONZ_POSE_LP1_DP1.uasset": "ae304a2914c26f85292c0c4705820dde6cda19bc50ec348b90a7ef9fcc4dcbd9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

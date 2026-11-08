@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture restaurant-table: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/restaurant-table"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/restaurant-table"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/restaurant-table.glb"
+sha256 = "ef393a824e3defd57f0a5fbda620e2171c91d06d6f4247b03e9308a6da135e7f"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/restaurant-table.json"
+sha256 = "9347abb3a5b5d8403c837e95ee58daa6fdc05664807b8359b47857134be48afa"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_RestaurantTable"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD0/M_BT_RestaurantTable"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD0/restaurant-table-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD0/restaurant-table-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD0/restaurant-table-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD1/M_BT_RestaurantTable_LOD1"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD1/restaurant-table-lod1-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD1/restaurant-table-lod1-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/LOD1/restaurant-table-lod1-normal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_RestaurantTable/SM_BTF_RestaurantTable_LOD1"

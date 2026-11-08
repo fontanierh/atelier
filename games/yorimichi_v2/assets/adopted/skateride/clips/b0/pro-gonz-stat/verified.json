@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-gonz-stat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_STAT_IDLE.uasset": "4116b014d99522d7b8fca69c0be6d61cd1f2ffc1452a78fcc840c7b26668d607"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

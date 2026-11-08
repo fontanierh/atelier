@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/kickflip-mcarroll-into",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_HIGH_A.uasset": "3b8878de5e384c17671ddedf6efa5b3db8a8903356769e24775a26c88a86b036",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_HIGH_G.uasset": "faed9faadcda8a775a0354ddba7e0c0bad9c12fecdf91664bf7a0020311a0a21",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_LOW_A.uasset": "9b96456fcf7dc50917f64bbe53dd3ff91227f6bedd08d48808e0e537fbe67ce6",
+    "unreal/Content/SkateRide/Clips/B0/KICKFLIP_MCARROLL_INTO_LOW_G.uasset": "23bf9e99e062a48c7b1f866a73c866d54e2b3747ffd2bc3aaed5ee006b5d3a57"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

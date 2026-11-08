@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-darktolight-bsshuvit",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_DARKTOLIGHT_BSSHUVIT_HI.uasset": "74983088dc16a624f3939cf3f8ff8286544b462f84c7f7ed0165d61065cea59a",
+    "unreal/Content/SkateRide/Clips/B0/T_DARKTOLIGHT_BSSHUVIT_LOW.uasset": "d6903a5545855976b7a8264ce921e01ce9410db3e3ea3adf3b4be424634d0b54"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

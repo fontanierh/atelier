@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-forest-maple",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/MI_Tree_Forest_Maple_Crown.uasset": "172f1357e08c61ea1b07f968eee2ee708075743b089ee1ffdac2156463e5c5c5",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Maple_LOD1.uasset": "9dbf8fecc3c84ea41c30c0569ae8565a652718a5c6c1197c26905d58ae4c4a37",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Maple_LOD2.uasset": "fc5694715a23e8c4d4be8315f3cef14d5bd90e697197f10fe3275cd1878fb3c6",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Maple_LOD3.uasset": "21581f9b5713a09d28b0310e46eb4f6d5be5fc0f7b91e9a728ba0a2e8c397980",
+    "unreal/Content/Japan/FoliageLODs/Tree_Forest_Maple_LOD4.uasset": "08c1c13705e6ba847335d501fa630b38aa9eb855ab4cd5284f9961ec05bc46fb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

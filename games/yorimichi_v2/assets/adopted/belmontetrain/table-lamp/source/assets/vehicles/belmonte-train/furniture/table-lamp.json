@@ -1,0 +1,57 @@
+{
+  "asset": "table-lamp",
+  "source": "lamp.glb",
+  "source_sha256": "8ef4acf6b4fe06b9cd78a4a86f5ac5d4903232babedc0d814ee02493474e5fc2",
+  "target_m": {
+    "width": 0.24,
+    "depth": 0.24,
+    "height": 0.456
+  },
+  "source_size": [
+    0.5259,
+    0.5259,
+    0.9995
+  ],
+  "quarter_turn": false,
+  "uniform_scale": 0.45638,
+  "column_fraction": null,
+  "column_stretch_m": 0.0,
+  "fitted_m": {
+    "width": 0.24,
+    "depth": 0.24,
+    "height": 0.4562
+  },
+  "errors_m": {
+    "width": 0.0,
+    "depth": 0.0,
+    "height": 0.0002
+  },
+  "ok": true,
+  "triangles": 19959,
+  "pivot": "base_contact_center",
+  "glb": {
+    "file": "table-lamp.glb",
+    "bytes": 1391572,
+    "sha256": "cd453f793ca29d4b2899902103c72f533a7a8aebd601fdc4184f5308707a34f0"
+  },
+  "output_id": "table-lamp",
+  "metal": {
+    "hue": [
+      28.0,
+      58.0
+    ],
+    "min_saturation": 0.45,
+    "min_value": 0.4,
+    "skip": [
+      0.0,
+      1.0,
+      0.0,
+      1.0,
+      0.56,
+      0.985
+    ],
+    "share": [
+      0.5915735363960266
+    ]
+  }
+}

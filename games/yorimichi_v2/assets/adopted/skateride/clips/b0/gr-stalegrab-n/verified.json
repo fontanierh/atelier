@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-stalegrab-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_STALEGRAB_N_0_CYC.uasset": "db83c19bbcc594bff46d51615bf3ffc5ec9ee3fe38193748151f8ee0822198c2",
+    "unreal/Content/SkateRide/Clips/B0/GR_STALEGRAB_N_0_INTO.uasset": "57af7b3a3d3c28e3e62a3f3e47331e7c1117ef14dd8c4d239dd8a621961b9c62",
+    "unreal/Content/SkateRide/Clips/B0/GR_STALEGRAB_N_0_OUT.uasset": "c1bac081cd5f464d1e382b4c7f508406ed4f4303c58d447d625ec593a3b66d2f",
+    "unreal/Content/SkateRide/Clips/B0/GR_STALEGRAB_N_0_OUT_IDLE.uasset": "b05ba5a59d6d22131ebd3f85c4d21713f8c9dd2b9b7cf4823916ce278a64bd5f",
+    "unreal/Content/SkateRide/Clips/B0/GR_STALEGRAB_N_1_CYC.uasset": "0a4f8ed41d552728caa33e9e5e72436c67f41e11f9a7d44e46bc4044dba17192"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

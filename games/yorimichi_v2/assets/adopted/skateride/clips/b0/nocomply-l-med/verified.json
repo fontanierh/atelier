@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/nocomply-l-med",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_MED_INTO_A.uasset": "a8ef5d73ec21dba5ecb691a8996b61be4b0106fe50635e23a4acdab1e782effd",
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_MED_INTO_F.uasset": "393b5acf585bea4d45bb69debbdf7bbd90f26573a96a4c2b70875aba429578a3",
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_MED_INTO_L.uasset": "c2a370cfe8fe60dae4f1e0cff7934309974b9054f3c13838ed044a790fd20cc4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

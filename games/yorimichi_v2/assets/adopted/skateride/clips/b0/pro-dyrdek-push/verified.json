@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-dyrdek-push",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_HSPD_HSTR_CYC1.uasset": "7e4a43cda8e7afca0d5a1707a09882ba4cdde4a1a19beccf3e9a8164af7ce78e",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_HSPD_HSTR_CYC2.uasset": "853186b9c702e4cc682b97111b04ebeb01edceb75c7dd43f3bc05ed7ad58e51d",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_HSPD_HSTR_INTO.uasset": "4dcd329a4ec8abdc0e1722329e5d1d13713d91d1a98d9ba9c5bb2d6de3fbbdeb",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_HSPD_LSTR_CYC1.uasset": "2bf1c54048e68493ac41457c7083d758bbfb232ed075be8f7244a1e0e386200f",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_HSPD_LSTR_CYC2.uasset": "ad11c92245977d15a1a7222fd4eef7153b2f83cd030bd2c5244715490db791ab",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_HSPD_LSTR_INTO.uasset": "777b516170105f6aab94090d1f57a270dd62c5e9b20ffc9d4e614f81d18c2d63",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_LSPD_HSTR_CYC1.uasset": "c17dd1875a11b18589d1bc8abff85a9c0bafec042d4a67245177aef10d113c1c",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_LSPD_HSTR_CYC2.uasset": "1a43ebdf01e79817633340f4cbadfc212fc610fd5a12e7d56bd0ff0e1e8c125f",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_LSPD_HSTR_INTO.uasset": "9035922c63a3d89735fc9995129bf126e25e91196f0f6629f847dc5dd4b122bc",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_LSPD_LSTR_CYC1.uasset": "88a66e24232b90e2fa1992b94c00b025aec92f843075870a36909a46c632d745",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_LSPD_LSTR_CYC2.uasset": "d1ec97c1b5c0b24b722cc5925e7b6271381b1a1526f4eb77184db76417259136",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_PUSH_LSPD_LSTR_INTO.uasset": "74bf872a3166ced642deb28abde38c475a09ae774fa86a060f1dc696374524ed"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

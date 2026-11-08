@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-way-christair",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_WAY_CHRISTAIR_CYC.uasset": "feac4ed02f40abeec38c90632e225ccf6de662a949df2300eab0e6022ea4159f",
+    "unreal/Content/SkateRide/Clips/B0/PRO_WAY_CHRISTAIR_INTO.uasset": "eca4073fc40a0b69c20e0cbf82704536f09427187af03e41556cad186669ba88",
+    "unreal/Content/SkateRide/Clips/B0/PRO_WAY_CHRISTAIR_MED_OUT.uasset": "e0eda7357efcc0f368fbddc810faeeb0dbc3a4a99483da95bcb8328b5def4549",
+    "unreal/Content/SkateRide/Clips/B0/PRO_WAY_CHRISTAIR_OUT.uasset": "f7b801d7128fa187ad6539d67e7e639aa0a46b1111c4a8c64e67ff01812c31d5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

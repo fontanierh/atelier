@@ -13,15 +13,15 @@ folder = "/Game/Japan/Assets"
 key = '^(BK|SB|TH|ZP|Bird|Bush|Grass|Rock|HouseLot|House|Mega|Pole|Tree_(?:Caldera|Canopy|Forest|Tuscan|Broad|Cedar|Ginkgo|Maple|Pine))(?:_|$|(?=[A-Z]))'
 names = { BK = "bike", SB = "sailboat", TH = "treehouse", ZP = "zeppelin", Mega = "mega-park-pieces" }
 
-# Skate clips: one record per move family, the name's first token (R, G, B, T, PRO, TKDWN, ...); a family over 200
-# clips splits into numbered parts.
+# Skate clips: one record per complete move family (docs/inventory/ownership-audit.md), the name's first three
+# tokens in B0 and two in B1 (`INVERT_HANDPLANT_BS`, `MVOBJ_PULL`), which keeps every family under the 200 cap.
 [[group]]
 folder = "/Game/SkateRide/Clips/B0"
-key = '^([0-9A-Z]+)_'
+key = '^([0-9A-Z]+_[0-9A-Z]+_[0-9A-Z]+)(?:_|$)'
 
 [[group]]
 folder = "/Game/SkateRide/Clips/B1"
-key = '^([0-9A-Z]+)_'
+key = '^([0-9A-Z]+_[0-9A-Z]+)(?:_|$)'
 
 # Atomic terrain and city surfaces: one record per area (the name before `_cell`).
 [[group]]
@@ -96,3 +96,26 @@ map = "japan/hidamari/units.json"
 [[units]]
 folder = "/Game/Japan/Treehouse"
 map = "japan/treehouse/units.json"
+
+# The Belmonte train and Japan's shared materials, textures, foliage LODs and audio (docs/inventory/ownership-audit.md):
+# each rolling-stock model, material family, texture set, LOD set and sound bank is one unit with its sources
+# (tools/migrate/belmontetrain_units.py, japan_units.py).
+[[units]]
+folder = "/Game/BelmonteTrain"
+map = "belmontetrain/units.json"
+
+[[units]]
+folder = "/Game/Japan/Materials"
+map = "japan/materials/units.json"
+
+[[units]]
+folder = "/Game/Japan/Textures"
+map = "japan/textures/units.json"
+
+[[units]]
+folder = "/Game/Japan/FoliageLODs"
+map = "japan/foliagelods/units.json"
+
+[[units]]
+folder = "/Game/Japan/Audio"
+map = "japan/audio/units.json"

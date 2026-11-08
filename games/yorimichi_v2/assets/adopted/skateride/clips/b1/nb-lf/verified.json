@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/nb-lf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/NB_LF_AIR_INTO_LAND_ON_BOARD.uasset": "6b4dcc6ec02baeb3fdd70be732e3fae92375f17a75971a3edfa3364d9a2e5fe5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

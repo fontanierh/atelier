@@ -1,0 +1,171 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train generator: carriage and furniture scripts, source record, livery and detail images, line data, Unreal import script and the shared materials
+schema = 1
+id = "adopted/belmontetrain/generator"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/generator"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/README.md"
+sha256 = "ebde7e8285561991fe31acc3cb4200166eaac8d8811908636092d40b33a5fbdf"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/line.json"
+sha256 = "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/planning/furniture-dimensions.json"
+sha256 = "40d8f64931dbbd9f7f7a2e1a9272025ac8f33ae829bd7fecfdf4a14026c45a65"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/source.toml"
+sha256 = "92572b4914ad7b8e12639a12eb31d6f0ab225a982665815e7509a26ecef69fca"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/backhead.jpg"
+sha256 = "2a9d50d014da71e8d8714a4287caa92f3e3e75beeb28720bd30bbb96bd636e06"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/canteen-tiles.jpg"
+sha256 = "b8aeb6f0d322ec730ef484ca13fd2c44cc415e0262020354bf354f3cf04fe869"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/lino.jpg"
+sha256 = "91fd7e66e6680d6d13695f9ce124f7b7280c7a2652d1baae55bcacad3a97e6bd"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/livery-blue-panel.jpg"
+sha256 = "289621a1a445c0c072ad99a32f6412ed9f2a5083b12dbad5f538d338670507f8"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/livery-ivory.jpg"
+sha256 = "fb173dcdbf8ebea273a7428ce54f1960874d813bcbda9dfa79ed53b546b2101a"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/roof-canvas.jpg"
+sha256 = "74e29d8ec31f3ed758a692a63560d44768b52a1d11789e07156f9dd06bab2a08"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/smokebox-door.jpg"
+sha256 = "095b9ecb622065ec3996bc3b086d0eb5662bbe1cc3cd60a5978f4d4d7b471d40"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/underframe.jpg"
+sha256 = "93653308c6162bccff74d2950efba28d01686268a989023ddc2be2d53268bf3f"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/textures/wall-peel.jpg"
+sha256 = "81e0d1eb0bc751cbad810791f6f999520631eb56392f836005c986daefdd8013"
+
+[[sources]]
+path = "source/train_carriage_build.py"
+sha256 = "8c1e7f0967410621a171554160207c8ca18cf0de3dea561bf10fecf136a41c63"
+
+[[sources]]
+path = "source/train_carriage_products.py"
+sha256 = "0f3c5ec541ae09a52fbbdbf5d05087c8c6ff8a670da76c7a921987a8db97f380"
+
+[[sources]]
+path = "source/unreal/Scripts/import_belmonte_train.py"
+sha256 = "81ed44a62d72e975c6f1c19a98e197fe7fee48ec2e36d40b9f89cf68d44c6174"
+
+[[sources]]
+path = "source/world/train/__init__.py"
+sha256 = "19113ebbd5e09109c67dee28786d28fed41b7f03c2525403be730a1c6a118de4"
+
+[[sources]]
+path = "source/world/train/access.py"
+sha256 = "c798d3fcc76eb8d0086dcda1824f0f56f923f3659cbe14b2772873ca6c827b09"
+
+[[sources]]
+path = "source/world/train/bake_manifest.py"
+sha256 = "1355a82dda9cb8c934fe40f40bad5580d4c22567ba221ae0e6d714d12a5000f9"
+
+[[sources]]
+path = "source/world/train/budgets.py"
+sha256 = "7a8078f723b11e847143b8240469cf2eac81773c1e2c909c1118fa1c7839794d"
+
+[[sources]]
+path = "source/world/train/build.py"
+sha256 = "dbb35a70390b5794f916eaec225527192032612f860700f896c5eb73a9f75236"
+
+[[sources]]
+path = "source/world/train/carriage_mesh.py"
+sha256 = "6f310d19bfaf568be8044cbe6f21ad394e3efc2a1740d4b9247379998a9d3bdc"
+
+[[sources]]
+path = "source/world/train/carriage_request.py"
+sha256 = "c9c7979da878548189967e3ba4618bf08cfddbd6b6237eb57df733263404cc02"
+
+[[sources]]
+path = "source/world/train/carriage_source.py"
+sha256 = "34a79cc6fdffbee0e09756c8281b8ea51138f66685624c24d296eaacf1be9307"
+
+[[sources]]
+path = "source/world/train/collision.py"
+sha256 = "5a6df6a9d3059c82dbbefd23c94f445c0116eabc5d5d882c712a151b5a57247c"
+
+[[sources]]
+path = "source/world/train/consist.py"
+sha256 = "dc8a5c06b921b1ae944cd57ebab659c38ff4a9e3f1509359f1dba34cbc9b401e"
+
+[[sources]]
+path = "source/world/train/construct_carriage.py"
+sha256 = "008ff0ace34c77785aed876a32204926066d5ae3b38f3de5cdea39603d74517d"
+
+[[sources]]
+path = "source/world/train/export_carriage.py"
+sha256 = "123ae1e263c3ea5e6b450a20339c05649600a18956d2e4710efe397674b59a9a"
+
+[[sources]]
+path = "source/world/train/fit_furniture.py"
+sha256 = "48037c113c5323b2afa7ad4844709d8f7261024d95984aabf1fa6cb64ebe88b9"
+
+[[sources]]
+path = "source/world/train/fittings.py"
+sha256 = "491824eccc492d6c506fb2dc9b336140b2bce168d7f0288e57bdaa4437d77334"
+
+[[sources]]
+path = "source/world/train/furniture.py"
+sha256 = "0d618483a0d10d8f3f7fb8a27af9bc749d4fdca7c130423365d8446fe24673b6"
+
+[[sources]]
+path = "source/world/train/layout.py"
+sha256 = "55f655df303c0ef20b60256c3d18da47024e8987e263ab59d46833990a405f6d"
+
+[[sources]]
+path = "source/world/train/lod_furniture.py"
+sha256 = "ccc8940490123369244a2d59c996af40bb2baca5f81ce59c4a56cfed506e7563"
+
+[[sources]]
+path = "source/world/train/parts.py"
+sha256 = "5030e1d48fce723f7c35e5af54f09f9024e612dc9c5b5f432a8dd76a1d7d3509"
+
+[[sources]]
+path = "source/world/train/plan_carriage.py"
+sha256 = "743e0784dc513c625f3bffa2808a9d4709ff97d6f79ea5e7f26378a549eb3699"
+
+[[sources]]
+path = "source/world/train/prepare_livery.py"
+sha256 = "1f99f9fd8c534344db1f6a4b7faf693c33b8f736dd6654dabe4b0b24dfdda410"
+
+[[sources]]
+path = "source/world/train/service_meshes.py"
+sha256 = "f6cfa8ca794e8c7c84c000bfb69e3c722b54e3d7b36ed98896a8f4750daa93bd"
+
+[[sources]]
+path = "source/world/train/textures.py"
+sha256 = "37a6c97eb0fcb2368173f06b59383a2993075d87d53ead7d711be69b145052bb"
+
+[[sources]]
+path = "source/world/yori.py"
+sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Materials/M_BT_BoardText"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Materials/M_Default_ISM"

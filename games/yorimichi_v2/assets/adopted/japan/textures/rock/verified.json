@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/japan/textures/rock",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_CoastRock.uasset": "ca358342798b17451cff2f5fcccfd9a27a685b81c0ec11a77c8d7687e2613452",
+    "unreal/Content/Japan/Textures/T_NorthCraterFloor.uasset": "f028a485ebad8f5066c91c646e349482ff8a4606f87eb35918face845af38846",
+    "unreal/Content/Japan/Textures/T_NorthCraterMask.uasset": "b138bcc335bbc806e366be950cd5464475d5dffeb50d40a4a2a78e985dfa5e63",
+    "unreal/Content/Japan/Textures/T_NorthSnowMask.uasset": "7c71709064b9d7426625028aaebdc529d8dc0caab28c0858cdf3cc901c4d112d",
+    "unreal/Content/Japan/Textures/T_VolcanicRock.uasset": "87c7222887c7ecb1165a0cd56ede70c049736f51ddcc1b6c66b1e35a54d587b1",
+    "unreal/Content/Japan/Textures/T_concrete.uasset": "bf868ec7d7c9458248c14c657afc0a023326f1d3334a5287afebcc2f64e57a1b",
+    "unreal/Content/Japan/Textures/T_rooftile.uasset": "ae3980fa7d777db2c572bf0319ea8d2a0bbc214ad62a76057267dc2a05c760aa"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

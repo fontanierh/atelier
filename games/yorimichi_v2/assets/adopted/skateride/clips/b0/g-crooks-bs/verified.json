@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-crooks-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_BS_CYC.uasset": "272c15291dc355ae250b3c3c406c57f7916bc6d2294d46f16a338cdc436c1928",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_BS_INTO.uasset": "8e6092446ebef9367ce78e82587c0406bb48ae8a9a317dde7f4ce851f644559f",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_BS_OUT.uasset": "8f4b65c9760cc90b93a4216bfbda0209ceedf33e879ddb9ea855f8e413554315",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_TAIL_CYC.uasset": "fecc75cd4c171321273660025ed96735e384891d30031ee011e76ca0ded14553",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_TAIL_INTO.uasset": "ee6e5b0c48965235fa2bfee1f6769503b8674a418ecca83a85fbb9d35f33474d",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_GRAB_TAIL_OUT.uasset": "651822a3314ae9d3fd4d4baf4c47646c10db06eaf0f6d40ff5ced4eb0d1206c3",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_HI_0_CYC.uasset": "a2648c8568bdbb4da8552cd1242ff8cd2ea60247a730570b69e9f668d89c3283",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_HI_L_CYC.uasset": "db77807bc9e4ac35746afff01ed242038694aed169c5115e4de70257461d492d",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_HI_R_CYC.uasset": "ad3dfd36ababc21bc33c51ee6444b853723ef791bb5a0fbd0659570050c5b35e",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_LOW_0_CYC.uasset": "66e8dd8c697dfa7f11d24a9cf0028b3d2c49af2ecaae0590f97c90a3993811c9",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_LOW_L_CYC.uasset": "0ae73300caa9e0ff01e6f1c8a0ebc37d00980a579ef304508349b42a2d013f74",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BS_LOW_R_CYC.uasset": "1349aadc62ad347fa55914b06412d24bc2403606a6ca07391ed445130ab3e600"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

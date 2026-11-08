@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-idle-hcom",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_HCOM_000.uasset": "793e1f9bc877175ba80dd020d5186627a73e91ef6a3752bb33f38d9858c64204",
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_HCOM_N100.uasset": "19d17130b0acb039cf4f8d120b684da1aac74729b625d14220a5da8e2f2cf04a",
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_HCOM_P100.uasset": "210a0c37d4708e56580c02504a380da4a26f2e47353236fd398286330239e7cd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

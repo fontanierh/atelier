@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/materials/tree-tuscan-cypress",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Tree_Tuscan_Cypress_Impostor.uasset": "44a1c4434565ed0f04c0647d94a17706c382aa835ef69155afc2d843b1498382"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

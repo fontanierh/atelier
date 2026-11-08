@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-willy-bf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_WILLY_BF_HI_0_CYC.uasset": "9ee39b74a4e9b0c00be13b8aea1f69ade6f9394967162382294e3a88cc842d9d",
+    "unreal/Content/SkateRide/Clips/B0/G_WILLY_BF_HI_L_CYC.uasset": "0b8a6b4dd341d821cd32e23547a3fc354e6cae1b5f1c3256b6ade0375eeeb226",
+    "unreal/Content/SkateRide/Clips/B0/G_WILLY_BF_HI_R_CYC.uasset": "2d4bab8ced5a31b9c011f50321c35a9b58596499a5d25fd4e4bf6c1babd68e22",
+    "unreal/Content/SkateRide/Clips/B0/G_WILLY_BF_LOW_0_CYC.uasset": "5d40df44341e2d6827d52a252a347d88b317fbdbef940e98a055dcce71f201c6",
+    "unreal/Content/SkateRide/Clips/B0/G_WILLY_BF_LOW_L_CYC.uasset": "763ce2cf5424f16964ab9ab692ac5f2de9ede7412ba50bb7450049b9e15b4907",
+    "unreal/Content/SkateRide/Clips/B0/G_WILLY_BF_LOW_R_CYC.uasset": "5f601b140b137fc7b83035e4fbbf9a387225cb8489c55e4acaacc7bce22f97b3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

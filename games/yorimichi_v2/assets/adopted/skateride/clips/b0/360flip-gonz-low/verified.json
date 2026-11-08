@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/360flip-gonz-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_LOW_A.uasset": "82bc8c2f4370bfdb78f8ba4babcd2d8267f7827e978a1338cbbf614180dff98a",
+    "unreal/Content/SkateRide/Clips/B0/360FLIP_GONZ_LOW_G.uasset": "6298809ec060e70d1d57e10851b7402c561f95464554a79cae7608735345f97f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

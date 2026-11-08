@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-hippyjump-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_HIPPYJUMP_LOW_N_0_ANTIC.uasset": "c5a0d67a0716532c4399494bb3233d4b3115a02ca0d4ee30f9e9a5ae24307438",
+    "unreal/Content/SkateRide/Clips/B0/T_HIPPYJUMP_LOW_N_0_CYC.uasset": "08aab7b68c79b750371d4d82ce1dd0c205dff2b8da5b0890593ad5d30c72d1bd",
+    "unreal/Content/SkateRide/Clips/B0/T_HIPPYJUMP_LOW_N_0_INTO.uasset": "45b9f8f3329c1a75870582d8c28d2d0e9e14b7d25714e7755144d88f885ef1cd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-gstr-wipeout",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_WIPEOUT_CANNONBALL.uasset": "83b1cdc36f3c236f929c9b2e3abd5db57c28cb1a0e24e87e8c1c09364a12da2d",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_WIPEOUT_JUMPKICK.uasset": "e25b1285e60066758c0d888b5fdfc4c8e68eafdd961a569c1452e50dcb3df196",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_WIPEOUT_SWAN_DIVE.uasset": "20aa753fbef86a4863f1dcc125402e78ffc415ccb9d5c6cddd4a63bfcfb4291f",
+    "unreal/Content/SkateRide/Clips/B0/G_GSTR_WIPEOUT_TORPEDO.uasset": "f4980253ba388697f7b65e6c070926ba68b2ac70c0e5abc807f705360bff46b2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

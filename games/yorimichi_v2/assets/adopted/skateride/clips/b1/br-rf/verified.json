@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/br-rf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/BR_RF_AIR_INTO_MOUNT_BSGRAB.uasset": "6f3975cc08784df2bd2107db4fe52e584353216f55427a477935a0653c5f74cc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

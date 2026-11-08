@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/w-recovery-onright",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/W_RECOVERY_ONRIGHT_N_0_N.uasset": "c993e256b084cc083a002258bf5dbf8e28afcb509307d945ead0ddd9ddb47c50"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

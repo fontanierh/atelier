@@ -1,0 +1,19 @@
+{
+  "asset": "adopted/belmontetrain/canteen-shelves",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenShelves.uasset": "159d9008e65fa36b2a6fbb3964bb77bac6cf227549aeb09504bc4ffb7e947cbe",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/M_BT_CanteenShelves.uasset": "bb808e692bebd26416e6d435d902dc7d6a361edb5f0a60878e00b10b027d7b90",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/canteen-shelves-base.uasset": "616937274b3b56a362e555aec59c3dc686144b91464bded2584dcd10203b584e",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/canteen-shelves-mr.uasset": "1f2dc26588337f0bbe58a6ee3a2ccd5ffbe0cee7bbfa5f675fa5b877f6615535",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD0/canteen-shelves-normal.uasset": "4794abab38516c0639c119f87508c1a0a587eb0c026b2ceedfe4c870ff838ca7",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/M_BT_CanteenShelves_LOD1.uasset": "86f83f9ec6462ff71213fc08c556f7b5534432dc2faa832e35e5b2a7cac92193",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/canteen-shelves-lod1-base.uasset": "674c073214049c1ce98f211afbf23fcb6c1f4a9d7e8e16c4a2593d1f755e0450",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/canteen-shelves-lod1-mr.uasset": "75d86521409f4927503a733ddf569dc8b3e03eee2e794f2c44104e1e976e9191",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/LOD1/canteen-shelves-lod1-normal.uasset": "16ac547e7519c5404bedc905e48a0e49346435f86793c8d656bca19fe3e1a16d",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenShelves/SM_BTF_CanteenShelves_LOD1.uasset": "bdcdaed71dbd0b2636b4ab1b346457d03b3466738b7804fc72aeda4fa5f9f8d0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

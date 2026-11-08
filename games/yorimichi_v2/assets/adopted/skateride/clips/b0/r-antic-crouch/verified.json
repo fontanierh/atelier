@@ -1,0 +1,33 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-antic-crouch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_L_0_INTO.uasset": "41085bdac517b52c310f617de370d28dc1965866e85ebfad31f6c793af643e92",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_L_0_OUT.uasset": "e3f4236d692149b556a221ffe76fee123c30390ae5486bc6feb13e6e5ad1daa6",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_N_0_INTO.uasset": "57554f79860783ca7694c6094c140d83c4f40208ee17374c231ec0d51ecdbe6e",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_N_0_OUT.uasset": "a38e8d781761b0c4de3301d6a0e55aecd013b7a1bd9d1263ca485f5001cda4b2",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_R_0_INTO.uasset": "c69ed861e8c2e99e5913ff62e33b58694f30af7864f3611de7b60d489a74e863",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHNOLLIE_R_0_OUT.uasset": "81b5814a4becd588649ce4f204b813a5965a54d7ff75ad65f15459aec3c9e0eb",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_L_0_INTO.uasset": "5a5681c7de58de3c0937565693447b861b1e098a072fde0b24bdd2f30e306e4a",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_L_0_OUT.uasset": "25bb0e6888ea2e1da759cab11d6765c7f13b07b31c412dffec9e93fef1b42861",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_N_0_INTO.uasset": "5dcc8fec6a4450440e2abf0b1ed0d5c7820b8ca6265c5401e2ec1f1af9df1b81",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_N_0_OUT.uasset": "1d49d451b7d2b78445a5e895bb6fd4fd6fe31ad26a65b82739eca3c66742fa4c",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_R_0_INTO.uasset": "226ef236dc7d3871694eb3a2b276d20d8681a117bfc0cab6fd2df4469b5a9d18",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_HIGHOLLIE_R_0_OUT.uasset": "048137ccf8ed6450bb32883b0a9030b3157565dc2c2917869785deca894845c8",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_L_0_INTO.uasset": "6829f22733677b16d1549eafc5d9a5d5d8cc69016cede6f74e0f56b0f09c073d",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_L_0_OUT.uasset": "2489c58c9313c23ba67bfdf30c2cfb93f3cf3ed1bef85266df74fb49070de577",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_N_0_INTO.uasset": "261ffb50dda622399ca46d35e06753b9161835dc092adc008f56a9d9851ef0a5",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_N_0_OUT.uasset": "2bb6d9152aef76be93358ce2dd80a660cf21cc8e07b8aed332fea16dc745f381",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_R_0_INTO.uasset": "959498c7defde2f49336959cde6b6c053d1926c9ff05d09d61a386b0770a0f18",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_NOLLIE_R_0_OUT.uasset": "7bb16059d9d08440cd9c77f151ad4fc4bf0160f6e978d97eb854d498155dd413",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_L_0_INTO.uasset": "2ab615d67ced8846be0a26d90066c0685ef1b8c4fcab15c087130cba2309d7c7",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_L_0_OUT.uasset": "03e54a5fec78b85027c0cc977a6f0154fc21b25b05b0987da6495e095c10b256",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_N_0_INTO.uasset": "9b740ecfe95fe5ac6e89b583a7aab565da1378a8845c88509eff507a8b25be41",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_N_0_OUT.uasset": "696d5c7f7ba0fa56be1c51fb496cf99e49d6bdcbe9f5943c2540ec2a63779716",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_R_0_INTO.uasset": "6d18baa2b5965850fcb79227e0007cd5596a7b193d3c90194938d6fa7cd5ce9e",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_CROUCH_OLLIE_R_0_OUT.uasset": "7790128d2889dabbc38625558defe15ef4d2c90b621b5e5e78230d17fbf0c57c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

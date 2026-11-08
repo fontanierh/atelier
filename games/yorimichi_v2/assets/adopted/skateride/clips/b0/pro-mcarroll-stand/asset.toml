@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: PRO_MCARROLL_STAND in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/pro-mcarroll-stand"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/pro-mcarroll-stand"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PRO_MCARROLL_STAND_IDLE_ARMSUP_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/PRO_MCARROLL_STAND_IDLE_LOOKBACK_CYC"

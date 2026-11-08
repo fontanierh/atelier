@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/nocomply-l-slow",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_SLOW_INTO_A.uasset": "77ec18675be2dfe9f9c37a17cfe50969bb5c990744b9dc6406c02f1c5200dfa2",
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_SLOW_INTO_F.uasset": "bd534202c1c88897afaefb312d815475fbc6db6505bc2f541a2104ed65d266f7",
+    "unreal/Content/SkateRide/Clips/B0/NOCOMPLY_L_SLOW_INTO_L.uasset": "6644a2b11f3ccaef7e03b039528228cced1038d1ff260003e5cc675089218ef8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

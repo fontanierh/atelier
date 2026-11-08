@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/japan/foliagelods/bush-green",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Bush_Green_A/Bush_Green_A_LOD1.uasset": "3823334c79aa3ac92736ad5693cc7a476351517835cdd7e5033383fc6fd29f1a",
+    "unreal/Content/Japan/FoliageLODs/Bush_Green_A/Bush_Green_A_LOD2.uasset": "dd61169f1c233ccdfcb1b3a03240815d3f47e555442ade09108fa6cc8ca4533d",
+    "unreal/Content/Japan/FoliageLODs/Bush_Green_B/Bush_Green_B_LOD1.uasset": "02b2bbfccefad700d74eba870db008360af6a34d3752e0216f2bf740a5f6de37",
+    "unreal/Content/Japan/FoliageLODs/Bush_Green_B/Bush_Green_B_LOD2.uasset": "a24e992c46d5b031eab3b32552f5e90a07b73964643e725c2b39cc1fc868a44f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

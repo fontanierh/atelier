@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-idle-speedtuck",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_IDLE_SPEEDTUCK_N_0_CYC.uasset": "3ffa44f0b60cab93309b513da160da501798542e80849a4a9f928e47f992557a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

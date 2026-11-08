@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/varialheelflip-d-low",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/VARIALHEELFLIP_D_LOW_A.uasset": "bcc15d8ef99f270ac84bbb3bbfae29fc7528cb043606f297f53e37f3cae297e4",
+    "unreal/Content/SkateRide/Clips/B0/VARIALHEELFLIP_D_LOW_G.uasset": "6689ccf34a37ac6cac74561e4d3ade5d6d76559f2e34cf72219b8e3fe1e52244"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

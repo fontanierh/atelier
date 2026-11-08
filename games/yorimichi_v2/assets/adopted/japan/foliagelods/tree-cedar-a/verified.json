@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-cedar-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Tree_Cedar_A/MI_Tree_Cedar_A_Crown.uasset": "9cf6792d5beceaff45aa5abea6f7b8d75973f47f3082d5f4d737448df98beb36",
+    "unreal/Content/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD1.uasset": "5a8d25529532d3f203cb8088f914905d23f136870427cd1d95f2e866886576f5",
+    "unreal/Content/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD2.uasset": "e0991a983be3a309cb09e632610a8cf72b2000441a566e003041a1c75484a56e",
+    "unreal/Content/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD3.uasset": "0a9ebd74d5eb072306075d6bdbd3c85c985291938d323c5a836cc04fe545f45f",
+    "unreal/Content/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD4.uasset": "9187b66ee9925f537be158f285bb1cf9625a6656a4e9ea0706f20389390de0eb",
+    "unreal/Content/Japan/FoliageLODs/Tree_Cedar_A/Tree_Cedar_A_LOD5.uasset": "ad83863dc33ac151cae17af07024cae3cbd0e102dd249105552a823a00939f89"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

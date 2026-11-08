@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-grablft-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_GRABLFT_N_BS2DBL_0_TR.uasset": "79cb1bd7e998e20c0604816d8be32f9fa77567f678d09df669b24d0a1a0c8f2c",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRABLFT_N_BS2FS_0_TR.uasset": "a4877ef3b4308acb849d247212696b4304b119a8f28ae590bb681871b101393d",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRABLFT_N_DBL2BS_0_TR.uasset": "11c54b205e00fe35e206007b87252b8ed193423f74f455dc19169eeda2fa6605",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRABLFT_N_DBL2FS_0_TR.uasset": "09d6cec043210391a1b60365ae5bc24f37381fdcdc991e4bce7d3902e882ae00",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRABLFT_N_FS2BS_0_TR.uasset": "3436f8c5721fc0f56c54bbec9b9d0f5f14e4d09f5dc99d2bf0f5bb106cb0194a",
+    "unreal/Content/SkateRide/Clips/B0/GR_GRABLFT_N_FS2DBL_0_TR.uasset": "b82b9354225c844311135feda0d2bb47917eecb6a7e95ea197fa28ccbb6cc284"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

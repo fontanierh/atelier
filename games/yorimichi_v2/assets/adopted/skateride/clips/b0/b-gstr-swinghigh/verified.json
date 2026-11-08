@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-swinghigh",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_BOTH_CYC.uasset": "19f816597a4706f4989f5c98c138aea27ed70eb845ee1a8ec03efe5e1334b5e3",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_BOTH_INTO.uasset": "34f5d4e6821d712a3309f58632f2fec0a897520940ab8aca8cd6853bc916b3de",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_BOTH_OUT.uasset": "23d792d8f09c4c32cb18be0e890ebd96453b47018c34066346a703b6645ae6ec",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_LEFT_CYC.uasset": "d0a3aa3a83cd35d86a72a342e65abefcc438af0809125150454ddd6c60b9bd7a",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_LEFT_INTO.uasset": "06f213c29cc5f58ddd070125f7fe3247bdd0bbb75c96ef69d67f67f25cb25c6e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_LEFT_OUT.uasset": "246a4eb9de3841f70c20f2ee82cf3b816f63fa1d1838e70d0ac6a0f17d395d50",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_RIGHT_CYC.uasset": "83bb94d3085ba3e0087d13e888405bcd0172e96ce6ea66b4200700e215aa347f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_RIGHT_INTO.uasset": "4d80a7a03199b94c229d476500d04249f8a5e437a8194d1d5a0fe8a08a65e097",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SWINGHIGH_RIGHT_OUT.uasset": "2c7ed6b036f4ab0e69d104f46e4e32e0d2ebe46ada021d9ef350030888a4d57b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

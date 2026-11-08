@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-kickturn-stat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_KICKTURN_STAT_BS.uasset": "09bf425ab9367ebdf3a3101be0778af078a36433a3cf783d2e312e1416c4daab",
+    "unreal/Content/SkateRide/Clips/B0/R_KICKTURN_STAT_FS.uasset": "b784c15d7e953317eacf03ff587ba558289fc04bfe8b158a22a3e11ea7c2e5f5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

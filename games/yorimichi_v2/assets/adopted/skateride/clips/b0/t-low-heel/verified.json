@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-low-heel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_HEEL_CYC1.uasset": "2f7b5d73323cddecde47eaa377cc59bd61c0ff9ce210e0ce11e3f7d8db3c6c78",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_HEEL_CYC2.uasset": "dcfc473442d0fc9085c61670b3ad60e4ada0e77080579eca6d2804cb3e694bd3",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_HEEL_CYC3.uasset": "62a1df2cdc199d289abd4ef5aa05f6d1e337ac51db6fdfd84bf858f4b9d287da",
+    "unreal/Content/SkateRide/Clips/B0/T_LOW_HEEL_OUT4.uasset": "faf38ecd73f3e63a01eb519b013c470d0e05624d8493533802ae571c99976f62"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

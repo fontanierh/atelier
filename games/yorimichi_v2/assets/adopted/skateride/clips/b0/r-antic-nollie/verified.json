@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-antic-nollie",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_CYC.uasset": "2404ff0dfe2fd839199d22b99724e1ae76835157c968eecd7dfc01584f745272",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_INTO.uasset": "8e7964ad21d2cb72d054216615965d783a4c1689e172b4d9ebaf3285f82d03b1",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_OUT.uasset": "95bb33e3a4d286281f00ba717a30d1e9f9b3f6183f55bdad07e75179429ab7d3",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_CYC.uasset": "b21098e8b4c69563cbfb4bba19d1fb6dc9d78383892f80f3160dfa43e1c8a6f3",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_INTO.uasset": "b157af3991ac3dedbc52a5ccc93abb1a8996cf13790f2808a1f4a0be83020b3b",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_OUT.uasset": "b1c9b0a9419c306b9a031d91b18e4e7131d71f142acc66815abaa11e481a74dd",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_CYC.uasset": "99ef3b7d3bc2db80ac44f6ea0d5bd639f4548ac49e8cca531e4f2c81142b98da",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_INTO.uasset": "9154c220cebdb5d6c6cad3470925fea6734cd2565687640faa990a4b5619c864",
+    "unreal/Content/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_OUT.uasset": "3ea6067f07a92c6698d2dd34dd36ea369a62c0d6d58d60ba6a89d4eeb5ecbeb9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

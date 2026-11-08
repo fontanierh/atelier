@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-prewind",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_BOTH_CYC.uasset": "e0d27e6eb54eb9d23b4ce40941c4fd78b713c153b74becb15e6caa151f5eb71e",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_BOTH_INTO.uasset": "44eb84469665fb14ab3b41f0cd0ae5ef08c6a47440ae350d96672f3a095f61ae",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_BOTH_OUT.uasset": "deb2736bfb1427bd9a18cee98b1794267ea1af89a84a0d59aa6164221d12a248",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_LEFT_CYC.uasset": "3406bafe7a5ed85ea0024260364caf84e38f84b4e7e1909d7fafff5320ff0daf",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_LEFT_INTO.uasset": "f1877d44fb0657e37c19945bc9ea90291354d334ca5d70398641176582f7eaf4",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_LEFT_OUT.uasset": "8d155f68c523456af29252e998499af97783bc718d70b2ba283cd00acf3d36ac",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_RIGHT_CYC.uasset": "018dbb18aa991ab89c46fe81a1f87e1a40bd38458ed095962fd8c7e17de7d17c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_RIGHT_INTO.uasset": "788a053851224f3d0eff5ba9dce3c3665331581563c8790918837663045a61ac",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_PREWIND_RIGHT_OUT.uasset": "9d6922a16b09e3a67e9e30db0c4366284e0bfb4da63638bf6a7df4463b868b22"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

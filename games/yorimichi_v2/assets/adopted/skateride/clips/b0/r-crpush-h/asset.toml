@@ -1,0 +1,81 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: R_CRPUSH_H in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/r-crpush-h"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/r-crpush-h"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_LEFT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_LEFT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_N_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_M_RIGHT_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_N_OUT_MIDFRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_BACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_FRONT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_MIDBACK"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_CRPUSH_H_RIGHT_OUT_MIDFRONT"

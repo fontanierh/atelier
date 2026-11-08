@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-hsu-stat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_HSU_STAT_IDLE.uasset": "8513b3f56dacac593df584a4c6af551aa95bce829fd06134f32c3a24f375cfd9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

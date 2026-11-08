@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-dyrdek-mongo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_HSPD_HSTR_CYC1.uasset": "c8a6007228fd56b129168129048cdb80843b11367b33360da6367ea931205114",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_HSPD_HSTR_CYC2.uasset": "77dad425dec32999b46e65f8907f0884394b062cce85ed73c7978e13e6bfec36",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_HSPD_HSTR_INTO.uasset": "45da071727f704a022067e914a6fab952054f3fdba029ddf634b1aaacd084ff9",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_HSPD_LSTR_CYC1.uasset": "e46ac7d90c02953a9a5e46c581a63d6cb139846961c7138b53a18b1c42733159",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_HSPD_LSTR_CYC2.uasset": "12f5640930f0bfb7360800ba72dcf3ece366cf1ee906cf8e9a4ce8c3e0a5bd37",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_HSPD_LSTR_INTO.uasset": "c6ae34d6dd6d6bb3c30795bd614386ae378ae735d72d84c53987ac265f7a4fbc",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_LSPD_HSTR_CYC1.uasset": "1e9beaf2823c7ae9ac78b5a0aee6e7010795aa59193e3a5a834715886fb3a8e2",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_LSPD_HSTR_CYC2.uasset": "619ade69885053eec4ae768f0b2fe4ad9be352a3e80bc689fa856173ae4f868b",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_LSPD_HSTR_INTO.uasset": "b7500c1bab029b76dd5d20b46ef78c0fcba9ad0fd17eee50e35f9ec6b818b3ba",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_LSPD_LSTR_CYC1.uasset": "b6bae785456884363b1ef0253ed6eefa8b25ea34a7d957276eae334302084363",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_LSPD_LSTR_CYC2.uasset": "baa31356cb66f56113f74019dec160ccdecde33d4762ad576fa77adc12f224b5",
+    "unreal/Content/SkateRide/Clips/B0/PRO_DYRDEK_MONGO_LSPD_LSTR_INTO.uasset": "36ba7076e3f9b0478112019cc6502b93fe4788c3b9f0ce23fadb6978cc4e7bfc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

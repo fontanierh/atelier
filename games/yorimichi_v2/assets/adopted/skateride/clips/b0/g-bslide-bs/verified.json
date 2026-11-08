@@ -1,0 +1,24 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-bslide-bs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_DOUBLE_CYC.uasset": "efe8bf019645518c8f4df407818d6435120003c623ac7aeae49076716e2ba78c",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_DOUBLE_INTO.uasset": "23d94f1c4803997906998747e6236b61060fd7d5b28332a063714e4b75c30273",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_DOUBLE_OUT.uasset": "1bb432d329519ee23bb955f208574193c4b716ef383820458f64133c9914f3cb",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_NOSE_CYC.uasset": "9205489ae2bbd7092111dd289ff331ae229f027a414c455f4a55957cfb945ce0",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_NOSE_INTO.uasset": "42f62cdf9c7e1b92103f468e80a34a04543e59851dd6dfab3249f974cedcf087",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_NOSE_OUT.uasset": "7eb3aa3a28b55ddb68e2e5f3930bbbe1b621e9d842d5f378759e8215ab68f993",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_TAIL_CYC.uasset": "bbca045979acea46912b4d23525a56d1337bb4a5fafb051dc0c04edcc3bf8c89",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_TAIL_INTO.uasset": "beb7ee79ce4571a627137c1999ebcb06e4c878c72ec4aacb03e4bb676d1fe440",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_GRAB_TAIL_OUT.uasset": "46cd30985b7c433e9f585416c9bd293b91443cae60ab58a5e7907cada834bf40",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_HI_0_CYC.uasset": "5f2810bfa3b338205f108edf454943b4c5ddd09c9daa2e9be519ae26206a9c36",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_HI_L_CYC.uasset": "73b2dbe6500ce0667f2da6005fd2b4ef77b442f257bdcbb1da95dc8e8063d1d2",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_HI_R_CYC.uasset": "3a948423cafbed6df14590a6aa55327d1d5b076efb726f5640eea472e76e4e00",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_LOW_0_CYC.uasset": "1d37bf71b84589f2e718416b29fd687bec3e302d1093a71c78f385604665e33e",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_LOW_L_CYC.uasset": "4530d6d9580e31f4fe7847f054e91fc40706a1d62392656f96e9195e12d29d65",
+    "unreal/Content/SkateRide/Clips/B0/G_BSLIDE_BS_LOW_R_CYC.uasset": "f053e53465385ff9632889f4689794d3f61fb8cc14c62a6ea396ba9c911828c4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

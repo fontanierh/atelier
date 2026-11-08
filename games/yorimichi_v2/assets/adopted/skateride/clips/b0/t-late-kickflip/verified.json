@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-late-kickflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_KICKFLIP_HI_0_N.uasset": "38b207a3df907fc8d2ae2043d96c9befb36b38e3cbbc94898d97961f0476ba2a",
+    "unreal/Content/SkateRide/Clips/B0/T_LATE_KICKFLIP_LOW_0_N.uasset": "ccdf4ffbf042813637f49fdc391a27e7c36ac1f061654538ce6298cae9e94940"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

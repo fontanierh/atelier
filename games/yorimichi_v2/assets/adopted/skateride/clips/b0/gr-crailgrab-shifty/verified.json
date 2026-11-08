@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-crailgrab-shifty",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_SHIFTY_BS_0_CYC.uasset": "3b76f8b10ee650b81fe57d9501aea0b76ca9de2785a7a9587bc09759e0541e9a",
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_SHIFTY_BS_0_INTO.uasset": "53b49eee72d79dcce19c1fa2eb744ade39f45f54b0ed7bace3f2eb93bb41cdbe",
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_SHIFTY_BS_0_OUT.uasset": "a38080a05b5db24b1ab4fe76aa2178d2f478dc564c833d503b3e94c938bfa651",
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_SHIFTY_FS_0_CYC.uasset": "9e8f55055faf92ea5ac032799039cc2ea66f470c43713ac4a36c4b948aa302d2",
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_SHIFTY_FS_0_INTO.uasset": "6d0a018f973122911e0db225c84b6e53fffc134cac9970079800e408b12e1f80",
+    "unreal/Content/SkateRide/Clips/B0/GR_CRAILGRAB_SHIFTY_FS_0_OUT.uasset": "25f4bafa5a2a60f74f4cb9e5bbdf173179ee072cd431235da614873954a88f08"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

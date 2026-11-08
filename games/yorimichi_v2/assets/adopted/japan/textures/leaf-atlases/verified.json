@@ -1,0 +1,23 @@
+{
+  "asset": "adopted/japan/textures/leaf-atlases",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_LeafCypress.uasset": "577e8ace97e8fb882641afc5eb9ec80558ac79f19c0c511000900c06cf3c0a03",
+    "unreal/Content/Japan/Textures/T_LeafOak.uasset": "dc3d8385037db0a23fb0afaa7d81c5e2505626c42dd022850ce1d975b2e32739",
+    "unreal/Content/Japan/Textures/T_LeafOlive.uasset": "b5febca23a27c58d0fc0826310c94ba7e5b46fc0acae7e47b3d383512c164b6e",
+    "unreal/Content/Japan/Textures/T_LeafStonePine.uasset": "c7ab0570b66407c438561f467d1fecc60c31925b2b7f2bcaeb15acd8d982a2fc",
+    "unreal/Content/Japan/Textures/T_leaf_amber.uasset": "b843cd8a44331705551864ff705f6be8a8b529601221cad1c0ceecaeaf9d20ce",
+    "unreal/Content/Japan/Textures/T_leaf_broad.uasset": "c634bc833c8e34c860b80e0a708c07e3e8c95eb96ed93acd77fe4188df1809d3",
+    "unreal/Content/Japan/Textures/T_leaf_cedar.uasset": "5530bbce951e48505b6c915c72776010bf861418f05873dd9724ad1d50dac0a7",
+    "unreal/Content/Japan/Textures/T_leaf_crimson.uasset": "a871982271256eff303b0d3bc4d31524fa9509b460052971172830ae84632535",
+    "unreal/Content/Japan/Textures/T_leaf_ginkgo.uasset": "a20b8bc4952209e950c47dce25c9593776a0c9f00b97aff27eb07e2ca212da25",
+    "unreal/Content/Japan/Textures/T_leaf_maple.uasset": "8548b831f06c83cb32f3cff905aa38cfde3412e8c842b5bba56919bd6f0229d3",
+    "unreal/Content/Japan/Textures/T_leaf_ochre.uasset": "ea8e95ea013f663d506aec7828bd0a15dce20907025516a5ee520f773eb45ce3",
+    "unreal/Content/Japan/Textures/T_leaf_ochre_small.uasset": "8bad6ab3fc1a0ee4a1ad3ef86885229b7c0a1a6cdc5db1d5628b730347576c67",
+    "unreal/Content/Japan/Textures/T_leaf_pine.uasset": "9ab6aa9711a2dc6a71e7ea9f7e388d2cda0e7a0f854253e24ec84664cce7eef8",
+    "unreal/Content/Japan/Textures/T_leaf_small.uasset": "835260433476f00c5d1fabc9c6dbf2e366125e65a81e2665feceaccb6b196f43"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

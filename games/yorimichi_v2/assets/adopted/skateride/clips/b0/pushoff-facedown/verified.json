@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-facedown",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_FACEDOWN.uasset": "6e874d266d13790d6923ebfe8356525540d363cde8d633bac3ed6ee322e212d4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/splash-back",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/SPLASH_BACK.uasset": "22ba4a8f98b793fa234d10bde01a5ed21d2c01570e2e5ba508431d0078cf3adc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

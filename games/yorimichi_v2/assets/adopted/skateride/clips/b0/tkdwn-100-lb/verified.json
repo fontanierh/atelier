@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/tkdwn-100-lb",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/TKDWN_100_LB_CLOTHESLINE.uasset": "5ab1bee04951b08f7bd540a2df4e82c5adf8ed56b6194d7cec4aa71c3544efca"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

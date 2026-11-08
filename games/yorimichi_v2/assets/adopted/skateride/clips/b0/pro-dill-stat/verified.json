@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-dill-stat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_DILL_STAT_IDLE.uasset": "265423dae7419ed9ff87f27a28b9c368bd26aa3886223d3603e32bb4575f11dc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

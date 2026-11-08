@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/materials/tree-tuscan-pine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Tree_Tuscan_Pine_Impostor.uasset": "b14b6266a00d82eade80b72078599f54140c729d3a7d77f3cc91ce1d398fae71"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

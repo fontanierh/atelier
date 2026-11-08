@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/nb-rf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/NB_RF_AIR_INTO_LAND_ON_BOARD.uasset": "88da9f3b31585d3f9ab669b395f5a482c3f92149139e803376ea3660cd8542cc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

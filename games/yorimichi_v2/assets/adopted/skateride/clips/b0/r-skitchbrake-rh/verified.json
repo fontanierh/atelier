@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-skitchbrake-rh",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHBRAKE_RH_H_CYC.uasset": "a86be1e6a982ddcdc1957be3c048076da064781f2bd60341c80079248858f259",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHBRAKE_RH_H_INTO.uasset": "c1b10c10dbffb1748c1968c571077794ebd4620b6902d313667c55e37261aa6c",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHBRAKE_RH_H_OUT.uasset": "c3d689d9149d4e5585a3d7bc1da78c9f58d411a60e9dd2e3ff1c60a2987bc42e",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHBRAKE_RH_LO_CYC.uasset": "bdabdac0aec03035da39943fd4abb728e156ab4d81fe0ec59bba8c43ecb63b36",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHBRAKE_RH_LO_INTO.uasset": "6bffa7675fc372f1036376fc8b3b0a287966e61167fc1eed2dc390f1bb2b77f7",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHBRAKE_RH_LO_OUT.uasset": "1afbe2f87073d3a4a20cb504c5fa3f7c2a229aebbf7d7694a498c263ffe662e1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

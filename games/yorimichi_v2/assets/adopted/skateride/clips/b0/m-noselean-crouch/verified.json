@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-noselean-crouch",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_NOSELEAN_CROUCH_0_CYC.uasset": "9d268b794a428a67596868555104e84197790c3122dfbbc268d016e3ae22913f",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSELEAN_CROUCH_0_TURN_BS_0_CYC.uasset": "6c6dec53e6f895ecc2be570998280f9c264790b82df71f86e1aa78686452578e",
+    "unreal/Content/SkateRide/Clips/B0/M_NOSELEAN_CROUCH_0_TURN_FS_0_CYC.uasset": "3f692d00174b109988576d51dbeace36843438a9d332d7622941984e6bb22899"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

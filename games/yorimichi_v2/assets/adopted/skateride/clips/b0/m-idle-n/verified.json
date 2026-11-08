@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-idle-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_IDLE_N_0_CYC.uasset": "44d028ca14ee8167e6e04144f1e09feccf0189f76b82c6ca82297fdacbcf0d0b",
+    "unreal/Content/SkateRide/Clips/B0/M_IDLE_N_0_TURN_BS_0_CYC.uasset": "af2182e2ad246ff864c2a928234e77fdd64a45f201f789a486e13b0c2623830a",
+    "unreal/Content/SkateRide/Clips/B0/M_IDLE_N_0_TURN_FS_0_CYC.uasset": "4bb05efd0a1e0526c4d6e1a1d7b5209c060573333881c6ca183179b80a6acb73"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

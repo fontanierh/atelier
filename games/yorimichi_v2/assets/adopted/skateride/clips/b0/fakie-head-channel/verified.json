@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/fakie-head-channel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/FAKIE_HEAD_CHANNEL_CYC.uasset": "db377bb8213d2a34e566ecc5aac34d7db83eb54862a86fe6f0be212ea3f5797e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

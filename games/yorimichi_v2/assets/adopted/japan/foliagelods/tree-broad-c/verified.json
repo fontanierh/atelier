@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/japan/foliagelods/tree-broad-c",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/FoliageLODs/Tree_Broad_C/MI_Tree_Broad_C_Crown.uasset": "9046d9231548cdd63a112bc956a9dbde9ea7719dcf67b098a0524936540caaf4",
+    "unreal/Content/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD1.uasset": "73933649620c1f3b52dcb2466a7c80a140c69420df551b6d141bb3cb1c450420",
+    "unreal/Content/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD2.uasset": "abbda54a8e71889e2cf997e5c43911fd35de31a83605cfdaf26da2483fc25de1",
+    "unreal/Content/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD3.uasset": "7f36d69a4c2b91e3642f4bb1980dda748df80e04f07d733ad65fc3225a598db9",
+    "unreal/Content/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD4.uasset": "812cd746063ca622d05929cf8a3c0285211ad790adf84e6c15be23528d67e5ab",
+    "unreal/Content/Japan/FoliageLODs/Tree_Broad_C/Tree_Broad_C_LOD5.uasset": "f84e6a8251507847994b874cc21c93febaaa6290f7ab91811f4fb64e79bc244d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

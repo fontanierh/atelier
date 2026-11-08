@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-mutegrab-tail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_MUTEGRAB_TAIL_N_0_CYC.uasset": "dac57a9120220c176ec15cd4d98354ab81550bb9760d2f1118d215b034e68548"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

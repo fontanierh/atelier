@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/f-flip-tail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_TAIL_GRAB_INTO_0_N.uasset": "28a5e41f483411cb20bd6e69d507fca4935bf2f21a5e49e849f076c9f85af099",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_TAIL_GRAB_OUT_N_GRAB.uasset": "e41d8a5e4befc5cb325902a4fb98791f425f17c95f41994fd0e6309616b60b0b",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_TAIL_GRAB_OUT_N_HIGH.uasset": "9766e4a932fddb1334d4f53231525d7eab80425af555f1a2c5339d0655329205",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_TAIL_GRAB_OUT_N_LOW.uasset": "2027b0e83d8cd4e015679ed327dc8891af06cf967873e628fd76a59df43b1d2e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

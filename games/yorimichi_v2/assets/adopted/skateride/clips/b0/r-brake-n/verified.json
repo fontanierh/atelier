@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-brake-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_CR_0_CYC.uasset": "0dfcba2476e5218d6886ab013dd04ac85833391687d47c468228e0bb38d08da6",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_CR_0_CYC1.uasset": "8c18ff06f1f450715b401b51eadb84b589d2f6676c0442a213f09076a0d928ce",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_CR_0_INTO.uasset": "d320af1db4069e71f98650f6df6dbc0d5a0196779afeb490dc9c08cbe2eed412",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_CR_0_OUT.uasset": "1d26a8472ed171f63707d83fe070a3673ab1f7bfa40a429d41f190143c580e91",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_N_0_CYC.uasset": "946a2ce5b2a002d70acc1f13eb7c59e1cab48b90c2caf7a92bcb11a89ba6d87f",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_N_0_CYC1.uasset": "c7f24903f27109697274620f8612808e48058a972415e8a8d94535180d900671",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_N_0_INTO.uasset": "3734d90a59fb117b4ac0f02fbca7c51066d12040a5acee5dcb8ab1647a2811c7",
+    "unreal/Content/SkateRide/Clips/B0/R_BRAKE_N_N_0_OUT.uasset": "44130e729e24b97652beda6d7cdee810f876c958814898fd6c0256d83e5dfbab"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

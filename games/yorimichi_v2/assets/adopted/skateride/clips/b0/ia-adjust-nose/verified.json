@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/ia-adjust-nose",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_NOSE_BS_0_CYC.uasset": "07829318e1e29e1bcdcb787ceaf9d1ccd103c6f5a42a18314e7edc6a63dcaf4c",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_NOSE_BS_LOW_CYC.uasset": "28c0ed5c4b58b48362e97837d7c016e69c25b961a668e815a914a018d49b85a2",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_NOSE_FS_0_CYC.uasset": "923264c1d9920b5356033c137a3e133515de9104182bd0cf2f5ff887c6d1a7a5",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_NOSE_FS_LOW_CYC.uasset": "162e97d25af9c7f1a681bd3f98048bcbe63a80997767fdc03dc3b7555a021f30",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_NOSE_N_0_CYC.uasset": "db2e5cba2a60a14c4285627f8168efc568e46cc69c75f427c8933869bbadaa41",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_NOSE_N_LOW_CYC.uasset": "7b3634299740d128b29048f333f16db6106aa1de4193b87210b4a5f41e0205e9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

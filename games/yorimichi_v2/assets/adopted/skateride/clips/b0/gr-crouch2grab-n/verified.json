@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-crouch2grab-n",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_CROUCH2GRAB_N_BS_0_INTO.uasset": "7ab2edbadba3f34da8533f1f1739f5553b8515643989c89eb2478e9c5c21131a",
+    "unreal/Content/SkateRide/Clips/B0/GR_CROUCH2GRAB_N_BS_0_OUT.uasset": "3b1dc88dfb5f88ccd6dc19ebfa908909813d3d43937d66f3ae7224d4c1cbbe40",
+    "unreal/Content/SkateRide/Clips/B0/GR_CROUCH2GRAB_N_DBL_0_INTO.uasset": "e545af7c7e648d0e24bd00a24fcbdeba7df1040f0e9d4bbf0d4ec2cf924d23d2",
+    "unreal/Content/SkateRide/Clips/B0/GR_CROUCH2GRAB_N_DBL_0_OUT.uasset": "249bd08a6543eee149cc1f58e5893cc57518f83bfbfa79af68359e1d3afd4fe4",
+    "unreal/Content/SkateRide/Clips/B0/GR_CROUCH2GRAB_N_FS_0_INTO.uasset": "b40fe86529aa05b726754f6dc2d156e9be3537dddc730dc97960a6ff79852b95",
+    "unreal/Content/SkateRide/Clips/B0/GR_CROUCH2GRAB_N_FS_0_OUT.uasset": "a079aa931a2a7773f07cf8d69f39cd74bfbc4b9f3c375dcb4d24339eea7c1588"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/tkdwn-300-r",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/TKDWN_300_R_BODYCHECK.uasset": "dc6b83d2a0d3c0f721f0ef411f6b6eb686906f7b5c0960ca69e723a4f9bbb70b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

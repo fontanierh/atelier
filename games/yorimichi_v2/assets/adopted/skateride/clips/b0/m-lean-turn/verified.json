@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-lean-turn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_LEAN_TURN_BS_0_CYC.uasset": "dbeaee242fdacb010ddb18897e6a6e4167430a117008bc5c87d35dce76a5f5c7",
+    "unreal/Content/SkateRide/Clips/B0/M_LEAN_TURN_FS_0_CYC.uasset": "e0b4ac724b51ed1368b545949c54c2736f2e43673c15f5cad458c54f004ad672"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

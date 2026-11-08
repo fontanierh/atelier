@@ -1,0 +1,27 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan rock-concrete materials (6 package(s))
+schema = 1
+id = "adopted/japan/materials/rock-concrete"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials/rock-concrete"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Coast"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_CoastRock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Concrete"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_NorthRockCaps"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Rock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Stone"

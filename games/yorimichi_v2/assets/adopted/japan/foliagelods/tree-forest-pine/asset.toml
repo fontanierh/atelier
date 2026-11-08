@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage tree-forest-pine (5 package(s)): LODs and crown material
+schema = 1
+id = "adopted/japan/foliagelods/tree-forest-pine"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods/tree-forest-pine"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/MI_Tree_Forest_Pine_Crown"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD3"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Tree_Forest_Pine_LOD4"

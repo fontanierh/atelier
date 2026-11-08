@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/japan/textures/plaza-harbor",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Arcade_paving.uasset": "882f404cad14f2abc5243f2019bc6c1d40ad7974da748c27f5bcff1e918deaec",
+    "unreal/Content/Japan/Textures/T_Arcade_timber.uasset": "f76339800e9dbea6db114a4f86e58dd93e52ca68f097ec8c0da21dd0ac801866",
+    "unreal/Content/Japan/Textures/T_Harbor_paving.uasset": "152ce535768351586331fe915e8f5cdd439a4b49e85d5592e43cad83c442f48e",
+    "unreal/Content/Japan/Textures/T_Harbor_timber.uasset": "0a797c179bd064eb255ddcbfc92d9f1f84cf74b191f29e6e94c7dc57053ddc89"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,27 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: R_SWITCH_RIDE in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/r-switch-ride"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/r-switch-ride"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_0_BS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_0_FS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_2_BS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SWITCH_RIDE_LEAN_2_FS"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SWITCH_RIDE_N_0_N"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SWITCH_RIDE_N_2_N"

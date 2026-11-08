@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/dropin-step",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/DROPIN_STEP_INTO.uasset": "67ab976a1fefdd3e2f2c94d7658e05c96e846fec561caeb81dee10e230b759ed"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

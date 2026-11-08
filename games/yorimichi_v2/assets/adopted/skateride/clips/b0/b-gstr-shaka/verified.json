@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-shaka",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_BOTH_CYC.uasset": "d557765845088b5d11780b80a73e20ef31bba195c584dcdc34418063dc3c87bc",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_BOTH_INTO.uasset": "0a5713f1419f29bfdc2431dc8be02930c26fdda1d4d06beeca4320c34e36cdf3",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_BOTH_OUT.uasset": "201d5a7e2c9aeddc0997ca353bb19718d7d518a9922ea6a98a9fb93ea2724c63",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_LEFT_CYC.uasset": "c89e673d1182c56a35a0082823d35601c4f79a21f94c0e2f36b04cc65ca6e9bf",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_LEFT_INTO.uasset": "4602b7b8d990f92c110248cb6fe330bd8360611d0428cddc0c59f1311d67f2e2",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_LEFT_OUT.uasset": "550cffe7602fe243d3ff2f3343a2ec7f93db7ba51335f6cb060f4aad646d7e93",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_RIGHT_CYC.uasset": "0b56728310076aac4f407ade66883e2206aae1e27d42af6672c8fa7417d813b5",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_RIGHT_INTO.uasset": "51a686c7a0e821e96630b3d33280fe6f6422db0a53de9e9d2938d51135abad4f",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_SHAKA_RIGHT_OUT.uasset": "077bdf47950d3d74626e1bcfc842c82d5b90e1cef825c501d82158dd4a5b6c72"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

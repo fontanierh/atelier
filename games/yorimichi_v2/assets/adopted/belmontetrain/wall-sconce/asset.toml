@@ -1,0 +1,33 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Belmonte train furniture wall-sconce: mesh, materials and textures
+schema = 1
+id = "adopted/belmontetrain/wall-sconce"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/wall-sconce"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/belmontetrain/generator"]
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/wall-sconce.glb"
+sha256 = "5c7e2a1545b57e356f9ce3dbc9bdf7ba527d493bd5ce8fac0d85bbc9bfffa875"
+
+[[sources]]
+path = "source/assets/vehicles/belmonte-train/furniture/wall-sconce.json"
+sha256 = "082830e624927b5ef034a414bfa71243f438da0024c97e011179f4d91999b0ba"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Furniture/SM_BTF_WallSconce"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/M_BT_WallSconce"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/wall-sconce-base"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/wall-sconce-mr"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BTF_WallSconce/LOD0/wall-sconce-normal"

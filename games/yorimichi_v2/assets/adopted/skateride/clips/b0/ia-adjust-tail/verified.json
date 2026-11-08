@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/ia-adjust-tail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_TAIL_BS_0_CYC.uasset": "26b419bece422d36a2436731893b0e4113cfb17213d4ccafbe432752e3bd57fe",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_TAIL_BS_LOW_CYC.uasset": "39415c2fa530652ecbdd3e4633c37c761505c72acda1f9b8ead2dd57b1e6db36",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_TAIL_FS_0_CYC.uasset": "0e53cb82276f5e0908007756966649dfc6ff6d72558ed3edb5e735581dda0888",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_TAIL_FS_LOW_CYC.uasset": "93db2639c8e46264cdc7339eae34c8a7d2d4d3d75e0976a7d0ed3a944dba69e0",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_TAIL_N_0_CYC.uasset": "f0b57771fd770de142dd0781a0a53fd60e6ef30b640f1f2e0e02652d422d3f09",
+    "unreal/Content/SkateRide/Clips/B0/IA_ADJUST_TAIL_N_LOW_CYC.uasset": "198561d787c141fbf9d8bad817e49165a60147f526ae891e0f7c941ff7315d35"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

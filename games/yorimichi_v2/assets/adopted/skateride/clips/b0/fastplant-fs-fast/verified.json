@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/fastplant-fs-fast",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_FS_FAST_A.uasset": "e108302ae2b3e87a2368cc4fe77942ed06b7ced43d04467e0b3ccbe6df73292d",
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_FS_FAST_F.uasset": "a514994de7d99c1cf651156e52182cf1d21b25c62f6be9bd5018f40a222e51f8",
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_FS_FAST_G.uasset": "676138c63c62f42c4af8f7a82db6caf315c51cec98d2fe46a10d543802d4e3d7",
+    "unreal/Content/SkateRide/Clips/B0/FASTPLANT_FS_FAST_L.uasset": "9fefeed2c947febcdc2b156bebdc5c0e0b5f5cadf0fcc9948aa8416274ddfe06"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

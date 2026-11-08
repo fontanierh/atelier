@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-tailgrab-nbone",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_TAILGRAB_NBONE_N_0_CYC.uasset": "334b38727ea2153cc1e1f8c202d5e333e725d6380d79565c75da6c972a6623af",
+    "unreal/Content/SkateRide/Clips/B0/GR_TAILGRAB_NBONE_N_0_INTO.uasset": "c2650365966ee9fb3e515d9aea397a8f09e4e58a8fb91db468aa62a0ea3b3ccf",
+    "unreal/Content/SkateRide/Clips/B0/GR_TAILGRAB_NBONE_N_0_OUT.uasset": "1b2f9bc0784ba10d67e92d7b4b62febe8d3c9915eb818bedf53b8297d3479172"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b1/jumpout-bf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BF_HI_TO_JUMPOUT_BF.uasset": "b3b77d42c4eed041cf741656e7a86d616280f2a1c220facb7c6d6dd7c3af8ede",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BF_HI_TO_JUMPOUT_BF4.uasset": "c8e49c4424b062997a8ba67cbcdf8cf89b25b3aa5c193e38f655d50b109f46b8",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BF_LO_TO_JUMPOUT_BF.uasset": "e4f2723edd71595eba6d77aecf77e4a93b4b194ae847a67d9785a35a81000210",
+    "unreal/Content/SkateRide/Clips/B1/JUMPOUT_BF_LO_TO_JUMPOUT_BF4.uasset": "d777b0e28dc31836b3b7e7ae8927fe07afba985308e08fa49b5e255e69b09584"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

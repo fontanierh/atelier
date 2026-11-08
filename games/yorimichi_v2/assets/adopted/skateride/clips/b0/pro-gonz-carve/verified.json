@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/pro-gonz-carve",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_CARVE_HCOM_N100.uasset": "571e214638e94c842100d8622e55a1391aeb3403ba943f3cff80c0197c3e390e",
+    "unreal/Content/SkateRide/Clips/B0/PRO_GONZ_CARVE_HCOM_P100.uasset": "fdbdf3590dd30b3043f0767521283c22f5d42c81ec63d6dcb2d60e3f9aab696b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,51 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan leaf-atlases textures (14 package(s))
+schema = 1
+id = "adopted/japan/textures/leaf-atlases"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/textures/leaf-atlases"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_LeafCypress"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_LeafOak"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_LeafOlive"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_LeafStonePine"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_amber"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_broad"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_cedar"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_crimson"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_ginkgo"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_maple"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_ochre"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_ochre_small"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_pine"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_leaf_small"

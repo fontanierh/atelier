@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/belmontetrain/canteen-sink",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Furniture/SM_BTF_CanteenSink.uasset": "0d1ab033e957743be65c7c2fc2b776d5aaa539f00ac9c93da7e483e808500bec",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenSink/LOD0/M_BT_CanteenSink.uasset": "2438b0ac58d3af52b36a1f9951337e012c6112a80e0073dfb8dff7aaa3974692",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenSink/LOD0/canteen-sink-base.uasset": "082d2ba3bf4f245b88c6967eae5cc094e48cbb4de5575f1d22d0a945b85bb398",
+    "unreal/Content/BelmonteTrain/Source/SM_BTF_CanteenSink/LOD0/canteen-sink-normal.uasset": "cce40475b10266e06bb53b23e18ef2fd5448e1ab17443166360f7db24d631a0c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

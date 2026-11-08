@@ -1,0 +1,15 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Footstep bank generator and licence: bank record, fetch and slice scripts, Sonniss licence text, import script, plus the loose footstep assets
+schema = 1
+id = "adopted/japan/audio/generator"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/audio/generator"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Audio/A_Footstep"
+
+[[outputs]]
+package = "/Game/Japan/Audio/DA_Footsteps"

@@ -1,0 +1,33 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-crooks-bf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_BS_CYC.uasset": "0c1d0c82158f463012581e09324bc6839ba82400d39d98bf2f7891046b4fd108",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_BS_INTO.uasset": "c85aa58ba9f8b08744f0e5724d92c9f8f0560b23639e177397554e27728a0086",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_BS_OUT.uasset": "df9db87c2782a945cc18e69c64989609c36fcf76e9ed844735913fbe59fc83e8",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_TAIL_CYC.uasset": "d7d022f1e91cfb33bdfea5e9959c66cac57c614a909fd081a1ae790957e7f3bf",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_TAIL_INTO.uasset": "a2bdbe7db469de6f5ab084db274de00e887fc89a2a8f7d6cbbfab2712acfa0b0",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_GRAB_TAIL_OUT.uasset": "8c5a280b801613c9e96d94e56e7f372af5b30f826eed05fb28d0540e949f92db",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_HI_0_CYC.uasset": "04d18cd7e56836a19f485ba223e5e89db8ae619015ce51198bb8065559d1bac7",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_HI_L_CYC.uasset": "9b7bf20f8f6dc3e6900533ee6ee7c298f540b7511d26daf2aac222c4c79713a7",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_HI_R_CYC.uasset": "923f9210aec767ff7313c4d579e4d38535da0b0c225dea8a66d249ef0f873f5b",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_LOW_0_CYC.uasset": "bd373c40e810f0b30af5fdd67438e0380997d55bbfe928ba0afd0451cf8c034b",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_LOW_L_CYC.uasset": "8d5c37254b4c7b63aa8f553ce4345748b12cd724a2a591911db6f7cf586b297b",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_BS_LOW_R_CYC.uasset": "c207e1048da838866297b8642145343dc87da4292d457c0f796623a2339aff9f",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_BS_CYC.uasset": "6afeafd7f85a60cf5dd9e141860cef96e51c60181e49eee1f88d751fcd4c5b67",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_BS_INTO.uasset": "40f76a2e49ac2ff61bfd31f12a3c77510996bc562379178a60607359dcc858c6",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_BS_OUT.uasset": "9ef926906f858e35d456232714fba5e56bf34a21b376ec569a12c7504b8ba367",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_TAIL_CYC.uasset": "6e13d8d9baa2013ec3030ea9dd975fafdbe206cb1ca3647fadbe2bc7b44f2a63",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_TAIL_INTO.uasset": "e7c22391a8c8ee3130d84c07ea87e9121195d7b812b8ff7142336808ca95a89c",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_GRAB_TAIL_OUT.uasset": "5c6baf7899f3dbd2014b1e507946eca9040be3a1a6f77f8da4cd912ce46051a9",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_HI_0_CYC.uasset": "24b6d42d57fa0428618e4904d88b07b1b4f6bcc52711e68558320506d9f29199",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_HI_L_CYC.uasset": "edcecc203e2ba35f5e54788f6dbfadfe3e523b79465fb4d2463db268442c1265",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_HI_R_CYC.uasset": "f04e8dcedcccaa096a7576c6197fe0b6d328976b26d9ce5022427b0e2a0e0f6d",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_LOW_0_CYC.uasset": "364bab127278cb58ce482eb3fbf636a15ffe8155c04a3fadaf8aa55c8de80204",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_LOW_L_CYC.uasset": "6ecf69961751e30be2c0550004717113ae533323b6a38f318ded2efbbda36d22",
+    "unreal/Content/SkateRide/Clips/B0/G_CROOKS_BF_FS_LOW_R_CYC.uasset": "98112a8381634bcc531eb35268189c71a3b96ce52ccd7e5fec3ad121f83a1275"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

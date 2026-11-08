@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-pump-str",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_PUMP_STR_CROUCH_0_N.uasset": "4e687fae8594f351fdd7ef82771fc7723c7fca94bacb2f0e0e6e94ed6ffa5db4",
+    "unreal/Content/SkateRide/Clips/B0/R_PUMP_STR_HCOM_0_N.uasset": "549bc62aea4e8ccd59f8ed854cd40b2f1e9ed4609a4913b6bf7f164f2a4232bf"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/japan/materials/tree-forest-ginkgo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Tree_Forest_Ginkgo_Impostor.uasset": "afa41989585816d53436f1a89f17a00f5f478eec7cb55618398e3b4f6726275b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-dslide-f",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_DOUBLE_CYC.uasset": "1ce750a456242856f54b47ef25440ddd7aff247bc95a61c3d1cdffdb5a18919e",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_DOUBLE_INTO.uasset": "6dc045410bc9754079333358bdcc6d5897427be8dbc8da912fc36a16c8986c47",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_DOUBLE_OUT.uasset": "b39c7860398a27cf0ee4b6a2730208832cbfb14958d5aa670d8dbde6f6349a49",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_NOSE_CYC.uasset": "59c62b62c8c3be6f44e987496345f47a21079530352d9520e16b7238a50fe12d",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_NOSE_INTO.uasset": "90c85dd32b282e8c5543ed4ddec2f6b26bbddb2205e79c2263f3a6b9f8078e8c",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_NOSE_OUT.uasset": "32741f04dcd165623bb594016bfce7c71d130080ebe40698d6045f667a131c3b",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_TAIL_CYC.uasset": "4e44f874c479c47890b6c7a15fb3e0f11b90a7555e98716285baa84cebc2be3d",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_TAIL_INTO.uasset": "46293e297af4ed09281b31a91d21d3081af24a60b9e99761d676e55e02861ba9",
+    "unreal/Content/SkateRide/Clips/B0/G_DSLIDE_F_GRAB_TAIL_OUT.uasset": "9df515768db637d9bfc7e61d46570cfb25ae47cd393bd0bf950a748013430d3c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

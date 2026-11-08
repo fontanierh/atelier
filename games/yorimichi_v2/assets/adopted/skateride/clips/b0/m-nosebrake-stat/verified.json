@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-nosebrake-stat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_NOSEBRAKE_STAT_0_CYC.uasset": "57980960c65ea96e905058d739eb0769be57bf235da692f7b4b3d6398c9588bb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

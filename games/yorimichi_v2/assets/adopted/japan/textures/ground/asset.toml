@@ -1,0 +1,30 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan ground textures (7 package(s))
+schema = 1
+id = "adopted/japan/textures/ground"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/textures/ground"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_ForestNormalDefault"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_flower"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_grass"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_ground"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_ground_detail"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_litter"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_road"

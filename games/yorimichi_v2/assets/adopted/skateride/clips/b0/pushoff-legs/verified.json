@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-legs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_LEGS.uasset": "6c754cdfb2129f3e253616e78e01908604f4212badd0055fe1e9345f41997821"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/japan/materials/ground",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Ground.uasset": "63b649acace632fd7af8f13468a3ec4ff462b5e393e311b70e7479f9eda6cc91",
+    "unreal/Content/Japan/Materials/MI_Litter.uasset": "6e483895eb0a22448ae6b80873902bb32611f02106629b2eda83717578529176",
+    "unreal/Content/Japan/Materials/MI_Moss.uasset": "6d19581ab2a11e942a533c842787bfe5938ac19568b446b6f6a635d4e3ae3bf5",
+    "unreal/Content/Japan/Materials/MI_Road.uasset": "a9780d3da2e617bf076cb2ba236d5845389be4de4c7f33d4d5efc9eec6d9f1f3",
+    "unreal/Content/Japan/Materials/MI_Sand.uasset": "53706a52a112d13e831feb097385000907de855ab30af712cb9af8217f64ce8d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

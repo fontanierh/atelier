@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/r-skitchpush-h",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_H_FAST_CYC.uasset": "efe6f7d7b6b4e6ac5528fe9345837f8dae2ac052bb37da2d5f6f5431d6a54fb2",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_H_FAST_INTO.uasset": "d9975a2eb3deb94cf74288419c9be93cb8fcec640929f775a22685367027d544",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_H_FAST_OUT.uasset": "c23c41af33de67a9ffe85ec86deddf2d270fb33eab5bc4e3917979e1dbe8c73d",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_H_SLOW_CYC.uasset": "a25f6ae2b17906665a66d6e2e38715cdc0bd1c6e1443abd93342acc714463c16",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_H_SLOW_INTO.uasset": "67a1d9ba55c181bee5fa10d0dd3d97fb0af3d3ae40e170b9f5c66d5856944009",
+    "unreal/Content/SkateRide/Clips/B0/R_SKITCHPUSH_H_SLOW_OUT.uasset": "6304543dc8f7cd95dc266c4c5e5ab19fb7131a2d48527d7a2521229aae4fe5f7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

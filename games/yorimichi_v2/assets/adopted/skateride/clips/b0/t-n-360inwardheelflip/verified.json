@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-n-360inwardheelflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_N_360INWARDHEELFLIP_HI_DCATCH_OUT1.uasset": "02c6af2a444c336f02acb930695b52329df178b4ba2e2026b3eeca2753602518",
+    "unreal/Content/SkateRide/Clips/B0/T_N_360INWARDHEELFLIP_H_CYC.uasset": "ea614fd2444e276b4e27c0a83176286ab5336e8b127afa1108812a4cb8fef096",
+    "unreal/Content/SkateRide/Clips/B0/T_N_360INWARDHEELFLIP_LO_DCATCH_OUT1.uasset": "158e1060c58c884816645fdccdebe29fc0f0c5d476f6059fd2644d64e3349aa7",
+    "unreal/Content/SkateRide/Clips/B0/T_N_360INWARDHEELFLIP_L_CYC.uasset": "617c5cd8ec09917b93bf6120ebe91baedf1473ceeb73f1aa8f0d5b700b27abc5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/skateride/clips/b0/f-flip-mute",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_MUTE_GRAB_INTO_0_N.uasset": "85e54e0cfb69a128cc77706fc29f03cbe1a8808072185171c600eec0ec86a82b",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_MUTE_GRAB_OUT_N_GRAB.uasset": "08b907c11918e38bfc546f45b22eae98f03dc311cf7268c4424594ea2ab0b858",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_MUTE_GRAB_OUT_N_HIGH.uasset": "fa53d04a193b6eb5a19cb99c319e7f9552a53969c876cdbcfc26a65d120a185c",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_MUTE_GRAB_OUT_N_LOW.uasset": "146cc1fbbfdc9e8ad3ad4db8ef57ad6931b7479bd78e81387d45618a09688dee",
+    "unreal/Content/SkateRide/Clips/B0/F_FLIP_MUTE_TO_BS_GRAB.uasset": "acdeaf1a8190e56462303799bce783f4e961558b81a627aaac17d177ce61555f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,36 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: R_ANTIC_NOLLIE in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/r-antic-nollie"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/r-antic-nollie"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_L_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_N_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_ANTIC_NOLLIE_R_0_OUT"

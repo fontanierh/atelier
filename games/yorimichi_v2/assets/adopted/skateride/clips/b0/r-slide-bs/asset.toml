@@ -1,0 +1,51 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: R_SLIDE_BS in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/r-slide-bs"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/r-slide-bs"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_HSP_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_HSP_EARLYOUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_HSP_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_HSP_MIDOUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_HSP_OUT_000"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_HSP_OUT_090"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_HSP_OUT_180"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_LSP_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_LSP_EARLYOUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_LSP_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_LSP_MIDOUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_LSP_OUT_000"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_LSP_OUT_090"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/R_SLIDE_BS_LSP_OUT_180"

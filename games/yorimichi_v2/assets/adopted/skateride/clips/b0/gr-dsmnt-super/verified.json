@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-dsmnt-super",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_SUPER_DBL_0_CYC.uasset": "666c844dc11397c833f894a9479123d8656cbfec1425c595648a76c9b00a9b15",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_SUPER_DBL_0_INTO.uasset": "8a429f20a81c0444ba6a49b618aa89077c717f64d7520b4d233bbc522bc293bd",
+    "unreal/Content/SkateRide/Clips/B0/GR_DSMNT_SUPER_DBL_0_OUT.uasset": "3b583cc21421ba606c5f669117c7f4ee56821b03d9d013fe1aaf1b5b76f8613a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

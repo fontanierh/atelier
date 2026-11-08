@@ -1,0 +1,57 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: GR_GROUND_N in /Game/SkateRide/Clips/B0
+schema = 1
+id = "adopted/skateride/clips/b0/gr-ground-n"
+kind = "adopted"
+authority = "editor"
+owner = "shared/skateride/clips/b0/gr-ground-n"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_BS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_BS_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_0_INTO"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_2HGRAB_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_BSGRAB_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_FSGRAB_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_LEFT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_COFFIN_RIGHT_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_DBL_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_DBL_0_OUT"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_DBL_CARVE_L_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_DBL_CARVE_R_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_FS_0_CYC"
+
+[[outputs]]
+package = "/Game/SkateRide/Clips/B0/GR_GROUND_N_FS_0_OUT"

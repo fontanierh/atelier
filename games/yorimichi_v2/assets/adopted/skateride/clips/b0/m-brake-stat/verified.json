@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/m-brake-stat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/M_BRAKE_STAT_0_CYC.uasset": "4b903780b79189ed409e2ed163df7d264731fe2437fdae9faee7af3f35bbd6fc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

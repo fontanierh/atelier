@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/gr-seatbeltgrab-shifty",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_SHIFTY_BS_0_CYC.uasset": "ec3625df1072c0b5c5456a3d355005e2f76675842406486a19416c41cfbbfebf",
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_SHIFTY_BS_0_INTO.uasset": "58d23a8bd615d2bc1bff8d12fb7bfcd5eeb4ab5cd137c056eaed79e2ad082efb",
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_SHIFTY_BS_0_OUT.uasset": "e40f863c8775e568c30543d5e82bac1f3d20e154b12a381c969a5bc04ebc180d",
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_SHIFTY_FS_0_CYC.uasset": "813d52c0260c0c20614bf1fceed56446402b437ec340d57378d7b4f0b7bdf840",
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_SHIFTY_FS_0_INTO.uasset": "c224c721afb5b2100e7e6fdb728a9e768d1d18ed860af96bf7babfc5a782a26f",
+    "unreal/Content/SkateRide/Clips/B0/GR_SEATBELTGRAB_SHIFTY_FS_0_OUT.uasset": "0149e58617753cc54ec01fab79d4488a8de111461fccba713ef243f4d379c441"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

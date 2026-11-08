@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b1/br-spawn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B1/BR_SPAWN_DISMOUNT_INTO_STAND_0.uasset": "5949ad0f0e1c5075ec1c65b060128f7a8180e26750297b88edbbd5af981f862f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

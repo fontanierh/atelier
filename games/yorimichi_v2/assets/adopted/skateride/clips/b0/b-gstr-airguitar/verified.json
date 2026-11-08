@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-airguitar",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_BOTH_CYC.uasset": "76538fee7c03f43b455fbbf805ce3dcb2e6b4dc88aa9e291d3b1183792475a99",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_BOTH_INTO.uasset": "ac5bbd944e7efdd4acd61df8529bbf04d4034bb32f7d4773533edf82b8250da5",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_BOTH_OUT.uasset": "c15b8f8acba26d3d207d6eaffbdb3806b41678aca41c9158ddb0384d9271659b",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_LEFT_CYC.uasset": "4f83261c3e64e9a8d944470e8439a88ba22467ddd3c81d163ddb493273a916c4",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_LEFT_INTO.uasset": "b8460650f04b32e4305c901f1314dfcac9a3b3aefc0a328e826368c353eadf4d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_LEFT_OUT.uasset": "4ef9f6683ee2cae29ae0031564a8fa1143b05d3c825f94661ce2e862d8a64216",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_RIGHT_CYC.uasset": "76377fea5559d8b5accd5d67f0168c526981e2e40e01d56903ce9ee282c63b51",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_RIGHT_INTO.uasset": "e9b8ece060b23f4c341d99aeaff6d2f15e219d03c1392dae971d2dc6ccfa6a01",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_AIRGUITAR_RIGHT_OUT.uasset": "ea98bfc6c1991faa9a4b0e6fda3894fd7e04161e1dd1bfc3d87f00c5aa0d4fb0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

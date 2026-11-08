@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/japan/textures/tree-forest-pine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Tree_Forest_Pine_colour.uasset": "e27ba24404e7d6da1ecafd9d17112c91bccb5e36705eb8e544957d755463c8f9",
+    "unreal/Content/Japan/Textures/T_Tree_Forest_Pine_normal.uasset": "8b598a2d8ee13e9dea24127b9b674a5298f191de4b2c3aba7cff2b004317eeec"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

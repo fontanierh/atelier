@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan plaza-harbor textures (4 package(s))
+schema = 1
+id = "adopted/japan/textures/plaza-harbor"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/textures/plaza-harbor"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Arcade_paving"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Arcade_timber"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Harbor_paving"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Harbor_timber"

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/pushoff-tuck-legs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/PUSHOFF_TUCK_LEGS.uasset": "0627bb8bd64bf93452d82170a072ae72aa38949d964b7e039edd303f2f37eba6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

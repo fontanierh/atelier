@@ -1,0 +1,38 @@
+{
+  "asset": "canteen-mug",
+  "source": "canteen-mug.glb",
+  "source_sha256": "84fbc384abb29f955b889e84313c035c141636f395aff7e8c14f4ae0852791d9",
+  "target_m": {
+    "width": 0.128,
+    "depth": 0.095,
+    "height": 0.09
+  },
+  "source_size": [
+    0.7397,
+    0.9995,
+    0.7036
+  ],
+  "quarter_turn": true,
+  "uniform_scale": 0.12791,
+  "column_fraction": null,
+  "column_stretch_m": 0.0,
+  "fitted_m": {
+    "width": 0.1278,
+    "depth": 0.0946,
+    "height": 0.09
+  },
+  "errors_m": {
+    "width": 0.0002,
+    "depth": 0.0004,
+    "height": 0.0
+  },
+  "ok": true,
+  "triangles": 3008,
+  "pivot": "floor_footprint_center",
+  "glb": {
+    "file": "canteen-mug.glb",
+    "bytes": 232580,
+    "sha256": "c28fe4514b183433f6ea7437245a06120e9183943cd60c7ffef7bf8ae46a83a4"
+  },
+  "output_id": "canteen-mug"
+}

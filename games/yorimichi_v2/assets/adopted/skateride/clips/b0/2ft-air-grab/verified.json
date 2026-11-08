@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/2ft-air-grab",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/2FT_AIR_GRAB_N_NOSE_0_CYC.uasset": "877f06ee34d9cbd00995d7eb5ba17f5e3c26f1b3a01c3dfb675b412399ffab7a",
+    "unreal/Content/SkateRide/Clips/B0/2FT_AIR_GRAB_N_NOSE_0_INTO.uasset": "d864545a56a6c671fbe7c21b545d42dd8a0a238d77f8e38d8fbe451032ebfb33",
+    "unreal/Content/SkateRide/Clips/B0/2FT_AIR_GRAB_N_NOSE_0_OUT.uasset": "437c58802b59556d76bc638252b9e75aeb05ae8c9e4722bf11820f505caa0645",
+    "unreal/Content/SkateRide/Clips/B0/2FT_AIR_GRAB_N_TAIL_0_CYC.uasset": "a266555233a9d85e753358c9a18f8e05b6d9b446af47512ec4465894a290e881",
+    "unreal/Content/SkateRide/Clips/B0/2FT_AIR_GRAB_N_TAIL_0_INTO.uasset": "e6fe4e08657f2881c6489608d8b7931d694fcaf163005b94f625157a86076d72",
+    "unreal/Content/SkateRide/Clips/B0/2FT_AIR_GRAB_N_TAIL_0_OUT.uasset": "62c0a20c317d14d1fe14704201a573dd0d83124b75a1434b7f1f49a3a439ecac"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

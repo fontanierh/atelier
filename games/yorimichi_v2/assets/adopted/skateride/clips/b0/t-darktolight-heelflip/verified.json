@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/skateride/clips/b0/t-darktolight-heelflip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/T_DARKTOLIGHT_HEELFLIP_HI.uasset": "a728be5d6e69e1c6d7fc1bf1573bbc7f0b4c21dd30d30871365ac2df62917bcb",
+    "unreal/Content/SkateRide/Clips/B0/T_DARKTOLIGHT_HEELFLIP_LOW.uasset": "d1a127d9f4716033b578c94849591c85deb6dcd3037a26600fc449a41d28e1df"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-ngrind-hi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_BS_CYC.uasset": "2614c04e2dac92c6e4e721c52255cca2843e4685ac49fe5ce8721829432cb251",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_BS_INTO.uasset": "27096034ac4807af63921d63ee0ef59e8d839902c32a37e335aa7b9a9a47989d",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_BS_OUT.uasset": "8ad03c7fb2ab728bc8af58ff25b3edb89e178ce707efe5a707572915227b0528",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_TAIL_CYC.uasset": "caa0f853fa87b0aae465125c561b9c05a9e8b9d0a7534f1b9445525de030ced1",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_TAIL_INTO.uasset": "18de4d752648d21d7d130c1b2bffe80a0dfbf069716219fc3c59d546b213007c",
+    "unreal/Content/SkateRide/Clips/B0/G_NGRIND_HI_GRAB_TAIL_OUT.uasset": "441202ecabbea3335bf26e52b43f767d51a25396b362b28930d9d8a0c262b69a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

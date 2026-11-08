@@ -1,0 +1,21 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Japan foliage grass (4 package(s)): LODs and crown material
+schema = 1
+id = "adopted/japan/foliagelods/grass"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/foliagelods/grass"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_A/Grass_A_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_A/Grass_A_LOD2"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_B/Grass_B_LOD1"
+
+[[outputs]]
+package = "/Game/Japan/FoliageLODs/Grass_B/Grass_B_LOD2"

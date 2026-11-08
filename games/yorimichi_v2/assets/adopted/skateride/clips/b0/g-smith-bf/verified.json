@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/skateride/clips/b0/g-smith-bf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_BS_HI_0_CYC.uasset": "f2059229253d021cde07c882bd615cb008e0391387c3bcf6c6e7ff0e6bc07518",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_BS_HI_L_CYC.uasset": "8b114ba3c6072465440c4e58a17de938c0e7425580138e551597880f48b2798f",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_BS_HI_R_CYC.uasset": "f9e5ef49742c439be69f6ff638f25305070759bf319ec77ac02a591b2a2d90a8",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_BS_LOW_0_CYC.uasset": "c6442af7e39d2336f7f1f58caef97b04fcf72e7df3a5e7d32233ac04910ae462",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_BS_LOW_L_CYC.uasset": "11a5bee26c2219e620bbbd7003fb3cc2c2abbddc5352145ca4159fc377bbbca6",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_BS_LOW_R_CYC.uasset": "3d0119ecd05ab3f922495e958287966259f6cc8437f0b862d7233b64df7ee5fe",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_FS_HI_0_CYC.uasset": "2142bae0654a80c25dd797953f9d1b3fa7854bdb20764683c892c39907375f3a",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_FS_HI_L_CYC.uasset": "280055945f966b83a260085b594ccf94dcff009863d20cbf5dd4d8f93f2b2b1f",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_FS_HI_R_CYC.uasset": "aa28026732d883656e110521f349f9dd214ad33a3a34d3b36274f3a6caf902ed",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_FS_LOW_0_CYC.uasset": "e6656b227e17d9339cd174db0342d4e382ba5baf2a73e28d42441da9a24f0971",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_FS_LOW_L_CYC.uasset": "82b1ddfcce35e40773d506bd3fe53e81536be4dce7b0cb2b3581be92232a367f",
+    "unreal/Content/SkateRide/Clips/B0/G_SMITH_BF_FS_LOW_R_CYC.uasset": "494211e05637ac8223194c4502e2a0cb3214ac4a373add2425971bf62acb26b7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

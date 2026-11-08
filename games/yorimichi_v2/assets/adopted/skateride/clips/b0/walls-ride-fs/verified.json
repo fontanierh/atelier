@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/walls-ride-fs",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/WALLS_RIDE_FS_CYC.uasset": "b5cd1a991094e5101a0d4db1bd35d890ce1a52db2b5a699bd5e028a571630a19"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

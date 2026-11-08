@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/skateride/clips/b0/hardflip-high-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/HARDFLIP_HIGH_A.uasset": "d581357391952960fe736fcd90be85adcd69a23aa3ca3ce16fa9eb1cb6be4b52"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/skateride/clips/b0/b-gstr-raiseroof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_BOTH_CYC.uasset": "9af3508e6e527536b94f27caaada768034fed20c8947580bb56479d0a95d978d",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_BOTH_INTO.uasset": "ef50fae3c236022ad8b1ddae79f9d44bc3bab64a9645ea15ad5dfe7614b2fe0a",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_BOTH_OUT.uasset": "2cf7f5b85be9fcc733c45f2fd11afe6b1c697a070aa72603d64bfef7e80445bd",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_LEFT_CYC.uasset": "92bf24056814179ab8c68b1c954058af1a0bf0baabd40c12cb689ba1522d6e43",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_LEFT_INTO.uasset": "b2183bdd6082f9239dd6b8b0f8566f3a853172b1b2b6c6ba68a6365bbed70e08",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_LEFT_OUT.uasset": "a9cc7112b5e8d6dccb6d9f2ea009a358a6584c97b522875b0ebe0ec1645dd3f9",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_RIGHT_CYC.uasset": "f030fbe6502b66e5b9f5a44a6143fe8ddf7c1b92299bba58ccd80b09c23fc14c",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_RIGHT_INTO.uasset": "2cf9596c36061499a9d77420686db9f8ece83f5aad75636d8fe73ceefede1c91",
+    "unreal/Content/SkateRide/Clips/B0/B_GSTR_RAISEROOF_RIGHT_OUT.uasset": "4e073736d9960fac317e6e38b314ee261d7b732e953516b1d1ca542c4e563490"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
