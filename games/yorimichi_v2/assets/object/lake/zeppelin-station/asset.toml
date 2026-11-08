@@ -1,0 +1,12 @@
+# One saved object of region/w06-lake-treehouse (tools/migrate/objects.py, from its objects.toml): the Woodland zeppelin station (ZP_Woodland).
+# Its placement is this actor package; its model is adopted/japan/assets/zeppelin. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/lake/zeppelin-station"
+kind = "placement"
+authority = "editor"
+owner = "region/w06-lake-treehouse"
+references = ["adopted/japan/assets/zeppelin"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/DP/UC41C1NEINY8NRQ1HW8CQZ"

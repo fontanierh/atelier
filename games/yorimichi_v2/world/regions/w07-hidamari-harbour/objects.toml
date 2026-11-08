@@ -5716,3 +5716,10 @@ id = "object/harbour/hd-arcaderoof-01"
 split = {key = "HD_ArcadeRoof", at = [660.0, 75.0]}
 model = "adopted/experiments/citysurfaces/v1-128m/arcade-roof"
 about = "HD_ArcadeRoof 1 of 1 in w07-hidamari-harbour, placed at (660.0, 75.0) m"
+
+# A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
+[[objects]]
+id = "object/harbour/zeppelin-trail"
+patch = "028fae5694d6f2a6"
+model = "adopted/japan/assets/zeppelin"
+about = "the zeppelin trail piece (ZP_Trail)"
