@@ -22,6 +22,13 @@ hippodrome/hippodrome.json, its `meshes`) that the unit owns. UV2Migration::Migr
 unit's AV2ScenePatch at the course origin, and AHippodrome::Spawn skips exactly those meshes. The data file's shape picks
 the migration: a park file has render and collision entries, the hippodrome file a meshes list.
 
+A `route` object is one unit of a transport route, saved by the editor step as one AV2ScenePatch and skipped by the
+runtime service (CoversGroup): its `route` lists entries of the route's data file, and the file's shape picks the
+migration. A railway file (belmonte_track/track.json, `pieces` and `instances`) takes piece names, and instanced groups
+as "<mesh>#<key>" (UV2MigrationTravel::MigrateRailwayPieces); a ferry file (ferry/service/service.json, `terminals`) takes
+terminal keys (MigrateFerryTerminals); a gondola file (gondola/runtime.json, `static`) takes static entry names
+(MigrateGondolaStatics). Each name is listed once, in one object of the region.
+
 The claim holds the region's and the environment's scopes, the manifest's actor package, and each object record's
 two files; the created actor packages are bound to it by the build step.
 """
@@ -71,7 +78,7 @@ def load_objects(region) -> dict:
     if data.get('schema') != records.SCHEMA or not isinstance(data.get('tag'), str) or not isinstance(data.get('data'), str):
         raise ObjectError(f'{path}: needs schema = {records.SCHEMA}, tag and data')
     objects = data.get('objects', [])
-    kinds = {'group', 'groups', 'patch', 'split', 'park'}
+    kinds = {'group', 'groups', 'patch', 'split', 'park', 'route'}
     for item in objects:
         keys = set(item) - kinds
         if keys != {'id', 'model', 'about'} or len(kinds & set(item)) != 1 \
@@ -83,6 +90,11 @@ def load_objects(region) -> dict:
             raise ObjectError(f'{path}: {item["id"]}: park needs a list of mesh names, not {park}')
         if park is not None and not data['data']:
             raise ObjectError(f'{path}: {item["id"]}: a park object needs data = "<park>/park.json"')
+        route = item.get('route')
+        if route is not None and (not isinstance(route, list) or not route or not all(isinstance(n, str) and n for n in route)):
+            raise ObjectError(f'{path}: {item["id"]}: route needs a list of entry names, not {route}')
+        if route is not None and not data['data']:
+            raise ObjectError(f'{path}: {item["id"]}: a route object needs data = "<route>/<file>.json"')
         patch = item.get('patch')
         if patch is not None and not (isinstance(patch, str) and patch or isinstance(patch, list) and patch
                                       and all(isinstance(v, str) and v for v in patch)):
@@ -100,6 +112,9 @@ def load_objects(region) -> dict:
     parks = [p for i in objects for p in i.get('park', [])]
     if len(parks) != len(set(parks)):
         raise ObjectError(f'{path}: a park piece is listed twice')
+    routes = [n for i in objects for n in i.get('route', [])]
+    if len(routes) != len(set(routes)):
+        raise ObjectError(f'{path}: a route entry is listed twice')
     for values in ([i['id'] for i in objects], [i['id'].rsplit('/', 1)[1] for i in objects],
                    [g for i in objects for g in i['groups']]):
         if len(values) != len(set(values)):
@@ -200,6 +215,34 @@ def park_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -
     return {'region': region, 'tag': tag, 'data': data, 'pieces': pieces, 'is_collision': is_collision, 'units': joined}
 
 
+def route_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> tuple[str, dict]:
+    """(the plan list, its entry) of a region's route objects: a railway file's ("railways"), a ferry file's ("ferries") or a
+    gondola file's ("gondolas"). Every name must be an entry of the file (read here, so an unknown name is refused before the
+    editor runs). A railway name is a piece's name, or "<mesh>#<key>" for an instanced group (as track.json names them)."""
+    spec = read_piece_file(region, data, game)
+    if 'pieces' in spec and 'instances' in spec:
+        kind = 'railways'
+        names = {p['name'] for p in spec['pieces']}
+        names |= {f"{g['mesh'].rsplit('/', 1)[-1].split('.')[0]}#{g['key']}" for g in spec['instances']}
+    elif 'terminals' in spec:
+        kind = 'ferries'
+        names = {t['key'] for t in spec['terminals']}
+    elif 'static' in spec:
+        kind = 'gondolas'
+        names = {s['name'] for s in spec['static']}
+    else:
+        raise ObjectError(f'{region}: {data} is no railway, ferry or gondola file')
+    entries, joined = [], []
+    for item in units:
+        unit = item['id'].rsplit('/', 1)[1]
+        for name in item['route']:
+            if name not in names:
+                raise ObjectError(f'{item["id"]}: {name} is no entry of {data}')
+            entries.append(name)
+            joined.append(unit)
+    return kind, {'region': region, 'tag': tag, 'data': data, 'names': entries, 'units': joined}
+
+
 def native_run(plan_file: Path) -> str:
     env = {**os.environ, 'V2_MIGRATE_PLAN': str(plan_file)}
     LOG.unlink(missing_ok=True)
@@ -228,6 +271,7 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     if len(maps) != 1:
         raise ObjectError(f'the regions must share exactly one map, not {sorted(maps)}')
     wanted, groups, splits, parks, hippodromes = {}, [], [], [], []
+    routes = {'railways': [], 'ferries': [], 'gondolas': []}
     for rid in region_ids:
         listed = load_objects(by_id[rid])
         listed['objects'] = [item for item in listed['objects'] if 'patch' not in item]   # patch objects: promote()
@@ -250,11 +294,15 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
         if units:
             kind, entry = piece_plan(rid, listed['tag'], listed['data'], units, game)
             (parks if kind == 'parks' else hippodromes).append(entry)
+        legs = [item for item in listed['objects'] if 'route' in item]
+        if legs:
+            kind, entry = route_plan(rid, listed['tag'], listed['data'], legs, game)
+            routes[kind].append(entry)
         for item in listed['objects']:
             wanted[f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'] = (rid, item)
-    unit_objects = bool(parks or hippodromes)
+    unit_objects = bool(parks or hippodromes or any(routes.values()))
     if (groups or unit_objects) and not environment:
-        raise ObjectError('--environment is needed to save runtime-group, park and hippodrome objects (the manifest lists '
+        raise ObjectError('--environment is needed to save runtime-group, park, hippodrome and route objects (the manifest lists '
                           'their meshes)')
     environment = environment if groups or unit_objects else None
     if claim:
@@ -262,7 +310,8 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     else:
         authority.authorize([], None, 'object migration')
     plan = {'map': maps.pop(), 'claim': claim, 'regions': [{'id': r} for r in region_ids], 'environment': environment,
-            'groups': groups, 'splits': splits, 'parks': parks, 'hippodromes': hippodromes}
+            'groups': groups, 'splits': splits, 'parks': parks, 'hippodromes': hippodromes,
+            'railways': routes['railways'], 'ferries': routes['ferries'], 'gondolas': routes['gondolas']}
     out.mkdir(parents=True, exist_ok=True)
     plan_file = out / 'objects-plan.json'
     plan_file.write_text(json.dumps(plan, indent=2, sort_keys=True) + '\n')

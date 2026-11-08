@@ -1,0 +1,11 @@
+# W18 gondola: the static stations and pylons of the three lines (unreal/Content/Data/gondola/runtime.json, `static`;
+# GondolaService.cpp). One object per station (its shell, platform, fittings, collision and ground access) and one per
+# pylon line (its towers). Cabins, haul ropes, the station audio and the walking routes stay runtime; the cabins never clip
+# the ropes, so nothing here moves. Bounds: the static entries' locations, 20 m margin, Unreal cm.
+schema = 1
+id = "region/w18-gondola"
+about = "The gondola route: six stations and the pylons of its three lines (the cabins and ropes stay runtime)"
+bounds_cm = [35955, -462759, 122154, -42741]
+neighbours = ["region/w16-belmonte", "region/w07-hidamari-harbour", "region/w12-craterpark"]
+maps = ["/Game/V2/Maps/Slice"]
+shared = ["shared/material/japan", "shared/sky", "shared/sea"]

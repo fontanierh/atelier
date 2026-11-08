@@ -128,6 +128,14 @@ public:
     /** The ship whose deck carries this player, or INDEX_NONE. */
     int32 ShipOf(const AWandererCharacter* Character) const;
 
+    /** The builders the saved ferry terminals share (UV2MigrationTravel::MigrateFerryTerminals) with Initialize: a mesh part
+     *  (its Outer owns it; the caller registers it), and a terminal's static parts and its hidden collision, built exactly as
+     *  Initialize builds them at the terminal's anchor. OutMissing counts the meshes not found. */
+    static UStaticMeshComponent* MakeMeshPart(UObject* Outer, USceneComponent* Parent, const FString& Name, const FString& Asset,
+        bool bCollision, bool bMovable);
+    static void MakeTerminal(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& Terminal,
+        TArray<UStaticMeshComponent*>& OutParts, UStaticMeshComponent*& OutCollision, int32& OutMissing);
+
 private:
     struct FShip
     {

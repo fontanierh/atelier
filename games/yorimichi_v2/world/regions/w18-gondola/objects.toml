@@ -1,0 +1,84 @@
+# Objects of this route region, saved by tools/migrate/objects.py (see its docstring).
+# Gondola static objects (tools/migrate/objects.py). `route` names entries of runtime.json's `static` list by name.
+schema = 1
+tag = "gondola"
+data = "gondola/runtime.json"
+
+
+[[objects]]
+id = "object/gondola/station-hidamari"
+route = [
+    "hidamari_GD_StationValley_Platform", "hidamari_GD_StationValley_Machinery",
+    "hidamari_GD_StationValley_Fittings", "hidamari_GD_StationValley_Building",
+    "hidamari_GD_StationValley_Collision", "GD_hidamari_Foundation", "GD_hidamari_Access"
+]
+model = ["adopted/gondola/station-hidamari", "adopted/gondola/shell-valley"]
+about = "the hidamari station: its building, platform, machinery, fittings, collision and ground access"
+
+[[objects]]
+id = "object/gondola/station-southeast"
+route = [
+    "southeast_GD_StationRim_Platform", "southeast_GD_StationRim_Machinery",
+    "southeast_GD_StationRim_Fittings", "southeast_GD_StationRim_Building",
+    "southeast_GD_StationRim_Collision", "GD_southeast_Foundation", "GD_southeast_Access"
+]
+model = ["adopted/gondola/station-southeast", "adopted/gondola/shell-rim"]
+about = "the southeast station: its building, platform, machinery, fittings, collision and ground access"
+
+[[objects]]
+id = "object/gondola/station-belmonte"
+route = [
+    "belmonte_GD_StationValley_Platform", "belmonte_GD_StationValley_Machinery",
+    "belmonte_GD_StationValley_Fittings", "belmonte_GD_StationValley_Building",
+    "belmonte_GD_StationValley_Collision", "GD_belmonte_Foundation", "GD_belmonte_Access"
+]
+model = ["adopted/gondola/station-belmonte", "adopted/gondola/shell-valley"]
+about = "the belmonte station: its building, platform, machinery, fittings, collision and ground access"
+
+[[objects]]
+id = "object/gondola/station-northwest"
+route = [
+    "northwest_GD_StationRim_Platform", "northwest_GD_StationRim_Machinery",
+    "northwest_GD_StationRim_Fittings", "northwest_GD_StationRim_Building",
+    "northwest_GD_StationRim_Collision", "GD_northwest_Foundation", "GD_northwest_Access"
+]
+model = ["adopted/gondola/station-northwest", "adopted/gondola/shell-rim"]
+about = "the northwest station: its building, platform, machinery, fittings, collision and ground access"
+
+[[objects]]
+id = "object/gondola/station-floor"
+route = [
+    "floor_GD_StationCrater_Platform", "floor_GD_StationCrater_Machinery",
+    "floor_GD_StationCrater_Fittings", "floor_GD_StationCrater_Building",
+    "floor_GD_StationCrater_Collision", "GD_floor_Foundation", "GD_floor_Access"
+]
+model = ["adopted/gondola/station-floor", "adopted/gondola/shell-crater"]
+about = "the floor station: its building, platform, machinery, fittings, collision and ground access"
+
+[[objects]]
+id = "object/gondola/station-floor-rim"
+route = [
+    "floor_rim_GD_StationRim_Platform", "floor_rim_GD_StationRim_Machinery",
+    "floor_rim_GD_StationRim_Fittings", "floor_rim_GD_StationRim_Building",
+    "floor_rim_GD_StationRim_Collision", "GD_floor_rim_Foundation", "GD_floor_rim_Access"
+]
+model = ["adopted/gondola/station-floor-rim", "adopted/gondola/shell-rim"]
+about = "the floor-rim station: its building, platform, machinery, fittings, collision and ground access"
+
+[[objects]]
+id = "object/gondola/pylons-l1"
+route = ["GD_L1_0_Tower", "GD_L1_1_Tower", "GD_L1_2_Tower", "GD_L1_3_Tower"]
+model = ["adopted/gondola/tower-l1-0", "adopted/gondola/tower-l1-1", "adopted/gondola/tower-l1-2", "adopted/gondola/tower-l1-3"]
+about = "the L1 pylon line: its support towers"
+
+[[objects]]
+id = "object/gondola/pylons-l2"
+route = ["GD_L2_0_Tower", "GD_L2_1_Tower", "GD_L2_2_Tower", "GD_L2_3_Tower"]
+model = ["adopted/gondola/tower-l2-0", "adopted/gondola/tower-l2-1", "adopted/gondola/tower-l2-2", "adopted/gondola/tower-l2-3"]
+about = "the L2 pylon line: its support towers"
+
+[[objects]]
+id = "object/gondola/pylons-l3"
+route = ["GD_L3_0_Tower", "GD_L3_1_Tower"]
+model = ["adopted/gondola/tower-l3-0", "adopted/gondola/tower-l3-1"]
+about = "the L3 pylon line: its support towers"
