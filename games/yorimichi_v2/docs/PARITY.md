@@ -116,3 +116,27 @@ city groups that the slice now holds as saved actors. It belongs to P5's runtime
 Runtime data (`Content/Data`, for example `horses/roster.json`) is staged inside the app. The log names no path
 inside a source checkout. The package also kept the template bundle identifier (`com.YourCompany.YorimichiV2`), like
 the donor's, so its saved data lives in that sandbox container.
+
+## Whole-island pose set (P5, 2026-11-08)
+
+`tools/parity/island_poses.json` holds 54 viewpoints, at least two for every world row W01–W20 and three for W00 (the
+sea and coast views). `tools/parity/make_island_poses.py` writes it from committed data: unreal/Content/Data (world.json,
+city.json, the per-feature JSON), `world/regions/*/region.toml` bounds and `heightmap.bin`. Every pose's `source` names
+its target's file. Rerun the generator rather than editing the file; `tests/test_island_poses.py` fails when they differ.
+Pose names are `<wrow>_<what>`. Cameras stand outside and above the landmark, at least 10 m above the ground the
+heightfield or nearest committed scenery gives. Walls and canopies between camera and target are not checked.
+
+Capture a subset with `--only` (fnmatch globs, comma separated or repeated; every glob must match). The receipt then
+names only the subset, and compare.py needs the same `--only`:
+
+    uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --source donor-runtime \
+        --checkout DONOR_CHECKOUT --port 8830 --poses games/yorimichi_v2/tools/parity/island_poses.json \
+        --only 'w07_*' --out build/yorimichi_v2/parity/island-donor
+    uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --session ID --source v2 \
+        --poses games/yorimichi_v2/tools/parity/island_poses.json --only 'w07_*' \
+        --out build/yorimichi_v2/parity/island-v2
+    uv run python games/yorimichi_v2/tools/parity/compare.py build/yorimichi_v2/parity/island-donor \
+        build/yorimichi_v2/parity/island-v2 --out build/yorimichi_v2/parity/island-report --min-ssim 0.75 \
+        --poses games/yorimichi_v2/tools/parity/island_poses.json --only 'w07_*'
+
+Omit `--only` for all 54. Nothing here has been captured yet: the donor and V2 captures are the next step.

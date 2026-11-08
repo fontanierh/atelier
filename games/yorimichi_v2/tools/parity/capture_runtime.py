@@ -4,6 +4,8 @@
         --checkout DONOR_CHECKOUT --out build/yorimichi_v2/parity/donor
     uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --session ID --source v2 \
         --out build/yorimichi_v2/parity/v2
+--poses FILE --only GLOB (e.g. 'w07_*') captures a subset of a poses file, such as island_poses.json (the receipt
+names only the subset; compare.py then needs the same --only).
 
 The donor's island scenery is spawned at run time, so its baseline must come from the running donor game; capturing
 V2 the same way (a runtime viewport screenshot, not an editor scene capture) keeps both sides on one render path.
@@ -31,6 +33,8 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
 sys.path.insert(0, str(HERE.parent / 'test'))
 from launch import git, launch_revision, revision  # noqa: E402
+sys.path.insert(0, str(HERE))
+from poseset import load_poses, select  # noqa: E402
 DEFAULT_POSES = HERE / 'poses.json'
 
 
@@ -122,6 +126,8 @@ def main(argv=None) -> int:
                         '(verified, captured through and checked again afterwards)')
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--poses', type=Path, default=DEFAULT_POSES)
+    parser.add_argument('--only', action='append', help='capture only the poses named by this glob (e.g. w07_*), '
+                        'comma separated or repeated; the receipt then names only those poses')
     parser.add_argument('--settle', type=float, default=8., help='seconds at each pose before its screenshot')
     parser.add_argument('--timeout', type=float, default=900)
     args = parser.parse_args(argv)
@@ -141,7 +147,11 @@ def main(argv=None) -> int:
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
         print(f'cannot bind the capture to its game: {error}', file=sys.stderr)
         return 2
-    poses = json.loads(args.poses.read_text())['poses']
+    try:
+        poses = select(load_poses(args.poses), args.only)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
     names = [p['name'] for p in poses]
     glb = camera_glb(Path(tempfile.mkdtemp(prefix='parity-camera-')) / 'camera.glb')
     params = {'out': str(out), 'poses': poses, 'settle_s': args.settle, 'camera_glb': str(glb)}
