@@ -10,6 +10,8 @@
             unit (one actor per unit) and whether it is a collision piece (UV2Migration.MigrateParkPieces)
   hippodromes  [{region, tag, data, pieces, units}]: the hippodrome's meshes, each with its unit (one actor per unit;
             UV2Migration.MigrateHippodromePieces)
+  statics   [{region, tag, meshes, units}]: the mini Mega ramp's and the Ronin camp's static meshes, each with its unit
+            (one actor per unit; UV2MigrationMisc.MigrateStaticMeshes)
 UV2Migration.MigrateRegionGroups builds each patch with the runtime's own component code and lists the group in the
 map's manifest, so the runtime skips only those groups. A group already saved is kept as it is, edits included: a
 rerun creates nothing. Prints each object's actor package for its record.
@@ -67,6 +69,16 @@ for hippodrome in plan.get('hippodromes', []):
     created += actors
     kept += reused
     keys |= {f'{hippodrome["tag"]}:{unit}' for unit in hippodrome['units']}
+for static in plan.get('statics', []):
+    count, actors, reused, error = U.V2MigrationMisc.migrate_static_meshes(
+        world, U.Name(static['region']), U.Name(static['tag']), list(static['meshes']), list(static['units']))
+    if count < 0:
+        raise RuntimeError(f'MigrateStaticMeshes {static["tag"]}: {error}')
+    for actor in actors:
+        actor.set_editor_property('is_spatially_loaded', False)
+    created += actors
+    kept += reused
+    keys |= {f'{static["tag"]}:{unit}' for unit in static['units']}
 for split in plan.get('splits', []):
     count, actors, changed, reused, error = U.V2Migration.split_patch_objects(
         world, U.Name(split['region']), U.Name(split['tag']), list(split['keys']), list(split['objects']),

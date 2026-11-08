@@ -22,6 +22,11 @@ hippodrome/hippodrome.json, its `meshes`) that the unit owns. UV2Migration::Migr
 unit's AV2ScenePatch at the course origin, and AHippodrome::Spawn skips exactly those meshes. The data file's shape picks
 the migration: a park file has render and collision entries, the hippodrome file a meshes list.
 
+A `static` object is one unit of a static piece the runtime spawns from code, not from a data file: the mini Mega ramp
+(w03-mega, `Mega_Ramp` and `Mega_Trim`, one unit) or a Ronin camp prop (w13-swordcamp, one unit per `SM_Camp*` mesh).
+UV2MigrationMisc::MigrateStaticMeshes saves each unit as its AV2ScenePatch at the placement the runtime uses, and the
+runtime skips exactly those meshes (AMegaRamp, SwordTrainer::SpawnRoninCamp). The meshes are named in STATIC_MESHES.
+
 The claim holds the region's and the environment's scopes, the manifest's actor package, and each object record's
 two files; the created actor packages are bound to it by the build step.
 """
@@ -47,6 +52,9 @@ import save_validate  # noqa: E402
 LOG = REPO / 'build/yorimichi_v2/logs/migrate.objects.guard/stdout.log'   # the guarded editor's output
 OBJECT = re.compile(r'V2 OBJECT (\S+) (\S+)')
 DONE = re.compile(r'V2 OBJECTS DONE created=(\d+) kept=(\d+)')
+# The static meshes a `static` object may name: the mini Mega ramp's two and the Ronin camp's four props. Each is built by
+# UV2MigrationMisc::MigrateStaticMeshes (World/V2MigrationMisc.cpp); a test keeps the two lists equal.
+STATIC_MESHES = ('Mega_Ramp', 'Mega_Trim', 'SM_CampFirePit', 'SM_CampJinmaku', 'SM_CampWeaponRack', 'SM_CampBales')
 
 
 class ObjectError(RuntimeError):
@@ -71,18 +79,22 @@ def load_objects(region) -> dict:
     if data.get('schema') != records.SCHEMA or not isinstance(data.get('tag'), str) or not isinstance(data.get('data'), str):
         raise ObjectError(f'{path}: needs schema = {records.SCHEMA}, tag and data')
     objects = data.get('objects', [])
-    kinds = {'group', 'groups', 'patch', 'split', 'park'}
+    kinds = {'group', 'groups', 'patch', 'split', 'park', 'static'}
     for item in objects:
         keys = set(item) - kinds
         if keys != {'id', 'model', 'about'} or len(kinds & set(item)) != 1 \
                 or not records.ID.match(item['id']) or not item['id'].startswith('object/'):
-            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", one of group, groups, patch, split or '
-                              f'park, model and about, not {item}')
+            raise ObjectError(f'{path}: each [[objects]] needs id = "object/...", one of group, groups, patch, split, '
+                              f'park or static, model and about, not {item}')
         park = item.get('park')
         if park is not None and (not isinstance(park, list) or not park or not all(isinstance(n, str) and n for n in park)):
             raise ObjectError(f'{path}: {item["id"]}: park needs a list of mesh names, not {park}')
         if park is not None and not data['data']:
             raise ObjectError(f'{path}: {item["id"]}: a park object needs data = "<park>/park.json"')
+        static = item.get('static')
+        if static is not None and (not isinstance(static, list) or not static
+                                   or not all(isinstance(n, str) and n in STATIC_MESHES for n in static)):
+            raise ObjectError(f'{path}: {item["id"]}: static needs a list of {", ".join(STATIC_MESHES)}, not {static}')
         patch = item.get('patch')
         if patch is not None and not (isinstance(patch, str) and patch or isinstance(patch, list) and patch
                                       and all(isinstance(v, str) and v for v in patch)):
@@ -100,6 +112,9 @@ def load_objects(region) -> dict:
     parks = [p for i in objects for p in i.get('park', [])]
     if len(parks) != len(set(parks)):
         raise ObjectError(f'{path}: a park piece is listed twice')
+    statics = [s for i in objects for s in i.get('static', [])]
+    if len(statics) != len(set(statics)):
+        raise ObjectError(f'{path}: a static mesh is listed twice')
     for values in ([i['id'] for i in objects], [i['id'].rsplit('/', 1)[1] for i in objects],
                    [g for i in objects for g in i['groups']]):
         if len(values) != len(set(values)):
@@ -200,6 +215,21 @@ def park_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -
     return {'region': region, 'tag': tag, 'data': data, 'pieces': pieces, 'is_collision': is_collision, 'units': joined}
 
 
+def static_plan(region: str, tag: str, units: list[dict]) -> dict:
+    """The plan entry of a region's static objects: each mesh name (one of STATIC_MESHES) and the unit it joins. A unit is one
+    place: the ramp's two meshes together, or one camp prop alone (checked here, before the editor runs)."""
+    meshes, joined = [], []
+    for item in units:
+        unit = item['id'].rsplit('/', 1)[1]
+        names = item['static']
+        if len(names) > 1 and not all(n.startswith('Mega_') for n in names):
+            raise ObjectError(f'{item["id"]}: a unit is the ramp (Mega_Ramp, Mega_Trim) or one camp prop')
+        for name in names:
+            meshes.append(name)
+            joined.append(unit)
+    return {'region': region, 'tag': tag, 'meshes': meshes, 'units': joined}
+
+
 def native_run(plan_file: Path) -> str:
     env = {**os.environ, 'V2_MIGRATE_PLAN': str(plan_file)}
     LOG.unlink(missing_ok=True)
@@ -227,7 +257,7 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
     maps = {m for r in region_ids for m in by_id[r].maps}
     if len(maps) != 1:
         raise ObjectError(f'the regions must share exactly one map, not {sorted(maps)}')
-    wanted, groups, splits, parks, hippodromes = {}, [], [], [], []
+    wanted, groups, splits, parks, hippodromes, statics = {}, [], [], [], [], []
     for rid in region_ids:
         listed = load_objects(by_id[rid])
         listed['objects'] = [item for item in listed['objects'] if 'patch' not in item]   # patch objects: promote()
@@ -250,19 +280,22 @@ def migrate(game: Path, region_ids: list[str], environment: str | None, claim: s
         if units:
             kind, entry = piece_plan(rid, listed['tag'], listed['data'], units, game)
             (parks if kind == 'parks' else hippodromes).append(entry)
+        static_units = [item for item in listed['objects'] if 'static' in item]
+        if static_units:
+            statics.append(static_plan(rid, listed['tag'], static_units))
         for item in listed['objects']:
             wanted[f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'] = (rid, item)
-    unit_objects = bool(parks or hippodromes)
+    unit_objects = bool(parks or hippodromes or statics)
     if (groups or unit_objects) and not environment:
-        raise ObjectError('--environment is needed to save runtime-group, park and hippodrome objects (the manifest lists '
-                          'their meshes)')
+        raise ObjectError('--environment is needed to save runtime-group, park, hippodrome and static objects (the manifest '
+                          'lists their meshes)')
     environment = environment if groups or unit_objects else None
     if claim:
         authority.creation_claim(claim, region_ids + ([environment] if environment else []), 'object migration')
     else:
         authority.authorize([], None, 'object migration')
     plan = {'map': maps.pop(), 'claim': claim, 'regions': [{'id': r} for r in region_ids], 'environment': environment,
-            'groups': groups, 'splits': splits, 'parks': parks, 'hippodromes': hippodromes}
+            'groups': groups, 'splits': splits, 'parks': parks, 'hippodromes': hippodromes, 'statics': statics}
     out.mkdir(parents=True, exist_ok=True)
     plan_file = out / 'objects-plan.json'
     plan_file.write_text(json.dumps(plan, indent=2, sort_keys=True) + '\n')
