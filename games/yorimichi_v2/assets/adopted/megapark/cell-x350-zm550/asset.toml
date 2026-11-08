@@ -1,0 +1,48 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park section at stream cell (350, -550): 2 model(s), 2 collision mesh(es), their own materials and textures
+schema = 1
+id = "adopted/megapark/cell-x350-zm550"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/cell-x350-zm550"
+provenance = "donor build of games/yorimichi (unreal.megapark) from games/yorimichi/assets/megapark/collision/65313BFD727B566A_0.npz, collision/DC5A848A9C1D9A30_0.npz, geometry/49FCE212AF609520.npz, geometry/F03BD8AEFE8D7AA1.npz (map.json 0x49FCE212AF609520, 0x65313BFD727B566A, 0xDC5A848A9C1D9A30, 0xF03BD8AEFE8D7AA1)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/collision/65313BFD727B566A_0.npz"
+sha256 = "2df9b84cf91ea5059ed5d83d19c6c6af05de1e380ee487870c9ab2b874b6374e"
+
+[[sources]]
+path = "source/assets/megapark/collision/DC5A848A9C1D9A30_0.npz"
+sha256 = "730454aa61eaffde250ac94b98d413003fc41176ae8e49189c2014c7668602c0"
+
+[[sources]]
+path = "source/assets/megapark/geometry/49FCE212AF609520.npz"
+sha256 = "c02dd2727e3977aba99c785f274ad9233dc05d8f4d94441d0f473d0881bf2953"
+
+[[sources]]
+path = "source/assets/megapark/geometry/F03BD8AEFE8D7AA1.npz"
+sha256 = "8ed0049ff134a7369d3e53ddc3d6fa3fb36452e18d77723691a65db5181f2e3c"
+
+[[sources]]
+path = "source/assets/megapark/textures/0e390e035fe78286.png"
+sha256 = "e30072d7c974502dbb2f7c36d4418bdc0f22245ac67a4178d0eae425abe90cd1"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_00b64baf69418777"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_49FCE212AF609520"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_F03BD8AEFE8D7AA1"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/UC_MP_65313BFD727B566A_0"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/UC_MP_DC5A848A9C1D9A30_0"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_0e390e035fe78286"

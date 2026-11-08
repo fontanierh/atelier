@@ -1,0 +1,38 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park textures shared by more than one section, surface family pavement
+schema = 1
+id = "adopted/megapark/shared-textures-pavement"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-textures-pavement"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/textures/00008ccc03e3870a.png"
+sha256 = "1e6e3b8b2d5528e3ba6e3c0393d9c3c4a147ec608ed76d5f4344e064afc00451"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a00040017.png"
+sha256 = "a755e71b2a0ec4fe86a20e77e547b6f9d860d36058fd358812a561020268e9ab"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a00040018.png"
+sha256 = "ed5a5e7b1d5cbb183eaa664ddb5729f97534d80fd5627a6b66bf9a20c0b0a218"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a000400cc.png"
+sha256 = "5d6bae77c73d65b10dcc418ec3fceeea644cd76d13d0a050135f4292970eed06"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_00008ccc03e3870a"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a00040017"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a00040018"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a000400cc"

@@ -1,0 +1,18 @@
+{
+  "asset": "adopted/megapark/shared-textures-wood",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0129.uasset": "f4b0d114a6cc9ac50ee6244b8671cd156eb6f4d3d9dd4a8e7593884d83374d81",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d012a.uasset": "b7c6dbf9304af0180a36846305c5682c7aeeaf3fd52a991029a262088848c6c3",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d012b.uasset": "e273b10e2d6839fec502568b985ab505d551302396c9efee3b374edec38771c8",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d012c.uasset": "32f15148eef6f787249aa3d5513e7f5fdab4881e973994a0de15793f7117f20d",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0150.uasset": "7328d509bbfcf0e0f4663426de330e158222ce25228a2654ce6260daf6b90568",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0151.uasset": "39045e597e1a4a52ff8fbe7111206ec90500604247b6dd1a9486875bfdf8e442",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f053d.uasset": "725014a098b2025995d7cb0d72ad224dfa54317f4d01b82702b02297eebb7637"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

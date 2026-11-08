@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park section at stream cell (150, -850): 1 model(s), 1 collision mesh(es), their own materials and textures
+schema = 1
+id = "adopted/megapark/cell-x150-zm850"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/cell-x150-zm850"
+provenance = "donor build of games/yorimichi (unreal.megapark) from games/yorimichi/assets/megapark/collision/550AC3210EC10CB1_0.npz, geometry/23BEE1BECD19BE5A.npz (map.json 0x23BEE1BECD19BE5A, 0x550AC3210EC10CB1)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/collision/550AC3210EC10CB1_0.npz"
+sha256 = "c1140dc7ad7e04a9cdd3421b916e8fe78b7a589e7e1c5d2df3f18bd87bc57210"
+
+[[sources]]
+path = "source/assets/megapark/geometry/23BEE1BECD19BE5A.npz"
+sha256 = "3c24496f8b8900d373b0a1c2b7b10eb42f1ab532473d4b5e15575c3b1c0d2aa6"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_23BEE1BECD19BE5A"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/UC_MP_550AC3210EC10CB1_0"

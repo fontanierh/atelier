@@ -1,0 +1,302 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park section at stream cell (250, -650): 4 model(s), 1 collision mesh(es), their own materials and textures
+schema = 1
+id = "adopted/megapark/cell-x250-zm650"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/cell-x250-zm650"
+provenance = "donor build of games/yorimichi (unreal.megapark) from games/yorimichi/assets/megapark/collision/DE463D6F91D30023_0.npz, geometry/44214047ACFF84CE.npz, geometry/5B3CA6D5163630B2.npz, geometry/BFD920538C420ABC.npz, geometry/D0A698D4B8E19DA3.npz (map.json 0x44214047ACFF84CE, 0x5B3CA6D5163630B2, 0xBFD920538C420ABC, 0xD0A698D4B8E19DA3, 0xDE463D6F91D30023)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/collision/DE463D6F91D30023_0.npz"
+sha256 = "938810ffc68b81867358377e799ca37d81083671ece96c060b486fd8f3ca2ba0"
+
+[[sources]]
+path = "source/assets/megapark/geometry/44214047ACFF84CE.npz"
+sha256 = "ea1c1893a484790088400a9a4b004e86fda79ded2fab756db6d825656eb893e6"
+
+[[sources]]
+path = "source/assets/megapark/geometry/5B3CA6D5163630B2.npz"
+sha256 = "332caa1f2a7dc7a26aabe3cb4be914dc493c3319698e62f133c386e8cc1be2bc"
+
+[[sources]]
+path = "source/assets/megapark/geometry/BFD920538C420ABC.npz"
+sha256 = "9581e8e94cd84d6109576cf82cc7d6ec7516c9632d4de32a05cba114db0ec742"
+
+[[sources]]
+path = "source/assets/megapark/geometry/D0A698D4B8E19DA3.npz"
+sha256 = "a1e74a14464dd785884f52c48971ec40c8758d9afad4bd21511f19b274634d7b"
+
+[[sources]]
+path = "source/assets/megapark/textures/081694c4b8553cb8.png"
+sha256 = "82102760a001cd40a1edcba0d6fdf86296f3ff212c598420c62781dfc4eac712"
+
+[[sources]]
+path = "source/assets/megapark/textures/2a224bba3987b77d.png"
+sha256 = "4b2041277fdd29d0d717f806e71c1ac2cd1153797930fb7d2dff64b2055980ab"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d009a.png"
+sha256 = "cc72f79d7f972303e79dba68df8c622b5f02c85ee20e2d5a0ecfee89d1449c4d"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d01b6.png"
+sha256 = "3d9828b456e55d139ead6c891fc710d4e07298453499b7928aa5f1f02e43f494"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d01b7.png"
+sha256 = "af3fa3cd1e87c3be41c2b1ec7dadcf0551549a3dc4ddf2acb6c5a529346a6a79"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d01b8.png"
+sha256 = "0ca15945754b2395070daa072c71f3c1b46d9f7a62d3143be9cf244f9b532d98"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a002f1111.png"
+sha256 = "b523e936b2ec91411484d3b08273ad8d94fad50be2e4093fe840ad7ccc40e76b"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a002f1112.png"
+sha256 = "5062558d27a66b7a035ad46bfe225027819164677edb14af7a16453a14994d61"
+
+[[sources]]
+path = "source/assets/megapark/textures/30f8846bfabae8f4.png"
+sha256 = "c25c9bb8032908c23ba75b9d5e96826d64a9e9e67647c8a407c6c64cf8750a1f"
+
+[[sources]]
+path = "source/assets/megapark/textures/82abf94d073df989.png"
+sha256 = "7f990e2f7079fde129ca9fd60a2d1e231354f3ad1d825852c3f363f0c5bd7254"
+
+[[sources]]
+path = "source/assets/megapark/textures/9201bea53424ba58.png"
+sha256 = "c33d4d3bfaddf6ec9f32e6fc59d1e98d5b69861832a26900ed626f314316d905"
+
+[[sources]]
+path = "source/assets/megapark/textures/a6b25b32edd4315c.png"
+sha256 = "80e6f0ef39a89c6f2340366f8999fad1f9c06b55d2106e7cb3969e101570e567"
+
+[[sources]]
+path = "source/assets/megapark/textures/a9c1ee944a71883d.png"
+sha256 = "ccf38b9cb95b5928a3a48fe712b6a5663433b516fa9465278a09cf3aee1d29b5"
+
+[[sources]]
+path = "source/assets/megapark/textures/aca5394ca68387a4.png"
+sha256 = "b1696e4127820d7ad3065ed09937bd502f34e264b243466d1e561dbf6f8458b7"
+
+[[sources]]
+path = "source/assets/megapark/textures/b6bbcf842c83eb52.png"
+sha256 = "8a60b01bbebff6a4e905b210abbbe9eaed8c542ef52928e1945b1d40fb523eca"
+
+[[sources]]
+path = "source/assets/megapark/textures/b6ca42a92c771737.png"
+sha256 = "dfcdc17025dc08262eac9b56c0f2cd3295c5e22ccefdc37716ed4aae3ce3916d"
+
+[[sources]]
+path = "source/assets/megapark/textures/b97638feabb712aa.png"
+sha256 = "1c25fadad322834a53fe834809cb02a5916b48740e24fdc4238a1f5f6b65350f"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_04cb5f3319c5d664"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_05d82fabb2900147"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_06238d7f88d457ef"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0af9d4fe74cc6cfb"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0cf50cef5a62c8d3"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_1530c82764953002"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_1777cf6f714348f8"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_1b3125eea20f4b6b"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_23d5b10bb6f64c4e"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_2aeb323bcc1239b9"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_398299afd78ac222"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_3dd553d1537e856f"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_4a2fa5aa263bcdf2"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_4cb19f293010c394"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_4cea0ba907df8245"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_6a6b1fef70a29c76"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_6f481d6f39349f04"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_7229e2fcd0e7b12a"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_777e91883f0a3bc6"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_886a35fab278e628"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_88b088d39237da9c"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_898e41a52f64c1a9"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_8abe9b60eb35d79f"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_94513bbed5406f5c"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_96917ce227596892"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_9a1dd0abfba41aee"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_9a60d60de10fd7b8"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_a5e9629609ba96da"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_a6302513cbe41749"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_a917e3eb5ee28640"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_ac3481334bc149e1"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_b4e3e817c906edf4"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_bdcab1c9b502a9b4"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_bfa32ac4a12a04a5"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_cd369b310670206d"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_ceac59d6d7aad591"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_d0e8fd03c1e5215e"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_d38fe43ff05e6799"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_dc1326c3fbb35bec"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_dc81f4a6bdfe5519"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_dd04389c6502643f"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_eb1a1703ffb6ceed"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_ebf3d42fb8d8e73d"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_ec9a6bf7483418bc"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_ee584e5ed43d6a12"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_f6efdfa64ac3f89b"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_44214047ACFF84CE"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_5B3CA6D5163630B2"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_BFD920538C420ABC"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_D0A698D4B8E19DA3"
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/UC_MP_DE463D6F91D30023_0"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_081694c4b8553cb8"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2a224bba3987b77d"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d009a"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d01b6"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d01b7"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d01b8"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a002f1111"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a002f1112"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_30f8846bfabae8f4"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_82abf94d073df989"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_9201bea53424ba58"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_a6b25b32edd4315c"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_a9c1ee944a71883d"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_aca5394ca68387a4"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_b6bbcf842c83eb52"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_b6ca42a92c771737"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_b97638feabb712aa"

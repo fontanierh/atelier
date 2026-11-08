@@ -1,0 +1,30 @@
+{
+  "asset": "adopted/megapark/shared-textures-stone",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Textures/T_2c70170a00040019.uasset": "d7af9f8758c21d97abb58dbfe8b3e2c590a0cb5b293e77a94cd9145ab948342d",
+    "unreal/Content/MegaPark/Textures/T_2c70170a0004001a.uasset": "d3c72c64bc03b5563b917cae283620b6d41c144312a52c9abe99dc411315a3c3",
+    "unreal/Content/MegaPark/Textures/T_2c70170a00050558.uasset": "54492f919c82c117e80f620c397c89fca29ac93b481d470d74040db744d71e4f",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d014e.uasset": "46bb64b5166b233006552d3f57ee7070895e3c2103f78e73452381281acb0410",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d014f.uasset": "e0b76f96da1aba94157d5d21da43be1bd3c09c9ccfe8814ad11b1b4085bf4aeb",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0159.uasset": "b773668f16dabd5c61a51d7d763bc895a180c38af692ad468dccb84793bbec1e",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d015a.uasset": "f2017ec0007f58009b6be09800324702d90d58c8baab17ed2b2bcfad13aefd8e",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0162.uasset": "ad5fd089ce23457c7e684e419eeff3330def65e2dee6ae5a932f804783c1dc15",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0163.uasset": "6bf9294ca4494250e2159a382bc52f1481a05c05ba3c9eb5bb1e6b1493ee003b",
+    "unreal/Content/MegaPark/Textures/T_2c70170a001d0166.uasset": "91c32e7da35fbd24a298475768c6cfbf6e0af34dfadffeb051ddde8dbc492230",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0355.uasset": "5cdbafb3a35a483ffc10a9722cbcf6da660462c605d9b86f9586976a6542dec7",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0b5a.uasset": "4a224c88f3706b71a5feb1c454245f7031093d2d3075cd3a29985e631797fc43",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0b86.uasset": "d90c6c5ea462f163439cfe6ab24b16229e71cb17d2ee2c25bce5ab8f31454473",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0ba3.uasset": "f7746fa81063a7a1aceb160c91789d8138fc35338641a4e84a3797f0e4002485",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0bb0.uasset": "04ec7eafc2afdc14386a3a0e239e6a1af5014a1340379b3940e4d60c3ff96f0f",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0bf7.uasset": "306850c4796638e663daa5355b67617f81a68792b6ce9970ca002660ed61d4a6",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0c2c.uasset": "e6f173661b29a7a4aea60df3e0cad31562b4c4d971b9b001c35cb58aaa29bcb3",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f0d0c.uasset": "0ad701b203607aec3f97c3be188a76e376a3253d703745f792559103ef25e0e2",
+    "unreal/Content/MegaPark/Textures/T_2c70170a002f110b.uasset": "7824d05212aa4935a759a062c4300e428ea9e56283c67f3290e4d9d8de5cd895"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

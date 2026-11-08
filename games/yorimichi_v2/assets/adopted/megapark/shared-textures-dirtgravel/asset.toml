@@ -1,0 +1,24 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park textures shared by more than one section, surface family dirtgravel
+schema = 1
+id = "adopted/megapark/shared-textures-dirtgravel"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-textures-dirtgravel"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d00aa.png"
+sha256 = "e93474b211275793d8a3f41d312d1dcf5db222372a44a017ffed27a3740996e7"
+
+[[sources]]
+path = "source/assets/megapark/textures/8f426b4a873045a1.png"
+sha256 = "972e7f7e60d772e0ac434a2e694d4476a359f4559a4a9c60c469ea21b7db2175"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d00aa"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_8f426b4a873045a1"

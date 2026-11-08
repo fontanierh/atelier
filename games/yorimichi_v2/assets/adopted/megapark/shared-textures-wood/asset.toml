@@ -1,0 +1,59 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Mega Park textures shared by more than one section, surface family wood
+schema = 1
+id = "adopted/megapark/shared-textures-wood"
+kind = "adopted"
+authority = "editor"
+owner = "shared/megapark/shared-textures-wood"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/megapark/base-materials"]
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0129.png"
+sha256 = "382f6acc03090b0462e8f914bccf7dbd3829845c24f81650271d6ac374b98b98"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d012a.png"
+sha256 = "bf28d7dffc2957083d32f336399428062e1333e54d95f6a310ff01519d7212ee"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d012b.png"
+sha256 = "4c77639593b660e1d86cb160f9bc73eef22643d93daa4d69626f4859ac181951"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d012c.png"
+sha256 = "37cc23b4a9238cf6a166dd42452bdc568ddd2c185fa4ce662f1316a06bd5aa09"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0150.png"
+sha256 = "e7df7afbd94380ee8f05e0628e6084f5b4fe6870707b36d959b4a82b5ce9fad2"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a001d0151.png"
+sha256 = "77b2c61798ccd53856c5019cca74266a6ba444e9e3b3f70d6fe7d864067a51d0"
+
+[[sources]]
+path = "source/assets/megapark/textures/2c70170a002f053d.png"
+sha256 = "40fa3d8f00d7e5519ab90e2903a38df976ca77796126e244d7c6df1f514ac1ce"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0129"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d012a"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d012b"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d012c"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0150"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a001d0151"
+
+[[outputs]]
+package = "/Game/MegaPark/Textures/T_2c70170a002f053d"
