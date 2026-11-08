@@ -42,7 +42,15 @@ class ClaimService:
         self.check_timeouts = 0    # protected checks that time out
 
     def grant(self, task, holder, scopes, paths=()):
-        self.tasks[task] = {'id': len(self.tasks) + 1, 'holder': holder, 'scopes': list(scopes), 'paths': set(paths)}
+        self.tasks[task] = {'id': len(self.tasks) + 1, 'holder': holder, 'scopes': list(scopes), 'paths': set(paths),
+                            'more': []}
+
+    def grant_more(self, task, paths):
+        """A further claim of the task by its holder, with exact paths only (a later request of the same task)."""
+        self.tasks[task]['more'].append({'id': 100 + len(self.tasks[task]['more']), 'paths': set(paths)})
+
+    def held_paths(self, task):
+        return task['paths'].union(*(more['paths'] for more in task['more']))
 
     def extend(self, task, paths):
         self.tasks[task]['paths'] |= set(paths)
@@ -63,8 +71,10 @@ class ClaimService:
                 return Result(1, stderr=f'no task {command[6]}')
             items = [{'kind': 'scope', 'value': s} for s in task['scopes']]
             items += [{'kind': 'path', 'value': p} for p in sorted(task['paths'])]
+            more = [{'id': m['id'], 'state': 'active', 'principal': task['holder'],
+                     'items': [{'kind': 'path', 'value': p} for p in sorted(m['paths'])]} for m in task['more']]
             return Result(0, json.dumps({'id': command[6], 'claims': [
-                {'id': task['id'], 'state': 'active', 'principal': task['holder'], 'items': items}]}))
+                {'id': task['id'], 'state': 'active', 'principal': task['holder'], 'items': items}, *more]}))
         if command[4] == 'check' and self.check_timeouts:
             self.check_timeouts -= 1
             return Result(1, stderr='claims: claims service at http://127.0.0.1:8840: timed out')
@@ -72,7 +82,7 @@ class ClaimService:
             task = self.tasks.get(command[command.index('--task') + 1])
             paths = set(command[command.index('--paths') + 1:])
             self.checks.append(command)
-            ok = (task is not None and task['holder'] == os.environ.get('ATELIER_AGENT') and paths <= task['paths']
+            ok = (task is not None and task['holder'] == os.environ.get('ATELIER_AGENT') and paths <= self.held_paths(task)
                   and not paths & self.unlocked)   # a listed path whose LFS lock the service cannot verify
             return Result(0 if ok else 1)
         if command[4] == 'extend' and self.extend_timeouts:

@@ -268,7 +268,9 @@ def _authorize_migration(ctx, log):
         return
     held = authority.creation_claim(plan['claim'], _migration_regions(plan), 'map migration')
     MIGRATE_BEFORE.update(authority.content_snapshot(GAME))
-    claimed = set(authority.items_of(held, 'path'))
+    # Every active claim of the task this actor holds lists paths it may save; a later request often carries them.
+    claimed = {path for c in authority.active_claims(plan['claim']) if c.get('principal') == held.get('principal')
+               for path in authority.items_of(c, 'path')}
     # The existing files the editor may save are authorized now, with their live LFS locks verified: a listed path
     # whose lock is missing must refuse before anything is written, not only when the created files are bound.
     existing = sorted(p for p in claimed if p.removeprefix('games/yorimichi_v2/') in MIGRATE_BEFORE)

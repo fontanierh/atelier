@@ -173,6 +173,18 @@ def test_closed_d04_refuses_the_bootstrap_writer_on_every_route(tmp_path, game, 
     recipe._authorize_migration(ctx, io.StringIO())
 
 
+def test_a_path_in_a_later_claim_of_the_task_may_be_saved(tmp_path, game, claims, env):
+    env.setattr(authority, 'GOVERNANCE', governance(tmp_path, True))
+    env.setenv('ATELIER_AGENT', 'agent-a')
+    claims.grant('T1', 'agent-a', ['region/w01', 'region/w00'])
+    claims.grant_more('T1', {repo_path(OLD)})   # the existing file this run changes, requested after the scopes
+    denied = set()
+    files = {NEW: 'region/w01:Kiosk:whole:id1', SKY: 'region/w00:Sky:whole:id2', OLD: 'region/w01:Old:whole:id0 v2'}
+    assert migration.migrate(game, plan(game), 'T1', editor=editor(game, tmp_path, files, denied),
+                             out=tmp_path / 'm', echo=lambda *_: None) == [NEW, SKY]
+    assert not any(d.endswith(OLD) for d in denied) and any(d.endswith(FAR) for d in denied)
+
+
 def test_a_claimed_migration_creates_binds_and_records_its_regions_actors(tmp_path, game, claims, env):
     env.setattr(authority, 'GOVERNANCE', governance(tmp_path, True))      # works with no bootstrap exemption
     env.setenv('ATELIER_AGENT', 'agent-a')
