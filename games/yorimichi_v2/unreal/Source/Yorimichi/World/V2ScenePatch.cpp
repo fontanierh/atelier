@@ -412,10 +412,15 @@ int32 UV2Migration::MigrateRegionGroups(UObject* WorldContext, FName Region, FNa
         Made->MarkPackageDirty();
     }
     // Kept groups stay listed too: the runtime must never spawn a group this map saved.
-    Manifest->Modify();
-    for (const FString& Name : Meshes) Manifest->MigratedGroups.AddUnique(Tag.ToString() + TEXT(":") + Name);
-    Manifest->MigratedGroups.Sort();
-    Manifest->MarkPackageDirty();
+    TArray<FString> Listed = Manifest->MigratedGroups;
+    for (const FString& Name : Meshes) Listed.AddUnique(Tag.ToString() + TEXT(":") + Name);
+    Listed.Sort();
+    if (Listed != Manifest->MigratedGroups)
+    {
+        Manifest->Modify();
+        Manifest->MigratedGroups = MoveTemp(Listed);
+        Manifest->MarkPackageDirty();
+    }
     UE_LOG(LogTemp, Display, TEXT("V2 MIGRATION %s groups: created %d patches, kept %d"), *Tag.ToString(), OutCreated.Num(), OutKept);
     return OutCreated.Num();
 #else
