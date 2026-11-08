@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BM_NorthCountry_Piece3020: one generated north-country piece (8672 triangles, its ground material).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmonte/north-country-piece3020"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmonte/north-country-piece3020"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "src/SM_BM_NorthCountry_Piece3020.glb"
+sha256 = "c200aff290bbfd30354ecbc52c111f6561e1a1d2c8bea9d6b81b9b9a0dc16e3e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Belmonte/Materials/MI_BM_Ground"]
+triangles = 8672
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3020"

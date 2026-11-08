@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BM_NorthApron_Piece2: one generated north-apron piece (28678 triangles, its ground material).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmonte/north-apron-piece2"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmonte/north-apron-piece2"
+references = ["adopted/belmonte/generator"]
+
+[[sources]]
+path = "src/SM_BM_NorthApron_Piece2.glb"
+sha256 = "a1b6fff73f0536dea009bb12cf8aed5d80ebdd9eff5e3b0422c8263519d2d710"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Belmonte/Materials/MI_BM_Ground"]
+triangles = 28678
+
+[[outputs]]
+package = "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece2"

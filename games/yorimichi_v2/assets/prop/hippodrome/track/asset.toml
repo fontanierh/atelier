@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_HD_Track: one course surface (1108 triangles, material HD_Dirt).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hippodrome/track"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hippodrome/track"
+references = ["adopted/hippodrome/materials"]
+
+[[sources]]
+path = "src/SM_HD_Track.glb"
+sha256 = "51b8f11fb41ae82ca6c9e27b40fd8cedb0be9efe0a01c2de62bb6776c81519a9"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Hippodrome/Materials/M_HD_Dirt"]
+triangles = 1108
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Track"

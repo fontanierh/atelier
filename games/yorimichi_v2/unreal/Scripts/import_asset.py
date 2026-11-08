@@ -117,6 +117,12 @@ def _apply_texture_settings(asset, settings):
         asset.set_editor_property('srgb', bool(settings['srgb']))
     if 'compression' in settings:
         asset.set_editor_property('compression_settings', getattr(U.TextureCompressionSettings, settings['compression']))
+    if 'address' in settings:
+        # The donor's tiling surfaces (import_hippodrome.py `wrap=True`): wrap on both axes, nothing else.
+        if settings['address'] != 'wrap':
+            raise RuntimeError(f'unknown texture address {settings["address"]!r}')
+        asset.set_editor_property('address_x', U.TextureAddress.TA_WRAP)
+        asset.set_editor_property('address_y', U.TextureAddress.TA_WRAP)
 
 
 def _apply_material_slots(asset, plan):

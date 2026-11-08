@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Dirt: the tiling ground colour of the course (donor texture T_HD_Dirt.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/hippodrome/dirt"
+kind = "texture"
+authority = "generated"
+owner = "shared/hippodrome/dirt"
+
+[[sources]]
+path = "src/T_HD_Dirt.png"
+sha256 = "f77b7af773ec74cf5938f8d03cf09aeb679ede9184185f4f90f123c531431afe"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/Hippodrome/Textures/T_Dirt"
