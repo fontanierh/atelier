@@ -119,6 +119,8 @@ def test_generated_objects_load_and_match_the_classification(state, tag):
 
 @pytest.mark.parametrize('tag', TAGS)
 def test_saved_groups_follow_the_runtime_filters(state, tag, clearance):
+    """Each saved group or cell piece holds exactly the instances the runtime draws there: a plant's outside the gondola
+    clearance, any other group's inside the district; a piece only its 128 m cell's."""
     _, _, data, result = state[tag]
     by_key = dict(zip(towns.group_keys(data), data['groups']))
     cached = {}
@@ -127,26 +129,26 @@ def test_saved_groups_follow_the_runtime_filters(state, tag, clearance):
             piece = towns.split_piece(key)
             base, cell = piece if piece else (key, None)
             entry = by_key[base]
-            if entry['plant']:
-                if base not in cached:
-                    cached[base] = towns.plant_cells(data, entry, clearance)
-                cells = cached[base]
-                assert count == (cells[cell] if cell else sum(cells.values())) > 0, key
-                if cell is None:
-                    assert sum(cells.values()) <= towns.PIECE_LIMIT, key
-            else:
-                assert cell is None and count == towns.in_district(data, entry) > 0, key
+            if base not in cached:
+                cached[base] = towns.kept_cells(data, entry, clearance)
+            cells = cached[base]
+            assert count == (cells[cell] if cell else sum(cells.values())) > 0, key
+            if cell is None:
+                assert sum(cells.values()) <= towns.PIECE_LIMIT, key
 
 
 @pytest.mark.parametrize('tag', TAGS)
-def test_pieces_are_cut_only_for_large_plant_groups(state, tag):
+def test_pieces_are_cut_only_for_groups_over_the_limit(state, tag, clearance):
     _, _, data, result = state[tag]
+    by_key = dict(zip(towns.group_keys(data), data['groups']))
+    totals = {}
     for members in result['units'].values():
         for key, _, _ in members:
             piece = towns.split_piece(key)
             if piece:
-                entry = next(e for e in data['groups'] if towns.mesh_name(e) == piece[0])
-                assert entry['plant'], key
+                if piece[0] not in totals:
+                    totals[piece[0]] = sum(towns.kept_cells(data, by_key[piece[0]], clearance).values())
+                assert totals[piece[0]] > towns.PIECE_LIMIT, key
 
 
 @pytest.mark.parametrize('tag', TAGS)
@@ -195,11 +197,7 @@ def test_reasons_are_the_runtime_ones(state):
 
 def test_shared_mesh_names_are_saved_by_key(state):
     text, _, data, _ = state['brinecove']
-    keys = [k for k in all_groups(text[text.index(towns.MARKER):]) if '#' in k]
-    assert sorted(keys) == sorted(towns.group_keys(data)[i] for i, e in enumerate(data['groups'])
-                                  if towns.mesh_name(e) in {'SM_BC_Plant_CoverFern0', 'SM_BC_Plant_CoverFern1',
-                                                            'SM_BC_Plant_CoverFern2', 'SM_BC_Plant_CoverGrass0',
-                                                            'SM_BC_Plant_CoverGrass1', 'SM_BC_Plant_CoverGrass2',
-                                                            'SM_BC_Plant_CoverLeaf0', 'SM_BC_Plant_CoverLeaf1',
-                                                            'SM_BC_Plant_CoverLeaf2'})
-    assert len(keys) == 18
+    shared = {k for k in towns.group_keys(data) if '#' in k}
+    assert len(shared) == 18
+    saved = {g.split('@', 1)[0] for g in all_groups(text[text.index(towns.MARKER):]) if '#' in g}
+    assert saved == shared

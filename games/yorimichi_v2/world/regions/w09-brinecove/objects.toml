@@ -489,21 +489,273 @@ about = "Brine Cove plant-broad (8 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern"
-groups = ["SM_BC_Plant_CoverFern0#511", "SM_BC_Plant_CoverFern0#512", "SM_BC_Plant_CoverFern1#517", "SM_BC_Plant_CoverFern1#518", "SM_BC_Plant_CoverFern2#523", "SM_BC_Plant_CoverFern2#524"]
+groups = ["SM_BC_Plant_CoverFern0#512", "SM_BC_Plant_CoverFern1#518", "SM_BC_Plant_CoverFern2#524"]
 model = "adopted/brinecove/plant-cover-fern"
-about = "Brine Cove plant-cover-fern (6 groups)"
+about = "Brine Cove plant-cover-fern (3 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m2-0"
+groups = ["SM_BC_Plant_CoverFern0#511@-8_0", "SM_BC_Plant_CoverFern0#511@-8_1", "SM_BC_Plant_CoverFern0#511@-8_2", "SM_BC_Plant_CoverFern0#511@-8_3", "SM_BC_Plant_CoverFern0#511@-7_0", "SM_BC_Plant_CoverFern0#511@-7_1", "SM_BC_Plant_CoverFern0#511@-7_2", "SM_BC_Plant_CoverFern0#511@-7_3", "SM_BC_Plant_CoverFern0#511@-6_0", "SM_BC_Plant_CoverFern0#511@-6_1", "SM_BC_Plant_CoverFern0#511@-6_2", "SM_BC_Plant_CoverFern0#511@-6_3", "SM_BC_Plant_CoverFern1#517@-8_0", "SM_BC_Plant_CoverFern1#517@-8_1", "SM_BC_Plant_CoverFern1#517@-8_2", "SM_BC_Plant_CoverFern1#517@-8_3", "SM_BC_Plant_CoverFern1#517@-7_0", "SM_BC_Plant_CoverFern1#517@-7_1", "SM_BC_Plant_CoverFern1#517@-7_2", "SM_BC_Plant_CoverFern1#517@-7_3", "SM_BC_Plant_CoverFern1#517@-6_0", "SM_BC_Plant_CoverFern1#517@-6_1", "SM_BC_Plant_CoverFern1#517@-6_2", "SM_BC_Plant_CoverFern1#517@-6_3", "SM_BC_Plant_CoverFern2#523@-8_0", "SM_BC_Plant_CoverFern2#523@-8_1", "SM_BC_Plant_CoverFern2#523@-8_2", "SM_BC_Plant_CoverFern2#523@-8_3", "SM_BC_Plant_CoverFern2#523@-7_0", "SM_BC_Plant_CoverFern2#523@-7_1", "SM_BC_Plant_CoverFern2#523@-7_2", "SM_BC_Plant_CoverFern2#523@-7_3", "SM_BC_Plant_CoverFern2#523@-6_0", "SM_BC_Plant_CoverFern2#523@-6_1", "SM_BC_Plant_CoverFern2#523@-6_2", "SM_BC_Plant_CoverFern2#523@-6_3"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m2-0 (36 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m2-1"
+groups = ["SM_BC_Plant_CoverFern0#511@-8_4", "SM_BC_Plant_CoverFern0#511@-7_4", "SM_BC_Plant_CoverFern0#511@-6_4", "SM_BC_Plant_CoverFern1#517@-8_4", "SM_BC_Plant_CoverFern1#517@-7_4", "SM_BC_Plant_CoverFern1#517@-6_4", "SM_BC_Plant_CoverFern2#523@-8_4", "SM_BC_Plant_CoverFern2#523@-7_4", "SM_BC_Plant_CoverFern2#523@-6_4"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m2-1 (9 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m2-m1"
+groups = ["SM_BC_Plant_CoverFern0#511@-8_-4", "SM_BC_Plant_CoverFern0#511@-8_-3", "SM_BC_Plant_CoverFern0#511@-8_-2", "SM_BC_Plant_CoverFern0#511@-8_-1", "SM_BC_Plant_CoverFern0#511@-7_-4", "SM_BC_Plant_CoverFern0#511@-7_-3", "SM_BC_Plant_CoverFern0#511@-7_-2", "SM_BC_Plant_CoverFern0#511@-7_-1", "SM_BC_Plant_CoverFern0#511@-6_-4", "SM_BC_Plant_CoverFern0#511@-6_-3", "SM_BC_Plant_CoverFern0#511@-6_-2", "SM_BC_Plant_CoverFern0#511@-6_-1", "SM_BC_Plant_CoverFern1#517@-8_-4", "SM_BC_Plant_CoverFern1#517@-8_-3", "SM_BC_Plant_CoverFern1#517@-8_-2", "SM_BC_Plant_CoverFern1#517@-8_-1", "SM_BC_Plant_CoverFern1#517@-7_-4", "SM_BC_Plant_CoverFern1#517@-7_-3", "SM_BC_Plant_CoverFern1#517@-7_-2", "SM_BC_Plant_CoverFern1#517@-7_-1", "SM_BC_Plant_CoverFern1#517@-6_-4", "SM_BC_Plant_CoverFern1#517@-6_-3", "SM_BC_Plant_CoverFern1#517@-6_-2", "SM_BC_Plant_CoverFern1#517@-6_-1", "SM_BC_Plant_CoverFern2#523@-8_-4", "SM_BC_Plant_CoverFern2#523@-8_-3", "SM_BC_Plant_CoverFern2#523@-8_-2", "SM_BC_Plant_CoverFern2#523@-8_-1", "SM_BC_Plant_CoverFern2#523@-7_-4", "SM_BC_Plant_CoverFern2#523@-7_-3", "SM_BC_Plant_CoverFern2#523@-7_-2", "SM_BC_Plant_CoverFern2#523@-7_-1", "SM_BC_Plant_CoverFern2#523@-6_-4", "SM_BC_Plant_CoverFern2#523@-6_-3", "SM_BC_Plant_CoverFern2#523@-6_-2", "SM_BC_Plant_CoverFern2#523@-6_-1"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m2-m1 (36 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m2-m2"
+groups = ["SM_BC_Plant_CoverFern0#511@-8_-5", "SM_BC_Plant_CoverFern0#511@-7_-7", "SM_BC_Plant_CoverFern0#511@-7_-6", "SM_BC_Plant_CoverFern0#511@-7_-5", "SM_BC_Plant_CoverFern0#511@-6_-6", "SM_BC_Plant_CoverFern0#511@-6_-5", "SM_BC_Plant_CoverFern1#517@-8_-5", "SM_BC_Plant_CoverFern1#517@-7_-7", "SM_BC_Plant_CoverFern1#517@-7_-6", "SM_BC_Plant_CoverFern1#517@-7_-5", "SM_BC_Plant_CoverFern1#517@-6_-6", "SM_BC_Plant_CoverFern1#517@-6_-5", "SM_BC_Plant_CoverFern2#523@-8_-5", "SM_BC_Plant_CoverFern2#523@-7_-7", "SM_BC_Plant_CoverFern2#523@-7_-6", "SM_BC_Plant_CoverFern2#523@-7_-5", "SM_BC_Plant_CoverFern2#523@-6_-5"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m2-m2 (17 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m3-0"
+groups = ["SM_BC_Plant_CoverFern0#511@-12_0", "SM_BC_Plant_CoverFern0#511@-12_1", "SM_BC_Plant_CoverFern0#511@-12_2", "SM_BC_Plant_CoverFern0#511@-12_3", "SM_BC_Plant_CoverFern0#511@-11_0", "SM_BC_Plant_CoverFern0#511@-11_1", "SM_BC_Plant_CoverFern0#511@-11_2", "SM_BC_Plant_CoverFern0#511@-11_3", "SM_BC_Plant_CoverFern0#511@-10_0", "SM_BC_Plant_CoverFern0#511@-10_1", "SM_BC_Plant_CoverFern0#511@-10_2", "SM_BC_Plant_CoverFern0#511@-10_3", "SM_BC_Plant_CoverFern0#511@-9_0", "SM_BC_Plant_CoverFern0#511@-9_1", "SM_BC_Plant_CoverFern0#511@-9_2", "SM_BC_Plant_CoverFern0#511@-9_3", "SM_BC_Plant_CoverFern1#517@-12_0", "SM_BC_Plant_CoverFern1#517@-12_1", "SM_BC_Plant_CoverFern1#517@-12_2", "SM_BC_Plant_CoverFern1#517@-12_3", "SM_BC_Plant_CoverFern1#517@-11_0", "SM_BC_Plant_CoverFern1#517@-11_1", "SM_BC_Plant_CoverFern1#517@-11_2", "SM_BC_Plant_CoverFern1#517@-11_3", "SM_BC_Plant_CoverFern1#517@-10_0", "SM_BC_Plant_CoverFern1#517@-10_1", "SM_BC_Plant_CoverFern1#517@-10_2", "SM_BC_Plant_CoverFern1#517@-10_3", "SM_BC_Plant_CoverFern1#517@-9_0", "SM_BC_Plant_CoverFern1#517@-9_1", "SM_BC_Plant_CoverFern1#517@-9_2", "SM_BC_Plant_CoverFern1#517@-9_3", "SM_BC_Plant_CoverFern2#523@-12_0", "SM_BC_Plant_CoverFern2#523@-12_1", "SM_BC_Plant_CoverFern2#523@-12_2", "SM_BC_Plant_CoverFern2#523@-12_3", "SM_BC_Plant_CoverFern2#523@-11_0", "SM_BC_Plant_CoverFern2#523@-11_1", "SM_BC_Plant_CoverFern2#523@-11_2", "SM_BC_Plant_CoverFern2#523@-11_3", "SM_BC_Plant_CoverFern2#523@-10_0", "SM_BC_Plant_CoverFern2#523@-10_1", "SM_BC_Plant_CoverFern2#523@-10_2", "SM_BC_Plant_CoverFern2#523@-10_3", "SM_BC_Plant_CoverFern2#523@-9_0", "SM_BC_Plant_CoverFern2#523@-9_1", "SM_BC_Plant_CoverFern2#523@-9_2", "SM_BC_Plant_CoverFern2#523@-9_3"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m3-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m3-1"
+groups = ["SM_BC_Plant_CoverFern0#511@-12_4", "SM_BC_Plant_CoverFern0#511@-11_4", "SM_BC_Plant_CoverFern0#511@-10_4", "SM_BC_Plant_CoverFern0#511@-9_4", "SM_BC_Plant_CoverFern1#517@-12_4", "SM_BC_Plant_CoverFern1#517@-11_4", "SM_BC_Plant_CoverFern1#517@-10_4", "SM_BC_Plant_CoverFern1#517@-9_4", "SM_BC_Plant_CoverFern2#523@-12_4", "SM_BC_Plant_CoverFern2#523@-11_4", "SM_BC_Plant_CoverFern2#523@-10_4", "SM_BC_Plant_CoverFern2#523@-9_4"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m3-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m3-m1"
+groups = ["SM_BC_Plant_CoverFern0#511@-11_-1", "SM_BC_Plant_CoverFern0#511@-10_-1", "SM_BC_Plant_CoverFern0#511@-9_-2", "SM_BC_Plant_CoverFern0#511@-9_-1", "SM_BC_Plant_CoverFern1#517@-11_-1", "SM_BC_Plant_CoverFern1#517@-9_-2", "SM_BC_Plant_CoverFern1#517@-9_-1", "SM_BC_Plant_CoverFern2#523@-11_-1", "SM_BC_Plant_CoverFern2#523@-10_-1", "SM_BC_Plant_CoverFern2#523@-9_-2", "SM_BC_Plant_CoverFern2#523@-9_-1"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m3-m1 (11 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m4-0"
+groups = ["SM_BC_Plant_CoverFern0#511@-16_0", "SM_BC_Plant_CoverFern0#511@-16_1", "SM_BC_Plant_CoverFern0#511@-16_2", "SM_BC_Plant_CoverFern0#511@-16_3", "SM_BC_Plant_CoverFern0#511@-15_0", "SM_BC_Plant_CoverFern0#511@-15_1", "SM_BC_Plant_CoverFern0#511@-15_2", "SM_BC_Plant_CoverFern0#511@-15_3", "SM_BC_Plant_CoverFern0#511@-14_0", "SM_BC_Plant_CoverFern0#511@-14_1", "SM_BC_Plant_CoverFern0#511@-14_2", "SM_BC_Plant_CoverFern0#511@-14_3", "SM_BC_Plant_CoverFern0#511@-13_0", "SM_BC_Plant_CoverFern0#511@-13_1", "SM_BC_Plant_CoverFern0#511@-13_2", "SM_BC_Plant_CoverFern0#511@-13_3", "SM_BC_Plant_CoverFern1#517@-16_0", "SM_BC_Plant_CoverFern1#517@-16_1", "SM_BC_Plant_CoverFern1#517@-16_2", "SM_BC_Plant_CoverFern1#517@-16_3", "SM_BC_Plant_CoverFern1#517@-15_0", "SM_BC_Plant_CoverFern1#517@-15_1", "SM_BC_Plant_CoverFern1#517@-15_2", "SM_BC_Plant_CoverFern1#517@-15_3", "SM_BC_Plant_CoverFern1#517@-14_0", "SM_BC_Plant_CoverFern1#517@-14_1", "SM_BC_Plant_CoverFern1#517@-14_2", "SM_BC_Plant_CoverFern1#517@-14_3", "SM_BC_Plant_CoverFern1#517@-13_0", "SM_BC_Plant_CoverFern1#517@-13_1", "SM_BC_Plant_CoverFern1#517@-13_2", "SM_BC_Plant_CoverFern1#517@-13_3", "SM_BC_Plant_CoverFern2#523@-16_0", "SM_BC_Plant_CoverFern2#523@-16_1", "SM_BC_Plant_CoverFern2#523@-16_2", "SM_BC_Plant_CoverFern2#523@-16_3", "SM_BC_Plant_CoverFern2#523@-15_0", "SM_BC_Plant_CoverFern2#523@-15_1", "SM_BC_Plant_CoverFern2#523@-15_2", "SM_BC_Plant_CoverFern2#523@-15_3", "SM_BC_Plant_CoverFern2#523@-14_0", "SM_BC_Plant_CoverFern2#523@-14_1", "SM_BC_Plant_CoverFern2#523@-14_2", "SM_BC_Plant_CoverFern2#523@-14_3", "SM_BC_Plant_CoverFern2#523@-13_0", "SM_BC_Plant_CoverFern2#523@-13_1", "SM_BC_Plant_CoverFern2#523@-13_2", "SM_BC_Plant_CoverFern2#523@-13_3"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m4-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m4-1"
+groups = ["SM_BC_Plant_CoverFern0#511@-16_4", "SM_BC_Plant_CoverFern0#511@-15_4", "SM_BC_Plant_CoverFern0#511@-14_4", "SM_BC_Plant_CoverFern0#511@-13_4", "SM_BC_Plant_CoverFern1#517@-16_4", "SM_BC_Plant_CoverFern1#517@-15_4", "SM_BC_Plant_CoverFern1#517@-14_4", "SM_BC_Plant_CoverFern1#517@-13_4", "SM_BC_Plant_CoverFern2#523@-16_4", "SM_BC_Plant_CoverFern2#523@-15_4", "SM_BC_Plant_CoverFern2#523@-14_4", "SM_BC_Plant_CoverFern2#523@-13_4"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m4-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m4-m1"
+groups = ["SM_BC_Plant_CoverFern0#511@-16_-4", "SM_BC_Plant_CoverFern0#511@-16_-3", "SM_BC_Plant_CoverFern0#511@-16_-2", "SM_BC_Plant_CoverFern0#511@-16_-1", "SM_BC_Plant_CoverFern0#511@-15_-1", "SM_BC_Plant_CoverFern0#511@-14_-1", "SM_BC_Plant_CoverFern0#511@-13_-1", "SM_BC_Plant_CoverFern1#517@-16_-4", "SM_BC_Plant_CoverFern1#517@-16_-3", "SM_BC_Plant_CoverFern1#517@-16_-2", "SM_BC_Plant_CoverFern1#517@-16_-1", "SM_BC_Plant_CoverFern1#517@-15_-1", "SM_BC_Plant_CoverFern1#517@-14_-1", "SM_BC_Plant_CoverFern2#523@-16_-3", "SM_BC_Plant_CoverFern2#523@-16_-2", "SM_BC_Plant_CoverFern2#523@-16_-1", "SM_BC_Plant_CoverFern2#523@-15_-1", "SM_BC_Plant_CoverFern2#523@-14_-1"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m4-m1 (18 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m5-0"
+groups = ["SM_BC_Plant_CoverFern0#511@-20_0", "SM_BC_Plant_CoverFern0#511@-20_1", "SM_BC_Plant_CoverFern0#511@-20_2", "SM_BC_Plant_CoverFern0#511@-20_3", "SM_BC_Plant_CoverFern0#511@-19_0", "SM_BC_Plant_CoverFern0#511@-19_1", "SM_BC_Plant_CoverFern0#511@-19_2", "SM_BC_Plant_CoverFern0#511@-19_3", "SM_BC_Plant_CoverFern0#511@-18_0", "SM_BC_Plant_CoverFern0#511@-18_1", "SM_BC_Plant_CoverFern0#511@-18_2", "SM_BC_Plant_CoverFern0#511@-18_3", "SM_BC_Plant_CoverFern0#511@-17_0", "SM_BC_Plant_CoverFern0#511@-17_1", "SM_BC_Plant_CoverFern0#511@-17_2", "SM_BC_Plant_CoverFern0#511@-17_3", "SM_BC_Plant_CoverFern1#517@-20_0", "SM_BC_Plant_CoverFern1#517@-20_1", "SM_BC_Plant_CoverFern1#517@-20_2", "SM_BC_Plant_CoverFern1#517@-20_3", "SM_BC_Plant_CoverFern1#517@-19_0", "SM_BC_Plant_CoverFern1#517@-19_1", "SM_BC_Plant_CoverFern1#517@-19_2", "SM_BC_Plant_CoverFern1#517@-19_3", "SM_BC_Plant_CoverFern1#517@-18_0", "SM_BC_Plant_CoverFern1#517@-18_1", "SM_BC_Plant_CoverFern1#517@-18_2", "SM_BC_Plant_CoverFern1#517@-18_3", "SM_BC_Plant_CoverFern1#517@-17_0", "SM_BC_Plant_CoverFern1#517@-17_1", "SM_BC_Plant_CoverFern1#517@-17_2", "SM_BC_Plant_CoverFern1#517@-17_3", "SM_BC_Plant_CoverFern2#523@-20_0", "SM_BC_Plant_CoverFern2#523@-20_1", "SM_BC_Plant_CoverFern2#523@-20_2", "SM_BC_Plant_CoverFern2#523@-20_3", "SM_BC_Plant_CoverFern2#523@-19_0", "SM_BC_Plant_CoverFern2#523@-19_1", "SM_BC_Plant_CoverFern2#523@-19_2", "SM_BC_Plant_CoverFern2#523@-19_3", "SM_BC_Plant_CoverFern2#523@-18_0", "SM_BC_Plant_CoverFern2#523@-18_1", "SM_BC_Plant_CoverFern2#523@-18_2", "SM_BC_Plant_CoverFern2#523@-18_3", "SM_BC_Plant_CoverFern2#523@-17_0", "SM_BC_Plant_CoverFern2#523@-17_1", "SM_BC_Plant_CoverFern2#523@-17_2", "SM_BC_Plant_CoverFern2#523@-17_3"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m5-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m5-1"
+groups = ["SM_BC_Plant_CoverFern0#511@-20_4", "SM_BC_Plant_CoverFern0#511@-19_4", "SM_BC_Plant_CoverFern0#511@-18_4", "SM_BC_Plant_CoverFern0#511@-17_4", "SM_BC_Plant_CoverFern1#517@-20_4", "SM_BC_Plant_CoverFern1#517@-19_4", "SM_BC_Plant_CoverFern1#517@-18_4", "SM_BC_Plant_CoverFern1#517@-17_4", "SM_BC_Plant_CoverFern2#523@-20_4", "SM_BC_Plant_CoverFern2#523@-19_4", "SM_BC_Plant_CoverFern2#523@-18_4", "SM_BC_Plant_CoverFern2#523@-17_4"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m5-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m5-m1"
+groups = ["SM_BC_Plant_CoverFern0#511@-20_-1", "SM_BC_Plant_CoverFern0#511@-19_-4", "SM_BC_Plant_CoverFern0#511@-19_-3", "SM_BC_Plant_CoverFern0#511@-19_-2", "SM_BC_Plant_CoverFern0#511@-19_-1", "SM_BC_Plant_CoverFern0#511@-18_-4", "SM_BC_Plant_CoverFern0#511@-18_-3", "SM_BC_Plant_CoverFern0#511@-18_-2", "SM_BC_Plant_CoverFern0#511@-18_-1", "SM_BC_Plant_CoverFern0#511@-17_-4", "SM_BC_Plant_CoverFern0#511@-17_-3", "SM_BC_Plant_CoverFern0#511@-17_-2", "SM_BC_Plant_CoverFern0#511@-17_-1", "SM_BC_Plant_CoverFern1#517@-20_-1", "SM_BC_Plant_CoverFern1#517@-19_-4", "SM_BC_Plant_CoverFern1#517@-19_-3", "SM_BC_Plant_CoverFern1#517@-19_-2", "SM_BC_Plant_CoverFern1#517@-19_-1", "SM_BC_Plant_CoverFern1#517@-18_-4", "SM_BC_Plant_CoverFern1#517@-18_-3", "SM_BC_Plant_CoverFern1#517@-18_-2", "SM_BC_Plant_CoverFern1#517@-18_-1", "SM_BC_Plant_CoverFern1#517@-17_-4", "SM_BC_Plant_CoverFern1#517@-17_-3", "SM_BC_Plant_CoverFern1#517@-17_-2", "SM_BC_Plant_CoverFern1#517@-17_-1", "SM_BC_Plant_CoverFern2#523@-20_-1", "SM_BC_Plant_CoverFern2#523@-19_-4", "SM_BC_Plant_CoverFern2#523@-19_-3", "SM_BC_Plant_CoverFern2#523@-19_-2", "SM_BC_Plant_CoverFern2#523@-19_-1", "SM_BC_Plant_CoverFern2#523@-18_-4", "SM_BC_Plant_CoverFern2#523@-18_-3", "SM_BC_Plant_CoverFern2#523@-18_-2", "SM_BC_Plant_CoverFern2#523@-18_-1", "SM_BC_Plant_CoverFern2#523@-17_-4", "SM_BC_Plant_CoverFern2#523@-17_-3", "SM_BC_Plant_CoverFern2#523@-17_-2", "SM_BC_Plant_CoverFern2#523@-17_-1"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m5-m1 (39 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-fern-m5-m2"
+groups = ["SM_BC_Plant_CoverFern0#511@-19_-5", "SM_BC_Plant_CoverFern0#511@-18_-7", "SM_BC_Plant_CoverFern0#511@-18_-6", "SM_BC_Plant_CoverFern0#511@-18_-5", "SM_BC_Plant_CoverFern0#511@-17_-7", "SM_BC_Plant_CoverFern0#511@-17_-6", "SM_BC_Plant_CoverFern0#511@-17_-5", "SM_BC_Plant_CoverFern1#517@-19_-5", "SM_BC_Plant_CoverFern1#517@-18_-7", "SM_BC_Plant_CoverFern1#517@-18_-6", "SM_BC_Plant_CoverFern1#517@-18_-5", "SM_BC_Plant_CoverFern1#517@-17_-7", "SM_BC_Plant_CoverFern1#517@-17_-6", "SM_BC_Plant_CoverFern1#517@-17_-5", "SM_BC_Plant_CoverFern2#523@-19_-5", "SM_BC_Plant_CoverFern2#523@-18_-7", "SM_BC_Plant_CoverFern2#523@-18_-6", "SM_BC_Plant_CoverFern2#523@-18_-5", "SM_BC_Plant_CoverFern2#523@-17_-7", "SM_BC_Plant_CoverFern2#523@-17_-6", "SM_BC_Plant_CoverFern2#523@-17_-5"]
+model = "adopted/brinecove/plant-cover-fern"
+about = "Brine Cove plant-cover-fern-m5-m2 (21 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass"
-groups = ["SM_BC_Plant_CoverGrass0#513", "SM_BC_Plant_CoverGrass0#514", "SM_BC_Plant_CoverGrass1#519", "SM_BC_Plant_CoverGrass1#520", "SM_BC_Plant_CoverGrass2#525", "SM_BC_Plant_CoverGrass2#526"]
+groups = ["SM_BC_Plant_CoverGrass0#514", "SM_BC_Plant_CoverGrass1#520", "SM_BC_Plant_CoverGrass2#526"]
 model = "adopted/brinecove/plant-cover-grass"
-about = "Brine Cove plant-cover-grass (6 groups)"
+about = "Brine Cove plant-cover-grass (3 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m2-0"
+groups = ["SM_BC_Plant_CoverGrass0#513@-8_0", "SM_BC_Plant_CoverGrass0#513@-8_1", "SM_BC_Plant_CoverGrass0#513@-8_2", "SM_BC_Plant_CoverGrass0#513@-8_3", "SM_BC_Plant_CoverGrass0#513@-7_0", "SM_BC_Plant_CoverGrass0#513@-7_1", "SM_BC_Plant_CoverGrass0#513@-7_2", "SM_BC_Plant_CoverGrass0#513@-7_3", "SM_BC_Plant_CoverGrass0#513@-6_0", "SM_BC_Plant_CoverGrass0#513@-6_1", "SM_BC_Plant_CoverGrass0#513@-6_2", "SM_BC_Plant_CoverGrass0#513@-6_3", "SM_BC_Plant_CoverGrass1#519@-8_0", "SM_BC_Plant_CoverGrass1#519@-8_1", "SM_BC_Plant_CoverGrass1#519@-8_2", "SM_BC_Plant_CoverGrass1#519@-8_3", "SM_BC_Plant_CoverGrass1#519@-7_0", "SM_BC_Plant_CoverGrass1#519@-7_1", "SM_BC_Plant_CoverGrass1#519@-7_2", "SM_BC_Plant_CoverGrass1#519@-7_3", "SM_BC_Plant_CoverGrass1#519@-6_0", "SM_BC_Plant_CoverGrass1#519@-6_1", "SM_BC_Plant_CoverGrass1#519@-6_2", "SM_BC_Plant_CoverGrass1#519@-6_3", "SM_BC_Plant_CoverGrass2#525@-8_0", "SM_BC_Plant_CoverGrass2#525@-8_1", "SM_BC_Plant_CoverGrass2#525@-8_2", "SM_BC_Plant_CoverGrass2#525@-8_3", "SM_BC_Plant_CoverGrass2#525@-7_0", "SM_BC_Plant_CoverGrass2#525@-7_1", "SM_BC_Plant_CoverGrass2#525@-7_2", "SM_BC_Plant_CoverGrass2#525@-7_3", "SM_BC_Plant_CoverGrass2#525@-6_0", "SM_BC_Plant_CoverGrass2#525@-6_1", "SM_BC_Plant_CoverGrass2#525@-6_2", "SM_BC_Plant_CoverGrass2#525@-6_3"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m2-0 (36 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m2-1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-8_4", "SM_BC_Plant_CoverGrass0#513@-7_4", "SM_BC_Plant_CoverGrass0#513@-6_4", "SM_BC_Plant_CoverGrass1#519@-8_4", "SM_BC_Plant_CoverGrass1#519@-7_4", "SM_BC_Plant_CoverGrass1#519@-6_4", "SM_BC_Plant_CoverGrass2#525@-8_4", "SM_BC_Plant_CoverGrass2#525@-7_4", "SM_BC_Plant_CoverGrass2#525@-6_4"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m2-1 (9 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m2-m1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-8_-4", "SM_BC_Plant_CoverGrass0#513@-8_-3", "SM_BC_Plant_CoverGrass0#513@-8_-2", "SM_BC_Plant_CoverGrass0#513@-8_-1", "SM_BC_Plant_CoverGrass0#513@-7_-4", "SM_BC_Plant_CoverGrass0#513@-7_-3", "SM_BC_Plant_CoverGrass0#513@-7_-2", "SM_BC_Plant_CoverGrass0#513@-7_-1", "SM_BC_Plant_CoverGrass0#513@-6_-4", "SM_BC_Plant_CoverGrass0#513@-6_-3", "SM_BC_Plant_CoverGrass0#513@-6_-2", "SM_BC_Plant_CoverGrass0#513@-6_-1", "SM_BC_Plant_CoverGrass1#519@-8_-4", "SM_BC_Plant_CoverGrass1#519@-8_-3", "SM_BC_Plant_CoverGrass1#519@-8_-2", "SM_BC_Plant_CoverGrass1#519@-8_-1", "SM_BC_Plant_CoverGrass1#519@-7_-4", "SM_BC_Plant_CoverGrass1#519@-7_-3", "SM_BC_Plant_CoverGrass1#519@-7_-2", "SM_BC_Plant_CoverGrass1#519@-7_-1", "SM_BC_Plant_CoverGrass1#519@-6_-4", "SM_BC_Plant_CoverGrass1#519@-6_-3", "SM_BC_Plant_CoverGrass1#519@-6_-2", "SM_BC_Plant_CoverGrass1#519@-6_-1", "SM_BC_Plant_CoverGrass2#525@-8_-4", "SM_BC_Plant_CoverGrass2#525@-8_-3", "SM_BC_Plant_CoverGrass2#525@-8_-2", "SM_BC_Plant_CoverGrass2#525@-8_-1", "SM_BC_Plant_CoverGrass2#525@-7_-4", "SM_BC_Plant_CoverGrass2#525@-7_-3", "SM_BC_Plant_CoverGrass2#525@-7_-2", "SM_BC_Plant_CoverGrass2#525@-7_-1", "SM_BC_Plant_CoverGrass2#525@-6_-4", "SM_BC_Plant_CoverGrass2#525@-6_-3", "SM_BC_Plant_CoverGrass2#525@-6_-2", "SM_BC_Plant_CoverGrass2#525@-6_-1"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m2-m1 (36 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m2-m2"
+groups = ["SM_BC_Plant_CoverGrass0#513@-8_-5", "SM_BC_Plant_CoverGrass0#513@-7_-7", "SM_BC_Plant_CoverGrass0#513@-7_-6", "SM_BC_Plant_CoverGrass0#513@-7_-5", "SM_BC_Plant_CoverGrass0#513@-6_-6", "SM_BC_Plant_CoverGrass0#513@-6_-5", "SM_BC_Plant_CoverGrass1#519@-8_-5", "SM_BC_Plant_CoverGrass1#519@-7_-7", "SM_BC_Plant_CoverGrass1#519@-7_-6", "SM_BC_Plant_CoverGrass1#519@-7_-5", "SM_BC_Plant_CoverGrass1#519@-6_-6", "SM_BC_Plant_CoverGrass2#525@-8_-5", "SM_BC_Plant_CoverGrass2#525@-7_-7", "SM_BC_Plant_CoverGrass2#525@-7_-6", "SM_BC_Plant_CoverGrass2#525@-7_-5", "SM_BC_Plant_CoverGrass2#525@-6_-6", "SM_BC_Plant_CoverGrass2#525@-6_-5"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m2-m2 (17 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m3-0"
+groups = ["SM_BC_Plant_CoverGrass0#513@-12_0", "SM_BC_Plant_CoverGrass0#513@-12_1", "SM_BC_Plant_CoverGrass0#513@-12_2", "SM_BC_Plant_CoverGrass0#513@-12_3", "SM_BC_Plant_CoverGrass0#513@-11_0", "SM_BC_Plant_CoverGrass0#513@-11_1", "SM_BC_Plant_CoverGrass0#513@-11_2", "SM_BC_Plant_CoverGrass0#513@-11_3", "SM_BC_Plant_CoverGrass0#513@-10_0", "SM_BC_Plant_CoverGrass0#513@-10_1", "SM_BC_Plant_CoverGrass0#513@-10_2", "SM_BC_Plant_CoverGrass0#513@-10_3", "SM_BC_Plant_CoverGrass0#513@-9_0", "SM_BC_Plant_CoverGrass0#513@-9_1", "SM_BC_Plant_CoverGrass0#513@-9_2", "SM_BC_Plant_CoverGrass0#513@-9_3", "SM_BC_Plant_CoverGrass1#519@-12_0", "SM_BC_Plant_CoverGrass1#519@-12_1", "SM_BC_Plant_CoverGrass1#519@-12_2", "SM_BC_Plant_CoverGrass1#519@-12_3", "SM_BC_Plant_CoverGrass1#519@-11_0", "SM_BC_Plant_CoverGrass1#519@-11_1", "SM_BC_Plant_CoverGrass1#519@-11_2", "SM_BC_Plant_CoverGrass1#519@-11_3", "SM_BC_Plant_CoverGrass1#519@-10_0", "SM_BC_Plant_CoverGrass1#519@-10_1", "SM_BC_Plant_CoverGrass1#519@-10_2", "SM_BC_Plant_CoverGrass1#519@-10_3", "SM_BC_Plant_CoverGrass1#519@-9_0", "SM_BC_Plant_CoverGrass1#519@-9_1", "SM_BC_Plant_CoverGrass1#519@-9_2", "SM_BC_Plant_CoverGrass1#519@-9_3", "SM_BC_Plant_CoverGrass2#525@-12_0", "SM_BC_Plant_CoverGrass2#525@-12_1", "SM_BC_Plant_CoverGrass2#525@-12_2", "SM_BC_Plant_CoverGrass2#525@-12_3", "SM_BC_Plant_CoverGrass2#525@-11_0", "SM_BC_Plant_CoverGrass2#525@-11_1", "SM_BC_Plant_CoverGrass2#525@-11_2", "SM_BC_Plant_CoverGrass2#525@-11_3", "SM_BC_Plant_CoverGrass2#525@-10_0", "SM_BC_Plant_CoverGrass2#525@-10_1", "SM_BC_Plant_CoverGrass2#525@-10_2", "SM_BC_Plant_CoverGrass2#525@-10_3", "SM_BC_Plant_CoverGrass2#525@-9_0", "SM_BC_Plant_CoverGrass2#525@-9_1", "SM_BC_Plant_CoverGrass2#525@-9_2", "SM_BC_Plant_CoverGrass2#525@-9_3"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m3-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m3-1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-12_4", "SM_BC_Plant_CoverGrass0#513@-11_4", "SM_BC_Plant_CoverGrass0#513@-10_4", "SM_BC_Plant_CoverGrass0#513@-9_4", "SM_BC_Plant_CoverGrass1#519@-12_4", "SM_BC_Plant_CoverGrass1#519@-11_4", "SM_BC_Plant_CoverGrass1#519@-10_4", "SM_BC_Plant_CoverGrass1#519@-9_4", "SM_BC_Plant_CoverGrass2#525@-12_4", "SM_BC_Plant_CoverGrass2#525@-11_4", "SM_BC_Plant_CoverGrass2#525@-10_4", "SM_BC_Plant_CoverGrass2#525@-9_4"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m3-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m3-m1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-11_-1", "SM_BC_Plant_CoverGrass0#513@-9_-2", "SM_BC_Plant_CoverGrass0#513@-9_-1", "SM_BC_Plant_CoverGrass1#519@-11_-1", "SM_BC_Plant_CoverGrass1#519@-10_-1", "SM_BC_Plant_CoverGrass1#519@-9_-2", "SM_BC_Plant_CoverGrass1#519@-9_-1", "SM_BC_Plant_CoverGrass2#525@-11_-1", "SM_BC_Plant_CoverGrass2#525@-10_-1", "SM_BC_Plant_CoverGrass2#525@-9_-2", "SM_BC_Plant_CoverGrass2#525@-9_-1"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m3-m1 (11 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m4-0"
+groups = ["SM_BC_Plant_CoverGrass0#513@-16_0", "SM_BC_Plant_CoverGrass0#513@-16_1", "SM_BC_Plant_CoverGrass0#513@-16_2", "SM_BC_Plant_CoverGrass0#513@-16_3", "SM_BC_Plant_CoverGrass0#513@-15_0", "SM_BC_Plant_CoverGrass0#513@-15_1", "SM_BC_Plant_CoverGrass0#513@-15_2", "SM_BC_Plant_CoverGrass0#513@-15_3", "SM_BC_Plant_CoverGrass0#513@-14_0", "SM_BC_Plant_CoverGrass0#513@-14_1", "SM_BC_Plant_CoverGrass0#513@-14_2", "SM_BC_Plant_CoverGrass0#513@-14_3", "SM_BC_Plant_CoverGrass0#513@-13_0", "SM_BC_Plant_CoverGrass0#513@-13_1", "SM_BC_Plant_CoverGrass0#513@-13_2", "SM_BC_Plant_CoverGrass0#513@-13_3", "SM_BC_Plant_CoverGrass1#519@-16_0", "SM_BC_Plant_CoverGrass1#519@-16_1", "SM_BC_Plant_CoverGrass1#519@-16_2", "SM_BC_Plant_CoverGrass1#519@-16_3", "SM_BC_Plant_CoverGrass1#519@-15_0", "SM_BC_Plant_CoverGrass1#519@-15_1", "SM_BC_Plant_CoverGrass1#519@-15_2", "SM_BC_Plant_CoverGrass1#519@-15_3", "SM_BC_Plant_CoverGrass1#519@-14_0", "SM_BC_Plant_CoverGrass1#519@-14_1", "SM_BC_Plant_CoverGrass1#519@-14_2", "SM_BC_Plant_CoverGrass1#519@-14_3", "SM_BC_Plant_CoverGrass1#519@-13_0", "SM_BC_Plant_CoverGrass1#519@-13_1", "SM_BC_Plant_CoverGrass1#519@-13_2", "SM_BC_Plant_CoverGrass1#519@-13_3", "SM_BC_Plant_CoverGrass2#525@-16_0", "SM_BC_Plant_CoverGrass2#525@-16_1", "SM_BC_Plant_CoverGrass2#525@-16_2", "SM_BC_Plant_CoverGrass2#525@-16_3", "SM_BC_Plant_CoverGrass2#525@-15_0", "SM_BC_Plant_CoverGrass2#525@-15_1", "SM_BC_Plant_CoverGrass2#525@-15_2", "SM_BC_Plant_CoverGrass2#525@-15_3", "SM_BC_Plant_CoverGrass2#525@-14_0", "SM_BC_Plant_CoverGrass2#525@-14_1", "SM_BC_Plant_CoverGrass2#525@-14_2", "SM_BC_Plant_CoverGrass2#525@-14_3", "SM_BC_Plant_CoverGrass2#525@-13_0", "SM_BC_Plant_CoverGrass2#525@-13_1", "SM_BC_Plant_CoverGrass2#525@-13_2", "SM_BC_Plant_CoverGrass2#525@-13_3"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m4-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m4-1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-16_4", "SM_BC_Plant_CoverGrass0#513@-15_4", "SM_BC_Plant_CoverGrass0#513@-14_4", "SM_BC_Plant_CoverGrass0#513@-13_4", "SM_BC_Plant_CoverGrass1#519@-16_4", "SM_BC_Plant_CoverGrass1#519@-15_4", "SM_BC_Plant_CoverGrass1#519@-14_4", "SM_BC_Plant_CoverGrass1#519@-13_4", "SM_BC_Plant_CoverGrass2#525@-16_4", "SM_BC_Plant_CoverGrass2#525@-15_4", "SM_BC_Plant_CoverGrass2#525@-14_4", "SM_BC_Plant_CoverGrass2#525@-13_4"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m4-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m4-m1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-16_-4", "SM_BC_Plant_CoverGrass0#513@-16_-3", "SM_BC_Plant_CoverGrass0#513@-16_-2", "SM_BC_Plant_CoverGrass0#513@-16_-1", "SM_BC_Plant_CoverGrass0#513@-15_-1", "SM_BC_Plant_CoverGrass0#513@-14_-1", "SM_BC_Plant_CoverGrass0#513@-13_-1", "SM_BC_Plant_CoverGrass1#519@-16_-4", "SM_BC_Plant_CoverGrass1#519@-16_-3", "SM_BC_Plant_CoverGrass1#519@-16_-2", "SM_BC_Plant_CoverGrass1#519@-16_-1", "SM_BC_Plant_CoverGrass1#519@-15_-1", "SM_BC_Plant_CoverGrass1#519@-13_-1", "SM_BC_Plant_CoverGrass2#525@-16_-4", "SM_BC_Plant_CoverGrass2#525@-16_-3", "SM_BC_Plant_CoverGrass2#525@-16_-2", "SM_BC_Plant_CoverGrass2#525@-16_-1", "SM_BC_Plant_CoverGrass2#525@-15_-1", "SM_BC_Plant_CoverGrass2#525@-14_-1"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m4-m1 (19 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m5-0"
+groups = ["SM_BC_Plant_CoverGrass0#513@-20_0", "SM_BC_Plant_CoverGrass0#513@-20_1", "SM_BC_Plant_CoverGrass0#513@-20_2", "SM_BC_Plant_CoverGrass0#513@-20_3", "SM_BC_Plant_CoverGrass0#513@-19_0", "SM_BC_Plant_CoverGrass0#513@-19_1", "SM_BC_Plant_CoverGrass0#513@-19_2", "SM_BC_Plant_CoverGrass0#513@-19_3", "SM_BC_Plant_CoverGrass0#513@-18_0", "SM_BC_Plant_CoverGrass0#513@-18_1", "SM_BC_Plant_CoverGrass0#513@-18_2", "SM_BC_Plant_CoverGrass0#513@-18_3", "SM_BC_Plant_CoverGrass0#513@-17_0", "SM_BC_Plant_CoverGrass0#513@-17_1", "SM_BC_Plant_CoverGrass0#513@-17_2", "SM_BC_Plant_CoverGrass0#513@-17_3", "SM_BC_Plant_CoverGrass1#519@-20_0", "SM_BC_Plant_CoverGrass1#519@-20_1", "SM_BC_Plant_CoverGrass1#519@-20_2", "SM_BC_Plant_CoverGrass1#519@-20_3", "SM_BC_Plant_CoverGrass1#519@-19_0", "SM_BC_Plant_CoverGrass1#519@-19_1", "SM_BC_Plant_CoverGrass1#519@-19_2", "SM_BC_Plant_CoverGrass1#519@-19_3", "SM_BC_Plant_CoverGrass1#519@-18_0", "SM_BC_Plant_CoverGrass1#519@-18_1", "SM_BC_Plant_CoverGrass1#519@-18_2", "SM_BC_Plant_CoverGrass1#519@-18_3", "SM_BC_Plant_CoverGrass1#519@-17_0", "SM_BC_Plant_CoverGrass1#519@-17_1", "SM_BC_Plant_CoverGrass1#519@-17_2", "SM_BC_Plant_CoverGrass1#519@-17_3", "SM_BC_Plant_CoverGrass2#525@-20_0", "SM_BC_Plant_CoverGrass2#525@-20_1", "SM_BC_Plant_CoverGrass2#525@-20_2", "SM_BC_Plant_CoverGrass2#525@-20_3", "SM_BC_Plant_CoverGrass2#525@-19_0", "SM_BC_Plant_CoverGrass2#525@-19_1", "SM_BC_Plant_CoverGrass2#525@-19_2", "SM_BC_Plant_CoverGrass2#525@-19_3", "SM_BC_Plant_CoverGrass2#525@-18_0", "SM_BC_Plant_CoverGrass2#525@-18_1", "SM_BC_Plant_CoverGrass2#525@-18_2", "SM_BC_Plant_CoverGrass2#525@-18_3", "SM_BC_Plant_CoverGrass2#525@-17_0", "SM_BC_Plant_CoverGrass2#525@-17_1", "SM_BC_Plant_CoverGrass2#525@-17_2", "SM_BC_Plant_CoverGrass2#525@-17_3"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m5-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m5-1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-20_4", "SM_BC_Plant_CoverGrass0#513@-19_4", "SM_BC_Plant_CoverGrass0#513@-18_4", "SM_BC_Plant_CoverGrass0#513@-17_4", "SM_BC_Plant_CoverGrass1#519@-20_4", "SM_BC_Plant_CoverGrass1#519@-19_4", "SM_BC_Plant_CoverGrass1#519@-18_4", "SM_BC_Plant_CoverGrass1#519@-17_4", "SM_BC_Plant_CoverGrass2#525@-20_4", "SM_BC_Plant_CoverGrass2#525@-19_4", "SM_BC_Plant_CoverGrass2#525@-18_4", "SM_BC_Plant_CoverGrass2#525@-17_4"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m5-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m5-m1"
+groups = ["SM_BC_Plant_CoverGrass0#513@-20_-1", "SM_BC_Plant_CoverGrass0#513@-19_-4", "SM_BC_Plant_CoverGrass0#513@-19_-3", "SM_BC_Plant_CoverGrass0#513@-19_-2", "SM_BC_Plant_CoverGrass0#513@-19_-1", "SM_BC_Plant_CoverGrass0#513@-18_-4", "SM_BC_Plant_CoverGrass0#513@-18_-3", "SM_BC_Plant_CoverGrass0#513@-18_-2", "SM_BC_Plant_CoverGrass0#513@-18_-1", "SM_BC_Plant_CoverGrass0#513@-17_-4", "SM_BC_Plant_CoverGrass0#513@-17_-3", "SM_BC_Plant_CoverGrass0#513@-17_-2", "SM_BC_Plant_CoverGrass0#513@-17_-1", "SM_BC_Plant_CoverGrass1#519@-20_-1", "SM_BC_Plant_CoverGrass1#519@-19_-4", "SM_BC_Plant_CoverGrass1#519@-19_-3", "SM_BC_Plant_CoverGrass1#519@-19_-2", "SM_BC_Plant_CoverGrass1#519@-19_-1", "SM_BC_Plant_CoverGrass1#519@-18_-4", "SM_BC_Plant_CoverGrass1#519@-18_-3", "SM_BC_Plant_CoverGrass1#519@-18_-2", "SM_BC_Plant_CoverGrass1#519@-18_-1", "SM_BC_Plant_CoverGrass1#519@-17_-4", "SM_BC_Plant_CoverGrass1#519@-17_-3", "SM_BC_Plant_CoverGrass1#519@-17_-2", "SM_BC_Plant_CoverGrass1#519@-17_-1", "SM_BC_Plant_CoverGrass2#525@-20_-1", "SM_BC_Plant_CoverGrass2#525@-19_-4", "SM_BC_Plant_CoverGrass2#525@-19_-3", "SM_BC_Plant_CoverGrass2#525@-19_-2", "SM_BC_Plant_CoverGrass2#525@-19_-1", "SM_BC_Plant_CoverGrass2#525@-18_-4", "SM_BC_Plant_CoverGrass2#525@-18_-3", "SM_BC_Plant_CoverGrass2#525@-18_-2", "SM_BC_Plant_CoverGrass2#525@-18_-1", "SM_BC_Plant_CoverGrass2#525@-17_-4", "SM_BC_Plant_CoverGrass2#525@-17_-3", "SM_BC_Plant_CoverGrass2#525@-17_-2", "SM_BC_Plant_CoverGrass2#525@-17_-1"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m5-m1 (39 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-grass-m5-m2"
+groups = ["SM_BC_Plant_CoverGrass0#513@-19_-5", "SM_BC_Plant_CoverGrass0#513@-18_-7", "SM_BC_Plant_CoverGrass0#513@-18_-6", "SM_BC_Plant_CoverGrass0#513@-18_-5", "SM_BC_Plant_CoverGrass0#513@-17_-7", "SM_BC_Plant_CoverGrass0#513@-17_-6", "SM_BC_Plant_CoverGrass0#513@-17_-5", "SM_BC_Plant_CoverGrass1#519@-18_-7", "SM_BC_Plant_CoverGrass1#519@-18_-6", "SM_BC_Plant_CoverGrass1#519@-18_-5", "SM_BC_Plant_CoverGrass1#519@-17_-7", "SM_BC_Plant_CoverGrass1#519@-17_-6", "SM_BC_Plant_CoverGrass1#519@-17_-5", "SM_BC_Plant_CoverGrass2#525@-19_-5", "SM_BC_Plant_CoverGrass2#525@-18_-7", "SM_BC_Plant_CoverGrass2#525@-18_-6", "SM_BC_Plant_CoverGrass2#525@-18_-5", "SM_BC_Plant_CoverGrass2#525@-17_-7", "SM_BC_Plant_CoverGrass2#525@-17_-6", "SM_BC_Plant_CoverGrass2#525@-17_-5"]
+model = "adopted/brinecove/plant-cover-grass"
+about = "Brine Cove plant-cover-grass-m5-m2 (20 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf"
-groups = ["SM_BC_Plant_CoverLeaf0#515", "SM_BC_Plant_CoverLeaf0#516", "SM_BC_Plant_CoverLeaf1#521", "SM_BC_Plant_CoverLeaf1#522", "SM_BC_Plant_CoverLeaf2#527", "SM_BC_Plant_CoverLeaf2#528"]
+groups = ["SM_BC_Plant_CoverLeaf0#516", "SM_BC_Plant_CoverLeaf1#522", "SM_BC_Plant_CoverLeaf2#528"]
 model = "adopted/brinecove/plant-cover-leaf"
-about = "Brine Cove plant-cover-leaf (6 groups)"
+about = "Brine Cove plant-cover-leaf (3 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m2-0"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-8_0", "SM_BC_Plant_CoverLeaf0#515@-8_1", "SM_BC_Plant_CoverLeaf0#515@-8_2", "SM_BC_Plant_CoverLeaf0#515@-8_3", "SM_BC_Plant_CoverLeaf0#515@-7_0", "SM_BC_Plant_CoverLeaf0#515@-7_1", "SM_BC_Plant_CoverLeaf0#515@-7_2", "SM_BC_Plant_CoverLeaf0#515@-7_3", "SM_BC_Plant_CoverLeaf0#515@-6_0", "SM_BC_Plant_CoverLeaf0#515@-6_1", "SM_BC_Plant_CoverLeaf0#515@-6_2", "SM_BC_Plant_CoverLeaf0#515@-6_3", "SM_BC_Plant_CoverLeaf1#521@-8_0", "SM_BC_Plant_CoverLeaf1#521@-8_1", "SM_BC_Plant_CoverLeaf1#521@-8_2", "SM_BC_Plant_CoverLeaf1#521@-8_3", "SM_BC_Plant_CoverLeaf1#521@-7_0", "SM_BC_Plant_CoverLeaf1#521@-7_1", "SM_BC_Plant_CoverLeaf1#521@-7_2", "SM_BC_Plant_CoverLeaf1#521@-7_3", "SM_BC_Plant_CoverLeaf1#521@-6_0", "SM_BC_Plant_CoverLeaf1#521@-6_1", "SM_BC_Plant_CoverLeaf1#521@-6_2", "SM_BC_Plant_CoverLeaf1#521@-6_3", "SM_BC_Plant_CoverLeaf2#527@-8_0", "SM_BC_Plant_CoverLeaf2#527@-8_1", "SM_BC_Plant_CoverLeaf2#527@-8_2", "SM_BC_Plant_CoverLeaf2#527@-8_3", "SM_BC_Plant_CoverLeaf2#527@-7_0", "SM_BC_Plant_CoverLeaf2#527@-7_1", "SM_BC_Plant_CoverLeaf2#527@-7_2", "SM_BC_Plant_CoverLeaf2#527@-7_3", "SM_BC_Plant_CoverLeaf2#527@-6_0", "SM_BC_Plant_CoverLeaf2#527@-6_1", "SM_BC_Plant_CoverLeaf2#527@-6_2", "SM_BC_Plant_CoverLeaf2#527@-6_3"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m2-0 (36 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m2-1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-8_4", "SM_BC_Plant_CoverLeaf0#515@-7_4", "SM_BC_Plant_CoverLeaf0#515@-6_4", "SM_BC_Plant_CoverLeaf1#521@-8_4", "SM_BC_Plant_CoverLeaf1#521@-7_4", "SM_BC_Plant_CoverLeaf1#521@-6_4", "SM_BC_Plant_CoverLeaf2#527@-8_4", "SM_BC_Plant_CoverLeaf2#527@-7_4", "SM_BC_Plant_CoverLeaf2#527@-6_4"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m2-1 (9 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m2-m1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-8_-4", "SM_BC_Plant_CoverLeaf0#515@-8_-3", "SM_BC_Plant_CoverLeaf0#515@-8_-2", "SM_BC_Plant_CoverLeaf0#515@-8_-1", "SM_BC_Plant_CoverLeaf0#515@-7_-4", "SM_BC_Plant_CoverLeaf0#515@-7_-3", "SM_BC_Plant_CoverLeaf0#515@-7_-2", "SM_BC_Plant_CoverLeaf0#515@-7_-1", "SM_BC_Plant_CoverLeaf0#515@-6_-4", "SM_BC_Plant_CoverLeaf0#515@-6_-3", "SM_BC_Plant_CoverLeaf0#515@-6_-2", "SM_BC_Plant_CoverLeaf0#515@-6_-1", "SM_BC_Plant_CoverLeaf1#521@-8_-4", "SM_BC_Plant_CoverLeaf1#521@-8_-3", "SM_BC_Plant_CoverLeaf1#521@-8_-2", "SM_BC_Plant_CoverLeaf1#521@-8_-1", "SM_BC_Plant_CoverLeaf1#521@-7_-4", "SM_BC_Plant_CoverLeaf1#521@-7_-3", "SM_BC_Plant_CoverLeaf1#521@-7_-2", "SM_BC_Plant_CoverLeaf1#521@-7_-1", "SM_BC_Plant_CoverLeaf1#521@-6_-4", "SM_BC_Plant_CoverLeaf1#521@-6_-3", "SM_BC_Plant_CoverLeaf1#521@-6_-2", "SM_BC_Plant_CoverLeaf1#521@-6_-1", "SM_BC_Plant_CoverLeaf2#527@-8_-4", "SM_BC_Plant_CoverLeaf2#527@-8_-3", "SM_BC_Plant_CoverLeaf2#527@-8_-2", "SM_BC_Plant_CoverLeaf2#527@-8_-1", "SM_BC_Plant_CoverLeaf2#527@-7_-4", "SM_BC_Plant_CoverLeaf2#527@-7_-3", "SM_BC_Plant_CoverLeaf2#527@-7_-2", "SM_BC_Plant_CoverLeaf2#527@-7_-1", "SM_BC_Plant_CoverLeaf2#527@-6_-4", "SM_BC_Plant_CoverLeaf2#527@-6_-3", "SM_BC_Plant_CoverLeaf2#527@-6_-2", "SM_BC_Plant_CoverLeaf2#527@-6_-1"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m2-m1 (36 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m2-m2"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-8_-6", "SM_BC_Plant_CoverLeaf0#515@-8_-5", "SM_BC_Plant_CoverLeaf0#515@-7_-7", "SM_BC_Plant_CoverLeaf0#515@-7_-6", "SM_BC_Plant_CoverLeaf0#515@-7_-5", "SM_BC_Plant_CoverLeaf0#515@-6_-6", "SM_BC_Plant_CoverLeaf0#515@-6_-5", "SM_BC_Plant_CoverLeaf1#521@-8_-6", "SM_BC_Plant_CoverLeaf1#521@-8_-5", "SM_BC_Plant_CoverLeaf1#521@-7_-7", "SM_BC_Plant_CoverLeaf1#521@-7_-6", "SM_BC_Plant_CoverLeaf1#521@-7_-5", "SM_BC_Plant_CoverLeaf1#521@-6_-6", "SM_BC_Plant_CoverLeaf1#521@-6_-5", "SM_BC_Plant_CoverLeaf2#527@-8_-6", "SM_BC_Plant_CoverLeaf2#527@-8_-5", "SM_BC_Plant_CoverLeaf2#527@-7_-7", "SM_BC_Plant_CoverLeaf2#527@-7_-6", "SM_BC_Plant_CoverLeaf2#527@-7_-5", "SM_BC_Plant_CoverLeaf2#527@-6_-6", "SM_BC_Plant_CoverLeaf2#527@-6_-5"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m2-m2 (21 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m3-0"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-12_0", "SM_BC_Plant_CoverLeaf0#515@-12_1", "SM_BC_Plant_CoverLeaf0#515@-12_2", "SM_BC_Plant_CoverLeaf0#515@-12_3", "SM_BC_Plant_CoverLeaf0#515@-11_0", "SM_BC_Plant_CoverLeaf0#515@-11_1", "SM_BC_Plant_CoverLeaf0#515@-11_2", "SM_BC_Plant_CoverLeaf0#515@-11_3", "SM_BC_Plant_CoverLeaf0#515@-10_0", "SM_BC_Plant_CoverLeaf0#515@-10_1", "SM_BC_Plant_CoverLeaf0#515@-10_2", "SM_BC_Plant_CoverLeaf0#515@-10_3", "SM_BC_Plant_CoverLeaf0#515@-9_0", "SM_BC_Plant_CoverLeaf0#515@-9_1", "SM_BC_Plant_CoverLeaf0#515@-9_2", "SM_BC_Plant_CoverLeaf0#515@-9_3", "SM_BC_Plant_CoverLeaf1#521@-12_0", "SM_BC_Plant_CoverLeaf1#521@-12_1", "SM_BC_Plant_CoverLeaf1#521@-12_2", "SM_BC_Plant_CoverLeaf1#521@-12_3", "SM_BC_Plant_CoverLeaf1#521@-11_0", "SM_BC_Plant_CoverLeaf1#521@-11_1", "SM_BC_Plant_CoverLeaf1#521@-11_2", "SM_BC_Plant_CoverLeaf1#521@-11_3", "SM_BC_Plant_CoverLeaf1#521@-10_0", "SM_BC_Plant_CoverLeaf1#521@-10_1", "SM_BC_Plant_CoverLeaf1#521@-10_2", "SM_BC_Plant_CoverLeaf1#521@-10_3", "SM_BC_Plant_CoverLeaf1#521@-9_0", "SM_BC_Plant_CoverLeaf1#521@-9_1", "SM_BC_Plant_CoverLeaf1#521@-9_2", "SM_BC_Plant_CoverLeaf1#521@-9_3", "SM_BC_Plant_CoverLeaf2#527@-12_0", "SM_BC_Plant_CoverLeaf2#527@-12_1", "SM_BC_Plant_CoverLeaf2#527@-12_2", "SM_BC_Plant_CoverLeaf2#527@-12_3", "SM_BC_Plant_CoverLeaf2#527@-11_0", "SM_BC_Plant_CoverLeaf2#527@-11_1", "SM_BC_Plant_CoverLeaf2#527@-11_2", "SM_BC_Plant_CoverLeaf2#527@-11_3", "SM_BC_Plant_CoverLeaf2#527@-10_0", "SM_BC_Plant_CoverLeaf2#527@-10_1", "SM_BC_Plant_CoverLeaf2#527@-10_2", "SM_BC_Plant_CoverLeaf2#527@-10_3", "SM_BC_Plant_CoverLeaf2#527@-9_0", "SM_BC_Plant_CoverLeaf2#527@-9_1", "SM_BC_Plant_CoverLeaf2#527@-9_2", "SM_BC_Plant_CoverLeaf2#527@-9_3"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m3-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m3-1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-12_4", "SM_BC_Plant_CoverLeaf0#515@-11_4", "SM_BC_Plant_CoverLeaf0#515@-10_4", "SM_BC_Plant_CoverLeaf0#515@-9_4", "SM_BC_Plant_CoverLeaf1#521@-12_4", "SM_BC_Plant_CoverLeaf1#521@-11_4", "SM_BC_Plant_CoverLeaf1#521@-10_4", "SM_BC_Plant_CoverLeaf1#521@-9_4", "SM_BC_Plant_CoverLeaf2#527@-12_4", "SM_BC_Plant_CoverLeaf2#527@-11_4", "SM_BC_Plant_CoverLeaf2#527@-10_4", "SM_BC_Plant_CoverLeaf2#527@-9_4"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m3-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m3-m1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-11_-1", "SM_BC_Plant_CoverLeaf0#515@-10_-1", "SM_BC_Plant_CoverLeaf0#515@-9_-2", "SM_BC_Plant_CoverLeaf0#515@-9_-1", "SM_BC_Plant_CoverLeaf1#521@-11_-1", "SM_BC_Plant_CoverLeaf1#521@-10_-1", "SM_BC_Plant_CoverLeaf1#521@-9_-2", "SM_BC_Plant_CoverLeaf1#521@-9_-1", "SM_BC_Plant_CoverLeaf2#527@-11_-1", "SM_BC_Plant_CoverLeaf2#527@-10_-1", "SM_BC_Plant_CoverLeaf2#527@-9_-2", "SM_BC_Plant_CoverLeaf2#527@-9_-1"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m3-m1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m4-0"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-16_0", "SM_BC_Plant_CoverLeaf0#515@-16_1", "SM_BC_Plant_CoverLeaf0#515@-16_2", "SM_BC_Plant_CoverLeaf0#515@-16_3", "SM_BC_Plant_CoverLeaf0#515@-15_0", "SM_BC_Plant_CoverLeaf0#515@-15_1", "SM_BC_Plant_CoverLeaf0#515@-15_2", "SM_BC_Plant_CoverLeaf0#515@-15_3", "SM_BC_Plant_CoverLeaf0#515@-14_0", "SM_BC_Plant_CoverLeaf0#515@-14_1", "SM_BC_Plant_CoverLeaf0#515@-14_2", "SM_BC_Plant_CoverLeaf0#515@-14_3", "SM_BC_Plant_CoverLeaf0#515@-13_0", "SM_BC_Plant_CoverLeaf0#515@-13_1", "SM_BC_Plant_CoverLeaf0#515@-13_2", "SM_BC_Plant_CoverLeaf0#515@-13_3", "SM_BC_Plant_CoverLeaf1#521@-16_0", "SM_BC_Plant_CoverLeaf1#521@-16_1", "SM_BC_Plant_CoverLeaf1#521@-16_2", "SM_BC_Plant_CoverLeaf1#521@-16_3", "SM_BC_Plant_CoverLeaf1#521@-15_0", "SM_BC_Plant_CoverLeaf1#521@-15_1", "SM_BC_Plant_CoverLeaf1#521@-15_2", "SM_BC_Plant_CoverLeaf1#521@-15_3", "SM_BC_Plant_CoverLeaf1#521@-14_0", "SM_BC_Plant_CoverLeaf1#521@-14_1", "SM_BC_Plant_CoverLeaf1#521@-14_2", "SM_BC_Plant_CoverLeaf1#521@-14_3", "SM_BC_Plant_CoverLeaf1#521@-13_0", "SM_BC_Plant_CoverLeaf1#521@-13_1", "SM_BC_Plant_CoverLeaf1#521@-13_2", "SM_BC_Plant_CoverLeaf1#521@-13_3", "SM_BC_Plant_CoverLeaf2#527@-16_0", "SM_BC_Plant_CoverLeaf2#527@-16_1", "SM_BC_Plant_CoverLeaf2#527@-16_2", "SM_BC_Plant_CoverLeaf2#527@-16_3", "SM_BC_Plant_CoverLeaf2#527@-15_0", "SM_BC_Plant_CoverLeaf2#527@-15_1", "SM_BC_Plant_CoverLeaf2#527@-15_2", "SM_BC_Plant_CoverLeaf2#527@-15_3", "SM_BC_Plant_CoverLeaf2#527@-14_0", "SM_BC_Plant_CoverLeaf2#527@-14_1", "SM_BC_Plant_CoverLeaf2#527@-14_2", "SM_BC_Plant_CoverLeaf2#527@-14_3", "SM_BC_Plant_CoverLeaf2#527@-13_0", "SM_BC_Plant_CoverLeaf2#527@-13_1", "SM_BC_Plant_CoverLeaf2#527@-13_2", "SM_BC_Plant_CoverLeaf2#527@-13_3"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m4-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m4-1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-16_4", "SM_BC_Plant_CoverLeaf0#515@-15_4", "SM_BC_Plant_CoverLeaf0#515@-14_4", "SM_BC_Plant_CoverLeaf0#515@-13_4", "SM_BC_Plant_CoverLeaf1#521@-16_4", "SM_BC_Plant_CoverLeaf1#521@-15_4", "SM_BC_Plant_CoverLeaf1#521@-14_4", "SM_BC_Plant_CoverLeaf1#521@-13_4", "SM_BC_Plant_CoverLeaf2#527@-16_4", "SM_BC_Plant_CoverLeaf2#527@-15_4", "SM_BC_Plant_CoverLeaf2#527@-14_4", "SM_BC_Plant_CoverLeaf2#527@-13_4"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m4-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m4-m1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-16_-4", "SM_BC_Plant_CoverLeaf0#515@-16_-3", "SM_BC_Plant_CoverLeaf0#515@-16_-2", "SM_BC_Plant_CoverLeaf0#515@-16_-1", "SM_BC_Plant_CoverLeaf0#515@-15_-1", "SM_BC_Plant_CoverLeaf1#521@-16_-4", "SM_BC_Plant_CoverLeaf1#521@-16_-3", "SM_BC_Plant_CoverLeaf1#521@-16_-2", "SM_BC_Plant_CoverLeaf1#521@-16_-1", "SM_BC_Plant_CoverLeaf1#521@-15_-1", "SM_BC_Plant_CoverLeaf2#527@-16_-4", "SM_BC_Plant_CoverLeaf2#527@-16_-3", "SM_BC_Plant_CoverLeaf2#527@-16_-2", "SM_BC_Plant_CoverLeaf2#527@-16_-1", "SM_BC_Plant_CoverLeaf2#527@-15_-1"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m4-m1 (15 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m5-0"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-20_0", "SM_BC_Plant_CoverLeaf0#515@-20_1", "SM_BC_Plant_CoverLeaf0#515@-20_2", "SM_BC_Plant_CoverLeaf0#515@-20_3", "SM_BC_Plant_CoverLeaf0#515@-19_0", "SM_BC_Plant_CoverLeaf0#515@-19_1", "SM_BC_Plant_CoverLeaf0#515@-19_2", "SM_BC_Plant_CoverLeaf0#515@-19_3", "SM_BC_Plant_CoverLeaf0#515@-18_0", "SM_BC_Plant_CoverLeaf0#515@-18_1", "SM_BC_Plant_CoverLeaf0#515@-18_2", "SM_BC_Plant_CoverLeaf0#515@-18_3", "SM_BC_Plant_CoverLeaf0#515@-17_0", "SM_BC_Plant_CoverLeaf0#515@-17_1", "SM_BC_Plant_CoverLeaf0#515@-17_2", "SM_BC_Plant_CoverLeaf0#515@-17_3", "SM_BC_Plant_CoverLeaf1#521@-20_0", "SM_BC_Plant_CoverLeaf1#521@-20_1", "SM_BC_Plant_CoverLeaf1#521@-20_2", "SM_BC_Plant_CoverLeaf1#521@-20_3", "SM_BC_Plant_CoverLeaf1#521@-19_0", "SM_BC_Plant_CoverLeaf1#521@-19_1", "SM_BC_Plant_CoverLeaf1#521@-19_2", "SM_BC_Plant_CoverLeaf1#521@-19_3", "SM_BC_Plant_CoverLeaf1#521@-18_0", "SM_BC_Plant_CoverLeaf1#521@-18_1", "SM_BC_Plant_CoverLeaf1#521@-18_2", "SM_BC_Plant_CoverLeaf1#521@-18_3", "SM_BC_Plant_CoverLeaf1#521@-17_0", "SM_BC_Plant_CoverLeaf1#521@-17_1", "SM_BC_Plant_CoverLeaf1#521@-17_2", "SM_BC_Plant_CoverLeaf1#521@-17_3", "SM_BC_Plant_CoverLeaf2#527@-20_0", "SM_BC_Plant_CoverLeaf2#527@-20_1", "SM_BC_Plant_CoverLeaf2#527@-20_2", "SM_BC_Plant_CoverLeaf2#527@-20_3", "SM_BC_Plant_CoverLeaf2#527@-19_0", "SM_BC_Plant_CoverLeaf2#527@-19_1", "SM_BC_Plant_CoverLeaf2#527@-19_2", "SM_BC_Plant_CoverLeaf2#527@-19_3", "SM_BC_Plant_CoverLeaf2#527@-18_0", "SM_BC_Plant_CoverLeaf2#527@-18_1", "SM_BC_Plant_CoverLeaf2#527@-18_2", "SM_BC_Plant_CoverLeaf2#527@-18_3", "SM_BC_Plant_CoverLeaf2#527@-17_0", "SM_BC_Plant_CoverLeaf2#527@-17_1", "SM_BC_Plant_CoverLeaf2#527@-17_2", "SM_BC_Plant_CoverLeaf2#527@-17_3"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m5-0 (48 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m5-1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-20_4", "SM_BC_Plant_CoverLeaf0#515@-19_4", "SM_BC_Plant_CoverLeaf0#515@-18_4", "SM_BC_Plant_CoverLeaf0#515@-17_4", "SM_BC_Plant_CoverLeaf1#521@-20_4", "SM_BC_Plant_CoverLeaf1#521@-19_4", "SM_BC_Plant_CoverLeaf1#521@-18_4", "SM_BC_Plant_CoverLeaf1#521@-17_4", "SM_BC_Plant_CoverLeaf2#527@-20_4", "SM_BC_Plant_CoverLeaf2#527@-19_4", "SM_BC_Plant_CoverLeaf2#527@-18_4", "SM_BC_Plant_CoverLeaf2#527@-17_4"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m5-1 (12 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m5-m1"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-20_-1", "SM_BC_Plant_CoverLeaf0#515@-19_-4", "SM_BC_Plant_CoverLeaf0#515@-19_-3", "SM_BC_Plant_CoverLeaf0#515@-19_-2", "SM_BC_Plant_CoverLeaf0#515@-19_-1", "SM_BC_Plant_CoverLeaf0#515@-18_-4", "SM_BC_Plant_CoverLeaf0#515@-18_-3", "SM_BC_Plant_CoverLeaf0#515@-18_-2", "SM_BC_Plant_CoverLeaf0#515@-18_-1", "SM_BC_Plant_CoverLeaf0#515@-17_-4", "SM_BC_Plant_CoverLeaf0#515@-17_-3", "SM_BC_Plant_CoverLeaf0#515@-17_-2", "SM_BC_Plant_CoverLeaf0#515@-17_-1", "SM_BC_Plant_CoverLeaf1#521@-20_-1", "SM_BC_Plant_CoverLeaf1#521@-19_-4", "SM_BC_Plant_CoverLeaf1#521@-19_-3", "SM_BC_Plant_CoverLeaf1#521@-19_-2", "SM_BC_Plant_CoverLeaf1#521@-19_-1", "SM_BC_Plant_CoverLeaf1#521@-18_-4", "SM_BC_Plant_CoverLeaf1#521@-18_-3", "SM_BC_Plant_CoverLeaf1#521@-18_-2", "SM_BC_Plant_CoverLeaf1#521@-18_-1", "SM_BC_Plant_CoverLeaf1#521@-17_-4", "SM_BC_Plant_CoverLeaf1#521@-17_-3", "SM_BC_Plant_CoverLeaf1#521@-17_-2", "SM_BC_Plant_CoverLeaf1#521@-17_-1", "SM_BC_Plant_CoverLeaf2#527@-20_-1", "SM_BC_Plant_CoverLeaf2#527@-19_-4", "SM_BC_Plant_CoverLeaf2#527@-19_-3", "SM_BC_Plant_CoverLeaf2#527@-19_-2", "SM_BC_Plant_CoverLeaf2#527@-19_-1", "SM_BC_Plant_CoverLeaf2#527@-18_-4", "SM_BC_Plant_CoverLeaf2#527@-18_-3", "SM_BC_Plant_CoverLeaf2#527@-18_-2", "SM_BC_Plant_CoverLeaf2#527@-18_-1", "SM_BC_Plant_CoverLeaf2#527@-17_-4", "SM_BC_Plant_CoverLeaf2#527@-17_-3", "SM_BC_Plant_CoverLeaf2#527@-17_-2", "SM_BC_Plant_CoverLeaf2#527@-17_-1"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m5-m1 (39 groups)"
+
+[[objects]]
+id = "object/brinecove/plant-cover-leaf-m5-m2"
+groups = ["SM_BC_Plant_CoverLeaf0#515@-18_-7", "SM_BC_Plant_CoverLeaf0#515@-18_-6", "SM_BC_Plant_CoverLeaf0#515@-18_-5", "SM_BC_Plant_CoverLeaf0#515@-17_-7", "SM_BC_Plant_CoverLeaf0#515@-17_-6", "SM_BC_Plant_CoverLeaf0#515@-17_-5", "SM_BC_Plant_CoverLeaf1#521@-19_-5", "SM_BC_Plant_CoverLeaf1#521@-18_-7", "SM_BC_Plant_CoverLeaf1#521@-18_-6", "SM_BC_Plant_CoverLeaf1#521@-18_-5", "SM_BC_Plant_CoverLeaf1#521@-17_-7", "SM_BC_Plant_CoverLeaf1#521@-17_-6", "SM_BC_Plant_CoverLeaf1#521@-17_-5", "SM_BC_Plant_CoverLeaf2#527@-19_-5", "SM_BC_Plant_CoverLeaf2#527@-18_-7", "SM_BC_Plant_CoverLeaf2#527@-18_-6", "SM_BC_Plant_CoverLeaf2#527@-18_-5", "SM_BC_Plant_CoverLeaf2#527@-17_-7", "SM_BC_Plant_CoverLeaf2#527@-17_-6", "SM_BC_Plant_CoverLeaf2#527@-17_-5"]
+model = "adopted/brinecove/plant-cover-leaf"
+about = "Brine Cove plant-cover-leaf-m5-m2 (20 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-emergent"

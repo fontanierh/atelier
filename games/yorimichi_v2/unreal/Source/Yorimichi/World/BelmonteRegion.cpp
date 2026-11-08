@@ -207,7 +207,17 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
                 Placement.AddToTranslation(Region->GetActorLocation());
                 Instances.Add(Placement);
             }
-        else Instances = SceneryTransforms(Data, Entry, Outside);
+        else
+        {
+            Instances = SceneryTransforms(Data, Entry, Outside);
+            // A cell piece saved for this group draws its cell's instances (V2MigrationTowns::CellOf); the rest stay here.
+            if (Manifest) Instances.RemoveAll([&](const FTransform& T)
+            {
+                int32 CellX = 0, CellY = 0;
+                V2MigrationTowns::CellOf(Origin, T, CellX, CellY);
+                return Manifest->CoversGroup(Tag, V2MigrationTowns::PieceKey(Key, CellX, CellY));
+            });
+        }
         Group->AddInstances(Instances, false, false, false);
         Group->BuildTreeIfOutdated(true, true);
         Group->bAutoRebuildTreeOnInstanceChanges = true;
