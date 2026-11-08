@@ -7,6 +7,7 @@
 #include "SkateComponent.h"
 #include "BikeComponent.h"
 #include "HorseComponent.h"
+#include "SailboatComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
 #include "PlayableCharacter.h"
@@ -200,6 +201,15 @@ static bool GFilmHud = false;
 void UYorimichiLive::FilmHud(bool bOn) { GFilmHud = bOn; }
 bool UYorimichiLive::IsFilmHud() { return GFilmHud; }
 FString UYorimichiLive::SkateLoops() { USkateComponent* S = PlayerSkate(); return S ? S->GetLoopState() : FString(); }
+FString UYorimichiLive::SailState()
+{
+    const AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const USailboatComponent* S = P ? P->GetSailboat() : nullptr;
+    if (!S) return TEXT("no sailboat");
+    const FVector A = P->GetActorLocation();
+    return FString::Printf(TEXT("equipped=%d speed=%.0f sail=%.2f steer=%.2f depth=%.0f ground=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f"),
+        S->IsEquipped() ? 1 : 0, S->GetSpeed(), S->GetSailAmount(), S->GetSteering(), S->GetWaterDepth(),
+        P->GetCharacterMovement()->IsMovingOnGround() ? 1 : 0, *S->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw);
+}
 FString UYorimichiLive::BikeLoops()
 {
     const AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UBikeComponent* B = P ? P->GetBike() : nullptr;

@@ -57,6 +57,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeState();
     /** The skate loops now: "volume pitch" for roll, grind, slide, skid and scrape. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateLoops();
+    /** The sailboat as text, BikeState's way: equipped, speed, sail, steering, water depth (cm, negative off the sea),
+     *  hint and the rider's placement. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString SailState();
     /** The bike's loops, "volume pitch" each (UBikeComponent::GetLoopState). */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeLoops();
     /** Filming the skating: the HUD keeps only the trick line and the balance needle. */
