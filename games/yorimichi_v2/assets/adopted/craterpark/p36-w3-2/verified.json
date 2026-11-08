@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/craterpark/p36-w3-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_22_22.uasset": "56eeee9c5d117f53ab01fe6846afa23bff481651f7ad37960c105c52432aa319",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_23_21.uasset": "10f0230062dcee006f59b6f3c34f5562e408394ee73144d06d19d9b91841ff10",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_23_22.uasset": "9bb6f413ede945a88532a40dc1ea2116e9fd455a649c2f21e0749ae1c0aaf0ce",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_24_22.uasset": "ca286c6927195cb8b309edc22c59c367c9c76d1fcf2ad0ff8cccc588175a1e46",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_23_22.uasset": "91586799563e0a3c76d242e328e5df26d9f40ecc67766720309eebfb922180b6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

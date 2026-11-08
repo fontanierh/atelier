@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/p50-t-approach",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_25_14.uasset": "26ffffa27b85f05039db03858d7de812fdd20ffcc824f0ac9c315165e6029e01"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: /Game/CraterPark/Cloud
+# Ownership unit: Crater Park lenticular cap cloud materials (cloud.py shells, ACraterCloud)
 schema = 1
 id = "adopted/craterpark/cloud"
 kind = "adopted"
@@ -7,6 +7,19 @@ authority = "editor"
 owner = "shared/craterpark/cloud"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/unreal/Scripts/crater_cloud_material.py"
+sha256 = "df185a65618a245cd2f5dd29ad2edaf87c7ebfc51b897cb249ede367ece106ec"
+
+[[sources]]
+path = "source/world/regions/craterpark/cloud.py"
+sha256 = "05436e83902c60df472f31bf5b4b108bbdbd25942d2241726eac5d161187dd56"
+
+[[sources]]
+path = "source/world/regions/craterpark/cloud_build.py"
+sha256 = "9f7dc2743a5eaa0c672492545b897064234adca6fb45f01b86cdf7149a287d62"
 
 [[outputs]]
 package = "/Game/CraterPark/Cloud/M_CraterCloud"

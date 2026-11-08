@@ -1,0 +1,76 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park collision pieces of the z-ordered sections that no single feature fills (under 95 % of their triangles from one feature); the ownership ledger lists their features
+schema = 1
+id = "adopted/craterpark/collision-mixed"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/collision-mixed"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_0_Piece000"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_0_Piece001"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_0_Piece002"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_0_Piece003"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_1_Piece000"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_1_Piece001"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_1_Piece004"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_1_Piece005"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_1_Piece006"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_2_Piece000"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_2_Piece001"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_2_Piece002"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_2_Piece003"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_2_Piece004"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_2_Piece005"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_2_Piece006"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_3_Piece000"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_3_Piece001"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_3_Piece002"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_3_Piece003"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_3_Piece004"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/UC_CP_original_3_Piece005"

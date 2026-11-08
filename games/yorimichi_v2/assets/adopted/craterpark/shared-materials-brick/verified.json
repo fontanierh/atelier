@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/craterpark/shared-materials-brick",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_009.uasset": "47bfc2be804b0c1e9612db1e1f5afcbc2a1744042ee629bc6a8728c0536f921f",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_012.uasset": "aa9b48ba3f7e3fb224f736111ba7db7bbd398f1067b68fa7da09da5f31e5c5af",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_018.uasset": "9eb8e92a75d0f1bf15339b2e28e88dbeee8114ef7fe2998a550d3aaf05392076",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_033.uasset": "befe78187323a873cec916616a151b0582105cd1cfd158896326273d0ac80f75"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

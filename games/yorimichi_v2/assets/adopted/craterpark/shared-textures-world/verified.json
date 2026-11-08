@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/craterpark/shared-textures-world",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Textures/T_CP_material_024.uasset": "b96aa520311398853511c0f8fcc7969b813b1044524d02f88cab85eef2d67a00",
+    "unreal/Content/CraterPark/Textures/T_CP_material_025.uasset": "878b38bd3d4c1723552254ec0958943c3f6c6e0ee17e418b4eac5a6611b8a104",
+    "unreal/Content/CraterPark/Textures/T_CP_material_026.uasset": "5f07bebbfb2605d17d4f41de69c38e894dee36d354e8a1872f1811165608cf3c",
+    "unreal/Content/CraterPark/Textures/T_CP_material_027.uasset": "fe46ffb5923f7b8e06dd0d8502d9d41792d783708635aea1a1dee5592d24bbe6",
+    "unreal/Content/CraterPark/Textures/T_CP_material_028.uasset": "4329d4e9e6c0c0d8a67bf4cd1fa5dbfcf8e10e8952b42e95d6f60252b6fdcfd0",
+    "unreal/Content/CraterPark/Textures/T_CP_material_029.uasset": "0bc9e8c4f8eaeeb1bc32d696e82e852c79db1b44083181b77100781539ba5e7e",
+    "unreal/Content/CraterPark/Textures/T_CP_material_045.uasset": "54b7bd5b65d64a92fed9d431d6b46bebead24ce6017a22e962fd1f1b56a6cf6a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

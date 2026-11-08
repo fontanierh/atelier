@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/craterpark/shared-materials-wood",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_011.uasset": "01a0321603c88d19ea5336f1190d5c6033180823b030b307eb774c8f7e1eb629",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_016.uasset": "24230e6dde7e7e4e48b48162e4f0e25bcccd044d66dce0cd4ca74a0711910c1f",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_030.uasset": "bf3b638177a4f09ae28b228fe308947fa4299d20bf012f6b6dd661532b7bfb23",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_032.uasset": "5c861496666e222d1fab7a4e2963918e90151bb1a9166dda3130dece47919686"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

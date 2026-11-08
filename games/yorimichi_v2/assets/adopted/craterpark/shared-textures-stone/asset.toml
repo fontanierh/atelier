@@ -1,0 +1,55 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family stone
+schema = 1
+id = "adopted/craterpark/shared-textures-stone"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-stone"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/bowl.jpg"
+sha256 = "03e7aec97b095f46c82f8076579ebe8c5869b3ab276dc896c4294234f3196e92"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/bowl.json"
+sha256 = "6299c77a70fe96d567a4f3b57f1e80a1048f278149e5ff614fb042db5921c28e"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/masonite.jpg"
+sha256 = "f8e603fed325f7c95408bd751987a3c396e62e49bf0d99871190896692272194"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/masonite.json"
+sha256 = "3597d3ea2ae5b8afbf9677a7de0d3fa1fbeb95b74bcccec0772c1362706f1846"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/retaining_wall.jpg"
+sha256 = "b0a04021b57ba8ee6b7d0c65155a5bb9a3e4c2290dfd6a442bf24a60d3a236dc"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/retaining_wall.json"
+sha256 = "679784b23425a3507cc638ea1fda2755b6e181fe74d2f2719dca8b07fe9befd3"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0004.png"
+sha256 = "d3d9fae2597ed9c45a0d9bd062d257a3945d8c7c32c022f58a5cc3732d90e4dd"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0024.png"
+sha256 = "ea303f3234f9203d371007e44c5f5ab5f5faf2f113d6b389fc87131bdebc94e2"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0031.png"
+sha256 = "4836ac390a6a610da73893a325357c2d01706c7fbef7b8b03f824c6d168f80c4"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_bowl"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_flagstone"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_retaining_wall"

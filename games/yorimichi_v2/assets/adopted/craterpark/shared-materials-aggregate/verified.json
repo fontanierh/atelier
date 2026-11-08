@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/shared-materials-aggregate",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_015.uasset": "055a6c32e487102ab9d1d1e9fd4cf0e63c5bc6892d7485542094e5c218733750"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/p53-s",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_24_13.uasset": "38dbb78e5c47df8e38238592b05a5841f86a05809ff793292d9f766a7792c4d3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

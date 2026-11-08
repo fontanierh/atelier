@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/craterpark/p307-vert-drop-bend-right",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_15_16.uasset": "d134daa22df9d36f9b449d6a78423a233ca2edfb60eed667f66fb68a85681819",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_15_16.uasset": "b2850a838b75125d1ac244753e1c1074172250d5f4fe28001054da9be127748f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

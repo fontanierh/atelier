@@ -1,0 +1,17 @@
+{
+  "asset": "adopted/craterpark/p320-step-down-18-m-sd",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_17_22.uasset": "1062bafacc56f00d6e5b3b0c3204c1228f24421bb4971b04e42117b6c3b82efc",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_17_23.uasset": "74fec567e7a15ffa01c0dd6a7b75211432a23ba8349a175a69fc1ffa4147133c",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_18_22.uasset": "cca74e06df4d9f95485adc32306530625c1ff02743b1bf0ebae52865c78edf1a",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_17_22.uasset": "3e6deb9db4326b9df59e38f64f14cf7e6c75bf9857b9597c55e4e1cc0248ca8e",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_17_23.uasset": "a5f700f64edb02931e61733b5eeb05c81e1c0d04f4bf5cdd23596b48d4e773ac",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_18_22.uasset": "0bcd174b4c655fd6a9893502447e58494237db2e6ae30a7a2038c5720317326d",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_17_22.uasset": "75230ed66c48a0dc7cc9f36d1d527e23ec9a5e9e77847b85c72f80532f9fc982",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_18_22.uasset": "9a9ab46fc3bf152337fc5dac0b81132c2228d236a43b005e3159974a6997dd1c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

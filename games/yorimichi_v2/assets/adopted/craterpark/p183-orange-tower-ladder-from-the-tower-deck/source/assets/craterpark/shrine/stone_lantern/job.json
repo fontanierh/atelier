@@ -1,0 +1,29 @@
+{
+  "stage": "craterpark_shrine",
+  "slug": "stone_lantern",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 8000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "80ab1a91b3ef746930d05aac79908dee770bc79d0c69354614d80eec0c6f343d",
+  "concept_sha256": "80ab1a91b3ef746930d05aac79908dee770bc79d0c69354614d80eec0c6f343d",
+  "submitted_at": "2026-10-16T09:57:59.834934+00:00",
+  "task_id": "019e31af-5de5-4a07-b91f-2b8a4ee68002",
+  "status": "submitted",
+  "user_approval": "project owner, 2026-10-16: picked tower-top concept C (shrine balcony) and asked for the remaining Tripo credits to be used for it",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-16T10:00:18.701043+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

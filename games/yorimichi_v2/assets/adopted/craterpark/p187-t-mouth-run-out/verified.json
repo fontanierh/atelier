@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/p187-t-mouth-run-out",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_24_13.uasset": "f25af744b76203d39644553af1dec589cb9f49195f87f77373d59982b0566cf2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

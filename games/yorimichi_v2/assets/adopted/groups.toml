@@ -55,3 +55,12 @@ map = "brinecove/units.json"
 [[units]]
 folder = "/Game/Belmonte"
 map = "belmonte/units.json"
+
+# Crater Park (audit A3): a committed map (written by tools/migrate/craterpark_units.py from the shipped park design
+# and the generator's per-face feature names, kept in craterpark_ownership.json) makes each park piece one unit with
+# its supports and copings, the crater floor 4 x 4 tile areas, shared surfaces by family, and materials-base the
+# generator every unit references. Collision the generator slices across pieces stays in collision-mixed (open gap:
+# per-feature collision needs the generator to emit it per piece).
+[[units]]
+folder = "/Game/CraterPark"
+map = "craterpark/units.json"

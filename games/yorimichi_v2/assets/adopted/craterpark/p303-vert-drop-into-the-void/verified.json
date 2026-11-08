@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/craterpark/p303-vert-drop-into-the-void",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_13_15.uasset": "33c85760d809b2a334e6270ae05027c3e5435f68d89ce77a773b0127d12d1b7e",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_14_16.uasset": "e11cf19f943cdf6fa188473a8eec6c6eb79a3abfd7565581b66c74303d696c8c",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_14_17.uasset": "3a7a6dc4152d944a4c48b50b142edfad16527bd2352d9e01e582c0b918a0c4ef",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_13_15.uasset": "5236674916b09a4ff6c11c822e6c857bd6e669ccffa6ca556431bb2241256405",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_14_17.uasset": "5cdf493aa84a425d6c6580cec9606a0184bcb2ef9b29b07527721b26169405dd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

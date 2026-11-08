@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/craterpark/p321-sd-out-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_18_23.uasset": "4371a0f3348ce60e14bfcf793992537dac8af7fbcd0c7822e383c372d4697251",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_18_23.uasset": "9ec73ccfbb6709e84f3541f6e3fd8e8a479d8b0f4dcd84e5f047f5d3abf12023",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_18_23.uasset": "53bb1ca59d1ace483d98c3d6f1dfc27e22b9e3076dc98757dbefc6469059703b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

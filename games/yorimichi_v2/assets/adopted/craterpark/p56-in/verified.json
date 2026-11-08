@@ -1,0 +1,14 @@
+{
+  "asset": "adopted/craterpark/p56-in",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_21_14.uasset": "ed9922bfeed79db92a37f0daf16fd2ab147b56867a219ca5dd446f2d6828e30b",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_21_13.uasset": "a99bff690ee4b1de7d581a5214f8ac9faf048aa8c36159b782b52bb437b7ec0e",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_21_14.uasset": "b5443b89ba401caf48b0c2fdabfc4127f3805685e15b1f2be91f3412e1af395f",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_21_13.uasset": "80afcef1449c490236c0c79be59ddb67508389c08f71474b1b94a46a3bb505b2",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_21_14.uasset": "67b87bd5ce773f2c0f2fab2df06b9c166bb0b5b742d7f4f27ef6e1e8502fc11f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

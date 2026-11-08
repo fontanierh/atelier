@@ -1,0 +1,39 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 shows the art direction of a stylised game: soft painterly shapes, flat matte colour. Paint a seamless tileable texture in that style, seen from directly above, perfectly flat and straight-on, filling the square edge to edge: no perspective, no horizon, no object outline, no shadows or lighting gradient, even brightness everywhere, no text, repeating seamlessly on all four sides. Hand-painted like the background art of a Japanese animated film, soft strokes, medium detail that holds up when repeated over a large area, no photographic grime or noise. The surface: the smooth outer side panel (fascia) of a big wooden skate ramp, as the ramp sides in Image 1: large smooth sheets of warm dark-stained plywood in a deep chestnut brown, two tall panels side by side with one thin vertical joint, a narrow slightly darker band along the top edge, soft broad painterly tonal variation, almost no grain; no boards, no planks, no stripes, no nails.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/style-ramps.png": "19f9f9ebf8cc7eba0b09549fb3cf133463451b340e207db49b33b574682376d6"
+  },
+  "texture": "textures/ramp_fascia.png",
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "df4c73a413a3801faf4a8b389f4c48c3a5cdf228842f86f99565b8b7ebd0b75c",
+  "status": "done",
+  "started_at": "2026-10-15T16:45:43.309079+00:00",
+  "output": "ramp_fascia.png",
+  "output_sha256": "5242edf12815ae606d54a8569c609071bce1730f87d5ac56efad0afa4115a63c",
+  "usage": {
+    "input_tokens": 744,
+    "input_tokens_details": {
+      "image_tokens": 525,
+      "text_tokens": 219
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 2500
+  },
+  "elapsed_seconds": 56.0,
+  "finished_at": "2026-10-15T16:46:39.299155+00:00",
+  "compact": {
+    "file": "ramp_fascia.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

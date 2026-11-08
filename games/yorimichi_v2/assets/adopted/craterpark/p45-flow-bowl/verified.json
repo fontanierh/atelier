@@ -1,0 +1,32 @@
+{
+  "asset": "adopted/craterpark/p45-flow-bowl",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_23_14.uasset": "f404e6dbc9d03f8085197f47169bbbc5f90bf20d0274906fc8bae204e32955cb",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_24_14.uasset": "14fd61793461d2c7a1e85fe8f41cf6076ee450dbc175d9aee9c8090e33ffffc9",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_25_16.uasset": "56bacde0ecdc73c8e8f6933756d8e90ce41fcac2b511b7227c65125cea250b94",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_coping_steel_25_17.uasset": "4e23231c786d5f96f1acd7c515d2b34f5dced426c175d5c55c94f6c765ab7df1",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_material_053_23_14.uasset": "cf0122712299ef24e719e0502aadab20b2d78783327290126eb6fc0eaaa342c6",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_material_053_23_16.uasset": "e5ed31372a60964faf585491215057036dd6d99e8878267ec54321cd724c520a",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_material_053_24_14.uasset": "3e03711f29ad85b282bd5d9f6a7db81ea96f6393cb4a8e4c6405f5daedcad352",
+    "unreal/Content/CraterPark/Meshes/SM_CP_coping_material_053_24_16.uasset": "510747cb26001985932b4deeafacf682894bffd3bd66e62af7206a085ad9e7e7",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_23_16.uasset": "e3c109c280d57c2261d3705c83d7f4630d3c237882d72a32cbaceaaced44c0f6",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_24_15.uasset": "ad136b460b5e1c97cabc2b05d5cbe08073451274d8470ccccb16b7b5bfc29862",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_24_16.uasset": "52f07cb289e23748789304fe49e2d8b77ffe62534b6a2c3ca32f442b22c6676d",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_23_16.uasset": "60d47fb2eac376e15eb719d00e39fd8cb0fe6c2bb811050848847bf32ecde862",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_24_16.uasset": "e99b22eccccf27ced21ee265b59e36c49a5c017b3d32b95470003296477cb140",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_050_23_15.uasset": "1034ae219a59fd2050b0a1fb501275c1560311ebaf8d9aedd2f3342d5d9f2392",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_050_23_16.uasset": "c052af231eb5a34bae5fc2c06c8e8b762f3358f95be2e2f812c55a19d6ac4f33",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_050_24_15.uasset": "c5e4dce2fbcf74ca72078329188eae0a74353646d55d8ddb425eb1e91828dbb5",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_050_24_16.uasset": "257dc09f6970c622a6478f05ec0219b0114298091c89ee13478db567a282748d",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_051_23_15.uasset": "db3d776b73b5b3cb0be042443864e40643c9abff449d76b557c0ef669f7a635a",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_051_23_16.uasset": "08b7e47d284b6fc77cd421075960ab0c6fe88a39ff0889833b7457a7f45bd776",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_051_24_15.uasset": "eee2c66d36f9e210299dad7b27a790aeb808807280d3b35f3b9826635817459d",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_051_24_16.uasset": "717f80635a89e28c35c10424f1f34740f41a2e78c9269cf48082f5a3cb98d5be",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_052_24_15.uasset": "a27ef43423ecd3b8ed563d762fda8f70f61aaf245bb4274eda6cd0095bdec386",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_053_24_15.uasset": "85dc7d7dc1d1615c616ce17ec19203d73de0421d710e9bb4b89dabc93c81a059"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

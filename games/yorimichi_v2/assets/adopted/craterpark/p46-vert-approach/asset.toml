@@ -1,0 +1,16 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park run "vert approach" (piece p46, line L1): its render meshes (with its supports and coping), the collision pieces it fills, and the material instances and textures only it uses
+schema = 1
+id = "adopted/craterpark/p46-vert-approach"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/p46-vert-approach"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_23_15"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_23_15"

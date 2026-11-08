@@ -1,0 +1,21 @@
+{
+  "asset": "adopted/craterpark/p43-turn-t1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_24_15.uasset": "a4260b17c910289355bee342ed5fcd9415b127d956167000e0db87122a31df50",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_25_15.uasset": "21cd01cc99b61400f1cff937be2b40eb9cfea3fb8d3e218f308d23e186c5cc60",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_26_16.uasset": "5728c6796fe2b2db64212c50e023c204a3cbfb4d62da434f64c50db7943a14b6",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_25_15.uasset": "6c501b6c7d4a60f0250416aad5460e38868e1bdd2ab09899b63d6fce0d786a39",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_25_16.uasset": "a26a2b707ccd608a4b7024c6daf49476d0078166a74a68fbd0d5554b1f344f29",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_26_15.uasset": "71744d1e8cbbe40770358dc515c5dcdc8a8ec5a63abc442bcf9dea2ca268b8c5",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_26_16.uasset": "814b94591d89a2a0981dddf32ee9d0c8b881d9aa3e05dcc0b848b34e1a782c38",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_24_15.uasset": "137da7cf1c72fd34a03d4b124c822c68e64c1885abb54ac2060f8e0cdb697bc5",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_25_15.uasset": "55fc96dd1fbcbba047030585d50eb36057c962f6c328e1fb43f5570588a76d34",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_25_16.uasset": "1a8638e6ef486cd84a61805d94165e71a000d5efa4e0bf341864e709619a0413",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_26_15.uasset": "5e35ba3f3354dad4d2cbcf522492ea270c5e1cb2c5d9e07aa3166fce159d971e",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_26_16.uasset": "2ae6fd77f2e3d46723f2d4c3c613d843888461b079764222e110e0f59e3830a9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

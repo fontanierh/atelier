@@ -1,0 +1,15 @@
+{
+  "asset": "adopted/craterpark/p310-mega-air-kicker",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_15_14.uasset": "9d9a6505eb989af1a2bcbb219023dec5135e991d84ee8f1d2716d21883409d58",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_15_13.uasset": "9fbec1db9c96a6da2e72acc08bca93b3b3076475ea8d07cac37d0aa084b22a6c",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_15_14.uasset": "3cdba75ee33f2c41ad8d0655ad356a82515c741e06f6faaeeff19e40dc0013ce",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_039_15_14.uasset": "97ab70287e0d12202c5d8708be4264d352f5f50a2c4b798cd0f6bb6cb9cc7705",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_15_13.uasset": "12b766ab949824d192ec4c86339a38089a17cb9f3c3a41c0e2719f762065626c",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_15_14.uasset": "c9c8b81e1dd8a967f8f404da5358134d745e2f0c5db15ccee3c1634e71c92cce"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

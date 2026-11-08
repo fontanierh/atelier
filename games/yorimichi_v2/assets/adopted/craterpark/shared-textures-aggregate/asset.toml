@@ -1,0 +1,25 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family aggregate
+schema = 1
+id = "adopted/craterpark/shared-textures-aggregate"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-aggregate"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/aggregate.jpg"
+sha256 = "248c15c2976c3e2390b8872fc055cbcbb8696c49721b77ac1139d9df0f519964"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/aggregate.json"
+sha256 = "b90aa24029750dc8e61c14d8fe609857fc228aff5ccd13ec491da6af153b504b"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0074.png"
+sha256 = "b1855d13f9b71b28bbfd2264fe0dbf91b4bce6e95879d2d3c68784cfa7846785"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_aggregate"

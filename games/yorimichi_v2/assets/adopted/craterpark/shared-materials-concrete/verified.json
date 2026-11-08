@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/craterpark/shared-materials-concrete",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_000.uasset": "cbfb05051404c6358fc85dd9ec8b466791f11440bacac9410c1343176f3e2fbd",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_002.uasset": "2d2af8a6dc3198a5f54b359507db65250721ce57093ad392f74d5f20e48ad7f6",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_005.uasset": "32e3b1c8bab3d63b01640798d55fe2ddf1fb253ee94b53957585c0cb818684b8",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_006.uasset": "b7176212f014ea550d02916d1eb12c7b3a7cf0e8fc29940232ad78c3e61aba5c",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_019.uasset": "236a92b71bbc92426045a7c553675db13bd079d3f261ab0c614d4fe9e08a36e7",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_020.uasset": "728626e56ef9036f6100537fc63d6f63e21de1bbf81570c5411d86fffc92e8b8",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_022.uasset": "9b6103aa6b233a117a486b21e7d62a34799a616fdef965dc3b75bb24949feb65"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

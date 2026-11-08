@@ -1,0 +1,16 @@
+{
+  "asset": "adopted/craterpark/shared-materials-world",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_024.uasset": "23e99e1ffdc8cfb57512b3791b4348f414c187be940b1a01c92026f613b66041",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_025.uasset": "790b637dc1ef4b5d7ae9d905b2986ebf3d7320a6518c6097c3d1e54b3e8865b4",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_026.uasset": "1d56624450aef97c61c7c15636608341eaa949ecf77f7bf25902fd7f9b2e0f17",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_027.uasset": "243a0732dc046810c9c9c097bc9248e33bb9339041b46d9b29ed1d3507079e04",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_028.uasset": "6f1f5051c0e4f20640f1a05cf5cc573a6fc45d6683637c2f27193569af989f90",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_029.uasset": "20b41add8fa14e9a53c7fe93408f0ee2078d983887871b665976e1718569b666",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_045.uasset": "c596370d8eb4d270a8db35b99001df2098c811ffe31340fc78010e7400cede8c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/craterpark/shared-materials-ceramic",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_007.uasset": "ddb6e16da5e167a76d85629b0ea611ca4898c4a4349c733d7e285506c6ec035c",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_013.uasset": "1e8eaed5c5468b14f6e37429532ec3604179423fa377e7824dba4dec17b7c035",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_014.uasset": "7fce2757591beafdbc870eda460f335bd3f57682b83504ec62775b72a26066ad",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_021.uasset": "4211b7b52e3f4868d6ba4e3c977b70e94596ca1cfd4918517b9d830d3aecb908"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

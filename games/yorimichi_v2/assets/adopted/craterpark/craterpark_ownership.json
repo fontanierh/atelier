@@ -1,0 +1,2326 @@
+{
+ "about": "Crater Park package ownership measured from the generator (craterpark_units.py --measure): render mesh -> owner feature, collision piece -> owner feature or mixed, the materials each owner uses",
+ "shipped_rev": 114,
+ "coping_rides": {
+  "editor_coping_000": "p5",
+  "editor_coping_001": "p5",
+  "editor_coping_002": "p5",
+  "editor_coping_003": "p5",
+  "editor_coping_004": "p8",
+  "editor_coping_005": "p8",
+  "editor_coping_006": "p9",
+  "editor_coping_007": "p9",
+  "editor_coping_008": "p30",
+  "editor_coping_009": "p30",
+  "editor_coping_010": "p31",
+  "editor_coping_011": "p31",
+  "editor_coping_012": "p36",
+  "editor_coping_013": "p34",
+  "editor_coping_014": "p37",
+  "editor_coping_015": "p37",
+  "editor_coping_016": "p41",
+  "editor_coping_017": "p39",
+  "editor_coping_018": "p45",
+  "editor_coping_019": "p51",
+  "editor_coping_020": "p55",
+  "editor_coping_021": "p55",
+  "editor_coping_022": "p303",
+  "editor_coping_023": "p303",
+  "editor_coping_024": "p308",
+  "editor_coping_025": "p309",
+  "editor_coping_026": "p311",
+  "editor_coping_027": "p311"
+ },
+ "render": {
+  "SM_CP_coping_coping_steel_12_14": "p308",
+  "SM_CP_coping_coping_steel_12_15": "p308",
+  "SM_CP_coping_coping_steel_13_13": "p308",
+  "SM_CP_coping_coping_steel_13_14": "p308",
+  "SM_CP_coping_coping_steel_13_15": "p303",
+  "SM_CP_coping_coping_steel_13_16": "p8",
+  "SM_CP_coping_coping_steel_13_17": "p8",
+  "SM_CP_coping_coping_steel_13_18": "p8",
+  "SM_CP_coping_coping_steel_14_13": "p308",
+  "SM_CP_coping_coping_steel_14_14": "p309",
+  "SM_CP_coping_coping_steel_14_15": "p309",
+  "SM_CP_coping_coping_steel_14_16": "p303",
+  "SM_CP_coping_coping_steel_14_17": "p8",
+  "SM_CP_coping_coping_steel_14_18": "p8",
+  "SM_CP_coping_coping_steel_14_19": "p9",
+  "SM_CP_coping_coping_steel_14_20": "p9",
+  "SM_CP_coping_coping_steel_15_13": "p308",
+  "SM_CP_coping_coping_steel_15_14": "p309",
+  "SM_CP_coping_coping_steel_15_15": "p309",
+  "SM_CP_coping_coping_steel_15_16": "p308",
+  "SM_CP_coping_coping_steel_15_19": "p9",
+  "SM_CP_coping_coping_steel_15_20": "p9",
+  "SM_CP_coping_coping_steel_15_21": "p9",
+  "SM_CP_coping_coping_steel_15_22": "p9",
+  "SM_CP_coping_coping_steel_16_13": "p311",
+  "SM_CP_coping_coping_steel_16_14": "p311",
+  "SM_CP_coping_coping_steel_16_16": "p308",
+  "SM_CP_coping_coping_steel_16_21": "p9",
+  "SM_CP_coping_coping_steel_16_22": "p9",
+  "SM_CP_coping_coping_steel_17_13": "p311",
+  "SM_CP_coping_coping_steel_17_14": "p311",
+  "SM_CP_coping_coping_steel_17_22": "p9",
+  "SM_CP_coping_coping_steel_18_13": "p311",
+  "SM_CP_coping_coping_steel_18_14": "p311",
+  "SM_CP_coping_coping_steel_18_22": "p30",
+  "SM_CP_coping_coping_steel_18_23": "p30",
+  "SM_CP_coping_coping_steel_19_13": "p311",
+  "SM_CP_coping_coping_steel_19_14": "p311",
+  "SM_CP_coping_coping_steel_19_22": "p30",
+  "SM_CP_coping_coping_steel_19_23": "p30",
+  "SM_CP_coping_coping_steel_20_22": "p31",
+  "SM_CP_coping_coping_steel_20_23": "p31",
+  "SM_CP_coping_coping_steel_21_13": "p55",
+  "SM_CP_coping_coping_steel_21_14": "p55",
+  "SM_CP_coping_coping_steel_21_22": "p31",
+  "SM_CP_coping_coping_steel_21_23": "p31",
+  "SM_CP_coping_coping_steel_22_13": "p55",
+  "SM_CP_coping_coping_steel_22_14": "p55",
+  "SM_CP_coping_coping_steel_22_22": "p36",
+  "SM_CP_coping_coping_steel_22_23": "p34",
+  "SM_CP_coping_coping_steel_23_13": "p51",
+  "SM_CP_coping_coping_steel_23_14": "p45",
+  "SM_CP_coping_coping_steel_23_15": "p51",
+  "SM_CP_coping_coping_steel_23_21": "p36",
+  "SM_CP_coping_coping_steel_23_22": "p34",
+  "SM_CP_coping_coping_steel_24_13": "p51",
+  "SM_CP_coping_coping_steel_24_14": "p45",
+  "SM_CP_coping_coping_steel_24_15": "p51",
+  "SM_CP_coping_coping_steel_24_21": "p37",
+  "SM_CP_coping_coping_steel_24_22": "p34",
+  "SM_CP_coping_coping_steel_25_14": "p51",
+  "SM_CP_coping_coping_steel_25_15": "p51",
+  "SM_CP_coping_coping_steel_25_16": "p45",
+  "SM_CP_coping_coping_steel_25_17": "p45",
+  "SM_CP_coping_coping_steel_25_18": "p41",
+  "SM_CP_coping_coping_steel_25_19": "p41",
+  "SM_CP_coping_coping_steel_25_20": "p37",
+  "SM_CP_coping_coping_steel_25_21": "p37",
+  "SM_CP_coping_coping_steel_26_15": "p51",
+  "SM_CP_coping_coping_steel_26_16": "p51",
+  "SM_CP_coping_coping_steel_26_17": "p51",
+  "SM_CP_coping_coping_steel_26_18": "p39",
+  "SM_CP_coping_coping_steel_26_19": "p39",
+  "SM_CP_coping_coping_steel_26_20": "p39",
+  "SM_CP_coping_material_034_14_17": "crater_floor",
+  "SM_CP_coping_material_034_14_18": "crater_floor",
+  "SM_CP_coping_material_034_15_12": "crater_floor",
+  "SM_CP_coping_material_034_15_13": "crater_floor",
+  "SM_CP_coping_material_034_15_14": "crater_floor",
+  "SM_CP_coping_material_034_15_16": "crater_floor",
+  "SM_CP_coping_material_034_15_17": "crater_floor",
+  "SM_CP_coping_material_034_15_18": "crater_floor",
+  "SM_CP_coping_material_034_15_19": "crater_floor",
+  "SM_CP_coping_material_034_16_10": "crater_floor",
+  "SM_CP_coping_material_034_16_11": "crater_floor",
+  "SM_CP_coping_material_034_16_12": "crater_floor",
+  "SM_CP_coping_material_034_16_13": "crater_floor",
+  "SM_CP_coping_material_034_16_14": "crater_floor",
+  "SM_CP_coping_material_034_16_15": "crater_floor",
+  "SM_CP_coping_material_034_16_16": "crater_floor",
+  "SM_CP_coping_material_034_16_17": "crater_floor",
+  "SM_CP_coping_material_034_16_18": "crater_floor",
+  "SM_CP_coping_material_034_16_19": "crater_floor",
+  "SM_CP_coping_material_034_16_20": "crater_floor",
+  "SM_CP_coping_material_034_17_10": "crater_floor",
+  "SM_CP_coping_material_034_17_11": "crater_floor",
+  "SM_CP_coping_material_034_17_12": "crater_floor",
+  "SM_CP_coping_material_034_17_13": "crater_floor",
+  "SM_CP_coping_material_034_17_14": "crater_floor",
+  "SM_CP_coping_material_034_17_15": "crater_floor",
+  "SM_CP_coping_material_034_17_16": "crater_floor",
+  "SM_CP_coping_material_034_17_17": "crater_floor",
+  "SM_CP_coping_material_034_17_19": "crater_floor",
+  "SM_CP_coping_material_034_17_20": "crater_floor",
+  "SM_CP_coping_material_034_17_21": "crater_floor",
+  "SM_CP_coping_material_034_18_10": "crater_floor",
+  "SM_CP_coping_material_034_18_11": "crater_floor",
+  "SM_CP_coping_material_034_18_12": "crater_floor",
+  "SM_CP_coping_material_034_18_13": "crater_floor",
+  "SM_CP_coping_material_034_18_15": "crater_floor",
+  "SM_CP_coping_material_034_18_16": "crater_floor",
+  "SM_CP_coping_material_034_18_17": "crater_floor",
+  "SM_CP_coping_material_034_18_18": "crater_floor",
+  "SM_CP_coping_material_034_18_19": "crater_floor",
+  "SM_CP_coping_material_034_18_20": "crater_floor",
+  "SM_CP_coping_material_034_18_21": "crater_floor",
+  "SM_CP_coping_material_034_19_10": "crater_floor",
+  "SM_CP_coping_material_034_19_11": "crater_floor",
+  "SM_CP_coping_material_034_19_12": "crater_floor",
+  "SM_CP_coping_material_034_19_13": "crater_floor",
+  "SM_CP_coping_material_034_19_14": "crater_floor",
+  "SM_CP_coping_material_034_19_15": "crater_floor",
+  "SM_CP_coping_material_034_19_16": "crater_floor",
+  "SM_CP_coping_material_034_19_17": "crater_floor",
+  "SM_CP_coping_material_034_19_18": "crater_floor",
+  "SM_CP_coping_material_034_19_20": "crater_floor",
+  "SM_CP_coping_material_034_19_21": "crater_floor",
+  "SM_CP_coping_material_034_19_22": "crater_floor",
+  "SM_CP_coping_material_034_19_9": "crater_floor",
+  "SM_CP_coping_material_034_20_10": "crater_floor",
+  "SM_CP_coping_material_034_20_11": "crater_floor",
+  "SM_CP_coping_material_034_20_12": "crater_floor",
+  "SM_CP_coping_material_034_20_13": "crater_floor",
+  "SM_CP_coping_material_034_20_14": "crater_floor",
+  "SM_CP_coping_material_034_20_19": "crater_floor",
+  "SM_CP_coping_material_034_20_20": "crater_floor",
+  "SM_CP_coping_material_034_20_21": "crater_floor",
+  "SM_CP_coping_material_034_20_22": "crater_floor",
+  "SM_CP_coping_material_034_21_10": "crater_floor",
+  "SM_CP_coping_material_034_21_11": "crater_floor",
+  "SM_CP_coping_material_034_21_17": "crater_floor",
+  "SM_CP_coping_material_034_21_18": "crater_floor",
+  "SM_CP_coping_material_034_21_19": "crater_floor",
+  "SM_CP_coping_material_034_21_20": "crater_floor",
+  "SM_CP_coping_material_034_21_21": "crater_floor",
+  "SM_CP_coping_material_034_21_22": "crater_floor",
+  "SM_CP_coping_material_034_22_10": "crater_floor",
+  "SM_CP_coping_material_034_22_11": "crater_floor",
+  "SM_CP_coping_material_034_22_17": "crater_floor",
+  "SM_CP_coping_material_034_22_18": "crater_floor",
+  "SM_CP_coping_material_034_22_19": "crater_floor",
+  "SM_CP_coping_material_034_22_20": "crater_floor",
+  "SM_CP_coping_material_034_22_21": "crater_floor",
+  "SM_CP_coping_material_034_23_10": "crater_floor",
+  "SM_CP_coping_material_034_23_11": "crater_floor",
+  "SM_CP_coping_material_034_23_12": "crater_floor",
+  "SM_CP_coping_material_034_23_14": "crater_floor",
+  "SM_CP_coping_material_034_23_17": "crater_floor",
+  "SM_CP_coping_material_034_23_18": "crater_floor",
+  "SM_CP_coping_material_034_23_19": "crater_floor",
+  "SM_CP_coping_material_034_23_20": "crater_floor",
+  "SM_CP_coping_material_034_23_21": "crater_floor",
+  "SM_CP_coping_material_034_24_11": "crater_floor",
+  "SM_CP_coping_material_034_24_12": "crater_floor",
+  "SM_CP_coping_material_034_24_13": "crater_floor",
+  "SM_CP_coping_material_034_24_16": "crater_floor",
+  "SM_CP_coping_material_034_24_17": "crater_floor",
+  "SM_CP_coping_material_034_24_18": "crater_floor",
+  "SM_CP_coping_material_034_24_19": "crater_floor",
+  "SM_CP_coping_material_034_24_20": "crater_floor",
+  "SM_CP_coping_material_034_25_12": "crater_floor",
+  "SM_CP_coping_material_034_25_13": "crater_floor",
+  "SM_CP_coping_material_034_25_14": "crater_floor",
+  "SM_CP_coping_material_034_25_15": "crater_floor",
+  "SM_CP_coping_material_034_25_16": "crater_floor",
+  "SM_CP_coping_material_034_25_17": "crater_floor",
+  "SM_CP_coping_material_034_25_18": "crater_floor",
+  "SM_CP_coping_material_034_25_19": "crater_floor",
+  "SM_CP_coping_material_034_25_20": "crater_floor",
+  "SM_CP_coping_material_034_26_14": "crater_floor",
+  "SM_CP_coping_material_034_26_15": "crater_floor",
+  "SM_CP_coping_material_035_15_12": "crater_floor",
+  "SM_CP_coping_material_035_15_13": "crater_floor",
+  "SM_CP_coping_material_035_15_17": "crater_floor",
+  "SM_CP_coping_material_035_15_18": "crater_floor",
+  "SM_CP_coping_material_035_15_19": "crater_floor",
+  "SM_CP_coping_material_035_16_10": "crater_floor",
+  "SM_CP_coping_material_035_16_11": "crater_floor",
+  "SM_CP_coping_material_035_16_12": "crater_floor",
+  "SM_CP_coping_material_035_16_13": "crater_floor",
+  "SM_CP_coping_material_035_16_14": "crater_floor",
+  "SM_CP_coping_material_035_16_15": "crater_floor",
+  "SM_CP_coping_material_035_16_16": "crater_floor",
+  "SM_CP_coping_material_035_16_18": "crater_floor",
+  "SM_CP_coping_material_035_16_19": "crater_floor",
+  "SM_CP_coping_material_035_16_20": "crater_floor",
+  "SM_CP_coping_material_035_16_21": "crater_floor",
+  "SM_CP_coping_material_035_17_11": "crater_floor",
+  "SM_CP_coping_material_035_17_12": "crater_floor",
+  "SM_CP_coping_material_035_17_14": "crater_floor",
+  "SM_CP_coping_material_035_17_16": "crater_floor",
+  "SM_CP_coping_material_035_17_18": "crater_floor",
+  "SM_CP_coping_material_035_17_19": "crater_floor",
+  "SM_CP_coping_material_035_17_20": "crater_floor",
+  "SM_CP_coping_material_035_17_21": "crater_floor",
+  "SM_CP_coping_material_035_17_22": "crater_floor",
+  "SM_CP_coping_material_035_18_10": "crater_floor",
+  "SM_CP_coping_material_035_18_11": "crater_floor",
+  "SM_CP_coping_material_035_18_12": "crater_floor",
+  "SM_CP_coping_material_035_18_13": "crater_floor",
+  "SM_CP_coping_material_035_18_15": "crater_floor",
+  "SM_CP_coping_material_035_18_17": "crater_floor",
+  "SM_CP_coping_material_035_18_18": "crater_floor",
+  "SM_CP_coping_material_035_18_19": "crater_floor",
+  "SM_CP_coping_material_035_18_20": "crater_floor",
+  "SM_CP_coping_material_035_18_21": "crater_floor",
+  "SM_CP_coping_material_035_18_22": "crater_floor",
+  "SM_CP_coping_material_035_18_9": "crater_floor",
+  "SM_CP_coping_material_035_19_10": "crater_floor",
+  "SM_CP_coping_material_035_19_11": "crater_floor",
+  "SM_CP_coping_material_035_19_12": "crater_floor",
+  "SM_CP_coping_material_035_19_14": "crater_floor",
+  "SM_CP_coping_material_035_19_15": "crater_floor",
+  "SM_CP_coping_material_035_19_17": "crater_floor",
+  "SM_CP_coping_material_035_19_18": "crater_floor",
+  "SM_CP_coping_material_035_19_19": "crater_floor",
+  "SM_CP_coping_material_035_19_20": "crater_floor",
+  "SM_CP_coping_material_035_19_21": "crater_floor",
+  "SM_CP_coping_material_035_19_9": "crater_floor",
+  "SM_CP_coping_material_035_20_10": "crater_floor",
+  "SM_CP_coping_material_035_20_12": "crater_floor",
+  "SM_CP_coping_material_035_20_13": "crater_floor",
+  "SM_CP_coping_material_035_20_14": "crater_floor",
+  "SM_CP_coping_material_035_20_15": "crater_floor",
+  "SM_CP_coping_material_035_20_16": "crater_floor",
+  "SM_CP_coping_material_035_20_17": "crater_floor",
+  "SM_CP_coping_material_035_20_19": "crater_floor",
+  "SM_CP_coping_material_035_20_20": "crater_floor",
+  "SM_CP_coping_material_035_20_21": "crater_floor",
+  "SM_CP_coping_material_035_20_22": "crater_floor",
+  "SM_CP_coping_material_035_21_10": "crater_floor",
+  "SM_CP_coping_material_035_21_11": "crater_floor",
+  "SM_CP_coping_material_035_21_12": "crater_floor",
+  "SM_CP_coping_material_035_21_13": "crater_floor",
+  "SM_CP_coping_material_035_21_18": "crater_floor",
+  "SM_CP_coping_material_035_21_19": "crater_floor",
+  "SM_CP_coping_material_035_21_20": "crater_floor",
+  "SM_CP_coping_material_035_21_22": "crater_floor",
+  "SM_CP_coping_material_035_22_10": "crater_floor",
+  "SM_CP_coping_material_035_22_11": "crater_floor",
+  "SM_CP_coping_material_035_22_12": "crater_floor",
+  "SM_CP_coping_material_035_22_13": "crater_floor",
+  "SM_CP_coping_material_035_22_17": "crater_floor",
+  "SM_CP_coping_material_035_22_19": "crater_floor",
+  "SM_CP_coping_material_035_22_20": "crater_floor",
+  "SM_CP_coping_material_035_22_21": "crater_floor",
+  "SM_CP_coping_material_035_22_22": "crater_floor",
+  "SM_CP_coping_material_035_22_9": "crater_floor",
+  "SM_CP_coping_material_035_23_10": "crater_floor",
+  "SM_CP_coping_material_035_23_11": "crater_floor",
+  "SM_CP_coping_material_035_23_12": "crater_floor",
+  "SM_CP_coping_material_035_23_13": "crater_floor",
+  "SM_CP_coping_material_035_23_17": "crater_floor",
+  "SM_CP_coping_material_035_23_19": "crater_floor",
+  "SM_CP_coping_material_035_23_21": "crater_floor",
+  "SM_CP_coping_material_035_23_9": "crater_floor",
+  "SM_CP_coping_material_035_24_10": "crater_floor",
+  "SM_CP_coping_material_035_24_11": "crater_floor",
+  "SM_CP_coping_material_035_24_12": "crater_floor",
+  "SM_CP_coping_material_035_24_13": "crater_floor",
+  "SM_CP_coping_material_035_24_17": "crater_floor",
+  "SM_CP_coping_material_035_24_18": "crater_floor",
+  "SM_CP_coping_material_035_24_19": "crater_floor",
+  "SM_CP_coping_material_035_24_20": "crater_floor",
+  "SM_CP_coping_material_035_25_11": "crater_floor",
+  "SM_CP_coping_material_035_25_12": "crater_floor",
+  "SM_CP_coping_material_035_25_16": "crater_floor",
+  "SM_CP_coping_material_035_25_17": "crater_floor",
+  "SM_CP_coping_material_035_25_18": "crater_floor",
+  "SM_CP_coping_material_035_25_19": "crater_floor",
+  "SM_CP_coping_material_035_26_12": "crater_floor",
+  "SM_CP_coping_material_035_26_13": "crater_floor",
+  "SM_CP_coping_material_035_26_14": "crater_floor",
+  "SM_CP_coping_material_035_26_17": "crater_floor",
+  "SM_CP_coping_material_035_27_15": "crater_floor",
+  "SM_CP_coping_material_036_14_12": "crater_floor",
+  "SM_CP_coping_material_036_14_13": "crater_floor",
+  "SM_CP_coping_material_036_14_18": "crater_floor",
+  "SM_CP_coping_material_036_15_12": "crater_floor",
+  "SM_CP_coping_material_036_15_13": "crater_floor",
+  "SM_CP_coping_material_036_15_14": "crater_floor",
+  "SM_CP_coping_material_036_15_16": "crater_floor",
+  "SM_CP_coping_material_036_15_17": "crater_floor",
+  "SM_CP_coping_material_036_15_18": "crater_floor",
+  "SM_CP_coping_material_036_15_19": "crater_floor",
+  "SM_CP_coping_material_036_15_20": "crater_floor",
+  "SM_CP_coping_material_036_16_10": "crater_floor",
+  "SM_CP_coping_material_036_16_12": "crater_floor",
+  "SM_CP_coping_material_036_16_13": "crater_floor",
+  "SM_CP_coping_material_036_16_16": "crater_floor",
+  "SM_CP_coping_material_036_16_17": "crater_floor",
+  "SM_CP_coping_material_036_16_18": "crater_floor",
+  "SM_CP_coping_material_036_16_19": "crater_floor",
+  "SM_CP_coping_material_036_16_20": "crater_floor",
+  "SM_CP_coping_material_036_17_10": "crater_floor",
+  "SM_CP_coping_material_036_17_12": "crater_floor",
+  "SM_CP_coping_material_036_17_13": "crater_floor",
+  "SM_CP_coping_material_036_17_17": "crater_floor",
+  "SM_CP_coping_material_036_17_19": "crater_floor",
+  "SM_CP_coping_material_036_17_20": "crater_floor",
+  "SM_CP_coping_material_036_17_21": "crater_floor",
+  "SM_CP_coping_material_036_18_10": "crater_floor",
+  "SM_CP_coping_material_036_18_11": "crater_floor",
+  "SM_CP_coping_material_036_18_13": "crater_floor",
+  "SM_CP_coping_material_036_18_15": "crater_floor",
+  "SM_CP_coping_material_036_18_16": "crater_floor",
+  "SM_CP_coping_material_036_18_17": "crater_floor",
+  "SM_CP_coping_material_036_18_18": "crater_floor",
+  "SM_CP_coping_material_036_18_20": "crater_floor",
+  "SM_CP_coping_material_036_18_21": "crater_floor",
+  "SM_CP_coping_material_036_18_9": "crater_floor",
+  "SM_CP_coping_material_036_19_10": "crater_floor",
+  "SM_CP_coping_material_036_19_12": "crater_floor",
+  "SM_CP_coping_material_036_19_15": "crater_floor",
+  "SM_CP_coping_material_036_19_17": "crater_floor",
+  "SM_CP_coping_material_036_19_18": "crater_floor",
+  "SM_CP_coping_material_036_19_19": "crater_floor",
+  "SM_CP_coping_material_036_19_20": "crater_floor",
+  "SM_CP_coping_material_036_19_21": "crater_floor",
+  "SM_CP_coping_material_036_19_22": "crater_floor",
+  "SM_CP_coping_material_036_20_10": "crater_floor",
+  "SM_CP_coping_material_036_20_11": "crater_floor",
+  "SM_CP_coping_material_036_20_13": "crater_floor",
+  "SM_CP_coping_material_036_20_14": "crater_floor",
+  "SM_CP_coping_material_036_20_19": "crater_floor",
+  "SM_CP_coping_material_036_20_20": "crater_floor",
+  "SM_CP_coping_material_036_20_21": "crater_floor",
+  "SM_CP_coping_material_036_20_22": "crater_floor",
+  "SM_CP_coping_material_036_21_10": "crater_floor",
+  "SM_CP_coping_material_036_21_11": "crater_floor",
+  "SM_CP_coping_material_036_21_13": "crater_floor",
+  "SM_CP_coping_material_036_21_18": "crater_floor",
+  "SM_CP_coping_material_036_21_19": "crater_floor",
+  "SM_CP_coping_material_036_21_20": "crater_floor",
+  "SM_CP_coping_material_036_21_21": "crater_floor",
+  "SM_CP_coping_material_036_21_22": "crater_floor",
+  "SM_CP_coping_material_036_21_9": "crater_floor",
+  "SM_CP_coping_material_036_22_10": "crater_floor",
+  "SM_CP_coping_material_036_22_11": "crater_floor",
+  "SM_CP_coping_material_036_22_17": "crater_floor",
+  "SM_CP_coping_material_036_22_18": "crater_floor",
+  "SM_CP_coping_material_036_22_19": "crater_floor",
+  "SM_CP_coping_material_036_22_20": "crater_floor",
+  "SM_CP_coping_material_036_23_10": "crater_floor",
+  "SM_CP_coping_material_036_23_11": "crater_floor",
+  "SM_CP_coping_material_036_23_12": "crater_floor",
+  "SM_CP_coping_material_036_23_13": "crater_floor",
+  "SM_CP_coping_material_036_23_17": "crater_floor",
+  "SM_CP_coping_material_036_23_19": "crater_floor",
+  "SM_CP_coping_material_036_23_20": "crater_floor",
+  "SM_CP_coping_material_036_24_10": "crater_floor",
+  "SM_CP_coping_material_036_24_12": "crater_floor",
+  "SM_CP_coping_material_036_24_13": "crater_floor",
+  "SM_CP_coping_material_036_24_16": "crater_floor",
+  "SM_CP_coping_material_036_24_17": "crater_floor",
+  "SM_CP_coping_material_036_24_18": "crater_floor",
+  "SM_CP_coping_material_036_24_19": "crater_floor",
+  "SM_CP_coping_material_036_24_20": "crater_floor",
+  "SM_CP_coping_material_036_25_13": "crater_floor",
+  "SM_CP_coping_material_036_25_16": "crater_floor",
+  "SM_CP_coping_material_036_25_17": "crater_floor",
+  "SM_CP_coping_material_036_25_18": "crater_floor",
+  "SM_CP_coping_material_036_26_14": "crater_floor",
+  "SM_CP_coping_material_036_26_15": "crater_floor",
+  "SM_CP_coping_material_037_14_18": "crater_floor",
+  "SM_CP_coping_material_037_15_11": "crater_floor",
+  "SM_CP_coping_material_037_15_12": "crater_floor",
+  "SM_CP_coping_material_037_15_13": "crater_floor",
+  "SM_CP_coping_material_037_15_17": "crater_floor",
+  "SM_CP_coping_material_037_15_18": "crater_floor",
+  "SM_CP_coping_material_037_15_19": "crater_floor",
+  "SM_CP_coping_material_037_16_10": "crater_floor",
+  "SM_CP_coping_material_037_16_11": "crater_floor",
+  "SM_CP_coping_material_037_16_12": "crater_floor",
+  "SM_CP_coping_material_037_16_13": "crater_floor",
+  "SM_CP_coping_material_037_16_14": "crater_floor",
+  "SM_CP_coping_material_037_16_15": "crater_floor",
+  "SM_CP_coping_material_037_16_16": "crater_floor",
+  "SM_CP_coping_material_037_16_17": "crater_floor",
+  "SM_CP_coping_material_037_16_18": "crater_floor",
+  "SM_CP_coping_material_037_16_19": "crater_floor",
+  "SM_CP_coping_material_037_16_20": "crater_floor",
+  "SM_CP_coping_material_037_17_10": "crater_floor",
+  "SM_CP_coping_material_037_17_11": "crater_floor",
+  "SM_CP_coping_material_037_17_13": "crater_floor",
+  "SM_CP_coping_material_037_17_14": "crater_floor",
+  "SM_CP_coping_material_037_17_15": "crater_floor",
+  "SM_CP_coping_material_037_17_16": "crater_floor",
+  "SM_CP_coping_material_037_17_17": "crater_floor",
+  "SM_CP_coping_material_037_17_18": "crater_floor",
+  "SM_CP_coping_material_037_17_19": "crater_floor",
+  "SM_CP_coping_material_037_17_20": "crater_floor",
+  "SM_CP_coping_material_037_17_21": "crater_floor",
+  "SM_CP_coping_material_037_18_10": "crater_floor",
+  "SM_CP_coping_material_037_18_11": "crater_floor",
+  "SM_CP_coping_material_037_18_13": "crater_floor",
+  "SM_CP_coping_material_037_18_15": "crater_floor",
+  "SM_CP_coping_material_037_18_16": "crater_floor",
+  "SM_CP_coping_material_037_18_17": "crater_floor",
+  "SM_CP_coping_material_037_18_18": "crater_floor",
+  "SM_CP_coping_material_037_18_19": "crater_floor",
+  "SM_CP_coping_material_037_18_20": "crater_floor",
+  "SM_CP_coping_material_037_18_21": "crater_floor",
+  "SM_CP_coping_material_037_19_10": "crater_floor",
+  "SM_CP_coping_material_037_19_11": "crater_floor",
+  "SM_CP_coping_material_037_19_12": "crater_floor",
+  "SM_CP_coping_material_037_19_14": "crater_floor",
+  "SM_CP_coping_material_037_19_15": "crater_floor",
+  "SM_CP_coping_material_037_19_16": "crater_floor",
+  "SM_CP_coping_material_037_19_18": "crater_floor",
+  "SM_CP_coping_material_037_19_19": "crater_floor",
+  "SM_CP_coping_material_037_19_20": "crater_floor",
+  "SM_CP_coping_material_037_19_21": "crater_floor",
+  "SM_CP_coping_material_037_19_22": "crater_floor",
+  "SM_CP_coping_material_037_19_9": "crater_floor",
+  "SM_CP_coping_material_037_20_10": "crater_floor",
+  "SM_CP_coping_material_037_20_11": "crater_floor",
+  "SM_CP_coping_material_037_20_12": "crater_floor",
+  "SM_CP_coping_material_037_20_13": "crater_floor",
+  "SM_CP_coping_material_037_20_14": "crater_floor",
+  "SM_CP_coping_material_037_20_15": "crater_floor",
+  "SM_CP_coping_material_037_20_20": "crater_floor",
+  "SM_CP_coping_material_037_20_21": "crater_floor",
+  "SM_CP_coping_material_037_20_22": "crater_floor",
+  "SM_CP_coping_material_037_20_9": "crater_floor",
+  "SM_CP_coping_material_037_21_10": "crater_floor",
+  "SM_CP_coping_material_037_21_11": "crater_floor",
+  "SM_CP_coping_material_037_21_12": "crater_floor",
+  "SM_CP_coping_material_037_21_13": "crater_floor",
+  "SM_CP_coping_material_037_21_18": "crater_floor",
+  "SM_CP_coping_material_037_21_20": "crater_floor",
+  "SM_CP_coping_material_037_21_21": "crater_floor",
+  "SM_CP_coping_material_037_21_22": "crater_floor",
+  "SM_CP_coping_material_037_22_10": "crater_floor",
+  "SM_CP_coping_material_037_22_11": "crater_floor",
+  "SM_CP_coping_material_037_22_12": "crater_floor",
+  "SM_CP_coping_material_037_22_13": "crater_floor",
+  "SM_CP_coping_material_037_22_17": "crater_floor",
+  "SM_CP_coping_material_037_22_18": "crater_floor",
+  "SM_CP_coping_material_037_22_19": "crater_floor",
+  "SM_CP_coping_material_037_22_20": "crater_floor",
+  "SM_CP_coping_material_037_22_21": "crater_floor",
+  "SM_CP_coping_material_037_22_9": "crater_floor",
+  "SM_CP_coping_material_037_23_10": "crater_floor",
+  "SM_CP_coping_material_037_23_11": "crater_floor",
+  "SM_CP_coping_material_037_23_13": "crater_floor",
+  "SM_CP_coping_material_037_23_14": "crater_floor",
+  "SM_CP_coping_material_037_23_16": "crater_floor",
+  "SM_CP_coping_material_037_23_17": "crater_floor",
+  "SM_CP_coping_material_037_23_18": "crater_floor",
+  "SM_CP_coping_material_037_23_19": "crater_floor",
+  "SM_CP_coping_material_037_23_20": "crater_floor",
+  "SM_CP_coping_material_037_24_10": "crater_floor",
+  "SM_CP_coping_material_037_24_11": "crater_floor",
+  "SM_CP_coping_material_037_24_12": "crater_floor",
+  "SM_CP_coping_material_037_24_13": "crater_floor",
+  "SM_CP_coping_material_037_24_16": "crater_floor",
+  "SM_CP_coping_material_037_24_17": "crater_floor",
+  "SM_CP_coping_material_037_24_18": "crater_floor",
+  "SM_CP_coping_material_037_24_19": "crater_floor",
+  "SM_CP_coping_material_037_24_20": "crater_floor",
+  "SM_CP_coping_material_037_25_13": "crater_floor",
+  "SM_CP_coping_material_037_25_14": "crater_floor",
+  "SM_CP_coping_material_037_25_15": "crater_floor",
+  "SM_CP_coping_material_037_25_16": "crater_floor",
+  "SM_CP_coping_material_037_25_17": "crater_floor",
+  "SM_CP_coping_material_037_25_18": "crater_floor",
+  "SM_CP_coping_material_037_25_19": "crater_floor",
+  "SM_CP_coping_material_037_26_14": "crater_floor",
+  "SM_CP_coping_material_042_14_17": "crater_floor",
+  "SM_CP_coping_material_042_15_17": "crater_floor",
+  "SM_CP_coping_material_042_15_18": "crater_floor",
+  "SM_CP_coping_material_042_15_19": "crater_floor",
+  "SM_CP_coping_material_042_16_11": "crater_floor",
+  "SM_CP_coping_material_042_16_12": "crater_floor",
+  "SM_CP_coping_material_042_16_14": "crater_floor",
+  "SM_CP_coping_material_042_16_15": "crater_floor",
+  "SM_CP_coping_material_042_16_16": "crater_floor",
+  "SM_CP_coping_material_042_16_17": "crater_floor",
+  "SM_CP_coping_material_042_16_18": "crater_floor",
+  "SM_CP_coping_material_042_16_19": "crater_floor",
+  "SM_CP_coping_material_042_16_20": "crater_floor",
+  "SM_CP_coping_material_042_17_11": "crater_floor",
+  "SM_CP_coping_material_042_17_12": "crater_floor",
+  "SM_CP_coping_material_042_17_14": "crater_floor",
+  "SM_CP_coping_material_042_17_19": "crater_floor",
+  "SM_CP_coping_material_042_17_20": "crater_floor",
+  "SM_CP_coping_material_042_17_21": "crater_floor",
+  "SM_CP_coping_material_042_18_10": "crater_floor",
+  "SM_CP_coping_material_042_18_11": "crater_floor",
+  "SM_CP_coping_material_042_18_19": "crater_floor",
+  "SM_CP_coping_material_042_18_20": "crater_floor",
+  "SM_CP_coping_material_042_18_9": "crater_floor",
+  "SM_CP_coping_material_042_19_10": "crater_floor",
+  "SM_CP_coping_material_042_19_11": "crater_floor",
+  "SM_CP_coping_material_042_19_12": "crater_floor",
+  "SM_CP_coping_material_042_19_20": "crater_floor",
+  "SM_CP_coping_material_042_19_21": "crater_floor",
+  "SM_CP_coping_material_042_20_10": "crater_floor",
+  "SM_CP_coping_material_042_20_19": "crater_floor",
+  "SM_CP_coping_material_042_20_20": "crater_floor",
+  "SM_CP_coping_material_042_20_21": "crater_floor",
+  "SM_CP_coping_material_042_21_17": "crater_floor",
+  "SM_CP_coping_material_042_21_18": "crater_floor",
+  "SM_CP_coping_material_042_21_20": "crater_floor",
+  "SM_CP_coping_material_042_22_11": "crater_floor",
+  "SM_CP_coping_material_042_22_12": "crater_floor",
+  "SM_CP_coping_material_042_22_17": "crater_floor",
+  "SM_CP_coping_material_042_22_18": "crater_floor",
+  "SM_CP_coping_material_042_22_19": "crater_floor",
+  "SM_CP_coping_material_042_22_20": "crater_floor",
+  "SM_CP_coping_material_042_23_10": "crater_floor",
+  "SM_CP_coping_material_042_23_11": "crater_floor",
+  "SM_CP_coping_material_042_23_12": "crater_floor",
+  "SM_CP_coping_material_042_23_14": "crater_floor",
+  "SM_CP_coping_material_042_23_18": "crater_floor",
+  "SM_CP_coping_material_042_23_19": "crater_floor",
+  "SM_CP_coping_material_042_24_11": "crater_floor",
+  "SM_CP_coping_material_042_24_12": "crater_floor",
+  "SM_CP_coping_material_042_24_18": "crater_floor",
+  "SM_CP_coping_material_042_24_19": "crater_floor",
+  "SM_CP_coping_material_042_24_20": "crater_floor",
+  "SM_CP_coping_material_042_25_12": "crater_floor",
+  "SM_CP_coping_material_042_25_14": "crater_floor",
+  "SM_CP_coping_material_042_25_15": "crater_floor",
+  "SM_CP_coping_material_042_25_16": "crater_floor",
+  "SM_CP_coping_material_042_25_17": "crater_floor",
+  "SM_CP_coping_material_042_25_18": "crater_floor",
+  "SM_CP_coping_material_042_26_14": "crater_floor",
+  "SM_CP_coping_material_042_26_15": "crater_floor",
+  "SM_CP_coping_material_044_14_17": "crater_floor",
+  "SM_CP_coping_material_044_14_18": "crater_floor",
+  "SM_CP_coping_material_044_15_11": "crater_floor",
+  "SM_CP_coping_material_044_15_12": "crater_floor",
+  "SM_CP_coping_material_044_15_13": "crater_floor",
+  "SM_CP_coping_material_044_15_17": "crater_floor",
+  "SM_CP_coping_material_044_15_18": "crater_floor",
+  "SM_CP_coping_material_044_15_19": "crater_floor",
+  "SM_CP_coping_material_044_15_20": "crater_floor",
+  "SM_CP_coping_material_044_16_10": "crater_floor",
+  "SM_CP_coping_material_044_16_11": "crater_floor",
+  "SM_CP_coping_material_044_16_12": "crater_floor",
+  "SM_CP_coping_material_044_16_13": "crater_floor",
+  "SM_CP_coping_material_044_16_14": "crater_floor",
+  "SM_CP_coping_material_044_16_15": "crater_floor",
+  "SM_CP_coping_material_044_16_16": "crater_floor",
+  "SM_CP_coping_material_044_16_17": "crater_floor",
+  "SM_CP_coping_material_044_16_18": "crater_floor",
+  "SM_CP_coping_material_044_16_19": "crater_floor",
+  "SM_CP_coping_material_044_16_20": "crater_floor",
+  "SM_CP_coping_material_044_17_10": "crater_floor",
+  "SM_CP_coping_material_044_17_11": "crater_floor",
+  "SM_CP_coping_material_044_17_12": "crater_floor",
+  "SM_CP_coping_material_044_17_13": "crater_floor",
+  "SM_CP_coping_material_044_17_14": "crater_floor",
+  "SM_CP_coping_material_044_17_15": "crater_floor",
+  "SM_CP_coping_material_044_17_16": "crater_floor",
+  "SM_CP_coping_material_044_17_17": "crater_floor",
+  "SM_CP_coping_material_044_17_18": "crater_floor",
+  "SM_CP_coping_material_044_17_19": "crater_floor",
+  "SM_CP_coping_material_044_17_20": "crater_floor",
+  "SM_CP_coping_material_044_17_21": "crater_floor",
+  "SM_CP_coping_material_044_18_10": "crater_floor",
+  "SM_CP_coping_material_044_18_11": "crater_floor",
+  "SM_CP_coping_material_044_18_15": "crater_floor",
+  "SM_CP_coping_material_044_18_16": "crater_floor",
+  "SM_CP_coping_material_044_18_17": "crater_floor",
+  "SM_CP_coping_material_044_18_18": "crater_floor",
+  "SM_CP_coping_material_044_18_19": "crater_floor",
+  "SM_CP_coping_material_044_18_20": "crater_floor",
+  "SM_CP_coping_material_044_18_21": "crater_floor",
+  "SM_CP_coping_material_044_19_10": "crater_floor",
+  "SM_CP_coping_material_044_19_11": "crater_floor",
+  "SM_CP_coping_material_044_19_12": "crater_floor",
+  "SM_CP_coping_material_044_19_14": "crater_floor",
+  "SM_CP_coping_material_044_19_16": "crater_floor",
+  "SM_CP_coping_material_044_19_17": "crater_floor",
+  "SM_CP_coping_material_044_19_18": "crater_floor",
+  "SM_CP_coping_material_044_19_19": "crater_floor",
+  "SM_CP_coping_material_044_19_20": "crater_floor",
+  "SM_CP_coping_material_044_19_21": "crater_floor",
+  "SM_CP_coping_material_044_19_22": "crater_floor",
+  "SM_CP_coping_material_044_19_9": "crater_floor",
+  "SM_CP_coping_material_044_20_10": "crater_floor",
+  "SM_CP_coping_material_044_20_11": "crater_floor",
+  "SM_CP_coping_material_044_20_12": "crater_floor",
+  "SM_CP_coping_material_044_20_13": "crater_floor",
+  "SM_CP_coping_material_044_20_14": "crater_floor",
+  "SM_CP_coping_material_044_20_15": "crater_floor",
+  "SM_CP_coping_material_044_20_16": "crater_floor",
+  "SM_CP_coping_material_044_20_20": "crater_floor",
+  "SM_CP_coping_material_044_20_21": "crater_floor",
+  "SM_CP_coping_material_044_20_22": "crater_floor",
+  "SM_CP_coping_material_044_20_9": "crater_floor",
+  "SM_CP_coping_material_044_21_10": "crater_floor",
+  "SM_CP_coping_material_044_21_11": "crater_floor",
+  "SM_CP_coping_material_044_21_12": "crater_floor",
+  "SM_CP_coping_material_044_21_13": "crater_floor",
+  "SM_CP_coping_material_044_21_18": "crater_floor",
+  "SM_CP_coping_material_044_21_20": "crater_floor",
+  "SM_CP_coping_material_044_21_21": "crater_floor",
+  "SM_CP_coping_material_044_21_22": "crater_floor",
+  "SM_CP_coping_material_044_21_9": "crater_floor",
+  "SM_CP_coping_material_044_22_10": "crater_floor",
+  "SM_CP_coping_material_044_22_11": "crater_floor",
+  "SM_CP_coping_material_044_22_12": "crater_floor",
+  "SM_CP_coping_material_044_22_13": "crater_floor",
+  "SM_CP_coping_material_044_22_17": "crater_floor",
+  "SM_CP_coping_material_044_22_18": "crater_floor",
+  "SM_CP_coping_material_044_22_19": "crater_floor",
+  "SM_CP_coping_material_044_22_20": "crater_floor",
+  "SM_CP_coping_material_044_22_21": "crater_floor",
+  "SM_CP_coping_material_044_22_9": "crater_floor",
+  "SM_CP_coping_material_044_23_10": "crater_floor",
+  "SM_CP_coping_material_044_23_11": "crater_floor",
+  "SM_CP_coping_material_044_23_13": "crater_floor",
+  "SM_CP_coping_material_044_23_14": "crater_floor",
+  "SM_CP_coping_material_044_23_16": "crater_floor",
+  "SM_CP_coping_material_044_23_17": "crater_floor",
+  "SM_CP_coping_material_044_23_18": "crater_floor",
+  "SM_CP_coping_material_044_23_19": "crater_floor",
+  "SM_CP_coping_material_044_23_20": "crater_floor",
+  "SM_CP_coping_material_044_24_10": "crater_floor",
+  "SM_CP_coping_material_044_24_11": "crater_floor",
+  "SM_CP_coping_material_044_24_12": "crater_floor",
+  "SM_CP_coping_material_044_24_13": "crater_floor",
+  "SM_CP_coping_material_044_24_16": "crater_floor",
+  "SM_CP_coping_material_044_24_17": "crater_floor",
+  "SM_CP_coping_material_044_24_18": "crater_floor",
+  "SM_CP_coping_material_044_24_19": "crater_floor",
+  "SM_CP_coping_material_044_24_20": "crater_floor",
+  "SM_CP_coping_material_044_25_12": "crater_floor",
+  "SM_CP_coping_material_044_25_13": "crater_floor",
+  "SM_CP_coping_material_044_25_14": "crater_floor",
+  "SM_CP_coping_material_044_25_15": "crater_floor",
+  "SM_CP_coping_material_044_25_16": "crater_floor",
+  "SM_CP_coping_material_044_25_17": "crater_floor",
+  "SM_CP_coping_material_044_25_18": "crater_floor",
+  "SM_CP_coping_material_044_25_19": "crater_floor",
+  "SM_CP_coping_material_044_26_14": "crater_floor",
+  "SM_CP_coping_material_044_26_15": "crater_floor",
+  "SM_CP_coping_material_046_12_16": "p183",
+  "SM_CP_coping_material_046_13_16": "p183",
+  "SM_CP_coping_material_047_13_16": "p183",
+  "SM_CP_coping_material_048_13_16": "p183",
+  "SM_CP_coping_material_049_12_16": "p183",
+  "SM_CP_coping_material_053_21_14": "p5",
+  "SM_CP_coping_material_053_21_15": "p5",
+  "SM_CP_coping_material_053_21_16": "p5",
+  "SM_CP_coping_material_053_21_17": "p5",
+  "SM_CP_coping_material_053_22_14": "p5",
+  "SM_CP_coping_material_053_22_15": "p5",
+  "SM_CP_coping_material_053_22_16": "p5",
+  "SM_CP_coping_material_053_22_17": "p5",
+  "SM_CP_coping_material_053_23_14": "p45",
+  "SM_CP_coping_material_053_23_15": "p51",
+  "SM_CP_coping_material_053_23_16": "p45",
+  "SM_CP_coping_material_053_24_13": "p51",
+  "SM_CP_coping_material_053_24_14": "p45",
+  "SM_CP_coping_material_053_24_15": "p51",
+  "SM_CP_coping_material_053_24_16": "p45",
+  "SM_CP_coping_material_053_25_13": "p51",
+  "SM_CP_coping_material_053_25_14": "p51",
+  "SM_CP_original_material_010_21_14": "p5",
+  "SM_CP_original_material_010_21_15": "p5",
+  "SM_CP_original_material_010_21_16": "p5",
+  "SM_CP_original_material_010_21_17": "p5",
+  "SM_CP_original_material_010_22_14": "p5",
+  "SM_CP_original_material_010_22_15": "p5",
+  "SM_CP_original_material_010_22_16": "p5",
+  "SM_CP_original_material_010_22_17": "p5",
+  "SM_CP_original_material_023_21_14": "p5",
+  "SM_CP_original_material_023_21_15": "p5",
+  "SM_CP_original_material_023_21_16": "p5",
+  "SM_CP_original_material_023_21_17": "p5",
+  "SM_CP_original_material_023_22_14": "p5",
+  "SM_CP_original_material_023_22_15": "p5",
+  "SM_CP_original_material_023_22_16": "p5",
+  "SM_CP_original_material_023_22_17": "p5",
+  "SM_CP_original_material_027_12_16": "p183",
+  "SM_CP_original_material_027_13_16": "p183",
+  "SM_CP_original_material_027_13_17": "p8",
+  "SM_CP_original_material_027_13_18": "p8",
+  "SM_CP_original_material_027_14_11": "crater_floor",
+  "SM_CP_original_material_027_14_13": "p308",
+  "SM_CP_original_material_027_14_14": "p308",
+  "SM_CP_original_material_027_14_15": "p308",
+  "SM_CP_original_material_027_14_16": "p308",
+  "SM_CP_original_material_027_14_17": "crater_floor",
+  "SM_CP_original_material_027_14_18": "p9",
+  "SM_CP_original_material_027_14_19": "p9",
+  "SM_CP_original_material_027_14_20": "p9",
+  "SM_CP_original_material_027_14_21": "p9",
+  "SM_CP_original_material_027_15_10": "crater_floor",
+  "SM_CP_original_material_027_15_11": "crater_floor",
+  "SM_CP_original_material_027_15_12": "crater_floor",
+  "SM_CP_original_material_027_15_13": "crater_floor",
+  "SM_CP_original_material_027_15_14": "p310",
+  "SM_CP_original_material_027_15_15": "p306",
+  "SM_CP_original_material_027_15_16": "p307",
+  "SM_CP_original_material_027_15_17": "crater_floor",
+  "SM_CP_original_material_027_15_18": "crater_floor",
+  "SM_CP_original_material_027_15_19": "crater_floor",
+  "SM_CP_original_material_027_15_20": "p9",
+  "SM_CP_original_material_027_15_21": "p10",
+  "SM_CP_original_material_027_15_22": "p10",
+  "SM_CP_original_material_027_16_10": "crater_floor",
+  "SM_CP_original_material_027_16_11": "crater_floor",
+  "SM_CP_original_material_027_16_12": "crater_floor",
+  "SM_CP_original_material_027_16_13": "crater_floor",
+  "SM_CP_original_material_027_16_14": "crater_floor",
+  "SM_CP_original_material_027_16_15": "crater_floor",
+  "SM_CP_original_material_027_16_16": "crater_floor",
+  "SM_CP_original_material_027_16_17": "crater_floor",
+  "SM_CP_original_material_027_16_18": "crater_floor",
+  "SM_CP_original_material_027_16_19": "crater_floor",
+  "SM_CP_original_material_027_16_20": "crater_floor",
+  "SM_CP_original_material_027_16_21": "p10",
+  "SM_CP_original_material_027_16_22": "p10",
+  "SM_CP_original_material_027_17_10": "crater_floor",
+  "SM_CP_original_material_027_17_11": "crater_floor",
+  "SM_CP_original_material_027_17_12": "crater_floor",
+  "SM_CP_original_material_027_17_13": "crater_floor",
+  "SM_CP_original_material_027_17_14": "crater_floor",
+  "SM_CP_original_material_027_17_15": "crater_floor",
+  "SM_CP_original_material_027_17_16": "crater_floor",
+  "SM_CP_original_material_027_17_17": "crater_floor",
+  "SM_CP_original_material_027_17_18": "crater_floor",
+  "SM_CP_original_material_027_17_19": "crater_floor",
+  "SM_CP_original_material_027_17_20": "crater_floor",
+  "SM_CP_original_material_027_17_21": "crater_floor",
+  "SM_CP_original_material_027_17_22": "p320",
+  "SM_CP_original_material_027_17_23": "p320",
+  "SM_CP_original_material_027_18_10": "crater_floor",
+  "SM_CP_original_material_027_18_11": "crater_floor",
+  "SM_CP_original_material_027_18_12": "crater_floor",
+  "SM_CP_original_material_027_18_13": "crater_floor",
+  "SM_CP_original_material_027_18_14": "crater_floor",
+  "SM_CP_original_material_027_18_15": "crater_floor",
+  "SM_CP_original_material_027_18_16": "crater_floor",
+  "SM_CP_original_material_027_18_17": "crater_floor",
+  "SM_CP_original_material_027_18_18": "crater_floor",
+  "SM_CP_original_material_027_18_19": "crater_floor",
+  "SM_CP_original_material_027_18_20": "crater_floor",
+  "SM_CP_original_material_027_18_21": "crater_floor",
+  "SM_CP_original_material_027_18_22": "p320",
+  "SM_CP_original_material_027_18_23": "p321",
+  "SM_CP_original_material_027_18_9": "crater_floor",
+  "SM_CP_original_material_027_19_10": "crater_floor",
+  "SM_CP_original_material_027_19_11": "crater_floor",
+  "SM_CP_original_material_027_19_12": "crater_floor",
+  "SM_CP_original_material_027_19_13": "crater_floor",
+  "SM_CP_original_material_027_19_14": "crater_floor",
+  "SM_CP_original_material_027_19_15": "crater_floor",
+  "SM_CP_original_material_027_19_16": "crater_floor",
+  "SM_CP_original_material_027_19_17": "crater_floor",
+  "SM_CP_original_material_027_19_18": "crater_floor",
+  "SM_CP_original_material_027_19_19": "crater_floor",
+  "SM_CP_original_material_027_19_20": "crater_floor",
+  "SM_CP_original_material_027_19_21": "crater_floor",
+  "SM_CP_original_material_027_19_22": "p30",
+  "SM_CP_original_material_027_19_23": "p30",
+  "SM_CP_original_material_027_19_9": "crater_floor",
+  "SM_CP_original_material_027_20_10": "crater_floor",
+  "SM_CP_original_material_027_20_11": "crater_floor",
+  "SM_CP_original_material_027_20_12": "crater_floor",
+  "SM_CP_original_material_027_20_13": "crater_floor",
+  "SM_CP_original_material_027_20_14": "crater_floor",
+  "SM_CP_original_material_027_20_15": "crater_floor",
+  "SM_CP_original_material_027_20_16": "crater_floor",
+  "SM_CP_original_material_027_20_17": "crater_floor",
+  "SM_CP_original_material_027_20_18": "crater_floor",
+  "SM_CP_original_material_027_20_19": "crater_floor",
+  "SM_CP_original_material_027_20_20": "crater_floor",
+  "SM_CP_original_material_027_20_21": "crater_floor",
+  "SM_CP_original_material_027_20_22": "p31",
+  "SM_CP_original_material_027_20_23": "p31",
+  "SM_CP_original_material_027_20_9": "crater_floor",
+  "SM_CP_original_material_027_21_10": "crater_floor",
+  "SM_CP_original_material_027_21_11": "crater_floor",
+  "SM_CP_original_material_027_21_12": "crater_floor",
+  "SM_CP_original_material_027_21_13": "crater_floor",
+  "SM_CP_original_material_027_21_14": "p56",
+  "SM_CP_original_material_027_21_17": "crater_floor",
+  "SM_CP_original_material_027_21_18": "crater_floor",
+  "SM_CP_original_material_027_21_19": "crater_floor",
+  "SM_CP_original_material_027_21_20": "crater_floor",
+  "SM_CP_original_material_027_21_21": "crater_floor",
+  "SM_CP_original_material_027_21_22": "p32",
+  "SM_CP_original_material_027_21_23": "p32",
+  "SM_CP_original_material_027_21_9": "crater_floor",
+  "SM_CP_original_material_027_22_10": "crater_floor",
+  "SM_CP_original_material_027_22_11": "crater_floor",
+  "SM_CP_original_material_027_22_12": "crater_floor",
+  "SM_CP_original_material_027_22_13": "crater_floor",
+  "SM_CP_original_material_027_22_16": "crater_floor",
+  "SM_CP_original_material_027_22_17": "crater_floor",
+  "SM_CP_original_material_027_22_18": "crater_floor",
+  "SM_CP_original_material_027_22_19": "crater_floor",
+  "SM_CP_original_material_027_22_20": "crater_floor",
+  "SM_CP_original_material_027_22_21": "crater_floor",
+  "SM_CP_original_material_027_22_22": "p34",
+  "SM_CP_original_material_027_22_23": "p34",
+  "SM_CP_original_material_027_22_9": "crater_floor",
+  "SM_CP_original_material_027_23_10": "crater_floor",
+  "SM_CP_original_material_027_23_11": "crater_floor",
+  "SM_CP_original_material_027_23_12": "crater_floor",
+  "SM_CP_original_material_027_23_13": "p54",
+  "SM_CP_original_material_027_23_14": "p185",
+  "SM_CP_original_material_027_23_15": "p46",
+  "SM_CP_original_material_027_23_16": "crater_floor",
+  "SM_CP_original_material_027_23_17": "crater_floor",
+  "SM_CP_original_material_027_23_18": "crater_floor",
+  "SM_CP_original_material_027_23_19": "crater_floor",
+  "SM_CP_original_material_027_23_20": "crater_floor",
+  "SM_CP_original_material_027_23_21": "crater_floor",
+  "SM_CP_original_material_027_23_22": "p36",
+  "SM_CP_original_material_027_23_9": "crater_floor",
+  "SM_CP_original_material_027_24_10": "crater_floor",
+  "SM_CP_original_material_027_24_11": "crater_floor",
+  "SM_CP_original_material_027_24_12": "crater_floor",
+  "SM_CP_original_material_027_24_13": "crater_floor",
+  "SM_CP_original_material_027_24_14": "p185",
+  "SM_CP_original_material_027_24_15": "p43",
+  "SM_CP_original_material_027_24_16": "crater_floor",
+  "SM_CP_original_material_027_24_17": "crater_floor",
+  "SM_CP_original_material_027_24_18": "crater_floor",
+  "SM_CP_original_material_027_24_19": "crater_floor",
+  "SM_CP_original_material_027_24_20": "crater_floor",
+  "SM_CP_original_material_027_24_21": "p37",
+  "SM_CP_original_material_027_24_22": "p36",
+  "SM_CP_original_material_027_24_9": "crater_floor",
+  "SM_CP_original_material_027_25_10": "crater_floor",
+  "SM_CP_original_material_027_25_11": "crater_floor",
+  "SM_CP_original_material_027_25_12": "crater_floor",
+  "SM_CP_original_material_027_25_13": "crater_floor",
+  "SM_CP_original_material_027_25_14": "crater_floor",
+  "SM_CP_original_material_027_25_15": "p43",
+  "SM_CP_original_material_027_25_16": "crater_floor",
+  "SM_CP_original_material_027_25_17": "crater_floor",
+  "SM_CP_original_material_027_25_18": "crater_floor",
+  "SM_CP_original_material_027_25_19": "crater_floor",
+  "SM_CP_original_material_027_25_20": "p38",
+  "SM_CP_original_material_027_25_21": "p37",
+  "SM_CP_original_material_027_26_12": "crater_floor",
+  "SM_CP_original_material_027_26_13": "crater_floor",
+  "SM_CP_original_material_027_26_14": "crater_floor",
+  "SM_CP_original_material_027_26_15": "crater_floor",
+  "SM_CP_original_material_027_26_16": "p43",
+  "SM_CP_original_material_027_26_17": "p42",
+  "SM_CP_original_material_027_26_18": "p42",
+  "SM_CP_original_material_027_26_19": "p41",
+  "SM_CP_original_material_027_26_20": "p39",
+  "SM_CP_original_material_027_27_14": "crater_floor",
+  "SM_CP_original_material_027_27_15": "crater_floor",
+  "SM_CP_original_material_027_27_16": "crater_floor",
+  "SM_CP_original_material_029_13_15": "p300",
+  "SM_CP_original_material_029_13_16": "p8",
+  "SM_CP_original_material_029_13_17": "p8",
+  "SM_CP_original_material_029_13_18": "p8",
+  "SM_CP_original_material_029_14_17": "p8",
+  "SM_CP_original_material_029_14_18": "p9",
+  "SM_CP_original_material_029_14_19": "p9",
+  "SM_CP_original_material_029_14_20": "p9",
+  "SM_CP_original_material_029_14_21": "p9",
+  "SM_CP_original_material_029_15_19": "p9",
+  "SM_CP_original_material_029_15_20": "p9",
+  "SM_CP_original_material_029_15_21": "p9",
+  "SM_CP_original_material_029_15_22": "p10",
+  "SM_CP_original_material_029_16_21": "p10",
+  "SM_CP_original_material_029_16_22": "p10",
+  "SM_CP_original_material_029_17_22": "p320",
+  "SM_CP_original_material_029_17_23": "p320",
+  "SM_CP_original_material_029_18_22": "p320",
+  "SM_CP_original_material_029_18_23": "p321",
+  "SM_CP_original_material_029_19_22": "p30",
+  "SM_CP_original_material_029_19_23": "p30",
+  "SM_CP_original_material_029_20_22": "p31",
+  "SM_CP_original_material_029_20_23": "p31",
+  "SM_CP_original_material_029_21_13": "p56",
+  "SM_CP_original_material_029_21_14": "p56",
+  "SM_CP_original_material_029_21_22": "p34",
+  "SM_CP_original_material_029_21_23": "p32",
+  "SM_CP_original_material_029_22_13": "p55",
+  "SM_CP_original_material_029_22_14": "p55",
+  "SM_CP_original_material_029_22_15": "p47",
+  "SM_CP_original_material_029_22_22": "p34",
+  "SM_CP_original_material_029_22_23": "p34",
+  "SM_CP_original_material_029_23_13": "p54",
+  "SM_CP_original_material_029_23_14": "p185",
+  "SM_CP_original_material_029_23_15": "p46",
+  "SM_CP_original_material_029_23_16": "p45",
+  "SM_CP_original_material_029_23_21": "p37",
+  "SM_CP_original_material_029_23_22": "p36",
+  "SM_CP_original_material_029_24_13": "p53",
+  "SM_CP_original_material_029_24_14": "p185",
+  "SM_CP_original_material_029_24_15": "p45",
+  "SM_CP_original_material_029_24_16": "p45",
+  "SM_CP_original_material_029_24_21": "p37",
+  "SM_CP_original_material_029_24_22": "p37",
+  "SM_CP_original_material_029_25_13": "p51",
+  "SM_CP_original_material_029_25_14": "p51",
+  "SM_CP_original_material_029_25_15": "p43",
+  "SM_CP_original_material_029_25_16": "p43",
+  "SM_CP_original_material_029_25_17": "p42",
+  "SM_CP_original_material_029_25_18": "p42",
+  "SM_CP_original_material_029_25_19": "p39",
+  "SM_CP_original_material_029_25_20": "p38",
+  "SM_CP_original_material_029_25_21": "p37",
+  "SM_CP_original_material_029_26_15": "p43",
+  "SM_CP_original_material_029_26_16": "p43",
+  "SM_CP_original_material_029_26_17": "p42",
+  "SM_CP_original_material_029_26_18": "p42",
+  "SM_CP_original_material_029_26_19": "p39",
+  "SM_CP_original_material_029_26_20": "p39",
+  "SM_CP_original_material_030_12_14": "p308",
+  "SM_CP_original_material_030_12_15": "p308",
+  "SM_CP_original_material_030_13_13": "p308",
+  "SM_CP_original_material_030_13_14": "p308",
+  "SM_CP_original_material_030_13_15": "p308",
+  "SM_CP_original_material_030_13_16": "p8",
+  "SM_CP_original_material_030_13_17": "p8",
+  "SM_CP_original_material_030_13_18": "p8",
+  "SM_CP_original_material_030_14_13": "p308",
+  "SM_CP_original_material_030_14_14": "p308",
+  "SM_CP_original_material_030_14_15": "p308",
+  "SM_CP_original_material_030_14_16": "p308",
+  "SM_CP_original_material_030_14_17": "p8",
+  "SM_CP_original_material_030_14_18": "p8",
+  "SM_CP_original_material_030_14_19": "p9",
+  "SM_CP_original_material_030_14_20": "p9",
+  "SM_CP_original_material_030_15_13": "p310",
+  "SM_CP_original_material_030_15_14": "p310",
+  "SM_CP_original_material_030_15_15": "p306",
+  "SM_CP_original_material_030_15_16": "p306",
+  "SM_CP_original_material_030_15_19": "p9",
+  "SM_CP_original_material_030_15_20": "p9",
+  "SM_CP_original_material_030_15_21": "p9",
+  "SM_CP_original_material_030_15_22": "p10",
+  "SM_CP_original_material_030_16_13": "p311",
+  "SM_CP_original_material_030_16_14": "p311",
+  "SM_CP_original_material_030_16_16": "p306",
+  "SM_CP_original_material_030_16_21": "p10",
+  "SM_CP_original_material_030_16_22": "p10",
+  "SM_CP_original_material_030_17_13": "p311",
+  "SM_CP_original_material_030_17_14": "p311",
+  "SM_CP_original_material_030_17_22": "p320",
+  "SM_CP_original_material_030_18_13": "p311",
+  "SM_CP_original_material_030_18_14": "p311",
+  "SM_CP_original_material_030_18_22": "p320",
+  "SM_CP_original_material_030_18_23": "p321",
+  "SM_CP_original_material_030_19_13": "p312",
+  "SM_CP_original_material_030_19_14": "p312",
+  "SM_CP_original_material_030_19_22": "p30",
+  "SM_CP_original_material_030_19_23": "p30",
+  "SM_CP_original_material_030_20_22": "p31",
+  "SM_CP_original_material_030_20_23": "p31",
+  "SM_CP_original_material_030_21_13": "p56",
+  "SM_CP_original_material_030_21_14": "p56",
+  "SM_CP_original_material_030_21_22": "p34",
+  "SM_CP_original_material_030_21_23": "p32",
+  "SM_CP_original_material_030_22_13": "p55",
+  "SM_CP_original_material_030_22_14": "p55",
+  "SM_CP_original_material_030_22_15": "p47",
+  "SM_CP_original_material_030_22_22": "p34",
+  "SM_CP_original_material_030_22_23": "p34",
+  "SM_CP_original_material_030_23_13": "p55",
+  "SM_CP_original_material_030_23_14": "p49",
+  "SM_CP_original_material_030_23_15": "p49",
+  "SM_CP_original_material_030_23_16": "p45",
+  "SM_CP_original_material_030_23_21": "p37",
+  "SM_CP_original_material_030_23_22": "p34",
+  "SM_CP_original_material_030_24_13": "p187",
+  "SM_CP_original_material_030_24_14": "p185",
+  "SM_CP_original_material_030_24_15": "p43",
+  "SM_CP_original_material_030_24_16": "p45",
+  "SM_CP_original_material_030_24_21": "p37",
+  "SM_CP_original_material_030_24_22": "p37",
+  "SM_CP_original_material_030_25_13": "p51",
+  "SM_CP_original_material_030_25_14": "p50",
+  "SM_CP_original_material_030_25_15": "p43",
+  "SM_CP_original_material_030_25_16": "p43",
+  "SM_CP_original_material_030_25_17": "p42",
+  "SM_CP_original_material_030_25_18": "p42",
+  "SM_CP_original_material_030_25_19": "p39",
+  "SM_CP_original_material_030_25_20": "p38",
+  "SM_CP_original_material_030_25_21": "p37",
+  "SM_CP_original_material_030_26_15": "p43",
+  "SM_CP_original_material_030_26_16": "p43",
+  "SM_CP_original_material_030_26_17": "p42",
+  "SM_CP_original_material_030_26_18": "p42",
+  "SM_CP_original_material_030_26_19": "p39",
+  "SM_CP_original_material_030_26_20": "p39",
+  "SM_CP_original_material_038_12_16": "p183",
+  "SM_CP_original_material_038_13_16": "p183",
+  "SM_CP_original_material_039_12_16": "p183",
+  "SM_CP_original_material_039_13_16": "p183",
+  "SM_CP_original_material_039_13_17": "p8",
+  "SM_CP_original_material_039_13_18": "p8",
+  "SM_CP_original_material_039_14_13": "p309",
+  "SM_CP_original_material_039_14_14": "p308",
+  "SM_CP_original_material_039_14_15": "p308",
+  "SM_CP_original_material_039_14_16": "p308",
+  "SM_CP_original_material_039_14_17": "p303",
+  "SM_CP_original_material_039_14_18": "p8",
+  "SM_CP_original_material_039_15_14": "p310",
+  "SM_CP_original_material_039_15_15": "p306",
+  "SM_CP_original_material_039_15_16": "p307",
+  "SM_CP_original_material_039_15_17": "p302",
+  "SM_CP_original_material_039_16_15": "p306",
+  "SM_CP_original_material_039_16_16": "p306",
+  "SM_CP_original_material_041_12_16": "p183",
+  "SM_CP_original_material_041_13_16": "p183",
+  "SM_CP_original_material_045_12_14": "p308",
+  "SM_CP_original_material_045_12_15": "p308",
+  "SM_CP_original_material_045_12_16": "p183",
+  "SM_CP_original_material_045_13_13": "p308",
+  "SM_CP_original_material_045_13_14": "p308",
+  "SM_CP_original_material_045_13_15": "p303",
+  "SM_CP_original_material_045_13_16": "p183",
+  "SM_CP_original_material_045_13_17": "p8",
+  "SM_CP_original_material_045_13_18": "p8",
+  "SM_CP_original_material_045_14_13": "p309",
+  "SM_CP_original_material_045_14_14": "p308",
+  "SM_CP_original_material_045_14_15": "p308",
+  "SM_CP_original_material_045_14_16": "p308",
+  "SM_CP_original_material_045_14_17": "p303",
+  "SM_CP_original_material_045_14_18": "p8",
+  "SM_CP_original_material_045_15_13": "p310",
+  "SM_CP_original_material_045_15_14": "p310",
+  "SM_CP_original_material_045_15_15": "p306",
+  "SM_CP_original_material_045_15_16": "p305",
+  "SM_CP_original_material_045_15_17": "p302",
+  "SM_CP_original_material_045_16_13": "p311",
+  "SM_CP_original_material_045_16_14": "p311",
+  "SM_CP_original_material_045_16_15": "p306",
+  "SM_CP_original_material_045_16_16": "p306",
+  "SM_CP_original_material_045_17_13": "p311",
+  "SM_CP_original_material_045_17_14": "p311",
+  "SM_CP_original_material_045_18_13": "p311",
+  "SM_CP_original_material_045_18_14": "p311",
+  "SM_CP_original_material_045_19_13": "p312",
+  "SM_CP_original_material_045_19_14": "p312",
+  "SM_CP_original_material_050_22_14": "p47",
+  "SM_CP_original_material_050_22_15": "p47",
+  "SM_CP_original_material_050_23_14": "p47",
+  "SM_CP_original_material_050_23_15": "p45",
+  "SM_CP_original_material_050_23_16": "p45",
+  "SM_CP_original_material_050_24_13": "p51",
+  "SM_CP_original_material_050_24_15": "p45",
+  "SM_CP_original_material_050_24_16": "p45",
+  "SM_CP_original_material_050_25_13": "p51",
+  "SM_CP_original_material_050_25_14": "p51",
+  "SM_CP_original_material_051_22_15": "p47",
+  "SM_CP_original_material_051_23_15": "p45",
+  "SM_CP_original_material_051_23_16": "p45",
+  "SM_CP_original_material_051_24_13": "p51",
+  "SM_CP_original_material_051_24_15": "p45",
+  "SM_CP_original_material_051_24_16": "p45",
+  "SM_CP_original_material_051_25_13": "p51",
+  "SM_CP_original_material_051_25_14": "p51",
+  "SM_CP_original_material_052_23_15": "p47",
+  "SM_CP_original_material_052_24_13": "p51",
+  "SM_CP_original_material_052_24_14": "p51",
+  "SM_CP_original_material_052_24_15": "p45",
+  "SM_CP_original_material_052_25_13": "p51",
+  "SM_CP_original_material_052_25_14": "p51",
+  "SM_CP_original_material_053_22_14": "p5",
+  "SM_CP_original_material_053_23_15": "p47",
+  "SM_CP_original_material_053_24_13": "p51",
+  "SM_CP_original_material_053_24_15": "p45",
+  "SM_CP_original_material_053_25_13": "p51",
+  "SM_CP_original_material_053_25_14": "p51",
+  "SM_CP_original_material_054_21_14": "p5",
+  "SM_CP_original_material_054_21_15": "p5",
+  "SM_CP_original_material_054_21_16": "p5",
+  "SM_CP_original_material_054_21_17": "p5",
+  "SM_CP_original_material_054_22_14": "p5",
+  "SM_CP_original_material_054_22_15": "p5",
+  "SM_CP_original_material_054_22_16": "p5",
+  "SM_CP_original_material_054_22_17": "p5",
+  "SM_CP_original_material_055_21_14": "p5",
+  "SM_CP_original_material_055_21_15": "p5",
+  "SM_CP_original_material_055_21_16": "p5",
+  "SM_CP_original_material_055_21_17": "p5",
+  "SM_CP_original_material_055_22_14": "p5",
+  "SM_CP_original_material_055_22_15": "p5",
+  "SM_CP_original_material_055_22_16": "p5",
+  "SM_CP_original_material_055_22_17": "p5",
+  "SM_CP_original_material_056_21_14": "p5",
+  "SM_CP_original_material_056_21_15": "p5",
+  "SM_CP_original_material_056_21_16": "p5",
+  "SM_CP_original_material_056_22_14": "p5",
+  "SM_CP_original_material_056_22_15": "p5",
+  "SM_CP_original_material_056_22_16": "p5",
+  "SM_CP_original_material_057_21_14": "p5",
+  "SM_CP_original_material_057_21_15": "p5",
+  "SM_CP_original_material_057_21_16": "p5",
+  "SM_CP_original_material_057_21_17": "p5",
+  "SM_CP_original_material_057_22_14": "p5",
+  "SM_CP_original_material_057_22_15": "p5",
+  "SM_CP_original_material_057_22_16": "p5",
+  "SM_CP_original_material_057_22_17": "p5",
+  "SM_CP_original_material_058_21_14": "p5",
+  "SM_CP_original_material_058_21_15": "p5",
+  "SM_CP_original_material_058_21_16": "p5",
+  "SM_CP_original_material_058_21_17": "p5",
+  "SM_CP_original_material_058_22_14": "p5",
+  "SM_CP_original_material_058_22_15": "p5",
+  "SM_CP_original_material_058_22_16": "p5",
+  "SM_CP_original_material_058_22_17": "p5",
+  "SM_CP_original_material_059_22_14": "p5",
+  "SM_CP_original_material_060_21_16": "p5"
+ },
+ "mixed": {
+  "SM_CP_coping_coping_steel_13_15": [
+   "p308"
+  ],
+  "SM_CP_coping_coping_steel_13_16": [
+   "p303",
+   "p308"
+  ],
+  "SM_CP_coping_coping_steel_13_17": [
+   "p303"
+  ],
+  "SM_CP_coping_coping_steel_14_15": [
+   "p303"
+  ],
+  "SM_CP_coping_coping_steel_14_16": [
+   "p308"
+  ],
+  "SM_CP_coping_coping_steel_15_15": [
+   "p303"
+  ],
+  "SM_CP_coping_coping_steel_15_16": [
+   "p303"
+  ],
+  "SM_CP_coping_coping_steel_17_22": [
+   "p30"
+  ],
+  "SM_CP_coping_coping_steel_22_22": [
+   "p34"
+  ],
+  "SM_CP_coping_coping_steel_22_23": [
+   "p31"
+  ],
+  "SM_CP_coping_coping_steel_23_13": [
+   "p55"
+  ],
+  "SM_CP_coping_coping_steel_23_14": [
+   "p55"
+  ],
+  "SM_CP_coping_coping_steel_23_15": [
+   "p45"
+  ],
+  "SM_CP_coping_coping_steel_23_22": [
+   "p36"
+  ],
+  "SM_CP_coping_coping_steel_24_14": [
+   "p51"
+  ],
+  "SM_CP_coping_coping_steel_24_15": [
+   "p45"
+  ],
+  "SM_CP_coping_coping_steel_25_15": [
+   "p45"
+  ],
+  "SM_CP_coping_coping_steel_26_16": [
+   "p45"
+  ],
+  "SM_CP_coping_coping_steel_26_17": [
+   "p45"
+  ],
+  "SM_CP_coping_material_053_22_14": [
+   "p45"
+  ],
+  "SM_CP_coping_material_053_22_15": [
+   "p45"
+  ],
+  "SM_CP_coping_material_053_23_15": [
+   "p45"
+  ],
+  "SM_CP_coping_material_053_24_15": [
+   "p45"
+  ],
+  "SM_CP_original_material_027_13_16": [
+   "p8"
+  ],
+  "SM_CP_original_material_027_13_18": [
+   "p9"
+  ],
+  "SM_CP_original_material_027_14_13": [
+   "p309"
+  ],
+  "SM_CP_original_material_027_14_14": [
+   "p309"
+  ],
+  "SM_CP_original_material_027_14_15": [
+   "p305",
+   "p307"
+  ],
+  "SM_CP_original_material_027_14_16": [
+   "p302",
+   "p303"
+  ],
+  "SM_CP_original_material_027_14_17": [
+   "p302",
+   "p303",
+   "p8"
+  ],
+  "SM_CP_original_material_027_14_18": [
+   "crater_floor",
+   "p8"
+  ],
+  "SM_CP_original_material_027_15_13": [
+   "p309",
+   "p310"
+  ],
+  "SM_CP_original_material_027_15_14": [
+   "crater_floor",
+   "p305",
+   "p309"
+  ],
+  "SM_CP_original_material_027_15_15": [
+   "crater_floor",
+   "p305",
+   "p307"
+  ],
+  "SM_CP_original_material_027_15_16": [
+   "crater_floor",
+   "p302",
+   "p305",
+   "p306",
+   "p308"
+  ],
+  "SM_CP_original_material_027_15_17": [
+   "p302"
+  ],
+  "SM_CP_original_material_027_15_19": [
+   "p9"
+  ],
+  "SM_CP_original_material_027_15_20": [
+   "crater_floor"
+  ],
+  "SM_CP_original_material_027_15_21": [
+   "p9"
+  ],
+  "SM_CP_original_material_027_16_15": [
+   "p306"
+  ],
+  "SM_CP_original_material_027_16_16": [
+   "p306"
+  ],
+  "SM_CP_original_material_027_16_21": [
+   "crater_floor"
+  ],
+  "SM_CP_original_material_027_17_22": [
+   "crater_floor",
+   "p10",
+   "p12",
+   "p13"
+  ],
+  "SM_CP_original_material_027_18_22": [
+   "p321",
+   "p322"
+  ],
+  "SM_CP_original_material_027_18_23": [
+   "p320",
+   "p322"
+  ],
+  "SM_CP_original_material_027_19_22": [
+   "crater_floor",
+   "p322"
+  ],
+  "SM_CP_original_material_027_19_23": [
+   "p322"
+  ],
+  "SM_CP_original_material_027_20_22": [
+   "crater_floor"
+  ],
+  "SM_CP_original_material_027_21_13": [
+   "p56"
+  ],
+  "SM_CP_original_material_027_21_22": [
+   "crater_floor",
+   "p31",
+   "p34"
+  ],
+  "SM_CP_original_material_027_21_23": [
+   "p31",
+   "p33"
+  ],
+  "SM_CP_original_material_027_22_13": [
+   "p56"
+  ],
+  "SM_CP_original_material_027_22_22": [
+   "crater_floor"
+  ],
+  "SM_CP_original_material_027_23_13": [
+   "p53",
+   "p55"
+  ],
+  "SM_CP_original_material_027_23_14": [
+   "crater_floor",
+   "p53",
+   "p54",
+   "p55"
+  ],
+  "SM_CP_original_material_027_23_15": [
+   "p185",
+   "p49"
+  ],
+  "SM_CP_original_material_027_23_21": [
+   "p36"
+  ],
+  "SM_CP_original_material_027_23_22": [
+   "p34",
+   "p35"
+  ],
+  "SM_CP_original_material_027_24_13": [
+   "p53"
+  ],
+  "SM_CP_original_material_027_24_14": [
+   "crater_floor",
+   "p186",
+   "p187",
+   "p53"
+  ],
+  "SM_CP_original_material_027_24_15": [
+   "p185"
+  ],
+  "SM_CP_original_material_027_24_21": [
+   "crater_floor"
+  ],
+  "SM_CP_original_material_027_24_22": [
+   "p37"
+  ],
+  "SM_CP_original_material_027_25_14": [
+   "p186",
+   "p50"
+  ],
+  "SM_CP_original_material_027_25_15": [
+   "crater_floor"
+  ],
+  "SM_CP_original_material_027_25_16": [
+   "p42",
+   "p43"
+  ],
+  "SM_CP_original_material_027_25_17": [
+   "p42"
+  ],
+  "SM_CP_original_material_027_25_18": [
+   "p41",
+   "p42"
+  ],
+  "SM_CP_original_material_027_25_19": [
+   "p39",
+   "p41"
+  ],
+  "SM_CP_original_material_027_25_20": [
+   "crater_floor",
+   "p37"
+  ],
+  "SM_CP_original_material_027_25_21": [
+   "p38"
+  ],
+  "SM_CP_original_material_027_26_15": [
+   "p43"
+  ],
+  "SM_CP_original_material_027_26_16": [
+   "crater_floor",
+   "p42"
+  ],
+  "SM_CP_original_material_027_26_18": [
+   "p41"
+  ],
+  "SM_CP_original_material_027_26_19": [
+   "p39"
+  ],
+  "SM_CP_original_material_029_13_16": [
+   "p300"
+  ],
+  "SM_CP_original_material_029_13_18": [
+   "p9"
+  ],
+  "SM_CP_original_material_029_14_18": [
+   "p8"
+  ],
+  "SM_CP_original_material_029_15_21": [
+   "p10"
+  ],
+  "SM_CP_original_material_029_16_22": [
+   "p11"
+  ],
+  "SM_CP_original_material_029_17_22": [
+   "p10",
+   "p11",
+   "p12",
+   "p13",
+   "p14"
+  ],
+  "SM_CP_original_material_029_18_22": [
+   "p321",
+   "p322"
+  ],
+  "SM_CP_original_material_029_18_23": [
+   "p320",
+   "p322"
+  ],
+  "SM_CP_original_material_029_19_22": [
+   "p31",
+   "p322"
+  ],
+  "SM_CP_original_material_029_19_23": [
+   "p31",
+   "p322"
+  ],
+  "SM_CP_original_material_029_21_14": [
+   "p189",
+   "p190"
+  ],
+  "SM_CP_original_material_029_21_22": [
+   "p31",
+   "p32",
+   "p33"
+  ],
+  "SM_CP_original_material_029_21_23": [
+   "p31",
+   "p33",
+   "p34"
+  ],
+  "SM_CP_original_material_029_22_13": [
+   "p56"
+  ],
+  "SM_CP_original_material_029_22_14": [
+   "p47",
+   "p56"
+  ],
+  "SM_CP_original_material_029_22_23": [
+   "p33"
+  ],
+  "SM_CP_original_material_029_23_13": [
+   "p53",
+   "p55"
+  ],
+  "SM_CP_original_material_029_23_14": [
+   "p48",
+   "p49",
+   "p53",
+   "p54",
+   "p55"
+  ],
+  "SM_CP_original_material_029_23_15": [
+   "p184",
+   "p45",
+   "p47",
+   "p48",
+   "p49"
+  ],
+  "SM_CP_original_material_029_23_21": [
+   "p36"
+  ],
+  "SM_CP_original_material_029_23_22": [
+   "p34",
+   "p35",
+   "p37"
+  ],
+  "SM_CP_original_material_029_24_13": [
+   "p187",
+   "p51",
+   "p52"
+  ],
+  "SM_CP_original_material_029_24_14": [
+   "p186",
+   "p187",
+   "p188",
+   "p50",
+   "p51",
+   "p52",
+   "p53"
+  ],
+  "SM_CP_original_material_029_24_15": [
+   "p184",
+   "p185",
+   "p43",
+   "p44",
+   "p49"
+  ],
+  "SM_CP_original_material_029_24_22": [
+   "p36"
+  ],
+  "SM_CP_original_material_029_25_14": [
+   "p186",
+   "p50"
+  ],
+  "SM_CP_original_material_029_25_18": [
+   "p41"
+  ],
+  "SM_CP_original_material_029_25_19": [
+   "p40",
+   "p41"
+  ],
+  "SM_CP_original_material_029_25_20": [
+   "p37",
+   "p39"
+  ],
+  "SM_CP_original_material_029_25_21": [
+   "p38"
+  ],
+  "SM_CP_original_material_029_26_16": [
+   "p42"
+  ],
+  "SM_CP_original_material_029_26_18": [
+   "p41"
+  ],
+  "SM_CP_original_material_029_26_19": [
+   "p40",
+   "p41"
+  ],
+  "SM_CP_original_material_030_13_15": [
+   "p303"
+  ],
+  "SM_CP_original_material_030_13_16": [
+   "p183",
+   "p300",
+   "p303",
+   "p308"
+  ],
+  "SM_CP_original_material_030_14_13": [
+   "p309"
+  ],
+  "SM_CP_original_material_030_14_14": [
+   "p309"
+  ],
+  "SM_CP_original_material_030_14_15": [
+   "p302",
+   "p303",
+   "p307"
+  ],
+  "SM_CP_original_material_030_14_16": [
+   "p302",
+   "p303"
+  ],
+  "SM_CP_original_material_030_14_18": [
+   "p9"
+  ],
+  "SM_CP_original_material_030_15_13": [
+   "p309"
+  ],
+  "SM_CP_original_material_030_15_14": [
+   "p309"
+  ],
+  "SM_CP_original_material_030_15_15": [
+   "p302",
+   "p305",
+   "p307"
+  ],
+  "SM_CP_original_material_030_15_16": [
+   "p302",
+   "p305",
+   "p307",
+   "p308"
+  ],
+  "SM_CP_original_material_030_15_21": [
+   "p10"
+  ],
+  "SM_CP_original_material_030_16_22": [
+   "p11"
+  ],
+  "SM_CP_original_material_030_17_22": [
+   "p11",
+   "p12",
+   "p13",
+   "p14"
+  ],
+  "SM_CP_original_material_030_18_22": [
+   "p321",
+   "p322"
+  ],
+  "SM_CP_original_material_030_18_23": [
+   "p320",
+   "p322"
+  ],
+  "SM_CP_original_material_030_19_13": [
+   "p311"
+  ],
+  "SM_CP_original_material_030_19_14": [
+   "p311"
+  ],
+  "SM_CP_original_material_030_19_22": [
+   "p31",
+   "p322"
+  ],
+  "SM_CP_original_material_030_19_23": [
+   "p31",
+   "p322"
+  ],
+  "SM_CP_original_material_030_21_14": [
+   "p189",
+   "p190"
+  ],
+  "SM_CP_original_material_030_21_22": [
+   "p32",
+   "p33"
+  ],
+  "SM_CP_original_material_030_21_23": [
+   "p31",
+   "p33",
+   "p34"
+  ],
+  "SM_CP_original_material_030_22_13": [
+   "p56"
+  ],
+  "SM_CP_original_material_030_22_14": [
+   "p47",
+   "p56"
+  ],
+  "SM_CP_original_material_030_22_23": [
+   "p33"
+  ],
+  "SM_CP_original_material_030_23_13": [
+   "p53",
+   "p54"
+  ],
+  "SM_CP_original_material_030_23_14": [
+   "p185",
+   "p48",
+   "p53",
+   "p54",
+   "p55"
+  ],
+  "SM_CP_original_material_030_23_15": [
+   "p184",
+   "p45",
+   "p46",
+   "p47",
+   "p48"
+  ],
+  "SM_CP_original_material_030_23_21": [
+   "p36"
+  ],
+  "SM_CP_original_material_030_23_22": [
+   "p35",
+   "p36",
+   "p37"
+  ],
+  "SM_CP_original_material_030_24_13": [
+   "p51",
+   "p52",
+   "p53"
+  ],
+  "SM_CP_original_material_030_24_14": [
+   "p186",
+   "p187",
+   "p188",
+   "p49",
+   "p50",
+   "p51",
+   "p52",
+   "p53"
+  ],
+  "SM_CP_original_material_030_24_15": [
+   "p184",
+   "p185",
+   "p44",
+   "p45",
+   "p49"
+  ],
+  "SM_CP_original_material_030_24_22": [
+   "p36"
+  ],
+  "SM_CP_original_material_030_25_14": [
+   "p186",
+   "p51"
+  ],
+  "SM_CP_original_material_030_25_18": [
+   "p41"
+  ],
+  "SM_CP_original_material_030_25_19": [
+   "p40",
+   "p41"
+  ],
+  "SM_CP_original_material_030_25_20": [
+   "p39"
+  ],
+  "SM_CP_original_material_030_25_21": [
+   "p38"
+  ],
+  "SM_CP_original_material_030_26_16": [
+   "p42"
+  ],
+  "SM_CP_original_material_030_26_18": [
+   "p41"
+  ],
+  "SM_CP_original_material_030_26_19": [
+   "p40",
+   "p41"
+  ],
+  "SM_CP_original_material_039_13_16": [
+   "p8"
+  ],
+  "SM_CP_original_material_039_14_13": [
+   "p308"
+  ],
+  "SM_CP_original_material_039_14_14": [
+   "p309"
+  ],
+  "SM_CP_original_material_039_14_15": [
+   "p307"
+  ],
+  "SM_CP_original_material_039_14_17": [
+   "p302",
+   "p8"
+  ],
+  "SM_CP_original_material_039_15_14": [
+   "p305",
+   "p309"
+  ],
+  "SM_CP_original_material_039_15_15": [
+   "p305",
+   "p307"
+  ],
+  "SM_CP_original_material_039_15_16": [
+   "p302",
+   "p305",
+   "p306"
+  ],
+  "SM_CP_original_material_045_13_15": [
+   "p308"
+  ],
+  "SM_CP_original_material_045_13_16": [
+   "p303",
+   "p308",
+   "p8"
+  ],
+  "SM_CP_original_material_045_13_17": [
+   "p303"
+  ],
+  "SM_CP_original_material_045_14_13": [
+   "p308"
+  ],
+  "SM_CP_original_material_045_14_14": [
+   "p309"
+  ],
+  "SM_CP_original_material_045_14_15": [
+   "p302",
+   "p303",
+   "p305",
+   "p307",
+   "p309"
+  ],
+  "SM_CP_original_material_045_14_16": [
+   "p302",
+   "p303"
+  ],
+  "SM_CP_original_material_045_14_17": [
+   "p302",
+   "p8"
+  ],
+  "SM_CP_original_material_045_15_13": [
+   "p309"
+  ],
+  "SM_CP_original_material_045_15_14": [
+   "p305",
+   "p309"
+  ],
+  "SM_CP_original_material_045_15_15": [
+   "p302",
+   "p305",
+   "p307"
+  ],
+  "SM_CP_original_material_045_15_16": [
+   "p302",
+   "p306",
+   "p307",
+   "p308"
+  ],
+  "SM_CP_original_material_045_19_13": [
+   "p311"
+  ],
+  "SM_CP_original_material_045_19_14": [
+   "p311"
+  ],
+  "SM_CP_original_material_050_23_15": [
+   "p47"
+  ],
+  "SM_CP_original_material_051_23_15": [
+   "p47"
+  ],
+  "SM_CP_original_material_052_23_15": [
+   "p45"
+  ],
+  "SM_CP_original_material_053_23_15": [
+   "p45"
+  ]
+ },
+ "collision": {
+  "UC_CP_original_0_Piece000": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "crater_floor": 19454,
+    "p308": 7297,
+    "p310": 3620,
+    "p309": 2397
+   }
+  },
+  "UC_CP_original_0_Piece001": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p8": 7935,
+    "p306": 5953,
+    "p183": 3224,
+    "p308": 3153
+   }
+  },
+  "UC_CP_original_0_Piece002": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "crater_floor": 18615,
+    "p311": 11321,
+    "p312": 2329,
+    "p55": 390
+   }
+  },
+  "UC_CP_original_0_Piece003": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p5": 18242,
+    "p55": 5238,
+    "crater_floor": 3922,
+    "p56": 3661
+   }
+  },
+  "UC_CP_original_0_Piece004": {
+   "owner": "p5",
+   "triangles": 32768,
+   "features": {
+    "p5": 32762,
+    "crater_floor": 6
+   }
+  },
+  "UC_CP_original_0_Piece005": {
+   "owner": "p5",
+   "triangles": 17646,
+   "features": {
+    "p5": 17625,
+    "p47": 21
+   }
+  },
+  "UC_CP_original_1_Piece000": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p5": 8147,
+    "p47": 4101,
+    "p53": 3704,
+    "p185": 3127
+   }
+  },
+  "UC_CP_original_1_Piece001": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p5": 25183,
+    "p185": 3323,
+    "p45": 1801,
+    "p186": 822
+   }
+  },
+  "UC_CP_original_1_Piece002": {
+   "owner": "p5",
+   "triangles": 32768,
+   "features": {
+    "p5": 32628,
+    "p47": 120,
+    "crater_floor": 20
+   }
+  },
+  "UC_CP_original_1_Piece003": {
+   "owner": "p5",
+   "triangles": 32768,
+   "features": {
+    "p5": 32768
+   }
+  },
+  "UC_CP_original_1_Piece004": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p43": 12149,
+    "crater_floor": 5022,
+    "p45": 4814,
+    "p51": 4623
+   }
+  },
+  "UC_CP_original_1_Piece005": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p42": 10408,
+    "p43": 8905,
+    "crater_floor": 7772,
+    "p9": 4597
+   }
+  },
+  "UC_CP_original_1_Piece006": {
+   "owner": "mixed",
+   "triangles": 2711,
+   "features": {
+    "p8": 2308,
+    "p9": 403
+   }
+  },
+  "UC_CP_original_2_Piece000": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p9": 23393,
+    "p8": 5959,
+    "crater_floor": 2410,
+    "p10": 1006
+   }
+  },
+  "UC_CP_original_2_Piece001": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p9": 29665,
+    "crater_floor": 2072,
+    "p10": 1031
+   }
+  },
+  "UC_CP_original_2_Piece002": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p10": 20502,
+    "crater_floor": 11653,
+    "p9": 613
+   }
+  },
+  "UC_CP_original_2_Piece003": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p320": 7045,
+    "p10": 6789,
+    "p31": 3360,
+    "p30": 3301
+   }
+  },
+  "UC_CP_original_2_Piece004": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p31": 8619,
+    "p30": 6281,
+    "crater_floor": 5092,
+    "p321": 3984
+   }
+  },
+  "UC_CP_original_2_Piece005": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p42": 12055,
+    "crater_floor": 11706,
+    "p37": 4664,
+    "p41": 3850
+   }
+  },
+  "UC_CP_original_2_Piece006": {
+   "owner": "mixed",
+   "triangles": 3322,
+   "features": {
+    "p39": 1548,
+    "p41": 772,
+    "p40": 672,
+    "crater_floor": 330
+   }
+  },
+  "UC_CP_original_3_Piece000": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p34": 7347,
+    "p38": 5914,
+    "p37": 5066,
+    "p39": 4695
+   }
+  },
+  "UC_CP_original_3_Piece001": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p34": 9439,
+    "p37": 6782,
+    "p31": 4444,
+    "p32": 4382
+   }
+  },
+  "UC_CP_original_3_Piece002": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p311": 2789,
+    "p185": 2414,
+    "p308": 2060,
+    "p306": 2031
+   }
+  },
+  "UC_CP_original_3_Piece003": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p9": 17489,
+    "p43": 5712,
+    "p10": 4415,
+    "p42": 2673
+   }
+  },
+  "UC_CP_original_3_Piece004": {
+   "owner": "mixed",
+   "triangles": 32768,
+   "features": {
+    "p10": 5767,
+    "p42": 3798,
+    "p31": 3393,
+    "p320": 3224
+   }
+  },
+  "UC_CP_original_3_Piece005": {
+   "owner": "mixed",
+   "triangles": 12962,
+   "features": {
+    "p34": 4554,
+    "p32": 2080,
+    "p37": 1826,
+    "p36": 1684
+   }
+  }
+ },
+ "materials": {
+  "crater_floor": [
+   "material_027",
+   "material_034",
+   "material_035",
+   "material_036",
+   "material_037",
+   "material_042",
+   "material_044"
+  ],
+  "p10": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p183": [
+   "material_027",
+   "material_038",
+   "material_039",
+   "material_041",
+   "material_045",
+   "material_046",
+   "material_047",
+   "material_048",
+   "material_049"
+  ],
+  "p185": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p187": [
+   "material_030"
+  ],
+  "p30": [
+   "coping_steel",
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p300": [
+   "material_029"
+  ],
+  "p302": [
+   "material_039",
+   "material_045"
+  ],
+  "p303": [
+   "coping_steel",
+   "material_039",
+   "material_045"
+  ],
+  "p305": [
+   "material_045"
+  ],
+  "p306": [
+   "material_027",
+   "material_030",
+   "material_039",
+   "material_045"
+  ],
+  "p307": [
+   "material_027",
+   "material_039"
+  ],
+  "p308": [
+   "coping_steel",
+   "material_027",
+   "material_030",
+   "material_039",
+   "material_045"
+  ],
+  "p309": [
+   "coping_steel",
+   "material_039",
+   "material_045"
+  ],
+  "p31": [
+   "coping_steel",
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p310": [
+   "material_027",
+   "material_030",
+   "material_039",
+   "material_045"
+  ],
+  "p311": [
+   "coping_steel",
+   "material_030",
+   "material_045"
+  ],
+  "p312": [
+   "material_030",
+   "material_045"
+  ],
+  "p32": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p320": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p321": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p34": [
+   "coping_steel",
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p36": [
+   "coping_steel",
+   "material_027",
+   "material_029"
+  ],
+  "p37": [
+   "coping_steel",
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p38": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p39": [
+   "coping_steel",
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p41": [
+   "coping_steel",
+   "material_027"
+  ],
+  "p42": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p43": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p45": [
+   "coping_steel",
+   "material_029",
+   "material_030",
+   "material_050",
+   "material_051",
+   "material_052",
+   "material_053"
+  ],
+  "p46": [
+   "material_027",
+   "material_029"
+  ],
+  "p47": [
+   "material_029",
+   "material_030",
+   "material_050",
+   "material_051",
+   "material_052",
+   "material_053"
+  ],
+  "p49": [
+   "material_030"
+  ],
+  "p5": [
+   "material_010",
+   "material_023",
+   "material_053",
+   "material_054",
+   "material_055",
+   "material_056",
+   "material_057",
+   "material_058",
+   "material_059",
+   "material_060"
+  ],
+  "p50": [
+   "material_030"
+  ],
+  "p51": [
+   "coping_steel",
+   "material_029",
+   "material_030",
+   "material_050",
+   "material_051",
+   "material_052",
+   "material_053"
+  ],
+  "p53": [
+   "material_029"
+  ],
+  "p54": [
+   "material_027",
+   "material_029"
+  ],
+  "p55": [
+   "coping_steel",
+   "material_029",
+   "material_030"
+  ],
+  "p56": [
+   "material_027",
+   "material_029",
+   "material_030"
+  ],
+  "p8": [
+   "coping_steel",
+   "material_027",
+   "material_029",
+   "material_030",
+   "material_039",
+   "material_045"
+  ],
+  "p9": [
+   "coping_steel",
+   "material_027",
+   "material_029",
+   "material_030"
+  ]
+ }
+}

@@ -1,0 +1,88 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park jump "Mega 55 m · mega" (piece p9, line L1): its render meshes (with its supports and coping), the collision pieces it fills, and the material instances and textures only it uses
+schema = 1
+id = "adopted/craterpark/p9-mega-55-m-mega"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/p9-mega-55-m-mega"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_14_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_15_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_16_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_16_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_coping_steel_17_22"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_14_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_15_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_14_18"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_14_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_14_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_14_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_15_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_15_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_029_15_21"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_14_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_14_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_15_19"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_15_20"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_030_15_21"

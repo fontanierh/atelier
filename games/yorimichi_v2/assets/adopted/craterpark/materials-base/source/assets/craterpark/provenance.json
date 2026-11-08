@@ -1,0 +1,10 @@
+{
+ "source": "https://github.com/fontanierh/crater-skate-park",
+ "commit": "bf511b19ef2e103071480a82ea1d55c34ac04be2",
+ "ownership": "The park's author, who contributed it to Yorimichi.",
+ "scene_sha256": "2573c2233d6f9ba83a129ca4e26cfee007d60f9f54de79df727517d0ebbbba43",
+ "materials_sha256": "2a28851147e417a72a5e63631bbced8bd0d96870e646920e121f30461ebef661",
+ "drop_in_sha256": "ab33b2d30dab26502d13f13050eb132fbf3569f951c10322f60f5fb6e3cb2aa3",
+ "conversion": "readable/mountain JSON arrays -> float32/uint32 npz, bit-identical to each mesh's arraysSha256; renderSkipTriangles as render_skip; textures, materials and the marked drop-in copied unchanged.",
+ "left_out": "readable/mountain/obj and meshes/*.json, which hold the same arrays; tools/, the Blender viewer."
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "adopted/craterpark/p312-into-the-orange-last-section",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_19_13.uasset": "e6dc7a3b4248517dc2913e0d4fe4686621e87d344b39751e554e5e92d6341d51",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_030_19_14.uasset": "6ea3ac61e05fe017502e13034f97b55ec80b9803539160ee0b795e1e949f1953",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_19_13.uasset": "1bfa39759eb0f65f4881220c3319031e6b1b607cc241765b5621a657e8dd7823",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_19_14.uasset": "3525812f24845bafdaa1d656e8b947f203b0f8105e55514dcc00a44b93afe3f4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

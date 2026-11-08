@@ -1,0 +1,115 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family concrete
+schema = 1
+id = "adopted/craterpark/shared-textures-concrete"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-concrete"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/concrete_deck.jpg"
+sha256 = "82bb41a28bd06a6bf31a8b502a2979329fd31e65d1078f2d53b86bf31d9902cf"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/concrete_deck.json"
+sha256 = "379e9acddd9a19a111a94d818b52bf250d22c893e9bede430af31980d94b8f49"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/concrete_edge.jpg"
+sha256 = "030c3aa2d24b357f7b083b00610ebc6436a9023ef295c6394c1855efb78e04f2"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/concrete_edge.json"
+sha256 = "1c8a2fc956f86457be3472d51355938abe2a8e24cabf259ec0373204235289b3"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ledge.jpg"
+sha256 = "c0032910434090670a88e40d24936d7a6b58a6f52f986d1beb1254b10d767087"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/ledge.json"
+sha256 = "b240f609384e174079e48af397f0b700ffb75a7f29655ef5b896241625352a18"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/planter.jpg"
+sha256 = "2aba61ea81e43744069b5db94557395d4a0e99a9a2e68ca74386a6937da087d8"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/planter.json"
+sha256 = "3fed2d4c63d1ebd681243fe5ab8607ff445724e812767d00773d6c107112d1fa"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/pool.jpg"
+sha256 = "3ac0ce1f60677d72dd332ed41247f2bffb46cddb9ed95091bb18bc900c9e4f82"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/pool.json"
+sha256 = "971621cbd512f7844b9aa6c948a4cab57050d1451d80e97985590653244f8bdc"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/side_bank.jpg"
+sha256 = "4a369cbfb9c8b9959ca747c1480f9e3b8626cafdb5734a9bd5fabb2deb26cb39"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/side_bank.json"
+sha256 = "51d4e669cfbcc45486e30d62463befd6981e2f6d91fdce38479abcdb441e628b"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/stamped.jpg"
+sha256 = "ed512f39e40303cbe95963bd343b88b1f35b3cb0cb1a8beff4016baa8cb6d81d"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/stamped.json"
+sha256 = "dedbf5091b392cb45546d660631daff67f911404380cf1efc53d016310dd8cd5"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0016.png"
+sha256 = "589e1b39cc05e01649398c26c2b21206a8b5f5caab75967548f53d77e35bc5af"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0025.png"
+sha256 = "140143c75e2c2f98b6aa0951494c7cc29c6590d803139887a7c1334739a9a9c8"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0029.png"
+sha256 = "d0a58a89d0b959b95ecb893f812daaf71309f86f94c98723b317ea1b6b7c4425"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0051.png"
+sha256 = "9998ced022cbfd86c99db2afec9b35502e34f0572d4ca386126bf2ba1a66fb5e"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0059.png"
+sha256 = "09bd90706676eebec622a0080c2c7eb9e89e74b0548786f4497ea9d72e78b742"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0067.png"
+sha256 = "8076683a90e6598be181cc802326281363c861c0b3fa88feea0852c1dd6b4dc2"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0073.png"
+sha256 = "2ec90c07464554aa5691b1ee23cb0a32b30f7bdac837c8ba26cd2493a511c9c3"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_concrete_deck"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_concrete_edge"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_ledge"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_planter"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_pool"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_side_bank"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_stamped"

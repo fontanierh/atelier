@@ -1,0 +1,66 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park textures several units share, surface family brick
+schema = 1
+id = "adopted/craterpark/shared-textures-brick"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/shared-textures-brick"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[sources]]
+path = "source/assets/craterpark/restyle/brick_coping.jpg"
+sha256 = "ece974a0cdb2e7c453422013f7bc0b0a9fa56561402ee1c4c9f5c2a4b425160b"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/brick_coping.json"
+sha256 = "09414cdb415f57347f58039216c1fd62211f5df4618ea7b015a87d97fb754a55"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/herringbone.jpg"
+sha256 = "bf93e86192436f9b00578d671347d5c85d5a06fbe2b63e069a04c40197db1cb5"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/herringbone.json"
+sha256 = "0c8954a8285c0f1fdbf305a4c63aac4a6812e8af992fd643e7f462d3d2cd853b"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/paving.jpg"
+sha256 = "eb44cb3a4d62b60c9dfcea8452bb45e8878150ae9557c3847a1c454e10fdfe50"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/paving.json"
+sha256 = "6d340c92e975762fbccee6073e9c297387010b7286e052f6cf0d82532e17786b"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/stair_brick.jpg"
+sha256 = "0434d7fb5eb043bf5cb64ad6999321b44e3618ffda694d13f8c14cbb1c2d16b7"
+
+[[sources]]
+path = "source/assets/craterpark/restyle/stair_brick.json"
+sha256 = "d4581751d24663362df671bcceca27142f24985f3bcd9a91078dd41fad69dbb7"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0030.png"
+sha256 = "ffd7de742ea0b1a5c3be765489a5898401b62aeb0c37e35a08d493deb1b742f0"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0036.png"
+sha256 = "630e0c303264768145fd208f60bb288011fde8d3567e6cf76d21686380383449"
+
+[[sources]]
+path = "source/assets/craterpark/textures/tex-0064.png"
+sha256 = "3d619e2d91a3f85305e63b0a0a8afbd63d9fa5b3c68798e68e70a85c3ee6ba97"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_brick_coping"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_herringbone"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_paving"
+
+[[outputs]]
+package = "/Game/CraterPark/Textures/T_CP_stair_brick"

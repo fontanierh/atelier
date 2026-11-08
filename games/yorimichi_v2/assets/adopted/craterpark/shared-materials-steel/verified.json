@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/craterpark/shared-materials-steel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_coping_steel.uasset": "d0b943ddff962cceed48d27c9800354f5010a4efee44791fe7592b346a4c128e",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_053.uasset": "5d1f6732862ed5861b6cbf5762d8d5a03373f1fca473aa93648385f1623b120b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

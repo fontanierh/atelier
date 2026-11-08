@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/craterpark/shared-materials-lacquer",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_050.uasset": "952fcbcbaae77e389e912138ad351a318b51362abb0a5bda84a0bd54417962c1",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_051.uasset": "072d47ce687dbc53658ee406df6aae1ac4a53b868086e0905665db9d85223ae8",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_052.uasset": "69e2d2823c374325d128b91075edc8f04f6d210ffd173b326eebf6ecdf5b799b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

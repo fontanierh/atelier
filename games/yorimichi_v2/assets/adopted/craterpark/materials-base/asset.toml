@@ -1,0 +1,428 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park parent materials, and the generator that made every Crater Park package (the region and editor scripts, the shipped park document and its terrain, the texture, shrine and import scripts)
+schema = 1
+id = "adopted/craterpark/materials-base"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/materials-base"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "source/assets/craterpark/concepts/editor/crater-floor-layout.jpg"
+sha256 = "099d9edbc9b46302658a8518bcc4ec271a7b267c24c8520e9d5ca468be8f9fcf"
+
+[[sources]]
+path = "source/assets/craterpark/concepts/editor/crater-floor.jpg"
+sha256 = "42db0a0478c55192376874c5f780430c0dbcc86b22e45c5189752d53d8e23373"
+
+[[sources]]
+path = "source/assets/craterpark/concepts/editor/prado-graphics-layout.jpg"
+sha256 = "6a23e62dc50fb7b4ad879edb6f5a451b2267e08a7689fa2f3f7fb0ade392d611"
+
+[[sources]]
+path = "source/assets/craterpark/concepts/editor/support-design-viaduct.jpg"
+sha256 = "d7476c8777d00e293b5be9faa9d0d289d2d6f1984e0807b05e25853f4417eb24"
+
+[[sources]]
+path = "source/assets/craterpark/concepts/editor/vertdrop-kiyomizu-overview.jpg"
+sha256 = "2bbf43db7b56d4f21398456c2ee98bfa78a18e0f0e41f31738db680fefdadb6d"
+
+[[sources]]
+path = "source/assets/craterpark/concepts/paintover-bowls.jpg"
+sha256 = "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+
+[[sources]]
+path = "source/assets/craterpark/concepts/paintover-dropin.jpg"
+sha256 = "63b2a908efe04a1b2d201076d2618b6778aea445fcbd363d75b9b74dccb755a7"
+
+[[sources]]
+path = "source/assets/craterpark/materials.json"
+sha256 = "f34541687dde7af8517913368cb4ca5287cdb82ee909f634784b0f6bf9275e21"
+
+[[sources]]
+path = "source/assets/craterpark/provenance.json"
+sha256 = "b6f593ac4f1aae11d92116c5d6e42f4b3dcc9582deb9f43aecb11648b0401284"
+
+[[sources]]
+path = "source/assets/megapark/concepts/improve-riding.jpg"
+sha256 = "6c1e206c08e0ad27dc944baa96f4553e7aafb8bceb0074109a55194743c4a2ed"
+
+[[sources]]
+path = "source/assets/megapark/restyle/rock.json"
+sha256 = "633792e174b8373a9f314fe89b9df6dd55930572a1638cf859113af3848d56ed"
+
+[[sources]]
+path = "source/assets/source-library.json"
+sha256 = "56d7aa5142852e1304c7bf04a95e3acfcbac079ad5d2d2962800b10879eec1b6"
+
+[[sources]]
+path = "source/craterpark_atomic_build.py"
+sha256 = "d44586007bdf21c6ae6e7967ee239f6c5a274e82940c37085931c044d317ade1"
+
+[[sources]]
+path = "source/tools/craterpark_editor/data/inner_dug.bin"
+sha256 = "0a3478d99afb4402a474a852804df46f4abed5a77cce2b2f42297f40bf9e6651"
+
+[[sources]]
+path = "source/tools/craterpark_editor/data/inner_natural.bin"
+sha256 = "373b261ccdd0da6fcfb514cae0c82db1e1395f99ef26ad2812cb91279818b474"
+
+[[sources]]
+path = "source/tools/craterpark_editor/data/outer.bin"
+sha256 = "e2d91792d11d62367b4a64e418d3d2243f473f54afb833957d17ae599ff6e653"
+
+[[sources]]
+path = "source/tools/craterpark_editor/data/terrain.json"
+sha256 = "768d8add2af6c6edd3b4cd28dc1839c0fe1ca9b39be817d697cf90aafa92baf5"
+
+[[sources]]
+path = "source/tools/craterpark_editor/export_terrain.py"
+sha256 = "e34b8dfd9bf5b46ae89db851ce6556eea2f00c214ea7a5a14a8d324ffeef5b94"
+
+[[sources]]
+path = "source/tools/craterpark_editor/shipped.json"
+sha256 = "adb2324cf5bdfc462baddfb209dc71a4eab5806bf60474e745a86ed4d3764b63"
+
+[[sources]]
+path = "source/tools/craterpark_shrine_props.py"
+sha256 = "701cfd942f01f9f1f038c266e368d424bf28304b26954ff1f5e3eb7f5cb07469"
+
+[[sources]]
+path = "source/tools/craterpark_textures.py"
+sha256 = "bd79913488c08d3e62e8233bde7c9f6fa5c6114c50be02076d66d6cd00748255"
+
+[[sources]]
+path = "source/unreal/Scripts/import_craterpark.py"
+sha256 = "02fa4b4a9babe90b4e08a7007268aac5d7f4c9e177b173dcdf25b56a91422025"
+
+[[sources]]
+path = "source/unreal/Scripts/import_megapark.py"
+sha256 = "ac0c1df05fd3ff3b48862ad68a07c28189afb7fc3663652f7020a33106f80a7a"
+
+[[sources]]
+path = "source/unreal/Scripts/park_atomic_native.py"
+sha256 = "ab42dd84c2b0e8172a93ab8467325a2622bba18aa1020232eccbc0e5b81b0e33"
+
+[[sources]]
+path = "source/world/regions/craterpark/__init__.py"
+sha256 = "7d062d3f44a29448be2ca840783b25c5199ca18ec598c616b92f18e55b4c8089"
+
+[[sources]]
+path = "source/world/regions/craterpark/additions.py"
+sha256 = "d20dcaa4a09d8e453c969d380019a87d6cd37ff576b2558b8f32afb875b66b8e"
+
+[[sources]]
+path = "source/world/regions/craterpark/build.py"
+sha256 = "8456e8e6e1ce0c25fd436b7fe11208341e6e2ad951689b00b4c9ca4f6844a8a5"
+
+[[sources]]
+path = "source/world/regions/craterpark/clean.py"
+sha256 = "04b914c638b2af1454ec4c323de6fa9fd3c7a07a0c16b7f3a45781eb2f5c6672"
+
+[[sources]]
+path = "source/world/regions/craterpark/cleanbuild.py"
+sha256 = "a46e01310d2ac59c2bcac9f789fa36144dab076875413b4d4b41ca6c5f3ad9bb"
+
+[[sources]]
+path = "source/world/regions/craterpark/cloud.py"
+sha256 = "05436e83902c60df472f31bf5b4b108bbdbd25942d2241726eac5d161187dd56"
+
+[[sources]]
+path = "source/world/regions/craterpark/cloud_build.py"
+sha256 = "9f7dc2743a5eaa0c672492545b897064234adca6fb45f01b86cdf7149a287d62"
+
+[[sources]]
+path = "source/world/regions/craterpark/extract.py"
+sha256 = "07bc72d61d88d575d68dec05a4504fa87f263827adf6c710e3f010e2b69865f8"
+
+[[sources]]
+path = "source/world/regions/craterpark/grind.py"
+sha256 = "01377be036ac5321b98b207f26c7642647eb23b1aae61072a4967074f8b16ccd"
+
+[[sources]]
+path = "source/world/regions/craterpark/placement.py"
+sha256 = "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42"
+
+[[sources]]
+path = "source/world/regions/craterpark/remesh.py"
+sha256 = "a8ca2e6f6ec5e49890ae685c368902687170e08e797ee43771c1ba4152b5ae5d"
+
+[[sources]]
+path = "source/world/regions/craterpark/tunnel.py"
+sha256 = "14f923367f7ed45bda747f8c743fcdd629d1a9d7efb8f50f285f96e87466f588"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/__init__.py"
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/ao.py"
+sha256 = "ce3718ded36e1b54fefa6cdc32fe84f6043074d885879a45400f04f0c1b434c7"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/assemble.py"
+sha256 = "d978d41f506e99f5c8eed281eb7d142f85299bea0826626b35e69210ac229e3d"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/atomic_inputs.py"
+sha256 = "49803e8b19250f9618cb6fb2080646a18119720fdb141a1c4f7bea264f16d7ee"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/bowl_entry.py"
+sha256 = "8e9f1580226db1ac726960333c42a116a7f2a0c201f59dc387c16459f1c03529"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/bowls.py"
+sha256 = "ba379cae6b96bf0b5ac92091af8989ad6bd42e52556481bdcf11fc134f913c62"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/cdt.py"
+sha256 = "52c4f2c9b9612266858025a451287476c50a00f2c2e0361637da0e8733b481f8"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/choice_vert.py"
+sha256 = "5d317891effc58336d264770f17f69bce20eef881bd66b4fbc99225ca37b82fc"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/coping.py"
+sha256 = "d18cc78c6ae657d9f583d2d6db3ce47e190d53d6362f1875ae18cbc54b20ec95"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/course.py"
+sha256 = "aef6518ea97cb62ef90608f7404da48221c40e8cb0074b1a6ba3e8538b7fc537"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/curves.py"
+sha256 = "37ce55a236bce8e5078882b8d797f4aa91e2c02cfe6ebeeb4c2f29b98dfa7fe5"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/dressing.py"
+sha256 = "75bc94ec35dd5cfd4a6e4b24d144ef4da059bdf92be9255c774e135a5c5247f7"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/dsl.py"
+sha256 = "0e7c4cee3ab004db1ab2c5318a9747a3ba913c768eee85115bd0b436609e241f"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor/__init__.py"
+sha256 = "93b82fe2b1583364b4bbf906737b94d8f789f5be0545b1a2478a33cd0d71aca6"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor/bridge.cjs"
+sha256 = "36886b417ed0cd4ff45c4428fc70bfef8591555372ec9d8d5034bb33fc8d08d0"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor/diagnostic.py"
+sha256 = "12283df96ecab7d396f3b3a0f2ba826b384291bd3d47bc6f02fa1b603f4cbc56"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor/frontend.py"
+sha256 = "adfc3c649b864622c7818b700fcfb4493887a4c513039ccb4f38d3b1e3da79fa"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor/pieces.cjs"
+sha256 = "7e61398c75ad4186a6403b348ddc52d0c49b95fa6c2420739d0a4e3052973571"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor/pin.json"
+sha256 = "7f5fc28697c8a7aeb691ac57997028f7ede7c37ffe9a22ac01034270c09f9500"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor/terrain.cjs"
+sha256 = "db35053e6cfa6a9dfaca311ce4f65bf766b1299c82ace7627a6d4734d0d4b134"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor_boost.py"
+sha256 = "edef564546f6e6c573583c3602cd8b2c4cff4ae754221dd324fd1f7ad769ac7d"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor_coping.py"
+sha256 = "b75581f0297b45e4ad725f49d1421a5e9b4cb2070f8f0a43b837b9c2b5c338dd"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor_decal.py"
+sha256 = "9ca54cf857f17e42e19318e86273d349f945a92d90559ea7e6b6b6068bd6edaf"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor_floor.py"
+sha256 = "fa4dab9b750907847ac409f0c70a5307705ca244aa2bdd9f177d0b2e4a0703eb"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor_generate.py"
+sha256 = "b12088dfde188184bae84a4c05304dc9d254e670697bc7b3051a9a43e344ffd0"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor_prado.py"
+sha256 = "98c9644329ffb64fa7e66d5919e64d8a022224996ac66cbe24d0325bd93e9b4d"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/editor_supports.py"
+sha256 = "12a66667e7df6e5dcefa4265aae8874deb954f50a08b7f9bd8b9650259f4152c"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/export.py"
+sha256 = "8d00cd80be7be3c395b1595f522eb3effdcbf777ff1c69e917d050be3d6c2a99"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/finish.py"
+sha256 = "d481feabb178142b6cedd1d913808a0a03cab561509decf876cc7b7268fbf4d0"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/generate.py"
+sha256 = "9c3fe662624136054a124c135619d3fc00f5b48f17e4ea872cfb864af8c6fa8b"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/ground.py"
+sha256 = "21b70c70bcabf4aa76df146471a7ec05ed7e4e9878828b8c21f917782e092aae"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/junctions.py"
+sha256 = "4adae959cb91d3ac308d1aa98991427ab90b2648a03432b276aa153a7bcdf54a"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/layout.py"
+sha256 = "f2ab54d45e15ba096bce5523f2c21bf414fefe8a91f509b5a81bf252738d97d9"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/layout_m0.py"
+sha256 = "542ef4605c077d3fe4184e8fb3bc6c91ee91070405e1f6667bccc207db46e84c"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/mega.py"
+sha256 = "3a23d8c7dd0dd7948b1a117f77fe4be5bfad49a6438bf4a40e4a833befcd362d"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/network.py"
+sha256 = "82c66fee3fb78acc41e789ac464ba9719a3f2e09a613526ee99f6b7b0c1f4a7e"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/plan_asset.py"
+sha256 = "3c5f273dc44283167c31b7da92952d861a62b96f475c3402d999a770626ae354"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/plan_png.py"
+sha256 = "e72cec4fa5c7315d311b6611c37a685a12fbbca14c5819e92445c97127594b96"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/ports.py"
+sha256 = "a997512f8e65563011a6756504c2a45f0774299c2cfde8e47e7d781120e6f128"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/prado.py"
+sha256 = "beed0bd9f714681431eb3f269f2f67a0a461e0476e4c46a0079e28da967fab8b"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/primitives.py"
+sha256 = "aa968bba13d1ba3f02b3801c0acff3d4c9d6fb86189b0c3a2ea9acb25ee8d21e"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/profile.py"
+sha256 = "873b2f3e1e8480dfea8b2126b12d3bfea805cf54588765752d921c7bc8641690"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/rails.py"
+sha256 = "782074eb97a52965a876263608406f7992f254b9c88632a8a31db8bd05184f32"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/remesh.py"
+sha256 = "c4733f4972dce9c35bbc464dce34c310912d10bb8ba4dfff9848bc06b8943ea0"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/shared14.py"
+sha256 = "d00396583b17db026f093758466772f6bfdf92b6a010f3a7bdce7a3dc9707a20"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/shrine.py"
+sha256 = "2c8f8698bfb6d6decde10de2b9be513cc361bd24f96a65b78e45d2b2880acc95"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/solid_union.py"
+sha256 = "97d6d2f2355a64af9d9fafa9c8b6eba598ac8daa39adead046560608d3a74616"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/solids.py"
+sha256 = "d50ed2e4423001aa5f2d06adddd959ca65d1b72376d86178757190c7546169cc"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/spawns.py"
+sha256 = "7b4e554800d49e8a22361eabb8894818f28c5fb1b030604f838fb7528d0d4f98"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/split.py"
+sha256 = "f7becfc9811ce286f824a286d95c254f1c3835d83077b0d72c5e0abc412a7767"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/sweep.py"
+sha256 = "baf8b6a32c904e590232793a237f2188292956af491d6b8dc1b8343fee704292"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/tjunction.py"
+sha256 = "8150297f427b44cfdbe3babae9047ff91ef460062ec1c355a8ed75e879a428b5"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/trees.py"
+sha256 = "fbf80efa81c8987851ff99612abc3a25b393111c22016122a9b7e9b55dbbfdd4"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_config.py"
+sha256 = "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_design.py"
+sha256 = "29713f316426b180bd322f2f74c185a3a81f575dfa83225cd1cba7d01e467946"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_editor.py"
+sha256 = "4ba485b06b0638fd4e4533078596fcd8719fcfc4b5c65bd796ec8ac857376ee8"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_generate.py"
+sha256 = "5f563afbb7f073ae94473a0318d4dd99b6ac08c8f40c3dd5c32d6f7e8db7a33a"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_geometry.py"
+sha256 = "b3ead624ce93d11707397ab6e5e664983570eb9e909d0ebbc51f1852097443c6"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_layout.py"
+sha256 = "f6f2451447f09442cd986853d27cc694bcfba53fb2b136af75c5f5d564dfa658"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_placement.py"
+sha256 = "2a2a1c221a5dd3a1dcf78dad86c08645d74656815ee48e2fd45794a033549673"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/v4_supports.py"
+sha256 = "1522e026a677eabb250ab70feb69d58bc01d04c6d6165908e5a6a7f7810e7d1d"
+
+[[sources]]
+path = "source/world/regions/craterpark/v2/validate.py"
+sha256 = "b405d2062ed6db3fd44a9d691b8cdecc192e4071f19d0d144878338e224bcca7"
+
+[[sources]]
+path = "source/world/regions/craterpark/visibility.py"
+sha256 = "325afafb9abe7fb28b32aee61668a2bd6446925c0d5421f26aad72b2d1ca6019"
+
+[[sources]]
+path = "source/world/source_registry.py"
+sha256 = "01eb1094164b3f518b3de9c40cb19afc8862e3635f4cc081be50af822b462edf"
+
+[[sources]]
+path = "source/world/yori.py"
+sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/M_CP_Flat"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/M_CP_Lacquer"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/M_CP_Steel"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/M_CP_Textured"
+
+[[outputs]]
+package = "/Game/CraterPark/Materials/M_CP_World"

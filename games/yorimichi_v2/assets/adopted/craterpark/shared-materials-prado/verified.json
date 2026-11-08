@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/shared-materials-prado",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_031.uasset": "9d381a7eb6f4103ce393713fbc509a91be149f671f25321d08d4f93925ad7bfb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

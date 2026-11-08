@@ -1,0 +1,12 @@
+{
+  "asset": "adopted/craterpark/shared-materials-stone",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Materials/MI_CP_material_003.uasset": "1745439e4bdefcdef886f79d286ecda843550c3530318882527e8b52797f5739",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_004.uasset": "b4d38a4abdc65c3cd15a1da1b78f34d0230f0530bb027c21b3dbd97dbbc44db5",
+    "unreal/Content/CraterPark/Materials/MI_CP_material_017.uasset": "4e43d8ef7c9d2baa608f5559804d7b09669b644bfcc5b6f7d7150080d57fc742"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

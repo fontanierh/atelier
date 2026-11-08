@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/p305-vert-launch-no-assist",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_15_16.uasset": "af61f33c60d0079a8b02f709690dc115b499d1b4aba9910d330b5cff3ffb9c5c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

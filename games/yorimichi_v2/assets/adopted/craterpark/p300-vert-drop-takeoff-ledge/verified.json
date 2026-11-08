@@ -1,0 +1,10 @@
+{
+  "asset": "adopted/craterpark/p300-vert-drop-takeoff-ledge",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_13_15.uasset": "f18fc24d39a7c82bdb20c6880594ec65dcb0bdbb428d8714f2ec5899c1e595cd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

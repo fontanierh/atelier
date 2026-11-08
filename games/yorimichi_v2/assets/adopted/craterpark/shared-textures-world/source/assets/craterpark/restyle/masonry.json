@@ -1,0 +1,41 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 shows the art direction of a stylised game: soft painterly shapes, flat matte colour. Paint a seamless tileable texture in that style, seen from directly above, perfectly flat and straight-on, filling the square edge to edge: no perspective, no horizon, no object outline, no shadows or lighting gradient, even brightness everywhere, no text, repeating seamlessly on all four sides. Hand-painted like the background art of a Japanese animated film, soft strokes, medium detail that holds up when repeated over a large area, no photographic grime or noise. The surface: the wall of a mountain viaduct as in Image 1: squarish warm charcoal-grey and grey-brown basalt blocks of slightly varied sizes in rough courses, soft rounded worn edges, thin joints only a little lighter than the stone so they stay subtle, gentle painterly variation from block to block, two or three tiny yellow-green moss tufts; not blue, no bright mortar grid, no snow.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/style-viaduct.png": "dbbee65b2d1665b564d652daa043f86e8a0cbf96722a0db25b1c12631bd1c786"
+  },
+  "materials": [
+    "material_029"
+  ],
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "87f8ba1192073252154823ef4dadea57044c1dfb3b1271373fd234484ad5f14b",
+  "status": "done",
+  "started_at": "2026-10-15T16:26:49.783117+00:00",
+  "output": "masonry.png",
+  "output_sha256": "31a098c7c5231762486ef9a6cf9506b83abceb383b1fb9b816facf3e26c5b574",
+  "usage": {
+    "input_tokens": 983,
+    "input_tokens_details": {
+      "image_tokens": 768,
+      "text_tokens": 215
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 2739
+  },
+  "elapsed_seconds": 55.6,
+  "finished_at": "2026-10-15T16:27:45.444698+00:00",
+  "compact": {
+    "file": "masonry.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

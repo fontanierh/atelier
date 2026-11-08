@@ -1,0 +1,29 @@
+{
+  "stage": "craterpark_shrine",
+  "slug": "torii",
+  "endpoint": "/generation/image-to-model",
+  "settings": {
+    "model": "P2-20260801",
+    "quad": false,
+    "face_limit": 10000,
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "export_uv": true,
+    "model_seed": 9292026,
+    "texture_seed": 9292026,
+    "texture_alignment": "original_image"
+  },
+  "input": "concept.png",
+  "input_sha256": "111fbe37bd0fb189c97507cae0754b9463eff7669256b572c7af43eb5a32ec16",
+  "concept_sha256": "111fbe37bd0fb189c97507cae0754b9463eff7669256b572c7af43eb5a32ec16",
+  "submitted_at": "2026-10-16T09:57:59.664950+00:00",
+  "task_id": "f5536a5d-0deb-45d3-a30a-ec81a2f74360",
+  "status": "submitted",
+  "user_approval": "project owner, 2026-10-16: picked tower-top concept C (shrine balcony) and asked for the remaining Tripo credits to be used for it",
+  "provider_status": "success",
+  "progress": 100,
+  "last_checked_at": "2026-10-16T10:00:50.579230+00:00",
+  "credits_consumed": 120.0,
+  "output_files": 2
+}

@@ -1,0 +1,55 @@
+# Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
+# Ownership unit: Crater Park crater floor, area block (6, 2): the volcano's ground inside the crater, cut by the park, 64 m tiles x 24 to 27, z 8 to 11 (render meshes only)
+schema = 1
+id = "adopted/craterpark/crater-floor-6-2"
+kind = "adopted"
+authority = "editor"
+owner = "shared/craterpark/crater-floor-6-2"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+references = ["adopted/craterpark/materials-base"]
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_034_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_24_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_035_25_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_036_24_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_037_24_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_037_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_042_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_coping_material_044_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_24_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_24_11"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_24_9"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_25_10"
+
+[[outputs]]
+package = "/Game/CraterPark/Meshes/SM_CP_original_material_027_25_11"

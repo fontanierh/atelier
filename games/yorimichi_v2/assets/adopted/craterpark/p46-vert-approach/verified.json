@@ -1,0 +1,11 @@
+{
+  "asset": "adopted/craterpark/p46-vert-approach",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_027_23_15.uasset": "8f75b13b257607e639f92475f7ecc0ab1a7e382f30798bd1ea71fe09af762d13",
+    "unreal/Content/CraterPark/Meshes/SM_CP_original_material_029_23_15.uasset": "55ca81c8d90bb8aae203256f9f30761ee14f39f80fa2b030c8f4a0e486710a85"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
