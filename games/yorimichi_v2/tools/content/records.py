@@ -438,7 +438,15 @@ def state_fingerprint(verified: dict) -> str:
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+def record_paths(game: Path) -> list[Path]:
+    """Every asset record (assets/**/asset.toml) that is not inside another record's folder: a record's copied
+    sources keep their donor names, and a donor's own asset.toml among them is a source file, not a V2 record."""
+    paths = sorted((game / 'assets').glob('**/asset.toml'))
+    folders = {p.parent for p in paths}
+    return [p for p in paths if not any(parent in folders for parent in p.parent.parents)]
+
+
 def discover(game: Path) -> tuple[list[Asset], list[Region]]:
-    assets = [load_asset(p) for p in sorted((game / 'assets').glob('**/asset.toml'))]
+    assets = [load_asset(p) for p in record_paths(game)]
     regions = [load_region(p) for p in sorted((game / 'world' / 'regions').glob('*/region.toml'))]
     return assets, regions

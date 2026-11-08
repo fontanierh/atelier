@@ -432,3 +432,12 @@ def test_adoption_writes_the_repartitioned_units_and_asks_for_repartition_over_c
     report = adopt.adopt(game, content, ['Japan'], [], 'owner-published', echo=lambda *_: None)
     assert set(report['records']) == {a.id for a in records.discover(game)[0]}
     assert stamps == {p: p.stat().st_mtime_ns for p in (game / 'assets').rglob('asset.toml')}
+
+
+def test_a_donor_asset_toml_among_copied_sources_is_no_record(tmp_path):
+    """A record's sources keep their donor names: the donor's own asset.toml in source/ is a file, not a V2 record."""
+    game = tmp_path / 'game'
+    write(game / 'assets/adopted/cove/prop/asset.toml', b'schema = 1\n')
+    write(game / 'assets/adopted/cove/prop/source/assets/props/prop/asset.toml', b'model = "donor"\n')
+    write(game / 'assets/prop/other/asset.toml', b'schema = 1\n')
+    assert records.record_paths(game) == [game / 'assets/adopted/cove/prop/asset.toml', game / 'assets/prop/other/asset.toml']

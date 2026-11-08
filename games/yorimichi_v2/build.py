@@ -83,7 +83,7 @@ def import_steps():
     import records
     script = UNREAL / 'Scripts/import_asset.py'
     found = []
-    for record in sorted((GAME / 'assets').glob('**/asset.toml')):
+    for record in records.record_paths(GAME):
         try:
             asset = records.load_asset(record)
         except records.RecordError:

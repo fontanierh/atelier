@@ -1,6 +1,7 @@
 # Brine Cove objects a person edits on their own (tools/migrate/objects.py), one saved actor each. Their groups hold them alone;
 # docs/inventory/brinecove-objects.md lists the objects that are fused with others and what extracting them needs.
-# `model` is the object's unit in assets/adopted/brinecove/units.json.
+# `model` is the record of the object's mesh: its unit in assets/adopted/brinecove/units.json, or (the wreck) its
+# generated model with a committed source.
 schema = 1
 tag = "brinecove"
 data = "brinecove/runtime.json"
@@ -8,7 +9,7 @@ data = "brinecove/runtime.json"
 [[objects]]
 id = "object/brinecove/wreck"
 group = "SM_BC_Ships_2_2"
-model = "adopted/brinecove/wreck"
+model = "prop/brinecove/wreck"
 about = "the broken, unfinished galleon hull on the western rocks"
 
 [[objects]]

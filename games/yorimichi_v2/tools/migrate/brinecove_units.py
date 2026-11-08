@@ -31,6 +31,8 @@ GAME = HERE.parents[1]
 REPO = GAME.parents[1]
 sys.path.insert(0, str(GAME / 'tools' / 'content'))
 import records  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import unit_tools  # noqa: E402
 
 DONOR = REPO / 'games' / 'yorimichi'
 ASSETS = 'games/yorimichi/assets/brinecove/'
@@ -41,7 +43,8 @@ HERO = re.compile(r'^(?:MI|T)_BC_hero_([a-z-]+)_\d+$')
 # Tiles named for what they hold, each found by running its generator function alone and bucketing its face
 # centres (docs/inventory/brinecove-objects.md): a ship or landmark alone in its tile, or one structure spread over
 # several tiles that change together.
-NAMED = {'ships-2-2': 'wreck', 'ships-3-3': 'galleon-adventure', 'landmarks-1-3': 'lighthouse',
+# The wreck (tile ships 2_2) left this map: its mesh is the generated record prop/brinecove/wreck.
+NAMED = {'ships-3-3': 'galleon-adventure', 'landmarks-1-3': 'lighthouse',
          'landmarks-3-5': 'fort', 'ships-4-2': 'ships-nightjar-sloop', 'ships-4-3': 'ships-nightjar-sloop',
          'ships-5-3': 'ships-nightjar-sloop', 'landmarks-5-3': 'waterfall-canyon', 'landmarks-5-4': 'waterfall-canyon',
          'landmarks-6-3': 'waterfall-canyon', 'landmarks-6-4': 'waterfall-canyon'}
@@ -120,6 +123,9 @@ def build(game: Path) -> dict:
             info[name] = {'about': ABOUT.get(name, f'Brine Cove {name} ({counts[name]} mesh(es))')}
     # The hero models no unit owns are baked into the feature tiles: the generator's inputs.
     generator = [f'games/yorimichi/{f}' for f in GENERATOR] + [f for folder in GENERATOR_FOLDERS for f in donor_files(folder)]
+    # The donor modules the region's scripts import (yori, terrain_product, ...): the generator runs from these alone.
+    generator += unit_tools.code_closure(['world/regions/brinecove'], ('world', 'world/regions', '.'))
+    generator = sorted(set(generator))
     generator += [f'{ASSETS}models/{m}.{ext}' for m in sorted(heroes) for ext in ('glb', 'provenance.json')]
     info['materials']['sources'] = sorted(generator)
     for name, about in info.items():
