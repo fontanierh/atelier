@@ -1,0 +1,29 @@
+# Single-instance objects of w01-start that take their existing area-patch actor ("promote", patch = V2Id from patches.json).
+# Each key has one placed instance in the source data and is the only patch of that key in this region.
+schema = 1
+tag = "start"
+data = ""
+
+[[objects]]
+id = "object/start/house-lot-1"
+patch = "0b87ec7fbbaa39ae"
+model = "adopted/japan/assets/houselot"
+about = "the lot (grounds) of the first road house"
+
+[[objects]]
+id = "object/start/house-lot-2"
+patch = "725dd22fd8a256f0"
+model = "adopted/japan/assets/houselot"
+about = "the lot (grounds) of the second road house"
+
+[[objects]]
+id = "object/start/house-b"
+patch = "2899c739f3aade2d"
+model = "adopted/japan/assets/house"
+about = "house B on the start road"
+
+[[objects]]
+id = "object/start/fisher-house-b"
+patch = "46158b7d1fafe6c9"
+model = "adopted/japan/southwest"
+about = "fisher house B"

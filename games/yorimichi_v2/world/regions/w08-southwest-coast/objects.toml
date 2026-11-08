@@ -1,0 +1,35 @@
+# Single-instance objects of w08-southwest-coast that take their existing area-patch actor ("promote", patch = V2Id from patches.json).
+# Each key has one placed instance in the source data and is the only patch of that key in this region.
+schema = 1
+tag = "swcoast"
+data = ""
+
+[[objects]]
+id = "object/swcoast/boat-shed"
+patch = "b1509dfbecbca7fa"
+model = "adopted/japan/southwest"
+about = "the boat shed"
+
+[[objects]]
+id = "object/swcoast/coconut-stand"
+patch = "1a8a656b99bc8dad"
+model = "adopted/japan/southwest"
+about = "the coconut stand"
+
+[[objects]]
+id = "object/swcoast/dock"
+patch = "10a79b43638f7cac"
+model = "adopted/japan/southwest"
+about = "the dock"
+
+[[objects]]
+id = "object/swcoast/drying-rack"
+patch = "87c0299893ed2594"
+model = "adopted/japan/southwest"
+about = "the drying rack"
+
+[[objects]]
+id = "object/swcoast/temple"
+patch = "b6f9ee4932af5800"
+model = "adopted/japan/southwest"
+about = "the temple"
