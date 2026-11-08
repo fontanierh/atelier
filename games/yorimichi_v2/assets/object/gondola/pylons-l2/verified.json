@@ -1,0 +1,15 @@
+{
+  "asset": "object/gondola/pylons-l2",
+  "dependencies": {
+    "adopted/gondola/tower-l2-0": "0b9c4405db62c6a4afd8997cdf6d97ade79a9832ffa12011b46327ec8c8449f5",
+    "adopted/gondola/tower-l2-1": "2ee2067b973e258f7a776ca3feda2bb188f31cf2b269952fbc115c0cb76fabb4",
+    "adopted/gondola/tower-l2-2": "c33c7248a644373f54c68a6c51c9b18287e520d08a002caa9aaf7c57a3adb3f0",
+    "adopted/gondola/tower-l2-3": "2b0841a35121ca73e6f2a9afa5c90369a6d1f0bad0969bb3c351a50703f4445b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/T6/JL5ZQDUJRMEIYACD76AXMG.uasset": "b8786c76b9fbfd1f4c95c87486a8c349cfbfb60f1869279691ff967496facb87"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

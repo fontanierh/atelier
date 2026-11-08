@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-cover-fern-m5-1",
+  "dependencies": {
+    "adopted/brinecove/plant-cover-fern": "57051ee0ffce0c5b7d9b830bf08cf1c1c128fa561db0aa3e367b01efdea95728"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/FL/7RJ0D27JP5VLG0Z78MJ6S3.uasset": "c746c900ade12b607406ee66849d77227d3d7e0cd8b49415eabe92f6b0133e32"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

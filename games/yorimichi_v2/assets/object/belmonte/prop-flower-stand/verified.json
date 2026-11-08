@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-flower-stand",
+  "dependencies": {
+    "adopted/belmonte/prop-flower-stand": "c385c65eca3e32132d110eef8a5b5c001f13f6528d0db4b5cbdbb45e82e316b3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/F/4S/YXX34AYFIPAHC47TUBO8HL.uasset": "8ae75aee5377b71ce416f4057f309f415809dd9c2a0da241c4dcf6ac78d2ead9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-hay-cart",
+  "dependencies": {
+    "adopted/belmonte/estate-hay-cart": "9f4961bb2bc2be45095784f0d2e3b5edc55e3a41cec2f6174b7fce0e2673964e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/M6/BFR7MZMMD66EE8V5LN8QNQ.uasset": "fb92a6ca19af2bb464b9d69417ce009dd55d1393382a879ecc58655e4bdf2875"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

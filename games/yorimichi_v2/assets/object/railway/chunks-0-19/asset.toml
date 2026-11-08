@@ -1,0 +1,12 @@
+# One saved object of region/w20-railway (tools/migrate/objects.py, from its objects.toml): route chunks 0-19: rail bed, rails and their sleepers, in route order.
+# Its placement is this actor package; its model is adopted/belmontetrack/chunks-0-19, adopted/belmontetrack/track-small. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/railway/chunks-0-19"
+kind = "placement"
+authority = "editor"
+owner = "region/w20-railway"
+references = ["adopted/belmontetrack/chunks-0-19", "adopted/belmontetrack/track-small"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/1F/064KU2JQ3727XMVI6N4X51"

@@ -1,0 +1,13 @@
+{
+  "asset": "object/gondola/station-hidamari",
+  "dependencies": {
+    "adopted/gondola/shell-valley": "015f8cdbbdf9dd59ec959bead6101263d634ec435426c75ef4dc125e565070d8",
+    "adopted/gondola/station-hidamari": "03da3da1da570825bdbb995f12b3e5e58f10dc2292a2dc6c409959e66e7a0e52"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/MZ/71ALGEF0IQE77L69DECTFL.uasset": "f0b867ea97b69baa3e9d469776dd5feea0adac48277fada71c697cf693a2e893"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

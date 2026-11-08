@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-stone-bench",
+  "dependencies": {
+    "adopted/belmonte/prop-stone-bench": "b56d74bd1a0648cff0233166ef380b17f2329228fe8059cc83432a2613f032fc"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/QU/CECNIE0WCBC184X0E27IPV.uasset": "126ca61c621120cfc191bb3a70c5e5d9814cbc891633240898f4624f59b58ae5"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

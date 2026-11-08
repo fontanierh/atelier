@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/north-apron",
+  "dependencies": {
+    "adopted/belmonte/north-apron": "1595d60f40a2ec53516a150fa1b8b9c4c2a10dcd4e4cb9b68732bcd21010257c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/VY/9HVTAIILA1LR6UDHZWRZNX.uasset": "301aa52371fce04f278afd56ba1f15475f998d458fc84b46f39895fdd7cac3d6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

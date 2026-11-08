@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-pot-geranium",
+  "dependencies": {
+    "adopted/belmonte/prop-pot-geranium": "a0b72f01d8ae1356993f743d631a172cdd811abca7423b03033e395f5aee2b8f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/28/4ENYZU2R0HAM8QI83D3CPA.uasset": "d1fafc71254c37bcc1dbd04c6abf0cdc9bfac796f530f446e85e17e5c80e01c6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

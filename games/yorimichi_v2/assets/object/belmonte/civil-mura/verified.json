@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-mura",
+  "dependencies": {
+    "adopted/belmonte/civil-mura": "b5621a110db89a6c526b14be9ce3cd4215c1f1c5e5bf1bd51ecd8d8fc41b8660"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/IT/ZKFCHEHZ3453XVAI70ZZFG.uasset": "92cf6bc9a0edee85630169704068403ebe5e3752cd1bf32297f346bf0c8a0c8d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

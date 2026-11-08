@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-lake",
+  "dependencies": {
+    "adopted/belmonte/civil-lake": "b087721c1c05ec93651a082070c21fb094f828b94d9eb27cfc66ff98104f3954"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/3H/5372XXCEDD7NMR3AOWIBYQ.uasset": "d4c3e7f8450f31ffa6e6f955449dbb1b657bac8c4e4b708220b61e2dd027af41"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

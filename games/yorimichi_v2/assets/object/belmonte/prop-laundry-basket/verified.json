@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-laundry-basket",
+  "dependencies": {
+    "adopted/belmonte/prop-laundry-basket": "476e8af5b36d9a03ccd3168426f377bb36275358b6114241a295859cf7001d3a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/BO/RV69RQV5TJB0HQUZAMHWEJ.uasset": "09673277827b3dc096bc684045ad9a956e6cf10929a36f54272970eaff44fbf0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

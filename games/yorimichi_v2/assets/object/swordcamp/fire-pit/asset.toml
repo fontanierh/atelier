@@ -1,0 +1,12 @@
+# One saved object of region/w13-swordcamp (tools/migrate/objects.py, from its objects.toml): the Ronin camp's fire pit, at the camp centre, by which the camp captain sits.
+# Its placement is this actor package; its model is adopted/swordcamp/assets. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/swordcamp/fire-pit"
+kind = "placement"
+authority = "editor"
+owner = "region/w13-swordcamp"
+references = ["adopted/swordcamp/assets"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/TH/LPMG3HRC24I2FAGFX3TAW2"

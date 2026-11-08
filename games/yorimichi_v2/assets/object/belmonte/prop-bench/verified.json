@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-bench",
+  "dependencies": {
+    "adopted/belmonte/prop-bench": "592a41c444763ee5c09702ef2c7bb5128f30f2d65531db5e166a230483cdc0d9"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/V1/1UH82NTV382252736M2F88.uasset": "44684e79ef884b0efe1afa6497ac800ff4f23ddaf736465796bc82b0099355b1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

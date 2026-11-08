@@ -1,0 +1,12 @@
+# One saved object of region/w11-megapark (tools/migrate/objects.py, from its objects.toml): the Mega Park car park prop SM_Kei_Microvan.
+# Its placement is this actor package; its model is prop/megapark/kei-microvan. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/megapark/kei-microvan"
+kind = "placement"
+authority = "editor"
+owner = "region/w11-megapark"
+references = ["prop/megapark/kei-microvan"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/B/N0/IUEBLI2JQ3V5QJKE5BAY52"

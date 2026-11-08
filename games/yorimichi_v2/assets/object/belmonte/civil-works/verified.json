@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-works",
+  "dependencies": {
+    "adopted/belmonte/civil-works": "d64beb6cdf8a8a4c642f67cb3b0288e3f6d0c4ea210c436e6161955b1b670825"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/YT/YBJOMA1MPPJ8AS9GYFXALI.uasset": "dc3762d4c66fc4bc9abc6ff19badf95017fbb3b58b690536dbed9c7587d7d978"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/estate-tie-rail",
+  "dependencies": {
+    "adopted/belmonte/estate-tie-rail": "5b1d6b15da4391ae2eb173a81477c64aaf16b1d92a3eeafa33a4dd4f7d8e4790"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/DZ/E4KDBKOYBDW4N7DC0MPQE1.uasset": "2615182f47f5be6df4d3e52a17ddf92b3139860fdd39a4651c2807ec72a2239f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

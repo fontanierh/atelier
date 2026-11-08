@@ -1,0 +1,12 @@
+# One saved object of region/w18-gondola (tools/migrate/objects.py, from its objects.toml): the southeast station: its building, platform, machinery, fittings, collision and ground access.
+# Its placement is this actor package; its model is adopted/gondola/station-southeast, adopted/gondola/shell-rim. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/gondola/station-southeast"
+kind = "placement"
+authority = "editor"
+owner = "region/w18-gondola"
+references = ["adopted/gondola/station-southeast", "adopted/gondola/shell-rim"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/6/RS/QZKL8SZIXTZN3ERB1D39UF"

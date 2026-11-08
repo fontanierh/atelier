@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/civil-piazza",
+  "dependencies": {
+    "adopted/belmonte/civil-piazza": "65b29ca5db3cb28a748af335be0032ba70e5d722f24b671d438c24fceca7b1a6"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/GS/HVLTM6TXKHYUCMA688278X.uasset": "a9b2bbd407fc29bbb68c14ccb24f646788168f1d1acff3bc42a7e30dddd98b74"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

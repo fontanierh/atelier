@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/plant-bloom",
+  "dependencies": {
+    "adopted/brinecove/plant-bloom": "a18821377821ce451698166afec315fea499b0168f6db66c093e8d7006bfa2ba"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/50/UAUIT9RE2RKZU4MM1HF4S6.uasset": "f49e4d5d17fcd717aec1fae0492fe0e69940fc36082f5bd1e2559f38b43ab8c9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte village-hay-roll (1 group).
+# Its placement is this actor package; its model is adopted/belmonte/village-hay-roll. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/village-hay-roll"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/village-hay-roll"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/7/BX/7FMVOZLU5K1WSGZW1UY0Q7"

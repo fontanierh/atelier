@@ -1,0 +1,13 @@
+{
+  "asset": "object/railway/tunnel-t2",
+  "dependencies": {
+    "adopted/belmontetrack/track-small": "e9eae30e7ee4b25c096f9d8cd64dfacc39fa5c8e416de7cfe94eb597abea5205",
+    "adopted/belmontetrack/tunnel-t2": "b875e12049b3ff9b19e1b765024f8abef660dfb4a057eaaa784970e002afebdb"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/NG/HJAVWPXWI3VBSV8AVRFPKR.uasset": "fa2c70bea5fa25eeb32b5d02c230ba26545fc91b64a1536237ac58d2d824e0f9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

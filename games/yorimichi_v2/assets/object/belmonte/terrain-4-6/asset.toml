@@ -1,0 +1,12 @@
+# One saved object of region/w16-belmonte (tools/migrate/objects.py, from its objects.toml): Belmonte terrain-4-6 (1 group).
+# Its placement is this actor package; its model is adopted/belmonte/terrain-4-6. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/belmonte/terrain-4-6"
+kind = "placement"
+authority = "editor"
+owner = "region/w16-belmonte"
+references = ["adopted/belmonte/terrain-4-6"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/D/1J/5T7GL9O9EZY4W1JNG4IF6A"

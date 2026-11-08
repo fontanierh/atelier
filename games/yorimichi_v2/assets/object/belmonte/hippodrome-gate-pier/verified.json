@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-gate-pier",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-gate-pier": "6335fda4fc1b0ed9ff65361615a99252d2c5e771a249ae8d84b54cabcb485359"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/D5/Q039T52JGGDKUAXMDIUZNS.uasset": "c8fb36a71bfb7e106c23402c010b7e18df3a2464855c90ea1ec4525b54165856"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

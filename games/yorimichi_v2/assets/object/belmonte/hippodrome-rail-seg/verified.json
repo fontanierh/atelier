@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/hippodrome-rail-seg",
+  "dependencies": {
+    "adopted/belmonte/hippodrome-rail-seg": "56e0aede38fc15e2d3d47c95933b60ceb6d687badaf24515fea5ce71c7e2940f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/V6/D2Z4S8QGCNGO92H60UU884.uasset": "c1347ac55f3259ca0551eae2ba1a0b553fc4acf88c8618bd6cf476888b43c295"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

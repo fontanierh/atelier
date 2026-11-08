@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-amphora",
+  "dependencies": {
+    "adopted/belmonte/prop-amphora": "09e3a666266e09526a9d0834d599ba2ee202974187e57c3601191f66c684a241"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/DB/E2ZBVGDYTJOBRRX1YDM4ON.uasset": "bfdf50b63affb3bde341fdf98b3051d004d59f581ede2dce6506b7a488908903"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

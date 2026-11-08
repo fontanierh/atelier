@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-kiosk",
+  "dependencies": {
+    "adopted/belmonte/prop-kiosk": "9c017ae375775efb54c84be6902cf7fe5bbbc2f11e726116eb1ede1133cc3531"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/WL/VPOPV6LJLJTAPAZIWMUAST.uasset": "d22425d43e037536177eabc0e8ca18e7aec8aa5ddc7f5d8e00e0a7a73f987d2c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

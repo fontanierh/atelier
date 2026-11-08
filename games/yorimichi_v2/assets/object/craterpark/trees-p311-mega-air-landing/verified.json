@@ -1,0 +1,12 @@
+{
+  "asset": "object/craterpark/trees-p311-mega-air-landing",
+  "dependencies": {
+    "adopted/japan/assets/tree-caldera": "fe1f9348001b4c2789fdd5c40e3aa76e5b7898690067db19ca612c8cc21c22a3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/Q4/MY79PW13R6UMS2U9CA5BRH.uasset": "5104002aa76d470906e8bf5d19044e0442a4d0e2ec31f83ea1b5cad71f43dc56"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/plant-tree-tuscan-pine",
+  "dependencies": {
+    "adopted/japan/assets/tree-tuscan": "5e2ce7d9c39eb80b9ad591116c41b5a5243e1758aebb96b8a87801fcfd7e3f65"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/AZ/6SXES2Y6Q68XA81L6OWA4Q.uasset": "2566eb919756871adddf4bd09ee32931f46ee9d32b881e04ef450a66bc3fde12"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

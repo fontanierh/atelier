@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/village-stone-wall",
+  "dependencies": {
+    "adopted/belmonte/village-stone-wall": "278a72f9edf79a1ed2a9f5a0c62a0c976c2da6424f3e682d88b89b3d3cd3d27c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/XZ/IQ8BO5B4C16YRPAOOWHYSV.uasset": "2a6c4a096b92cf92f8e387a41a1efb602106f1182a48543829a92c20ada1201d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-bucket",
+  "dependencies": {
+    "adopted/belmonte/prop-bucket": "7ca8b10f8a2e3e00284d6d2486ce1c6703d3a97bcd0c087245651ba216a32d01"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/FA/WIHKB3H37JW6E5CBKXRF0M.uasset": "457eb3a145d62b4ee51be562e4c90b0e7346e5ae6781bcfe721ccde7b5e1a2b1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-pot-shrub",
+  "dependencies": {
+    "adopted/belmonte/prop-pot-shrub": "b42cd89a09a3ed01f69494f3a1b3bcfae60b2b25b5a64e04f9b557eea92a381b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/P4/HQ4LSQSX3QH5FP7EAR2MZT.uasset": "4d6d97bfc3a8972596d0851174efc03a438f46ef0d78046159f3ee4838d14e2b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

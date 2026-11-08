@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/market-4-3",
+  "dependencies": {
+    "adopted/brinecove/market-4-3": "0c85f8b5c0220b5c66dd60c571e1acda8e9b9e31a1074b098b5429101407b709"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/WL/CTUX4JF4C13MYQIKN0200M.uasset": "528892b4aff82ce216d9f4c12f48904a8eb674f9cbc1432fb7177240c0daca3a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

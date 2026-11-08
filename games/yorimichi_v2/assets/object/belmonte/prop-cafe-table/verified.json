@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/prop-cafe-table",
+  "dependencies": {
+    "adopted/belmonte/prop-cafe-table": "ccbb12fddc9286bc88f58a0fdaeafa57bfcd5ac023bf946b119519f203c03d6a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/KS/P3XHSQR15DEQUUUCOZ5FLL.uasset": "34062f847a4524e98be4ff2b89360801cc730cfdcf89f941028d91af78b75565"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

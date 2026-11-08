@@ -1,0 +1,12 @@
+# One saved object of region/w03-mega (tools/migrate/objects.py, from its objects.toml): the mini Mega ramp in the clearing: the ridden Mega_Ramp and its look-only Mega_Trim seams, at world.json's mega origin.
+# Its placement is this actor package; its model is adopted/japan/assets/mega-park-pieces. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/megaramp/ramp"
+kind = "placement"
+authority = "editor"
+owner = "region/w03-mega"
+references = ["adopted/japan/assets/mega-park-pieces"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/9/Q7/Y7N2FPA9K59DDUBF1X9SWH"

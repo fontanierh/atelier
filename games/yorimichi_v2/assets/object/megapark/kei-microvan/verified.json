@@ -1,0 +1,12 @@
+{
+  "asset": "object/megapark/kei-microvan",
+  "dependencies": {
+    "prop/megapark/kei-microvan": "405e7da7c75a161f3cc1891a446c61c7b7f2d631f9db4a80f2a18f97eb41d966"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/N0/IUEBLI2JQ3V5QJKE5BAY52.uasset": "89e5d3ac6dd540bc4a2a8c39cd457020ba13b57ac4100b623ee0fcffbec77a4f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

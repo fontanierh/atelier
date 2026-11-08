@@ -1,0 +1,12 @@
+{
+  "asset": "object/belmonte/terrain-1-1",
+  "dependencies": {
+    "adopted/belmonte/terrain-1-1": "bf34a945e1544adacb4e8ee3b70b9c591221378ab1d984376d924990ef654fe1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/QZ/C835QKH1JI41DMG9BNNTC0.uasset": "2bd077d0164f2980ebc406affc8ef96dd6fb87032dcf60015c2a7a9e7c551c62"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

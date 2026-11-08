@@ -1,0 +1,12 @@
+{
+  "asset": "object/swordcamp/jinmaku",
+  "dependencies": {
+    "adopted/swordcamp/assets": "a49109bdbf13dd73922213a547cb8a544e5db7a09ab33247494e39f86e49ac79"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/I2/791A3MOGK44IUHMNK5FQ1M.uasset": "feecc07c0a41a3037d3ed06bc562d31a08f4c4af1ffb1a65ad6ba4bb18bd9216"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

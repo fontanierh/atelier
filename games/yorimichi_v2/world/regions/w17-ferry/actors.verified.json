@@ -1,5 +1,7 @@
 {
   "asset": "region/w17-ferry",
   "engine": "5.8.2-56702186",
-  "files": {}
+  "files": {},
+  "kind": "editor-saved",
+  "schema": 1
 }

@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/loop",
+  "dependencies": {
+    "adopted/belmontetrack/loop": "2b2e7f65c84efe3df9e8643ac50d2ba1df19d3ec77cab3ec2940edeb78e23fc8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/NR/LJNDNY2I32CYFNKS804C8A.uasset": "8275237b400abf878632bea7928fd57c1b4cc9d74d43eea219b822fa09cddcbb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

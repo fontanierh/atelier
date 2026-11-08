@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/hero-harbor-capstan",
+  "dependencies": {
+    "adopted/brinecove/hero-harbor-capstan": "fe0d13a4f947f18e943dcd9aca10df7088b71dfafcbcbad1273dad4224d3aec6"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/H2/B9A23BM0L0Z16YZR3W2YZY.uasset": "e9e9022ac7b182f7e2cde9bdf4ca52ea7105c1d58b49025543cde7884d19e5f1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
