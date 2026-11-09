@@ -480,7 +480,7 @@ def test_skatepark_binds_slots_by_name_and_reuses_the_steel_maps_for_painted(tmp
     path, planting, deck = (by_id[f'prop/skatepark/{n}'] for n in ('skate-path', 'skate-park-planting', 'skate-deck'))
     assert path.settings == {'slot_map': {'Pier_concrete': f'{root}/Materials/M_Pier_concrete',
                                           'Pier_steel': f'{root}/Materials/M_Pier_steel'}, 'triangles': 10, 'collision': 'complex',
-                                          'allow_cpu_access': True}
+                                          'allow_cpu_access': True, 'double_sided': False}
     assert planting.settings['collision'] == 'none'                      # a floor paint piece has no shapes
     assert deck.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 6, 'collision': 'none'}     # no cpu access
     assert deck.references == ['adopted/japan/materials/base-materials']
@@ -572,14 +572,17 @@ def test_villageatomic_follows_the_parent_collision_policy_in_a_one_record_famil
     for name in names:
         write(donor / f'assets/{name}.fbx', name)
     write(tmp_path / 'build' / 'village' / 'atomic-manifest.json', json.dumps({'parents': {
-        'Village_Sign': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Sign'}]},
-        'Village_Ground': {'collision': 'complex_as_simple', 'pieces': [{'name': 'Village_Ground'}]},
-        'Village_Planting': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Planting_cell_0_0'}]}}}))
+        'Village_Sign': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Sign', 'native_triangles': 30}]},
+        'Village_Ground': {'collision': 'complex_as_simple', 'pieces': [{'name': 'Village_Ground', 'native_triangles': 29}]},
+        'Village_Planting': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Planting_cell_0_0', 'native_triangles': 30}]}}}))
     plan = recover.build_plan(game, 'experiments/villageatomic', donor)
     by_id = {g.id: g for g in plan.generated}
     assert by_id['prop/villageatomic/sign'].settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 30,
                                                          'collision': 'simple_and_complex', 'hulls': 1}
-    assert by_id['prop/villageatomic/ground'].settings['collision'] == 'complex'
+    # The ground's one degenerate triangle goes in the donor's legacy import (native 29 of 30), single-sided as the old package.
+    assert by_id['prop/villageatomic/ground'].settings == {
+        'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 29, 'collision': 'complex', 'legacy_fbx': True,
+        'double_sided': False}
     assert by_id['prop/villageatomic/planting-cell-0-0'].settings['hulls'] == 0       # a render-only leaf keeps no shapes
     assert plan.kept == {'adopted/experiments/villageatomic': []}
     changed = recover.apply(game, plan, donor)
@@ -633,7 +636,7 @@ def test_lake_binds_water_to_its_own_material_and_a_one_record_family_is_recover
     plan = recover.build_plan(game, 'japan/lake', donor)
     cabin, water = sorted(plan.generated, key=lambda g: g.id)
     assert (cabin.id, water.id) == ('prop/lake/cabin', 'prop/lake/water')
-    assert cabin.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 20910,
+    assert cabin.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 20910, 'double_sided': False,
                               'collision': 'complex'}
     assert water.settings['slot_materials'] == ['/Game/Japan/Materials/M_ForestLakeWater']
     assert cabin.references == ['adopted/japan/materials/base-materials'] and cabin.origin == 'adopted/japan/lake'

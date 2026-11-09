@@ -21,6 +21,7 @@ slot_map = {Pier_concrete = "/Game/SkatePark/Materials/M_Pier_concrete", Pier_st
 triangles = 4370
 collision = "complex"
 allow_cpu_access = true
+double_sided = false
 
 [[outputs]]
 package = "/Game/SkatePark/SM_SkateParkFurniture"

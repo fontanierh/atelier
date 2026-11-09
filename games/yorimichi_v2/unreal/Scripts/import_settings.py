@@ -3,6 +3,7 @@
 Every setting defaults to what the importer did before it existed, so a record that omits it imports identically:
 - mesh `allow_cpu_access` (bool): absent leaves the flag as imported; `double_sided` (bool): absent keeps complex collision
   double-sided (the original behaviour);
+- mesh `legacy_fbx` (bool): absent keeps the Interchange FBX import unless the record imports UCX hulls;
 - texture `max_texture_size` (int, 0 = engine default) and `lod_group` (a TEXTUREGROUP_* name): absent leaves them as imported.
 """
 
@@ -51,3 +52,9 @@ def lod_group(settings: dict):
     if value not in TEXTURE_GROUPS:
         raise SettingError(f'unknown lod_group {value!r}')
     return value
+
+
+def legacy_fbx(settings: dict) -> bool:
+    """True to import an FBX through the legacy importer (the donor's, with Interchange off), which drops degenerate
+    triangles that the Interchange importer keeps. UCX-hull records always use it; False when absent."""
+    return bool(_flag(settings, 'legacy_fbx'))
