@@ -438,3 +438,148 @@ package = "{mat1}"
     write(donor / 'service/service.json', json.dumps({'consist': {'vehicles': [vehicle]}, 'furniture': {}}))
     with pytest.raises(recover.RecoverError, match='collision boxes'):
         recover.build_plan(game, 'belmontetrain', donor)
+
+
+# --- Small source-less families: skatepark, megapark seam, swordcamp, fx, villageatomic ---------------------------------
+def adopted(game: Path, folder: str, packages: list[str], refs: str = ''):
+    outputs = ''.join(f'\n[[outputs]]\npackage = "{p}"\n' for p in packages)
+    record(game, f'adopted/{folder}', f'''schema = 1
+id = "adopted/{folder}"
+kind = "adopted"
+authority = "editor"
+owner = "shared/{folder}"
+provenance = "test"
+license = "test"
+{refs}{outputs}''')
+
+
+def test_skatepark_binds_slots_by_name_and_reuses_the_steel_maps_for_painted(tmp_path):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    root = '/Game/SkatePark'
+    adopted(game, 'skatepark/materials', [f'{root}/Materials/M_Pier_concrete', f'{root}/Materials/M_Pier_steel'])
+    adopted(game, 'skatepark/textures', [f'{root}/Textures/T_Pier_steel_albedo', f'{root}/Textures/T_Pier_steel_normal',
+                                         f'{root}/Textures/T_Pier_painted_albedo', f'{root}/Textures/T_Pier_painted_normal'])
+    adopted(game, 'skatepark/loose_files', [f'{root}/SM_SkatePath', f'{root}/SM_SkateParkPlanting'])
+    adopted(game, 'skatepark/board', [f'{root}/Board/SM_SkateDeck', f'{root}/Board/M_BoardDissolve'])
+    adopted(game, 'japan/materials/base-materials', ['/Game/Japan/Materials/M_Village'])
+    files = {'assets/SM_SkatePath.fbx': b'path', 'assets/SM_SkateParkPlanting.fbx': b'planting', 'board/SM_SkateDeck.fbx': b'deck',
+             'textures/steel-albedo.png': b'sa', 'textures/steel-normal.png': b'sn'}
+    for rel, data in files.items():
+        write(donor / rel, data)
+    write(donor / 'textures/textures.json', json.dumps({'steel': {'maps': {'albedo': 'steel-albedo.png', 'normal': 'steel-normal.png'},
+        'sha256': {'albedo': sha(b'sa'), 'normal': sha(b'sn')}}}))
+    write(donor / 'runtime-park.json', json.dumps({'meshes': [{'name': 'SM_SkatePath', 'blocks': True},
+                                                              {'name': 'SM_SkateParkPlanting', 'blocks': False}]}))
+    write(donor / 'build-report.json', json.dumps({
+        'identity': {'exports': {rel: sha(files[rel]) for rel in files if rel.endswith('.fbx')}},
+        'material_slots': {'SM_SkatePath': ['Pier_concrete', 'Pier_steel'], 'SM_SkateParkPlanting': ['Pier_concrete']},
+        'meshes': {'SM_SkatePath': {'triangles': 10}, 'SM_SkateParkPlanting': {'triangles': 4}, 'SM_SkateDeck': {'triangles': 6}}}))
+    plan = recover.build_plan(game, 'skatepark', donor)
+    by_id = {g.id: g for g in plan.generated}
+    assert len(by_id) == 7
+    path, planting, deck = (by_id[f'prop/skatepark/{n}'] for n in ('skate-path', 'skate-park-planting', 'skate-deck'))
+    assert path.settings == {'slot_map': {'Pier_concrete': f'{root}/Materials/M_Pier_concrete',
+                                          'Pier_steel': f'{root}/Materials/M_Pier_steel'}, 'triangles': 10, 'collision': 'complex'}
+    assert planting.settings['collision'] == 'none'                      # a floor paint piece has no shapes
+    assert deck.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 6, 'collision': 'none'}
+    assert deck.references == ['adopted/japan/materials/base-materials']
+    # The donor's 'painted' surface is the steel maps under the painted names; colour maps are sRGB, normals are not.
+    painted = by_id['texture/skatepark/pier-painted-normal']
+    assert painted.package == f'{root}/Textures/T_Pier_painted_normal' and painted.source.name == 'steel-normal.png'
+    assert painted.settings == {'srgb': False, 'compression': 'TC_NORMALMAP'}
+    assert by_id['texture/skatepark/pier-steel-albedo'].settings == {'srgb': True, 'compression': 'TC_DEFAULT'}
+    assert plan.kept['adopted/skatepark/loose_files'] == [] and plan.kept['adopted/skatepark/board'] == [f'{root}/Board/M_BoardDissolve']
+    assert plan.kept['adopted/skatepark/materials'] == [f'{root}/Materials/M_Pier_concrete', f'{root}/Materials/M_Pier_steel']
+    # A material no record owns leaves the piece open, reported.
+    (game / 'assets/adopted/skatepark/materials/asset.toml').unlink()
+    open_plan = recover.build_plan(game, 'skatepark', donor)
+    assert any('SM_SkatePath' in u and 'M_Pier_concrete' in u for u in open_plan.unmapped_outputs)
+    assert 'prop/skatepark/skate-path' not in {g.id for g in open_plan.generated}
+
+
+def test_megapark_seam_recovers_both_seam_meshes_and_ignores_the_sections(tmp_path):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    root = '/Game/MegaPark'
+    adopted(game, 'megapark/seam', [f'{root}/Materials/MI_aa_Seam', f'{root}/Meshes/SM_MP_Seam', f'{root}/Meshes/UC_MP_Seam'])
+    adopted(game, 'megapark/cell-x150-zm450', [f'{root}/Meshes/SM_MP_0123'])
+    export = lambda name, slots: {'asset': name, 'primary': f'{name}.fbx', 'sha256': sha(name.encode()), 'triangles': 8,
+                                  'metadata': {'slots': slots, 'collision_hulls': 0}}
+    write(donor / 'fbx/manifest.json', json.dumps({'exports': [
+        export('SM_MP_Seam', ['M_aa_Seam']), export('UC_MP_Seam', ['M_Collision']), export('SM_MP_0123', ['M_bb'])]}))
+    for name in ('SM_MP_Seam', 'UC_MP_Seam', 'SM_MP_0123'):
+        write(donor / f'fbx/{name}.fbx', name)
+    plan = recover.build_plan(game, 'megapark', donor)
+    render, collision = sorted(plan.generated, key=lambda g: g.id)
+    assert (render.id, collision.id) == ('prop/megapark/seam', 'prop/megapark/seam-collision')
+    assert render.settings == {'slot_map': {'M_aa_Seam': f'{root}/Materials/MI_aa_Seam'}, 'triangles': 8,
+                               'collision': 'complex', 'full_precision_uvs': True}
+    assert 'slot_map' not in collision.settings and collision.references == []
+    assert plan.kept['adopted/megapark/seam'] == [f'{root}/Materials/MI_aa_Seam']     # the material instance stays editor-owned
+    assert plan.kept['adopted/megapark/cell-x150-zm450'] == [f'{root}/Meshes/SM_MP_0123']
+
+
+def test_swordcamp_solid_props_keep_their_hull_and_the_atlas_is_srgb(tmp_path):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    adopted(game, 'swordcamp/assets', ['/Game/SwordCamp/Assets/SM_CampBales', '/Game/SwordCamp/Assets/SM_RoninKatana'])
+    adopted(game, 'swordcamp/materials', ['/Game/SwordCamp/Materials/M_SwordCamp'])
+    adopted(game, 'swordcamp/textures', ['/Game/SwordCamp/Textures/T_SwordCampAtlas'])
+    write(donor / 'swordcamp_atlas.jpg', 'atlas')
+    export = lambda name, hulls: {'asset': name, 'primary': f'{name}.fbx', 'sha256': sha(name.encode()), 'triangles': 20,
+                                  'metadata': {'slots': ['M_SwordCamp'], 'collision_hulls': hulls}}
+    write(donor / 'fbx/manifest.json', json.dumps({'exports': [export('SM_CampBales', 1), export('SM_RoninKatana', 0)]}))
+    for name in ('SM_CampBales', 'SM_RoninKatana'):
+        write(donor / f'fbx/{name}.fbx', name)
+    plan = recover.build_plan(game, 'swordcamp', donor)
+    by_id = {g.id: g for g in plan.generated}
+    assert by_id['texture/swordcamp/atlas'].settings == {'srgb': True}
+    assert by_id['prop/swordcamp/camp-bales'].settings == {'slot_materials': ['/Game/SwordCamp/Materials/M_SwordCamp'],
+                                                           'triangles': 20, 'collision': 'simple_and_complex', 'hulls': 1}
+    assert by_id['prop/swordcamp/ronin-katana'].settings['collision'] == 'none'
+    assert plan.kept['adopted/swordcamp/materials'] == ['/Game/SwordCamp/Materials/M_SwordCamp']
+    # A hull count that contradicts the donor's solid-prop list stops the plan: the collision would change.
+    write(donor / 'fbx/manifest.json', json.dumps({'exports': [export('SM_CampBales', 0), export('SM_RoninKatana', 0)]}))
+    with pytest.raises(recover.RecoverError, match='collision policy'):
+        recover.build_plan(game, 'swordcamp', donor)
+
+
+def test_fx_recovers_the_sprite_textures_only(tmp_path):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    adopted(game, 'fx/textures', ['/Game/FX/Textures/T_FX_Glow'])
+    adopted(game, 'fx/loose_files', ['/Game/FX/M_FX_Additive'])
+    write(donor / 'T_FX_Glow.png', 'glow')
+    write(donor / 'unreal_import.json', json.dumps({'textures': ['/Game/FX/Textures/T_FX_Glow.T_FX_Glow',
+                                                                 '/Game/FX/Textures/T_FX_Gone.T_FX_Gone']}))
+    plan = recover.build_plan(game, 'fx', donor)
+    (glow,) = plan.generated
+    assert (glow.id, glow.kind, glow.settings) == ('texture/fx/glow', 'texture', {'srgb': False})
+    assert any('T_FX_Gone' in u for u in plan.unmapped_outputs)
+    assert plan.kept == {'adopted/fx/textures': [], 'adopted/fx/loose_files': ['/Game/FX/M_FX_Additive']}
+
+
+def test_villageatomic_follows_the_parent_collision_policy_in_a_one_record_family(tmp_path):
+    game = tmp_path / 'game'
+    donor = tmp_path / 'build' / 'atomic_regions' / 'village'
+    dest = '/Game/Experiments/VillageAtomic/v1_atomic'
+    adopted(game, 'experiments/villageatomic', [f'{dest}/Village_Sign', f'{dest}/Village_Ground', f'{dest}/Village_Planting_cell_0_0'])
+    adopted(game, 'japan/materials/base-materials', ['/Game/Japan/Materials/M_Village'])
+    names = {'Village_Sign': 1, 'Village_Ground': 0, 'Village_Planting_cell_0_0': 0}
+    export = lambda name, hulls: {'asset': name, 'primary': f'{name}.fbx', 'sha256': sha(name.encode()), 'triangles': 30,
+                                  'metadata': {'slots': ['VillagePalette'], 'collision_hulls': hulls}}
+    write(donor / 'assets/manifest.json', json.dumps({'exports': [export(n, h) for n, h in names.items()]}))
+    for name in names:
+        write(donor / f'assets/{name}.fbx', name)
+    write(tmp_path / 'build' / 'village' / 'atomic-manifest.json', json.dumps({'parents': {
+        'Village_Sign': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Sign'}]},
+        'Village_Ground': {'collision': 'complex_as_simple', 'pieces': [{'name': 'Village_Ground'}]},
+        'Village_Planting': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Planting_cell_0_0'}]}}}))
+    plan = recover.build_plan(game, 'experiments/villageatomic', donor)
+    by_id = {g.id: g for g in plan.generated}
+    assert by_id['prop/villageatomic/sign'].settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 30,
+                                                         'collision': 'simple_and_complex', 'hulls': 1}
+    assert by_id['prop/villageatomic/ground'].settings['collision'] == 'complex'
+    assert by_id['prop/villageatomic/planting-cell-0-0'].settings['hulls'] == 0       # a render-only leaf keeps no shapes
+    assert plan.kept == {'adopted/experiments/villageatomic': []}
+    changed = recover.apply(game, plan, donor)
+    assert len(changed['created']) == 3 and changed['deleted'] == ['adopted/experiments/villageatomic']
+    again = recover.apply(game, recover.build_plan(game, 'experiments/villageatomic', donor), donor)
+    assert again['created'] == []

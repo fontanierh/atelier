@@ -97,12 +97,17 @@ def record_owners(game: Path) -> dict[str, str]:
     return owner
 
 
+def in_family(record_id: str, family: str) -> bool:
+    """An adopted record of the family: adopted/<family>/..., or adopted/<family> itself (a one-record family)."""
+    return record_id == f'adopted/{family}' or record_id.startswith(f'adopted/{family}/')
+
+
 def adopted_packages(game: Path, family: str) -> dict[str, str]:
     """package -> adopted record ID, for every adopted record of the family."""
     owner = {}
     for path in records.record_paths(game):
         asset = records.load_asset(path)
-        if asset.id.startswith(f'adopted/{family}/') and not asset.sources and asset.recipe is None:
+        if in_family(asset.id, family) and not asset.sources and asset.recipe is None:
             for output in asset.outputs:          # a record with its own sources is not a source-less one
                 owner[output.package] = asset.id
     return owner
@@ -364,9 +369,193 @@ def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner
     return Plan('belmontetrain', generated, unmapped, {})
 
 
+# --- Small source-less families: skatepark, megapark seam, swordcamp, fx, villageatomic ---------------------------------
+# Not planned, with the reason (docs/inventory/sources.md): materials and material instances are built in the donor editor
+# (no V2 importer for them); racing (M_RacingTv) and skateruntime (a custom data asset) have no mesh or texture input;
+# experiments/citytrees are LOD-chain duplicates of citysurfaces pieces whose LOD files are FBX, and the V2 LOD chain imports
+# glTF levels only (see the report of the recovery branch).
+SKATEPARK_ROOT = '/Game/SkatePark'
+SKATEPARK_BOARD_MATERIAL = '/Game/Japan/Materials/M_Village'   # import_skatepark.py: the board parts take M_Village
+
+
+def _texture_record(rid: str, package: str, source: Path, settings: dict, about: str, sha: str | None = None) -> Generated:
+    tail = rid.split('/', 1)[1]
+    return Generated(id=rid, kind='texture', owner=f'shared/{tail}', package=package, source=source, settings=settings,
+                     about=about, expected_sha=sha)
+
+
+def plan_skatepark(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The donor's skatepark outputs (import_skatepark.py): assets/<SM_*>.fbx (the park pieces), board/<SM_Skate*>.fbx,
+    textures/<key>-<role>.png. A park piece binds each imported slot (Pier_<key>) to /Game/SkatePark/Materials/M_Pier_<key>
+    (build-report material_slots); a board part has one slot on M_Village. A piece that blocks (runtime-park.json) is
+    complex-as-simple, any other has no shapes (the donor sets simple-as-complex and imports none). 'painted' reuses the
+    steel maps (the donor's specs['painted']), and each texture is sRGB for albedo, normal-map compression for normal."""
+    build, park = _json(donor / 'build-report.json'), _json(donor / 'runtime-park.json')
+    maps = _json(donor / 'textures' / 'textures.json')
+    maps['painted'] = maps['steel']
+    blocks = {row['name']: row['blocks'] for row in park['meshes']}
+    exports = build['identity']['exports']
+    generated, unmapped, used = [], [], set()
+    for key, spec in sorted(maps.items()):
+        for role, file in sorted(spec['maps'].items()):
+            name = f'T_Pier_{key}_{role}'
+            used.add(file)
+            generated.append(_texture_record(
+                f'texture/skatepark/pier-{key}-{role}', f'{SKATEPARK_ROOT}/Textures/{name}', donor / 'textures' / file,
+                {'srgb': role == 'albedo', 'compression': 'TC_NORMALMAP' if role == 'normal' else 'TC_DEFAULT'},
+                f'{name}: the {role} map of the {key} pier surface (donor texture {file})', spec['sha256'][role]))
+    for rel, digest in sorted(exports.items()):
+        name = rel.rsplit('/', 1)[1][:-len('.fbx')]
+        board = rel.startswith('board/')
+        package = f'{SKATEPARK_ROOT}/Board/{name}' if board else f'{SKATEPARK_ROOT}/{name}'
+        if package not in owner:
+            unmapped.append(f'{rel} (its package is not in a source-less skatepark record)')
+            continue
+        if board:
+            slots = {'slot_materials': [SKATEPARK_BOARD_MATERIAL]}
+            collision, refs = 'none', [all_owner[SKATEPARK_BOARD_MATERIAL]]
+        else:
+            surfaces = {slot: f'{SKATEPARK_ROOT}/Materials/M_{slot}' for slot in build['material_slots'][name]}
+            missing = [m for m in surfaces.values() if m not in all_owner]
+            if missing:
+                unmapped.append(f'{rel} (material {missing[0]} owned by no record)')
+                continue
+            slots = {'slot_map': surfaces}
+            collision, refs = ('complex' if blocks[name] else 'none'), sorted({all_owner[m] for m in surfaces.values()})
+        tail = ident(name[len('SM_'):])
+        generated.append(Generated(
+            id=f'prop/skatepark/{tail}', kind='static-mesh', owner=f'shared/skatepark/{tail}', package=package,
+            source=donor / rel, settings={**slots, 'triangles': build['meshes'][name]['triangles'], 'collision': collision},
+            references=refs, about=f'{name}: one skate park mesh ({build["meshes"][name]["triangles"]} triangles)',
+            expected_sha=digest))
+    for path in sorted((donor / 'textures').glob('*.png')):
+        if path.name not in used:
+            unmapped.append(f'textures/{path.name}')
+    return Plan('skatepark', generated, unmapped, {})
+
+
+def plan_megapark(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The two seam meshes joining the park to the zeppelin footbridge (fbx/manifest.json): SM_MP_Seam binds each imported
+    slot M_<hash>_Seam to /Game/MegaPark/Materials/MI_<hash>_Seam (import_megapark.py), UC_MP_Seam is its one-sided
+    collision twin with no material. Both are complex-as-simple with full-precision UVs. The section meshes have their own
+    npz sources in their adopted records and are not part of this recovery; the material instances stay editor-owned."""
+    manifest = _json(donor / 'fbx' / 'manifest.json')
+    generated, unmapped = [], []
+    for row in manifest['exports']:
+        name = row['asset']
+        if not name.endswith('_Seam'):
+            continue
+        package = f'/Game/MegaPark/Meshes/{name}'
+        slots = row['metadata']['slots']
+        materials = {} if name.startswith('UC_') else {s: f'/Game/MegaPark/Materials/MI_{s[2:]}' for s in slots}
+        missing = [m for m in materials.values() if m not in all_owner]
+        if package not in owner or missing:
+            unmapped.append(f'fbx/{row["primary"]} (' + (f'material {missing[0]} owned by no record' if missing
+                                                          else 'its package is not in a source-less megapark record') + ')')
+            continue
+        generated.append(Generated(
+            id=f'prop/megapark/{"seam" if materials else "seam-collision"}', kind='static-mesh',
+            owner=f'shared/megapark/{"seam" if materials else "seam-collision"}', package=package,
+            source=donor / 'fbx' / row['primary'],
+            settings={**({'slot_map': materials} if materials else {}), 'triangles': row['triangles'],
+                      'collision': 'complex', 'full_precision_uvs': True},
+            references=sorted({all_owner[m] for m in materials.values()}),
+            about=f'{name}: the {"render" if materials else "collision"} mesh of the park seam ({row["triangles"]} triangles)',
+            expected_sha=row['sha256']))
+    return Plan('megapark', generated, unmapped, {})
+
+
+SWORDCAMP_SOLID = {'SM_CampJinmaku', 'SM_CampFirePit', 'SM_CampWeaponRack', 'SM_CampBales'}   # import_swordcamp.py SOLID_PROPS
+
+
+def plan_swordcamp(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The donor's swordcamp outputs (import_swordcamp.py): fbx/<SM_*>.fbx on M_SwordCamp, and the atlas texture. The four
+    camp props keep their one authored UCX hull as simple-and-complex collision (SOLID_PROPS); the ronin equipment has none."""
+    manifest = _json(donor / 'fbx' / 'manifest.json')
+    material = '/Game/SwordCamp/Materials/M_SwordCamp'
+    generated, unmapped = [], []
+    if material not in all_owner:
+        raise RecoverError(f'{material} is owned by no record')
+    generated.append(_texture_record(
+        'texture/swordcamp/atlas', '/Game/SwordCamp/Textures/T_SwordCampAtlas', donor / 'swordcamp_atlas.jpg',
+        {'srgb': True}, 'T_SwordCampAtlas: the Sunburst colour atlas of every Sword Camp mesh (donor swordcamp_atlas.jpg)'))
+    for row in manifest['exports']:
+        name, hulls = row['asset'], row['metadata']['collision_hulls']
+        package = f'/Game/SwordCamp/Assets/{name}'
+        if package not in owner or row['metadata']['slots'] != ['M_SwordCamp']:
+            unmapped.append(f'fbx/{row["primary"]} (not a one-slot M_SwordCamp mesh of a source-less swordcamp record)')
+            continue
+        if (name in SWORDCAMP_SOLID) != (hulls > 0):
+            raise RecoverError(f'{name}: {hulls} hulls does not match the donor collision policy')
+        tail = ident(name[len('SM_'):])
+        generated.append(Generated(
+            id=f'prop/swordcamp/{tail}', kind='static-mesh', owner=f'shared/swordcamp/{tail}', package=package,
+            source=donor / 'fbx' / row['primary'],
+            settings={'slot_materials': [material], 'triangles': row['triangles'],
+                      **({'collision': 'simple_and_complex', 'hulls': hulls} if hulls else {'collision': 'none'})},
+            references=[all_owner[material]], about=f'{name}: one Sword Camp mesh ({row["triangles"]} triangles)',
+            expected_sha=row['sha256']))
+    return Plan('swordcamp', generated, unmapped, {})
+
+
+def plan_fx(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The donor's combat_fx textures (unreal_import.json: /Game/FX/Textures/T_FX_*, one PNG each, imported not-sRGB).
+    The FX materials are built in the donor editor and stay editor-owned."""
+    listed = _json(donor / 'unreal_import.json')['textures']
+    generated, unmapped = [], []
+    for path in listed:
+        package = path.split('.', 1)[0]
+        name = package.rsplit('/', 1)[1]
+        if package not in owner:
+            unmapped.append(f'{name}.png (its package is not in a source-less fx record)')
+            continue
+        generated.append(_texture_record(
+            f'texture/fx/{slug(name[len("T_FX_"):])}', package, donor / f'{name}.png', {'srgb': False},
+            f'{name}: a combat effect sprite mask (donor texture {name}.png)'))
+    return Plan('fx', generated, unmapped, {})
+
+
+VILLAGE_DESTINATION = '/Game/Experiments/VillageAtomic/v1_atomic'
+VILLAGE_MATERIAL = '/Game/Japan/Materials/M_Village'
+
+
+def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The donor's village atomic exports (DONOR is atomic_regions/village: assets/manifest.json, assets/<piece>.fbx;
+    village/atomic-manifest.json two folders up names each parent's collision policy). Every piece has the one slot
+    VillagePalette, bound to M_Village. A parent with source_collision_hulls imports its UCX hulls (a piece with none
+    keeps no shapes), the ground is complex-as-simple, as import_village_atomic.py sets them. Half-precision UVs are
+    the importer's default."""
+    manifest = _json(donor / 'assets' / 'manifest.json')
+    parents = _json(donor.parents[1] / 'village' / 'atomic-manifest.json')['parents']
+    policy = {piece['name']: group['collision'] for group in parents.values() for piece in group['pieces']}
+    generated, unmapped = [], []
+    if VILLAGE_MATERIAL not in all_owner:
+        raise RecoverError(f'{VILLAGE_MATERIAL} is owned by no record')
+    for row in manifest['exports']:
+        name = row['asset']
+        package = f'{VILLAGE_DESTINATION}/{name}'
+        if package not in owner or row['metadata']['slots'] != ['VillagePalette'] or name not in policy:
+            unmapped.append(f'assets/{row["primary"]} (not a VillagePalette piece of a source-less village record)')
+            continue
+        hulls = row['metadata']['collision_hulls']
+        collision = ({'collision': 'complex'} if policy[name] == 'complex_as_simple'
+                     else {'collision': 'simple_and_complex', 'hulls': hulls})
+        tail = ident(name[len('Village_'):])
+        generated.append(Generated(
+            id=f'prop/villageatomic/{tail}', kind='static-mesh', owner=f'shared/villageatomic/{tail}', package=package,
+            source=donor / 'assets' / row['primary'],
+            settings={'slot_materials': [VILLAGE_MATERIAL], 'triangles': row['triangles'], **collision},
+            references=[all_owner[VILLAGE_MATERIAL]],
+            about=f'{name}: one village piece ({row["triangles"]} triangles, {hulls} collision hulls)',
+            expected_sha=row['sha256']))
+    return Plan('experiments/villageatomic', generated, unmapped, {})
+
+
 FAMILIES = {'hippodrome': plan_hippodrome, 'belmonte': plan_belmonte, 'experiments/islandterrain': plan_island,
             'brinecove': plan_brinecove, 'experiments/citysurfaces': plan_citysurfaces,
             'belmontetrain': plan_belmontetrain}
+FAMILIES.update({'skatepark': plan_skatepark, 'megapark': plan_megapark, 'swordcamp': plan_swordcamp, 'fx': plan_fx,
+                 'experiments/villageatomic': plan_villageatomic})
 
 
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
@@ -402,7 +591,7 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
     generated_packages = set(packages)
     for path in records.record_paths(game):
         asset = records.load_asset(path)
-        if asset.id.startswith(f'adopted/{family}/'):
+        if in_family(asset.id, family):
             left = [o.package for o in asset.outputs if o.package not in generated_packages]
             kept[asset.id] = left
     plan.kept = kept
