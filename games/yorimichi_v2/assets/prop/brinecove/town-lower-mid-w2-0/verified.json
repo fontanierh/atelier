@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-mid-w2-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerMidW20.uasset": "c52c628771a503e9db3a90b2fc261f5003cdcbc95de4293995b57ac086c29aad"
+  },
+  "input_fingerprint": "2467849b1a291fac84c5f2b4457088b3c98211c982dccdd6e5ed72ea848d7d1d",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerMidW20": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
