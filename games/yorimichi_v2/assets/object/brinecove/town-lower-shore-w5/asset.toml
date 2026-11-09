@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the town lower shore w5, cut from its fused tile (6496 triangles).
+# Its placement is this actor package; its model is prop/brinecove/town-lower-shore-w5, prop/brinecove/town-lower-shore-w5-soft. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/town-lower-shore-w5"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/town-lower-shore-w5", "prop/brinecove/town-lower-shore-w5-soft"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/8/BP/3Y156W154U9L5U82RRNZLK"
