@@ -64,8 +64,10 @@ The seven adopted records `adopted/japan/materials/{bark, buildings, foliage, gr
 hold 43 packages, all `MI_*` material instances in `/Game/Japan/Materials`, all `authority = "editor"`. They have no
 `[[sources]]` and no recipe, and they stay that way: adding sources would make `check.py` report `STALE_IMPORT`.
 
-Result: **0** imported textures or meshes (a), **41** material instances built by donor Python (b, Prepared),
-**2** with no donor builder (c, Blocked). Nothing here is verified closure.
+Result: **0** imported textures or meshes (a). **41** generator-built instances (b): **Prepared, read-confirmed**,
+the saved parent and parameters match the donor script on every row. **2** used leaf instances
+(`MI_LeafAmber`, `MI_LeafCrimson`): **Prepared, recipe recorded**. No row is Blocked. Nothing here is verified
+closure: the read confirms parameters only, and no import has been compared with the accepted packages.
 
 Method. Each saved `.uasset` matches its `verified.json` sha256 in the full donor checkout and in the fix checkout
 (43 of 43). Parent and texture references were read from those bytes with `LC_ALL=C grep -a`. Every (b) package is
@@ -120,69 +122,84 @@ in the 43:
 | `T_LeafOlive` | `build/yorimichi/forest/textures/T_LeafOlive.png` | `0a7910a4b61649cc78f55a8ea245472e9fff99ff0a88838dfe824e4f74d04dff` |
 | `T_LeafCypress` | `build/yorimichi/forest/textures/T_LeafCypress.png` | `094f0b2c7405ac001179e4a83ebf82374e30e81f1b685f18eb4a7ff40c9b32df` |
 | `T_LeafStonePine` | `build/yorimichi/forest/textures/T_LeafStonePine.png` | `62505bc2b129575966cb7ac1dcc542b33139cd5ff6b9453f060aa945c35020dc` |
-| `T_leaf_amber (Blocked rows only)` | `build/yorimichi/treehouse/trees/T_leaf_amber.png` | `e9614e6d278c200bfca7a2233ca141760259d3c0f473ae92526c0b51b25fb9c5` |
-| `T_leaf_crimson (Blocked rows only)` | `build/yorimichi/treehouse/trees/T_leaf_crimson.png` | `406c9d466b7d479d26003e03c05a2b0134107833779e64eb1a86b19923fef309` |
+| `T_leaf_amber (two leaf recipes)` | `build/yorimichi/treehouse/trees/T_leaf_amber.png` | `e9614e6d278c200bfca7a2233ca141760259d3c0f473ae92526c0b51b25fb9c5` |
+| `T_leaf_crimson (two leaf recipes)` | `build/yorimichi/treehouse/trees/T_leaf_crimson.png` | `406c9d466b7d479d26003e03c05a2b0134107833779e64eb1a86b19923fef309` |
 
-Per-package table. Class (a)/(b)/(c), status Prepared (candidate original identified, needs an editor read) or
-Blocked (unknown). Parent and texture references come from the real package bytes:
+Per-package table. Status: **Prepared, read-confirmed** (a generator row whose saved parent and parameters match the
+donor script in the editor read below), or **Prepared, recipe recorded** (a used leaf, with its recipe below).
+Parent and texture references come from the real package bytes:
 
 | Package | Record | Status | Parent | Texture refs | Candidate original |
 |---|---|---|---|---|---|
-| `MI_Bark` | `bark` | Prepared | `M_Painted` | `T_bark` | shared_materials.py build_materials |
-| `MI_BarkOlive` | `bark` | Prepared | `M_Painted` | `T_bark_olive` | shared_materials.py build_materials |
-| `MI_BarkTuscan` | `bark` | Prepared | `M_Painted` | `T_bark_olive` | shared_materials.py build_materials |
-| `MI_Lattice` | `buildings` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Metal` | `buildings` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Paint` | `buildings` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Plaster` | `buildings` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_RoofTile` | `buildings` | Prepared | `M_Painted` | `T_rooftile` | shared_materials.py build_materials |
-| `MI_Tile` | `buildings` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Vermilion` | `buildings` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Wood` | `buildings` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_FarForest` | `foliage` | Prepared | `M_ForestGround` | none | main |
-| `MI_Feather` | `foliage` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_FeatherDark` | `foliage` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Flower` | `foliage` | Prepared | `M_Foliage` | `T_flower` | shared_materials.py build_materials |
-| `MI_Grass` | `foliage` | Prepared | `M_Grass` | `T_grass` | shared_materials.py build_materials |
-| `MI_LeafAmber` | `foliage` | Blocked | `M_Foliage` | `T_leaf_amber` | none found |
-| `MI_LeafBroad` | `foliage` | Prepared | `M_Foliage` | `T_leaf_broad` | shared_materials.py build_materials |
-| `MI_LeafCedar` | `foliage` | Prepared | `M_Foliage` | `T_leaf_cedar` | shared_materials.py build_materials |
-| `MI_LeafCrimson` | `foliage` | Blocked | `M_Foliage` | `T_leaf_crimson` | none found |
-| `MI_LeafCypress` | `foliage` | Prepared | `M_Foliage` | `T_LeafCypress` | import_forest.py (textures from tools/forest_textures.py) |
-| `MI_LeafGinkgo` | `foliage` | Prepared | `M_Foliage` | `T_leaf_ginkgo` | shared_materials.py build_materials |
-| `MI_LeafMaple` | `foliage` | Prepared | `M_Foliage` | `T_leaf_maple` | shared_materials.py build_materials |
-| `MI_LeafOak` | `foliage` | Prepared | `M_Foliage` | `T_LeafOak` | import_forest.py (textures from tools/forest_textures.py) |
-| `MI_LeafOchre` | `foliage` | Prepared | `M_Foliage` | `T_leaf_ochre` | shared_materials.py build_materials |
-| `MI_LeafOchreSmall` | `foliage` | Prepared | `M_Foliage` | `T_leaf_ochre_small` | shared_materials.py build_materials |
-| `MI_LeafOlive` | `foliage` | Prepared | `M_Foliage` | `T_LeafOlive` | import_forest.py (textures from tools/forest_textures.py) |
-| `MI_LeafPine` | `foliage` | Prepared | `M_Foliage` | `T_leaf_pine` | shared_materials.py build_materials |
-| `MI_LeafSmall` | `foliage` | Prepared | `M_Foliage` | `T_leaf_small` | shared_materials.py build_materials |
-| `MI_LeafStonePine` | `foliage` | Prepared | `M_Foliage` | `T_LeafStonePine` | import_forest.py (textures from tools/forest_textures.py) |
-| `MI_Ground` | `ground` | Prepared | `M_Painted` | `T_ground` | shared_materials.py build_materials |
-| `MI_Litter` | `ground` | Prepared | `M_Foliage` | `T_litter` | shared_materials.py build_materials |
-| `MI_Moss` | `ground` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Road` | `ground` | Prepared | `M_Painted` | `T_road` | shared_materials.py build_materials |
-| `MI_Sand` | `ground` | Prepared | `M_Painted` | `T_white` | sand_material |
-| `MI_Coast` | `rock-concrete` | Prepared | `M_ForestGround` | none | coast_instance |
-| `MI_CoastRock` | `rock-concrete` | Prepared | `M_CoastRock` | none | coast_rock_instance |
-| `MI_Concrete` | `rock-concrete` | Prepared | `M_Painted` | `T_concrete` | shared_materials.py build_materials |
-| `MI_NorthRockCaps` | `rock-concrete` | Prepared | `M_NorthMountains` | none | rock_material |
-| `MI_Rock` | `rock-concrete` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Stone` | `rock-concrete` | Prepared | `M_Painted` | `T_white` | shared_materials.py build_materials |
-| `MI_Sky` | `sky-wind` | Prepared | `M_Sky` | none | shared_materials.py build_materials |
-| `MI_Water` | `water` | Prepared | `M_Painted` | `T_water` | shared_materials.py build_materials |
+| `MI_Bark` | `bark` | Prepared, read-confirmed | `M_Painted` | `T_bark` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_BarkOlive` | `bark` | Prepared, read-confirmed | `M_Painted` | `T_bark_olive` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_BarkTuscan` | `bark` | Prepared, read-confirmed | `M_Painted` | `T_bark_olive` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Lattice` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Metal` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Paint` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Plaster` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_RoofTile` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_rooftile` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Tile` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Vermilion` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Wood` | `buildings` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_FarForest` | `foliage` | Prepared, read-confirmed | `M_ForestGround` | none | main |
+| `MI_Feather` | `foliage` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials |
+| `MI_FeatherDark` | `foliage` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials |
+| `MI_Flower` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_flower` | shared_materials.py build_materials |
+| `MI_Grass` | `foliage` | Prepared, read-confirmed | `M_Grass` | `T_grass` | shared_materials.py build_materials |
+| `MI_LeafAmber` | `foliage` | Prepared, recipe recorded | `M_Foliage` | `T_leaf_amber` | recipe below (no donor builder) |
+| `MI_LeafBroad` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_broad` | shared_materials.py build_materials |
+| `MI_LeafCedar` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_cedar` | shared_materials.py build_materials |
+| `MI_LeafCrimson` | `foliage` | Prepared, recipe recorded | `M_Foliage` | `T_leaf_crimson` | recipe below (no donor builder) |
+| `MI_LeafCypress` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_LeafCypress` | import_forest.py (textures from tools/forest_textures.py) |
+| `MI_LeafGinkgo` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_ginkgo` | shared_materials.py build_materials |
+| `MI_LeafMaple` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_maple` | shared_materials.py build_materials |
+| `MI_LeafOak` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_LeafOak` | import_forest.py (textures from tools/forest_textures.py) |
+| `MI_LeafOchre` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_ochre` | shared_materials.py build_materials |
+| `MI_LeafOchreSmall` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_ochre_small` | shared_materials.py build_materials |
+| `MI_LeafOlive` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_LeafOlive` | import_forest.py (textures from tools/forest_textures.py) |
+| `MI_LeafPine` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_pine` | shared_materials.py build_materials |
+| `MI_LeafSmall` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_small` | shared_materials.py build_materials |
+| `MI_LeafStonePine` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_LeafStonePine` | import_forest.py (textures from tools/forest_textures.py) |
+| `MI_Ground` | `ground` | Prepared, read-confirmed | `M_Painted` | `T_ground` | shared_materials.py build_materials |
+| `MI_Litter` | `ground` | Prepared, read-confirmed | `M_Foliage` | `T_litter` | shared_materials.py build_materials |
+| `MI_Moss` | `ground` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials |
+| `MI_Road` | `ground` | Prepared, read-confirmed | `M_Painted` | `T_road` | shared_materials.py build_materials |
+| `MI_Sand` | `ground` | Prepared, read-confirmed | `M_Painted` | `T_white` | sand_material |
+| `MI_Coast` | `rock-concrete` | Prepared, read-confirmed | `M_ForestGround` | none | coast_instance |
+| `MI_CoastRock` | `rock-concrete` | Prepared, read-confirmed | `M_CoastRock` | none | coast_rock_instance |
+| `MI_Concrete` | `rock-concrete` | Prepared, read-confirmed | `M_Painted` | `T_concrete` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_NorthRockCaps` | `rock-concrete` | Prepared, read-confirmed | `M_NorthMountains` | none | rock_material |
+| `MI_Rock` | `rock-concrete` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials |
+| `MI_Stone` | `rock-concrete` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials; base-property override not in the read |
+| `MI_Sky` | `sky-wind` | Prepared, read-confirmed | `M_Sky` | none | shared_materials.py build_materials |
+| `MI_Water` | `water` | Prepared, read-confirmed | `M_Painted` | `T_water` | shared_materials.py build_materials |
 
-Blocked: `MI_LeafAmber` and `MI_LeafCrimson` are **used**: `assets/prop/japan-kit/tree-canopy-amber/asset.toml` and
-`tree-canopy-crimson/asset.toml` (recipe `slot_map`, line 20) bind their `LeafMaple` slot to them. No donor script found
-builds the instances, so their original is not found. The image inputs are the treehouse generator's
-`T_leaf_amber.png` and `T_leaf_crimson.png` (`world/regions/treehouse/trees.py`, listed above). The status is
-**used; original script not found**. Recovery: a bounded editor read of parent and parameters, then a faithful,
-recorded recipe, compared with the accepted package before adoption. They are not relabelled as editor originals.
+Used leaves: `MI_LeafAmber` and `MI_LeafCrimson` are **used**: `assets/prop/japan-kit/tree-canopy-amber/asset.toml`
+and `tree-canopy-crimson/asset.toml` (recipe `slot_map`, line 20) bind their `LeafMaple` slot to them. No donor script
+builds them, so the original script is not found. Their image inputs are the treehouse generator's `T_leaf_amber.png`
+and `T_leaf_crimson.png` (`world/regions/treehouse/trees.py`, listed above). They are not relabelled as editor
+originals.
 
-Native reads still needed (none run here): (1) an editor read of the 41 Prepared packages against their generators,
-grouped as 32 from `shared_materials.py`, 5 from the other scripts, and 4 Tuscan leaves from `import_forest.py`;
-(2) the texture imports above, compared with the saved parents; (3) for the 2 used packages, a bounded editor read of
-parent and parameters through `unreal/Scripts/report_materials.py`, not run here:
+### Recipe for the two used leaves
+
+`material-instance` is a valid record kind (`tools/content/records.py`), but no record uses it and no recipe fields
+are defined for it, so the recipe is recorded here rather than as a new schema.
+
+| Field | `MI_LeafAmber` | `MI_LeafCrimson` |
+|---|---|---|
+| Parent | `/Game/Japan/Materials/M_Foliage` | `/Game/Japan/Materials/M_Foliage` |
+| Tex (texture parameter) | `/Game/Japan/Textures/T_leaf_amber` | `/Game/Japan/Textures/T_leaf_crimson` |
+| Vector and scalar overrides | none | none |
+| Texture input (donor) | `build/yorimichi/treehouse/trees/T_leaf_amber.png`, sha256 `e9614e6d278c200bfca7a2233ca141760259d3c0f473ae92526c0b51b25fb9c5` | `build/yorimichi/treehouse/trees/T_leaf_crimson.png`, sha256 `406c9d466b7d479d26003e03c05a2b0134107833779e64eb1a86b19923fef309` |
+| Effective (read) | FadeMode 0, CutScale [1,1,2,1], Tint [1,1,1,1]: the parent's defaults | same |
+
+The recipe is the form `import_forest.py` uses for the Tuscan leaves: set the parent to `M_Foliage` and set `Tex` to the
+imported texture. It specifies exactly the content of the read. Reproducing it in an editor, and comparing the result
+with the accepted packages, is not done.
+
+Editor read. `docs/inventory/japan-materials-read.json` is the output of `unreal/Scripts/report_materials.py`, run as a
+read-only `editor.run` (43 rows, 0 errors, nothing saved):
 
 ```sh
 V2_EDITOR_READ_ONLY=1 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/report_materials.py \
@@ -191,8 +208,19 @@ V2_EDITOR_READ_ONLY=1 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/re
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run
 ```
 
-The output is one JSON row per package (parent, saved overrides, effective parameters); it saves nothing. Then a recipe
-is compared with the accepted package. Counts are pinned by `tests/test_japan_materials_sources.py`.
+Each generator row was compared with what its donor script sets: parent; `Tex`; `Tint`; the `CutScale` that
+`see_through.py` gives `MI_Paint`; `NearGround` on `MI_Coast`; `Caps` on `MI_NorthRockCaps`; `MI_Sand`'s tint; and the
+Tuscan leaves' `Tex` only. **Mismatches: none.** The read confirms parameters only. Thirteen rows also carry
+base-property overrides that the job does not read: `enable_bark_lod_blend` (foliage_material.py) sets dithered LOD
+transition on `MI_Bark`, `MI_BarkOlive` and `MI_BarkTuscan`; `mask_instance` (see_through.py) sets masked blend with
+clip 0.5 on `MI_Bark`, `MI_RoofTile`, `MI_Tile`, `MI_Plaster`, `MI_Wood`, `MI_Lattice`, `MI_Vermilion`, `MI_Paint`,
+`MI_Metal`, `MI_Stone` and `MI_Concrete`. Those rows say so in the table. The pins are in
+`tests/test_japan_materials_read.py`.
+
+Still to do, not run here: (1) an editor reproduction of each generator row, compared with its accepted package;
+(2) an editor reproduction of the two leaf recipes, compared with their accepted packages; (3) a read of the
+base-property overrides of the 13 rows; (4) the texture imports listed above, compared with the saved parents.
+Counts are pinned by `tests/test_japan_materials_sources.py`.
 
 Brine Cove's source-preservation route at `5f2d21fbd1` is prepared but not applied on main. It is due after town9;
 see [sources.md](sources.md). It fixes preservation of fused originals without changing accepted package bytes.

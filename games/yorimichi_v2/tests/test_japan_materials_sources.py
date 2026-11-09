@@ -29,7 +29,7 @@ OTHER = [  # forest_ground.py, import_island_world.py, mountain_material.py, imp
 TUSCAN = [  # import_forest.py, textures from tools/forest_textures.py
     'MI_LeafCypress',  'MI_LeafOak',  'MI_LeafOlive',  'MI_LeafStonePine',
 ]
-BLOCKED = [  # no donor builder found
+BLOCKED = [  # used leaves: a recipe recorded from the editor read (no donor builder)
     'MI_LeafAmber',  'MI_LeafCrimson',
 ]
 ALL = SHARED + OTHER + TUSCAN + BLOCKED
@@ -59,16 +59,17 @@ def test_the_packages_are_the_43_material_instances_and_each_has_a_verified_hash
         assert len(hashes) == len(re.findall(r'\.uasset"', verified))
 
 
-def test_the_classification_is_41_prepared_and_2_blocked_with_no_imported_original():
+def test_the_classification_is_41_generator_rows_and_2_used_leaves_with_no_imported_original():
     assert len(ALL) == 43 and len(set(ALL)) == 43
     assert (len(SHARED), len(OTHER), len(TUSCAN), len(BLOCKED)) == (32, 5, 4, 2)
     assert BLOCKED == ['MI_LeafAmber', 'MI_LeafCrimson']
-    assert len(SHARED) + len(OTHER) + len(TUSCAN) == 41   # class (b), Prepared; class (a) is empty
+    assert len(SHARED) + len(OTHER) + len(TUSCAN) == 41   # class (b); class (a) is empty
 
 
 def test_the_exceptions_table_lists_each_package_once_with_the_same_status():
-    rows = re.findall(r'^\| `(MI_[A-Za-z0-9]+)` \| `[^`]+` \| (Prepared|Blocked) \|', EXCEPTIONS.read_text(), re.M)
+    rows = re.findall(r'^\| `(MI_[A-Za-z0-9]+)` \| `[^`]+` \| (Prepared, read-confirmed|Prepared, recipe recorded) \|',
+                      EXCEPTIONS.read_text(), re.M)
     assert sorted(name for name, _ in rows) == sorted(ALL)
     status = dict(rows)
-    assert {name for name, s in status.items() if s == 'Blocked'} == set(BLOCKED)
-    assert sum(1 for s in status.values() if s == 'Prepared') == 41
+    assert {name for name, s in status.items() if s == 'Prepared, recipe recorded'} == set(BLOCKED)
+    assert sum(1 for s in status.values() if s == 'Prepared, read-confirmed') == 41
