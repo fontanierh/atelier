@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-slope--1-2-4-1-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperSlope1241_Soft.uasset": "0fcfc0f68eec71f37fc932423beaf03683d4f946aaa7ead4d5f577ee780dbbe5"
+  },
+  "input_fingerprint": "7216e041a04988905e19db9cab7ff7e792525d79cf03e884763c8edeecd00b39",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperSlope1241_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
