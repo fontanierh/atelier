@@ -8,7 +8,8 @@ output the family maps to the adopted package it became, the tool writes a gener
 into the record's `src/` and pinned by sha256, its recipe is the donor's own import setting (only importers the V2
 editor supports: static-mesh and texture), and the record owns that one package. The adopted record that held the
 package keeps only what is not generated (its `[[outputs]]` and their verified files), and is deleted when nothing is
-left. Each generated record is imported later by the controller (`tools/import/run.py ID`), which writes its
+left. A record that referenced it (a saved object placing its model) then references the records owning the packages
+it uses, read from its own saved bytes. Each generated record is imported later by the controller (`tools/import/run.py ID`), which writes its
 `verified.json`; this tool never runs Unreal, claims or pushes.
 
 Unmapped donor outputs and unmapped adopted packages are reported, never guessed: they keep their current record.
@@ -347,6 +348,7 @@ def apply(game: Path, plan: Plan, donor: Path) -> dict:
     """Write the generated records and shrink the adopted ones. Returns what changed (empty when already applied)."""
     changed = {'created': [], 'shrunk': [], 'deleted': []}
     gen_packages = {g.package for g in plan.generated}
+    moved_from: dict[str, set[str]] = {}   # shrunk or deleted record -> the packages it lost to generated records
     for gen in plan.generated:
         folder = game / 'assets' / gen.id
         src = folder / 'src' / gen.source.name
@@ -373,6 +375,7 @@ def apply(game: Path, plan: Plan, donor: Path) -> dict:
                 asset_toml.write_text(_unit_text(text))
                 changed['shrunk'].append(record_id)
             continue
+        moved_from[record_id] = before & gen_packages
         if not left:
             for path in (asset_toml, folder / 'verified.json'):
                 if path.is_file():
@@ -390,7 +393,76 @@ def apply(game: Path, plan: Plan, donor: Path) -> dict:
         if (folder / 'verified.json').is_file():
             _drop_verified(folder / 'verified.json', gen_packages & before)
         changed['shrunk'].append(record_id)
+    changed['retargeted'] = _retarget(game, plan, moved_from)
     return changed
+
+
+def _used_bytes(game: Path, asset) -> bytes | None:
+    """The consumer's own saved package bytes (which name the packages it uses), or None when they are not here."""
+    data = b''
+    for output in asset.outputs:
+        for path in records.package_files(game, output.package):
+            if path.is_file():
+                if records.is_lfs_pointer(path):
+                    return None
+                data += path.read_bytes()
+    return data or None
+
+
+def _retarget(game: Path, plan: Plan, moved_from: dict[str, set[str]]) -> list[str]:
+    """Point each consumer of a shrunk or deleted record at the records that now own the packages it uses.
+
+    A consumer that names the old record keeps it only while it still uses a package the old record kept; each moved
+    package it uses (read from its own saved bytes; all moved ones when those are not here) adds its new owner.
+    Links to records that lost nothing (materials, generators) are untouched."""
+    new_owner = {g.package: g.id for g in plan.generated}
+    retargeted = []
+    for asset_toml in sorted((game / 'assets').glob('**/asset.toml')):
+        asset = records.load_asset(asset_toml)
+        hit = [r for r in asset.references + asset.input_dependencies if moved_from.get(r)]
+        if not hit or asset.id in new_owner.values():
+            continue
+        used = _used_bytes(game, asset)
+        uses = (lambda package: True) if used is None else (lambda package: package.encode() in used)
+        replace = {}
+        for old in hit:
+            ids = sorted({new_owner[p] for p in moved_from[old] if uses(p)})
+            old_toml = game / 'assets' / old / 'asset.toml'
+            kept = [o.package for o in records.load_asset(old_toml).outputs] if old_toml.is_file() else []
+            if kept and (not ids or any(uses(p) for p in kept)):
+                ids = [old] + ids
+            if not ids:
+                raise RecoverError(f'{asset.id} references deleted {old} but uses none of its moved packages')
+            replace[old] = ids
+        text = asset_toml.read_text()
+        for key in ('references', 'input_dependencies'):
+            names = getattr(asset, key)
+            if not any(n in replace for n in names):
+                continue
+            new = []
+            for name in names:
+                new += [n for n in replace.get(name, [name]) if n not in new]
+            text = re.sub(rf'(?m)^{key} = \[.*\]$', f'{key} = [' + ', '.join(f'"{n}"' for n in new) + ']', text, count=1)
+        if text == asset_toml.read_text():
+            continue
+        asset_toml.write_text(text)
+        verified = asset_toml.parent / 'verified.json'
+        if verified.is_file():
+            body = _json(verified)
+            deps = body.get('dependencies') or {}
+            if any(d in replace for d in deps):
+                out = {}
+                for dep, digest in deps.items():
+                    for name in replace.get(dep, [dep]):
+                        state = game / 'assets' / name / 'verified.json'
+                        if name == dep:
+                            out[name] = digest
+                        elif state.is_file():   # a generated record not imported yet records its state on import
+                            out[name] = records.state_fingerprint(records.load_verified(state))
+                body['dependencies'] = dict(sorted(out.items()))
+                records.write_json(verified, body)
+        retargeted.append(asset.id)
+    return retargeted
 
 
 def report(plan: Plan) -> str:
@@ -417,7 +489,7 @@ def main(argv=None) -> int:
         if args.apply:
             changed = apply(args.game.resolve(), plan, args.donor.resolve())
             print(f'applied: created {len(changed["created"])}, shrunk {len(changed["shrunk"])}, '
-                  f'deleted {len(changed["deleted"])}')
+                  f'deleted {len(changed["deleted"])}, retargeted {len(changed["retargeted"])}')
     except (RecoverError, RecordError) as error:
         print(f'recover failed: {error}', file=sys.stderr)
         return 1

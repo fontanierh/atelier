@@ -142,8 +142,49 @@ def test_second_apply_changes_nothing(world):
     plan = recover.build_plan(game, 'hippodrome', donor)
     assert all(g.origin == 'applied' for g in plan.generated)
     changed = recover.apply(game, plan, donor)
-    assert changed == {'created': [], 'shrunk': [], 'deleted': []}
+    assert changed == {'created': [], 'shrunk': [], 'deleted': [], 'retargeted': []}
     assert {p: p.read_bytes() for p in game.rglob('*') if p.is_file()} == before
+
+
+def test_apply_points_consumers_at_the_records_now_owning_the_packages_they_use(world):
+    game, donor = world
+
+    def placement(name, refs, uses):
+        record(game, f'object/hippodrome/{name}', f'''schema = 1
+id = "object/hippodrome/{name}"
+kind = "placement"
+authority = "editor"
+owner = "region/hippodrome"
+references = [{', '.join(f'"{r}"' for r in refs)}]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/{name}"
+''')
+        write(game / f'unreal/Content/__ExternalActors__/V2/{name}.uasset', ''.join(f'{u}\0' for u in uses))
+        verified(game, f'object/hippodrome/{name}', [f'unreal/Content/__ExternalActors__/V2/{name}.uasset'])
+        body = json.loads((game / f'assets/object/hippodrome/{name}/verified.json').read_text())
+        body['dependencies'] = {r: 'old' for r in refs}
+        write(game / f'assets/object/hippodrome/{name}/verified.json', json.dumps(body))
+
+    placement('ground', ['adopted/hippodrome/loose_files'], ['/Game/Hippodrome/SM_HD_Ground'])
+    placement('both', ['adopted/hippodrome/loose_files'], ['/Game/Hippodrome/SM_HD_Ground',
+                                                         '/Game/Hippodrome/SM_HD_FinishPost'])
+    placement('post', ['adopted/hippodrome/loose_files'], ['/Game/Hippodrome/SM_HD_FinishPost'])
+    placement('dirt', ['adopted/hippodrome/textures', 'adopted/hippodrome/materials'],
+              ['/Game/Hippodrome/Textures/T_Dirt', '/Game/Hippodrome/Materials/M_HD_Grass'])
+    changed = recover.apply(game, recover.build_plan(game, 'hippodrome', donor), donor)
+    refs = {n: records.load_asset(game / f'assets/object/hippodrome/{n}/asset.toml').references
+            for n in ('ground', 'both', 'post', 'dirt')}
+    # A shrunk record stays only while the consumer still uses what it kept; a deleted one is always replaced.
+    assert refs == {'ground': ['prop/hippodrome/ground'],
+                    'both': ['adopted/hippodrome/loose_files', 'prop/hippodrome/ground'],
+                    'post': ['adopted/hippodrome/loose_files'],
+                    'dirt': ['texture/hippodrome/dirt', 'adopted/hippodrome/materials']}
+    assert sorted(changed['retargeted']) == ['object/hippodrome/both', 'object/hippodrome/dirt',
+                                             'object/hippodrome/ground']
+    # Not imported yet: the new owners record their state on import; untouched links keep theirs.
+    deps = json.loads((game / 'assets/object/hippodrome/dirt/verified.json').read_text())['dependencies']
+    assert deps == {'adopted/hippodrome/materials': 'old'}
 
 
 def test_donor_bytes_that_differ_from_the_report_refuse_the_plan(world):
