@@ -10,9 +10,6 @@ license = "owner-published (docs/DECISIONS.md D05 group 1)"
 references = ["adopted/belmontetrain/generator"]
 
 [[outputs]]
-package = "/Game/BelmonteTrain/SM_BT_Tender"
-
-[[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD0/M_BT_Brass"
 
 [[outputs]]

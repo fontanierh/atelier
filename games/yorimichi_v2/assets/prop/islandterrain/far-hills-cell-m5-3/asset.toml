@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): FarHills_cell_-5_3: one island piece (364 triangles, materials FarForest).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/islandterrain/far-hills-cell-m5-3"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/islandterrain/far-hills-cell-m5-3"
+references = ["adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/FarHills_cell_-5_3.fbx"
+sha256 = "3a24e49b36fe3e074ca9f80ba97d097d7c68333c4c8226eccf7c06913a5cef3c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_FarForest"]
+triangles = 364
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_-5_3"

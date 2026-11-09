@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_ArcadeRoof: one city surface piece of HD_ArcadeRoof (672 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/arcade-roof"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/arcade-roof"
+references = ["adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_ArcadeRoof.fbx"
+sha256 = "4198e2990f6b316b58c3ff4a8ee5dd722412101f6d16587b93b850e52b627e37"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 672
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeRoof"

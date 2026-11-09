@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/brake-van-door-balcony-door-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_BrakeVan_balcony_door_a.uasset": "090f397258e55e0a797c3b7edcf6be17e738da94a22bdbb4aba0ed62aa8e3c5a"
+  },
+  "input_fingerprint": "53863cc465cc6cebe26605d9b6e71436d2b3a5e905ee270b21b858de8da929e0",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_balcony_door_a": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

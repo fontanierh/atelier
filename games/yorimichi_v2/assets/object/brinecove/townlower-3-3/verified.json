@@ -1,7 +1,7 @@
 {
   "asset": "object/brinecove/townlower-3-3",
   "dependencies": {
-    "adopted/brinecove/townlower-3-3": "461b72b3cdabaeeb197e92587a588447d2adf4c22536f0f6801b37fbc9531d04"
+    "prop/brinecove/town-lower-3-3": "dc3f2a66702d2e5f21ff63583c707d673ee7fddefe3e56090feb4f3b36ee9d6a"
   },
   "engine": "5.8.2-56702186",
   "files": {

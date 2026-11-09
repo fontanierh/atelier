@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Rocks_5_6_Soft: one Brine Cove mesh (23820 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/rocks-5-6-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/rocks-5-6-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Rocks_5_6_Soft.glb"
+sha256 = "a98d5853ed8351e0d6a00a5a119ec7b39b80386eb26bf714e4ea7f57d574ea50"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_fern", "/Game/Brinecove/Materials/MI_BC_cover_fern_light", "/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm"]
+triangles = 23820
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Rocks_5_6_Soft"

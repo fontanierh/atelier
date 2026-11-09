@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/first-class-door-door-pantry",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_FirstClass_door_pantry.uasset": "026d1213f52ec542e49b32df092fc92a9c56456896a432712b69dc07af59ba93"
+  },
+  "input_fingerprint": "fa0d9bb31ec2fd3fd7403d19b6fa6656765e07a19e3f8b72231e2a29bd53bd93",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_pantry": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

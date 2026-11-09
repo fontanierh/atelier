@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_ArcadeFloor: one city surface piece of HD_ArcadeFloor (23888 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/arcade-floor"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/arcade-floor"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_ArcadeFloor.fbx"
+sha256 = "febe009ba7c1d6d9eb3c0aa8092a953920a0045e7903a28abd0a5a0e03b5dec6"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_ArcadePaving"]
+triangles = 23888
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeFloor"

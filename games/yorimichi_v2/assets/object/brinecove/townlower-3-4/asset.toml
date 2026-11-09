@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove townlower-3-4 (17 groups).
-# Its placement is this actor package; its model is adopted/brinecove/townlower-3-4. Edit it in the editor and save-validate
+# Its placement is this actor package; its models are prop/brinecove/town-lower-3-4-piece000, prop/brinecove/town-lower-3-4-piece001, prop/brinecove/town-lower-3-4-piece002, prop/brinecove/town-lower-3-4-piece003, prop/brinecove/town-lower-3-4-piece01, prop/brinecove/town-lower-3-4-piece02, prop/brinecove/town-lower-3-4-piece030, prop/brinecove/town-lower-3-4-piece031, prop/brinecove/town-lower-3-4-piece032, prop/brinecove/town-lower-3-4-piece033, prop/brinecove/town-lower-3-4-piece10, prop/brinecove/town-lower-3-4-piece11, prop/brinecove/town-lower-3-4-piece12, prop/brinecove/town-lower-3-4-piece13, prop/brinecove/town-lower-3-4-piece2, prop/brinecove/town-lower-3-4-piece3, prop/brinecove/town-lower-3-4-soft. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/townlower-3-4"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/townlower-3-4"]
+references = ["prop/brinecove/town-lower-3-4-piece000", "prop/brinecove/town-lower-3-4-piece001", "prop/brinecove/town-lower-3-4-piece002", "prop/brinecove/town-lower-3-4-piece003", "prop/brinecove/town-lower-3-4-piece01", "prop/brinecove/town-lower-3-4-piece02", "prop/brinecove/town-lower-3-4-piece030", "prop/brinecove/town-lower-3-4-piece031", "prop/brinecove/town-lower-3-4-piece032", "prop/brinecove/town-lower-3-4-piece033", "prop/brinecove/town-lower-3-4-piece10", "prop/brinecove/town-lower-3-4-piece11", "prop/brinecove/town-lower-3-4-piece12", "prop/brinecove/town-lower-3-4-piece13", "prop/brinecove/town-lower-3-4-piece2", "prop/brinecove/town-lower-3-4-piece3", "prop/brinecove/town-lower-3-4-soft"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/LZ/NFZYDIJLMNZ1HL6RSO2LJS"

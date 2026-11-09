@@ -1,0 +1,42 @@
+{
+  "asset": "prop/belmontetrain/second-class",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/SM_BT_SecondClass.uasset": "025f94449879fea9c695df4f2f4f7ecf32a7dd89f534154e291b3a5f7b35a912"
+  },
+  "input_fingerprint": "82148ac02874c1841db13365a7178a97866c6607bad0925780944366054f33e7",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/SM_BT_SecondClass": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

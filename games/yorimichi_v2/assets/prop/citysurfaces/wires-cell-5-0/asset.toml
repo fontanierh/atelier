@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Wires_cell_5_0: one city surface piece of HD_Wires (1584 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/wires-cell-5-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/wires-cell-5-0"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_Wires_cell_5_0.fbx"
+sha256 = "4e56f4f441e8a80200b7a9720ba8dae0fc8b6e83f0507439ade0012adddb72dd"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 1584
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_5_0"

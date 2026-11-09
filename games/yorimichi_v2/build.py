@@ -310,8 +310,9 @@ def _authorize_import(ctx, log):
     import records
     plan_file = Path(os.environ['V2_IMPORT_PLAN'])
     plan = json.loads(plan_file.read_text())
-    by_id = {a.id: a for a in records.discover(GAME)[0]}
-    asset = by_id.get(plan['asset'])
+    # The records and their ownership, read again only when a record file changed: a session's jobs share one reading.
+    index = authority.discovered(GAME)
+    asset = index.by_id.get(plan['asset'])
     if asset is None or asset.authority not in ('generated', 'split'):
         raise RuntimeError(f"import plan names {plan['asset']!r}, which has no generated outputs")
     expected = [o.package for o in asset.outputs if o.writer == 'generated']
@@ -324,7 +325,7 @@ def _authorize_import(ctx, log):
         stem = records.package_files(GAME, package)[0].with_suffix('')
         destinations |= {'games/yorimichi_v2/' + records.content_relative(GAME, stem.with_suffix(ext))
                          for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
-    owners, _ = authority.owning_scopes(GAME, sorted(destinations))
+    owners, _ = index.owning_scopes(sorted(destinations))
     if owners - {authority.asset_scope(asset)}:
         raise RuntimeError(f'{asset.id}: a destination is owned by {sorted(map(str, owners - {authority.asset_scope(asset)}))}')
     paths = sorted(destinations | set(plan.get('write_paths', ())))

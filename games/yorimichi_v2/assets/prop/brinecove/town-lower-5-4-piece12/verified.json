@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/town-lower-5-4-piece12",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece12.uasset": "9a4adf6209dde757658ed236be166d6abd601f50bcd118c4988ba7b9390689db"
+  },
+  "input_fingerprint": "61c88d673462edb2b394bbf03945de473cf64bf7897fa0928fdd6c36971ca365",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLower_5_4_Piece12": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

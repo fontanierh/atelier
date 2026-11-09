@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/brake-van-door-exterior-door-ml",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_BrakeVan_exterior_door_ml.uasset": "346a0a691c0042792e954a1558b402441dc32b041482314332f5d20395d2cd46"
+  },
+  "input_fingerprint": "4947807ae0a214a5b04d92a9f634a326676edc06fd3bee9a6e15f29e7db2ad58",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_exterior_door_ml": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

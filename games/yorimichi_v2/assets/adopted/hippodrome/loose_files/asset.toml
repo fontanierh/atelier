@@ -15,25 +15,7 @@ package = "/Game/Hippodrome/SM_HD_FinishPost"
 package = "/Game/Hippodrome/SM_HD_Grandstand"
 
 [[outputs]]
-package = "/Game/Hippodrome/SM_HD_Ground"
-
-[[outputs]]
 package = "/Game/Hippodrome/SM_HD_JudgesTower"
 
 [[outputs]]
-package = "/Game/Hippodrome/SM_HD_Lane"
-
-[[outputs]]
-package = "/Game/Hippodrome/SM_HD_LaneSkirt"
-
-[[outputs]]
-package = "/Game/Hippodrome/SM_HD_Rails"
-
-[[outputs]]
-package = "/Game/Hippodrome/SM_HD_Skirt"
-
-[[outputs]]
 package = "/Game/Hippodrome/SM_HD_ToteBoard"
-
-[[outputs]]
-package = "/Game/Hippodrome/SM_HD_Track"

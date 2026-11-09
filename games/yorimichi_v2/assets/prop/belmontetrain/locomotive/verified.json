@@ -1,0 +1,42 @@
+{
+  "asset": "prop/belmontetrain/locomotive",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/SM_BT_Locomotive.uasset": "584e610efea65aff209bdce419879b3d873e27639680de05c5e97733f9b3258d"
+  },
+  "input_fingerprint": "cd4a25d26081cb791b0ee6352e16122a29aa2ae1473c8ace383dc49e6e05234c",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/SM_BT_Locomotive": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

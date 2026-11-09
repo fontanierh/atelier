@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_SecondClass_bulkhead_door_a: a second-class door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/second-class-door-bulkhead-door-a"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/second-class"
+references = ["adopted/belmontetrain/second-class"]
+
+[[sources]]
+path = "src/SM_BTD_SecondClass_bulkhead_door_a.glb"
+sha256 = "35a73bf45e92e4305ba82c23a5ac1081af3de471173563f472a427a8fda4bd7b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_SecondClass_bulkhead_door_a.glb", 2.0, 36, [0, 1]]]
+slots = [["M_BT_PaintPeel", "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/M_BT_PaintPeel"], ["M_BT_BrassDull", "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/M_BT_BrassDull"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_SecondClass_bulkhead_door_a"

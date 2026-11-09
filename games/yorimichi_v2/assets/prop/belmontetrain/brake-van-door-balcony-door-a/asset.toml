@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_BrakeVan_balcony_door_a: a brake-van door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/brake-van-door-balcony-door-a"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/brake-van"
+references = ["adopted/belmontetrain/brake-van"]
+
+[[sources]]
+path = "src/SM_BTD_BrakeVan_balcony_door_a.glb"
+sha256 = "3cb5d8cb186bbccd0addb1a11615b10e47dcfef2214976d1003503c3f61d6f23"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_BrakeVan_balcony_door_a.glb", 2.0, 180, [0, 1, 2, 3]]]
+slots = [["M_BT_Walnut", "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Walnut"], ["M_BT_PanelTall", "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/M_BT_PanelTall"], ["M_BT_Brass", "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Brass"], ["M_BT_Glass", "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Glass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_balcony_door_a"

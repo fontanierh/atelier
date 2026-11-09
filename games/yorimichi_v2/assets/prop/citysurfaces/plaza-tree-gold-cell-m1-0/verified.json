@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/plaza-tree-gold-cell-m1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeGold_cell_-1_0.uasset": "117e3acf45cd2c99de231c3b2df673af06f7dffed1618637ce1314ef81668368"
+  },
+  "input_fingerprint": "5c382d6551d165e32695a245e5c6be183d2795f658f367c729338d32c05e07cd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeGold_cell_-1_0": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

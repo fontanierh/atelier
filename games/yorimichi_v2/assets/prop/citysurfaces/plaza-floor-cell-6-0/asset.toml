@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_PlazaFloor_cell_6_0: one city surface piece of HD_PlazaFloor (142 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/plaza-floor-cell-6-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/plaza-floor-cell-6-0"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_PlazaFloor_cell_6_0.fbx"
+sha256 = "12fb4e0728d0c96f284e1bcb0d6d1d95751a1c3381af785367e621ebc1fa6279"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_PlazaPaving"]
+triangles = 142
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaFloor_cell_6_0"

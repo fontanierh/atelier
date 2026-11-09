@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_HD_Hedge: one city surface piece of Bush_HD_Hedge (4062 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/bush-hd-hedge"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/bush-hd-hedge"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Bush_HD_Hedge.fbx"
+sha256 = "b64481e6e92b33158ee8cf4abed49836d3b0a78482bddc8401cfb08f63346da0"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 4062
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Hedge"

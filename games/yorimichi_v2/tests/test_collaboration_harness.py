@@ -82,8 +82,13 @@ def importer(game, asset, plan_file):
     by_id = {a.id: a for a in records.discover(game)[0]}
     inputs = [records.sha256_file(asset.folder / s.path) for s in asset.sources]
     inputs += [records.state_fingerprint(records.load_verified(by_id[d].verified)) for d in asset.input_dependencies]
-    for package in json.loads(plan_file.read_text())['packages']:
+    plan = json.loads(plan_file.read_text())
+    for package in plan['packages']:
         write(records.package_files(game, package)[0], f'{asset.id} {" ".join(inputs)}')
+    if plan['importer'] == 'static-mesh':   # what import_asset.py records: a new package had no LOD chain before
+        one = {'count': 1, 'screen_sizes': [1.0], 'reductions': [1.0]}
+        write(plan_file.with_name('lod-result.json'), json.dumps({p: {'before': None, 'after': one}
+                                                                  for p in plan['packages']}))
 
 
 def quiet(*_):

@@ -6,7 +6,7 @@ id = "object/harbour/hd-lamp-35"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/experiments/citysurfaces/v1-128m/lamp"]
+references = ["prop/citysurfaces/lamp"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/9/R7/W8T2BS7L0BBC76KTO3X4EU"

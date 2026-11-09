@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/landmarks-5-3-soft-piece1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece1.uasset": "f08bd1d1e224937caf68d77b310a3b2f14fc3b27914b0a330f8ba8e14c04f58d"
+  },
+  "input_fingerprint": "e676287f9ba7a40e974c0af765dc209add555ed034d2cde1318805d912a44edf",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Landmarks_5_3_Soft_Piece1": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

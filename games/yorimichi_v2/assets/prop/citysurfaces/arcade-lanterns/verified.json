@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/arcade-lanterns",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeLanterns.uasset": "1b80b8bce1a95792e2c9758c59a2bc8f2ddd38d7d86094d1e3ee8779017d70d7"
+  },
+  "input_fingerprint": "034f2b840a41e3ae2fd9175264f8e5371e27058176b2c7e86fca044b3495ae8a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeLanterns": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

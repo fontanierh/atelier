@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmonte/north-apron-piece3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthApron_Piece3.uasset": "bea62c1ea5b10cde777b7148c9aaa4a484aa64c41f8ce50226082af415a7f4e0"
+  },
+  "input_fingerprint": "6ae54bf979dd1ac40a3881408448b95b7d03e5c6e302ebb2727c60baf916975b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Belmonte/Meshes/SM_BM_NorthApron_Piece3": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

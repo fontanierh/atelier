@@ -3,9 +3,6 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Locomotive_cab_l.uasset": "64d7618bb758b1d09696b195046c69feff8551023f8c126d8e8cd08be9c2c3dd",
-    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Locomotive_cab_r.uasset": "d2e19df7c128b2733a7156ef37b76080e62517daf01ac2d4e3da9694adce13d6",
-    "unreal/Content/BelmonteTrain/SM_BT_Locomotive.uasset": "0f167cb6bfb695e45efb3dc1135358a9c168a24ddeeb709c43c3cc5c97de06bc",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Brass.uasset": "3e001de05956b0133bae327d0d813549eecb0a6150a654d0de10b8250d1f6c43",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_BrassDull.uasset": "cb1ba637230561a690b7e2f4d3c22b8f534299163d32181bb491d5b96a693b40",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Ceiling.uasset": "5c363863c0d101eca4be0a66fc758fbca53e901255cfef3934adca4356117640",

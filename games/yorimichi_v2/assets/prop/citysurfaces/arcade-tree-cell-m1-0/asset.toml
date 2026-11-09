@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_ArcadeTree_cell_-1_0: one city surface piece of HD_ArcadeTree (25117 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/arcade-tree-cell-m1-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/arcade-tree-cell-m1-0"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_ArcadeTree_cell_-1_0.fbx"
+sha256 = "382f466769ca2874683d82f84b33b1d36726bf191bad4f88db986a85b1f6277f"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Arcade"]
+triangles = 25117
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 0
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeTree_cell_-1_0"

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Boat: one city surface piece of HD_Boat (13108 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/boat"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/boat"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_Boat.fbx"
+sha256 = "d1682043d5ad37d0524c9f28b2ec246d6cd6f545d467f329f96950bcc288fe55"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Harbor"]
+triangles = 13108
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Boat"

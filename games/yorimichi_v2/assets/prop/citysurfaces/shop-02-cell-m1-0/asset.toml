@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Shop_02_cell_-1_0: one city surface piece of HD_Shop_02 (2467 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/shop-02-cell-m1-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/shop-02-cell-m1-0"
+references = ["adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-grass", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-siding", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_Shop_02_cell_-1_0.fbx"
+sha256 = "247c7873dddd8c06db1933d00c6754af711b21c92ec01b8e76b9aa726aee8013"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_concrete = "/Game/Japan/Hidamari/Materials/MI_HD_concrete", HDS_earth = "/Game/Japan/Hidamari/Materials/MI_HD_earth", HDS_flat = "/Game/Japan/Hidamari/Materials/MI_HD_flat", HDS_grass = "/Game/Japan/Hidamari/Materials/MI_HD_grass", HDS_metal = "/Game/Japan/Hidamari/Materials/MI_HD_metal", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_siding = "/Game/Japan/Hidamari/Materials/MI_HD_siding", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 2467
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 0
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Shop_02_cell_-1_0"

@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_HD_Rails: one course surface (15804 triangles, material HD_Rail).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hippodrome/rails"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hippodrome/rails"
+references = ["adopted/hippodrome/materials"]
+
+[[sources]]
+path = "src/SM_HD_Rails.glb"
+sha256 = "d721ba3974ed8175acf2f226d2ef55fa9a913687497247cbf3b089dbe88b3f77"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Hippodrome/Materials/M_HD_Rail"]
+triangles = 15804
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Rails"

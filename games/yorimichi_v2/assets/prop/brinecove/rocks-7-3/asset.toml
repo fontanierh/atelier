@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Rocks_7_3: one Brine Cove mesh (1285 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/rocks-7-3"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/rocks-7-3"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Rocks_7_3.glb"
+sha256 = "3ff7341c0dd3ee9c9d2cdbb2361bda1e4f49ecd1228c1975e2a72fab6b37f5d4"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_rock", "/Game/Brinecove/Materials/MI_BC_rock_light"]
+triangles = 1285
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Rocks_7_3"

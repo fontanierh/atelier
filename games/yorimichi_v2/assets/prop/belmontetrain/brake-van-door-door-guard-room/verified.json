@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/brake-van-door-door-guard-room",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_BrakeVan_door_guard_room.uasset": "b8f61c07970e28b2d1d705ca4d92db349e7b216704ab389c212908babb6d1deb"
+  },
+  "input_fingerprint": "8389dbbdeec7659de24568bef4c544c57ca87861c71f4db715d8c8b8c313a4cd",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_door_guard_room": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

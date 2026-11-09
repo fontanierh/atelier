@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Pavilion: one city surface piece of HD_Pavilion (390 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/pavilion"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/pavilion"
+references = ["adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_Pavilion.fbx"
+sha256 = "d40c1340680d4d4bd8d3aff6d0866109967190b60b78ee10ca608d85b8ef8049"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 390
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 6
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Pavilion"

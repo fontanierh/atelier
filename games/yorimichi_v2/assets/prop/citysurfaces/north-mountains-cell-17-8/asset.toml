@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_NorthMountains_cell_17_8: one city surface piece of HD_NorthMountains (5910 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/north-mountains-cell-17-8"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/north-mountains-cell-17-8"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_NorthMountains_cell_17_8.fbx"
+sha256 = "d5652cfb97c11124be070b072b51c1e1cd805b664bc4d50b609cccbb40d1e419"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_NorthMountains"]
+triangles = 5910
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_17_8"

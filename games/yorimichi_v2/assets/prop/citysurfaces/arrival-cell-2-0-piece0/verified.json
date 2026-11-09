@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/arrival-cell-2-0-piece0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Arrival_cell_2_0_Piece0.uasset": "6c4ba5d4e681490c4c82966a285461becb0c4f34799f39ee77658ba8b4c67a83"
+  },
+  "input_fingerprint": "505361da5c32be718131f21b4c866edfa0aae4e81f68e6fa3143343fa04c3f59",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Arrival_cell_2_0_Piece0": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

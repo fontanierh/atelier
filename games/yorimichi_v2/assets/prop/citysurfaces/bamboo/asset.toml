@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Bamboo: one city surface piece of HD_Bamboo (1284 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/bamboo"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/bamboo"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_Bamboo.fbx"
+sha256 = "c58a636e7388474ef5de835ed6a44d6e2d0bd64263ed21ed09a51ba4e226ec0b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 1284
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Bamboo"

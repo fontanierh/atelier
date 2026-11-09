@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Ground_0_0: one Brine Cove mesh (8074 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/ground-0-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/ground-0-0"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Ground_0_0.glb"
+sha256 = "8198f6dffce978a5d983c35154ae3cc0e78cb9690778699e00ec2a349d294444"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_seabed"]
+triangles = 8074
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Ground_0_0"

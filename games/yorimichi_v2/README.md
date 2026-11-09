@@ -128,3 +128,13 @@ are recorded.
 
 The normal build and play never generate, import, resave or cook. Packaging is explicit and runs a full-hash
 content check first.
+
+```
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 unreal.package --cook-memory-gib 20   # full cook 19 min, warm 4 min
+ditto build/yorimichi_v2/package/archive/Mac/YorimichiV2.app "$HOME/YorimichiV2-Package/YorimichiV2.app"
+uv run python games/yorimichi_v2/tools/package/acceptance.py automated --app "$HOME/YorimichiV2-Package/YorimichiV2.app"
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier playtest yorimichi_v2 --app "$HOME/YorimichiV2-Package/YorimichiV2.app" --memory-gib 22
+```
+
+The last line plays the extracted package under the render lock and memory guard (map loaded in 16.5 s on
+2026-11-09). Recording the manual items and the verdict is in [docs/PACKAGE.md](docs/PACKAGE.md).

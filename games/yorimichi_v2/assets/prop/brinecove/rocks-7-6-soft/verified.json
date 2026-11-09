@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/rocks-7-6-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Rocks_7_6_Soft.uasset": "968ad651ca38acc5f237bc854fde5c971abc03f53a79f8d48e03798bd82c0b52"
+  },
+  "input_fingerprint": "b2e7fe0e057ec27695c9c61026bd39a048208e4de61ba2bb9e6834090f6daff1",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Rocks_7_6_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

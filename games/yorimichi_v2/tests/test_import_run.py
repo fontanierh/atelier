@@ -75,6 +75,10 @@ class FakeEditor:
             write(target, f'imported {asset.id} from {plan["portable_sources"][0]}'.encode())
             if self.crash:
                 raise RuntimeError('editor crashed')
+        if plan['importer'] == 'static-mesh':   # what import_asset.py records: a new package had no chain before
+            one = {'count': 1, 'screen_sizes': [1.0], 'reductions': [1.0]}
+            write(plan_file.with_name('lod-result.json'), json.dumps(
+                {package: {'before': None, 'after': one} for package in plan['packages']}))
         if self.stray:
             write(game / self.stray, b'unexpected')
 
@@ -251,3 +255,30 @@ def test_the_import_step_of_an_asset_id_is_a_valid_build_step_name():
     name = records.import_step('prop/lantern')
     assert name == 'import.prop.lantern'
     assert re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', name)   # atelier.build_products' step name rule
+
+
+def test_a_static_mesh_whose_lod_chain_changed_fails_and_restores_its_package(game):
+    """A package with four LODs that the import reduces to one fails that asset alone, and its old bytes come back."""
+    target = game / 'unreal/Content/Props/SM_Bench.uasset'
+    write(target, b'old bench')
+
+    class ChainDropped(FakeEditor):
+        def __call__(self, game, asset, plan_file):
+            super().__call__(game, asset, plan_file)
+            four = {'count': 4, 'screen_sizes': [1., .3, .12, .04], 'reductions': [1., .45, .2, .08]}
+            one = {'count': 1, 'screen_sizes': [1.], 'reductions': [1.]}
+            plan = json.loads(plan_file.read_text())
+            write(plan_file.with_name('lod-result.json'), json.dumps(
+                {p: {'before': four, 'after': one} for p in plan['packages']}))
+
+    with pytest.raises(run.ImportError_, match='LOD chain changed'):
+        do(game, ['prop/bench'], ChainDropped())
+    assert target.read_bytes() == b'old bench'
+    assert not (game / 'assets/props/bench/verified.json').exists()
+
+
+def test_a_recorded_import_keeps_its_lod_chains_in_verified_json(game):
+    one = {'count': 1, 'screen_sizes': [1.], 'reductions': [1.]}
+    do(game, ['prop/bench'], FakeEditor())
+    record = json.loads((game / 'assets/props/bench/verified.json').read_text())
+    assert record['lods'] == {'/Game/Props/SM_Bench': {'before': None, 'after': one}}

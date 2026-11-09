@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Rocks_6_3_Soft: one Brine Cove mesh (27378 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/rocks-6-3-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/rocks-6-3-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Rocks_6_3_Soft.glb"
+sha256 = "82643b9b2d24fa48f4108b994c5c5ca6b109813e71b8dd47f415a0fe6b115aeb"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_fern", "/Game/Brinecove/Materials/MI_BC_cover_fern_light", "/Game/Brinecove/Materials/MI_BC_cover_grass", "/Game/Brinecove/Materials/MI_BC_cover_grass_dry", "/Game/Brinecove/Materials/MI_BC_foam", "/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm", "/Game/Brinecove/Materials/MI_BC_water_mid", "/Game/Brinecove/Materials/MI_BC_water_shallow"]
+triangles = 27378
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Rocks_6_3_Soft"

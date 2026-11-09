@@ -1,7 +1,8 @@
 {
   "asset": "object/brinecove/understory-6-5",
   "dependencies": {
-    "adopted/brinecove/understory-6-5": "1099f85da8ccf15c1de95c32105564f019eb1d8d64ec958bc13ca1bafd644514"
+    "prop/brinecove/understory-6-5": "a3cc02547a45eb064adbd79c4c78e81ccca364aa68d2463422b150582cbf148e",
+    "prop/brinecove/understory-6-5-soft": "fdbf2c961dc30d80e5ba31967ea82e296e24bb12a8ae5adf8587ec3476ad7a71"
   },
   "engine": "5.8.2-56702186",
   "files": {

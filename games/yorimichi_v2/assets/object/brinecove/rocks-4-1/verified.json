@@ -1,7 +1,8 @@
 {
   "asset": "object/brinecove/rocks-4-1",
   "dependencies": {
-    "adopted/brinecove/rocks-4-1": "ec96e47c3ac19c69b34bb048f5d1f7c95eba15702971340311f89cc12eec1578"
+    "prop/brinecove/rocks-4-1": "4993e986c01aee4b4c1612111652bdf191900243906e44d235c56d6420dceec9",
+    "prop/brinecove/rocks-4-1-soft": "75bc3b00d58c966fd861a22b7e685d9a27606016bd81f6edabd6e7aec2c442e2"
   },
   "engine": "5.8.2-56702186",
   "files": {

@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-boat-08",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/boat": "b2f1ad53dad36cfaedbd80a525b1bb07c83923ab2a351e0425293f466eb2e305"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/VH/2LUMKL8X8V5EUPBPW8L0MN.uasset": "b4f2fafecb7e38238f170faede7e5f5b5a6ef5de90cd6433b5fd19c5310d1167"

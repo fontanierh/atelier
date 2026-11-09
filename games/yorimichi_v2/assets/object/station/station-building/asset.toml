@@ -6,7 +6,7 @@ id = "object/station/station-building"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/experiments/citysurfaces/v1-128m/station-m1-m1", "adopted/experiments/citysurfaces/v1-128m/station-m1-0", "adopted/experiments/citysurfaces/v1-128m/station-0-m1", "adopted/experiments/citysurfaces/v1-128m/station-0-0"]
+references = ["prop/citysurfaces/station-cell-m1-m1", "prop/citysurfaces/station-cell-m1-0", "prop/citysurfaces/station-cell-0-m1", "prop/citysurfaces/station-cell-0-0"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/E/NF/P5JMNK8S2UZWW2PF21DXC7"

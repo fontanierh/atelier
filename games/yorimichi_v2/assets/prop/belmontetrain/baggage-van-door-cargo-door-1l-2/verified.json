@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/baggage-van-door-cargo-door-1l-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_1l_2.uasset": "69202b7f76df63ba82c08ec43e00f64df36ecfd80b2001a6c06877e5ed97f063"
+  },
+  "input_fingerprint": "a2bf246dd522c20d3c1622cb1640a7432eba29a0bafddf68100ec4c643252d2b",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_1l_2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-plazafountain-01",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/plaza-fountain": "9e95b1943d9202b37e5a91942111d9161f50737e0447ca772302d520e0c6ae1b"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/7Z/JPGRI43ME73W3BDVYURWQN.uasset": "e50582744733544910d0dc4ad886c9b6890aa29ba45b7ee45033c3cf3cef214f"

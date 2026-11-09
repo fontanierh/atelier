@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Graves: one city surface piece of HD_Graves (3672 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/graves"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/graves"
+references = ["adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-gravel", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_Graves.fbx"
+sha256 = "5f5692d5bb59b2e4c1f3dcd8fb4a2fcc310a135c89349353b71c63636d5924c1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_concrete = "/Game/Japan/Hidamari/Materials/MI_HD_concrete", HDS_gravel = "/Game/Japan/Hidamari/Materials/MI_HD_gravel", HDS_stone = "/Game/Japan/Hidamari/Materials/MI_HD_stone", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 3672
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 48
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Graves"

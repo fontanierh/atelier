@@ -1,0 +1,42 @@
+{
+  "asset": "prop/belmontetrain/brake-van",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/SM_BT_BrakeVan.uasset": "d78a2018aacef9852b9ff8a5cd8a848b7161193277759dfe9a9003b4cbb5bfbe"
+  },
+  "input_fingerprint": "547166976b9186fa40a23e44b2a923b293cc8a10d9509b865ad4a7aedab92f2f",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/SM_BT_BrakeVan": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

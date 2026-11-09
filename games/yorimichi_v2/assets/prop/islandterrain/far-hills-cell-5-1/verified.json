@@ -1,0 +1,34 @@
+{
+  "asset": "prop/islandterrain/far-hills-cell-5-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_1.uasset": "a5cef8dfdc2eeef9046a2ed9a0db98b7f8cbfb1662bee1ad4c64fa39b07770f2"
+  },
+  "input_fingerprint": "da097e4f5376bf04d6087bf743ad0396127c8c102f1c4227726f900063c103f9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/IslandTerrain/v1_atomic/FarHills_cell_5_1": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

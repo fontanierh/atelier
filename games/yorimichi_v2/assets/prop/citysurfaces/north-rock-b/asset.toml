@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_NorthRockB: one city surface piece of HD_NorthRockB (49 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/north-rock-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/north-rock-b"
+references = ["adopted/japan/materials/rock-concrete"]
+
+[[sources]]
+path = "src/HD_NorthRockB.fbx"
+sha256 = "705c1b07b9473ef718d52837ddb93830f3225c0a7fef1b7a360d6965f0b75abe"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_NorthRockCaps"]
+triangles = 49
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthRockB"

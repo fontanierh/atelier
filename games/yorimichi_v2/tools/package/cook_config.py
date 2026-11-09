@@ -28,12 +28,14 @@ DEFAULT_GAME_INI = GAME / 'unreal/Config/DefaultGame.ini'
 ENGINE_INI = GAME / 'unreal/Config/DefaultEngine.ini'
 MAC_INI = GAME / 'unreal/Config/Mac/MacEngine.ini'
 RESTRICTED = GAME / 'restricted.toml'
-BUNDLE_SECTION = '[/Script/MacTargetPlatform.MacTargetSettings]'
+BUNDLE_SECTION = '[/Script/MacTargetPlatform.XcodeProjectSettings]'   # what the Xcode build writes to Info.plist
 TEMPLATE_BUNDLE_PREFIX = 'com.YourCompany.'
 # Folders that scan for string paths must ignore: fixtures, caches and the editor's own saved state.
 SCAN = ('unreal/Source', 'unreal/Scripts', 'unreal/Config', 'unreal/Content/Data', 'live', 'tools', 'world', 'build.py')
 SKIP_PARTS = {'__pycache__', 'tests', 'Saved', 'Intermediate', 'Binaries'}
 LITERAL = re.compile(r'/Game/[A-Za-z0-9_./-]+')
+# In the Xcode project settings (entitlements) /Game/ is the project folder: /Game/Build/... is a file, not content.
+PROJECT_FILES = '/Game/Build/'
 ALWAYS = re.compile(r'^\+DirectoriesToAlwaysCook=\(Path="(/Game/[^"]*)"\)\s*$', re.M)
 # Excluded by the owner's inventory (docs/INVENTORY.md X01, X02): their content must not be cooked into the package.
 # Matched on Content-relative paths. 'phone' alone would catch the city's phone booths, which are in scope.
@@ -81,6 +83,8 @@ def string_roots(game: Path = GAME) -> dict[str, int]:
         except OSError:
             continue
         for literal in LITERAL.findall(text):
+            if literal.startswith(PROJECT_FILES):
+                continue
             root = root_of(literal)
             if root:
                 counts[root] = counts.get(root, 0) + 1

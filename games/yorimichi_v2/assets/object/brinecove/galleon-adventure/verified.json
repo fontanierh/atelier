@@ -1,7 +1,7 @@
 {
   "asset": "object/brinecove/galleon-adventure",
   "dependencies": {
-    "adopted/brinecove/galleon-adventure": "716bc90d17b489176d7f3d2674a818862cb0a14b212408ece5a3e9aac06d4872"
+    "prop/brinecove/ships-3-3": "6abbd265939f8e2a1603e3e0acd7d2048f96faa5de4fa7448ef9b986b060c149"
   },
   "engine": "5.8.2-56702186",
   "files": {

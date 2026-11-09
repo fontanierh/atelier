@@ -1,7 +1,21 @@
 {
   "asset": "object/brinecove/waterfall-canyon",
   "dependencies": {
-    "adopted/brinecove/waterfall-canyon": "98b790bd001f151f5d83cb20648fa3631ec80da8b47dd059ef21bdad0c4cfb20"
+    "prop/brinecove/landmarks-5-3": "5dda68cd7e5d6e3eb59b8824ffa326c6d44576ac8f7ba7f410bf8ce7066572dd",
+    "prop/brinecove/landmarks-5-3-soft-piece1": "30bdc77b1d33a92881d3586922db48fd23c94bf92bf2cbd1e130153350fd0fc8",
+    "prop/brinecove/landmarks-5-3-soft-piece3": "0364285ddeb5e42cf6c07b11dc9d0f75bea29179d1e17144a8b140bb863118da",
+    "prop/brinecove/landmarks-5-4": "5352195f3b6a058fd7c3611d29e2d5c1606a62b0d5124a522027527582c85cf0",
+    "prop/brinecove/landmarks-5-4-soft": "90042d2e28b2cf404e6c823911eae66c8148a5666f45e872b263ff81651a18a3",
+    "prop/brinecove/landmarks-6-3": "9bcaf70f75ee0bc0fe9377b0cf23ce38d2cb14d34384308bbcc2be5b828304d9",
+    "prop/brinecove/landmarks-6-3-soft-piece0": "95cb43a277a6371a6f6a14812aede49956cfb98e0f0d911cfc6a0be004f44eb7",
+    "prop/brinecove/landmarks-6-3-soft-piece1": "b4fa45248ed91e2b0fda61ca81d52c2fdd3138dc7c5884e70d6f1f05761d0d9c",
+    "prop/brinecove/landmarks-6-3-soft-piece20": "c990be1ea7354a67fe53a732e6de9186f3563ff1b2c8da90e918aa1200dd65d5",
+    "prop/brinecove/landmarks-6-3-soft-piece21": "f1ef7f90c0e73dd97e81d4f90d76c54dbe3b67a5b8ab317996fdb2b5f0090397",
+    "prop/brinecove/landmarks-6-3-soft-piece22": "4193b7633abfb06fe69d9a675faa541654d37617a2adca04022273666f1e9b75",
+    "prop/brinecove/landmarks-6-3-soft-piece23": "41fbee1ee046a4c44996e6bb3b0a0322eafe9b106f2b12054c681a8dcaf92b78",
+    "prop/brinecove/landmarks-6-3-soft-piece3": "f5a0d116fb9cdf6b31f3530d21075aa6e3d0aa071405a7a8e3e78d061265240f",
+    "prop/brinecove/landmarks-6-4": "bfbcc900d6ddb9121aa978db303e7c43a553d3ec02c6530ca264bdb89abd53c8",
+    "prop/brinecove/landmarks-6-4-soft": "a09a512e59066c2d7a5b1420a2699013083c51d7453e6a0889bdbc4a00370dbc"
   },
   "engine": "5.8.2-56702186",
   "files": {

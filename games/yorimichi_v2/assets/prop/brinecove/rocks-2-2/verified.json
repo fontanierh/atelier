@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/rocks-2-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Rocks_2_2.uasset": "0a04aa87fc7503cea4a4f8f55b67bce14ad6e0d7ac892593261949036240e037"
+  },
+  "input_fingerprint": "eb8db7f34e1830f2c539987d2e5e4e23c493e071e5b170c63a6b0710885168ae",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Rocks_2_2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

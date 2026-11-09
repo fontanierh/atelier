@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/clock-hall-cell-m1-m1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ClockHall_cell_-1_-1.uasset": "f802e7c31dd6629d3d11d54cf28e9a27fa1c830c264d926fc94567b83a349325"
+  },
+  "input_fingerprint": "541dbc3f409764323ba36a831a12d92fff3e0cb54125abc00c001652a34460fb",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_ClockHall_cell_-1_-1": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

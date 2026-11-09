@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-lamp-01",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/lamp": "2c13d90a49860b7af091f21f2ef4c4fbb873792a56480c8add8e584cb8d294fe"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/12/CEHSO31FB6ZWVXAIIV2MSM.uasset": "de4534c235b9b656a74b4bf518988521f3d007606b1b734cb91bfaa1a8355d75"

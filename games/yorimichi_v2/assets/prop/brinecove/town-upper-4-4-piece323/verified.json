@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/town-upper-4-4-piece323",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece323.uasset": "322c9c545b3d816fea4901aafc1dd258f714460fc543870f1b45375ed59a9746"
+  },
+  "input_fingerprint": "bb6e279d77b6e1861f2395b1fa6be337c8323948d7647d715a1c8620ec3f8335",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_4_Piece323": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

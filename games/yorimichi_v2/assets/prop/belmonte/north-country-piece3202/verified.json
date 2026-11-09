@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmonte/north-country-piece3202",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Meshes/SM_BM_NorthCountry_Piece3202.uasset": "be30802a9b01a8fe0cea3685076f9f722a81cfebb4d47c91044c8c2f77630b04"
+  },
+  "input_fingerprint": "b795a78334ab5161cc08f431571ada4e2c889494edff52b03b28e3ac9eeff7a8",
+  "kind": "imported",
+  "lods": {
+    "/Game/Belmonte/Meshes/SM_BM_NorthCountry_Piece3202": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

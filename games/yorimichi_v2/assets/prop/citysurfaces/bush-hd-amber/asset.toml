@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_HD_Amber: one city surface piece of Bush_HD_Amber (3646 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/bush-hd-amber"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/bush-hd-amber"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Bush_HD_Amber.fbx"
+sha256 = "8a48aa0e55c8c9f333bb401f6576a14bd6c8ea8bf090e24074519f4a8fd69941"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 3646
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Amber"

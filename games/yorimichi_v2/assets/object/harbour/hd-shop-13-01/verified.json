@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-shop-13-01",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/shop-13": "24e284fbbca55a1b8887525e153874b9f35c003f4a6b5744438b3c3a12b6e1f3"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/HU/709U9K0IYOAXE68J2U7GPU.uasset": "b450f09ea53ff81eae85f2694ec1885ccb8c6747327552e4f07bfebcfec52730"

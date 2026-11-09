@@ -1,0 +1,34 @@
+{
+  "asset": "prop/islandterrain/guardrail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Guardrail.uasset": "ac416e40bc9b7b12c6fb6dc5c6a4c453bbccba12a51359f618794b5bbf41c896"
+  },
+  "input_fingerprint": "c79cb7105fcdd4715ca8e23bf8eae332b4a68abc477df89eb82c54a4c023b685",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/IslandTerrain/v1_atomic/Guardrail": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

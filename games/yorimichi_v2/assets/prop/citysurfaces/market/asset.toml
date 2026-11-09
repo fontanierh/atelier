@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Market: one city surface piece of HD_Market (3894 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/market"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/market"
+references = ["adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_Market.fbx"
+sha256 = "c774078344f777f1acec08d3be688e1439dddd8ad8792d0abc84cdcc9af4e3dd"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 3894
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 16
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Market"

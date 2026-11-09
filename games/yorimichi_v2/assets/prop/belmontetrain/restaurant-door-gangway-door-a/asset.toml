@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_Restaurant_gangway_door_a: a restaurant door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/restaurant-door-gangway-door-a"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/restaurant"
+references = ["adopted/belmontetrain/restaurant"]
+
+[[sources]]
+path = "src/SM_BTD_Restaurant_gangway_door_a.glb"
+sha256 = "6793f59436525e183e193468445ce220fa0f4b3ad3cfee1b9e4c68c372a123fb"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_Restaurant_gangway_door_a.glb", 2.0, 180, [0, 1, 2, 3]]]
+slots = [["M_BT_Walnut", "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Walnut"], ["M_BT_PanelTall", "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/M_BT_PanelTall"], ["M_BT_Brass", "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Brass"], ["M_BT_Glass", "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Glass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_Restaurant_gangway_door_a"

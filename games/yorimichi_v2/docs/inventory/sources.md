@@ -99,4 +99,3 @@ runs it on the committed files). Run 2026-11-09 against the donor checkout `atel
 6,076 originals (1.0 GB) are pinned by donor-relative path, sha256 and size. Their bytes stay in authorized restricted
 storage laid out like the donor checkout (`$V2_RESTRICTED_ORIGINALS`); a fetch from the donor checkout copied and
 verified all 6,076.
-

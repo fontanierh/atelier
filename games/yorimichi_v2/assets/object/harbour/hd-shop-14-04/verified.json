@@ -1,11 +1,6 @@
 {
   "asset": "object/harbour/hd-shop-14-04",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/shop-14-0-0": "6bc37301e4b9e87708e0c36745797b139a3e95ae408ee9093af0287413c1c322",
-    "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1": "02ad5f4db5db453b50207ecc73e84914c926bb3a4f4f04ce6d6819b84f8aa096",
-    "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0": "d91418701067d9cfb0282f8ca0ae4eb59d64399bc3fff7c0a37fb72ffefc11f9",
-    "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1": "d33456d962f002b9cf11ff28562f837369f8a8758eaa4644ff25b44d3c1bd4f5"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/JY/KU7O6LHJT2E7PSZY1JH605.uasset": "761c24b8363536b71a2bb64e155258fda487b22c2bdfcd8b6eee55538ccdb8a0"

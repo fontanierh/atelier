@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/understory-1-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Understory_1_3.uasset": "ba59f9e5c294dbeb580aaa415fcb35af47ec6724bbb83f49b1226f40fff663c5"
+  },
+  "input_fingerprint": "b41a37bd66e383d8187f2a32711dfeb2b5f664deaf780737f20ec23de3f8e7e1",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Understory_1_3": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

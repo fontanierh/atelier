@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_PlazaWater: one city surface piece of HD_PlazaWater (2428 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/plaza-water"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/plaza-water"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_PlazaWater.fbx"
+sha256 = "47f989760f9b49d073e572d5042e8f73848443358e8389d0ba7c99ff618dfc2b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_PlazaWater"]
+triangles = 2428
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaWater"

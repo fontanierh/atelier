@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_FirstClass_door_luggage: a first-class door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/first-class-door-door-luggage"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/first-class"
+references = ["adopted/belmontetrain/first-class"]
+
+[[sources]]
+path = "src/SM_BTD_FirstClass_door_luggage.glb"
+sha256 = "4186d67a06928cc8b97d318023345f1f4ec655471736648855950f9801c7473e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_FirstClass_door_luggage.glb", 2.0, 36, [0, 1]]]
+slots = [["M_BT_Walnut", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Walnut"], ["M_BT_Brass", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Brass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_luggage"

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/first-class-door-exterior-door-ar",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_FirstClass_exterior_door_ar.uasset": "d9f38fd0ce9e45dd28a32749f608586384f763070e2b5d309a9f61c69369eb8b"
+  },
+  "input_fingerprint": "d5e00874f885d8cdf6869ce360f280d70d27c73319d42f16bded43606d24b8b7",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_exterior_door_ar": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

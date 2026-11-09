@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/first-class-door-gangway-door-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_FirstClass_gangway_door_a.uasset": "dc5f414c9663f078895756d4c15bbea3f97dc9dde6e59fb9e9c0e959a5015f48"
+  },
+  "input_fingerprint": "62b2ad5958644de882120b40ca5c7f0f826a57d2589613dfd9a23186fe6b34c1",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_gangway_door_a": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

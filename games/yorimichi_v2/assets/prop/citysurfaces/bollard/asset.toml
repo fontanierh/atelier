@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Bollard: one city surface piece of HD_Bollard (48 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/bollard"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/bollard"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_Bollard.fbx"
+sha256 = "e1d57a5af2f091c11771b36067875dbe0f2894edecfb52cd006a3be37b9ebbd3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 48
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Bollard"

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/first-class-door-door-wc-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_FirstClass_door_wc_b.uasset": "ea852c28874587519d5258f6cad75a257e5b2586dfa49a35d58800794df58929"
+  },
+  "input_fingerprint": "0ef4a53644dd349581731ec589e4dfef984e93f6508f305642b5bbbbfb31b9dc",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_wc_b": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

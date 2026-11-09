@@ -1,0 +1,34 @@
+{
+  "asset": "prop/brinecove/harbor-4-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Harbor_4_4.uasset": "bffbe1c8ab457b2a1ab38f3d4ac59e726cf6c5b9d11f99aaa0c0f5e4e6aabb94"
+  },
+  "input_fingerprint": "c9a036e4ca9b828d881ef8292dd0e1def32840d890759d058561de2838cf6691",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Harbor_4_4": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

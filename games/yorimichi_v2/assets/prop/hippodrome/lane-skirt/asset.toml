@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_HD_LaneSkirt: one course surface (400 triangles, material HD_Stone).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hippodrome/lane-skirt"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hippodrome/lane-skirt"
+references = ["adopted/hippodrome/materials"]
+
+[[sources]]
+path = "src/SM_HD_LaneSkirt.glb"
+sha256 = "db16aad07c9d71a144648bc14ea3efcfc0cc7f8e6ec9030022fb417a90bffdf1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Hippodrome/Materials/M_HD_Stone"]
+triangles = 400
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_LaneSkirt"

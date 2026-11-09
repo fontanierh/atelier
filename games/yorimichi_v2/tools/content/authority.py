@@ -11,6 +11,7 @@ them aside for `resume_created`).
 """
 from __future__ import annotations
 
+import functools
 import json
 import os
 import subprocess
@@ -102,37 +103,77 @@ def subject_scope(game: Path, subject: str):
     return asset_scope(asset) if asset else scope_of(subject)
 
 
+class Records:
+    """One reading of the records and what derives from them: the generated package paths and each repository package
+    path's owning scope. Read-only: `discovered` shares one instance between the jobs of a batch."""
+
+    def __init__(self, game: Path, stamp: list[tuple]):
+        import records
+        self.game, self.stamp = game, stamp
+        self.assets, self.regions = records.discover(game)
+        self.by_id = {a.id: a for a in self.assets}
+        self.generated = set()
+        for asset in self.assets:
+            for output in asset.outputs:
+                if output.writer == 'generated':
+                    self.generated |= self._files(output.package)
+
+    def _files(self, package: str) -> set[str]:
+        import records
+        stem = records.package_files(self.game, package)[0].with_suffix('')
+        return {f'games/yorimichi_v2/{stem.with_suffix(ext).relative_to(self.game).as_posix()}'
+                for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
+
+    @functools.cached_property
+    def owner(self) -> dict:
+        """Repository path -> owning scope; the regions' actor records are read only when ownership is asked."""
+        import records
+        owner = {}
+        for asset in self.assets:
+            for output in asset.outputs:
+                owner.update(dict.fromkeys(self._files(output.package), asset_scope(asset)))
+        for region in self.regions:
+            if region.actors.is_file():
+                for rel in records.load_verified(region.actors)['files']:
+                    stem = Path(rel).with_suffix('')   # an actor package's companions belong to its region too
+                    for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS:
+                        owner[f'games/yorimichi_v2/{stem.with_suffix(ext).as_posix()}'] = scope_of(region.id)
+        return owner
+
+    def owning_scopes(self, paths: list[str]) -> tuple[set[str], list[str]]:
+        owner = self.owner
+        return {owner[p] for p in paths if p in owner}, [p for p in paths if p not in owner]
+
+
+# Coarse file times (a Linux kernel tick is a few ms) can give a rewrite of the same size the same stamp: an index read
+# from a record file written this recently is used once, not kept.
+SETTLED_NS = 2_000_000_000
+_RECORDS: list = []   # (game, Records) of the last settled reading
+
+
+def discovered(game: Path) -> Records:
+    """The records and their ownership, read again only when a record file changed (records.record_files): one batch
+    of jobs reads and indexes thousands of records once, and a record changed between jobs is read before the next."""
+    import records
+    now = time.time_ns()
+    stamp = records.record_files(game)   # taken before reading: a write during the reading changes the next stamp
+    if _RECORDS and _RECORDS[0][0] == game and _RECORDS[0][1].stamp == stamp:
+        return _RECORDS[0][1]
+    _RECORDS.clear()
+    index = Records(game, stamp)
+    if all(now - mtime > SETTLED_NS for _, _, mtime, _, _ in stamp):
+        _RECORDS.append((game, index))
+    return index
+
+
 def owning_scopes(game: Path, paths: list[str]) -> tuple[set[str], list[str]]:
     """The scopes of the records owning these repository paths, and the paths no record owns yet."""
-    import records
-    assets, regions = records.discover(game)
-    owner = {}
-    for asset in assets:
-        for output in asset.outputs:
-            stem = records.package_files(game, output.package)[0].with_suffix('')
-            for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS:
-                owner[f'games/yorimichi_v2/{stem.with_suffix(ext).relative_to(game).as_posix()}'] = asset_scope(asset)
-    for region in regions:
-        if region.actors.is_file():
-            for rel in records.load_verified(region.actors)['files']:
-                stem = Path(rel).with_suffix('')   # an actor package's companions belong to its region too
-                for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS:
-                    owner[f'games/yorimichi_v2/{stem.with_suffix(ext).as_posix()}'] = scope_of(region.id)
-    return {owner[p] for p in paths if p in owner}, [p for p in paths if p not in owner]
+    return discovered(game).owning_scopes(paths)
 
 
 def generated_paths(game: Path) -> set[str]:
     """Repository paths of every generated package and its companions: only their recorded importer writes them."""
-    import records
-    found = set()
-    for asset in records.discover(game)[0]:
-        for output in asset.outputs:
-            if output.writer != 'generated':
-                continue
-            stem = records.package_files(game, output.package)[0].with_suffix('')
-            found |= {f'games/yorimichi_v2/{stem.with_suffix(ext).relative_to(game).as_posix()}'
-                      for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS}
-    return found
+    return set(discovered(game).generated)
 
 
 def active_claims(claim: str, *, repo: Path = REPO) -> list[dict]:

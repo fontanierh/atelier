@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_Restaurant_door_galley_bar: a restaurant door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/restaurant-door-door-galley-bar"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/restaurant"
+references = ["adopted/belmontetrain/restaurant"]
+
+[[sources]]
+path = "src/SM_BTD_Restaurant_door_galley_bar.glb"
+sha256 = "2c17f1e7982e6444e6285bdfa2e3ee7e92f332f9527a2a23cd8dd64250db0218"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_Restaurant_door_galley_bar.glb", 2.0, 36, [0, 1]]]
+slots = [["M_BT_Walnut", "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Walnut"], ["M_BT_Brass", "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Brass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_Restaurant_door_galley_bar"

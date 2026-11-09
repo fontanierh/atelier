@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Guardrail: one island piece (11548 triangles, materials Paint).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/islandterrain/guardrail"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/islandterrain/guardrail"
+references = ["adopted/japan/materials/buildings"]
+
+[[sources]]
+path = "src/Guardrail.fbx"
+sha256 = "a053d1bf85882a5bbec4011d052c1142783182219a0cf01d44b22d78f9a7838d"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_Paint"]
+triangles = 11548
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Guardrail"

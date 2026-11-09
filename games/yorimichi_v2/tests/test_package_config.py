@@ -28,7 +28,7 @@ def make_game(tmp: Path, *, ini_entries=(), content=(), literals=(), restricted=
     (tmp / 'restricted.toml').write_text('schema = 1\nroots = [' + ', '.join(f'"{r}"' for r in restricted) + ']\n')
     if bundle is not None:
         (tmp / 'unreal/Config/Mac/MacEngine.ini').write_text(
-            f'[/Script/MacTargetPlatform.MacTargetSettings]\nBundleIdentifier={bundle}\n')
+            f'[/Script/MacTargetPlatform.XcodeProjectSettings]\nBundleIdentifier={bundle}\n')
     return tmp
 
 
@@ -97,4 +97,4 @@ def test_real_tree_has_no_failures():
     assert [str(p) for p in found if p.level == 'FAIL'] == []
     assert cook_config.bundle_identifier(ROOT) == 'com.atelier.yorimichiv2'
     assert cook_config.render_missing(ROOT) == []
-    assert {p.subject for p in found if p.code == 'UNKNOWN_ROOT'} <= {'/Game/A', '/Game/HidamariStable'}
+    assert {p.subject for p in found if p.code == 'UNKNOWN_ROOT'} <= {'/Game/A', '/Game/HidamariStable', '/Game/V2Import'}   # V2Import: an import's transient LOD levels, never saved

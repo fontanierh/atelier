@@ -3,7 +3,7 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Nox/BP_Nox.uasset": "e096d2b54bfc8784f29822aac48140232202dd608825b3f9836dbf130c62fcf5",
+    "unreal/Content/Nox/BP_Nox.uasset": "b13f2a8afcaaf6b1ae0c38168732469a3e8fe3f100f5ba9e2a244ac425bec16b",
     "unreal/Content/Nox/DA_Nox.uasset": "4dfb3991a20b05b5c82f5f11df00ff7168e2af0ba8ac2c9e745eaafbbe3dc9ed",
     "unreal/Content/Nox/DA_NoxBase.uasset": "ee75b57d6cee7588dada15e69c8c875e58a972b21a36716fefce648dbab3a3e4",
     "unreal/Content/Nox/M_Nox_Body.uasset": "aab80cb082d9a685632a8633d652cbed3b94834bcb1f11aea6af3864d8590c3e",

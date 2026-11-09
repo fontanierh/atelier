@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_HD_Niwaki: one city surface piece of Bush_HD_Niwaki (7266 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/bush-hd-niwaki"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/bush-hd-niwaki"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Bush_HD_Niwaki.fbx"
+sha256 = "a8c94825ee5cb958d459d8551e85bc455bf87a645db9bb299c357e33be970f5a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 7266
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Niwaki"

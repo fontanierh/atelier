@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove waterfall-canyon (15 groups).
-# Its placement is this actor package; its model is adopted/brinecove/waterfall-canyon. Edit it in the editor and save-validate
+# Its placement is this actor package; its models are prop/brinecove/landmarks-5-3, prop/brinecove/landmarks-5-3-soft-piece1, prop/brinecove/landmarks-5-3-soft-piece3, prop/brinecove/landmarks-5-4, prop/brinecove/landmarks-5-4-soft, prop/brinecove/landmarks-6-3, prop/brinecove/landmarks-6-3-soft-piece0, prop/brinecove/landmarks-6-3-soft-piece1, prop/brinecove/landmarks-6-3-soft-piece20, prop/brinecove/landmarks-6-3-soft-piece21, prop/brinecove/landmarks-6-3-soft-piece22, prop/brinecove/landmarks-6-3-soft-piece23, prop/brinecove/landmarks-6-3-soft-piece3, prop/brinecove/landmarks-6-4, prop/brinecove/landmarks-6-4-soft. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/waterfall-canyon"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/waterfall-canyon"]
+references = ["prop/brinecove/landmarks-5-3", "prop/brinecove/landmarks-5-3-soft-piece1", "prop/brinecove/landmarks-5-3-soft-piece3", "prop/brinecove/landmarks-5-4", "prop/brinecove/landmarks-5-4-soft", "prop/brinecove/landmarks-6-3", "prop/brinecove/landmarks-6-3-soft-piece0", "prop/brinecove/landmarks-6-3-soft-piece1", "prop/brinecove/landmarks-6-3-soft-piece20", "prop/brinecove/landmarks-6-3-soft-piece21", "prop/brinecove/landmarks-6-3-soft-piece22", "prop/brinecove/landmarks-6-3-soft-piece23", "prop/brinecove/landmarks-6-3-soft-piece3", "prop/brinecove/landmarks-6-4", "prop/brinecove/landmarks-6-4-soft"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/C/VD/KZVMBKOSHTGBX3NQ8TLRKF"

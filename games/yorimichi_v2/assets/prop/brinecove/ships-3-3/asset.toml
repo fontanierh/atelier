@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Ships_3_3: one Brine Cove mesh (9328 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/ships-3-3"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/ships-3-3"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Ships_3_3.glb"
+sha256 = "0cb36ae281cb854cc4efb0deae22741270c3071ad842968ab7113080ce9bb960"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_flag_black", "/Game/Brinecove/Materials/MI_BC_flag_red", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_sail_dark", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 9328
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Ships_3_3"

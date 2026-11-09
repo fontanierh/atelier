@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_FirstClass_door_pantry: a first-class door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/first-class-door-door-pantry"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/first-class"
+references = ["adopted/belmontetrain/first-class"]
+
+[[sources]]
+path = "src/SM_BTD_FirstClass_door_pantry.glb"
+sha256 = "f993da489f9ed2ceb9c3648332ae7666368ce5c4308d935967e7a43111b0679a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_FirstClass_door_pantry.glb", 2.0, 36, [0, 1]]]
+slots = [["M_BT_Walnut", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Walnut"], ["M_BT_Brass", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Brass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_pantry"

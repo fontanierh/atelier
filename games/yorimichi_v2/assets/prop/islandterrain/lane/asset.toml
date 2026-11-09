@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Lane: one island piece (346 triangles, materials Sand).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/islandterrain/lane"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/islandterrain/lane"
+references = ["adopted/japan/materials/ground"]
+
+[[sources]]
+path = "src/Lane.fbx"
+sha256 = "cffa117f1317adba4affbb9f04dc97327f0b742b0e23b3d587a3b52cf6679fb4"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_Sand"]
+triangles = 346
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/IslandTerrain/v1_atomic/Lane"

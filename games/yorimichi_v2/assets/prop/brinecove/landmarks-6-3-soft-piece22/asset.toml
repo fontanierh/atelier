@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Landmarks_6_3_Soft_Piece22: one Brine Cove mesh (21734 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/landmarks-6-3-soft-piece22"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/landmarks-6-3-soft-piece22"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Landmarks_6_3_Soft_Piece22.glb"
+sha256 = "689d84c74c3f8a5c4ecb61c7ab2a9c33691c07708610401ea24f34ddb22be52c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_fern", "/Game/Brinecove/Materials/MI_BC_cover_fern_light", "/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm"]
+triangles = 21734
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece22"

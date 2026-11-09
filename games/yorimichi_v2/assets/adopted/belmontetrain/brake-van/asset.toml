@@ -10,33 +10,6 @@ license = "owner-published (docs/DECISIONS.md D05 group 1)"
 references = ["adopted/belmontetrain/generator"]
 
 [[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_balcony_door_a"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_door_guard_room"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_door_luggage"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_exterior_door_ml"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_exterior_door_mr"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_gangway_door_b"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_gate_al"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_gate_ar"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/SM_BT_BrakeVan"
-
-[[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/M_BT_Brass"
 
 [[outputs]]

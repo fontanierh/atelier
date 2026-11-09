@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_StationYard: one city surface piece of HD_StationYard (936 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/station-yard"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/station-yard"
+references = ["adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-sidewalk"]
+
+[[sources]]
+path = "src/HD_StationYard.fbx"
+sha256 = "51f44047868c683e489b5fd750cc567c2a3630b4aa0d3f193067ce00eb168ff5"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_concrete = "/Game/Japan/Hidamari/Materials/MI_HD_concrete", HDS_flat = "/Game/Japan/Hidamari/Materials/MI_HD_flat", HDS_metal = "/Game/Japan/Hidamari/Materials/MI_HD_metal", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_sidewalk = "/Game/Japan/Hidamari/Materials/MI_HD_sidewalk"}
+triangles = 936
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 8
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_StationYard"

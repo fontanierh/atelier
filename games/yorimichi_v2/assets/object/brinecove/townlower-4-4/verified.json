@@ -1,7 +1,17 @@
 {
   "asset": "object/brinecove/townlower-4-4",
   "dependencies": {
-    "adopted/brinecove/townlower-4-4": "48a277231f7515ae0898151d0513fe76ad4e7e5c938d74612282e39342efe801"
+    "prop/brinecove/town-lower-4-4-piece01": "a9c4d51c76c3da8091bc420c1460569fd639c6e172453618d1d05e527ee11b4a",
+    "prop/brinecove/town-lower-4-4-piece02": "116e4a8bec8cbffaf1e23081de6b1c87eec700ac6e7d88a5b1afa9ef4752219f",
+    "prop/brinecove/town-lower-4-4-piece03": "f6222e981dedd877b2b157a913f6663459c7ce89c9d77505869f729bd831efea",
+    "prop/brinecove/town-lower-4-4-piece10": "33218b6ac3e3c79eddfb1f51de129b76763ec795bfbbadb50e73c1c92a9bfa11",
+    "prop/brinecove/town-lower-4-4-piece11": "09131b2a165e04a2c47eb8e1cd80748b3cbb963618469e66e2677dc7d7a8a2cc",
+    "prop/brinecove/town-lower-4-4-piece12": "04f0045bfb80d33c5b584bb91b467ccb64b62c8b0d949f8a6bfce2639fcb4c7b",
+    "prop/brinecove/town-lower-4-4-piece13": "6937e8afff258d4fcaec1229302f8b748ec30a7ab042dd3270b4f5d749769cbc",
+    "prop/brinecove/town-lower-4-4-piece2": "c7a576e9eab2b65598c5370d2bbf335cca4df4673b48df13dc33072c59cee3b4",
+    "prop/brinecove/town-lower-4-4-piece30": "a269bebd0e6ba4296541466dc9e67d0952a1913fa7536e837599a72754d43fb1",
+    "prop/brinecove/town-lower-4-4-piece31": "1b1adcc06d9e7b5f554d1bca59a0b74942c2a45615bf35304f02237459b158cc",
+    "prop/brinecove/town-lower-4-4-soft": "1614515e8478f859c0d9f8f0b755ddcfacf9a2761d351839f3ee80fc9ac79420"
   },
   "engine": "5.8.2-56702186",
   "files": {

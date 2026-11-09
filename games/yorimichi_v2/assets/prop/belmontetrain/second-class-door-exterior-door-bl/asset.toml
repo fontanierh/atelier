@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_SecondClass_exterior_door_bl: a second-class door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/second-class-door-exterior-door-bl"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/second-class"
+references = ["adopted/belmontetrain/second-class"]
+
+[[sources]]
+path = "src/SM_BTD_SecondClass_exterior_door_bl.glb"
+sha256 = "56f1161950b547929fba8eb39fc8b741344aed7f9fd1404a2ff67494da2f2245"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_SecondClass_exterior_door_bl.glb", 2.0, 576, [0, 1, 2, 3, 4]]]
+slots = [["M_BT_LiveryBlueWorn", "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/M_BT_LiveryBlueWorn"], ["M_BT_LiveryIvoryWorn", "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/M_BT_LiveryIvoryWorn"], ["M_BT_PaintPeel", "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/M_BT_PaintPeel"], ["M_BT_BrassDull", "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/M_BT_BrassDull"], ["M_BT_GlassGrimy", "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/M_BT_GlassGrimy"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_SecondClass_exterior_door_bl"

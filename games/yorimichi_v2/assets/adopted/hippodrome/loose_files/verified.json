@@ -5,14 +5,8 @@
   "files": {
     "unreal/Content/Hippodrome/SM_HD_FinishPost.uasset": "da655bc659bd8a45d3d67b4646347dbdd3647534010f815a9f54539de59c36c2",
     "unreal/Content/Hippodrome/SM_HD_Grandstand.uasset": "4a6934faad41ec1636d151b320da2466a8b7c58856f5254e7fda1bfa1f4d4d4c",
-    "unreal/Content/Hippodrome/SM_HD_Ground.uasset": "cf97336b1abc582c67977f5d37720c63372bab71adc1318702e622b22da1431c",
     "unreal/Content/Hippodrome/SM_HD_JudgesTower.uasset": "023b446e392f5af1143f12de9c2bd47e484bc0aa0e10272001f0f8a03f9c69e3",
-    "unreal/Content/Hippodrome/SM_HD_Lane.uasset": "948dc1e0669bbe9ba735fd89acccdd6d59e7f0c6a74009293c995487db321f92",
-    "unreal/Content/Hippodrome/SM_HD_LaneSkirt.uasset": "7275889779a9e03e0cf51534998939c02af0be9372620503992e36dc2a0b500e",
-    "unreal/Content/Hippodrome/SM_HD_Rails.uasset": "449226df3de6c8753e5cf313ceed3909c3c4a2e070872cf2795ecf6dcd799ab9",
-    "unreal/Content/Hippodrome/SM_HD_Skirt.uasset": "d2f5345fd698981c7de6ea7f1f34ec2d391d828012e7b8b95f5191067defb224",
-    "unreal/Content/Hippodrome/SM_HD_ToteBoard.uasset": "3d6d2a4d22734c72bb81555ac30c904309cc33c6afb6edf5a5c2e4ca63a113ab",
-    "unreal/Content/Hippodrome/SM_HD_Track.uasset": "750b10817109476655f5787e1faaee76574dfb737b8a07c4b229d0de0be7c26d"
+    "unreal/Content/Hippodrome/SM_HD_ToteBoard.uasset": "3d6d2a4d22734c72bb81555ac30c904309cc33c6afb6edf5a5c2e4ca63a113ab"
   },
   "kind": "editor-saved",
   "schema": 1

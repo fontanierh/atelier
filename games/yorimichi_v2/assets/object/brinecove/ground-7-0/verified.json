@@ -1,7 +1,7 @@
 {
   "asset": "object/brinecove/ground-7-0",
   "dependencies": {
-    "adopted/brinecove/ground-7-0": "0b6dfe9e50eb4119443d4aaee60309a4c877b0a8ae6408463c1df6a4a2a50b63"
+    "prop/brinecove/ground-7-0": "7436d23b3f7af5bd86cc6f88b5c76a4d4b6959aaea2ea6ff6aa20ae11983ea83"
   },
   "engine": "5.8.2-56702186",
   "files": {

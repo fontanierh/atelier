@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/restaurant-door-door-wc",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Restaurant_door_wc.uasset": "bad01777d53f25f92d426ad12776c393a94aae09d1d08fd70fada86068c5da41"
+  },
+  "input_fingerprint": "520614fa3f2d78dff52eaa0c97309bd3b3e3481b17520bff6b07983810d1956b",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_Restaurant_door_wc": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -413,3 +413,29 @@ def main(game, tag=None, download_only=False, extra=(), limit_gib=10.):
     except OSError as error:
         print(f'game log not copied: {error}')
     return code
+
+
+def app_executable(app):
+    """The executable a packaged .app runs (its Info.plist CFBundleExecutable, in Contents/MacOS)."""
+    try:
+        with open(Path(app) / 'Contents' / 'Info.plist', 'rb') as plist:
+            name = plistlib.load(plist)['CFBundleExecutable']
+    except (OSError, KeyError, plistlib.InvalidFileException) as error:
+        raise SystemExit(f'{app} is not a packaged app: {error}')
+    executable = Path(app) / 'Contents' / 'MacOS' / name
+    if not executable.is_file():
+        raise SystemExit(f'{app} has no executable {name}')
+    return executable
+
+
+def play_app(game, app, extra=(), limit_gib=10.):
+    """Play a local packaged app (a package under acceptance) under the render lock and memory guard as a game."""
+    manifest.game(game)
+    executable = app_executable(app)
+    stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    logs = paths.build_dir(game) / 'logs' / f'playtest-app-{stamp}'
+    logs.mkdir(parents=True, exist_ok=True)
+    from atelier.harness.safety import guarded
+    print(f'playing {Path(app).name}; guard reports in {logs}')
+    return guarded.run([str(executable), *extra], logs, purpose=f'atelier playtest {game} --app {Path(app).name}',
+                       kind='game', watch=(executable.name,), limit_gib=limit_gib)

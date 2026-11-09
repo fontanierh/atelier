@@ -8,2329 +8,2329 @@ data = ""
 [[objects]]
 id = "object/harbour/hd-house-00-01"
 split = {key = "HD_House_00", at = [440.85, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 1 of 20 in w07-hidamari-harbour, placed at (440.85, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-02"
 split = {key = "HD_House_00", at = [463.95, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 2 of 20 in w07-hidamari-harbour, placed at (463.95, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-03"
 split = {key = "HD_House_00", at = [486.85, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 3 of 20 in w07-hidamari-harbour, placed at (486.85, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-04"
 split = {key = "HD_House_00", at = [498.35, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 4 of 20 in w07-hidamari-harbour, placed at (498.35, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-05"
 split = {key = "HD_House_00", at = [521.35, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 5 of 20 in w07-hidamari-harbour, placed at (521.35, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-06"
 split = {key = "HD_House_00", at = [521.45, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 6 of 20 in w07-hidamari-harbour, placed at (521.45, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-07"
 split = {key = "HD_House_00", at = [521.55, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 7 of 20 in w07-hidamari-harbour, placed at (521.55, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-08"
 split = {key = "HD_House_00", at = [532.95, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 8 of 20 in w07-hidamari-harbour, placed at (532.95, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-09"
 split = {key = "HD_House_00", at = [577.44, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 9 of 20 in w07-hidamari-harbour, placed at (577.44, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-10"
 split = {key = "HD_House_00", at = [619.09, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 10 of 20 in w07-hidamari-harbour, placed at (619.09, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-11"
 split = {key = "HD_House_00", at = [648.43, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 11 of 20 in w07-hidamari-harbour, placed at (648.43, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-12"
 split = {key = "HD_House_00", at = [760.93, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 12 of 20 in w07-hidamari-harbour, placed at (760.93, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-13"
 split = {key = "HD_House_00", at = [783.93, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 13 of 20 in w07-hidamari-harbour, placed at (783.93, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-14"
 split = {key = "HD_House_00", at = [813.2, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 14 of 20 in w07-hidamari-harbour, placed at (813.2, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-15"
 split = {key = "HD_House_00", at = [840.87, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 15 of 20 in w07-hidamari-harbour, placed at (840.87, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-16"
 split = {key = "HD_House_00", at = [852.37, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 16 of 20 in w07-hidamari-harbour, placed at (852.37, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-17"
 split = {key = "HD_House_00", at = [857.74, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 17 of 20 in w07-hidamari-harbour, placed at (857.74, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-18"
 split = {key = "HD_House_00", at = [872.95, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 18 of 20 in w07-hidamari-harbour, placed at (872.95, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-19"
 split = {key = "HD_House_00", at = [886.87, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 19 of 20 in w07-hidamari-harbour, placed at (886.87, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-00-20"
 split = {key = "HD_House_00", at = [893.7, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-00"
+model = "prop/citysurfaces/house-00"
 about = "HD_House_00 20 of 20 in w07-hidamari-harbour, placed at (893.7, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-01"
 split = {key = "HD_House_01", at = [441.05, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 1 of 25 in w07-hidamari-harbour, placed at (441.05, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-02"
 split = {key = "HD_House_01", at = [452.46, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 2 of 25 in w07-hidamari-harbour, placed at (452.46, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-03"
 split = {key = "HD_House_01", at = [455.34, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 3 of 25 in w07-hidamari-harbour, placed at (455.34, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-04"
 split = {key = "HD_House_01", at = [463.85, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 4 of 25 in w07-hidamari-harbour, placed at (463.85, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-05"
 split = {key = "HD_House_01", at = [463.96, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 5 of 25 in w07-hidamari-harbour, placed at (463.96, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-06"
 split = {key = "HD_House_01", at = [475.45, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 6 of 25 in w07-hidamari-harbour, placed at (475.45, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-07"
 split = {key = "HD_House_01", at = [475.46, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 7 of 25 in w07-hidamari-harbour, placed at (475.46, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-08"
 split = {key = "HD_House_01", at = [478.34, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 8 of 25 in w07-hidamari-harbour, placed at (478.34, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-09"
 split = {key = "HD_House_01", at = [483.94, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 9 of 25 in w07-hidamari-harbour, placed at (483.94, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-10"
 split = {key = "HD_House_01", at = [494.38, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 10 of 25 in w07-hidamari-harbour, placed at (494.38, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-11"
 split = {key = "HD_House_01", at = [501.34, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 11 of 25 in w07-hidamari-harbour, placed at (501.34, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-12"
 split = {key = "HD_House_01", at = [506.94, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 12 of 25 in w07-hidamari-harbour, placed at (506.94, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-13"
 split = {key = "HD_House_01", at = [510.05, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 13 of 25 in w07-hidamari-harbour, placed at (510.05, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-14"
 split = {key = "HD_House_01", at = [518.44, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 14 of 25 in w07-hidamari-harbour, placed at (518.44, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-15"
 split = {key = "HD_House_01", at = [529.94, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 15 of 25 in w07-hidamari-harbour, placed at (529.94, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-16"
 split = {key = "HD_House_01", at = [538.2, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 16 of 25 in w07-hidamari-harbour, placed at (538.2, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-17"
 split = {key = "HD_House_01", at = [577.24, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 17 of 25 in w07-hidamari-harbour, placed at (577.24, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-18"
 split = {key = "HD_House_01", at = [577.7, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 18 of 25 in w07-hidamari-harbour, placed at (577.7, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-19"
 split = {key = "HD_House_01", at = [587.95, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 19 of 25 in w07-hidamari-harbour, placed at (587.95, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-20"
 split = {key = "HD_House_01", at = [594.04, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 20 of 25 in w07-hidamari-harbour, placed at (594.04, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-21"
 split = {key = "HD_House_01", at = [605.54, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 21 of 25 in w07-hidamari-harbour, placed at (605.54, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-22"
 split = {key = "HD_House_01", at = [617.04, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 22 of 25 in w07-hidamari-harbour, placed at (617.04, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-23"
 split = {key = "HD_House_01", at = [682.93, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 23 of 25 in w07-hidamari-harbour, placed at (682.93, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-24"
 split = {key = "HD_House_01", at = [705.93, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 24 of 25 in w07-hidamari-harbour, placed at (705.93, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-01-25"
 split = {key = "HD_House_01", at = [772.51, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-01"
+model = "prop/citysurfaces/house-01"
 about = "HD_House_01 25 of 25 in w07-hidamari-harbour, placed at (772.51, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-01"
 split = {key = "HD_House_02", at = [442.12, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 1 of 38 in w07-hidamari-harbour, placed at (442.12, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-02"
 split = {key = "HD_House_02", at = [443.84, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 2 of 38 in w07-hidamari-harbour, placed at (443.84, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-03"
 split = {key = "HD_House_02", at = [452.35, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 3 of 38 in w07-hidamari-harbour, placed at (452.35, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-04"
 split = {key = "HD_House_02", at = [453.62, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 4 of 38 in w07-hidamari-harbour, placed at (453.62, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-05"
 split = {key = "HD_House_02", at = [464.05, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 5 of 38 in w07-hidamari-harbour, placed at (464.05, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-06"
 split = {key = "HD_House_02", at = [472.44, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 6 of 38 in w07-hidamari-harbour, placed at (472.44, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-07"
 split = {key = "HD_House_02", at = [475.35, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 7 of 38 in w07-hidamari-harbour, placed at (475.35, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-08"
 split = {key = "HD_House_02", at = [498.45, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 8 of 38 in w07-hidamari-harbour, placed at (498.45, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-09"
 split = {key = "HD_House_02", at = [498.55, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 9 of 38 in w07-hidamari-harbour, placed at (498.55, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-10"
 split = {key = "HD_House_02", at = [509.85, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 10 of 38 in w07-hidamari-harbour, placed at (509.85, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-11"
 split = {key = "HD_House_02", at = [524.34, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 11 of 38 in w07-hidamari-harbour, placed at (524.34, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-12"
 split = {key = "HD_House_02", at = [532.85, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 12 of 38 in w07-hidamari-harbour, placed at (532.85, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-13"
 split = {key = "HD_House_02", at = [541.44, 265.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 13 of 38 in w07-hidamari-harbour, placed at (541.44, 265.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-14"
 split = {key = "HD_House_02", at = [576.45, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 14 of 38 in w07-hidamari-harbour, placed at (576.45, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-15"
 split = {key = "HD_House_02", at = [588.74, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 15 of 38 in w07-hidamari-harbour, placed at (588.74, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-16"
 split = {key = "HD_House_02", at = [600.24, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 16 of 38 in w07-hidamari-harbour, placed at (600.24, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-17"
 split = {key = "HD_House_02", at = [606.96, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 17 of 38 in w07-hidamari-harbour, placed at (606.96, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-18"
 split = {key = "HD_House_02", at = [622.87, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 18 of 38 in w07-hidamari-harbour, placed at (622.87, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-19"
 split = {key = "HD_House_02", at = [633.01, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 19 of 38 in w07-hidamari-harbour, placed at (633.01, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-20"
 split = {key = "HD_House_02", at = [636.93, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 20 of 38 in w07-hidamari-harbour, placed at (636.93, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-21"
 split = {key = "HD_House_02", at = [667.51, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 21 of 38 in w07-hidamari-harbour, placed at (667.51, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-22"
 split = {key = "HD_House_02", at = [679.01, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 22 of 38 in w07-hidamari-harbour, placed at (679.01, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-23"
 split = {key = "HD_House_02", at = [749.43, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 23 of 38 in w07-hidamari-harbour, placed at (749.43, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-24"
 split = {key = "HD_House_02", at = [749.51, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 24 of 38 in w07-hidamari-harbour, placed at (749.51, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-25"
 split = {key = "HD_House_02", at = [761.01, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 25 of 38 in w07-hidamari-harbour, placed at (761.01, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-26"
 split = {key = "HD_House_02", at = [784.01, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 26 of 38 in w07-hidamari-harbour, placed at (784.01, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-27"
 split = {key = "HD_House_02", at = [801.7, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 27 of 38 in w07-hidamari-harbour, placed at (801.7, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-28"
 split = {key = "HD_House_02", at = [812.28, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 28 of 38 in w07-hidamari-harbour, placed at (812.28, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-29"
 split = {key = "HD_House_02", at = [817.87, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 29 of 38 in w07-hidamari-harbour, placed at (817.87, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-30"
 split = {key = "HD_House_02", at = [823.78, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 30 of 38 in w07-hidamari-harbour, placed at (823.78, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-31"
 split = {key = "HD_House_02", at = [829.37, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 31 of 38 in w07-hidamari-harbour, placed at (829.37, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-32"
 split = {key = "HD_House_02", at = [830.66, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 32 of 38 in w07-hidamari-harbour, placed at (830.66, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-33"
 split = {key = "HD_House_02", at = [833.63, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 33 of 38 in w07-hidamari-harbour, placed at (833.63, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-34"
 split = {key = "HD_House_02", at = [842.16, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 34 of 38 in w07-hidamari-harbour, placed at (842.16, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-35"
 split = {key = "HD_House_02", at = [856.63, 281.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 35 of 38 in w07-hidamari-harbour, placed at (856.63, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-36"
 split = {key = "HD_House_02", at = [882.2, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 36 of 38 in w07-hidamari-harbour, placed at (882.2, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-37"
 split = {key = "HD_House_02", at = [885.51, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 37 of 38 in w07-hidamari-harbour, placed at (885.51, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-02-38"
 split = {key = "HD_House_02", at = [888.52, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-02"
+model = "prop/citysurfaces/house-02"
 about = "HD_House_02 38 of 38 in w07-hidamari-harbour, placed at (888.52, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-01"
 split = {key = "HD_House_03", at = [440.95, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 1 of 19 in w07-hidamari-harbour, placed at (440.95, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-02"
 split = {key = "HD_House_03", at = [440.96, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 2 of 19 in w07-hidamari-harbour, placed at (440.96, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-03"
 split = {key = "HD_House_03", at = [466.84, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 3 of 19 in w07-hidamari-harbour, placed at (466.84, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-04"
 split = {key = "HD_House_03", at = [475.55, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 4 of 19 in w07-hidamari-harbour, placed at (475.55, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-05"
 split = {key = "HD_House_03", at = [505.88, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 5 of 19 in w07-hidamari-harbour, placed at (505.88, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-06"
 split = {key = "HD_House_03", at = [509.95, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 6 of 19 in w07-hidamari-harbour, placed at (509.95, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-07"
 split = {key = "HD_House_03", at = [512.84, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 7 of 19 in w07-hidamari-harbour, placed at (512.84, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-08"
 split = {key = "HD_House_03", at = [537.74, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 8 of 19 in w07-hidamari-harbour, placed at (537.74, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-09"
 split = {key = "HD_House_03", at = [539.94, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 9 of 19 in w07-hidamari-harbour, placed at (539.94, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-10"
 split = {key = "HD_House_03", at = [589.2, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 10 of 19 in w07-hidamari-harbour, placed at (589.2, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-11"
 split = {key = "HD_House_03", at = [620.51, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 11 of 19 in w07-hidamari-harbour, placed at (620.51, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-12"
 split = {key = "HD_House_03", at = [634.37, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 12 of 19 in w07-hidamari-harbour, placed at (634.37, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-13"
 split = {key = "HD_House_03", at = [643.51, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 13 of 19 in w07-hidamari-harbour, placed at (643.51, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-14"
 split = {key = "HD_House_03", at = [659.93, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 14 of 19 in w07-hidamari-harbour, placed at (659.93, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-15"
 split = {key = "HD_House_03", at = [694.43, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 15 of 19 in w07-hidamari-harbour, placed at (694.43, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-16"
 split = {key = "HD_House_03", at = [772.43, -54.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 16 of 19 in w07-hidamari-harbour, placed at (772.43, -54.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-17"
 split = {key = "HD_House_03", at = [795.51, -38.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 17 of 19 in w07-hidamari-harbour, placed at (795.51, -38.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-18"
 split = {key = "HD_House_03", at = [861.45, 175.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 18 of 19 in w07-hidamari-harbour, placed at (861.45, 175.5) m"
 
 [[objects]]
 id = "object/harbour/hd-house-03-19"
 split = {key = "HD_House_03", at = [863.87, 191.5]}
-model = "adopted/experiments/citysurfaces/v1-128m/house-03"
+model = "prop/citysurfaces/house-03"
 about = "HD_House_03 19 of 19 in w07-hidamari-harbour, placed at (863.87, 191.5) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-01"
 split = {key = "HD_Shop_00", at = [455, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 1 of 8 in w07-hidamari-harbour, placed at (455, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-02"
 split = {key = "HD_Shop_00", at = [509, 121]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 2 of 8 in w07-hidamari-harbour, placed at (509, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-03"
 split = {key = "HD_Shop_00", at = [509, 159]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 3 of 8 in w07-hidamari-harbour, placed at (509, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-04"
 split = {key = "HD_Shop_00", at = [698, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 4 of 8 in w07-hidamari-harbour, placed at (698, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-05"
 split = {key = "HD_Shop_00", at = [698, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 5 of 8 in w07-hidamari-harbour, placed at (698, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-06"
 split = {key = "HD_Shop_00", at = [806, 56]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 6 of 8 in w07-hidamari-harbour, placed at (806, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-07"
 split = {key = "HD_Shop_00", at = [806, 94]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 7 of 8 in w07-hidamari-harbour, placed at (806, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-00-08"
 split = {key = "HD_Shop_00", at = [887, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-00-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-00-m1-m1"]
+model = ["prop/citysurfaces/shop-00-cell-0-0", "prop/citysurfaces/shop-00-cell-0-m1", "prop/citysurfaces/shop-00-cell-m1-0", "prop/citysurfaces/shop-00-cell-m1-m1"]
 about = "HD_Shop_00 8 of 8 in w07-hidamari-harbour, placed at (887, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-01-01"
 split = {key = "HD_Shop_01", at = [482, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+model = ["prop/citysurfaces/shop-01-cell-0-0", "prop/citysurfaces/shop-01-cell-0-m1", "prop/citysurfaces/shop-01-cell-m1-0", "prop/citysurfaces/shop-01-cell-m1-m1"]
 about = "HD_Shop_01 1 of 5 in w07-hidamari-harbour, placed at (482, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-01-02"
 split = {key = "HD_Shop_01", at = [536, 121]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+model = ["prop/citysurfaces/shop-01-cell-0-0", "prop/citysurfaces/shop-01-cell-0-m1", "prop/citysurfaces/shop-01-cell-m1-0", "prop/citysurfaces/shop-01-cell-m1-m1"]
 about = "HD_Shop_01 2 of 5 in w07-hidamari-harbour, placed at (536, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-01-03"
 split = {key = "HD_Shop_01", at = [536, 159]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+model = ["prop/citysurfaces/shop-01-cell-0-0", "prop/citysurfaces/shop-01-cell-0-m1", "prop/citysurfaces/shop-01-cell-m1-0", "prop/citysurfaces/shop-01-cell-m1-m1"]
 about = "HD_Shop_01 3 of 5 in w07-hidamari-harbour, placed at (536, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-01-04"
 split = {key = "HD_Shop_01", at = [833, 56]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+model = ["prop/citysurfaces/shop-01-cell-0-0", "prop/citysurfaces/shop-01-cell-0-m1", "prop/citysurfaces/shop-01-cell-m1-0", "prop/citysurfaces/shop-01-cell-m1-m1"]
 about = "HD_Shop_01 4 of 5 in w07-hidamari-harbour, placed at (833, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-01-05"
 split = {key = "HD_Shop_01", at = [833, 94]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-01-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-01-m1-m1"]
+model = ["prop/citysurfaces/shop-01-cell-0-0", "prop/citysurfaces/shop-01-cell-0-m1", "prop/citysurfaces/shop-01-cell-m1-0", "prop/citysurfaces/shop-01-cell-m1-m1"]
 about = "HD_Shop_01 5 of 5 in w07-hidamari-harbour, placed at (833, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-02-01"
 split = {key = "HD_Shop_02", at = [509, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+model = ["prop/citysurfaces/shop-02-cell-0-0", "prop/citysurfaces/shop-02-cell-0-m1", "prop/citysurfaces/shop-02-cell-m1-0", "prop/citysurfaces/shop-02-cell-m1-m1"]
 about = "HD_Shop_02 1 of 5 in w07-hidamari-harbour, placed at (509, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-02-02"
 split = {key = "HD_Shop_02", at = [752, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+model = ["prop/citysurfaces/shop-02-cell-0-0", "prop/citysurfaces/shop-02-cell-0-m1", "prop/citysurfaces/shop-02-cell-m1-0", "prop/citysurfaces/shop-02-cell-m1-m1"]
 about = "HD_Shop_02 2 of 5 in w07-hidamari-harbour, placed at (752, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-02-03"
 split = {key = "HD_Shop_02", at = [752, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+model = ["prop/citysurfaces/shop-02-cell-0-0", "prop/citysurfaces/shop-02-cell-0-m1", "prop/citysurfaces/shop-02-cell-m1-0", "prop/citysurfaces/shop-02-cell-m1-m1"]
 about = "HD_Shop_02 3 of 5 in w07-hidamari-harbour, placed at (752, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-02-04"
 split = {key = "HD_Shop_02", at = [860, 56]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+model = ["prop/citysurfaces/shop-02-cell-0-0", "prop/citysurfaces/shop-02-cell-0-m1", "prop/citysurfaces/shop-02-cell-m1-0", "prop/citysurfaces/shop-02-cell-m1-m1"]
 about = "HD_Shop_02 4 of 5 in w07-hidamari-harbour, placed at (860, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-02-05"
 split = {key = "HD_Shop_02", at = [860, 94]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-02-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-02-m1-m1"]
+model = ["prop/citysurfaces/shop-02-cell-0-0", "prop/citysurfaces/shop-02-cell-0-m1", "prop/citysurfaces/shop-02-cell-m1-0", "prop/citysurfaces/shop-02-cell-m1-m1"]
 about = "HD_Shop_02 5 of 5 in w07-hidamari-harbour, placed at (860, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-01"
 split = {key = "HD_Shop_03", at = [455, 56]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 1 of 11 in w07-hidamari-harbour, placed at (455, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-02"
 split = {key = "HD_Shop_03", at = [455, 94]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 2 of 11 in w07-hidamari-harbour, placed at (455, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-03"
 split = {key = "HD_Shop_03", at = [536, -71]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 3 of 11 in w07-hidamari-harbour, placed at (536, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-04"
 split = {key = "HD_Shop_03", at = [590, 121]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 4 of 11 in w07-hidamari-harbour, placed at (590, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-05"
 split = {key = "HD_Shop_03", at = [590, 159]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 5 of 11 in w07-hidamari-harbour, placed at (590, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-06"
 split = {key = "HD_Shop_03", at = [779, -4]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 6 of 11 in w07-hidamari-harbour, placed at (779, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-07"
 split = {key = "HD_Shop_03", at = [779, 34]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 7 of 11 in w07-hidamari-harbour, placed at (779, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-08"
 split = {key = "HD_Shop_03", at = [833, 211]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 8 of 11 in w07-hidamari-harbour, placed at (833, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-09"
 split = {key = "HD_Shop_03", at = [833, 249]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 9 of 11 in w07-hidamari-harbour, placed at (833, 249) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-10"
 split = {key = "HD_Shop_03", at = [887, 56]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 10 of 11 in w07-hidamari-harbour, placed at (887, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-03-11"
 split = {key = "HD_Shop_03", at = [887, 94]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-03"
+model = "prop/citysurfaces/shop-03"
 about = "HD_Shop_03 11 of 11 in w07-hidamari-harbour, placed at (887, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-01"
 split = {key = "HD_Shop_04", at = [482, 56]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 1 of 8 in w07-hidamari-harbour, placed at (482, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-02"
 split = {key = "HD_Shop_04", at = [482, 94]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 2 of 8 in w07-hidamari-harbour, placed at (482, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-03"
 split = {key = "HD_Shop_04", at = [617, 121]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 3 of 8 in w07-hidamari-harbour, placed at (617, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-04"
 split = {key = "HD_Shop_04", at = [617, 159]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 4 of 8 in w07-hidamari-harbour, placed at (617, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-05"
 split = {key = "HD_Shop_04", at = [806, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 5 of 8 in w07-hidamari-harbour, placed at (806, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-06"
 split = {key = "HD_Shop_04", at = [806, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 6 of 8 in w07-hidamari-harbour, placed at (806, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-07"
 split = {key = "HD_Shop_04", at = [860, 211]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 7 of 8 in w07-hidamari-harbour, placed at (860, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-04-08"
 split = {key = "HD_Shop_04", at = [860, 249]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-04-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1"]
+model = ["prop/citysurfaces/shop-04-cell-0-0", "prop/citysurfaces/shop-04-cell-0-m1", "prop/citysurfaces/shop-04-cell-m1-0", "prop/citysurfaces/shop-04-cell-m1-m1"]
 about = "HD_Shop_04 8 of 8 in w07-hidamari-harbour, placed at (860, 249) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-01"
 split = {key = "HD_Shop_05", at = [455, 211]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 1 of 9 in w07-hidamari-harbour, placed at (455, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-02"
 split = {key = "HD_Shop_05", at = [455, 249]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 2 of 9 in w07-hidamari-harbour, placed at (455, 249) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-03"
 split = {key = "HD_Shop_05", at = [509, 56]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 3 of 9 in w07-hidamari-harbour, placed at (509, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-04"
 split = {key = "HD_Shop_05", at = [509, 94]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 4 of 9 in w07-hidamari-harbour, placed at (509, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-05"
 split = {key = "HD_Shop_05", at = [590, -71]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 5 of 9 in w07-hidamari-harbour, placed at (590, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-06"
 split = {key = "HD_Shop_05", at = [644, 121]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 6 of 9 in w07-hidamari-harbour, placed at (644, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-07"
 split = {key = "HD_Shop_05", at = [644, 159]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 7 of 9 in w07-hidamari-harbour, placed at (644, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-08"
 split = {key = "HD_Shop_05", at = [833, 34]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 8 of 9 in w07-hidamari-harbour, placed at (833, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-05-09"
 split = {key = "HD_Shop_05", at = [887, 211]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-05"
+model = "prop/citysurfaces/shop-05"
 about = "HD_Shop_05 9 of 9 in w07-hidamari-harbour, placed at (887, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-06-01"
 split = {key = "HD_Shop_06", at = [482, 211]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+model = ["prop/citysurfaces/shop-06-cell-0-0", "prop/citysurfaces/shop-06-cell-0-m1", "prop/citysurfaces/shop-06-cell-m1-0", "prop/citysurfaces/shop-06-cell-m1-m1"]
 about = "HD_Shop_06 1 of 6 in w07-hidamari-harbour, placed at (482, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-06-02"
 split = {key = "HD_Shop_06", at = [482, 249]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+model = ["prop/citysurfaces/shop-06-cell-0-0", "prop/citysurfaces/shop-06-cell-0-m1", "prop/citysurfaces/shop-06-cell-m1-0", "prop/citysurfaces/shop-06-cell-m1-m1"]
 about = "HD_Shop_06 2 of 6 in w07-hidamari-harbour, placed at (482, 249) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-06-03"
 split = {key = "HD_Shop_06", at = [536, 56]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+model = ["prop/citysurfaces/shop-06-cell-0-0", "prop/citysurfaces/shop-06-cell-0-m1", "prop/citysurfaces/shop-06-cell-m1-0", "prop/citysurfaces/shop-06-cell-m1-m1"]
 about = "HD_Shop_06 3 of 6 in w07-hidamari-harbour, placed at (536, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-06-04"
 split = {key = "HD_Shop_06", at = [536, 94]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+model = ["prop/citysurfaces/shop-06-cell-0-0", "prop/citysurfaces/shop-06-cell-0-m1", "prop/citysurfaces/shop-06-cell-m1-0", "prop/citysurfaces/shop-06-cell-m1-m1"]
 about = "HD_Shop_06 4 of 6 in w07-hidamari-harbour, placed at (536, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-06-05"
 split = {key = "HD_Shop_06", at = [617, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+model = ["prop/citysurfaces/shop-06-cell-0-0", "prop/citysurfaces/shop-06-cell-0-m1", "prop/citysurfaces/shop-06-cell-m1-0", "prop/citysurfaces/shop-06-cell-m1-m1"]
 about = "HD_Shop_06 5 of 6 in w07-hidamari-harbour, placed at (617, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-06-06"
 split = {key = "HD_Shop_06", at = [860, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-06-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-06-m1-m1"]
+model = ["prop/citysurfaces/shop-06-cell-0-0", "prop/citysurfaces/shop-06-cell-0-m1", "prop/citysurfaces/shop-06-cell-m1-0", "prop/citysurfaces/shop-06-cell-m1-m1"]
 about = "HD_Shop_06 6 of 6 in w07-hidamari-harbour, placed at (860, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-07-01"
 split = {key = "HD_Shop_07", at = [455, -4]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+model = "prop/citysurfaces/shop-07"
 about = "HD_Shop_07 1 of 7 in w07-hidamari-harbour, placed at (455, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-07-02"
 split = {key = "HD_Shop_07", at = [455, 34]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+model = "prop/citysurfaces/shop-07"
 about = "HD_Shop_07 2 of 7 in w07-hidamari-harbour, placed at (455, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-07-03"
 split = {key = "HD_Shop_07", at = [509, 211]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+model = "prop/citysurfaces/shop-07"
 about = "HD_Shop_07 3 of 7 in w07-hidamari-harbour, placed at (509, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-07-04"
 split = {key = "HD_Shop_07", at = [509, 249]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+model = "prop/citysurfaces/shop-07"
 about = "HD_Shop_07 4 of 7 in w07-hidamari-harbour, placed at (509, 249) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-07-05"
 split = {key = "HD_Shop_07", at = [644, -71]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+model = "prop/citysurfaces/shop-07"
 about = "HD_Shop_07 5 of 7 in w07-hidamari-harbour, placed at (644, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-07-06"
 split = {key = "HD_Shop_07", at = [887, -4]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+model = "prop/citysurfaces/shop-07"
 about = "HD_Shop_07 6 of 7 in w07-hidamari-harbour, placed at (887, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-07-07"
 split = {key = "HD_Shop_07", at = [887, 34]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-07"
+model = "prop/citysurfaces/shop-07"
 about = "HD_Shop_07 7 of 7 in w07-hidamari-harbour, placed at (887, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-08-01"
 split = {key = "HD_Shop_08", at = [482, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+model = ["prop/citysurfaces/shop-08-cell-0-0", "prop/citysurfaces/shop-08-cell-0-m1", "prop/citysurfaces/shop-08-cell-m1-0", "prop/citysurfaces/shop-08-cell-m1-m1"]
 about = "HD_Shop_08 1 of 5 in w07-hidamari-harbour, placed at (482, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-08-02"
 split = {key = "HD_Shop_08", at = [482, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+model = ["prop/citysurfaces/shop-08-cell-0-0", "prop/citysurfaces/shop-08-cell-0-m1", "prop/citysurfaces/shop-08-cell-m1-0", "prop/citysurfaces/shop-08-cell-m1-m1"]
 about = "HD_Shop_08 2 of 5 in w07-hidamari-harbour, placed at (482, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-08-03"
 split = {key = "HD_Shop_08", at = [536, 211]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+model = ["prop/citysurfaces/shop-08-cell-0-0", "prop/citysurfaces/shop-08-cell-0-m1", "prop/citysurfaces/shop-08-cell-m1-0", "prop/citysurfaces/shop-08-cell-m1-m1"]
 about = "HD_Shop_08 3 of 5 in w07-hidamari-harbour, placed at (536, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-08-04"
 split = {key = "HD_Shop_08", at = [536, 249]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+model = ["prop/citysurfaces/shop-08-cell-0-0", "prop/citysurfaces/shop-08-cell-0-m1", "prop/citysurfaces/shop-08-cell-m1-0", "prop/citysurfaces/shop-08-cell-m1-m1"]
 about = "HD_Shop_08 4 of 5 in w07-hidamari-harbour, placed at (536, 249) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-08-05"
 split = {key = "HD_Shop_08", at = [671, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-08-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-08-m1-m1"]
+model = ["prop/citysurfaces/shop-08-cell-0-0", "prop/citysurfaces/shop-08-cell-0-m1", "prop/citysurfaces/shop-08-cell-m1-0", "prop/citysurfaces/shop-08-cell-m1-m1"]
 about = "HD_Shop_08 5 of 5 in w07-hidamari-harbour, placed at (671, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-09-01"
 split = {key = "HD_Shop_09", at = [509, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+model = ["prop/citysurfaces/shop-09-cell-0-0", "prop/citysurfaces/shop-09-cell-0-m1", "prop/citysurfaces/shop-09-cell-m1-0", "prop/citysurfaces/shop-09-cell-m1-m1"]
 about = "HD_Shop_09 1 of 3 in w07-hidamari-harbour, placed at (509, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-09-02"
 split = {key = "HD_Shop_09", at = [509, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+model = ["prop/citysurfaces/shop-09-cell-0-0", "prop/citysurfaces/shop-09-cell-0-m1", "prop/citysurfaces/shop-09-cell-m1-0", "prop/citysurfaces/shop-09-cell-m1-m1"]
 about = "HD_Shop_09 2 of 3 in w07-hidamari-harbour, placed at (509, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-09-03"
 split = {key = "HD_Shop_09", at = [698, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-09-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-09-m1-m1"]
+model = ["prop/citysurfaces/shop-09-cell-0-0", "prop/citysurfaces/shop-09-cell-0-m1", "prop/citysurfaces/shop-09-cell-m1-0", "prop/citysurfaces/shop-09-cell-m1-m1"]
 about = "HD_Shop_09 3 of 3 in w07-hidamari-harbour, placed at (698, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-10-01"
 split = {key = "HD_Shop_10", at = [536, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+model = ["prop/citysurfaces/shop-10-cell-0-0", "prop/citysurfaces/shop-10-cell-0-m1", "prop/citysurfaces/shop-10-cell-m1-0", "prop/citysurfaces/shop-10-cell-m1-m1"]
 about = "HD_Shop_10 1 of 5 in w07-hidamari-harbour, placed at (536, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-10-02"
 split = {key = "HD_Shop_10", at = [536, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+model = ["prop/citysurfaces/shop-10-cell-0-0", "prop/citysurfaces/shop-10-cell-0-m1", "prop/citysurfaces/shop-10-cell-m1-0", "prop/citysurfaces/shop-10-cell-m1-m1"]
 about = "HD_Shop_10 2 of 5 in w07-hidamari-harbour, placed at (536, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-10-03"
 split = {key = "HD_Shop_10", at = [590, 211]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+model = ["prop/citysurfaces/shop-10-cell-0-0", "prop/citysurfaces/shop-10-cell-0-m1", "prop/citysurfaces/shop-10-cell-m1-0", "prop/citysurfaces/shop-10-cell-m1-m1"]
 about = "HD_Shop_10 3 of 5 in w07-hidamari-harbour, placed at (590, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-10-04"
 split = {key = "HD_Shop_10", at = [833, 316]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+model = ["prop/citysurfaces/shop-10-cell-0-0", "prop/citysurfaces/shop-10-cell-0-m1", "prop/citysurfaces/shop-10-cell-m1-0", "prop/citysurfaces/shop-10-cell-m1-m1"]
 about = "HD_Shop_10 4 of 5 in w07-hidamari-harbour, placed at (833, 316) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-10-05"
 split = {key = "HD_Shop_10", at = [833, 351]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-10-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-10-m1-m1"]
+model = ["prop/citysurfaces/shop-10-cell-0-0", "prop/citysurfaces/shop-10-cell-0-m1", "prop/citysurfaces/shop-10-cell-m1-0", "prop/citysurfaces/shop-10-cell-m1-m1"]
 about = "HD_Shop_10 5 of 5 in w07-hidamari-harbour, placed at (833, 351) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-11-01"
 split = {key = "HD_Shop_11", at = [617, 211]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+model = "prop/citysurfaces/shop-11"
 about = "HD_Shop_11 1 of 4 in w07-hidamari-harbour, placed at (617, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-11-02"
 split = {key = "HD_Shop_11", at = [752, -71]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+model = "prop/citysurfaces/shop-11"
 about = "HD_Shop_11 2 of 4 in w07-hidamari-harbour, placed at (752, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-11-03"
 split = {key = "HD_Shop_11", at = [860, 316]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+model = "prop/citysurfaces/shop-11"
 about = "HD_Shop_11 3 of 4 in w07-hidamari-harbour, placed at (860, 316) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-11-04"
 split = {key = "HD_Shop_11", at = [860, 351]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-11"
+model = "prop/citysurfaces/shop-11"
 about = "HD_Shop_11 4 of 4 in w07-hidamari-harbour, placed at (860, 351) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-01"
 split = {key = "HD_Shop_12", at = [455, 316]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 1 of 8 in w07-hidamari-harbour, placed at (455, 316) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-02"
 split = {key = "HD_Shop_12", at = [455, 351]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 2 of 8 in w07-hidamari-harbour, placed at (455, 351) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-03"
 split = {key = "HD_Shop_12", at = [590, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 3 of 8 in w07-hidamari-harbour, placed at (590, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-04"
 split = {key = "HD_Shop_12", at = [590, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 4 of 8 in w07-hidamari-harbour, placed at (590, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-05"
 split = {key = "HD_Shop_12", at = [644, 211]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 5 of 8 in w07-hidamari-harbour, placed at (644, 211) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-06"
 split = {key = "HD_Shop_12", at = [779, -71]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 6 of 8 in w07-hidamari-harbour, placed at (779, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-07"
 split = {key = "HD_Shop_12", at = [833, 121]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 7 of 8 in w07-hidamari-harbour, placed at (833, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-12-08"
 split = {key = "HD_Shop_12", at = [833, 159]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-12-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-12-m1-m1"]
+model = ["prop/citysurfaces/shop-12-cell-0-0", "prop/citysurfaces/shop-12-cell-0-m1", "prop/citysurfaces/shop-12-cell-m1-0", "prop/citysurfaces/shop-12-cell-m1-m1"]
 about = "HD_Shop_12 8 of 8 in w07-hidamari-harbour, placed at (833, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-13-01"
 split = {key = "HD_Shop_13", at = [482, 316]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+model = "prop/citysurfaces/shop-13"
 about = "HD_Shop_13 1 of 7 in w07-hidamari-harbour, placed at (482, 316) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-13-02"
 split = {key = "HD_Shop_13", at = [482, 351]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+model = "prop/citysurfaces/shop-13"
 about = "HD_Shop_13 2 of 7 in w07-hidamari-harbour, placed at (482, 351) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-13-03"
 split = {key = "HD_Shop_13", at = [617, -4]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+model = "prop/citysurfaces/shop-13"
 about = "HD_Shop_13 3 of 7 in w07-hidamari-harbour, placed at (617, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-13-04"
 split = {key = "HD_Shop_13", at = [617, 34]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+model = "prop/citysurfaces/shop-13"
 about = "HD_Shop_13 4 of 7 in w07-hidamari-harbour, placed at (617, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-13-05"
 split = {key = "HD_Shop_13", at = [806, -71]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+model = "prop/citysurfaces/shop-13"
 about = "HD_Shop_13 5 of 7 in w07-hidamari-harbour, placed at (806, -71) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-13-06"
 split = {key = "HD_Shop_13", at = [860, 121]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+model = "prop/citysurfaces/shop-13"
 about = "HD_Shop_13 6 of 7 in w07-hidamari-harbour, placed at (860, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-13-07"
 split = {key = "HD_Shop_13", at = [860, 159]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-13"
+model = "prop/citysurfaces/shop-13"
 about = "HD_Shop_13 7 of 7 in w07-hidamari-harbour, placed at (860, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-01"
 split = {key = "HD_Shop_14", at = [455, 121]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 1 of 10 in w07-hidamari-harbour, placed at (455, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-02"
 split = {key = "HD_Shop_14", at = [455, 159]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 2 of 10 in w07-hidamari-harbour, placed at (455, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-03"
 split = {key = "HD_Shop_14", at = [509, 316]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 3 of 10 in w07-hidamari-harbour, placed at (509, 316) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-04"
 split = {key = "HD_Shop_14", at = [509, 351]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 4 of 10 in w07-hidamari-harbour, placed at (509, 351) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-05"
 split = {key = "HD_Shop_14", at = [644, -4]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 5 of 10 in w07-hidamari-harbour, placed at (644, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-06"
 split = {key = "HD_Shop_14", at = [644, 34]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 6 of 10 in w07-hidamari-harbour, placed at (644, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-07"
 split = {key = "HD_Shop_14", at = [752, 56]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 7 of 10 in w07-hidamari-harbour, placed at (752, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-08"
 split = {key = "HD_Shop_14", at = [752, 94]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 8 of 10 in w07-hidamari-harbour, placed at (752, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-09"
 split = {key = "HD_Shop_14", at = [887, 121]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 9 of 10 in w07-hidamari-harbour, placed at (887, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-14-10"
 split = {key = "HD_Shop_14", at = [887, 159]}
-model = ["adopted/experiments/citysurfaces/v1-128m/shop-14-0-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-0-m1", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-0", "adopted/experiments/citysurfaces/v1-128m/shop-14-m1-m1"]
+model = ["prop/citysurfaces/shop-14-cell-0-0", "prop/citysurfaces/shop-14-cell-0-m1", "prop/citysurfaces/shop-14-cell-m1-0", "prop/citysurfaces/shop-14-cell-m1-m1"]
 about = "HD_Shop_14 10 of 10 in w07-hidamari-harbour, placed at (887, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-01"
 split = {key = "HD_Shop_15", at = [482, 121]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 1 of 8 in w07-hidamari-harbour, placed at (482, 121) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-02"
 split = {key = "HD_Shop_15", at = [482, 159]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 2 of 8 in w07-hidamari-harbour, placed at (482, 159) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-03"
 split = {key = "HD_Shop_15", at = [536, 316]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 3 of 8 in w07-hidamari-harbour, placed at (536, 316) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-04"
 split = {key = "HD_Shop_15", at = [536, 351]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 4 of 8 in w07-hidamari-harbour, placed at (536, 351) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-05"
 split = {key = "HD_Shop_15", at = [671, -4]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 5 of 8 in w07-hidamari-harbour, placed at (671, -4) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-06"
 split = {key = "HD_Shop_15", at = [671, 34]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 6 of 8 in w07-hidamari-harbour, placed at (671, 34) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-07"
 split = {key = "HD_Shop_15", at = [779, 56]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 7 of 8 in w07-hidamari-harbour, placed at (779, 56) m"
 
 [[objects]]
 id = "object/harbour/hd-shop-15-08"
 split = {key = "HD_Shop_15", at = [779, 94]}
-model = "adopted/experiments/citysurfaces/v1-128m/shop-15"
+model = "prop/citysurfaces/shop-15"
 about = "HD_Shop_15 8 of 8 in w07-hidamari-harbour, placed at (779, 94) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-01"
 split = {key = "HD_ArcadeShop_00", at = [614.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 1 of 11 in w07-hidamari-harbour, placed at (614.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-02"
 split = {key = "HD_ArcadeShop_00", at = [621.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 2 of 11 in w07-hidamari-harbour, placed at (621.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-03"
 split = {key = "HD_ArcadeShop_00", at = [656.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 3 of 11 in w07-hidamari-harbour, placed at (656.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-04"
 split = {key = "HD_ArcadeShop_00", at = [663, 185]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 4 of 11 in w07-hidamari-harbour, placed at (663, 185) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-05"
 split = {key = "HD_ArcadeShop_00", at = [663.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 5 of 11 in w07-hidamari-harbour, placed at (663.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-06"
 split = {key = "HD_ArcadeShop_00", at = [677, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 6 of 11 in w07-hidamari-harbour, placed at (677, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-07"
 split = {key = "HD_ArcadeShop_00", at = [698.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 7 of 11 in w07-hidamari-harbour, placed at (698.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-08"
 split = {key = "HD_ArcadeShop_00", at = [705.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 8 of 11 in w07-hidamari-harbour, placed at (705.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-09"
 split = {key = "HD_ArcadeShop_00", at = [712, 130]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 9 of 11 in w07-hidamari-harbour, placed at (712, 130) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-10"
 split = {key = "HD_ArcadeShop_00", at = [761, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 10 of 11 in w07-hidamari-harbour, placed at (761, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-00-11"
 split = {key = "HD_ArcadeShop_00", at = [775, 176]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-00"
+model = "prop/citysurfaces/arcade-shop-00"
 about = "HD_ArcadeShop_00 11 of 11 in w07-hidamari-harbour, placed at (775, 176) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-01"
 split = {key = "HD_ArcadeShop_01", at = [614.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 1 of 12 in w07-hidamari-harbour, placed at (614.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-02"
 split = {key = "HD_ArcadeShop_01", at = [621.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 2 of 12 in w07-hidamari-harbour, placed at (621.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-03"
 split = {key = "HD_ArcadeShop_01", at = [628.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 3 of 12 in w07-hidamari-harbour, placed at (628.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-04"
 split = {key = "HD_ArcadeShop_01", at = [663, 150]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 4 of 12 in w07-hidamari-harbour, placed at (663, 150) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-05"
 split = {key = "HD_ArcadeShop_01", at = [663, 192]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 5 of 12 in w07-hidamari-harbour, placed at (663, 192) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-06"
 split = {key = "HD_ArcadeShop_01", at = [663.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 6 of 12 in w07-hidamari-harbour, placed at (663.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-07"
 split = {key = "HD_ArcadeShop_01", at = [670.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 7 of 12 in w07-hidamari-harbour, placed at (670.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-08"
 split = {key = "HD_ArcadeShop_01", at = [683.5, 149]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 8 of 12 in w07-hidamari-harbour, placed at (683.5, 149) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-09"
 split = {key = "HD_ArcadeShop_01", at = [684, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 9 of 12 in w07-hidamari-harbour, placed at (684, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-10"
 split = {key = "HD_ArcadeShop_01", at = [705.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 10 of 12 in w07-hidamari-harbour, placed at (705.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-11"
 split = {key = "HD_ArcadeShop_01", at = [768, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 11 of 12 in w07-hidamari-harbour, placed at (768, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-01-12"
 split = {key = "HD_ArcadeShop_01", at = [796, 185]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-01"
+model = "prop/citysurfaces/arcade-shop-01"
 about = "HD_ArcadeShop_01 12 of 12 in w07-hidamari-harbour, placed at (796, 185) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-01"
 split = {key = "HD_ArcadeShop_02", at = [628.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 1 of 10 in w07-hidamari-harbour, placed at (628.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-02"
 split = {key = "HD_ArcadeShop_02", at = [663, 157]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 2 of 10 in w07-hidamari-harbour, placed at (663, 157) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-03"
 split = {key = "HD_ArcadeShop_02", at = [663, 199]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 3 of 10 in w07-hidamari-harbour, placed at (663, 199) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-04"
 split = {key = "HD_ArcadeShop_02", at = [670.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 4 of 10 in w07-hidamari-harbour, placed at (670.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-05"
 split = {key = "HD_ArcadeShop_02", at = [677.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 5 of 10 in w07-hidamari-harbour, placed at (677.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-06"
 split = {key = "HD_ArcadeShop_02", at = [690.5, 163]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 6 of 10 in w07-hidamari-harbour, placed at (690.5, 163) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-07"
 split = {key = "HD_ArcadeShop_02", at = [691, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 7 of 10 in w07-hidamari-harbour, placed at (691, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-08"
 split = {key = "HD_ArcadeShop_02", at = [775, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 8 of 10 in w07-hidamari-harbour, placed at (775, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-09"
 split = {key = "HD_ArcadeShop_02", at = [796, 150]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 9 of 10 in w07-hidamari-harbour, placed at (796, 150) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-02-10"
 split = {key = "HD_ArcadeShop_02", at = [796, 192]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-02"
+model = "prop/citysurfaces/arcade-shop-02"
 about = "HD_ArcadeShop_02 10 of 10 in w07-hidamari-harbour, placed at (796, 192) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-01"
 split = {key = "HD_ArcadeShop_03", at = [607.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 1 of 10 in w07-hidamari-harbour, placed at (607.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-02"
 split = {key = "HD_ArcadeShop_03", at = [642.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 2 of 10 in w07-hidamari-harbour, placed at (642.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-03"
 split = {key = "HD_ArcadeShop_03", at = [663, 164]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 3 of 10 in w07-hidamari-harbour, placed at (663, 164) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-04"
 split = {key = "HD_ArcadeShop_03", at = [663, 206]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 4 of 10 in w07-hidamari-harbour, placed at (663, 206) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-05"
 split = {key = "HD_ArcadeShop_03", at = [677.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 5 of 10 in w07-hidamari-harbour, placed at (677.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-06"
 split = {key = "HD_ArcadeShop_03", at = [698, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 6 of 10 in w07-hidamari-harbour, placed at (698, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-07"
 split = {key = "HD_ArcadeShop_03", at = [782, 176]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 7 of 10 in w07-hidamari-harbour, placed at (782, 176) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-08"
 split = {key = "HD_ArcadeShop_03", at = [782, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 8 of 10 in w07-hidamari-harbour, placed at (782, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-09"
 split = {key = "HD_ArcadeShop_03", at = [796, 157]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 9 of 10 in w07-hidamari-harbour, placed at (796, 157) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-03-10"
 split = {key = "HD_ArcadeShop_03", at = [796, 199]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-03"
+model = "prop/citysurfaces/arcade-shop-03"
 about = "HD_ArcadeShop_03 10 of 10 in w07-hidamari-harbour, placed at (796, 199) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-01"
 split = {key = "HD_ArcadeShop_04", at = [607.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 1 of 9 in w07-hidamari-harbour, placed at (607.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-02"
 split = {key = "HD_ArcadeShop_04", at = [642.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 2 of 9 in w07-hidamari-harbour, placed at (642.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-03"
 split = {key = "HD_ArcadeShop_04", at = [649.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 3 of 9 in w07-hidamari-harbour, placed at (649.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-04"
 split = {key = "HD_ArcadeShop_04", at = [663, 171]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 4 of 9 in w07-hidamari-harbour, placed at (663, 171) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-05"
 split = {key = "HD_ArcadeShop_04", at = [691.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 5 of 9 in w07-hidamari-harbour, placed at (691.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-06"
 split = {key = "HD_ArcadeShop_04", at = [705, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 6 of 9 in w07-hidamari-harbour, placed at (705, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-07"
 split = {key = "HD_ArcadeShop_04", at = [789, 176]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 7 of 9 in w07-hidamari-harbour, placed at (789, 176) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-08"
 split = {key = "HD_ArcadeShop_04", at = [796, 164]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 8 of 9 in w07-hidamari-harbour, placed at (796, 164) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-04-09"
 split = {key = "HD_ArcadeShop_04", at = [796, 206]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-04"
+model = "prop/citysurfaces/arcade-shop-04"
 about = "HD_ArcadeShop_04 9 of 9 in w07-hidamari-harbour, placed at (796, 206) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-05-01"
 split = {key = "HD_ArcadeShop_05", at = [649.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+model = "prop/citysurfaces/arcade-shop-05"
 about = "HD_ArcadeShop_05 1 of 6 in w07-hidamari-harbour, placed at (649.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-05-02"
 split = {key = "HD_ArcadeShop_05", at = [656.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+model = "prop/citysurfaces/arcade-shop-05"
 about = "HD_ArcadeShop_05 2 of 6 in w07-hidamari-harbour, placed at (656.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-05-03"
 split = {key = "HD_ArcadeShop_05", at = [663, 178]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+model = "prop/citysurfaces/arcade-shop-05"
 about = "HD_ArcadeShop_05 3 of 6 in w07-hidamari-harbour, placed at (663, 178) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-05-04"
 split = {key = "HD_ArcadeShop_05", at = [691.5, 61.6]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+model = "prop/citysurfaces/arcade-shop-05"
 about = "HD_ArcadeShop_05 4 of 6 in w07-hidamari-harbour, placed at (691.5, 61.6) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-05-05"
 split = {key = "HD_ArcadeShop_05", at = [698.5, 88.4]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+model = "prop/citysurfaces/arcade-shop-05"
 about = "HD_ArcadeShop_05 5 of 6 in w07-hidamari-harbour, placed at (698.5, 88.4) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadeshop-05-06"
 split = {key = "HD_ArcadeShop_05", at = [754, 208]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-shop-05"
+model = "prop/citysurfaces/arcade-shop-05"
 about = "HD_ArcadeShop_05 6 of 6 in w07-hidamari-harbour, placed at (754, 208) m"
 
 [[objects]]
 id = "object/harbour/hd-market-01"
 split = {key = "HD_Market", at = [600, -113]}
-model = "adopted/experiments/citysurfaces/v1-128m/market"
+model = "prop/citysurfaces/market"
 about = "HD_Market 1 of 2 in w07-hidamari-harbour, placed at (600, -113) m"
 
 [[objects]]
 id = "object/harbour/hd-market-02"
 split = {key = "HD_Market", at = [730, -113]}
-model = "adopted/experiments/citysurfaces/v1-128m/market"
+model = "prop/citysurfaces/market"
 about = "HD_Market 2 of 2 in w07-hidamari-harbour, placed at (730, -113) m"
 
 [[objects]]
 id = "object/harbour/hd-bench-01"
 split = {key = "HD_Bench", at = [605.0, 275.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bench"
+model = "prop/citysurfaces/bench"
 about = "HD_Bench 1 of 4 in w07-hidamari-harbour, placed at (605.0, 275.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bench-02"
 split = {key = "HD_Bench", at = [765.0, 285.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bench"
+model = "prop/citysurfaces/bench"
 about = "HD_Bench 2 of 4 in w07-hidamari-harbour, placed at (765.0, 285.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bench-03"
 split = {key = "HD_Bench", at = [795.0, -95.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bench"
+model = "prop/citysurfaces/bench"
 about = "HD_Bench 3 of 4 in w07-hidamari-harbour, placed at (795.0, -95.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bench-04"
 split = {key = "HD_Bench", at = [890.0, 20.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bench"
+model = "prop/citysurfaces/bench"
 about = "HD_Bench 4 of 4 in w07-hidamari-harbour, placed at (890.0, 20.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-01"
 split = {key = "HD_Boat", at = [460.0, -150.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 1 of 12 in w07-hidamari-harbour, placed at (460.0, -150.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-02"
 split = {key = "HD_Boat", at = [492.0, -169.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 2 of 12 in w07-hidamari-harbour, placed at (492.0, -169.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-03"
 split = {key = "HD_Boat", at = [524.0, -150.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 3 of 12 in w07-hidamari-harbour, placed at (524.0, -150.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-04"
 split = {key = "HD_Boat", at = [556.0, -169.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 4 of 12 in w07-hidamari-harbour, placed at (556.0, -169.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-05"
 split = {key = "HD_Boat", at = [588.0, -150.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 5 of 12 in w07-hidamari-harbour, placed at (588.0, -150.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-06"
 split = {key = "HD_Boat", at = [620.0, -169.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 6 of 12 in w07-hidamari-harbour, placed at (620.0, -169.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-07"
 split = {key = "HD_Boat", at = [652.0, -150.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 7 of 12 in w07-hidamari-harbour, placed at (652.0, -150.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-08"
 split = {key = "HD_Boat", at = [684.0, -169.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 8 of 12 in w07-hidamari-harbour, placed at (684.0, -169.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-09"
 split = {key = "HD_Boat", at = [716.0, -150.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 9 of 12 in w07-hidamari-harbour, placed at (716.0, -150.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-10"
 split = {key = "HD_Boat", at = [748.0, -169.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 10 of 12 in w07-hidamari-harbour, placed at (748.0, -169.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-11"
 split = {key = "HD_Boat", at = [780.0, -150.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 11 of 12 in w07-hidamari-harbour, placed at (780.0, -150.0) m"
 
 [[objects]]
 id = "object/harbour/hd-boat-12"
 split = {key = "HD_Boat", at = [812.0, -169.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/boat"
+model = "prop/citysurfaces/boat"
 about = "HD_Boat 12 of 12 in w07-hidamari-harbour, placed at (812.0, -169.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-01"
 split = {key = "HD_Bollard", at = [452.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 1 of 35 in w07-hidamari-harbour, placed at (452.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-02"
 split = {key = "HD_Bollard", at = [464.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 2 of 35 in w07-hidamari-harbour, placed at (464.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-03"
 split = {key = "HD_Bollard", at = [476.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 3 of 35 in w07-hidamari-harbour, placed at (476.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-04"
 split = {key = "HD_Bollard", at = [488.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 4 of 35 in w07-hidamari-harbour, placed at (488.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-05"
 split = {key = "HD_Bollard", at = [500.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 5 of 35 in w07-hidamari-harbour, placed at (500.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-06"
 split = {key = "HD_Bollard", at = [512.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 6 of 35 in w07-hidamari-harbour, placed at (512.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-07"
 split = {key = "HD_Bollard", at = [524.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 7 of 35 in w07-hidamari-harbour, placed at (524.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-08"
 split = {key = "HD_Bollard", at = [536.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 8 of 35 in w07-hidamari-harbour, placed at (536.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-09"
 split = {key = "HD_Bollard", at = [548.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 9 of 35 in w07-hidamari-harbour, placed at (548.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-10"
 split = {key = "HD_Bollard", at = [560.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 10 of 35 in w07-hidamari-harbour, placed at (560.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-11"
 split = {key = "HD_Bollard", at = [572.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 11 of 35 in w07-hidamari-harbour, placed at (572.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-12"
 split = {key = "HD_Bollard", at = [584.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 12 of 35 in w07-hidamari-harbour, placed at (584.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-13"
 split = {key = "HD_Bollard", at = [596.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 13 of 35 in w07-hidamari-harbour, placed at (596.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-14"
 split = {key = "HD_Bollard", at = [608.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 14 of 35 in w07-hidamari-harbour, placed at (608.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-15"
 split = {key = "HD_Bollard", at = [620.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 15 of 35 in w07-hidamari-harbour, placed at (620.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-16"
 split = {key = "HD_Bollard", at = [632.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 16 of 35 in w07-hidamari-harbour, placed at (632.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-17"
 split = {key = "HD_Bollard", at = [644.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 17 of 35 in w07-hidamari-harbour, placed at (644.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-18"
 split = {key = "HD_Bollard", at = [656.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 18 of 35 in w07-hidamari-harbour, placed at (656.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-19"
 split = {key = "HD_Bollard", at = [668.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 19 of 35 in w07-hidamari-harbour, placed at (668.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-20"
 split = {key = "HD_Bollard", at = [680.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 20 of 35 in w07-hidamari-harbour, placed at (680.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-21"
 split = {key = "HD_Bollard", at = [692.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 21 of 35 in w07-hidamari-harbour, placed at (692.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-22"
 split = {key = "HD_Bollard", at = [704.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 22 of 35 in w07-hidamari-harbour, placed at (704.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-23"
 split = {key = "HD_Bollard", at = [716.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 23 of 35 in w07-hidamari-harbour, placed at (716.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-24"
 split = {key = "HD_Bollard", at = [728.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 24 of 35 in w07-hidamari-harbour, placed at (728.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-25"
 split = {key = "HD_Bollard", at = [740.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 25 of 35 in w07-hidamari-harbour, placed at (740.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-26"
 split = {key = "HD_Bollard", at = [752.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 26 of 35 in w07-hidamari-harbour, placed at (752.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-27"
 split = {key = "HD_Bollard", at = [764.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 27 of 35 in w07-hidamari-harbour, placed at (764.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-28"
 split = {key = "HD_Bollard", at = [776.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 28 of 35 in w07-hidamari-harbour, placed at (776.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-29"
 split = {key = "HD_Bollard", at = [788.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 29 of 35 in w07-hidamari-harbour, placed at (788.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-30"
 split = {key = "HD_Bollard", at = [800.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 30 of 35 in w07-hidamari-harbour, placed at (800.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-31"
 split = {key = "HD_Bollard", at = [812.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 31 of 35 in w07-hidamari-harbour, placed at (812.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-32"
 split = {key = "HD_Bollard", at = [824.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 32 of 35 in w07-hidamari-harbour, placed at (824.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-33"
 split = {key = "HD_Bollard", at = [836.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 33 of 35 in w07-hidamari-harbour, placed at (836.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-34"
 split = {key = "HD_Bollard", at = [848.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 34 of 35 in w07-hidamari-harbour, placed at (848.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-bollard-35"
 split = {key = "HD_Bollard", at = [860.0, -125.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/bollard"
+model = "prop/citysurfaces/bollard"
 about = "HD_Bollard 35 of 35 in w07-hidamari-harbour, placed at (860.0, -125.0) m"
 
 [[objects]]
 id = "object/harbour/hd-graves-01"
 split = {key = "HD_Graves", at = [739.0, 271.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/graves"
+model = "prop/citysurfaces/graves"
 about = "HD_Graves 1 of 1 in w07-hidamari-harbour, placed at (739.0, 271.0) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-01"
 split = {key = "HD_Lamp", at = [420.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 1 of 64 in w07-hidamari-harbour, placed at (420.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-02"
 split = {key = "HD_Lamp", at = [420.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 2 of 64 in w07-hidamari-harbour, placed at (420.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-03"
 split = {key = "HD_Lamp", at = [420.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 3 of 64 in w07-hidamari-harbour, placed at (420.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-04"
 split = {key = "HD_Lamp", at = [420.0, 147.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 4 of 64 in w07-hidamari-harbour, placed at (420.0, 147.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-05"
 split = {key = "HD_Lamp", at = [420.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 5 of 64 in w07-hidamari-harbour, placed at (420.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-06"
 split = {key = "HD_Lamp", at = [420.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 6 of 64 in w07-hidamari-harbour, placed at (420.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-07"
 split = {key = "HD_Lamp", at = [462.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 7 of 64 in w07-hidamari-harbour, placed at (462.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-08"
 split = {key = "HD_Lamp", at = [462.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 8 of 64 in w07-hidamari-harbour, placed at (462.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-09"
 split = {key = "HD_Lamp", at = [462.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 9 of 64 in w07-hidamari-harbour, placed at (462.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-10"
 split = {key = "HD_Lamp", at = [462.0, 147.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 10 of 64 in w07-hidamari-harbour, placed at (462.0, 147.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-11"
 split = {key = "HD_Lamp", at = [462.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 11 of 64 in w07-hidamari-harbour, placed at (462.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-12"
 split = {key = "HD_Lamp", at = [468.5, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 12 of 64 in w07-hidamari-harbour, placed at (468.5, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-13"
 split = {key = "HD_Lamp", at = [495.5, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 13 of 64 in w07-hidamari-harbour, placed at (495.5, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-14"
 split = {key = "HD_Lamp", at = [504.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 14 of 64 in w07-hidamari-harbour, placed at (504.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-15"
 split = {key = "HD_Lamp", at = [504.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 15 of 64 in w07-hidamari-harbour, placed at (504.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-16"
 split = {key = "HD_Lamp", at = [504.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 16 of 64 in w07-hidamari-harbour, placed at (504.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-17"
 split = {key = "HD_Lamp", at = [504.0, 147.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 17 of 64 in w07-hidamari-harbour, placed at (504.0, 147.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-18"
 split = {key = "HD_Lamp", at = [504.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 18 of 64 in w07-hidamari-harbour, placed at (504.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-19"
 split = {key = "HD_Lamp", at = [546.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 19 of 64 in w07-hidamari-harbour, placed at (546.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-20"
 split = {key = "HD_Lamp", at = [546.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 20 of 64 in w07-hidamari-harbour, placed at (546.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-21"
 split = {key = "HD_Lamp", at = [546.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 21 of 64 in w07-hidamari-harbour, placed at (546.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-22"
 split = {key = "HD_Lamp", at = [546.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 22 of 64 in w07-hidamari-harbour, placed at (546.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-23"
 split = {key = "HD_Lamp", at = [549.5, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 23 of 64 in w07-hidamari-harbour, placed at (549.5, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-24"
 split = {key = "HD_Lamp", at = [588.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 24 of 64 in w07-hidamari-harbour, placed at (588.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-25"
 split = {key = "HD_Lamp", at = [588.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 25 of 64 in w07-hidamari-harbour, placed at (588.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-26"
 split = {key = "HD_Lamp", at = [588.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 26 of 64 in w07-hidamari-harbour, placed at (588.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-27"
 split = {key = "HD_Lamp", at = [588.0, 147.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 27 of 64 in w07-hidamari-harbour, placed at (588.0, 147.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-28"
 split = {key = "HD_Lamp", at = [588.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 28 of 64 in w07-hidamari-harbour, placed at (588.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-29"
 split = {key = "HD_Lamp", at = [588.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 29 of 64 in w07-hidamari-harbour, placed at (588.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-30"
 split = {key = "HD_Lamp", at = [630.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 30 of 64 in w07-hidamari-harbour, placed at (630.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-31"
 split = {key = "HD_Lamp", at = [630.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 31 of 64 in w07-hidamari-harbour, placed at (630.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-32"
 split = {key = "HD_Lamp", at = [630.0, 147.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 32 of 64 in w07-hidamari-harbour, placed at (630.0, 147.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-33"
 split = {key = "HD_Lamp", at = [630.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 33 of 64 in w07-hidamari-harbour, placed at (630.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-34"
 split = {key = "HD_Lamp", at = [630.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 34 of 64 in w07-hidamari-harbour, placed at (630.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-35"
 split = {key = "HD_Lamp", at = [672.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 35 of 64 in w07-hidamari-harbour, placed at (672.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-36"
 split = {key = "HD_Lamp", at = [672.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 36 of 64 in w07-hidamari-harbour, placed at (672.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-37"
 split = {key = "HD_Lamp", at = [672.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 37 of 64 in w07-hidamari-harbour, placed at (672.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-38"
 split = {key = "HD_Lamp", at = [672.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 38 of 64 in w07-hidamari-harbour, placed at (672.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-39"
 split = {key = "HD_Lamp", at = [714.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 39 of 64 in w07-hidamari-harbour, placed at (714.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-40"
 split = {key = "HD_Lamp", at = [714.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 40 of 64 in w07-hidamari-harbour, placed at (714.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-41"
 split = {key = "HD_Lamp", at = [714.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 41 of 64 in w07-hidamari-harbour, placed at (714.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-42"
 split = {key = "HD_Lamp", at = [714.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 42 of 64 in w07-hidamari-harbour, placed at (714.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-43"
 split = {key = "HD_Lamp", at = [756.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 43 of 64 in w07-hidamari-harbour, placed at (756.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-44"
 split = {key = "HD_Lamp", at = [756.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 44 of 64 in w07-hidamari-harbour, placed at (756.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-45"
 split = {key = "HD_Lamp", at = [756.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 45 of 64 in w07-hidamari-harbour, placed at (756.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-46"
 split = {key = "HD_Lamp", at = [756.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 46 of 64 in w07-hidamari-harbour, placed at (756.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-47"
 split = {key = "HD_Lamp", at = [756.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 47 of 64 in w07-hidamari-harbour, placed at (756.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-48"
 split = {key = "HD_Lamp", at = [798.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 48 of 64 in w07-hidamari-harbour, placed at (798.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-49"
 split = {key = "HD_Lamp", at = [798.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 49 of 64 in w07-hidamari-harbour, placed at (798.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-50"
 split = {key = "HD_Lamp", at = [798.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 50 of 64 in w07-hidamari-harbour, placed at (798.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-51"
 split = {key = "HD_Lamp", at = [798.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 51 of 64 in w07-hidamari-harbour, placed at (798.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-52"
 split = {key = "HD_Lamp", at = [798.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 52 of 64 in w07-hidamari-harbour, placed at (798.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-53"
 split = {key = "HD_Lamp", at = [840.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 53 of 64 in w07-hidamari-harbour, placed at (840.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-54"
 split = {key = "HD_Lamp", at = [840.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 54 of 64 in w07-hidamari-harbour, placed at (840.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-55"
 split = {key = "HD_Lamp", at = [840.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 55 of 64 in w07-hidamari-harbour, placed at (840.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-56"
 split = {key = "HD_Lamp", at = [840.0, 147.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 56 of 64 in w07-hidamari-harbour, placed at (840.0, 147.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-57"
 split = {key = "HD_Lamp", at = [840.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 57 of 64 in w07-hidamari-harbour, placed at (840.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-58"
 split = {key = "HD_Lamp", at = [846.5, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 58 of 64 in w07-hidamari-harbour, placed at (846.5, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-59"
 split = {key = "HD_Lamp", at = [882.0, -82.2]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 59 of 64 in w07-hidamari-harbour, placed at (882.0, -82.2) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-60"
 split = {key = "HD_Lamp", at = [882.0, 22.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 60 of 64 in w07-hidamari-harbour, placed at (882.0, 22.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-61"
 split = {key = "HD_Lamp", at = [882.0, 82.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 61 of 64 in w07-hidamari-harbour, placed at (882.0, 82.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-62"
 split = {key = "HD_Lamp", at = [882.0, 147.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 62 of 64 in w07-hidamari-harbour, placed at (882.0, 147.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-63"
 split = {key = "HD_Lamp", at = [882.0, 237.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 63 of 64 in w07-hidamari-harbour, placed at (882.0, 237.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lamp-64"
 split = {key = "HD_Lamp", at = [882.0, 342.8]}
-model = "adopted/experiments/citysurfaces/v1-128m/lamp"
+model = "prop/citysurfaces/lamp"
 about = "HD_Lamp 64 of 64 in w07-hidamari-harbour, placed at (882.0, 342.8) m"
 
 [[objects]]
 id = "object/harbour/hd-lighthouse-01"
 split = {key = "HD_Lighthouse", at = [440.0, -225.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/lighthouse"
+model = "prop/citysurfaces/lighthouse"
 about = "HD_Lighthouse 1 of 1 in w07-hidamari-harbour, placed at (440.0, -225.0) m"
 
 [[objects]]
@@ -5012,361 +5012,361 @@ about = "HD_P_yatai 1 of 1 in w07-hidamari-harbour, placed at (705.0, -104.0) m"
 [[objects]]
 id = "object/harbour/hd-pagoda-01"
 split = {key = "HD_Pagoda", at = [641.0, 304.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/pagoda"
+model = "prop/citysurfaces/pagoda"
 about = "HD_Pagoda 1 of 1 in w07-hidamari-harbour, placed at (641.0, 304.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-01"
 split = {key = "HD_Planter", at = [441.5, 131.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 1 of 57 in w07-hidamari-harbour, placed at (441.5, 131.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-02"
 split = {key = "HD_Planter", at = [446.0, -81.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 2 of 57 in w07-hidamari-harbour, placed at (446.0, -81.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-03"
 split = {key = "HD_Planter", at = [446.0, 6.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 3 of 57 in w07-hidamari-harbour, placed at (446.0, 6.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-04"
 split = {key = "HD_Planter", at = [446.0, 24.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 4 of 57 in w07-hidamari-harbour, placed at (446.0, 24.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-05"
 split = {key = "HD_Planter", at = [446.0, 66.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 5 of 57 in w07-hidamari-harbour, placed at (446.0, 66.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-06"
 split = {key = "HD_Planter", at = [446.0, 84.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 6 of 57 in w07-hidamari-harbour, placed at (446.0, 84.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-07"
 split = {key = "HD_Planter", at = [446.0, 149.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 7 of 57 in w07-hidamari-harbour, placed at (446.0, 149.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-08"
 split = {key = "HD_Planter", at = [446.0, 221.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 8 of 57 in w07-hidamari-harbour, placed at (446.0, 221.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-09"
 split = {key = "HD_Planter", at = [446.0, 239.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 9 of 57 in w07-hidamari-harbour, placed at (446.0, 239.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-10"
 split = {key = "HD_Planter", at = [446.0, 326.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 10 of 57 in w07-hidamari-harbour, placed at (446.0, 326.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-11"
 split = {key = "HD_Planter", at = [446.0, 341.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 11 of 57 in w07-hidamari-harbour, placed at (446.0, 341.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-12"
 split = {key = "HD_Planter", at = [495.5, 326.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 12 of 57 in w07-hidamari-harbour, placed at (495.5, 326.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-13"
 split = {key = "HD_Planter", at = [500.0, -81.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 13 of 57 in w07-hidamari-harbour, placed at (500.0, -81.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-14"
 split = {key = "HD_Planter", at = [500.0, 6.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 14 of 57 in w07-hidamari-harbour, placed at (500.0, 6.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-15"
 split = {key = "HD_Planter", at = [500.0, 24.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 15 of 57 in w07-hidamari-harbour, placed at (500.0, 24.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-16"
 split = {key = "HD_Planter", at = [500.0, 66.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 16 of 57 in w07-hidamari-harbour, placed at (500.0, 66.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-17"
 split = {key = "HD_Planter", at = [500.0, 84.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 17 of 57 in w07-hidamari-harbour, placed at (500.0, 84.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-18"
 split = {key = "HD_Planter", at = [500.0, 131.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 18 of 57 in w07-hidamari-harbour, placed at (500.0, 131.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-19"
 split = {key = "HD_Planter", at = [500.0, 149.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 19 of 57 in w07-hidamari-harbour, placed at (500.0, 149.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-20"
 split = {key = "HD_Planter", at = [500.0, 221.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 20 of 57 in w07-hidamari-harbour, placed at (500.0, 221.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-21"
 split = {key = "HD_Planter", at = [500.0, 239.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 21 of 57 in w07-hidamari-harbour, placed at (500.0, 239.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-22"
 split = {key = "HD_Planter", at = [500.0, 341.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 22 of 57 in w07-hidamari-harbour, placed at (500.0, 341.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-23"
 split = {key = "HD_Planter", at = [608.0, -81.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 23 of 57 in w07-hidamari-harbour, placed at (608.0, -81.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-24"
 split = {key = "HD_Planter", at = [608.0, 6.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 24 of 57 in w07-hidamari-harbour, placed at (608.0, 6.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-25"
 split = {key = "HD_Planter", at = [608.0, 24.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 25 of 57 in w07-hidamari-harbour, placed at (608.0, 24.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-26"
 split = {key = "HD_Planter", at = [608.0, 131.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 26 of 57 in w07-hidamari-harbour, placed at (608.0, 131.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-27"
 split = {key = "HD_Planter", at = [608.0, 149.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 27 of 57 in w07-hidamari-harbour, placed at (608.0, 149.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-28"
 split = {key = "HD_Planter", at = [608.0, 221.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 28 of 57 in w07-hidamari-harbour, placed at (608.0, 221.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-29"
 split = {key = "HD_Planter", at = [608.0, 275.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 29 of 57 in w07-hidamari-harbour, placed at (608.0, 275.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-30"
 split = {key = "HD_Planter", at = [662.0, -81.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 30 of 57 in w07-hidamari-harbour, placed at (662.0, -81.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-31"
 split = {key = "HD_Planter", at = [662.0, 6.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 31 of 57 in w07-hidamari-harbour, placed at (662.0, 6.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-32"
 split = {key = "HD_Planter", at = [662.0, 24.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 32 of 57 in w07-hidamari-harbour, placed at (662.0, 24.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-33"
 split = {key = "HD_Planter", at = [768.0, 285.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 33 of 57 in w07-hidamari-harbour, placed at (768.0, 285.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-34"
 split = {key = "HD_Planter", at = [770.0, -81.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 34 of 57 in w07-hidamari-harbour, placed at (770.0, -81.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-35"
 split = {key = "HD_Planter", at = [770.0, 6.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 35 of 57 in w07-hidamari-harbour, placed at (770.0, 6.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-36"
 split = {key = "HD_Planter", at = [770.0, 24.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 36 of 57 in w07-hidamari-harbour, placed at (770.0, 24.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-37"
 split = {key = "HD_Planter", at = [770.0, 66.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 37 of 57 in w07-hidamari-harbour, placed at (770.0, 66.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-38"
 split = {key = "HD_Planter", at = [770.0, 84.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 38 of 57 in w07-hidamari-harbour, placed at (770.0, 84.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-39"
 split = {key = "HD_Planter", at = [798.0, -95.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 39 of 57 in w07-hidamari-harbour, placed at (798.0, -95.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-40"
 split = {key = "HD_Planter", at = [820.5, 326.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 40 of 57 in w07-hidamari-harbour, placed at (820.5, 326.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-41"
 split = {key = "HD_Planter", at = [824.0, 24.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 41 of 57 in w07-hidamari-harbour, placed at (824.0, 24.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-42"
 split = {key = "HD_Planter", at = [824.0, 66.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 42 of 57 in w07-hidamari-harbour, placed at (824.0, 66.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-43"
 split = {key = "HD_Planter", at = [824.0, 84.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 43 of 57 in w07-hidamari-harbour, placed at (824.0, 84.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-44"
 split = {key = "HD_Planter", at = [824.0, 131.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 44 of 57 in w07-hidamari-harbour, placed at (824.0, 131.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-45"
 split = {key = "HD_Planter", at = [824.0, 149.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 45 of 57 in w07-hidamari-harbour, placed at (824.0, 149.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-46"
 split = {key = "HD_Planter", at = [824.0, 221.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 46 of 57 in w07-hidamari-harbour, placed at (824.0, 221.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-47"
 split = {key = "HD_Planter", at = [824.0, 239.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 47 of 57 in w07-hidamari-harbour, placed at (824.0, 239.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-48"
 split = {key = "HD_Planter", at = [824.0, 341.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 48 of 57 in w07-hidamari-harbour, placed at (824.0, 341.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-49"
 split = {key = "HD_Planter", at = [873.5, 131.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 49 of 57 in w07-hidamari-harbour, placed at (873.5, 131.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-50"
 split = {key = "HD_Planter", at = [878.0, -81.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 50 of 57 in w07-hidamari-harbour, placed at (878.0, -81.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-51"
 split = {key = "HD_Planter", at = [878.0, 6.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 51 of 57 in w07-hidamari-harbour, placed at (878.0, 6.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-52"
 split = {key = "HD_Planter", at = [878.0, 24.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 52 of 57 in w07-hidamari-harbour, placed at (878.0, 24.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-53"
 split = {key = "HD_Planter", at = [878.0, 66.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 53 of 57 in w07-hidamari-harbour, placed at (878.0, 66.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-54"
 split = {key = "HD_Planter", at = [878.0, 84.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 54 of 57 in w07-hidamari-harbour, placed at (878.0, 84.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-55"
 split = {key = "HD_Planter", at = [878.0, 149.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 55 of 57 in w07-hidamari-harbour, placed at (878.0, 149.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-56"
 split = {key = "HD_Planter", at = [878.0, 221.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 56 of 57 in w07-hidamari-harbour, placed at (878.0, 221.0) m"
 
 [[objects]]
 id = "object/harbour/hd-planter-57"
 split = {key = "HD_Planter", at = [893.0, 20.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/planter"
+model = "prop/citysurfaces/planter"
 about = "HD_Planter 57 of 57 in w07-hidamari-harbour, placed at (893.0, 20.0) m"
 
 [[objects]]
 id = "object/harbour/hd-plazafountain-01"
 split = {key = "HD_PlazaFountain", at = [698.0, 154.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/plaza-fountain"
+model = "prop/citysurfaces/plaza-fountain"
 about = "HD_PlazaFountain 1 of 1 in w07-hidamari-harbour, placed at (698.0, 154.0) m"
 
 [[objects]]
 id = "object/harbour/hd-shrine-01"
 split = {key = "HD_Shrine", at = [600.0, 280.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/shrine"
+model = "prop/citysurfaces/shrine"
 about = "HD_Shrine 1 of 1 in w07-hidamari-harbour, placed at (600.0, 280.0) m"
 
 [[objects]]
@@ -6074,25 +6074,25 @@ about = "Pole_Lamp 27 of 27 in w07-hidamari-harbour, placed at (877.4, 70.7) m"
 [[objects]]
 id = "object/harbour/hd-arcade-01"
 split = {key = "HD_Arcade", at = [660.0, 75.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade"
+model = "prop/citysurfaces/arcade"
 about = "HD_Arcade 1 of 1 in w07-hidamari-harbour, placed at (660.0, 75.0) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadegate-01"
 split = {key = "HD_ArcadeGate", at = [744.0, 75.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-gate"
+model = "prop/citysurfaces/arcade-gate"
 about = "HD_ArcadeGate 1 of 1 in w07-hidamari-harbour, placed at (744.0, 75.0) m"
 
 [[objects]]
 id = "object/harbour/hd-arcadelanterns-01"
 split = {key = "HD_ArcadeLanterns", at = [660.0, 75.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-lanterns"
+model = "prop/citysurfaces/arcade-lanterns"
 about = "HD_ArcadeLanterns 1 of 1 in w07-hidamari-harbour, placed at (660.0, 75.0) m"
 
 [[objects]]
 id = "object/harbour/hd-arcaderoof-01"
 split = {key = "HD_ArcadeRoof", at = [660.0, 75.0]}
-model = "adopted/experiments/citysurfaces/v1-128m/arcade-roof"
+model = "prop/citysurfaces/arcade-roof"
 about = "HD_ArcadeRoof 1 of 1 in w07-hidamari-harbour, placed at (660.0, 75.0) m"
 
 # A zeppelin piece saved alone in its area patch (placement baked into the mesh): promoted, bytes unchanged.
@@ -6107,7 +6107,7 @@ about = "the zeppelin trail piece (ZP_Trail)"
 [[objects]]
 id = "object/harbour/clock-hall"
 patch = ["0b0439244af1482f", "8aed27d4802b7554", "b719d3a9aed13496", "e882ce5f492436d8"]
-model = ["adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-m1", "adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-0", "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-m1", "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-0"]
+model = ["prop/citysurfaces/clock-hall-cell-m1-m1", "prop/citysurfaces/clock-hall-cell-m1-0", "prop/citysurfaces/clock-hall-cell-0-m1", "prop/citysurfaces/clock-hall-cell-0-0"]
 about = "the clock hall (HD_ClockHall: one placement, cut into four cells)"
 
 
@@ -6115,6 +6115,6 @@ about = "the clock hall (HD_ClockHall: one placement, cut into four cells)"
 [[objects]]
 id = "object/harbour/temples"
 patch = ["0693a2738084a992", "329b7ee1d27de3a7", "4b71d1f6c203e34d", "7180b7adacaaf06e", "8cadb81065707564", "9855ee30983c941d", "daa114f6b256e806", "ddf215e45cfbf9b7"]
-model = ["adopted/experiments/citysurfaces/v1-128m/temple-m1-m1", "adopted/experiments/citysurfaces/v1-128m/temple-m1-0", "adopted/experiments/citysurfaces/v1-128m/temple-0-m1", "adopted/experiments/citysurfaces/v1-128m/temple-0-0"]
+model = ["prop/citysurfaces/temple-cell-m1-m1", "prop/citysurfaces/temple-cell-m1-0", "prop/citysurfaces/temple-cell-0-m1", "prop/citysurfaces/temple-cell-0-0"]
 about = "the two harbour temples (HD_Temple: two placements, cut into eight cell patches)"
 

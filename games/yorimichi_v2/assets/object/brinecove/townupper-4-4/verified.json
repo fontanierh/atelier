@@ -1,7 +1,26 @@
 {
   "asset": "object/brinecove/townupper-4-4",
   "dependencies": {
-    "adopted/brinecove/townupper-4-4": "a27d20b463b7e7409f1e38b007ee70da000489dd7ce0908d15a7524f435eaf7a"
+    "prop/brinecove/town-upper-4-4-piece0": "e54138214f6d31a9202bc7386322290f0b239cc8ce07fa17b1e5956a22f0618d",
+    "prop/brinecove/town-upper-4-4-piece1": "34b4639f75474f9217edfdab2b6f452608d2e323a4d1b3bb603c617a77572a64",
+    "prop/brinecove/town-upper-4-4-piece20": "b0f9ba125d3f39fd4980bc494825a814b9258077e6f8bb90b7b4b1ab92819400",
+    "prop/brinecove/town-upper-4-4-piece21": "abaab6f76aa849cbe3dbbf6ca52e09b142ca5f957ea2089ac57e1f2b80d0b0b8",
+    "prop/brinecove/town-upper-4-4-piece22": "5b7cffe525ff0387355061300643a7e3d87f906bcc814197bff310f7357b5569",
+    "prop/brinecove/town-upper-4-4-piece230": "b7dbbd1b16097ec6b0e39af28214855540e6fed20372cbdcbd4e4c7a3206a16b",
+    "prop/brinecove/town-upper-4-4-piece231": "43bfc823eb4008adc2b827ec07716d4b686fa3785ca125922c6013b7fd0f1068",
+    "prop/brinecove/town-upper-4-4-piece232": "fe5210c73c14700069dc7f5dcdc29874735a2a93d916e41e9486b4f979054316",
+    "prop/brinecove/town-upper-4-4-piece233": "244dedf6d406769ea6fc861211e990546f5345505b3233b92b66177eb714acda",
+    "prop/brinecove/town-upper-4-4-piece30": "fd44b5cf3b4904c6c639f1586173ec4d34549ff843848d4c3f1b274b0a2f5249",
+    "prop/brinecove/town-upper-4-4-piece31": "ee5595d0d15404f5d34ca5c2271305256a98d510c2b3975a582920f2a9d8590a",
+    "prop/brinecove/town-upper-4-4-piece320": "75a51e89da27ac8e7daa08b1853b0ecb6ce722a5b3bd05908c8b3bd903b714f2",
+    "prop/brinecove/town-upper-4-4-piece321": "761396e4a1c33b72aa220fb5f713454fcca2abffbab5596a674d70ff111d2563",
+    "prop/brinecove/town-upper-4-4-piece322": "2c9d3c89cec73971534b6f8b3436d01423256d64907c29a460f430097784a81f",
+    "prop/brinecove/town-upper-4-4-piece323": "739e802a89c65b83dcc55beb837ae1cafebccd1069b1f4634c57dd643129337f",
+    "prop/brinecove/town-upper-4-4-piece330": "15a2a6d5206cb0c209356298d331e8fc7630d92606c830e716f0dc1c3b94334b",
+    "prop/brinecove/town-upper-4-4-piece331": "9bdc89dbfc8f9a3d0703e4c22209bbe8c1f6aaf24e3bb684d1714ecc83a81de5",
+    "prop/brinecove/town-upper-4-4-piece332": "506f9ddca7ae18d321867e352fccd99aee8f5890b10a2d7eb5e3d1048b3cab70",
+    "prop/brinecove/town-upper-4-4-piece333": "5604f32af12cf7cc8af457cf4588fc220e37e15291f3b184e1ce7c31bc98ce44",
+    "prop/brinecove/town-upper-4-4-soft": "6ebbf6cb65fa754670bd678be83525d675715c0769aec2ca027b459df7eaca74"
   },
   "engine": "5.8.2-56702186",
   "files": {

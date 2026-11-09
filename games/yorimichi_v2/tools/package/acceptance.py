@@ -109,6 +109,24 @@ def check_signatures(app: Path) -> list[Check]:
         return [Check('signatures', False, f'codesign unavailable: {error}')]
 
 
+AUDIO_LOOKUP = 'com.apple.cmio.registerassistantservice.system-extensions'
+MACH_LOOKUP = 'com.apple.security.temporary-exception.mach-lookup.global-name'
+
+
+def check_entitlements(app: Path) -> list[Check]:
+    """A sandboxed app may look up the CoreAudio service: without it audio start-up blocks forever (first launch)."""
+    try:
+        result = subprocess.run(['codesign', '-d', '--entitlements', '-', '--xml', str(app)], capture_output=True,
+                                timeout=120)
+        entitlements = plistlib.loads(result.stdout) if result.stdout.strip() else {}
+    except (OSError, subprocess.TimeoutExpired, plistlib.InvalidFileException, ValueError) as error:
+        return [Check('entitlements.audio', False, f'entitlements unreadable: {error}')]
+    if not entitlements.get('com.apple.security.app-sandbox'):
+        return [Check('entitlements.audio', True, 'not sandboxed')]
+    ok = AUDIO_LOOKUP in (entitlements.get(MACH_LOOKUP) or [])
+    return [Check('entitlements.audio', ok, 'sandboxed; CoreAudio lookup ' + ('allowed' if ok else f'missing ({AUDIO_LOOKUP})'))]
+
+
 def check_bundled_deps(app: Path) -> list[Check]:
     """Every executable and library resolves its non-system dependencies inside the package, not in a build tree."""
     binaries = [p for p in files_under(app) if p.suffix == '.dylib' or (p.parent.name == 'MacOS' and p.is_file())]
@@ -120,7 +138,9 @@ def check_bundled_deps(app: Path) -> list[Check]:
             result = subprocess.run(['otool', '-L', str(binary)], capture_output=True, text=True, timeout=120)
         except (OSError, subprocess.TimeoutExpired) as error:
             return [Check('bundled_deps', False, f'otool unavailable: {error}')]
-        for line in result.stdout.splitlines()[1:]:
+        for line in result.stdout.splitlines():
+            if not line.startswith(('\t', ' ')):   # a header: the binary itself, once per architecture of a universal one
+                continue
             target = line.strip().split(' (')[0]
             if target.startswith(SYSTEM_PREFIXES) or target.startswith('@'):
                 continue
@@ -167,6 +187,7 @@ def automated(app: Path) -> list[Check]:
     out = [Check('app', True, app.name)]
     out += check_identity(app)
     out += check_signatures(app)
+    out += check_entitlements(app)
     out += check_bundled_deps(app)
     out += check_excluded(app)
     out += check_runtime_data(app)

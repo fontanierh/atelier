@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_HD_Ball: one city surface piece of Bush_HD_Ball (2574 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/bush-hd-ball"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/bush-hd-ball"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Bush_HD_Ball.fbx"
+sha256 = "ef580f084a6a09967ad612bfa5ccfe3bd9d26fd8797c4142b2a78a1106aaac4d"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 2574
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Ball"

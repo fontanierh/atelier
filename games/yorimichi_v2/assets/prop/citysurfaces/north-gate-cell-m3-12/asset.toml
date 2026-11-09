@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_NorthGate_cell_-3_12: one city surface piece of HD_NorthGate (512 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/north-gate-cell-m3-12"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/north-gate-cell-m3-12"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_NorthGate_cell_-3_12.fbx"
+sha256 = "bebbd59df6941d41559c8ab54611a3e8c1c32a8017bdda395b084f51f54bf505"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_NorthGate"]
+triangles = 512
+full_precision_uvs = true
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthGate_cell_-3_12"

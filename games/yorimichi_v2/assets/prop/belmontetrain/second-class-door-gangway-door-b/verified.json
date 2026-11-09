@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/second-class-door-gangway-door-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_SecondClass_gangway_door_b.uasset": "eb5b31a7f58c42b4d6f3f641b40b70076615847fac19b09c1cccb42afa16c347"
+  },
+  "input_fingerprint": "217573fa921dc7d0142d6770b4e060fd1ca9b16dc2599b3c14f2ab5149141186",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_SecondClass_gangway_door_b": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/islandterrain/wires",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Wires.uasset": "88646b74871a58a21b5a1732a1e057e0290708213a0e3f9128ac70d1c65022fb"
+  },
+  "input_fingerprint": "ddc78aa85dd34f3a3b89e51b5699be94f96eeb79dbf87ef1904de8233a66a914",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/IslandTerrain/v1_atomic/Wires": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

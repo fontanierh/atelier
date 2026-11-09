@@ -190,6 +190,8 @@ def build(game: Path) -> dict:
     users = collections.defaultdict(set)
     for group in runtime['groups']:
         mesh = group['asset'].rsplit('/', 1)[1].split('.')[0]
+        if mesh not in mesh_of:   # recovered as generated records (tools/migrate/recover.py): no unit of this map
+            continue
         for material in group['materials']:
             users[material.rsplit('/', 1)[1].split('.')[0]].add(mesh_of[mesh])
     mat_unit = {}
@@ -231,9 +233,7 @@ def build(game: Path) -> dict:
     for p in packages:
         if p not in unit:
             raise ValueError(f'{p} fits no Belmonte unit')
-    for generated in GENERATED:
-        if generated not in set(unit.values()):
-            raise ValueError(f'no {generated} package')
+    # A generated north unit exists only while its pieces are adopted; recovered pieces are generated records now.
 
     counts = collections.Counter(unit.values())
     info = {}

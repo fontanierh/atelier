@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Lighthouse: one city surface piece of HD_Lighthouse (180 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/lighthouse"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/lighthouse"
+references = ["adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof"]
+
+[[sources]]
+path = "src/HD_Lighthouse.fbx"
+sha256 = "6dd6f17715c95ce85fb69551ec884a4987629bb9f6ab28ac8597aa13b6c680b1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_flat = "/Game/Japan/Hidamari/Materials/MI_HD_flat", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof"}
+triangles = 180
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Lighthouse"

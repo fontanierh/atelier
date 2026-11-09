@@ -1,0 +1,34 @@
+{
+  "asset": "prop/islandterrain/road",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Road.uasset": "caac2353c24a6a09aeeb48bd2a21200b9eb13ece693306128f33cd1b51e4a245"
+  },
+  "input_fingerprint": "094dce6a146a32a1c0897db5a5579a1d23f79c858cab7fcd41d4f7207c1530f8",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/IslandTerrain/v1_atomic/Road": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

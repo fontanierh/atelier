@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/crate",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Crate.uasset": "c09f2ef921df2e4664f62a80616905deb7112aada2f305ef2936eed961b266a2"
+  },
+  "input_fingerprint": "dc13e00e449b1cfc673df2796ae78ac5370b5cce86c298de90efcc0989e65306",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Crate": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

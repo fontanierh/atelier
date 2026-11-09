@@ -242,7 +242,9 @@ def partition(packages, root: str, *, depth: int = DEPTH, cap: int = CAP,
                 here.append(package)
             else:
                 below.setdefault(rest[0], []).append(package)
-        if rule is None and (len(parts) >= depth or not below) and len(members) <= cap:
+        # A units map below this folder decides its packages, however few remain: no early unit here.
+        mapped_below = any(isinstance(r, Units) and k.startswith(folder + '/') for k, r in (groups or {}).items())
+        if rule is None and not mapped_below and (len(parts) >= depth or not below) and len(members) <= cap:
             return add(names, folder, members)
         seen = {}
         if rule is None:
