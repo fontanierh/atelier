@@ -55,7 +55,7 @@ def fake_game(tmp_path, monkeypatch):
     game = make_game(tmp_path, name='fake-game')
     (game / 'unreal/Config/Mac').mkdir(parents=True)
     (game / 'unreal/Config/Mac/MacEngine.ini').write_text(
-        f'[/Script/MacTargetPlatform.MacTargetSettings]\nBundleIdentifier={BUNDLE}\n')
+        f'[/Script/MacTargetPlatform.XcodeProjectSettings]\nBundleIdentifier={BUNDLE}\n')
     monkeypatch.setattr(acceptance, 'GAME', game)
     monkeypatch.setattr(cook_config, 'GAME', game)
     return game
@@ -87,6 +87,10 @@ def test_bundled_dependency_outside_the_package_fails(tmp_path, tools):
     result = acceptance.check_bundled_deps(app)[0]
     assert not result.ok and 'libfoo' in result.detail
     tools['otool'] = 'x:\n\t@rpath/libx.dylib (x)\n\t/usr/lib/libz.dylib (x)\n'
+    assert acceptance.check_bundled_deps(app)[0].ok
+    # A universal binary repeats its own path as a header per architecture: that is not a dependency.
+    tools['otool'] = ('/opt/pkg/A.app/Contents/UE/Binaries/Mac/libx.dylib (architecture x86_64):\n\t@rpath/libx.dylib (x)\n'
+                      '/opt/pkg/A.app/Contents/UE/Binaries/Mac/libx.dylib (architecture arm64):\n\t@rpath/libx.dylib (x)\n')
     assert acceptance.check_bundled_deps(app)[0].ok
 
 

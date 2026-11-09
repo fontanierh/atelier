@@ -120,7 +120,9 @@ def check_bundled_deps(app: Path) -> list[Check]:
             result = subprocess.run(['otool', '-L', str(binary)], capture_output=True, text=True, timeout=120)
         except (OSError, subprocess.TimeoutExpired) as error:
             return [Check('bundled_deps', False, f'otool unavailable: {error}')]
-        for line in result.stdout.splitlines()[1:]:
+        for line in result.stdout.splitlines():
+            if not line.startswith(('\t', ' ')):   # a header: the binary itself, once per architecture of a universal one
+                continue
             target = line.strip().split(' (')[0]
             if target.startswith(SYSTEM_PREFIXES) or target.startswith('@'):
                 continue

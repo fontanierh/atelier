@@ -54,15 +54,15 @@ reports it; do not re-cook for publication (P7 step 4).
 Extract the archive's `.app` to a folder outside every checkout, for example:
 
 ```
-mkdir -p "$HOME/YorimichiV2-Package" && ditto "<archive>/Yorimichi V2.app" "$HOME/YorimichiV2-Package/Yorimichi V2.app"
+mkdir -p "$HOME/YorimichiV2-Package" && ditto build/yorimichi_v2/package/archive/Mac/YorimichiV2.app "$HOME/YorimichiV2-Package/YorimichiV2.app"
 ```
 
-Status: `ditto` exists; the app name and the archive path come from the step log and are **not yet confirmed**.
+Status: confirmed on the 2026-11-09 package (3.1 GB app; `unreal.package` archives it at that path).
 
 Automated checks (exist; run on the extracted app):
 
 ```
-APP="$HOME/YorimichiV2-Package/Yorimichi V2.app"
+APP="$HOME/YorimichiV2-Package/YorimichiV2.app"
 uv run python games/yorimichi_v2/tools/package/acceptance.py automated --app "$APP"
 ```
 
@@ -78,7 +78,7 @@ uv run python games/yorimichi_v2/tools/package/acceptance.py record --app "$APP"
 
 Required items: `first_launch`, `input`, `map_travel`, `gameplay`, `sound`, `settings_persistence`, `save_persistence`,
 `shutdown`. Status: `record` and `verify` exist; **the packaged app has no Atelier launch command yet**, so the controller
-launches `Yorimichi V2.app` by hand (Finder or `open`). Map travel and gameplay use the routes the slice uses
+launches `YorimichiV2.app` by hand (Finder or `open`). Map travel and gameplay use the routes the slice uses
 (`/Game/V2/Maps/Slice`, `/Game/MegaPark/Maps/SuperUltraMegaPark`); the packaged route is not yet automated.
 
 A changed package (a new cook, a new `.pak`) changes the fingerprint, and `record` refuses old evidence. Use `--reset`

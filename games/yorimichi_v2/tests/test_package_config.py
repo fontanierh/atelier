@@ -28,7 +28,7 @@ def make_game(tmp: Path, *, ini_entries=(), content=(), literals=(), restricted=
     (tmp / 'restricted.toml').write_text('schema = 1\nroots = [' + ', '.join(f'"{r}"' for r in restricted) + ']\n')
     if bundle is not None:
         (tmp / 'unreal/Config/Mac/MacEngine.ini').write_text(
-            f'[/Script/MacTargetPlatform.MacTargetSettings]\nBundleIdentifier={bundle}\n')
+            f'[/Script/MacTargetPlatform.XcodeProjectSettings]\nBundleIdentifier={bundle}\n')
     return tmp
 
 

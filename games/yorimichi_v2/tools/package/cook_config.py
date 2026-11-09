@@ -28,7 +28,7 @@ DEFAULT_GAME_INI = GAME / 'unreal/Config/DefaultGame.ini'
 ENGINE_INI = GAME / 'unreal/Config/DefaultEngine.ini'
 MAC_INI = GAME / 'unreal/Config/Mac/MacEngine.ini'
 RESTRICTED = GAME / 'restricted.toml'
-BUNDLE_SECTION = '[/Script/MacTargetPlatform.MacTargetSettings]'
+BUNDLE_SECTION = '[/Script/MacTargetPlatform.XcodeProjectSettings]'   # what the Xcode build writes to Info.plist
 TEMPLATE_BUNDLE_PREFIX = 'com.YourCompany.'
 # Folders that scan for string paths must ignore: fixtures, caches and the editor's own saved state.
 SCAN = ('unreal/Source', 'unreal/Scripts', 'unreal/Config', 'unreal/Content/Data', 'live', 'tools', 'world', 'build.py')
