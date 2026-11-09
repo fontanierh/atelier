@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-hill-e3-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperHillE3_Soft.uasset": "96e141680784c784357b89776c4ba48861435a63bb38d91e6508b961bb0bdff2"
+  },
+  "input_fingerprint": "fe62aed51a7d0b7c705001a925ba41ac780808c8dbd107dd1569ef1daba2c5ef",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE3_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

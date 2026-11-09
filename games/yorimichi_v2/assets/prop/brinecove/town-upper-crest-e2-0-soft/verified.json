@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-crest-e2-0-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperCrestE20_Soft.uasset": "5d15b74702bdd3248a46f20ce080166b669bbc06a6956b215974b6602a22df17"
+  },
+  "input_fingerprint": "24d117f0b649c086ab993800b5476fc5567db102160745fc77c8db99b9bd7ed0",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE20_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
