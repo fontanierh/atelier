@@ -274,14 +274,16 @@ def _build_lod_chain(asset, settings, resolve):
     for level, (source, _, _, sections) in enumerate(chain[1:], 1):
         name = f'{asset.get_name()}_LOD{level}'
         lod = _import(resolve(source), f'{TRANSIENT}/{name}', _gltf_static_mesh(name, collision=False))
-        transient.append(lod.get_outermost())
         bind(lod, sections)
         if editor.set_lod_from_static_mesh(asset, level, lod, 0, True) != level:
             raise RuntimeError(f'{asset.get_path_name()}: LOD{level} from {source} was not attached')
-    # The attached levels are copies: unload the transient meshes, so a batch session ends the job with no dirty package.
+        transient.append(lod)
+    # The attached levels are copies: delete the never-saved transient meshes (which drops their packages' dirty state;
+    # an unload skips dirty packages), so a batch session ends the job with no dirty package.
     lod = None
-    if transient:
-        U.EditorLoadingAndSavingUtils.unload_packages(transient)
+    for mesh in transient:
+        EAL.delete_loaded_asset(mesh)
+    transient.clear()
     left = [p.get_name() for p in U.EditorLoadingAndSavingUtils.get_dirty_content_packages()
             if p.get_name().startswith(TRANSIENT)]
     if left:
