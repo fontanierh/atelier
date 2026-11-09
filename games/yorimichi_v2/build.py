@@ -96,7 +96,8 @@ def import_steps():
         found.append(Step(name, [Call(f'authorize {name}', _authorize_import),
                                  UnrealScript(script, 'V2 IMPORT DONE', null_rhi=asset.kind == 'static-mesh'),
                                  ran(name)],
-                          inputs=[script], after=['unreal.compile'], heavy=True, explicit=True,
+                          inputs=[script, UNREAL / 'Scripts/mesh_materials.py'], after=['unreal.compile'],
+                          heavy=True, explicit=True,
                           verify=lambda name=name: name in RAN,
                           about=f'editor import of {asset.id} (use tools/import/run.py)'))
     return found
