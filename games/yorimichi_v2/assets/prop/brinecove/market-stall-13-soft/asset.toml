@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_MarketStall13_Soft: the market stall 13, cut from the fused tile(s) Market_3_4_Soft (400 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/market-stall-13-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/market-stall-13-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_MarketStall13_Soft.glb"
+sha256 = "df18c980891aae29cc0c1d47d222ceb8b6be7380e48a2e8fb2613001f29e783a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_sun"]
+triangles = 400
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_MarketStall13_Soft"

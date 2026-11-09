@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Market_4_4_Piece020: one Brine Cove mesh (16330 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Market_4_4_Piece020: one Brine Cove mesh, what remains after batch 1 took its objects (12536 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -10,7 +10,7 @@ references = ["adopted/brinecove/materials"]
 
 [[sources]]
 path = "src/SM_BC_Market_4_4_Piece020.glb"
-sha256 = "344f347306703345e1ef69ab6d2536242a07b98832a4612a8de0f4fc058da50e"
+sha256 = "08507211a98969405466aacf1ac5720dc4b135052f32d692aa67fcda847f8bb1"
 
 [recipe]
 importer = "static-mesh"
@@ -18,7 +18,7 @@ version = 1
 
 [recipe.settings]
 slot_materials = ["/Game/Brinecove/Materials/MI_BC_canvas", "/Game/Brinecove/Materials/MI_BC_canvas_blue", "/Game/Brinecove/Materials/MI_BC_canvas_gold", "/Game/Brinecove/Materials/MI_BC_canvas_green", "/Game/Brinecove/Materials/MI_BC_canvas_red", "/Game/Brinecove/Materials/MI_BC_canvas_teal", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_glass_warm", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_ochre", "/Game/Brinecove/Materials/MI_BC_planks", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_sage_wall", "/Game/Brinecove/Materials/MI_BC_sail", "/Game/Brinecove/Materials/MI_BC_shutter_red", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
-triangles = 16330
+triangles = 12536
 collision = "complex"
 full_precision_uvs = true
 
