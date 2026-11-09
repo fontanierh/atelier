@@ -1,7 +1,7 @@
-"""The W20 railway's track-fittings group as one object per fitting kind (tools/migrate/railway_fittings.py): the selection is
-deterministic and in route order; every taken entry is an instanced group of track.json with key "" and its full count; no
-group is listed twice; the other objects (track, station, bridge, tunnels, the chunks) are unchanged; a partly taken group
-is refused; and the steps (prepare, save, retire) each repeat safely in a fake copy of the tree."""
+"""The W20 railway's track-fittings group as twelve objects, one per fitting (tools/migrate/railway_fittings.py): the selection is
+deterministic and in route order; each fitting is one row of a group of track.json with key "" and its route names that row
+("SM_TK_BufferStop#@0"); no route is listed twice; the other objects (track, station, bridge, tunnels, the chunks) are
+unchanged; a partly taken group is refused; and the steps (prepare, save, retire) each repeat safely in a fake copy of the tree."""
 import importlib.util
 import json
 import shutil
@@ -30,8 +30,12 @@ objects = load('v2_migrate_objects_fittings', 'tools/migrate/objects.py')
 GAME = ROOT
 REGION_FOLDER = ROOT / 'world/regions/w20-railway'
 DATA = ROOT / 'unreal/Content/Data/belmonte_track/track.json'
-KIND_IDS = ['object/railway/buffer-stops', 'object/railway/stop-boards', 'object/railway/turnouts',
-            'object/railway/tunnel-portals']
+FIT_IDS = ['object/railway/buffer-stop-0', 'object/railway/buffer-stop-1',
+           'object/railway/stop-board-0', 'object/railway/stop-board-1',
+           'object/railway/turnout-0', 'object/railway/turnout-1',
+           *[f'object/railway/tunnel-portal-{row}' for row in range(6)]]
+FIT_NAMES = [f'{mesh}#@{row}' for mesh, rows in [
+    ('SM_TK_BufferStop', 2), ('SM_TK_StopBoard', 2), ('SM_TK_Turnout', 2), ('SM_TK_Portal', 6)] for row in range(rows)]
 
 
 @pytest.fixture(scope='module')
@@ -52,20 +56,24 @@ def blocks_by_id(text):
 
 # --- the selection and the rendered objects.toml (read only) ---------------------------------------------------------------
 
-def test_selection_is_deterministic_and_in_the_group_route_order(data):
+def test_selection_is_deterministic_and_one_object_per_fitting(data):
     first = fittings.select(data)
     assert first == fittings.select(data)
-    assert [t['name'] for t in first] == fittings.GROUP_ROUTE
-    assert [t['object'] for t in first] == KIND_IDS
-    assert sum(t['count'] for t in first) == 12
+    assert [t['object'] for t in first] == FIT_IDS
+    assert [t['name'] for t in first] == FIT_NAMES
+    assert len(first) == 12
+    assert [t['row'] for t in first] == [0, 1, 0, 1, 0, 1, 0, 1, 2, 3, 4, 5]
+    assert list(dict.fromkeys(t['name'].split('@')[0] for t in first)) == fittings.GROUP_ROUTE
 
 
-def test_every_key_exists_in_the_runtime_file(data):
+def test_every_row_exists_in_the_runtime_file(data):
     groups = {f'{g["mesh"].rsplit("/", 1)[-1].split(".")[0]}#{g["key"]}': g for g in data['instances']}
     for t in fittings.select(data):
-        assert t['name'] in groups, t['name']
-        assert len(groups[t['name']]['instances']) == t['count']
-        assert groups[t['name']]['key'] == ''
+        group_name, row = t['name'].split('@')
+        assert group_name in groups, group_name
+        assert groups[group_name]['key'] == ''
+        assert int(row) == t['row'] < len(groups[group_name]['instances'])
+        assert len(groups[group_name]['instances'][t['row']]) >= 5
 
 
 def test_each_model_names_the_existing_record_that_owns_the_mesh(data):
@@ -74,22 +82,24 @@ def test_each_model_names_the_existing_record_that_owns_the_mesh(data):
         assert (GAME / 'assets' / t['model'] / 'asset.toml').is_file()
 
 
-def test_rendered_objects_load_and_list_each_group_once(data, committed, tmp_path):
+def test_rendered_objects_load_and_route_each_row_once(data, committed, tmp_path):
     (tmp_path / 'objects.toml').write_text(fittings.render(committed, data))
     loaded = objects.load_objects(SimpleNamespace(id='region/w20-railway', folder=tmp_path))
     routes = [name for item in loaded['objects'] for name in item['route']]
     assert len(routes) == len(set(routes))
-    assert [r for r in routes if r in fittings.GROUP_ROUTE] == fittings.GROUP_ROUTE
+    assert [r for r in routes if r in FIT_NAMES] == FIT_NAMES
     groups = {f'{g["mesh"].rsplit("/", 1)[-1].split(".")[0]}#{g["key"]}' for g in data['instances']}
+    rows = {f'{g["mesh"].rsplit("/", 1)[-1].split(".")[0]}#{g["key"]}@{row}'
+            for g in data['instances'] for row in range(len(g['instances']))}
     pieces = {p['name'] for p in data['pieces']}
-    assert set(routes) <= groups | pieces
-    assert [i['id'] for i in loaded['objects'] if i['id'] in KIND_IDS] == KIND_IDS
+    assert set(routes) <= groups | rows | pieces
+    assert [i['id'] for i in loaded['objects'] if i['id'] in FIT_IDS] == FIT_IDS
     assert 'object/railway/track-fittings' not in {i['id'] for i in loaded['objects']}
 
 
 def test_the_track_station_and_route_objects_are_unchanged(data, committed):
     before = {k: v for k, v in blocks_by_id(committed).items() if k != fittings.GROUP_ID}
-    after = {k: v for k, v in blocks_by_id(fittings.render(committed, data)).items() if k not in KIND_IDS}
+    after = {k: v for k, v in blocks_by_id(fittings.render(committed, data)).items() if k not in FIT_IDS}
     assert before == after
     assert len(before) == 12
     assert 'object/railway/chunks-0-19' in after and 'object/railway/station-belmonte' in after
@@ -99,6 +109,13 @@ def test_the_header_and_data_line_are_unchanged(data, committed):
     rendered = fittings.render(committed, data)
     assert rendered.split('[[objects]]', 1)[0].rstrip() == committed.split('[[objects]]', 1)[0].rstrip()
     assert 'data = "belmonte_track/track.json"' in rendered
+
+
+def test_each_fitting_gets_its_own_route_and_about(data, committed):
+    rendered = blocks_by_id(fittings.render(committed, data))
+    for t in fittings.select(data):
+        assert rendered[t['object']]['route'] == [t['name']]
+        assert rendered[t['object']]['model'] == fittings.MODEL
 
 
 def test_a_partly_taken_group_is_refused(data, committed):
@@ -137,15 +154,15 @@ def test_the_claim_paths_name_every_file_and_both_scopes(data):
     assert 'games/yorimichi_v2/world/regions/w20-railway/objects.toml' in paths
     assert 'games/yorimichi_v2/world/regions/w20-railway/objects.saved.json' in paths
     assert 'games/yorimichi_v2/world/regions/w20-railway/fittings-retire.json' in paths
-    assert 'games/yorimichi_v2/assets/object/railway/buffer-stops/asset.toml' in paths
-    assert 'games/yorimichi_v2/assets/object/railway/tunnel-portals/verified.json' in paths
+    assert 'games/yorimichi_v2/assets/object/railway/buffer-stop-0/asset.toml' in paths
+    assert 'games/yorimichi_v2/assets/object/railway/tunnel-portal-5/verified.json' in paths
     assert 'games/yorimichi_v2/assets/object/railway/track-fittings/asset.toml' in paths
     assert f'games/yorimichi_v2/{objects.MANIFEST["region/w00-island"]}' in paths
     assert plan['scopes'] == ['region/w00-island', 'region/w20-railway']
 
 
 def test_the_command_line_dispatches_each_step(monkeypatch):
-    """--retire takes --claim (step 3); --claim alone prepares (step 1); --check and --paths take none."""
+    """--retire takes --claim (step 3); --claim alone prepares (step 1); --check, --ids and --paths take none."""
     calls = []
     monkeypatch.setattr(fittings, 'runtime', lambda game: {})
     monkeypatch.setattr(fittings, 'select', lambda data: [])
@@ -156,6 +173,14 @@ def test_the_command_line_dispatches_each_step(monkeypatch):
     assert calls == [('retire', 'TASK'), ('prepare', 'TASK')]
     assert fittings.main(['--retire']) == 1
     assert fittings.main(['--check', '--claim', 'TASK']) == 1
+    assert fittings.main(['--ids', '--claim', 'TASK']) == 1
+
+
+def test_ids_prints_the_twelve_object_ids_in_order(monkeypatch, capsys):
+    monkeypatch.setattr(fittings, 'runtime', lambda game: {})
+    monkeypatch.setattr(fittings, 'select', lambda data: [{'object': i} for i in FIT_IDS])
+    assert fittings.main(['--ids']) == 0
+    assert capsys.readouterr().out.split() == FIT_IDS
 
 
 # --- the lifecycle in a fake copy of the tree ------------------------------------------------------------------------------
@@ -230,13 +255,13 @@ def test_prepare_save_retire_each_repeat_safely(data, tmp_path, monkeypatch):
     assert fittings.state(tmp_path, taken)[0] == 'unprepared'
     assert fittings.prepare(tmp_path, taken, 'TASK', lockable=no_lock, echo=lambda *_: None) == 'prepared'
     listed = tomllib.loads((region / 'objects.toml').read_text())['objects']
-    assert [i['id'] for i in listed if i['id'] in KIND_IDS] == KIND_IDS
+    assert [i['id'] for i in listed if i['id'] in FIT_IDS] == FIT_IDS
     assert not [i for i in listed if fittings.GROUP.match(i['id'])]
     assert group_record.is_file()
     assert fittings.GROUP_ID in json.loads((region / 'objects.saved.json').read_text())['objects']
     pending = json.loads((region / 'fittings-retire.json').read_text())
     assert pending['groups'].keys() == {fittings.GROUP_ID}
-    assert pending['replacements'] == sorted(KIND_IDS)
+    assert pending['replacements'] == sorted(FIT_IDS)
 
     # A rerun of prepare is a no-op: nothing is written, not even the pending file's bytes.
     before = tree_bytes(tmp_path)
@@ -259,7 +284,7 @@ def test_prepare_save_retire_each_repeat_safely(data, tmp_path, monkeypatch):
     assert fittings.GROUP_ID not in saved
     assert {t['object'] for t in taken} <= set(saved)
     assert not (region / 'fittings-retire.json').exists()
-    assert (tmp_path / 'assets/object/railway/buffer-stops/asset.toml').is_file()
+    assert (tmp_path / 'assets/object/railway/buffer-stop-0/asset.toml').is_file()
     after = tree_bytes(tmp_path)
     assert fittings.retire(tmp_path, taken, 'TASK', lockable=no_lock, echo=lambda *_: None) == 'done'
     assert tree_bytes(tmp_path) == after

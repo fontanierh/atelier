@@ -36,7 +36,8 @@ runtime skips exactly those meshes (AMegaRamp, SwordTrainer::SpawnRoninCamp). Th
 A `route` object is one unit of a transport route, saved by the editor step as one AV2ScenePatch and skipped by the
 runtime service (CoversGroup): its `route` lists entries of the route's data file, and the file's shape picks the
 migration. A railway file (belmonte_track/track.json, `pieces` and `instances`) takes piece names, and instanced groups
-as "<mesh>#<key>" (UV2MigrationTravel::MigrateRailwayPieces); a ferry file (ferry/service/service.json, `terminals`) takes
+as "<mesh>#<key>", or one row of a group as "<mesh>#<key>@<row>" (its index in the group's instances; UV2MigrationTravel::
+MigrateRailwayPieces); a ferry file (ferry/service/service.json, `terminals`) takes
 terminal keys (MigrateFerryTerminals); a gondola file (gondola/runtime.json, `static`) takes static entry names
 (MigrateGondolaStatics). Each name is listed once, in one object of the region.
 
@@ -328,12 +329,15 @@ def static_plan(region: str, tag: str, units: list[dict]) -> dict:
 def route_plan(region: str, tag: str, data: str, units: list[dict], game: Path) -> tuple[str, dict]:
     """(the plan list, its entry) of a region's route objects: a railway file's ("railways"), a ferry file's ("ferries") or a
     gondola file's ("gondolas"). Every name must be an entry of the file (read here, so an unknown name is refused before the
-    editor runs). A railway name is a piece's name, or "<mesh>#<key>" for an instanced group (as track.json names them)."""
+    editor runs). A railway name is a piece's name, "<mesh>#<key>" for an instanced group (as track.json names them), or
+    "<mesh>#<key>@<row>" for one row of a group (its index in the group's instances, from 0)."""
     spec = read_piece_file(region, data, game)
     if 'pieces' in spec and 'instances' in spec:
         kind = 'railways'
         names = {p['name'] for p in spec['pieces']}
-        names |= {f"{g['mesh'].rsplit('/', 1)[-1].split('.')[0]}#{g['key']}" for g in spec['instances']}
+        for g in spec['instances']:
+            group = f"{g['mesh'].rsplit('/', 1)[-1].split('.')[0]}#{g['key']}"
+            names |= {group} | {f'{group}@{row}' for row in range(len(g['instances']))}
     elif 'terminals' in spec:
         kind = 'ferries'
         names = {t['key'] for t in spec['terminals']}
