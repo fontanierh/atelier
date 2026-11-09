@@ -1,0 +1,34 @@
+{
+  "asset": "prop/megapark/seam",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Meshes/SM_MP_Seam.uasset": "8e9206e6ce8ccc7cfee1511f4a56d065e232e76801f2e07a7868c9bb7795419f"
+  },
+  "input_fingerprint": "f8a085d5bd3e6cc3f6bb99139f1119b1649b184f930ac24a60f1db8a4c61a9ff",
+  "kind": "imported",
+  "lods": {
+    "/Game/MegaPark/Meshes/SM_MP_Seam": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

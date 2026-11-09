@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-wheel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Board/SM_SkateWheel.uasset": "b1deaec8a507afe101eaac25d2dfb097d4e117d5d097085c11b96c14f79ec680"
+  },
+  "input_fingerprint": "dbfcfdfd06dcd5347481e9c2ea9c92b246205e4c82a24843a2bbe7b5d6e255ab",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/Board/SM_SkateWheel": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

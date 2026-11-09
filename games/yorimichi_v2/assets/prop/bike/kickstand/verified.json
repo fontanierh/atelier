@@ -1,0 +1,34 @@
+{
+  "asset": "prop/bike/kickstand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/BK_Kickstand.uasset": "29e6ce8d0bead1426888e87ab8f00705fdfe3178c3d4c633f55955afc24b7736"
+  },
+  "input_fingerprint": "779e104624e1180b7ec1fdd9c6553712e45388e91f284dc25d3ccab90b1842c3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/BK_Kickstand": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

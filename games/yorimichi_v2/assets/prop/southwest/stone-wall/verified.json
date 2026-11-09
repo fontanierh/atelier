@@ -1,0 +1,34 @@
+{
+  "asset": "prop/southwest/stone-wall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Southwest/Pieces/SW_StoneWall.uasset": "89b66564180eef3cda8a96188018cba7f891fc14012f31ef82dcf262aebae588"
+  },
+  "input_fingerprint": "f33b14edc6172bdd0f0f1d9476c5dd4cf4b46d4c413292c95e5a52dc0df458c9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Southwest/Pieces/SW_StoneWall": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

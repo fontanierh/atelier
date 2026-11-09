@@ -1,0 +1,34 @@
+{
+  "asset": "prop/mega/trim",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Mega_Trim.uasset": "e4287cec7a120f1dc5f21706ccd098d35033d98edb514a6df0534ed7fa9b723b"
+  },
+  "input_fingerprint": "3fe7a5dc165d7bea607fc7ad19722e0eb716bfb91ea782a2b5d3237471562f0a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Mega_Trim": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

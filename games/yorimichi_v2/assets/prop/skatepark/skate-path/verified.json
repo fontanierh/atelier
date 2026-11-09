@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-path",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/SM_SkatePath.uasset": "56c1c600084dde2f9e80d0c4e758672c824b3e0a361cf922c29814a8480d9aed"
+  },
+  "input_fingerprint": "dc74e04f010b455a474760d9070fc4dfb1c61da7d6783a044f2c14e6e07fd41a",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/SM_SkatePath": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

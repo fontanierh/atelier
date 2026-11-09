@@ -1,0 +1,34 @@
+{
+  "asset": "prop/villageatomic/planting-cell-1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_1_0.uasset": "45f8a6aa0dcf9e25ea1fdc1f6982c4ee9e7c36b695cfbb4dd912fd24d55b9d53"
+  },
+  "input_fingerprint": "1f5d5468f82e856f8c41d8734a1e163ee79006bf27127816d0f90669193fae80",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_1_0": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

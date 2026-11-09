@@ -1,0 +1,34 @@
+{
+  "asset": "prop/zeppelin/propeller",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/ZP_Propeller.uasset": "0fe34a64276a6684a9221e0c177d39f88b3bd91c9632e25d8462b8de25d6a630"
+  },
+  "input_fingerprint": "60ab0bc118af71ff8f565dd88298ff78af56c2857908291530d66a12f645ee42",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/ZP_Propeller": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

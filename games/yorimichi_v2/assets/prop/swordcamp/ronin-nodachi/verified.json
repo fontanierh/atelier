@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/ronin-nodachi",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_RoninNodachi.uasset": "e725d1e5e4f6e2e441d6a36b594d5aeac5a9289d44411d495d978a0e4981bc31"
+  },
+  "input_fingerprint": "68ad24e25e9e7f5d28f6c3239858184c75db8905acb9ecca4e5a69f31157fb54",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_RoninNodachi": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

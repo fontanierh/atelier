@@ -1,0 +1,34 @@
+{
+  "asset": "prop/villageatomic/garden",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Garden.uasset": "21d1201210b7c1e7bd08ad46f26b8942e59e6b033f0e250419aed8e4be3f86da"
+  },
+  "input_fingerprint": "86d339e77776928f0438d1be5168548e304c83c0bbec0a370facf62d04f608e9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/VillageAtomic/v1_atomic/Village_Garden": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

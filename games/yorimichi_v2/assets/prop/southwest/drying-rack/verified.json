@@ -1,0 +1,34 @@
+{
+  "asset": "prop/southwest/drying-rack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Southwest/Pieces/SW_DryingRack.uasset": "0a11a29ec597533c0626aca8deef6be24f99e0b67c287cd81606c0ccf917642c"
+  },
+  "input_fingerprint": "2cd42d13cf45ea393734f3c866ced91be010421ed862ee90d7ffd1115260e421",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Southwest/Pieces/SW_DryingRack": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

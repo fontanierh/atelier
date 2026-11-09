@@ -1,0 +1,34 @@
+{
+  "asset": "prop/zeppelin/airship",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/ZP_Airship.uasset": "a0caf97a340a320378d384054c354c0e065463eab98118fe2c33a0df8c238338"
+  },
+  "input_fingerprint": "0c2e2c9a47e90169188fb277f264239c762bfc6635525f2e438395d132b02562",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/ZP_Airship": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

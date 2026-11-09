@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/captain-kabuto",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_CaptainKabuto.uasset": "343c93afb4dd1dea26506fe196b8ee9e1a1d5cb02793ef9ae6ccf10b370b2a88"
+  },
+  "input_fingerprint": "7c649edfd8d25f67ec5002d0ad6ff1b0b3fd1c1b8a7fe52f8ac70a4a1e710990",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_CaptainKabuto": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

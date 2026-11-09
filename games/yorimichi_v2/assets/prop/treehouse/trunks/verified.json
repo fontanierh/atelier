@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse/trunks",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/TH_Trunks.uasset": "05f2adce27d69d50ebe0a9971ffabdd1bb608756562e5e900727ab65861e21b7"
+  },
+  "input_fingerprint": "23168192174f72feeb295a27095e5ee3699eea5ad89165d62d2a3d89a4240b93",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/TH_Trunks": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

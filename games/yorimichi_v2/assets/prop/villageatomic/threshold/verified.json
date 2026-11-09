@@ -1,0 +1,34 @@
+{
+  "asset": "prop/villageatomic/threshold",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Threshold.uasset": "7b3d3d5bde0c19d2754f78df393dc33619c0a8a700bb37f35179d77b9b8fddcf"
+  },
+  "input_fingerprint": "f59c405a8b9445285a460207671af25c313957e5a0cc8d530a485e9e04c47f4a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/VillageAtomic/v1_atomic/Village_Threshold": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/southwest/boulder-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Southwest/Pieces/SW_Boulder_A.uasset": "a75770c63e617d7e7ac817d9be486bb91672e86e4bd3ec52ad07fbd3dcedd32b"
+  },
+  "input_fingerprint": "51d3925a6740c18d1b35303d84d4e5631d3a05d8f09271a9907b0a3a78dbaafe",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Southwest/Pieces/SW_Boulder_A": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/lake/trail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Lake/Pieces/Lake_Trail.uasset": "899752879a44a8c58ef7038612f4464433b042d47603429017773fe51a8d109a"
+  },
+  "input_fingerprint": "13aa87442f06b4533d4b47a7808a33f3a9c230966283befcb8c0cf012ae225e3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Lake/Pieces/Lake_Trail": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

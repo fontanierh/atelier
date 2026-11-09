@@ -1,0 +1,34 @@
+{
+  "asset": "prop/southwest/temple",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Southwest/Pieces/SW_Temple.uasset": "9d5fb41491021c3b0774606bff73ea18fed3bfb67d9a392f6241a07137293d36"
+  },
+  "input_fingerprint": "28e7a0811d4ccf4a318ef0f8e8faf67c54e107602fcf48b188a9f7a014fbeae3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Southwest/Pieces/SW_Temple": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

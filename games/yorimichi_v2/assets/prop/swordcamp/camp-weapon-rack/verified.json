@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/camp-weapon-rack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_CampWeaponRack.uasset": "1b5dceeeae764395fbe8348b0f7201cd3bf1aeee05dcd0bcec0b8aa235b03e61"
+  },
+  "input_fingerprint": "32cc9c765dd9269a01ea9e62890b88be007207d47ffda031874218b4b3f7cd4f",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_CampWeaponRack": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

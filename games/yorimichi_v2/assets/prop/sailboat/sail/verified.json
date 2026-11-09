@@ -1,0 +1,34 @@
+{
+  "asset": "prop/sailboat/sail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SB_Sail.uasset": "9cf0a2948b32dd4ab50c370dc0c9f9c4ee0de3ba61eac6901195d471b077349e"
+  },
+  "input_fingerprint": "0b0401fa53f8bafeaaaed7f03aacf6def454438eee87437591c8d05cdcf9e94d",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/SB_Sail": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

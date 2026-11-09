@@ -1,0 +1,34 @@
+{
+  "asset": "prop/lake/shore",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Lake/Pieces/Lake_Shore.uasset": "640e3bd554c9b13329fbfedb880b8437feb8e24bbd51f80fd39938db37d2a184"
+  },
+  "input_fingerprint": "0bbf3f726e5dafcb3495a0a6e1529819f97ea26b5b2727d3fb4fd2d3ea620c55",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Lake/Pieces/Lake_Shore": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

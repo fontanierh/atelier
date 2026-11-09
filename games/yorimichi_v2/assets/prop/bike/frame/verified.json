@@ -1,0 +1,34 @@
+{
+  "asset": "prop/bike/frame",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/BK_Frame.uasset": "904f0c78e421501f627b6b4907c50a236475785d4ac9b26aff95237bcbea7a8b"
+  },
+  "input_fingerprint": "7af7a516c5faa49a21e5b646f6d0a8a0604e66886cf6da7e34e9f2b8a670dffd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/BK_Frame": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/southwest/coconut-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Southwest/Pieces/SW_CoconutStand.uasset": "8010e39cc9bb195eea0cf96313b14a10075d92eeeaaf58895e31eecac664d517"
+  },
+  "input_fingerprint": "a29e53c6e7308b1df9c7bb953dbc3443cc4fdb89fca436ee2561127859f684fc",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Southwest/Pieces/SW_CoconutStand": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

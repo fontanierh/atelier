@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/ronin-menpo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_RoninMenpo.uasset": "18624c5a139ec00f7f6b6ce7e8a6015a62972874b072bfa73dc728323365ff58"
+  },
+  "input_fingerprint": "3ba5624cb392633fcd91a2ef80fc134ed2eb42caafcf6501924104e313e8cb89",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_RoninMenpo": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

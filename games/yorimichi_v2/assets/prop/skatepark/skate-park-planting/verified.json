@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-park-planting",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/SM_SkateParkPlanting.uasset": "61e75e37ec915230980fd315b3cb940ab0dc524b0a9f81d5f3cb1307db59b0e4"
+  },
+  "input_fingerprint": "43b6a6dceca478b3103e28f0e7f412776e61901456009794617d33686f0f4069",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/SM_SkateParkPlanting": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

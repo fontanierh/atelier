@@ -1,0 +1,34 @@
+{
+  "asset": "prop/villageatomic/workshop",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Workshop.uasset": "d9119fce852929c5a25e8bccbda874fab39b9db1ca81c41b8dd624798bba478e"
+  },
+  "input_fingerprint": "a61ded94b7a1addf7b55f915b8ae3637617dc781ff35434f8e124dd3ab2b5281",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/VillageAtomic/v1_atomic/Village_Workshop": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

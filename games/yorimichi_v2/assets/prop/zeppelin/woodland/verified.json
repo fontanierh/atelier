@@ -1,0 +1,34 @@
+{
+  "asset": "prop/zeppelin/woodland",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/ZP_Woodland.uasset": "60c26af43c595137b7a1417c1ea64d3df84dc1b23fbe1b3f2e8cd5d6336735c5"
+  },
+  "input_fingerprint": "0ee93afa7f7abf61a4853077e5d6ea3accc000d2b2432f090717eb5ecf14c3f3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/ZP_Woodland": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

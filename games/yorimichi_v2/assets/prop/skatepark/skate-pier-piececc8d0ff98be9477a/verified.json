@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-pier-piececc8d0ff98be9477a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/SM_SkatePier_Piececc8d0ff98be9477a.uasset": "ed31f77ee5d13d06043d604d1bb83ee9b7978a8d03d6ad5fd46ddd118c27f564"
+  },
+  "input_fingerprint": "af7f85ce32bfc975fd1e553607e94b9759a6fe98f87fff5cae0b60108b018fea",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/SM_SkatePier_Piececc8d0ff98be9477a": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
