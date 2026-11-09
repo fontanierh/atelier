@@ -296,3 +296,55 @@ def test_partition_honours_a_units_map_below_a_folder_with_few_packages():
     rules = {'/Game/Experiments/IslandTerrain/v1_atomic': units}
     found = adopt.partition(['/Game/Experiments/IslandTerrain/v1_atomic/Sea'], 'Experiments', groups=rules)
     assert list(found) == ['adopted/experiments/islandterrain/v1-atomic/generator']
+
+
+def test_city_surfaces_recover_pieces_of_hull_free_sources_only(tmp_path):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    dest = '/Game/Experiments/CitySurfaces/v1_128m'
+    record(game, 'adopted/experiments/citysurfaces/v1-128m/street', f'''schema = 1
+id = "adopted/experiments/citysurfaces/v1-128m/street"
+kind = "adopted"
+authority = "editor"
+owner = "shared/citysurfaces/street"
+provenance = "test"
+license = "test"
+
+[[outputs]]
+package = "{dest}/HD_Street_0"
+
+[[outputs]]
+package = "{dest}/HD_Arcade_0"
+''')
+    record(game, 'adopted/japan/materials', '''schema = 1
+id = "adopted/japan/materials"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/materials"
+provenance = "test"
+license = "test"
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt"
+''')
+    fbx = {'HD_Street_0': b'street fbx', 'HD_Arcade_0': b'arcade fbx', 'HD_Sea': b'sea fbx'}
+    for name, data in fbx.items():
+        write(donor / name.rsplit('_', 1)[0].replace('HD_Sea', 'HD_Sea') / f'{name}.fbx', data)
+    tile = lambda name, hulls=0: {'name': name, 'sha256': sha(fbx[name]), 'triangles': 12, 'collision_hulls': hulls}
+    write(donor / 'manifest.json', json.dumps({'sources': {
+        'HD_Street': {'source_collision_hulls': 0, 'tiles': [tile('HD_Street_0')]},
+        'HD_Arcade': {'source_collision_hulls': 2, 'tiles': [tile('HD_Arcade_0', 2)]},
+        'HD_Sea': {'source_collision_hulls': 0, 'tiles': [tile('HD_Sea')]}}}))
+    bind = lambda name: [{'name': name, 'triangles': 12, 'asset': f'{dest}/{name}.{name}',
+                          'material': '/Game/Japan/Hidamari/Materials/MI_HD_asphalt.MI_HD_asphalt'}]
+    write(donor / 'import-report.json', json.dumps({'HD_Street': bind('HD_Street_0'), 'HD_Arcade': bind('HD_Arcade_0'),
+                                                    'HD_Sea': bind('HD_Sea')}))
+    plan = recover.build_plan(game, 'experiments/citysurfaces', donor)
+    (street,) = plan.generated
+    assert street.id == 'prop/citysurfaces/street-0' and street.package == f'{dest}/HD_Street_0'
+    assert street.settings == {'slot_materials': ['/Game/Japan/Hidamari/Materials/MI_HD_asphalt'], 'triangles': 12,
+                               'collision': 'complex', 'full_precision_uvs': True}
+    assert street.references == ['adopted/japan/materials']
+    # A hull source stays open (no V2 UCX import); a piece no adopted record holds is reported, not guessed.
+    assert any('HD_Arcade_0' in u and 'UCX' in u for u in plan.unmapped_outputs)
+    assert any('HD_Sea' in u for u in plan.unmapped_outputs)
+    assert plan.kept['adopted/experiments/citysurfaces/v1-128m/street'] == [f'{dest}/HD_Arcade_0']

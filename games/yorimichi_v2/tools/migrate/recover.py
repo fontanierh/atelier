@@ -242,8 +242,49 @@ def plan_belmonte(game: Path, donor: Path, owner: dict[str, str], all_owner: dic
     return Plan('belmonte', generated, unmapped, {})
 
 
+CITY_DESTINATION = '/Game/Experiments/CitySurfaces/v1_128m'
+
+
+def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The donor's city surface partition (city_surface_tiles/v1_128m: manifest.json, import-report.json): one FBX per
+    tile piece, one material per piece (the report's binding, the donor's piece_material_paths). The donor sets
+    full-precision UVs on every piece and picks collision per source: complex-as-simple for a source without authored
+    UCX hulls, simple-and-complex (hulls imported) for one with them. The V2 importer has no UCX import, so every
+    piece of a hull source stays open in its adopted record."""
+    manifest, report = _json(donor / 'manifest.json'), _json(donor / 'import-report.json')
+    generated, unmapped = [], []
+    for name, source in manifest['sources'].items():
+        bound = {row['name']: row for row in report.get(name, [])}
+        for tile in source['tiles']:
+            piece = tile['name']
+            package = f'{CITY_DESTINATION}/{piece}'
+            if package not in owner:
+                unmapped.append(f'{name}/{piece}.fbx (its package is not in a source-less city surface record)')
+                continue
+            if source['source_collision_hulls']:
+                unmapped.append(f'{name}/{piece}.fbx (source {name} has UCX hulls: no V2 simple-and-complex import)')
+                continue
+            row = bound.get(piece)
+            material = row['material'].split('.', 1)[0] if row else ''
+            if not material or material not in all_owner:
+                unmapped.append(f'{name}/{piece}.fbx (material {material or "unbound"} owned by no record)')
+                continue
+            if row['triangles'] != tile['triangles']:
+                raise RecoverError(f'{piece}: manifest and import report disagree on its triangles')
+            tail = ident(piece[len('HD_'):]) if piece.startswith('HD_') else ident(piece)
+            generated.append(Generated(
+                id=f'prop/citysurfaces/{tail}', kind='static-mesh', owner=f'shared/citysurfaces/{tail}',
+                package=package, source=donor / name / f'{piece}.fbx',
+                settings={'slot_materials': [material], 'triangles': tile['triangles'], 'collision': 'complex',
+                          'full_precision_uvs': True},
+                references=[all_owner[material]],
+                about=f'{piece}: one city surface piece of {name} ({tile["triangles"]} triangles)',
+                expected_sha=tile['sha256']))
+    return Plan('experiments/citysurfaces', generated, unmapped, {})
+
+
 FAMILIES = {'hippodrome': plan_hippodrome, 'belmonte': plan_belmonte, 'experiments/islandterrain': plan_island,
-            'brinecove': plan_brinecove}
+            'brinecove': plan_brinecove, 'experiments/citysurfaces': plan_citysurfaces}
 
 
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
