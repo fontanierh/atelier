@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/bush-hd-ball",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Ball.uasset": "87dfa62321430dc0e6758ccd09088a6ef0ab6332a6c41e68371829d69efb4a52"
+  },
+  "input_fingerprint": "06b28e6a297915072cca6abc5387e23d50ad52b8c5d15cbac5a348e96f7bac61",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Ball": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

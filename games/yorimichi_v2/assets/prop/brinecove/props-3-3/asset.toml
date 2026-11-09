@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Props_3_3: one Brine Cove mesh (4600 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Props_3_3: one Brine Cove mesh, what remains after batch 1 took its objects (1868 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -10,15 +10,15 @@ references = ["adopted/brinecove/materials"]
 
 [[sources]]
 path = "src/SM_BC_Props_3_3.glb"
-sha256 = "6beca5fd75a5c042b8555a9f5bcc2395cd6fbd4767210c07022b61599c08bfee"
+sha256 = "03efb4f3320f8b93a16794c81a35cfa0730fae0f25e153eae31def907feccd31"
 
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_flag_black", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_sail", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
-triangles = 4600
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_sail", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 1868
 collision = "complex"
 full_precision_uvs = true
 

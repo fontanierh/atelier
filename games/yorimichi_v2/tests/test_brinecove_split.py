@@ -135,3 +135,27 @@ def test_written_parts_read_back_as_the_same_triangles(tmp_path):
     source = list(split.triangles(split.read_glb(tmp_path / 'SM_BC_Props_9_9.glb')))
     parts = [list(split.triangles(split.read_glb(f))) for f in sorted(out.glob('*/SM_BC_Props_9_9.glb'))]
     assert len(parts) == 2 and split.verify_partition(source, parts) == []
+
+
+def test_exclude_zone_keeps_a_neighbouring_palm_out_of_the_object():
+    # a crane part and a palm (planter, trunk, fronds) 12 m away, both inside the crane's radius; layout y is -z
+    crane = tris_for(-334, 84, 'BC_wood')
+    palm = tris_for(-330, 72, 'BC_clay') + tris_for(-330, 72, 'BC_palm_frond', height=11.0)
+    tris = crane + palm
+    comps = split.components(tris)
+    anchor = dict(x=-326, y=83, radius=14, max_extent=25, min_height=4.5)
+    plain = split.assign_anchored(tris, comps, {'crane': anchor})
+    assert len(plain['crane']) == len(tris)                        # radius alone takes the palm too
+    zoned = split.assign_anchored(tris, comps, {'crane': {**anchor, 'exclude_zones': ((-330, 72, 5.0),)}})
+    assert len(zoned['crane']) == len(crane) and len(zoned['']) == len(palm)
+
+
+def tris_for(x, y, material, height=5.0):
+    z = -y
+    sq = [(x, height, z), (x + 1, height, z), (x + 1, height, z + 1), (x, height, z + 1)]
+    return [(material, (sq[0], sq[1], sq[2])), (material, (sq[0], sq[2], sq[3]))]
+
+
+def test_the_batch_keeps_palm_zones_for_the_crane_and_the_shed():
+    assert split.OBJECTS['crane-west']['exclude_zones'] == ((-330, 72, 5.0),)
+    assert split.OBJECTS['fish-shed']['exclude_zones'] == ((300, 72, 5.0),)

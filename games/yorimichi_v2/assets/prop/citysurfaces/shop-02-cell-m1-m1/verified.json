@@ -1,0 +1,46 @@
+{
+  "asset": "prop/citysurfaces/shop-02-cell-m1-m1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Shop_02_cell_-1_-1.uasset": "38ec61f7a514ec6c1640fe67504d5b9d05a85d2108d5b38f6d34cc875c8c1be7"
+  },
+  "input_fingerprint": "0f2c533fb01394624ebbca3628ce451ffb0e8b879b9c02789d9e4f28bd65f839",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Shop_02_cell_-1_-1": {
+      "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.5,
+          0.15000000596046448,
+          0.03999999910593033
+        ],
+        "screen_sizes": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "before": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.5,
+          0.15000000596046448,
+          0.03999999910593033
+        ],
+        "screen_sizes": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

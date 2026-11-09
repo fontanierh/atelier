@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/bush-hd-hedge",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Hedge.uasset": "8863def11612459fd928463ebac1a4d70cd0a6f0b99348e35b48f53a8fdf5f34"
+  },
+  "input_fingerprint": "ea83adf18111804388366f9696249efe3e5c5639a81b8b58fa1691d7b13d814f",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Hedge": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

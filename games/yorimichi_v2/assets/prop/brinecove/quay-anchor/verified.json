@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/quay-anchor",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_QuayAnchor.uasset": "cf931c28f8a22c7de8a5345bc912af2128b21c6e63735b70bb70298e5a08af10"
+  },
+  "input_fingerprint": "0b49d6cd428f8a73fdb024627d496f7fb84b4e8735a5d3242baf218cc97ce10a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_QuayAnchor": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

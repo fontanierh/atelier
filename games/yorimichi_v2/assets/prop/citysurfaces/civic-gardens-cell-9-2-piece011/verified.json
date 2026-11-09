@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/civic-gardens-cell-9-2-piece011",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_9_2_Piece011.uasset": "bbfc3d36ef8f78da68fd95e34e6d8a84b139a3890a14c439dec98d4fc23e9b19"
+  },
+  "input_fingerprint": "eac63eed9e8f6b00d784528caae1fc6a579196c4b8f4a0ff521a9646d91cbec3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_9_2_Piece011": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

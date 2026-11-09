@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/market-auction-block",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_MarketAuctionBlock.uasset": "a9cb0bc870f907ee28c2bf34277fc5e74c1767a7f7fd40c69daae0bc51d9992f"
+  },
+  "input_fingerprint": "de4490d98153031fec1a2b88135778a6a8210a1fd9ad8c8563d7709b2445e886",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_MarketAuctionBlock": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

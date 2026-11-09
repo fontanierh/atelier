@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Soft.uasset": "0dc0059f8bef3dc136b62f6066b944ee6c8b67e0cf36d03ce7df93e7d75f4856"
+    "unreal/Content/Brinecove/Meshes/SM_BC_Market_4_4_Soft.uasset": "6247cafa870ae81742331d34766448728d17c88edfd4d7eb11cf2b28272159f8"
   },
-  "input_fingerprint": "d974109e1b3718799ddd8e83313cbfaaeac4702eaad87d60a7805e8743b1d61b",
+  "input_fingerprint": "4249bc4d323097fb822906cb4723223e86e334eac3835b096b183fc292452d12",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Soft": {
@@ -15,7 +15,7 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
       "before": {

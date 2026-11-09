@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/park-cell-7-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Park_cell_7_1.uasset": "98ba9cfa1c0e1b88580450a8f23048aa34fe5371a9033efe7c7bfe3cea4852a6"
+  },
+  "input_fingerprint": "1265d7404823473fbbd5630362f0039937ab1c14c570dc961ae5bfbe2d6b0c82",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Park_cell_7_1": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

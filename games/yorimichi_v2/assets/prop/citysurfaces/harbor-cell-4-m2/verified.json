@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/harbor-cell-4-m2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_4_-2.uasset": "826619a3a7d79d628c3c65d51357f2b86d04f8eb5108869da54a839c4dfdfbe5"
+  },
+  "input_fingerprint": "64d13c2efc36208eebc256f101b71f2e8ca19014ba2463ac2f19c8b71acae3e9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_4_-2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

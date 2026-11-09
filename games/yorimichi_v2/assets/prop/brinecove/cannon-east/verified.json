@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/cannon-east",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_CannonEast.uasset": "526243cc281e009fcf92ec588d2e73f4a33271eda12c5779dd7c6917f9036446"
+  },
+  "input_fingerprint": "f4514484e768bb7d86c07eec5f81d0f68f027572415d964558bb243c949c0116",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_CannonEast": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

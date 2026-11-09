@@ -72,6 +72,9 @@ DONE = re.compile(r'V2 OBJECTS DONE created=(\d+) kept=(\d+)')
 # The static meshes a `static` object may name: the mini Mega ramp's two and the Ronin camp's four props. Each is built by
 # UV2MigrationMisc::MigrateStaticMeshes (World/V2MigrationMisc.cpp); a test keeps the two lists equal.
 STATIC_MESHES = ('Mega_Ramp', 'Mega_Trim', 'SM_CampFirePit', 'SM_CampJinmaku', 'SM_CampWeaponRack', 'SM_CampBales')
+# The map manifest's actor package (AV2WorldManifest) of each environment region: a migration with --environment saves it,
+# so its claim must lock it (World Partition named it once; a test keeps it in the region's verified actor files).
+MANIFEST = {'region/w00-island': 'unreal/Content/__ExternalActors__/V2/Maps/Slice/7/B7/AWD1CJD6O85IL6NNJK0SYE.uasset'}
 
 
 class ObjectError(RuntimeError):
@@ -231,12 +234,17 @@ def record_text(item: dict, region: str, package) -> str:
         ''][:-1])
 
 
-def claim_paths(game: Path, region_ids: list[str], *, only=None) -> dict[str, list[str]]:
+def claim_paths(game: Path, region_ids: list[str], *, only=None, environment=None) -> dict[str, list[str]]:
     """What a claim for these regions' objects locks and lists: {"lock": the area patch packages their split
-    objects leave (every patch of each split key in patches.json), "path": each object record's two files}."""
+    objects leave (every patch of each split key in patches.json) and the environment's manifest actor (MANIFEST),
+    "path": each object record's two files}."""
     _, regions = records.discover(game)
     by_id = {r.id: r for r in regions}
     lock, path = set(), set()
+    if environment:
+        if environment not in MANIFEST:
+            raise ObjectError(f'{environment} owns no map manifest (MANIFEST)')
+        lock.add(f'games/yorimichi_v2/{MANIFEST[environment]}')
     for rid in region_ids:
         items = [i for i in load_objects(by_id[rid])['objects'] if only is None or i['id'] in set(only)]
         keys = {i['split']['key'] for i in items if 'split' in i}
@@ -583,7 +591,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.claim_paths:
-            print(json.dumps(claim_paths(GAME, args.regions, only=args.only), indent=1))
+            print(json.dumps(claim_paths(GAME, args.regions, only=args.only, environment=args.environment), indent=1))
         elif args.promote:
             promote(GAME, args.regions, args.claim, only=args.only)
         else:

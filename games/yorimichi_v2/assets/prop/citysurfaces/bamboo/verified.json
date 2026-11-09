@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/bamboo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Bamboo.uasset": "e3ad3429bcd5a66fabbeba46c9360876df83adffb379525b4c198a052b47ddda"
+  },
+  "input_fingerprint": "75577ec35ba0babb36ddb312eed1be3fd91cc9936729cc25469996a084317a15",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Bamboo": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
