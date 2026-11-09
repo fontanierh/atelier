@@ -877,7 +877,7 @@ def _drop_verified(path: Path, packages: set[str]) -> None:
         path.unlink()
 
 
-def apply(game: Path, plan: Plan, donor: Path) -> dict:
+def apply(game: Path, plan: Plan, donor: Path, settle: bool = False) -> dict:
     """Write the generated records and shrink the adopted ones. Returns what changed (empty when already applied)."""
     changed = {'created': [], 'shrunk': [], 'deleted': []}
     gen_packages = {g.package for g in plan.generated}
@@ -928,7 +928,47 @@ def apply(game: Path, plan: Plan, donor: Path) -> dict:
             _drop_verified(folder / 'verified.json', gen_packages & before)
         changed['shrunk'].append(record_id)
     changed['retargeted'] = _retarget(game, plan, moved_from)
+    if settle:
+        changed['settled'] = _settle(game, plan.family)
     return changed
+
+
+def _settle(game: Path, family: str) -> list[str]:
+    """Give the family's adopted records the form adoption's repartition would: when generated records took packages out
+    of a folder, the one adopted record left may now belong in the parent unit (adopted/fx/loose_files -> adopted/fx,
+    since /Game/FX holds only its seven loose packages). Only that single-record move is done here, with the
+    repartition's own unit text; the real-game repartition test stays clean."""
+    sys.path.insert(0, str(HERE))
+    import adopt
+    report = adopt.repartition(game, check_only=True)
+    settled = []
+    for gone in report['delete']:
+        if not (gone.startswith(f'assets/adopted/{family}/') and gone.endswith('asset.toml')):
+            continue
+        old = records.load_asset(game / gone)
+        packages = [o.package for o in old.outputs]
+        units = adopt.partition(packages, packages[0].split('/')[2], groups=adopt.load_groups(game / adopt.GROUPS.relative_to(adopt.GAME)))
+        if len(units) != 1:
+            continue
+        ((unit_id, (owner, about, members)),) = units.items()
+        if sorted(members) != sorted(packages) or unit_id == old.id:
+            continue
+        folder = game / 'assets' / unit_id
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / 'asset.toml').write_text(adopt.record_text(unit_id, owner, about, members, old.license, old.provenance, (),
+                                                             old.references))
+        if old.verified.is_file():
+            body = _json(old.verified)
+            body['asset'] = unit_id
+            records.write_json(folder / 'verified.json', body)
+            old.verified.unlink()
+        old.record.unlink()
+        parent = old.record.parent
+        while parent != game / 'assets' and parent.is_dir() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
+        settled.append(unit_id)
+    return settled
 
 
 def _used_bytes(game: Path, asset) -> bytes | None:
@@ -1021,8 +1061,8 @@ def main(argv=None) -> int:
         plan = build_plan(args.game.resolve(), args.family, args.donor.resolve())
         print(report(plan))
         if args.apply:
-            changed = apply(args.game.resolve(), plan, args.donor.resolve())
-            print(f'applied: created {len(changed["created"])}, shrunk {len(changed["shrunk"])}, '
+            changed = apply(args.game.resolve(), plan, args.donor.resolve(), settle=True)
+            print(f'applied: created {len(changed["created"])}, shrunk {len(changed["shrunk"])}, settled {len(changed.get("settled", []))}, '
                   f'deleted {len(changed["deleted"])}, retargeted {len(changed["retargeted"])}')
     except (RecoverError, RecordError) as error:
         print(f'recover failed: {error}', file=sys.stderr)
