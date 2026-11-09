@@ -1,0 +1,12 @@
+{
+  "asset": "texture/hippodrome/dirt",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Textures/T_Dirt.uasset": "352be56ea9b8e4f9bb24209a999d3cc387e7b7adf8083d8b0bb700f2e65120fa"
+  },
+  "input_fingerprint": "659162ed7135217232a3bf52a8ae9013e096dd47f1fa3f401f23227983250216",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

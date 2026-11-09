@@ -111,8 +111,15 @@ def _import(source, package, options):
 def _portable_source(asset, portable):
     """Point the asset's import data at the repository-relative source, not this checkout's absolute path."""
     data = asset.get_editor_property('asset_import_data')
-    if data is not None:
-        data.scripted_add_filename(portable, 0, '')
+    if data is None:
+        return
+    data.scripted_add_filename(portable, 0, '')
+    # An Interchange import (textures) also keeps its node graph and a factory node ID ("Factory_<absolute path>"),
+    # which both repeat the checkout's path: drop the graph and name the node after the asset, as the scrub does.
+    if hasattr(data, 'set_node_container') and hasattr(U, 'InterchangeBaseNodeContainer'):
+        data.set_node_container(U.new_object(U.InterchangeBaseNodeContainer, outer=data))
+        if not U.ImportProvenance.rename_interchange_node(data, f'Factory_{asset.get_name()}'):
+            raise RuntimeError(f'{asset.get_path_name()}: Interchange data without a renamable node ID')
 
 
 def _apply_texture_settings(asset, settings):

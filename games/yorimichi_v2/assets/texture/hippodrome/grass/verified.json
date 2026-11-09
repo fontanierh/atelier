@@ -1,0 +1,12 @@
+{
+  "asset": "texture/hippodrome/grass",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Textures/T_Grass.uasset": "3fd88da4d1114b6e80f23d89645644283a0f647f4a0f5c9b438e8e2fab3c5b7f"
+  },
+  "input_fingerprint": "e3ce73d24aa401e205d3da60a0b807657db677a63df2e425a4d662925abc61cf",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}
