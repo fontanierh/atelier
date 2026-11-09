@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_water.uasset": "ac70272b8f48a5baa6c4e7d895c8e4347b7ada72bb4c2d27c68f9acaf5ce9a9e"
+  },
+  "input_fingerprint": "3fa34f8a46693699271fa272ba2b83996e9c0223604c17a81b6fbb35b021d1cc",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

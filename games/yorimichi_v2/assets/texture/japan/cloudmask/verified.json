@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/cloudmask",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_cloudmask.uasset": "eced895b8913e5f1acbfd1906031aedf8c73388a3f3b38e44f71013664102994"
+  },
+  "input_fingerprint": "8003f3134811cad49f6737d9f37acf9e5b0e9d15c788d620c9bdcc750f39b769",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

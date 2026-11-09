@@ -1,0 +1,12 @@
+{
+  "asset": "texture/fx/ring",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/Textures/T_FX_Ring.uasset": "ff270c2f858aa17e470cbabd626e757114cbd8f93084b428864ff8772352c0ef"
+  },
+  "input_fingerprint": "28eb43a01ca0ed951c16beef4adab5eeaac36b9a4d280cb8d3df6cd0ff26844f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

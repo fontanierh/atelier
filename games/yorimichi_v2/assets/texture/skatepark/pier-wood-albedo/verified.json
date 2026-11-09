@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-wood-albedo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_wood_albedo.uasset": "8c77f90f65525e98defbea9cdc4a5e2557d160b17b0e28edab636c459beac5b8"
+  },
+  "input_fingerprint": "21f1e5efa9523ff94cff57ed6c144903138e19d2452dd1c435f6da41e4e2759e",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}
