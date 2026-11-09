@@ -47,7 +47,7 @@ retire later.
 ## Controller sequence
 
 ```
-DONOR=~/dev/atelier-yv2-donor/build/yorimichi           # generator found at DONOR/../../games/yorimichi/world/regions (or --generator DIR)
+DONOR=build/yorimichi                                  # generator found at DONOR/../../games/yorimichi/world/regions (or --generator DIR)
 CMD="uv run python games/yorimichi_v2/tools/migrate/brinecove_ships.py"
 git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
 $CMD plan  --donor $DONOR
@@ -57,7 +57,7 @@ uv run python games/yorimichi_v2/tools/import/run.py prop/brinecove/galleon-nigh
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK \
   --only object/brinecove/galleon-nightjar,object/brinecove/sloop-east,object/brinecove/galleon-adventure-hull
 $CMD check --donor $DONOR
-uv run python games/yorimichi_v2/tools/test/saved_objects.py --zone brinecove_harbor      # each ship and hull drawn once
+uv run python games/yorimichi_v2/tools/test/saved_objects.py --zone <the Brine Cove ship zone>      # each ship and hull drawn once
 $CMD retire --donor $DONOR --claim TASK     # refuses unless check passes; then rerun towns.py (below)
 uv run python games/yorimichi_v2/tools/migrate/towns.py
 uv run python games/yorimichi_v2/tools/content/check.py
