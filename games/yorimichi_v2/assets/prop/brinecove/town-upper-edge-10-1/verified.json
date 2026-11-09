@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-edge-10-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperEdge101.uasset": "2665fff6b7aa59ea26ed2717a2f6a725474bab59326967b894d8f6c68393293c"
+  },
+  "input_fingerprint": "0e2de05a984d89e38fd78a3036a74933c7f2057981336b4ec21db83a1657ef46",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperEdge101": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
