@@ -326,6 +326,21 @@ def main():
     lod_results = {}
     for source, portable, package in jobs:
         if plan['importer'] == 'static-mesh':
+            # The chain the package had before this import; a new package has none.
+            # A new package is checked first: loading a missing one logs an error, which fails the session's exit.
+            existing = EAL.load_asset(package) if EAL.does_asset_exist(package) else None
+            if existing is not None and settings.get('collision') == 'simple_and_complex':
+                # An FBX reimport appends its UCX hulls to the saved ones: start from none.
+                _static_mesh_editor().remove_collisions(existing)
+            before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
+            slots = settings.get('slot_materials')
+            if (existing is not None and slots is not None
+                    and len(existing.get_editor_property('static_materials')) != len(slots)):
+                # The source has a different material set (a split took a material): a reimport keeps the old slot
+                # table, so the import starts from no package; its LOD settings were read above and are kept.
+                EAL.delete_loaded_asset(existing)
+                existing = None
+            # Made after any delete above: its garbage collection would free a pipeline made earlier.
             if source.lower().endswith('.fbx'):
                 options = _fbx_static_mesh(settings)
             elif source.lower().endswith(('.glb', '.gltf')):
@@ -333,12 +348,6 @@ def main():
                                             collision=settings.get('collision') not in ('boxes', 'none'))
             else:
                 options = None
-            # The chain the package had before this import; a new package has none.
-            existing = EAL.load_asset(package)
-            if existing is not None and settings.get('collision') == 'simple_and_complex':
-                # An FBX reimport appends its UCX hulls to the saved ones: start from none.
-                _static_mesh_editor().remove_collisions(existing)
-            before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
             legacy = source.lower().endswith('.fbx') and _legacy_fbx(settings)
             if legacy:
                 U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
