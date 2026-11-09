@@ -334,9 +334,16 @@ def prior_files(region: Path, own: str) -> list[Path]:
 
 
 def prior_objects(region: Path, own: str) -> set[str]:
-    """Objects earlier batches already cut out of the donor tiles (batch 1 and any other split-*.json)."""
+    """Objects earlier batches already cut out of the donor tiles (batch 1, the ships and the market/town batches before
+    this one). A later batch's parts are not subtracted: a batch's plan is the one it was applied with, so a retirement
+    after later batches re-carved a shared tile still binds to its own applied selection."""
+    order = list(BATCHES)
+    mine = own[len('split-'):-len('.json')]
+    later = set(order[order.index(mine) + 1:]) if mine in order else set()
     names: set[str] = set()
     for path in prior_files(region, own):
+        if path.name[len('split-'):-len('.json')] in later:
+            continue
         names |= {part['object'] for part in json.loads(path.read_text())['parts'].values()}
     return names
 
