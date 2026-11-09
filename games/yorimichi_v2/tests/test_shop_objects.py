@@ -105,7 +105,7 @@ def test_a_quadrant_type_takes_all_four_of_its_cells_and_a_whole_type_one_record
         cells = set()
         for model in next(iter(sets)):
             number = key[-2:]
-            tail = model.rsplit('/', 1)[1].removeprefix(f'shop-{number}-').split('-')
+            tail = model.rsplit('/', 1)[1].removeprefix(f'shop-{number}-cell-').split('-')
             cells.add((CELLS[tail[0]], CELLS[tail[1]]))
         assert cells == {(0, 0), (0, -1), (-1, 0), (-1, -1)}, key
 

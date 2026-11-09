@@ -97,4 +97,4 @@ def test_real_tree_has_no_failures():
     assert [str(p) for p in found if p.level == 'FAIL'] == []
     assert cook_config.bundle_identifier(ROOT) == 'com.atelier.yorimichiv2'
     assert cook_config.render_missing(ROOT) == []
-    assert {p.subject for p in found if p.code == 'UNKNOWN_ROOT'} <= {'/Game/A', '/Game/HidamariStable'}
+    assert {p.subject for p in found if p.code == 'UNKNOWN_ROOT'} <= {'/Game/A', '/Game/HidamariStable', '/Game/V2Import'}   # V2Import: an import's transient LOD levels, never saved

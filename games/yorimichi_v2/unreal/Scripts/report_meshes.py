@@ -1,6 +1,6 @@
 """Report saved static meshes as JSON (read-only `editor.run`, V2_EDITOR_READ_ONLY=1): what a recipe must reproduce.
 
-V2_REPORT_PACKAGES names the meshes ("/Game/A/SM_X /Game/B/SM_Y"); V2_REPORT_OUT the JSON file to write. For each mesh:
+V2_REPORT_PACKAGES names the meshes ("/Game/BelmonteTrain/SM_BT_Tender /Game/Japan/Assets/BK_Frame"); V2_REPORT_OUT the JSON file to write. For each mesh:
 its material slots in index order (slot name and material), each LOD's screen size, triangles and per-section slot,
 its collision (trace flag, the simple boxes, convex and other shape counts, the LOD used for collision), its bounds and
 its import sources. Nothing is saved.

@@ -371,7 +371,7 @@ def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner
 
 # --- Small source-less families: skatepark, megapark seam, swordcamp, fx, villageatomic ---------------------------------
 # Not planned, with the reason (docs/inventory/sources.md): materials and material instances are built in the donor editor
-# (no V2 importer for them); racing (M_RacingTv) and skateruntime (a custom data asset) have no mesh or texture input;
+# (no V2 importer for them); the hippodrome TV material and skateruntime (a custom data asset) have no mesh or texture input;
 # experiments/citytrees are LOD-chain duplicates of citysurfaces pieces whose LOD files are FBX, and the V2 LOD chain imports
 # glTF levels only (see the report of the recovery branch).
 SKATEPARK_ROOT = '/Game/SkatePark'

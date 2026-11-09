@@ -23,13 +23,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]                  # games/yorimichi_v2
 DONOR_WORLD = ROOT.parent / 'yorimichi' / 'world'           # the legacy generator (placements and types)
 REGIONS = ROOT / 'world' / 'regions'
-RECORDS = ROOT / 'assets' / 'adopted' / 'experiments' / 'citysurfaces' / 'v1-128m'
-MODEL_PREFIX = 'adopted/experiments/citysurfaces/v1-128m/'
+RECORDS = ROOT / 'assets' / 'prop' / 'citysurfaces'          # the recovered city pieces (recover.py)
+MODEL_PREFIX = 'prop/citysurfaces/'
 REGION_IDS = ('w07-hidamari-harbour', 'w07-hidamari-station')
 TAGS = {'w07-hidamari-harbour': 'harbour', 'w07-hidamari-station': 'station'}
 KEY = re.compile(r'HD_Shop_\d\d')
 WHOLE = re.compile(r'shop-(\d\d)')
-QUADRANT = re.compile(r'shop-(\d\d)-(0|m1)-(0|m1)')
+QUADRANT = re.compile(r'shop-(\d\d)-cell-(0|m1)-(0|m1)')
 HEADER_OLD = '# The fused city-surface pieces (HD_Shop_* _cell_ meshes, streets, squares) stay area patches.'
 HEADER_NEW = ('# HD_Shop_* placements are instances of their type (tools/migrate/shop_objects.py): one object per shop, '
               'its model the type\'s mesh.')
