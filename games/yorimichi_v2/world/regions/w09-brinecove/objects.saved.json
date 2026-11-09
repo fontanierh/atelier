@@ -5813,6 +5813,76 @@
         "prop/brinecove/town-upper-crest-e4-1-soft"
       ]
     },
+    "object/brinecove/town-upper-crest-w1-0": {
+      "groups": [
+        "SM_BC_TownUpperCrestW10",
+        "SM_BC_TownUpperCrestW10_Soft"
+      ],
+      "id": "object/brinecove/town-upper-crest-w1-0",
+      "model": [
+        "prop/brinecove/town-upper-crest-w1-0",
+        "prop/brinecove/town-upper-crest-w1-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-crest-w1-0",
+        "prop/brinecove/town-upper-crest-w1-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-crest-w1-1": {
+      "groups": [
+        "SM_BC_TownUpperCrestW11"
+      ],
+      "id": "object/brinecove/town-upper-crest-w1-1",
+      "model": "prop/brinecove/town-upper-crest-w1-1",
+      "models": [
+        "prop/brinecove/town-upper-crest-w1-1"
+      ]
+    },
+    "object/brinecove/town-upper-crest-w1-2": {
+      "groups": [
+        "SM_BC_TownUpperCrestW12",
+        "SM_BC_TownUpperCrestW12_Soft"
+      ],
+      "id": "object/brinecove/town-upper-crest-w1-2",
+      "model": [
+        "prop/brinecove/town-upper-crest-w1-2",
+        "prop/brinecove/town-upper-crest-w1-2-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-crest-w1-2",
+        "prop/brinecove/town-upper-crest-w1-2-soft"
+      ]
+    },
+    "object/brinecove/town-upper-crest-w2-0": {
+      "groups": [
+        "SM_BC_TownUpperCrestW20",
+        "SM_BC_TownUpperCrestW20_Soft"
+      ],
+      "id": "object/brinecove/town-upper-crest-w2-0",
+      "model": [
+        "prop/brinecove/town-upper-crest-w2-0",
+        "prop/brinecove/town-upper-crest-w2-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-crest-w2-0",
+        "prop/brinecove/town-upper-crest-w2-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-crest-w2-1": {
+      "groups": [
+        "SM_BC_TownUpperCrestW21",
+        "SM_BC_TownUpperCrestW21_Soft"
+      ],
+      "id": "object/brinecove/town-upper-crest-w2-1",
+      "model": [
+        "prop/brinecove/town-upper-crest-w2-1",
+        "prop/brinecove/town-upper-crest-w2-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-crest-w2-1",
+        "prop/brinecove/town-upper-crest-w2-1-soft"
+      ]
+    },
     "object/brinecove/town-upper-edge-0-0": {
       "groups": [
         "SM_BC_TownUpperEdge00",
@@ -6043,6 +6113,111 @@
         "prop/brinecove/town-upper-hill-e4-soft"
       ]
     },
+    "object/brinecove/town-upper-hill-w1": {
+      "groups": [
+        "SM_BC_TownUpperHillW1",
+        "SM_BC_TownUpperHillW1_Soft"
+      ],
+      "id": "object/brinecove/town-upper-hill-w1",
+      "model": [
+        "prop/brinecove/town-upper-hill-w1",
+        "prop/brinecove/town-upper-hill-w1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-hill-w1",
+        "prop/brinecove/town-upper-hill-w1-soft"
+      ]
+    },
+    "object/brinecove/town-upper-hill-w2": {
+      "groups": [
+        "SM_BC_TownUpperHillW2",
+        "SM_BC_TownUpperHillW2_Soft"
+      ],
+      "id": "object/brinecove/town-upper-hill-w2",
+      "model": [
+        "prop/brinecove/town-upper-hill-w2",
+        "prop/brinecove/town-upper-hill-w2-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-hill-w2",
+        "prop/brinecove/town-upper-hill-w2-soft"
+      ]
+    },
+    "object/brinecove/town-upper-hill-w3": {
+      "groups": [
+        "SM_BC_TownUpperHillW3",
+        "SM_BC_TownUpperHillW3_Soft"
+      ],
+      "id": "object/brinecove/town-upper-hill-w3",
+      "model": [
+        "prop/brinecove/town-upper-hill-w3",
+        "prop/brinecove/town-upper-hill-w3-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-hill-w3",
+        "prop/brinecove/town-upper-hill-w3-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-0-0": {
+      "groups": [
+        "SM_BC_TownUpperRidge00",
+        "SM_BC_TownUpperRidge00_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-0-0",
+      "model": [
+        "prop/brinecove/town-upper-ridge-0-0",
+        "prop/brinecove/town-upper-ridge-0-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-0-0",
+        "prop/brinecove/town-upper-ridge-0-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-0-1": {
+      "groups": [
+        "SM_BC_TownUpperRidge01",
+        "SM_BC_TownUpperRidge01_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-0-1",
+      "model": [
+        "prop/brinecove/town-upper-ridge-0-1",
+        "prop/brinecove/town-upper-ridge-0-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-0-1",
+        "prop/brinecove/town-upper-ridge-0-1-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-1-0": {
+      "groups": [
+        "SM_BC_TownUpperRidge10",
+        "SM_BC_TownUpperRidge10_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-1-0",
+      "model": [
+        "prop/brinecove/town-upper-ridge-1-0",
+        "prop/brinecove/town-upper-ridge-1-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-1-0",
+        "prop/brinecove/town-upper-ridge-1-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-1-1": {
+      "groups": [
+        "SM_BC_TownUpperRidge11",
+        "SM_BC_TownUpperRidge11_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-1-1",
+      "model": [
+        "prop/brinecove/town-upper-ridge-1-1",
+        "prop/brinecove/town-upper-ridge-1-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-1-1",
+        "prop/brinecove/town-upper-ridge-1-1-soft"
+      ]
+    },
     "object/brinecove/town-upper-ridge-10-0": {
       "groups": [
         "SM_BC_TownUpperRidge100",
@@ -6213,6 +6388,156 @@
         "prop/brinecove/town-upper-ridge-15-1-soft"
       ]
     },
+    "object/brinecove/town-upper-ridge-2-0": {
+      "groups": [
+        "SM_BC_TownUpperRidge20",
+        "SM_BC_TownUpperRidge20_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-2-0",
+      "model": [
+        "prop/brinecove/town-upper-ridge-2-0",
+        "prop/brinecove/town-upper-ridge-2-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-2-0",
+        "prop/brinecove/town-upper-ridge-2-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-2-1": {
+      "groups": [
+        "SM_BC_TownUpperRidge21",
+        "SM_BC_TownUpperRidge21_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-2-1",
+      "model": [
+        "prop/brinecove/town-upper-ridge-2-1",
+        "prop/brinecove/town-upper-ridge-2-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-2-1",
+        "prop/brinecove/town-upper-ridge-2-1-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-3-0": {
+      "groups": [
+        "SM_BC_TownUpperRidge30",
+        "SM_BC_TownUpperRidge30_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-3-0",
+      "model": [
+        "prop/brinecove/town-upper-ridge-3-0",
+        "prop/brinecove/town-upper-ridge-3-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-3-0",
+        "prop/brinecove/town-upper-ridge-3-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-3-1": {
+      "groups": [
+        "SM_BC_TownUpperRidge31",
+        "SM_BC_TownUpperRidge31_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-3-1",
+      "model": [
+        "prop/brinecove/town-upper-ridge-3-1",
+        "prop/brinecove/town-upper-ridge-3-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-3-1",
+        "prop/brinecove/town-upper-ridge-3-1-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-4-0": {
+      "groups": [
+        "SM_BC_TownUpperRidge40",
+        "SM_BC_TownUpperRidge40_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-4-0",
+      "model": [
+        "prop/brinecove/town-upper-ridge-4-0",
+        "prop/brinecove/town-upper-ridge-4-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-4-0",
+        "prop/brinecove/town-upper-ridge-4-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-4-1": {
+      "groups": [
+        "SM_BC_TownUpperRidge41",
+        "SM_BC_TownUpperRidge41_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-4-1",
+      "model": [
+        "prop/brinecove/town-upper-ridge-4-1",
+        "prop/brinecove/town-upper-ridge-4-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-4-1",
+        "prop/brinecove/town-upper-ridge-4-1-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-6-0": {
+      "groups": [
+        "SM_BC_TownUpperRidge60",
+        "SM_BC_TownUpperRidge60_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-6-0",
+      "model": [
+        "prop/brinecove/town-upper-ridge-6-0",
+        "prop/brinecove/town-upper-ridge-6-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-6-0",
+        "prop/brinecove/town-upper-ridge-6-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-6-1": {
+      "groups": [
+        "SM_BC_TownUpperRidge61",
+        "SM_BC_TownUpperRidge61_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-6-1",
+      "model": [
+        "prop/brinecove/town-upper-ridge-6-1",
+        "prop/brinecove/town-upper-ridge-6-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-6-1",
+        "prop/brinecove/town-upper-ridge-6-1-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-7-0": {
+      "groups": [
+        "SM_BC_TownUpperRidge70",
+        "SM_BC_TownUpperRidge70_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-7-0",
+      "model": [
+        "prop/brinecove/town-upper-ridge-7-0",
+        "prop/brinecove/town-upper-ridge-7-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-7-0",
+        "prop/brinecove/town-upper-ridge-7-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-ridge-7-1": {
+      "groups": [
+        "SM_BC_TownUpperRidge71",
+        "SM_BC_TownUpperRidge71_Soft"
+      ],
+      "id": "object/brinecove/town-upper-ridge-7-1",
+      "model": [
+        "prop/brinecove/town-upper-ridge-7-1",
+        "prop/brinecove/town-upper-ridge-7-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-ridge-7-1",
+        "prop/brinecove/town-upper-ridge-7-1-soft"
+      ]
+    },
     "object/brinecove/town-upper-ridge-8-0": {
       "groups": [
         "SM_BC_TownUpperRidge80",
@@ -6333,6 +6658,36 @@
         "prop/brinecove/town-upper-slope--1-0-5-1-soft"
       ]
     },
+    "object/brinecove/town-upper-slope--1-1-5-0": {
+      "groups": [
+        "SM_BC_TownUpperSlope1150",
+        "SM_BC_TownUpperSlope1150_Soft"
+      ],
+      "id": "object/brinecove/town-upper-slope--1-1-5-0",
+      "model": [
+        "prop/brinecove/town-upper-slope--1-1-5-0",
+        "prop/brinecove/town-upper-slope--1-1-5-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-slope--1-1-5-0",
+        "prop/brinecove/town-upper-slope--1-1-5-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-slope--1-1-5-1": {
+      "groups": [
+        "SM_BC_TownUpperSlope1151",
+        "SM_BC_TownUpperSlope1151_Soft"
+      ],
+      "id": "object/brinecove/town-upper-slope--1-1-5-1",
+      "model": [
+        "prop/brinecove/town-upper-slope--1-1-5-1",
+        "prop/brinecove/town-upper-slope--1-1-5-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-slope--1-1-5-1",
+        "prop/brinecove/town-upper-slope--1-1-5-1-soft"
+      ]
+    },
     "object/brinecove/town-upper-slope--1-2-3-1": {
       "groups": [
         "SM_BC_TownUpperSlope1231",
@@ -6371,6 +6726,36 @@
       "models": [
         "prop/brinecove/town-upper-slope--1-2-4-1",
         "prop/brinecove/town-upper-slope--1-2-4-1-soft"
+      ]
+    },
+    "object/brinecove/town-upper-slope--1-2-5-0": {
+      "groups": [
+        "SM_BC_TownUpperSlope1250",
+        "SM_BC_TownUpperSlope1250_Soft"
+      ],
+      "id": "object/brinecove/town-upper-slope--1-2-5-0",
+      "model": [
+        "prop/brinecove/town-upper-slope--1-2-5-0",
+        "prop/brinecove/town-upper-slope--1-2-5-0-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-slope--1-2-5-0",
+        "prop/brinecove/town-upper-slope--1-2-5-0-soft"
+      ]
+    },
+    "object/brinecove/town-upper-slope--1-2-5-1": {
+      "groups": [
+        "SM_BC_TownUpperSlope1251",
+        "SM_BC_TownUpperSlope1251_Soft"
+      ],
+      "id": "object/brinecove/town-upper-slope--1-2-5-1",
+      "model": [
+        "prop/brinecove/town-upper-slope--1-2-5-1",
+        "prop/brinecove/town-upper-slope--1-2-5-1-soft"
+      ],
+      "models": [
+        "prop/brinecove/town-upper-slope--1-2-5-1",
+        "prop/brinecove/town-upper-slope--1-2-5-1-soft"
       ]
     },
     "object/brinecove/town-upper-terrace-w1-0": {

@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-upper-crest-w1-2",
+  "dependencies": {
+    "prop/brinecove/town-upper-crest-w1-2": "745de244f2014723c1b248ac97146ad808517fe6c58454b24467b9c9472f5c08",
+    "prop/brinecove/town-upper-crest-w1-2-soft": "edb6945a6467606bad2e5c5f33b5353ae0a7ede8434603037c241680ec563ef8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/IT/E7DJ5GVRTSPIZE9JF9A55V.uasset": "8dcc5ab0a426fc9e4d0dab25fb812e231560fcf12b06c51316deb94efada8a04"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
