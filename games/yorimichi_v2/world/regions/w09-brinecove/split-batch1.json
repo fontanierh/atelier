@@ -86,10 +86,7 @@
     },
     "prop/brinecove/crane-west": {
       "materials": [
-        "BC_autumn_olive",
-        "BC_clay",
         "BC_rope",
-        "BC_stone_light",
         "BC_wood",
         "BC_wood_dark",
         "BC_wood_light"
@@ -97,50 +94,25 @@
       "max": [
         -319.0745,
         18.072,
-        -70.769
+        -77.8339
       ],
       "mesh": "SM_BC_CraneWest",
       "min": [
         -338.2394,
-        4.5004,
+        4.628,
         -84.25
       ],
       "object": "crane-west",
       "package": "/Game/Brinecove/Meshes/SM_BC_CraneWest",
-      "sha256": "8aa4316fada8587b7755b3be398f2b161d263bde13db5cdab232787e28bcd848",
+      "sha256": "17ff53137a4c1304c4e79c5694ead54ebf4153f505800946687a1a37e3227f06",
       "soft": false,
       "tiles": [
         "Harbor_2_3"
       ],
-      "triangles": 410
-    },
-    "prop/brinecove/crane-west-soft": {
-      "materials": [
-        "BC_palm_frond"
-      ],
-      "max": [
-        -324.6264,
-        14.4976,
-        -68.2841
-      ],
-      "mesh": "SM_BC_CraneWest_Soft",
-      "min": [
-        -333.3439,
-        10.0437,
-        -77.3378
-      ],
-      "object": "crane-west",
-      "package": "/Game/Brinecove/Meshes/SM_BC_CraneWest_Soft",
-      "sha256": "22c87da283b6f629067ef151890628a9b345afee850164cfed712256a6748e35",
-      "soft": true,
-      "tiles": [
-        "Harbor_2_3_Soft"
-      ],
-      "triangles": 30
+      "triangles": 168
     },
     "prop/brinecove/fish-shed": {
       "materials": [
-        "BC_autumn_olive",
         "BC_clay",
         "BC_cream",
         "BC_planks",
@@ -153,7 +125,7 @@
       "max": [
         322.0,
         13.915,
-        -70.897
+        -77.9
       ],
       "mesh": "SM_BC_FishShed",
       "min": [
@@ -163,36 +135,12 @@
       ],
       "object": "fish-shed",
       "package": "/Game/Brinecove/Meshes/SM_BC_FishShed",
-      "sha256": "957bd32d165671fb7832fbdb03a598f360c49d860961a0074f219173c258154a",
+      "sha256": "07c32e773a8fe0c80f39b8980577d427cd4e7d05dd203243aa4794bc935efc03",
       "soft": false,
       "tiles": [
         "Harbor_5_3"
       ],
-      "triangles": 678
-    },
-    "prop/brinecove/fish-shed-soft": {
-      "materials": [
-        "BC_palm_frond"
-      ],
-      "max": [
-        303.188,
-        13.5888,
-        -68.04
-      ],
-      "mesh": "SM_BC_FishShed_Soft",
-      "min": [
-        295.4459,
-        9.4859,
-        -76.6302
-      ],
-      "object": "fish-shed",
-      "package": "/Game/Brinecove/Meshes/SM_BC_FishShed_Soft",
-      "sha256": "72fa3dd7673602c76bbbca3e06fedca66a8f2985399d8252bf29227f123cc078",
-      "soft": true,
-      "tiles": [
-        "Harbor_5_3_Soft"
-      ],
-      "triangles": 30
+      "triangles": 468
     },
     "prop/brinecove/market-auction-block": {
       "materials": [
@@ -389,18 +337,14 @@
   "schema": 1,
   "shares": {
     "Harbor_2_3": {
-      "prop/brinecove/crane-west": 410
+      "prop/brinecove/crane-west": 168
     },
-    "Harbor_2_3_Soft": {
-      "prop/brinecove/crane-west-soft": 30
-    },
+    "Harbor_2_3_Soft": {},
     "Harbor_5_3": {
-      "prop/brinecove/fish-shed": 678,
+      "prop/brinecove/fish-shed": 468,
       "prop/brinecove/shipyard-yard": 8926
     },
-    "Harbor_5_3_Soft": {
-      "prop/brinecove/fish-shed-soft": 30
-    },
+    "Harbor_5_3_Soft": {},
     "Harbor_5_4": {
       "prop/brinecove/crane-east": 168,
       "prop/brinecove/shipyard-yard": 632
@@ -485,8 +429,8 @@
           "BC_wood_dark",
           "BC_wood_light"
         ],
-        "sha256": "ac8391002f730553d7ec0fbdbd13efb5c38020a29e579baa561e0b3d1837cc50",
-        "triangles": 2436
+        "sha256": "68a47478dd56eece1adf7181867cb429e73b91cd4863cb64c6874ac9e6b3f29d",
+        "triangles": 2678
       },
       "source_triangles": 2846
     },
@@ -513,8 +457,8 @@
         "materials": [
           "BC_palm_frond"
         ],
-        "sha256": "6ea9639f1e52b71b9b84af43a147065c1630ccd00a0fec68fb2151f3c76d0fcf",
-        "triangles": 60
+        "sha256": "59e2ad966fbd9859c8c7cb088a0250da6efe3a50ea081176c08cff8fd3d00406",
+        "triangles": 90
       },
       "source_triangles": 90
     },
@@ -586,8 +530,8 @@
           "BC_wood_dark",
           "BC_wood_light"
         ],
-        "sha256": "527cf45baf07e68fbde8d12f82e92ddaf4d4c7e34aaaf150660c24268bcc60c1",
-        "triangles": 3198
+        "sha256": "1dade7ab9f2523741489ddf52d57dc503a061a736701f6bfbe928b620ce624de",
+        "triangles": 3408
       },
       "source_triangles": 12802
     },
@@ -614,8 +558,8 @@
         "materials": [
           "BC_palm_frond"
         ],
-        "sha256": "e72b089b0b416fd5d19a72cac304a0724b2b1388eb3c0c605561f52d7e73b826",
-        "triangles": 60
+        "sha256": "22e96159f11047659a1f95f74ee0ebca6a956178d4956f82a9d8fe047fd0bad5",
+        "triangles": 90
       },
       "source_triangles": 90
     },

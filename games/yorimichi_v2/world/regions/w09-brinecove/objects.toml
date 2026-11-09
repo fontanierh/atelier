@@ -56,15 +56,15 @@ about = "the crane east, cut from its fused tile (168 triangles)"
 
 [[objects]]
 id = "object/brinecove/crane-west"
-groups = ["SM_BC_CraneWest", "SM_BC_CraneWest_Soft"]
-model = ["prop/brinecove/crane-west", "prop/brinecove/crane-west-soft"]
-about = "the crane west, cut from its fused tile (410 triangles)"
+group = "SM_BC_CraneWest"
+model = "prop/brinecove/crane-west"
+about = "the crane west, cut from its fused tile (168 triangles)"
 
 [[objects]]
 id = "object/brinecove/fish-shed"
-groups = ["SM_BC_FishShed", "SM_BC_FishShed_Soft"]
-model = ["prop/brinecove/fish-shed", "prop/brinecove/fish-shed-soft"]
-about = "the fish shed, cut from its fused tile (678 triangles)"
+group = "SM_BC_FishShed"
+model = "prop/brinecove/fish-shed"
+about = "the fish shed, cut from its fused tile (468 triangles)"
 
 [[objects]]
 id = "object/brinecove/market-auction-block"
