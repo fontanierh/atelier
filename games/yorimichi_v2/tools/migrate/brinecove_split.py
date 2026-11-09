@@ -339,9 +339,11 @@ def wanted_tiles(glb_dir: Path, objects: dict[str, dict]) -> list[str]:
                                     for o in objects.values() for t in o['tiles'])]
 
 
-def compute(glb_dir: Path, objects: dict[str, dict] | None = None) -> dict:
+def compute(glb_dir: Path, objects: dict[str, dict] | None = None, assigner=None) -> dict:
     """Split every donor tile the batch touches: {'models': {tile: model}, 'tris': {tile: [triangles]},
-    'owned': {tile: {object or '': [ordinals]}}, 'problems': [...]}. The remainder ('') plus the parts is each tile's triangles."""
+    'owned': {tile: {object or '': [ordinals]}}, 'problems': [...]}. The remainder ('') plus the parts is each tile's triangles.
+    `assigner(stem, tris, components, allowed)` replaces the anchored (radius) assignment, e.g. brinecove_ships.py's
+    generator-boundary assignment; it returns the same {object or '': [ordinals]}."""
     objects = objects or OBJECTS
     out = {'models': {}, 'tris': {}, 'owned': {}, 'problems': []}
     for stem in wanted_tiles(glb_dir, objects):
@@ -349,7 +351,8 @@ def compute(glb_dir: Path, objects: dict[str, dict] | None = None) -> dict:
         tris = list(triangles(model))
         allowed = {n: {k: v for k, v in o.items() if k != 'tiles'} for n, o in objects.items()
                    if any(stem.startswith(t) if t.endswith('_') else stem == t for t in o['tiles'])}
-        owned = assign_anchored(tris, components(tris), allowed)
+        comps = components(tris)
+        owned = assigner(stem, tris, comps, allowed) if assigner else assign_anchored(tris, comps, allowed)
         out['problems'] += [f'{stem}: {p}' for p in verify_partition(tris, [[tris[t] for t in m] for m in owned.values()])]
         out['models'][stem], out['tris'][stem], out['owned'][stem] = model, tris, owned
     return out
