@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/komainu",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_komainu.uasset": "19e7709179e91242d89414e33689537cf018e08074e242f761ad292250683bdb"
+  },
+  "input_fingerprint": "5b4bc435a71b0198012c7c2ee112d0371a39dbc0c1bcc607be55d9b79a853529",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_komainu": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/scooter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_scooter.uasset": "5f36695f4d2c46b08acf136542b12c9aa5346a40b57b4c25fa53816f6c1b8ea2"
+  },
+  "input_fingerprint": "756dd5ce7d6fe6d93d78c0a6ae969341a9c54fe9d4984f85f943327d6953d357",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_scooter": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

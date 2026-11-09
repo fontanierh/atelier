@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/kei-truck",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_kei_truck.uasset": "d6a1a72d5e3198510c14834813e9fe235a5c5ead0e7a84a09b73cf9d8eb38189"
+  },
+  "input_fingerprint": "a0696d239bbe527eea5ed183d5ea27f92436b70895e76f05e903db2afff96f60",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_kei_truck": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

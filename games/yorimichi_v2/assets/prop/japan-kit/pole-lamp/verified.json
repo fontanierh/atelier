@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/pole-lamp",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Pole_Lamp.uasset": "d45066b9efaf1143f53499e67c817b4bd49df0a760a501581ab67997f7c2996e"
+  },
+  "input_fingerprint": "906aa733ae6b6c6e791e391ce45816114c106e1fc43c2f277a63a5ebe67a8ee3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Pole_Lamp": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/tree-canopy-ginkgo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Canopy_Ginkgo.uasset": "e334d8880f7ae11df027f35d06c21d7bd5d5f75396578b327551470a14642275"
+  },
+  "input_fingerprint": "b69ae12f1497a848ef4be3dc818aba4e07eaecbf1b56e08ce702a100c5783aa7",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Canopy_Ginkgo": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

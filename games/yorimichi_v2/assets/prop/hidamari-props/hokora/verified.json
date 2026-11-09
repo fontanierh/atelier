@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/hokora",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_hokora.uasset": "f2cb9cac834470cf9413dd73bbfe2fe5290b3ec9317625abf3d067d3e929bf9e"
+  },
+  "input_fingerprint": "f911a5e42647cd94f3eb39a1ffac65f7cbf05f1f49641870cf5f37896202ca93",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_hokora": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

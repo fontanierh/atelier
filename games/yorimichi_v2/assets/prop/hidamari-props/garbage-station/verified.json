@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/garbage-station",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_garbage_station.uasset": "1856cc47435eeaa07466435aaae86dce12e1359b42d1cfcf0310d884f457e184"
+  },
+  "input_fingerprint": "8c5b79604e24e2473aba31df1860d094d2fd6f98b931441ee6387f1cfbbb7471",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_garbage_station": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

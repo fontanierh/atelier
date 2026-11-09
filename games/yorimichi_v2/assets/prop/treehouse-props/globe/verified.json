@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse-props/globe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/TH_P_globe.uasset": "e438c7e10fc6e531df50ab2272809ec8b64dedfd27a15c968fa498d519fe37ba"
+  },
+  "input_fingerprint": "146966167679ad9dd9984cb63c23d05c3167819a2c66ccc8cb3772a035c4c182",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/TH_P_globe": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

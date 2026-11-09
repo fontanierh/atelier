@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/torii",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Torii.uasset": "4a875a4d9169b1a44e8d35375ac10e8aabcdabb6d17a76f42d8aff694e125af1"
+  },
+  "input_fingerprint": "0284aea06ee0df09b5b7aba43842d0ee1abb366a23e2992b8a191744d3d79216",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Torii": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

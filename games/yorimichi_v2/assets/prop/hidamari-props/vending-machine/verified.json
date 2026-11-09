@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/vending-machine",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_vending_machine.uasset": "acb270375a36f11c85f0d3e26d9119761644b66d3bb8f106ebb4e7ba6c99512a"
+  },
+  "input_fingerprint": "af56686d83fa5e9d4aee898675f9497672a6f9253a0ca289be49651b4ffec337",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_vending_machine": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/sky-dome",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SkyDome.uasset": "5f587f535ff354e5cef6ee0f582f4eb222a6b1a5cfe5cb03e04dc6114849f775"
+  },
+  "input_fingerprint": "2f72c10a8564f918b4e90d7fd7e18faaceaf2d431c3f944950b741c67dcfdfcd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/SkyDome": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

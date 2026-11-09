@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/tree-canopy-maple",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Canopy_Maple.uasset": "6aa18bb128319374684985152ce83458b44e5dea7443aba3066c3a0f4b0fede5"
+  },
+  "input_fingerprint": "522a1a6195fda337dce61bcc731c00f1292f4389e55259cd8513650b8d73d824",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Canopy_Maple": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

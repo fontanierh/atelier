@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/rock-c",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Rock_C.uasset": "13b9b6110eedc1362db7c4fb91ac033c8d6feed4b6627d831ca3ed32855c72b7"
+  },
+  "input_fingerprint": "b9bfcab90e4a256a4cba9aac41affceeabf95ebf828950c73da121a76efeb860",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Rock_C": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
