@@ -81,7 +81,7 @@ def sha_of(path: Path) -> str:
 
 
 def instance_path(package: str) -> str:
-    return f'{package}.{package.rsplit("/", 1)[1]}'     # the runtime file's asset form: /Game/X/Y.Y
+    return f'{package}.{package.rsplit("/", 1)[1]}'     # the runtime file's asset form: /Game/A/Y.Y
 
 
 # --- the plan ----------------------------------------------------------------------------------------------------------
