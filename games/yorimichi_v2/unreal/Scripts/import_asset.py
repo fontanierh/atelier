@@ -327,7 +327,8 @@ def main():
     for source, portable, package in jobs:
         if plan['importer'] == 'static-mesh':
             # The chain the package had before this import; a new package has none.
-            existing = EAL.load_asset(package)
+            # A new package is checked first: loading a missing one logs an error, which fails the session's exit.
+            existing = EAL.load_asset(package) if EAL.does_asset_exist(package) else None
             if existing is not None and settings.get('collision') == 'simple_and_complex':
                 # An FBX reimport appends its UCX hulls to the saved ones: start from none.
                 _static_mesh_editor().remove_collisions(existing)
