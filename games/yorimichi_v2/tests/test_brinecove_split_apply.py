@@ -553,3 +553,72 @@ def test_cli_check_uses_completed_ship_retirement(cli_batch):
     body['groups'].append(group('SM_BC_Ships_4_3'))               # a retired tile drawn again is still a defect
     runtime.write_text(json.dumps(body))
     assert case.run('check', 'sloop-east') == 1
+
+
+@pytest.fixture
+def interrupted_split(tmp_path):
+    from types import SimpleNamespace
+    game = mini_game(tmp_path)
+    old = game / 'assets/prop/brinecove/cannon-west/asset.toml'
+    new = game / 'unreal/Content/Brinecove/Meshes/SM_BC_CannonWest.uasset'
+    old.parent.mkdir(parents=True)
+    old.write_bytes(b'original record')
+    scopes = {'region/w09-brinecove', ('asset/prop/brinecove/cannon-west', 'shared/brinecove/cannon-west')}
+    rels = [p.relative_to(game).as_posix() for p in (old, new)]
+    journal = apply.Journal(game)
+    journal.begin(rels, scopes=scopes)
+    old.write_bytes(b'partial record, not parseable')
+    new.parent.mkdir(parents=True)
+    new.write_bytes(b'partial new package')
+    return SimpleNamespace(game=game, old=old, new=new, scopes=scopes, rels=rels, journal=journal)
+
+
+@pytest.mark.parametrize('claim', [None, 'stale', 'unrelated'])
+def test_journal_recovery_refusal_preserves_every_byte(interrupted_split, monkeypatch, claim):
+    case = interrupted_split
+    before = snapshot(case.game)
+    calls = []
+
+    def refuse(paths, current_claim, what, *, scopes=(), repo=None):
+        calls.append((set(paths), current_claim, set(scopes)))
+        raise authority.Unauthorized('recovery claim does not cover the journal')
+    monkeypatch.setattr(apply.authority, 'authorize', refuse)
+    with pytest.raises(apply.SplitError, match='does not cover the journal'):
+        apply.run_step(case.game, {}, claim)
+    assert calls == [({f'{apply.GAME_REL}/{p}' for p in case.rels}, claim, case.scopes)]
+    assert snapshot(case.game) == before             # no rollback chmod/write/delete, and backups remain available
+
+
+def test_journal_recovery_uses_persisted_scopes_before_reading_partial_records(interrupted_split, monkeypatch):
+    case = interrupted_split
+    calls = []
+
+    def authorize(paths, claim, what, *, scopes=(), repo=None):
+        assert case.old.read_bytes() == b'partial record, not parseable' and case.new.exists()
+        calls.append((set(paths), claim, set(scopes)))
+    monkeypatch.setattr(apply.authority, 'authorize', authorize)
+
+    def compute(game, plan, retire):
+        assert case.old.read_bytes() == b'original record' and not case.new.exists()
+        assert not case.journal.manifest.exists()
+        return {'writes': {}, 'deletes': []}
+    monkeypatch.setattr(apply, 'compute', compute)
+
+    def build(*args):
+        assert case.old.read_bytes() == b'original record' and not case.new.exists()
+        return {}
+    monkeypatch.setattr(apply, 'build', build)
+    monkeypatch.setattr(apply, 'report', lambda plan: 'recovered plan')
+    assert apply.main(['apply', '--game', str(case.game), '--donor', str(case.game), '--claim', 'RECOVER']) == 0
+    assert calls == [({f'{apply.GAME_REL}/{p}' for p in case.rels}, 'RECOVER', case.scopes)]
+
+
+def test_journal_recovery_refuses_legacy_scopeless_journal(interrupted_split, monkeypatch):
+    case = interrupted_split
+    legacy = json.loads(case.journal.manifest.read_text())
+    del legacy['scopes']
+    case.journal.manifest.write_text(json.dumps(legacy))
+    before = snapshot(case.game)
+    with pytest.raises(apply.SplitError, match='no valid owning scopes'):
+        apply.run_step(case.game, {}, 'RECOVER')
+    assert snapshot(case.game) == before

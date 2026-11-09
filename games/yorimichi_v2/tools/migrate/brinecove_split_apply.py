@@ -576,7 +576,7 @@ class Journal:
         self.game, self.dir = game, game / JOURNAL
         self.manifest = self.dir / 'journal.json'
 
-    def begin(self, rels: list[str]):
+    def begin(self, rels: list[str], *, scopes):
         self.dir.mkdir(parents=True, exist_ok=True)
         entries = {}
         for rel in rels:
@@ -588,7 +588,34 @@ class Journal:
                 entries[rel] = records.sha256_file(path)
             else:
                 entries[rel] = None
-        self.manifest.write_text(json.dumps({'files': entries}, indent=2))
+        self.manifest.write_text(json.dumps({'files': entries, 'scopes': sorted(scopes, key=lambda s: json.dumps(s))},
+                                            indent=2))
+
+    def recover(self, claim: str | None) -> list[str]:
+        """@cc [owner:fontanierh,label:safety] brinecove-journal-recovery-ownership
+        Fresh-invocation recovery MUST authorize every persisted journal path and its original owning scopes before
+        restoring bytes. Missing authority or legacy scope metadata MUST leave the journal and partial work intact.
+        """
+        if not self.manifest.is_file():
+            return []
+        data = json.loads(self.manifest.read_text())
+        scopes = data.get('scopes')
+        valid_scope = lambda s: isinstance(s, str) and bool(s)  # noqa: E731
+        if not isinstance(scopes, list) or not scopes or any(
+                not (valid_scope(s) or isinstance(s, list) and s and all(valid_scope(v) for v in s)) for s in scopes):
+            raise SplitError('interrupted split journal has no valid owning scopes; recover its original scope set '
+                             'before retrying (journal and partial work retained)')
+        files = data.get('files')
+        if not isinstance(files, dict) or not files or any(
+                not isinstance(rel, str) or not rel or Path(rel).is_absolute() or '..' in Path(rel).parts or
+                Path(rel).as_posix() != rel for rel in files):
+            raise SplitError('interrupted split journal has invalid paths; resolve it before retrying (journal retained)')
+        try:
+            authority.authorize([f'{GAME_REL}/{rel}' for rel in sorted(files)], claim, 'Brine Cove split recovery',
+                                scopes=[tuple(s) if isinstance(s, list) else s for s in scopes])
+        except authority.Unauthorized as error:
+            raise SplitError(str(error)) from None
+        return self.restore()
 
     def restore(self) -> list[str]:
         if not self.manifest.is_file():
@@ -623,12 +650,12 @@ def lockable_present(game: Path, rels: list[str]) -> list[str]:
     return [line.split(':')[0][len(GAME_REL) + 1:] for line in out.splitlines() if line.endswith(': lockable: set')]
 
 
-def execute(game: Path, ops: dict, *, lockable=lockable_present) -> dict:
+def execute(game: Path, ops: dict, *, scopes, lockable=lockable_present) -> dict:
     """Write the computed outputs under the journal; any failure restores every file. Only the lockable files among those
     the (already checked) claim holds are made writable, as git-lfs does for a locked file; nothing else changes mode."""
     journal = Journal(game)
     touched_rels = sorted(set(ops['writes']) | set(ops['deletes']))
-    journal.begin(touched_rels)
+    journal.begin(touched_rels, scopes=scopes)
     try:
         for rel in lockable(game, touched_rels):
             path = game / rel
@@ -652,8 +679,8 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
 
     Preflight reads the runtime input, finishes all splitting (the plan is already staged) and computes every output in
     memory. Then the claim must cover the complete touched set. Any failure raises before the first byte is written. A
-    journal left by a crashed earlier run is restored first."""
-    recovered = Journal(game).restore()
+    journal left by a crashed earlier run is restored only after its persisted paths and scopes are authorized."""
+    recovered = Journal(game).recover(claim)
     if recovered:
         echo(f'restored {len(recovered)} file(s) from an interrupted run')
     if retire:
@@ -667,7 +694,7 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
                             scopes=info['scopes'])
     except authority.Unauthorized as error:
         raise SplitError(str(error)) from None
-    return execute(game, ops, lockable=lockable)
+    return execute(game, ops, scopes=info['scopes'], lockable=lockable)
 
 
 # --- check -------------------------------------------------------------------------------------------------------------
@@ -870,6 +897,10 @@ def main(argv=None) -> int:
             return 1 if problems else 0
         if args.donor is None:
             parser.error('--donor is required')
+        if args.command in ('apply', 'retire'):
+            recovered = Journal(game).recover(args.claim)    # partial records may not be readable by build yet
+            if recovered:
+                print(f'restored {len(recovered)} file(s) from an interrupted run')
         plan = build(game, args.donor.resolve(), args.stage.resolve(),
                      select(args.only.split(',') if args.only else None))
         retire = args.command == 'retire'
