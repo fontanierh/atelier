@@ -142,6 +142,12 @@ then deletes them, with the retired actor's entries in `objects.toml`, `objects.
 
 ### Controller sequence
 
+The expectation file holds one outstanding removal batch. Use the same `--only` selection for apply and retire;
+finish its accepted imports and retirement before applying a different selection when empty tiles, stale parts or
+changed actors still need removal. Pending actions survive retries and clear only after successful journaled retirement.
+This rule applies to this helper, not to a separate town planner's manifest. For an older apply that already lost its
+pending actions, recover the exact cleanup set from the prior applied manifest before retirement; keep accepted imports.
+
 ```
 DONOR=build/yorimichi
 CMD="uv run python games/yorimichi_v2/tools/migrate/brinecove_split_apply.py"

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/arcade-shop-04",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeShop_04.uasset": "daf57251225f7323e94f9c9142e98addde52c917d8532c18111690516ec7443a"
+  },
+  "input_fingerprint": "ea3640daf0b90811e1caf6482b44835ee0de6bd11cf768044d4be221f32a8736",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeShop_04": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

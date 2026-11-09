@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/north-rock-c",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthRockC.uasset": "bb7a0d219e1de6fb73107b97e0c959fc7a00162dba0280cb15cf9b6715607528"
+  },
+  "input_fingerprint": "435dbcc60a5cccff0e0b6ffbc42bcce823257cdc13d07001b77ac1fe0433a4f4",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthRockC": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

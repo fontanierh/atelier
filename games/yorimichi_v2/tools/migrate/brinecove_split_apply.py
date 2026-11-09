@@ -24,6 +24,10 @@ claimed paths are made writable. Every file is journaled first (unreal/Saved/Bri
 failure or at the start of the next run. `apply` never deletes: replaced tile packages are overwritten by their import,
 and retired packages and the retired actor stay until `retire`, which `check` must allow. It never runs Unreal, Blender
 or Git. A second `apply` changes nothing.
+
+The expectation holds one removal batch at a time. Use the same selection for apply and retire; another selection
+is refused while empty tiles, stale parts or changed saved actors await retirement. Pending actions remain in the
+expectation across commands and clear only with the successful journaled retirement.
 """
 from __future__ import annotations
 
@@ -121,14 +125,17 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None) -> 
     if done['problems']:
         raise SplitError('the partition does not hold: ' + '; '.join(done['problems'][:3]))
     objects = objects or split.OBJECTS
-    prior = json.loads((game / EXPECTED).read_text())['tiles'] if (game / EXPECTED).is_file() else {}
+    applied = json.loads((game / EXPECTED).read_text()) if (game / EXPECTED).is_file() else {}
+    if pending_retirement(applied) and sorted(objects) != applied_selection(applied):
+        raise SplitError('retire the applied selection before starting another batch with pending removals')
+    prior = applied.get('tiles', {})
     untouched = [s for s, owned in done['owned'].items() if not any(m for n, m in owned.items() if n) and s not in prior]
     for s in untouched:                  # a tile no object takes anything from keeps its record and its bytes
         for key in ('models', 'tris', 'owned'):
             del done[key][s]
     stage.mkdir(parents=True, exist_ok=True)
     tiles = {}
-    saved = json.loads((game / EXPECTED).read_text())['tiles'] if (game / EXPECTED).is_file() else {}
+    saved = prior
     for stem, model in done['models'].items():
         asset = records.load_asset(game / 'assets' / tile_record(stem) / 'asset.toml') \
             if (game / 'assets' / tile_record(stem) / 'asset.toml').is_file() else None
@@ -195,7 +202,7 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None) -> 
     # A rerun on a tree that already holds an earlier split: parts of a selected object that no longer exist are stale
     # (their records, packages and runtime groups go at the retire step), and an object whose groups changed must be
     # saved again (objects.py refuses a changed definition; its record and actor go at the retire step too).
-    previous = json.loads((game / EXPECTED).read_text())['parts'] if (game / EXPECTED).is_file() else {}
+    previous = applied.get('parts', {})
     stale = [{'record': rid, 'mesh': q['mesh'], 'package': q['package'], 'object': q['object']}
              for rid, q in sorted(previous.items()) if q['object'] in objects and rid not in {p['record'] for p in parts.values()}]
     resave = []
@@ -204,13 +211,22 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None) -> 
         now = sorted(p['mesh'] for p in parts.values() if p['object'] == obj)
         if before and before != now and (game / 'assets' / 'object' / 'brinecove' / obj / 'asset.toml').is_file():
             resave.append(f'object/brinecove/{obj}')
-    return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'stale': stale, 'resave': resave}
+    pending = applied.get('pending', {})
+    stale = {q['record']: q for q in pending.get('stale', []) + stale}
+    if set(stale) & {p['record'] for p in parts.values()}:
+        raise SplitError('retire pending stale parts before making them replacements again')
+    return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'selection': sorted(objects),
+            'stale': [stale[rid] for rid in sorted(stale)], 'resave': sorted(set(pending.get('resave', []) + resave))}
 
 
 def expected(plan: dict) -> dict:
     """The committed expectation `check` proves: per part and per tile, no donor needed."""
     return {
         'schema': 1,
+        'selection': plan.get('selection', sorted({p['object'] for p in plan['parts'].values()})),
+        'pending': {'stale': sorted(plan.get('stale', []), key=lambda q: q['record']),
+                    'resave': sorted(plan.get('resave', []))},
+        'retired': False,
         'about': 'Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part '
                  'mesh, each tile remainder, and the donor tile each was cut from.',
         'tiles': {s: {'record': t['record'], 'package': t['package'], 'source_triangles': t['triangles'],
@@ -223,6 +239,32 @@ def expected(plan: dict) -> dict:
                   for p in sorted(plan['parts'].values(), key=lambda p: p['record'])},
         'shares': {stem: {p['record']: p['share'][stem] for p in plan['parts'].values() if stem in p['share']}
                    for stem in sorted(plan['tiles'])}}
+
+
+def applied_selection(exp: dict) -> list[str]:
+    return exp.get('selection', sorted({p['object'] for p in exp.get('parts', {}).values()}))
+
+
+def pending_retirement(exp: dict) -> bool:
+    pending = exp.get('pending', {})
+    return bool(pending.get('stale') or pending.get('resave') or
+                (not exp.get('retired', False) and any(t['remainder'] is None for t in exp.get('tiles', {}).values())))
+
+
+def same_applied_plan(applied: dict, proposed: dict) -> bool:
+    return (applied_selection(applied) == applied_selection(proposed) and
+            all(applied.get(k) == proposed.get(k) for k in ('parts', 'tiles', 'shares')) and
+            applied.get('pending', {'stale': [], 'resave': []}) == proposed['pending'])
+
+
+def require_applied_plan(game: Path, plan: dict) -> None:
+    """@cc [owner:fontanierh,label:correctness] brinecove-retire-applied-plan
+    Retirement MUST execute the persisted applied selection and replacement identities that check validates.
+    Pending stale/resave actions MUST survive separate commands and clear only in successful journaled retirement.
+    """
+    path = game / EXPECTED
+    if not path.is_file() or not same_applied_plan(json.loads(path.read_text()), expected(plan)):
+        raise SplitError('retirement plan differs from the applied selection or replacements; apply and import it first')
 
 
 # --- the records -------------------------------------------------------------------------------------------------------
@@ -476,7 +518,11 @@ def compute(game: Path, plan: dict, retire: bool = False) -> dict:
             put(f'assets/{gen.id}/asset.toml', text.encode())
             put(f'assets/{gen.id}/src/{name}', gen.source.read_bytes())
         put(f'world/regions/{REGION}/objects.toml', edit_objects_toml((region / 'objects.toml').read_text(), plan).encode())
-        put(EXPECTED, (json.dumps(expected(plan), indent=2, sort_keys=True) + '\n').encode())
+        exp = expected(plan)
+        prior = json.loads((game / EXPECTED).read_text()) if (game / EXPECTED).is_file() else {}
+        if prior.get('retired') and same_applied_plan(prior, exp):
+            exp['retired'] = True
+        put(EXPECTED, (json.dumps(exp, indent=2, sort_keys=True) + '\n').encode())
         new_runtime = edit_runtime(runtime, plan)
     else:
         targets = removal_targets(game, plan)
@@ -513,6 +559,9 @@ def compute(game: Path, plan: dict, retire: bool = False) -> dict:
                 del body['objects'][o]
             if dropped:
                 put(f'world/regions/{REGION}/objects.saved.json', (json.dumps(body, indent=2, sort_keys=True) + '\n').encode())
+        exp = expected(plan)
+        exp.update(pending={'stale': [], 'resave': []}, retired=True)
+        put(EXPECTED, (json.dumps(exp, indent=2, sort_keys=True) + '\n').encode())
     new_bytes = json.dumps(new_runtime, separators=(',', ':')).encode()
     if new_runtime != runtime:
         put(f'unreal/Content/{RUNTIME}', new_bytes)
@@ -527,7 +576,7 @@ class Journal:
         self.game, self.dir = game, game / JOURNAL
         self.manifest = self.dir / 'journal.json'
 
-    def begin(self, rels: list[str]):
+    def begin(self, rels: list[str], *, scopes):
         self.dir.mkdir(parents=True, exist_ok=True)
         entries = {}
         for rel in rels:
@@ -539,7 +588,34 @@ class Journal:
                 entries[rel] = records.sha256_file(path)
             else:
                 entries[rel] = None
-        self.manifest.write_text(json.dumps({'files': entries}, indent=2))
+        self.manifest.write_text(json.dumps({'files': entries, 'scopes': sorted(scopes, key=lambda s: json.dumps(s))},
+                                            indent=2))
+
+    def recover(self, claim: str | None) -> list[str]:
+        """@cc [owner:fontanierh,label:safety] brinecove-journal-recovery-ownership
+        Fresh-invocation recovery MUST authorize every persisted journal path and its original owning scopes before
+        restoring bytes. Missing authority or legacy scope metadata MUST leave the journal and partial work intact.
+        """
+        if not self.manifest.is_file():
+            return []
+        data = json.loads(self.manifest.read_text())
+        scopes = data.get('scopes')
+        valid_scope = lambda s: isinstance(s, str) and bool(s)  # noqa: E731
+        if not isinstance(scopes, list) or not scopes or any(
+                not (valid_scope(s) or isinstance(s, list) and s and all(valid_scope(v) for v in s)) for s in scopes):
+            raise SplitError('interrupted split journal has no valid owning scopes; recover its original scope set '
+                             'before retrying (journal and partial work retained)')
+        files = data.get('files')
+        if not isinstance(files, dict) or not files or any(
+                not isinstance(rel, str) or not rel or Path(rel).is_absolute() or '..' in Path(rel).parts or
+                Path(rel).as_posix() != rel for rel in files):
+            raise SplitError('interrupted split journal has invalid paths; resolve it before retrying (journal retained)')
+        try:
+            authority.authorize([f'{GAME_REL}/{rel}' for rel in sorted(files)], claim, 'Brine Cove split recovery',
+                                scopes=[tuple(s) if isinstance(s, list) else s for s in scopes])
+        except authority.Unauthorized as error:
+            raise SplitError(str(error)) from None
+        return self.restore()
 
     def restore(self) -> list[str]:
         if not self.manifest.is_file():
@@ -574,12 +650,12 @@ def lockable_present(game: Path, rels: list[str]) -> list[str]:
     return [line.split(':')[0][len(GAME_REL) + 1:] for line in out.splitlines() if line.endswith(': lockable: set')]
 
 
-def execute(game: Path, ops: dict, *, lockable=lockable_present) -> dict:
+def execute(game: Path, ops: dict, *, scopes, lockable=lockable_present) -> dict:
     """Write the computed outputs under the journal; any failure restores every file. Only the lockable files among those
     the (already checked) claim holds are made writable, as git-lfs does for a locked file; nothing else changes mode."""
     journal = Journal(game)
     touched_rels = sorted(set(ops['writes']) | set(ops['deletes']))
-    journal.begin(touched_rels)
+    journal.begin(touched_rels, scopes=scopes)
     try:
         for rel in lockable(game, touched_rels):
             path = game / rel
@@ -603,10 +679,12 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
 
     Preflight reads the runtime input, finishes all splitting (the plan is already staged) and computes every output in
     memory. Then the claim must cover the complete touched set. Any failure raises before the first byte is written. A
-    journal left by a crashed earlier run is restored first."""
-    recovered = Journal(game).restore()
+    journal left by a crashed earlier run is restored only after its persisted paths and scopes are authorized."""
+    recovered = Journal(game).recover(claim)
     if recovered:
         echo(f'restored {len(recovered)} file(s) from an interrupted run')
+    if retire:
+        require_applied_plan(game, plan)
     ops = compute(game, plan, retire)
     if not ops['writes'] and not ops['deletes']:
         return {'written': [], 'deleted': []}                 # nothing differs: nothing to claim, nothing written
@@ -616,7 +694,7 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
                             scopes=info['scopes'])
     except authority.Unauthorized as error:
         raise SplitError(str(error)) from None
-    return execute(game, ops, lockable=lockable)
+    return execute(game, ops, scopes=info['scopes'], lockable=lockable)
 
 
 # --- check -------------------------------------------------------------------------------------------------------------
@@ -625,10 +703,55 @@ def group_names(data: dict) -> list[str]:
     return [g['asset'].rsplit('/', 1)[1].split('.')[0] for g in data['groups']]
 
 
+def import_problems(game: Path, asset: records.Asset) -> list[str]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-retire-accepted-imports
+    Retirement MUST require each replacement's current imported receipt, complete declared package coverage and
+    matching hydrated source/output bytes. A receipt left by an earlier apply MUST NOT authorize deletion.
+    """
+    problems = []
+    try:
+        receipt = records.load_verified(asset.verified)
+        if receipt['kind'] != 'imported':
+            problems.append(f'{asset.id}: replacement has no accepted import receipt')
+        states = {}
+        if asset.input_dependencies:
+            by_id = {a.id: a for a in records.discover(game)[0]}
+            states = {dep: records.state_fingerprint(records.load_verified(by_id[dep].verified))
+                      for dep in asset.input_dependencies}
+        if receipt.get('input_fingerprint') != records.input_fingerprint(asset, states):
+            problems.append(f'{asset.id}: replacement import is stale; import its current sources and recipe first')
+        for source in asset.sources:
+            path = asset.folder / source.path
+            if not path.is_file() or records.is_lfs_pointer(path) or records.sha256_file(path) != source.sha256:
+                problems.append(f'{asset.id}: source {source.path} is missing or differs from its pin')
+        allowed = set()
+        for output in asset.outputs:
+            primary = records.package_files(game, output.package)
+            if not any(records.content_relative(game, p) in receipt['files'] for p in primary):
+                problems.append(f'{asset.id}: replacement receipt omits package {output.package}')
+            stem = primary[0].with_suffix('')
+            for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS:
+                path = stem.with_suffix(ext)
+                rel = records.content_relative(game, path)
+                allowed.add(rel)
+                if path.is_file() and rel not in receipt['files']:
+                    problems.append(f'{asset.id}: replacement receipt omits existing output {rel}')
+        for rel, digest in receipt['files'].items():
+            path = game / rel
+            if rel not in allowed:
+                problems.append(f'{asset.id}: replacement receipt names undeclared output {rel}')
+            elif not path.is_file() or records.is_lfs_pointer(path) or records.sha256_file(path) != digest:
+                problems.append(f'{asset.id}: replacement output {rel} is missing or differs from its accepted bytes')
+    except (OSError, ValueError, KeyError, records.RecordError) as error:
+        problems.append(f'{asset.id}: cannot verify replacement import: {error}')
+    return problems
+
+
 def check(game: Path, donor: Path | None = None, retired: bool = False, records_only: bool = False) -> list[str]:
     """Problems with the applied batch, from the repository alone (the donor adds the vertex-level partition proof)."""
     problems = []
     exp = json.loads((game / EXPECTED).read_text())
+    retired = retired or exp.get('retired', False)
     for rid, part in exp['parts'].items():
         folder = game / 'assets' / rid
         if not (folder / 'asset.toml').is_file():
@@ -649,9 +772,7 @@ def check(game: Path, donor: Path | None = None, retired: bool = False, records_
             lo, hi = split.bounds(tris, range(len(tris)))
             if any(abs(a - b) > TOLERANCE_M for a, b in zip(list(lo) + list(hi), part['min'] + part['max'])):
                 problems.append(f'{rid}: bounds differ from the expectation')
-        verified = folder / 'verified.json'
-        if not verified.is_file():
-            problems.append(f'{rid}: not imported yet (no verified.json): run tools/import/run.py {rid}')
+        problems += import_problems(game, asset)
     for stem, tile in exp['tiles'].items():
         rem = tile['remainder']
         asset_path = game / 'assets' / tile['record'] / 'asset.toml'
@@ -665,8 +786,7 @@ def check(game: Path, donor: Path | None = None, retired: bool = False, records_
         asset = records.load_asset(asset_path)
         if asset.sources[0].sha256 != rem['sha256'] or asset.recipe['settings']['triangles'] != rem['triangles']:
             problems.append(f'{tile["record"]}: remainder differs from the expectation')
-        if not (asset_path.parent / 'verified.json').is_file():
-            problems.append(f'{tile["record"]}: not re-imported (no verified.json)')
+        problems += import_problems(game, asset)
     # the same arithmetic per tile: remainder + the parts' share of the tile = the tile
     for stem, tile in exp['tiles'].items():
         rem = (tile['remainder'] or {}).get('triangles', 0)
@@ -718,7 +838,7 @@ def check_placements(game: Path, exp: dict, retired: bool = False) -> list[str]:
     if dup:
         problems.append(f'groups listed by more than one object: {dict(list(dup.items())[:3])}')
     if retired and any(t['remainder'] is None for t in exp['tiles'].values()) and (
-            RETIRED_OBJECT in {i['id'] for i in listed} or (game / 'assets' / RETIRED_OBJECT).exists()):
+            RETIRED_OBJECT in {i['id'] for i in listed} or (game / 'assets' / RETIRED_OBJECT / 'asset.toml').is_file()):
         problems.append(f'{RETIRED_OBJECT} is not retired')
     for part in exp['parts'].values():
         if len(groups.get(part['mesh'], [])) != 1:
@@ -777,6 +897,10 @@ def main(argv=None) -> int:
             return 1 if problems else 0
         if args.donor is None:
             parser.error('--donor is required')
+        if args.command in ('apply', 'retire'):
+            recovered = Journal(game).recover(args.claim)    # partial records may not be readable by build yet
+            if recovered:
+                print(f'restored {len(recovered)} file(s) from an interrupted run')
         plan = build(game, args.donor.resolve(), args.stage.resolve(),
                      select(args.only.split(',') if args.only else None))
         retire = args.command == 'retire'
@@ -801,6 +925,7 @@ def main(argv=None) -> int:
                 print('\n'.join('#   ' + x for x in scopes))
         else:
             if retire:
+                require_applied_plan(game, plan)
                 problems = check(game, args.donor, records_only=True)
                 if problems:
                     raise SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))

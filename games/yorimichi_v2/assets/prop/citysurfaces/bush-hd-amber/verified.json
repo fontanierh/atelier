@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/bush-hd-amber",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Amber.uasset": "41ef119bfbab64cf7e4896eb02198f13006c113e09571faa623aac1ff851e3c7"
+  },
+  "input_fingerprint": "5e7d77302d9a78b5d8daf4f2213c754cbcef7b455166c71975b61db5a85c9d42",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Amber": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
