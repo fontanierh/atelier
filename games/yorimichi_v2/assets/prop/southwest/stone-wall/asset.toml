@@ -20,6 +20,7 @@ version = 1
 slot_materials = ["/Game/Japan/Materials/M_Village"]
 triangles = 2160
 collision = "complex"
+double_sided = false
 
 [[outputs]]
 package = "/Game/Japan/Southwest/Pieces/SW_StoneWall"

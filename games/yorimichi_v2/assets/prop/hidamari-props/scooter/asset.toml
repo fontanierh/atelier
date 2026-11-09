@@ -21,6 +21,7 @@ slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_scooter"]
 triangles = 11396
 collision = "boxes"
 boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
 
 [[outputs]]
 package = "/Game/Japan/Assets/HD_P_scooter"

@@ -21,6 +21,7 @@ slot_map = {TH_rope = "/Game/Japan/Treehouse/Materials/MI_TH_rope", TH_wood_plan
 triangles = 30584
 collision = "complex"
 full_precision_uvs = true
+double_sided = false
 
 [[outputs]]
 package = "/Game/Japan/Assets/TH_Frame"

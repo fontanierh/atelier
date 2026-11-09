@@ -145,7 +145,9 @@ def assign_anchored(tris: list, comps: list[list[int]], anchors: dict[str, dict]
     anchors[name] = {'x', 'y': layout metres (the generator's frame; the GLB ground plane is (x, -y)),
     'radius': metres, 'max_extent': longest allowed component side (a quay, floor or terrain slab is longer and is
     never an object part), 'min_height': lowest vertex a part may start at (the slab it stands on is lower),
-    'exclude_materials': material names the object never uses (the floor's setts and kerbs)}.
+    'exclude_materials': material names the object never uses (the floor's setts and kerbs),
+    'exclude_zones': [(x, y, radius)] layout points of neighbouring things (a palm: planter, trunk and fronds) whose
+    components never belong to this object, whatever their material, even when they lie inside its radius}.
     A component that no anchor claims stays in the remainder ''. Ties go to the nearer anchor, then the name."""
     out: dict[str, list[int]] = {name: [] for name in anchors}
     out[''] = []
@@ -157,6 +159,8 @@ def assign_anchored(tris: list, comps: list[list[int]], anchors: dict[str, dict]
             if extent(box) > a.get('max_extent', 30.0) or box[0][1] < a.get('min_height', -1e9):
                 continue
             if a.get('exclude_materials') and any(tris[t][0] in a['exclude_materials'] for t in comp):
+                continue
+            if any(((cx - zx) ** 2 + (cz + zy) ** 2) ** 0.5 <= zr for zx, zy, zr in a.get('exclude_zones', ())):
                 continue
             d = ((cx - a['x']) ** 2 + (cz + a['y']) ** 2) ** 0.5
             if d <= a['radius'] and (best is None or d < best[0]):
@@ -314,9 +318,13 @@ OBJECTS: dict[str, dict] = {
     'shipyard-yard': dict(x=376, y=78, radius=36, max_extent=40, min_height=-5,
                           exclude_materials=('BC_stone', 'BC_stone_dark', 'BC_stone_light'),
                           tiles=('Harbor_5_3', 'Harbor_5_3_Soft', 'Harbor_5_4')),
-    'crane-west': dict(x=-326, y=83, radius=14, max_extent=25, min_height=4.5, tiles=('Harbor_2_3', 'Harbor_2_3_Soft')),
+    # harbor.py builds a palm in a stone planter at (-330, 72) and (300, 72) (lines 97-103); the crane stands at (-334, 84)
+    # and the shed at (305, 86), so those palms (trunk, planter, fronds: all within 5 m of the base) stay in the tile.
+    'crane-west': dict(x=-326, y=83, radius=14, max_extent=25, min_height=4.5, exclude_zones=((-330, 72, 5.0),),
+                       tiles=('Harbor_2_3', 'Harbor_2_3_Soft')),
     'crane-east': dict(x=418, y=127, radius=14, max_extent=25, min_height=4.5, tiles=('Harbor_5_4',)),
-    'fish-shed': dict(x=305, y=86, radius=21, max_extent=40, min_height=4.9, tiles=('Harbor_5_3', 'Harbor_5_3_Soft')),
+    'fish-shed': dict(x=305, y=86, radius=21, max_extent=40, min_height=4.9, exclude_zones=((300, 72, 5.0),),
+                      tiles=('Harbor_5_3', 'Harbor_5_3_Soft')),
     'net-rack-west': dict(x=274, y=70, radius=5.5, max_extent=12, min_height=4.5, tiles=('Props_5_3',)),
     'net-rack-east': dict(x=286, y=70, radius=5.5, max_extent=12, min_height=4.5, tiles=('Props_5_3',)),
     'cannon-west': dict(x=-206, y=88, radius=8, max_extent=12, min_height=4.5, tiles=('Props_3_3',)),

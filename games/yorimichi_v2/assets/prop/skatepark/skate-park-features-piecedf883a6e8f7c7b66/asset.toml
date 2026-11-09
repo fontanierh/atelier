@@ -21,6 +21,7 @@ slot_map = {Pier_ceramic = "/Game/SkatePark/Materials/M_Pier_ceramic"}
 triangles = 252
 collision = "complex"
 allow_cpu_access = true
+double_sided = false
 
 [[outputs]]
 package = "/Game/SkatePark/SM_SkateParkFeatures_Piecedf883a6e8f7c7b66"

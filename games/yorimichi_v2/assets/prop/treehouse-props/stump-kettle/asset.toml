@@ -21,6 +21,7 @@ slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_stump_kettle"]
 triangles = 8438
 collision = "simple_and_complex"
 hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
 
 [[outputs]]
 package = "/Game/Japan/Assets/TH_P_stump_kettle"
