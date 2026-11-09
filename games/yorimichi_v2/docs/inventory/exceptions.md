@@ -69,7 +69,7 @@ records), so none of the 473 packages has a planner row. Plan mode writes nothin
 
 | Kind | Packages | Donor evidence (checked) | Verdict |
 |---|---:|---|---|
-| `Source/SM_BT_<V>/SM_BT_<V>_LOD1` and `_LOD2` meshes | 14 | Each level GLB is pinned by the donor's `import-report.json` sha256 (14 of 14). The LOD2 triangle counts match the committed root chain (7 of 7). LOD1 matches for locomotive only (1 of 7): the other six GLBs have 2,096 or 1,160 fewer triangles than the donor report and the committed chain | **Prepared, not closed.** Six LOD1 facts disagree between the donor GLB and the committed chain; resolve that before any record is written. Slot tables need an Unreal read (no committed slot facts exist for these packages) |
+| `Source/SM_BT_<V>/SM_BT_<V>_LOD1` and `_LOD2` meshes | 14 | Each level GLB is pinned by the donor's `import-report.json` sha256 (14 of 14). The donor counts triangles per node placement: a mesh placed by several nodes counts once per placement. Counted that way, all 14 levels match the committed root chain's triangles and material names (sets). The earlier six-LOD1 disagreement was this instancing, not door leaves (refuted: tender has no doors and is short by 1,160 = 2 × 580) | **Prepared, needs import.** `recover.py belmontetrain` now plans all 14 with the donor GLB as source (`prop/belmontetrain/<unit>-lod1|lod2`). Not written. The committed slot order differs from the GLB's order for some vehicles; the planner keeps the committed order. Collision and the import result still need an editor run |
 | `M_BT_*` material instances in `Source/SM_BT_<V>/LOD0..2` | 321 | Each GLB material slot (321 across all levels of all seven vehicles) binds by name to exactly one residual material package in the same LOD folder: 321 of 321 | **Prepared.** The binding closes by name, but the instance parameters and the source texture links still need an editor read, and no committed facts exist to compare them with |
 | `T_BT_*` textures | 138 (27 names) | The donor has an image for 128 of the 138 packages (26 of 27 names); `T_BT_Walnut1` has none (10 packages). No committed texture facts (size, format) are saved | **Prepared** for 128 packages: the donor image is the candidate source, with `generator/source/world/train/textures.py` as its generator. Verifying needs an editor import compared with the committed packages, and accepted content is not re-imported. **Blocked** for the 10 `T_BT_Walnut1` packages |
 
@@ -77,10 +77,12 @@ Adding `[[sources]]` to these records would change their import fingerprints and
 so the records stay as they are until a verified import closes them. The count and the texture coverage are pinned by
 `tests/test_belmontetrain_residual.py`.
 
-Commands for the next step, not run here: `recover.py belmontetrain --donor <belmonte-train folder>` (plan only, 0 rows
-today); a planner extension for `Source/SM_BT_<V>/SM_BT_<V>_LOD1|LOD2` against the donor level GLBs, then the claimed
-targeted import of those 14 ids (`tools/import/run.py <id> --plan` first; scope `shared/belmontetrain/<unit>`); and,
-for textures, the 128 donor-backed ids after the generator's own source record is pinned.
+Next steps, not run here. (1) `recover.py belmontetrain --donor <belmonte-train folder> --apply` writes the 14 mesh
+records and removes their packages from the residual records (this adds `[[sources]]`, so their packages need an
+import). (2) `tools/import/run.py <id> --plan` for each of the 14 ids below, then a claimed import of them. Claim scopes:
+`shared/belmontetrain/<unit>` for each unit (baggage-van, brake-van, first-class, locomotive, restaurant, second-class,
+tender). The 14 ids: `prop/belmontetrain/<unit>-lod1` and `-lod2` for each of the seven units. Textures remain prepared,
+for the 128 donor-backed ids, after the generator's own source record is pinned.
 
 Brine Cove's source-preservation route at `5f2d21fbd1` is prepared but not applied on main. It is due after town9;
 see [sources.md](sources.md). It fixes preservation of fused originals without changing accepted package bytes.

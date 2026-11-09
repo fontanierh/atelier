@@ -22,6 +22,7 @@ import hashlib
 import json
 import re
 import shutil
+import struct
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -316,6 +317,20 @@ def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner:
 TRAIN_SAVED = HERE / 'saved' / 'belmontetrain.json'
 
 
+def glb_instanced(path: Path) -> tuple[int, list[str]]:
+    """(triangles, material names) of a binary glTF counted per node instance: the donor's triangle figure. A mesh
+    that several nodes place counts once per placement (the Belmonte LOD1 files place some meshes up to four times)."""
+    data = path.read_bytes()
+    if data[:4] != b'glTF':
+        raise RecoverError(f'{path}: not a binary glTF')
+    doc = json.loads(data[20:20 + struct.unpack_from('<I', data, 12)[0]])
+
+    def mesh_tris(index: int) -> int:
+        return sum(doc['accessors'][prim['indices']]['count'] // 3 for prim in doc['meshes'][index]['primitives'])
+    total = sum(mesh_tris(node['mesh']) for node in doc.get('nodes', []) if 'mesh' in node)
+    return total, [m.get('name', '') for m in doc.get('materials', [])]
+
+
 def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
     """The donor's Belmonte train (belmonte-train: service/service.json, service/import-report.json, the Train Builder's
     GLBs; import_belmonte_train.py): each vehicle from its LOD0-LOD2 files with its fixed boxes as simple-as-complex
@@ -366,6 +381,37 @@ def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner
                 add(leaf_package, f'prop/belmontetrain/{unit}-door-{tail}', f'shared/belmontetrain/{unit}',
                     [(donor / leaf['glb']).resolve()], f'{leaf_package.rsplit("/", 1)[1]}: a {unit} door leaf',
                     {'collision': 'boxes', 'boxes': []})
+        # The LOD1 and LOD2 meshes of the vehicle (the residual records' Source/SM_BT_<V>/SM_BT_<V>_LODn packages). The
+        # donor level file's triangles, counted per node instance, and its material names must be the saved chain's
+        # section for that level (the root record's lods and slots): the import's own facts, which it must reproduce.
+        for level in (1, 2):
+            lod_package = f'/Game/BelmonteTrain/Source/{name}/{name}_LOD{level}'
+            if lod_package not in owner:
+                continue
+            root_saved = saved[vehicle['mesh'].split('.', 1)[0]]
+            screen, triangles, indices = root_saved['lods'][level]
+            slots = [root_saved['slots'][i] for i in indices]
+            path = (donor / vehicle['levels'][level]).resolve()
+            counted, names = glb_instanced(path)
+            # The material names must be the saved slots' names as a set; the saved order is kept (the import binds
+            # the slots by name, and the donor file's own material order differs for some vehicles).
+            if counted != triangles or sorted(names) != sorted(material.rsplit('/', 1)[1] for _, material in slots):
+                unmapped.append(f'{path.relative_to(donor)} (LOD{level}: {counted} triangles and {len(names)} materials, '
+                                f'the saved chain has {triangles} and {len(slots)})')
+                continue
+            materials = [material for _, material in slots]
+            missing = sorted({m for m in materials if m not in all_owner})
+            if missing:
+                unmapped.append(f'{path.relative_to(donor)} (materials owned by no record: {", ".join(missing[:3])})')
+                continue
+            generated.append(Generated(
+                id=f'prop/belmontetrain/{unit}-lod{level}', kind='static-mesh', owner=f'shared/belmontetrain/{unit}',
+                package=lod_package, source=path,
+                settings={'slots': [list(s) for s in slots], 'triangles': triangles, 'collision': 'none'},
+                references=sorted({all_owner[m] for m in materials}),
+                about=f'{name}: the {unit} LOD{level} mesh, {triangles} triangles per node instance, screen size {screen}; '
+                      'collision not recorded in the saved chain',
+                expected={}))
     return Plan('belmontetrain', generated, unmapped, {})
 
 
