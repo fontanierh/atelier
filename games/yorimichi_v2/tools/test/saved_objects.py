@@ -1,7 +1,7 @@
 """Check a region's saved objects in the running slice game: each exactly once, as its saved actor (audit A1).
 
     uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen      # first, and wait for the world
-    uv run python games/yorimichi_v2/tools/test/saved_objects.py --session ID --region w09-brinecove --zone cove
+    uv run python games/yorimichi_v2/tools/test/saved_objects.py --session ID --region w09-brinecove --zone brinecove_quay
 
 The objects are the region's objects.toml (tools/migrate/objects.py). After travelling to --zone and --settle seconds
 of streaming, every component of the game world drawing one of an object's group meshes must belong to that
@@ -24,6 +24,8 @@ GAME = HERE.parents[1]
 REPO = HERE.parents[3]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(REPO / 'platform' / 'studio'))
+sys.path.insert(0, str(GAME / 'tools' / 'migrate'))
+import towns  # noqa: E402
 from launch import launch_revision, revision  # noqa: E402
 from atelier import live  # noqa: E402
 from atelier.live_sessions import Unreachable  # noqa: E402
@@ -40,7 +42,8 @@ def objects_found(meshes):
     for actor in unreal.GameplayStatics.get_all_actors_of_class(world, unreal.Actor):
         for c in actor.get_components_by_class(unreal.StaticMeshComponent):
             mesh = c.static_mesh.get_name() if c.static_mesh else None
-            if mesh not in found:
+            # A patch's shadow twin repeats its group's instances, hidden, for shadows only: not a second copy.
+            if mesh not in found or 'V2Role:ShadowTwin' in [str(t) for t in c.component_tags]:
                 continue
             count = c.get_instance_count() if isinstance(c, unreal.InstancedStaticMeshComponent) else 1
             key = str(actor.get_editor_property('source_key')) if actor.get_class().get_name() == 'V2ScenePatch' else actor.get_name()
@@ -64,43 +67,60 @@ def py(code):
     return out.get('output', '').strip()
 
 
+def mesh_of(group: str) -> str:
+    """The mesh a group key draws: towns.group_keys' "<mesh>#<index>" and its cell pieces "<key>@<x>_<y>" name it."""
+    return group.split('@', 1)[0].split('#', 1)[0]
+
+
 def expected_instances(data: dict) -> dict[str, int]:
-    """{group mesh: instances the runtime places} from the region's runtime file, with ABelmonteRegion's own filter
-    (SceneryTransforms: inside the district's bounds plus 100 m), so a saved group drawing fewer is missing geometry."""
-    x0, y0, x1, y1 = data['bounds_m']
-    ox, oy, _ = data['origin_cm']
+    """{group key: instances the runtime places}, with the runtime's own filters as towns.py mirrors them (district
+    bounds for scenery, gondola clearance for plants) and its cell pieces, so a saved group drawing fewer is missing
+    geometry."""
+    # Only plant groups are clipped by the gondola clearance.
+    segments = towns.clearance_segments() if any(e['plant'] for e in data['groups']) else []
     counts = {}
-    for entry in data['groups']:
-        mesh = entry['asset'].rsplit('/', 1)[-1].split('.', 1)[0]
-        inside = 0
-        for item in entry['transforms']:
-            x, y = (ox + item['translation_cm'][0]) / 100., -(oy + item['translation_cm'][1]) / 100.
-            inside += x0 - 100. <= x <= x1 + 100. and y0 - 100. <= y <= y1 + 100.
-        counts[mesh] = inside
+    for entry, key in zip(data['groups'], towns.group_keys(data)):
+        cells = towns.kept_cells(data, entry, segments)
+        counts[key] = sum(cells.values())
+        if counts[key] > towns.PIECE_LIMIT:
+            counts.update({towns.piece_key(key, *cell): n for cell, n in cells.items()})
     return counts
 
 
 def check(listed: dict, found: dict, expected: dict[str, int]) -> dict:
     """{object id: problems} from objects.toml's objects, the game's components per mesh and the instances each
-    group must draw (expected_instances)."""
+    group must draw (expected_instances). Groups sharing a mesh (`#index` groups, cell pieces) are checked together
+    per object: its actor draws their summed instances, and no actor but the objects listing that mesh draws it."""
+    owners: dict[str, set] = {}
+    for item in listed['objects']:
+        for group in item['groups'] if 'groups' in item else [item['group']]:
+            owners.setdefault(mesh_of(group), set()).add(f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}')
     problems = {}
     for item in listed['objects']:
         key = f'{listed["tag"]}:{item["id"].rsplit("/", 1)[1]}'
         groups = item['groups'] if 'groups' in item else [item['group']]
+        by_mesh: dict[str, list[str]] = {}
+        for group in groups:
+            by_mesh.setdefault(mesh_of(group), []).append(group)
         wrong = []
-        for mesh in groups:
+        for mesh, keys in by_mesh.items():
             rows = found.get(mesh, [])
             mine = [r for r in rows if r[0] == 'V2ScenePatch' and r[1] == key]
-            if len(mine) != 1:
-                wrong.append(f'{mesh}: {len(mine)} saved copies')
-            elif mesh not in expected or expected[mesh] < 1:
-                wrong.append(f'{mesh}: the runtime file places no instance of it')
-            elif mine[0][2] != expected[mesh]:
-                wrong.append(f'{mesh}: {mine[0][2]} instance(s) drawn, {expected[mesh]} expected')
-            others = [r for r in rows if r not in mine]
+            want = sum(expected.get(k, 0) for k in keys)
+            if not mine:
+                wrong.append(f'{mesh}: 0 saved copies')
+            elif any(expected.get(k, 0) < 1 for k in keys):
+                wrong.append(f'{mesh}: the runtime file places no instance of {[k for k in keys if expected.get(k, 0) < 1]}')
+            elif sum(r[2] for r in mine) != want:
+                wrong.append(f'{mesh}: {sum(r[2] for r in mine)} instance(s) drawn, {want} expected')
+            # A copy is the runtime drawing it, or a second saved actor of this region. A component with no instances
+            # draws nothing (the runtime region keeps its emptied plant groups); other regions' patches draw a shared
+            # plant mesh at their own places.
+            others = [r for r in rows if r[2] and (r[0] != 'V2ScenePatch' or (
+                r[1].startswith(f'{listed["tag"]}:') and r[1] not in owners[mesh]))]
             if others:
                 wrong.append(f'{mesh}: also drawn by {", ".join(f"{r[0]} {r[1]}" for r in others[:3])}')
-        if len({tuple(r[3]) for m in groups for r in found.get(m, []) if r[1] == key}) > 1:
+        if len({tuple(r[3]) for m in by_mesh for r in found.get(m, []) if r[1] == key}) > 1:
             wrong.append('its groups are in more than one actor')
         if wrong:
             problems[item['id']] = wrong
@@ -129,7 +149,7 @@ def main(argv=None):
     if len(listed['objects']) < len(groups):
         print(f'PENDING {len(groups) - len(listed["objects"])} object(s) of {args.region} have no record yet: '
               'the runtime still draws them', flush=True)
-    meshes = sorted({m for i in listed['objects'] for m in (i['groups'] if 'groups' in i else [i['group']])})
+    meshes = sorted({mesh_of(m) for i in listed['objects'] for m in (i['groups'] if 'groups' in i else [i['group']])})
     py(HELPERS)
     if py(f'print(objects_travel({args.zone!r}))') != 'True':
         print(f'travel to {args.zone} was refused', file=sys.stderr)

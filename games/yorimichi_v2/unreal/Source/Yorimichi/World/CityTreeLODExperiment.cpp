@@ -13,6 +13,24 @@
 #include "AssetCompilingManager.h"
 #endif
 
+static const TCHAR* CityTreeParents[]={TEXT("HD_ArcadeTree"),TEXT("HD_PlazaTreeGold"),TEXT("HD_PlazaTreeOrange")};
+
+bool AJapanWorld::IsCityTreePiece(const FName& Tag)
+{
+    // The tree pieces' CityPiece tags, read once: an arriving building piece must not re-run the tree swap.
+    static TSet<FName> Tags;
+    if (Tags.IsEmpty())
+    {
+        TMap<FString,TArray<FString>> CityPieces;
+        if (!JapanCityPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces))
+            return false;
+        for (const TCHAR* Parent:CityTreeParents)
+            if (const auto* Paths=CityPieces.Find(Parent))
+                for (const FString& Path:*Paths) Tags.Add(FName(TEXT("CityPiece:")+FPaths::GetBaseFilename(Path)));
+    }
+    return Tags.Contains(Tag);
+}
+
 // Both the settings menu and the diagnostic command use the same validated swap.
 // LOD0, materials, instances and collision stay unchanged; only distant leaf outlines differ.
 static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Enabled,int32 Forced,float DistanceScale=1.5f)
@@ -29,7 +47,7 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
     if (!JapanCityPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces))
         return false;
     TMap<FString,UStaticMesh*> Replacements,Originals;
-    for (const FString Parent:{TEXT("HD_ArcadeTree"),TEXT("HD_PlazaTreeGold"),TEXT("HD_PlazaTreeOrange")})
+    for (const TCHAR* Parent:CityTreeParents)
     {
         const auto* Paths=CityPieces.Find(Parent);
         if (!Paths || Paths->IsEmpty()) return false;
@@ -44,12 +62,16 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
             Originals.Add(Name,Original);Replacements.Add(Name,Mesh);
         }
     }
+    // The meshes are validated once per variant: each tree piece arriving with streaming swaps only its own groups.
+    static TSet<FString> Validated;
+    const FString Variant=OptimizedMesh?Tag:TEXT("original");
+    const bool bValidate=!Validated.Contains(Variant);
 #if WITH_EDITOR
-    FAssetCompilingManager::Get().FinishAllCompilation();
+    if (bValidate) FAssetCompilingManager::Get().FinishAllCompilation();
 #endif
     // Reject stale experiments imported in meters as centimeters. Validate
     // each LOD's actual vertex extent, not combined bounds containing LOD0.
-    if (OptimizedMesh) for (const auto& Pair:Replacements)
+    if (OptimizedMesh && bValidate) for (const auto& Pair:Replacements)
     {
 #if WITH_EDITORONLY_DATA
         const bool bNanite=Pair.Value->IsNaniteEnabled();
@@ -90,11 +112,12 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
             { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS invalid LOD scale %s ratio=%.5f; keeping originals"),*Pair.Key,Ratio); return false; }
         }
     }
-    for (const auto& Pair:Replacements)
+    if (bValidate) for (const auto& Pair:Replacements)
         if (const auto* Data=Pair.Value->GetRenderData())
             for (int32 LOD=0;LOD<Data->LODResources.Num();++LOD)
                 UE_LOG(LogTemp,Display,TEXT("CITY TREE LOD DATA %s lod=%d triangles=%u screen=%.5f"),
                     *Pair.Value->GetName(),LOD,Data->LODResources[LOD].GetNumTriangles(),Data->ScreenSize[LOD].GetValue());
+    Validated.Add(Variant);
     int32 Groups=0,Instances=0;
     TSet<FString> AppliedPieces;
     {
@@ -128,8 +151,8 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
                         AppliedPieces.Add(Pair.Key);
                         ++Groups;Instances+=Group->GetInstanceCount();break;
                     }
-        if (AppliedPieces.Num()!=Replacements.Num())
-        { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS incomplete child swap %d/%d"),AppliedPieces.Num(),Replacements.Num());return false; }
+        // Only the loaded pieces are swapped: a streamed-out piece is swapped when its patch arrives
+        // (AJapanWorld::RegisterScenePatch), so a partial set is not a failure.
         const FName Prepared(TEXT("CityTreeLODPrepared"));
         if (Enabled && !Landscape->Tags.Contains(Prepared))
         {
@@ -147,7 +170,8 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
             }),2.f,false);
         }
     }
-    UE_LOG(LogTemp,Display,TEXT("CITY TREE LODS tag=%s enabled=%d forced=%d groups=%d instances=%d distance_scale=%.2f"),*Tag,Enabled,Forced,Groups,Instances,DistanceScale);
+    UE_LOG(LogTemp,Display,TEXT("CITY TREE LODS tag=%s enabled=%d forced=%d pieces=%d/%d groups=%d instances=%d distance_scale=%.2f"),
+        *Tag,Enabled,Forced,AppliedPieces.Num(),Replacements.Num(),Groups,Instances,DistanceScale);
     return true;
 }
 

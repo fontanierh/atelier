@@ -95,6 +95,8 @@ public:
     void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres);
     /** The menu's city-tree optimization: unchanged close trees and collision, lighter distant leaf outlines. */
     bool ApplyTreeOptimization(bool bEnabled, int32 LODMode = 0, float DistanceScale = 1.5f);
+    /** Whether a component tag names one of the city tree pieces the tree optimization swaps. */
+    static bool IsCityTreePiece(const FName& Tag);
     /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
      *  by the sun and the sky, inside the froxel grid around the camera. Off restores the level's fog and sun as built. */
     void ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look);
