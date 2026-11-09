@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-upper-terrace-e2-0",
+  "dependencies": {
+    "prop/brinecove/town-upper-terrace-e2-0": "5f6aa33b359758368969762014ab387bfa1956726e3c4923e91c7b9b36f608c5",
+    "prop/brinecove/town-upper-terrace-e2-0-soft": "5489077c13450ecc6e16bef19d7dd8a5677f7d39d7a0e2e48a16f076c33deb84"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/8U/QCOXGEHPY54M1MEM5I9ELV.uasset": "79ab7a621cf471fe943406d1dff01f02e699e8e56e9b33fafab81b2d4193c9b9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
