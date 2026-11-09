@@ -3430,6 +3430,76 @@
         "adopted/brinecove/hero-galleon-hull"
       ]
     },
+    "object/brinecove/town-lower-back-e2-0": {
+      "groups": [
+        "SM_BC_TownLowerBackE20"
+      ],
+      "id": "object/brinecove/town-lower-back-e2-0",
+      "model": "prop/brinecove/town-lower-back-e2-0",
+      "models": [
+        "prop/brinecove/town-lower-back-e2-0"
+      ]
+    },
+    "object/brinecove/town-lower-back-w1-0": {
+      "groups": [
+        "SM_BC_TownLowerBackW10"
+      ],
+      "id": "object/brinecove/town-lower-back-w1-0",
+      "model": "prop/brinecove/town-lower-back-w1-0",
+      "models": [
+        "prop/brinecove/town-lower-back-w1-0"
+      ]
+    },
+    "object/brinecove/town-lower-back-w4-0": {
+      "groups": [
+        "SM_BC_TownLowerBackW40"
+      ],
+      "id": "object/brinecove/town-lower-back-w4-0",
+      "model": "prop/brinecove/town-lower-back-w4-0",
+      "models": [
+        "prop/brinecove/town-lower-back-w4-0"
+      ]
+    },
+    "object/brinecove/town-lower-hall--1-2-1": {
+      "groups": [
+        "SM_BC_TownLowerHall121"
+      ],
+      "id": "object/brinecove/town-lower-hall--1-2-1",
+      "model": "prop/brinecove/town-lower-hall--1-2-1",
+      "models": [
+        "prop/brinecove/town-lower-hall--1-2-1"
+      ]
+    },
+    "object/brinecove/town-lower-mid-e1-1": {
+      "groups": [
+        "SM_BC_TownLowerMidE11"
+      ],
+      "id": "object/brinecove/town-lower-mid-e1-1",
+      "model": "prop/brinecove/town-lower-mid-e1-1",
+      "models": [
+        "prop/brinecove/town-lower-mid-e1-1"
+      ]
+    },
+    "object/brinecove/town-lower-rum-e2-0": {
+      "groups": [
+        "SM_BC_TownLowerRumE20"
+      ],
+      "id": "object/brinecove/town-lower-rum-e2-0",
+      "model": "prop/brinecove/town-lower-rum-e2-0",
+      "models": [
+        "prop/brinecove/town-lower-rum-e2-0"
+      ]
+    },
+    "object/brinecove/town-lower-rum-e2-1": {
+      "groups": [
+        "SM_BC_TownLowerRumE21"
+      ],
+      "id": "object/brinecove/town-lower-rum-e2-1",
+      "model": "prop/brinecove/town-lower-rum-e2-1",
+      "models": [
+        "prop/brinecove/town-lower-rum-e2-1"
+      ]
+    },
     "object/brinecove/townlower-1-2": {
       "groups": [
         "SM_BC_TownLower_1_2",
