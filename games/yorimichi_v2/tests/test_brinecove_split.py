@@ -42,6 +42,7 @@ def test_read_glb_and_triangles(tmp_path):
     glb(tmp_path / 'a.glb', [(0, verts, idx)])
     model = split.read_glb(tmp_path / 'a.glb')
     assert model['materials'] == ['BC_a', 'BC_b']
+    assert {m for m, _ in split.triangles(model)} == {'BC_a'}
     assert len(list(split.triangles(model))) == 2
 
 
@@ -66,14 +67,14 @@ def model_of(*squares):
 def test_components_weld_shared_corners(tmp_path):
     # two squares sharing one corner weld into one component; a distant one is its own
     a, b, c = quad(0, 0), quad(1, 1), quad(50, 50)
-    tris = [(0, tuple(a[0][i] for i in a[1][k:k + 3])) for k in (0, 3)]
-    tris += [(0, tuple(b[0][i] for i in b[1][k:k + 3])) for k in (0, 3)]
-    tris += [(0, tuple(c[0][i] for i in c[1][k:k + 3])) for k in (0, 3)]
+    tris = [('BC_a', tuple(a[0][i] for i in a[1][k:k + 3])) for k in (0, 3)]
+    tris += [('BC_a', tuple(b[0][i] for i in b[1][k:k + 3])) for k in (0, 3)]
+    tris += [('BC_a', tuple(c[0][i] for i in c[1][k:k + 3])) for k in (0, 3)]
     comps = split.components(tris)
     assert sorted(len(x) for x in comps) == [2, 4]
 
 
-def tris_at(x, z, material=0, size=1.0, y=5.0):
+def tris_at(x, z, material='BC_a', size=1.0, y=5.0):
     verts, idx = quad(x, z, size, y)
     return [(material, tuple(verts[i] for i in idx[k:k + 3])) for k in (0, 3)]
 
@@ -90,10 +91,10 @@ def test_anchored_assignment_nearest_extent_and_height():
 
 
 def test_anchored_assignment_excludes_materials():
-    tris = tris_at(0, 0, material=0) + tris_at(0.2, 0.2, material=1, size=5)
+    tris = tris_at(0, 0, material='BC_a') + tris_at(0.2, 0.2, material='BC_b', size=5)
     comps = split.components(tris)
     anchors = {'o': dict(x=0, y=0, radius=9, max_extent=9, min_height=0, exclude_materials=('BC_b',))}
-    owned = split.assign_anchored(tris, comps, anchors, ['BC_a', 'BC_b'])
+    owned = split.assign_anchored(tris, comps, anchors)
     assert len(owned['o']) == 2 and len(owned['']) == 2
 
 
@@ -103,7 +104,7 @@ def test_partition_proof_detects_missing_and_changed_triangles():
     assert split.verify_partition(tris, [tris[:2]])                               # a lost triangle
     moved = tris_at(0, 0) + tris_at(5, 6)
     assert split.verify_partition(tris, [moved[:2], moved[2:]])                   # a moved vertex
-    swapped = [(1, c) for _, c in tris[:2]] + tris[2:]
+    swapped = [('BC_b', c) for _, c in tris[:2]] + tris[2:]
     assert 'material split differs' in split.verify_partition(tris, [swapped])    # a changed material
 
 

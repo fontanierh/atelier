@@ -103,16 +103,78 @@ The V2 world already holds one saved actor per fused group, referencing the tile
 entries with `model = "prop/brinecove/<object>"` and the tile's group names removed from the old entry's share, which is a
 planner change to `tools/migrate/recover.py` and `objects.py` (not made here: workers A and B own `recover.py`).
 
-## Planner changes the batch needs (described, not edited)
+## Implementation (done): `tools/migrate/brinecove_split_apply.py`
 
-1. **Recover step**: today `recover.py` turns each donor tile GLB into one `prop/brinecove/<tile>` record. For a split tile it
-   must instead (a) run `brinecove_split.py plan GLB_DIR --out DIR` (pure Python, no Blender, deterministic), (b) write the
-   part GLBs as new records `prop/brinecove/<object>[-soft]` with the tile's collision, LOD and material settings, and (c) re-record
-   the tile from `_rest/SM_BC_<tile>.glb`.
-2. **Objects**: add the 13 entries to `objects.toml`; `objects.py` must allow an entry whose `model` is a generated prop and
-   whose groups are the new part meshes.
-3. **Restricted/units**: none of these packages is restricted; `brinecove_units.py` units `ships-nightjar-sloop`,
-   `harbor-*`, `props-*`, `market-*` keep their materials reference and lose the parts moved out.
+One tool, three commands. `DONOR` is the donor's `build/yorimichi` folder (read only). Tests:
+`tests/test_brinecove_split.py` (reader, components, anchors, partition, writer) and `tests/test_brinecove_split_apply.py`
+(objects.toml and runtime-file edits, names, expectation shape).
+
+- `plan --donor DONOR`: splits into the stage folder (`build/yorimichi_v2/brinecove-split`, never committed) and prints
+  each part (triangles, bytes, tiles) and each tile's remainder. Nothing in the game changes.
+- `apply --donor DONOR`: the same split, then
+  - **records**: one generated record per part, `assets/prop/brinecove/<object>` (`<object>-soft` for a part cut from a
+    Soft tile), package `/Game/Brinecove/Meshes/SM_BC_<Object>[_Soft]`. Its source is the part GLB copied into the
+    record's `src/` and pinned by sha256 (the layout recover.py uses for copied donor sources; the donor folder is never
+    referenced). The recipe is the tile's own: `static-mesh`, `collision = "complex"` (none for Soft parts),
+    `full_precision_uvs`, `triangles`, and `slot_materials` for the part's used materials in first-use order.
+  - **tile records**: the 12 touched tiles take their remainder as the new source (new sha256, triangles and slot list);
+    the three ship tiles are empty and are retired with their package files.
+  - **placements**: `objects.toml` gains the 13 objects in its hand-written head (`group` = the part mesh, or `groups`
+    = hard + Soft part); the generated tail's `ships-nightjar-sloop` entry, its record, its `objects.saved.json` entry
+    and its actor package are removed. The runtime scenery file (`unreal/Content/Data/brinecove/runtime.json`, must
+    be hydrated) gets one group per part copied from the tile group (same flags, identity transform), the remainders'
+    material lists, and no group for retired tiles; `runtime-data.lock.json` is rewritten. `--skip-runtime` leaves the data
+    file alone (it then must be edited by a second `apply` before the objects are saved).
+  - **expectation**: `world/regions/w09-brinecove/split-batch1.json` (per part and per tile: triangles, bounds, hashes,
+    original settings, the tile's source triangles and each object's share). A rerun changes nothing (tested on a copy).
+- `check [--donor DONOR]`: pure Python, after the import. Proves record, source hash, triangle count and bounds of every part
+  against the expectation; remainder + shares = the tile for every tile; that each part mesh is a group of exactly one object
+  and once in the runtime file with identity transforms; that retired tiles and the retired object are gone; that every
+  record is imported (`verified.json`). With `--donor` it also proves, at vertex level, that all parts plus all remainders are
+  exactly the donor tiles' triangles.
+
+### What the split writes (donor export of 2026-11-07, run on the scratch stage)
+
+28 files, 9.5 MB: 16 part meshes (4 KB to 1.0 MB, e.g. `SM_BC_GalleonNightjar.glb` 827,064 bytes, `SM_BC_SloopEast.glb`
+1,014,504, `SM_BC_ShipyardYard.glb` 1,037,708, each cannon 299,632) and 12 remainders (7.6 KB to 1.5 MB).
+
+### Controller sequence
+
+```
+DONOR=build/yorimichi                      # the donor export the records were recovered from
+CMD="uv run python games/yorimichi_v2/tools/migrate/brinecove_split_apply.py"
+git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
+$CMD plan  --donor $DONOR                  # read the plan
+$CMD apply --donor $DONOR                  # records, remainders, placements, runtime file, expectation
+for id in $(git status --porcelain games/yorimichi_v2/assets/prop/brinecove | sed -n 's#.*assets/\(prop/brinecove/[^/]*\)/asset.toml#\1#p'); do
+  uv run python games/yorimichi_v2/tools/import/run.py $id    # under the controller's guard, one record at a time
+done
+uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island \
+  --claim TASK --only <the 13 new object ids>                  # saves the 13 new actors; kept actors are untouched
+$CMD check --donor $DONOR                  # triangles, bounds, partition, drawn-once
+uv run python games/yorimichi_v2/tools/content/check.py
+```
+
+Remainder actors that were saved before the split keep working: a remainder keeps its package name, so its actor shows the
+new remainder after the re-import. Where a remainder lost a material, its slot list shrinks (listed by `plan`), so those
+actors (`harbor-2-3`, `harbor-5-3`, `harbor-5-4`, the three `props-*` and the two `market-*` objects) must be checked for
+material overrides copied from the old runtime list; `saved_objects.py` (below) shows any slot mismatch as a miss.
+
+### Importer changes: none needed
+
+`import_asset.py` already binds `slot_materials` by slot index, checks the slot count and the `triangles` count, applies
+complex collision and full-precision UVs. Nothing in it changes.
+
+### Ray collision and captures (run by the controller after the import)
+
+```
+uv run python games/yorimichi_v2/tools/test/saved_objects.py --zone brinecove_quay      # each object drawn once
+uv run python games/yorimichi_v2/tools/parity/capture_runtime.py ...                    # fixed cameras, before and after
+uv run python games/yorimichi_v2/tools/parity/compare.py BEFORE AFTER                   # zero changed pixels outside AA noise
+```
+
+For collision, trace the same rays (grid of 25 per object, 20 cm apart, from 3 m out on 4 sides) against the tile and the
+part before and after and compare hit points within 1 cm.
 
 ## Proof the controller run needs
 
