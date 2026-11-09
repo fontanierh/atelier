@@ -193,7 +193,7 @@ def needles() -> dict:
 
 
 def proof(game: Path, plan: Plan) -> tuple:
-    """@cc [owner:jim5,label:safety] belmontetrain-lod-unreferenced
+    """@cc [owner:fontanierh,label:safety] belmontetrain-lod-unreferenced
     Retirement MUST NOT write while any tracked file other than the 14 packages themselves names one of them, as UTF-8
     or UTF-16, in the form it will have after the retirement (the planned bytes for the records, verified.json and
     units.json). A Git LFS pointer among the scanned files, the 14 included, cannot be proven unreferenced, so it refuses.

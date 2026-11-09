@@ -381,37 +381,9 @@ def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner
                 add(leaf_package, f'prop/belmontetrain/{unit}-door-{tail}', f'shared/belmontetrain/{unit}',
                     [(donor / leaf['glb']).resolve()], f'{leaf_package.rsplit("/", 1)[1]}: a {unit} door leaf',
                     {'collision': 'boxes', 'boxes': []})
-        # The LOD1 and LOD2 meshes of the vehicle (the residual records' Source/SM_BT_<V>/SM_BT_<V>_LODn packages). The
-        # donor level file's triangles, counted per node instance, and its material names must be the saved chain's
-        # section for that level (the root record's lods and slots): the import's own facts, which it must reproduce.
-        for level in (1, 2):
-            lod_package = f'/Game/BelmonteTrain/Source/{name}/{name}_LOD{level}'
-            if lod_package not in owner:
-                continue
-            root_saved = saved[vehicle['mesh'].split('.', 1)[0]]
-            screen, triangles, indices = root_saved['lods'][level]
-            slots = [root_saved['slots'][i] for i in indices]
-            path = (donor / vehicle['levels'][level]).resolve()
-            counted, names = glb_instanced(path)
-            # The material names must be the saved slots' names as a set; the saved order is kept (the import binds
-            # the slots by name, and the donor file's own material order differs for some vehicles).
-            if counted != triangles or sorted(names) != sorted(material.rsplit('/', 1)[1] for _, material in slots):
-                unmapped.append(f'{path.relative_to(donor)} (LOD{level}: {counted} triangles and {len(names)} materials, '
-                                f'the saved chain has {triangles} and {len(slots)})')
-                continue
-            materials = [material for _, material in slots]
-            missing = sorted({m for m in materials if m not in all_owner})
-            if missing:
-                unmapped.append(f'{path.relative_to(donor)} (materials owned by no record: {", ".join(missing[:3])})')
-                continue
-            generated.append(Generated(
-                id=f'prop/belmontetrain/{unit}-lod{level}', kind='static-mesh', owner=f'shared/belmontetrain/{unit}',
-                package=lod_package, source=path,
-                settings={'slots': [list(s) for s in slots], 'triangles': triangles, 'collision': 'none'},
-                references=sorted({all_owner[m] for m in materials}),
-                about=f'{name}: the {unit} LOD{level} mesh, {triangles} triangles per node instance, screen size {screen}; '
-                      'collision not recorded in the saved chain',
-                expected={}))
+        # The vehicle's LOD1 and LOD2 meshes are not planned: the import builds them from the prop record's lod_chain as
+        # transient meshes, and the residual records' standalone Source/SM_BT_<V>/SM_BT_<V>_LODn packages are unused donor
+        # leftovers that belmontetrain_lods.py retires.
     return Plan('belmontetrain', generated, unmapped, {})
 
 
