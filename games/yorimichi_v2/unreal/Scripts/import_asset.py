@@ -297,7 +297,13 @@ def _build_lod_chain(asset, settings, resolve):
     if left:
         raise RuntimeError(f'{asset.get_path_name()}: transient LOD packages {left} are still loaded')
     if len(chain) > 1:
-        editor.set_lod_screen_sizes(asset, [screen for _, screen, _, _ in chain])
+        # The legacy FBX import leaves the mesh computing its own screen sizes, which would replace the record's.
+        asset.set_editor_property('auto_compute_lod_screen_size', False)
+        screens = [screen for _, screen, _, _ in chain]
+        editor.set_lod_screen_sizes(asset, screens)
+        got = [float(s) for s in editor.get_lod_screen_sizes(asset)][:len(chain)]
+        if len(got) != len(chain) or any(abs(a - b) > 1e-3 for a, b in zip(got, screens)):
+            raise RuntimeError(f'{asset.get_path_name()} has LOD screen sizes {got}, the record {screens}')
     got = [[str(m.get_editor_property('imported_material_slot_name')), _material_path(m)]
            for m in asset.get_editor_property('static_materials')]
     if got != [list(s) for s in slots]:
