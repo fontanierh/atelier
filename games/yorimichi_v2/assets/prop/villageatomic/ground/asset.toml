@@ -18,9 +18,8 @@ version = 1
 
 [recipe.settings]
 slot_materials = ["/Game/Japan/Materials/M_Village"]
-triangles = 13647
+triangles = 13648
 collision = "complex"
-legacy_fbx = true
 double_sided = false
 
 [[outputs]]
