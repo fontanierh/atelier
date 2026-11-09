@@ -172,6 +172,8 @@ package = "/Game/__ExternalActors__/V2/{name}"
     placement('post', ['adopted/hippodrome/loose_files'], ['/Game/Hippodrome/SM_HD_FinishPost'])
     placement('dirt', ['adopted/hippodrome/textures', 'adopted/hippodrome/materials'],
               ['/Game/Hippodrome/Textures/T_Dirt', '/Game/Hippodrome/Materials/M_HD_Grass'])
+    # A record's copied donor sources may carry their own asset.toml: a source file, never read as a record.
+    write(game / 'assets/object/hippodrome/ground/source/asset.toml', 'not a record')
     changed = recover.apply(game, recover.build_plan(game, 'hippodrome', donor), donor)
     refs = {n: records.load_asset(game / f'assets/object/hippodrome/{n}/asset.toml').references
             for n in ('ground', 'both', 'post', 'dirt')}
