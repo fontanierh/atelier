@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/market-stall-03",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_MarketStall03.uasset": "9dcd0f92eaa1e925831661b4fc0636fb3391fe009920d319cf61fcebd05e1557"
+  },
+  "input_fingerprint": "7fdde60af36d80dca9fdc79d98dde9c73e8ea513767906ac183448a8d6b832ee",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_MarketStall03": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
