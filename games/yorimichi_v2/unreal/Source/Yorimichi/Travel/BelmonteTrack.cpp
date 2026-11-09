@@ -75,6 +75,11 @@ FString ABelmonteTrack::GroupName(const TSharedPtr<FJsonObject>& Group)
     return MeshName(Group->GetStringField(TEXT("mesh"))) + TEXT("#") + Group->GetStringField(TEXT("key"));
 }
 
+FString ABelmonteTrack::RowName(const TSharedPtr<FJsonObject>& Group, int32 Row)
+{
+    return GroupName(Group) + TEXT("@") + FString::FromInt(Row);
+}
+
 UStaticMeshComponent* ABelmonteTrack::MakePiece(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& CullCm,
     const TSharedPtr<FJsonObject>& P, UStaticMesh* Mesh)
 {
@@ -88,7 +93,8 @@ UStaticMeshComponent* ABelmonteTrack::MakePiece(UObject* Outer, USceneComponent*
     return C;
 }
 
-UInstancedStaticMeshComponent* ABelmonteTrack::MakeGroup(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& G, UStaticMesh* Mesh)
+UInstancedStaticMeshComponent* ABelmonteTrack::MakeGroup(UObject* Outer, USceneComponent* Parent, const TSharedPtr<FJsonObject>& G, UStaticMesh* Mesh,
+    const TArray<int32>* OnlyRows)
 {
     const FString Name = FString::Printf(TEXT("%s_%s_%s"), *G->GetStringField(TEXT("kind")), *Mesh->GetName(), *G->GetStringField(TEXT("key")));
     UInstancedStaticMeshComponent* C = G->GetBoolField(TEXT("hierarchical"))
@@ -98,9 +104,11 @@ UInstancedStaticMeshComponent* ABelmonteTrack::MakeGroup(UObject* Outer, USceneC
     const float Distance = float(G->GetNumberField(TEXT("cull_cm")));
     Common(C, Distance, G->GetBoolField(TEXT("collision")), G->GetBoolField(TEXT("shadow")));
     C->InstanceEndCullDistance = int32(Distance);
-    for (const auto& Row : G->GetArrayField(TEXT("instances")))
+    const TArray<TSharedPtr<FJsonValue>>& Rows = G->GetArrayField(TEXT("instances"));
+    for (int32 Index = 0; Index < Rows.Num(); ++Index)
     {
-        const auto& A = Row->AsArray();
+        if (OnlyRows && !OnlyRows->Contains(Index)) continue;
+        const auto& A = Rows[Index]->AsArray();
         if (A.Num() < 5) continue;
         C->AddInstance(FTransform(FRotator(0., A[3]->AsNumber(), 0.), TrackVector(A), FVector(1., A[4]->AsNumber(), 1.)), true);
     }
@@ -154,9 +162,15 @@ bool ABelmonteTrack::Initialize(const FString& Path)
         const auto G = Value->AsObject();
         const FString Asset = G->GetStringField(TEXT("mesh"));
         if (IsSaved(GroupName(G), Asset)) continue;
+        // Rows a saved unit holds ("mesh#key@row") are left out; the rest of the group stays one component.
+        const int32 Count = G->GetArrayField(TEXT("instances")).Num();
+        TArray<int32> Left;
+        for (int32 Row = 0; Row < Count; ++Row)
+            if (!Manifest || !IsSaved(RowName(G, Row), Asset)) Left.Add(Row);
+        if (Left.IsEmpty() && Count > 0) continue;
         UStaticMesh* Mesh = Load(Asset);
         if (!Mesh) continue;
-        UInstancedStaticMeshComponent* C = MakeGroup(this, RootComponent, G, Mesh);
+        UInstancedStaticMeshComponent* C = MakeGroup(this, RootComponent, G, Mesh, Left.Num() == Count ? nullptr : &Left);
         Instances += C->GetInstanceCount();
         C->RegisterComponent();
         Parts.Add(C);

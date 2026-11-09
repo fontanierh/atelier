@@ -13,7 +13,7 @@ tracked in [sources.md](sources.md), and unfinished useful-object boundaries in 
 | Belmonte train | 67 generated `prop/belmontetrain/*` meshes; 24 remaining adopted records hold 592 other packages | Imported train meshes are recovered; residual material/texture/source closure is assessed separately |
 | Gondola | 26 adopted records / 96 packages, 9 saved route placements | Saved stations and grouped pylons exist; a group of useful towers is not proof of independent editing of each tower |
 | Ferry | 4 adopted records / 66 packages, 2 saved terminal placements | Both terminals have saved placement ownership |
-| Railway | 14 adopted records / 146 packages, 13 saved route placements | Stations, bridge and track sections have saved ownership; broad fitting/area groups still need useful-object review |
+| Railway | 14 adopted records / 146 packages, 13 saved route placements | Stations, bridge and track sections have saved ownership. The track-fittings group is prepared, not saved, as twelve per-fitting objects (one per row of its four mesh groups) |
 | SkateRide | 692 adopted records / 3,331 packages, including 691 clip-family records | The prefix/chunk split proposal has landed; clip originals and importer code follow the restricted manifest |
 | Japan models and ten smaller families | 100 Japan model records; 141 family meshes and 29 textures recovered | The old unsourced-model grouping list is obsolete |
 | Brine Cove | 11 small-prop placements, 3 new ship/hull placements and 6 market-stall placements saved on main | Further market/town splits and old-tile retirement remain active work |

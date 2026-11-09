@@ -156,6 +156,20 @@ int32 UV2MigrationTravel::MigrateRailwayPieces(UObject* WorldContext, FName Regi
                     if (!Mesh) { Err = Entry + TEXT(": its mesh is missing from V2 Content"); return false; }
                     AddPart(Made, ABelmonteTrack::MakeGroup(Made, Made->GetRootComponent(), *Group, Mesh));
                 }
+                else if (int32 At = INDEX_NONE; Entry.FindLastChar(TEXT('@'), At) && Groups.Find(Entry.Left(At)))
+                {
+                    // One row of a group, "mesh#key@row": its own patch, the row's index in the group's instances.
+                    const TSharedPtr<FJsonObject> Group = *Groups.Find(Entry.Left(At));
+                    const FString Suffix = Entry.RightChop(At + 1);
+                    const auto& Rows = Group->GetArrayField(TEXT("instances"));
+                    if (!Suffix.IsNumeric() || !Rows.IsValidIndex(FCString::Atoi(*Suffix))
+                        || Rows[FCString::Atoi(*Suffix)]->AsArray().Num() < 5)
+                    { Err = Entry + TEXT(": no such fitting row in its group"); return false; }
+                    UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Group->GetStringField(TEXT("mesh")));
+                    if (!Mesh) { Err = Entry + TEXT(": its mesh is missing from V2 Content"); return false; }
+                    const TArray<int32> Only{ FCString::Atoi(*Suffix) };
+                    AddPart(Made, ABelmonteTrack::MakeGroup(Made, Made->GetRootComponent(), Group, Mesh, &Only));
+                }
                 else
                 {
                     Err = Entry + TEXT(" is no piece or group of ") + DataFile;
