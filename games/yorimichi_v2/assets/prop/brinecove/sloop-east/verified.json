@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/sloop-east",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_SloopEast.uasset": "9f03fd1e5b781b3e22ebd32ecc2b35cd5f2be2b951f12451611f886034c840a8"
+  },
+  "input_fingerprint": "8b4ba8d4fd5a771ab899f4918a540b9ec940badb24d3ba74a512fa19af6bc76d",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_SloopEast": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
