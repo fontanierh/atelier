@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/Tree_PineLean_A.uasset": "3a47abe5e9e28e4ad3056bb6ae796015bf10d55a4b8f057759fd574c2b8bf0f5"
+    "unreal/Content/Japan/Southwest/Pieces/Tree_PineLean_A.uasset": "809da49a7f8e2f52a3eb789219e0dfd674e5f5a5fc82a0e009e733b7156ce7ab"
   },
-  "input_fingerprint": "3c123272127100a2c48285b876bdf8326f8e6a36f6dc08d582faa8aa74282aea",
+  "input_fingerprint": "51a5963b2c5c4abae984a568507537c27441693333ae67093bbcd25ad8c5eab3",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/Tree_PineLean_A": {

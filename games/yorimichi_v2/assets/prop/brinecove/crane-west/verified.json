@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_CraneWest.uasset": "dd8ff0b50ff6a03cc03fdcfa454585b097cb8be3c11d733526fdf8d3d03c9bc7"
+    "unreal/Content/Brinecove/Meshes/SM_BC_CraneWest.uasset": "3aea0f7ecc65cc6c12a83b13275842cac424f2bc4186a81ced6c772065324fcd"
   },
-  "input_fingerprint": "c662867859d4d9dae31b222a336b06aa7c45d656fe2a24975f897f04361e1e5d",
+  "input_fingerprint": "84ae41ee21e91204ca54e267864f0f048b9b75589e58297c1daf476da960ebbf",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_CraneWest": {
@@ -18,7 +18,15 @@
           2.0
         ]
       },
-      "before": null
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
     }
   },
   "schema": 1,

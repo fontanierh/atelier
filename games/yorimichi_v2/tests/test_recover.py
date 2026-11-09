@@ -579,10 +579,9 @@ def test_villageatomic_follows_the_parent_collision_policy_in_a_one_record_famil
     by_id = {g.id: g for g in plan.generated}
     assert by_id['prop/villageatomic/sign'].settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 30,
                                                          'collision': 'simple_and_complex', 'hulls': 1}
-    # The ground's one degenerate triangle goes in the donor's legacy import (native 29 of 30), single-sided as the old package.
+    # The ground keeps the source triangle count (no legacy_fbx: that path does not convert units), single-sided.
     assert by_id['prop/villageatomic/ground'].settings == {
-        'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 29, 'collision': 'complex', 'legacy_fbx': True,
-        'double_sided': False}
+        'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 30, 'collision': 'complex', 'double_sided': False}
     assert by_id['prop/villageatomic/planting-cell-0-0'].settings['hulls'] == 0       # a render-only leaf keeps no shapes
     assert plan.kept == {'adopted/experiments/villageatomic': []}
     changed = recover.apply(game, plan, donor)

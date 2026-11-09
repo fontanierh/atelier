@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/market-auction-block",
+  "dependencies": {
+    "prop/brinecove/market-auction-block": "942f05ca0d52eb870c29845de593c5a8377fa8a8c730f0eb7999eb4fd148b5a1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/XN/X9Y1AA01J3JUIYQZVWT3ZR.uasset": "5d3764ae94d18e6a998d732ba07bca2351e3c7cb3e2fa51f8de0ae793e46ce19"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Airship.uasset": "a0caf97a340a320378d384054c354c0e065463eab98118fe2c33a0df8c238338"
+    "unreal/Content/Japan/Assets/ZP_Airship.uasset": "11b079f678d716cb01f9d254f1c54f33dbd6a742e3b5dd053fe4687f7d622942"
   },
-  "input_fingerprint": "0c2e2c9a47e90169188fb277f264239c762bfc6635525f2e438395d132b02562",
+  "input_fingerprint": "e48d184059e58d1c92b5583d08612d788fd518d81b2f194c2163bdb7bb0fac95",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Airship": {

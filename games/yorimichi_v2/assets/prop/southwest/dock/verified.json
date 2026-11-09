@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_Dock.uasset": "1fbe0e5084b0a3d3421248f2885ea8e18433b570cc2b33e53dd298b3d0da9d12"
+    "unreal/Content/Japan/Southwest/Pieces/SW_Dock.uasset": "fe04cf330e35ea393ac8f3f32b19a0d0f6d036225836367571362abbdb2fb830"
   },
-  "input_fingerprint": "9973a628f12320af230684a19ecfa6baed245fb927bfacf591c7c3033bf7f4ae",
+  "input_fingerprint": "8e94f755f420bc31308e2de9806cf6db9f05f6e40211c0ace0f8bbd1719f2a1e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_Dock": {

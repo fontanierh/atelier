@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Trail.uasset": "9235a70a9bef0432b9827bf606b3c0b832baddcbeff997e91087f58b1f159863"
+    "unreal/Content/Japan/Assets/ZP_Trail.uasset": "fc383d3eb284af5055d7abe7644defbd9e5d431bf6bbd5fb13a3690e530cc29f"
   },
-  "input_fingerprint": "d8f7ce455c7ad9f8a56677cc3769a33b97be60e44340e80ac40d7c7db22df5d4",
+  "input_fingerprint": "1d94bd630da1a8c77c033b606cdd2e007ab6c9836aa5b564dd56467b8f08271e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Trail": {

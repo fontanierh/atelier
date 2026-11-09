@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/cannon-west",
+  "dependencies": {
+    "prop/brinecove/cannon-west": "60b294808352485c079badf0f09d3655e51231e12e331b2aed42b321f8834b26"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/GI/5OH1A0DQQUQM5WK1VNQF6F.uasset": "b1f383bf4680b0bc6bcfbb7174a8f8d0dd372e986733f1c5e34522a464539fff"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

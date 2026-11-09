@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_Boulder_C.uasset": "a85aec3aee157f53bda8973bd37abaa9a21472d116fbe2ad3338bd3e70dcde79"
+    "unreal/Content/Japan/Southwest/Pieces/SW_Boulder_C.uasset": "aa992e2eaf21fa8212b0370fdd4ac3615db3d367566e215bd414e414e75b61e0"
   },
-  "input_fingerprint": "eb8019eed78a2b63c6b73322d5b242b4f42bd74b26d2134fe4fc7e2c9cdff682",
+  "input_fingerprint": "aab1a32b68db1bdaab952e5a0fddebca82acd81dbe52b647260e86c51a790aef",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_Boulder_C": {

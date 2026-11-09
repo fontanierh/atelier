@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_Boat.uasset": "ef3775811203445b1177408a674d3d2c33db335e0e49b3af17c729e0885d48f3"
+    "unreal/Content/Japan/Southwest/Pieces/SW_Boat.uasset": "d904b66c7a6006cc69629f7a1358639a8e4df34b056dd0c4fb3c39680c20f812"
   },
-  "input_fingerprint": "af5d24fdd6806bcf86bb63b318308e4549df6d3064ec9f91bea2c20596e4e415",
+  "input_fingerprint": "2d6de097188fa9c13ef83e2713d644dd668400b1358d87c5410b9b481144cee9",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_Boat": {

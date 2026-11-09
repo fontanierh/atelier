@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piece971a82d94a995696.uasset": "f9fae4a778aeef12e7a8a524a85c432f0eebdb3b7ba37244474d00f8a18e7926"
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Piece971a82d94a995696.uasset": "83e32aec3b776b37e7953d2bbe090655449dcb50938dcc085afaa90916e88dfb"
   },
-  "input_fingerprint": "2532287d6a88ebb20a73c3217400dc2430603e39d07cec24318cd03689b9c094",
+  "input_fingerprint": "56682a85a571966fda66fc608f069cf5e86348e0449b73783c262222c041836e",
   "kind": "imported",
   "lods": {
     "/Game/SkatePark/SM_SkateParkFeatures_Piece971a82d94a995696": {

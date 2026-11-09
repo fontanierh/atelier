@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/Mega_Trail.uasset": "49e29eb113acc43a0f0ffa9b4827f9f9b6197299799e31baf979eee53bfd5900"
+    "unreal/Content/Japan/Assets/Mega_Trail.uasset": "d00487788206ff66aed658b5be3ba040587c7ea99ff2006cb8830b4ab822c57b"
   },
-  "input_fingerprint": "e5ece78f7d2cff6dff12e31df018eb56e77309145b9e8a2136b2c99e104a324e",
+  "input_fingerprint": "592beaab47d23fed9e0b44c22e01f994345d502f3ed325f88f85320446996a9a",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/Mega_Trail": {

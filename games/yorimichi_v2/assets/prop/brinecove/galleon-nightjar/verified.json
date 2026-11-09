@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/galleon-nightjar",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_GalleonNightjar.uasset": "b0a4635786fd9aabb8c7576b2c09afeee3aa8ad70f231c620b76638266aff276"
+  },
+  "input_fingerprint": "884ecf9803ed3ac4557a0a99f1fe2464f76a2070a55a7600969c75545df2f078",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_GalleonNightjar": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

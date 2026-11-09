@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/Mega_Ramp.uasset": "8a016a63f4a889ef456c7e0838ae344bc66de6d77a782a4081cf29f33b656768"
+    "unreal/Content/Japan/Assets/Mega_Ramp.uasset": "08d9ab357776d57c7623b1d2a0b53e726e0b581427f247cdb04cc0d7f290c2fa"
   },
-  "input_fingerprint": "c4178f88bb5d4bed4f0f47c4886e39c4b9cb9873209766cbf0b2595556e0a94b",
+  "input_fingerprint": "fa0f11407ff42464b94fe7f8e822bd56738e75a30d0e59744d73120b0df32dd5",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/Mega_Ramp": {

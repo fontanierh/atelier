@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_StoneStairs.uasset": "6c3cc928fa43d13302c54fda4ddd7305b065fb67f8b0f6a0918a7e7aa0b8c9c2"
+    "unreal/Content/Japan/Southwest/Pieces/SW_StoneStairs.uasset": "be71137ceb85f0d2ae35bdad73b821a965a098a0ffd0330d29b2231b1f64a183"
   },
-  "input_fingerprint": "a13604b9e9a51c3218a931701d1823f59e586780bc1c086b045266701963cbeb",
+  "input_fingerprint": "3e453b2bbf78488c7c251af9445e12fe07e6b26789b952d9869be37eec542e20",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_StoneStairs": {

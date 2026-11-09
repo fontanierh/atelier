@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the shipyard yard, cut from its fused tile (9558 triangles).
+# Its placement is this actor package; its model is prop/brinecove/shipyard-yard. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/shipyard-yard"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/shipyard-yard"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/XW/D36GFY57MKGMQXXQ90ANXL"

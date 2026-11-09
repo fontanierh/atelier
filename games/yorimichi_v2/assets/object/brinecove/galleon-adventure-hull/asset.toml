@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the galleon Adventure's hero hull instance (its rig, deck and guns are object/brinecove/galleon-adventure).
+# Its placement is this actor package; its model is adopted/brinecove/hero-galleon-hull. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/galleon-adventure-hull"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["adopted/brinecove/hero-galleon-hull"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/1X/62OOOZM4RBCF1HNHAIUGY4"

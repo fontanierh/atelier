@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/net-rack-east",
+  "dependencies": {
+    "prop/brinecove/net-rack-east": "5cd24b63eb1a3461b2d5cd12c72f03840c93b7906404bec2de0ec3691aec923a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/47/LV7KEFSFHIRJLVAREBBU8P.uasset": "bb44d1e611f34ab80fa99343931b4aecabe89bea71654ae70910f8e928ef4c92"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

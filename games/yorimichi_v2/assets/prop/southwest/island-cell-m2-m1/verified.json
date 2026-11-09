@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_Island_cell_-2_-1.uasset": "28864b125c15a25dbe275a51dd332708c9439f7753b73f7b6a43b350bf65516f"
+    "unreal/Content/Japan/Southwest/Pieces/SW_Island_cell_-2_-1.uasset": "313fb0a2c844510738589e651a2826be8443c1cbc8c7c68f76a4a0b2177a7173"
   },
-  "input_fingerprint": "29e19716e6522906dbe48e711ef756399a72a38c03faddb14dcc3efb596c0cfb",
+  "input_fingerprint": "9d375617976ad15712b7d4fe517be721d85d2469a263bb488bfc2be18fc09469",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_Island_cell_-2_-1": {

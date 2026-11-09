@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SkatePark/SM_SkatePath.uasset": "56c1c600084dde2f9e80d0c4e758672c824b3e0a361cf922c29814a8480d9aed"
+    "unreal/Content/SkatePark/SM_SkatePath.uasset": "e84b80d3bfd2ff22d343e0157d378fd3c837b3e0bab6dad82cbb1562cbd1428a"
   },
-  "input_fingerprint": "dc74e04f010b455a474760d9070fc4dfb1c61da7d6783a044f2c14e6e07fd41a",
+  "input_fingerprint": "9ded137849c1621ba556f5d3ccfc61239c4d8d1d06a1339a146f978e2f6d8a32",
   "kind": "imported",
   "lods": {
     "/Game/SkatePark/SM_SkatePath": {
