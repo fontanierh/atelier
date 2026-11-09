@@ -244,3 +244,10 @@ def test_drop_saved_group():
 
 def test_emptied_lists_tiles_with_no_remainder():
     assert market.emptied({'remainders': {'B': None, 'A': {'triangles': 3}, 'C': None}}) == ['B', 'C']
+
+
+def test_the_command_line_parses():
+    """Every option is declared once (a duplicate stops the parser before any subcommand runs)."""
+    with pytest.raises(SystemExit) as done:
+        market.main(['--help'])
+    assert done.value.code == 0

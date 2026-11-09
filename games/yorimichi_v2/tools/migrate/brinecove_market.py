@@ -637,7 +637,7 @@ def main(argv=None) -> int:
     parser.add_argument('--stage', type=Path)
     parser.add_argument('--claim', help='the active claim (task ID) that must cover the touched set')
     parser.add_argument('--json', action='store_true')
-    parser.add_argument('--stage', choices=('groups', 'records'), default='groups', help='retire: which stage')
+    parser.add_argument('--retire-stage', choices=('groups', 'records'), default='groups', help='retire: which stage')
     parser.add_argument('--retired', action='store_true', help='check: the emptied tiles are already retired')
     parser.add_argument('--game', type=Path, default=HERE.parents[1], help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -680,14 +680,14 @@ def main(argv=None) -> int:
             else:
                 print('# apply: write, create or (for the package files, by the import) overwrite')
                 print('\n'.join(info['paths']))
-                print('# retire --stage groups: edit placements and runtime (after a passing import and check)')
+                print('# retire --retire-stage groups: edit placements and runtime (after a passing import and check)')
                 print('\n'.join(groups['paths']))
-                print('# retire --stage records: delete the emptied tiles (after their placements were saved again)')
+                print('# retire --retire-stage records: delete the emptied tiles (after their placements were saved again)')
                 print('\n'.join(records['paths']))
                 print('# placements to delete and save again between the stages: ' + ', '.join(affected_placements(game, plan)))
         elif args.command == 'retire':
             print(apply_.report(plan))
-            done = retire(game, plan, args.claim, args.batch, args.stage, donor)
+            done = retire(game, plan, args.claim, args.batch, args.retire_stage, donor)
             print(f'retire: wrote {len(done["written"])}, deleted {len(done["deleted"])}')
         else:
             print(apply_.report(plan))
