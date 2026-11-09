@@ -13,9 +13,9 @@ existing verified package and the [release workflow](../../../docs/RELEASES.md),
   excluded phone/kart content absent, and 62 runtime-data files with no missing or changed bytes.
 - **Human verification:** no new manual-play ledger is recorded here for this checkpoint. Earlier launch/shutdown
   results belong to the earlier `40d5f9721f4f` package fingerprint and do not transfer to this app.
-- **Content scope:** see [INVENTORY.md](INVENTORY.md). The additional 15 market stalls and seven town1 placements
-  in draft [PR #787](https://github.com/fontanierh/atelier/pull/787), later town batches, soft fragments and
-  source-preservation conversion are outside this main checkpoint.
+- **Content scope:** see [INVENTORY.md](INVENTORY.md). The Brine Cove market and town split of
+  [PR #787](https://github.com/fontanierh/atelier/pull/787) (15 more stalls, 265 town objects, the soft fragments,
+  the source-preservation conversion and the tile retirements) is outside this package; the next package includes it.
 
 The owner directed on 2026-11-09 that human and multiplayer playtesting follows building; multiplayer will be
 played with his brother. These checks remain unverified acceptance work, not a block on independent migration.

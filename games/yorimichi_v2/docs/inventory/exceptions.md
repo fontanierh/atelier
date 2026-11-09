@@ -20,7 +20,7 @@ For imported content, an editor-saved package is not a substitute for the import
 
 | Area | Landed | Still open |
 |---|---|---|
-| Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split | Save the two soft remainders and finish any remaining useful fused objects; preserve each whole palm |
+| Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split, and the two harbour Soft fragments (#787) | Finish any remaining useful fused objects (signal mast, shipyard slip); preserve each whole palm |
 | Brine Cove ships | Nightjar, sloop and Adventure hull placements saved with per-instance hull groups | Retire the three emptied ship tiles and obsolete grouped placements after accepted replacement checks |
 | Brine Cove market | Six market1 stalls saved on main | Fifteen more saved on PR #787; integrate them. The full market has 21 stalls, not the older 19-stall-only list |
 | Brine Cove town | Original town appearance still represented by the fused tiles | Seven town1 placements are on PR #787; town2–9 remain pending. Retire the 42 empty tiles only after their replacements are accepted and saved |
@@ -58,8 +58,8 @@ This query is a **classification list**, not a claim that every package lacks an
 verify origin: procedural materials may need generator inputs; genuinely Unreal-authored maps/settings may use
 saved packages; imported files need their original bytes. Do not relabel unknown imports as editor originals.
 
-Brine Cove's source-preservation route at `5f2d21fbd1` is prepared but not applied on main. It is due after town9;
-see [sources.md](sources.md). It fixes preservation of fused originals without changing accepted package bytes.
+Brine Cove's source-preservation route is applied by #787: 148 carved tile records keep their fused original and a
+carve selection, and each remainder derives byte-identically (see [sources.md](sources.md)). No accepted package changed.
 
 ## Evidence and updates
 

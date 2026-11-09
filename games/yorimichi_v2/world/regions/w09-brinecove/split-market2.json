@@ -1,0 +1,1579 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part mesh, each tile remainder, and the donor tile each was cut from.",
+  "parts": {
+    "prop/brinecove/market-stall-03": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_blue",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_planks",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        30.1574,
+        8.2441,
+        -112.2251
+      ],
+      "mesh": "SM_BC_MarketStall03",
+      "min": [
+        15.8289,
+        4.5082,
+        -121.8623
+      ],
+      "object": "market-stall-03",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall03",
+      "sha256": "2ce007650678c3f6a01f742d5cd48476c812a4d8e10e60432b98c7a0185782af",
+      "soft": false,
+      "tiles": [
+        "Market_4_4_Piece000",
+        "Market_4_4_Piece001"
+      ],
+      "triangles": 5500
+    },
+    "prop/brinecove/market-stall-04": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_planks",
+        "BC_rope",
+        "BC_sail",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        66.7793,
+        8.2441,
+        -108.4127
+      ],
+      "mesh": "SM_BC_MarketStall04",
+      "min": [
+        52.3437,
+        4.5082,
+        -117.4774
+      ],
+      "object": "market-stall-04",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall04",
+      "sha256": "6effb786fda7f6199067cf71c505a52cc7cfbd4f673ae8f2e3c0674b0cd38ece",
+      "soft": false,
+      "tiles": [
+        "Market_4_4_Piece001",
+        "Market_4_4_Piece010"
+      ],
+      "triangles": 5500
+    },
+    "prop/brinecove/market-stall-05": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_cream",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -34.5106,
+        8.2514,
+        -141.4877
+      ],
+      "mesh": "SM_BC_MarketStall05",
+      "min": [
+        -46.5796,
+        4.5082,
+        -150.6984
+      ],
+      "object": "market-stall-05",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall05",
+      "sha256": "e9c5ca70d926a73aef14becab9d5ddfa2a9dbfdf40fdb7f5fcc3ea18b3305473",
+      "soft": false,
+      "tiles": [
+        "Market_3_4_Piece112"
+      ],
+      "triangles": 4056
+    },
+    "prop/brinecove/market-stall-05-soft": {
+      "materials": [
+        "BC_leaf_sun"
+      ],
+      "max": [
+        -37.4159,
+        6.2632,
+        -143.2741
+      ],
+      "mesh": "SM_BC_MarketStall05_Soft",
+      "min": [
+        -44.2551,
+        6.0632,
+        -144.9678
+      ],
+      "object": "market-stall-05",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall05_Soft",
+      "sha256": "929a39a8342604f3d58764ef7961e45f69652ae896ae9a535063f3915384db10",
+      "soft": true,
+      "tiles": [
+        "Market_3_4_Soft"
+      ],
+      "triangles": 800
+    },
+    "prop/brinecove/market-stall-10": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_cream",
+        "BC_glass_warm",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        59.7966,
+        8.2514,
+        -122.6992
+      ],
+      "mesh": "SM_BC_MarketStall10",
+      "min": [
+        47.6541,
+        4.5082,
+        -131.4483
+      ],
+      "object": "market-stall-10",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall10",
+      "sha256": "75cbb1ad59d1bd18529ce8a4a49644663145003195c78684043571422a59dab4",
+      "soft": false,
+      "tiles": [
+        "Market_4_4_Piece001"
+      ],
+      "triangles": 4188
+    },
+    "prop/brinecove/market-stall-10-soft": {
+      "materials": [
+        "BC_leaf_sun"
+      ],
+      "max": [
+        55.1465,
+        6.2632,
+        -125.1805
+      ],
+      "mesh": "SM_BC_MarketStall10_Soft",
+      "min": [
+        54.5836,
+        6.0632,
+        -125.5836
+      ],
+      "object": "market-stall-10",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall10_Soft",
+      "sha256": "1ea590afc44fa255a5068e2d760db79ceb40fde71933e744db139c1e84937457",
+      "soft": true,
+      "tiles": [
+        "Market_4_4_Soft"
+      ],
+      "triangles": 400
+    },
+    "prop/brinecove/market-stall-11": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light",
+        "BC_glass_warm"
+      ],
+      "max": [
+        -18.1555,
+        8.2514,
+        -125.7017
+      ],
+      "mesh": "SM_BC_MarketStall11",
+      "min": [
+        -30.3181,
+        4.5082,
+        -134.961
+      ],
+      "object": "market-stall-11",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall11",
+      "sha256": "ad66d277d505659bd5f3483356312907693925c71a7a769a5d168b588e2ab391",
+      "soft": false,
+      "tiles": [
+        "Market_3_4_Piece111",
+        "Market_3_4_Piece113"
+      ],
+      "triangles": 4056
+    },
+    "prop/brinecove/market-stall-11-soft": {
+      "materials": [
+        "BC_leaf_sun"
+      ],
+      "max": [
+        -22.0806,
+        6.2632,
+        -127.6951
+      ],
+      "mesh": "SM_BC_MarketStall11_Soft",
+      "min": [
+        -28.8467,
+        6.0632,
+        -129.5916
+      ],
+      "object": "market-stall-11",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall11_Soft",
+      "sha256": "1979620140265591c26b43dee638f3b1a48f266b10220fb1e5abe9e24ad3439f",
+      "soft": true,
+      "tiles": [
+        "Market_3_4_Soft"
+      ],
+      "triangles": 800
+    },
+    "prop/brinecove/market-stall-12": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light",
+        "BC_glass_warm"
+      ],
+      "max": [
+        26.6017,
+        8.2514,
+        -126.4253
+      ],
+      "mesh": "SM_BC_MarketStall12",
+      "min": [
+        14.4918,
+        4.5082,
+        -136.1349
+      ],
+      "object": "market-stall-12",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall12",
+      "sha256": "a0967596391bdaac9730fa6257cd74a5186e69cea6450fb6fa33eacc20b62ca6",
+      "soft": false,
+      "tiles": [
+        "Market_4_4_Piece000",
+        "Market_4_4_Piece002"
+      ],
+      "triangles": 4456
+    },
+    "prop/brinecove/market-stall-12-soft": {
+      "materials": [
+        "BC_leaf_sun"
+      ],
+      "max": [
+        23.7474,
+        6.2632,
+        -129.889
+      ],
+      "mesh": "SM_BC_MarketStall12_Soft",
+      "min": [
+        23.1723,
+        6.0632,
+        -130.3071
+      ],
+      "object": "market-stall-12",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall12_Soft",
+      "sha256": "60ee11584e49c68c1de1ee0beed7138cf3d09b1fcbb492191b5739e9ee0418c0",
+      "soft": true,
+      "tiles": [
+        "Market_4_4_Soft"
+      ],
+      "triangles": 400
+    },
+    "prop/brinecove/market-stall-13": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -17.7859,
+        8.2514,
+        -170.7404
+      ],
+      "mesh": "SM_BC_MarketStall13",
+      "min": [
+        -29.8749,
+        4.5082,
+        -179.373
+      ],
+      "object": "market-stall-13",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall13",
+      "sha256": "104bea8e495fd52946bee1fcef28c7007987478b7647f691b756a3c8e1021a5c",
+      "soft": false,
+      "tiles": [
+        "Market_3_4_Piece131"
+      ],
+      "triangles": 4352
+    },
+    "prop/brinecove/market-stall-13-soft": {
+      "materials": [
+        "BC_leaf_sun"
+      ],
+      "max": [
+        -26.1874,
+        6.2632,
+        -173.3344
+      ],
+      "mesh": "SM_BC_MarketStall13_Soft",
+      "min": [
+        -26.7235,
+        6.0632,
+        -173.764
+      ],
+      "object": "market-stall-13",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall13_Soft",
+      "sha256": "df18c980891aae29cc0c1d47d222ceb8b6be7380e48a2e8fb2613001f29e783a",
+      "soft": true,
+      "tiles": [
+        "Market_3_4_Soft"
+      ],
+      "triangles": 400
+    },
+    "prop/brinecove/market-stall-14": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_green",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_stone",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        32.107,
+        8.2514,
+        -169.2947
+      ],
+      "mesh": "SM_BC_MarketStall14",
+      "min": [
+        19.9251,
+        4.5082,
+        -178.7318
+      ],
+      "object": "market-stall-14",
+      "package": "/Game/Brinecove/Meshes/SM_BC_MarketStall14",
+      "sha256": "cd84e1886cfb9157973d86485b845e858d44208d3d2776192e076917b0e92aa8",
+      "soft": false,
+      "tiles": [
+        "Market_4_4_Piece020",
+        "Market_4_4_Piece021"
+      ],
+      "triangles": 4484
+    }
+  },
+  "pending": {
+    "resave": [],
+    "stale": []
+  },
+  "retired": false,
+  "schema": 1,
+  "selection": [
+    "market-stall-03",
+    "market-stall-04",
+    "market-stall-05",
+    "market-stall-10",
+    "market-stall-11",
+    "market-stall-12",
+    "market-stall-13",
+    "market-stall-14"
+  ],
+  "shares": {
+    "Market_3_4_Piece111": {
+      "prop/brinecove/market-stall-11": 3188
+    },
+    "Market_3_4_Piece112": {
+      "prop/brinecove/market-stall-05": 4056
+    },
+    "Market_3_4_Piece113": {
+      "prop/brinecove/market-stall-11": 868
+    },
+    "Market_3_4_Piece131": {
+      "prop/brinecove/market-stall-13": 4352
+    },
+    "Market_3_4_Soft": {
+      "prop/brinecove/market-stall-05-soft": 800,
+      "prop/brinecove/market-stall-11-soft": 800,
+      "prop/brinecove/market-stall-13-soft": 400
+    },
+    "Market_4_4_Piece000": {
+      "prop/brinecove/market-stall-03": 5432,
+      "prop/brinecove/market-stall-12": 3376
+    },
+    "Market_4_4_Piece001": {
+      "prop/brinecove/market-stall-03": 68,
+      "prop/brinecove/market-stall-04": 3330,
+      "prop/brinecove/market-stall-10": 4188
+    },
+    "Market_4_4_Piece002": {
+      "prop/brinecove/market-stall-12": 1080
+    },
+    "Market_4_4_Piece010": {
+      "prop/brinecove/market-stall-04": 2170
+    },
+    "Market_4_4_Piece020": {
+      "prop/brinecove/market-stall-14": 3794
+    },
+    "Market_4_4_Piece021": {
+      "prop/brinecove/market-stall-14": 690
+    },
+    "Market_4_4_Soft": {
+      "prop/brinecove/market-stall-10-soft": 400,
+      "prop/brinecove/market-stall-12-soft": 400
+    }
+  },
+  "tiles": {
+    "Market_3_4_Piece111": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-3-4-piece111",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 13482
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece111",
+      "record": "prop/brinecove/market-3-4-piece111",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_blue",
+          "BC_canvas_gold",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_coral",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_planks",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_stone",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "38248f9a92296f8b3832688b45e73f036e916f5f6d1e6ca3bf99e44e0fd897cf",
+        "triangles": 4794
+      },
+      "source_triangles": 7982
+    },
+    "Market_3_4_Piece112": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-3-4-piece112",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 24594
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece112",
+      "record": "prop/brinecove/market-3-4-piece112",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_blue",
+          "BC_canvas_gold",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_moss",
+          "BC_ochre",
+          "BC_planks",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_shutter_red",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "acedf1f2501e8e145e7fde069839dc16449a9b9bd85cd4cbb3511b0421c284d4",
+        "triangles": 20538
+      },
+      "source_triangles": 24594
+    },
+    "Market_3_4_Piece113": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-3-4-piece113",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 10322
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece113",
+      "record": "prop/brinecove/market-3-4-piece113",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_blue",
+          "BC_canvas_gold",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_moss",
+          "BC_ochre",
+          "BC_planks",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "342e8bdd000e8f74cf0f909bceaa30bfe5dd8232eae1b199c69739be2a2b0dc4",
+        "triangles": 9454
+      },
+      "source_triangles": 10322
+    },
+    "Market_3_4_Piece131": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-3-4-piece131",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 15000
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Piece131",
+      "record": "prop/brinecove/market-3-4-piece131",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_gold",
+          "BC_canvas_red",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_ochre",
+          "BC_planks",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "785827bf8a5a484fba472c52e19921a1e18a4cbe488bb4a3adb93751cb4c8427",
+        "triangles": 10648
+      },
+      "source_triangles": 15000
+    },
+    "Market_3_4_Soft": {
+      "original": {
+        "material_package": {
+          "BC_leaf_deep": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+          "BC_leaf_light": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+          "BC_leaf_mid": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+          "BC_leaf_sun": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+          "BC_leaf_warm": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond"
+        },
+        "owner": "shared/brinecove/market-3-4-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+            "/Game/Brinecove/Materials/MI_BC_leaf_light",
+            "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+            "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+            "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+            "/Game/Brinecove/Materials/MI_BC_palm_frond"
+          ],
+          "triangles": 6834
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_3_4_Soft",
+      "record": "prop/brinecove/market-3-4-soft",
+      "remainder": {
+        "materials": [
+          "BC_leaf_deep",
+          "BC_leaf_light",
+          "BC_leaf_mid",
+          "BC_leaf_sun",
+          "BC_leaf_warm",
+          "BC_palm_frond"
+        ],
+        "sha256": "f50588c1f455e532f81ac7255437a532b0f7ae2879bdf4cd7ae812c0880d7148",
+        "triangles": 4834
+      },
+      "source_triangles": 6834
+    },
+    "Market_4_4_Piece000": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-4-4-piece000",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 9886
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece000",
+      "record": "prop/brinecove/market-4-4-piece000",
+      "remainder": {
+        "materials": [
+          "BC_autumn_olive",
+          "BC_canvas",
+          "BC_canvas_gold",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_rope",
+          "BC_sail",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "7293aa7f716760a158ca2ae0d4038cb207d15dbaf1366e3ac6a13b3f40f68b2e",
+        "triangles": 1078
+      },
+      "source_triangles": 9886
+    },
+    "Market_4_4_Piece001": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-4-4-piece001",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 13503
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece001",
+      "record": "prop/brinecove/market-4-4-piece001",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_moss",
+          "BC_ochre",
+          "BC_planks",
+          "BC_rope",
+          "BC_sail",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "60b53546e1e8f83e58430b779b89f92805bea431ae161371273b4045f1df2eeb",
+        "triangles": 5917
+      },
+      "source_triangles": 13503
+    },
+    "Market_4_4_Piece002": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_roof_teal": "/Game/Brinecove/Materials/MI_BC_roof_teal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-4-4-piece002",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_roof_teal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 11772
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece002",
+      "record": "prop/brinecove/market-4-4-piece002",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_blue",
+          "BC_canvas_gold",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_moss",
+          "BC_planks",
+          "BC_roof_teal",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_shutter_red",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "1536ff0f3f8d98fe8a964e415cdc07e60a5058f6bcaf575651eac9e9908a6746",
+        "triangles": 10692
+      },
+      "source_triangles": 11772
+    },
+    "Market_4_4_Piece010": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_green": "/Game/Brinecove/Materials/MI_BC_canvas_green",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-4-4-piece010",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_green",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 17610
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece010",
+      "record": "prop/brinecove/market-4-4-piece010",
+      "remainder": {
+        "materials": [
+          "BC_autumn_olive",
+          "BC_canvas",
+          "BC_canvas_green",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_moss",
+          "BC_ochre",
+          "BC_planks",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "59fe39cab8c876fa09de41368fb8d33da9d9196a8dd03eb41005551f9f57fe12",
+        "triangles": 15440
+      },
+      "source_triangles": 17610
+    },
+    "Market_4_4_Piece020": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_green": "/Game/Brinecove/Materials/MI_BC_canvas_green",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-4-4-piece020",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_green",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 16330
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece020",
+      "record": "prop/brinecove/market-4-4-piece020",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_blue",
+          "BC_canvas_gold",
+          "BC_canvas_green",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_ochre",
+          "BC_planks",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_shutter_red",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "08507211a98969405466aacf1ac5720dc4b135052f32d692aa67fcda847f8bb1",
+        "triangles": 12536
+      },
+      "source_triangles": 16330
+    },
+    "Market_4_4_Piece021": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_blue": "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+          "BC_canvas_gold": "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+          "BC_canvas_green": "/Game/Brinecove/Materials/MI_BC_canvas_green",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/market-4-4-piece021",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_blue",
+            "/Game/Brinecove/Materials/MI_BC_canvas_gold",
+            "/Game/Brinecove/Materials/MI_BC_canvas_green",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 19734
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece021",
+      "record": "prop/brinecove/market-4-4-piece021",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_blue",
+          "BC_canvas_gold",
+          "BC_canvas_green",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_glass_warm",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_moss",
+          "BC_planks",
+          "BC_rope",
+          "BC_sage_wall",
+          "BC_sail",
+          "BC_shutter_red",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "db18d0d6c7989554194be6bebea3d0aa22c9fecc236dcf39b61734444b605f2f",
+        "triangles": 19044
+      },
+      "source_triangles": 19734
+    },
+    "Market_4_4_Soft": {
+      "original": {
+        "material_package": {
+          "BC_leaf_deep": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+          "BC_leaf_light": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+          "BC_leaf_mid": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+          "BC_leaf_sun": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+          "BC_leaf_warm": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond",
+          "BC_water_deep": "/Game/Brinecove/Materials/MI_BC_water_deep"
+        },
+        "owner": "shared/brinecove/market-4-4-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+            "/Game/Brinecove/Materials/MI_BC_leaf_light",
+            "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+            "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+            "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+            "/Game/Brinecove/Materials/MI_BC_palm_frond",
+            "/Game/Brinecove/Materials/MI_BC_water_deep"
+          ],
+          "triangles": 9058
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Soft",
+      "record": "prop/brinecove/market-4-4-soft",
+      "remainder": {
+        "materials": [
+          "BC_leaf_deep",
+          "BC_leaf_light",
+          "BC_leaf_mid",
+          "BC_leaf_sun",
+          "BC_leaf_warm",
+          "BC_palm_frond"
+        ],
+        "sha256": "64fe291c57d2044353fd4fe2d440ae7dfaba32ff04c377d4e5561665cdd501ae",
+        "triangles": 8214
+      },
+      "source_triangles": 9014
+    }
+  }
+}

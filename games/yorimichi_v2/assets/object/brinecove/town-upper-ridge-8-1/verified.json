@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-upper-ridge-8-1",
+  "dependencies": {
+    "prop/brinecove/town-upper-ridge-8-1": "198fa7d50f0b3e9da2e1995adc1b30f2091d4de84d630f11dfe464990479ba8d",
+    "prop/brinecove/town-upper-ridge-8-1-soft": "537d243caabf1a0c95edab26cbb1cfceb856ffa0d85e314623c5b3c5429a2b23"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/2X/S4U2EJQPJ6QZ9SNJ75MWLC.uasset": "e5cc9d25c63e49101d41b2fd45676fd538adad175324790a5ded134439c6a754"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/crane-west-soft",
+  "dependencies": {
+    "prop/brinecove/crane-west-soft": "548e2f1d157403e1622a42e8f382c3b705ffb1a219d29cbbf01faf789ed0f7c8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/NS/4VETHUTQW3R0JUTNKPQ8VK.uasset": "7965ee17e9bd26f10f9ffa2fad2af5640b9e551525a927d7ffdb6a40b2a3dc96"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

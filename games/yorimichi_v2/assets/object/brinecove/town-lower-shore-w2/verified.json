@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-lower-shore-w2",
+  "dependencies": {
+    "prop/brinecove/town-lower-shore-w2": "bfbdde37fa7440a6c79ed15582e4dc9ddb8636f459840c309abf04a45902722b",
+    "prop/brinecove/town-lower-shore-w2-soft": "abfec717a6700c3a6291e52858b1bb0c407816e062fbc3e98d8f8f14633cccba"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/X1/3KK16CPYXGGC66G8VYPY86.uasset": "7f0b2122c98d155c729c12845eab02a93f7a43e7aa1dd60511a3bdcce01be885"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-upper-hill-e4",
+  "dependencies": {
+    "prop/brinecove/town-upper-hill-e4": "c68ff448a450501b1158d950595ad4b9874baa74efae3f55051973e997483971",
+    "prop/brinecove/town-upper-hill-e4-soft": "5691623a8cad2cd0aff06034cefbc5eba1d20e9d605689afd63b0a1ac253daff"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/VS/V3K51HGM5IYQUAQ9YWOOV3.uasset": "9e0d528f749feecdde11e7f4417565352cc8e6024d323ad6b7ff2315c4664cba"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

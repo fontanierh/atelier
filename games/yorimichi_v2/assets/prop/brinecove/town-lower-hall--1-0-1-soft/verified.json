@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-hall--1-0-1-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerHall101_Soft.uasset": "b39a5bff527dca5b256581ba842303f06a411ea1904e2736cff0d75258f4e877"
+  },
+  "input_fingerprint": "ae2921f12bc810224d7de9a0a170507601398fb91874168420868b5199e7b5bd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerHall101_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

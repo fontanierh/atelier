@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLowerRumE52_Soft: the town lower rum e5 2, cut from the fused tile(s) TownLower_5_4_Soft (96 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-lower-rum-e5-2-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-lower-rum-e5-2-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownLowerRumE52_Soft.glb"
+sha256 = "bb492380e77dc3eb618f96c77deba1f836274e005df3f335a7774e2a8f83f55e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm"]
+triangles = 96
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLowerRumE52_Soft"

@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-lower-rum-e5-0",
+  "dependencies": {
+    "prop/brinecove/town-lower-rum-e5-0": "544c58f69c71c01217d81339c551a42032ca31c82e00b3659b008acc292f2113",
+    "prop/brinecove/town-lower-rum-e5-0-soft": "7161d72b3cce8b7a7b51ff841d227f2a6d4792e63a29cbb785a78c436d7f9b5d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/UN/RCAUSSG8OR7AG6CW23SGMH.uasset": "136cf2a75bf5101030a2d88b0ca4172bf941f345b294d25fd400df1ad482d002"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

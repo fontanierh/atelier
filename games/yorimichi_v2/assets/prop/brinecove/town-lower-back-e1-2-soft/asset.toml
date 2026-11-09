@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLowerBackE12_Soft: the town lower back e1 2, cut from the fused tile(s) TownLower_4_4_Soft (60 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-lower-back-e1-2-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-lower-back-e1-2-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownLowerBackE12_Soft.glb"
+sha256 = "af7db02b3e24147c37d536ece9e36b96ab61d0b219a7956ff198429be0dc7ac7"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_palm_frond"]
+triangles = 60
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLowerBackE12_Soft"

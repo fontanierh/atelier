@@ -1,18 +1,17 @@
 {
   "asset": "object/brinecove/townupper-3-5",
   "dependencies": {
-    "prop/brinecove/town-upper-3-5-piece00": "b2e0963f1feab5abf1e5db8799150a3c9a9ba2cd08f9643730558e6000c680f4",
-    "prop/brinecove/town-upper-3-5-piece01": "c4b2560f9b38765f8c59d45aea1f7c6a8ba4a2d02d26a2b0252f2c1610454785",
-    "prop/brinecove/town-upper-3-5-piece02": "646d995384efbbd770dff863e1629c3403e6864d1f4f0b20ccb35cbd86720d05",
-    "prop/brinecove/town-upper-3-5-piece03": "a17e8195a8e783b823b887425f0cdac1e6d08bcabd11615865befee3dbea967a",
-    "prop/brinecove/town-upper-3-5-piece1": "1aa876e987a010547a261ea5adae67a4d6fbf8e7c8a7c1fdf96e8c9c18cf8504",
-    "prop/brinecove/town-upper-3-5-piece2": "22bb50bb6ccdbf910880d848ba858e636f733bbe032b256e54b3201ffe1b18b6",
+    "prop/brinecove/town-upper-3-5-piece00": "13609d5b0bb1a040d28c1a50528f84a23744da234510552196ef62e8dfe71a87",
+    "prop/brinecove/town-upper-3-5-piece01": "6d7b913fe5a1b6e956aa3b8248bf2c9527f273184aec3c15151c86e39967da37",
+    "prop/brinecove/town-upper-3-5-piece02": "f3ef6fc672f703dde70d32b3900b43fd50f4c107c13b09852e165dc1f116d47b",
+    "prop/brinecove/town-upper-3-5-piece03": "2b77de6a792ac585791272b0aee1e42d79f172f03d87669250481a184909a575",
+    "prop/brinecove/town-upper-3-5-piece1": "4645068fb5a7c7be89915e1e87e1118e8f7f472399f22bf978e661376a54095c",
     "prop/brinecove/town-upper-3-5-piece3": "9e55f72cb24ae26881bc0339ac207e8d8b1d6d84144b8617a815832e7298e8dc",
-    "prop/brinecove/town-upper-3-5-soft": "f3fd69075df916324056284635480bb256a4833912c76475a3dc78fd4709497b"
+    "prop/brinecove/town-upper-3-5-soft": "d89e451f1990a5b4e0def532e8dc53277e211cd314329de9940269f3d77d8344"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/JB/4AGF64YF60FAR1M7G0J7L0.uasset": "632e4b29d799714ad0b990aa257eba947e01c991761e1fa80f511837c980be44"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/JB/4AGF64YF60FAR1M7G0J7L0.uasset": "ff832581aa065a513cf55bee7672cf34eacc3eda488264a07d1934b780fbfb61"
   },
   "kind": "editor-saved",
   "schema": 1

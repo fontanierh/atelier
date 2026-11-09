@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-lower-mid-e4-1",
+  "dependencies": {
+    "prop/brinecove/town-lower-mid-e4-1": "652463c8c315c697ef96aab739120c266607633b7697bb1ff305c545098a5979",
+    "prop/brinecove/town-lower-mid-e4-1-soft": "1d736d57082f2430a3646b23e059ebc91b52830ea85090ca52bd4eedd29af182"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/0T/BVRCRRZJOGD5RNBGGN8GJW.uasset": "c489ed3adde9d44af920ae5ae9f73392c804e175a6904646918001f093451ecc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -33,10 +33,25 @@ Parts retain the tile's world-space frame; saved placements use the same transfo
 Hard parts keep complex collision, Soft parts have none. Slot tables are rebuilt when a changed source has a
 new material count; the importer no longer assumes every carved source keeps the original slot table.
 
-On this main revision, `brinecove_split_apply.py` writes carved part/remainder sources into their asset records.
-That source mutation is a recorded remaining defect. The prepared source-preservation follow-up keeps the fused
-original plus a selection and derives output under `build/yorimichi_v2/`; it has not yet been applied here.
-See [sources.md](sources.md). Do not mistake the existing record for complete recoverability of the fused original.
+Carved tile records keep the fused original plus a selection, and the remainder derives under `build/yorimichi_v2/`
+(see the section below and [sources.md](sources.md)). #787 converted the 148 records carved in the old form; the split
+tools read a converted tile's fused-original facts from its first split's saved expectation.
+
+## Source form of a carved tile (derived remainder)
+
+A carved tile never commits its remainder. Its record keeps the fused original as its first pinned source (the bytes
+`tools/migrate/recover.py` produced from the donor generator, before any carve), and `src/SM_BC_<tile>.carve.json` beside
+it lists the triangles the remainder keeps and removes (half-open ranges of triangle ordinals). The `[derive]` table of
+`asset.toml` names the two (`tools/content/carve.py`). The targeted import derives the remainder under
+`build/yorimichi_v2/derived/<record>/` from the two and imports it; the import fingerprint covers both hashes. A normal build
+never writes it.
+
+The split tools write only a tile's selection and its `[[sources]]`; the cut-out parts keep their own committed part GLB as
+before. Tile records in the old form (remainder committed as the source) are converted once by
+`tools/migrate/brinecove_sources.py --check` (proof, no claim) and `--claim TASK` (write). The conversion takes the original
+from the record's first commit in git history (read from the local LFS store, checked against the first pin), finds the kept
+triangles by matching the committed remainder to the original, and requires the derived remainder to be byte-identical
+(sha256) to the committed one. The record's import stays current, so no package is rewritten and no placement moves.
 
 ## Claimed apply/import/retire/save sequence
 

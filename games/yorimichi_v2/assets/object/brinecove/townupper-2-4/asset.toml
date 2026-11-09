@@ -1,12 +1,12 @@
-# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove townupper-2-4 (12 groups).
-# Its placement is this actor package; its models are prop/brinecove/town-upper-2-4-piece20, prop/brinecove/town-upper-2-4-piece21, prop/brinecove/town-upper-2-4-piece22, prop/brinecove/town-upper-2-4-piece230, prop/brinecove/town-upper-2-4-piece231, prop/brinecove/town-upper-2-4-piece232, prop/brinecove/town-upper-2-4-piece233, prop/brinecove/town-upper-2-4-piece30, prop/brinecove/town-upper-2-4-piece31, prop/brinecove/town-upper-2-4-piece32, prop/brinecove/town-upper-2-4-piece33, prop/brinecove/town-upper-2-4-soft. Edit it in the editor and save-validate
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove townupper-2-4 (5 groups).
+# Its placement is this actor package; its model is prop/brinecove/town-upper-2-4-piece30, prop/brinecove/town-upper-2-4-piece31, prop/brinecove/town-upper-2-4-piece32, prop/brinecove/town-upper-2-4-piece33, prop/brinecove/town-upper-2-4-soft. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/townupper-2-4"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["prop/brinecove/town-upper-2-4-piece20", "prop/brinecove/town-upper-2-4-piece21", "prop/brinecove/town-upper-2-4-piece22", "prop/brinecove/town-upper-2-4-piece230", "prop/brinecove/town-upper-2-4-piece231", "prop/brinecove/town-upper-2-4-piece232", "prop/brinecove/town-upper-2-4-piece233", "prop/brinecove/town-upper-2-4-piece30", "prop/brinecove/town-upper-2-4-piece31", "prop/brinecove/town-upper-2-4-piece32", "prop/brinecove/town-upper-2-4-piece33", "prop/brinecove/town-upper-2-4-soft"]
+references = ["prop/brinecove/town-upper-2-4-piece30", "prop/brinecove/town-upper-2-4-piece31", "prop/brinecove/town-upper-2-4-piece32", "prop/brinecove/town-upper-2-4-piece33", "prop/brinecove/town-upper-2-4-soft"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/5/B1/LSTUWDNDWAFHM9T9R6AJ3N"

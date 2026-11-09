@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Soft.uasset": "ae070019bef79aa94d7f68f63f6baa0318901da378483376e701648775e27183"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLower_4_4_Soft.uasset": "2451095f0efd4b1f0c41db40d2e95da5042b24c48440b7f78a1d733aef5bc8a4"
   },
-  "input_fingerprint": "16fc7b1d7dafbc3028ddeed8913d59e67f9d93bc269da7a7ac463fbf7301ce98",
+  "input_fingerprint": "f82dbee689de4ec414308e468482adf57cfd003765701560bad1000feb1f6f9a",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownLower_4_4_Soft": {
@@ -15,7 +15,7 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
       "before": {

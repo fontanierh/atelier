@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-back-e1-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerBackE11.uasset": "37f0732225c9192624c3a38df50ccb23540440e20ba6a200f4a4096732244574"
+  },
+  "input_fingerprint": "a779d5844eed15dccb195f6412b512d7a30e213ff130e1cf917fbeb7bf161b9e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerBackE11": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

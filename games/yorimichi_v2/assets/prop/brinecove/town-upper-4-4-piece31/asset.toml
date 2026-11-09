@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_4_4_Piece31: one Brine Cove mesh (3452 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_4_4_Piece31: one Brine Cove mesh, what remains after batch 1 took its objects (3078 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -12,13 +12,23 @@ references = ["adopted/brinecove/materials"]
 path = "src/SM_BC_TownUpper_4_4_Piece31.glb"
 sha256 = "75a1b4dd75b3f9c716c5cfc0557e86e23d906638a28064ad6639087eb50330eb"
 
+[[sources]]
+path = "src/SM_BC_TownUpper_4_4_Piece31.carve.json"
+sha256 = "e1312775c5e5e1a2d6ac48bbbbcf7d16e949ac573498e476994ed224b3bb4ee0"
+
+[derive]
+kind = "carve"
+version = 1
+original = "src/SM_BC_TownUpper_4_4_Piece31.glb"
+selection = "src/SM_BC_TownUpper_4_4_Piece31.carve.json"
+
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_canvas", "/Game/Brinecove/Materials/MI_BC_canvas_red", "/Game/Brinecove/Materials/MI_BC_canvas_teal", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_jungle", "/Game/Brinecove/Materials/MI_BC_jungle_light", "/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
-triangles = 3452
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_canvas_red", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_jungle", "/Game/Brinecove/Materials/MI_BC_jungle_light", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 3078
 collision = "complex"
 full_precision_uvs = true
 

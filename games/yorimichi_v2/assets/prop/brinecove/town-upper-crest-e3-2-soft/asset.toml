@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpperCrestE32_Soft: the town upper crest e3 2, cut from the fused tile(s) TownUpper_4_5_Soft (230 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-upper-crest-e3-2-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-upper-crest-e3-2-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownUpperCrestE32_Soft.glb"
+sha256 = "8f6d8a05cfc2cdd998864287afe206d79c6f097c5db0031df32c277de96ba8d7"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm"]
+triangles = 230
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE32_Soft"

@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-ridge-3-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperRidge30.uasset": "3b8082d07f51644df151ef45056e7a1280ab85eba8ec728fafc2e5169d11fe7b"
+  },
+  "input_fingerprint": "c4e92084ebae26932090776f536424da015e4bf31063e4d80709295e788bb61b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge30": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

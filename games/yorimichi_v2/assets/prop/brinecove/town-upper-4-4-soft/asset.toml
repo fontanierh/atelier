@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_4_4_Soft: one Brine Cove mesh (2842 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_4_4_Soft: one Brine Cove mesh, what remains after batch 1 took its objects (740 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -12,13 +12,23 @@ references = ["adopted/brinecove/materials"]
 path = "src/SM_BC_TownUpper_4_4_Soft.glb"
 sha256 = "0af58a59ea3b6be9f74913a127ed820320bd465e21f18aa7719bf0e246c4974d"
 
+[[sources]]
+path = "src/SM_BC_TownUpper_4_4_Soft.carve.json"
+sha256 = "773073242e1d4f14600a7ab5ef9d9a5d1e101d4fdf69c9fc11b5f97eb3a81121"
+
+[derive]
+kind = "carve"
+version = 1
+original = "src/SM_BC_TownUpper_4_4_Soft.glb"
+selection = "src/SM_BC_TownUpper_4_4_Soft.carve.json"
+
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
 slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm", "/Game/Brinecove/Materials/MI_BC_palm_frond"]
-triangles = 2842
+triangles = 740
 full_precision_uvs = true
 
 [[outputs]]

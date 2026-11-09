@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLowerMidW10_Soft: the town lower mid w1 0, cut from the fused tile(s) TownLower_2_4_Soft (64 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-lower-mid-w1-0-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-lower-mid-w1-0-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownLowerMidW10_Soft.glb"
+sha256 = "ac6a4a6097dde64e2182a6b3d8537a753b8d853b5923858e944231073e58da92"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid"]
+triangles = 64
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLowerMidW10_Soft"

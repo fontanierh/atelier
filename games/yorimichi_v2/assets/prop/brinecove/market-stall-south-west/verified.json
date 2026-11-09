@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/market-stall-south-west",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_MarketStallSouthWest.uasset": "a97fbd96f73e04437e91d8bbbb2b9abf79c5f0dab72d2ac5971d87755d3a3667"
+  },
+  "input_fingerprint": "eb5628dc094536c7ef24181a51679e9bd507c670cbf8f3418d688978c98c08ac",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_MarketStallSouthWest": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

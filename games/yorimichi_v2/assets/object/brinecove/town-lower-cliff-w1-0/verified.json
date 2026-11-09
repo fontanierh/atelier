@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-lower-cliff-w1-0",
+  "dependencies": {
+    "prop/brinecove/town-lower-cliff-w1-0": "b0b0123874c12e9326407c27ad299f05af019d29a0cf4ffe755f039e9792ddca",
+    "prop/brinecove/town-lower-cliff-w1-0-soft": "52bd9646ec5ff8c854560943cf61b55754683b89e762e5d3996062a862dc59ee"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/50/5MTLCWUB75KM21A48OFE7K.uasset": "5a2938ff5637da5b74ddc0bd8ab5574734d749f1b1cd0d92109d17de1325e73e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -14,7 +14,9 @@ ships (`galleon-nightjar`, `sloop-east`), so the ship tiles and the `ships-night
 
 - one generated record per object, `assets/prop/brinecove/<object>` (`<object>-soft` for a part cut from a Soft tile,
   which has no collision), source = the part mesh copied into its `src/`, recipe = the tile's own;
-- each touched tile record with its remainder as the new source;
+- each touched tile record keeps its fused original as its first source and writes its selection (the triangles the
+  remainder keeps) as `src/SM_BC_<tile>.carve.json`; its remainder is derived by the targeted import, never committed
+  (tools/content/carve.py). Carved tiles in the old form are converted first by tools/migrate/brinecove_sources.py;
 - `world/regions/w09-brinecove/split-batch1.json` (what `check` proves) and the objects.toml head with the objects;
 - the runtime scenery file (a group per part, the remainders' material lists) and `runtime-data.lock.json`.
 
@@ -48,6 +50,7 @@ sys.path.insert(0, str(GAME / 'tools' / 'content'))
 sys.path.insert(0, str(HERE))
 import brinecove_split as split  # noqa: E402
 import authority  # noqa: E402
+import carve  # noqa: E402
 import records  # noqa: E402
 import recover  # noqa: E402
 
@@ -70,6 +73,17 @@ DEFAULT_STAGE = REPO / 'build' / 'yorimichi_v2' / 'brinecove-split'
 class SplitError(RuntimeError):
     pass
 
+
+
+def material_packages(materials: list[str], slots: list[str]) -> dict[str, str]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-tile-slots-by-name
+    The material package of each donor material of a carved tile, by name (`BC_x` -> `MATERIALS + MI_BC_x`). A remainder
+    binds only the materials it kept, so its slots are fewer than the fused original's and cannot be paired by position;
+    a material the remainder dropped resolves to its package in the same folder, which its part records bind."""
+    by_name = {s.rsplit('/', 1)[1]: s for s in slots}
+    if len(by_name) != len(slots) or set(by_name) - {f'MI_{m}' for m in materials}:
+        raise SplitError(f'the record slots {sorted(by_name)} do not name the donor materials {materials}')
+    return {m: by_name.get(f'MI_{m}', f'{MATERIALS}MI_{m}') for m in materials}
 
 def pascal(name: str) -> str:
     return ''.join(part.title() for part in name.split('-'))
@@ -140,16 +154,22 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None, ass
         asset = records.load_asset(game / 'assets' / tile_record(stem) / 'asset.toml') \
             if (game / 'assets' / tile_record(stem) / 'asset.toml').is_file() else None
         donor_sha = records.sha256_file(glb_dir / f'SM_BC_{stem}.glb')
-        if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
+        if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha and stem in saved:
+            # Carved before (derived form): the fused original's facts are the ones its first split saved; the record's
+            # settings are its remainder's.
+            tiles[stem] = {**saved[stem]['original'], 'record': saved[stem]['record'], 'package': saved[stem]['package'],
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        elif asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
             settings = dict(asset.recipe['settings'])
             slots = settings['slot_materials']
-            if len(slots) != len(model['materials']):
-                raise SplitError(f'{stem}: the record binds {len(slots)} slots, the donor mesh has {len(model["materials"])}')
             tiles[stem] = {'record': asset.id, 'owner': asset.owner, 'references': list(asset.references),
                            'package': asset.outputs[0].package, 'settings': settings,
-                           'material_package': dict(zip(model['materials'], slots))}
-        elif stem in saved:               # already applied: the record holds the remainder, the first run kept the original
-            tiles[stem] = {**saved[stem]['original'], 'record': saved[stem]['record'], 'package': saved[stem]['package']}
+                           'material_package': material_packages(model['materials'], slots),
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        elif stem in saved or asset is not None:
+            # A tile carved in the old form holds its remainder as its source: convert it before another split.
+            raise SplitError(f'{stem}: carved in the old form, its remainder is the committed source; run '
+                             'tools/migrate/brinecove_sources.py --claim TASK first')
         else:
             raise SplitError(f'{stem}: the donor mesh is not the one the record pins; rebuild the donor first')
         tiles[stem]['triangles'] = len(done['tris'][stem])
@@ -181,7 +201,7 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None, ass
                 'slots': [slot_of(tiles, stems, m) for m in used], 'min': [round(v, 4) for v in lo],
                 'max': [round(v, 4) for v in hi], 'tiles': stems, 'tile': lead}
     for stem, owned in done['owned'].items():
-        rest = owned.get('', [])
+        rest = sorted(owned.get('', []))
         entry = tiles[stem]
         if not any(m for n, m in owned.items() if n):
             # An earlier run cut this tile and no object takes anything from it now: it goes back to the donor's bytes.
@@ -190,13 +210,14 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None, ass
             shutil.copyfile(glb_dir / f'SM_BC_{stem}.glb', path)
             remainders[stem] = {'file': path, 'sha256': sha_of(path), 'triangles': entry['triangles'],
                                 'materials': list(entry['material_package']), 'slots': list(entry['settings']['slot_materials']),
-                                'restored': True}
+                                'restored': True, 'kept': list(range(entry['triangles'])), 'total': entry['triangles']}
         elif rest:
             path = stage / 'rest' / f'SM_BC_{stem}.glb'
             path.parent.mkdir(parents=True, exist_ok=True)
             used = split.write_subset(done['models'][stem], rest, path)
             remainders[stem] = {'file': path, 'sha256': sha_of(path), 'triangles': len(rest), 'materials': used,
-                                'slots': [slot_of(tiles, [stem], m) for m in used]}
+                                'slots': [slot_of(tiles, [stem], m) for m in used], 'kept': rest,
+                                'total': entry['triangles']}
         else:
             remainders[stem] = None
     # A rerun on a tree that already holds an earlier split: parts of a selected object that no longer exist are stale
@@ -299,6 +320,33 @@ def record_files(gen: recover.Generated) -> tuple[str, str]:
     """(asset.toml text, src file name) of a generated record."""
     text = recover._record_text(gen, [(gen.source.name, records.sha256_file(gen.source))])
     return text, gen.source.name
+
+
+def tile_record_files(stem: str, tile: dict, rem: dict) -> tuple[str, str, bytes]:
+    """(asset.toml text, selection file name, selection bytes) of a carved tile. The fused original stays the first pinned
+    source; the remainder is derived from it and the selection (tools/content/carve.py), never committed."""
+    gen = tile_generated(stem, tile, rem)
+    original = tile['source']
+    name = carve.selection_name(original['name'])
+    selection = carve.selection_text(rem['total'], rem['kept']).encode()
+    text = recover._record_text(gen, [(original['name'], original['sha256']), (name, carve.sha256(selection))])
+    return carve.with_derive(text, f'src/{original["name"]}', f'src/{name}'), name, selection
+
+
+def later_tiles(game: Path) -> set[str]:
+    """The donor tiles another batch's expectation (split-<batch>.json, brinecove_market.py and the ships) lists."""
+    region = game / 'world' / 'regions' / REGION
+    return {t for path in sorted(region.glob('split-*.json')) if path.name != Path(EXPECTED).name
+            for t in json.loads(path.read_text()).get('tiles', {})}
+
+
+def restored_record(asset, tile: dict, shares: dict) -> bool:
+    """A tile nothing is carved from keeps the plain donor record (compute): its remainder is the whole uncut tile, no part
+    holds a share of it, and its one source is the remainder's bytes. A legacy old-form remainder (a cut tile whose
+    committed source is what is left) has shares or fewer triangles, so it is not one."""
+    rem = tile['remainder']
+    return (asset.derive is None and rem['triangles'] == tile['source_triangles'] and not any(shares.values()) and
+            len(asset.sources) == 1 and asset.sources[0].sha256 == rem['sha256'])
 
 
 def package_rels(game: Path, package: str) -> list[str]:
@@ -414,9 +462,9 @@ def runtime_input(game: Path) -> dict:
     return data
 
 
-def record_set(game: Path, rid: str, package: str, name: str) -> list[str]:
+def record_set(game: Path, rid: str, package: str, *names: str) -> list[str]:
     """A generated record's files and its package files: what changing it touches (the import writes verified.json)."""
-    return [f'assets/{rid}/asset.toml', f'assets/{rid}/src/{name}', f'assets/{rid}/verified.json',
+    return [f'assets/{rid}/asset.toml', *(f'assets/{rid}/src/{n}' for n in names), f'assets/{rid}/verified.json',
             *package_rels(game, package)]
 
 
@@ -451,7 +499,7 @@ def touched(game: Path, plan: dict, retire: bool = False, ops: dict | None = Non
     add = lambda rel: paths.add(f'{GAME_REL}/{rel}')   # noqa: E731
     if not retire:
         ops = ops if ops is not None else compute(game, plan)
-        changed = set(ops['writes'])
+        changed = set(ops['writes']) | set(ops['deletes'])
         for p in plan['parts'].values():
             if any(k.startswith(f'assets/{p["record"]}/') for k in changed):
                 scopes.add((f'asset/{p["record"]}', 'shared/brinecove/' + p['record'].rsplit('/', 1)[1]))
@@ -461,7 +509,11 @@ def touched(game: Path, plan: dict, retire: bool = False, ops: dict | None = Non
             tile = plan['tiles'][stem]
             if rem is not None and any(k.startswith(f'assets/{tile["record"]}/') for k in changed):
                 scopes.add((f'asset/{tile["record"]}', tile['owner']))
-                for rel in record_set(game, tile['record'], tile['package'], f'SM_BC_{stem}.glb'):
+                # A carved tile writes its selection, never the remainder: its original is not touched. A restored one
+                # writes its donor source and drops the selection.
+                names = ([f'SM_BC_{stem}.glb', carve.selection_name(f'SM_BC_{stem}.glb')] if rem.get('restored')
+                         else [carve.selection_name(f'SM_BC_{stem}.glb')])
+                for rel in record_set(game, tile['record'], tile['package'], *names):
                     add(rel)
         for rel in changed:
             if not rel.startswith('assets/'):
@@ -512,11 +564,26 @@ def compute(game: Path, plan: dict, retire: bool = False) -> dict:
 
     if not retire:
         gens = [part_generated(p) for p in plan['parts'].values()]
-        gens += [tile_generated(stem, plan['tiles'][stem], rem) for stem, rem in sorted(plan['remainders'].items()) if rem]
         for gen in gens:
             text, name = record_files(gen)
             put(f'assets/{gen.id}/asset.toml', text.encode())
             put(f'assets/{gen.id}/src/{name}', gen.source.read_bytes())
+        for stem, rem in sorted(plan['remainders'].items()):
+            if rem and rem.get('restored'):
+                # Nothing is carved from it: the plain donor record recover.py writes, so a rerun leaves an accepted
+                # record and its import fingerprint alone; a selection an earlier split left goes.
+                tile = plan['tiles'][stem]
+                text, name = record_files(tile_generated(stem, tile, rem))
+                put(f'assets/{tile["record"]}/asset.toml', text.encode())
+                put(f'assets/{tile["record"]}/src/{name}', rem['file'].read_bytes())
+                selection = f'assets/{tile["record"]}/src/{carve.selection_name(name)}'
+                if (game / selection).is_file():
+                    deletes.append(selection)
+            elif rem:
+                tile = plan['tiles'][stem]
+                text, name, selection = tile_record_files(stem, tile, rem)
+                put(f'assets/{tile["record"]}/asset.toml', text.encode())
+                put(f'assets/{tile["record"]}/src/{name}', selection)
         put(f'world/regions/{REGION}/objects.toml', edit_objects_toml((region / 'objects.toml').read_text(), plan).encode())
         exp = expected(plan)
         prior = json.loads((game / EXPECTED).read_text()) if (game / EXPECTED).is_file() else {}
@@ -784,7 +851,13 @@ def check(game: Path, donor: Path | None = None, retired: bool = False, records_
             problems.append(f'{tile["record"]}: remainder record missing')
             continue
         asset = records.load_asset(asset_path)
-        if asset.sources[0].sha256 != rem['sha256'] or asset.recipe['settings']['triangles'] != rem['triangles']:
+        if asset.derive is None and not restored_record(asset, tile, exp['shares'].get(stem, {})):
+            problems.append(f'{tile["record"]}: carved in the old form (remainder committed); run '
+                            'tools/migrate/brinecove_sources.py first')
+            continue
+        if asset.derive is not None:
+            problems += remainder_problems(asset, rem)
+        if asset.recipe['settings']['triangles'] != rem['triangles']:
             problems.append(f'{tile["record"]}: remainder differs from the expectation')
         problems += import_problems(game, asset)
     # the same arithmetic per tile: remainder + the parts' share of the tile = the tile
@@ -797,6 +870,17 @@ def check(game: Path, donor: Path | None = None, retired: bool = False, records_
     if donor is not None:
         problems += check_against_donor(game, donor, exp)
     return problems
+
+
+def remainder_problems(asset: records.Asset, rem: dict) -> list[str]:
+    """A carved tile's derived remainder, computed in memory from its original and selection, must be the expected one."""
+    try:
+        data = carve.derive(asset.folder, asset.derive)
+    except (OSError, ValueError, carve.CarveError) as error:
+        return [f'{asset.id}: cannot derive the remainder (not hydrated, or a selection that does not fit): {error}']
+    if carve.sha256(data) != rem['sha256']:
+        return [f'{asset.id}: derived remainder differs from the expectation']
+    return []
 
 
 def check_against_donor(game: Path, donor: Path, exp: dict) -> list[str]:
@@ -816,10 +900,19 @@ def check_union(game: Path, glb_dir: Path, exp: dict) -> list[str]:
         parts.append(list(split.triangles(split.read_glb(f))))
     for stem, tile in exp['tiles'].items():
         if tile['remainder'] is not None:
-            f = game / 'assets' / tile['record'] / 'src' / f'SM_BC_{stem}.glb'
-            if not f.is_file() or records.is_lfs_pointer(f):
-                return [f'{tile["record"]}: src not hydrated, the donor proof is skipped']
-            parts.append(list(split.triangles(split.read_glb(f))))
+            asset = records.load_asset(game / 'assets' / tile['record'] / 'asset.toml')
+            if restored_record(asset, tile, exp['shares'].get(stem, {})):
+                f = asset.folder / asset.sources[0].path
+                if not f.is_file() or records.is_lfs_pointer(f):
+                    return [f'{tile["record"]}: src not hydrated, the donor proof is skipped']
+                parts.append(list(split.triangles(split.read_glb(f))))
+                continue
+            if asset.derive is None:
+                return [f'{tile["record"]}: carved in the old form, the donor proof is skipped']
+            try:
+                parts.append(list(split.triangles(carve.remainder_model(asset.folder, asset.derive))))
+            except (OSError, ValueError, carve.CarveError):
+                return [f'{tile["record"]}: original or selection not hydrated, the donor proof is skipped']
     return [f'donor: {p}' for p in split.verify_partition(source, parts)]
 
 
@@ -904,6 +997,10 @@ def main(argv=None) -> int:
         plan = build(game, args.donor.resolve(), args.stage.resolve(),
                      select(args.only.split(',') if args.only else None))
         retire = args.command == 'retire'
+        recut = sorted(later_tiles(game) & set(plan.get('tiles', {})))
+        if args.command == 'apply' and recut:   # brinecove_market.py's batches came after this one
+            raise SplitError(f'later batches cut {", ".join(recut[:3])} again; a rerun would undo their remainders, '
+                             'so batch 1 is not applied again')
         if args.command == 'plan':
             print(report(plan))
         elif args.command == 'paths':

@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/market-stall-south-east",
+  "dependencies": {
+    "prop/brinecove/market-stall-south-east": "3843ba0ff95bd832622af8f4e0bf164d864d1608c720d2db7b3c43d6d2f26f8f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/K6/SDBY0YJMI2SMXJTVW91MZN.uasset": "77e16bb050558b6b2880e7e02219ee7b9fb88f1a386a2b0a17096c0a3192577e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

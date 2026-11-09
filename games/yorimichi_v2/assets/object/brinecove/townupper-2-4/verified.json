@@ -1,22 +1,15 @@
 {
   "asset": "object/brinecove/townupper-2-4",
   "dependencies": {
-    "prop/brinecove/town-upper-2-4-piece20": "fbe869c647be7e667ed96c6953aa6e8dbf1cea77e2470d4daf07f0fd05d053e9",
-    "prop/brinecove/town-upper-2-4-piece21": "580c51ea7f263f91804909a25672da3bf99ca9f83a2e68f390c6591f996b4cdf",
-    "prop/brinecove/town-upper-2-4-piece22": "369dcf42c145ffb63b29c71623bd9076975b93d915b5e2479ceb0551a8333300",
-    "prop/brinecove/town-upper-2-4-piece230": "bdb4c98db24a7ed25359e4dbdf611790df552eef8214928222ce72185740f32b",
-    "prop/brinecove/town-upper-2-4-piece231": "2f538cfd30324834d339978b847c4fcebd8732d0fb90c1ba36681be88e11db19",
-    "prop/brinecove/town-upper-2-4-piece232": "a062fb6b8b5fc13bb139c56af24500fbd6024d74bf0b3773706dc0e6844d4cfe",
-    "prop/brinecove/town-upper-2-4-piece233": "f3bb43672f121d1e44c180a126ee8825f43100c9a20507242d6cb2a9a0554bc3",
-    "prop/brinecove/town-upper-2-4-piece30": "a7448b536bb5beeb8bd9d6c917aae10069ead243d147f9628442fe1931cad1f7",
-    "prop/brinecove/town-upper-2-4-piece31": "dbd5310980193c8bb4354cc95101c47706296b20dafb657628e6bc09287f761f",
-    "prop/brinecove/town-upper-2-4-piece32": "020a9162857cbf2f6022ad89b31a6edb18a4118b0945fb1f536688748f7fcc83",
-    "prop/brinecove/town-upper-2-4-piece33": "dd4881183833e5b9864d3eae904af6b812059f68cdc16aafc563acf9cc2a3b15",
-    "prop/brinecove/town-upper-2-4-soft": "b0e4f173189945fe27f7152c3b84d4aeec70e3d320bfa7b5a847888fe29604ff"
+    "prop/brinecove/town-upper-2-4-piece30": "018cb79c9cab436929df52a9f1f36262d4bde29d03a995424d349cbacd179bdb",
+    "prop/brinecove/town-upper-2-4-piece31": "5888d5f35a8efb7d57af29ec0f20171feaeea57a1bafd7c88e62b76c2dc600bc",
+    "prop/brinecove/town-upper-2-4-piece32": "94346ef8c86dc7943cfe9feb109b25278c2062238c0c326d28b8a6bc3de83c99",
+    "prop/brinecove/town-upper-2-4-piece33": "8cdcd0448439f706f80fa9af044eccf34ade0312335a05854147cbda576aa0f9",
+    "prop/brinecove/town-upper-2-4-soft": "2d7030ed0a17e7bd4a74e75dd3ec8d3a6f3a294e6346a47edbb592c938de3ab5"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/B1/LSTUWDNDWAFHM9T9R6AJ3N.uasset": "60c427897a159c4aa6668d2b1972c327ea111f7aac5c85ee9010e8bcc665a926"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/B1/LSTUWDNDWAFHM9T9R6AJ3N.uasset": "b1f81accc1ddb3390244d0737d1f162e9fac5f2668c36f404744693ce6513fab"
   },
   "kind": "editor-saved",
   "schema": 1

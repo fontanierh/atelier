@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-rum-e6-2-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerRumE62_Soft.uasset": "ae719ffd937efdd056922425b1c515dc36c95d7d672c04a40e1917c47d2377ca"
+  },
+  "input_fingerprint": "1cbee03be69e5089bae8ecd6b71fc018d47bcc66d5c453845ed43bfc6d91a94a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerRumE62_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

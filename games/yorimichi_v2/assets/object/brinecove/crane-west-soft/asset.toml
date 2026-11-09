@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the crane west Soft fragment, the part of its object in the fused Soft tile Harbor_2_3_Soft (30 triangles).
+# Its placement is this actor package; its model is prop/brinecove/crane-west-soft. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/crane-west-soft"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/crane-west-soft"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/NS/4VETHUTQW3R0JUTNKPQ8VK"

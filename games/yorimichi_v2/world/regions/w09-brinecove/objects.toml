@@ -67,6 +67,18 @@ model = "prop/brinecove/fish-shed"
 about = "the fish shed, cut from its fused tile (468 triangles)"
 
 [[objects]]
+id = "object/brinecove/crane-west-soft"
+group = "SM_BC_CraneWest_Soft"
+model = "prop/brinecove/crane-west-soft"
+about = "the crane west Soft fragment, the part of its object in the fused Soft tile Harbor_2_3_Soft (30 triangles)"
+
+[[objects]]
+id = "object/brinecove/fish-shed-soft"
+group = "SM_BC_FishShed_Soft"
+model = "prop/brinecove/fish-shed-soft"
+about = "the fish shed Soft fragment, the part of its object in the fused Soft tile Harbor_5_3_Soft (30 triangles)"
+
+[[objects]]
 id = "object/brinecove/market-auction-block"
 group = "SM_BC_MarketAuctionBlock"
 model = "prop/brinecove/market-auction-block"
@@ -103,24 +115,6 @@ model = "prop/brinecove/shipyard-yard"
 about = "the shipyard yard, cut from its fused tile (9558 triangles)"
 
 [[objects]]
-id = "object/brinecove/galleon-adventure-hull"
-groups = ["SM_BC_Hero_GalleonHull_cell_-1_-1#70", "SM_BC_Hero_GalleonHull_cell_-1_0#71", "SM_BC_Hero_GalleonHull_cell_0_-1#72", "SM_BC_Hero_GalleonHull_cell_0_0#73"]
-model = "adopted/brinecove/hero-galleon-hull"
-about = "the galleon Adventure's hero hull instance (its rig, deck and guns are object/brinecove/galleon-adventure)"
-
-[[objects]]
-id = "object/brinecove/galleon-nightjar"
-groups = ["SM_BC_GalleonNightjar", "SM_BC_Hero_GalleonHull_cell_-1_-1#543", "SM_BC_Hero_GalleonHull_cell_-1_0#544", "SM_BC_Hero_GalleonHull_cell_0_-1#545", "SM_BC_Hero_GalleonHull_cell_0_0#546"]
-model = ["prop/brinecove/galleon-nightjar", "adopted/brinecove/hero-galleon-hull"]
-about = "the galleon nightjar: rig and flags cut from the fused ship tiles (7600 triangles, by the generator's ship boundary) and its own hero hull instance"
-
-[[objects]]
-id = "object/brinecove/sloop-east"
-groups = ["SM_BC_SloopEast", "SM_BC_Hero_GalleonHull_cell_-1_-1#547", "SM_BC_Hero_GalleonHull_cell_-1_0#548", "SM_BC_Hero_GalleonHull_cell_0_-1#549", "SM_BC_Hero_GalleonHull_cell_0_0#550"]
-model = ["prop/brinecove/sloop-east", "adopted/brinecove/hero-galleon-hull"]
-about = "the sloop east: rig and flags cut from the fused ship tiles (9328 triangles, by the generator's ship boundary) and its own hero hull instance"
-
-[[objects]]
 id = "object/brinecove/market-stall-01"
 group = "SM_BC_MarketStall01"
 model = "prop/brinecove/market-stall-01"
@@ -155,6 +149,1704 @@ id = "object/brinecove/market-stall-09"
 group = "SM_BC_MarketStall09"
 model = "prop/brinecove/market-stall-09"
 about = "the market stall 09, cut from its fused tile (4484 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-03"
+group = "SM_BC_MarketStall03"
+model = "prop/brinecove/market-stall-03"
+about = "the market stall 03, cut from its fused tile (5500 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-04"
+group = "SM_BC_MarketStall04"
+model = "prop/brinecove/market-stall-04"
+about = "the market stall 04, cut from its fused tile (5500 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-05"
+groups = ["SM_BC_MarketStall05", "SM_BC_MarketStall05_Soft"]
+model = ["prop/brinecove/market-stall-05", "prop/brinecove/market-stall-05-soft"]
+about = "the market stall 05, cut from its fused tile (4056 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-10"
+groups = ["SM_BC_MarketStall10", "SM_BC_MarketStall10_Soft"]
+model = ["prop/brinecove/market-stall-10", "prop/brinecove/market-stall-10-soft"]
+about = "the market stall 10, cut from its fused tile (4188 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-11"
+groups = ["SM_BC_MarketStall11", "SM_BC_MarketStall11_Soft"]
+model = ["prop/brinecove/market-stall-11", "prop/brinecove/market-stall-11-soft"]
+about = "the market stall 11, cut from its fused tile (4056 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-12"
+groups = ["SM_BC_MarketStall12", "SM_BC_MarketStall12_Soft"]
+model = ["prop/brinecove/market-stall-12", "prop/brinecove/market-stall-12-soft"]
+about = "the market stall 12, cut from its fused tile (4456 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-13"
+groups = ["SM_BC_MarketStall13", "SM_BC_MarketStall13_Soft"]
+model = ["prop/brinecove/market-stall-13", "prop/brinecove/market-stall-13-soft"]
+about = "the market stall 13, cut from its fused tile (4352 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-14"
+group = "SM_BC_MarketStall14"
+model = "prop/brinecove/market-stall-14"
+about = "the market stall 14, cut from its fused tile (4484 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-15"
+group = "SM_BC_MarketStall15"
+model = "prop/brinecove/market-stall-15"
+about = "the market stall 15, cut from its fused tile (4588 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-16"
+group = "SM_BC_MarketStall16"
+model = "prop/brinecove/market-stall-16"
+about = "the market stall 16, cut from its fused tile (4752 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-17"
+group = "SM_BC_MarketStall17"
+model = "prop/brinecove/market-stall-17"
+about = "the market stall 17, cut from its fused tile (4932 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-18"
+group = "SM_BC_MarketStall18"
+model = "prop/brinecove/market-stall-18"
+about = "the market stall 18, cut from its fused tile (5012 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-19"
+group = "SM_BC_MarketStall19"
+model = "prop/brinecove/market-stall-19"
+about = "the market stall 19, cut from its fused tile (7616 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-south-east"
+group = "SM_BC_MarketStallSouthEast"
+model = "prop/brinecove/market-stall-south-east"
+about = "the market stall south east, cut from its fused tile (5420 triangles)"
+
+[[objects]]
+id = "object/brinecove/market-stall-south-west"
+group = "SM_BC_MarketStallSouthWest"
+model = "prop/brinecove/market-stall-south-west"
+about = "the market stall south west, cut from its fused tile (5420 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e2-0"
+group = "SM_BC_TownLowerBackE20"
+model = "prop/brinecove/town-lower-back-e2-0"
+about = "the town lower back e2 0, cut from its fused tile (6437 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w1-0"
+group = "SM_BC_TownLowerBackW10"
+model = "prop/brinecove/town-lower-back-w1-0"
+about = "the town lower back w1 0, cut from its fused tile (7256 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w4-0"
+group = "SM_BC_TownLowerBackW40"
+model = "prop/brinecove/town-lower-back-w4-0"
+about = "the town lower back w4 0, cut from its fused tile (7492 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-2-1"
+group = "SM_BC_TownLowerHall121"
+model = "prop/brinecove/town-lower-hall--1-2-1"
+about = "the town lower hall  1 2 1, cut from its fused tile (4828 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e1-1"
+group = "SM_BC_TownLowerMidE11"
+model = "prop/brinecove/town-lower-mid-e1-1"
+about = "the town lower mid e1 1, cut from its fused tile (7568 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e2-0"
+group = "SM_BC_TownLowerRumE20"
+model = "prop/brinecove/town-lower-rum-e2-0"
+about = "the town lower rum e2 0, cut from its fused tile (8308 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e2-1"
+group = "SM_BC_TownLowerRumE21"
+model = "prop/brinecove/town-lower-rum-e2-1"
+about = "the town lower rum e2 1, cut from its fused tile (8152 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e1-0"
+group = "SM_BC_TownLowerBackE10"
+model = "prop/brinecove/town-lower-back-e1-0"
+about = "the town lower back e1 0, cut from its fused tile (6356 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e1-1"
+groups = ["SM_BC_TownLowerBackE11", "SM_BC_TownLowerBackE11_Soft"]
+model = ["prop/brinecove/town-lower-back-e1-1", "prop/brinecove/town-lower-back-e1-1-soft"]
+about = "the town lower back e1 1, cut from its fused tile (6440 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e1-2"
+groups = ["SM_BC_TownLowerBackE12", "SM_BC_TownLowerBackE12_Soft"]
+model = ["prop/brinecove/town-lower-back-e1-2", "prop/brinecove/town-lower-back-e1-2-soft"]
+about = "the town lower back e1 2, cut from its fused tile (6904 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e2-1"
+groups = ["SM_BC_TownLowerBackE21", "SM_BC_TownLowerBackE21_Soft"]
+model = ["prop/brinecove/town-lower-back-e2-1", "prop/brinecove/town-lower-back-e2-1-soft"]
+about = "the town lower back e2 1, cut from its fused tile (8708 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e2-2"
+groups = ["SM_BC_TownLowerBackE22", "SM_BC_TownLowerBackE22_Soft"]
+model = ["prop/brinecove/town-lower-back-e2-2", "prop/brinecove/town-lower-back-e2-2-soft"]
+about = "the town lower back e2 2, cut from its fused tile (8860 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e3-0"
+groups = ["SM_BC_TownLowerBackE30", "SM_BC_TownLowerBackE30_Soft"]
+model = ["prop/brinecove/town-lower-back-e3-0", "prop/brinecove/town-lower-back-e3-0-soft"]
+about = "the town lower back e3 0, cut from its fused tile (6600 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e3-1"
+groups = ["SM_BC_TownLowerBackE31", "SM_BC_TownLowerBackE31_Soft"]
+model = ["prop/brinecove/town-lower-back-e3-1", "prop/brinecove/town-lower-back-e3-1-soft"]
+about = "the town lower back e3 1, cut from its fused tile (8396 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e3-2"
+groups = ["SM_BC_TownLowerBackE32", "SM_BC_TownLowerBackE32_Soft"]
+model = ["prop/brinecove/town-lower-back-e3-2", "prop/brinecove/town-lower-back-e3-2-soft"]
+about = "the town lower back e3 2, cut from its fused tile (8568 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall-1-0-0"
+groups = ["SM_BC_TownLowerHallP100", "SM_BC_TownLowerHallP100_Soft"]
+model = ["prop/brinecove/town-lower-hall-1-0-0", "prop/brinecove/town-lower-hall-1-0-0-soft"]
+about = "the town lower hall 1 0 0, cut from its fused tile (3600 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall-1-0-1"
+groups = ["SM_BC_TownLowerHallP101", "SM_BC_TownLowerHallP101_Soft"]
+model = ["prop/brinecove/town-lower-hall-1-0-1", "prop/brinecove/town-lower-hall-1-0-1-soft"]
+about = "the town lower hall 1 0 1, cut from its fused tile (5560 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall-1-1-0"
+groups = ["SM_BC_TownLowerHallP110", "SM_BC_TownLowerHallP110_Soft"]
+model = ["prop/brinecove/town-lower-hall-1-1-0", "prop/brinecove/town-lower-hall-1-1-0-soft"]
+about = "the town lower hall 1 1 0, cut from its fused tile (5348 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall-1-1-1"
+groups = ["SM_BC_TownLowerHallP111", "SM_BC_TownLowerHallP111_Soft"]
+model = ["prop/brinecove/town-lower-hall-1-1-1", "prop/brinecove/town-lower-hall-1-1-1-soft"]
+about = "the town lower hall 1 1 1, cut from its fused tile (5368 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall-1-2-0"
+groups = ["SM_BC_TownLowerHallP120", "SM_BC_TownLowerHallP120_Soft"]
+model = ["prop/brinecove/town-lower-hall-1-2-0", "prop/brinecove/town-lower-hall-1-2-0-soft"]
+about = "the town lower hall 1 2 0, cut from its fused tile (4528 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall-1-2-1"
+groups = ["SM_BC_TownLowerHallP121", "SM_BC_TownLowerHallP121_Soft"]
+model = ["prop/brinecove/town-lower-hall-1-2-1", "prop/brinecove/town-lower-hall-1-2-1-soft"]
+about = "the town lower hall 1 2 1, cut from its fused tile (7772 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e1-0"
+groups = ["SM_BC_TownLowerMidE10", "SM_BC_TownLowerMidE10_Soft"]
+model = ["prop/brinecove/town-lower-mid-e1-0", "prop/brinecove/town-lower-mid-e1-0-soft"]
+about = "the town lower mid e1 0, cut from its fused tile (8441 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e2-0"
+groups = ["SM_BC_TownLowerMidE20", "SM_BC_TownLowerMidE20_Soft"]
+model = ["prop/brinecove/town-lower-mid-e2-0", "prop/brinecove/town-lower-mid-e2-0-soft"]
+about = "the town lower mid e2 0, cut from its fused tile (6760 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e2-1"
+groups = ["SM_BC_TownLowerMidE21", "SM_BC_TownLowerMidE21_Soft"]
+model = ["prop/brinecove/town-lower-mid-e2-1", "prop/brinecove/town-lower-mid-e2-1-soft"]
+about = "the town lower mid e2 1, cut from its fused tile (6444 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e2-2"
+groups = ["SM_BC_TownLowerMidE22", "SM_BC_TownLowerMidE22_Soft"]
+model = ["prop/brinecove/town-lower-mid-e2-2", "prop/brinecove/town-lower-mid-e2-2-soft"]
+about = "the town lower mid e2 2, cut from its fused tile (8136 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e3-0"
+groups = ["SM_BC_TownLowerMidE30", "SM_BC_TownLowerMidE30_Soft"]
+model = ["prop/brinecove/town-lower-mid-e3-0", "prop/brinecove/town-lower-mid-e3-0-soft"]
+about = "the town lower mid e3 0, cut from its fused tile (9392 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e3-1"
+groups = ["SM_BC_TownLowerMidE31", "SM_BC_TownLowerMidE31_Soft"]
+model = ["prop/brinecove/town-lower-mid-e3-1", "prop/brinecove/town-lower-mid-e3-1-soft"]
+about = "the town lower mid e3 1, cut from its fused tile (8860 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e1-0"
+groups = ["SM_BC_TownLowerRumE10", "SM_BC_TownLowerRumE10_Soft"]
+model = ["prop/brinecove/town-lower-rum-e1-0", "prop/brinecove/town-lower-rum-e1-0-soft"]
+about = "the town lower rum e1 0, cut from its fused tile (9812 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e1-1"
+groups = ["SM_BC_TownLowerRumE11", "SM_BC_TownLowerRumE11_Soft"]
+model = ["prop/brinecove/town-lower-rum-e1-1", "prop/brinecove/town-lower-rum-e1-1-soft"]
+about = "the town lower rum e1 1, cut from its fused tile (6652 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e2-2"
+groups = ["SM_BC_TownLowerRumE22", "SM_BC_TownLowerRumE22_Soft"]
+model = ["prop/brinecove/town-lower-rum-e2-2", "prop/brinecove/town-lower-rum-e2-2-soft"]
+about = "the town lower rum e2 2, cut from its fused tile (9013 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e3-0"
+group = "SM_BC_TownLowerRumE30"
+model = "prop/brinecove/town-lower-rum-e3-0"
+about = "the town lower rum e3 0, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e4-0"
+groups = ["SM_BC_TownLowerRumE40", "SM_BC_TownLowerRumE40_Soft"]
+model = ["prop/brinecove/town-lower-rum-e4-0", "prop/brinecove/town-lower-rum-e4-0-soft"]
+about = "the town lower rum e4 0, cut from its fused tile (10852 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e4-0"
+group = "SM_BC_TownLowerBackE40"
+model = "prop/brinecove/town-lower-back-e4-0"
+about = "the town lower back e4 0, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e4-1"
+group = "SM_BC_TownLowerBackE41"
+model = "prop/brinecove/town-lower-back-e4-1"
+about = "the town lower back e4 1, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e5-0"
+groups = ["SM_BC_TownLowerBackE50", "SM_BC_TownLowerBackE50_Soft"]
+model = ["prop/brinecove/town-lower-back-e5-0", "prop/brinecove/town-lower-back-e5-0-soft"]
+about = "the town lower back e5 0, cut from its fused tile (9125 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e5-1"
+groups = ["SM_BC_TownLowerBackE51", "SM_BC_TownLowerBackE51_Soft"]
+model = ["prop/brinecove/town-lower-back-e5-1", "prop/brinecove/town-lower-back-e5-1-soft"]
+about = "the town lower back e5 1, cut from its fused tile (6693 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-e5-2"
+groups = ["SM_BC_TownLowerBackE52", "SM_BC_TownLowerBackE52_Soft"]
+model = ["prop/brinecove/town-lower-back-e5-2", "prop/brinecove/town-lower-back-e5-2-soft"]
+about = "the town lower back e5 2, cut from its fused tile (6368 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-cliff-e1-0"
+groups = ["SM_BC_TownLowerCliffE10", "SM_BC_TownLowerCliffE10_Soft"]
+model = ["prop/brinecove/town-lower-cliff-e1-0", "prop/brinecove/town-lower-cliff-e1-0-soft"]
+about = "the town lower cliff e1 0, cut from its fused tile (4276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-cliff-e1-1"
+groups = ["SM_BC_TownLowerCliffE11", "SM_BC_TownLowerCliffE11_Soft"]
+model = ["prop/brinecove/town-lower-cliff-e1-1", "prop/brinecove/town-lower-cliff-e1-1-soft"]
+about = "the town lower cliff e1 1, cut from its fused tile (4264 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e4-0"
+groups = ["SM_BC_TownLowerMidE40", "SM_BC_TownLowerMidE40_Soft"]
+model = ["prop/brinecove/town-lower-mid-e4-0", "prop/brinecove/town-lower-mid-e4-0-soft"]
+about = "the town lower mid e4 0, cut from its fused tile (4968 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-e4-1"
+groups = ["SM_BC_TownLowerMidE41", "SM_BC_TownLowerMidE41_Soft"]
+model = ["prop/brinecove/town-lower-mid-e4-1", "prop/brinecove/town-lower-mid-e4-1-soft"]
+about = "the town lower mid e4 1, cut from its fused tile (7544 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e3-1"
+group = "SM_BC_TownLowerRumE31"
+model = "prop/brinecove/town-lower-rum-e3-1"
+about = "the town lower rum e3 1, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e4-1"
+groups = ["SM_BC_TownLowerRumE41", "SM_BC_TownLowerRumE41_Soft"]
+model = ["prop/brinecove/town-lower-rum-e4-1", "prop/brinecove/town-lower-rum-e4-1-soft"]
+about = "the town lower rum e4 1, cut from its fused tile (10312 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e4-2"
+groups = ["SM_BC_TownLowerRumE42", "SM_BC_TownLowerRumE42_Soft"]
+model = ["prop/brinecove/town-lower-rum-e4-2", "prop/brinecove/town-lower-rum-e4-2-soft"]
+about = "the town lower rum e4 2, cut from its fused tile (8892 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e5-0"
+groups = ["SM_BC_TownLowerRumE50", "SM_BC_TownLowerRumE50_Soft"]
+model = ["prop/brinecove/town-lower-rum-e5-0", "prop/brinecove/town-lower-rum-e5-0-soft"]
+about = "the town lower rum e5 0, cut from its fused tile (8829 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e5-1"
+groups = ["SM_BC_TownLowerRumE51", "SM_BC_TownLowerRumE51_Soft"]
+model = ["prop/brinecove/town-lower-rum-e5-1", "prop/brinecove/town-lower-rum-e5-1-soft"]
+about = "the town lower rum e5 1, cut from its fused tile (9016 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e5-2"
+groups = ["SM_BC_TownLowerRumE52", "SM_BC_TownLowerRumE52_Soft"]
+model = ["prop/brinecove/town-lower-rum-e5-2", "prop/brinecove/town-lower-rum-e5-2-soft"]
+about = "the town lower rum e5 2, cut from its fused tile (6560 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e6-0"
+groups = ["SM_BC_TownLowerRumE60", "SM_BC_TownLowerRumE60_Soft"]
+model = ["prop/brinecove/town-lower-rum-e6-0", "prop/brinecove/town-lower-rum-e6-0-soft"]
+about = "the town lower rum e6 0, cut from its fused tile (10741 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e6-1"
+group = "SM_BC_TownLowerRumE61"
+model = "prop/brinecove/town-lower-rum-e6-1"
+about = "the town lower rum e6 1, cut from its fused tile (6500 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-e6-2"
+groups = ["SM_BC_TownLowerRumE62", "SM_BC_TownLowerRumE62_Soft"]
+model = ["prop/brinecove/town-lower-rum-e6-2", "prop/brinecove/town-lower-rum-e6-2-soft"]
+about = "the town lower rum e6 2, cut from its fused tile (10740 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-0-1-0"
+groups = ["SM_BC_TownLowerSlopeP1010", "SM_BC_TownLowerSlopeP1010_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-0-1-0", "prop/brinecove/town-lower-slope-1-0-1-0-soft"]
+about = "the town lower slope 1 0 1 0, cut from its fused tile (4193 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-0-1-1"
+groups = ["SM_BC_TownLowerSlopeP1011", "SM_BC_TownLowerSlopeP1011_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-0-1-1", "prop/brinecove/town-lower-slope-1-0-1-1-soft"]
+about = "the town lower slope 1 0 1 1, cut from its fused tile (4180 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-0-2-0"
+groups = ["SM_BC_TownLowerSlopeP1020", "SM_BC_TownLowerSlopeP1020_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-0-2-0", "prop/brinecove/town-lower-slope-1-0-2-0-soft"]
+about = "the town lower slope 1 0 2 0, cut from its fused tile (6064 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-0-2-1"
+group = "SM_BC_TownLowerSlopeP1021"
+model = "prop/brinecove/town-lower-slope-1-0-2-1"
+about = "the town lower slope 1 0 2 1, cut from its fused tile (4504 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-1-2-0"
+groups = ["SM_BC_TownLowerSlopeP1120", "SM_BC_TownLowerSlopeP1120_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-1-2-0", "prop/brinecove/town-lower-slope-1-1-2-0-soft"]
+about = "the town lower slope 1 1 2 0, cut from its fused tile (6916 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-1-2-1"
+groups = ["SM_BC_TownLowerSlopeP1121", "SM_BC_TownLowerSlopeP1121_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-1-2-1", "prop/brinecove/town-lower-slope-1-1-2-1-soft"]
+about = "the town lower slope 1 1 2 1, cut from its fused tile (8292 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-1-3-0"
+groups = ["SM_BC_TownLowerSlope1130", "SM_BC_TownLowerSlope1130_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-1-3-0", "prop/brinecove/town-lower-slope-1-1-3-0-soft"]
+about = "the town lower slope 1 1 3 0, cut from its fused tile (7288 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-1-3-1"
+groups = ["SM_BC_TownLowerSlope1131", "SM_BC_TownLowerSlope1131_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-1-3-1", "prop/brinecove/town-lower-slope-1-1-3-1-soft"]
+about = "the town lower slope 1 1 3 1, cut from its fused tile (5328 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-2-1-0"
+group = "SM_BC_TownLowerSlopeP1210"
+model = "prop/brinecove/town-lower-slope-1-2-1-0"
+about = "the town lower slope 1 2 1 0, cut from its fused tile (5829 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-2-1-1"
+groups = ["SM_BC_TownLowerSlopeP1211", "SM_BC_TownLowerSlopeP1211_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-2-1-1", "prop/brinecove/town-lower-slope-1-2-1-1-soft"]
+about = "the town lower slope 1 2 1 1, cut from its fused tile (6676 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-2-2-0"
+groups = ["SM_BC_TownLowerSlopeP1220", "SM_BC_TownLowerSlopeP1220_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-2-2-0", "prop/brinecove/town-lower-slope-1-2-2-0-soft"]
+about = "the town lower slope 1 2 2 0, cut from its fused tile (8572 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-2-2-1"
+groups = ["SM_BC_TownLowerSlopeP1221", "SM_BC_TownLowerSlopeP1221_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-2-2-1", "prop/brinecove/town-lower-slope-1-2-2-1-soft"]
+about = "the town lower slope 1 2 2 1, cut from its fused tile (7813 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope-1-2-3-1"
+groups = ["SM_BC_TownLowerSlope1231", "SM_BC_TownLowerSlope1231_Soft"]
+model = ["prop/brinecove/town-lower-slope-1-2-3-1", "prop/brinecove/town-lower-slope-1-2-3-1-soft"]
+about = "the town lower slope 1 2 3 1, cut from its fused tile (4968 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w1-1"
+groups = ["SM_BC_TownLowerBackW11", "SM_BC_TownLowerBackW11_Soft"]
+model = ["prop/brinecove/town-lower-back-w1-1", "prop/brinecove/town-lower-back-w1-1-soft"]
+about = "the town lower back w1 1, cut from its fused tile (6681 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w1-2"
+groups = ["SM_BC_TownLowerBackW12", "SM_BC_TownLowerBackW12_Soft"]
+model = ["prop/brinecove/town-lower-back-w1-2", "prop/brinecove/town-lower-back-w1-2-soft"]
+about = "the town lower back w1 2, cut from its fused tile (8724 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w2-0"
+groups = ["SM_BC_TownLowerBackW20", "SM_BC_TownLowerBackW20_Soft"]
+model = ["prop/brinecove/town-lower-back-w2-0", "prop/brinecove/town-lower-back-w2-0-soft"]
+about = "the town lower back w2 0, cut from its fused tile (7472 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w2-1"
+groups = ["SM_BC_TownLowerBackW21", "SM_BC_TownLowerBackW21_Soft"]
+model = ["prop/brinecove/town-lower-back-w2-1", "prop/brinecove/town-lower-back-w2-1-soft"]
+about = "the town lower back w2 1, cut from its fused tile (9268 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w2-2"
+groups = ["SM_BC_TownLowerBackW22", "SM_BC_TownLowerBackW22_Soft"]
+model = ["prop/brinecove/town-lower-back-w2-2", "prop/brinecove/town-lower-back-w2-2-soft"]
+about = "the town lower back w2 2, cut from its fused tile (7152 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w3-0"
+group = "SM_BC_TownLowerBackW30"
+model = "prop/brinecove/town-lower-back-w3-0"
+about = "the town lower back w3 0, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w3-1"
+group = "SM_BC_TownLowerBackW31"
+model = "prop/brinecove/town-lower-back-w3-1"
+about = "the town lower back w3 1, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w4-1"
+groups = ["SM_BC_TownLowerBackW41", "SM_BC_TownLowerBackW41_Soft"]
+model = ["prop/brinecove/town-lower-back-w4-1", "prop/brinecove/town-lower-back-w4-1-soft"]
+about = "the town lower back w4 1, cut from its fused tile (11857 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w5-0"
+groups = ["SM_BC_TownLowerBackW50", "SM_BC_TownLowerBackW50_Soft"]
+model = ["prop/brinecove/town-lower-back-w5-0", "prop/brinecove/town-lower-back-w5-0-soft"]
+about = "the town lower back w5 0, cut from its fused tile (8317 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w5-1"
+groups = ["SM_BC_TownLowerBackW51", "SM_BC_TownLowerBackW51_Soft"]
+model = ["prop/brinecove/town-lower-back-w5-1", "prop/brinecove/town-lower-back-w5-1-soft"]
+about = "the town lower back w5 1, cut from its fused tile (9192 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w5-2"
+groups = ["SM_BC_TownLowerBackW52", "SM_BC_TownLowerBackW52_Soft"]
+model = ["prop/brinecove/town-lower-back-w5-2", "prop/brinecove/town-lower-back-w5-2-soft"]
+about = "the town lower back w5 2, cut from its fused tile (7300 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-0-0"
+groups = ["SM_BC_TownLowerHall100", "SM_BC_TownLowerHall100_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-0-0", "prop/brinecove/town-lower-hall--1-0-0-soft"]
+about = "the town lower hall  1 0 0, cut from its fused tile (4972 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-0-1"
+groups = ["SM_BC_TownLowerHall101", "SM_BC_TownLowerHall101_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-0-1", "prop/brinecove/town-lower-hall--1-0-1-soft"]
+about = "the town lower hall  1 0 1, cut from its fused tile (4913 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-1-0"
+groups = ["SM_BC_TownLowerHall110", "SM_BC_TownLowerHall110_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-1-0", "prop/brinecove/town-lower-hall--1-1-0-soft"]
+about = "the town lower hall  1 1 0, cut from its fused tile (7768 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-1-1"
+groups = ["SM_BC_TownLowerHall111", "SM_BC_TownLowerHall111_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-1-1", "prop/brinecove/town-lower-hall--1-1-1-soft"]
+about = "the town lower hall  1 1 1, cut from its fused tile (4992 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-2-0"
+group = "SM_BC_TownLowerHall120"
+model = "prop/brinecove/town-lower-hall--1-2-0"
+about = "the town lower hall  1 2 0, cut from its fused tile (4496 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w1-0"
+groups = ["SM_BC_TownLowerMidW10", "SM_BC_TownLowerMidW10_Soft"]
+model = ["prop/brinecove/town-lower-mid-w1-0", "prop/brinecove/town-lower-mid-w1-0-soft"]
+about = "the town lower mid w1 0, cut from its fused tile (8088 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w1-1"
+groups = ["SM_BC_TownLowerMidW11", "SM_BC_TownLowerMidW11_Soft"]
+model = ["prop/brinecove/town-lower-mid-w1-1", "prop/brinecove/town-lower-mid-w1-1-soft"]
+about = "the town lower mid w1 1, cut from its fused tile (6564 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w1-2"
+groups = ["SM_BC_TownLowerMidW12", "SM_BC_TownLowerMidW12_Soft"]
+model = ["prop/brinecove/town-lower-mid-w1-2", "prop/brinecove/town-lower-mid-w1-2-soft"]
+about = "the town lower mid w1 2, cut from its fused tile (6240 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w2-0"
+groups = ["SM_BC_TownLowerMidW20", "SM_BC_TownLowerMidW20_Soft"]
+model = ["prop/brinecove/town-lower-mid-w2-0", "prop/brinecove/town-lower-mid-w2-0-soft"]
+about = "the town lower mid w2 0, cut from its fused tile (9593 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w2-1"
+groups = ["SM_BC_TownLowerMidW21", "SM_BC_TownLowerMidW21_Soft"]
+model = ["prop/brinecove/town-lower-mid-w2-1", "prop/brinecove/town-lower-mid-w2-1-soft"]
+about = "the town lower mid w2 1, cut from its fused tile (9504 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w3-0"
+groups = ["SM_BC_TownLowerMidW30", "SM_BC_TownLowerMidW30_Soft"]
+model = ["prop/brinecove/town-lower-mid-w3-0", "prop/brinecove/town-lower-mid-w3-0-soft"]
+about = "the town lower mid w3 0, cut from its fused tile (6680 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w3-1"
+groups = ["SM_BC_TownLowerMidW31", "SM_BC_TownLowerMidW31_Soft"]
+model = ["prop/brinecove/town-lower-mid-w3-1", "prop/brinecove/town-lower-mid-w3-1-soft"]
+about = "the town lower mid w3 1, cut from its fused tile (7468 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w3-2"
+groups = ["SM_BC_TownLowerMidW32", "SM_BC_TownLowerMidW32_Soft"]
+model = ["prop/brinecove/town-lower-mid-w3-2", "prop/brinecove/town-lower-mid-w3-2-soft"]
+about = "the town lower mid w3 2, cut from its fused tile (9020 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w4-0"
+groups = ["SM_BC_TownLowerMidW40", "SM_BC_TownLowerMidW40_Soft"]
+model = ["prop/brinecove/town-lower-mid-w4-0", "prop/brinecove/town-lower-mid-w4-0-soft"]
+about = "the town lower mid w4 0, cut from its fused tile (7069 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w4-1"
+groups = ["SM_BC_TownLowerMidW41", "SM_BC_TownLowerMidW41_Soft"]
+model = ["prop/brinecove/town-lower-mid-w4-1", "prop/brinecove/town-lower-mid-w4-1-soft"]
+about = "the town lower mid w4 1, cut from its fused tile (7420 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w2-0"
+groups = ["SM_BC_TownLowerRumW20", "SM_BC_TownLowerRumW20_Soft"]
+model = ["prop/brinecove/town-lower-rum-w2-0", "prop/brinecove/town-lower-rum-w2-0-soft"]
+about = "the town lower rum w2 0, cut from its fused tile (6908 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w2-1"
+groups = ["SM_BC_TownLowerRumW21", "SM_BC_TownLowerRumW21_Soft"]
+model = ["prop/brinecove/town-lower-rum-w2-1", "prop/brinecove/town-lower-rum-w2-1-soft"]
+about = "the town lower rum w2 1, cut from its fused tile (8768 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w2-2"
+groups = ["SM_BC_TownLowerRumW22", "SM_BC_TownLowerRumW22_Soft"]
+model = ["prop/brinecove/town-lower-rum-w2-2", "prop/brinecove/town-lower-rum-w2-2-soft"]
+about = "the town lower rum w2 2, cut from its fused tile (8676 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w3-0"
+groups = ["SM_BC_TownLowerRumW30", "SM_BC_TownLowerRumW30_Soft"]
+model = ["prop/brinecove/town-lower-rum-w3-0", "prop/brinecove/town-lower-rum-w3-0-soft"]
+about = "the town lower rum w3 0, cut from its fused tile (11668 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w3-1"
+groups = ["SM_BC_TownLowerRumW31", "SM_BC_TownLowerRumW31_Soft"]
+model = ["prop/brinecove/town-lower-rum-w3-1", "prop/brinecove/town-lower-rum-w3-1-soft"]
+about = "the town lower rum w3 1, cut from its fused tile (8420 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w3-2"
+groups = ["SM_BC_TownLowerRumW32", "SM_BC_TownLowerRumW32_Soft"]
+model = ["prop/brinecove/town-lower-rum-w3-2", "prop/brinecove/town-lower-rum-w3-2-soft"]
+about = "the town lower rum w3 2, cut from its fused tile (10688 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w4-0"
+groups = ["SM_BC_TownLowerRumW40", "SM_BC_TownLowerRumW40_Soft"]
+model = ["prop/brinecove/town-lower-rum-w4-0", "prop/brinecove/town-lower-rum-w4-0-soft"]
+about = "the town lower rum w4 0, cut from its fused tile (7369 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w4-1"
+groups = ["SM_BC_TownLowerRumW41", "SM_BC_TownLowerRumW41_Soft"]
+model = ["prop/brinecove/town-lower-rum-w4-1", "prop/brinecove/town-lower-rum-w4-1-soft"]
+about = "the town lower rum w4 1, cut from its fused tile (6884 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w4-2"
+groups = ["SM_BC_TownLowerRumW42", "SM_BC_TownLowerRumW42_Soft"]
+model = ["prop/brinecove/town-lower-rum-w4-2", "prop/brinecove/town-lower-rum-w4-2-soft"]
+about = "the town lower rum w4 2, cut from its fused tile (5232 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w5-0"
+group = "SM_BC_TownLowerRumW50"
+model = "prop/brinecove/town-lower-rum-w5-0"
+about = "the town lower rum w5 0, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w5-1"
+group = "SM_BC_TownLowerRumW51"
+model = "prop/brinecove/town-lower-rum-w5-1"
+about = "the town lower rum w5 1, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w6-0"
+groups = ["SM_BC_TownLowerRumW60", "SM_BC_TownLowerRumW60_Soft"]
+model = ["prop/brinecove/town-lower-rum-w6-0", "prop/brinecove/town-lower-rum-w6-0-soft"]
+about = "the town lower rum w6 0, cut from its fused tile (7868 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w6-1"
+groups = ["SM_BC_TownLowerRumW61", "SM_BC_TownLowerRumW61_Soft"]
+model = ["prop/brinecove/town-lower-rum-w6-1", "prop/brinecove/town-lower-rum-w6-1-soft"]
+about = "the town lower rum w6 1, cut from its fused tile (7224 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e1"
+groups = ["SM_BC_TownLowerShoreE1", "SM_BC_TownLowerShoreE1_Soft"]
+model = ["prop/brinecove/town-lower-shore-e1", "prop/brinecove/town-lower-shore-e1-soft"]
+about = "the town lower shore e1, cut from its fused tile (6616 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e2"
+groups = ["SM_BC_TownLowerShoreE2", "SM_BC_TownLowerShoreE2_Soft"]
+model = ["prop/brinecove/town-lower-shore-e2", "prop/brinecove/town-lower-shore-e2-soft"]
+about = "the town lower shore e2, cut from its fused tile (6688 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e3"
+groups = ["SM_BC_TownLowerShoreE3", "SM_BC_TownLowerShoreE3_Soft"]
+model = ["prop/brinecove/town-lower-shore-e3", "prop/brinecove/town-lower-shore-e3-soft"]
+about = "the town lower shore e3, cut from its fused tile (6616 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e4"
+groups = ["SM_BC_TownLowerShoreE4", "SM_BC_TownLowerShoreE4_Soft"]
+model = ["prop/brinecove/town-lower-shore-e4", "prop/brinecove/town-lower-shore-e4-soft"]
+about = "the town lower shore e4, cut from its fused tile (6652 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e5"
+groups = ["SM_BC_TownLowerShoreE5", "SM_BC_TownLowerShoreE5_Soft"]
+model = ["prop/brinecove/town-lower-shore-e5", "prop/brinecove/town-lower-shore-e5-soft"]
+about = "the town lower shore e5, cut from its fused tile (6400 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e6"
+groups = ["SM_BC_TownLowerShoreE6", "SM_BC_TownLowerShoreE6_Soft"]
+model = ["prop/brinecove/town-lower-shore-e6", "prop/brinecove/town-lower-shore-e6-soft"]
+about = "the town lower shore e6, cut from its fused tile (4496 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-cliff-w1-0"
+groups = ["SM_BC_TownLowerCliffW10", "SM_BC_TownLowerCliffW10_Soft"]
+model = ["prop/brinecove/town-lower-cliff-w1-0", "prop/brinecove/town-lower-cliff-w1-0-soft"]
+about = "the town lower cliff w1 0, cut from its fused tile (4264 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-cliff-w1-1"
+groups = ["SM_BC_TownLowerCliffW11", "SM_BC_TownLowerCliffW11_Soft"]
+model = ["prop/brinecove/town-lower-cliff-w1-1", "prop/brinecove/town-lower-cliff-w1-1-soft"]
+about = "the town lower cliff w1 1, cut from its fused tile (4324 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w1-0"
+group = "SM_BC_TownLowerRumW10"
+model = "prop/brinecove/town-lower-rum-w1-0"
+about = "the town lower rum w1 0, cut from its fused tile (9076 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w1-1"
+groups = ["SM_BC_TownLowerRumW11", "SM_BC_TownLowerRumW11_Soft"]
+model = ["prop/brinecove/town-lower-rum-w1-1", "prop/brinecove/town-lower-rum-w1-1-soft"]
+about = "the town lower rum w1 1, cut from its fused tile (11889 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w1-2"
+groups = ["SM_BC_TownLowerRumW12", "SM_BC_TownLowerRumW12_Soft"]
+model = ["prop/brinecove/town-lower-rum-w1-2", "prop/brinecove/town-lower-rum-w1-2-soft"]
+about = "the town lower rum w1 2, cut from its fused tile (9676 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-w1"
+groups = ["SM_BC_TownLowerShoreW1", "SM_BC_TownLowerShoreW1_Soft"]
+model = ["prop/brinecove/town-lower-shore-w1", "prop/brinecove/town-lower-shore-w1-soft"]
+about = "the town lower shore w1, cut from its fused tile (6592 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-w2"
+groups = ["SM_BC_TownLowerShoreW2", "SM_BC_TownLowerShoreW2_Soft"]
+model = ["prop/brinecove/town-lower-shore-w2", "prop/brinecove/town-lower-shore-w2-soft"]
+about = "the town lower shore w2, cut from its fused tile (6484 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-w3"
+groups = ["SM_BC_TownLowerShoreW3", "SM_BC_TownLowerShoreW3_Soft"]
+model = ["prop/brinecove/town-lower-shore-w3", "prop/brinecove/town-lower-shore-w3-soft"]
+about = "the town lower shore w3, cut from its fused tile (6436 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-w4"
+groups = ["SM_BC_TownLowerShoreW4", "SM_BC_TownLowerShoreW4_Soft"]
+model = ["prop/brinecove/town-lower-shore-w4", "prop/brinecove/town-lower-shore-w4-soft"]
+about = "the town lower shore w4, cut from its fused tile (6496 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-w5"
+groups = ["SM_BC_TownLowerShoreW5", "SM_BC_TownLowerShoreW5_Soft"]
+model = ["prop/brinecove/town-lower-shore-w5", "prop/brinecove/town-lower-shore-w5-soft"]
+about = "the town lower shore w5, cut from its fused tile (6496 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-w6"
+groups = ["SM_BC_TownLowerShoreW6", "SM_BC_TownLowerShoreW6_Soft"]
+model = ["prop/brinecove/town-lower-shore-w6", "prop/brinecove/town-lower-shore-w6-soft"]
+about = "the town lower shore w6, cut from its fused tile (4544 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-0-1-0"
+group = "SM_BC_TownLowerSlope1010"
+model = "prop/brinecove/town-lower-slope--1-0-1-0"
+about = "the town lower slope  1 0 1 0, cut from its fused tile (4816 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-0-1-1"
+group = "SM_BC_TownLowerSlope1011"
+model = "prop/brinecove/town-lower-slope--1-0-1-1"
+about = "the town lower slope  1 0 1 1, cut from its fused tile (4365 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-0-2-0"
+groups = ["SM_BC_TownLowerSlope1020", "SM_BC_TownLowerSlope1020_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-0-2-0", "prop/brinecove/town-lower-slope--1-0-2-0-soft"]
+about = "the town lower slope  1 0 2 0, cut from its fused tile (7372 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-0-2-1"
+groups = ["SM_BC_TownLowerSlope1021", "SM_BC_TownLowerSlope1021_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-0-2-1", "prop/brinecove/town-lower-slope--1-0-2-1-soft"]
+about = "the town lower slope  1 0 2 1, cut from its fused tile (3585 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-1-0-0"
+groups = ["SM_BC_TownLowerSlope1100", "SM_BC_TownLowerSlope1100_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-1-0-0", "prop/brinecove/town-lower-slope--1-1-0-0-soft"]
+about = "the town lower slope  1 1 0 0, cut from its fused tile (4348 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-1-0-1"
+groups = ["SM_BC_TownLowerSlope1101", "SM_BC_TownLowerSlope1101_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-1-0-1", "prop/brinecove/town-lower-slope--1-1-0-1-soft"]
+about = "the town lower slope  1 1 0 1, cut from its fused tile (4156 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-1-1-0"
+groups = ["SM_BC_TownLowerSlope1110", "SM_BC_TownLowerSlope1110_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-1-1-0", "prop/brinecove/town-lower-slope--1-1-1-0-soft"]
+about = "the town lower slope  1 1 1 0, cut from its fused tile (8160 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-1-1-1"
+groups = ["SM_BC_TownLowerSlope1111", "SM_BC_TownLowerSlope1111_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-1-1-1", "prop/brinecove/town-lower-slope--1-1-1-1-soft"]
+about = "the town lower slope  1 1 1 1, cut from its fused tile (5421 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-1-2-0"
+groups = ["SM_BC_TownLowerSlope1120", "SM_BC_TownLowerSlope1120_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-1-2-0", "prop/brinecove/town-lower-slope--1-1-2-0-soft"]
+about = "the town lower slope  1 1 2 0, cut from its fused tile (6217 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-1-2-1"
+groups = ["SM_BC_TownLowerSlope1121", "SM_BC_TownLowerSlope1121_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-1-2-1", "prop/brinecove/town-lower-slope--1-1-2-1-soft"]
+about = "the town lower slope  1 1 2 1, cut from its fused tile (4888 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-2-0-0"
+group = "SM_BC_TownLowerSlope1200"
+model = "prop/brinecove/town-lower-slope--1-2-0-0"
+about = "the town lower slope  1 2 0 0, cut from its fused tile (4864 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-2-0-1"
+groups = ["SM_BC_TownLowerSlope1201", "SM_BC_TownLowerSlope1201_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-2-0-1", "prop/brinecove/town-lower-slope--1-2-0-1-soft"]
+about = "the town lower slope  1 2 0 1, cut from its fused tile (6060 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-2-1-0"
+groups = ["SM_BC_TownLowerSlope1210", "SM_BC_TownLowerSlope1210_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-2-1-0", "prop/brinecove/town-lower-slope--1-2-1-0-soft"]
+about = "the town lower slope  1 2 1 0, cut from its fused tile (6316 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-2-1-1"
+groups = ["SM_BC_TownLowerSlope1211", "SM_BC_TownLowerSlope1211_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-2-1-1", "prop/brinecove/town-lower-slope--1-2-1-1-soft"]
+about = "the town lower slope  1 2 1 1, cut from its fused tile (3212 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-2-2-0"
+groups = ["SM_BC_TownLowerSlope1220", "SM_BC_TownLowerSlope1220_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-2-2-0", "prop/brinecove/town-lower-slope--1-2-2-0-soft"]
+about = "the town lower slope  1 2 2 0, cut from its fused tile (5305 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-2-2-1"
+group = "SM_BC_TownLowerSlope1221"
+model = "prop/brinecove/town-lower-slope--1-2-2-1"
+about = "the town lower slope  1 2 2 1, cut from its fused tile (6612 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-slope--1-2-3-0"
+groups = ["SM_BC_TownLowerSlope1230", "SM_BC_TownLowerSlope1230_Soft"]
+model = ["prop/brinecove/town-lower-slope--1-2-3-0", "prop/brinecove/town-lower-slope--1-2-3-0-soft"]
+about = "the town lower slope  1 2 3 0, cut from its fused tile (5516 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-cliff-w2-0"
+groups = ["SM_BC_TownUpperCliffW20", "SM_BC_TownUpperCliffW20_Soft"]
+model = ["prop/brinecove/town-upper-cliff-w2-0", "prop/brinecove/town-upper-cliff-w2-0-soft"]
+about = "the town upper cliff w2 0, cut from its fused tile (4156 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-cliff-w2-1"
+groups = ["SM_BC_TownUpperCliffW21", "SM_BC_TownUpperCliffW21_Soft"]
+model = ["prop/brinecove/town-upper-cliff-w2-1", "prop/brinecove/town-upper-cliff-w2-1-soft"]
+about = "the town upper cliff w2 1, cut from its fused tile (4204 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-0-0"
+groups = ["SM_BC_TownUpperEdge00", "SM_BC_TownUpperEdge00_Soft"]
+model = ["prop/brinecove/town-upper-edge-0-0", "prop/brinecove/town-upper-edge-0-0-soft"]
+about = "the town upper edge 0 0, cut from its fused tile (4044 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-0-1"
+groups = ["SM_BC_TownUpperEdge01", "SM_BC_TownUpperEdge01_Soft"]
+model = ["prop/brinecove/town-upper-edge-0-1", "prop/brinecove/town-upper-edge-0-1-soft"]
+about = "the town upper edge 0 1, cut from its fused tile (3924 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-1-0"
+groups = ["SM_BC_TownUpperEdge10", "SM_BC_TownUpperEdge10_Soft"]
+model = ["prop/brinecove/town-upper-edge-1-0", "prop/brinecove/town-upper-edge-1-0-soft"]
+about = "the town upper edge 1 0, cut from its fused tile (3892 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-1-1"
+groups = ["SM_BC_TownUpperEdge11", "SM_BC_TownUpperEdge11_Soft"]
+model = ["prop/brinecove/town-upper-edge-1-1", "prop/brinecove/town-upper-edge-1-1-soft"]
+about = "the town upper edge 1 1, cut from its fused tile (5496 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-2-0"
+groups = ["SM_BC_TownUpperEdge20", "SM_BC_TownUpperEdge20_Soft"]
+model = ["prop/brinecove/town-upper-edge-2-0", "prop/brinecove/town-upper-edge-2-0-soft"]
+about = "the town upper edge 2 0, cut from its fused tile (4577 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-2-1"
+groups = ["SM_BC_TownUpperEdge21", "SM_BC_TownUpperEdge21_Soft"]
+model = ["prop/brinecove/town-upper-edge-2-1", "prop/brinecove/town-upper-edge-2-1-soft"]
+about = "the town upper edge 2 1, cut from its fused tile (6789 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-3-0"
+groups = ["SM_BC_TownUpperEdge30", "SM_BC_TownUpperEdge30_Soft"]
+model = ["prop/brinecove/town-upper-edge-3-0", "prop/brinecove/town-upper-edge-3-0-soft"]
+about = "the town upper edge 3 0, cut from its fused tile (5624 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-3-1"
+group = "SM_BC_TownUpperEdge31"
+model = "prop/brinecove/town-upper-edge-3-1"
+about = "the town upper edge 3 1, cut from its fused tile (4848 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-4-0"
+groups = ["SM_BC_TownUpperEdge40", "SM_BC_TownUpperEdge40_Soft"]
+model = ["prop/brinecove/town-upper-edge-4-0", "prop/brinecove/town-upper-edge-4-0-soft"]
+about = "the town upper edge 4 0, cut from its fused tile (5768 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-4-1"
+groups = ["SM_BC_TownUpperEdge41", "SM_BC_TownUpperEdge41_Soft"]
+model = ["prop/brinecove/town-upper-edge-4-1", "prop/brinecove/town-upper-edge-4-1-soft"]
+about = "the town upper edge 4 1, cut from its fused tile (3828 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-5-0"
+group = "SM_BC_TownUpperEdge50"
+model = "prop/brinecove/town-upper-edge-5-0"
+about = "the town upper edge 5 0, cut from its fused tile (3792 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-5-1"
+groups = ["SM_BC_TownUpperEdge51", "SM_BC_TownUpperEdge51_Soft"]
+model = ["prop/brinecove/town-upper-edge-5-1", "prop/brinecove/town-upper-edge-5-1-soft"]
+about = "the town upper edge 5 1, cut from its fused tile (4597 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-0-4-0"
+groups = ["SM_BC_TownUpperSlope1040", "SM_BC_TownUpperSlope1040_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-0-4-0", "prop/brinecove/town-upper-slope--1-0-4-0-soft"]
+about = "the town upper slope  1 0 4 0, cut from its fused tile (5784 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-0-4-1"
+groups = ["SM_BC_TownUpperSlope1041", "SM_BC_TownUpperSlope1041_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-0-4-1", "prop/brinecove/town-upper-slope--1-0-4-1-soft"]
+about = "the town upper slope  1 0 4 1, cut from its fused tile (6608 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-0-5-0"
+groups = ["SM_BC_TownUpperSlope1050", "SM_BC_TownUpperSlope1050_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-0-5-0", "prop/brinecove/town-upper-slope--1-0-5-0-soft"]
+about = "the town upper slope  1 0 5 0, cut from its fused tile (7796 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-0-5-1"
+groups = ["SM_BC_TownUpperSlope1051", "SM_BC_TownUpperSlope1051_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-0-5-1", "prop/brinecove/town-upper-slope--1-0-5-1-soft"]
+about = "the town upper slope  1 0 5 1, cut from its fused tile (7048 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-2-3-1"
+groups = ["SM_BC_TownUpperSlope1231", "SM_BC_TownUpperSlope1231_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-2-3-1", "prop/brinecove/town-upper-slope--1-2-3-1-soft"]
+about = "the town upper slope  1 2 3 1, cut from its fused tile (5212 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-2-4-0"
+group = "SM_BC_TownUpperSlope1240"
+model = "prop/brinecove/town-upper-slope--1-2-4-0"
+about = "the town upper slope  1 2 4 0, cut from its fused tile (5216 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-2-4-1"
+groups = ["SM_BC_TownUpperSlope1241", "SM_BC_TownUpperSlope1241_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-2-4-1", "prop/brinecove/town-upper-slope--1-2-4-1-soft"]
+about = "the town upper slope  1 2 4 1, cut from its fused tile (6880 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w1-0"
+groups = ["SM_BC_TownUpperTerraceW10", "SM_BC_TownUpperTerraceW10_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w1-0", "prop/brinecove/town-upper-terrace-w1-0-soft"]
+about = "the town upper terrace w1 0, cut from its fused tile (7660 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w1-1"
+groups = ["SM_BC_TownUpperTerraceW11", "SM_BC_TownUpperTerraceW11_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w1-1", "prop/brinecove/town-upper-terrace-w1-1-soft"]
+about = "the town upper terrace w1 1, cut from its fused tile (5152 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w1-2"
+group = "SM_BC_TownUpperTerraceW12"
+model = "prop/brinecove/town-upper-terrace-w1-2"
+about = "the town upper terrace w1 2, cut from its fused tile (7265 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w2-0"
+groups = ["SM_BC_TownUpperTerraceW20", "SM_BC_TownUpperTerraceW20_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w2-0", "prop/brinecove/town-upper-terrace-w2-0-soft"]
+about = "the town upper terrace w2 0, cut from its fused tile (7433 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w2-1"
+groups = ["SM_BC_TownUpperTerraceW21", "SM_BC_TownUpperTerraceW21_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w2-1", "prop/brinecove/town-upper-terrace-w2-1-soft"]
+about = "the town upper terrace w2 1, cut from its fused tile (9717 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w3-0"
+group = "SM_BC_TownUpperTerraceW30"
+model = "prop/brinecove/town-upper-terrace-w3-0"
+about = "the town upper terrace w3 0, cut from its fused tile (6652 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w3-1"
+groups = ["SM_BC_TownUpperTerraceW31", "SM_BC_TownUpperTerraceW31_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w3-1", "prop/brinecove/town-upper-terrace-w3-1-soft"]
+about = "the town upper terrace w3 1, cut from its fused tile (6740 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w3-2"
+groups = ["SM_BC_TownUpperTerraceW32", "SM_BC_TownUpperTerraceW32_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w3-2", "prop/brinecove/town-upper-terrace-w3-2-soft"]
+about = "the town upper terrace w3 2, cut from its fused tile (7092 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w4-0"
+groups = ["SM_BC_TownUpperTerraceW40", "SM_BC_TownUpperTerraceW40_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w4-0", "prop/brinecove/town-upper-terrace-w4-0-soft"]
+about = "the town upper terrace w4 0, cut from its fused tile (9632 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w4-1"
+groups = ["SM_BC_TownUpperTerraceW41", "SM_BC_TownUpperTerraceW41_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w4-1", "prop/brinecove/town-upper-terrace-w4-1-soft"]
+about = "the town upper terrace w4 1, cut from its fused tile (7484 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w5-0"
+group = "SM_BC_TownUpperTerraceW50"
+model = "prop/brinecove/town-upper-terrace-w5-0"
+about = "the town upper terrace w5 0, cut from its fused tile (7713 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-w5-1"
+groups = ["SM_BC_TownUpperTerraceW51", "SM_BC_TownUpperTerraceW51_Soft"]
+model = ["prop/brinecove/town-upper-terrace-w5-1", "prop/brinecove/town-upper-terrace-w5-1-soft"]
+about = "the town upper terrace w5 1, cut from its fused tile (9308 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e1-0"
+groups = ["SM_BC_TownUpperCrestE10", "SM_BC_TownUpperCrestE10_Soft"]
+model = ["prop/brinecove/town-upper-crest-e1-0", "prop/brinecove/town-upper-crest-e1-0-soft"]
+about = "the town upper crest e1 0, cut from its fused tile (8660 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e1-1"
+groups = ["SM_BC_TownUpperCrestE11", "SM_BC_TownUpperCrestE11_Soft"]
+model = ["prop/brinecove/town-upper-crest-e1-1", "prop/brinecove/town-upper-crest-e1-1-soft"]
+about = "the town upper crest e1 1, cut from its fused tile (6424 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e1-2"
+groups = ["SM_BC_TownUpperCrestE12", "SM_BC_TownUpperCrestE12_Soft"]
+model = ["prop/brinecove/town-upper-crest-e1-2", "prop/brinecove/town-upper-crest-e1-2-soft"]
+about = "the town upper crest e1 2, cut from its fused tile (5436 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e2-0"
+groups = ["SM_BC_TownUpperCrestE20", "SM_BC_TownUpperCrestE20_Soft"]
+model = ["prop/brinecove/town-upper-crest-e2-0", "prop/brinecove/town-upper-crest-e2-0-soft"]
+about = "the town upper crest e2 0, cut from its fused tile (10348 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e2-1"
+groups = ["SM_BC_TownUpperCrestE21", "SM_BC_TownUpperCrestE21_Soft"]
+model = ["prop/brinecove/town-upper-crest-e2-1", "prop/brinecove/town-upper-crest-e2-1-soft"]
+about = "the town upper crest e2 1, cut from its fused tile (6164 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e3-0"
+groups = ["SM_BC_TownUpperCrestE30", "SM_BC_TownUpperCrestE30_Soft"]
+model = ["prop/brinecove/town-upper-crest-e3-0", "prop/brinecove/town-upper-crest-e3-0-soft"]
+about = "the town upper crest e3 0, cut from its fused tile (8784 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e3-1"
+groups = ["SM_BC_TownUpperCrestE31", "SM_BC_TownUpperCrestE31_Soft"]
+model = ["prop/brinecove/town-upper-crest-e3-1", "prop/brinecove/town-upper-crest-e3-1-soft"]
+about = "the town upper crest e3 1, cut from its fused tile (6944 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e3-2"
+groups = ["SM_BC_TownUpperCrestE32", "SM_BC_TownUpperCrestE32_Soft"]
+model = ["prop/brinecove/town-upper-crest-e3-2", "prop/brinecove/town-upper-crest-e3-2-soft"]
+about = "the town upper crest e3 2, cut from its fused tile (10164 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e4-0"
+groups = ["SM_BC_TownUpperCrestE40", "SM_BC_TownUpperCrestE40_Soft"]
+model = ["prop/brinecove/town-upper-crest-e4-0", "prop/brinecove/town-upper-crest-e4-0-soft"]
+about = "the town upper crest e4 0, cut from its fused tile (8488 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-e4-1"
+groups = ["SM_BC_TownUpperCrestE41", "SM_BC_TownUpperCrestE41_Soft"]
+model = ["prop/brinecove/town-upper-crest-e4-1", "prop/brinecove/town-upper-crest-e4-1-soft"]
+about = "the town upper crest e4 1, cut from its fused tile (5124 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-e1"
+groups = ["SM_BC_TownUpperHillE1", "SM_BC_TownUpperHillE1_Soft"]
+model = ["prop/brinecove/town-upper-hill-e1", "prop/brinecove/town-upper-hill-e1-soft"]
+about = "the town upper hill e1, cut from its fused tile (6676 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-e2"
+groups = ["SM_BC_TownUpperHillE2", "SM_BC_TownUpperHillE2_Soft"]
+model = ["prop/brinecove/town-upper-hill-e2", "prop/brinecove/town-upper-hill-e2-soft"]
+about = "the town upper hill e2, cut from its fused tile (6628 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-e3"
+groups = ["SM_BC_TownUpperHillE3", "SM_BC_TownUpperHillE3_Soft"]
+model = ["prop/brinecove/town-upper-hill-e3", "prop/brinecove/town-upper-hill-e3-soft"]
+about = "the town upper hill e3, cut from its fused tile (6592 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-e4"
+groups = ["SM_BC_TownUpperHillE4", "SM_BC_TownUpperHillE4_Soft"]
+model = ["prop/brinecove/town-upper-hill-e4", "prop/brinecove/town-upper-hill-e4-soft"]
+about = "the town upper hill e4, cut from its fused tile (6652 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-10-0"
+groups = ["SM_BC_TownUpperRidge100", "SM_BC_TownUpperRidge100_Soft"]
+model = ["prop/brinecove/town-upper-ridge-10-0", "prop/brinecove/town-upper-ridge-10-0-soft"]
+about = "the town upper ridge 10 0, cut from its fused tile (3512 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-10-1"
+groups = ["SM_BC_TownUpperRidge101", "SM_BC_TownUpperRidge101_Soft"]
+model = ["prop/brinecove/town-upper-ridge-10-1", "prop/brinecove/town-upper-ridge-10-1-soft"]
+about = "the town upper ridge 10 1, cut from its fused tile (6696 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-11-0"
+group = "SM_BC_TownUpperRidge110"
+model = "prop/brinecove/town-upper-ridge-11-0"
+about = "the town upper ridge 11 0, cut from its fused tile (3576 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-11-1"
+groups = ["SM_BC_TownUpperRidge111", "SM_BC_TownUpperRidge111_Soft"]
+model = ["prop/brinecove/town-upper-ridge-11-1", "prop/brinecove/town-upper-ridge-11-1-soft"]
+about = "the town upper ridge 11 1, cut from its fused tile (6713 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-12-0"
+groups = ["SM_BC_TownUpperRidge120", "SM_BC_TownUpperRidge120_Soft"]
+model = ["prop/brinecove/town-upper-ridge-12-0", "prop/brinecove/town-upper-ridge-12-0-soft"]
+about = "the town upper ridge 12 0, cut from its fused tile (7148 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-12-1"
+group = "SM_BC_TownUpperRidge121"
+model = "prop/brinecove/town-upper-ridge-12-1"
+about = "the town upper ridge 12 1, cut from its fused tile (4212 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-13-0"
+groups = ["SM_BC_TownUpperRidge130", "SM_BC_TownUpperRidge130_Soft"]
+model = ["prop/brinecove/town-upper-ridge-13-0", "prop/brinecove/town-upper-ridge-13-0-soft"]
+about = "the town upper ridge 13 0, cut from its fused tile (2228 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-13-1"
+groups = ["SM_BC_TownUpperRidge131", "SM_BC_TownUpperRidge131_Soft"]
+model = ["prop/brinecove/town-upper-ridge-13-1", "prop/brinecove/town-upper-ridge-13-1-soft"]
+about = "the town upper ridge 13 1, cut from its fused tile (2132 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-14-0"
+groups = ["SM_BC_TownUpperRidge140", "SM_BC_TownUpperRidge140_Soft"]
+model = ["prop/brinecove/town-upper-ridge-14-0", "prop/brinecove/town-upper-ridge-14-0-soft"]
+about = "the town upper ridge 14 0, cut from its fused tile (7300 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-14-1"
+groups = ["SM_BC_TownUpperRidge141", "SM_BC_TownUpperRidge141_Soft"]
+model = ["prop/brinecove/town-upper-ridge-14-1", "prop/brinecove/town-upper-ridge-14-1-soft"]
+about = "the town upper ridge 14 1, cut from its fused tile (6068 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-15-0"
+groups = ["SM_BC_TownUpperRidge150", "SM_BC_TownUpperRidge150_Soft"]
+model = ["prop/brinecove/town-upper-ridge-15-0", "prop/brinecove/town-upper-ridge-15-0-soft"]
+about = "the town upper ridge 15 0, cut from its fused tile (3532 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-15-1"
+groups = ["SM_BC_TownUpperRidge151", "SM_BC_TownUpperRidge151_Soft"]
+model = ["prop/brinecove/town-upper-ridge-15-1", "prop/brinecove/town-upper-ridge-15-1-soft"]
+about = "the town upper ridge 15 1, cut from its fused tile (6604 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-8-0"
+groups = ["SM_BC_TownUpperRidge80", "SM_BC_TownUpperRidge80_Soft"]
+model = ["prop/brinecove/town-upper-ridge-8-0", "prop/brinecove/town-upper-ridge-8-0-soft"]
+about = "the town upper ridge 8 0, cut from its fused tile (6140 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-8-1"
+groups = ["SM_BC_TownUpperRidge81", "SM_BC_TownUpperRidge81_Soft"]
+model = ["prop/brinecove/town-upper-ridge-8-1", "prop/brinecove/town-upper-ridge-8-1-soft"]
+about = "the town upper ridge 8 1, cut from its fused tile (5808 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-9-0"
+groups = ["SM_BC_TownUpperRidge90", "SM_BC_TownUpperRidge90_Soft"]
+model = ["prop/brinecove/town-upper-ridge-9-0", "prop/brinecove/town-upper-ridge-9-0-soft"]
+about = "the town upper ridge 9 0, cut from its fused tile (4996 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-9-1"
+groups = ["SM_BC_TownUpperRidge91", "SM_BC_TownUpperRidge91_Soft"]
+model = ["prop/brinecove/town-upper-ridge-9-1", "prop/brinecove/town-upper-ridge-9-1-soft"]
+about = "the town upper ridge 9 1, cut from its fused tile (5184 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w1-0"
+groups = ["SM_BC_TownUpperCrestW10", "SM_BC_TownUpperCrestW10_Soft"]
+model = ["prop/brinecove/town-upper-crest-w1-0", "prop/brinecove/town-upper-crest-w1-0-soft"]
+about = "the town upper crest w1 0, cut from its fused tile (6713 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w1-1"
+group = "SM_BC_TownUpperCrestW11"
+model = "prop/brinecove/town-upper-crest-w1-1"
+about = "the town upper crest w1 1, cut from its fused tile (6796 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w1-2"
+groups = ["SM_BC_TownUpperCrestW12", "SM_BC_TownUpperCrestW12_Soft"]
+model = ["prop/brinecove/town-upper-crest-w1-2", "prop/brinecove/town-upper-crest-w1-2-soft"]
+about = "the town upper crest w1 2, cut from its fused tile (6881 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w2-0"
+groups = ["SM_BC_TownUpperCrestW20", "SM_BC_TownUpperCrestW20_Soft"]
+model = ["prop/brinecove/town-upper-crest-w2-0", "prop/brinecove/town-upper-crest-w2-0-soft"]
+about = "the town upper crest w2 0, cut from its fused tile (9597 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w2-1"
+groups = ["SM_BC_TownUpperCrestW21", "SM_BC_TownUpperCrestW21_Soft"]
+model = ["prop/brinecove/town-upper-crest-w2-1", "prop/brinecove/town-upper-crest-w2-1-soft"]
+about = "the town upper crest w2 1, cut from its fused tile (6744 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-w1"
+groups = ["SM_BC_TownUpperHillW1", "SM_BC_TownUpperHillW1_Soft"]
+model = ["prop/brinecove/town-upper-hill-w1", "prop/brinecove/town-upper-hill-w1-soft"]
+about = "the town upper hill w1, cut from its fused tile (8724 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-w2"
+groups = ["SM_BC_TownUpperHillW2", "SM_BC_TownUpperHillW2_Soft"]
+model = ["prop/brinecove/town-upper-hill-w2", "prop/brinecove/town-upper-hill-w2-soft"]
+about = "the town upper hill w2, cut from its fused tile (6796 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-w3"
+groups = ["SM_BC_TownUpperHillW3", "SM_BC_TownUpperHillW3_Soft"]
+model = ["prop/brinecove/town-upper-hill-w3", "prop/brinecove/town-upper-hill-w3-soft"]
+about = "the town upper hill w3, cut from its fused tile (6712 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-0-0"
+groups = ["SM_BC_TownUpperRidge00", "SM_BC_TownUpperRidge00_Soft"]
+model = ["prop/brinecove/town-upper-ridge-0-0", "prop/brinecove/town-upper-ridge-0-0-soft"]
+about = "the town upper ridge 0 0, cut from its fused tile (5644 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-0-1"
+groups = ["SM_BC_TownUpperRidge01", "SM_BC_TownUpperRidge01_Soft"]
+model = ["prop/brinecove/town-upper-ridge-0-1", "prop/brinecove/town-upper-ridge-0-1-soft"]
+about = "the town upper ridge 0 1, cut from its fused tile (5024 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-1-0"
+groups = ["SM_BC_TownUpperRidge10", "SM_BC_TownUpperRidge10_Soft"]
+model = ["prop/brinecove/town-upper-ridge-1-0", "prop/brinecove/town-upper-ridge-1-0-soft"]
+about = "the town upper ridge 1 0, cut from its fused tile (7976 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-1-1"
+groups = ["SM_BC_TownUpperRidge11", "SM_BC_TownUpperRidge11_Soft"]
+model = ["prop/brinecove/town-upper-ridge-1-1", "prop/brinecove/town-upper-ridge-1-1-soft"]
+about = "the town upper ridge 1 1, cut from its fused tile (5840 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-2-0"
+groups = ["SM_BC_TownUpperRidge20", "SM_BC_TownUpperRidge20_Soft"]
+model = ["prop/brinecove/town-upper-ridge-2-0", "prop/brinecove/town-upper-ridge-2-0-soft"]
+about = "the town upper ridge 2 0, cut from its fused tile (5024 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-2-1"
+groups = ["SM_BC_TownUpperRidge21", "SM_BC_TownUpperRidge21_Soft"]
+model = ["prop/brinecove/town-upper-ridge-2-1", "prop/brinecove/town-upper-ridge-2-1-soft"]
+about = "the town upper ridge 2 1, cut from its fused tile (5349 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-3-0"
+groups = ["SM_BC_TownUpperRidge30", "SM_BC_TownUpperRidge30_Soft"]
+model = ["prop/brinecove/town-upper-ridge-3-0", "prop/brinecove/town-upper-ridge-3-0-soft"]
+about = "the town upper ridge 3 0, cut from its fused tile (2228 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-3-1"
+groups = ["SM_BC_TownUpperRidge31", "SM_BC_TownUpperRidge31_Soft"]
+model = ["prop/brinecove/town-upper-ridge-3-1", "prop/brinecove/town-upper-ridge-3-1-soft"]
+about = "the town upper ridge 3 1, cut from its fused tile (2240 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-4-0"
+groups = ["SM_BC_TownUpperRidge40", "SM_BC_TownUpperRidge40_Soft"]
+model = ["prop/brinecove/town-upper-ridge-4-0", "prop/brinecove/town-upper-ridge-4-0-soft"]
+about = "the town upper ridge 4 0, cut from its fused tile (2168 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-4-1"
+groups = ["SM_BC_TownUpperRidge41", "SM_BC_TownUpperRidge41_Soft"]
+model = ["prop/brinecove/town-upper-ridge-4-1", "prop/brinecove/town-upper-ridge-4-1-soft"]
+about = "the town upper ridge 4 1, cut from its fused tile (2120 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-6-0"
+groups = ["SM_BC_TownUpperRidge60", "SM_BC_TownUpperRidge60_Soft"]
+model = ["prop/brinecove/town-upper-ridge-6-0", "prop/brinecove/town-upper-ridge-6-0-soft"]
+about = "the town upper ridge 6 0, cut from its fused tile (4652 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-6-1"
+groups = ["SM_BC_TownUpperRidge61", "SM_BC_TownUpperRidge61_Soft"]
+model = ["prop/brinecove/town-upper-ridge-6-1", "prop/brinecove/town-upper-ridge-6-1-soft"]
+about = "the town upper ridge 6 1, cut from its fused tile (5156 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-7-0"
+groups = ["SM_BC_TownUpperRidge70", "SM_BC_TownUpperRidge70_Soft"]
+model = ["prop/brinecove/town-upper-ridge-7-0", "prop/brinecove/town-upper-ridge-7-0-soft"]
+about = "the town upper ridge 7 0, cut from its fused tile (4588 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-7-1"
+groups = ["SM_BC_TownUpperRidge71", "SM_BC_TownUpperRidge71_Soft"]
+model = ["prop/brinecove/town-upper-ridge-7-1", "prop/brinecove/town-upper-ridge-7-1-soft"]
+about = "the town upper ridge 7 1, cut from its fused tile (4312 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-1-5-0"
+groups = ["SM_BC_TownUpperSlope1150", "SM_BC_TownUpperSlope1150_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-1-5-0", "prop/brinecove/town-upper-slope--1-1-5-0-soft"]
+about = "the town upper slope  1 1 5 0, cut from its fused tile (7316 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-1-5-1"
+groups = ["SM_BC_TownUpperSlope1151", "SM_BC_TownUpperSlope1151_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-1-5-1", "prop/brinecove/town-upper-slope--1-1-5-1-soft"]
+about = "the town upper slope  1 1 5 1, cut from its fused tile (6460 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-2-5-0"
+groups = ["SM_BC_TownUpperSlope1250", "SM_BC_TownUpperSlope1250_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-2-5-0", "prop/brinecove/town-upper-slope--1-2-5-0-soft"]
+about = "the town upper slope  1 2 5 0, cut from its fused tile (8104 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-2-5-1"
+groups = ["SM_BC_TownUpperSlope1251", "SM_BC_TownUpperSlope1251_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-2-5-1", "prop/brinecove/town-upper-slope--1-2-5-1-soft"]
+about = "the town upper slope  1 2 5 1, cut from its fused tile (6753 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-10-0"
+groups = ["SM_BC_TownUpperEdge100", "SM_BC_TownUpperEdge100_Soft"]
+model = ["prop/brinecove/town-upper-edge-10-0", "prop/brinecove/town-upper-edge-10-0-soft"]
+about = "the town upper edge 10 0, cut from its fused tile (3580 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-10-1"
+groups = ["SM_BC_TownUpperEdge101", "SM_BC_TownUpperEdge101_Soft"]
+model = ["prop/brinecove/town-upper-edge-10-1", "prop/brinecove/town-upper-edge-10-1-soft"]
+about = "the town upper edge 10 1, cut from its fused tile (6576 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-11-0"
+group = "SM_BC_TownUpperEdge110"
+model = "prop/brinecove/town-upper-edge-11-0"
+about = "the town upper edge 11 0, cut from its fused tile (4204 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-11-1"
+groups = ["SM_BC_TownUpperEdge111", "SM_BC_TownUpperEdge111_Soft"]
+model = ["prop/brinecove/town-upper-edge-11-1", "prop/brinecove/town-upper-edge-11-1-soft"]
+about = "the town upper edge 11 1, cut from its fused tile (7272 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-6-0"
+groups = ["SM_BC_TownUpperEdge60", "SM_BC_TownUpperEdge60_Soft"]
+model = ["prop/brinecove/town-upper-edge-6-0", "prop/brinecove/town-upper-edge-6-0-soft"]
+about = "the town upper edge 6 0, cut from its fused tile (5384 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-6-1"
+groups = ["SM_BC_TownUpperEdge61", "SM_BC_TownUpperEdge61_Soft"]
+model = ["prop/brinecove/town-upper-edge-6-1", "prop/brinecove/town-upper-edge-6-1-soft"]
+about = "the town upper edge 6 1, cut from its fused tile (5600 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-7-0"
+groups = ["SM_BC_TownUpperEdge70", "SM_BC_TownUpperEdge70_Soft"]
+model = ["prop/brinecove/town-upper-edge-7-0", "prop/brinecove/town-upper-edge-7-0-soft"]
+about = "the town upper edge 7 0, cut from its fused tile (7792 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-7-1"
+groups = ["SM_BC_TownUpperEdge71", "SM_BC_TownUpperEdge71_Soft"]
+model = ["prop/brinecove/town-upper-edge-7-1", "prop/brinecove/town-upper-edge-7-1-soft"]
+about = "the town upper edge 7 1, cut from its fused tile (4864 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-8-0"
+groups = ["SM_BC_TownUpperEdge80", "SM_BC_TownUpperEdge80_Soft"]
+model = ["prop/brinecove/town-upper-edge-8-0", "prop/brinecove/town-upper-edge-8-0-soft"]
+about = "the town upper edge 8 0, cut from its fused tile (3684 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-8-1"
+groups = ["SM_BC_TownUpperEdge81", "SM_BC_TownUpperEdge81_Soft"]
+model = ["prop/brinecove/town-upper-edge-8-1", "prop/brinecove/town-upper-edge-8-1-soft"]
+about = "the town upper edge 8 1, cut from its fused tile (6044 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-9-0"
+groups = ["SM_BC_TownUpperEdge90", "SM_BC_TownUpperEdge90_Soft"]
+model = ["prop/brinecove/town-upper-edge-9-0", "prop/brinecove/town-upper-edge-9-0-soft"]
+about = "the town upper edge 9 0, cut from its fused tile (4156 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-edge-9-1"
+groups = ["SM_BC_TownUpperEdge91", "SM_BC_TownUpperEdge91_Soft"]
+model = ["prop/brinecove/town-upper-edge-9-1", "prop/brinecove/town-upper-edge-9-1-soft"]
+about = "the town upper edge 9 1, cut from its fused tile (4832 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-0-4-0"
+groups = ["SM_BC_TownUpperSlopeP1040", "SM_BC_TownUpperSlopeP1040_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-0-4-0", "prop/brinecove/town-upper-slope-1-0-4-0-soft"]
+about = "the town upper slope 1 0 4 0, cut from its fused tile (4772 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-0-4-1"
+group = "SM_BC_TownUpperSlopeP1041"
+model = "prop/brinecove/town-upper-slope-1-0-4-1"
+about = "the town upper slope 1 0 4 1, cut from its fused tile (4701 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-0-5-0"
+groups = ["SM_BC_TownUpperSlopeP1050", "SM_BC_TownUpperSlopeP1050_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-0-5-0", "prop/brinecove/town-upper-slope-1-0-5-0-soft"]
+about = "the town upper slope 1 0 5 0, cut from its fused tile (5620 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-0-5-1"
+groups = ["SM_BC_TownUpperSlopeP1051", "SM_BC_TownUpperSlopeP1051_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-0-5-1", "prop/brinecove/town-upper-slope-1-0-5-1-soft"]
+about = "the town upper slope 1 0 5 1, cut from its fused tile (3856 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-1-4-0"
+groups = ["SM_BC_TownUpperSlope1140", "SM_BC_TownUpperSlope1140_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-1-4-0", "prop/brinecove/town-upper-slope-1-1-4-0-soft"]
+about = "the town upper slope 1 1 4 0, cut from its fused tile (2132 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-1-4-1"
+groups = ["SM_BC_TownUpperSlope1141", "SM_BC_TownUpperSlope1141_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-1-4-1", "prop/brinecove/town-upper-slope-1-1-4-1-soft"]
+about = "the town upper slope 1 1 4 1, cut from its fused tile (2180 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-1-5-0"
+groups = ["SM_BC_TownUpperSlopeP1150", "SM_BC_TownUpperSlopeP1150_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-1-5-0", "prop/brinecove/town-upper-slope-1-1-5-0-soft"]
+about = "the town upper slope 1 1 5 0, cut from its fused tile (4240 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-1-5-1"
+groups = ["SM_BC_TownUpperSlopeP1151", "SM_BC_TownUpperSlopeP1151_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-1-5-1", "prop/brinecove/town-upper-slope-1-1-5-1-soft"]
+about = "the town upper slope 1 1 5 1, cut from its fused tile (4288 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-2-3-0"
+groups = ["SM_BC_TownUpperSlope1230", "SM_BC_TownUpperSlope1230_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-2-3-0", "prop/brinecove/town-upper-slope-1-2-3-0-soft"]
+about = "the town upper slope 1 2 3 0, cut from its fused tile (5092 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-2-4-0"
+groups = ["SM_BC_TownUpperSlopeP1240", "SM_BC_TownUpperSlopeP1240_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-2-4-0", "prop/brinecove/town-upper-slope-1-2-4-0-soft"]
+about = "the town upper slope 1 2 4 0, cut from its fused tile (4264 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-2-4-1"
+groups = ["SM_BC_TownUpperSlopeP1241", "SM_BC_TownUpperSlopeP1241_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-2-4-1", "prop/brinecove/town-upper-slope-1-2-4-1-soft"]
+about = "the town upper slope 1 2 4 1, cut from its fused tile (4348 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-2-5-0"
+groups = ["SM_BC_TownUpperSlopeP1250", "SM_BC_TownUpperSlopeP1250_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-2-5-0", "prop/brinecove/town-upper-slope-1-2-5-0-soft"]
+about = "the town upper slope 1 2 5 0, cut from its fused tile (4105 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope-1-2-5-1"
+groups = ["SM_BC_TownUpperSlopeP1251", "SM_BC_TownUpperSlopeP1251_Soft"]
+model = ["prop/brinecove/town-upper-slope-1-2-5-1", "prop/brinecove/town-upper-slope-1-2-5-1-soft"]
+about = "the town upper slope 1 2 5 1, cut from its fused tile (4604 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e1-0"
+groups = ["SM_BC_TownUpperTerraceE10", "SM_BC_TownUpperTerraceE10_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e1-0", "prop/brinecove/town-upper-terrace-e1-0-soft"]
+about = "the town upper terrace e1 0, cut from its fused tile (10200 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e1-1"
+groups = ["SM_BC_TownUpperTerraceE11", "SM_BC_TownUpperTerraceE11_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e1-1", "prop/brinecove/town-upper-terrace-e1-1-soft"]
+about = "the town upper terrace e1 1, cut from its fused tile (7397 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e2-0"
+groups = ["SM_BC_TownUpperTerraceE20", "SM_BC_TownUpperTerraceE20_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e2-0", "prop/brinecove/town-upper-terrace-e2-0-soft"]
+about = "the town upper terrace e2 0, cut from its fused tile (8088 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e2-1"
+groups = ["SM_BC_TownUpperTerraceE21", "SM_BC_TownUpperTerraceE21_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e2-1", "prop/brinecove/town-upper-terrace-e2-1-soft"]
+about = "the town upper terrace e2 1, cut from its fused tile (6768 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e2-2"
+group = "SM_BC_TownUpperTerraceE22"
+model = "prop/brinecove/town-upper-terrace-e2-2"
+about = "the town upper terrace e2 2, cut from its fused tile (7976 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e3-0"
+groups = ["SM_BC_TownUpperTerraceE30", "SM_BC_TownUpperTerraceE30_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e3-0", "prop/brinecove/town-upper-terrace-e3-0-soft"]
+about = "the town upper terrace e3 0, cut from its fused tile (8304 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e3-1"
+groups = ["SM_BC_TownUpperTerraceE31", "SM_BC_TownUpperTerraceE31_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e3-1", "prop/brinecove/town-upper-terrace-e3-1-soft"]
+about = "the town upper terrace e3 1, cut from its fused tile (7828 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e4-0"
+groups = ["SM_BC_TownUpperTerraceE40", "SM_BC_TownUpperTerraceE40_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e4-0", "prop/brinecove/town-upper-terrace-e4-0-soft"]
+about = "the town upper terrace e4 0, cut from its fused tile (7444 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e4-1"
+groups = ["SM_BC_TownUpperTerraceE41", "SM_BC_TownUpperTerraceE41_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e4-1", "prop/brinecove/town-upper-terrace-e4-1-soft"]
+about = "the town upper terrace e4 1, cut from its fused tile (8601 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e4-2"
+groups = ["SM_BC_TownUpperTerraceE42", "SM_BC_TownUpperTerraceE42_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e4-2", "prop/brinecove/town-upper-terrace-e4-2-soft"]
+about = "the town upper terrace e4 2, cut from its fused tile (6865 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e5-0"
+groups = ["SM_BC_TownUpperTerraceE50", "SM_BC_TownUpperTerraceE50_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e5-0", "prop/brinecove/town-upper-terrace-e5-0-soft"]
+about = "the town upper terrace e5 0, cut from its fused tile (8348 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e5-1"
+groups = ["SM_BC_TownUpperTerraceE51", "SM_BC_TownUpperTerraceE51_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e5-1", "prop/brinecove/town-upper-terrace-e5-1-soft"]
+about = "the town upper terrace e5 1, cut from its fused tile (9032 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e6-0"
+groups = ["SM_BC_TownUpperTerraceE60", "SM_BC_TownUpperTerraceE60_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e6-0", "prop/brinecove/town-upper-terrace-e6-0-soft"]
+about = "the town upper terrace e6 0, cut from its fused tile (8988 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e6-1"
+groups = ["SM_BC_TownUpperTerraceE61", "SM_BC_TownUpperTerraceE61_Soft"]
+model = ["prop/brinecove/town-upper-terrace-e6-1", "prop/brinecove/town-upper-terrace-e6-1-soft"]
+about = "the town upper terrace e6 1, cut from its fused tile (8116 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-terrace-e6-2"
+group = "SM_BC_TownUpperTerraceE62"
+model = "prop/brinecove/town-upper-terrace-e6-2"
+about = "the town upper terrace e6 2, cut from its fused tile (8656 triangles)"
+
+[[objects]]
+id = "object/brinecove/galleon-adventure-hull"
+groups = ["SM_BC_Hero_GalleonHull_cell_-1_-1#70", "SM_BC_Hero_GalleonHull_cell_-1_0#71", "SM_BC_Hero_GalleonHull_cell_0_-1#72", "SM_BC_Hero_GalleonHull_cell_0_0#73"]
+model = "adopted/brinecove/hero-galleon-hull"
+about = "the galleon Adventure's hero hull instance (its rig, deck and guns are object/brinecove/galleon-adventure)"
+
+[[objects]]
+id = "object/brinecove/galleon-nightjar"
+groups = ["SM_BC_GalleonNightjar", "SM_BC_Hero_GalleonHull_cell_-1_-1#498", "SM_BC_Hero_GalleonHull_cell_-1_0#499", "SM_BC_Hero_GalleonHull_cell_0_-1#500", "SM_BC_Hero_GalleonHull_cell_0_0#501"]
+model = ["prop/brinecove/galleon-nightjar", "adopted/brinecove/hero-galleon-hull"]
+about = "the galleon nightjar: rig and flags cut from the fused ship tiles (7600 triangles, by the generator's ship boundary) and its own hero hull instance"
+
+[[objects]]
+id = "object/brinecove/sloop-east"
+groups = ["SM_BC_SloopEast", "SM_BC_Hero_GalleonHull_cell_-1_-1#502", "SM_BC_Hero_GalleonHull_cell_-1_0#503", "SM_BC_Hero_GalleonHull_cell_0_-1#504", "SM_BC_Hero_GalleonHull_cell_0_0#505"]
+model = ["prop/brinecove/sloop-east", "adopted/brinecove/hero-galleon-hull"]
+about = "the sloop east: rig and flags cut from the fused ship tiles (9328 triangles, by the generator's ship boundary) and its own hero hull instance"
 
 # --- Generated by tools/migrate/towns.py: every other runtime group of the region (rerun to regenerate) ---
 
@@ -604,271 +2296,271 @@ about = "Brine Cove plant-broad (8 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern"
-groups = ["SM_BC_Plant_CoverFern0#512", "SM_BC_Plant_CoverFern1#518", "SM_BC_Plant_CoverFern2#524"]
+groups = ["SM_BC_Plant_CoverFern0#467", "SM_BC_Plant_CoverFern1#473", "SM_BC_Plant_CoverFern2#479"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern (3 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m2-0"
-groups = ["SM_BC_Plant_CoverFern0#511@-8_0", "SM_BC_Plant_CoverFern0#511@-8_1", "SM_BC_Plant_CoverFern0#511@-8_2", "SM_BC_Plant_CoverFern0#511@-8_3", "SM_BC_Plant_CoverFern0#511@-7_0", "SM_BC_Plant_CoverFern0#511@-7_1", "SM_BC_Plant_CoverFern0#511@-7_2", "SM_BC_Plant_CoverFern0#511@-7_3", "SM_BC_Plant_CoverFern0#511@-6_0", "SM_BC_Plant_CoverFern0#511@-6_1", "SM_BC_Plant_CoverFern0#511@-6_2", "SM_BC_Plant_CoverFern0#511@-6_3", "SM_BC_Plant_CoverFern1#517@-8_0", "SM_BC_Plant_CoverFern1#517@-8_1", "SM_BC_Plant_CoverFern1#517@-8_2", "SM_BC_Plant_CoverFern1#517@-8_3", "SM_BC_Plant_CoverFern1#517@-7_0", "SM_BC_Plant_CoverFern1#517@-7_1", "SM_BC_Plant_CoverFern1#517@-7_2", "SM_BC_Plant_CoverFern1#517@-7_3", "SM_BC_Plant_CoverFern1#517@-6_0", "SM_BC_Plant_CoverFern1#517@-6_1", "SM_BC_Plant_CoverFern1#517@-6_2", "SM_BC_Plant_CoverFern1#517@-6_3", "SM_BC_Plant_CoverFern2#523@-8_0", "SM_BC_Plant_CoverFern2#523@-8_1", "SM_BC_Plant_CoverFern2#523@-8_2", "SM_BC_Plant_CoverFern2#523@-8_3", "SM_BC_Plant_CoverFern2#523@-7_0", "SM_BC_Plant_CoverFern2#523@-7_1", "SM_BC_Plant_CoverFern2#523@-7_2", "SM_BC_Plant_CoverFern2#523@-7_3", "SM_BC_Plant_CoverFern2#523@-6_0", "SM_BC_Plant_CoverFern2#523@-6_1", "SM_BC_Plant_CoverFern2#523@-6_2", "SM_BC_Plant_CoverFern2#523@-6_3"]
+groups = ["SM_BC_Plant_CoverFern0#466@-8_0", "SM_BC_Plant_CoverFern0#466@-8_1", "SM_BC_Plant_CoverFern0#466@-8_2", "SM_BC_Plant_CoverFern0#466@-8_3", "SM_BC_Plant_CoverFern0#466@-7_0", "SM_BC_Plant_CoverFern0#466@-7_1", "SM_BC_Plant_CoverFern0#466@-7_2", "SM_BC_Plant_CoverFern0#466@-7_3", "SM_BC_Plant_CoverFern0#466@-6_0", "SM_BC_Plant_CoverFern0#466@-6_1", "SM_BC_Plant_CoverFern0#466@-6_2", "SM_BC_Plant_CoverFern0#466@-6_3", "SM_BC_Plant_CoverFern1#472@-8_0", "SM_BC_Plant_CoverFern1#472@-8_1", "SM_BC_Plant_CoverFern1#472@-8_2", "SM_BC_Plant_CoverFern1#472@-8_3", "SM_BC_Plant_CoverFern1#472@-7_0", "SM_BC_Plant_CoverFern1#472@-7_1", "SM_BC_Plant_CoverFern1#472@-7_2", "SM_BC_Plant_CoverFern1#472@-7_3", "SM_BC_Plant_CoverFern1#472@-6_0", "SM_BC_Plant_CoverFern1#472@-6_1", "SM_BC_Plant_CoverFern1#472@-6_2", "SM_BC_Plant_CoverFern1#472@-6_3", "SM_BC_Plant_CoverFern2#478@-8_0", "SM_BC_Plant_CoverFern2#478@-8_1", "SM_BC_Plant_CoverFern2#478@-8_2", "SM_BC_Plant_CoverFern2#478@-8_3", "SM_BC_Plant_CoverFern2#478@-7_0", "SM_BC_Plant_CoverFern2#478@-7_1", "SM_BC_Plant_CoverFern2#478@-7_2", "SM_BC_Plant_CoverFern2#478@-7_3", "SM_BC_Plant_CoverFern2#478@-6_0", "SM_BC_Plant_CoverFern2#478@-6_1", "SM_BC_Plant_CoverFern2#478@-6_2", "SM_BC_Plant_CoverFern2#478@-6_3"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m2-0 (36 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m2-1"
-groups = ["SM_BC_Plant_CoverFern0#511@-8_4", "SM_BC_Plant_CoverFern0#511@-7_4", "SM_BC_Plant_CoverFern0#511@-6_4", "SM_BC_Plant_CoverFern1#517@-8_4", "SM_BC_Plant_CoverFern1#517@-7_4", "SM_BC_Plant_CoverFern1#517@-6_4", "SM_BC_Plant_CoverFern2#523@-8_4", "SM_BC_Plant_CoverFern2#523@-7_4", "SM_BC_Plant_CoverFern2#523@-6_4"]
+groups = ["SM_BC_Plant_CoverFern0#466@-8_4", "SM_BC_Plant_CoverFern0#466@-7_4", "SM_BC_Plant_CoverFern0#466@-6_4", "SM_BC_Plant_CoverFern1#472@-8_4", "SM_BC_Plant_CoverFern1#472@-7_4", "SM_BC_Plant_CoverFern1#472@-6_4", "SM_BC_Plant_CoverFern2#478@-8_4", "SM_BC_Plant_CoverFern2#478@-7_4", "SM_BC_Plant_CoverFern2#478@-6_4"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m2-1 (9 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m2-m1"
-groups = ["SM_BC_Plant_CoverFern0#511@-8_-4", "SM_BC_Plant_CoverFern0#511@-8_-3", "SM_BC_Plant_CoverFern0#511@-8_-2", "SM_BC_Plant_CoverFern0#511@-8_-1", "SM_BC_Plant_CoverFern0#511@-7_-4", "SM_BC_Plant_CoverFern0#511@-7_-3", "SM_BC_Plant_CoverFern0#511@-7_-2", "SM_BC_Plant_CoverFern0#511@-7_-1", "SM_BC_Plant_CoverFern0#511@-6_-4", "SM_BC_Plant_CoverFern0#511@-6_-3", "SM_BC_Plant_CoverFern0#511@-6_-2", "SM_BC_Plant_CoverFern0#511@-6_-1", "SM_BC_Plant_CoverFern1#517@-8_-4", "SM_BC_Plant_CoverFern1#517@-8_-3", "SM_BC_Plant_CoverFern1#517@-8_-2", "SM_BC_Plant_CoverFern1#517@-8_-1", "SM_BC_Plant_CoverFern1#517@-7_-4", "SM_BC_Plant_CoverFern1#517@-7_-3", "SM_BC_Plant_CoverFern1#517@-7_-2", "SM_BC_Plant_CoverFern1#517@-7_-1", "SM_BC_Plant_CoverFern1#517@-6_-4", "SM_BC_Plant_CoverFern1#517@-6_-3", "SM_BC_Plant_CoverFern1#517@-6_-2", "SM_BC_Plant_CoverFern1#517@-6_-1", "SM_BC_Plant_CoverFern2#523@-8_-4", "SM_BC_Plant_CoverFern2#523@-8_-3", "SM_BC_Plant_CoverFern2#523@-8_-2", "SM_BC_Plant_CoverFern2#523@-8_-1", "SM_BC_Plant_CoverFern2#523@-7_-4", "SM_BC_Plant_CoverFern2#523@-7_-3", "SM_BC_Plant_CoverFern2#523@-7_-2", "SM_BC_Plant_CoverFern2#523@-7_-1", "SM_BC_Plant_CoverFern2#523@-6_-4", "SM_BC_Plant_CoverFern2#523@-6_-3", "SM_BC_Plant_CoverFern2#523@-6_-2", "SM_BC_Plant_CoverFern2#523@-6_-1"]
+groups = ["SM_BC_Plant_CoverFern0#466@-8_-4", "SM_BC_Plant_CoverFern0#466@-8_-3", "SM_BC_Plant_CoverFern0#466@-8_-2", "SM_BC_Plant_CoverFern0#466@-8_-1", "SM_BC_Plant_CoverFern0#466@-7_-4", "SM_BC_Plant_CoverFern0#466@-7_-3", "SM_BC_Plant_CoverFern0#466@-7_-2", "SM_BC_Plant_CoverFern0#466@-7_-1", "SM_BC_Plant_CoverFern0#466@-6_-4", "SM_BC_Plant_CoverFern0#466@-6_-3", "SM_BC_Plant_CoverFern0#466@-6_-2", "SM_BC_Plant_CoverFern0#466@-6_-1", "SM_BC_Plant_CoverFern1#472@-8_-4", "SM_BC_Plant_CoverFern1#472@-8_-3", "SM_BC_Plant_CoverFern1#472@-8_-2", "SM_BC_Plant_CoverFern1#472@-8_-1", "SM_BC_Plant_CoverFern1#472@-7_-4", "SM_BC_Plant_CoverFern1#472@-7_-3", "SM_BC_Plant_CoverFern1#472@-7_-2", "SM_BC_Plant_CoverFern1#472@-7_-1", "SM_BC_Plant_CoverFern1#472@-6_-4", "SM_BC_Plant_CoverFern1#472@-6_-3", "SM_BC_Plant_CoverFern1#472@-6_-2", "SM_BC_Plant_CoverFern1#472@-6_-1", "SM_BC_Plant_CoverFern2#478@-8_-4", "SM_BC_Plant_CoverFern2#478@-8_-3", "SM_BC_Plant_CoverFern2#478@-8_-2", "SM_BC_Plant_CoverFern2#478@-8_-1", "SM_BC_Plant_CoverFern2#478@-7_-4", "SM_BC_Plant_CoverFern2#478@-7_-3", "SM_BC_Plant_CoverFern2#478@-7_-2", "SM_BC_Plant_CoverFern2#478@-7_-1", "SM_BC_Plant_CoverFern2#478@-6_-4", "SM_BC_Plant_CoverFern2#478@-6_-3", "SM_BC_Plant_CoverFern2#478@-6_-2", "SM_BC_Plant_CoverFern2#478@-6_-1"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m2-m1 (36 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m2-m2"
-groups = ["SM_BC_Plant_CoverFern0#511@-8_-5", "SM_BC_Plant_CoverFern0#511@-7_-7", "SM_BC_Plant_CoverFern0#511@-7_-6", "SM_BC_Plant_CoverFern0#511@-7_-5", "SM_BC_Plant_CoverFern0#511@-6_-6", "SM_BC_Plant_CoverFern0#511@-6_-5", "SM_BC_Plant_CoverFern1#517@-8_-5", "SM_BC_Plant_CoverFern1#517@-7_-7", "SM_BC_Plant_CoverFern1#517@-7_-6", "SM_BC_Plant_CoverFern1#517@-7_-5", "SM_BC_Plant_CoverFern1#517@-6_-6", "SM_BC_Plant_CoverFern1#517@-6_-5", "SM_BC_Plant_CoverFern2#523@-8_-5", "SM_BC_Plant_CoverFern2#523@-7_-7", "SM_BC_Plant_CoverFern2#523@-7_-6", "SM_BC_Plant_CoverFern2#523@-7_-5", "SM_BC_Plant_CoverFern2#523@-6_-5"]
+groups = ["SM_BC_Plant_CoverFern0#466@-8_-5", "SM_BC_Plant_CoverFern0#466@-7_-7", "SM_BC_Plant_CoverFern0#466@-7_-6", "SM_BC_Plant_CoverFern0#466@-7_-5", "SM_BC_Plant_CoverFern0#466@-6_-6", "SM_BC_Plant_CoverFern0#466@-6_-5", "SM_BC_Plant_CoverFern1#472@-8_-5", "SM_BC_Plant_CoverFern1#472@-7_-7", "SM_BC_Plant_CoverFern1#472@-7_-6", "SM_BC_Plant_CoverFern1#472@-7_-5", "SM_BC_Plant_CoverFern1#472@-6_-6", "SM_BC_Plant_CoverFern1#472@-6_-5", "SM_BC_Plant_CoverFern2#478@-8_-5", "SM_BC_Plant_CoverFern2#478@-7_-7", "SM_BC_Plant_CoverFern2#478@-7_-6", "SM_BC_Plant_CoverFern2#478@-7_-5", "SM_BC_Plant_CoverFern2#478@-6_-5"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m2-m2 (17 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m3-0"
-groups = ["SM_BC_Plant_CoverFern0#511@-12_0", "SM_BC_Plant_CoverFern0#511@-12_1", "SM_BC_Plant_CoverFern0#511@-12_2", "SM_BC_Plant_CoverFern0#511@-12_3", "SM_BC_Plant_CoverFern0#511@-11_0", "SM_BC_Plant_CoverFern0#511@-11_1", "SM_BC_Plant_CoverFern0#511@-11_2", "SM_BC_Plant_CoverFern0#511@-11_3", "SM_BC_Plant_CoverFern0#511@-10_0", "SM_BC_Plant_CoverFern0#511@-10_1", "SM_BC_Plant_CoverFern0#511@-10_2", "SM_BC_Plant_CoverFern0#511@-10_3", "SM_BC_Plant_CoverFern0#511@-9_0", "SM_BC_Plant_CoverFern0#511@-9_1", "SM_BC_Plant_CoverFern0#511@-9_2", "SM_BC_Plant_CoverFern0#511@-9_3", "SM_BC_Plant_CoverFern1#517@-12_0", "SM_BC_Plant_CoverFern1#517@-12_1", "SM_BC_Plant_CoverFern1#517@-12_2", "SM_BC_Plant_CoverFern1#517@-12_3", "SM_BC_Plant_CoverFern1#517@-11_0", "SM_BC_Plant_CoverFern1#517@-11_1", "SM_BC_Plant_CoverFern1#517@-11_2", "SM_BC_Plant_CoverFern1#517@-11_3", "SM_BC_Plant_CoverFern1#517@-10_0", "SM_BC_Plant_CoverFern1#517@-10_1", "SM_BC_Plant_CoverFern1#517@-10_2", "SM_BC_Plant_CoverFern1#517@-10_3", "SM_BC_Plant_CoverFern1#517@-9_0", "SM_BC_Plant_CoverFern1#517@-9_1", "SM_BC_Plant_CoverFern1#517@-9_2", "SM_BC_Plant_CoverFern1#517@-9_3", "SM_BC_Plant_CoverFern2#523@-12_0", "SM_BC_Plant_CoverFern2#523@-12_1", "SM_BC_Plant_CoverFern2#523@-12_2", "SM_BC_Plant_CoverFern2#523@-12_3", "SM_BC_Plant_CoverFern2#523@-11_0", "SM_BC_Plant_CoverFern2#523@-11_1", "SM_BC_Plant_CoverFern2#523@-11_2", "SM_BC_Plant_CoverFern2#523@-11_3", "SM_BC_Plant_CoverFern2#523@-10_0", "SM_BC_Plant_CoverFern2#523@-10_1", "SM_BC_Plant_CoverFern2#523@-10_2", "SM_BC_Plant_CoverFern2#523@-10_3", "SM_BC_Plant_CoverFern2#523@-9_0", "SM_BC_Plant_CoverFern2#523@-9_1", "SM_BC_Plant_CoverFern2#523@-9_2", "SM_BC_Plant_CoverFern2#523@-9_3"]
+groups = ["SM_BC_Plant_CoverFern0#466@-12_0", "SM_BC_Plant_CoverFern0#466@-12_1", "SM_BC_Plant_CoverFern0#466@-12_2", "SM_BC_Plant_CoverFern0#466@-12_3", "SM_BC_Plant_CoverFern0#466@-11_0", "SM_BC_Plant_CoverFern0#466@-11_1", "SM_BC_Plant_CoverFern0#466@-11_2", "SM_BC_Plant_CoverFern0#466@-11_3", "SM_BC_Plant_CoverFern0#466@-10_0", "SM_BC_Plant_CoverFern0#466@-10_1", "SM_BC_Plant_CoverFern0#466@-10_2", "SM_BC_Plant_CoverFern0#466@-10_3", "SM_BC_Plant_CoverFern0#466@-9_0", "SM_BC_Plant_CoverFern0#466@-9_1", "SM_BC_Plant_CoverFern0#466@-9_2", "SM_BC_Plant_CoverFern0#466@-9_3", "SM_BC_Plant_CoverFern1#472@-12_0", "SM_BC_Plant_CoverFern1#472@-12_1", "SM_BC_Plant_CoverFern1#472@-12_2", "SM_BC_Plant_CoverFern1#472@-12_3", "SM_BC_Plant_CoverFern1#472@-11_0", "SM_BC_Plant_CoverFern1#472@-11_1", "SM_BC_Plant_CoverFern1#472@-11_2", "SM_BC_Plant_CoverFern1#472@-11_3", "SM_BC_Plant_CoverFern1#472@-10_0", "SM_BC_Plant_CoverFern1#472@-10_1", "SM_BC_Plant_CoverFern1#472@-10_2", "SM_BC_Plant_CoverFern1#472@-10_3", "SM_BC_Plant_CoverFern1#472@-9_0", "SM_BC_Plant_CoverFern1#472@-9_1", "SM_BC_Plant_CoverFern1#472@-9_2", "SM_BC_Plant_CoverFern1#472@-9_3", "SM_BC_Plant_CoverFern2#478@-12_0", "SM_BC_Plant_CoverFern2#478@-12_1", "SM_BC_Plant_CoverFern2#478@-12_2", "SM_BC_Plant_CoverFern2#478@-12_3", "SM_BC_Plant_CoverFern2#478@-11_0", "SM_BC_Plant_CoverFern2#478@-11_1", "SM_BC_Plant_CoverFern2#478@-11_2", "SM_BC_Plant_CoverFern2#478@-11_3", "SM_BC_Plant_CoverFern2#478@-10_0", "SM_BC_Plant_CoverFern2#478@-10_1", "SM_BC_Plant_CoverFern2#478@-10_2", "SM_BC_Plant_CoverFern2#478@-10_3", "SM_BC_Plant_CoverFern2#478@-9_0", "SM_BC_Plant_CoverFern2#478@-9_1", "SM_BC_Plant_CoverFern2#478@-9_2", "SM_BC_Plant_CoverFern2#478@-9_3"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m3-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m3-1"
-groups = ["SM_BC_Plant_CoverFern0#511@-12_4", "SM_BC_Plant_CoverFern0#511@-11_4", "SM_BC_Plant_CoverFern0#511@-10_4", "SM_BC_Plant_CoverFern0#511@-9_4", "SM_BC_Plant_CoverFern1#517@-12_4", "SM_BC_Plant_CoverFern1#517@-11_4", "SM_BC_Plant_CoverFern1#517@-10_4", "SM_BC_Plant_CoverFern1#517@-9_4", "SM_BC_Plant_CoverFern2#523@-12_4", "SM_BC_Plant_CoverFern2#523@-11_4", "SM_BC_Plant_CoverFern2#523@-10_4", "SM_BC_Plant_CoverFern2#523@-9_4"]
+groups = ["SM_BC_Plant_CoverFern0#466@-12_4", "SM_BC_Plant_CoverFern0#466@-11_4", "SM_BC_Plant_CoverFern0#466@-10_4", "SM_BC_Plant_CoverFern0#466@-9_4", "SM_BC_Plant_CoverFern1#472@-12_4", "SM_BC_Plant_CoverFern1#472@-11_4", "SM_BC_Plant_CoverFern1#472@-10_4", "SM_BC_Plant_CoverFern1#472@-9_4", "SM_BC_Plant_CoverFern2#478@-12_4", "SM_BC_Plant_CoverFern2#478@-11_4", "SM_BC_Plant_CoverFern2#478@-10_4", "SM_BC_Plant_CoverFern2#478@-9_4"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m3-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m3-m1"
-groups = ["SM_BC_Plant_CoverFern0#511@-11_-1", "SM_BC_Plant_CoverFern0#511@-10_-1", "SM_BC_Plant_CoverFern0#511@-9_-2", "SM_BC_Plant_CoverFern0#511@-9_-1", "SM_BC_Plant_CoverFern1#517@-11_-1", "SM_BC_Plant_CoverFern1#517@-9_-2", "SM_BC_Plant_CoverFern1#517@-9_-1", "SM_BC_Plant_CoverFern2#523@-11_-1", "SM_BC_Plant_CoverFern2#523@-10_-1", "SM_BC_Plant_CoverFern2#523@-9_-2", "SM_BC_Plant_CoverFern2#523@-9_-1"]
+groups = ["SM_BC_Plant_CoverFern0#466@-11_-1", "SM_BC_Plant_CoverFern0#466@-10_-1", "SM_BC_Plant_CoverFern0#466@-9_-2", "SM_BC_Plant_CoverFern0#466@-9_-1", "SM_BC_Plant_CoverFern1#472@-11_-1", "SM_BC_Plant_CoverFern1#472@-9_-2", "SM_BC_Plant_CoverFern1#472@-9_-1", "SM_BC_Plant_CoverFern2#478@-11_-1", "SM_BC_Plant_CoverFern2#478@-10_-1", "SM_BC_Plant_CoverFern2#478@-9_-2", "SM_BC_Plant_CoverFern2#478@-9_-1"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m3-m1 (11 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m4-0"
-groups = ["SM_BC_Plant_CoverFern0#511@-16_0", "SM_BC_Plant_CoverFern0#511@-16_1", "SM_BC_Plant_CoverFern0#511@-16_2", "SM_BC_Plant_CoverFern0#511@-16_3", "SM_BC_Plant_CoverFern0#511@-15_0", "SM_BC_Plant_CoverFern0#511@-15_1", "SM_BC_Plant_CoverFern0#511@-15_2", "SM_BC_Plant_CoverFern0#511@-15_3", "SM_BC_Plant_CoverFern0#511@-14_0", "SM_BC_Plant_CoverFern0#511@-14_1", "SM_BC_Plant_CoverFern0#511@-14_2", "SM_BC_Plant_CoverFern0#511@-14_3", "SM_BC_Plant_CoverFern0#511@-13_0", "SM_BC_Plant_CoverFern0#511@-13_1", "SM_BC_Plant_CoverFern0#511@-13_2", "SM_BC_Plant_CoverFern0#511@-13_3", "SM_BC_Plant_CoverFern1#517@-16_0", "SM_BC_Plant_CoverFern1#517@-16_1", "SM_BC_Plant_CoverFern1#517@-16_2", "SM_BC_Plant_CoverFern1#517@-16_3", "SM_BC_Plant_CoverFern1#517@-15_0", "SM_BC_Plant_CoverFern1#517@-15_1", "SM_BC_Plant_CoverFern1#517@-15_2", "SM_BC_Plant_CoverFern1#517@-15_3", "SM_BC_Plant_CoverFern1#517@-14_0", "SM_BC_Plant_CoverFern1#517@-14_1", "SM_BC_Plant_CoverFern1#517@-14_2", "SM_BC_Plant_CoverFern1#517@-14_3", "SM_BC_Plant_CoverFern1#517@-13_0", "SM_BC_Plant_CoverFern1#517@-13_1", "SM_BC_Plant_CoverFern1#517@-13_2", "SM_BC_Plant_CoverFern1#517@-13_3", "SM_BC_Plant_CoverFern2#523@-16_0", "SM_BC_Plant_CoverFern2#523@-16_1", "SM_BC_Plant_CoverFern2#523@-16_2", "SM_BC_Plant_CoverFern2#523@-16_3", "SM_BC_Plant_CoverFern2#523@-15_0", "SM_BC_Plant_CoverFern2#523@-15_1", "SM_BC_Plant_CoverFern2#523@-15_2", "SM_BC_Plant_CoverFern2#523@-15_3", "SM_BC_Plant_CoverFern2#523@-14_0", "SM_BC_Plant_CoverFern2#523@-14_1", "SM_BC_Plant_CoverFern2#523@-14_2", "SM_BC_Plant_CoverFern2#523@-14_3", "SM_BC_Plant_CoverFern2#523@-13_0", "SM_BC_Plant_CoverFern2#523@-13_1", "SM_BC_Plant_CoverFern2#523@-13_2", "SM_BC_Plant_CoverFern2#523@-13_3"]
+groups = ["SM_BC_Plant_CoverFern0#466@-16_0", "SM_BC_Plant_CoverFern0#466@-16_1", "SM_BC_Plant_CoverFern0#466@-16_2", "SM_BC_Plant_CoverFern0#466@-16_3", "SM_BC_Plant_CoverFern0#466@-15_0", "SM_BC_Plant_CoverFern0#466@-15_1", "SM_BC_Plant_CoverFern0#466@-15_2", "SM_BC_Plant_CoverFern0#466@-15_3", "SM_BC_Plant_CoverFern0#466@-14_0", "SM_BC_Plant_CoverFern0#466@-14_1", "SM_BC_Plant_CoverFern0#466@-14_2", "SM_BC_Plant_CoverFern0#466@-14_3", "SM_BC_Plant_CoverFern0#466@-13_0", "SM_BC_Plant_CoverFern0#466@-13_1", "SM_BC_Plant_CoverFern0#466@-13_2", "SM_BC_Plant_CoverFern0#466@-13_3", "SM_BC_Plant_CoverFern1#472@-16_0", "SM_BC_Plant_CoverFern1#472@-16_1", "SM_BC_Plant_CoverFern1#472@-16_2", "SM_BC_Plant_CoverFern1#472@-16_3", "SM_BC_Plant_CoverFern1#472@-15_0", "SM_BC_Plant_CoverFern1#472@-15_1", "SM_BC_Plant_CoverFern1#472@-15_2", "SM_BC_Plant_CoverFern1#472@-15_3", "SM_BC_Plant_CoverFern1#472@-14_0", "SM_BC_Plant_CoverFern1#472@-14_1", "SM_BC_Plant_CoverFern1#472@-14_2", "SM_BC_Plant_CoverFern1#472@-14_3", "SM_BC_Plant_CoverFern1#472@-13_0", "SM_BC_Plant_CoverFern1#472@-13_1", "SM_BC_Plant_CoverFern1#472@-13_2", "SM_BC_Plant_CoverFern1#472@-13_3", "SM_BC_Plant_CoverFern2#478@-16_0", "SM_BC_Plant_CoverFern2#478@-16_1", "SM_BC_Plant_CoverFern2#478@-16_2", "SM_BC_Plant_CoverFern2#478@-16_3", "SM_BC_Plant_CoverFern2#478@-15_0", "SM_BC_Plant_CoverFern2#478@-15_1", "SM_BC_Plant_CoverFern2#478@-15_2", "SM_BC_Plant_CoverFern2#478@-15_3", "SM_BC_Plant_CoverFern2#478@-14_0", "SM_BC_Plant_CoverFern2#478@-14_1", "SM_BC_Plant_CoverFern2#478@-14_2", "SM_BC_Plant_CoverFern2#478@-14_3", "SM_BC_Plant_CoverFern2#478@-13_0", "SM_BC_Plant_CoverFern2#478@-13_1", "SM_BC_Plant_CoverFern2#478@-13_2", "SM_BC_Plant_CoverFern2#478@-13_3"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m4-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m4-1"
-groups = ["SM_BC_Plant_CoverFern0#511@-16_4", "SM_BC_Plant_CoverFern0#511@-15_4", "SM_BC_Plant_CoverFern0#511@-14_4", "SM_BC_Plant_CoverFern0#511@-13_4", "SM_BC_Plant_CoverFern1#517@-16_4", "SM_BC_Plant_CoverFern1#517@-15_4", "SM_BC_Plant_CoverFern1#517@-14_4", "SM_BC_Plant_CoverFern1#517@-13_4", "SM_BC_Plant_CoverFern2#523@-16_4", "SM_BC_Plant_CoverFern2#523@-15_4", "SM_BC_Plant_CoverFern2#523@-14_4", "SM_BC_Plant_CoverFern2#523@-13_4"]
+groups = ["SM_BC_Plant_CoverFern0#466@-16_4", "SM_BC_Plant_CoverFern0#466@-15_4", "SM_BC_Plant_CoverFern0#466@-14_4", "SM_BC_Plant_CoverFern0#466@-13_4", "SM_BC_Plant_CoverFern1#472@-16_4", "SM_BC_Plant_CoverFern1#472@-15_4", "SM_BC_Plant_CoverFern1#472@-14_4", "SM_BC_Plant_CoverFern1#472@-13_4", "SM_BC_Plant_CoverFern2#478@-16_4", "SM_BC_Plant_CoverFern2#478@-15_4", "SM_BC_Plant_CoverFern2#478@-14_4", "SM_BC_Plant_CoverFern2#478@-13_4"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m4-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m4-m1"
-groups = ["SM_BC_Plant_CoverFern0#511@-16_-4", "SM_BC_Plant_CoverFern0#511@-16_-3", "SM_BC_Plant_CoverFern0#511@-16_-2", "SM_BC_Plant_CoverFern0#511@-16_-1", "SM_BC_Plant_CoverFern0#511@-15_-1", "SM_BC_Plant_CoverFern0#511@-14_-1", "SM_BC_Plant_CoverFern0#511@-13_-1", "SM_BC_Plant_CoverFern1#517@-16_-4", "SM_BC_Plant_CoverFern1#517@-16_-3", "SM_BC_Plant_CoverFern1#517@-16_-2", "SM_BC_Plant_CoverFern1#517@-16_-1", "SM_BC_Plant_CoverFern1#517@-15_-1", "SM_BC_Plant_CoverFern1#517@-14_-1", "SM_BC_Plant_CoverFern2#523@-16_-3", "SM_BC_Plant_CoverFern2#523@-16_-2", "SM_BC_Plant_CoverFern2#523@-16_-1", "SM_BC_Plant_CoverFern2#523@-15_-1", "SM_BC_Plant_CoverFern2#523@-14_-1"]
+groups = ["SM_BC_Plant_CoverFern0#466@-16_-4", "SM_BC_Plant_CoverFern0#466@-16_-3", "SM_BC_Plant_CoverFern0#466@-16_-2", "SM_BC_Plant_CoverFern0#466@-16_-1", "SM_BC_Plant_CoverFern0#466@-15_-1", "SM_BC_Plant_CoverFern0#466@-14_-1", "SM_BC_Plant_CoverFern0#466@-13_-1", "SM_BC_Plant_CoverFern1#472@-16_-4", "SM_BC_Plant_CoverFern1#472@-16_-3", "SM_BC_Plant_CoverFern1#472@-16_-2", "SM_BC_Plant_CoverFern1#472@-16_-1", "SM_BC_Plant_CoverFern1#472@-15_-1", "SM_BC_Plant_CoverFern1#472@-14_-1", "SM_BC_Plant_CoverFern2#478@-16_-3", "SM_BC_Plant_CoverFern2#478@-16_-2", "SM_BC_Plant_CoverFern2#478@-16_-1", "SM_BC_Plant_CoverFern2#478@-15_-1", "SM_BC_Plant_CoverFern2#478@-14_-1"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m4-m1 (18 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m5-0"
-groups = ["SM_BC_Plant_CoverFern0#511@-20_0", "SM_BC_Plant_CoverFern0#511@-20_1", "SM_BC_Plant_CoverFern0#511@-20_2", "SM_BC_Plant_CoverFern0#511@-20_3", "SM_BC_Plant_CoverFern0#511@-19_0", "SM_BC_Plant_CoverFern0#511@-19_1", "SM_BC_Plant_CoverFern0#511@-19_2", "SM_BC_Plant_CoverFern0#511@-19_3", "SM_BC_Plant_CoverFern0#511@-18_0", "SM_BC_Plant_CoverFern0#511@-18_1", "SM_BC_Plant_CoverFern0#511@-18_2", "SM_BC_Plant_CoverFern0#511@-18_3", "SM_BC_Plant_CoverFern0#511@-17_0", "SM_BC_Plant_CoverFern0#511@-17_1", "SM_BC_Plant_CoverFern0#511@-17_2", "SM_BC_Plant_CoverFern0#511@-17_3", "SM_BC_Plant_CoverFern1#517@-20_0", "SM_BC_Plant_CoverFern1#517@-20_1", "SM_BC_Plant_CoverFern1#517@-20_2", "SM_BC_Plant_CoverFern1#517@-20_3", "SM_BC_Plant_CoverFern1#517@-19_0", "SM_BC_Plant_CoverFern1#517@-19_1", "SM_BC_Plant_CoverFern1#517@-19_2", "SM_BC_Plant_CoverFern1#517@-19_3", "SM_BC_Plant_CoverFern1#517@-18_0", "SM_BC_Plant_CoverFern1#517@-18_1", "SM_BC_Plant_CoverFern1#517@-18_2", "SM_BC_Plant_CoverFern1#517@-18_3", "SM_BC_Plant_CoverFern1#517@-17_0", "SM_BC_Plant_CoverFern1#517@-17_1", "SM_BC_Plant_CoverFern1#517@-17_2", "SM_BC_Plant_CoverFern1#517@-17_3", "SM_BC_Plant_CoverFern2#523@-20_0", "SM_BC_Plant_CoverFern2#523@-20_1", "SM_BC_Plant_CoverFern2#523@-20_2", "SM_BC_Plant_CoverFern2#523@-20_3", "SM_BC_Plant_CoverFern2#523@-19_0", "SM_BC_Plant_CoverFern2#523@-19_1", "SM_BC_Plant_CoverFern2#523@-19_2", "SM_BC_Plant_CoverFern2#523@-19_3", "SM_BC_Plant_CoverFern2#523@-18_0", "SM_BC_Plant_CoverFern2#523@-18_1", "SM_BC_Plant_CoverFern2#523@-18_2", "SM_BC_Plant_CoverFern2#523@-18_3", "SM_BC_Plant_CoverFern2#523@-17_0", "SM_BC_Plant_CoverFern2#523@-17_1", "SM_BC_Plant_CoverFern2#523@-17_2", "SM_BC_Plant_CoverFern2#523@-17_3"]
+groups = ["SM_BC_Plant_CoverFern0#466@-20_0", "SM_BC_Plant_CoverFern0#466@-20_1", "SM_BC_Plant_CoverFern0#466@-20_2", "SM_BC_Plant_CoverFern0#466@-20_3", "SM_BC_Plant_CoverFern0#466@-19_0", "SM_BC_Plant_CoverFern0#466@-19_1", "SM_BC_Plant_CoverFern0#466@-19_2", "SM_BC_Plant_CoverFern0#466@-19_3", "SM_BC_Plant_CoverFern0#466@-18_0", "SM_BC_Plant_CoverFern0#466@-18_1", "SM_BC_Plant_CoverFern0#466@-18_2", "SM_BC_Plant_CoverFern0#466@-18_3", "SM_BC_Plant_CoverFern0#466@-17_0", "SM_BC_Plant_CoverFern0#466@-17_1", "SM_BC_Plant_CoverFern0#466@-17_2", "SM_BC_Plant_CoverFern0#466@-17_3", "SM_BC_Plant_CoverFern1#472@-20_0", "SM_BC_Plant_CoverFern1#472@-20_1", "SM_BC_Plant_CoverFern1#472@-20_2", "SM_BC_Plant_CoverFern1#472@-20_3", "SM_BC_Plant_CoverFern1#472@-19_0", "SM_BC_Plant_CoverFern1#472@-19_1", "SM_BC_Plant_CoverFern1#472@-19_2", "SM_BC_Plant_CoverFern1#472@-19_3", "SM_BC_Plant_CoverFern1#472@-18_0", "SM_BC_Plant_CoverFern1#472@-18_1", "SM_BC_Plant_CoverFern1#472@-18_2", "SM_BC_Plant_CoverFern1#472@-18_3", "SM_BC_Plant_CoverFern1#472@-17_0", "SM_BC_Plant_CoverFern1#472@-17_1", "SM_BC_Plant_CoverFern1#472@-17_2", "SM_BC_Plant_CoverFern1#472@-17_3", "SM_BC_Plant_CoverFern2#478@-20_0", "SM_BC_Plant_CoverFern2#478@-20_1", "SM_BC_Plant_CoverFern2#478@-20_2", "SM_BC_Plant_CoverFern2#478@-20_3", "SM_BC_Plant_CoverFern2#478@-19_0", "SM_BC_Plant_CoverFern2#478@-19_1", "SM_BC_Plant_CoverFern2#478@-19_2", "SM_BC_Plant_CoverFern2#478@-19_3", "SM_BC_Plant_CoverFern2#478@-18_0", "SM_BC_Plant_CoverFern2#478@-18_1", "SM_BC_Plant_CoverFern2#478@-18_2", "SM_BC_Plant_CoverFern2#478@-18_3", "SM_BC_Plant_CoverFern2#478@-17_0", "SM_BC_Plant_CoverFern2#478@-17_1", "SM_BC_Plant_CoverFern2#478@-17_2", "SM_BC_Plant_CoverFern2#478@-17_3"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m5-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m5-1"
-groups = ["SM_BC_Plant_CoverFern0#511@-20_4", "SM_BC_Plant_CoverFern0#511@-19_4", "SM_BC_Plant_CoverFern0#511@-18_4", "SM_BC_Plant_CoverFern0#511@-17_4", "SM_BC_Plant_CoverFern1#517@-20_4", "SM_BC_Plant_CoverFern1#517@-19_4", "SM_BC_Plant_CoverFern1#517@-18_4", "SM_BC_Plant_CoverFern1#517@-17_4", "SM_BC_Plant_CoverFern2#523@-20_4", "SM_BC_Plant_CoverFern2#523@-19_4", "SM_BC_Plant_CoverFern2#523@-18_4", "SM_BC_Plant_CoverFern2#523@-17_4"]
+groups = ["SM_BC_Plant_CoverFern0#466@-20_4", "SM_BC_Plant_CoverFern0#466@-19_4", "SM_BC_Plant_CoverFern0#466@-18_4", "SM_BC_Plant_CoverFern0#466@-17_4", "SM_BC_Plant_CoverFern1#472@-20_4", "SM_BC_Plant_CoverFern1#472@-19_4", "SM_BC_Plant_CoverFern1#472@-18_4", "SM_BC_Plant_CoverFern1#472@-17_4", "SM_BC_Plant_CoverFern2#478@-20_4", "SM_BC_Plant_CoverFern2#478@-19_4", "SM_BC_Plant_CoverFern2#478@-18_4", "SM_BC_Plant_CoverFern2#478@-17_4"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m5-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m5-m1"
-groups = ["SM_BC_Plant_CoverFern0#511@-20_-1", "SM_BC_Plant_CoverFern0#511@-19_-4", "SM_BC_Plant_CoverFern0#511@-19_-3", "SM_BC_Plant_CoverFern0#511@-19_-2", "SM_BC_Plant_CoverFern0#511@-19_-1", "SM_BC_Plant_CoverFern0#511@-18_-4", "SM_BC_Plant_CoverFern0#511@-18_-3", "SM_BC_Plant_CoverFern0#511@-18_-2", "SM_BC_Plant_CoverFern0#511@-18_-1", "SM_BC_Plant_CoverFern0#511@-17_-4", "SM_BC_Plant_CoverFern0#511@-17_-3", "SM_BC_Plant_CoverFern0#511@-17_-2", "SM_BC_Plant_CoverFern0#511@-17_-1", "SM_BC_Plant_CoverFern1#517@-20_-1", "SM_BC_Plant_CoverFern1#517@-19_-4", "SM_BC_Plant_CoverFern1#517@-19_-3", "SM_BC_Plant_CoverFern1#517@-19_-2", "SM_BC_Plant_CoverFern1#517@-19_-1", "SM_BC_Plant_CoverFern1#517@-18_-4", "SM_BC_Plant_CoverFern1#517@-18_-3", "SM_BC_Plant_CoverFern1#517@-18_-2", "SM_BC_Plant_CoverFern1#517@-18_-1", "SM_BC_Plant_CoverFern1#517@-17_-4", "SM_BC_Plant_CoverFern1#517@-17_-3", "SM_BC_Plant_CoverFern1#517@-17_-2", "SM_BC_Plant_CoverFern1#517@-17_-1", "SM_BC_Plant_CoverFern2#523@-20_-1", "SM_BC_Plant_CoverFern2#523@-19_-4", "SM_BC_Plant_CoverFern2#523@-19_-3", "SM_BC_Plant_CoverFern2#523@-19_-2", "SM_BC_Plant_CoverFern2#523@-19_-1", "SM_BC_Plant_CoverFern2#523@-18_-4", "SM_BC_Plant_CoverFern2#523@-18_-3", "SM_BC_Plant_CoverFern2#523@-18_-2", "SM_BC_Plant_CoverFern2#523@-18_-1", "SM_BC_Plant_CoverFern2#523@-17_-4", "SM_BC_Plant_CoverFern2#523@-17_-3", "SM_BC_Plant_CoverFern2#523@-17_-2", "SM_BC_Plant_CoverFern2#523@-17_-1"]
+groups = ["SM_BC_Plant_CoverFern0#466@-20_-1", "SM_BC_Plant_CoverFern0#466@-19_-4", "SM_BC_Plant_CoverFern0#466@-19_-3", "SM_BC_Plant_CoverFern0#466@-19_-2", "SM_BC_Plant_CoverFern0#466@-19_-1", "SM_BC_Plant_CoverFern0#466@-18_-4", "SM_BC_Plant_CoverFern0#466@-18_-3", "SM_BC_Plant_CoverFern0#466@-18_-2", "SM_BC_Plant_CoverFern0#466@-18_-1", "SM_BC_Plant_CoverFern0#466@-17_-4", "SM_BC_Plant_CoverFern0#466@-17_-3", "SM_BC_Plant_CoverFern0#466@-17_-2", "SM_BC_Plant_CoverFern0#466@-17_-1", "SM_BC_Plant_CoverFern1#472@-20_-1", "SM_BC_Plant_CoverFern1#472@-19_-4", "SM_BC_Plant_CoverFern1#472@-19_-3", "SM_BC_Plant_CoverFern1#472@-19_-2", "SM_BC_Plant_CoverFern1#472@-19_-1", "SM_BC_Plant_CoverFern1#472@-18_-4", "SM_BC_Plant_CoverFern1#472@-18_-3", "SM_BC_Plant_CoverFern1#472@-18_-2", "SM_BC_Plant_CoverFern1#472@-18_-1", "SM_BC_Plant_CoverFern1#472@-17_-4", "SM_BC_Plant_CoverFern1#472@-17_-3", "SM_BC_Plant_CoverFern1#472@-17_-2", "SM_BC_Plant_CoverFern1#472@-17_-1", "SM_BC_Plant_CoverFern2#478@-20_-1", "SM_BC_Plant_CoverFern2#478@-19_-4", "SM_BC_Plant_CoverFern2#478@-19_-3", "SM_BC_Plant_CoverFern2#478@-19_-2", "SM_BC_Plant_CoverFern2#478@-19_-1", "SM_BC_Plant_CoverFern2#478@-18_-4", "SM_BC_Plant_CoverFern2#478@-18_-3", "SM_BC_Plant_CoverFern2#478@-18_-2", "SM_BC_Plant_CoverFern2#478@-18_-1", "SM_BC_Plant_CoverFern2#478@-17_-4", "SM_BC_Plant_CoverFern2#478@-17_-3", "SM_BC_Plant_CoverFern2#478@-17_-2", "SM_BC_Plant_CoverFern2#478@-17_-1"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m5-m1 (39 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-fern-m5-m2"
-groups = ["SM_BC_Plant_CoverFern0#511@-19_-5", "SM_BC_Plant_CoverFern0#511@-18_-7", "SM_BC_Plant_CoverFern0#511@-18_-6", "SM_BC_Plant_CoverFern0#511@-18_-5", "SM_BC_Plant_CoverFern0#511@-17_-7", "SM_BC_Plant_CoverFern0#511@-17_-6", "SM_BC_Plant_CoverFern0#511@-17_-5", "SM_BC_Plant_CoverFern1#517@-19_-5", "SM_BC_Plant_CoverFern1#517@-18_-7", "SM_BC_Plant_CoverFern1#517@-18_-6", "SM_BC_Plant_CoverFern1#517@-18_-5", "SM_BC_Plant_CoverFern1#517@-17_-7", "SM_BC_Plant_CoverFern1#517@-17_-6", "SM_BC_Plant_CoverFern1#517@-17_-5", "SM_BC_Plant_CoverFern2#523@-19_-5", "SM_BC_Plant_CoverFern2#523@-18_-7", "SM_BC_Plant_CoverFern2#523@-18_-6", "SM_BC_Plant_CoverFern2#523@-18_-5", "SM_BC_Plant_CoverFern2#523@-17_-7", "SM_BC_Plant_CoverFern2#523@-17_-6", "SM_BC_Plant_CoverFern2#523@-17_-5"]
+groups = ["SM_BC_Plant_CoverFern0#466@-19_-5", "SM_BC_Plant_CoverFern0#466@-18_-7", "SM_BC_Plant_CoverFern0#466@-18_-6", "SM_BC_Plant_CoverFern0#466@-18_-5", "SM_BC_Plant_CoverFern0#466@-17_-7", "SM_BC_Plant_CoverFern0#466@-17_-6", "SM_BC_Plant_CoverFern0#466@-17_-5", "SM_BC_Plant_CoverFern1#472@-19_-5", "SM_BC_Plant_CoverFern1#472@-18_-7", "SM_BC_Plant_CoverFern1#472@-18_-6", "SM_BC_Plant_CoverFern1#472@-18_-5", "SM_BC_Plant_CoverFern1#472@-17_-7", "SM_BC_Plant_CoverFern1#472@-17_-6", "SM_BC_Plant_CoverFern1#472@-17_-5", "SM_BC_Plant_CoverFern2#478@-19_-5", "SM_BC_Plant_CoverFern2#478@-18_-7", "SM_BC_Plant_CoverFern2#478@-18_-6", "SM_BC_Plant_CoverFern2#478@-18_-5", "SM_BC_Plant_CoverFern2#478@-17_-7", "SM_BC_Plant_CoverFern2#478@-17_-6", "SM_BC_Plant_CoverFern2#478@-17_-5"]
 model = "adopted/brinecove/plant-cover-fern"
 about = "Brine Cove plant-cover-fern-m5-m2 (21 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass"
-groups = ["SM_BC_Plant_CoverGrass0#514", "SM_BC_Plant_CoverGrass1#520", "SM_BC_Plant_CoverGrass2#526"]
+groups = ["SM_BC_Plant_CoverGrass0#469", "SM_BC_Plant_CoverGrass1#475", "SM_BC_Plant_CoverGrass2#481"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass (3 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m2-0"
-groups = ["SM_BC_Plant_CoverGrass0#513@-8_0", "SM_BC_Plant_CoverGrass0#513@-8_1", "SM_BC_Plant_CoverGrass0#513@-8_2", "SM_BC_Plant_CoverGrass0#513@-8_3", "SM_BC_Plant_CoverGrass0#513@-7_0", "SM_BC_Plant_CoverGrass0#513@-7_1", "SM_BC_Plant_CoverGrass0#513@-7_2", "SM_BC_Plant_CoverGrass0#513@-7_3", "SM_BC_Plant_CoverGrass0#513@-6_0", "SM_BC_Plant_CoverGrass0#513@-6_1", "SM_BC_Plant_CoverGrass0#513@-6_2", "SM_BC_Plant_CoverGrass0#513@-6_3", "SM_BC_Plant_CoverGrass1#519@-8_0", "SM_BC_Plant_CoverGrass1#519@-8_1", "SM_BC_Plant_CoverGrass1#519@-8_2", "SM_BC_Plant_CoverGrass1#519@-8_3", "SM_BC_Plant_CoverGrass1#519@-7_0", "SM_BC_Plant_CoverGrass1#519@-7_1", "SM_BC_Plant_CoverGrass1#519@-7_2", "SM_BC_Plant_CoverGrass1#519@-7_3", "SM_BC_Plant_CoverGrass1#519@-6_0", "SM_BC_Plant_CoverGrass1#519@-6_1", "SM_BC_Plant_CoverGrass1#519@-6_2", "SM_BC_Plant_CoverGrass1#519@-6_3", "SM_BC_Plant_CoverGrass2#525@-8_0", "SM_BC_Plant_CoverGrass2#525@-8_1", "SM_BC_Plant_CoverGrass2#525@-8_2", "SM_BC_Plant_CoverGrass2#525@-8_3", "SM_BC_Plant_CoverGrass2#525@-7_0", "SM_BC_Plant_CoverGrass2#525@-7_1", "SM_BC_Plant_CoverGrass2#525@-7_2", "SM_BC_Plant_CoverGrass2#525@-7_3", "SM_BC_Plant_CoverGrass2#525@-6_0", "SM_BC_Plant_CoverGrass2#525@-6_1", "SM_BC_Plant_CoverGrass2#525@-6_2", "SM_BC_Plant_CoverGrass2#525@-6_3"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-8_0", "SM_BC_Plant_CoverGrass0#468@-8_1", "SM_BC_Plant_CoverGrass0#468@-8_2", "SM_BC_Plant_CoverGrass0#468@-8_3", "SM_BC_Plant_CoverGrass0#468@-7_0", "SM_BC_Plant_CoverGrass0#468@-7_1", "SM_BC_Plant_CoverGrass0#468@-7_2", "SM_BC_Plant_CoverGrass0#468@-7_3", "SM_BC_Plant_CoverGrass0#468@-6_0", "SM_BC_Plant_CoverGrass0#468@-6_1", "SM_BC_Plant_CoverGrass0#468@-6_2", "SM_BC_Plant_CoverGrass0#468@-6_3", "SM_BC_Plant_CoverGrass1#474@-8_0", "SM_BC_Plant_CoverGrass1#474@-8_1", "SM_BC_Plant_CoverGrass1#474@-8_2", "SM_BC_Plant_CoverGrass1#474@-8_3", "SM_BC_Plant_CoverGrass1#474@-7_0", "SM_BC_Plant_CoverGrass1#474@-7_1", "SM_BC_Plant_CoverGrass1#474@-7_2", "SM_BC_Plant_CoverGrass1#474@-7_3", "SM_BC_Plant_CoverGrass1#474@-6_0", "SM_BC_Plant_CoverGrass1#474@-6_1", "SM_BC_Plant_CoverGrass1#474@-6_2", "SM_BC_Plant_CoverGrass1#474@-6_3", "SM_BC_Plant_CoverGrass2#480@-8_0", "SM_BC_Plant_CoverGrass2#480@-8_1", "SM_BC_Plant_CoverGrass2#480@-8_2", "SM_BC_Plant_CoverGrass2#480@-8_3", "SM_BC_Plant_CoverGrass2#480@-7_0", "SM_BC_Plant_CoverGrass2#480@-7_1", "SM_BC_Plant_CoverGrass2#480@-7_2", "SM_BC_Plant_CoverGrass2#480@-7_3", "SM_BC_Plant_CoverGrass2#480@-6_0", "SM_BC_Plant_CoverGrass2#480@-6_1", "SM_BC_Plant_CoverGrass2#480@-6_2", "SM_BC_Plant_CoverGrass2#480@-6_3"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m2-0 (36 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m2-1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-8_4", "SM_BC_Plant_CoverGrass0#513@-7_4", "SM_BC_Plant_CoverGrass0#513@-6_4", "SM_BC_Plant_CoverGrass1#519@-8_4", "SM_BC_Plant_CoverGrass1#519@-7_4", "SM_BC_Plant_CoverGrass1#519@-6_4", "SM_BC_Plant_CoverGrass2#525@-8_4", "SM_BC_Plant_CoverGrass2#525@-7_4", "SM_BC_Plant_CoverGrass2#525@-6_4"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-8_4", "SM_BC_Plant_CoverGrass0#468@-7_4", "SM_BC_Plant_CoverGrass0#468@-6_4", "SM_BC_Plant_CoverGrass1#474@-8_4", "SM_BC_Plant_CoverGrass1#474@-7_4", "SM_BC_Plant_CoverGrass1#474@-6_4", "SM_BC_Plant_CoverGrass2#480@-8_4", "SM_BC_Plant_CoverGrass2#480@-7_4", "SM_BC_Plant_CoverGrass2#480@-6_4"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m2-1 (9 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m2-m1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-8_-4", "SM_BC_Plant_CoverGrass0#513@-8_-3", "SM_BC_Plant_CoverGrass0#513@-8_-2", "SM_BC_Plant_CoverGrass0#513@-8_-1", "SM_BC_Plant_CoverGrass0#513@-7_-4", "SM_BC_Plant_CoverGrass0#513@-7_-3", "SM_BC_Plant_CoverGrass0#513@-7_-2", "SM_BC_Plant_CoverGrass0#513@-7_-1", "SM_BC_Plant_CoverGrass0#513@-6_-4", "SM_BC_Plant_CoverGrass0#513@-6_-3", "SM_BC_Plant_CoverGrass0#513@-6_-2", "SM_BC_Plant_CoverGrass0#513@-6_-1", "SM_BC_Plant_CoverGrass1#519@-8_-4", "SM_BC_Plant_CoverGrass1#519@-8_-3", "SM_BC_Plant_CoverGrass1#519@-8_-2", "SM_BC_Plant_CoverGrass1#519@-8_-1", "SM_BC_Plant_CoverGrass1#519@-7_-4", "SM_BC_Plant_CoverGrass1#519@-7_-3", "SM_BC_Plant_CoverGrass1#519@-7_-2", "SM_BC_Plant_CoverGrass1#519@-7_-1", "SM_BC_Plant_CoverGrass1#519@-6_-4", "SM_BC_Plant_CoverGrass1#519@-6_-3", "SM_BC_Plant_CoverGrass1#519@-6_-2", "SM_BC_Plant_CoverGrass1#519@-6_-1", "SM_BC_Plant_CoverGrass2#525@-8_-4", "SM_BC_Plant_CoverGrass2#525@-8_-3", "SM_BC_Plant_CoverGrass2#525@-8_-2", "SM_BC_Plant_CoverGrass2#525@-8_-1", "SM_BC_Plant_CoverGrass2#525@-7_-4", "SM_BC_Plant_CoverGrass2#525@-7_-3", "SM_BC_Plant_CoverGrass2#525@-7_-2", "SM_BC_Plant_CoverGrass2#525@-7_-1", "SM_BC_Plant_CoverGrass2#525@-6_-4", "SM_BC_Plant_CoverGrass2#525@-6_-3", "SM_BC_Plant_CoverGrass2#525@-6_-2", "SM_BC_Plant_CoverGrass2#525@-6_-1"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-8_-4", "SM_BC_Plant_CoverGrass0#468@-8_-3", "SM_BC_Plant_CoverGrass0#468@-8_-2", "SM_BC_Plant_CoverGrass0#468@-8_-1", "SM_BC_Plant_CoverGrass0#468@-7_-4", "SM_BC_Plant_CoverGrass0#468@-7_-3", "SM_BC_Plant_CoverGrass0#468@-7_-2", "SM_BC_Plant_CoverGrass0#468@-7_-1", "SM_BC_Plant_CoverGrass0#468@-6_-4", "SM_BC_Plant_CoverGrass0#468@-6_-3", "SM_BC_Plant_CoverGrass0#468@-6_-2", "SM_BC_Plant_CoverGrass0#468@-6_-1", "SM_BC_Plant_CoverGrass1#474@-8_-4", "SM_BC_Plant_CoverGrass1#474@-8_-3", "SM_BC_Plant_CoverGrass1#474@-8_-2", "SM_BC_Plant_CoverGrass1#474@-8_-1", "SM_BC_Plant_CoverGrass1#474@-7_-4", "SM_BC_Plant_CoverGrass1#474@-7_-3", "SM_BC_Plant_CoverGrass1#474@-7_-2", "SM_BC_Plant_CoverGrass1#474@-7_-1", "SM_BC_Plant_CoverGrass1#474@-6_-4", "SM_BC_Plant_CoverGrass1#474@-6_-3", "SM_BC_Plant_CoverGrass1#474@-6_-2", "SM_BC_Plant_CoverGrass1#474@-6_-1", "SM_BC_Plant_CoverGrass2#480@-8_-4", "SM_BC_Plant_CoverGrass2#480@-8_-3", "SM_BC_Plant_CoverGrass2#480@-8_-2", "SM_BC_Plant_CoverGrass2#480@-8_-1", "SM_BC_Plant_CoverGrass2#480@-7_-4", "SM_BC_Plant_CoverGrass2#480@-7_-3", "SM_BC_Plant_CoverGrass2#480@-7_-2", "SM_BC_Plant_CoverGrass2#480@-7_-1", "SM_BC_Plant_CoverGrass2#480@-6_-4", "SM_BC_Plant_CoverGrass2#480@-6_-3", "SM_BC_Plant_CoverGrass2#480@-6_-2", "SM_BC_Plant_CoverGrass2#480@-6_-1"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m2-m1 (36 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m2-m2"
-groups = ["SM_BC_Plant_CoverGrass0#513@-8_-5", "SM_BC_Plant_CoverGrass0#513@-7_-7", "SM_BC_Plant_CoverGrass0#513@-7_-6", "SM_BC_Plant_CoverGrass0#513@-7_-5", "SM_BC_Plant_CoverGrass0#513@-6_-6", "SM_BC_Plant_CoverGrass0#513@-6_-5", "SM_BC_Plant_CoverGrass1#519@-8_-5", "SM_BC_Plant_CoverGrass1#519@-7_-7", "SM_BC_Plant_CoverGrass1#519@-7_-6", "SM_BC_Plant_CoverGrass1#519@-7_-5", "SM_BC_Plant_CoverGrass1#519@-6_-6", "SM_BC_Plant_CoverGrass2#525@-8_-5", "SM_BC_Plant_CoverGrass2#525@-7_-7", "SM_BC_Plant_CoverGrass2#525@-7_-6", "SM_BC_Plant_CoverGrass2#525@-7_-5", "SM_BC_Plant_CoverGrass2#525@-6_-6", "SM_BC_Plant_CoverGrass2#525@-6_-5"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-8_-5", "SM_BC_Plant_CoverGrass0#468@-7_-7", "SM_BC_Plant_CoverGrass0#468@-7_-6", "SM_BC_Plant_CoverGrass0#468@-7_-5", "SM_BC_Plant_CoverGrass0#468@-6_-6", "SM_BC_Plant_CoverGrass0#468@-6_-5", "SM_BC_Plant_CoverGrass1#474@-8_-5", "SM_BC_Plant_CoverGrass1#474@-7_-7", "SM_BC_Plant_CoverGrass1#474@-7_-6", "SM_BC_Plant_CoverGrass1#474@-7_-5", "SM_BC_Plant_CoverGrass1#474@-6_-6", "SM_BC_Plant_CoverGrass2#480@-8_-5", "SM_BC_Plant_CoverGrass2#480@-7_-7", "SM_BC_Plant_CoverGrass2#480@-7_-6", "SM_BC_Plant_CoverGrass2#480@-7_-5", "SM_BC_Plant_CoverGrass2#480@-6_-6", "SM_BC_Plant_CoverGrass2#480@-6_-5"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m2-m2 (17 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m3-0"
-groups = ["SM_BC_Plant_CoverGrass0#513@-12_0", "SM_BC_Plant_CoverGrass0#513@-12_1", "SM_BC_Plant_CoverGrass0#513@-12_2", "SM_BC_Plant_CoverGrass0#513@-12_3", "SM_BC_Plant_CoverGrass0#513@-11_0", "SM_BC_Plant_CoverGrass0#513@-11_1", "SM_BC_Plant_CoverGrass0#513@-11_2", "SM_BC_Plant_CoverGrass0#513@-11_3", "SM_BC_Plant_CoverGrass0#513@-10_0", "SM_BC_Plant_CoverGrass0#513@-10_1", "SM_BC_Plant_CoverGrass0#513@-10_2", "SM_BC_Plant_CoverGrass0#513@-10_3", "SM_BC_Plant_CoverGrass0#513@-9_0", "SM_BC_Plant_CoverGrass0#513@-9_1", "SM_BC_Plant_CoverGrass0#513@-9_2", "SM_BC_Plant_CoverGrass0#513@-9_3", "SM_BC_Plant_CoverGrass1#519@-12_0", "SM_BC_Plant_CoverGrass1#519@-12_1", "SM_BC_Plant_CoverGrass1#519@-12_2", "SM_BC_Plant_CoverGrass1#519@-12_3", "SM_BC_Plant_CoverGrass1#519@-11_0", "SM_BC_Plant_CoverGrass1#519@-11_1", "SM_BC_Plant_CoverGrass1#519@-11_2", "SM_BC_Plant_CoverGrass1#519@-11_3", "SM_BC_Plant_CoverGrass1#519@-10_0", "SM_BC_Plant_CoverGrass1#519@-10_1", "SM_BC_Plant_CoverGrass1#519@-10_2", "SM_BC_Plant_CoverGrass1#519@-10_3", "SM_BC_Plant_CoverGrass1#519@-9_0", "SM_BC_Plant_CoverGrass1#519@-9_1", "SM_BC_Plant_CoverGrass1#519@-9_2", "SM_BC_Plant_CoverGrass1#519@-9_3", "SM_BC_Plant_CoverGrass2#525@-12_0", "SM_BC_Plant_CoverGrass2#525@-12_1", "SM_BC_Plant_CoverGrass2#525@-12_2", "SM_BC_Plant_CoverGrass2#525@-12_3", "SM_BC_Plant_CoverGrass2#525@-11_0", "SM_BC_Plant_CoverGrass2#525@-11_1", "SM_BC_Plant_CoverGrass2#525@-11_2", "SM_BC_Plant_CoverGrass2#525@-11_3", "SM_BC_Plant_CoverGrass2#525@-10_0", "SM_BC_Plant_CoverGrass2#525@-10_1", "SM_BC_Plant_CoverGrass2#525@-10_2", "SM_BC_Plant_CoverGrass2#525@-10_3", "SM_BC_Plant_CoverGrass2#525@-9_0", "SM_BC_Plant_CoverGrass2#525@-9_1", "SM_BC_Plant_CoverGrass2#525@-9_2", "SM_BC_Plant_CoverGrass2#525@-9_3"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-12_0", "SM_BC_Plant_CoverGrass0#468@-12_1", "SM_BC_Plant_CoverGrass0#468@-12_2", "SM_BC_Plant_CoverGrass0#468@-12_3", "SM_BC_Plant_CoverGrass0#468@-11_0", "SM_BC_Plant_CoverGrass0#468@-11_1", "SM_BC_Plant_CoverGrass0#468@-11_2", "SM_BC_Plant_CoverGrass0#468@-11_3", "SM_BC_Plant_CoverGrass0#468@-10_0", "SM_BC_Plant_CoverGrass0#468@-10_1", "SM_BC_Plant_CoverGrass0#468@-10_2", "SM_BC_Plant_CoverGrass0#468@-10_3", "SM_BC_Plant_CoverGrass0#468@-9_0", "SM_BC_Plant_CoverGrass0#468@-9_1", "SM_BC_Plant_CoverGrass0#468@-9_2", "SM_BC_Plant_CoverGrass0#468@-9_3", "SM_BC_Plant_CoverGrass1#474@-12_0", "SM_BC_Plant_CoverGrass1#474@-12_1", "SM_BC_Plant_CoverGrass1#474@-12_2", "SM_BC_Plant_CoverGrass1#474@-12_3", "SM_BC_Plant_CoverGrass1#474@-11_0", "SM_BC_Plant_CoverGrass1#474@-11_1", "SM_BC_Plant_CoverGrass1#474@-11_2", "SM_BC_Plant_CoverGrass1#474@-11_3", "SM_BC_Plant_CoverGrass1#474@-10_0", "SM_BC_Plant_CoverGrass1#474@-10_1", "SM_BC_Plant_CoverGrass1#474@-10_2", "SM_BC_Plant_CoverGrass1#474@-10_3", "SM_BC_Plant_CoverGrass1#474@-9_0", "SM_BC_Plant_CoverGrass1#474@-9_1", "SM_BC_Plant_CoverGrass1#474@-9_2", "SM_BC_Plant_CoverGrass1#474@-9_3", "SM_BC_Plant_CoverGrass2#480@-12_0", "SM_BC_Plant_CoverGrass2#480@-12_1", "SM_BC_Plant_CoverGrass2#480@-12_2", "SM_BC_Plant_CoverGrass2#480@-12_3", "SM_BC_Plant_CoverGrass2#480@-11_0", "SM_BC_Plant_CoverGrass2#480@-11_1", "SM_BC_Plant_CoverGrass2#480@-11_2", "SM_BC_Plant_CoverGrass2#480@-11_3", "SM_BC_Plant_CoverGrass2#480@-10_0", "SM_BC_Plant_CoverGrass2#480@-10_1", "SM_BC_Plant_CoverGrass2#480@-10_2", "SM_BC_Plant_CoverGrass2#480@-10_3", "SM_BC_Plant_CoverGrass2#480@-9_0", "SM_BC_Plant_CoverGrass2#480@-9_1", "SM_BC_Plant_CoverGrass2#480@-9_2", "SM_BC_Plant_CoverGrass2#480@-9_3"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m3-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m3-1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-12_4", "SM_BC_Plant_CoverGrass0#513@-11_4", "SM_BC_Plant_CoverGrass0#513@-10_4", "SM_BC_Plant_CoverGrass0#513@-9_4", "SM_BC_Plant_CoverGrass1#519@-12_4", "SM_BC_Plant_CoverGrass1#519@-11_4", "SM_BC_Plant_CoverGrass1#519@-10_4", "SM_BC_Plant_CoverGrass1#519@-9_4", "SM_BC_Plant_CoverGrass2#525@-12_4", "SM_BC_Plant_CoverGrass2#525@-11_4", "SM_BC_Plant_CoverGrass2#525@-10_4", "SM_BC_Plant_CoverGrass2#525@-9_4"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-12_4", "SM_BC_Plant_CoverGrass0#468@-11_4", "SM_BC_Plant_CoverGrass0#468@-10_4", "SM_BC_Plant_CoverGrass0#468@-9_4", "SM_BC_Plant_CoverGrass1#474@-12_4", "SM_BC_Plant_CoverGrass1#474@-11_4", "SM_BC_Plant_CoverGrass1#474@-10_4", "SM_BC_Plant_CoverGrass1#474@-9_4", "SM_BC_Plant_CoverGrass2#480@-12_4", "SM_BC_Plant_CoverGrass2#480@-11_4", "SM_BC_Plant_CoverGrass2#480@-10_4", "SM_BC_Plant_CoverGrass2#480@-9_4"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m3-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m3-m1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-11_-1", "SM_BC_Plant_CoverGrass0#513@-9_-2", "SM_BC_Plant_CoverGrass0#513@-9_-1", "SM_BC_Plant_CoverGrass1#519@-11_-1", "SM_BC_Plant_CoverGrass1#519@-10_-1", "SM_BC_Plant_CoverGrass1#519@-9_-2", "SM_BC_Plant_CoverGrass1#519@-9_-1", "SM_BC_Plant_CoverGrass2#525@-11_-1", "SM_BC_Plant_CoverGrass2#525@-10_-1", "SM_BC_Plant_CoverGrass2#525@-9_-2", "SM_BC_Plant_CoverGrass2#525@-9_-1"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-11_-1", "SM_BC_Plant_CoverGrass0#468@-9_-2", "SM_BC_Plant_CoverGrass0#468@-9_-1", "SM_BC_Plant_CoverGrass1#474@-11_-1", "SM_BC_Plant_CoverGrass1#474@-10_-1", "SM_BC_Plant_CoverGrass1#474@-9_-2", "SM_BC_Plant_CoverGrass1#474@-9_-1", "SM_BC_Plant_CoverGrass2#480@-11_-1", "SM_BC_Plant_CoverGrass2#480@-10_-1", "SM_BC_Plant_CoverGrass2#480@-9_-2", "SM_BC_Plant_CoverGrass2#480@-9_-1"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m3-m1 (11 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m4-0"
-groups = ["SM_BC_Plant_CoverGrass0#513@-16_0", "SM_BC_Plant_CoverGrass0#513@-16_1", "SM_BC_Plant_CoverGrass0#513@-16_2", "SM_BC_Plant_CoverGrass0#513@-16_3", "SM_BC_Plant_CoverGrass0#513@-15_0", "SM_BC_Plant_CoverGrass0#513@-15_1", "SM_BC_Plant_CoverGrass0#513@-15_2", "SM_BC_Plant_CoverGrass0#513@-15_3", "SM_BC_Plant_CoverGrass0#513@-14_0", "SM_BC_Plant_CoverGrass0#513@-14_1", "SM_BC_Plant_CoverGrass0#513@-14_2", "SM_BC_Plant_CoverGrass0#513@-14_3", "SM_BC_Plant_CoverGrass0#513@-13_0", "SM_BC_Plant_CoverGrass0#513@-13_1", "SM_BC_Plant_CoverGrass0#513@-13_2", "SM_BC_Plant_CoverGrass0#513@-13_3", "SM_BC_Plant_CoverGrass1#519@-16_0", "SM_BC_Plant_CoverGrass1#519@-16_1", "SM_BC_Plant_CoverGrass1#519@-16_2", "SM_BC_Plant_CoverGrass1#519@-16_3", "SM_BC_Plant_CoverGrass1#519@-15_0", "SM_BC_Plant_CoverGrass1#519@-15_1", "SM_BC_Plant_CoverGrass1#519@-15_2", "SM_BC_Plant_CoverGrass1#519@-15_3", "SM_BC_Plant_CoverGrass1#519@-14_0", "SM_BC_Plant_CoverGrass1#519@-14_1", "SM_BC_Plant_CoverGrass1#519@-14_2", "SM_BC_Plant_CoverGrass1#519@-14_3", "SM_BC_Plant_CoverGrass1#519@-13_0", "SM_BC_Plant_CoverGrass1#519@-13_1", "SM_BC_Plant_CoverGrass1#519@-13_2", "SM_BC_Plant_CoverGrass1#519@-13_3", "SM_BC_Plant_CoverGrass2#525@-16_0", "SM_BC_Plant_CoverGrass2#525@-16_1", "SM_BC_Plant_CoverGrass2#525@-16_2", "SM_BC_Plant_CoverGrass2#525@-16_3", "SM_BC_Plant_CoverGrass2#525@-15_0", "SM_BC_Plant_CoverGrass2#525@-15_1", "SM_BC_Plant_CoverGrass2#525@-15_2", "SM_BC_Plant_CoverGrass2#525@-15_3", "SM_BC_Plant_CoverGrass2#525@-14_0", "SM_BC_Plant_CoverGrass2#525@-14_1", "SM_BC_Plant_CoverGrass2#525@-14_2", "SM_BC_Plant_CoverGrass2#525@-14_3", "SM_BC_Plant_CoverGrass2#525@-13_0", "SM_BC_Plant_CoverGrass2#525@-13_1", "SM_BC_Plant_CoverGrass2#525@-13_2", "SM_BC_Plant_CoverGrass2#525@-13_3"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-16_0", "SM_BC_Plant_CoverGrass0#468@-16_1", "SM_BC_Plant_CoverGrass0#468@-16_2", "SM_BC_Plant_CoverGrass0#468@-16_3", "SM_BC_Plant_CoverGrass0#468@-15_0", "SM_BC_Plant_CoverGrass0#468@-15_1", "SM_BC_Plant_CoverGrass0#468@-15_2", "SM_BC_Plant_CoverGrass0#468@-15_3", "SM_BC_Plant_CoverGrass0#468@-14_0", "SM_BC_Plant_CoverGrass0#468@-14_1", "SM_BC_Plant_CoverGrass0#468@-14_2", "SM_BC_Plant_CoverGrass0#468@-14_3", "SM_BC_Plant_CoverGrass0#468@-13_0", "SM_BC_Plant_CoverGrass0#468@-13_1", "SM_BC_Plant_CoverGrass0#468@-13_2", "SM_BC_Plant_CoverGrass0#468@-13_3", "SM_BC_Plant_CoverGrass1#474@-16_0", "SM_BC_Plant_CoverGrass1#474@-16_1", "SM_BC_Plant_CoverGrass1#474@-16_2", "SM_BC_Plant_CoverGrass1#474@-16_3", "SM_BC_Plant_CoverGrass1#474@-15_0", "SM_BC_Plant_CoverGrass1#474@-15_1", "SM_BC_Plant_CoverGrass1#474@-15_2", "SM_BC_Plant_CoverGrass1#474@-15_3", "SM_BC_Plant_CoverGrass1#474@-14_0", "SM_BC_Plant_CoverGrass1#474@-14_1", "SM_BC_Plant_CoverGrass1#474@-14_2", "SM_BC_Plant_CoverGrass1#474@-14_3", "SM_BC_Plant_CoverGrass1#474@-13_0", "SM_BC_Plant_CoverGrass1#474@-13_1", "SM_BC_Plant_CoverGrass1#474@-13_2", "SM_BC_Plant_CoverGrass1#474@-13_3", "SM_BC_Plant_CoverGrass2#480@-16_0", "SM_BC_Plant_CoverGrass2#480@-16_1", "SM_BC_Plant_CoverGrass2#480@-16_2", "SM_BC_Plant_CoverGrass2#480@-16_3", "SM_BC_Plant_CoverGrass2#480@-15_0", "SM_BC_Plant_CoverGrass2#480@-15_1", "SM_BC_Plant_CoverGrass2#480@-15_2", "SM_BC_Plant_CoverGrass2#480@-15_3", "SM_BC_Plant_CoverGrass2#480@-14_0", "SM_BC_Plant_CoverGrass2#480@-14_1", "SM_BC_Plant_CoverGrass2#480@-14_2", "SM_BC_Plant_CoverGrass2#480@-14_3", "SM_BC_Plant_CoverGrass2#480@-13_0", "SM_BC_Plant_CoverGrass2#480@-13_1", "SM_BC_Plant_CoverGrass2#480@-13_2", "SM_BC_Plant_CoverGrass2#480@-13_3"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m4-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m4-1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-16_4", "SM_BC_Plant_CoverGrass0#513@-15_4", "SM_BC_Plant_CoverGrass0#513@-14_4", "SM_BC_Plant_CoverGrass0#513@-13_4", "SM_BC_Plant_CoverGrass1#519@-16_4", "SM_BC_Plant_CoverGrass1#519@-15_4", "SM_BC_Plant_CoverGrass1#519@-14_4", "SM_BC_Plant_CoverGrass1#519@-13_4", "SM_BC_Plant_CoverGrass2#525@-16_4", "SM_BC_Plant_CoverGrass2#525@-15_4", "SM_BC_Plant_CoverGrass2#525@-14_4", "SM_BC_Plant_CoverGrass2#525@-13_4"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-16_4", "SM_BC_Plant_CoverGrass0#468@-15_4", "SM_BC_Plant_CoverGrass0#468@-14_4", "SM_BC_Plant_CoverGrass0#468@-13_4", "SM_BC_Plant_CoverGrass1#474@-16_4", "SM_BC_Plant_CoverGrass1#474@-15_4", "SM_BC_Plant_CoverGrass1#474@-14_4", "SM_BC_Plant_CoverGrass1#474@-13_4", "SM_BC_Plant_CoverGrass2#480@-16_4", "SM_BC_Plant_CoverGrass2#480@-15_4", "SM_BC_Plant_CoverGrass2#480@-14_4", "SM_BC_Plant_CoverGrass2#480@-13_4"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m4-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m4-m1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-16_-4", "SM_BC_Plant_CoverGrass0#513@-16_-3", "SM_BC_Plant_CoverGrass0#513@-16_-2", "SM_BC_Plant_CoverGrass0#513@-16_-1", "SM_BC_Plant_CoverGrass0#513@-15_-1", "SM_BC_Plant_CoverGrass0#513@-14_-1", "SM_BC_Plant_CoverGrass0#513@-13_-1", "SM_BC_Plant_CoverGrass1#519@-16_-4", "SM_BC_Plant_CoverGrass1#519@-16_-3", "SM_BC_Plant_CoverGrass1#519@-16_-2", "SM_BC_Plant_CoverGrass1#519@-16_-1", "SM_BC_Plant_CoverGrass1#519@-15_-1", "SM_BC_Plant_CoverGrass1#519@-13_-1", "SM_BC_Plant_CoverGrass2#525@-16_-4", "SM_BC_Plant_CoverGrass2#525@-16_-3", "SM_BC_Plant_CoverGrass2#525@-16_-2", "SM_BC_Plant_CoverGrass2#525@-16_-1", "SM_BC_Plant_CoverGrass2#525@-15_-1", "SM_BC_Plant_CoverGrass2#525@-14_-1"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-16_-4", "SM_BC_Plant_CoverGrass0#468@-16_-3", "SM_BC_Plant_CoverGrass0#468@-16_-2", "SM_BC_Plant_CoverGrass0#468@-16_-1", "SM_BC_Plant_CoverGrass0#468@-15_-1", "SM_BC_Plant_CoverGrass0#468@-14_-1", "SM_BC_Plant_CoverGrass0#468@-13_-1", "SM_BC_Plant_CoverGrass1#474@-16_-4", "SM_BC_Plant_CoverGrass1#474@-16_-3", "SM_BC_Plant_CoverGrass1#474@-16_-2", "SM_BC_Plant_CoverGrass1#474@-16_-1", "SM_BC_Plant_CoverGrass1#474@-15_-1", "SM_BC_Plant_CoverGrass1#474@-13_-1", "SM_BC_Plant_CoverGrass2#480@-16_-4", "SM_BC_Plant_CoverGrass2#480@-16_-3", "SM_BC_Plant_CoverGrass2#480@-16_-2", "SM_BC_Plant_CoverGrass2#480@-16_-1", "SM_BC_Plant_CoverGrass2#480@-15_-1", "SM_BC_Plant_CoverGrass2#480@-14_-1"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m4-m1 (19 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m5-0"
-groups = ["SM_BC_Plant_CoverGrass0#513@-20_0", "SM_BC_Plant_CoverGrass0#513@-20_1", "SM_BC_Plant_CoverGrass0#513@-20_2", "SM_BC_Plant_CoverGrass0#513@-20_3", "SM_BC_Plant_CoverGrass0#513@-19_0", "SM_BC_Plant_CoverGrass0#513@-19_1", "SM_BC_Plant_CoverGrass0#513@-19_2", "SM_BC_Plant_CoverGrass0#513@-19_3", "SM_BC_Plant_CoverGrass0#513@-18_0", "SM_BC_Plant_CoverGrass0#513@-18_1", "SM_BC_Plant_CoverGrass0#513@-18_2", "SM_BC_Plant_CoverGrass0#513@-18_3", "SM_BC_Plant_CoverGrass0#513@-17_0", "SM_BC_Plant_CoverGrass0#513@-17_1", "SM_BC_Plant_CoverGrass0#513@-17_2", "SM_BC_Plant_CoverGrass0#513@-17_3", "SM_BC_Plant_CoverGrass1#519@-20_0", "SM_BC_Plant_CoverGrass1#519@-20_1", "SM_BC_Plant_CoverGrass1#519@-20_2", "SM_BC_Plant_CoverGrass1#519@-20_3", "SM_BC_Plant_CoverGrass1#519@-19_0", "SM_BC_Plant_CoverGrass1#519@-19_1", "SM_BC_Plant_CoverGrass1#519@-19_2", "SM_BC_Plant_CoverGrass1#519@-19_3", "SM_BC_Plant_CoverGrass1#519@-18_0", "SM_BC_Plant_CoverGrass1#519@-18_1", "SM_BC_Plant_CoverGrass1#519@-18_2", "SM_BC_Plant_CoverGrass1#519@-18_3", "SM_BC_Plant_CoverGrass1#519@-17_0", "SM_BC_Plant_CoverGrass1#519@-17_1", "SM_BC_Plant_CoverGrass1#519@-17_2", "SM_BC_Plant_CoverGrass1#519@-17_3", "SM_BC_Plant_CoverGrass2#525@-20_0", "SM_BC_Plant_CoverGrass2#525@-20_1", "SM_BC_Plant_CoverGrass2#525@-20_2", "SM_BC_Plant_CoverGrass2#525@-20_3", "SM_BC_Plant_CoverGrass2#525@-19_0", "SM_BC_Plant_CoverGrass2#525@-19_1", "SM_BC_Plant_CoverGrass2#525@-19_2", "SM_BC_Plant_CoverGrass2#525@-19_3", "SM_BC_Plant_CoverGrass2#525@-18_0", "SM_BC_Plant_CoverGrass2#525@-18_1", "SM_BC_Plant_CoverGrass2#525@-18_2", "SM_BC_Plant_CoverGrass2#525@-18_3", "SM_BC_Plant_CoverGrass2#525@-17_0", "SM_BC_Plant_CoverGrass2#525@-17_1", "SM_BC_Plant_CoverGrass2#525@-17_2", "SM_BC_Plant_CoverGrass2#525@-17_3"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-20_0", "SM_BC_Plant_CoverGrass0#468@-20_1", "SM_BC_Plant_CoverGrass0#468@-20_2", "SM_BC_Plant_CoverGrass0#468@-20_3", "SM_BC_Plant_CoverGrass0#468@-19_0", "SM_BC_Plant_CoverGrass0#468@-19_1", "SM_BC_Plant_CoverGrass0#468@-19_2", "SM_BC_Plant_CoverGrass0#468@-19_3", "SM_BC_Plant_CoverGrass0#468@-18_0", "SM_BC_Plant_CoverGrass0#468@-18_1", "SM_BC_Plant_CoverGrass0#468@-18_2", "SM_BC_Plant_CoverGrass0#468@-18_3", "SM_BC_Plant_CoverGrass0#468@-17_0", "SM_BC_Plant_CoverGrass0#468@-17_1", "SM_BC_Plant_CoverGrass0#468@-17_2", "SM_BC_Plant_CoverGrass0#468@-17_3", "SM_BC_Plant_CoverGrass1#474@-20_0", "SM_BC_Plant_CoverGrass1#474@-20_1", "SM_BC_Plant_CoverGrass1#474@-20_2", "SM_BC_Plant_CoverGrass1#474@-20_3", "SM_BC_Plant_CoverGrass1#474@-19_0", "SM_BC_Plant_CoverGrass1#474@-19_1", "SM_BC_Plant_CoverGrass1#474@-19_2", "SM_BC_Plant_CoverGrass1#474@-19_3", "SM_BC_Plant_CoverGrass1#474@-18_0", "SM_BC_Plant_CoverGrass1#474@-18_1", "SM_BC_Plant_CoverGrass1#474@-18_2", "SM_BC_Plant_CoverGrass1#474@-18_3", "SM_BC_Plant_CoverGrass1#474@-17_0", "SM_BC_Plant_CoverGrass1#474@-17_1", "SM_BC_Plant_CoverGrass1#474@-17_2", "SM_BC_Plant_CoverGrass1#474@-17_3", "SM_BC_Plant_CoverGrass2#480@-20_0", "SM_BC_Plant_CoverGrass2#480@-20_1", "SM_BC_Plant_CoverGrass2#480@-20_2", "SM_BC_Plant_CoverGrass2#480@-20_3", "SM_BC_Plant_CoverGrass2#480@-19_0", "SM_BC_Plant_CoverGrass2#480@-19_1", "SM_BC_Plant_CoverGrass2#480@-19_2", "SM_BC_Plant_CoverGrass2#480@-19_3", "SM_BC_Plant_CoverGrass2#480@-18_0", "SM_BC_Plant_CoverGrass2#480@-18_1", "SM_BC_Plant_CoverGrass2#480@-18_2", "SM_BC_Plant_CoverGrass2#480@-18_3", "SM_BC_Plant_CoverGrass2#480@-17_0", "SM_BC_Plant_CoverGrass2#480@-17_1", "SM_BC_Plant_CoverGrass2#480@-17_2", "SM_BC_Plant_CoverGrass2#480@-17_3"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m5-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m5-1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-20_4", "SM_BC_Plant_CoverGrass0#513@-19_4", "SM_BC_Plant_CoverGrass0#513@-18_4", "SM_BC_Plant_CoverGrass0#513@-17_4", "SM_BC_Plant_CoverGrass1#519@-20_4", "SM_BC_Plant_CoverGrass1#519@-19_4", "SM_BC_Plant_CoverGrass1#519@-18_4", "SM_BC_Plant_CoverGrass1#519@-17_4", "SM_BC_Plant_CoverGrass2#525@-20_4", "SM_BC_Plant_CoverGrass2#525@-19_4", "SM_BC_Plant_CoverGrass2#525@-18_4", "SM_BC_Plant_CoverGrass2#525@-17_4"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-20_4", "SM_BC_Plant_CoverGrass0#468@-19_4", "SM_BC_Plant_CoverGrass0#468@-18_4", "SM_BC_Plant_CoverGrass0#468@-17_4", "SM_BC_Plant_CoverGrass1#474@-20_4", "SM_BC_Plant_CoverGrass1#474@-19_4", "SM_BC_Plant_CoverGrass1#474@-18_4", "SM_BC_Plant_CoverGrass1#474@-17_4", "SM_BC_Plant_CoverGrass2#480@-20_4", "SM_BC_Plant_CoverGrass2#480@-19_4", "SM_BC_Plant_CoverGrass2#480@-18_4", "SM_BC_Plant_CoverGrass2#480@-17_4"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m5-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m5-m1"
-groups = ["SM_BC_Plant_CoverGrass0#513@-20_-1", "SM_BC_Plant_CoverGrass0#513@-19_-4", "SM_BC_Plant_CoverGrass0#513@-19_-3", "SM_BC_Plant_CoverGrass0#513@-19_-2", "SM_BC_Plant_CoverGrass0#513@-19_-1", "SM_BC_Plant_CoverGrass0#513@-18_-4", "SM_BC_Plant_CoverGrass0#513@-18_-3", "SM_BC_Plant_CoverGrass0#513@-18_-2", "SM_BC_Plant_CoverGrass0#513@-18_-1", "SM_BC_Plant_CoverGrass0#513@-17_-4", "SM_BC_Plant_CoverGrass0#513@-17_-3", "SM_BC_Plant_CoverGrass0#513@-17_-2", "SM_BC_Plant_CoverGrass0#513@-17_-1", "SM_BC_Plant_CoverGrass1#519@-20_-1", "SM_BC_Plant_CoverGrass1#519@-19_-4", "SM_BC_Plant_CoverGrass1#519@-19_-3", "SM_BC_Plant_CoverGrass1#519@-19_-2", "SM_BC_Plant_CoverGrass1#519@-19_-1", "SM_BC_Plant_CoverGrass1#519@-18_-4", "SM_BC_Plant_CoverGrass1#519@-18_-3", "SM_BC_Plant_CoverGrass1#519@-18_-2", "SM_BC_Plant_CoverGrass1#519@-18_-1", "SM_BC_Plant_CoverGrass1#519@-17_-4", "SM_BC_Plant_CoverGrass1#519@-17_-3", "SM_BC_Plant_CoverGrass1#519@-17_-2", "SM_BC_Plant_CoverGrass1#519@-17_-1", "SM_BC_Plant_CoverGrass2#525@-20_-1", "SM_BC_Plant_CoverGrass2#525@-19_-4", "SM_BC_Plant_CoverGrass2#525@-19_-3", "SM_BC_Plant_CoverGrass2#525@-19_-2", "SM_BC_Plant_CoverGrass2#525@-19_-1", "SM_BC_Plant_CoverGrass2#525@-18_-4", "SM_BC_Plant_CoverGrass2#525@-18_-3", "SM_BC_Plant_CoverGrass2#525@-18_-2", "SM_BC_Plant_CoverGrass2#525@-18_-1", "SM_BC_Plant_CoverGrass2#525@-17_-4", "SM_BC_Plant_CoverGrass2#525@-17_-3", "SM_BC_Plant_CoverGrass2#525@-17_-2", "SM_BC_Plant_CoverGrass2#525@-17_-1"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-20_-1", "SM_BC_Plant_CoverGrass0#468@-19_-4", "SM_BC_Plant_CoverGrass0#468@-19_-3", "SM_BC_Plant_CoverGrass0#468@-19_-2", "SM_BC_Plant_CoverGrass0#468@-19_-1", "SM_BC_Plant_CoverGrass0#468@-18_-4", "SM_BC_Plant_CoverGrass0#468@-18_-3", "SM_BC_Plant_CoverGrass0#468@-18_-2", "SM_BC_Plant_CoverGrass0#468@-18_-1", "SM_BC_Plant_CoverGrass0#468@-17_-4", "SM_BC_Plant_CoverGrass0#468@-17_-3", "SM_BC_Plant_CoverGrass0#468@-17_-2", "SM_BC_Plant_CoverGrass0#468@-17_-1", "SM_BC_Plant_CoverGrass1#474@-20_-1", "SM_BC_Plant_CoverGrass1#474@-19_-4", "SM_BC_Plant_CoverGrass1#474@-19_-3", "SM_BC_Plant_CoverGrass1#474@-19_-2", "SM_BC_Plant_CoverGrass1#474@-19_-1", "SM_BC_Plant_CoverGrass1#474@-18_-4", "SM_BC_Plant_CoverGrass1#474@-18_-3", "SM_BC_Plant_CoverGrass1#474@-18_-2", "SM_BC_Plant_CoverGrass1#474@-18_-1", "SM_BC_Plant_CoverGrass1#474@-17_-4", "SM_BC_Plant_CoverGrass1#474@-17_-3", "SM_BC_Plant_CoverGrass1#474@-17_-2", "SM_BC_Plant_CoverGrass1#474@-17_-1", "SM_BC_Plant_CoverGrass2#480@-20_-1", "SM_BC_Plant_CoverGrass2#480@-19_-4", "SM_BC_Plant_CoverGrass2#480@-19_-3", "SM_BC_Plant_CoverGrass2#480@-19_-2", "SM_BC_Plant_CoverGrass2#480@-19_-1", "SM_BC_Plant_CoverGrass2#480@-18_-4", "SM_BC_Plant_CoverGrass2#480@-18_-3", "SM_BC_Plant_CoverGrass2#480@-18_-2", "SM_BC_Plant_CoverGrass2#480@-18_-1", "SM_BC_Plant_CoverGrass2#480@-17_-4", "SM_BC_Plant_CoverGrass2#480@-17_-3", "SM_BC_Plant_CoverGrass2#480@-17_-2", "SM_BC_Plant_CoverGrass2#480@-17_-1"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m5-m1 (39 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-grass-m5-m2"
-groups = ["SM_BC_Plant_CoverGrass0#513@-19_-5", "SM_BC_Plant_CoverGrass0#513@-18_-7", "SM_BC_Plant_CoverGrass0#513@-18_-6", "SM_BC_Plant_CoverGrass0#513@-18_-5", "SM_BC_Plant_CoverGrass0#513@-17_-7", "SM_BC_Plant_CoverGrass0#513@-17_-6", "SM_BC_Plant_CoverGrass0#513@-17_-5", "SM_BC_Plant_CoverGrass1#519@-18_-7", "SM_BC_Plant_CoverGrass1#519@-18_-6", "SM_BC_Plant_CoverGrass1#519@-18_-5", "SM_BC_Plant_CoverGrass1#519@-17_-7", "SM_BC_Plant_CoverGrass1#519@-17_-6", "SM_BC_Plant_CoverGrass1#519@-17_-5", "SM_BC_Plant_CoverGrass2#525@-19_-5", "SM_BC_Plant_CoverGrass2#525@-18_-7", "SM_BC_Plant_CoverGrass2#525@-18_-6", "SM_BC_Plant_CoverGrass2#525@-18_-5", "SM_BC_Plant_CoverGrass2#525@-17_-7", "SM_BC_Plant_CoverGrass2#525@-17_-6", "SM_BC_Plant_CoverGrass2#525@-17_-5"]
+groups = ["SM_BC_Plant_CoverGrass0#468@-19_-5", "SM_BC_Plant_CoverGrass0#468@-18_-7", "SM_BC_Plant_CoverGrass0#468@-18_-6", "SM_BC_Plant_CoverGrass0#468@-18_-5", "SM_BC_Plant_CoverGrass0#468@-17_-7", "SM_BC_Plant_CoverGrass0#468@-17_-6", "SM_BC_Plant_CoverGrass0#468@-17_-5", "SM_BC_Plant_CoverGrass1#474@-18_-7", "SM_BC_Plant_CoverGrass1#474@-18_-6", "SM_BC_Plant_CoverGrass1#474@-18_-5", "SM_BC_Plant_CoverGrass1#474@-17_-7", "SM_BC_Plant_CoverGrass1#474@-17_-6", "SM_BC_Plant_CoverGrass1#474@-17_-5", "SM_BC_Plant_CoverGrass2#480@-19_-5", "SM_BC_Plant_CoverGrass2#480@-18_-7", "SM_BC_Plant_CoverGrass2#480@-18_-6", "SM_BC_Plant_CoverGrass2#480@-18_-5", "SM_BC_Plant_CoverGrass2#480@-17_-7", "SM_BC_Plant_CoverGrass2#480@-17_-6", "SM_BC_Plant_CoverGrass2#480@-17_-5"]
 model = "adopted/brinecove/plant-cover-grass"
 about = "Brine Cove plant-cover-grass-m5-m2 (20 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf"
-groups = ["SM_BC_Plant_CoverLeaf0#516", "SM_BC_Plant_CoverLeaf1#522", "SM_BC_Plant_CoverLeaf2#528"]
+groups = ["SM_BC_Plant_CoverLeaf0#471", "SM_BC_Plant_CoverLeaf1#477", "SM_BC_Plant_CoverLeaf2#483"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf (3 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m2-0"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-8_0", "SM_BC_Plant_CoverLeaf0#515@-8_1", "SM_BC_Plant_CoverLeaf0#515@-8_2", "SM_BC_Plant_CoverLeaf0#515@-8_3", "SM_BC_Plant_CoverLeaf0#515@-7_0", "SM_BC_Plant_CoverLeaf0#515@-7_1", "SM_BC_Plant_CoverLeaf0#515@-7_2", "SM_BC_Plant_CoverLeaf0#515@-7_3", "SM_BC_Plant_CoverLeaf0#515@-6_0", "SM_BC_Plant_CoverLeaf0#515@-6_1", "SM_BC_Plant_CoverLeaf0#515@-6_2", "SM_BC_Plant_CoverLeaf0#515@-6_3", "SM_BC_Plant_CoverLeaf1#521@-8_0", "SM_BC_Plant_CoverLeaf1#521@-8_1", "SM_BC_Plant_CoverLeaf1#521@-8_2", "SM_BC_Plant_CoverLeaf1#521@-8_3", "SM_BC_Plant_CoverLeaf1#521@-7_0", "SM_BC_Plant_CoverLeaf1#521@-7_1", "SM_BC_Plant_CoverLeaf1#521@-7_2", "SM_BC_Plant_CoverLeaf1#521@-7_3", "SM_BC_Plant_CoverLeaf1#521@-6_0", "SM_BC_Plant_CoverLeaf1#521@-6_1", "SM_BC_Plant_CoverLeaf1#521@-6_2", "SM_BC_Plant_CoverLeaf1#521@-6_3", "SM_BC_Plant_CoverLeaf2#527@-8_0", "SM_BC_Plant_CoverLeaf2#527@-8_1", "SM_BC_Plant_CoverLeaf2#527@-8_2", "SM_BC_Plant_CoverLeaf2#527@-8_3", "SM_BC_Plant_CoverLeaf2#527@-7_0", "SM_BC_Plant_CoverLeaf2#527@-7_1", "SM_BC_Plant_CoverLeaf2#527@-7_2", "SM_BC_Plant_CoverLeaf2#527@-7_3", "SM_BC_Plant_CoverLeaf2#527@-6_0", "SM_BC_Plant_CoverLeaf2#527@-6_1", "SM_BC_Plant_CoverLeaf2#527@-6_2", "SM_BC_Plant_CoverLeaf2#527@-6_3"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-8_0", "SM_BC_Plant_CoverLeaf0#470@-8_1", "SM_BC_Plant_CoverLeaf0#470@-8_2", "SM_BC_Plant_CoverLeaf0#470@-8_3", "SM_BC_Plant_CoverLeaf0#470@-7_0", "SM_BC_Plant_CoverLeaf0#470@-7_1", "SM_BC_Plant_CoverLeaf0#470@-7_2", "SM_BC_Plant_CoverLeaf0#470@-7_3", "SM_BC_Plant_CoverLeaf0#470@-6_0", "SM_BC_Plant_CoverLeaf0#470@-6_1", "SM_BC_Plant_CoverLeaf0#470@-6_2", "SM_BC_Plant_CoverLeaf0#470@-6_3", "SM_BC_Plant_CoverLeaf1#476@-8_0", "SM_BC_Plant_CoverLeaf1#476@-8_1", "SM_BC_Plant_CoverLeaf1#476@-8_2", "SM_BC_Plant_CoverLeaf1#476@-8_3", "SM_BC_Plant_CoverLeaf1#476@-7_0", "SM_BC_Plant_CoverLeaf1#476@-7_1", "SM_BC_Plant_CoverLeaf1#476@-7_2", "SM_BC_Plant_CoverLeaf1#476@-7_3", "SM_BC_Plant_CoverLeaf1#476@-6_0", "SM_BC_Plant_CoverLeaf1#476@-6_1", "SM_BC_Plant_CoverLeaf1#476@-6_2", "SM_BC_Plant_CoverLeaf1#476@-6_3", "SM_BC_Plant_CoverLeaf2#482@-8_0", "SM_BC_Plant_CoverLeaf2#482@-8_1", "SM_BC_Plant_CoverLeaf2#482@-8_2", "SM_BC_Plant_CoverLeaf2#482@-8_3", "SM_BC_Plant_CoverLeaf2#482@-7_0", "SM_BC_Plant_CoverLeaf2#482@-7_1", "SM_BC_Plant_CoverLeaf2#482@-7_2", "SM_BC_Plant_CoverLeaf2#482@-7_3", "SM_BC_Plant_CoverLeaf2#482@-6_0", "SM_BC_Plant_CoverLeaf2#482@-6_1", "SM_BC_Plant_CoverLeaf2#482@-6_2", "SM_BC_Plant_CoverLeaf2#482@-6_3"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m2-0 (36 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m2-1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-8_4", "SM_BC_Plant_CoverLeaf0#515@-7_4", "SM_BC_Plant_CoverLeaf0#515@-6_4", "SM_BC_Plant_CoverLeaf1#521@-8_4", "SM_BC_Plant_CoverLeaf1#521@-7_4", "SM_BC_Plant_CoverLeaf1#521@-6_4", "SM_BC_Plant_CoverLeaf2#527@-8_4", "SM_BC_Plant_CoverLeaf2#527@-7_4", "SM_BC_Plant_CoverLeaf2#527@-6_4"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-8_4", "SM_BC_Plant_CoverLeaf0#470@-7_4", "SM_BC_Plant_CoverLeaf0#470@-6_4", "SM_BC_Plant_CoverLeaf1#476@-8_4", "SM_BC_Plant_CoverLeaf1#476@-7_4", "SM_BC_Plant_CoverLeaf1#476@-6_4", "SM_BC_Plant_CoverLeaf2#482@-8_4", "SM_BC_Plant_CoverLeaf2#482@-7_4", "SM_BC_Plant_CoverLeaf2#482@-6_4"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m2-1 (9 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m2-m1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-8_-4", "SM_BC_Plant_CoverLeaf0#515@-8_-3", "SM_BC_Plant_CoverLeaf0#515@-8_-2", "SM_BC_Plant_CoverLeaf0#515@-8_-1", "SM_BC_Plant_CoverLeaf0#515@-7_-4", "SM_BC_Plant_CoverLeaf0#515@-7_-3", "SM_BC_Plant_CoverLeaf0#515@-7_-2", "SM_BC_Plant_CoverLeaf0#515@-7_-1", "SM_BC_Plant_CoverLeaf0#515@-6_-4", "SM_BC_Plant_CoverLeaf0#515@-6_-3", "SM_BC_Plant_CoverLeaf0#515@-6_-2", "SM_BC_Plant_CoverLeaf0#515@-6_-1", "SM_BC_Plant_CoverLeaf1#521@-8_-4", "SM_BC_Plant_CoverLeaf1#521@-8_-3", "SM_BC_Plant_CoverLeaf1#521@-8_-2", "SM_BC_Plant_CoverLeaf1#521@-8_-1", "SM_BC_Plant_CoverLeaf1#521@-7_-4", "SM_BC_Plant_CoverLeaf1#521@-7_-3", "SM_BC_Plant_CoverLeaf1#521@-7_-2", "SM_BC_Plant_CoverLeaf1#521@-7_-1", "SM_BC_Plant_CoverLeaf1#521@-6_-4", "SM_BC_Plant_CoverLeaf1#521@-6_-3", "SM_BC_Plant_CoverLeaf1#521@-6_-2", "SM_BC_Plant_CoverLeaf1#521@-6_-1", "SM_BC_Plant_CoverLeaf2#527@-8_-4", "SM_BC_Plant_CoverLeaf2#527@-8_-3", "SM_BC_Plant_CoverLeaf2#527@-8_-2", "SM_BC_Plant_CoverLeaf2#527@-8_-1", "SM_BC_Plant_CoverLeaf2#527@-7_-4", "SM_BC_Plant_CoverLeaf2#527@-7_-3", "SM_BC_Plant_CoverLeaf2#527@-7_-2", "SM_BC_Plant_CoverLeaf2#527@-7_-1", "SM_BC_Plant_CoverLeaf2#527@-6_-4", "SM_BC_Plant_CoverLeaf2#527@-6_-3", "SM_BC_Plant_CoverLeaf2#527@-6_-2", "SM_BC_Plant_CoverLeaf2#527@-6_-1"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-8_-4", "SM_BC_Plant_CoverLeaf0#470@-8_-3", "SM_BC_Plant_CoverLeaf0#470@-8_-2", "SM_BC_Plant_CoverLeaf0#470@-8_-1", "SM_BC_Plant_CoverLeaf0#470@-7_-4", "SM_BC_Plant_CoverLeaf0#470@-7_-3", "SM_BC_Plant_CoverLeaf0#470@-7_-2", "SM_BC_Plant_CoverLeaf0#470@-7_-1", "SM_BC_Plant_CoverLeaf0#470@-6_-4", "SM_BC_Plant_CoverLeaf0#470@-6_-3", "SM_BC_Plant_CoverLeaf0#470@-6_-2", "SM_BC_Plant_CoverLeaf0#470@-6_-1", "SM_BC_Plant_CoverLeaf1#476@-8_-4", "SM_BC_Plant_CoverLeaf1#476@-8_-3", "SM_BC_Plant_CoverLeaf1#476@-8_-2", "SM_BC_Plant_CoverLeaf1#476@-8_-1", "SM_BC_Plant_CoverLeaf1#476@-7_-4", "SM_BC_Plant_CoverLeaf1#476@-7_-3", "SM_BC_Plant_CoverLeaf1#476@-7_-2", "SM_BC_Plant_CoverLeaf1#476@-7_-1", "SM_BC_Plant_CoverLeaf1#476@-6_-4", "SM_BC_Plant_CoverLeaf1#476@-6_-3", "SM_BC_Plant_CoverLeaf1#476@-6_-2", "SM_BC_Plant_CoverLeaf1#476@-6_-1", "SM_BC_Plant_CoverLeaf2#482@-8_-4", "SM_BC_Plant_CoverLeaf2#482@-8_-3", "SM_BC_Plant_CoverLeaf2#482@-8_-2", "SM_BC_Plant_CoverLeaf2#482@-8_-1", "SM_BC_Plant_CoverLeaf2#482@-7_-4", "SM_BC_Plant_CoverLeaf2#482@-7_-3", "SM_BC_Plant_CoverLeaf2#482@-7_-2", "SM_BC_Plant_CoverLeaf2#482@-7_-1", "SM_BC_Plant_CoverLeaf2#482@-6_-4", "SM_BC_Plant_CoverLeaf2#482@-6_-3", "SM_BC_Plant_CoverLeaf2#482@-6_-2", "SM_BC_Plant_CoverLeaf2#482@-6_-1"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m2-m1 (36 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m2-m2"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-8_-6", "SM_BC_Plant_CoverLeaf0#515@-8_-5", "SM_BC_Plant_CoverLeaf0#515@-7_-7", "SM_BC_Plant_CoverLeaf0#515@-7_-6", "SM_BC_Plant_CoverLeaf0#515@-7_-5", "SM_BC_Plant_CoverLeaf0#515@-6_-6", "SM_BC_Plant_CoverLeaf0#515@-6_-5", "SM_BC_Plant_CoverLeaf1#521@-8_-6", "SM_BC_Plant_CoverLeaf1#521@-8_-5", "SM_BC_Plant_CoverLeaf1#521@-7_-7", "SM_BC_Plant_CoverLeaf1#521@-7_-6", "SM_BC_Plant_CoverLeaf1#521@-7_-5", "SM_BC_Plant_CoverLeaf1#521@-6_-6", "SM_BC_Plant_CoverLeaf1#521@-6_-5", "SM_BC_Plant_CoverLeaf2#527@-8_-6", "SM_BC_Plant_CoverLeaf2#527@-8_-5", "SM_BC_Plant_CoverLeaf2#527@-7_-7", "SM_BC_Plant_CoverLeaf2#527@-7_-6", "SM_BC_Plant_CoverLeaf2#527@-7_-5", "SM_BC_Plant_CoverLeaf2#527@-6_-6", "SM_BC_Plant_CoverLeaf2#527@-6_-5"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-8_-6", "SM_BC_Plant_CoverLeaf0#470@-8_-5", "SM_BC_Plant_CoverLeaf0#470@-7_-7", "SM_BC_Plant_CoverLeaf0#470@-7_-6", "SM_BC_Plant_CoverLeaf0#470@-7_-5", "SM_BC_Plant_CoverLeaf0#470@-6_-6", "SM_BC_Plant_CoverLeaf0#470@-6_-5", "SM_BC_Plant_CoverLeaf1#476@-8_-6", "SM_BC_Plant_CoverLeaf1#476@-8_-5", "SM_BC_Plant_CoverLeaf1#476@-7_-7", "SM_BC_Plant_CoverLeaf1#476@-7_-6", "SM_BC_Plant_CoverLeaf1#476@-7_-5", "SM_BC_Plant_CoverLeaf1#476@-6_-6", "SM_BC_Plant_CoverLeaf1#476@-6_-5", "SM_BC_Plant_CoverLeaf2#482@-8_-6", "SM_BC_Plant_CoverLeaf2#482@-8_-5", "SM_BC_Plant_CoverLeaf2#482@-7_-7", "SM_BC_Plant_CoverLeaf2#482@-7_-6", "SM_BC_Plant_CoverLeaf2#482@-7_-5", "SM_BC_Plant_CoverLeaf2#482@-6_-6", "SM_BC_Plant_CoverLeaf2#482@-6_-5"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m2-m2 (21 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m3-0"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-12_0", "SM_BC_Plant_CoverLeaf0#515@-12_1", "SM_BC_Plant_CoverLeaf0#515@-12_2", "SM_BC_Plant_CoverLeaf0#515@-12_3", "SM_BC_Plant_CoverLeaf0#515@-11_0", "SM_BC_Plant_CoverLeaf0#515@-11_1", "SM_BC_Plant_CoverLeaf0#515@-11_2", "SM_BC_Plant_CoverLeaf0#515@-11_3", "SM_BC_Plant_CoverLeaf0#515@-10_0", "SM_BC_Plant_CoverLeaf0#515@-10_1", "SM_BC_Plant_CoverLeaf0#515@-10_2", "SM_BC_Plant_CoverLeaf0#515@-10_3", "SM_BC_Plant_CoverLeaf0#515@-9_0", "SM_BC_Plant_CoverLeaf0#515@-9_1", "SM_BC_Plant_CoverLeaf0#515@-9_2", "SM_BC_Plant_CoverLeaf0#515@-9_3", "SM_BC_Plant_CoverLeaf1#521@-12_0", "SM_BC_Plant_CoverLeaf1#521@-12_1", "SM_BC_Plant_CoverLeaf1#521@-12_2", "SM_BC_Plant_CoverLeaf1#521@-12_3", "SM_BC_Plant_CoverLeaf1#521@-11_0", "SM_BC_Plant_CoverLeaf1#521@-11_1", "SM_BC_Plant_CoverLeaf1#521@-11_2", "SM_BC_Plant_CoverLeaf1#521@-11_3", "SM_BC_Plant_CoverLeaf1#521@-10_0", "SM_BC_Plant_CoverLeaf1#521@-10_1", "SM_BC_Plant_CoverLeaf1#521@-10_2", "SM_BC_Plant_CoverLeaf1#521@-10_3", "SM_BC_Plant_CoverLeaf1#521@-9_0", "SM_BC_Plant_CoverLeaf1#521@-9_1", "SM_BC_Plant_CoverLeaf1#521@-9_2", "SM_BC_Plant_CoverLeaf1#521@-9_3", "SM_BC_Plant_CoverLeaf2#527@-12_0", "SM_BC_Plant_CoverLeaf2#527@-12_1", "SM_BC_Plant_CoverLeaf2#527@-12_2", "SM_BC_Plant_CoverLeaf2#527@-12_3", "SM_BC_Plant_CoverLeaf2#527@-11_0", "SM_BC_Plant_CoverLeaf2#527@-11_1", "SM_BC_Plant_CoverLeaf2#527@-11_2", "SM_BC_Plant_CoverLeaf2#527@-11_3", "SM_BC_Plant_CoverLeaf2#527@-10_0", "SM_BC_Plant_CoverLeaf2#527@-10_1", "SM_BC_Plant_CoverLeaf2#527@-10_2", "SM_BC_Plant_CoverLeaf2#527@-10_3", "SM_BC_Plant_CoverLeaf2#527@-9_0", "SM_BC_Plant_CoverLeaf2#527@-9_1", "SM_BC_Plant_CoverLeaf2#527@-9_2", "SM_BC_Plant_CoverLeaf2#527@-9_3"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-12_0", "SM_BC_Plant_CoverLeaf0#470@-12_1", "SM_BC_Plant_CoverLeaf0#470@-12_2", "SM_BC_Plant_CoverLeaf0#470@-12_3", "SM_BC_Plant_CoverLeaf0#470@-11_0", "SM_BC_Plant_CoverLeaf0#470@-11_1", "SM_BC_Plant_CoverLeaf0#470@-11_2", "SM_BC_Plant_CoverLeaf0#470@-11_3", "SM_BC_Plant_CoverLeaf0#470@-10_0", "SM_BC_Plant_CoverLeaf0#470@-10_1", "SM_BC_Plant_CoverLeaf0#470@-10_2", "SM_BC_Plant_CoverLeaf0#470@-10_3", "SM_BC_Plant_CoverLeaf0#470@-9_0", "SM_BC_Plant_CoverLeaf0#470@-9_1", "SM_BC_Plant_CoverLeaf0#470@-9_2", "SM_BC_Plant_CoverLeaf0#470@-9_3", "SM_BC_Plant_CoverLeaf1#476@-12_0", "SM_BC_Plant_CoverLeaf1#476@-12_1", "SM_BC_Plant_CoverLeaf1#476@-12_2", "SM_BC_Plant_CoverLeaf1#476@-12_3", "SM_BC_Plant_CoverLeaf1#476@-11_0", "SM_BC_Plant_CoverLeaf1#476@-11_1", "SM_BC_Plant_CoverLeaf1#476@-11_2", "SM_BC_Plant_CoverLeaf1#476@-11_3", "SM_BC_Plant_CoverLeaf1#476@-10_0", "SM_BC_Plant_CoverLeaf1#476@-10_1", "SM_BC_Plant_CoverLeaf1#476@-10_2", "SM_BC_Plant_CoverLeaf1#476@-10_3", "SM_BC_Plant_CoverLeaf1#476@-9_0", "SM_BC_Plant_CoverLeaf1#476@-9_1", "SM_BC_Plant_CoverLeaf1#476@-9_2", "SM_BC_Plant_CoverLeaf1#476@-9_3", "SM_BC_Plant_CoverLeaf2#482@-12_0", "SM_BC_Plant_CoverLeaf2#482@-12_1", "SM_BC_Plant_CoverLeaf2#482@-12_2", "SM_BC_Plant_CoverLeaf2#482@-12_3", "SM_BC_Plant_CoverLeaf2#482@-11_0", "SM_BC_Plant_CoverLeaf2#482@-11_1", "SM_BC_Plant_CoverLeaf2#482@-11_2", "SM_BC_Plant_CoverLeaf2#482@-11_3", "SM_BC_Plant_CoverLeaf2#482@-10_0", "SM_BC_Plant_CoverLeaf2#482@-10_1", "SM_BC_Plant_CoverLeaf2#482@-10_2", "SM_BC_Plant_CoverLeaf2#482@-10_3", "SM_BC_Plant_CoverLeaf2#482@-9_0", "SM_BC_Plant_CoverLeaf2#482@-9_1", "SM_BC_Plant_CoverLeaf2#482@-9_2", "SM_BC_Plant_CoverLeaf2#482@-9_3"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m3-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m3-1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-12_4", "SM_BC_Plant_CoverLeaf0#515@-11_4", "SM_BC_Plant_CoverLeaf0#515@-10_4", "SM_BC_Plant_CoverLeaf0#515@-9_4", "SM_BC_Plant_CoverLeaf1#521@-12_4", "SM_BC_Plant_CoverLeaf1#521@-11_4", "SM_BC_Plant_CoverLeaf1#521@-10_4", "SM_BC_Plant_CoverLeaf1#521@-9_4", "SM_BC_Plant_CoverLeaf2#527@-12_4", "SM_BC_Plant_CoverLeaf2#527@-11_4", "SM_BC_Plant_CoverLeaf2#527@-10_4", "SM_BC_Plant_CoverLeaf2#527@-9_4"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-12_4", "SM_BC_Plant_CoverLeaf0#470@-11_4", "SM_BC_Plant_CoverLeaf0#470@-10_4", "SM_BC_Plant_CoverLeaf0#470@-9_4", "SM_BC_Plant_CoverLeaf1#476@-12_4", "SM_BC_Plant_CoverLeaf1#476@-11_4", "SM_BC_Plant_CoverLeaf1#476@-10_4", "SM_BC_Plant_CoverLeaf1#476@-9_4", "SM_BC_Plant_CoverLeaf2#482@-12_4", "SM_BC_Plant_CoverLeaf2#482@-11_4", "SM_BC_Plant_CoverLeaf2#482@-10_4", "SM_BC_Plant_CoverLeaf2#482@-9_4"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m3-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m3-m1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-11_-1", "SM_BC_Plant_CoverLeaf0#515@-10_-1", "SM_BC_Plant_CoverLeaf0#515@-9_-2", "SM_BC_Plant_CoverLeaf0#515@-9_-1", "SM_BC_Plant_CoverLeaf1#521@-11_-1", "SM_BC_Plant_CoverLeaf1#521@-10_-1", "SM_BC_Plant_CoverLeaf1#521@-9_-2", "SM_BC_Plant_CoverLeaf1#521@-9_-1", "SM_BC_Plant_CoverLeaf2#527@-11_-1", "SM_BC_Plant_CoverLeaf2#527@-10_-1", "SM_BC_Plant_CoverLeaf2#527@-9_-2", "SM_BC_Plant_CoverLeaf2#527@-9_-1"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-11_-1", "SM_BC_Plant_CoverLeaf0#470@-10_-1", "SM_BC_Plant_CoverLeaf0#470@-9_-2", "SM_BC_Plant_CoverLeaf0#470@-9_-1", "SM_BC_Plant_CoverLeaf1#476@-11_-1", "SM_BC_Plant_CoverLeaf1#476@-10_-1", "SM_BC_Plant_CoverLeaf1#476@-9_-2", "SM_BC_Plant_CoverLeaf1#476@-9_-1", "SM_BC_Plant_CoverLeaf2#482@-11_-1", "SM_BC_Plant_CoverLeaf2#482@-10_-1", "SM_BC_Plant_CoverLeaf2#482@-9_-2", "SM_BC_Plant_CoverLeaf2#482@-9_-1"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m3-m1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m4-0"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-16_0", "SM_BC_Plant_CoverLeaf0#515@-16_1", "SM_BC_Plant_CoverLeaf0#515@-16_2", "SM_BC_Plant_CoverLeaf0#515@-16_3", "SM_BC_Plant_CoverLeaf0#515@-15_0", "SM_BC_Plant_CoverLeaf0#515@-15_1", "SM_BC_Plant_CoverLeaf0#515@-15_2", "SM_BC_Plant_CoverLeaf0#515@-15_3", "SM_BC_Plant_CoverLeaf0#515@-14_0", "SM_BC_Plant_CoverLeaf0#515@-14_1", "SM_BC_Plant_CoverLeaf0#515@-14_2", "SM_BC_Plant_CoverLeaf0#515@-14_3", "SM_BC_Plant_CoverLeaf0#515@-13_0", "SM_BC_Plant_CoverLeaf0#515@-13_1", "SM_BC_Plant_CoverLeaf0#515@-13_2", "SM_BC_Plant_CoverLeaf0#515@-13_3", "SM_BC_Plant_CoverLeaf1#521@-16_0", "SM_BC_Plant_CoverLeaf1#521@-16_1", "SM_BC_Plant_CoverLeaf1#521@-16_2", "SM_BC_Plant_CoverLeaf1#521@-16_3", "SM_BC_Plant_CoverLeaf1#521@-15_0", "SM_BC_Plant_CoverLeaf1#521@-15_1", "SM_BC_Plant_CoverLeaf1#521@-15_2", "SM_BC_Plant_CoverLeaf1#521@-15_3", "SM_BC_Plant_CoverLeaf1#521@-14_0", "SM_BC_Plant_CoverLeaf1#521@-14_1", "SM_BC_Plant_CoverLeaf1#521@-14_2", "SM_BC_Plant_CoverLeaf1#521@-14_3", "SM_BC_Plant_CoverLeaf1#521@-13_0", "SM_BC_Plant_CoverLeaf1#521@-13_1", "SM_BC_Plant_CoverLeaf1#521@-13_2", "SM_BC_Plant_CoverLeaf1#521@-13_3", "SM_BC_Plant_CoverLeaf2#527@-16_0", "SM_BC_Plant_CoverLeaf2#527@-16_1", "SM_BC_Plant_CoverLeaf2#527@-16_2", "SM_BC_Plant_CoverLeaf2#527@-16_3", "SM_BC_Plant_CoverLeaf2#527@-15_0", "SM_BC_Plant_CoverLeaf2#527@-15_1", "SM_BC_Plant_CoverLeaf2#527@-15_2", "SM_BC_Plant_CoverLeaf2#527@-15_3", "SM_BC_Plant_CoverLeaf2#527@-14_0", "SM_BC_Plant_CoverLeaf2#527@-14_1", "SM_BC_Plant_CoverLeaf2#527@-14_2", "SM_BC_Plant_CoverLeaf2#527@-14_3", "SM_BC_Plant_CoverLeaf2#527@-13_0", "SM_BC_Plant_CoverLeaf2#527@-13_1", "SM_BC_Plant_CoverLeaf2#527@-13_2", "SM_BC_Plant_CoverLeaf2#527@-13_3"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-16_0", "SM_BC_Plant_CoverLeaf0#470@-16_1", "SM_BC_Plant_CoverLeaf0#470@-16_2", "SM_BC_Plant_CoverLeaf0#470@-16_3", "SM_BC_Plant_CoverLeaf0#470@-15_0", "SM_BC_Plant_CoverLeaf0#470@-15_1", "SM_BC_Plant_CoverLeaf0#470@-15_2", "SM_BC_Plant_CoverLeaf0#470@-15_3", "SM_BC_Plant_CoverLeaf0#470@-14_0", "SM_BC_Plant_CoverLeaf0#470@-14_1", "SM_BC_Plant_CoverLeaf0#470@-14_2", "SM_BC_Plant_CoverLeaf0#470@-14_3", "SM_BC_Plant_CoverLeaf0#470@-13_0", "SM_BC_Plant_CoverLeaf0#470@-13_1", "SM_BC_Plant_CoverLeaf0#470@-13_2", "SM_BC_Plant_CoverLeaf0#470@-13_3", "SM_BC_Plant_CoverLeaf1#476@-16_0", "SM_BC_Plant_CoverLeaf1#476@-16_1", "SM_BC_Plant_CoverLeaf1#476@-16_2", "SM_BC_Plant_CoverLeaf1#476@-16_3", "SM_BC_Plant_CoverLeaf1#476@-15_0", "SM_BC_Plant_CoverLeaf1#476@-15_1", "SM_BC_Plant_CoverLeaf1#476@-15_2", "SM_BC_Plant_CoverLeaf1#476@-15_3", "SM_BC_Plant_CoverLeaf1#476@-14_0", "SM_BC_Plant_CoverLeaf1#476@-14_1", "SM_BC_Plant_CoverLeaf1#476@-14_2", "SM_BC_Plant_CoverLeaf1#476@-14_3", "SM_BC_Plant_CoverLeaf1#476@-13_0", "SM_BC_Plant_CoverLeaf1#476@-13_1", "SM_BC_Plant_CoverLeaf1#476@-13_2", "SM_BC_Plant_CoverLeaf1#476@-13_3", "SM_BC_Plant_CoverLeaf2#482@-16_0", "SM_BC_Plant_CoverLeaf2#482@-16_1", "SM_BC_Plant_CoverLeaf2#482@-16_2", "SM_BC_Plant_CoverLeaf2#482@-16_3", "SM_BC_Plant_CoverLeaf2#482@-15_0", "SM_BC_Plant_CoverLeaf2#482@-15_1", "SM_BC_Plant_CoverLeaf2#482@-15_2", "SM_BC_Plant_CoverLeaf2#482@-15_3", "SM_BC_Plant_CoverLeaf2#482@-14_0", "SM_BC_Plant_CoverLeaf2#482@-14_1", "SM_BC_Plant_CoverLeaf2#482@-14_2", "SM_BC_Plant_CoverLeaf2#482@-14_3", "SM_BC_Plant_CoverLeaf2#482@-13_0", "SM_BC_Plant_CoverLeaf2#482@-13_1", "SM_BC_Plant_CoverLeaf2#482@-13_2", "SM_BC_Plant_CoverLeaf2#482@-13_3"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m4-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m4-1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-16_4", "SM_BC_Plant_CoverLeaf0#515@-15_4", "SM_BC_Plant_CoverLeaf0#515@-14_4", "SM_BC_Plant_CoverLeaf0#515@-13_4", "SM_BC_Plant_CoverLeaf1#521@-16_4", "SM_BC_Plant_CoverLeaf1#521@-15_4", "SM_BC_Plant_CoverLeaf1#521@-14_4", "SM_BC_Plant_CoverLeaf1#521@-13_4", "SM_BC_Plant_CoverLeaf2#527@-16_4", "SM_BC_Plant_CoverLeaf2#527@-15_4", "SM_BC_Plant_CoverLeaf2#527@-14_4", "SM_BC_Plant_CoverLeaf2#527@-13_4"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-16_4", "SM_BC_Plant_CoverLeaf0#470@-15_4", "SM_BC_Plant_CoverLeaf0#470@-14_4", "SM_BC_Plant_CoverLeaf0#470@-13_4", "SM_BC_Plant_CoverLeaf1#476@-16_4", "SM_BC_Plant_CoverLeaf1#476@-15_4", "SM_BC_Plant_CoverLeaf1#476@-14_4", "SM_BC_Plant_CoverLeaf1#476@-13_4", "SM_BC_Plant_CoverLeaf2#482@-16_4", "SM_BC_Plant_CoverLeaf2#482@-15_4", "SM_BC_Plant_CoverLeaf2#482@-14_4", "SM_BC_Plant_CoverLeaf2#482@-13_4"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m4-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m4-m1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-16_-4", "SM_BC_Plant_CoverLeaf0#515@-16_-3", "SM_BC_Plant_CoverLeaf0#515@-16_-2", "SM_BC_Plant_CoverLeaf0#515@-16_-1", "SM_BC_Plant_CoverLeaf0#515@-15_-1", "SM_BC_Plant_CoverLeaf1#521@-16_-4", "SM_BC_Plant_CoverLeaf1#521@-16_-3", "SM_BC_Plant_CoverLeaf1#521@-16_-2", "SM_BC_Plant_CoverLeaf1#521@-16_-1", "SM_BC_Plant_CoverLeaf1#521@-15_-1", "SM_BC_Plant_CoverLeaf2#527@-16_-4", "SM_BC_Plant_CoverLeaf2#527@-16_-3", "SM_BC_Plant_CoverLeaf2#527@-16_-2", "SM_BC_Plant_CoverLeaf2#527@-16_-1", "SM_BC_Plant_CoverLeaf2#527@-15_-1"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-16_-4", "SM_BC_Plant_CoverLeaf0#470@-16_-3", "SM_BC_Plant_CoverLeaf0#470@-16_-2", "SM_BC_Plant_CoverLeaf0#470@-16_-1", "SM_BC_Plant_CoverLeaf0#470@-15_-1", "SM_BC_Plant_CoverLeaf1#476@-16_-4", "SM_BC_Plant_CoverLeaf1#476@-16_-3", "SM_BC_Plant_CoverLeaf1#476@-16_-2", "SM_BC_Plant_CoverLeaf1#476@-16_-1", "SM_BC_Plant_CoverLeaf1#476@-15_-1", "SM_BC_Plant_CoverLeaf2#482@-16_-4", "SM_BC_Plant_CoverLeaf2#482@-16_-3", "SM_BC_Plant_CoverLeaf2#482@-16_-2", "SM_BC_Plant_CoverLeaf2#482@-16_-1", "SM_BC_Plant_CoverLeaf2#482@-15_-1"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m4-m1 (15 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m5-0"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-20_0", "SM_BC_Plant_CoverLeaf0#515@-20_1", "SM_BC_Plant_CoverLeaf0#515@-20_2", "SM_BC_Plant_CoverLeaf0#515@-20_3", "SM_BC_Plant_CoverLeaf0#515@-19_0", "SM_BC_Plant_CoverLeaf0#515@-19_1", "SM_BC_Plant_CoverLeaf0#515@-19_2", "SM_BC_Plant_CoverLeaf0#515@-19_3", "SM_BC_Plant_CoverLeaf0#515@-18_0", "SM_BC_Plant_CoverLeaf0#515@-18_1", "SM_BC_Plant_CoverLeaf0#515@-18_2", "SM_BC_Plant_CoverLeaf0#515@-18_3", "SM_BC_Plant_CoverLeaf0#515@-17_0", "SM_BC_Plant_CoverLeaf0#515@-17_1", "SM_BC_Plant_CoverLeaf0#515@-17_2", "SM_BC_Plant_CoverLeaf0#515@-17_3", "SM_BC_Plant_CoverLeaf1#521@-20_0", "SM_BC_Plant_CoverLeaf1#521@-20_1", "SM_BC_Plant_CoverLeaf1#521@-20_2", "SM_BC_Plant_CoverLeaf1#521@-20_3", "SM_BC_Plant_CoverLeaf1#521@-19_0", "SM_BC_Plant_CoverLeaf1#521@-19_1", "SM_BC_Plant_CoverLeaf1#521@-19_2", "SM_BC_Plant_CoverLeaf1#521@-19_3", "SM_BC_Plant_CoverLeaf1#521@-18_0", "SM_BC_Plant_CoverLeaf1#521@-18_1", "SM_BC_Plant_CoverLeaf1#521@-18_2", "SM_BC_Plant_CoverLeaf1#521@-18_3", "SM_BC_Plant_CoverLeaf1#521@-17_0", "SM_BC_Plant_CoverLeaf1#521@-17_1", "SM_BC_Plant_CoverLeaf1#521@-17_2", "SM_BC_Plant_CoverLeaf1#521@-17_3", "SM_BC_Plant_CoverLeaf2#527@-20_0", "SM_BC_Plant_CoverLeaf2#527@-20_1", "SM_BC_Plant_CoverLeaf2#527@-20_2", "SM_BC_Plant_CoverLeaf2#527@-20_3", "SM_BC_Plant_CoverLeaf2#527@-19_0", "SM_BC_Plant_CoverLeaf2#527@-19_1", "SM_BC_Plant_CoverLeaf2#527@-19_2", "SM_BC_Plant_CoverLeaf2#527@-19_3", "SM_BC_Plant_CoverLeaf2#527@-18_0", "SM_BC_Plant_CoverLeaf2#527@-18_1", "SM_BC_Plant_CoverLeaf2#527@-18_2", "SM_BC_Plant_CoverLeaf2#527@-18_3", "SM_BC_Plant_CoverLeaf2#527@-17_0", "SM_BC_Plant_CoverLeaf2#527@-17_1", "SM_BC_Plant_CoverLeaf2#527@-17_2", "SM_BC_Plant_CoverLeaf2#527@-17_3"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-20_0", "SM_BC_Plant_CoverLeaf0#470@-20_1", "SM_BC_Plant_CoverLeaf0#470@-20_2", "SM_BC_Plant_CoverLeaf0#470@-20_3", "SM_BC_Plant_CoverLeaf0#470@-19_0", "SM_BC_Plant_CoverLeaf0#470@-19_1", "SM_BC_Plant_CoverLeaf0#470@-19_2", "SM_BC_Plant_CoverLeaf0#470@-19_3", "SM_BC_Plant_CoverLeaf0#470@-18_0", "SM_BC_Plant_CoverLeaf0#470@-18_1", "SM_BC_Plant_CoverLeaf0#470@-18_2", "SM_BC_Plant_CoverLeaf0#470@-18_3", "SM_BC_Plant_CoverLeaf0#470@-17_0", "SM_BC_Plant_CoverLeaf0#470@-17_1", "SM_BC_Plant_CoverLeaf0#470@-17_2", "SM_BC_Plant_CoverLeaf0#470@-17_3", "SM_BC_Plant_CoverLeaf1#476@-20_0", "SM_BC_Plant_CoverLeaf1#476@-20_1", "SM_BC_Plant_CoverLeaf1#476@-20_2", "SM_BC_Plant_CoverLeaf1#476@-20_3", "SM_BC_Plant_CoverLeaf1#476@-19_0", "SM_BC_Plant_CoverLeaf1#476@-19_1", "SM_BC_Plant_CoverLeaf1#476@-19_2", "SM_BC_Plant_CoverLeaf1#476@-19_3", "SM_BC_Plant_CoverLeaf1#476@-18_0", "SM_BC_Plant_CoverLeaf1#476@-18_1", "SM_BC_Plant_CoverLeaf1#476@-18_2", "SM_BC_Plant_CoverLeaf1#476@-18_3", "SM_BC_Plant_CoverLeaf1#476@-17_0", "SM_BC_Plant_CoverLeaf1#476@-17_1", "SM_BC_Plant_CoverLeaf1#476@-17_2", "SM_BC_Plant_CoverLeaf1#476@-17_3", "SM_BC_Plant_CoverLeaf2#482@-20_0", "SM_BC_Plant_CoverLeaf2#482@-20_1", "SM_BC_Plant_CoverLeaf2#482@-20_2", "SM_BC_Plant_CoverLeaf2#482@-20_3", "SM_BC_Plant_CoverLeaf2#482@-19_0", "SM_BC_Plant_CoverLeaf2#482@-19_1", "SM_BC_Plant_CoverLeaf2#482@-19_2", "SM_BC_Plant_CoverLeaf2#482@-19_3", "SM_BC_Plant_CoverLeaf2#482@-18_0", "SM_BC_Plant_CoverLeaf2#482@-18_1", "SM_BC_Plant_CoverLeaf2#482@-18_2", "SM_BC_Plant_CoverLeaf2#482@-18_3", "SM_BC_Plant_CoverLeaf2#482@-17_0", "SM_BC_Plant_CoverLeaf2#482@-17_1", "SM_BC_Plant_CoverLeaf2#482@-17_2", "SM_BC_Plant_CoverLeaf2#482@-17_3"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m5-0 (48 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m5-1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-20_4", "SM_BC_Plant_CoverLeaf0#515@-19_4", "SM_BC_Plant_CoverLeaf0#515@-18_4", "SM_BC_Plant_CoverLeaf0#515@-17_4", "SM_BC_Plant_CoverLeaf1#521@-20_4", "SM_BC_Plant_CoverLeaf1#521@-19_4", "SM_BC_Plant_CoverLeaf1#521@-18_4", "SM_BC_Plant_CoverLeaf1#521@-17_4", "SM_BC_Plant_CoverLeaf2#527@-20_4", "SM_BC_Plant_CoverLeaf2#527@-19_4", "SM_BC_Plant_CoverLeaf2#527@-18_4", "SM_BC_Plant_CoverLeaf2#527@-17_4"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-20_4", "SM_BC_Plant_CoverLeaf0#470@-19_4", "SM_BC_Plant_CoverLeaf0#470@-18_4", "SM_BC_Plant_CoverLeaf0#470@-17_4", "SM_BC_Plant_CoverLeaf1#476@-20_4", "SM_BC_Plant_CoverLeaf1#476@-19_4", "SM_BC_Plant_CoverLeaf1#476@-18_4", "SM_BC_Plant_CoverLeaf1#476@-17_4", "SM_BC_Plant_CoverLeaf2#482@-20_4", "SM_BC_Plant_CoverLeaf2#482@-19_4", "SM_BC_Plant_CoverLeaf2#482@-18_4", "SM_BC_Plant_CoverLeaf2#482@-17_4"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m5-1 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m5-m1"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-20_-1", "SM_BC_Plant_CoverLeaf0#515@-19_-4", "SM_BC_Plant_CoverLeaf0#515@-19_-3", "SM_BC_Plant_CoverLeaf0#515@-19_-2", "SM_BC_Plant_CoverLeaf0#515@-19_-1", "SM_BC_Plant_CoverLeaf0#515@-18_-4", "SM_BC_Plant_CoverLeaf0#515@-18_-3", "SM_BC_Plant_CoverLeaf0#515@-18_-2", "SM_BC_Plant_CoverLeaf0#515@-18_-1", "SM_BC_Plant_CoverLeaf0#515@-17_-4", "SM_BC_Plant_CoverLeaf0#515@-17_-3", "SM_BC_Plant_CoverLeaf0#515@-17_-2", "SM_BC_Plant_CoverLeaf0#515@-17_-1", "SM_BC_Plant_CoverLeaf1#521@-20_-1", "SM_BC_Plant_CoverLeaf1#521@-19_-4", "SM_BC_Plant_CoverLeaf1#521@-19_-3", "SM_BC_Plant_CoverLeaf1#521@-19_-2", "SM_BC_Plant_CoverLeaf1#521@-19_-1", "SM_BC_Plant_CoverLeaf1#521@-18_-4", "SM_BC_Plant_CoverLeaf1#521@-18_-3", "SM_BC_Plant_CoverLeaf1#521@-18_-2", "SM_BC_Plant_CoverLeaf1#521@-18_-1", "SM_BC_Plant_CoverLeaf1#521@-17_-4", "SM_BC_Plant_CoverLeaf1#521@-17_-3", "SM_BC_Plant_CoverLeaf1#521@-17_-2", "SM_BC_Plant_CoverLeaf1#521@-17_-1", "SM_BC_Plant_CoverLeaf2#527@-20_-1", "SM_BC_Plant_CoverLeaf2#527@-19_-4", "SM_BC_Plant_CoverLeaf2#527@-19_-3", "SM_BC_Plant_CoverLeaf2#527@-19_-2", "SM_BC_Plant_CoverLeaf2#527@-19_-1", "SM_BC_Plant_CoverLeaf2#527@-18_-4", "SM_BC_Plant_CoverLeaf2#527@-18_-3", "SM_BC_Plant_CoverLeaf2#527@-18_-2", "SM_BC_Plant_CoverLeaf2#527@-18_-1", "SM_BC_Plant_CoverLeaf2#527@-17_-4", "SM_BC_Plant_CoverLeaf2#527@-17_-3", "SM_BC_Plant_CoverLeaf2#527@-17_-2", "SM_BC_Plant_CoverLeaf2#527@-17_-1"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-20_-1", "SM_BC_Plant_CoverLeaf0#470@-19_-4", "SM_BC_Plant_CoverLeaf0#470@-19_-3", "SM_BC_Plant_CoverLeaf0#470@-19_-2", "SM_BC_Plant_CoverLeaf0#470@-19_-1", "SM_BC_Plant_CoverLeaf0#470@-18_-4", "SM_BC_Plant_CoverLeaf0#470@-18_-3", "SM_BC_Plant_CoverLeaf0#470@-18_-2", "SM_BC_Plant_CoverLeaf0#470@-18_-1", "SM_BC_Plant_CoverLeaf0#470@-17_-4", "SM_BC_Plant_CoverLeaf0#470@-17_-3", "SM_BC_Plant_CoverLeaf0#470@-17_-2", "SM_BC_Plant_CoverLeaf0#470@-17_-1", "SM_BC_Plant_CoverLeaf1#476@-20_-1", "SM_BC_Plant_CoverLeaf1#476@-19_-4", "SM_BC_Plant_CoverLeaf1#476@-19_-3", "SM_BC_Plant_CoverLeaf1#476@-19_-2", "SM_BC_Plant_CoverLeaf1#476@-19_-1", "SM_BC_Plant_CoverLeaf1#476@-18_-4", "SM_BC_Plant_CoverLeaf1#476@-18_-3", "SM_BC_Plant_CoverLeaf1#476@-18_-2", "SM_BC_Plant_CoverLeaf1#476@-18_-1", "SM_BC_Plant_CoverLeaf1#476@-17_-4", "SM_BC_Plant_CoverLeaf1#476@-17_-3", "SM_BC_Plant_CoverLeaf1#476@-17_-2", "SM_BC_Plant_CoverLeaf1#476@-17_-1", "SM_BC_Plant_CoverLeaf2#482@-20_-1", "SM_BC_Plant_CoverLeaf2#482@-19_-4", "SM_BC_Plant_CoverLeaf2#482@-19_-3", "SM_BC_Plant_CoverLeaf2#482@-19_-2", "SM_BC_Plant_CoverLeaf2#482@-19_-1", "SM_BC_Plant_CoverLeaf2#482@-18_-4", "SM_BC_Plant_CoverLeaf2#482@-18_-3", "SM_BC_Plant_CoverLeaf2#482@-18_-2", "SM_BC_Plant_CoverLeaf2#482@-18_-1", "SM_BC_Plant_CoverLeaf2#482@-17_-4", "SM_BC_Plant_CoverLeaf2#482@-17_-3", "SM_BC_Plant_CoverLeaf2#482@-17_-2", "SM_BC_Plant_CoverLeaf2#482@-17_-1"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m5-m1 (39 groups)"
 
 [[objects]]
 id = "object/brinecove/plant-cover-leaf-m5-m2"
-groups = ["SM_BC_Plant_CoverLeaf0#515@-18_-7", "SM_BC_Plant_CoverLeaf0#515@-18_-6", "SM_BC_Plant_CoverLeaf0#515@-18_-5", "SM_BC_Plant_CoverLeaf0#515@-17_-7", "SM_BC_Plant_CoverLeaf0#515@-17_-6", "SM_BC_Plant_CoverLeaf0#515@-17_-5", "SM_BC_Plant_CoverLeaf1#521@-19_-5", "SM_BC_Plant_CoverLeaf1#521@-18_-7", "SM_BC_Plant_CoverLeaf1#521@-18_-6", "SM_BC_Plant_CoverLeaf1#521@-18_-5", "SM_BC_Plant_CoverLeaf1#521@-17_-7", "SM_BC_Plant_CoverLeaf1#521@-17_-6", "SM_BC_Plant_CoverLeaf1#521@-17_-5", "SM_BC_Plant_CoverLeaf2#527@-19_-5", "SM_BC_Plant_CoverLeaf2#527@-18_-7", "SM_BC_Plant_CoverLeaf2#527@-18_-6", "SM_BC_Plant_CoverLeaf2#527@-18_-5", "SM_BC_Plant_CoverLeaf2#527@-17_-7", "SM_BC_Plant_CoverLeaf2#527@-17_-6", "SM_BC_Plant_CoverLeaf2#527@-17_-5"]
+groups = ["SM_BC_Plant_CoverLeaf0#470@-18_-7", "SM_BC_Plant_CoverLeaf0#470@-18_-6", "SM_BC_Plant_CoverLeaf0#470@-18_-5", "SM_BC_Plant_CoverLeaf0#470@-17_-7", "SM_BC_Plant_CoverLeaf0#470@-17_-6", "SM_BC_Plant_CoverLeaf0#470@-17_-5", "SM_BC_Plant_CoverLeaf1#476@-19_-5", "SM_BC_Plant_CoverLeaf1#476@-18_-7", "SM_BC_Plant_CoverLeaf1#476@-18_-6", "SM_BC_Plant_CoverLeaf1#476@-18_-5", "SM_BC_Plant_CoverLeaf1#476@-17_-7", "SM_BC_Plant_CoverLeaf1#476@-17_-6", "SM_BC_Plant_CoverLeaf1#476@-17_-5", "SM_BC_Plant_CoverLeaf2#482@-19_-5", "SM_BC_Plant_CoverLeaf2#482@-18_-7", "SM_BC_Plant_CoverLeaf2#482@-18_-6", "SM_BC_Plant_CoverLeaf2#482@-18_-5", "SM_BC_Plant_CoverLeaf2#482@-17_-7", "SM_BC_Plant_CoverLeaf2#482@-17_-6", "SM_BC_Plant_CoverLeaf2#482@-17_-5"]
 model = "adopted/brinecove/plant-cover-leaf"
 about = "Brine Cove plant-cover-leaf-m5-m2 (20 groups)"
 
@@ -1233,34 +2925,28 @@ model = ["prop/brinecove/rocks-7-6", "prop/brinecove/rocks-7-6-soft"]
 about = "Brine Cove rocks-7-6 (2 groups)"
 
 [[objects]]
-id = "object/brinecove/ships-nightjar-sloop"
-groups = ["SM_BC_Ships_4_2", "SM_BC_Ships_4_3", "SM_BC_Ships_5_3"]
-model = ["prop/brinecove/ships-4-2", "prop/brinecove/ships-4-3", "prop/brinecove/ships-5-3"]
-about = "Brine Cove ships-nightjar-sloop (3 groups)"
-
-[[objects]]
 id = "object/brinecove/townlower-1-2"
-groups = ["SM_BC_TownLower_1_2", "SM_BC_TownLower_1_2_Soft"]
-model = ["prop/brinecove/town-lower-1-2", "prop/brinecove/town-lower-1-2-soft"]
-about = "Brine Cove townlower-1-2 (2 groups)"
+group = "SM_BC_TownLower_1_2"
+model = "prop/brinecove/town-lower-1-2"
+about = "Brine Cove townlower-1-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-1-3"
-groups = ["SM_BC_TownLower_1_3", "SM_BC_TownLower_1_3_Soft"]
-model = ["prop/brinecove/town-lower-1-3", "prop/brinecove/town-lower-1-3-soft"]
-about = "Brine Cove townlower-1-3 (2 groups)"
+group = "SM_BC_TownLower_1_3"
+model = "prop/brinecove/town-lower-1-3"
+about = "Brine Cove townlower-1-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-2-3"
-groups = ["SM_BC_TownLower_2_3", "SM_BC_TownLower_2_3_Soft"]
-model = ["prop/brinecove/town-lower-2-3", "prop/brinecove/town-lower-2-3-soft"]
-about = "Brine Cove townlower-2-3 (2 groups)"
+group = "SM_BC_TownLower_2_3"
+model = "prop/brinecove/town-lower-2-3"
+about = "Brine Cove townlower-2-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-2-4"
-groups = ["SM_BC_TownLower_2_4_Piece00", "SM_BC_TownLower_2_4_Piece01", "SM_BC_TownLower_2_4_Piece02", "SM_BC_TownLower_2_4_Piece030", "SM_BC_TownLower_2_4_Piece031", "SM_BC_TownLower_2_4_Piece032", "SM_BC_TownLower_2_4_Piece033", "SM_BC_TownLower_2_4_Piece10", "SM_BC_TownLower_2_4_Piece110", "SM_BC_TownLower_2_4_Piece111", "SM_BC_TownLower_2_4_Piece112", "SM_BC_TownLower_2_4_Piece113", "SM_BC_TownLower_2_4_Piece12", "SM_BC_TownLower_2_4_Piece13", "SM_BC_TownLower_2_4_Piece20", "SM_BC_TownLower_2_4_Piece21", "SM_BC_TownLower_2_4_Piece30", "SM_BC_TownLower_2_4_Piece31", "SM_BC_TownLower_2_4_Soft"]
-model = ["prop/brinecove/town-lower-2-4-piece00", "prop/brinecove/town-lower-2-4-piece01", "prop/brinecove/town-lower-2-4-piece02", "prop/brinecove/town-lower-2-4-piece030", "prop/brinecove/town-lower-2-4-piece031", "prop/brinecove/town-lower-2-4-piece032", "prop/brinecove/town-lower-2-4-piece033", "prop/brinecove/town-lower-2-4-piece10", "prop/brinecove/town-lower-2-4-piece110", "prop/brinecove/town-lower-2-4-piece111", "prop/brinecove/town-lower-2-4-piece112", "prop/brinecove/town-lower-2-4-piece113", "prop/brinecove/town-lower-2-4-piece12", "prop/brinecove/town-lower-2-4-piece13", "prop/brinecove/town-lower-2-4-piece20", "prop/brinecove/town-lower-2-4-piece21", "prop/brinecove/town-lower-2-4-piece30", "prop/brinecove/town-lower-2-4-piece31", "prop/brinecove/town-lower-2-4-soft"]
-about = "Brine Cove townlower-2-4 (19 groups)"
+groups = ["SM_BC_TownLower_2_4_Piece01", "SM_BC_TownLower_2_4_Piece10", "SM_BC_TownLower_2_4_Piece112", "SM_BC_TownLower_2_4_Piece113", "SM_BC_TownLower_2_4_Piece12", "SM_BC_TownLower_2_4_Piece13", "SM_BC_TownLower_2_4_Piece30", "SM_BC_TownLower_2_4_Piece31", "SM_BC_TownLower_2_4_Soft"]
+model = ["prop/brinecove/town-lower-2-4-piece01", "prop/brinecove/town-lower-2-4-piece10", "prop/brinecove/town-lower-2-4-piece112", "prop/brinecove/town-lower-2-4-piece113", "prop/brinecove/town-lower-2-4-piece12", "prop/brinecove/town-lower-2-4-piece13", "prop/brinecove/town-lower-2-4-piece30", "prop/brinecove/town-lower-2-4-piece31", "prop/brinecove/town-lower-2-4-soft"]
+about = "Brine Cove townlower-2-4 (9 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-3-3"
@@ -1270,9 +2956,9 @@ about = "Brine Cove townlower-3-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-3-4"
-groups = ["SM_BC_TownLower_3_4_Piece000", "SM_BC_TownLower_3_4_Piece001", "SM_BC_TownLower_3_4_Piece002", "SM_BC_TownLower_3_4_Piece003", "SM_BC_TownLower_3_4_Piece01", "SM_BC_TownLower_3_4_Piece02", "SM_BC_TownLower_3_4_Piece030", "SM_BC_TownLower_3_4_Piece031", "SM_BC_TownLower_3_4_Piece032", "SM_BC_TownLower_3_4_Piece033", "SM_BC_TownLower_3_4_Piece10", "SM_BC_TownLower_3_4_Piece11", "SM_BC_TownLower_3_4_Piece12", "SM_BC_TownLower_3_4_Piece13", "SM_BC_TownLower_3_4_Piece2", "SM_BC_TownLower_3_4_Piece3", "SM_BC_TownLower_3_4_Soft"]
-model = ["prop/brinecove/town-lower-3-4-piece000", "prop/brinecove/town-lower-3-4-piece001", "prop/brinecove/town-lower-3-4-piece002", "prop/brinecove/town-lower-3-4-piece003", "prop/brinecove/town-lower-3-4-piece01", "prop/brinecove/town-lower-3-4-piece02", "prop/brinecove/town-lower-3-4-piece030", "prop/brinecove/town-lower-3-4-piece031", "prop/brinecove/town-lower-3-4-piece032", "prop/brinecove/town-lower-3-4-piece033", "prop/brinecove/town-lower-3-4-piece10", "prop/brinecove/town-lower-3-4-piece11", "prop/brinecove/town-lower-3-4-piece12", "prop/brinecove/town-lower-3-4-piece13", "prop/brinecove/town-lower-3-4-piece2", "prop/brinecove/town-lower-3-4-piece3", "prop/brinecove/town-lower-3-4-soft"]
-about = "Brine Cove townlower-3-4 (17 groups)"
+groups = ["SM_BC_TownLower_3_4_Piece002", "SM_BC_TownLower_3_4_Piece003", "SM_BC_TownLower_3_4_Piece01", "SM_BC_TownLower_3_4_Piece02", "SM_BC_TownLower_3_4_Piece030", "SM_BC_TownLower_3_4_Piece031", "SM_BC_TownLower_3_4_Piece032", "SM_BC_TownLower_3_4_Piece033", "SM_BC_TownLower_3_4_Piece10", "SM_BC_TownLower_3_4_Piece12", "SM_BC_TownLower_3_4_Piece13", "SM_BC_TownLower_3_4_Piece2", "SM_BC_TownLower_3_4_Piece3", "SM_BC_TownLower_3_4_Soft"]
+model = ["prop/brinecove/town-lower-3-4-piece002", "prop/brinecove/town-lower-3-4-piece003", "prop/brinecove/town-lower-3-4-piece01", "prop/brinecove/town-lower-3-4-piece02", "prop/brinecove/town-lower-3-4-piece030", "prop/brinecove/town-lower-3-4-piece031", "prop/brinecove/town-lower-3-4-piece032", "prop/brinecove/town-lower-3-4-piece033", "prop/brinecove/town-lower-3-4-piece10", "prop/brinecove/town-lower-3-4-piece12", "prop/brinecove/town-lower-3-4-piece13", "prop/brinecove/town-lower-3-4-piece2", "prop/brinecove/town-lower-3-4-piece3", "prop/brinecove/town-lower-3-4-soft"]
+about = "Brine Cove townlower-3-4 (14 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-4-3"
@@ -1288,39 +2974,39 @@ about = "Brine Cove townlower-4-4 (11 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-5-3"
-groups = ["SM_BC_TownLower_5_3", "SM_BC_TownLower_5_3_Soft"]
-model = ["prop/brinecove/town-lower-5-3", "prop/brinecove/town-lower-5-3-soft"]
-about = "Brine Cove townlower-5-3 (2 groups)"
+group = "SM_BC_TownLower_5_3"
+model = "prop/brinecove/town-lower-5-3"
+about = "Brine Cove townlower-5-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-5-4"
-groups = ["SM_BC_TownLower_5_4_Piece000", "SM_BC_TownLower_5_4_Piece001", "SM_BC_TownLower_5_4_Piece002", "SM_BC_TownLower_5_4_Piece003", "SM_BC_TownLower_5_4_Piece01", "SM_BC_TownLower_5_4_Piece02", "SM_BC_TownLower_5_4_Piece03", "SM_BC_TownLower_5_4_Piece10", "SM_BC_TownLower_5_4_Piece12", "SM_BC_TownLower_5_4_Piece13", "SM_BC_TownLower_5_4_Piece2", "SM_BC_TownLower_5_4_Piece30", "SM_BC_TownLower_5_4_Piece31", "SM_BC_TownLower_5_4_Soft"]
-model = ["prop/brinecove/town-lower-5-4-piece000", "prop/brinecove/town-lower-5-4-piece001", "prop/brinecove/town-lower-5-4-piece002", "prop/brinecove/town-lower-5-4-piece003", "prop/brinecove/town-lower-5-4-piece01", "prop/brinecove/town-lower-5-4-piece02", "prop/brinecove/town-lower-5-4-piece03", "prop/brinecove/town-lower-5-4-piece10", "prop/brinecove/town-lower-5-4-piece12", "prop/brinecove/town-lower-5-4-piece13", "prop/brinecove/town-lower-5-4-piece2", "prop/brinecove/town-lower-5-4-piece30", "prop/brinecove/town-lower-5-4-piece31", "prop/brinecove/town-lower-5-4-soft"]
-about = "Brine Cove townlower-5-4 (14 groups)"
+groups = ["SM_BC_TownLower_5_4_Piece002", "SM_BC_TownLower_5_4_Piece003", "SM_BC_TownLower_5_4_Piece01", "SM_BC_TownLower_5_4_Piece02", "SM_BC_TownLower_5_4_Piece03", "SM_BC_TownLower_5_4_Piece10", "SM_BC_TownLower_5_4_Piece2", "SM_BC_TownLower_5_4_Soft"]
+model = ["prop/brinecove/town-lower-5-4-piece002", "prop/brinecove/town-lower-5-4-piece003", "prop/brinecove/town-lower-5-4-piece01", "prop/brinecove/town-lower-5-4-piece02", "prop/brinecove/town-lower-5-4-piece03", "prop/brinecove/town-lower-5-4-piece10", "prop/brinecove/town-lower-5-4-piece2", "prop/brinecove/town-lower-5-4-soft"]
+about = "Brine Cove townlower-5-4 (8 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-6-2"
-groups = ["SM_BC_TownLower_6_2", "SM_BC_TownLower_6_2_Soft"]
-model = ["prop/brinecove/town-lower-6-2", "prop/brinecove/town-lower-6-2-soft"]
-about = "Brine Cove townlower-6-2 (2 groups)"
+group = "SM_BC_TownLower_6_2"
+model = "prop/brinecove/town-lower-6-2"
+about = "Brine Cove townlower-6-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-6-3"
-groups = ["SM_BC_TownLower_6_3", "SM_BC_TownLower_6_3_Soft"]
-model = ["prop/brinecove/town-lower-6-3", "prop/brinecove/town-lower-6-3-soft"]
-about = "Brine Cove townlower-6-3 (2 groups)"
+group = "SM_BC_TownLower_6_3"
+model = "prop/brinecove/town-lower-6-3"
+about = "Brine Cove townlower-6-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townupper-2-4"
-groups = ["SM_BC_TownUpper_2_4_Piece20", "SM_BC_TownUpper_2_4_Piece21", "SM_BC_TownUpper_2_4_Piece22", "SM_BC_TownUpper_2_4_Piece230", "SM_BC_TownUpper_2_4_Piece231", "SM_BC_TownUpper_2_4_Piece232", "SM_BC_TownUpper_2_4_Piece233", "SM_BC_TownUpper_2_4_Piece30", "SM_BC_TownUpper_2_4_Piece31", "SM_BC_TownUpper_2_4_Piece32", "SM_BC_TownUpper_2_4_Piece33", "SM_BC_TownUpper_2_4_Soft"]
-model = ["prop/brinecove/town-upper-2-4-piece20", "prop/brinecove/town-upper-2-4-piece21", "prop/brinecove/town-upper-2-4-piece22", "prop/brinecove/town-upper-2-4-piece230", "prop/brinecove/town-upper-2-4-piece231", "prop/brinecove/town-upper-2-4-piece232", "prop/brinecove/town-upper-2-4-piece233", "prop/brinecove/town-upper-2-4-piece30", "prop/brinecove/town-upper-2-4-piece31", "prop/brinecove/town-upper-2-4-piece32", "prop/brinecove/town-upper-2-4-piece33", "prop/brinecove/town-upper-2-4-soft"]
-about = "Brine Cove townupper-2-4 (12 groups)"
+groups = ["SM_BC_TownUpper_2_4_Piece30", "SM_BC_TownUpper_2_4_Piece31", "SM_BC_TownUpper_2_4_Piece32", "SM_BC_TownUpper_2_4_Piece33", "SM_BC_TownUpper_2_4_Soft"]
+model = ["prop/brinecove/town-upper-2-4-piece30", "prop/brinecove/town-upper-2-4-piece31", "prop/brinecove/town-upper-2-4-piece32", "prop/brinecove/town-upper-2-4-piece33", "prop/brinecove/town-upper-2-4-soft"]
+about = "Brine Cove townupper-2-4 (5 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-2-5"
-groups = ["SM_BC_TownUpper_2_5_Piece0", "SM_BC_TownUpper_2_5_Piece10", "SM_BC_TownUpper_2_5_Piece11", "SM_BC_TownUpper_2_5_Piece12", "SM_BC_TownUpper_2_5_Piece13", "SM_BC_TownUpper_2_5_Piece3", "SM_BC_TownUpper_2_5_Soft"]
-model = ["prop/brinecove/town-upper-2-5-piece0", "prop/brinecove/town-upper-2-5-piece10", "prop/brinecove/town-upper-2-5-piece11", "prop/brinecove/town-upper-2-5-piece12", "prop/brinecove/town-upper-2-5-piece13", "prop/brinecove/town-upper-2-5-piece3", "prop/brinecove/town-upper-2-5-soft"]
-about = "Brine Cove townupper-2-5 (7 groups)"
+groups = ["SM_BC_TownUpper_2_5_Piece10", "SM_BC_TownUpper_2_5_Piece11", "SM_BC_TownUpper_2_5_Piece12", "SM_BC_TownUpper_2_5_Piece13", "SM_BC_TownUpper_2_5_Soft"]
+model = ["prop/brinecove/town-upper-2-5-piece10", "prop/brinecove/town-upper-2-5-piece11", "prop/brinecove/town-upper-2-5-piece12", "prop/brinecove/town-upper-2-5-piece13", "prop/brinecove/town-upper-2-5-soft"]
+about = "Brine Cove townupper-2-5 (5 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-3-4"
@@ -1330,9 +3016,9 @@ about = "Brine Cove townupper-3-4 (19 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-3-5"
-groups = ["SM_BC_TownUpper_3_5_Piece00", "SM_BC_TownUpper_3_5_Piece01", "SM_BC_TownUpper_3_5_Piece02", "SM_BC_TownUpper_3_5_Piece03", "SM_BC_TownUpper_3_5_Piece1", "SM_BC_TownUpper_3_5_Piece2", "SM_BC_TownUpper_3_5_Piece3", "SM_BC_TownUpper_3_5_Soft"]
-model = ["prop/brinecove/town-upper-3-5-piece00", "prop/brinecove/town-upper-3-5-piece01", "prop/brinecove/town-upper-3-5-piece02", "prop/brinecove/town-upper-3-5-piece03", "prop/brinecove/town-upper-3-5-piece1", "prop/brinecove/town-upper-3-5-piece2", "prop/brinecove/town-upper-3-5-piece3", "prop/brinecove/town-upper-3-5-soft"]
-about = "Brine Cove townupper-3-5 (8 groups)"
+groups = ["SM_BC_TownUpper_3_5_Piece00", "SM_BC_TownUpper_3_5_Piece01", "SM_BC_TownUpper_3_5_Piece02", "SM_BC_TownUpper_3_5_Piece03", "SM_BC_TownUpper_3_5_Piece1", "SM_BC_TownUpper_3_5_Piece3", "SM_BC_TownUpper_3_5_Soft"]
+model = ["prop/brinecove/town-upper-3-5-piece00", "prop/brinecove/town-upper-3-5-piece01", "prop/brinecove/town-upper-3-5-piece02", "prop/brinecove/town-upper-3-5-piece03", "prop/brinecove/town-upper-3-5-piece1", "prop/brinecove/town-upper-3-5-piece3", "prop/brinecove/town-upper-3-5-soft"]
+about = "Brine Cove townupper-3-5 (7 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-4-4"
@@ -1342,21 +3028,21 @@ about = "Brine Cove townupper-4-4 (20 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-4-5"
-groups = ["SM_BC_TownUpper_4_5_Piece00", "SM_BC_TownUpper_4_5_Piece01", "SM_BC_TownUpper_4_5_Piece02", "SM_BC_TownUpper_4_5_Piece03", "SM_BC_TownUpper_4_5_Piece10", "SM_BC_TownUpper_4_5_Piece11", "SM_BC_TownUpper_4_5_Piece12", "SM_BC_TownUpper_4_5_Piece13", "SM_BC_TownUpper_4_5_Piece2", "SM_BC_TownUpper_4_5_Piece3", "SM_BC_TownUpper_4_5_Soft"]
-model = ["prop/brinecove/town-upper-4-5-piece00", "prop/brinecove/town-upper-4-5-piece01", "prop/brinecove/town-upper-4-5-piece02", "prop/brinecove/town-upper-4-5-piece03", "prop/brinecove/town-upper-4-5-piece10", "prop/brinecove/town-upper-4-5-piece11", "prop/brinecove/town-upper-4-5-piece12", "prop/brinecove/town-upper-4-5-piece13", "prop/brinecove/town-upper-4-5-piece2", "prop/brinecove/town-upper-4-5-piece3", "prop/brinecove/town-upper-4-5-soft"]
-about = "Brine Cove townupper-4-5 (11 groups)"
+groups = ["SM_BC_TownUpper_4_5_Piece00", "SM_BC_TownUpper_4_5_Piece01", "SM_BC_TownUpper_4_5_Piece02", "SM_BC_TownUpper_4_5_Piece03", "SM_BC_TownUpper_4_5_Piece10", "SM_BC_TownUpper_4_5_Piece11", "SM_BC_TownUpper_4_5_Piece12", "SM_BC_TownUpper_4_5_Piece13", "SM_BC_TownUpper_4_5_Piece2", "SM_BC_TownUpper_4_5_Soft"]
+model = ["prop/brinecove/town-upper-4-5-piece00", "prop/brinecove/town-upper-4-5-piece01", "prop/brinecove/town-upper-4-5-piece02", "prop/brinecove/town-upper-4-5-piece03", "prop/brinecove/town-upper-4-5-piece10", "prop/brinecove/town-upper-4-5-piece11", "prop/brinecove/town-upper-4-5-piece12", "prop/brinecove/town-upper-4-5-piece13", "prop/brinecove/town-upper-4-5-piece2", "prop/brinecove/town-upper-4-5-soft"]
+about = "Brine Cove townupper-4-5 (10 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-5-4"
-groups = ["SM_BC_TownUpper_5_4_Piece20", "SM_BC_TownUpper_5_4_Piece21", "SM_BC_TownUpper_5_4_Piece220", "SM_BC_TownUpper_5_4_Piece221", "SM_BC_TownUpper_5_4_Piece222", "SM_BC_TownUpper_5_4_Piece223", "SM_BC_TownUpper_5_4_Piece23", "SM_BC_TownUpper_5_4_Piece30", "SM_BC_TownUpper_5_4_Piece31", "SM_BC_TownUpper_5_4_Piece32", "SM_BC_TownUpper_5_4_Piece33", "SM_BC_TownUpper_5_4_Soft"]
-model = ["prop/brinecove/town-upper-5-4-piece20", "prop/brinecove/town-upper-5-4-piece21", "prop/brinecove/town-upper-5-4-piece220", "prop/brinecove/town-upper-5-4-piece221", "prop/brinecove/town-upper-5-4-piece222", "prop/brinecove/town-upper-5-4-piece223", "prop/brinecove/town-upper-5-4-piece23", "prop/brinecove/town-upper-5-4-piece30", "prop/brinecove/town-upper-5-4-piece31", "prop/brinecove/town-upper-5-4-piece32", "prop/brinecove/town-upper-5-4-piece33", "prop/brinecove/town-upper-5-4-soft"]
-about = "Brine Cove townupper-5-4 (12 groups)"
+groups = ["SM_BC_TownUpper_5_4_Piece20", "SM_BC_TownUpper_5_4_Piece21", "SM_BC_TownUpper_5_4_Piece220", "SM_BC_TownUpper_5_4_Piece221", "SM_BC_TownUpper_5_4_Piece222", "SM_BC_TownUpper_5_4_Piece223", "SM_BC_TownUpper_5_4_Piece23", "SM_BC_TownUpper_5_4_Soft"]
+model = ["prop/brinecove/town-upper-5-4-piece20", "prop/brinecove/town-upper-5-4-piece21", "prop/brinecove/town-upper-5-4-piece220", "prop/brinecove/town-upper-5-4-piece221", "prop/brinecove/town-upper-5-4-piece222", "prop/brinecove/town-upper-5-4-piece223", "prop/brinecove/town-upper-5-4-piece23", "prop/brinecove/town-upper-5-4-soft"]
+about = "Brine Cove townupper-5-4 (8 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-5-5"
-groups = ["SM_BC_TownUpper_5_5_Piece00", "SM_BC_TownUpper_5_5_Piece01", "SM_BC_TownUpper_5_5_Piece02", "SM_BC_TownUpper_5_5_Piece03", "SM_BC_TownUpper_5_5_Piece1", "SM_BC_TownUpper_5_5_Piece2", "SM_BC_TownUpper_5_5_Soft"]
-model = ["prop/brinecove/town-upper-5-5-piece00", "prop/brinecove/town-upper-5-5-piece01", "prop/brinecove/town-upper-5-5-piece02", "prop/brinecove/town-upper-5-5-piece03", "prop/brinecove/town-upper-5-5-piece1", "prop/brinecove/town-upper-5-5-piece2", "prop/brinecove/town-upper-5-5-soft"]
-about = "Brine Cove townupper-5-5 (7 groups)"
+groups = ["SM_BC_TownUpper_5_5_Piece00", "SM_BC_TownUpper_5_5_Piece01", "SM_BC_TownUpper_5_5_Piece02", "SM_BC_TownUpper_5_5_Piece03", "SM_BC_TownUpper_5_5_Soft"]
+model = ["prop/brinecove/town-upper-5-5-piece00", "prop/brinecove/town-upper-5-5-piece01", "prop/brinecove/town-upper-5-5-piece02", "prop/brinecove/town-upper-5-5-piece03", "prop/brinecove/town-upper-5-5-soft"]
+about = "Brine Cove townupper-5-5 (5 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-0-2"
@@ -1581,5 +3267,3 @@ model = ["prop/brinecove/landmarks-5-3", "prop/brinecove/landmarks-5-3-soft-piec
 about = "Brine Cove waterfall-canyon (15 groups)"
 
 # Not saved, by reason:
-# no record: SM_BC_CraneWest_Soft (/Game/Brinecove/Meshes/SM_BC_CraneWest_Soft)
-# no record: SM_BC_FishShed_Soft (/Game/Brinecove/Meshes/SM_BC_FishShed_Soft)

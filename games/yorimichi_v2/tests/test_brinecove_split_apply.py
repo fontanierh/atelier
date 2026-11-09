@@ -157,10 +157,10 @@ def small_plan(tmp_path):
     p.update({'file': glb, 'tile': {'settings': {'collision': 'complex'}, 'references': ['adopted/brinecove/materials']}})
     tile = {'record': 'prop/brinecove/props-3-3', 'owner': 'shared/brinecove/props-3-3', 'package': '/Game/Brinecove/Meshes/SM_BC_Props_3_3',
             'references': ['adopted/brinecove/materials'], 'settings': {'collision': 'complex', 'triangles': 15},
-            'triangles': 15, 'material_package': {}}
+            'triangles': 15, 'material_package': {}, 'source': {'name': 'SM_BC_Props_3_3.glb', 'sha256': 'a' * 64}}
     return {'parts': {('cannon-west', False): p}, 'tiles': {'Props_3_3': tile},
             'remainders': {'Props_3_3': {'file': rest, 'sha256': 'b' * 64, 'triangles': 5, 'materials': ['BC_rope'],
-                                         'slots': [apply.MATERIALS + 'MI_BC_rope']}}}
+                                         'slots': [apply.MATERIALS + 'MI_BC_rope'], 'kept': [0, 1, 2, 3, 4], 'total': 15}}}
 
 
 def allow(monkeypatch, seen=None):
@@ -179,7 +179,7 @@ def test_touched_set_lists_records_sources_packages_and_data(tmp_path):
     assert f'{g}/assets/prop/brinecove/cannon-west/src/SM_BC_CannonWest.glb' in paths
     assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_CannonWest.uasset' in paths          # the part's generated package
     assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset' in paths           # the changed tile's package
-    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.glb' in paths
+    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.carve.json' in paths
     assert {f'{g}/unreal/Content/Data/brinecove/runtime.json', f'{g}/runtime-data.lock.json',
             f'{g}/world/regions/w09-brinecove/objects.toml', f'{g}/world/regions/w09-brinecove/split-batch1.json'} <= paths
     assert info['paths'] == sorted(info['paths']) and 'region/w09-brinecove' in info['scopes']
@@ -362,7 +362,7 @@ def test_paths_list_only_what_changes(tmp_path, monkeypatch):
     plan['remainders']['Props_3_3']['triangles'] = 4
     paths = set(apply.touched(game, plan)['paths'])
     g = apply.GAME_REL
-    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.glb' in paths
+    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.carve.json' in paths
     assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset' in paths
     assert not any('cannon-west' in p for p in paths)               # the unchanged part is not touched
 
@@ -432,6 +432,39 @@ def test_a_tile_nothing_takes_from_any_more_goes_back_to_its_donor_record_text()
     gen = apply.tile_generated('Harbor_2_3_Soft', tile, rem)
     assert gen.about == 'SM_BC_Harbor_2_3_Soft: one Brine Cove mesh (90 triangles)'
     assert list(gen.settings) == ['slot_materials', 'triangles', 'full_precision_uvs']
+
+
+def test_a_restored_tile_keeps_its_plain_record_so_a_rerun_writes_nothing(tmp_path):
+    """yorimichi-v2-targeted-authoring: a tile nothing is carved from is the donor record recover.py writes, never the
+    derived form; once that record is committed, a rerun leaves it and its import fingerprint alone."""
+    game, plan = mini_game(tmp_path), small_plan(tmp_path)
+    plan['remainders']['Props_3_3'].update(restored=True, triangles=15, kept=list(range(15)))
+    rec = 'assets/prop/brinecove/props-3-3'
+    first = apply.compute(game, plan)['writes']
+    assert b'[derive]' not in first[f'{rec}/asset.toml'] and f'{rec}/src/SM_BC_Props_3_3.glb' in first
+    assert f'{rec}/src/SM_BC_Props_3_3.carve.json' not in first
+    for rel in (f'{rec}/asset.toml', f'{rec}/src/SM_BC_Props_3_3.glb'):
+        (game / rel).parent.mkdir(parents=True, exist_ok=True)
+        (game / rel).write_bytes(first[rel])
+    (game / rec / 'src' / 'SM_BC_Props_3_3.carve.json').write_text('{}')    # left by an earlier carve
+    again = apply.compute(game, plan)
+    assert not [k for k in again['writes'] if k.startswith(rec + '/')]
+    assert again['deletes'] == [f'{rec}/src/SM_BC_Props_3_3.carve.json']
+    assert f'{apply.GAME_REL}/{rec}/src/SM_BC_Props_3_3.carve.json' in apply.touched(game, plan, ops=again)['paths']
+
+
+def test_a_legacy_old_form_remainder_is_not_a_restored_tile():
+    """A cut tile whose committed source is its remainder (Props_3_3: 1868 of 4600 left, 2732 to cannon-west) still needs
+    brinecove_sources.py: only a whole uncut tile with no shares keeps the plain record (Harbor_2_3_Soft: 90 of 90)."""
+    from types import SimpleNamespace
+    plain = lambda sha: SimpleNamespace(derive=None, sources=[SimpleNamespace(sha256=sha, path='src/x.glb')])  # noqa: E731
+    legacy = {'source_triangles': 4600, 'remainder': {'sha256': 'r' * 64, 'triangles': 1868}}
+    assert not apply.restored_record(plain('r' * 64), legacy, {'prop/brinecove/cannon-west': 2732})
+    assert not apply.restored_record(plain('r' * 64), legacy, {})                      # fewer triangles than the tile
+    whole = {'source_triangles': 90, 'remainder': {'sha256': 'd' * 64, 'triangles': 90}}
+    assert apply.restored_record(plain('d' * 64), whole, {})
+    assert not apply.restored_record(plain('d' * 64), whole, {'prop/brinecove/crane-west-soft': 1})
+    assert not apply.restored_record(plain('e' * 64), whole, {})                       # not the pinned bytes
 
 
 @pytest.fixture
@@ -622,3 +655,13 @@ def test_journal_recovery_refuses_legacy_scopeless_journal(interrupted_split, mo
     with pytest.raises(apply.SplitError, match='no valid owning scopes'):
         apply.run_step(case.game, {}, 'RECOVER')
     assert snapshot(case.game) == before
+
+
+def test_a_remainder_binds_its_kept_materials_by_name():
+    # A carved remainder keeps fewer slots than the fused original: the slots pair by name, a dropped one keeps its package.
+    packages = apply.material_packages(['BC_canvas', 'BC_canvas_gold', 'BC_wood'],
+                                       [apply.MATERIALS + 'MI_BC_canvas', apply.MATERIALS + 'MI_BC_wood'])
+    assert packages == {'BC_canvas': apply.MATERIALS + 'MI_BC_canvas', 'BC_canvas_gold': apply.MATERIALS + 'MI_BC_canvas_gold',
+                        'BC_wood': apply.MATERIALS + 'MI_BC_wood'}
+    with pytest.raises(apply.SplitError):
+        apply.material_packages(['BC_wood'], [apply.MATERIALS + 'MI_BC_stone'])

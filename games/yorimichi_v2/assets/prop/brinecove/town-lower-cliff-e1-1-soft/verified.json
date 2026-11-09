@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-cliff-e1-1-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerCliffE11_Soft.uasset": "4b2bd09b38d30a91cbbfe95c3561601f60b744ff1681cd626679a7e27781dd07"
+  },
+  "input_fingerprint": "d4e04323f131bb2dc8c91b799186d1340287cae27e658a03009227911e1b348c",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerCliffE11_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

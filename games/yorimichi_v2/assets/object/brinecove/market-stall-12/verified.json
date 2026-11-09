@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/market-stall-12",
+  "dependencies": {
+    "prop/brinecove/market-stall-12": "81b29c63b145c54259a4ffeeabceabb121ffc952dfc1c466ff09c1202dfac2c7",
+    "prop/brinecove/market-stall-12-soft": "3dc4d2b57668bbfc1b82b30d992b5b5b8c610765c1efd559dd1fb78ed80f94e7"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/QS/A3BJDXBT1EQGA20UDDJMEG.uasset": "4f78dedbb290dc98f6aeddc95b880140a3c9b0a6734a0ccb3bb2fa5a19b0e97c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

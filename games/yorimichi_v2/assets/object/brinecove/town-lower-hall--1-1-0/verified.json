@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-lower-hall--1-1-0",
+  "dependencies": {
+    "prop/brinecove/town-lower-hall--1-1-0": "53446c867bb8752f682345b4a97d31ee5ce55d0253bf2e6954b41d2157bacd75",
+    "prop/brinecove/town-lower-hall--1-1-0-soft": "0cc7a79b856e8b9078f8992911e3c74039d78aa00df497b844947e449d635ba7"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/VZ/MDFK8HX1A5J7YDKL7WCQZ3.uasset": "cc3d7628c152f0230938492f2536b9a2ea74ba08652b11bdb729ca7fc9004134"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

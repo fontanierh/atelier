@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-cliff-w2-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperCliffW21.uasset": "478e659fbd74867cd700aa91a3809d48c1059d61343621948e907f84746445ab"
+  },
+  "input_fingerprint": "d648c40b2d24edb9987ba075c75652b59518d25f89050d0a803a5f6d029d68cd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperCliffW21": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

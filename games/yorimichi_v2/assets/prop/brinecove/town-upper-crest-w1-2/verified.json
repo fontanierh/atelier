@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-crest-w1-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperCrestW12.uasset": "4e3c66a3f91f6e449c3e192c5c3e6232d47635159149eb63cad6f5d1e140472e"
+  },
+  "input_fingerprint": "2152ee8c9aaafc4a2f4c59a354e665687395468babdc4efe2ffc13e2f7759e42",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestW12": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

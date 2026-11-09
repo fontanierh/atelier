@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_2_4_Piece30: one Brine Cove mesh (4 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_2_4_Piece30: one Brine Cove mesh, what remains after batch 1 took its objects (2 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -12,13 +12,23 @@ references = ["adopted/brinecove/materials"]
 path = "src/SM_BC_TownUpper_2_4_Piece30.glb"
 sha256 = "ffda302613b17cd893dfd9a755b26f599faf26cfa191819dd1dc09895612c7e9"
 
+[[sources]]
+path = "src/SM_BC_TownUpper_2_4_Piece30.carve.json"
+sha256 = "3463e907b658eb1f0a943191fbbc2c0bc1ca9474c84520f72e75d0d81058e309"
+
+[derive]
+kind = "carve"
+version = 1
+original = "src/SM_BC_TownUpper_2_4_Piece30.glb"
+selection = "src/SM_BC_TownUpper_2_4_Piece30.carve.json"
+
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
-triangles = 4
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_stone_light"]
+triangles = 2
 collision = "complex"
 full_precision_uvs = true
 

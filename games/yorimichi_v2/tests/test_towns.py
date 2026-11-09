@@ -215,9 +215,8 @@ def test_reasons_are_the_runtime_ones(state):
     assert {key for key, _ in bm['blocked']['outside']} == {f'SM_BM_BVV_Village_{n}' for n in range(1, 9)}
     assert bm['blocked']['no record'] == []
     _, _, _, bc = state['brinecove']
-    # Brine Cove batch 1 cut these remainders from their fused tiles; the next Brine Cove batch saves them as objects.
-    assert bc['blocked']['outside'] == [] and {key for key, _ in bc['blocked']['no record']} == {
-        'SM_BC_CraneWest_Soft', 'SM_BC_FishShed_Soft'}
+    # Brine Cove batch 1's two Soft remainders are saved as their own objects, so no group lacks a record.
+    assert bc['blocked']['outside'] == [] and bc['blocked']['no record'] == []
 
 
 def test_shared_mesh_names_are_saved_by_key(state):
@@ -227,3 +226,16 @@ def test_shared_mesh_names_are_saved_by_key(state):
     assert len(shared) == 30
     saved = {g.split('@', 1)[0] for g in all_groups(text) if '#' in g}
     assert saved == shared
+
+
+@pytest.mark.parametrize('tag', TAGS)
+def test_saved_definitions_name_the_current_group_keys(state, tag):
+    """Retiring runtime groups shifts the later `#index` keys (towns.group_keys); objects.saved.json must be relabelled with
+    objects.toml, or objects.py refuses the next save of those objects as changed (yorimichi-v2-targeted-authoring)."""
+    text = state[tag][0]
+    path = towns.region_folder(tag, ROOT) / objects.SAVED
+    if not path.is_file():
+        pytest.skip(f'{tag} has no {objects.SAVED}')
+    saved = json.loads(path.read_text())['objects']
+    now = {item['id']: item.get('groups', [item.get('group')]) for item in tomllib.loads(text).get('objects', [])}
+    assert {k: v['groups'] for k, v in saved.items() if k in now and v['groups'] != now[k]} == {}

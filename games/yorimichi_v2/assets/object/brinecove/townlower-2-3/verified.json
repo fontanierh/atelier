@@ -1,12 +1,11 @@
 {
   "asset": "object/brinecove/townlower-2-3",
   "dependencies": {
-    "prop/brinecove/town-lower-2-3": "13072f66118755ed32344981fcadaf512019e83857e0cff8031bb31c9b3d9d66",
-    "prop/brinecove/town-lower-2-3-soft": "7f068cb3f4f52e9ebf1e818d8fb6570bcab380b501cecd06705d61ea1f2f0b45"
+    "prop/brinecove/town-lower-2-3": "57ccac20ac0757ab5d9ebb4d511143805fdbd75fa7daf1a9a89b9fe6266a1524"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/1L/K55U1CIOYN0T8L6J7B9HMC.uasset": "3d75bda3bc281fe6adc58386357ae5eee7062229ec6ae9bf828719513cc22c15"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/1L/K55U1CIOYN0T8L6J7B9HMC.uasset": "4ced14eb7fd9415c7a2664b5b3dd10a50dd206fa54ebb0b48ef32c53f9a64125"
   },
   "kind": "editor-saved",
   "schema": 1

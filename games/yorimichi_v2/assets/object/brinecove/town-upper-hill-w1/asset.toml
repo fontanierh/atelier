@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the town upper hill w1, cut from its fused tile (8724 triangles).
+# Its placement is this actor package; its model is prop/brinecove/town-upper-hill-w1, prop/brinecove/town-upper-hill-w1-soft. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/town-upper-hill-w1"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/town-upper-hill-w1", "prop/brinecove/town-upper-hill-w1-soft"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/A/LL/N7YEBU62UEBA9H2KD9U8PC"

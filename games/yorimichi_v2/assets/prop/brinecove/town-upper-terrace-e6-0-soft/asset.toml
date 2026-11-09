@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpperTerraceE60_Soft: the town upper terrace e6 0, cut from the fused tile(s) TownUpper_5_4_Soft (70 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-upper-terrace-e6-0-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-upper-terrace-e6-0-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownUpperTerraceE60_Soft.glb"
+sha256 = "033af0ef8fa8d26e3f572984b0aaff5b5127b728d551b7370a532d77a3986a2a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid"]
+triangles = 70
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpperTerraceE60_Soft"

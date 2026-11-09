@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-lower-slope--1-1-1-0",
+  "dependencies": {
+    "prop/brinecove/town-lower-slope--1-1-1-0": "e450b300692c883113bf1ed7f9a6e7646eae9a420c26506c641245ed65edb1af",
+    "prop/brinecove/town-lower-slope--1-1-1-0-soft": "9314c62a6cca2d9217c69e89cea7ef574b8259dabebdb92772c2ca2c854dfab2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/X8/LIDIIDWI14GMS31NBK3C8U.uasset": "eb8658970b330940681e8cfc82a0c476f2e8c3b4770e249fdfbdac82f54b84b6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

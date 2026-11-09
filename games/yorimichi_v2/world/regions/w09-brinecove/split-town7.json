@@ -1,0 +1,3795 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part mesh, each tile remainder, and the donor tile each was cut from.",
+  "parts": {
+    "prop/brinecove/town-upper-crest-e1-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_metal",
+        "BC_ochre",
+        "BC_roof_slate",
+        "BC_rose_wall",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_shutter_teal"
+      ],
+      "max": [
+        65.3766,
+        50.3432,
+        -398.3224
+      ],
+      "mesh": "SM_BC_TownUpperCrestE10",
+      "min": [
+        49.4844,
+        30.5238,
+        -425.8738
+      ],
+      "object": "town-upper-crest-e1-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE10",
+      "sha256": "b83b03c3cbb7f4fa29666a449099c14c164274ee53e82fced0730ca5f92a0339",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece00",
+        "TownUpper_4_5_Piece01",
+        "TownUpper_4_5_Piece02",
+        "TownUpper_4_5_Piece03"
+      ],
+      "triangles": 8660
+    },
+    "prop/brinecove/town-upper-crest-e1-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        59.0337,
+        45.2242,
+        -399.2766
+      ],
+      "mesh": "SM_BC_TownUpperCrestE10_Soft",
+      "min": [
+        54.6027,
+        30.9215,
+        -400.7098
+      ],
+      "object": "town-upper-crest-e1-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE10_Soft",
+      "sha256": "51050e2f8231f1ff09fc514ce364c0a3dd1db229180043906ce90daeaa34de93",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 124
+    },
+    "prop/brinecove/town-upper-crest-e1-1": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_metal",
+        "BC_rose_wall",
+        "BC_shutter_blue",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        77.8793,
+        48.8159,
+        -399.5387
+      ],
+      "mesh": "SM_BC_TownUpperCrestE11",
+      "min": [
+        63.5189,
+        30.4484,
+        -423.5718
+      ],
+      "object": "town-upper-crest-e1-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE11",
+      "sha256": "6502d470225ef3f1d79fafd5f5c388369b35f6184fc2998b7ed6c199b1baeeae",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece01",
+        "TownUpper_4_5_Piece03"
+      ],
+      "triangles": 6424
+    },
+    "prop/brinecove/town-upper-crest-e1-1-soft": {
+      "materials": [
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm",
+        "BC_palm_frond"
+      ],
+      "max": [
+        74.9245,
+        49.649,
+        -400.0655
+      ],
+      "mesh": "SM_BC_TownUpperCrestE11_Soft",
+      "min": [
+        65.5411,
+        30.8308,
+        -410.2999
+      ],
+      "object": "town-upper-crest-e1-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE11_Soft",
+      "sha256": "d9a27d1532ba9fe40e42e07ed335a427bd6039deee4267fa0b314a8b848c10dc",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 108
+    },
+    "prop/brinecove/town-upper-crest-e1-2": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_roof_slate",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_yellow_wall"
+      ],
+      "max": [
+        90.3096,
+        46.5423,
+        -400.1358
+      ],
+      "mesh": "SM_BC_TownUpperCrestE12",
+      "min": [
+        75.1014,
+        30.4405,
+        -427.2626
+      ],
+      "object": "town-upper-crest-e1-2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE12",
+      "sha256": "1f0875e63c82d00a53ee443a56f207d413507f2b3f381828e21d28af92b0f6e3",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece01",
+        "TownUpper_4_5_Piece03"
+      ],
+      "triangles": 5436
+    },
+    "prop/brinecove/town-upper-crest-e1-2-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        87.6923,
+        37.3547,
+        -401.086
+      ],
+      "mesh": "SM_BC_TownUpperCrestE12_Soft",
+      "min": [
+        79.6003,
+        30.8103,
+        -402.3658
+      ],
+      "object": "town-upper-crest-e1-2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE12_Soft",
+      "sha256": "e8dbbcfc72b53dcf76aa227f4dbd4182567e1abe162239fc03cc6b902635b3d4",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/town-upper-crest-e2-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_roof_slate",
+        "BC_rope",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        131.1629,
+        50.2927,
+        -398.8297
+      ],
+      "mesh": "SM_BC_TownUpperCrestE20",
+      "min": [
+        110.9029,
+        30.5205,
+        -424.4502
+      ],
+      "object": "town-upper-crest-e2-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE20",
+      "sha256": "1daf58202d485199b417e5a313b8ab8b92d19fc27b26eecd92d0537210768428",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece01",
+        "TownUpper_4_5_Piece03",
+        "TownUpper_4_5_Piece10",
+        "TownUpper_4_5_Piece12"
+      ],
+      "triangles": 10348
+    },
+    "prop/brinecove/town-upper-crest-e2-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid"
+      ],
+      "max": [
+        118.9454,
+        44.6447,
+        -400.3395
+      ],
+      "mesh": "SM_BC_TownUpperCrestE20_Soft",
+      "min": [
+        115.4183,
+        33.3533,
+        -401.1611
+      ],
+      "object": "town-upper-crest-e2-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE20_Soft",
+      "sha256": "bcd14e6230a0dcff9752d80be12ed71b19009737c0b7d687cb32060b682bb1c4",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 76
+    },
+    "prop/brinecove/town-upper-crest-e2-1": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_roof_terra",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_yellow_wall"
+      ],
+      "max": [
+        148.8815,
+        45.9454,
+        -399.6101
+      ],
+      "mesh": "SM_BC_TownUpperCrestE21",
+      "min": [
+        129.1466,
+        30.5004,
+        -425.9623
+      ],
+      "object": "town-upper-crest-e2-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE21",
+      "sha256": "8752c9ab28795ff8817d4c4f5129513dd0e295fd9a0aa90268b2e5c8096574d3",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece10",
+        "TownUpper_4_5_Piece12"
+      ],
+      "triangles": 6164
+    },
+    "prop/brinecove/town-upper-crest-e2-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        144.9818,
+        41.3599,
+        -400.8279
+      ],
+      "mesh": "SM_BC_TownUpperCrestE21_Soft",
+      "min": [
+        132.8977,
+        30.8241,
+        -402.1996
+      ],
+      "object": "town-upper-crest-e2-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE21_Soft",
+      "sha256": "91ee789792edc2426c248553a1e3cd98ff8eb71f5f92b5e289bdc32b2c4c9fcc",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 108
+    },
+    "prop/brinecove/town-upper-crest-e3-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_roof_slate",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        184.3869,
+        48.0273,
+        -399.3351
+      ],
+      "mesh": "SM_BC_TownUpperCrestE30",
+      "min": [
+        168.7786,
+        30.3354,
+        -425.4895
+      ],
+      "object": "town-upper-crest-e3-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE30",
+      "sha256": "20958fa5fd5c28307df0a7c3ca0cb678f343570088e6e04111057cdeb5be1161",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece10",
+        "TownUpper_4_5_Piece12"
+      ],
+      "triangles": 8784
+    },
+    "prop/brinecove/town-upper-crest-e3-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid"
+      ],
+      "max": [
+        174.8455,
+        45.0606,
+        -400.8748
+      ],
+      "mesh": "SM_BC_TownUpperCrestE30_Soft",
+      "min": [
+        170.259,
+        33.786,
+        -401.774
+      ],
+      "object": "town-upper-crest-e3-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE30_Soft",
+      "sha256": "0ee834fc40d16def74d89251fb34f90ff69eb9ef05f2922554179257377fd877",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 76
+    },
+    "prop/brinecove/town-upper-crest-e3-1": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_roof_terra_light",
+        "BC_rope",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_shutter_green"
+      ],
+      "max": [
+        197.6021,
+        50.8644,
+        -398.1242
+      ],
+      "mesh": "SM_BC_TownUpperCrestE31",
+      "min": [
+        182.1912,
+        30.4175,
+        -425.1666
+      ],
+      "object": "town-upper-crest-e3-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE31",
+      "sha256": "ab309c78b58deff1223a5cb8d8e7f66950dc8d627e8d303c03df5fc888416fbe",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece10",
+        "TownUpper_4_5_Piece11",
+        "TownUpper_4_5_Piece12",
+        "TownUpper_4_5_Piece13"
+      ],
+      "triangles": 6944
+    },
+    "prop/brinecove/town-upper-crest-e3-1-soft": {
+      "materials": [
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        193.4003,
+        31.3416,
+        -399.2162
+      ],
+      "mesh": "SM_BC_TownUpperCrestE31_Soft",
+      "min": [
+        192.7164,
+        30.8082,
+        -399.9203
+      ],
+      "object": "town-upper-crest-e3-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE31_Soft",
+      "sha256": "d8704e3ae68467ddc93358c45c9d690998d4912b06fa465e164373f0bfee92c5",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 48
+    },
+    "prop/brinecove/town-upper-crest-e3-2": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_roof_terra_light",
+        "BC_sage_wall",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        211.3902,
+        53.6237,
+        -398.1056
+      ],
+      "mesh": "SM_BC_TownUpperCrestE32",
+      "min": [
+        195.2324,
+        30.4985,
+        -427.5797
+      ],
+      "object": "town-upper-crest-e3-2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE32",
+      "sha256": "c681b37251eb303ebeb8d2944bdff378c07ea7f9c96eea651d59ee81faa22634",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece11",
+        "TownUpper_4_5_Piece13"
+      ],
+      "triangles": 10164
+    },
+    "prop/brinecove/town-upper-crest-e3-2-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        207.1165,
+        47.6117,
+        -399.0598
+      ],
+      "mesh": "SM_BC_TownUpperCrestE32_Soft",
+      "min": [
+        196.2614,
+        30.9233,
+        -400.9562
+      ],
+      "object": "town-upper-crest-e3-2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE32_Soft",
+      "sha256": "8f6d8a05cfc2cdd998864287afe206d79c6f097c5db0031df32c277de96ba8d7",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 230
+    },
+    "prop/brinecove/town-upper-crest-e4-0": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        250.595,
+        48.5837,
+        -399.3798
+      ],
+      "mesh": "SM_BC_TownUpperCrestE40",
+      "min": [
+        231.4724,
+        30.4666,
+        -425.2658
+      ],
+      "object": "town-upper-crest-e4-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE40",
+      "sha256": "02736a89243279513f2ea6cf5221867bfd9f200700a46c4f226a16f0ae7b3931",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece11",
+        "TownUpper_4_5_Piece13"
+      ],
+      "triangles": 8488
+    },
+    "prop/brinecove/town-upper-crest-e4-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_palm_frond"
+      ],
+      "max": [
+        250.316,
+        49.5381,
+        -401.6354
+      ],
+      "mesh": "SM_BC_TownUpperCrestE40_Soft",
+      "min": [
+        235.1881,
+        32.1159,
+        -411.7851
+      ],
+      "object": "town-upper-crest-e4-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE40_Soft",
+      "sha256": "471ad2e6b89f567dfac99ada597df2b7359aab8ca31b11e8a83e18dcdd6173fe",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 130
+    },
+    "prop/brinecove/town-upper-crest-e4-1": {
+      "materials": [
+        "BC_cream",
+        "BC_glass",
+        "BC_lantern",
+        "BC_roof_slate",
+        "BC_sage_wall",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood_dark",
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_metal",
+        "BC_shutter_blue",
+        "BC_shutter_teal",
+        "BC_stone_dark",
+        "BC_wood"
+      ],
+      "max": [
+        270.1896,
+        48.308,
+        -399.3033
+      ],
+      "mesh": "SM_BC_TownUpperCrestE41",
+      "min": [
+        247.9476,
+        30.4202,
+        -427.7685
+      ],
+      "object": "town-upper-crest-e4-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE41",
+      "sha256": "b8ab8020c4c1bfd437af44ada84ee5d829f882fc76de50cbd4f3073469fc36bc",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece11",
+        "TownUpper_4_5_Piece13",
+        "TownUpper_5_5_Piece00",
+        "TownUpper_5_5_Piece02"
+      ],
+      "triangles": 5124
+    },
+    "prop/brinecove/town-upper-crest-e4-1-soft": {
+      "materials": [
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        266.8175,
+        31.3645,
+        -401.6896
+      ],
+      "mesh": "SM_BC_TownUpperCrestE41_Soft",
+      "min": [
+        266.1308,
+        30.8658,
+        -402.5059
+      ],
+      "object": "town-upper-crest-e4-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE41_Soft",
+      "sha256": "f84391037714e4d03f4da7ebe66c37ed1fb1440109a4ee1882766ba4977ea466",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 48
+    },
+    "prop/brinecove/town-upper-hill-e1": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_roof_straw",
+        "BC_roof_terra_light",
+        "BC_rope",
+        "BC_sail",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_teal_wall",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        115.8581,
+        64.9353,
+        -496.2326
+      ],
+      "mesh": "SM_BC_TownUpperHillE1",
+      "min": [
+        84.1419,
+        50.0631,
+        -519.7674
+      ],
+      "object": "town-upper-hill-e1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE1",
+      "sha256": "2d978e99718b2393cfdd27c44c4d42621b01f4e8d8161b9faea8c7ff7591d620",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece2"
+      ],
+      "triangles": 6676
+    },
+    "prop/brinecove/town-upper-hill-e1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        112.7112,
+        60.2161,
+        -501.3425
+      ],
+      "mesh": "SM_BC_TownUpperHillE1_Soft",
+      "min": [
+        94.5326,
+        58.0967,
+        -505.2686
+      ],
+      "object": "town-upper-hill-e1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE1_Soft",
+      "sha256": "deb6d9402960d0ea4131a05fced2ad3a8aeba11d43701a8f34e0117f6e6950e8",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/town-upper-hill-e2": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_roof_slate",
+        "BC_roof_straw",
+        "BC_roof_terra",
+        "BC_rope",
+        "BC_sage_wall",
+        "BC_sail",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        180.6959,
+        69.0248,
+        -506.4792
+      ],
+      "mesh": "SM_BC_TownUpperHillE2",
+      "min": [
+        149.3041,
+        52.4403,
+        -529.5208
+      ],
+      "object": "town-upper-hill-e2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE2",
+      "sha256": "43890357d3e6543ddc04fe5fb524b0e48956d8eb393ee96fd75f2be3ac25e852",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece3"
+      ],
+      "triangles": 6628
+    },
+    "prop/brinecove/town-upper-hill-e2-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        175.2212,
+        61.6045,
+        -514.0782
+      ],
+      "mesh": "SM_BC_TownUpperHillE2_Soft",
+      "min": [
+        158.2657,
+        60.4431,
+        -516.8569
+      ],
+      "object": "town-upper-hill-e2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE2_Soft",
+      "sha256": "3cf4b2ce902e8c7ebe6d4bc50f26fee11b86e227cb460262ac506d23f8f0d142",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/town-upper-hill-e3": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_roof_straw",
+        "BC_roof_terra",
+        "BC_rope",
+        "BC_sail",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_teal_wall",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        245.1143,
+        61.2354,
+        -493.3684
+      ],
+      "mesh": "SM_BC_TownUpperHillE3",
+      "min": [
+        214.8857,
+        46.8536,
+        -516.6317
+      ],
+      "object": "town-upper-hill-e3",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE3",
+      "sha256": "e5adadf7dc4286bcba07d0311763a6f3ffe32b9b26da12b26b5a6bfae94a40e2",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece3"
+      ],
+      "triangles": 6592
+    },
+    "prop/brinecove/town-upper-hill-e3-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        240.5061,
+        56.5202,
+        -500.0959
+      ],
+      "mesh": "SM_BC_TownUpperHillE3_Soft",
+      "min": [
+        225.3652,
+        54.7032,
+        -504.1157
+      ],
+      "object": "town-upper-hill-e3",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE3_Soft",
+      "sha256": "12773a6c7194eecf57d85f5514f89251684bc9dbb37e2bd5a873099ac06b01dc",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/town-upper-hill-e4": {
+      "materials": [
+        "BC_blossom",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_plaster",
+        "BC_roof_straw",
+        "BC_roof_terra",
+        "BC_roof_terra_light",
+        "BC_rope",
+        "BC_sail",
+        "BC_shutter_blue",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        315.529,
+        68.6341,
+        -510.7293
+      ],
+      "mesh": "SM_BC_TownUpperHillE4",
+      "min": [
+        284.471,
+        51.5278,
+        -533.2706
+      ],
+      "object": "town-upper-hill-e4",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE4",
+      "sha256": "94d18c0aaa292ef22e8c3fef24554c15c42ac690d93ffb807d7a60c06fc0ac5f",
+      "soft": false,
+      "tiles": [
+        "TownUpper_5_5_Piece2"
+      ],
+      "triangles": 6652
+    },
+    "prop/brinecove/town-upper-hill-e4-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        311.4639,
+        61.1243,
+        -520.2335
+      ],
+      "mesh": "SM_BC_TownUpperHillE4_Soft",
+      "min": [
+        292.6761,
+        59.3957,
+        -520.853
+      ],
+      "object": "town-upper-hill-e4",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE4_Soft",
+      "sha256": "560530bf894b2157ec4533c7161490978f2a08677298c52689f9d5819fe8ccf6",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/town-upper-ridge-10-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_peach_wall",
+        "BC_roof_straw",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        118.6402,
+        53.0837,
+        -465.4312
+      ],
+      "mesh": "SM_BC_TownUpperRidge100",
+      "min": [
+        106.3115,
+        34.2101,
+        -484.3521
+      ],
+      "object": "town-upper-ridge-10-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge100",
+      "sha256": "0ef7bdc89195ff5d0a116c7659fae544512043ed1c942d97c178df312f21d0cb",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece03",
+        "TownUpper_4_5_Piece2"
+      ],
+      "triangles": 3512
+    },
+    "prop/brinecove/town-upper-ridge-10-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        116.4429,
+        44.6837,
+        -466.1261
+      ],
+      "mesh": "SM_BC_TownUpperRidge100_Soft",
+      "min": [
+        109.9494,
+        38.7148,
+        -467.3404
+      ],
+      "object": "town-upper-ridge-10-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge100_Soft",
+      "sha256": "62e210b7a3fe1ceda9ceb21533822f41062320a311e4ba0d7d12e58ceea399c5",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/town-upper-ridge-10-1": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_roof_slate",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        129.1107,
+        56.5509,
+        -465.3212
+      ],
+      "mesh": "SM_BC_TownUpperRidge101",
+      "min": [
+        116.545,
+        34.2953,
+        -485.5863
+      ],
+      "object": "town-upper-ridge-10-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge101",
+      "sha256": "91eb6180ce267d4aaf99dcaec0929d42e30bb07cb8a0f252cb2b54ec3825a85d",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece03",
+        "TownUpper_4_5_Piece12",
+        "TownUpper_4_5_Piece2",
+        "TownUpper_4_5_Piece3"
+      ],
+      "triangles": 6696
+    },
+    "prop/brinecove/town-upper-ridge-10-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        126.8611,
+        50.8479,
+        -466.2983
+      ],
+      "mesh": "SM_BC_TownUpperRidge101_Soft",
+      "min": [
+        118.706,
+        38.8737,
+        -467.6229
+      ],
+      "object": "town-upper-ridge-10-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge101_Soft",
+      "sha256": "b686a4aa6081d1f0fb726bbec2d7a09da4447965b1adb799b3df8a4acb3ae104",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 210
+    },
+    "prop/brinecove/town-upper-ridge-11-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_metal",
+        "BC_roof_straw",
+        "BC_shutter_blue",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        168.2534,
+        47.2963,
+        -456.1414
+      ],
+      "mesh": "SM_BC_TownUpperRidge110",
+      "min": [
+        154.8506,
+        29.7841,
+        -475.9594
+      ],
+      "object": "town-upper-ridge-11-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge110",
+      "sha256": "9ee886bff034dc9d475b7ce04cbc05250dde423a015d55cfa21fbc9a2cb08f00",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece12"
+      ],
+      "triangles": 3576
+    },
+    "prop/brinecove/town-upper-ridge-11-1": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_peach_wall",
+        "BC_roof_teal",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        180.0021,
+        48.8655,
+        -456.1713
+      ],
+      "mesh": "SM_BC_TownUpperRidge111",
+      "min": [
+        166.8915,
+        29.7728,
+        -477.6204
+      ],
+      "object": "town-upper-ridge-11-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge111",
+      "sha256": "f547f491a41ccbd2b7e85af6c0750cfd489a88d0f57e278a66ee092967ce97c7",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece12"
+      ],
+      "triangles": 6713
+    },
+    "prop/brinecove/town-upper-ridge-11-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        179.1465,
+        44.7926,
+        -457.1361
+      ],
+      "mesh": "SM_BC_TownUpperRidge111_Soft",
+      "min": [
+        169.8481,
+        34.2995,
+        -458.4708
+      ],
+      "object": "town-upper-ridge-11-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge111_Soft",
+      "sha256": "ca2c506613d2fb7b1d86992c8e36f958b08da1bca93999d9be26adfab35c24e9",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 204
+    },
+    "prop/brinecove/town-upper-ridge-12-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_metal",
+        "BC_plaster",
+        "BC_roof_teal",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        222.9552,
+        51.3485,
+        -453.7276
+      ],
+      "mesh": "SM_BC_TownUpperRidge120",
+      "min": [
+        209.5462,
+        28.9075,
+        -473.6373
+      ],
+      "object": "town-upper-ridge-12-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge120",
+      "sha256": "7b454432aaecdf26b39b7eb5d18ba42712fce7257f294c5dc0fab9fb5599e667",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece13"
+      ],
+      "triangles": 7148
+    },
+    "prop/brinecove/town-upper-ridge-12-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        220.4774,
+        47.2371,
+        -454.9781
+      ],
+      "mesh": "SM_BC_TownUpperRidge120_Soft",
+      "min": [
+        210.3652,
+        33.3913,
+        -456.0321
+      ],
+      "object": "town-upper-ridge-12-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge120_Soft",
+      "sha256": "c73cbb77e2a6d9f73fd39e76a45c873628d9839ce499778348c9a1da3f343037",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 122
+    },
+    "prop/brinecove/town-upper-ridge-12-1": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_roof_straw",
+        "BC_rope",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        235.4127,
+        48.4379,
+        -454.3618
+      ],
+      "mesh": "SM_BC_TownUpperRidge121",
+      "min": [
+        221.5502,
+        28.7546,
+        -473.712
+      ],
+      "object": "town-upper-ridge-12-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge121",
+      "sha256": "adbc4749c62b96fb68de8e229502c3b4f11de0927b4129f1f7dda8ffa2ee16f8",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece13"
+      ],
+      "triangles": 4212
+    },
+    "prop/brinecove/town-upper-ridge-13-0": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_roof_straw",
+        "BC_roof_terra",
+        "BC_rope",
+        "BC_sail",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        269.6781,
+        46.7726,
+        -467.6231
+      ],
+      "mesh": "SM_BC_TownUpperRidge130",
+      "min": [
+        258.981,
+        34.9525,
+        -486.1528
+      ],
+      "object": "town-upper-ridge-13-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge130",
+      "sha256": "7fd3a141c1dab73e9bbb4660f380c18dba62c1d18cfcebe37b1a80349838da1d",
+      "soft": false,
+      "tiles": [
+        "TownUpper_5_5_Piece02",
+        "TownUpper_5_5_Piece2"
+      ],
+      "triangles": 2228
+    },
+    "prop/brinecove/town-upper-ridge-13-0-soft": {
+      "materials": [
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        267.7104,
+        41.5371,
+        -473.4159
+      ],
+      "mesh": "SM_BC_TownUpperRidge130_Soft",
+      "min": [
+        267.1646,
+        41.1575,
+        -473.9804
+      ],
+      "object": "town-upper-ridge-13-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge130_Soft",
+      "sha256": "7688ef3b35585da540632b8754b34b348ddca0b21becf597efb5ee3d0b828acd",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 48
+    },
+    "prop/brinecove/town-upper-ridge-13-1": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_lantern",
+        "BC_metal",
+        "BC_planks",
+        "BC_roof_terra",
+        "BC_roof_terra_light",
+        "BC_rope",
+        "BC_sail",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        279.881,
+        46.1108,
+        -467.7179
+      ],
+      "mesh": "SM_BC_TownUpperRidge131",
+      "min": [
+        269.7337,
+        34.9671,
+        -485.9516
+      ],
+      "object": "town-upper-ridge-13-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge131",
+      "sha256": "be5ca2b577197c487aaf2822837253a93a9bf6e4caad214c4ad97f71d88ea37a",
+      "soft": false,
+      "tiles": [
+        "TownUpper_5_5_Piece02",
+        "TownUpper_5_5_Piece2"
+      ],
+      "triangles": 2132
+    },
+    "prop/brinecove/town-upper-ridge-13-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        277.2052,
+        41.2122,
+        -472.4791
+      ],
+      "mesh": "SM_BC_TownUpperRidge131_Soft",
+      "min": [
+        276.6618,
+        40.8562,
+        -473.0407
+      ],
+      "object": "town-upper-ridge-13-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge131_Soft",
+      "sha256": "fc08258c22ce4b987ed449a37ae7307822fc75a7d985f41d37be21b61e5f9733",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 48
+    },
+    "prop/brinecove/town-upper-ridge-14-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_peach_wall",
+        "BC_roof_straw",
+        "BC_shutter_blue",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        315.3809,
+        54.6477,
+        -465.9966
+      ],
+      "mesh": "SM_BC_TownUpperRidge140",
+      "min": [
+        300.2944,
+        35.0905,
+        -487.7079
+      ],
+      "object": "town-upper-ridge-14-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge140",
+      "sha256": "4dadf80a1e786b6fa80e1e2e53e30883361fcc8dbb67ec5208a65ad1f7c9a73a",
+      "soft": false,
+      "tiles": [
+        "TownUpper_5_5_Piece02",
+        "TownUpper_5_5_Piece2"
+      ],
+      "triangles": 7300
+    },
+    "prop/brinecove/town-upper-ridge-14-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid"
+      ],
+      "max": [
+        314.5861,
+        52.3099,
+        -467.5811
+      ],
+      "mesh": "SM_BC_TownUpperRidge140_Soft",
+      "min": [
+        310.1606,
+        42.9284,
+        -468.7061
+      ],
+      "object": "town-upper-ridge-14-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge140_Soft",
+      "sha256": "77fdc35719c0c5b9e798f96ff859ef0c1d2f7431101217bde919604724e9d04e",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 68
+    },
+    "prop/brinecove/town-upper-ridge-14-1": {
+      "materials": [
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_roof_straw",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas_teal",
+        "BC_coral",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_shutter_red"
+      ],
+      "max": [
+        325.6823,
+        58.5092,
+        -466.6491
+      ],
+      "mesh": "SM_BC_TownUpperRidge141",
+      "min": [
+        312.1006,
+        35.2239,
+        -487.5273
+      ],
+      "object": "town-upper-ridge-14-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge141",
+      "sha256": "3b949ae468d6eeded11437000691a0887dcedb818aefbe9b43502b8678bc739e",
+      "soft": false,
+      "tiles": [
+        "TownUpper_5_5_Piece02",
+        "TownUpper_5_5_Piece03",
+        "TownUpper_5_5_Piece2"
+      ],
+      "triangles": 6068
+    },
+    "prop/brinecove/town-upper-ridge-14-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        322.8862,
+        47.8388,
+        -467.6356
+      ],
+      "mesh": "SM_BC_TownUpperRidge141_Soft",
+      "min": [
+        316.045,
+        39.7224,
+        -468.6307
+      ],
+      "object": "town-upper-ridge-14-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge141_Soft",
+      "sha256": "f77cebd4a5453984076491d1f723ba998a74c6b06e9ef8b4e131ea6269f93be6",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/town-upper-ridge-15-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_ochre",
+        "BC_roof_teal",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        367.6681,
+        47.2867,
+        -443.5197
+      ],
+      "mesh": "SM_BC_TownUpperRidge150",
+      "min": [
+        355.3582,
+        28.291,
+        -463.8145
+      ],
+      "object": "town-upper-ridge-15-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge150",
+      "sha256": "e4acbd1c4f5ad98a5c15603f3695ddb2d467d5a47292125ab7815c99f148ba28",
+      "soft": false,
+      "tiles": [
+        "TownUpper_5_5_Piece03"
+      ],
+      "triangles": 3532
+    },
+    "prop/brinecove/town-upper-ridge-15-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        365.4766,
+        33.3517,
+        -444.9907
+      ],
+      "mesh": "SM_BC_TownUpperRidge150_Soft",
+      "min": [
+        364.7472,
+        32.8189,
+        -445.7156
+      ],
+      "object": "town-upper-ridge-15-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge150_Soft",
+      "sha256": "4d078ed0d886bb1938c232d1129eb17b7139110251ed2a3961255ffd3fd46afc",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 48
+    },
+    "prop/brinecove/town-upper-ridge-15-1": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_rope",
+        "BC_rose_wall",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        376.9748,
+        48.4141,
+        -444.5095
+      ],
+      "mesh": "SM_BC_TownUpperRidge151",
+      "min": [
+        367.0972,
+        28.1614,
+        -464.0381
+      ],
+      "object": "town-upper-ridge-15-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge151",
+      "sha256": "3a8c48d8fa32eb5538fb19b949ecc72d03d4ca4d2eac52313bed8aa5b7eeac0e",
+      "soft": false,
+      "tiles": [
+        "TownUpper_5_5_Piece03"
+      ],
+      "triangles": 6604
+    },
+    "prop/brinecove/town-upper-ridge-15-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm",
+        "BC_palm_frond"
+      ],
+      "max": [
+        376.4197,
+        49.0747,
+        -445.7381
+      ],
+      "mesh": "SM_BC_TownUpperRidge151_Soft",
+      "min": [
+        366.8417,
+        32.6782,
+        -454.1996
+      ],
+      "object": "town-upper-ridge-15-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge151_Soft",
+      "sha256": "e0349e468820d278d961b85826cd056d1510156b7c7e14f7fb034a3a11844522",
+      "soft": true,
+      "tiles": [
+        "TownUpper_5_5_Soft"
+      ],
+      "triangles": 172
+    },
+    "prop/brinecove/town-upper-ridge-8-0": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_plaster",
+        "BC_roof_terra_light",
+        "BC_rope",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light",
+        "BC_yellow_wall"
+      ],
+      "max": [
+        32.6085,
+        44.0937,
+        -437.8787
+      ],
+      "mesh": "SM_BC_TownUpperRidge80",
+      "min": [
+        20.7211,
+        26.3303,
+        -458.1296
+      ],
+      "object": "town-upper-ridge-8-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge80",
+      "sha256": "765f5917edbd263cfd48f4ca801f10835b48042d97aef7abcb24f842e5764787",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece02"
+      ],
+      "triangles": 6140
+    },
+    "prop/brinecove/town-upper-ridge-8-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid"
+      ],
+      "max": [
+        30.9643,
+        39.4949,
+        -439.4062
+      ],
+      "mesh": "SM_BC_TownUpperRidge80_Soft",
+      "min": [
+        26.5901,
+        33.105,
+        -440.2856
+      ],
+      "object": "town-upper-ridge-8-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge80_Soft",
+      "sha256": "a606507977c601d817318357663b34d63a349148ba49f98bf0ed1901baf1d111",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 52
+    },
+    "prop/brinecove/town-upper-ridge-8-1": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_peach_wall",
+        "BC_roof_straw",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_red",
+        "BC_shutter_teal",
+        "BC_stone",
+        "BC_stone_dark",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        43.7918,
+        46.1085,
+        -439.0341
+      ],
+      "mesh": "SM_BC_TownUpperRidge81",
+      "min": [
+        30.9587,
+        26.1964,
+        -459.4611
+      ],
+      "object": "town-upper-ridge-8-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge81",
+      "sha256": "48311c115c259daf785a289d5ad0e6feae8de55b40201980ead5d1b63609bbbd",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece02"
+      ],
+      "triangles": 5808
+    },
+    "prop/brinecove/town-upper-ridge-8-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        41.5682,
+        41.7061,
+        -439.9823
+      ],
+      "mesh": "SM_BC_TownUpperRidge81_Soft",
+      "min": [
+        33.4713,
+        30.704,
+        -441.4525
+      ],
+      "object": "town-upper-ridge-8-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge81_Soft",
+      "sha256": "6f6cb281bf9ed472bd36260acf7d17286a3c989b28b270b66bf5721602d42f25",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 206
+    },
+    "prop/brinecove/town-upper-ridge-9-0": {
+      "materials": [
+        "BC_cream",
+        "BC_peach_wall",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood_dark",
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_clay",
+        "BC_coral",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_roof_terra",
+        "BC_shutter_blue",
+        "BC_stone_dark",
+        "BC_wood"
+      ],
+      "max": [
+        73.0701,
+        50.8002,
+        -452.6954
+      ],
+      "mesh": "SM_BC_TownUpperRidge90",
+      "min": [
+        59.7613,
+        28.6342,
+        -474.896
+      ],
+      "object": "town-upper-ridge-9-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge90",
+      "sha256": "ce19a30f1a59cc472fb742c24e7b060a2dbcda11b3780ba2a4caadbb2946431c",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece02",
+        "TownUpper_4_5_Piece03"
+      ],
+      "triangles": 4996
+    },
+    "prop/brinecove/town-upper-ridge-9-0-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        70.8431,
+        33.7041,
+        -454.236
+      ],
+      "mesh": "SM_BC_TownUpperRidge90_Soft",
+      "min": [
+        69.9803,
+        33.1225,
+        -454.9644
+      ],
+      "object": "town-upper-ridge-9-0",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge90_Soft",
+      "sha256": "5babeced941ebc85e4366ecd6e51342f9fb8628fcfed4d402222dfc0e9c8dc2c",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 48
+    },
+    "prop/brinecove/town-upper-ridge-9-1": {
+      "materials": [
+        "BC_blossom",
+        "BC_blossom_pale",
+        "BC_canvas",
+        "BC_canvas_red",
+        "BC_canvas_teal",
+        "BC_clay",
+        "BC_coral",
+        "BC_cream",
+        "BC_glass",
+        "BC_glass_warm",
+        "BC_gold",
+        "BC_jungle",
+        "BC_jungle_light",
+        "BC_lantern",
+        "BC_metal",
+        "BC_roof_terra_light",
+        "BC_rope",
+        "BC_shutter_blue",
+        "BC_shutter_green",
+        "BC_shutter_red",
+        "BC_stone",
+        "BC_stone_light",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        83.3639,
+        50.0738,
+        -453.8143
+      ],
+      "mesh": "SM_BC_TownUpperRidge91",
+      "min": [
+        70.6345,
+        28.5642,
+        -474.6552
+      ],
+      "object": "town-upper-ridge-9-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge91",
+      "sha256": "7af8fa2ea7b369165b6d266ce9d8ade12a216b0ca6b4b2b47fa2d396afdea700",
+      "soft": false,
+      "tiles": [
+        "TownUpper_4_5_Piece03"
+      ],
+      "triangles": 5184
+    },
+    "prop/brinecove/town-upper-ridge-9-1-soft": {
+      "materials": [
+        "BC_leaf_deep",
+        "BC_leaf_light",
+        "BC_leaf_mid",
+        "BC_leaf_warm"
+      ],
+      "max": [
+        81.0942,
+        33.4589,
+        -455.2451
+      ],
+      "mesh": "SM_BC_TownUpperRidge91_Soft",
+      "min": [
+        80.436,
+        33.0616,
+        -455.8376
+      ],
+      "object": "town-upper-ridge-9-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge91_Soft",
+      "sha256": "7c2343f507a66c45a95d8fc298c33075ec9d3bc9e92cfc68b9baef04fdebcc03",
+      "soft": true,
+      "tiles": [
+        "TownUpper_4_5_Soft"
+      ],
+      "triangles": 48
+    }
+  },
+  "pending": {
+    "resave": [],
+    "stale": []
+  },
+  "retired": false,
+  "schema": 1,
+  "selection": [
+    "town-upper-crest-e1-0",
+    "town-upper-crest-e1-1",
+    "town-upper-crest-e1-2",
+    "town-upper-crest-e2-0",
+    "town-upper-crest-e2-1",
+    "town-upper-crest-e3-0",
+    "town-upper-crest-e3-1",
+    "town-upper-crest-e3-2",
+    "town-upper-crest-e4-0",
+    "town-upper-crest-e4-1",
+    "town-upper-hill-e1",
+    "town-upper-hill-e2",
+    "town-upper-hill-e3",
+    "town-upper-hill-e4",
+    "town-upper-ridge-10-0",
+    "town-upper-ridge-10-1",
+    "town-upper-ridge-11-0",
+    "town-upper-ridge-11-1",
+    "town-upper-ridge-12-0",
+    "town-upper-ridge-12-1",
+    "town-upper-ridge-13-0",
+    "town-upper-ridge-13-1",
+    "town-upper-ridge-14-0",
+    "town-upper-ridge-14-1",
+    "town-upper-ridge-15-0",
+    "town-upper-ridge-15-1",
+    "town-upper-ridge-8-0",
+    "town-upper-ridge-8-1",
+    "town-upper-ridge-9-0",
+    "town-upper-ridge-9-1"
+  ],
+  "shares": {
+    "TownUpper_4_5_Piece00": {
+      "prop/brinecove/town-upper-crest-e1-0": 6274
+    },
+    "TownUpper_4_5_Piece01": {
+      "prop/brinecove/town-upper-crest-e1-0": 2142,
+      "prop/brinecove/town-upper-crest-e1-1": 6394,
+      "prop/brinecove/town-upper-crest-e1-2": 4982,
+      "prop/brinecove/town-upper-crest-e2-0": 6684
+    },
+    "TownUpper_4_5_Piece02": {
+      "prop/brinecove/town-upper-crest-e1-0": 196,
+      "prop/brinecove/town-upper-ridge-8-0": 6140,
+      "prop/brinecove/town-upper-ridge-8-1": 5808,
+      "prop/brinecove/town-upper-ridge-9-0": 276
+    },
+    "TownUpper_4_5_Piece03": {
+      "prop/brinecove/town-upper-crest-e1-0": 48,
+      "prop/brinecove/town-upper-crest-e1-1": 30,
+      "prop/brinecove/town-upper-crest-e1-2": 454,
+      "prop/brinecove/town-upper-crest-e2-0": 270,
+      "prop/brinecove/town-upper-ridge-10-0": 3504,
+      "prop/brinecove/town-upper-ridge-10-1": 5018,
+      "prop/brinecove/town-upper-ridge-9-0": 4720,
+      "prop/brinecove/town-upper-ridge-9-1": 5184
+    },
+    "TownUpper_4_5_Piece10": {
+      "prop/brinecove/town-upper-crest-e2-0": 3274,
+      "prop/brinecove/town-upper-crest-e2-1": 6046,
+      "prop/brinecove/town-upper-crest-e3-0": 8682,
+      "prop/brinecove/town-upper-crest-e3-1": 3428
+    },
+    "TownUpper_4_5_Piece11": {
+      "prop/brinecove/town-upper-crest-e3-1": 3256,
+      "prop/brinecove/town-upper-crest-e3-2": 9738,
+      "prop/brinecove/town-upper-crest-e4-0": 8458,
+      "prop/brinecove/town-upper-crest-e4-1": 1212
+    },
+    "TownUpper_4_5_Piece12": {
+      "prop/brinecove/town-upper-crest-e2-0": 120,
+      "prop/brinecove/town-upper-crest-e2-1": 118,
+      "prop/brinecove/town-upper-crest-e3-0": 102,
+      "prop/brinecove/town-upper-crest-e3-1": 104,
+      "prop/brinecove/town-upper-ridge-10-1": 1534,
+      "prop/brinecove/town-upper-ridge-11-0": 3576,
+      "prop/brinecove/town-upper-ridge-11-1": 6713
+    },
+    "TownUpper_4_5_Piece13": {
+      "prop/brinecove/town-upper-crest-e3-1": 156,
+      "prop/brinecove/town-upper-crest-e3-2": 426,
+      "prop/brinecove/town-upper-crest-e4-0": 30,
+      "prop/brinecove/town-upper-crest-e4-1": 50,
+      "prop/brinecove/town-upper-ridge-12-0": 7148,
+      "prop/brinecove/town-upper-ridge-12-1": 4212
+    },
+    "TownUpper_4_5_Piece2": {
+      "prop/brinecove/town-upper-hill-e1": 6676,
+      "prop/brinecove/town-upper-ridge-10-0": 8,
+      "prop/brinecove/town-upper-ridge-10-1": 112
+    },
+    "TownUpper_4_5_Piece3": {
+      "prop/brinecove/town-upper-hill-e2": 6628,
+      "prop/brinecove/town-upper-hill-e3": 6592,
+      "prop/brinecove/town-upper-ridge-10-1": 32
+    },
+    "TownUpper_4_5_Soft": {
+      "prop/brinecove/town-upper-crest-e1-0-soft": 124,
+      "prop/brinecove/town-upper-crest-e1-1-soft": 108,
+      "prop/brinecove/town-upper-crest-e1-2-soft": 144,
+      "prop/brinecove/town-upper-crest-e2-0-soft": 76,
+      "prop/brinecove/town-upper-crest-e2-1-soft": 108,
+      "prop/brinecove/town-upper-crest-e3-0-soft": 76,
+      "prop/brinecove/town-upper-crest-e3-1-soft": 48,
+      "prop/brinecove/town-upper-crest-e3-2-soft": 230,
+      "prop/brinecove/town-upper-crest-e4-0-soft": 130,
+      "prop/brinecove/town-upper-hill-e1-soft": 144,
+      "prop/brinecove/town-upper-hill-e2-soft": 144,
+      "prop/brinecove/town-upper-hill-e3-soft": 144,
+      "prop/brinecove/town-upper-ridge-10-0-soft": 144,
+      "prop/brinecove/town-upper-ridge-10-1-soft": 210,
+      "prop/brinecove/town-upper-ridge-11-1-soft": 204,
+      "prop/brinecove/town-upper-ridge-12-0-soft": 122,
+      "prop/brinecove/town-upper-ridge-8-0-soft": 52,
+      "prop/brinecove/town-upper-ridge-8-1-soft": 206,
+      "prop/brinecove/town-upper-ridge-9-0-soft": 48,
+      "prop/brinecove/town-upper-ridge-9-1-soft": 48
+    },
+    "TownUpper_5_5_Piece00": {
+      "prop/brinecove/town-upper-crest-e4-1": 3466
+    },
+    "TownUpper_5_5_Piece02": {
+      "prop/brinecove/town-upper-crest-e4-1": 396,
+      "prop/brinecove/town-upper-ridge-13-0": 2222,
+      "prop/brinecove/town-upper-ridge-13-1": 2130,
+      "prop/brinecove/town-upper-ridge-14-0": 7122,
+      "prop/brinecove/town-upper-ridge-14-1": 2156
+    },
+    "TownUpper_5_5_Piece03": {
+      "prop/brinecove/town-upper-ridge-14-1": 3734,
+      "prop/brinecove/town-upper-ridge-15-0": 3532,
+      "prop/brinecove/town-upper-ridge-15-1": 6604
+    },
+    "TownUpper_5_5_Piece2": {
+      "prop/brinecove/town-upper-hill-e4": 6652,
+      "prop/brinecove/town-upper-ridge-13-0": 6,
+      "prop/brinecove/town-upper-ridge-13-1": 2,
+      "prop/brinecove/town-upper-ridge-14-0": 178,
+      "prop/brinecove/town-upper-ridge-14-1": 178
+    },
+    "TownUpper_5_5_Soft": {
+      "prop/brinecove/town-upper-crest-e4-1-soft": 48,
+      "prop/brinecove/town-upper-hill-e4-soft": 144,
+      "prop/brinecove/town-upper-ridge-13-0-soft": 48,
+      "prop/brinecove/town-upper-ridge-13-1-soft": 48,
+      "prop/brinecove/town-upper-ridge-14-0-soft": 68,
+      "prop/brinecove/town-upper-ridge-14-1-soft": 144,
+      "prop/brinecove/town-upper-ridge-15-0-soft": 48,
+      "prop/brinecove/town-upper-ridge-15-1-soft": 172
+    }
+  },
+  "tiles": {
+    "TownUpper_4_5_Piece00": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_rose_wall": "/Game/Brinecove/Materials/MI_BC_rose_wall",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece00",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_rose_wall",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark"
+          ],
+          "triangles": 8906
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece00",
+      "record": "prop/brinecove/town-upper-4-5-piece00",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_flag_red",
+          "BC_gold",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "d15ac802c4f378c7a5faa01739fc86906923fa546fd753e5bc2bfac839838f9c",
+        "triangles": 2632
+      },
+      "source_triangles": 8906
+    },
+    "TownUpper_4_5_Piece01": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_rose_wall": "/Game/Brinecove/Materials/MI_BC_rose_wall",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light",
+          "BC_yellow_wall": "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece01",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_rose_wall",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light",
+            "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+          ],
+          "triangles": 21980
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece01",
+      "record": "prop/brinecove/town-upper-4-5-piece01",
+      "remainder": {
+        "materials": [
+          "BC_blossom",
+          "BC_canvas_teal",
+          "BC_clay",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_cream",
+          "BC_gold",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "e30ca117883b71211ce07bc7fce0895541a9379d6ead77911afed0f28baf5563",
+        "triangles": 1778
+      },
+      "source_triangles": 21980
+    },
+    "TownUpper_4_5_Piece02": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_peach_wall": "/Game/Brinecove/Materials/MI_BC_peach_wall",
+          "BC_plaster": "/Game/Brinecove/Materials/MI_BC_plaster",
+          "BC_rock": "/Game/Brinecove/Materials/MI_BC_rock",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light",
+          "BC_yellow_wall": "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece02",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_peach_wall",
+            "/Game/Brinecove/Materials/MI_BC_plaster",
+            "/Game/Brinecove/Materials/MI_BC_rock",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light",
+            "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+          ],
+          "triangles": 16160
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece02",
+      "record": "prop/brinecove/town-upper-4-5-piece02",
+      "remainder": {
+        "materials": [
+          "BC_blossom",
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_coral",
+          "BC_gold",
+          "BC_moss",
+          "BC_rock",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "10e69c05bb057d72fee845d825f5f8f311720a5446c6b30387e0778c7f946874",
+        "triangles": 3740
+      },
+      "source_triangles": 16160
+    },
+    "TownUpper_4_5_Piece03": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_peach_wall": "/Game/Brinecove/Materials/MI_BC_peach_wall",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_terra": "/Game/Brinecove/Materials/MI_BC_roof_terra",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_rose_wall": "/Game/Brinecove/Materials/MI_BC_rose_wall",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_yellow_wall": "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece03",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_peach_wall",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_rose_wall",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+          ],
+          "triangles": 20214
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece03",
+      "record": "prop/brinecove/town-upper-4-5-piece03",
+      "remainder": {
+        "materials": [
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "ee1951c70e5efdb39f876ee5b4bf15aff83554737150213b09d6fef65cc041ce",
+        "triangles": 986
+      },
+      "source_triangles": 20214
+    },
+    "TownUpper_4_5_Piece10": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_terra": "/Game/Brinecove/Materials/MI_BC_roof_terra",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_yellow_wall": "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece10",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+          ],
+          "triangles": 23272
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece10",
+      "record": "prop/brinecove/town-upper-4-5-piece10",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_cream",
+          "BC_flag_red",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "7e8f585255c70e9d745deb693e96d2ef2628fcb169e21e01d804a0593bdf93a6",
+        "triangles": 1842
+      },
+      "source_triangles": 23272
+    },
+    "TownUpper_4_5_Piece11": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece11",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark"
+          ],
+          "triangles": 24488
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece11",
+      "record": "prop/brinecove/town-upper-4-5-piece11",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_flag_red",
+          "BC_gold",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "1ec91e63e8e1cddb39347b25610c57478f36ebfa8f65a3ca43b1cc362e381b13",
+        "triangles": 1824
+      },
+      "source_triangles": 24488
+    },
+    "TownUpper_4_5_Piece12": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_peach_wall": "/Game/Brinecove/Materials/MI_BC_peach_wall",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_teal": "/Game/Brinecove/Materials/MI_BC_roof_teal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light",
+          "BC_yellow_wall": "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece12",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_peach_wall",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_teal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light",
+            "/Game/Brinecove/Materials/MI_BC_yellow_wall"
+          ],
+          "triangles": 13407
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece12",
+      "record": "prop/brinecove/town-upper-4-5-piece12",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "2d50b5598b594cdaef724d6f10cd7de754890e5f821a90e87aedbbe0a8c6b334",
+        "triangles": 1140
+      },
+      "source_triangles": 13407
+    },
+    "TownUpper_4_5_Piece13": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_plaster": "/Game/Brinecove/Materials/MI_BC_plaster",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_teal": "/Game/Brinecove/Materials/MI_BC_roof_teal",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece13",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_plaster",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_teal",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark"
+          ],
+          "triangles": 13118
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece13",
+      "record": "prop/brinecove/town-upper-4-5-piece13",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "2c76cd0de2cf6bd0dc2bc4ea15bc3fc1070e0f068d50a8ebee2b593e14170091",
+        "triangles": 1096
+      },
+      "source_triangles": 13118
+    },
+    "TownUpper_4_5_Piece2": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_moss": "/Game/Brinecove/Materials/MI_BC_moss",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_rock": "/Game/Brinecove/Materials/MI_BC_rock",
+          "BC_rock_dark": "/Game/Brinecove/Materials/MI_BC_rock_dark",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_teal_wall": "/Game/Brinecove/Materials/MI_BC_teal_wall",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_moss",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_rock",
+            "/Game/Brinecove/Materials/MI_BC_rock_dark",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_teal_wall",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 10403
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece2",
+      "record": "prop/brinecove/town-upper-4-5-piece2",
+      "remainder": {
+        "materials": [
+          "BC_blossom",
+          "BC_clay",
+          "BC_coral",
+          "BC_gold",
+          "BC_lantern",
+          "BC_metal",
+          "BC_moss",
+          "BC_rock",
+          "BC_rock_dark",
+          "BC_stone",
+          "BC_stone_light"
+        ],
+        "sha256": "ec277e48e2a01cdacafcb13ed2aa28cb8cc1fcb76500231d0d46ac90d629ae67",
+        "triangles": 3607
+      },
+      "source_triangles": 10403
+    },
+    "TownUpper_4_5_Piece3": {
+      "original": {
+        "material_package": {
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_terra": "/Game/Brinecove/Materials/MI_BC_roof_terra",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_teal_wall": "/Game/Brinecove/Materials/MI_BC_teal_wall",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-piece3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_teal_wall",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 13252
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Piece3",
+      "record": "prop/brinecove/town-upper-4-5-piece3",
+      "remainder": null,
+      "source_triangles": 13252
+    },
+    "TownUpper_4_5_Soft": {
+      "original": {
+        "material_package": {
+          "BC_leaf_deep": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+          "BC_leaf_light": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+          "BC_leaf_mid": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+          "BC_leaf_warm": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond"
+        },
+        "owner": "shared/brinecove/town-upper-4-5-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+            "/Game/Brinecove/Materials/MI_BC_leaf_light",
+            "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+            "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+            "/Game/Brinecove/Materials/MI_BC_palm_frond"
+          ],
+          "triangles": 6810
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_4_5_Soft",
+      "record": "prop/brinecove/town-upper-4-5-soft",
+      "remainder": {
+        "materials": [
+          "BC_leaf_deep",
+          "BC_leaf_light",
+          "BC_leaf_mid",
+          "BC_leaf_warm"
+        ],
+        "sha256": "084f60bd337b668d37db72a5b51e09331d3b5b327165859e193d5eb8bcd926cd",
+        "triangles": 4300
+      },
+      "source_triangles": 6810
+    },
+    "TownUpper_5_5_Piece00": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark"
+        },
+        "owner": "shared/brinecove/town-upper-5-5-piece00",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark"
+          ],
+          "triangles": 5130
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece00",
+      "record": "prop/brinecove/town-upper-5-5-piece00",
+      "remainder": {
+        "materials": [
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_rope",
+          "BC_stone",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "b6606cd341a085329b4d135e383522549203bff73dd675cd02df50557aed1ac5",
+        "triangles": 1664
+      },
+      "source_triangles": 5130
+    },
+    "TownUpper_5_5_Piece02": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_peach_wall": "/Game/Brinecove/Materials/MI_BC_peach_wall",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_roof_slate": "/Game/Brinecove/Materials/MI_BC_roof_slate",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_terra": "/Game/Brinecove/Materials/MI_BC_roof_terra",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sage_wall": "/Game/Brinecove/Materials/MI_BC_sage_wall",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/town-upper-5-5-piece02",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_peach_wall",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_roof_slate",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sage_wall",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 15036
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece02",
+      "record": "prop/brinecove/town-upper-5-5-piece02",
+      "remainder": {
+        "materials": [
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_rope",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "70dba95004aa6e8cd10f06ef1a6c3e3e6b8f81dcf7c1193e04a94d029d85bc46",
+        "triangles": 1010
+      },
+      "source_triangles": 15036
+    },
+    "TownUpper_5_5_Piece03": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_blossom_pale": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_glass_warm": "/Game/Brinecove/Materials/MI_BC_glass_warm",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_jungle": "/Game/Brinecove/Materials/MI_BC_jungle",
+          "BC_jungle_light": "/Game/Brinecove/Materials/MI_BC_jungle_light",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_teal": "/Game/Brinecove/Materials/MI_BC_roof_teal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_rose_wall": "/Game/Brinecove/Materials/MI_BC_rose_wall",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_green": "/Game/Brinecove/Materials/MI_BC_shutter_green",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark"
+        },
+        "owner": "shared/brinecove/town-upper-5-5-piece03",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_glass_warm",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_jungle",
+            "/Game/Brinecove/Materials/MI_BC_jungle_light",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_teal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_rose_wall",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_green",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark"
+          ],
+          "triangles": 14784
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece03",
+      "record": "prop/brinecove/town-upper-5-5-piece03",
+      "remainder": {
+        "materials": [
+          "BC_canvas",
+          "BC_canvas_red",
+          "BC_canvas_teal",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_rope",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "0df66b710d2fc31aacbfb1d8df8d3fc148a406759211657a6a8072e81d04e379",
+        "triangles": 914
+      },
+      "source_triangles": 14784
+    },
+    "TownUpper_5_5_Piece2": {
+      "original": {
+        "material_package": {
+          "BC_blossom": "/Game/Brinecove/Materials/MI_BC_blossom",
+          "BC_canvas": "/Game/Brinecove/Materials/MI_BC_canvas",
+          "BC_canvas_red": "/Game/Brinecove/Materials/MI_BC_canvas_red",
+          "BC_canvas_teal": "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_coral": "/Game/Brinecove/Materials/MI_BC_coral",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_glass": "/Game/Brinecove/Materials/MI_BC_glass",
+          "BC_gold": "/Game/Brinecove/Materials/MI_BC_gold",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_ochre": "/Game/Brinecove/Materials/MI_BC_ochre",
+          "BC_peach_wall": "/Game/Brinecove/Materials/MI_BC_peach_wall",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_plaster": "/Game/Brinecove/Materials/MI_BC_plaster",
+          "BC_roof_straw": "/Game/Brinecove/Materials/MI_BC_roof_straw",
+          "BC_roof_terra": "/Game/Brinecove/Materials/MI_BC_roof_terra",
+          "BC_roof_terra_light": "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_shutter_blue": "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+          "BC_shutter_red": "/Game/Brinecove/Materials/MI_BC_shutter_red",
+          "BC_shutter_teal": "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/town-upper-5-5-piece2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_blossom",
+            "/Game/Brinecove/Materials/MI_BC_canvas",
+            "/Game/Brinecove/Materials/MI_BC_canvas_red",
+            "/Game/Brinecove/Materials/MI_BC_canvas_teal",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_coral",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_glass",
+            "/Game/Brinecove/Materials/MI_BC_gold",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_ochre",
+            "/Game/Brinecove/Materials/MI_BC_peach_wall",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_plaster",
+            "/Game/Brinecove/Materials/MI_BC_roof_straw",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra_light",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_shutter_blue",
+            "/Game/Brinecove/Materials/MI_BC_shutter_red",
+            "/Game/Brinecove/Materials/MI_BC_shutter_teal",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 7016
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Piece2",
+      "record": "prop/brinecove/town-upper-5-5-piece2",
+      "remainder": null,
+      "source_triangles": 7016
+    },
+    "TownUpper_5_5_Soft": {
+      "original": {
+        "material_package": {
+          "BC_leaf_deep": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+          "BC_leaf_light": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+          "BC_leaf_mid": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+          "BC_leaf_warm": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond"
+        },
+        "owner": "shared/brinecove/town-upper-5-5-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+            "/Game/Brinecove/Materials/MI_BC_leaf_light",
+            "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+            "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+            "/Game/Brinecove/Materials/MI_BC_palm_frond"
+          ],
+          "triangles": 1212
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_TownUpper_5_5_Soft",
+      "record": "prop/brinecove/town-upper-5-5-soft",
+      "remainder": {
+        "materials": [
+          "BC_leaf_deep",
+          "BC_leaf_light",
+          "BC_leaf_mid",
+          "BC_leaf_warm"
+        ],
+        "sha256": "66de74e3b74e5cff75fbe01dcb70cae9b1d5b4aa69711c4cfdade72bbc042596",
+        "triangles": 492
+      },
+      "source_triangles": 1212
+    }
+  }
+}

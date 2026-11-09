@@ -29,19 +29,15 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## Active work after this checkpoint
 
-[Draft PR #787](https://github.com/fontanierh/atelier/pull/787) contains the next Brine Cove checkpoint. At its
-`ac513cf127` snapshot, 15 additional market stalls and seven town1 objects are saved on the branch, not in main.
-Town2–town9 are unfinished. The first town2 import attempt was rolled back after a package-name collision; it is
-not accepted content. The naming/ownership preflight was corrected, the accepted town1 package was restored,
-and a retry follows the refreshed claims. Do not add provisional import counts to the saved total.
+[PR #787](https://github.com/fontanierh/atelier/pull/787) completes the Brine Cove market and town split. With it,
+the 21 market stalls and all 265 town objects (town1–town9: 7, 25, 31, 45, 28, 33, 30, 26, 40) are saved as their own
+placements, and so are the two harbour Soft fragments. The 148 carved tile records keep their fused original plus a
+carve selection; each remainder derives byte-identically. The three ship tiles and the 42 town tiles the batches
+emptied are retired, and the 15 placements that named them were saved again. The first town2 import attempt was
+rolled back after a package-name collision and redone; only the redone town2 is accepted content. Saved, prepared
+(planned, not yet saved) and packaged (`3027366ced`) totals are separate. The package does not contain #787 yet.
 
 Remaining construction work:
-
-- Complete and save the remaining town batches, save the two small-prop soft fragments, and retire old ship/town
-  tiles only after their replacements are accepted and saved under the matching claims.
-- Apply the prepared source-preservation route at the stopped boundary after town9: retain the full fused
-  originals and recorded carve selections, derive remainders under `build/yorimichi_v2/`, and preserve accepted
-  package bytes. The current main carving route still has this known source-preservation gap.
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
   [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
 - Integrate the accepted follow-ups and produce the next useful package checkpoint. Keep the existing package
@@ -117,7 +113,7 @@ W10 shares W06's region scope; W19's stations belong to their host regions, so t
 | W06 | Forest lake | Saved [lake/treehouse](../world/regions/w06-lake-treehouse/) scenery/objects. |
 | W07 | Hidamari | Saved [harbour](../world/regions/w07-hidamari-harbour/) and [station](../world/regions/w07-hidamari-station/) scenery/objects; 1,048 city source records recovered. |
 | W08 | Southwest | Saved across coast, terrace and isle-east scopes in [regions](../world/regions/); recovered models in main. |
-| W09 | Brine Cove | Saved [region](../world/regions/w09-brinecove/), small props, ships and market1. Fused town/market splitting, soft fragments, retirements and source preservation continue in #787. |
+| W09 | Brine Cove | Saved [region](../world/regions/w09-brinecove/): small props, ships, the 21 market stalls and the 265 town objects (#787), with the fused originals preserved and the emptied tiles retired. The signal mast and the shipyard slip are still fused. |
 | W10 | Tree house | Saved under [W06](../world/regions/w06-lake-treehouse/); recovered models in main. |
 | W11 | Super Ultra Mega Park and its own map | Saved [island region](../world/regions/w11-megapark/) and standalone map/profile; rights cleared. |
 | W12 | Volcano and Crater Park | Saved [Crater Park](../world/regions/w12-craterpark/) plus three volcano scopes; restricted original routes linked. |

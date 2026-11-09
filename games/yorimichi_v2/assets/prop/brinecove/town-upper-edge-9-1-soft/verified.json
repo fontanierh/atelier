@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-edge-9-1-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperEdge91_Soft.uasset": "ff63c894ce1e1d2c523bd01b281c0e1994bcf479b230482563e9d3169fef3d4a"
+  },
+  "input_fingerprint": "465225876c96963fdc4f8cc3e9689642d4d22d61b056b8544c394a928327b265",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperEdge91_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

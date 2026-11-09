@@ -14,6 +14,10 @@ triangle with the same float32 vertex positions, so each donor triangle gets the
     python3 games/yorimichi_v2/tools/migrate/brinecove_market.py apply --donor DONOR_BUILD --claim TASK [--only a,b]
     python3 games/yorimichi_v2/tools/migrate/brinecove_market.py check [--donor DONOR_BUILD]
     python3 games/yorimichi_v2/tools/migrate/brinecove_market.py list  --donor DONOR_BUILD
+    python3 games/yorimichi_v2/tools/migrate/brinecove_market.py retire --batch B|a,b|all --retire-stage groups|placements|records --claim T --donor DONOR_BUILD
+
+`--batch all` (or a comma list) runs a stage for several batches in one call; `placements` deletes each affected placement
+once for the whole set and prints the ids to save again.
 
 DONOR_BUILD is the donor's `build/yorimichi` folder; the generator sources are read from `games/yorimichi` two levels up
 (override with --donor-src). The apply, check and claim machinery is `brinecove_split_apply.py`, used unchanged with
@@ -28,6 +32,7 @@ import re
 import json
 import struct
 import sys
+import tomllib
 from collections import defaultdict
 from pathlib import Path
 
@@ -264,6 +269,34 @@ TOWN_LOTS = {
 BATCHES.update({name: tuple(prefix + lot for lot in lots) for name, (prefix, lots) in TOWN_LOTS.items()})
 
 COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper'}
+ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
+
+
+def part_mesh(obj: str, soft: bool) -> str:
+    """The part's mesh name. apply.mesh_name drops a negative coordinate's minus (town-lower-hall--1-2-1 ->
+    SM_BC_TownLowerHall121, saved by town1), so the non-negative twin of a negative object takes a P before its
+    coordinates (town-lower-hall-1-2-1 -> SM_BC_TownLowerHallP121); the two never share a package."""
+    apply_ = _apply()
+    if '--' not in obj and re.sub(r'-(\d)', r'--\1', obj, count=1) in ALL_OBJECTS:
+        return apply_.mesh_name(re.sub(r'-(\d)', r'-p\1', obj, count=1), soft)
+    return apply_.mesh_name(obj, soft)
+
+
+def check_packages(game: Path, parts: dict) -> None:
+    """@cc [owner:fontanierh,label:safety] brinecove-part-package-unique
+    A split part MUST NOT share its package with another part of the plan or with another committed record: an import
+    would overwrite that record's accepted package (town2's hall-1-2-1 overwrote town1's hall--1-2-1)."""
+    apply_ = _apply()
+    seen: dict[str, str] = {}
+    for p in parts.values():
+        if seen.setdefault(p['package'], p['record']) != p['record']:
+            raise apply_.SplitError(f'{p["record"]} and {seen[p["package"]]} both name the package {p["package"]}')
+    for path in sorted((game / 'assets').rglob('asset.toml')):
+        data = tomllib.loads(path.read_text())
+        for output in data.get('outputs', []):
+            owner = seen.get(output['package'])
+            if owner is not None and owner != data['id']:
+                raise apply_.SplitError(f'{owner} would overwrite {data["id"]}\'s package {output["package"]}')
 
 
 def component_of(obj: str) -> str:
@@ -301,9 +334,16 @@ def prior_files(region: Path, own: str) -> list[Path]:
 
 
 def prior_objects(region: Path, own: str) -> set[str]:
-    """Objects earlier batches already cut out of the donor tiles (batch 1 and any other split-*.json)."""
+    """Objects earlier batches already cut out of the donor tiles (batch 1, the ships and the market/town batches before
+    this one). A later batch's parts are not subtracted: a batch's plan is the one it was applied with, so a retirement
+    after later batches re-carved a shared tile still binds to its own applied selection."""
+    order = list(BATCHES)
+    mine = own[len('split-'):-len('.json')]
+    later = set(order[order.index(mine) + 1:]) if mine in order else set()
     names: set[str] = set()
     for path in prior_files(region, own):
+        if path.name[len('split-'):-len('.json')] in later:
+            continue
         names |= {part['object'] for part in json.loads(path.read_text())['parts'].values()}
     return names
 
@@ -378,16 +418,20 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
         asset_path = game / 'assets' / apply_.tile_record(stem) / 'asset.toml'
         asset = records.load_asset(asset_path) if asset_path.is_file() else None
         donor_sha = records.sha256_file(glb_dir / f'SM_BC_{stem}.glb')
-        if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
+        if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha and stem in saved:
+            # Carved by an earlier batch (derived form): the fused original's facts are the ones that split saved; the
+            # record's settings are its remainder's.
+            tiles[stem] = {**saved[stem]['original'], 'record': saved[stem]['record'], 'package': saved[stem]['package'],
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        elif asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
             settings = dict(asset.recipe['settings'])
-            if len(settings['slot_materials']) != len(model['materials']):
-                raise apply_.SplitError(f'{stem}: the record binds {len(settings["slot_materials"])} slots, '
-                                        f'the donor mesh has {len(model["materials"])}')
             tiles[stem] = {'record': asset.id, 'owner': asset.owner, 'references': list(asset.references),
                            'package': asset.outputs[0].package, 'settings': settings,
-                           'material_package': dict(zip(model['materials'], settings['slot_materials']))}
-        elif stem in saved:
-            tiles[stem] = {**saved[stem]['original'], 'record': saved[stem]['record'], 'package': saved[stem]['package']}
+                           'material_package': apply_.material_packages(model['materials'], settings['slot_materials']),
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        elif stem in saved or asset is not None:
+            raise apply_.SplitError(f'{stem}: carved in the old form, its remainder is the committed source; run '
+                                    'tools/migrate/brinecove_sources.py --claim TASK first')
         else:
             raise apply_.SplitError(f'{stem}: the record neither pins the donor mesh nor appears in an earlier split-*.json')
         tiles[stem]['triangles'] = len(done['tris'][stem]) - done['prior'][stem]
@@ -399,7 +443,7 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
                 continue
             merged = split.merge_models([(done['models'][s], done['owned'][s][obj]) for s in stems])
             members = list(range(sum(1 for _ in split.triangles(merged))))
-            name = apply_.mesh_name(obj, soft)
+            name = part_mesh(obj, soft)
             path = stage / 'parts' / f'{name}.glb'
             path.parent.mkdir(parents=True, exist_ok=True)
             used = split.write_subset(merged, members, path)
@@ -422,25 +466,54 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
             path.parent.mkdir(parents=True, exist_ok=True)
             used = split.write_subset(done['models'][stem], rest, path)
             remainders[stem] = {'file': path, 'sha256': apply_.sha_of(path), 'triangles': len(rest), 'materials': used,
-                                'slots': [apply_.slot_of(tiles, [stem], m) for m in used]}
+                                'slots': [apply_.slot_of(tiles, [stem], m) for m in used],
+                                'kept': sorted(rest), 'total': len(done['tris'][stem])}
         else:
             remainders[stem] = None
+    check_packages(game, parts)
     return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
 
 
-def check(game: Path, donor: Path | None, batch: str, retired: bool = False) -> list[str]:
+def later_tiles(game: Path, batch: str) -> set[str]:
+    """The donor tiles that the batches after this one (in BATCHES order) have applied cuts from."""
+    order = list(BATCHES)
+    region = game / 'world' / 'regions' / _apply().REGION
+    later = set()
+    for name in order[order.index(batch) + 1:]:
+        path = region / f'split-{name}.json'
+        if path.is_file():
+            later |= set(json.loads(path.read_text())['tiles'])
+    return later
+
+
+def recarved_later(game: Path, batch: str, problem: str) -> bool:
+    """@cc [owner:fontanierh,label:correctness] brinecove-recarved-remainder
+    A tile that a later batch cut again has that batch's remainder: this batch's expected remainder (sha, triangles) is
+    stale by design and is not a problem here. The later batch's check owns the remainder; the donor proof below still
+    partitions the tile with every batch's parts and the current remainder."""
+    apply_ = set_batch(batch)
+    exp = json.loads((game / apply_.EXPECTED).read_text())
+    stems = set(exp['tiles']) & later_tiles(game, batch)
+    records = {exp['tiles'][s]['record'] for s in stems}
+    return (any(problem in (f'{r}: remainder differs from the expectation', f'{r}: derived remainder differs from the expectation')
+                for r in records) or any(problem == f'{s}: remainder plus parts is not the tile' for s in stems))
+
+
+def check(game: Path, donor: Path | None, batch: str, retired: bool = False, groups: bool = False) -> list[str]:
     """apply's repository checks for this batch, plus the vertex-level proof when the donor is given: donor tile =
-    this batch's parts + its remainder + the earlier batches' parts of the same tile."""
+    this batch's parts + its remainder + the earlier batches' parts of the same tile.
+    `groups`: the groups stage is done (emptied tiles have no runtime group); `retired`: the records stage is done too."""
     apply_ = set_batch(batch)
     problems = apply_.check(game, None)            # apply's own `retired` mode also tests the ships' actor: not used
-    if retired:
+    problems = [p for p in problems if not recarved_later(game, batch, p)]
+    if retired or groups:
         exp = json.loads((game / apply_.EXPECTED).read_text())
         gone = [s for s, t in exp['tiles'].items() if t['remainder'] is None]
         problems = [p for p in problems if not any(p.startswith(f'SM_BC_{s} appears 0 times') for s in gone)]
         data = json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text())
         names = apply_.group_names(data)
         for s in gone:
-            if (game / 'assets' / exp['tiles'][s]['record'] / 'asset.toml').exists():
+            if retired and (game / 'assets' / exp['tiles'][s]['record'] / 'asset.toml').exists():
                 problems.append(f'{exp["tiles"][s]["record"]}: should be retired (empty remainder)')
             if f'SM_BC_{s}' in names:
                 problems.append(f'retired tile SM_BC_{s} is still in the runtime file')
@@ -454,7 +527,6 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False) -> 
     for stem in exp['tiles']:
         sources += list(split.triangles(split.read_glb(glb_dir / f'SM_BC_{stem}.glb')))
     files = [game / 'assets' / rid / 'src' / f'{p["mesh"]}.glb' for rid, p in exp['parts'].items()]
-    files += [game / 'assets' / t['record'] / 'src' / f'SM_BC_{s}.glb' for s, t in exp['tiles'].items() if t['remainder']]
     for other in prior_files(region, f'split-{batch}.json'):          # earlier batches' parts cut from the same tiles
         old = json.loads(other.read_text())
         files += [game / 'assets' / rid / 'src' / f'{p["mesh"]}.glb' for rid, p in old['parts'].items()
@@ -463,6 +535,15 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False) -> 
         if not f.is_file() or records.is_lfs_pointer(f):
             return problems + [f'{f.name}: not hydrated, the donor proof is skipped']
         pieces.append(list(split.triangles(split.read_glb(f))))
+    for s, t in exp['tiles'].items():                                   # the remainders are derived, never read from src
+        if t['remainder']:
+            asset = records.load_asset(game / 'assets' / t['record'] / 'asset.toml')
+            if asset.derive is None:
+                return problems + [f'{t["record"]}: carved in the old form, the donor proof is skipped']
+            try:
+                pieces.append(list(split.triangles(apply_.carve.remainder_model(asset.folder, asset.derive))))
+            except (OSError, ValueError, apply_.carve.CarveError):
+                return problems + [f'{t["record"]}: original or selection not hydrated, the donor proof is skipped']
     # earlier parts may also cover tiles outside this batch; keep only triangles that the donor tiles above contain
     source_set = {tuple(sorted(split._key(p) for p in c)) for _, c in sources}
     pieces = [[t for t in piece if tuple(sorted(split._key(p) for p in t[1])) in source_set] for piece in pieces]
@@ -523,12 +604,65 @@ def emptied(plan: dict) -> list[str]:
 
 
 def affected_placements(game: Path, plan: dict) -> list[str]:
-    """Saved placements (objects.toml entries) that list a group of an emptied tile: their actors must be deleted with
-    their records and saved again by `migrate/objects.py` (an object cannot change its groups after it was saved)."""
+    """Saved placements that must be deleted with their records and saved again by `migrate/objects.py` (an object cannot
+    change its groups after it was saved). @cc [owner:fontanierh,label:correctness] brinecove-placements-survive-groups
+    Found two ways: the objects.toml entries that list a group of an emptied tile (before the groups stage), and the object
+    records that reference an emptied tile's record. The groups stage removes the groups from objects.toml but never from a
+    record, so after it the second way is the only one that still finds the placements."""
     apply_ = _apply()
+    stems = emptied(plan)
+    if not stems:
+        return []
     listed = apply_.tomllib.loads((game / 'world' / 'regions' / apply_.REGION / 'objects.toml').read_text()).get('objects', [])
+    meshes = {f'SM_BC_{s}' for s in stems}
+    ids = {i['id'] for i in listed if meshes & ({i['group']} if 'group' in i else set(i.get('groups', [])))}
+    tile_records = {plan['tiles'][s]['record'] for s in stems}
+    for path in apply_.records.record_paths(game):
+        asset = apply_.records.load_asset(path)
+        if asset.id.startswith('object/') and tile_records & set(asset.references + asset.input_dependencies):
+            ids.add(asset.id)
+    return sorted(ids)
+
+
+def placement_ids(game: Path, plans: list) -> list[str]:
+    """The affected placements of several (batch, plan) pairs, each id once: a placement that lists tiles of two batches
+    is deleted and saved again once."""
+    return sorted({oid for _, plan in plans for oid in affected_placements(game, plan)})
+
+
+def groups_retired(game: Path, plan: dict) -> bool:
+    """True when the groups stage has run for this plan: no emptied tile's group is left in objects.toml, objects.saved.json
+    or the runtime file (the tile records may still exist)."""
+    apply_ = _apply()
+    region = game / 'world' / 'regions' / apply_.REGION
     meshes = {f'SM_BC_{s}' for s in emptied(plan)}
-    return sorted(i['id'] for i in listed if meshes & ({i['group']} if 'group' in i else set(i.get('groups', []))))
+    text = (region / 'objects.toml').read_text()
+    saved = json.loads((region / 'objects.saved.json').read_text()) if (region / 'objects.saved.json').is_file() else None
+    names = apply_.group_names(json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text()))
+    return not any(drop_group(text, m) != text or (saved is not None and drop_saved_group(saved, m) != saved) or m in names
+                   for m in meshes)
+
+
+def placements_touched(game: Path, ids: list[str]) -> dict:
+    """Stage `placements`: each affected placement's record folder files and the actor packages its record lists as outputs
+    (the same approach as brinecove_ships.touched with retire=True). A placement already deleted contributes nothing."""
+    apply_ = _apply()
+    region = f'region/{apply_.REGION}'
+    paths, scopes = set(), {region}
+    for oid in ids:
+        folder = game / 'assets' / oid
+        owner = region
+        if (folder / 'asset.toml').is_file():
+            asset = apply_.records.load_asset(folder / 'asset.toml')
+            owner = asset.owner
+            for output in asset.outputs:
+                for rel in apply_.package_rels(game, output.package):
+                    paths.add(f'{apply_.GAME_REL}/{rel}')
+        scopes.add((f'asset/{oid}', owner))
+        for path in sorted(folder.rglob('*')) if folder.is_dir() else []:
+            if path.is_file():
+                paths.add(f'{apply_.GAME_REL}/{path.relative_to(game).as_posix()}')
+    return {'paths': sorted(paths), 'scopes': scopes}
 
 
 def retire_touched(game: Path, plan: dict, stage: str = 'groups') -> dict:
@@ -599,7 +733,7 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
     `groups` drops their groups from the placements and the runtime file; after the affected placements were deleted and
     saved again, `records` deletes the tile records and packages."""
     apply_ = _apply()
-    problems = check(game, donor, batch, retired=(stage == 'records'))
+    problems = check(game, donor, batch, groups=(stage == 'records'))   # records: the groups stage is done, the tiles not yet
     if problems:
         raise apply_.SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))
     set_batch(batch).require_applied_plan(game, plan)   # the checked batch, not a fresh selection under its name
@@ -613,6 +747,74 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
         echo('placements to delete (actor and record) and save again with migrate/objects.py: ' +
              ', '.join(affected_placements(game, plan)))
     return apply_.execute(game, ops, scopes=info['scopes'])
+
+
+def retire_placements(game: Path, plans: list, claim: str | None, donor: Path | None = None, echo=print) -> dict:
+    """Stage `placements` for every (batch, plan) pair in one claimed, journaled step: the affected placements' record folders
+    and actor packages, each placement once. Refuses unless each batch's groups stage is done and its check passes (the
+    emptied tile records still exist). Batches with nothing emptied are skipped. Idempotent: a placement already deleted
+    is no longer found, so a rerun deletes nothing (keep the list the first run printed for the re-save)."""
+    apply_ = _apply()
+    active = [(batch, plan) for batch, plan in plans if emptied(plan)]
+    if not active:
+        return {'written': [], 'deleted': []}
+    for batch, plan in active:
+        problems = check(game, donor, batch, groups=True)
+        if problems:
+            raise apply_.SplitError(f'{batch}: refusing to delete placements before the check passes: ' + '; '.join(problems[:3]))
+        set_batch(batch).require_applied_plan(game, plan)
+        if not groups_retired(game, plan):
+            raise apply_.SplitError(f'{batch}: the groups stage is not done; run retire --retire-stage groups first')
+    ids = placement_ids(game, active)
+    echo('placements to save again with migrate/objects.py: ' + (', '.join(ids) or 'none'))
+    info = placements_touched(game, ids)
+    ops = placements_compute(game, info)
+    if not ops['deletes']:
+        return {'written': [], 'deleted': []}
+    try:
+        apply_.authority.authorize(info['paths'], claim, 'Brine Cove market/town retire placements', scopes=info['scopes'])
+    except apply_.authority.Unauthorized as error:
+        raise apply_.SplitError(str(error)) from None
+    return apply_.execute(game, ops, scopes=info['scopes'])
+
+
+def placements_compute(game: Path, info: dict) -> dict:
+    """{'writes', 'deletes'} of the placements stage: the existing files of the placements' touched set."""
+    prefix = len(_apply().GAME_REL) + 1
+    deletes = sorted(p[prefix:] for p in info['paths'] if (game / p[prefix:]).is_file())
+    return {'writes': {}, 'deletes': deletes}
+
+
+def batch_names(arg: str) -> list[str]:
+    """`all` (every market and town batch in apply order) or a comma list of batch names, each once."""
+    names = list(BATCHES) if arg == 'all' else list(dict.fromkeys(b.strip() for b in arg.split(',') if b.strip()))
+    unknown = [b for b in names if b not in BATCHES]
+    if not names or unknown:
+        raise MarketError(f'unknown batch {", ".join(unknown) or "(none)"}; known: {", ".join(BATCHES)}, or all')
+    return names
+
+
+def touched_all(game: Path, plans: list) -> dict:
+    """The union over (batch, plan) pairs of every stage's paths and scopes, and the placements to save again."""
+    apply_ = _apply()
+    out = {'apply': set(), 'scopes': set(), 'retire_groups': set(), 'retire_records': set()}
+    for batch, plan in plans:
+        set_batch(batch)
+        info = apply_.touched(game, plan)
+        out['apply'] |= set(info['paths'])
+        out['scopes'] |= set(info['scopes'])
+        for stage, key in (('groups', 'retire_groups'), ('records', 'retire_records')):
+            step = retire_touched(game, plan, stage)
+            out[key] |= set(step['paths'])
+            out['scopes'] |= set(step['scopes'])
+    ids = placement_ids(game, plans)
+    placed = placements_touched(game, ids)
+    out['retire_placements'] = placed['paths']
+    out['scopes'] |= placed['scopes']
+    out['placements'] = ids
+    return {'apply': sorted(out['apply']), 'retire_groups': sorted(out['retire_groups']),
+            'retire_records': sorted(out['retire_records']), 'retire_placements': out['retire_placements'],
+            'placements': ids, 'scopes': sorted(s if isinstance(s, str) else ' or '.join(s) for s in out['scopes'])}
 
 
 def selection(batch: str, only: str | None) -> list[str]:
@@ -630,23 +832,26 @@ def selection(batch: str, only: str | None) -> list[str]:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('command', choices=('plan', 'paths', 'apply', 'retire', 'check', 'list'))
-    parser.add_argument('--batch', default='market1', help='batch name; its expectation is split-<batch>.json')
-    parser.add_argument('--only', help='comma-separated object names instead of the batch\'s own list')
+    parser.add_argument('--batch', default='market1', help='batch name, a comma list of names, or all (every market and town batch)')
+    parser.add_argument('--only', help='comma-separated object names instead of the batch\'s own list (one batch only)')
     parser.add_argument('--donor', type=Path, help='the donor build/yorimichi folder')
     parser.add_argument('--donor-src', type=Path, help='the donor games/yorimichi folder (default: next to --donor)')
     parser.add_argument('--components', default='Market', help='list: Market, TownLower, TownUpper (comma-separated)')
     parser.add_argument('--stage', type=Path)
     parser.add_argument('--claim', help='the active claim (task ID) that must cover the touched set')
     parser.add_argument('--json', action='store_true')
-    parser.add_argument('--retire-stage', choices=('groups', 'records'), default='groups', help='retire: which stage')
+    parser.add_argument('--retire-stage', choices=('groups', 'placements', 'records'), default='groups',
+                        help='retire: groups, then placements (delete and re-save them), then records')
     parser.add_argument('--retired', action='store_true', help='check: the emptied tiles are already retired')
     parser.add_argument('--game', type=Path, default=HERE.parents[1], help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    apply_ = set_batch(args.batch)
+    apply_ = _apply()
     game = args.game.resolve()
     try:
+        names = batch_names(args.batch)
         if args.command == 'check':
-            problems = check(game, args.donor.resolve() if args.donor else None, args.batch, args.retired)
+            donor = args.donor.resolve() if args.donor else None
+            problems = [p if len(names) == 1 else f'{b}: {p}' for b in names for p in check(game, donor, b, args.retired)]
             print('\n'.join(problems))
             print(f'{"FAIL" if problems else "OK"}: {len(problems)} problem(s)')
             return 1 if problems else 0
@@ -665,32 +870,64 @@ def main(argv=None) -> int:
                 for obj in sorted(count):
                     print(f'{obj:26} {sum(count[obj].values()):6} tris  {dict(count[obj])}')
             return 0
-        stage = (args.stage or apply_.DEFAULT_STAGE.with_name('brinecove-' + args.batch)).resolve()
-        plan = build(game, donor, src, stage, args.batch, selection(args.batch, args.only))
-        if args.command == 'plan':
-            print(apply_.report(plan))
-            if args.json:
-                print(json.dumps(summary(plan), indent=2))
-        elif args.command == 'paths':
-            info = apply_.touched(game, plan)
-            groups, records = retire_touched(game, plan, 'groups'), retire_touched(game, plan, 'records')
-            scopes = sorted(s if isinstance(s, str) else ' or '.join(s) for s in info['scopes'] | records['scopes'])
-            if args.json:
-                print(json.dumps({'apply': info['paths'], 'retire_groups': groups['paths'], 'retire_records': records['paths'],
-                                  'placements': affected_placements(game, plan), 'scopes': scopes}, indent=2))
+        if len(names) > 1 and args.only:
+            parser.error('--only takes one batch')
+        if args.command == 'apply' and len(names) > 1:
+            parser.error('apply takes one batch; run the batches one at a time, in order')
+        plans = []
+        for batch in names:
+            if args.stage is None:
+                stage = apply_.DEFAULT_STAGE.with_name('brinecove-' + batch)
             else:
-                print('# apply: write, create or (for the package files, by the import) overwrite')
-                print('\n'.join(info['paths']))
-                print('# retire --retire-stage groups: edit placements and runtime (after a passing import and check)')
-                print('\n'.join(groups['paths']))
-                print('# retire --retire-stage records: delete the emptied tiles (after their placements were saved again)')
-                print('\n'.join(records['paths']))
-                print('# placements to delete and save again between the stages: ' + ', '.join(affected_placements(game, plan)))
+                stage = args.stage if len(names) == 1 else args.stage / batch
+            plans.append((batch, build(game, donor, src, stage.resolve(), batch, selection(batch, args.only))))
+        if args.command == 'plan':
+            for batch, plan in plans:
+                print(apply_.report(plan))
+            if args.json:
+                print(json.dumps(summary(plans[0][1]) if len(plans) == 1 else {b: summary(p) for b, p in plans}, indent=2))
+        elif args.command == 'paths':
+            info = touched_all(game, plans)
+            if args.json:
+                print(json.dumps(info, indent=2))
+            else:
+                for title, key in (('# apply: write, create or (for the package files, by the import) overwrite', 'apply'),
+                                   ('# retire --retire-stage groups: edit placements and runtime (after a passing import and check)',
+                                    'retire_groups'),
+                                   ('# retire --retire-stage placements: delete the affected placements (records and actors)',
+                                    'retire_placements'),
+                                   ('# retire --retire-stage records: delete the emptied tiles (after their placements were saved again)',
+                                    'retire_records')):
+                    print(title)
+                    print('\n'.join(info[key]))
+                print('# placements to delete and save again between the stages: ' + ', '.join(info['placements']))
         elif args.command == 'retire':
-            print(apply_.report(plan))
-            done = retire(game, plan, args.claim, args.batch, args.retire_stage, donor)
+            for batch, plan in plans:
+                print(f'# {batch}')
+                print(apply_.report(plan))
+            if args.retire_stage == 'placements':
+                done = retire_placements(game, plans, args.claim, donor)
+            else:
+                done = {'written': [], 'deleted': []}
+                for batch, plan in plans:
+                    if not emptied(plan):
+                        print(f'{batch}: no emptied tile, nothing to retire')
+                        continue
+                    if args.retire_stage == 'groups' and groups_retired(game, plan):
+                        print(f'{batch}: groups stage already done')
+                        continue
+                    step = retire(game, plan, args.claim, batch, args.retire_stage, donor)
+                    done['written'] += step['written']
+                    done['deleted'] += step['deleted']
             print(f'retire: wrote {len(done["written"])}, deleted {len(done["deleted"])}')
         else:
+            if len(plans) != 1:
+                parser.error('apply takes one batch')
+            batch, plan = plans[0]
+            recut = sorted(later_tiles(game, batch) & set(plan['tiles']))
+            if recut:   # its remainders are theirs now: a rerun would put their parts back into these tiles
+                raise MarketError(f'{batch}: later batches cut {", ".join(recut[:3])} again; a rerun would undo their '
+                                  'remainders, so it is not applied again')
             print(apply_.report(plan))
             done = apply_.run_step(game, plan, args.claim)
             print(f'apply: wrote {len(done["written"])}')
