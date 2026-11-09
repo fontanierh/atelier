@@ -570,7 +570,7 @@ def emptied(plan: dict) -> list[str]:
 
 def affected_placements(game: Path, plan: dict) -> list[str]:
     """Saved placements that must be deleted with their records and saved again by `migrate/objects.py` (an object cannot
-    change its groups after it was saved). @cc [owner:jim5,label:correctness] brinecove-placements-survive-groups
+    change its groups after it was saved). @cc [owner:fontanierh,label:correctness] brinecove-placements-survive-groups
     Found two ways: the objects.toml entries that list a group of an emptied tile (before the groups stage), and the object
     records that reference an emptied tile's record. The groups stage removes the groups from objects.toml but never from a
     record, so after it the second way is the only one that still finds the placements."""
