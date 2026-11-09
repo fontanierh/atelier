@@ -1440,6 +1440,162 @@ groups = ["SM_BC_TownUpperRidge91", "SM_BC_TownUpperRidge91_Soft"]
 model = ["prop/brinecove/town-upper-ridge-9-1", "prop/brinecove/town-upper-ridge-9-1-soft"]
 about = "the town upper ridge 9 1, cut from its fused tile (5184 triangles)"
 
+[[objects]]
+id = "object/brinecove/town-upper-crest-w1-0"
+groups = ["SM_BC_TownUpperCrestW10", "SM_BC_TownUpperCrestW10_Soft"]
+model = ["prop/brinecove/town-upper-crest-w1-0", "prop/brinecove/town-upper-crest-w1-0-soft"]
+about = "the town upper crest w1 0, cut from its fused tile (6713 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w1-1"
+group = "SM_BC_TownUpperCrestW11"
+model = "prop/brinecove/town-upper-crest-w1-1"
+about = "the town upper crest w1 1, cut from its fused tile (6796 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w1-2"
+groups = ["SM_BC_TownUpperCrestW12", "SM_BC_TownUpperCrestW12_Soft"]
+model = ["prop/brinecove/town-upper-crest-w1-2", "prop/brinecove/town-upper-crest-w1-2-soft"]
+about = "the town upper crest w1 2, cut from its fused tile (6881 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w2-0"
+groups = ["SM_BC_TownUpperCrestW20", "SM_BC_TownUpperCrestW20_Soft"]
+model = ["prop/brinecove/town-upper-crest-w2-0", "prop/brinecove/town-upper-crest-w2-0-soft"]
+about = "the town upper crest w2 0, cut from its fused tile (9597 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-crest-w2-1"
+groups = ["SM_BC_TownUpperCrestW21", "SM_BC_TownUpperCrestW21_Soft"]
+model = ["prop/brinecove/town-upper-crest-w2-1", "prop/brinecove/town-upper-crest-w2-1-soft"]
+about = "the town upper crest w2 1, cut from its fused tile (6744 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-w1"
+groups = ["SM_BC_TownUpperHillW1", "SM_BC_TownUpperHillW1_Soft"]
+model = ["prop/brinecove/town-upper-hill-w1", "prop/brinecove/town-upper-hill-w1-soft"]
+about = "the town upper hill w1, cut from its fused tile (8724 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-w2"
+groups = ["SM_BC_TownUpperHillW2", "SM_BC_TownUpperHillW2_Soft"]
+model = ["prop/brinecove/town-upper-hill-w2", "prop/brinecove/town-upper-hill-w2-soft"]
+about = "the town upper hill w2, cut from its fused tile (6796 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-hill-w3"
+groups = ["SM_BC_TownUpperHillW3", "SM_BC_TownUpperHillW3_Soft"]
+model = ["prop/brinecove/town-upper-hill-w3", "prop/brinecove/town-upper-hill-w3-soft"]
+about = "the town upper hill w3, cut from its fused tile (6712 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-0-0"
+groups = ["SM_BC_TownUpperRidge00", "SM_BC_TownUpperRidge00_Soft"]
+model = ["prop/brinecove/town-upper-ridge-0-0", "prop/brinecove/town-upper-ridge-0-0-soft"]
+about = "the town upper ridge 0 0, cut from its fused tile (5644 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-0-1"
+groups = ["SM_BC_TownUpperRidge01", "SM_BC_TownUpperRidge01_Soft"]
+model = ["prop/brinecove/town-upper-ridge-0-1", "prop/brinecove/town-upper-ridge-0-1-soft"]
+about = "the town upper ridge 0 1, cut from its fused tile (5024 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-1-0"
+groups = ["SM_BC_TownUpperRidge10", "SM_BC_TownUpperRidge10_Soft"]
+model = ["prop/brinecove/town-upper-ridge-1-0", "prop/brinecove/town-upper-ridge-1-0-soft"]
+about = "the town upper ridge 1 0, cut from its fused tile (7976 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-1-1"
+groups = ["SM_BC_TownUpperRidge11", "SM_BC_TownUpperRidge11_Soft"]
+model = ["prop/brinecove/town-upper-ridge-1-1", "prop/brinecove/town-upper-ridge-1-1-soft"]
+about = "the town upper ridge 1 1, cut from its fused tile (5840 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-2-0"
+groups = ["SM_BC_TownUpperRidge20", "SM_BC_TownUpperRidge20_Soft"]
+model = ["prop/brinecove/town-upper-ridge-2-0", "prop/brinecove/town-upper-ridge-2-0-soft"]
+about = "the town upper ridge 2 0, cut from its fused tile (5024 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-2-1"
+groups = ["SM_BC_TownUpperRidge21", "SM_BC_TownUpperRidge21_Soft"]
+model = ["prop/brinecove/town-upper-ridge-2-1", "prop/brinecove/town-upper-ridge-2-1-soft"]
+about = "the town upper ridge 2 1, cut from its fused tile (5349 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-3-0"
+groups = ["SM_BC_TownUpperRidge30", "SM_BC_TownUpperRidge30_Soft"]
+model = ["prop/brinecove/town-upper-ridge-3-0", "prop/brinecove/town-upper-ridge-3-0-soft"]
+about = "the town upper ridge 3 0, cut from its fused tile (2228 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-3-1"
+groups = ["SM_BC_TownUpperRidge31", "SM_BC_TownUpperRidge31_Soft"]
+model = ["prop/brinecove/town-upper-ridge-3-1", "prop/brinecove/town-upper-ridge-3-1-soft"]
+about = "the town upper ridge 3 1, cut from its fused tile (2240 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-4-0"
+groups = ["SM_BC_TownUpperRidge40", "SM_BC_TownUpperRidge40_Soft"]
+model = ["prop/brinecove/town-upper-ridge-4-0", "prop/brinecove/town-upper-ridge-4-0-soft"]
+about = "the town upper ridge 4 0, cut from its fused tile (2168 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-4-1"
+groups = ["SM_BC_TownUpperRidge41", "SM_BC_TownUpperRidge41_Soft"]
+model = ["prop/brinecove/town-upper-ridge-4-1", "prop/brinecove/town-upper-ridge-4-1-soft"]
+about = "the town upper ridge 4 1, cut from its fused tile (2120 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-6-0"
+groups = ["SM_BC_TownUpperRidge60", "SM_BC_TownUpperRidge60_Soft"]
+model = ["prop/brinecove/town-upper-ridge-6-0", "prop/brinecove/town-upper-ridge-6-0-soft"]
+about = "the town upper ridge 6 0, cut from its fused tile (4652 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-6-1"
+groups = ["SM_BC_TownUpperRidge61", "SM_BC_TownUpperRidge61_Soft"]
+model = ["prop/brinecove/town-upper-ridge-6-1", "prop/brinecove/town-upper-ridge-6-1-soft"]
+about = "the town upper ridge 6 1, cut from its fused tile (5156 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-7-0"
+groups = ["SM_BC_TownUpperRidge70", "SM_BC_TownUpperRidge70_Soft"]
+model = ["prop/brinecove/town-upper-ridge-7-0", "prop/brinecove/town-upper-ridge-7-0-soft"]
+about = "the town upper ridge 7 0, cut from its fused tile (4588 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-ridge-7-1"
+groups = ["SM_BC_TownUpperRidge71", "SM_BC_TownUpperRidge71_Soft"]
+model = ["prop/brinecove/town-upper-ridge-7-1", "prop/brinecove/town-upper-ridge-7-1-soft"]
+about = "the town upper ridge 7 1, cut from its fused tile (4312 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-1-5-0"
+groups = ["SM_BC_TownUpperSlope1150", "SM_BC_TownUpperSlope1150_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-1-5-0", "prop/brinecove/town-upper-slope--1-1-5-0-soft"]
+about = "the town upper slope  1 1 5 0, cut from its fused tile (7316 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-1-5-1"
+groups = ["SM_BC_TownUpperSlope1151", "SM_BC_TownUpperSlope1151_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-1-5-1", "prop/brinecove/town-upper-slope--1-1-5-1-soft"]
+about = "the town upper slope  1 1 5 1, cut from its fused tile (6460 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-2-5-0"
+groups = ["SM_BC_TownUpperSlope1250", "SM_BC_TownUpperSlope1250_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-2-5-0", "prop/brinecove/town-upper-slope--1-2-5-0-soft"]
+about = "the town upper slope  1 2 5 0, cut from its fused tile (8104 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-upper-slope--1-2-5-1"
+groups = ["SM_BC_TownUpperSlope1251", "SM_BC_TownUpperSlope1251_Soft"]
+model = ["prop/brinecove/town-upper-slope--1-2-5-1", "prop/brinecove/town-upper-slope--1-2-5-1-soft"]
+about = "the town upper slope  1 2 5 1, cut from its fused tile (6753 triangles)"
+
 # --- Generated by tools/migrate/towns.py: every other runtime group of the region (rerun to regenerate) ---
 
 [[objects]]

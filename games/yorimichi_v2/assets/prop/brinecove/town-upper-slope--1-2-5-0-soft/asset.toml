@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpperSlope1250_Soft: the town upper slope  1 2 5 0, cut from the fused tile(s) TownUpper_2_5_Soft (226 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-upper-slope--1-2-5-0-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-upper-slope--1-2-5-0-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownUpperSlope1250_Soft.glb"
+sha256 = "a37ee0fbdfd7b8562a1c3be421808c0e223b1f8a8bb17124cd7a62aefb724aa2"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm"]
+triangles = 226
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpperSlope1250_Soft"
