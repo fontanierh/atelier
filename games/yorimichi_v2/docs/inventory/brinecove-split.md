@@ -38,6 +38,22 @@ That source mutation is a recorded remaining defect. The prepared source-preserv
 original plus a selection and derives output under `build/yorimichi_v2/`; it has not yet been applied here.
 See [sources.md](sources.md). Do not mistake the existing record for complete recoverability of the fused original.
 
+## Source form of a carved tile (derived remainder)
+
+A carved tile never commits its remainder. Its record keeps the fused original as its first pinned source (the bytes
+`tools/migrate/recover.py` produced from the donor generator, before any carve), and `src/SM_BC_<tile>.carve.json` beside
+it lists the triangles the remainder keeps and removes (half-open ranges of triangle ordinals). The `[derive]` table of
+`asset.toml` names the two (`tools/content/carve.py`). The targeted import derives the remainder under
+`build/yorimichi_v2/derived/<record>/` from the two and imports it; the import fingerprint covers both hashes. A normal build
+never writes it.
+
+The split tools write only a tile's selection and its `[[sources]]`; the cut-out parts keep their own committed part GLB as
+before. Tile records in the old form (remainder committed as the source) are converted once by
+`tools/migrate/brinecove_sources.py --check` (proof, no claim) and `--claim TASK` (write). The conversion takes the original
+from the record's first commit in git history (read from the local LFS store, checked against the first pin), finds the kept
+triangles by matching the committed remainder to the original, and requires the derived remainder to be byte-identical
+(sha256) to the committed one. The record's import stays current, so no package is rewritten and no placement moves.
+
 ## Claimed apply/import/retire/save sequence
 
 `DONOR` names the donor's `build/yorimichi` folder, read-only. Reuse accepted imports and existing focused evidence;

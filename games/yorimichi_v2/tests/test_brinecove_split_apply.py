@@ -157,10 +157,10 @@ def small_plan(tmp_path):
     p.update({'file': glb, 'tile': {'settings': {'collision': 'complex'}, 'references': ['adopted/brinecove/materials']}})
     tile = {'record': 'prop/brinecove/props-3-3', 'owner': 'shared/brinecove/props-3-3', 'package': '/Game/Brinecove/Meshes/SM_BC_Props_3_3',
             'references': ['adopted/brinecove/materials'], 'settings': {'collision': 'complex', 'triangles': 15},
-            'triangles': 15, 'material_package': {}}
+            'triangles': 15, 'material_package': {}, 'source': {'name': 'SM_BC_Props_3_3.glb', 'sha256': 'a' * 64}}
     return {'parts': {('cannon-west', False): p}, 'tiles': {'Props_3_3': tile},
             'remainders': {'Props_3_3': {'file': rest, 'sha256': 'b' * 64, 'triangles': 5, 'materials': ['BC_rope'],
-                                         'slots': [apply.MATERIALS + 'MI_BC_rope']}}}
+                                         'slots': [apply.MATERIALS + 'MI_BC_rope'], 'kept': [0, 1, 2, 3, 4], 'total': 15}}}
 
 
 def allow(monkeypatch, seen=None):
@@ -179,7 +179,7 @@ def test_touched_set_lists_records_sources_packages_and_data(tmp_path):
     assert f'{g}/assets/prop/brinecove/cannon-west/src/SM_BC_CannonWest.glb' in paths
     assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_CannonWest.uasset' in paths          # the part's generated package
     assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset' in paths           # the changed tile's package
-    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.glb' in paths
+    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.carve.json' in paths
     assert {f'{g}/unreal/Content/Data/brinecove/runtime.json', f'{g}/runtime-data.lock.json',
             f'{g}/world/regions/w09-brinecove/objects.toml', f'{g}/world/regions/w09-brinecove/split-batch1.json'} <= paths
     assert info['paths'] == sorted(info['paths']) and 'region/w09-brinecove' in info['scopes']
@@ -362,7 +362,7 @@ def test_paths_list_only_what_changes(tmp_path, monkeypatch):
     plan['remainders']['Props_3_3']['triangles'] = 4
     paths = set(apply.touched(game, plan)['paths'])
     g = apply.GAME_REL
-    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.glb' in paths
+    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.carve.json' in paths
     assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset' in paths
     assert not any('cannon-west' in p for p in paths)               # the unchanged part is not touched
 
