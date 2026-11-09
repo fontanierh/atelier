@@ -753,8 +753,8 @@
       "size": 562424
     },
     "Cairo/BP_Cairo.uasset": {
-      "sha256": "d74aebb5f82cd812a4d33b16822faa4b1a4a33561b4b3e1f38074a4316c687d2",
-      "size": 28748
+      "sha256": "d09134d56978f453c3be225f4f14179962e96f527d83647c814e67234cd1bc42",
+      "size": 28382
     },
     "Cairo/DA_CairoBase.uasset": {
       "sha256": "c9f04fc3a89257585239fea82d8eed3e9689e97cc8f3e48429a5c5ebb5085f44",
@@ -11653,8 +11653,8 @@
       "size": 4664
     },
     "Modori/BP_Modori.uasset": {
-      "sha256": "0c3b04a0ec11910e9e53593ab49a153876aa88d131266af20d6f6f4af96ace3f",
-      "size": 28906
+      "sha256": "40154b55e6d436a99d43e0e932d9734d0d34ac34b030fcdcc01f1703d2fd6e89",
+      "size": 28540
     },
     "Modori/DA_Modori.uasset": {
       "sha256": "e33444f756b10016bc2be5381d212666067f031353995b67b4523d23b5a7404e",
@@ -12269,8 +12269,8 @@
       "size": 4616
     },
     "Nox/BP_Nox.uasset": {
-      "sha256": "e096d2b54bfc8784f29822aac48140232202dd608825b3f9836dbf130c62fcf5",
-      "size": 28824
+      "sha256": "b13f2a8afcaaf6b1ae0c38168732469a3e8fe3f100f5ba9e2a244ac425bec16b",
+      "size": 28458
     },
     "Nox/DA_Nox.uasset": {
       "sha256": "4dfb3991a20b05b5c82f5f11df00ff7168e2af0ba8ac2c9e745eaafbbe3dc9ed",
@@ -12881,8 +12881,8 @@
       "size": 4632
     },
     "Paul/BP_Paul.uasset": {
-      "sha256": "1bbd58497cd0fdbf49f45c5820ef6e47d2e5e29ff1ca30418680da9197041717",
-      "size": 28612
+      "sha256": "2b9d866fa64f5e13d81c21d80d1d8911484b345a371a1a36f245b0a33733da9b",
+      "size": 28246
     },
     "Paul/DA_Paul.uasset": {
       "sha256": "7fb4498ae2125482880489687b232c331aa2e17d603b6e38a638ebfd1ea8c536",

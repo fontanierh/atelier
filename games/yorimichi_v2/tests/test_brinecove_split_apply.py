@@ -286,6 +286,71 @@ def test_a_failed_write_restores_every_file(tmp_path, monkeypatch):
     assert snapshot(game) == before and not (game / apply.JOURNAL).exists()
 
 
+@pytest.fixture
+def accepted_import(tmp_path):
+    """A replacement with an accepted import and a separate package companion, without an Unreal process."""
+    from types import SimpleNamespace
+    game = tmp_path / 'game'
+    folder = game / 'assets/prop/brinecove/cannon-west'
+    (folder / 'src').mkdir(parents=True)
+    source = folder / 'src/part.glb'
+    source.write_bytes(b'original source')
+    asset = apply.records.Asset(
+        id='prop/brinecove/cannon-west', kind='static-mesh', authority='generated',
+        owner='shared/brinecove/cannon-west', folder=folder,
+        sources=[apply.records.Source('src/part.glb', apply.records.sha256_file(source))],
+        recipe={'importer': 'static-mesh', 'version': 1, 'settings': {'triangles': 10}},
+        outputs=[apply.records.Output('/Game/Brinecove/Meshes/SM_BC_CannonWest', 'generated')])
+    primary = apply.records.package_files(game, asset.outputs[0].package)[0]
+    primary.parent.mkdir(parents=True)
+    primary.write_bytes(b'accepted package')
+    companion = primary.with_suffix('.uexp')
+    companion.write_bytes(b'accepted companion')
+    receipt = {'schema': apply.records.SCHEMA, 'kind': 'imported', 'engine': 'test',
+               'input_fingerprint': apply.records.input_fingerprint(asset, {}),
+               'files': {p.relative_to(game).as_posix(): apply.records.sha256_file(p) for p in (primary, companion)}}
+    asset.verified.write_text(json.dumps(receipt))
+    return SimpleNamespace(game=game, asset=asset, source=source, primary=primary, companion=companion, receipt=receipt)
+
+
+def test_retirement_accepts_only_the_current_import(accepted_import):
+    case = accepted_import
+    assert apply.import_problems(case.game, case.asset) == []
+    # A second apply pins a changed source but leaves the old import receipt and package bytes in place.
+    case.source.write_bytes(b'revised source')
+    case.asset.sources = [apply.records.Source('src/part.glb', apply.records.sha256_file(case.source))]
+    assert any('import is stale' in p for p in apply.import_problems(case.game, case.asset))
+
+
+def test_retirement_refuses_a_changed_recipe(accepted_import):
+    case = accepted_import
+    case.asset.recipe['settings']['triangles'] = 12
+    assert any('import is stale' in p for p in apply.import_problems(case.game, case.asset))
+
+
+@pytest.mark.parametrize('change', ['changed', 'missing', 'missing-companion', 'unrecorded-companion', 'omitted-package',
+                                  'editor-receipt', 'missing-receipt'])
+def test_retirement_refuses_unaccepted_output_bytes(accepted_import, change):
+    case = accepted_import
+    if change == 'changed':
+        case.primary.write_bytes(b'changed after acceptance')
+    elif change == 'missing':
+        case.primary.unlink()
+    elif change == 'missing-companion':
+        case.companion.unlink()
+    elif change == 'unrecorded-companion':
+        case.primary.with_suffix('.ubulk').write_bytes(b'not in the accepted receipt')
+    elif change == 'omitted-package':
+        del case.receipt['files'][case.primary.relative_to(case.game).as_posix()]
+        case.asset.verified.write_text(json.dumps(case.receipt))
+    elif change == 'editor-receipt':
+        case.receipt['kind'] = 'editor-saved'
+        case.asset.verified.write_text(json.dumps(case.receipt))
+    else:
+        case.asset.verified.unlink()
+    assert apply.import_problems(case.game, case.asset)
+
+
 def test_paths_list_only_what_changes(tmp_path, monkeypatch):
     allow(monkeypatch)
     game = mini_game(tmp_path)
@@ -367,3 +432,193 @@ def test_a_tile_nothing_takes_from_any_more_goes_back_to_its_donor_record_text()
     gen = apply.tile_generated('Harbor_2_3_Soft', tile, rem)
     assert gen.about == 'SM_BC_Harbor_2_3_Soft: one Brine Cove mesh (90 triangles)'
     assert list(gen.settings) == ['slot_materials', 'triangles', 'full_precision_uvs']
+
+
+@pytest.fixture
+def cli_batch(tmp_path, monkeypatch):
+    """Real tiny GLBs and records exercise separate planner/CLI calls; only claim admission and native imports are faked."""
+    from types import SimpleNamespace
+    game, donor, stage = mini_game(tmp_path), tmp_path / 'donor', tmp_path / 'stage'
+    allow(monkeypatch)
+    objects = {
+        'cannon-west': dict(x=0, y=0, radius=2, tiles=('Props_3_3',)),
+        'sloop-east': dict(x=0, y=0, radius=2, tiles=('Ships_4_3',)),
+        'crane-west': dict(x=0, y=0, radius=2, tiles=('Harbor_2_3', 'Harbor_2_3_Soft'))}
+    monkeypatch.setattr(apply.split, 'OBJECTS', objects)
+    groups = []
+    for stem, count, material in [('Props_3_3', 2, 'BC_wood'), ('Ships_4_3', 1, 'BC_wood'),
+                                  ('Harbor_2_3', 2, 'BC_wood'), ('Harbor_2_3_Soft', 1, 'BC_rope')]:
+        positions = [(x + dx, y, z) for x in range(0, count * 10, 10)
+                     for dx, y, z in [(0, 1, 0), (1, 1, 0), (0, 2, 1)]]
+        model = {'materials': [material], 'prims': [{'material': 0, 'positions': positions,
+                                                   'indices': list(range(count * 3))}]}
+        source = donor / 'brinecove/glb' / f'SM_BC_{stem}.glb'
+        source.parent.mkdir(parents=True, exist_ok=True)
+        apply.split.write_subset(model, range(count), source)
+        gen = apply.recover.Generated(id=apply.tile_record(stem), kind='static-mesh', owner='shared/brinecove',
+            package=apply.MESHES + f'SM_BC_{stem}', source=source, references=[], about='fixture tile',
+            settings={'slot_materials': [apply.MATERIALS + 'MI_' + material], 'triangles': count})
+        text, name = apply.record_files(gen)
+        folder = game / 'assets' / gen.id
+        (folder / 'src').mkdir(parents=True)
+        (folder / 'asset.toml').write_text(text)
+        (folder / 'src' / name).write_bytes(source.read_bytes())
+        groups.append(group(f'SM_BC_{stem}', collision=not stem.endswith('_Soft')))
+    (game / 'unreal/Content/Data/brinecove/runtime.json').write_text(json.dumps({'groups': groups}))
+
+    def accept():
+        for path in apply.records.record_paths(game):
+            asset = apply.records.load_asset(path)
+            if asset.kind != 'static-mesh':
+                continue
+            fingerprint = apply.records.input_fingerprint(asset, {})
+            package = apply.records.package_files(game, asset.outputs[0].package)[0]
+            package.parent.mkdir(parents=True, exist_ok=True)
+            package.write_bytes(('accepted ' + fingerprint).encode())
+            apply.records.write_json(asset.verified, {'schema': 1, 'kind': 'imported', 'engine': 'test',
+                'input_fingerprint': fingerprint,
+                'files': {package.relative_to(game).as_posix(): apply.records.sha256_file(package)}})
+
+    def actor(oid):
+        folder = game / 'assets' / oid
+        folder.mkdir(parents=True)
+        (folder / 'asset.toml').write_text(f'schema = 1\nid = "{oid}"\nkind = "placement"\nauthority = "editor"\n'
+            'owner = "region/w09-brinecove"\n[[outputs]]\npackage = "/Game/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR"\n')
+        package = game / 'unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR.uasset'
+        package.parent.mkdir(parents=True, exist_ok=True)
+        package.write_bytes(b'saved actor')
+        (game / f'world/regions/{apply.REGION}/objects.saved.json').write_text(json.dumps({'objects': {oid: {}}}))
+        return package
+
+    def run(command, selection):
+        return apply.main([command, '--game', str(game), '--donor', str(donor), '--stage', str(stage),
+                           '--only', selection, '--claim', 'T'])
+    return SimpleNamespace(game=game, donor=donor, objects=objects, accept=accept, actor=actor, run=run)
+
+
+def test_cli_retirement_refuses_a_different_applied_selection(cli_batch, capsys):
+    case = cli_batch
+    assert case.run('apply', 'cannon-west') == 0
+    case.accept()
+    case.actor(apply.RETIRED_OBJECT)
+    before = snapshot(case.game)
+    assert case.run('retire', 'sloop-east') == 1
+    assert 'differs from the applied selection' in capsys.readouterr().err
+    assert snapshot(case.game) == before               # B's exhausted tile and old actor survive A's accepted imports
+
+
+def test_cli_handoff_preserves_pending_removals_until_success(cli_batch, monkeypatch):
+    case = cli_batch
+    assert case.run('apply', 'crane-west') == 0
+    case.accept()
+    actor = case.actor('object/brinecove/crane-west')
+    stale = case.game / 'unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset'
+    case.objects['crane-west']['exclude_materials'] = ['BC_rope']       # palm correction drops the old soft part
+    assert case.run('apply', 'crane-west') == 0
+    case.accept()
+    pending = json.loads((case.game / apply.EXPECTED).read_text())['pending']
+    assert [p['record'] for p in pending['stale']] == ['prop/brinecove/crane-west-soft']
+    assert pending['resave'] == ['object/brinecove/crane-west']
+    before = snapshot(case.game)
+    assert case.run('apply', 'cannon-west') == 1        # one manifest cannot discard an outstanding batch's cleanup
+    assert snapshot(case.game) == before
+    real_unlink = Path.unlink
+
+    def fail_removal(path, *args, **kwargs):
+        if path == stale:
+            raise PermissionError('retirement interrupted')
+        return real_unlink(path, *args, **kwargs)
+    monkeypatch.setattr(Path, 'unlink', fail_removal)
+    with pytest.raises(PermissionError, match='retirement interrupted'):
+        case.run('retire', 'crane-west')
+    assert snapshot(case.game) == before              # journal restores pending state and every deletion
+    monkeypatch.setattr(Path, 'unlink', real_unlink)
+    assert case.run('retire', 'crane-west') == 0        # fresh CLI/build still has the pending stale/resave work
+    assert not stale.exists() and not actor.exists()
+    saved = json.loads((case.game / apply.EXPECTED).read_text())
+    assert saved['pending'] == {'stale': [], 'resave': []} and saved['retired'] is True
+    assert case.run('apply', 'cannon-west') == 0        # the next batch is now allowed
+
+
+def test_cli_check_uses_completed_ship_retirement(cli_batch):
+    case = cli_batch
+    case.actor(apply.RETIRED_OBJECT)
+    assert case.run('apply', 'sloop-east') == 0
+    case.accept()
+    assert case.run('retire', 'sloop-east') == 0
+    assert (case.game / 'assets' / apply.RETIRED_OBJECT).is_dir()   # empty record folders are harmless
+    assert case.run('check', 'sloop-east') == 0
+    runtime = case.game / 'unreal/Content/Data/brinecove/runtime.json'
+    body = json.loads(runtime.read_text())
+    body['groups'].append(group('SM_BC_Ships_4_3'))               # a retired tile drawn again is still a defect
+    runtime.write_text(json.dumps(body))
+    assert case.run('check', 'sloop-east') == 1
+
+
+@pytest.fixture
+def interrupted_split(tmp_path):
+    from types import SimpleNamespace
+    game = mini_game(tmp_path)
+    old = game / 'assets/prop/brinecove/cannon-west/asset.toml'
+    new = game / 'unreal/Content/Brinecove/Meshes/SM_BC_CannonWest.uasset'
+    old.parent.mkdir(parents=True)
+    old.write_bytes(b'original record')
+    scopes = {'region/w09-brinecove', ('asset/prop/brinecove/cannon-west', 'shared/brinecove/cannon-west')}
+    rels = [p.relative_to(game).as_posix() for p in (old, new)]
+    journal = apply.Journal(game)
+    journal.begin(rels, scopes=scopes)
+    old.write_bytes(b'partial record, not parseable')
+    new.parent.mkdir(parents=True)
+    new.write_bytes(b'partial new package')
+    return SimpleNamespace(game=game, old=old, new=new, scopes=scopes, rels=rels, journal=journal)
+
+
+@pytest.mark.parametrize('claim', [None, 'stale', 'unrelated'])
+def test_journal_recovery_refusal_preserves_every_byte(interrupted_split, monkeypatch, claim):
+    case = interrupted_split
+    before = snapshot(case.game)
+    calls = []
+
+    def refuse(paths, current_claim, what, *, scopes=(), repo=None):
+        calls.append((set(paths), current_claim, set(scopes)))
+        raise authority.Unauthorized('recovery claim does not cover the journal')
+    monkeypatch.setattr(apply.authority, 'authorize', refuse)
+    with pytest.raises(apply.SplitError, match='does not cover the journal'):
+        apply.run_step(case.game, {}, claim)
+    assert calls == [({f'{apply.GAME_REL}/{p}' for p in case.rels}, claim, case.scopes)]
+    assert snapshot(case.game) == before             # no rollback chmod/write/delete, and backups remain available
+
+
+def test_journal_recovery_uses_persisted_scopes_before_reading_partial_records(interrupted_split, monkeypatch):
+    case = interrupted_split
+    calls = []
+
+    def authorize(paths, claim, what, *, scopes=(), repo=None):
+        assert case.old.read_bytes() == b'partial record, not parseable' and case.new.exists()
+        calls.append((set(paths), claim, set(scopes)))
+    monkeypatch.setattr(apply.authority, 'authorize', authorize)
+
+    def compute(game, plan, retire):
+        assert case.old.read_bytes() == b'original record' and not case.new.exists()
+        assert not case.journal.manifest.exists()
+        return {'writes': {}, 'deletes': []}
+    monkeypatch.setattr(apply, 'compute', compute)
+
+    def build(*args):
+        assert case.old.read_bytes() == b'original record' and not case.new.exists()
+        return {}
+    monkeypatch.setattr(apply, 'build', build)
+    monkeypatch.setattr(apply, 'report', lambda plan: 'recovered plan')
+    assert apply.main(['apply', '--game', str(case.game), '--donor', str(case.game), '--claim', 'RECOVER']) == 0
+    assert calls == [({f'{apply.GAME_REL}/{p}' for p in case.rels}, 'RECOVER', case.scopes)]
+
+
+def test_journal_recovery_refuses_legacy_scopeless_journal(interrupted_split, monkeypatch):
+    case = interrupted_split
+    legacy = json.loads(case.journal.manifest.read_text())
+    del legacy['scopes']
+    case.journal.manifest.write_text(json.dumps(legacy))
+    before = snapshot(case.game)
+    with pytest.raises(apply.SplitError, match='no valid owning scopes'):
+        apply.run_step(case.game, {}, 'RECOVER')
+    assert snapshot(case.game) == before

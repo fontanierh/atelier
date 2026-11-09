@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/terrain-cell-10-m1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Terrain_cell_10_-1.uasset": "ec3c21dace3afa12ad27db7a4e3702391cd13084d7ef91bf770b14205bee5cbc"
+  },
+  "input_fingerprint": "64a124847d985556723c1aef2fc62407d4bfe39738a25af98893cd3b7b108e24",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Terrain_cell_10_-1": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

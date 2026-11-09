@@ -3,7 +3,7 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Modori/BP_Modori.uasset": "0c3b04a0ec11910e9e53593ab49a153876aa88d131266af20d6f6f4af96ace3f",
+    "unreal/Content/Modori/BP_Modori.uasset": "40154b55e6d436a99d43e0e932d9734d0d34ac34b030fcdcc01f1703d2fd6e89",
     "unreal/Content/Modori/DA_Modori.uasset": "e33444f756b10016bc2be5381d212666067f031353995b67b4523d23b5a7404e",
     "unreal/Content/Modori/DA_ModoriBase.uasset": "b7ce3d8d4d68a1cb2b9ada7b3f98391ab11d914647f38e1835a695db8572ad60",
     "unreal/Content/Modori/M_Modori_Body.uasset": "75b0dae70cdd42e14f3bf60fcb651baf9b4a3743d72a0ebb0a2a16a7783e7740",
