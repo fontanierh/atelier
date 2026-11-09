@@ -1,0 +1,50 @@
+{
+  "asset": "prop/japan-kit/tree-tuscan-olive",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Tuscan_Olive.uasset": "ac2c5151702a151519258c541b487da2a8c2700187fffe1c281da3a81272770e"
+  },
+  "input_fingerprint": "119b16d7c3f77fcc77ae6e4d8ea8f805d07b2809c8ef5c5a938dac4bb6692d2b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Tuscan_Olive": {
+      "after": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      },
+      "before": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

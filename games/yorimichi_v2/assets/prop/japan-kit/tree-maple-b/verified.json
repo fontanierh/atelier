@@ -1,0 +1,54 @@
+{
+  "asset": "prop/japan-kit/tree-maple-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Maple_B.uasset": "8c38b921b98e70d876a374428330a8c4bdbfabbad3dd7529390049e6f617fba9"
+  },
+  "input_fingerprint": "fe007e3e8d075f82cd902460be058dbae4dc4976f5da214d1a3e0559a499470c",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Maple_B": {
+      "after": {
+        "count": 6,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.2199999988079071,
+          0.09000000357627869,
+          0.03500000014901161,
+          0.012000000104308128,
+          0.003599999938160181
+        ]
+      },
+      "before": {
+        "count": 6,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.2199999988079071,
+          0.09000000357627869,
+          0.03500000014901161,
+          0.012000000104308128,
+          0.003599999938160181
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

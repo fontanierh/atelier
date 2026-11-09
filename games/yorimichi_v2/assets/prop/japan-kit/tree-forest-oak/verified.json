@@ -1,0 +1,50 @@
+{
+  "asset": "prop/japan-kit/tree-forest-oak",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Forest_Oak.uasset": "ce015935dcb4961dfe71837e68c87b0a04bacaf21812df70b23c7c2cca8d5a90"
+  },
+  "input_fingerprint": "6dbca2026d477758217dc0ab4e7b708e06cfa39112113322f3c3ee268b766ce0",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Forest_Oak": {
+      "after": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      },
+      "before": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
