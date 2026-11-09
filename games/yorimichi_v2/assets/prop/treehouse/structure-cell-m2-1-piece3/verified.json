@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece3.uasset": "07b719cc0cc0ae0a8988efcb443529c215f60726ebfe413645ec2a5e22c222d9"
+    "unreal/Content/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece3.uasset": "4538b17143cf163f20f6a86d4ce8d930eed648948ffba9157d52264592df288f"
   },
-  "input_fingerprint": "75a9969f2e3f3d73ccc578cc8ffc88211b05bdb527d7d10ed5a873096812ed4a",
+  "input_fingerprint": "e9381c24eb03b06b37c1d5a550e14c16c57c9b3f201fe321c3fd13380e79b7aa",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece3": {

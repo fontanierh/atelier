@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Lake/Pieces/Lake_Water.uasset": "770bc81e2a215df5f7b452b733240be642ee6fbcb2b0dcccd85c4c5e3a3155aa"
+    "unreal/Content/Japan/Lake/Pieces/Lake_Water.uasset": "cc4e202c887bb27aaadd084268697579d385488b94b1071c96aabb28e59b2911"
   },
-  "input_fingerprint": "409eec9d0d6c829a0179142780bcd750cecf854e16b8e89e47da8742b610a8d5",
+  "input_fingerprint": "e9d3651048cf1075f6fca390d326d17980868d8658cb0c2bf2eb89528afdfa02",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Lake/Pieces/Lake_Water": {

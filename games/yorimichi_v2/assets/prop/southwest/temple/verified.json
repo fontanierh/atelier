@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_Temple.uasset": "9d5fb41491021c3b0774606bff73ea18fed3bfb67d9a392f6241a07137293d36"
+    "unreal/Content/Japan/Southwest/Pieces/SW_Temple.uasset": "882a105b0eacb78f45910bbfe7ef2acf2154dcd2127f60b1a72f074ecf25a2a2"
   },
-  "input_fingerprint": "28e7a0811d4ccf4a318ef0f8e8faf67c54e107602fcf48b188a9f7a014fbeae3",
+  "input_fingerprint": "6fa178a64bf0bf10edfbd7d6758b5d003f2134af6809a5db235647a519a4e360",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_Temple": {

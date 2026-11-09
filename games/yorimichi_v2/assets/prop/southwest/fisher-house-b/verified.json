@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_FisherHouseB.uasset": "ab2c871d0bf40161545281bb2c8b11828f50abe5747dd056ee9f353b101c7ebb"
+    "unreal/Content/Japan/Southwest/Pieces/SW_FisherHouseB.uasset": "ca98af9b6a61ce3a49e1157bea3cb5c2c7a501b83f6d6edc49bae5ebc7f51d5b"
   },
-  "input_fingerprint": "7eafc5a3794cf3c113d948b4775da8ac9873b026bcbbfeb08eccbd0c229bad39",
+  "input_fingerprint": "381985bca7fc73958b68c316ab9df8e6776a01eacf52934efcffb5beb9e3d204",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_FisherHouseB": {

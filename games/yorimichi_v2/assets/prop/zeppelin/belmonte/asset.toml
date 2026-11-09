@@ -20,6 +20,7 @@ version = 1
 slot_materials = ["/Game/Japan/Materials/M_Village"]
 triangles = 14264
 collision = "complex"
+double_sided = false
 
 [[outputs]]
 package = "/Game/Japan/Assets/ZP_Belmonte"

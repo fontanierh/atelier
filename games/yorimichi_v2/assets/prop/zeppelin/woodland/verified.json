@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Woodland.uasset": "60c26af43c595137b7a1417c1ea64d3df84dc1b23fbe1b3f2e8cd5d6336735c5"
+    "unreal/Content/Japan/Assets/ZP_Woodland.uasset": "b2b898d38611db5999ded0d7b9074a2ebf03169f44021c4401e8601d20e5f288"
   },
-  "input_fingerprint": "0ee93afa7f7abf61a4853077e5d6ea3accc000d2b2432f090717eb5ecf14c3f3",
+  "input_fingerprint": "413033a9afa8ff77f08d04c0f622a83b7fc7c7166e855bd6fdea44bda8cc18d8",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Woodland": {

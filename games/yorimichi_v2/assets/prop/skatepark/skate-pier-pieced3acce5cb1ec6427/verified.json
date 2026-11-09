@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SkatePark/SM_SkatePier_Pieced3acce5cb1ec6427.uasset": "9119ef5249b8cfc1aa3e0e44082bb53cd10429228df966f978a8e89dc0ed204a"
+    "unreal/Content/SkatePark/SM_SkatePier_Pieced3acce5cb1ec6427.uasset": "131d71903bec3b188ea2169a0d423cd708ef8a44bcb160597840ae1bc1d518f2"
   },
-  "input_fingerprint": "fffe31abba7922722692ba579579b3598cfe3dfbfa1ff4ae3c7238a6e97b5e3f",
+  "input_fingerprint": "abdae86db2f08a7a559aa80624580fd026bec5c8be0127f449b30848d5e52f55",
   "kind": "imported",
   "lods": {
     "/Game/SkatePark/SM_SkatePier_Pieced3acce5cb1ec6427": {

@@ -20,6 +20,7 @@ version = 1
 slot_map = {ZeppelinPalette = "/Game/Japan/Materials/M_Village", ZeppelinFabric = "/Game/Japan/Materials/M_ZeppelinFabric"}
 triangles = 13688
 collision = "complex"
+double_sided = false
 
 [[outputs]]
 package = "/Game/Japan/Assets/ZP_Airship"

@@ -531,6 +531,7 @@ def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner
     manifest = _json(donor / 'assets' / 'manifest.json')
     parents = _json(donor.parents[1] / 'village' / 'atomic-manifest.json')['parents']
     policy = {piece['name']: group['collision'] for group in parents.values() for piece in group['pieces']}
+    native = {piece['name']: piece['native_triangles'] for group in parents.values() for piece in group['pieces']}
     generated, unmapped = [], []
     if VILLAGE_MATERIAL not in all_owner:
         raise RecoverError(f'{VILLAGE_MATERIAL} is owned by no record')
@@ -541,13 +542,15 @@ def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner
             unmapped.append(f'assets/{row["primary"]} (not a VillagePalette piece of a source-less village record)')
             continue
         hulls = row['metadata']['collision_hulls']
-        collision = ({'collision': 'complex'} if policy[name] == 'complex_as_simple'
+        # The donor's legacy FBX import drops the ground's one degenerate triangle (native_triangles 13647 of 13648); the
+        # Interchange import keeps it, so the ground is imported through the legacy importer, as the donor does.
+        collision = ({'collision': 'complex', 'legacy_fbx': True} if policy[name] == 'complex_as_simple'
                      else {'collision': 'simple_and_complex', 'hulls': hulls})
         tail = ident(name[len('Village_'):])
         generated.append(Generated(
             id=f'prop/villageatomic/{tail}', kind='static-mesh', owner=f'shared/villageatomic/{tail}', package=package,
             source=donor / 'assets' / row['primary'],
-            settings={'slot_materials': [VILLAGE_MATERIAL], 'triangles': row['triangles'], **collision},
+            settings={'slot_materials': [VILLAGE_MATERIAL], 'triangles': native[name], **collision},
             references=[all_owner[VILLAGE_MATERIAL]],
             about=f'{name}: one village piece ({row["triangles"]} triangles, {hulls} collision hulls)',
             expected_sha=row['sha256']))
@@ -760,6 +763,12 @@ FAMILIES.update({'japan/assets': plan_japan_assets, 'japan/treehouse': plan_japa
                  'japan/textures': plan_japan_textures})
 
 
+# Families whose old packages have single-sided complex collision (the donor never sets double_sided): their complex
+# recipes say so, as the importer's default for a complex record is double-sided (the city and earlier families keep it).
+SINGLE_SIDED = {'skatepark', 'megapark', 'swordcamp', 'fx', 'experiments/villageatomic', 'japan/assets', 'japan/treehouse',
+                'japan/southwest', 'japan/lake', 'japan/textures'}
+
+
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
     if family not in FAMILIES:
         raise RecoverError(f'unknown family {family!r}; known: {", ".join(sorted(FAMILIES))}')
@@ -774,6 +783,10 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
                 gen.origin = 'applied'
             else:
                 raise RecoverError(f'{gen.package} is in no adopted {family} record; nothing to recover there')
+    if family in SINGLE_SIDED:
+        for gen in plan.generated:
+            if gen.settings.get('collision') == 'complex':
+                gen.settings.setdefault('double_sided', False)
     ids = [g.id for g in plan.generated]
     packages = [g.package for g in plan.generated]
     if len(set(ids)) != len(ids) or len(set(packages)) != len(packages):

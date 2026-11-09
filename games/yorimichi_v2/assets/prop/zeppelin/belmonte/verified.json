@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Belmonte.uasset": "a9da6b4296227269ad4d3c44da9dc4877852ed4ea116f416e42d3baf5c8144e9"
+    "unreal/Content/Japan/Assets/ZP_Belmonte.uasset": "3c39e5038abc235a0328336f5692fe962f1f690abfe451be3f84a7c854331a03"
   },
-  "input_fingerprint": "a391e16f35e3b144f3fd5889d9171740034ad3e7e1cd6f03f44584aec9c76b5c",
+  "input_fingerprint": "79cbbec5f36396724c6d80955c215ec5621693222f2fdfaf16e32f8e7818f3b5",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Belmonte": {

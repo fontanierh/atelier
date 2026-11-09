@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Lake/Pieces/Lake_Plants.uasset": "25ed14ff96d84a0848489595304129b8c48bcd8714906685d314b156758be68a"
+    "unreal/Content/Japan/Lake/Pieces/Lake_Plants.uasset": "3e8489f0faccf638cd92923a502e73f26f19a60fda9a38f81007d247faa687ec"
   },
-  "input_fingerprint": "9a9694d28a6934f72da3350b2bd33d348517981c42045527781e45dba1f963f0",
+  "input_fingerprint": "1141f29223a26b2d00e734be9607d3faa4247b6fefb71a4ba4ccc6bee9d9977f",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Lake/Pieces/Lake_Plants": {

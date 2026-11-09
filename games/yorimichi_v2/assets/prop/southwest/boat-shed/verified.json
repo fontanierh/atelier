@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_BoatShed.uasset": "3fae5d87e82b8f4b96adaa66a91cb3acf37f1a6831a6e43497260b6c923d3852"
+    "unreal/Content/Japan/Southwest/Pieces/SW_BoatShed.uasset": "ce8e5f9556a8af4ba907bb32ac2a18973a35c0be5450e1c97999e0945919ac2f"
   },
-  "input_fingerprint": "0e0f42ec950cd769bccbb32712ad98393c4e5780fe05a0a12e0d980127a6053d",
+  "input_fingerprint": "fc7e91915a1cb74414619a82f48933ebab33c5bd84ce91f1513670e106557e44",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_BoatShed": {

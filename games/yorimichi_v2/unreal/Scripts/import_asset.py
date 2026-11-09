@@ -51,7 +51,7 @@ def _fbx_static_mesh(settings):
 def _legacy_fbx(settings):
     """True when the record imports authored UCX hulls: only the legacy FBX importer brings them in (the donor's
     importers turn Interchange off for FBX; an Interchange reimport here leaves the mesh with no shapes)."""
-    return settings.get('collision') == 'simple_and_complex'
+    return settings.get('collision') == 'simple_and_complex' or import_settings.legacy_fbx(settings)
 
 
 def _gltf_static_mesh(name, collision=True):

@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_DryingRack.uasset": "0a11a29ec597533c0626aca8deef6be24f99e0b67c287cd81606c0ccf917642c"
+    "unreal/Content/Japan/Southwest/Pieces/SW_DryingRack.uasset": "c753f244cd07995676e8caf16acd0dcdd4844f639ff1358867f05fbfec0178e5"
   },
-  "input_fingerprint": "2cd42d13cf45ea393734f3c866ced91be010421ed862ee90d7ffd1115260e421",
+  "input_fingerprint": "4ea4239c0487c531ff9b099ab611ce6978e71cdcea3d64d5a1c5eaaf26769f75",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_DryingRack": {
