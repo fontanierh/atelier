@@ -340,9 +340,13 @@ def later_tiles(game: Path) -> set[str]:
             for t in json.loads(path.read_text()).get('tiles', {})}
 
 
-def restored_record(asset, rem: dict) -> bool:
-    """A tile nothing is carved from keeps the plain donor record (compute): its one source is the remainder's bytes."""
-    return asset.derive is None and len(asset.sources) == 1 and asset.sources[0].sha256 == rem['sha256']
+def restored_record(asset, tile: dict, shares: dict) -> bool:
+    """A tile nothing is carved from keeps the plain donor record (compute): its remainder is the whole uncut tile, no part
+    holds a share of it, and its one source is the remainder's bytes. A legacy old-form remainder (a cut tile whose
+    committed source is what is left) has shares or fewer triangles, so it is not one."""
+    rem = tile['remainder']
+    return (asset.derive is None and rem['triangles'] == tile['source_triangles'] and not any(shares.values()) and
+            len(asset.sources) == 1 and asset.sources[0].sha256 == rem['sha256'])
 
 
 def package_rels(game: Path, package: str) -> list[str]:
@@ -847,7 +851,7 @@ def check(game: Path, donor: Path | None = None, retired: bool = False, records_
             problems.append(f'{tile["record"]}: remainder record missing')
             continue
         asset = records.load_asset(asset_path)
-        if asset.derive is None and not restored_record(asset, rem):
+        if asset.derive is None and not restored_record(asset, tile, exp['shares'].get(stem, {})):
             problems.append(f'{tile["record"]}: carved in the old form (remainder committed); run '
                             'tools/migrate/brinecove_sources.py first')
             continue
@@ -897,7 +901,7 @@ def check_union(game: Path, glb_dir: Path, exp: dict) -> list[str]:
     for stem, tile in exp['tiles'].items():
         if tile['remainder'] is not None:
             asset = records.load_asset(game / 'assets' / tile['record'] / 'asset.toml')
-            if restored_record(asset, tile['remainder']):
+            if restored_record(asset, tile, exp['shares'].get(stem, {})):
                 f = asset.folder / asset.sources[0].path
                 if not f.is_file() or records.is_lfs_pointer(f):
                     return [f'{tile["record"]}: src not hydrated, the donor proof is skipped']

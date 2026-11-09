@@ -453,6 +453,20 @@ def test_a_restored_tile_keeps_its_plain_record_so_a_rerun_writes_nothing(tmp_pa
     assert f'{apply.GAME_REL}/{rec}/src/SM_BC_Props_3_3.carve.json' in apply.touched(game, plan, ops=again)['paths']
 
 
+def test_a_legacy_old_form_remainder_is_not_a_restored_tile():
+    """A cut tile whose committed source is its remainder (Props_3_3: 1868 of 4600 left, 2732 to cannon-west) still needs
+    brinecove_sources.py: only a whole uncut tile with no shares keeps the plain record (Harbor_2_3_Soft: 90 of 90)."""
+    from types import SimpleNamespace
+    plain = lambda sha: SimpleNamespace(derive=None, sources=[SimpleNamespace(sha256=sha, path='src/x.glb')])  # noqa: E731
+    legacy = {'source_triangles': 4600, 'remainder': {'sha256': 'r' * 64, 'triangles': 1868}}
+    assert not apply.restored_record(plain('r' * 64), legacy, {'prop/brinecove/cannon-west': 2732})
+    assert not apply.restored_record(plain('r' * 64), legacy, {})                      # fewer triangles than the tile
+    whole = {'source_triangles': 90, 'remainder': {'sha256': 'd' * 64, 'triangles': 90}}
+    assert apply.restored_record(plain('d' * 64), whole, {})
+    assert not apply.restored_record(plain('d' * 64), whole, {'prop/brinecove/crane-west-soft': 1})
+    assert not apply.restored_record(plain('e' * 64), whole, {})                       # not the pinned bytes
+
+
 @pytest.fixture
 def cli_batch(tmp_path, monkeypatch):
     """Real tiny GLBs and records exercise separate planner/CLI calls; only claim admission and native imports are faked."""
