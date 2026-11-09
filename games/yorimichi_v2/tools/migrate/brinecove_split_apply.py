@@ -333,6 +333,18 @@ def tile_record_files(stem: str, tile: dict, rem: dict) -> tuple[str, str, bytes
     return carve.with_derive(text, f'src/{original["name"]}', f'src/{name}'), name, selection
 
 
+def later_tiles(game: Path) -> set[str]:
+    """The donor tiles another batch's expectation (split-<batch>.json, brinecove_market.py and the ships) lists."""
+    region = game / 'world' / 'regions' / REGION
+    return {t for path in sorted(region.glob('split-*.json')) if path.name != Path(EXPECTED).name
+            for t in json.loads(path.read_text()).get('tiles', {})}
+
+
+def restored_record(asset, rem: dict) -> bool:
+    """A tile nothing is carved from keeps the plain donor record (compute): its one source is the remainder's bytes."""
+    return asset.derive is None and len(asset.sources) == 1 and asset.sources[0].sha256 == rem['sha256']
+
+
 def package_rels(game: Path, package: str) -> list[str]:
     """Every file the importer may write for a package (game-relative): the package and its uncooked companions."""
     stem = records.package_files(game, package)[0].with_suffix('')
@@ -483,7 +495,7 @@ def touched(game: Path, plan: dict, retire: bool = False, ops: dict | None = Non
     add = lambda rel: paths.add(f'{GAME_REL}/{rel}')   # noqa: E731
     if not retire:
         ops = ops if ops is not None else compute(game, plan)
-        changed = set(ops['writes'])
+        changed = set(ops['writes']) | set(ops['deletes'])
         for p in plan['parts'].values():
             if any(k.startswith(f'assets/{p["record"]}/') for k in changed):
                 scopes.add((f'asset/{p["record"]}', 'shared/brinecove/' + p['record'].rsplit('/', 1)[1]))
@@ -493,9 +505,11 @@ def touched(game: Path, plan: dict, retire: bool = False, ops: dict | None = Non
             tile = plan['tiles'][stem]
             if rem is not None and any(k.startswith(f'assets/{tile["record"]}/') for k in changed):
                 scopes.add((f'asset/{tile["record"]}', tile['owner']))
-                # The tile writes its selection, never the remainder: its original is not touched.
-                for rel in record_set(game, tile['record'], tile['package'],
-                                      carve.selection_name(f'SM_BC_{stem}.glb')):
+                # A carved tile writes its selection, never the remainder: its original is not touched. A restored one
+                # writes its donor source and drops the selection.
+                names = ([f'SM_BC_{stem}.glb', carve.selection_name(f'SM_BC_{stem}.glb')] if rem.get('restored')
+                         else [carve.selection_name(f'SM_BC_{stem}.glb')])
+                for rel in record_set(game, tile['record'], tile['package'], *names):
                     add(rel)
         for rel in changed:
             if not rel.startswith('assets/'):
@@ -551,7 +565,17 @@ def compute(game: Path, plan: dict, retire: bool = False) -> dict:
             put(f'assets/{gen.id}/asset.toml', text.encode())
             put(f'assets/{gen.id}/src/{name}', gen.source.read_bytes())
         for stem, rem in sorted(plan['remainders'].items()):
-            if rem:
+            if rem and rem.get('restored'):
+                # Nothing is carved from it: the plain donor record recover.py writes, so a rerun leaves an accepted
+                # record and its import fingerprint alone; a selection an earlier split left goes.
+                tile = plan['tiles'][stem]
+                text, name = record_files(tile_generated(stem, tile, rem))
+                put(f'assets/{tile["record"]}/asset.toml', text.encode())
+                put(f'assets/{tile["record"]}/src/{name}', rem['file'].read_bytes())
+                selection = f'assets/{tile["record"]}/src/{carve.selection_name(name)}'
+                if (game / selection).is_file():
+                    deletes.append(selection)
+            elif rem:
                 tile = plan['tiles'][stem]
                 text, name, selection = tile_record_files(stem, tile, rem)
                 put(f'assets/{tile["record"]}/asset.toml', text.encode())
@@ -823,11 +847,12 @@ def check(game: Path, donor: Path | None = None, retired: bool = False, records_
             problems.append(f'{tile["record"]}: remainder record missing')
             continue
         asset = records.load_asset(asset_path)
-        if asset.derive is None:
+        if asset.derive is None and not restored_record(asset, rem):
             problems.append(f'{tile["record"]}: carved in the old form (remainder committed); run '
                             'tools/migrate/brinecove_sources.py first')
             continue
-        problems += remainder_problems(asset, rem)
+        if asset.derive is not None:
+            problems += remainder_problems(asset, rem)
         if asset.recipe['settings']['triangles'] != rem['triangles']:
             problems.append(f'{tile["record"]}: remainder differs from the expectation')
         problems += import_problems(game, asset)
@@ -872,6 +897,12 @@ def check_union(game: Path, glb_dir: Path, exp: dict) -> list[str]:
     for stem, tile in exp['tiles'].items():
         if tile['remainder'] is not None:
             asset = records.load_asset(game / 'assets' / tile['record'] / 'asset.toml')
+            if restored_record(asset, tile['remainder']):
+                f = asset.folder / asset.sources[0].path
+                if not f.is_file() or records.is_lfs_pointer(f):
+                    return [f'{tile["record"]}: src not hydrated, the donor proof is skipped']
+                parts.append(list(split.triangles(split.read_glb(f))))
+                continue
             if asset.derive is None:
                 return [f'{tile["record"]}: carved in the old form, the donor proof is skipped']
             try:
@@ -962,6 +993,10 @@ def main(argv=None) -> int:
         plan = build(game, args.donor.resolve(), args.stage.resolve(),
                      select(args.only.split(',') if args.only else None))
         retire = args.command == 'retire'
+        recut = sorted(later_tiles(game) & set(plan.get('tiles', {})))
+        if args.command == 'apply' and recut:   # brinecove_market.py's batches came after this one
+            raise SplitError(f'later batches cut {", ".join(recut[:3])} again; a rerun would undo their remainders, '
+                             'so batch 1 is not applied again')
         if args.command == 'plan':
             print(report(plan))
         elif args.command == 'paths':

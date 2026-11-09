@@ -145,6 +145,17 @@ def test_prior_objects_come_from_other_split_files(tmp_path):
     assert market.prior_objects(tmp_path, 'split-batch2.json') == {'market-well', 'market-stall-01'}
 
 
+def test_a_batch_is_not_applied_again_over_tiles_a_later_batch_cut(tmp_path):
+    """A rerun of market1 after town1 recut its tile would put town1's parts back into the tile's remainder."""
+    region = tmp_path / 'world' / 'regions' / market._apply().REGION
+    region.mkdir(parents=True)
+    (region / 'split-market1.json').write_text(json.dumps({'tiles': {'Market_3_4': {}}}))
+    (region / 'split-town1.json').write_text(json.dumps({'tiles': {'Market_3_4': {}, 'TownLower_1_2': {}}}))
+    assert market.later_tiles(tmp_path, 'market1') == {'Market_3_4', 'TownLower_1_2'}
+    assert market.later_tiles(tmp_path, 'town1') == set()
+    assert market._apply().later_tiles(tmp_path) == {'Market_3_4', 'TownLower_1_2'}    # batch 1 sees every other batch
+
+
 def test_compute_partitions_with_an_earlier_batch(tmp_path, monkeypatch):
     """Tile = stall parts + remainder + earlier batch, and a stall triangle already taken earlier is a problem."""
     g = market.glb_point

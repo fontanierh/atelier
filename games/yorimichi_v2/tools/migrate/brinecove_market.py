@@ -474,21 +474,26 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
     return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
 
 
+def later_tiles(game: Path, batch: str) -> set[str]:
+    """The donor tiles that the batches after this one (in BATCHES order) have applied cuts from."""
+    order = list(BATCHES)
+    region = game / 'world' / 'regions' / _apply().REGION
+    later = set()
+    for name in order[order.index(batch) + 1:]:
+        path = region / f'split-{name}.json'
+        if path.is_file():
+            later |= set(json.loads(path.read_text())['tiles'])
+    return later
+
+
 def recarved_later(game: Path, batch: str, problem: str) -> bool:
     """@cc [owner:fontanierh,label:correctness] brinecove-recarved-remainder
     A tile that a later batch cut again has that batch's remainder: this batch's expected remainder (sha, triangles) is
     stale by design and is not a problem here. The later batch's check owns the remainder; the donor proof below still
     partitions the tile with every batch's parts and the current remainder."""
     apply_ = set_batch(batch)
-    order = list(BATCHES)
-    region = game / 'world' / 'regions' / apply_.REGION
     exp = json.loads((game / apply_.EXPECTED).read_text())
-    later = set()
-    for name in order[order.index(batch) + 1:]:
-        path = region / f'split-{name}.json'
-        if path.is_file():
-            later |= set(json.loads(path.read_text())['tiles'])
-    stems = set(exp['tiles']) & later
+    stems = set(exp['tiles']) & later_tiles(game, batch)
     records = {exp['tiles'][s]['record'] for s in stems}
     return (any(problem in (f'{r}: remainder differs from the expectation', f'{r}: derived remainder differs from the expectation')
                 for r in records) or any(problem == f'{s}: remainder plus parts is not the tile' for s in stems))
@@ -918,8 +923,13 @@ def main(argv=None) -> int:
         else:
             if len(plans) != 1:
                 parser.error('apply takes one batch')
-            print(apply_.report(plans[0][1]))
-            done = apply_.run_step(game, plans[0][1], args.claim)
+            batch, plan = plans[0]
+            recut = sorted(later_tiles(game, batch) & set(plan['tiles']))
+            if recut:   # its remainders are theirs now: a rerun would put their parts back into these tiles
+                raise MarketError(f'{batch}: later batches cut {", ".join(recut[:3])} again; a rerun would undo their '
+                                  'remainders, so it is not applied again')
+            print(apply_.report(plan))
+            done = apply_.run_step(game, plan, args.claim)
             print(f'apply: wrote {len(done["written"])}')
     except (MarketError, apply_.SplitError, apply_.recover.RecoverError, apply_.records.RecordError, ValueError) as error:
         print(f'market split failed: {error}', file=sys.stderr)

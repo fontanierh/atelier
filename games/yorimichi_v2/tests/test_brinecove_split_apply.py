@@ -434,6 +434,25 @@ def test_a_tile_nothing_takes_from_any_more_goes_back_to_its_donor_record_text()
     assert list(gen.settings) == ['slot_materials', 'triangles', 'full_precision_uvs']
 
 
+def test_a_restored_tile_keeps_its_plain_record_so_a_rerun_writes_nothing(tmp_path):
+    """yorimichi-v2-targeted-authoring: a tile nothing is carved from is the donor record recover.py writes, never the
+    derived form; once that record is committed, a rerun leaves it and its import fingerprint alone."""
+    game, plan = mini_game(tmp_path), small_plan(tmp_path)
+    plan['remainders']['Props_3_3'].update(restored=True, triangles=15, kept=list(range(15)))
+    rec = 'assets/prop/brinecove/props-3-3'
+    first = apply.compute(game, plan)['writes']
+    assert b'[derive]' not in first[f'{rec}/asset.toml'] and f'{rec}/src/SM_BC_Props_3_3.glb' in first
+    assert f'{rec}/src/SM_BC_Props_3_3.carve.json' not in first
+    for rel in (f'{rec}/asset.toml', f'{rec}/src/SM_BC_Props_3_3.glb'):
+        (game / rel).parent.mkdir(parents=True, exist_ok=True)
+        (game / rel).write_bytes(first[rel])
+    (game / rec / 'src' / 'SM_BC_Props_3_3.carve.json').write_text('{}')    # left by an earlier carve
+    again = apply.compute(game, plan)
+    assert not [k for k in again['writes'] if k.startswith(rec + '/')]
+    assert again['deletes'] == [f'{rec}/src/SM_BC_Props_3_3.carve.json']
+    assert f'{apply.GAME_REL}/{rec}/src/SM_BC_Props_3_3.carve.json' in apply.touched(game, plan, ops=again)['paths']
+
+
 @pytest.fixture
 def cli_batch(tmp_path, monkeypatch):
     """Real tiny GLBs and records exercise separate planner/CLI calls; only claim admission and native imports are faked."""
