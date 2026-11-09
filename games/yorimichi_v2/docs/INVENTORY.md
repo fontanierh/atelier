@@ -30,10 +30,10 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 ## Active work after this checkpoint
 
 [Draft PR #787](https://github.com/fontanierh/atelier/pull/787) contains the next Brine Cove checkpoint. At its
-`ac513cf127` snapshot, 15 additional market stalls and seven town1 objects are saved on the branch, not in main.
-Town2–town9 are unfinished. The first town2 import attempt was rolled back after a package-name collision; it is
-not accepted content. The naming/ownership preflight was corrected, the accepted town1 package was restored,
-and a retry follows the refreshed claims. Do not add provisional import counts to the saved total.
+`824ce50094` snapshot, 15 additional market stalls and 199 of the 265 town objects (town1–town7) are saved on the
+branch, not in main. town8 (26) and town9 (40) are unfinished. The first town2 import attempt was rolled back after a
+package-name collision and redone; only the redone town2 is accepted content. Saved (on the branch), prepared (planned,
+not yet saved) and packaged (`3027366ced`) totals are separate; do not add provisional import counts to the saved total.
 
 Remaining construction work:
 

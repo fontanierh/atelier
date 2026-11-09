@@ -1,9 +1,10 @@
 # Brine Cove market stalls and town houses as individual objects (G4a, market and town)
 
 Snapshot: **main `3027366ced` (2026-11-09)**. `market1` has six accepted saved stalls on main.
-[PR #787](https://github.com/fontanierh/atelier/pull/787), snapshot `ac513cf127`, adds the other 15 stalls and
-seven saved `town1` objects. `town2`–`town9` remain pending: the initial town2 import was reverted after a name
-collision, so its 58 import completions are not accepted content. Current overall status: [INVENTORY](../INVENTORY.md).
+[PR #787](https://github.com/fontanierh/atelier/pull/787), snapshot `824ce50094`, adds the other 15 stalls and
+199 saved town objects (`town1` 7, `town2` 25, `town3` 31, `town4` 45, `town5` 28, `town6` 33, `town7` 30). `town8`
+and `town9` remain pending. The initial town2 import was reverted after a name collision and redone; its first 58
+import completions are not accepted content. Current overall status: [INVENTORY](../INVENTORY.md).
 
 Tool: `tools/migrate/brinecove_market.py` (tests `tests/test_brinecove_market.py`). It continues
 `brinecove-split.md`: shared apply, claim, journal and check machinery (`brinecove_split_apply.py`), with a new
