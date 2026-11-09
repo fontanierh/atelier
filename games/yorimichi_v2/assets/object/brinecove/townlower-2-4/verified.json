@@ -1,7 +1,25 @@
 {
   "asset": "object/brinecove/townlower-2-4",
   "dependencies": {
-    "adopted/brinecove/townlower-2-4": "ba77459390030d7f4046866a15d4d3f2110acc6c9a56a2ef89356058433216cf"
+    "prop/brinecove/town-lower-2-4-piece00": "405919ff702ad36deb8bd3608e4f5f71d81250e8a6316dde0cf11cafecd5c7b0",
+    "prop/brinecove/town-lower-2-4-piece01": "a07e65e3b8489fb7a4f61ab7505f08f7de7f9660282e4b76284e9db3d7859a16",
+    "prop/brinecove/town-lower-2-4-piece02": "fed778cbf4c4e54483d4e16826d7e356d7a79ed7a612eb2aa87aa6b5c36137db",
+    "prop/brinecove/town-lower-2-4-piece030": "0c8226b4f205d1773d2b50f515b075a3db2e128f3ed0c601292e9cf2456419fa",
+    "prop/brinecove/town-lower-2-4-piece031": "3503fba4c58152d59047e50229eafd76ff4e8d01218f46f629599e9f75fac8a9",
+    "prop/brinecove/town-lower-2-4-piece032": "1fad4ad9963a0ba1ba19e6ad334fa5b9b245f6c327e4a976d5d63d728c4878df",
+    "prop/brinecove/town-lower-2-4-piece033": "b14d58d823409f409947ef8f984319d5324cbec85f69764a90aff722cb04166a",
+    "prop/brinecove/town-lower-2-4-piece10": "a267edd677cd66c7d3efbc0355633c7344160ed6fd01aff59bd3af342c6bee3a",
+    "prop/brinecove/town-lower-2-4-piece110": "f887cbb3c055673a12c3ea9b841c582399b5b64c61fac9d5c8554c50e5c5bade",
+    "prop/brinecove/town-lower-2-4-piece111": "18c9448f4458cbf404d9e967bd89a1cf2daf452f3c9316ba8bd96aa1db507ad8",
+    "prop/brinecove/town-lower-2-4-piece112": "b9c564fabf6bec6aaffff1bba367c7523d429fcbd5a06d46a67431ddca8f89cc",
+    "prop/brinecove/town-lower-2-4-piece113": "744ae5c58916153b8af9be4c34a93ce27a8d378256a113628e7ff2fa58e28306",
+    "prop/brinecove/town-lower-2-4-piece12": "2d0ba5988515d301de3127f132067399a48a92625bc6d9a8d85d0be486d0907a",
+    "prop/brinecove/town-lower-2-4-piece13": "839b1ff65009f46edfdaf1a22b19a04c194eeebaa7f1adf93a9b729c7323116c",
+    "prop/brinecove/town-lower-2-4-piece20": "8c51fab971fb5a383065ec66324a412355f83466c4a2f85899c855d6e164e7d0",
+    "prop/brinecove/town-lower-2-4-piece21": "b97625eccd965563ebcad5c719d7ad9d3f67f559ec0e8eb924a045871f68782f",
+    "prop/brinecove/town-lower-2-4-piece30": "0d7e3f91c8ec26ba1e2cd554381985a7f20573a39beafe36cba9743468d446c1",
+    "prop/brinecove/town-lower-2-4-piece31": "bfcf0fdd620d8eb2a4c10e383ba25daa1cd4b91894cad357ea744fbfb9be1b2c",
+    "prop/brinecove/town-lower-2-4-soft": "44628528ae5076b92047634b131e78ca27d69a65862a343bc2d42136f778cf8f"
   },
   "engine": "5.8.2-56702186",
   "files": {

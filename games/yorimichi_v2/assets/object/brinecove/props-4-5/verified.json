@@ -1,7 +1,7 @@
 {
   "asset": "object/brinecove/props-4-5",
   "dependencies": {
-    "adopted/brinecove/props-4-5": "1767a7745645706a9aa1f128a0a55cb70e4876351c176730d5f88e7b6aa8dc58"
+    "prop/brinecove/props-4-5": "5e9d1a34a80a40124a57822605bd08c3a1d526f9d2740eb7add37616d4cdc6a9"
   },
   "engine": "5.8.2-56702186",
   "files": {

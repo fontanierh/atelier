@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove lighthouse-planting (1 group).
-# Its placement is this actor package; its model is adopted/brinecove/lighthouse. Edit it in the editor and save-validate
+# Its placement is this actor package; its models are prop/brinecove/landmarks-1-3, prop/brinecove/landmarks-1-3-soft. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/lighthouse-planting"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/lighthouse"]
+references = ["prop/brinecove/landmarks-1-3", "prop/brinecove/landmarks-1-3-soft"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/OH/3IUYXRS22E9ETCQ3O1Y3AP"

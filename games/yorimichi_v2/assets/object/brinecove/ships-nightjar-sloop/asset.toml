@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove ships-nightjar-sloop (3 groups).
-# Its placement is this actor package; its model is adopted/brinecove/ships-nightjar-sloop. Edit it in the editor and save-validate
+# Its placement is this actor package; its models are prop/brinecove/ships-4-2, prop/brinecove/ships-4-3, prop/brinecove/ships-5-3. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/ships-nightjar-sloop"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/ships-nightjar-sloop"]
+references = ["prop/brinecove/ships-4-2", "prop/brinecove/ships-4-3", "prop/brinecove/ships-5-3"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/3/RH/QSB99NGEX27RF32C1SHDZ7"

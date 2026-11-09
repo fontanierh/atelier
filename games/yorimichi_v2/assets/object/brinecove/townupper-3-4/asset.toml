@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove townupper-3-4 (19 groups).
-# Its placement is this actor package; its model is adopted/brinecove/townupper-3-4. Edit it in the editor and save-validate
+# Its placement is this actor package; its models are prop/brinecove/town-upper-3-4-piece0, prop/brinecove/town-upper-3-4-piece20, prop/brinecove/town-upper-3-4-piece21, prop/brinecove/town-upper-3-4-piece220, prop/brinecove/town-upper-3-4-piece221, prop/brinecove/town-upper-3-4-piece222, prop/brinecove/town-upper-3-4-piece223, prop/brinecove/town-upper-3-4-piece230, prop/brinecove/town-upper-3-4-piece231, prop/brinecove/town-upper-3-4-piece232, prop/brinecove/town-upper-3-4-piece233, prop/brinecove/town-upper-3-4-piece30, prop/brinecove/town-upper-3-4-piece31, prop/brinecove/town-upper-3-4-piece320, prop/brinecove/town-upper-3-4-piece321, prop/brinecove/town-upper-3-4-piece322, prop/brinecove/town-upper-3-4-piece323, prop/brinecove/town-upper-3-4-piece33, prop/brinecove/town-upper-3-4-soft. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/townupper-3-4"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/townupper-3-4"]
+references = ["prop/brinecove/town-upper-3-4-piece0", "prop/brinecove/town-upper-3-4-piece20", "prop/brinecove/town-upper-3-4-piece21", "prop/brinecove/town-upper-3-4-piece220", "prop/brinecove/town-upper-3-4-piece221", "prop/brinecove/town-upper-3-4-piece222", "prop/brinecove/town-upper-3-4-piece223", "prop/brinecove/town-upper-3-4-piece230", "prop/brinecove/town-upper-3-4-piece231", "prop/brinecove/town-upper-3-4-piece232", "prop/brinecove/town-upper-3-4-piece233", "prop/brinecove/town-upper-3-4-piece30", "prop/brinecove/town-upper-3-4-piece31", "prop/brinecove/town-upper-3-4-piece320", "prop/brinecove/town-upper-3-4-piece321", "prop/brinecove/town-upper-3-4-piece322", "prop/brinecove/town-upper-3-4-piece323", "prop/brinecove/town-upper-3-4-piece33", "prop/brinecove/town-upper-3-4-soft"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/BZ/2D9D6H6NLX6XJWSBSQQXW6"

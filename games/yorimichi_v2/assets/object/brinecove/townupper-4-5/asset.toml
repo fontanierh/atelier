@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove townupper-4-5 (11 groups).
-# Its placement is this actor package; its model is adopted/brinecove/townupper-4-5. Edit it in the editor and save-validate
+# Its placement is this actor package; its models are prop/brinecove/town-upper-4-5-piece00, prop/brinecove/town-upper-4-5-piece01, prop/brinecove/town-upper-4-5-piece02, prop/brinecove/town-upper-4-5-piece03, prop/brinecove/town-upper-4-5-piece10, prop/brinecove/town-upper-4-5-piece11, prop/brinecove/town-upper-4-5-piece12, prop/brinecove/town-upper-4-5-piece13, prop/brinecove/town-upper-4-5-piece2, prop/brinecove/town-upper-4-5-piece3, prop/brinecove/town-upper-4-5-soft. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/townupper-4-5"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/townupper-4-5"]
+references = ["prop/brinecove/town-upper-4-5-piece00", "prop/brinecove/town-upper-4-5-piece01", "prop/brinecove/town-upper-4-5-piece02", "prop/brinecove/town-upper-4-5-piece03", "prop/brinecove/town-upper-4-5-piece10", "prop/brinecove/town-upper-4-5-piece11", "prop/brinecove/town-upper-4-5-piece12", "prop/brinecove/town-upper-4-5-piece13", "prop/brinecove/town-upper-4-5-piece2", "prop/brinecove/town-upper-4-5-piece3", "prop/brinecove/town-upper-4-5-soft"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/C2/UW0N9B1ZA7VAQI9I24BG0M"

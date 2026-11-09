@@ -1,7 +1,7 @@
 {
   "asset": "object/brinecove/fort",
   "dependencies": {
-    "adopted/brinecove/fort": "c2939b0749782c83f790d566cc31b3bf667300813f2ae7eb9578f9152ae9b921"
+    "prop/brinecove/landmarks-3-5": "fa4f807ca8951e8b58d4b0c647157c22feb0d1cb583a708c336fb48621dd9673"
   },
   "engine": "5.8.2-56702186",
   "files": {

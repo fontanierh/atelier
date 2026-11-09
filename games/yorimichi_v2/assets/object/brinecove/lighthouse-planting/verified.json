@@ -1,7 +1,8 @@
 {
   "asset": "object/brinecove/lighthouse-planting",
   "dependencies": {
-    "adopted/brinecove/lighthouse": "f15ba96ca13a0c6f5e552ef0cce1fef936dc7c66d9d29187eb99e28de69b59fd"
+    "prop/brinecove/landmarks-1-3": "e7047c01c87445ec183d60cd206da3de881b3571d0510585aa6e84a158dd4799",
+    "prop/brinecove/landmarks-1-3-soft": "af7a4586fd0b2a20b8c22ea65c612704bb6c8eb59a62657b43fa2cf1516f4e4e"
   },
   "engine": "5.8.2-56702186",
   "files": {

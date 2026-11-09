@@ -1,7 +1,14 @@
 {
   "asset": "object/belmonte/north-apron",
   "dependencies": {
-    "adopted/belmonte/north-apron": "1595d60f40a2ec53516a150fa1b8b9c4c2a10dcd4e4cb9b68732bcd21010257c"
+    "prop/belmonte/north-apron-piece00": "31d75ff6a0d48735b8cb067faa53f85df943dc6078530afbb31bb62227f0ce28",
+    "prop/belmonte/north-apron-piece01": "2d8e1972baf1758ae784ae78b2b9832b820f84db24d64c47bec63549c967e336",
+    "prop/belmonte/north-apron-piece02": "e43486975414fb30940715a524f28f3bce9b9589042b4e578fc60618ca858875",
+    "prop/belmonte/north-apron-piece10": "973e7376b40b3b4460303b7a1fb55e536f367615da33be916f60aa9080e5b900",
+    "prop/belmonte/north-apron-piece11": "a48f8a96144afd6654bfb1be6cdb6172f8375d0a8ff18a64cd2a3feed846f2ad",
+    "prop/belmonte/north-apron-piece13": "7861f95cbb5cbe60a063bd210b4bff2792d92ad2bba9521512f4d7021b3d58bd",
+    "prop/belmonte/north-apron-piece2": "e8935a3b23e3dd97507dc084ca084dea31b440f32e719e464c30613013afd6e2",
+    "prop/belmonte/north-apron-piece3": "81a37146fc594e55ffc51068e0d2e9e5cd3292fdb06fb9419e65ad3045e8da56"
   },
   "engine": "5.8.2-56702186",
   "files": {

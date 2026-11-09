@@ -1,7 +1,11 @@
 {
   "asset": "object/brinecove/rocks-0-5",
   "dependencies": {
-    "adopted/brinecove/rocks-0-5": "f34be9bfd17961f1138a3b81a99b0449ea33d779323ccdc03bf7ae6f4f101eb3"
+    "prop/brinecove/rocks-0-5": "f408df492fbaf08c2b2c5a1b32a942787ea3728625d67bd6432c9eb8d7b74060",
+    "prop/brinecove/rocks-0-5-soft-piece0": "f12e8e9942b466aad510e78148c2a235974ea643e24a5c3ed0824d856f24d647",
+    "prop/brinecove/rocks-0-5-soft-piece1": "e2a16dcd505f51ed5393ee22d449104938484b3b54060e7155e948d1ef494580",
+    "prop/brinecove/rocks-0-5-soft-piece2": "a3e0287f9a1a6f5769c6c4b110089b5c58e5c071df6094918961bdc418594755",
+    "prop/brinecove/rocks-0-5-soft-piece3": "2ff24c15782da8f990cc7205e3b8e9e048ebcc255da98a6613089042ecd0b9c9"
   },
   "engine": "5.8.2-56702186",
   "files": {

@@ -1,7 +1,7 @@
 {
   "asset": "object/brinecove/harbor-3-2",
   "dependencies": {
-    "adopted/brinecove/harbor-3-2": "98cff78da9e054666fc1a19db9a2e7386520aea94929ae9d0ca0a2319172edc7"
+    "prop/brinecove/harbor-3-2": "52aa96c3164f8dd4eb2386f3657f2dda98e5b2d3af537b8d81e3bd78d1cede92"
   },
   "engine": "5.8.2-56702186",
   "files": {

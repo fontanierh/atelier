@@ -1,7 +1,8 @@
 {
   "asset": "object/brinecove/market-4-3",
   "dependencies": {
-    "adopted/brinecove/market-4-3": "0c85f8b5c0220b5c66dd60c571e1acda8e9b9e31a1074b098b5429101407b709"
+    "prop/brinecove/market-4-3": "6222de324a622b0e762f148e28a8b830d9eeac0af2564c287faf1b4e1920ffb9",
+    "prop/brinecove/market-4-3-soft": "156dde6eef47dbd559de4e2261abdf79db6f49be95eee4bd05a8caa338d03ab5"
   },
   "engine": "5.8.2-56702186",
   "files": {

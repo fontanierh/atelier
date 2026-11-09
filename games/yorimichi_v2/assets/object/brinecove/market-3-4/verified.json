@@ -1,7 +1,17 @@
 {
   "asset": "object/brinecove/market-3-4",
   "dependencies": {
-    "adopted/brinecove/market-3-4": "5bf2969156a6f0b5ac3acaeff774df7c17850198d10e6166474042c2dbf9413a"
+    "prop/brinecove/market-3-4-piece10": "7b97393a1fa4063b00733feacb11a9a04794de16428331cb208b8a4aaf9bfaa3",
+    "prop/brinecove/market-3-4-piece110": "8a9d58514ab7a7f4af1304e5db136d1fd4a5d4ed04c9cd98c9be864a08c69e93",
+    "prop/brinecove/market-3-4-piece111": "443f6806f2af98e41481bd9d07ff286445a31e8eb7c9c5b41114f042e710d9d6",
+    "prop/brinecove/market-3-4-piece112": "415240ed3cf270869640119bb365047c65eb3dea1defcdb96df475ebdb51fec1",
+    "prop/brinecove/market-3-4-piece113": "045df27e5014e635c87b5c7dd752b7d1e5319fce5ca8dd0de7321bf6eeb9cc81",
+    "prop/brinecove/market-3-4-piece12": "c2e057c919ab801224683c76672c9d8ef43c22efb5aaecc4462649e1dac48490",
+    "prop/brinecove/market-3-4-piece130": "e19f031af259ba1e5ee40f77f676c8caed26ab0a7b8f04ca46e247b61081a5a2",
+    "prop/brinecove/market-3-4-piece131": "6804c8dede44630d60a67f23f120f75ce05eafe6cf842e283934056f13224484",
+    "prop/brinecove/market-3-4-piece132": "cb1d7d59b91ed08b792a5900bcb32892643c7f2ac613ee3a1f6f064e93ea7016",
+    "prop/brinecove/market-3-4-piece133": "b0b1582b5127d0008e836c9d2efbb5be7d5c322835704ea18d9ec26a43dbb98a",
+    "prop/brinecove/market-3-4-soft": "4c0647eb4c0ad2b5123287ba75016ac7e288e51606a39ccbb92e25da8ae90f6f"
   },
   "engine": "5.8.2-56702186",
   "files": {
