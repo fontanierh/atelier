@@ -37,22 +37,51 @@ stations are saved. [INVENTORY](../INVENTORY.md) tracks port status; this note d
 
 ## Gondola pylon split (prepared, not saved)
 
-Status on main at this note: **prepared, not saved**. `w18-gondola/objects.toml` still lists the three line groups, and
-`objects.saved.json` still holds nine objects. Nothing here has been written to the map or the saved list.
+Status on main at this note: **unprepared**. `w18-gondola/objects.toml` still lists the three line groups, and
+`objects.saved.json` still holds nine objects. `tools/migrate/gondola_pylons.py --check` reports the state of the tree.
 
 - Selection: the ten `GD_L<line>_<n>_Tower` static entries of `gondola/runtime.json`, lines in id order, and within a
-  line by straight distance from its lower station (L1 Hidamari, L2 Belmonte, L3 Floor). The tool takes at most 20;
-  the file holds 10, so all are taken.
+  line by straight distance from its lower station (L1 Hidamari, L2 Belmonte, L3 Floor). At most 20 are taken; all ten are.
 - Each tower becomes `object/gondola/pylon-l<line>-<n>`, with `route` = its entry and `model` = its existing record
-  `adopted/gondola/tower-l<line>-<n>`. The three groups are removed from `objects.toml` once all their towers are taken.
-- The step retires the groups as plain file operations under one claim, as `brinecove_ships.py` retires its placements:
-  it deletes `assets/object/gondola/pylons-l{1,2,3}` and their actor packages, drops the three keys from
-  `objects.saved.json`, and writes the ten objects into `objects.toml`, all through the journal.
-- The manifest actor keeps its `MigratedGroups` names (they are the tower names, which are unchanged), so the following
-  `objects.py` save lists them again. The step and the save must run in one claim: between them the runtime skips the
-  towers and nothing draws them.
+  `adopted/gondola/tower-l<line>-<n>`.
 
-See the tool docstring and `gondola_pylons.py --paths` for the paths a claim covers.
+States, each reached by one step that repeats safely: **unprepared** -> **prepared (pending save)** -> **saved (pending
+retire)** -> **done**. The pending state is `world/regions/w18-gondola/pylon-retire.json`: the three groups, their record
+files and actor packages, and the ten replacement ids.
+
+1. **Prepare** (`--claim TASK`): every path and scope of `--paths` is authorized before any write (W18 and W00). One
+   journaled write puts the ten objects into objects.toml, removes the three group entries, and writes the pending file.
+   The groups' records, actors and saved keys stay, so their towers are still drawn. A rerun is a no-op.
+2. **Save**: the coordinator runs `objects.py` for the ten (unchanged). Its saved-definition check looks only at the
+   objects it is given, and `write_saved` keeps the groups' saved keys, so it accepts the state. The group actors stay on
+   disk, and `SaveUnits` creates new patches for the new unit ids while the manifest's names stay the same. Until retire,
+   the towers are drawn twice in the map. This is not verified in Unreal.
+3. **Retire** (`--retire --claim TASK`): refused, changing nothing, unless every replacement has a receipt (its
+   `objects.saved.json` entry equals its definition, its record names it, and its `verified.json` hashes each actor
+   package as on disk). It then deletes exactly the pending files and drops the three group keys, journaled. A rerun
+   after it is a no-op.
+
+Between the steps the map is consistent: prepare leaves the groups drawing, and a failed save leaves the pending file so a
+rerun of prepare says so and retire refuses. The Unreal manifest is never edited; its names are the tower names. The
+replacement records of a failed save are not created by these steps, so retire has nothing to delete for them.
+
+### Coordinator sequence
+
+```sh
+gp() { uv run python games/yorimichi_v2/tools/migrate/gondola_pylons.py "$@"; }
+gp --check                     # unprepared
+gp --paths                     # the paths and scopes (W18 + W00) the claim must cover; acquire it
+gp --claim TASK                # 1. prepare; a rerun prints "already prepared"
+uv run python games/yorimichi_v2/tools/migrate/objects.py region/w18-gondola --environment region/w00-island \
+    --claim TASK --only object/gondola/pylon-l1-0 --only object/gondola/pylon-l1-1 --only object/gondola/pylon-l1-2 \
+    --only object/gondola/pylon-l1-3 --only object/gondola/pylon-l2-0 --only object/gondola/pylon-l2-1 \
+    --only object/gondola/pylon-l2-2 --only object/gondola/pylon-l2-3 --only object/gondola/pylon-l3-0 --only object/gondola/pylon-l3-1
+gp --check                     # prepared (pending save) until every receipt exists, then saved (pending retire)
+gp --retire --claim TASK       # 3. refused until "saved"; then done; a rerun prints "already done"
+```
+
+If the save fails, stop there. Re-run `objects.py` with the same claim; prepare and `--check` remain safe to repeat, and
+retire is refused until the replacements have receipts.
 
 ## Recorded gameplay evidence
 
