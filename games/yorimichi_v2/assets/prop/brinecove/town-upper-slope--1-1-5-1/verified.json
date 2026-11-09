@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-slope--1-1-5-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperSlope1151.uasset": "d6a8d6fcdaa6010db7a6e0c3bd627dc70057c8a1996127ec7303cba13582a12d"
+  },
+  "input_fingerprint": "772758719dcbf47fa6f88cd1075a26ba948be950bee442aedad0a4f1a4a1027e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperSlope1151": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
