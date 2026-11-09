@@ -29,8 +29,28 @@ stations are saved. [INVENTORY](../INVENTORY.md) tracks port status; this note d
   concerns; inspect their actual useful-object boundary rather than declaring all runtime code obsolete.
 - `AV2ScenePatch::ClimbExempt` recognizes the saved source keys (`railway:`, `ferry:`, `gondola:`, parks and pier),
   so the old service-actor `NoClimb` tag is not the only path protecting saved scenery.
+- Gondola pylons are prepared as ten per-tower objects (`object/gondola/pylon-l<line>-<n>`) by
+  `tools/migrate/gondola_pylons.py`; the saved state is still the three line groups until the coordinator's retire
+  and save run (see the pylon section below). Cabins, ropes, the cable plan and station data are not part of that split.
 - Rendering batches may remain for performance. Several useful towers or fittings in one editable group still
   require independent editing boundaries under the whole-game authoring requirement.
+
+## Gondola pylon split (prepared, not saved)
+
+Status on main at this note: **prepared, not saved**. `w18-gondola/objects.toml` still lists the three line groups, and
+`objects.saved.json` still holds nine objects. Nothing here has been written to the map or the saved list.
+
+- Selection: the ten `GD_L<line>_<n>_Tower` static entries of `gondola/runtime.json`, lines in id order, and within a
+  line by straight distance from its lower station (L1 Hidamari, L2 Belmonte, L3 Floor). The tool takes at most 20;
+  the file holds 10, so all are taken.
+- Each tower becomes `object/gondola/pylon-l<line>-<n>`, with `route` = its entry and `model` = its existing record
+  `adopted/gondola/tower-l<line>-<n>`. The three groups are removed from `objects.toml` once all their towers are taken.
+- The group patches are retired in the editor, not by `objects.py`: `SaveUnits` keys each patch by its unit name and
+  finds towers already covered by a group patch. Retire the three `pylons-l*` patches and their manifest entries first,
+  or the towers would be drawn twice. Retiring them also removes their `assets/object/gondola/pylons-l*` records.
+- `objects.py` only adds to `objects.saved.json`, so the three `pylons-l*` keys must be dropped there in the same run.
+
+See the tool docstring and `gondola_pylons.py --paths` for the paths a claim covers.
 
 ## Recorded gameplay evidence
 
