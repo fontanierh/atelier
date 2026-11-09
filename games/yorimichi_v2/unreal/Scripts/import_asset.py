@@ -16,6 +16,7 @@ import unreal as U
 # A one-asset import runs this file in its own commandlet, which does not put unreal/Scripts on the path (the
 # editor session does): its helper modules beside it must import either way.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import import_settings  # noqa: E402
 import lod_preservation  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
@@ -105,9 +106,13 @@ def _apply_mesh_settings(asset, settings):
         build = editor.get_lod_build_settings(asset, 0)
         build.set_editor_property('use_full_precision_u_vs', True)
         editor.set_lod_build_settings(asset, 0, build)
+    cpu = import_settings.allow_cpu_access(settings)
+    if cpu is not None:
+        asset.set_editor_property('allow_cpu_access', cpu)   # cooked riding snapshots and LOD checks read positions on the CPU
     if settings.get('collision') == 'complex':
         body = asset.get_editor_property('body_setup')
-        _set(body, dict(collision_trace_flag=U.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE, double_sided_geometry=True))
+        _set(body, dict(collision_trace_flag=U.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE,
+                        double_sided_geometry=import_settings.double_sided(settings)))
     elif settings.get('collision') == 'simple_and_complex':
         # The source's authored UCX hulls are the simple collision (import_city_surface_tiles.py); a piece declared
         # with none keeps no shapes. The hull count must be the source's: a stale or missing hull is a broken import.
@@ -180,6 +185,11 @@ def _apply_texture_settings(asset, settings):
         asset.set_editor_property('srgb', bool(settings['srgb']))
     if 'compression' in settings:
         asset.set_editor_property('compression_settings', getattr(U.TextureCompressionSettings, settings['compression']))
+    size, group = import_settings.max_texture_size(settings), import_settings.lod_group(settings)
+    if size is not None:
+        asset.set_editor_property('max_texture_size', size)
+    if group is not None:
+        asset.set_editor_property('lod_group', getattr(U.TextureGroup, group))
     if 'address' in settings:
         # The donor's tiling surfaces (import_hippodrome.py `wrap=True`): wrap on both axes, nothing else.
         if settings['address'] != 'wrap':
