@@ -18,6 +18,7 @@ import unreal as U
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import import_settings  # noqa: E402
 import lod_preservation  # noqa: E402
+from mesh_materials import assign_materials  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
 LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
@@ -83,11 +84,13 @@ def _apply_mesh_settings(asset, settings):
         if len(asset.get_editor_property('static_materials')) != len(slots):
             raise RuntimeError(f'{asset.get_path_name()} has {len(asset.get_editor_property("static_materials"))} '
                                f'material slots, the record binds {len(slots)}')
+        materials = []
         for index, material in enumerate(slots):
             loaded = EAL.load_asset(material)
             if loaded is None:
                 raise RuntimeError(f'material {material} for slot {index} does not exist')
-            asset.set_material(index, loaded)
+            materials.append(loaded)
+        assign_materials(asset, materials)
     slot_map = settings.get('slot_map')
     if slot_map is not None:
         # Each imported slot binds by its authored name (the donor's city importer); a slot the record does not
