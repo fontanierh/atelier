@@ -157,7 +157,9 @@ def test_the_plan_carries_each_route_entry_with_its_unit(game):
     assert ferries[FERRY]['names'] == ['hidamari', 'brinecove']
     assert ferries[FERRY]['units'] == ['terminal-hidamari', 'terminal-brinecove']
     gondolas = {g['region']: g for g in plan['gondolas']}
-    assert len(gondolas[GONDOLA]['names']) == 52 and len(set(gondolas[GONDOLA]['units'])) == 9
+    # One unit per saved object: nine while the three pylon groups stand, sixteen once the pylons are objects of their own.
+    assert len(gondolas[GONDOLA]['names']) == 52
+    assert len(set(gondolas[GONDOLA]['units'])) == len(committed(GONDOLA)['objects'])
 
 
 def test_a_route_entry_the_file_does_not_hold_is_refused(game):

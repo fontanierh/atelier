@@ -45,10 +45,12 @@ Status on main at this note: **prepared, not saved**. `w18-gondola/objects.toml`
   the file holds 10, so all are taken.
 - Each tower becomes `object/gondola/pylon-l<line>-<n>`, with `route` = its entry and `model` = its existing record
   `adopted/gondola/tower-l<line>-<n>`. The three groups are removed from `objects.toml` once all their towers are taken.
-- The group patches are retired in the editor, not by `objects.py`: `SaveUnits` keys each patch by its unit name and
-  finds towers already covered by a group patch. Retire the three `pylons-l*` patches and their manifest entries first,
-  or the towers would be drawn twice. Retiring them also removes their `assets/object/gondola/pylons-l*` records.
-- `objects.py` only adds to `objects.saved.json`, so the three `pylons-l*` keys must be dropped there in the same run.
+- The step retires the groups as plain file operations under one claim, as `brinecove_ships.py` retires its placements:
+  it deletes `assets/object/gondola/pylons-l{1,2,3}` and their actor packages, drops the three keys from
+  `objects.saved.json`, and writes the ten objects into `objects.toml`, all through the journal.
+- The manifest actor keeps its `MigratedGroups` names (they are the tower names, which are unchanged), so the following
+  `objects.py` save lists them again. The step and the save must run in one claim: between them the runtime skips the
+  towers and nothing draws them.
 
 See the tool docstring and `gondola_pylons.py --paths` for the paths a claim covers.
 

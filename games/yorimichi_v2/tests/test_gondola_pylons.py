@@ -25,6 +25,7 @@ def load(name, rel):
 
 pylons = load('v2_migrate_gondola_pylons', 'tools/migrate/gondola_pylons.py')
 objects = load('v2_migrate_objects_pylons', 'tools/migrate/objects.py')
+GAME = ROOT
 REGION_FOLDER = ROOT / 'world/regions/w18-gondola'
 
 
@@ -110,14 +111,87 @@ def test_a_rerun_on_its_own_output_is_refused(data, committed):
         pylons.render(text, data)
 
 
-def test_check_writes_nothing(tmp_path, monkeypatch):
+def test_check_writes_nothing():
     before = (REGION_FOLDER / 'objects.toml').read_bytes()
     assert pylons.main(['--check']) in (0, 1)
     assert (REGION_FOLDER / 'objects.toml').read_bytes() == before
 
 
-def test_paths_name_the_objects_toml_and_the_records_a_claim_covers(data):
-    paths = pylons.paths(pylons.select(data))
-    assert 'games/yorimichi_v2/world/regions/w18-gondola/objects.toml' in paths
-    assert 'games/yorimichi_v2/assets/object/gondola/pylon-l3-1/asset.toml' in paths
-    assert 'games/yorimichi_v2/assets/object/gondola/pylons-l1/verified.json' in paths
+GROUP_PACKAGES = {'OXNPYPALF2J1WU4BQWWGA6', 'JL5ZQDUJRMEIYACD76AXMG', 'M90M3QGF1CH7RRRY3KDFBM'}
+
+
+def test_retire_deletes_exactly_the_group_records_and_actor_packages(data):
+    taken = pylons.select(data)
+    plan = pylons.retire_plan(GAME, taken, (REGION_FOLDER / 'objects.toml').read_text(),
+                              (REGION_FOLDER / 'objects.saved.json').read_text())
+    assert plan['groups'] == ['object/gondola/pylons-l1', 'object/gondola/pylons-l2', 'object/gondola/pylons-l3']
+    records_deleted = sorted(d for d in plan['deletes'] if d.startswith('assets/object/gondola/pylons-l'))
+    assert records_deleted == sorted(f'assets/object/gondola/pylons-l{n}/{name}'
+                                     for n in (1, 2, 3) for name in ('asset.toml', 'verified.json'))
+    packages = sorted(d for d in plan['deletes'] if d.startswith('unreal/Content/__ExternalActors__/'))
+    assert len(packages) == 3 and all(any(stem in d for stem in GROUP_PACKAGES) for d in packages)
+    assert set(plan['deletes']) == set(records_deleted) | set(packages)
+
+
+def test_retire_drops_exactly_the_three_group_keys_from_the_saved_list(data):
+    taken = pylons.select(data)
+    saved_text = (REGION_FOLDER / 'objects.saved.json').read_text()
+    plan = pylons.retire_plan(GAME, taken, (REGION_FOLDER / 'objects.toml').read_text(), saved_text)
+    before, after = json.loads(saved_text), json.loads(plan['saved_text'])
+    assert set(before['objects']) - set(after['objects']) == set(plan['groups'])
+    assert all(after['objects'][k] == before['objects'][k] for k in after['objects'])
+    assert after['schema'] == before['schema']
+    assert len(after['objects']) == 6
+
+
+def test_retire_is_refused_when_the_saved_definition_differs(data):
+    body = json.loads((REGION_FOLDER / 'objects.saved.json').read_text())
+    body['objects']['object/gondola/pylons-l2']['route'] = ['GD_L2_0_Tower']
+    with pytest.raises(pylons.PylonError, match='object/gondola/pylons-l2: objects.saved.json does not record'):
+        pylons.retire_plan(GAME, pylons.select(data), (REGION_FOLDER / 'objects.toml').read_text(), json.dumps(body))
+
+
+def test_retire_is_refused_when_a_group_record_is_missing(data, tmp_path):
+    with pytest.raises(pylons.PylonError, match='pylons-l1: its record .* is missing'):
+        pylons.retire_plan(tmp_path, pylons.select(data), (REGION_FOLDER / 'objects.toml').read_text(),
+                           (REGION_FOLDER / 'objects.saved.json').read_text())
+
+
+def test_retire_is_refused_when_a_pylon_is_already_saved(data):
+    body = json.loads((REGION_FOLDER / 'objects.saved.json').read_text())
+    body['objects']['object/gondola/pylon-l1-0'] = {'id': 'object/gondola/pylon-l1-0'}
+    with pytest.raises(pylons.PylonError, match='object/gondola/pylon-l1-0 is already saved'):
+        pylons.retire_plan(GAME, pylons.select(data), (REGION_FOLDER / 'objects.toml').read_text(), json.dumps(body))
+
+
+def test_step_paths_cover_the_retire_the_write_and_the_later_save(data):
+    paths = pylons.step_paths(GAME, pylons.select(data))
+    step, save = set(paths['step']), set(paths['save'])
+    assert 'games/yorimichi_v2/world/regions/w18-gondola/objects.toml' in step
+    assert 'games/yorimichi_v2/world/regions/w18-gondola/objects.saved.json' in step
+    assert 'games/yorimichi_v2/assets/object/gondola/pylons-l3/asset.toml' in step
+    assert any(p.startswith('games/yorimichi_v2/unreal/Content/__ExternalActors__/') for p in step)
+    assert 'games/yorimichi_v2/assets/object/gondola/pylon-l3-1/asset.toml' in save
+    assert 'games/yorimichi_v2/assets/object/gondola/pylon-l3-1/verified.json' in save
+    assert f'games/yorimichi_v2/{objects.MANIFEST["region/w00-island"]}' in save
+    assert not step & save
+
+
+def test_apply_without_authority_writes_nothing(data, monkeypatch):
+    monkeypatch.setattr(pylons.authority, 'd04', lambda *a, **k: (None, True))
+    watched = [REGION_FOLDER / 'objects.toml', REGION_FOLDER / 'objects.saved.json', GAME / 'assets/object/gondola/pylons-l1/asset.toml']
+    before = [p.read_bytes() for p in watched]
+    with pytest.raises(pylons.PylonError):
+        pylons.apply_step(GAME, pylons.select(data), 'TASK', echo=lambda *_: None)
+    assert [p.read_bytes() for p in watched] == before
+
+
+def test_the_journaled_write_applies_its_writes_and_deletes_exactly(tmp_path):
+    keep, gone = tmp_path / 'assets/x/asset.toml', tmp_path / 'unreal/Content/gone.uasset'
+    keep.parent.mkdir(parents=True), gone.parent.mkdir(parents=True)
+    keep.write_text('old'), gone.write_text('bin')
+    ops = {'writes': {'assets/x/asset.toml': b'new'}, 'deletes': ['unreal/Content/gone.uasset']}
+    result = pylons.apply.execute(tmp_path, ops, scopes={'region/w18-gondola'}, lockable=lambda g, r: [])
+    assert result == {'written': ['assets/x/asset.toml'], 'deleted': ['unreal/Content/gone.uasset']}
+    assert keep.read_text() == 'new' and not gone.exists()
+    assert not (tmp_path / pylons.apply.JOURNAL).exists()
