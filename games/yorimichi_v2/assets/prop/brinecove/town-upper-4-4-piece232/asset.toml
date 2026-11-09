@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_4_4_Piece232: one Brine Cove mesh (7601 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpper_4_4_Piece232: one Brine Cove mesh, what remains after batch 1 took its objects (424 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -10,15 +10,15 @@ references = ["adopted/brinecove/materials"]
 
 [[sources]]
 path = "src/SM_BC_TownUpper_4_4_Piece232.glb"
-sha256 = "52cfa6df123c183f3f4992262bcb2a3317e8980fa3bcc2c285c33cc8a244d8c7"
+sha256 = "b4bed945d811727b45f162af0cfa2e0f67c091d47060e326627a81f1610d132b"
 
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_autumn_olive", "/Game/Brinecove/Materials/MI_BC_blossom", "/Game/Brinecove/Materials/MI_BC_blossom_pale", "/Game/Brinecove/Materials/MI_BC_canvas", "/Game/Brinecove/Materials/MI_BC_canvas_red", "/Game/Brinecove/Materials/MI_BC_canvas_teal", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_glass", "/Game/Brinecove/Materials/MI_BC_glass_warm", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_jungle", "/Game/Brinecove/Materials/MI_BC_jungle_light", "/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_ochre", "/Game/Brinecove/Materials/MI_BC_roof_slate", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_shutter_blue", "/Game/Brinecove/Materials/MI_BC_shutter_green", "/Game/Brinecove/Materials/MI_BC_shutter_red", "/Game/Brinecove/Materials/MI_BC_shutter_teal", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
-triangles = 7601
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_canvas_teal", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_stone_light"]
+triangles = 424
 collision = "complex"
 full_precision_uvs = true
 

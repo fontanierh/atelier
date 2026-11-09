@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpperSlope1140: the town upper slope 1 1 4 0, cut from the fused tile(s) TownUpper_5_4_Piece32 (2132 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-upper-slope-1-1-4-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-upper-slope-1-1-4-0"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownUpperSlope1140.glb"
+sha256 = "091977835873952fc52882098d66649dc65a93025aa14bcb2a118f7e67d5bd79"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_canvas", "/Game/Brinecove/Materials/MI_BC_canvas_red", "/Game/Brinecove/Materials/MI_BC_canvas_teal", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_glass", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_planks", "/Game/Brinecove/Materials/MI_BC_roof_straw", "/Game/Brinecove/Materials/MI_BC_roof_terra", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_sail", "/Game/Brinecove/Materials/MI_BC_shutter_teal", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 2132
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpperSlope1140"
