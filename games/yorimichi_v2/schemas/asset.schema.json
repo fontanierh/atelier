@@ -145,6 +145,33 @@
         "type": "string"
       },
       "description": "named checks this asset must pass, e.g. collision.walkable"
+    },
+    "derive": {
+      "type": "object",
+      "required": [
+        "kind",
+        "version",
+        "original",
+        "selection"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "carve"
+          ]
+        },
+        "version": {
+          "const": 1
+        },
+        "original": {
+          "type": "string"
+        },
+        "selection": {
+          "type": "string"
+        }
+      },
+      "description": "a carved tile: sources are exactly [original, selection]; the import derives the remainder under build/yorimichi_v2/derived (tools/content/carve.py)"
     }
   }
 }
