@@ -52,6 +52,8 @@ def world(tmp_path):
     write(donor / 'build/yorimichi/paul/fbx/SK_Paul.glb', GLB)
     for rel in ('animation/clips/0/OLLIE.skate', 'animation/rig.skate', 'metadata/bank-0.skate'):
         write(donor / BUNDLE / rel, rel.encode())
+    for rel in originals.CLIP_CODE:
+        write(donor / rel, b'# importer code')
     write(donor / originals.CLIP_STATE, json.dumps({'fingerprint': 'f' * 64, 'clips': {
         'OLLIE': {'asset': '/Game/SkateRide/Clips/B0/OLLIE'}}}).encode())
     files = {rel: {'sha256': records.sha256_file(content / rel), 'size': (content / rel).stat().st_size}
@@ -71,6 +73,8 @@ def test_scan_links_every_package_by_its_route_and_pins_the_originals(world):
     assert packages[ROLL] == {'route': 'imported', 'class': 'SoundWave',
                               'originals': ['build/yorimichi/audio/skate/roll.wav']}
     assert packages[CLIP]['route'] == 'keyed' and packages[CLIP]['originals'][0] == f'{BUNDLE}/animation/clips/0/OLLIE.skate'
+    # The keyed clip links the importer's code beside its data: it can be keyed again from what is pinned.
+    assert set(originals.CLIP_CODE) <= set(packages[CLIP]['originals'])
     assert packages[MAT] == {'route': 'authored', 'class': 'Material'}
     assert packages[TEX] == {'route': 'embedded', 'class': 'Texture2D', 'originals': ['build/yorimichi/paul/fbx/SK_Paul.glb']}
     assert data['originals']['build/yorimichi/audio/skate/roll.wav'] == {'sha256': hashlib.sha256(WAV).hexdigest(),
@@ -108,7 +112,7 @@ def test_fetch_copies_each_original_only_as_its_pinned_bytes(world, tmp_path):
     game, donor, classes = world
     records.write_json(game / originals.LINKS, originals.scan(game, donor, classes))
     copied, refused = originals.fetch(game, donor, echo=lambda *_: None)
-    assert refused == [] and copied == 5
+    assert refused == [] and copied == 5 + len(originals.CLIP_CODE)
     assert (game / originals.DEST / 'build/yorimichi/audio/skate/roll.wav').read_bytes() == WAV
     storage = tmp_path / 'storage'
     write(storage / 'build/yorimichi/audio/skate/roll.wav', b'tampered')
