@@ -154,7 +154,12 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None, ass
         asset = records.load_asset(game / 'assets' / tile_record(stem) / 'asset.toml') \
             if (game / 'assets' / tile_record(stem) / 'asset.toml').is_file() else None
         donor_sha = records.sha256_file(glb_dir / f'SM_BC_{stem}.glb')
-        if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
+        if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha and stem in saved:
+            # Carved before (derived form): the fused original's facts are the ones its first split saved; the record's
+            # settings are its remainder's.
+            tiles[stem] = {**saved[stem]['original'], 'record': saved[stem]['record'], 'package': saved[stem]['package'],
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        elif asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
             settings = dict(asset.recipe['settings'])
             slots = settings['slot_materials']
             tiles[stem] = {'record': asset.id, 'owner': asset.owner, 'references': list(asset.references),
