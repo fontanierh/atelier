@@ -902,6 +902,41 @@
         "prop/brinecove/market-stall-02"
       ]
     },
+    "object/brinecove/market-stall-03": {
+      "groups": [
+        "SM_BC_MarketStall03"
+      ],
+      "id": "object/brinecove/market-stall-03",
+      "model": "prop/brinecove/market-stall-03",
+      "models": [
+        "prop/brinecove/market-stall-03"
+      ]
+    },
+    "object/brinecove/market-stall-04": {
+      "groups": [
+        "SM_BC_MarketStall04"
+      ],
+      "id": "object/brinecove/market-stall-04",
+      "model": "prop/brinecove/market-stall-04",
+      "models": [
+        "prop/brinecove/market-stall-04"
+      ]
+    },
+    "object/brinecove/market-stall-05": {
+      "groups": [
+        "SM_BC_MarketStall05",
+        "SM_BC_MarketStall05_Soft"
+      ],
+      "id": "object/brinecove/market-stall-05",
+      "model": [
+        "prop/brinecove/market-stall-05",
+        "prop/brinecove/market-stall-05-soft"
+      ],
+      "models": [
+        "prop/brinecove/market-stall-05",
+        "prop/brinecove/market-stall-05-soft"
+      ]
+    },
     "object/brinecove/market-stall-06": {
       "groups": [
         "SM_BC_MarketStall06"
@@ -940,6 +975,76 @@
       "model": "prop/brinecove/market-stall-09",
       "models": [
         "prop/brinecove/market-stall-09"
+      ]
+    },
+    "object/brinecove/market-stall-10": {
+      "groups": [
+        "SM_BC_MarketStall10",
+        "SM_BC_MarketStall10_Soft"
+      ],
+      "id": "object/brinecove/market-stall-10",
+      "model": [
+        "prop/brinecove/market-stall-10",
+        "prop/brinecove/market-stall-10-soft"
+      ],
+      "models": [
+        "prop/brinecove/market-stall-10",
+        "prop/brinecove/market-stall-10-soft"
+      ]
+    },
+    "object/brinecove/market-stall-11": {
+      "groups": [
+        "SM_BC_MarketStall11",
+        "SM_BC_MarketStall11_Soft"
+      ],
+      "id": "object/brinecove/market-stall-11",
+      "model": [
+        "prop/brinecove/market-stall-11",
+        "prop/brinecove/market-stall-11-soft"
+      ],
+      "models": [
+        "prop/brinecove/market-stall-11",
+        "prop/brinecove/market-stall-11-soft"
+      ]
+    },
+    "object/brinecove/market-stall-12": {
+      "groups": [
+        "SM_BC_MarketStall12",
+        "SM_BC_MarketStall12_Soft"
+      ],
+      "id": "object/brinecove/market-stall-12",
+      "model": [
+        "prop/brinecove/market-stall-12",
+        "prop/brinecove/market-stall-12-soft"
+      ],
+      "models": [
+        "prop/brinecove/market-stall-12",
+        "prop/brinecove/market-stall-12-soft"
+      ]
+    },
+    "object/brinecove/market-stall-13": {
+      "groups": [
+        "SM_BC_MarketStall13",
+        "SM_BC_MarketStall13_Soft"
+      ],
+      "id": "object/brinecove/market-stall-13",
+      "model": [
+        "prop/brinecove/market-stall-13",
+        "prop/brinecove/market-stall-13-soft"
+      ],
+      "models": [
+        "prop/brinecove/market-stall-13",
+        "prop/brinecove/market-stall-13-soft"
+      ]
+    },
+    "object/brinecove/market-stall-14": {
+      "groups": [
+        "SM_BC_MarketStall14"
+      ],
+      "id": "object/brinecove/market-stall-14",
+      "model": "prop/brinecove/market-stall-14",
+      "models": [
+        "prop/brinecove/market-stall-14"
       ]
     },
     "object/brinecove/market-well": {
