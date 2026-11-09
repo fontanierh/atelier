@@ -251,3 +251,27 @@ def test_the_command_line_parses():
     with pytest.raises(SystemExit) as done:
         market.main(['--help'])
     assert done.value.code == 0
+
+
+def test_a_negative_coordinate_and_its_twin_take_distinct_meshes():
+    """apply.mesh_name drops the minus (town1 saved town-lower-hall--1-2-1 as SM_BC_TownLowerHall121); the twin gets P."""
+    assert market.part_mesh('town-lower-hall--1-2-1', False) == 'SM_BC_TownLowerHall121'
+    assert market.part_mesh('town-lower-hall-1-2-1', False) == 'SM_BC_TownLowerHallP121'
+    assert market.part_mesh('town-lower-hall-1-2-1', True) == 'SM_BC_TownLowerHallP121_Soft'
+    assert market.part_mesh('market-stall-01', False) == 'SM_BC_MarketStall01'
+    names = [market.part_mesh(o, soft) for o in market.ALL_OBJECTS for soft in (False, True)]
+    assert len(names) == len(set(names))
+
+
+def test_a_part_never_takes_another_records_package(tmp_path):
+    import brinecove_split_apply as apply_
+    record = tmp_path / 'assets/prop/brinecove/town-lower-hall--1-2-1/asset.toml'
+    record.parent.mkdir(parents=True)
+    record.write_text('id = "prop/brinecove/town-lower-hall--1-2-1"\n[[outputs]]\n'
+                      'package = "/Game/Brinecove/Meshes/SM_BC_TownLowerHall121"\n')
+    part = {'record': 'prop/brinecove/town-lower-hall-1-2-1', 'package': '/Game/Brinecove/Meshes/SM_BC_TownLowerHall121'}
+    with pytest.raises(apply_.SplitError, match='would overwrite'):
+        market.check_packages(tmp_path, {('town-lower-hall-1-2-1', False): part})
+    with pytest.raises(apply_.SplitError, match='both name the package'):
+        market.check_packages(tmp_path, {1: part, 2: {**part, 'record': 'prop/brinecove/other'}})
+    market.check_packages(tmp_path, {1: {**part, 'record': 'prop/brinecove/town-lower-hall--1-2-1'}})

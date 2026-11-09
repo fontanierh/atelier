@@ -28,6 +28,7 @@ import re
 import json
 import struct
 import sys
+import tomllib
 from collections import defaultdict
 from pathlib import Path
 
@@ -264,6 +265,34 @@ TOWN_LOTS = {
 BATCHES.update({name: tuple(prefix + lot for lot in lots) for name, (prefix, lots) in TOWN_LOTS.items()})
 
 COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper'}
+ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
+
+
+def part_mesh(obj: str, soft: bool) -> str:
+    """The part's mesh name. apply.mesh_name drops a negative coordinate's minus (town-lower-hall--1-2-1 ->
+    SM_BC_TownLowerHall121, saved by town1), so the non-negative twin of a negative object takes a P before its
+    coordinates (town-lower-hall-1-2-1 -> SM_BC_TownLowerHallP121); the two never share a package."""
+    apply_ = _apply()
+    if '--' not in obj and re.sub(r'-(\d)', r'--\1', obj, count=1) in ALL_OBJECTS:
+        return apply_.mesh_name(re.sub(r'-(\d)', r'-p\1', obj, count=1), soft)
+    return apply_.mesh_name(obj, soft)
+
+
+def check_packages(game: Path, parts: dict) -> None:
+    """@cc [owner:fontanierh,label:safety] brinecove-part-package-unique
+    A split part MUST NOT share its package with another part of the plan or with another committed record: an import
+    would overwrite that record's accepted package (town2's hall-1-2-1 overwrote town1's hall--1-2-1)."""
+    apply_ = _apply()
+    seen: dict[str, str] = {}
+    for p in parts.values():
+        if seen.setdefault(p['package'], p['record']) != p['record']:
+            raise apply_.SplitError(f'{p["record"]} and {seen[p["package"]]} both name the package {p["package"]}')
+    for path in sorted((game / 'assets').rglob('asset.toml')):
+        data = tomllib.loads(path.read_text())
+        for output in data.get('outputs', []):
+            owner = seen.get(output['package'])
+            if owner is not None and owner != data['id']:
+                raise apply_.SplitError(f'{owner} would overwrite {data["id"]}\'s package {output["package"]}')
 
 
 def component_of(obj: str) -> str:
@@ -399,7 +428,7 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
                 continue
             merged = split.merge_models([(done['models'][s], done['owned'][s][obj]) for s in stems])
             members = list(range(sum(1 for _ in split.triangles(merged))))
-            name = apply_.mesh_name(obj, soft)
+            name = part_mesh(obj, soft)
             path = stage / 'parts' / f'{name}.glb'
             path.parent.mkdir(parents=True, exist_ok=True)
             used = split.write_subset(merged, members, path)
@@ -425,6 +454,7 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
                                 'slots': [apply_.slot_of(tiles, [stem], m) for m in used]}
         else:
             remainders[stem] = None
+    check_packages(game, parts)
     return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
 
 
