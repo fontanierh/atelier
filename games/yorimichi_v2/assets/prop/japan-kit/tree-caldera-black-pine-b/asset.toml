@@ -1,0 +1,39 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Caldera_BlackPine_B: one Japan mesh, LOD0-LOD3 (10799 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-caldera-black-pine-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-caldera-black-pine-b"
+references = ["adopted/japan/hidamari/tree-caldera-black-pine-b"]
+
+[[sources]]
+path = "src/Tree_Caldera_BlackPine_B.fbx"
+sha256 = "2f92e1413939727f0a05fb5942d31765f9ecb5a1f662897010d59595ba6bbef6"
+
+[[sources]]
+path = "src/Tree_Caldera_BlackPine_B_LOD1.fbx"
+sha256 = "e6609132b968b8c01d2bbfed0e80773bd7e3deaae9b0e24e1c01f2939efc0a29"
+
+[[sources]]
+path = "src/Tree_Caldera_BlackPine_B_LOD2.fbx"
+sha256 = "1cf9fae115e822c7fecae596fb9ca743d3b74a6a9928c3d25f4fdcfaa1b636b5"
+
+[[sources]]
+path = "src/Tree_Caldera_BlackPine_B_LOD3.fbx"
+sha256 = "9de4ddc4d90d8552d21afcd7af6f420f4d3016e727e98cc02b6807fd432fe9ba"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Caldera_BlackPine_B.fbx", 1.0, 10799, [0]], ["src/Tree_Caldera_BlackPine_B_LOD1.fbx", 0.25, 3238, [0]], ["src/Tree_Caldera_BlackPine_B_LOD2.fbx", 0.10000000149011612, 1077, [0]], ["src/Tree_Caldera_BlackPine_B_LOD3.fbx", 0.03999999910593033, 321, [0]]]
+slots = [["Tree_Caldera_BlackPine_B", "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_B"]]
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Caldera_BlackPine_B"

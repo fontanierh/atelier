@@ -6,7 +6,7 @@ id = "object/start/pole-lamp-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w01-start"
-references = ["adopted/japan/assets/pole"]
+references = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/WI/UL4JOXQ7JEC2SI7AZ1E38F"

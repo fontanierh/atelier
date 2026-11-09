@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_bonsai_shelf: a street prop (9684 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/bonsai-shelf"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/bonsai-shelf"
+references = ["adopted/japan/hidamari/prop-bonsai-shelf"]
+
+[[sources]]
+path = "src/HD_P_bonsai_shelf.fbx"
+sha256 = "bd83cf60f10b00be5615669222dbfe0e85c361c304f21d2727a55ca24928d7bc"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_bonsai_shelf"]
+triangles = 9684
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_bonsai_shelf"

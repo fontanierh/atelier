@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_P_crate_desk: a tree house prop (8861 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse-props/crate-desk"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse-props/crate-desk"
+references = ["adopted/japan/treehouse/prop-crate-desk"]
+
+[[sources]]
+path = "src/TH_P_crate_desk.fbx"
+sha256 = "9e24619e90cf2d4acaf6f2d57dfcd63d15805cf5d7396ceb1c2ca621831ea361"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_crate_desk"]
+triangles = 8861
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_P_crate_desk"

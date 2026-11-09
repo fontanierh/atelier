@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-lantern-sign-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-lantern-sign"]
+references = ["prop/hidamari-props/lantern-sign"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/1/C5/F0CJV499B8QWLCHCRESYUY"

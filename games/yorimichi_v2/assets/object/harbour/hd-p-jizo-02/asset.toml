@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-jizo-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-jizo"]
+references = ["prop/hidamari-props/jizo"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/O3/7WVS8JEMWSFXWML7CF6BBE"

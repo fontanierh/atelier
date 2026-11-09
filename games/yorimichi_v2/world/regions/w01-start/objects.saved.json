@@ -3,9 +3,15 @@
     "object/start/house-a-01": {
       "groups": [],
       "id": "object/start/house-a-01",
-      "model": "adopted/japan/assets/house",
+      "model": [
+        "prop/japan-kit/house-a",
+        "prop/japan-kit/house-b",
+        "prop/japan-kit/house-c"
+      ],
       "models": [
-        "adopted/japan/assets/house"
+        "prop/japan-kit/house-a",
+        "prop/japan-kit/house-b",
+        "prop/japan-kit/house-c"
       ],
       "split": {
         "at": [
@@ -48,9 +54,13 @@
     "object/start/pole-01": {
       "groups": [],
       "id": "object/start/pole-01",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [
@@ -63,9 +73,13 @@
     "object/start/pole-02": {
       "groups": [],
       "id": "object/start/pole-02",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [
@@ -78,9 +92,13 @@
     "object/start/pole-03": {
       "groups": [],
       "id": "object/start/pole-03",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [
@@ -93,9 +111,13 @@
     "object/start/pole-lamp-01": {
       "groups": [],
       "id": "object/start/pole-lamp-01",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [
@@ -108,9 +130,13 @@
     "object/start/pole-lamp-02": {
       "groups": [],
       "id": "object/start/pole-lamp-02",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [

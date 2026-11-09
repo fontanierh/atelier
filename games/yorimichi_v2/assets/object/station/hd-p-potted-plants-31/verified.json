@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-potted-plants-31",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-potted-plants": "a0ce091274944240b347bf5366ed39ee5315ba87a2e8e9e4572083970ca86810"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/1G/O1UN0INXOTNPG61OGHZ6CU.uasset": "79ce73d0542a1cc3a51f237e8a9aa2e8df9a1d999b0d83e2987a372c5a14ffad"

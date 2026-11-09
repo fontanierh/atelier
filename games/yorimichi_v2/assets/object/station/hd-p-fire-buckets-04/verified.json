@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-fire-buckets-04",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-fire-buckets": "514c53fbf8d9811ffaf298a54e779664d23c88ae11f71e294bc322e903a7cf5d"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/4U/1RKS2T4N040AHS3CTQBKNT.uasset": "566bd993d9821ae827dc40cfbf87e3e413e6358b04c324e77a69554f7416077a"

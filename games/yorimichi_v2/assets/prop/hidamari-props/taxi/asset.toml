@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_taxi: a street prop (12299 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/taxi"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/taxi"
+references = ["adopted/japan/hidamari/prop-taxi"]
+
+[[sources]]
+path = "src/HD_P_taxi.fbx"
+sha256 = "3ead6836cc7f5c1ee6b991d8891356ef27ea6fea07a40a43cf07944cb215ffeb"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_taxi"]
+triangles = 12299
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_taxi"

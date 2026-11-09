@@ -1,0 +1,43 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Tuscan_Cypress: one Japan mesh, LOD0-LOD4 (4456 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-tuscan-cypress"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-tuscan-cypress"
+references = ["adopted/japan/foliagelods/tree-tuscan-cypress", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-tuscan-cypress"]
+
+[[sources]]
+path = "src/Tree_Tuscan_Cypress.fbx"
+sha256 = "1308d8257215247ca281c627a3e28920d0d281f10705a91f29396bf073792653"
+
+[[sources]]
+path = "src/Tree_Tuscan_Cypress_LOD1.fbx"
+sha256 = "8bd1542202de70eb9d2bbe438100c3f80f7f193b4a0d04ab2360b1c166c96772"
+
+[[sources]]
+path = "src/Tree_Tuscan_Cypress_LOD2.fbx"
+sha256 = "f8800585dac74b80b5387294b704032baa2f996b010189d8d86bd7a189e48f87"
+
+[[sources]]
+path = "src/Tree_Tuscan_Cypress_LOD3.fbx"
+sha256 = "e4189928cf902fc88fa065c06c18f51e565c3243c6185ae4dbea0594e40da260"
+
+[[sources]]
+path = "src/Tree_Tuscan_Cypress_LOD4.fbx"
+sha256 = "8a7581ec587cc78ba5fe833b9eef986855c8b00688005ad6777651ef20850921"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Tuscan_Cypress.fbx", 1.0, 4456, [0, 1]], ["src/Tree_Tuscan_Cypress_LOD1.fbx", 0.23999999463558197, 1266, [0, 1]], ["src/Tree_Tuscan_Cypress_LOD2.fbx", 0.07500000298023224, 376, [0, 1]], ["src/Tree_Tuscan_Cypress_LOD3.fbx", 0.017999999225139618, 14, [2, 0]], ["src/Tree_Tuscan_Cypress_LOD4.fbx", 0.005400000140070915, 12, [3]]]
+slots = [["BarkTuscan", "/Game/Japan/Materials/MI_BarkTuscan"], ["LeafCypress", "/Game/Japan/Materials/MI_LeafCypress"], ["Tree_Tuscan_Cypress_Impostor", "/Game/Japan/Materials/MI_Tree_Tuscan_Cypress_Impostor"], ["Tree_Tuscan_Cypress_Crown", "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Cypress_Crown"]]
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Tuscan_Cypress"

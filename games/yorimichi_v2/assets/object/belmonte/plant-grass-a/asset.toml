@@ -6,7 +6,7 @@ id = "object/belmonte/plant-grass-a"
 kind = "placement"
 authority = "editor"
 owner = "region/w16-belmonte"
-references = ["adopted/japan/assets/grass"]
+references = ["prop/japan-kit/grass-a", "prop/japan-kit/grass-b"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/AH/94CTJ8U5HSM3E644WCR9A4"

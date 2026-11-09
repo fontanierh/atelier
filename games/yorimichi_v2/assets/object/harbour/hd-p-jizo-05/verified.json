@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-jizo-05",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-jizo": "c172bcc53731d64ef1fcdce3eaef00f84dc3a2128694acd5087aaee57479f655"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/RX/RRYJZ9L7EG44061662Y040.uasset": "462e2d93f875217470ed82a144efaa7a348dbd6892fa38da76b345da6c55faf8"

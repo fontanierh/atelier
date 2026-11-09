@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/bonsai-shelf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_bonsai_shelf.uasset": "58c8db34252989890346a78c27c88ecda88133041abd4b4f72d04e40cb532e7b"
+  },
+  "input_fingerprint": "6e488c6be27002e8aa262972999ef6bfd9456697cf1776ecda4cf365763f6e03",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_bonsai_shelf": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

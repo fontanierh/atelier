@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_drink_crates: a street prop (12352 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/drink-crates"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/drink-crates"
+references = ["adopted/japan/hidamari/prop-drink-crates"]
+
+[[sources]]
+path = "src/HD_P_drink_crates.fbx"
+sha256 = "48890d24c21172790729edce5561a7a0e8cdbce3ef54c80a86348dea3b68cb2e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_drink_crates"]
+triangles = 12352
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_drink_crates"

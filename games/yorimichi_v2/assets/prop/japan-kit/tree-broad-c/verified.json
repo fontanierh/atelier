@@ -1,0 +1,54 @@
+{
+  "asset": "prop/japan-kit/tree-broad-c",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Broad_C.uasset": "a791380d7a02e369010d146935bccda7ac0efb39cabf2fc3cd629f53e78b82ab"
+  },
+  "input_fingerprint": "c19805a2accde0107747deb5c3fa9ece1fb541fb9671733c402f2c246c6198cd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Broad_C": {
+      "after": {
+        "count": 6,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.2199999988079071,
+          0.09000000357627869,
+          0.03500000014901161,
+          0.012000000104308128,
+          0.003599999938160181
+        ]
+      },
+      "before": {
+        "count": 6,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.2199999988079071,
+          0.09000000357627869,
+          0.03500000014901161,
+          0.012000000104308128,
+          0.003599999938160181
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

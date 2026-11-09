@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_bus_stop: a street prop (9855 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/bus-stop"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/bus-stop"
+references = ["adopted/japan/hidamari/prop-bus-stop"]
+
+[[sources]]
+path = "src/HD_P_bus_stop.fbx"
+sha256 = "6fde110cb4a990124710f1f06556a02c50152e87373089be770df115e4d0a897"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop"]
+triangles = 9855
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_bus_stop"

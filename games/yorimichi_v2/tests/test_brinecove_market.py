@@ -253,6 +253,35 @@ def test_the_command_line_parses():
     assert done.value.code == 0
 
 
+def test_retire_writes_under_the_scopes_it_authorized(monkeypatch, tmp_path):
+    """The shared execute takes the authorized scopes (keyword-only); a retire without them is a TypeError."""
+    import brinecove_split_apply as apply_
+    monkeypatch.setattr(apply_, 'EXPECTED', apply_.EXPECTED)   # set_batch points it at the batch; restore after
+    calls = {}
+    monkeypatch.setattr(market, 'check', lambda *a, **k: [])
+    monkeypatch.setattr(market, 'retire_compute', lambda *a, **k: {'writes': {}, 'deletes': []})
+    monkeypatch.setattr(market, 'retire_touched', lambda *a, **k: {'paths': ['p'], 'scopes': ['region/w09-brinecove']})
+    monkeypatch.setattr(market, 'affected_placements', lambda *a, **k: [])
+    monkeypatch.setattr(apply_, 'require_applied_plan', lambda game, plan: calls.setdefault('applied', plan))
+    monkeypatch.setattr(apply_.authority, 'authorize', lambda paths, claim, what, scopes: calls.setdefault('auth', scopes))
+    monkeypatch.setattr(apply_, 'execute', lambda game, ops, *, scopes, lockable=None: calls.setdefault('scopes', scopes))
+    for stage in ('groups', 'records'):
+        calls.clear()
+        market.retire(tmp_path, {}, 'TASK', 'market1', stage, echo=lambda *_: None)
+        assert calls['scopes'] == calls['auth'] == ['region/w09-brinecove'] and calls['applied'] == {}
+
+
+def test_retire_refuses_a_plan_that_is_not_the_applied_batch(monkeypatch, tmp_path):
+    """A batch name reused with another --only selection must not retire tiles whose replacements were never imported."""
+    import brinecove_split_apply as apply_
+    monkeypatch.setattr(apply_, 'EXPECTED', apply_.EXPECTED)   # set_batch points it at the batch; restore after
+    monkeypatch.setattr(market, 'check', lambda *a, **k: [])
+    monkeypatch.setattr(apply_, 'execute', lambda *a, **k: pytest.fail('retire wrote without the applied plan'))
+    with pytest.raises(apply_.SplitError, match='differs from the applied selection'):
+        market.retire(tmp_path, {'parts': {}, 'tiles': {}, 'selection': ['market-stall-01']}, 'TASK', 'market1',
+                      echo=lambda *_: None)
+
+
 def test_a_negative_coordinate_and_its_twin_take_distinct_meshes():
     """apply.mesh_name drops the minus (town1 saved town-lower-hall--1-2-1 as SM_BC_TownLowerHall121); the twin gets P."""
     assert market.part_mesh('town-lower-hall--1-2-1', False) == 'SM_BC_TownLowerHall121'

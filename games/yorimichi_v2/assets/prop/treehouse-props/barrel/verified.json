@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse-props/barrel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/TH_P_barrel.uasset": "36d1a65d5a234c580ef85e4cc2590bba56535f5b44c01bea97cf3c6aca042d28"
+  },
+  "input_fingerprint": "e53a27f999d1527563df53a582a8f04870449c697a7d86220cb77b80ccae8510",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/TH_P_barrel": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

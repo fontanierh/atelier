@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Canopy_Amber: one Japan mesh (2544 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-canopy-amber"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-canopy-amber"
+references = ["adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Canopy_Amber.fbx"
+sha256 = "0916ad791e10fb1dc7da42cd513da51198852d06abea7918a99ac4d128bc43e3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Bark = "/Game/Japan/Materials/MI_Bark", LeafMaple = "/Game/Japan/Materials/MI_LeafAmber"}
+triangles = 2544
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Canopy_Amber"

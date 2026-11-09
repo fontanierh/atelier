@@ -6,7 +6,7 @@ id = "object/station/hd-p-garbage-station-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-garbage-station"]
+references = ["prop/hidamari-props/garbage-station"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/8X/RSOVTNRGHZMVJNLO96AKHX"

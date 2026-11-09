@@ -7,49 +7,49 @@ data = ""
 [[objects]]
 id = "object/village/house-lot-4"
 patch = "005f88bf938b6a0c"
-model = "adopted/japan/assets/houselot"
+model = ["prop/japan-kit/house-lot-1", "prop/japan-kit/house-lot-2", "prop/japan-kit/house-lot-3", "prop/japan-kit/house-lot-4", "prop/japan-kit/house-lot-5"]
 about = "the lot (grounds) of the fourth road house"
 
 [[objects]]
 id = "object/village/house-lot-5"
 patch = "d9afdc6ddce929ec"
-model = "adopted/japan/assets/houselot"
+model = ["prop/japan-kit/house-lot-1", "prop/japan-kit/house-lot-2", "prop/japan-kit/house-lot-3", "prop/japan-kit/house-lot-4", "prop/japan-kit/house-lot-5"]
 about = "the lot (grounds) of the fifth road house"
 
 [[objects]]
 id = "object/village/cottage-a"
 patch = "dc5c30ab83ed96db"
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/cottage-a"
 about = "Momiji Hamlet cottage A"
 
 [[objects]]
 id = "object/village/cottage-b"
 patch = "3004f4ef16d5840a"
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/cottage-b"
 about = "Momiji Hamlet cottage B"
 
 [[objects]]
 id = "object/village/garden"
 patch = "4364f64e7888ef22"
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/garden"
 about = "the hamlet garden"
 
 [[objects]]
 id = "object/village/storehouse"
 patch = "05ed3a01c13d434b"
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/storehouse"
 about = "the hamlet storehouse"
 
 [[objects]]
 id = "object/village/tea-house"
 patch = "68d16654e783a526"
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/tea-house"
 about = "the hamlet tea house"
 
 [[objects]]
 id = "object/village/workshop"
 patch = "5a6894dee105d020"
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/workshop"
 about = "the hamlet workshop"
 
 # Split entries: each takes one placed instance (source metres, within 50 cm) out of the area patches.
@@ -57,13 +57,13 @@ about = "the hamlet workshop"
 [[objects]]
 id = "object/village/house-a-01"
 split = {key = "House_A", at = [26.26, -55.58]}
-model = "adopted/japan/assets/house"
+model = ["prop/japan-kit/house-a", "prop/japan-kit/house-b", "prop/japan-kit/house-c"]
 about = "House_A 1 of 1 in w02-village, placed at (26.26, -55.58) m"
 
 [[objects]]
 id = "object/village/house-c-01"
 split = {key = "House_C", at = [47.76, -19.02]}
-model = "adopted/japan/assets/house"
+model = ["prop/japan-kit/house-a", "prop/japan-kit/house-b", "prop/japan-kit/house-c"]
 about = "House_C 1 of 1 in w02-village, placed at (47.76, -19.02) m"
 
 [[objects]]
@@ -93,78 +93,78 @@ about = "Lantern 4 of 4 in w02-village, placed at (189.99, 77.55) m"
 [[objects]]
 id = "object/village/pole-01"
 split = {key = "Pole", at = [35.3, -33.01]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 1 of 6 in w02-village, placed at (35.3, -33.01) m"
 
 [[objects]]
 id = "object/village/pole-02"
 split = {key = "Pole", at = [64.93, -26.51]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 2 of 6 in w02-village, placed at (64.93, -26.51) m"
 
 [[objects]]
 id = "object/village/pole-03"
 split = {key = "Pole", at = [124.74, -21.6]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 3 of 6 in w02-village, placed at (124.74, -21.6) m"
 
 [[objects]]
 id = "object/village/pole-04"
 split = {key = "Pole", at = [153.21, -14.45]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 4 of 6 in w02-village, placed at (153.21, -14.45) m"
 
 [[objects]]
 id = "object/village/pole-05"
 split = {key = "Pole", at = [207.14, 9.04]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 5 of 6 in w02-village, placed at (207.14, 9.04) m"
 
 [[objects]]
 id = "object/village/pole-06"
 split = {key = "Pole", at = [232.28, 25.21]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 6 of 6 in w02-village, placed at (232.28, 25.21) m"
 
 [[objects]]
 id = "object/village/pole-lamp-01"
 split = {key = "Pole_Lamp", at = [6.21, -41.77]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 1 of 3 in w02-village, placed at (6.21, -41.77) m"
 
 [[objects]]
 id = "object/village/pole-lamp-02"
 split = {key = "Pole_Lamp", at = [95.38, -23.65]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 2 of 3 in w02-village, placed at (95.38, -23.65) m"
 
 [[objects]]
 id = "object/village/pole-lamp-03"
 split = {key = "Pole_Lamp", at = [180.98, -4.26]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 3 of 3 in w02-village, placed at (180.98, -4.26) m"
 
 [[objects]]
 id = "object/village/torii-01"
 split = {key = "Torii", at = [186, 79]}
-model = "adopted/japan/assets/torii"
+model = "prop/japan-kit/torii"
 about = "Torii 1 of 1 in w02-village, placed at (186, 79) m"
 
 [[objects]]
 id = "object/village/village-sign-01"
 split = {key = "Village_Sign", at = [90.1, -22.4]}
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/sign"
 about = "Village_Sign 1 of 2 in w02-village, placed at (90.1, -22.4) m"
 
 [[objects]]
 id = "object/village/village-sign-02"
 split = {key = "Village_Sign", at = [118, 106]}
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/sign"
 about = "Village_Sign 2 of 2 in w02-village, placed at (118, 106) m"
 
 [[objects]]
 id = "object/village/village-threshold-01"
 split = {key = "Village_Threshold", at = [125.803, 107.863]}
-model = "adopted/experiments/villageatomic"
+model = "prop/villageatomic/threshold"
 about = "Village_Threshold 1 of 1 in w02-village, placed at (125.803, 107.863) m"
 

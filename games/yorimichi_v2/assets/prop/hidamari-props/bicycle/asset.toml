@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_bicycle: a street prop (12154 triangles, 0 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/bicycle"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/bicycle"
+references = ["adopted/japan/hidamari/prop-bicycle"]
+
+[[sources]]
+path = "src/HD_P_bicycle.fbx"
+sha256 = "245c696f2fce75c95499a206624a228629ae8b1caa3c55219db220f6c4bdd585"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle"]
+triangles = 12154
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_bicycle"

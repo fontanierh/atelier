@@ -409,7 +409,7 @@ def compute(game: Path, plan: dict, retire: bool = False) -> dict:
 
 def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False, lockable=apply.lockable_present,
              echo=print) -> dict:
-    recovered = apply.Journal(game).restore()
+    recovered = apply.Journal(game).recover(claim)    # authorizes the journal's own paths and scopes first
     if recovered:
         echo(f'restored {len(recovered)} file(s) from an interrupted run')
     ops = compute(game, plan, retire)
@@ -419,7 +419,7 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
                                   scopes=info['scopes'])
     except apply.authority.Unauthorized as error:
         raise SplitError(str(error)) from None
-    return apply.execute(game, ops, lockable=lockable)
+    return apply.execute(game, ops, scopes=info['scopes'], lockable=lockable)
 
 
 # --- check -------------------------------------------------------------------------------------------------------------

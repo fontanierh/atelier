@@ -1,8 +1,6 @@
 {
   "asset": "object/lake/telescope",
-  "dependencies": {
-    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/2U/097BDTUIJCER4LQ1A5SYNL.uasset": "fbc589090271d82b03d411b0b8a34602cc102b6e927e595e2afcb6d5c421d43c"

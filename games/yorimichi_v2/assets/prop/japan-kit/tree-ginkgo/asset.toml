@@ -1,0 +1,46 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Ginkgo: one Japan mesh, LOD0-LOD5 (3682 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-ginkgo"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-ginkgo"
+references = ["adopted/japan/foliagelods/tree-ginkgo", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Ginkgo.fbx"
+sha256 = "3d96a417c0e21fa20fa6aed63d8d6861a29cda6acedbf19d2a3f6b8b531a6892"
+
+[[sources]]
+path = "src/Tree_Ginkgo_LOD1.fbx"
+sha256 = "6b928bb8f6cdc958e8f02cbc43473862c52c8fcfd0a0015dfc9610c1a6956a4b"
+
+[[sources]]
+path = "src/Tree_Ginkgo_LOD2.fbx"
+sha256 = "c1e867897018535615438c360a611237b5c1cbcf5a2c41c0b24b7792ff07f046"
+
+[[sources]]
+path = "src/Tree_Ginkgo_LOD3.fbx"
+sha256 = "e2eae386f377ca5cb85632a935194f1b8fed1ebaf18bfe44cd8411a441b78592"
+
+[[sources]]
+path = "src/Tree_Ginkgo_LOD4.fbx"
+sha256 = "b12c01763bcd3e4980818573c76b1339fc6c2d01308bf56ed39daac29dd26908"
+
+[[sources]]
+path = "src/Tree_Ginkgo_LOD5.fbx"
+sha256 = "25d2f12b7468c2ee64706703e003ffe24429376f9ef166543ef0ae59c0b60468"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Ginkgo.fbx", 1.0, 3682, [0, 1]], ["src/Tree_Ginkgo_LOD1.fbx", 0.2199999988079071, 1264, [0, 1]], ["src/Tree_Ginkgo_LOD2.fbx", 0.09000000357627869, 390, [0, 1]], ["src/Tree_Ginkgo_LOD3.fbx", 0.03500000014901161, 138, [0, 1]], ["src/Tree_Ginkgo_LOD4.fbx", 0.012000000104308128, 76, [0, 1]], ["src/Tree_Ginkgo_LOD5.fbx", 0.003599999938160181, 12, [2]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafGinkgo", "/Game/Japan/Materials/MI_LeafGinkgo"], ["Tree_Ginkgo_Crown", "/Game/Japan/FoliageLODs/Tree_Ginkgo/MI_Tree_Ginkgo_Crown"]]
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Ginkgo"

@@ -3,9 +3,9 @@
     "object/swordcamp/bales": {
       "groups": [],
       "id": "object/swordcamp/bales",
-      "model": "adopted/swordcamp/assets",
+      "model": "prop/swordcamp/camp-bales",
       "models": [
-        "adopted/swordcamp/assets"
+        "prop/swordcamp/camp-bales"
       ],
       "static": [
         "SM_CampBales"
@@ -14,9 +14,9 @@
     "object/swordcamp/fire-pit": {
       "groups": [],
       "id": "object/swordcamp/fire-pit",
-      "model": "adopted/swordcamp/assets",
+      "model": "prop/swordcamp/camp-fire-pit",
       "models": [
-        "adopted/swordcamp/assets"
+        "prop/swordcamp/camp-fire-pit"
       ],
       "static": [
         "SM_CampFirePit"
@@ -25,9 +25,9 @@
     "object/swordcamp/jinmaku": {
       "groups": [],
       "id": "object/swordcamp/jinmaku",
-      "model": "adopted/swordcamp/assets",
+      "model": "prop/swordcamp/camp-jinmaku",
       "models": [
-        "adopted/swordcamp/assets"
+        "prop/swordcamp/camp-jinmaku"
       ],
       "static": [
         "SM_CampJinmaku"
@@ -36,9 +36,9 @@
     "object/swordcamp/weapon-rack": {
       "groups": [],
       "id": "object/swordcamp/weapon-rack",
-      "model": "adopted/swordcamp/assets",
+      "model": "prop/swordcamp/camp-weapon-rack",
       "models": [
-        "adopted/swordcamp/assets"
+        "prop/swordcamp/camp-weapon-rack"
       ],
       "static": [
         "SM_CampWeaponRack"

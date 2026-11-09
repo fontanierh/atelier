@@ -6,7 +6,7 @@ id = "object/station/hd-p-street-bench-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-street-bench"]
+references = ["prop/hidamari-props/street-bench"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/A3/K66WUTUMWP8WLEWNVQ51WC"

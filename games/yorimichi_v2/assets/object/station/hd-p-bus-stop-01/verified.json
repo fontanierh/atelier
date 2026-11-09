@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-bus-stop-01",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-bus-stop": "dc35b704a1826642bbfbe4435dda42c6e64e11880ce5cc901edcc9b4f285b3ba"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/PA/TXCVVZD33TE132DU4R848O.uasset": "c3e3092c5e6b9ac4db4309581777ba04ce7c7796494f6b838fe17d05018f17dc"

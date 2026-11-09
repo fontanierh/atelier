@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_lantern_sign: a street prop (12084 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/lantern-sign"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/lantern-sign"
+references = ["adopted/japan/hidamari/prop-lantern-sign"]
+
+[[sources]]
+path = "src/HD_P_lantern_sign.fbx"
+sha256 = "bb5515f15ffc088042f2cd5e9acdbc54ee76b46f10d5c1fade5707fa9bbf8eab"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_lantern_sign"]
+triangles = 12084
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_lantern_sign"

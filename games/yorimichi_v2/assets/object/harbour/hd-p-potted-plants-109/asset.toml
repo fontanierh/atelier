@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-potted-plants-109"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-potted-plants"]
+references = ["prop/hidamari-props/potted-plants"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/BW/5C5Q2UGZW6TTXPEWJAVEWV"

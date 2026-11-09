@@ -1,8 +1,6 @@
 {
   "asset": "object/belmonte/plant-tree-tuscan-cypress",
-  "dependencies": {
-    "adopted/japan/assets/tree-tuscan": "5e2ce7d9c39eb80b9ad591116c41b5a5243e1758aebb96b8a87801fcfd7e3f65"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/UA/AV17RZKVHT6UD2F0SPFFS5.uasset": "30b23c178857494a1a6cd68db71e6f1c0891d255c9e2608a029977474e20c821"

@@ -6,7 +6,7 @@ id = "object/station/hd-p-fire-buckets-05"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-fire-buckets"]
+references = ["prop/hidamari-props/fire-buckets"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/2H/7HP7HJJR20B07V47QP46BW"

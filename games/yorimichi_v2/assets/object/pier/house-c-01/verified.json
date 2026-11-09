@@ -1,8 +1,6 @@
 {
   "asset": "object/pier/house-c-01",
-  "dependencies": {
-    "adopted/japan/assets/house": "4ab7372e7dafec6053758a946133d1d7d94480168a902e281565c1b86720ee43"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/B5/JQ5Z2ISB193636QHFM28AR.uasset": "c64560cda5fe41e09d7e808e540c44ed7c2097eb62d1cf929db4905ec9f80d19"

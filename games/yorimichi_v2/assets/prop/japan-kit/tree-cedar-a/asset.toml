@@ -1,0 +1,47 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Cedar_A: one Japan mesh, LOD0-LOD5 (3656 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-cedar-a"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-cedar-a"
+references = ["adopted/japan/foliagelods/tree-cedar-a", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Cedar_A.fbx"
+sha256 = "ea034d2474c3fe32dbced2ba17ae88c43921fe1c5f3556d15241cd618e7f457a"
+
+[[sources]]
+path = "src/Tree_Cedar_A_LOD1.fbx"
+sha256 = "ada32341bb1e86b29741fdf1d5514c12ea24558af879d00fec831303b7de14c3"
+
+[[sources]]
+path = "src/Tree_Cedar_A_LOD2.fbx"
+sha256 = "8033a30eabd2c701587f8de94bb92bc049646c94acc7554277ad6a5535d64b7e"
+
+[[sources]]
+path = "src/Tree_Cedar_A_LOD3.fbx"
+sha256 = "8e27de60c03c7f2950b1651220ab26a89716bfef414861cfb71127e389510cf2"
+
+[[sources]]
+path = "src/Tree_Cedar_A_LOD4.fbx"
+sha256 = "1d0f13760dbfd1b7db06fac289add49e05cc86b32275281dacd302be5a9dfdcd"
+
+[[sources]]
+path = "src/Tree_Cedar_A_LOD5.fbx"
+sha256 = "62a5bf0c4bf426ad9de0f5bd48e8d402090f6b0e5a02787017f3e7d17b395508"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Cedar_A.fbx", 1.0, 3656, [0, 1]], ["src/Tree_Cedar_A_LOD1.fbx", 0.18000000715255737, 1254, [0, 1]], ["src/Tree_Cedar_A_LOD2.fbx", 0.07000000029802322, 444, [0, 1]], ["src/Tree_Cedar_A_LOD3.fbx", 0.02500000037252903, 232, [0, 1]], ["src/Tree_Cedar_A_LOD4.fbx", 0.012000000104308128, 120, [0, 1]], ["src/Tree_Cedar_A_LOD5.fbx", 0.003599999938160181, 12, [2]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafCedar", "/Game/Japan/Materials/MI_LeafCedar"], ["Tree_Cedar_A_Crown", "/Game/Japan/FoliageLODs/Tree_Cedar_A/MI_Tree_Cedar_A_Crown"]]
+collision = "complex"
+double_sided = false
+collision_trace = "CTF_USE_COMPLEX_AS_SIMPLE"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Cedar_A"

@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_tanuki: a street prop (11662 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/tanuki"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/tanuki"
+references = ["adopted/japan/hidamari/prop-tanuki"]
+
+[[sources]]
+path = "src/HD_P_tanuki.fbx"
+sha256 = "7cc68a02eeac53503c8843a084bfc6f821de159e174f27a75cfe250209a5e907"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_tanuki"]
+triangles = 11662
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_tanuki"

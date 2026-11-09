@@ -1,0 +1,34 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_Green_B: one Japan mesh, LOD0-LOD2 (220 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/bush-green-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/bush-green-b"
+references = ["adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Bush_Green_B.fbx"
+sha256 = "8b411698eec169369def9a8249f08e106d7b31cd21c1f7f796c2e6cc85e5f2c0"
+
+[[sources]]
+path = "src/Bush_Green_B_LOD1.fbx"
+sha256 = "f3b3372a4a47d0ff3347f8380f1298f7e02f278fe62c7cf4618c642972efcde8"
+
+[[sources]]
+path = "src/Bush_Green_B_LOD2.fbx"
+sha256 = "c1399700799d6b12db47334289a1804895071015ab46ad8b70348792d2d2d0de"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Bush_Green_B.fbx", 1.0, 220, [0]], ["src/Bush_Green_B_LOD1.fbx", 0.07999999821186066, 74, [0]], ["src/Bush_Green_B_LOD2.fbx", 0.02500000037252903, 28, [0]]]
+slots = [["LeafSmall", "/Game/Japan/Materials/MI_LeafSmall"]]
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Bush_Green_B"

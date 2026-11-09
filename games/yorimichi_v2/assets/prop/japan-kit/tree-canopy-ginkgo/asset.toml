@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Canopy_Ginkgo: one Japan mesh (2344 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-canopy-ginkgo"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-canopy-ginkgo"
+references = ["adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Canopy_Ginkgo.fbx"
+sha256 = "ccbc6b37728f9a8c67b02127542c5535f59b655e8d31bedb185a54f056855369"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Bark = "/Game/Japan/Materials/MI_Bark", LeafMaple = "/Game/Japan/Materials/MI_LeafGinkgo"}
+triangles = 2344
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Canopy_Ginkgo"

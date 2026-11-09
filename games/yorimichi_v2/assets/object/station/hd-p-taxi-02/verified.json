@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-taxi-02",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-taxi": "492e91698ed4b7ca9f6e9a185bc624dd69698d625b67bec02ac28af9ac5a65b7"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/XM/WK2PANFGT7EXD8FPZ5BR2F.uasset": "0ce4c2913cf029bc37b92e2e71dd9d3cab5b60e0d03b061a3ffc10a7c535fc36"

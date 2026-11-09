@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/house-lot-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HouseLot_1.uasset": "cbb115d56089dfe57a71d38fca46e96bf7f58426bb9e876ce01a1c28ba69c5f1"
+  },
+  "input_fingerprint": "eba9984e389f21b506548a5b4a48d586c9bb6fa2b79e021898a89d6dcd0f6ff7",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HouseLot_1": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

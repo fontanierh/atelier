@@ -1,0 +1,43 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Tuscan_Pine: one Japan mesh, LOD0-LOD4 (4480 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-tuscan-pine"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-tuscan-pine"
+references = ["adopted/japan/foliagelods/tree-tuscan-pine", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-tuscan-pine"]
+
+[[sources]]
+path = "src/Tree_Tuscan_Pine.fbx"
+sha256 = "827ebfa55c460d23d9fdb168d58f4511d1c658bc6cbcee6cba4239c961f9fd09"
+
+[[sources]]
+path = "src/Tree_Tuscan_Pine_LOD1.fbx"
+sha256 = "72e83fc16719875104ca9c33a1d9e073351727b6f080fbd3969c7a46ce36c899"
+
+[[sources]]
+path = "src/Tree_Tuscan_Pine_LOD2.fbx"
+sha256 = "28383fa321ce652d726867750099d7d0a35de3d5ca594612eabd25f6cad0e5ea"
+
+[[sources]]
+path = "src/Tree_Tuscan_Pine_LOD3.fbx"
+sha256 = "e2bd9115f59b3ded0fe21ad090f79755e5bce77923bc5f41dea7b912a9f9d410"
+
+[[sources]]
+path = "src/Tree_Tuscan_Pine_LOD4.fbx"
+sha256 = "03c2d2d54cef39cf90d2caee01dee39c10c15d2bde2de821e1515f7b56b11854"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Tuscan_Pine.fbx", 1.0, 4480, [0, 1]], ["src/Tree_Tuscan_Pine_LOD1.fbx", 0.23999999463558197, 1298, [0, 1]], ["src/Tree_Tuscan_Pine_LOD2.fbx", 0.07500000298023224, 372, [0, 1]], ["src/Tree_Tuscan_Pine_LOD3.fbx", 0.017999999225139618, 14, [2, 0]], ["src/Tree_Tuscan_Pine_LOD4.fbx", 0.005400000140070915, 12, [3]]]
+slots = [["BarkTuscan", "/Game/Japan/Materials/MI_BarkTuscan"], ["LeafStonePine", "/Game/Japan/Materials/MI_LeafStonePine"], ["Tree_Tuscan_Pine_Impostor", "/Game/Japan/Materials/MI_Tree_Tuscan_Pine_Impostor"], ["Tree_Tuscan_Pine_Crown", "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Pine_Crown"]]
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Tuscan_Pine"

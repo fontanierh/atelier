@@ -22,7 +22,11 @@ generated part follows them after the marker line, and a rerun replaces only wha
 A group is not saved, and is listed in the generated comments with its reason, when:
 - `outside`: no instance lies inside the district (non-plant groups), or none survives the clearance (plant groups): the
   runtime draws none and MigrateRegionGroups refuses it.
-- `no record`: no adopted record owns its mesh.
+- `no record`: no record owns its mesh, or no saved object names the recovered record that does.
+
+A recovery (tools/migrate/recover.py) replaces an adopted record with records made from the donor sources; its mesh then
+belongs to the new record, and the unit stays the one the region's saved object took (the placement record
+object/<region>/<unit> that names the new record), so a recovery never renames a saved object.
 """
 from __future__ import annotations
 
@@ -87,15 +91,34 @@ def split_piece(key: str) -> tuple[str, tuple[int, int]] | None:
 
 
 def package_records(game: Path) -> dict[str, list[str]]:
-    """{package path: the adopted record ids whose outputs list it}."""
+    """{package path: the record ids whose outputs list it}: adopted records, and the records a recovery made from donor
+    sources in their place. Placements (actor packages) own no mesh."""
     owners: dict[str, list[str]] = collections.defaultdict(list)
     for path in sorted((game / 'assets').rglob('asset.toml')):
         data = tomllib.loads(path.read_text())
-        if data.get('kind') != 'adopted':
+        if data.get('kind') == 'placement':
             continue
         for output in data.get('outputs', []):
             owners[output['package']].append(data['id'])
     return owners
+
+
+def saved_units(game: Path) -> dict[str, dict[str, set[str]]]:
+    """{region tag: {model record id: the units of the region's saved objects (object/<tag>/<unit>) whose saved
+    definition (objects.saved.json) names it as a model}}."""
+    units: dict[str, dict[str, set[str]]] = {}
+    for tag in REGIONS:
+        units[tag] = collections.defaultdict(set)
+        path = region_folder(tag, game) / 'objects.saved.json'
+        saved = json.loads(path.read_text())['objects'] if path.is_file() else {}
+        for oid, item in saved.items():
+            prefix = f'object/{tag}/'
+            if not oid.startswith(prefix):
+                continue
+            models = item.get('models') or ([item['model']] if isinstance(item.get('model'), str) else item.get('model', []))
+            for model in models:
+                units[tag][model].add(oid[len(prefix):])
+    return units
 
 
 def covered_groups(text: str) -> set[str]:
@@ -168,6 +191,21 @@ def unit_of(record: str) -> str:
     return record.split('/', 2)[2]
 
 
+def record_unit(tag: str, key: str, record: str, units: dict[str, set[str]] | None,
+                taken: set[str] = frozenset()) -> str | None:
+    """An adopted record's own unit, or the one saved object unit that names a recovered record (None: no saved object
+    names it yet; the split that made it gives it one)."""
+    if record.startswith('adopted/'):
+        return unit_of(record)
+    # A unit classify suffixed with -planting (its base id is taken by the region's own objects) folds back to the base.
+    named = sorted({unit.removesuffix('-planting') if f'object/{tag}/{unit.removesuffix("-planting")}' in taken else unit
+                    for unit in (units or {}).get(record, ())})
+    if len(named) > 1:
+        raise TownError(f'{tag}: {key} is owned by {record}, which saved objects {named} of {tag} all name; a recovered '
+                        'record must keep the one unit its saved object took')
+    return named[0] if named else None
+
+
 def kebab(name: str) -> str:
     return name.lower().replace('_', '-')
 
@@ -179,11 +217,12 @@ def cell_label(cell: tuple[int, int]) -> str:
 
 
 def classify(tag: str, data: dict, covered: set[str], owners: dict[str, list[str]], taken: set[str] = frozenset(),
-             segments: list | None = None) -> dict:
+             segments: list | None = None, saved: dict[str, set[str]] | None = None) -> dict:
     """Sort every group the region's objects do not already save into object units, or a reason not to save it.
 
     `taken` holds the object ids the region already has: a unit whose id is taken (the lighthouse's planting, kept apart
-    from the lighthouse object as its objects.toml says) takes the suffix `-planting`. Returns {'units': {unit: [(key,
+    from the lighthouse object as its objects.toml says) takes the suffix `-planting`. `saved` ({record id: units},
+    saved_units) names the unit of a recovered record. Returns {'units': {unit: [(key,
     record ids, instances)]}, 'blocked': {reason: [(key, detail)]}, 'handled': the keys accounted for, 'covered': int,
     'instances': int}; a plant group cut into pieces is handled through its pieces."""
     keys = group_keys(data)
@@ -208,13 +247,13 @@ def classify(tag: str, data: dict, covered: set[str], owners: dict[str, list[str
             continue
         package = entry['asset'].rsplit('.', 1)[0]
         adopted = sorted(owners.get(package, []))
-        if not adopted:
+        # A plant group keeps its own family unit; any other group its record unit (one building, tile or family).
+        whole_unit = adopted and (f'plant-{kebab(mesh_name(entry))}' if entry['plant'] else
+                                  record_unit(tag, key, adopted[0], saved, taken))
+        if not whole_unit:
             blocked['no record'].append((key, package))
             handled.add(key)
             continue
-        base_unit = unit_of(adopted[0])
-        # A plant group keeps its own family unit; any other group its record unit (one building, tile or family).
-        whole_unit = f'plant-{kebab(mesh_name(entry))}' if entry['plant'] else base_unit
         cells = kept_cells(data, entry, segments)
         total = sum(cells.values())
         if total == 0:
@@ -277,9 +316,10 @@ def split_head(text: str) -> str:
     return head if found else (text if text.endswith('\n') else text + '\n')
 
 
-def render(tag: str, head: str, data: dict, owners: dict[str, list[str]]) -> tuple[str, dict]:
+def render(tag: str, head: str, data: dict, owners: dict[str, list[str]],
+           units: dict[str, set[str]] | None = None) -> tuple[str, dict]:
     taken = {item['id'] for item in tomllib.loads(head).get('objects', [])}
-    result = classify(tag, data, covered_groups(head), owners, taken)
+    result = classify(tag, data, covered_groups(head), owners, taken, saved=units)
     return head + generated_text(tag, result), result
 
 
@@ -321,14 +361,14 @@ def main(argv=None) -> int:
     parser.add_argument('--check', action='store_true', help='exit 1 when the files differ from the generated text')
     parser.add_argument('--region', action='append', choices=sorted(REGIONS), help='only this region (repeatable)')
     args = parser.parse_args(argv)
-    owners = package_records(GAME)
+    owners, units = package_records(GAME), saved_units(GAME)
     stale = []
     for tag in args.region or sorted(REGIONS):
         path = region_folder(tag) / 'objects.toml'
         current = path.read_text()
         head = split_head(current)
         data = json.loads(runtime_path(tag).read_text())
-        text, result = render(tag, head, data, owners)
+        text, result = render(tag, head, data, owners, units[tag])
         check_result(tag, data, result, head)
         count = sum(len(m) for m in result['units'].values())
         pieces = sum(1 for m in result['units'].values() for key, _, _ in m if '@' in key)

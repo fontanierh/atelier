@@ -1,8 +1,6 @@
 {
   "asset": "object/belmonte/plant-tree-forest-maple",
-  "dependencies": {
-    "adopted/japan/assets/tree-forest": "f406209899b88716201c2f8f723885c21cad852d67994b3a2d8fced2f7e16ef7"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/C4/FKN5SAAUETFLHX9GRSG91G.uasset": "bdce3b4a15ba3faba1151375fe4e5660133518cf3483bfd9cb87f5285505a3db"

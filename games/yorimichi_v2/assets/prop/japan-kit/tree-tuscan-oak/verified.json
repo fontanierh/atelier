@@ -1,0 +1,50 @@
+{
+  "asset": "prop/japan-kit/tree-tuscan-oak",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Tuscan_Oak.uasset": "1c3050fe9e0b85f94d44fd54feb859e24386ee196b2d8c8eea837cc6b434d111"
+  },
+  "input_fingerprint": "65641fe2e1b2466f4be5f617020a11ae84de1c150acb8c536dcca3049ba1b467",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Tuscan_Oak": {
+      "after": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      },
+      "before": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

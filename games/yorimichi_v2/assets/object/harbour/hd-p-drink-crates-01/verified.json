@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-drink-crates-01",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-drink-crates": "8960d02f518698ae4fa90a750393f771f7510f3850da5f466228c6e9bc3f258a"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/8A/8WG96G8MF7ZJII0AF9RXRK.uasset": "f6b2034d62dbeb7c53e6b0c39bd51356ed3e216c1519940b03eb81635c1efbb5"

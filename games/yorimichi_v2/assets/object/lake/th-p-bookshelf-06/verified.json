@@ -1,8 +1,6 @@
 {
   "asset": "object/lake/th-p-bookshelf-06",
-  "dependencies": {
-    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/XC/G2LWZ8W7NDW1CL32554SJX.uasset": "e3c198b4d5927be8956e607e3c076c58c232ec83d98d479b45b384b19f29d98d"

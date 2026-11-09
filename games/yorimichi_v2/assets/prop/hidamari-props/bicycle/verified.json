@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/bicycle",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_bicycle.uasset": "7585d0fc5dc87bfefea270bc9524afdebc16109cc1c5e4b650122b7fe69dc85d"
+  },
+  "input_fingerprint": "7aa54c3bd3d10fd6af2a219f3863b33afcc2a3a3762cc6fe66f6aea6487c2869",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_bicycle": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

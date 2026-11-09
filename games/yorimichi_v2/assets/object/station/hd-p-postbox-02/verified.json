@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-postbox-02",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-postbox": "1c5c3d090b7c5fa737c41d96ede8e9897cc0076b627dad86e81df9b3148dbf15"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/PR/U89R2EWDHMLDWUCMBE2VDR.uasset": "9421cb71c88aa78331145f05246ac11d26704c7c6a8b67c85877a17dfc7c4150"

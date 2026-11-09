@@ -1,0 +1,46 @@
+{
+  "asset": "prop/japan-kit/tree-caldera-black-pine-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Caldera_BlackPine_A.uasset": "5f771ac784ea6026f3b06af1fd550b41b61f4989594328be60d476c3c614087b"
+  },
+  "input_fingerprint": "706fb282fac01f4a3adb46f3fc9b4f06dcae89eac4f3d7739bc6023f8431090a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Caldera_BlackPine_A": {
+      "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.25,
+          0.10000000149011612,
+          0.03999999910593033
+        ]
+      },
+      "before": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.25,
+          0.10000000149011612,
+          0.03999999910593033
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

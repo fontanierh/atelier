@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-postbox-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-postbox"]
+references = ["prop/hidamari-props/postbox"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/D/0Q/BPIRNILHS7UTYB973M44FR"

@@ -6,7 +6,7 @@ id = "object/megapark/trees-cell-x150-zm750"
 kind = "placement"
 authority = "editor"
 owner = "region/w11-megapark"
-references = ["adopted/japan/assets/bush", "adopted/japan/assets/tree-broad", "adopted/japan/assets/tree-cedar", "adopted/japan/assets/tree-ginkgo", "adopted/japan/assets/tree-maple", "adopted/japan/assets/tree-pine"]
+references = ["prop/japan-kit/bush-flower-a", "prop/japan-kit/bush-flower-b", "prop/japan-kit/bush-green-a", "prop/japan-kit/bush-green-b", "prop/japan-kit/bush-ochre-a", "prop/japan-kit/bush-ochre-b", "prop/japan-kit/tree-broad-a", "prop/japan-kit/tree-broad-b", "prop/japan-kit/tree-broad-c", "prop/japan-kit/tree-cedar-a", "prop/japan-kit/tree-cedar-b", "prop/japan-kit/tree-ginkgo", "prop/japan-kit/tree-maple-a", "prop/japan-kit/tree-maple-b", "prop/japan-kit/tree-pine-a", "prop/japan-kit/tree-pine-b"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/9X/JW448G24Q5UHP9LIAHPXZ2"

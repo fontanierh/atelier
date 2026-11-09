@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-fire-buckets-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-fire-buckets"]
+references = ["prop/hidamari-props/fire-buckets"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/W1/ZX687XV6IYWKVH7BHLVKR2"

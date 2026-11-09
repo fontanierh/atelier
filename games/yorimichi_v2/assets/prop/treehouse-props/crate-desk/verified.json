@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse-props/crate-desk",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/TH_P_crate_desk.uasset": "3b03f08f99dbeb5c8db66bc95a96f6a8dbea81464446aa2325fae199f87e23fa"
+  },
+  "input_fingerprint": "bc51817b47b7755d1f8c06ac12d229b2f8cfa47d866c5fa93acce544986d37bf",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/TH_P_crate_desk": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

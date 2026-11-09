@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_sake_barrels: a street prop (9919 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/sake-barrels"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/sake-barrels"
+references = ["adopted/japan/hidamari/prop-sake-barrels"]
+
+[[sources]]
+path = "src/HD_P_sake_barrels.fbx"
+sha256 = "e25d254d2cbeadc187d38bb1ff649166f9efdd55a1fcfa036bde8d585025d06e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_sake_barrels"]
+triangles = 9919
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_sake_barrels"

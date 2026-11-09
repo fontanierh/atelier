@@ -1,0 +1,34 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_Ochre_B: one Japan mesh, LOD0-LOD2 (242 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/bush-ochre-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/bush-ochre-b"
+references = ["adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Bush_Ochre_B.fbx"
+sha256 = "73ad3d68027b76191ba7fdbf88d8adc6237ccce75d644bf8485d07207f7e0ef0"
+
+[[sources]]
+path = "src/Bush_Ochre_B_LOD1.fbx"
+sha256 = "fc5febfc0ba7a3e05348ae2362ffb5d4a3b39283f0380157dcfb0aeccddf7deb"
+
+[[sources]]
+path = "src/Bush_Ochre_B_LOD2.fbx"
+sha256 = "01410f93420b64693d46a6fadc479e05742f3d101c5597b4ae33aadc79850f1b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Bush_Ochre_B.fbx", 1.0, 242, [0]], ["src/Bush_Ochre_B_LOD1.fbx", 0.07999999821186066, 82, [0]], ["src/Bush_Ochre_B_LOD2.fbx", 0.02500000037252903, 32, [0]]]
+slots = [["LeafOchreSmall", "/Game/Japan/Materials/MI_LeafOchreSmall"]]
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Bush_Ochre_B"

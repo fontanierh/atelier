@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-laundry-stand-17",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-laundry-stand": "fd2bdacc79d73d3be7d03c804a1009fa95988ec6517df1b1e6a7f155a5176c58"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/3I/ZPI1BVGBP53IUS54BLKH86.uasset": "fdee9027043fc7c6bdbbb5e89f483db8e566b8df5cdabd25249fdff8f4843461"

@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_P_basket: a tree house prop (9453 triangles, 0 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse-props/basket"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse-props/basket"
+references = ["adopted/japan/treehouse/prop-basket"]
+
+[[sources]]
+path = "src/TH_P_basket.fbx"
+sha256 = "74a308df0bb68937aa12edf337db24f41ed4dcca3a64615b7605f60bbd0a205c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_basket"]
+triangles = 9453
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_P_basket"

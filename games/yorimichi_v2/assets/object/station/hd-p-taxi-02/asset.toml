@@ -6,7 +6,7 @@ id = "object/station/hd-p-taxi-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-taxi"]
+references = ["prop/hidamari-props/taxi"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/5/XM/WK2PANFGT7EXD8FPZ5BR2F"

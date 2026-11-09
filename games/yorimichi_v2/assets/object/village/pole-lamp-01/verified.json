@@ -1,8 +1,6 @@
 {
   "asset": "object/village/pole-lamp-01",
-  "dependencies": {
-    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/FL/E5ZDN8AM7QA8EUA1XBBM41.uasset": "ca180432901b6fc7c126251d47c2aed41175f91a231896378973599c9ee84762"

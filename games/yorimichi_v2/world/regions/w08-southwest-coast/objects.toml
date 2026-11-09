@@ -7,31 +7,31 @@ data = ""
 [[objects]]
 id = "object/swcoast/boat-shed"
 patch = "b1509dfbecbca7fa"
-model = "adopted/japan/southwest"
+model = ["prop/southwest/boat", "prop/southwest/boat-shed"]
 about = "the boat shed"
 
 [[objects]]
 id = "object/swcoast/coconut-stand"
 patch = "1a8a656b99bc8dad"
-model = "adopted/japan/southwest"
+model = "prop/southwest/coconut-stand"
 about = "the coconut stand"
 
 [[objects]]
 id = "object/swcoast/dock"
 patch = "10a79b43638f7cac"
-model = "adopted/japan/southwest"
+model = "prop/southwest/dock"
 about = "the dock"
 
 [[objects]]
 id = "object/swcoast/drying-rack"
 patch = "87c0299893ed2594"
-model = "adopted/japan/southwest"
+model = "prop/southwest/drying-rack"
 about = "the drying rack"
 
 [[objects]]
 id = "object/swcoast/temple"
 patch = "b6f9ee4932af5800"
-model = "adopted/japan/southwest"
+model = "prop/southwest/temple"
 about = "the temple"
 
 # Split entries (Yorimichi V2 object prep): placed instances left in the area patches, each one actor of its own.
@@ -39,61 +39,61 @@ about = "the temple"
 [[objects]]
 id = "object/swcoast/sw-boat-01"
 split = {key = "SW_Boat", at = [-259, -157]}
-model = "adopted/japan/southwest"
+model = "prop/southwest/boat"
 about = "SW_Boat 1 of 2 in w08-southwest-coast, placed at (-259, -157) m"
 
 [[objects]]
 id = "object/swcoast/sw-boat-02"
 split = {key = "SW_Boat", at = [-226.5, -158.5]}
-model = "adopted/japan/southwest"
+model = "prop/southwest/boat"
 about = "SW_Boat 2 of 2 in w08-southwest-coast, placed at (-226.5, -158.5) m"
 
 [[objects]]
 id = "object/swcoast/sw-stonewall-01"
 split = {key = "SW_StoneWall", at = [-272, -132.5]}
-model = "adopted/japan/southwest"
+model = "prop/southwest/stone-wall"
 about = "SW_StoneWall 1 of 3 in w08-southwest-coast, placed at (-272, -132.5) m"
 
 [[objects]]
 id = "object/swcoast/sw-stonewall-02"
 split = {key = "SW_StoneWall", at = [-266, -133]}
-model = "adopted/japan/southwest"
+model = "prop/southwest/stone-wall"
 about = "SW_StoneWall 2 of 3 in w08-southwest-coast, placed at (-266, -133) m"
 
 [[objects]]
 id = "object/swcoast/sw-stonewall-03"
 split = {key = "SW_StoneWall", at = [-247, -134.5]}
-model = "adopted/japan/southwest"
+model = "prop/southwest/stone-wall"
 about = "SW_StoneWall 3 of 3 in w08-southwest-coast, placed at (-247, -134.5) m"
 
 [[objects]]
 id = "object/swcoast/torii-01"
 split = {key = "Torii", at = [-204.05, -472.26]}
-model = "adopted/japan/assets/torii"
+model = "prop/japan-kit/torii"
 about = "Torii 1 of 5 in w08-southwest-coast, placed at (-204.05, -472.26) m"
 
 [[objects]]
 id = "object/swcoast/torii-02"
 split = {key = "Torii", at = [-199.87, -446.87]}
-model = "adopted/japan/assets/torii"
+model = "prop/japan-kit/torii"
 about = "Torii 2 of 5 in w08-southwest-coast, placed at (-199.87, -446.87) m"
 
 [[objects]]
 id = "object/swcoast/torii-03"
 split = {key = "Torii", at = [-194.43, -510.24]}
-model = "adopted/japan/assets/torii"
+model = "prop/japan-kit/torii"
 about = "Torii 3 of 5 in w08-southwest-coast, placed at (-194.43, -510.24) m"
 
 [[objects]]
 id = "object/swcoast/torii-04"
 split = {key = "Torii", at = [-152.82, -482.77]}
-model = "adopted/japan/assets/torii"
+model = "prop/japan-kit/torii"
 about = "Torii 4 of 5 in w08-southwest-coast, placed at (-152.82, -482.77) m"
 
 [[objects]]
 id = "object/swcoast/torii-05"
 split = {key = "Torii", at = [-136.17, -464.4]}
-model = "adopted/japan/assets/torii"
+model = "prop/japan-kit/torii"
 about = "Torii 5 of 5 in w08-southwest-coast, placed at (-136.17, -464.4) m"
 
 [[objects]]

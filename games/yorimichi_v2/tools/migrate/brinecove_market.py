@@ -632,6 +632,7 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
     problems = check(game, donor, batch, retired=(stage == 'records'))
     if problems:
         raise apply_.SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))
+    set_batch(batch).require_applied_plan(game, plan)   # the checked batch, not a fresh selection under its name
     ops = retire_compute(game, plan, stage)
     info = retire_touched(game, plan, stage)
     try:

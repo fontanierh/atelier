@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse-props/bookshelf",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/TH_P_bookshelf.uasset": "aebd51b3c95c9499ce4b4be908e0ed40111b36bb22ae3c631b30fb1130629a31"
+  },
+  "input_fingerprint": "e14510469ed79d6ed2682e4a2a8b1ec50f93fbac52679ea15886bd4bd0ec39c7",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/TH_P_bookshelf": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

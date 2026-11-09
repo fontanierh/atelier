@@ -55,9 +55,9 @@
         "SM_BC_Landmarks_3_5"
       ],
       "id": "object/brinecove/fort",
-      "model": "adopted/brinecove/fort",
+      "model": "prop/brinecove/landmarks-3-5",
       "models": [
-        "adopted/brinecove/fort"
+        "prop/brinecove/landmarks-3-5"
       ]
     },
     "object/brinecove/galleon-adventure": {
@@ -65,9 +65,40 @@
         "SM_BC_Ships_3_3"
       ],
       "id": "object/brinecove/galleon-adventure",
-      "model": "adopted/brinecove/galleon-adventure",
+      "model": "prop/brinecove/ships-3-3",
       "models": [
-        "adopted/brinecove/galleon-adventure"
+        "prop/brinecove/ships-3-3"
+      ]
+    },
+    "object/brinecove/galleon-adventure-hull": {
+      "groups": [
+        "SM_BC_Hero_GalleonHull_cell_-1_-1#70",
+        "SM_BC_Hero_GalleonHull_cell_-1_0#71",
+        "SM_BC_Hero_GalleonHull_cell_0_-1#72",
+        "SM_BC_Hero_GalleonHull_cell_0_0#73"
+      ],
+      "id": "object/brinecove/galleon-adventure-hull",
+      "model": "adopted/brinecove/hero-galleon-hull",
+      "models": [
+        "adopted/brinecove/hero-galleon-hull"
+      ]
+    },
+    "object/brinecove/galleon-nightjar": {
+      "groups": [
+        "SM_BC_GalleonNightjar",
+        "SM_BC_Hero_GalleonHull_cell_-1_-1#543",
+        "SM_BC_Hero_GalleonHull_cell_-1_0#544",
+        "SM_BC_Hero_GalleonHull_cell_0_-1#545",
+        "SM_BC_Hero_GalleonHull_cell_0_0#546"
+      ],
+      "id": "object/brinecove/galleon-nightjar",
+      "model": [
+        "prop/brinecove/galleon-nightjar",
+        "adopted/brinecove/hero-galleon-hull"
+      ],
+      "models": [
+        "prop/brinecove/galleon-nightjar",
+        "adopted/brinecove/hero-galleon-hull"
       ]
     },
     "object/brinecove/galleon-adventure-hull": {
@@ -106,9 +137,9 @@
         "SM_BC_Ground_0_0"
       ],
       "id": "object/brinecove/ground-0-0",
-      "model": "adopted/brinecove/ground-0-0",
+      "model": "prop/brinecove/ground-0-0",
       "models": [
-        "adopted/brinecove/ground-0-0"
+        "prop/brinecove/ground-0-0"
       ]
     },
     "object/brinecove/ground-0-1": {
@@ -116,9 +147,9 @@
         "SM_BC_Ground_0_1"
       ],
       "id": "object/brinecove/ground-0-1",
-      "model": "adopted/brinecove/ground-0-1",
+      "model": "prop/brinecove/ground-0-1",
       "models": [
-        "adopted/brinecove/ground-0-1"
+        "prop/brinecove/ground-0-1"
       ]
     },
     "object/brinecove/ground-0-2": {
@@ -126,9 +157,9 @@
         "SM_BC_Ground_0_2"
       ],
       "id": "object/brinecove/ground-0-2",
-      "model": "adopted/brinecove/ground-0-2",
+      "model": "prop/brinecove/ground-0-2",
       "models": [
-        "adopted/brinecove/ground-0-2"
+        "prop/brinecove/ground-0-2"
       ]
     },
     "object/brinecove/ground-0-3": {
@@ -136,9 +167,9 @@
         "SM_BC_Ground_0_3"
       ],
       "id": "object/brinecove/ground-0-3",
-      "model": "adopted/brinecove/ground-0-3",
+      "model": "prop/brinecove/ground-0-3",
       "models": [
-        "adopted/brinecove/ground-0-3"
+        "prop/brinecove/ground-0-3"
       ]
     },
     "object/brinecove/ground-0-4": {
@@ -146,9 +177,9 @@
         "SM_BC_Ground_0_4"
       ],
       "id": "object/brinecove/ground-0-4",
-      "model": "adopted/brinecove/ground-0-4",
+      "model": "prop/brinecove/ground-0-4",
       "models": [
-        "adopted/brinecove/ground-0-4"
+        "prop/brinecove/ground-0-4"
       ]
     },
     "object/brinecove/ground-0-5": {
@@ -156,9 +187,9 @@
         "SM_BC_Ground_0_5"
       ],
       "id": "object/brinecove/ground-0-5",
-      "model": "adopted/brinecove/ground-0-5",
+      "model": "prop/brinecove/ground-0-5",
       "models": [
-        "adopted/brinecove/ground-0-5"
+        "prop/brinecove/ground-0-5"
       ]
     },
     "object/brinecove/ground-0-6": {
@@ -166,9 +197,9 @@
         "SM_BC_Ground_0_6"
       ],
       "id": "object/brinecove/ground-0-6",
-      "model": "adopted/brinecove/ground-0-6",
+      "model": "prop/brinecove/ground-0-6",
       "models": [
-        "adopted/brinecove/ground-0-6"
+        "prop/brinecove/ground-0-6"
       ]
     },
     "object/brinecove/ground-1-0": {
@@ -176,9 +207,9 @@
         "SM_BC_Ground_1_0"
       ],
       "id": "object/brinecove/ground-1-0",
-      "model": "adopted/brinecove/ground-1-0",
+      "model": "prop/brinecove/ground-1-0",
       "models": [
-        "adopted/brinecove/ground-1-0"
+        "prop/brinecove/ground-1-0"
       ]
     },
     "object/brinecove/ground-1-1": {
@@ -186,9 +217,9 @@
         "SM_BC_Ground_1_1"
       ],
       "id": "object/brinecove/ground-1-1",
-      "model": "adopted/brinecove/ground-1-1",
+      "model": "prop/brinecove/ground-1-1",
       "models": [
-        "adopted/brinecove/ground-1-1"
+        "prop/brinecove/ground-1-1"
       ]
     },
     "object/brinecove/ground-1-2": {
@@ -196,9 +227,9 @@
         "SM_BC_Ground_1_2"
       ],
       "id": "object/brinecove/ground-1-2",
-      "model": "adopted/brinecove/ground-1-2",
+      "model": "prop/brinecove/ground-1-2",
       "models": [
-        "adopted/brinecove/ground-1-2"
+        "prop/brinecove/ground-1-2"
       ]
     },
     "object/brinecove/ground-1-3": {
@@ -206,9 +237,9 @@
         "SM_BC_Ground_1_3"
       ],
       "id": "object/brinecove/ground-1-3",
-      "model": "adopted/brinecove/ground-1-3",
+      "model": "prop/brinecove/ground-1-3",
       "models": [
-        "adopted/brinecove/ground-1-3"
+        "prop/brinecove/ground-1-3"
       ]
     },
     "object/brinecove/ground-1-4": {
@@ -216,9 +247,9 @@
         "SM_BC_Ground_1_4"
       ],
       "id": "object/brinecove/ground-1-4",
-      "model": "adopted/brinecove/ground-1-4",
+      "model": "prop/brinecove/ground-1-4",
       "models": [
-        "adopted/brinecove/ground-1-4"
+        "prop/brinecove/ground-1-4"
       ]
     },
     "object/brinecove/ground-1-5": {
@@ -226,9 +257,9 @@
         "SM_BC_Ground_1_5"
       ],
       "id": "object/brinecove/ground-1-5",
-      "model": "adopted/brinecove/ground-1-5",
+      "model": "prop/brinecove/ground-1-5",
       "models": [
-        "adopted/brinecove/ground-1-5"
+        "prop/brinecove/ground-1-5"
       ]
     },
     "object/brinecove/ground-1-6": {
@@ -236,9 +267,9 @@
         "SM_BC_Ground_1_6"
       ],
       "id": "object/brinecove/ground-1-6",
-      "model": "adopted/brinecove/ground-1-6",
+      "model": "prop/brinecove/ground-1-6",
       "models": [
-        "adopted/brinecove/ground-1-6"
+        "prop/brinecove/ground-1-6"
       ]
     },
     "object/brinecove/ground-2-0": {
@@ -246,9 +277,9 @@
         "SM_BC_Ground_2_0"
       ],
       "id": "object/brinecove/ground-2-0",
-      "model": "adopted/brinecove/ground-2-0",
+      "model": "prop/brinecove/ground-2-0",
       "models": [
-        "adopted/brinecove/ground-2-0"
+        "prop/brinecove/ground-2-0"
       ]
     },
     "object/brinecove/ground-2-1": {
@@ -256,9 +287,9 @@
         "SM_BC_Ground_2_1"
       ],
       "id": "object/brinecove/ground-2-1",
-      "model": "adopted/brinecove/ground-2-1",
+      "model": "prop/brinecove/ground-2-1",
       "models": [
-        "adopted/brinecove/ground-2-1"
+        "prop/brinecove/ground-2-1"
       ]
     },
     "object/brinecove/ground-2-2": {
@@ -266,9 +297,9 @@
         "SM_BC_Ground_2_2"
       ],
       "id": "object/brinecove/ground-2-2",
-      "model": "adopted/brinecove/ground-2-2",
+      "model": "prop/brinecove/ground-2-2",
       "models": [
-        "adopted/brinecove/ground-2-2"
+        "prop/brinecove/ground-2-2"
       ]
     },
     "object/brinecove/ground-2-3": {
@@ -276,9 +307,9 @@
         "SM_BC_Ground_2_3"
       ],
       "id": "object/brinecove/ground-2-3",
-      "model": "adopted/brinecove/ground-2-3",
+      "model": "prop/brinecove/ground-2-3",
       "models": [
-        "adopted/brinecove/ground-2-3"
+        "prop/brinecove/ground-2-3"
       ]
     },
     "object/brinecove/ground-2-4": {
@@ -286,9 +317,9 @@
         "SM_BC_Ground_2_4"
       ],
       "id": "object/brinecove/ground-2-4",
-      "model": "adopted/brinecove/ground-2-4",
+      "model": "prop/brinecove/ground-2-4",
       "models": [
-        "adopted/brinecove/ground-2-4"
+        "prop/brinecove/ground-2-4"
       ]
     },
     "object/brinecove/ground-2-5": {
@@ -296,9 +327,9 @@
         "SM_BC_Ground_2_5"
       ],
       "id": "object/brinecove/ground-2-5",
-      "model": "adopted/brinecove/ground-2-5",
+      "model": "prop/brinecove/ground-2-5",
       "models": [
-        "adopted/brinecove/ground-2-5"
+        "prop/brinecove/ground-2-5"
       ]
     },
     "object/brinecove/ground-2-6": {
@@ -306,9 +337,9 @@
         "SM_BC_Ground_2_6"
       ],
       "id": "object/brinecove/ground-2-6",
-      "model": "adopted/brinecove/ground-2-6",
+      "model": "prop/brinecove/ground-2-6",
       "models": [
-        "adopted/brinecove/ground-2-6"
+        "prop/brinecove/ground-2-6"
       ]
     },
     "object/brinecove/ground-3-0": {
@@ -316,9 +347,9 @@
         "SM_BC_Ground_3_0"
       ],
       "id": "object/brinecove/ground-3-0",
-      "model": "adopted/brinecove/ground-3-0",
+      "model": "prop/brinecove/ground-3-0",
       "models": [
-        "adopted/brinecove/ground-3-0"
+        "prop/brinecove/ground-3-0"
       ]
     },
     "object/brinecove/ground-3-1": {
@@ -326,9 +357,9 @@
         "SM_BC_Ground_3_1"
       ],
       "id": "object/brinecove/ground-3-1",
-      "model": "adopted/brinecove/ground-3-1",
+      "model": "prop/brinecove/ground-3-1",
       "models": [
-        "adopted/brinecove/ground-3-1"
+        "prop/brinecove/ground-3-1"
       ]
     },
     "object/brinecove/ground-3-2": {
@@ -336,9 +367,9 @@
         "SM_BC_Ground_3_2"
       ],
       "id": "object/brinecove/ground-3-2",
-      "model": "adopted/brinecove/ground-3-2",
+      "model": "prop/brinecove/ground-3-2",
       "models": [
-        "adopted/brinecove/ground-3-2"
+        "prop/brinecove/ground-3-2"
       ]
     },
     "object/brinecove/ground-3-3": {
@@ -346,9 +377,9 @@
         "SM_BC_Ground_3_3"
       ],
       "id": "object/brinecove/ground-3-3",
-      "model": "adopted/brinecove/ground-3-3",
+      "model": "prop/brinecove/ground-3-3",
       "models": [
-        "adopted/brinecove/ground-3-3"
+        "prop/brinecove/ground-3-3"
       ]
     },
     "object/brinecove/ground-3-4": {
@@ -356,9 +387,9 @@
         "SM_BC_Ground_3_4"
       ],
       "id": "object/brinecove/ground-3-4",
-      "model": "adopted/brinecove/ground-3-4",
+      "model": "prop/brinecove/ground-3-4",
       "models": [
-        "adopted/brinecove/ground-3-4"
+        "prop/brinecove/ground-3-4"
       ]
     },
     "object/brinecove/ground-3-5": {
@@ -366,9 +397,9 @@
         "SM_BC_Ground_3_5"
       ],
       "id": "object/brinecove/ground-3-5",
-      "model": "adopted/brinecove/ground-3-5",
+      "model": "prop/brinecove/ground-3-5",
       "models": [
-        "adopted/brinecove/ground-3-5"
+        "prop/brinecove/ground-3-5"
       ]
     },
     "object/brinecove/ground-3-6": {
@@ -376,9 +407,9 @@
         "SM_BC_Ground_3_6"
       ],
       "id": "object/brinecove/ground-3-6",
-      "model": "adopted/brinecove/ground-3-6",
+      "model": "prop/brinecove/ground-3-6",
       "models": [
-        "adopted/brinecove/ground-3-6"
+        "prop/brinecove/ground-3-6"
       ]
     },
     "object/brinecove/ground-4-0": {
@@ -386,9 +417,9 @@
         "SM_BC_Ground_4_0"
       ],
       "id": "object/brinecove/ground-4-0",
-      "model": "adopted/brinecove/ground-4-0",
+      "model": "prop/brinecove/ground-4-0",
       "models": [
-        "adopted/brinecove/ground-4-0"
+        "prop/brinecove/ground-4-0"
       ]
     },
     "object/brinecove/ground-4-1": {
@@ -396,9 +427,9 @@
         "SM_BC_Ground_4_1"
       ],
       "id": "object/brinecove/ground-4-1",
-      "model": "adopted/brinecove/ground-4-1",
+      "model": "prop/brinecove/ground-4-1",
       "models": [
-        "adopted/brinecove/ground-4-1"
+        "prop/brinecove/ground-4-1"
       ]
     },
     "object/brinecove/ground-4-2": {
@@ -406,9 +437,9 @@
         "SM_BC_Ground_4_2"
       ],
       "id": "object/brinecove/ground-4-2",
-      "model": "adopted/brinecove/ground-4-2",
+      "model": "prop/brinecove/ground-4-2",
       "models": [
-        "adopted/brinecove/ground-4-2"
+        "prop/brinecove/ground-4-2"
       ]
     },
     "object/brinecove/ground-4-3": {
@@ -416,9 +447,9 @@
         "SM_BC_Ground_4_3"
       ],
       "id": "object/brinecove/ground-4-3",
-      "model": "adopted/brinecove/ground-4-3",
+      "model": "prop/brinecove/ground-4-3",
       "models": [
-        "adopted/brinecove/ground-4-3"
+        "prop/brinecove/ground-4-3"
       ]
     },
     "object/brinecove/ground-4-4": {
@@ -426,9 +457,9 @@
         "SM_BC_Ground_4_4"
       ],
       "id": "object/brinecove/ground-4-4",
-      "model": "adopted/brinecove/ground-4-4",
+      "model": "prop/brinecove/ground-4-4",
       "models": [
-        "adopted/brinecove/ground-4-4"
+        "prop/brinecove/ground-4-4"
       ]
     },
     "object/brinecove/ground-4-5": {
@@ -436,9 +467,9 @@
         "SM_BC_Ground_4_5"
       ],
       "id": "object/brinecove/ground-4-5",
-      "model": "adopted/brinecove/ground-4-5",
+      "model": "prop/brinecove/ground-4-5",
       "models": [
-        "adopted/brinecove/ground-4-5"
+        "prop/brinecove/ground-4-5"
       ]
     },
     "object/brinecove/ground-4-6": {
@@ -446,9 +477,9 @@
         "SM_BC_Ground_4_6"
       ],
       "id": "object/brinecove/ground-4-6",
-      "model": "adopted/brinecove/ground-4-6",
+      "model": "prop/brinecove/ground-4-6",
       "models": [
-        "adopted/brinecove/ground-4-6"
+        "prop/brinecove/ground-4-6"
       ]
     },
     "object/brinecove/ground-5-0": {
@@ -456,9 +487,9 @@
         "SM_BC_Ground_5_0"
       ],
       "id": "object/brinecove/ground-5-0",
-      "model": "adopted/brinecove/ground-5-0",
+      "model": "prop/brinecove/ground-5-0",
       "models": [
-        "adopted/brinecove/ground-5-0"
+        "prop/brinecove/ground-5-0"
       ]
     },
     "object/brinecove/ground-5-1": {
@@ -466,9 +497,9 @@
         "SM_BC_Ground_5_1"
       ],
       "id": "object/brinecove/ground-5-1",
-      "model": "adopted/brinecove/ground-5-1",
+      "model": "prop/brinecove/ground-5-1",
       "models": [
-        "adopted/brinecove/ground-5-1"
+        "prop/brinecove/ground-5-1"
       ]
     },
     "object/brinecove/ground-5-2": {
@@ -476,9 +507,9 @@
         "SM_BC_Ground_5_2"
       ],
       "id": "object/brinecove/ground-5-2",
-      "model": "adopted/brinecove/ground-5-2",
+      "model": "prop/brinecove/ground-5-2",
       "models": [
-        "adopted/brinecove/ground-5-2"
+        "prop/brinecove/ground-5-2"
       ]
     },
     "object/brinecove/ground-5-3": {
@@ -486,9 +517,9 @@
         "SM_BC_Ground_5_3"
       ],
       "id": "object/brinecove/ground-5-3",
-      "model": "adopted/brinecove/ground-5-3",
+      "model": "prop/brinecove/ground-5-3",
       "models": [
-        "adopted/brinecove/ground-5-3"
+        "prop/brinecove/ground-5-3"
       ]
     },
     "object/brinecove/ground-5-4": {
@@ -496,9 +527,9 @@
         "SM_BC_Ground_5_4"
       ],
       "id": "object/brinecove/ground-5-4",
-      "model": "adopted/brinecove/ground-5-4",
+      "model": "prop/brinecove/ground-5-4",
       "models": [
-        "adopted/brinecove/ground-5-4"
+        "prop/brinecove/ground-5-4"
       ]
     },
     "object/brinecove/ground-5-5": {
@@ -506,9 +537,9 @@
         "SM_BC_Ground_5_5"
       ],
       "id": "object/brinecove/ground-5-5",
-      "model": "adopted/brinecove/ground-5-5",
+      "model": "prop/brinecove/ground-5-5",
       "models": [
-        "adopted/brinecove/ground-5-5"
+        "prop/brinecove/ground-5-5"
       ]
     },
     "object/brinecove/ground-5-6": {
@@ -516,9 +547,9 @@
         "SM_BC_Ground_5_6"
       ],
       "id": "object/brinecove/ground-5-6",
-      "model": "adopted/brinecove/ground-5-6",
+      "model": "prop/brinecove/ground-5-6",
       "models": [
-        "adopted/brinecove/ground-5-6"
+        "prop/brinecove/ground-5-6"
       ]
     },
     "object/brinecove/ground-6-0": {
@@ -526,9 +557,9 @@
         "SM_BC_Ground_6_0"
       ],
       "id": "object/brinecove/ground-6-0",
-      "model": "adopted/brinecove/ground-6-0",
+      "model": "prop/brinecove/ground-6-0",
       "models": [
-        "adopted/brinecove/ground-6-0"
+        "prop/brinecove/ground-6-0"
       ]
     },
     "object/brinecove/ground-6-1": {
@@ -536,9 +567,9 @@
         "SM_BC_Ground_6_1"
       ],
       "id": "object/brinecove/ground-6-1",
-      "model": "adopted/brinecove/ground-6-1",
+      "model": "prop/brinecove/ground-6-1",
       "models": [
-        "adopted/brinecove/ground-6-1"
+        "prop/brinecove/ground-6-1"
       ]
     },
     "object/brinecove/ground-6-2": {
@@ -546,9 +577,9 @@
         "SM_BC_Ground_6_2"
       ],
       "id": "object/brinecove/ground-6-2",
-      "model": "adopted/brinecove/ground-6-2",
+      "model": "prop/brinecove/ground-6-2",
       "models": [
-        "adopted/brinecove/ground-6-2"
+        "prop/brinecove/ground-6-2"
       ]
     },
     "object/brinecove/ground-6-3": {
@@ -556,9 +587,9 @@
         "SM_BC_Ground_6_3"
       ],
       "id": "object/brinecove/ground-6-3",
-      "model": "adopted/brinecove/ground-6-3",
+      "model": "prop/brinecove/ground-6-3",
       "models": [
-        "adopted/brinecove/ground-6-3"
+        "prop/brinecove/ground-6-3"
       ]
     },
     "object/brinecove/ground-6-4": {
@@ -566,9 +597,9 @@
         "SM_BC_Ground_6_4"
       ],
       "id": "object/brinecove/ground-6-4",
-      "model": "adopted/brinecove/ground-6-4",
+      "model": "prop/brinecove/ground-6-4",
       "models": [
-        "adopted/brinecove/ground-6-4"
+        "prop/brinecove/ground-6-4"
       ]
     },
     "object/brinecove/ground-6-5": {
@@ -576,9 +607,9 @@
         "SM_BC_Ground_6_5"
       ],
       "id": "object/brinecove/ground-6-5",
-      "model": "adopted/brinecove/ground-6-5",
+      "model": "prop/brinecove/ground-6-5",
       "models": [
-        "adopted/brinecove/ground-6-5"
+        "prop/brinecove/ground-6-5"
       ]
     },
     "object/brinecove/ground-6-6": {
@@ -586,9 +617,9 @@
         "SM_BC_Ground_6_6"
       ],
       "id": "object/brinecove/ground-6-6",
-      "model": "adopted/brinecove/ground-6-6",
+      "model": "prop/brinecove/ground-6-6",
       "models": [
-        "adopted/brinecove/ground-6-6"
+        "prop/brinecove/ground-6-6"
       ]
     },
     "object/brinecove/ground-7-0": {
@@ -596,9 +627,9 @@
         "SM_BC_Ground_7_0"
       ],
       "id": "object/brinecove/ground-7-0",
-      "model": "adopted/brinecove/ground-7-0",
+      "model": "prop/brinecove/ground-7-0",
       "models": [
-        "adopted/brinecove/ground-7-0"
+        "prop/brinecove/ground-7-0"
       ]
     },
     "object/brinecove/ground-7-1": {
@@ -606,9 +637,9 @@
         "SM_BC_Ground_7_1"
       ],
       "id": "object/brinecove/ground-7-1",
-      "model": "adopted/brinecove/ground-7-1",
+      "model": "prop/brinecove/ground-7-1",
       "models": [
-        "adopted/brinecove/ground-7-1"
+        "prop/brinecove/ground-7-1"
       ]
     },
     "object/brinecove/ground-7-2": {
@@ -616,9 +647,9 @@
         "SM_BC_Ground_7_2"
       ],
       "id": "object/brinecove/ground-7-2",
-      "model": "adopted/brinecove/ground-7-2",
+      "model": "prop/brinecove/ground-7-2",
       "models": [
-        "adopted/brinecove/ground-7-2"
+        "prop/brinecove/ground-7-2"
       ]
     },
     "object/brinecove/ground-7-3": {
@@ -626,9 +657,9 @@
         "SM_BC_Ground_7_3"
       ],
       "id": "object/brinecove/ground-7-3",
-      "model": "adopted/brinecove/ground-7-3",
+      "model": "prop/brinecove/ground-7-3",
       "models": [
-        "adopted/brinecove/ground-7-3"
+        "prop/brinecove/ground-7-3"
       ]
     },
     "object/brinecove/ground-7-4": {
@@ -636,9 +667,9 @@
         "SM_BC_Ground_7_4"
       ],
       "id": "object/brinecove/ground-7-4",
-      "model": "adopted/brinecove/ground-7-4",
+      "model": "prop/brinecove/ground-7-4",
       "models": [
-        "adopted/brinecove/ground-7-4"
+        "prop/brinecove/ground-7-4"
       ]
     },
     "object/brinecove/ground-7-5": {
@@ -646,9 +677,9 @@
         "SM_BC_Ground_7_5"
       ],
       "id": "object/brinecove/ground-7-5",
-      "model": "adopted/brinecove/ground-7-5",
+      "model": "prop/brinecove/ground-7-5",
       "models": [
-        "adopted/brinecove/ground-7-5"
+        "prop/brinecove/ground-7-5"
       ]
     },
     "object/brinecove/ground-7-6": {
@@ -656,9 +687,9 @@
         "SM_BC_Ground_7_6"
       ],
       "id": "object/brinecove/ground-7-6",
-      "model": "adopted/brinecove/ground-7-6",
+      "model": "prop/brinecove/ground-7-6",
       "models": [
-        "adopted/brinecove/ground-7-6"
+        "prop/brinecove/ground-7-6"
       ]
     },
     "object/brinecove/harbor-2-3": {
@@ -667,9 +698,13 @@
         "SM_BC_Harbor_2_3_Soft"
       ],
       "id": "object/brinecove/harbor-2-3",
-      "model": "adopted/brinecove/harbor-2-3",
+      "model": [
+        "prop/brinecove/harbor-2-3",
+        "prop/brinecove/harbor-2-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/harbor-2-3"
+        "prop/brinecove/harbor-2-3",
+        "prop/brinecove/harbor-2-3-soft"
       ]
     },
     "object/brinecove/harbor-2-4": {
@@ -677,9 +712,9 @@
         "SM_BC_Harbor_2_4"
       ],
       "id": "object/brinecove/harbor-2-4",
-      "model": "adopted/brinecove/harbor-2-4",
+      "model": "prop/brinecove/harbor-2-4",
       "models": [
-        "adopted/brinecove/harbor-2-4"
+        "prop/brinecove/harbor-2-4"
       ]
     },
     "object/brinecove/harbor-3-2": {
@@ -687,9 +722,9 @@
         "SM_BC_Harbor_3_2"
       ],
       "id": "object/brinecove/harbor-3-2",
-      "model": "adopted/brinecove/harbor-3-2",
+      "model": "prop/brinecove/harbor-3-2",
       "models": [
-        "adopted/brinecove/harbor-3-2"
+        "prop/brinecove/harbor-3-2"
       ]
     },
     "object/brinecove/harbor-3-3": {
@@ -698,9 +733,13 @@
         "SM_BC_Harbor_3_3_Soft"
       ],
       "id": "object/brinecove/harbor-3-3",
-      "model": "adopted/brinecove/harbor-3-3",
+      "model": [
+        "prop/brinecove/harbor-3-3",
+        "prop/brinecove/harbor-3-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/harbor-3-3"
+        "prop/brinecove/harbor-3-3",
+        "prop/brinecove/harbor-3-3-soft"
       ]
     },
     "object/brinecove/harbor-3-4": {
@@ -708,9 +747,9 @@
         "SM_BC_Harbor_3_4"
       ],
       "id": "object/brinecove/harbor-3-4",
-      "model": "adopted/brinecove/harbor-3-4",
+      "model": "prop/brinecove/harbor-3-4",
       "models": [
-        "adopted/brinecove/harbor-3-4"
+        "prop/brinecove/harbor-3-4"
       ]
     },
     "object/brinecove/harbor-4-2": {
@@ -718,9 +757,9 @@
         "SM_BC_Harbor_4_2"
       ],
       "id": "object/brinecove/harbor-4-2",
-      "model": "adopted/brinecove/harbor-4-2",
+      "model": "prop/brinecove/harbor-4-2",
       "models": [
-        "adopted/brinecove/harbor-4-2"
+        "prop/brinecove/harbor-4-2"
       ]
     },
     "object/brinecove/harbor-4-3": {
@@ -729,9 +768,13 @@
         "SM_BC_Harbor_4_3_Soft"
       ],
       "id": "object/brinecove/harbor-4-3",
-      "model": "adopted/brinecove/harbor-4-3",
+      "model": [
+        "prop/brinecove/harbor-4-3",
+        "prop/brinecove/harbor-4-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/harbor-4-3"
+        "prop/brinecove/harbor-4-3",
+        "prop/brinecove/harbor-4-3-soft"
       ]
     },
     "object/brinecove/harbor-4-4": {
@@ -739,9 +782,9 @@
         "SM_BC_Harbor_4_4"
       ],
       "id": "object/brinecove/harbor-4-4",
-      "model": "adopted/brinecove/harbor-4-4",
+      "model": "prop/brinecove/harbor-4-4",
       "models": [
-        "adopted/brinecove/harbor-4-4"
+        "prop/brinecove/harbor-4-4"
       ]
     },
     "object/brinecove/harbor-5-3": {
@@ -750,9 +793,13 @@
         "SM_BC_Harbor_5_3_Soft"
       ],
       "id": "object/brinecove/harbor-5-3",
-      "model": "adopted/brinecove/harbor-5-3",
+      "model": [
+        "prop/brinecove/harbor-5-3",
+        "prop/brinecove/harbor-5-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/harbor-5-3"
+        "prop/brinecove/harbor-5-3",
+        "prop/brinecove/harbor-5-3-soft"
       ]
     },
     "object/brinecove/harbor-5-4": {
@@ -760,9 +807,9 @@
         "SM_BC_Harbor_5_4"
       ],
       "id": "object/brinecove/harbor-5-4",
-      "model": "adopted/brinecove/harbor-5-4",
+      "model": "prop/brinecove/harbor-5-4",
       "models": [
-        "adopted/brinecove/harbor-5-4"
+        "prop/brinecove/harbor-5-4"
       ]
     },
     "object/brinecove/hero-galleon-hull": {
@@ -793,9 +840,13 @@
         "SM_BC_Landmarks_1_3"
       ],
       "id": "object/brinecove/lighthouse",
-      "model": "adopted/brinecove/lighthouse",
+      "model": [
+        "prop/brinecove/landmarks-1-3",
+        "prop/brinecove/landmarks-1-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/lighthouse"
+        "prop/brinecove/landmarks-1-3",
+        "prop/brinecove/landmarks-1-3-soft"
       ]
     },
     "object/brinecove/lighthouse-planting": {
@@ -803,9 +854,9 @@
         "SM_BC_Landmarks_1_3_Soft"
       ],
       "id": "object/brinecove/lighthouse-planting",
-      "model": "adopted/brinecove/lighthouse",
+      "model": "prop/brinecove/landmarks-1-3-soft",
       "models": [
-        "adopted/brinecove/lighthouse"
+        "prop/brinecove/landmarks-1-3-soft"
       ]
     },
     "object/brinecove/market-3-3": {
@@ -813,9 +864,9 @@
         "SM_BC_Market_3_3"
       ],
       "id": "object/brinecove/market-3-3",
-      "model": "adopted/brinecove/market-3-3",
+      "model": "prop/brinecove/market-3-3",
       "models": [
-        "adopted/brinecove/market-3-3"
+        "prop/brinecove/market-3-3"
       ]
     },
     "object/brinecove/market-3-4": {
@@ -833,9 +884,31 @@
         "SM_BC_Market_3_4_Soft"
       ],
       "id": "object/brinecove/market-3-4",
-      "model": "adopted/brinecove/market-3-4",
+      "model": [
+        "prop/brinecove/market-3-4-piece10",
+        "prop/brinecove/market-3-4-piece110",
+        "prop/brinecove/market-3-4-piece111",
+        "prop/brinecove/market-3-4-piece112",
+        "prop/brinecove/market-3-4-piece113",
+        "prop/brinecove/market-3-4-piece12",
+        "prop/brinecove/market-3-4-piece130",
+        "prop/brinecove/market-3-4-piece131",
+        "prop/brinecove/market-3-4-piece132",
+        "prop/brinecove/market-3-4-piece133",
+        "prop/brinecove/market-3-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/market-3-4"
+        "prop/brinecove/market-3-4-piece10",
+        "prop/brinecove/market-3-4-piece110",
+        "prop/brinecove/market-3-4-piece111",
+        "prop/brinecove/market-3-4-piece112",
+        "prop/brinecove/market-3-4-piece113",
+        "prop/brinecove/market-3-4-piece12",
+        "prop/brinecove/market-3-4-piece130",
+        "prop/brinecove/market-3-4-piece131",
+        "prop/brinecove/market-3-4-piece132",
+        "prop/brinecove/market-3-4-piece133",
+        "prop/brinecove/market-3-4-soft"
       ]
     },
     "object/brinecove/market-4-3": {
@@ -844,9 +917,13 @@
         "SM_BC_Market_4_3_Soft"
       ],
       "id": "object/brinecove/market-4-3",
-      "model": "adopted/brinecove/market-4-3",
+      "model": [
+        "prop/brinecove/market-4-3",
+        "prop/brinecove/market-4-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/market-4-3"
+        "prop/brinecove/market-4-3",
+        "prop/brinecove/market-4-3-soft"
       ]
     },
     "object/brinecove/market-4-4": {
@@ -867,9 +944,142 @@
         "SM_BC_Market_4_4_Soft"
       ],
       "id": "object/brinecove/market-4-4",
-      "model": "adopted/brinecove/market-4-4",
+      "model": [
+        "prop/brinecove/market-4-4-piece000",
+        "prop/brinecove/market-4-4-piece001",
+        "prop/brinecove/market-4-4-piece002",
+        "prop/brinecove/market-4-4-piece003",
+        "prop/brinecove/market-4-4-piece010",
+        "prop/brinecove/market-4-4-piece011",
+        "prop/brinecove/market-4-4-piece012",
+        "prop/brinecove/market-4-4-piece013",
+        "prop/brinecove/market-4-4-piece020",
+        "prop/brinecove/market-4-4-piece021",
+        "prop/brinecove/market-4-4-piece022",
+        "prop/brinecove/market-4-4-piece023",
+        "prop/brinecove/market-4-4-piece03",
+        "prop/brinecove/market-4-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/market-4-4"
+        "prop/brinecove/market-4-4-piece000",
+        "prop/brinecove/market-4-4-piece001",
+        "prop/brinecove/market-4-4-piece002",
+        "prop/brinecove/market-4-4-piece003",
+        "prop/brinecove/market-4-4-piece010",
+        "prop/brinecove/market-4-4-piece011",
+        "prop/brinecove/market-4-4-piece012",
+        "prop/brinecove/market-4-4-piece013",
+        "prop/brinecove/market-4-4-piece020",
+        "prop/brinecove/market-4-4-piece021",
+        "prop/brinecove/market-4-4-piece022",
+        "prop/brinecove/market-4-4-piece023",
+        "prop/brinecove/market-4-4-piece03",
+        "prop/brinecove/market-4-4-soft"
+      ]
+    },
+    "object/brinecove/market-auction-block": {
+      "groups": [
+        "SM_BC_MarketAuctionBlock"
+      ],
+      "id": "object/brinecove/market-auction-block",
+      "model": "prop/brinecove/market-auction-block",
+      "models": [
+        "prop/brinecove/market-auction-block"
+      ]
+    },
+    "object/brinecove/market-stall-01": {
+      "groups": [
+        "SM_BC_MarketStall01"
+      ],
+      "id": "object/brinecove/market-stall-01",
+      "model": "prop/brinecove/market-stall-01",
+      "models": [
+        "prop/brinecove/market-stall-01"
+      ]
+    },
+    "object/brinecove/market-stall-02": {
+      "groups": [
+        "SM_BC_MarketStall02"
+      ],
+      "id": "object/brinecove/market-stall-02",
+      "model": "prop/brinecove/market-stall-02",
+      "models": [
+        "prop/brinecove/market-stall-02"
+      ]
+    },
+    "object/brinecove/market-stall-06": {
+      "groups": [
+        "SM_BC_MarketStall06"
+      ],
+      "id": "object/brinecove/market-stall-06",
+      "model": "prop/brinecove/market-stall-06",
+      "models": [
+        "prop/brinecove/market-stall-06"
+      ]
+    },
+    "object/brinecove/market-stall-07": {
+      "groups": [
+        "SM_BC_MarketStall07"
+      ],
+      "id": "object/brinecove/market-stall-07",
+      "model": "prop/brinecove/market-stall-07",
+      "models": [
+        "prop/brinecove/market-stall-07"
+      ]
+    },
+    "object/brinecove/market-stall-08": {
+      "groups": [
+        "SM_BC_MarketStall08"
+      ],
+      "id": "object/brinecove/market-stall-08",
+      "model": "prop/brinecove/market-stall-08",
+      "models": [
+        "prop/brinecove/market-stall-08"
+      ]
+    },
+    "object/brinecove/market-stall-09": {
+      "groups": [
+        "SM_BC_MarketStall09"
+      ],
+      "id": "object/brinecove/market-stall-09",
+      "model": "prop/brinecove/market-stall-09",
+      "models": [
+        "prop/brinecove/market-stall-09"
+      ]
+    },
+    "object/brinecove/market-well": {
+      "groups": [
+        "SM_BC_MarketWell",
+        "SM_BC_MarketWell_Soft"
+      ],
+      "id": "object/brinecove/market-well",
+      "model": [
+        "prop/brinecove/market-well",
+        "prop/brinecove/market-well-soft"
+      ],
+      "models": [
+        "prop/brinecove/market-well",
+        "prop/brinecove/market-well-soft"
+      ]
+    },
+    "object/brinecove/net-rack-east": {
+      "groups": [
+        "SM_BC_NetRackEast"
+      ],
+      "id": "object/brinecove/net-rack-east",
+      "model": "prop/brinecove/net-rack-east",
+      "models": [
+        "prop/brinecove/net-rack-east"
+      ]
+    },
+    "object/brinecove/net-rack-west": {
+      "groups": [
+        "SM_BC_NetRackWest"
+      ],
+      "id": "object/brinecove/net-rack-west",
+      "model": "prop/brinecove/net-rack-west",
+      "models": [
+        "prop/brinecove/net-rack-west"
       ]
     },
     "object/brinecove/market-auction-block": {
@@ -2767,9 +2977,9 @@
         "SM_BC_Props_2_2"
       ],
       "id": "object/brinecove/props-2-2",
-      "model": "adopted/brinecove/props-2-2",
+      "model": "prop/brinecove/props-2-2",
       "models": [
-        "adopted/brinecove/props-2-2"
+        "prop/brinecove/props-2-2"
       ]
     },
     "object/brinecove/props-2-3": {
@@ -2777,9 +2987,9 @@
         "SM_BC_Props_2_3"
       ],
       "id": "object/brinecove/props-2-3",
-      "model": "adopted/brinecove/props-2-3",
+      "model": "prop/brinecove/props-2-3",
       "models": [
-        "adopted/brinecove/props-2-3"
+        "prop/brinecove/props-2-3"
       ]
     },
     "object/brinecove/props-2-4": {
@@ -2788,9 +2998,13 @@
         "SM_BC_Props_2_4_Soft"
       ],
       "id": "object/brinecove/props-2-4",
-      "model": "adopted/brinecove/props-2-4",
+      "model": [
+        "prop/brinecove/props-2-4",
+        "prop/brinecove/props-2-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/props-2-4"
+        "prop/brinecove/props-2-4",
+        "prop/brinecove/props-2-4-soft"
       ]
     },
     "object/brinecove/props-3-2": {
@@ -2798,9 +3012,9 @@
         "SM_BC_Props_3_2"
       ],
       "id": "object/brinecove/props-3-2",
-      "model": "adopted/brinecove/props-3-2",
+      "model": "prop/brinecove/props-3-2",
       "models": [
-        "adopted/brinecove/props-3-2"
+        "prop/brinecove/props-3-2"
       ]
     },
     "object/brinecove/props-3-3": {
@@ -2808,9 +3022,9 @@
         "SM_BC_Props_3_3"
       ],
       "id": "object/brinecove/props-3-3",
-      "model": "adopted/brinecove/props-3-3",
+      "model": "prop/brinecove/props-3-3",
       "models": [
-        "adopted/brinecove/props-3-3"
+        "prop/brinecove/props-3-3"
       ]
     },
     "object/brinecove/props-3-4": {
@@ -2819,9 +3033,13 @@
         "SM_BC_Props_3_4_Soft"
       ],
       "id": "object/brinecove/props-3-4",
-      "model": "adopted/brinecove/props-3-4",
+      "model": [
+        "prop/brinecove/props-3-4",
+        "prop/brinecove/props-3-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/props-3-4"
+        "prop/brinecove/props-3-4",
+        "prop/brinecove/props-3-4-soft"
       ]
     },
     "object/brinecove/props-3-5": {
@@ -2829,9 +3047,9 @@
         "SM_BC_Props_3_5"
       ],
       "id": "object/brinecove/props-3-5",
-      "model": "adopted/brinecove/props-3-5",
+      "model": "prop/brinecove/props-3-5",
       "models": [
-        "adopted/brinecove/props-3-5"
+        "prop/brinecove/props-3-5"
       ]
     },
     "object/brinecove/props-4-2": {
@@ -2839,9 +3057,9 @@
         "SM_BC_Props_4_2"
       ],
       "id": "object/brinecove/props-4-2",
-      "model": "adopted/brinecove/props-4-2",
+      "model": "prop/brinecove/props-4-2",
       "models": [
-        "adopted/brinecove/props-4-2"
+        "prop/brinecove/props-4-2"
       ]
     },
     "object/brinecove/props-4-3": {
@@ -2849,9 +3067,9 @@
         "SM_BC_Props_4_3"
       ],
       "id": "object/brinecove/props-4-3",
-      "model": "adopted/brinecove/props-4-3",
+      "model": "prop/brinecove/props-4-3",
       "models": [
-        "adopted/brinecove/props-4-3"
+        "prop/brinecove/props-4-3"
       ]
     },
     "object/brinecove/props-4-4": {
@@ -2860,9 +3078,13 @@
         "SM_BC_Props_4_4_Soft"
       ],
       "id": "object/brinecove/props-4-4",
-      "model": "adopted/brinecove/props-4-4",
+      "model": [
+        "prop/brinecove/props-4-4",
+        "prop/brinecove/props-4-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/props-4-4"
+        "prop/brinecove/props-4-4",
+        "prop/brinecove/props-4-4-soft"
       ]
     },
     "object/brinecove/props-4-5": {
@@ -2870,9 +3092,9 @@
         "SM_BC_Props_4_5"
       ],
       "id": "object/brinecove/props-4-5",
-      "model": "adopted/brinecove/props-4-5",
+      "model": "prop/brinecove/props-4-5",
       "models": [
-        "adopted/brinecove/props-4-5"
+        "prop/brinecove/props-4-5"
       ]
     },
     "object/brinecove/props-5-2": {
@@ -2880,9 +3102,9 @@
         "SM_BC_Props_5_2"
       ],
       "id": "object/brinecove/props-5-2",
-      "model": "adopted/brinecove/props-5-2",
+      "model": "prop/brinecove/props-5-2",
       "models": [
-        "adopted/brinecove/props-5-2"
+        "prop/brinecove/props-5-2"
       ]
     },
     "object/brinecove/props-5-3": {
@@ -2890,9 +3112,9 @@
         "SM_BC_Props_5_3"
       ],
       "id": "object/brinecove/props-5-3",
-      "model": "adopted/brinecove/props-5-3",
+      "model": "prop/brinecove/props-5-3",
       "models": [
-        "adopted/brinecove/props-5-3"
+        "prop/brinecove/props-5-3"
       ]
     },
     "object/brinecove/props-5-4": {
@@ -2901,9 +3123,23 @@
         "SM_BC_Props_5_4_Soft"
       ],
       "id": "object/brinecove/props-5-4",
-      "model": "adopted/brinecove/props-5-4",
+      "model": [
+        "prop/brinecove/props-5-4",
+        "prop/brinecove/props-5-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/props-5-4"
+        "prop/brinecove/props-5-4",
+        "prop/brinecove/props-5-4-soft"
+      ]
+    },
+    "object/brinecove/quay-anchor": {
+      "groups": [
+        "SM_BC_QuayAnchor"
+      ],
+      "id": "object/brinecove/quay-anchor",
+      "model": "prop/brinecove/quay-anchor",
+      "models": [
+        "prop/brinecove/quay-anchor"
       ]
     },
     "object/brinecove/quay-anchor": {
@@ -2922,9 +3158,13 @@
         "SM_BC_Rocks_0_1_Soft"
       ],
       "id": "object/brinecove/rocks-0-1",
-      "model": "adopted/brinecove/rocks-0-1",
+      "model": [
+        "prop/brinecove/rocks-0-1",
+        "prop/brinecove/rocks-0-1-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-0-1"
+        "prop/brinecove/rocks-0-1",
+        "prop/brinecove/rocks-0-1-soft"
       ]
     },
     "object/brinecove/rocks-0-2": {
@@ -2933,9 +3173,13 @@
         "SM_BC_Rocks_0_2_Soft"
       ],
       "id": "object/brinecove/rocks-0-2",
-      "model": "adopted/brinecove/rocks-0-2",
+      "model": [
+        "prop/brinecove/rocks-0-2",
+        "prop/brinecove/rocks-0-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-0-2"
+        "prop/brinecove/rocks-0-2",
+        "prop/brinecove/rocks-0-2-soft"
       ]
     },
     "object/brinecove/rocks-0-3": {
@@ -2944,9 +3188,13 @@
         "SM_BC_Rocks_0_3_Soft"
       ],
       "id": "object/brinecove/rocks-0-3",
-      "model": "adopted/brinecove/rocks-0-3",
+      "model": [
+        "prop/brinecove/rocks-0-3",
+        "prop/brinecove/rocks-0-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-0-3"
+        "prop/brinecove/rocks-0-3",
+        "prop/brinecove/rocks-0-3-soft"
       ]
     },
     "object/brinecove/rocks-0-4": {
@@ -2958,9 +3206,19 @@
         "SM_BC_Rocks_0_4_Soft_Piece3"
       ],
       "id": "object/brinecove/rocks-0-4",
-      "model": "adopted/brinecove/rocks-0-4",
+      "model": [
+        "prop/brinecove/rocks-0-4",
+        "prop/brinecove/rocks-0-4-soft-piece0",
+        "prop/brinecove/rocks-0-4-soft-piece1",
+        "prop/brinecove/rocks-0-4-soft-piece2",
+        "prop/brinecove/rocks-0-4-soft-piece3"
+      ],
       "models": [
-        "adopted/brinecove/rocks-0-4"
+        "prop/brinecove/rocks-0-4",
+        "prop/brinecove/rocks-0-4-soft-piece0",
+        "prop/brinecove/rocks-0-4-soft-piece1",
+        "prop/brinecove/rocks-0-4-soft-piece2",
+        "prop/brinecove/rocks-0-4-soft-piece3"
       ]
     },
     "object/brinecove/rocks-0-5": {
@@ -2972,9 +3230,19 @@
         "SM_BC_Rocks_0_5_Soft_Piece3"
       ],
       "id": "object/brinecove/rocks-0-5",
-      "model": "adopted/brinecove/rocks-0-5",
+      "model": [
+        "prop/brinecove/rocks-0-5",
+        "prop/brinecove/rocks-0-5-soft-piece0",
+        "prop/brinecove/rocks-0-5-soft-piece1",
+        "prop/brinecove/rocks-0-5-soft-piece2",
+        "prop/brinecove/rocks-0-5-soft-piece3"
+      ],
       "models": [
-        "adopted/brinecove/rocks-0-5"
+        "prop/brinecove/rocks-0-5",
+        "prop/brinecove/rocks-0-5-soft-piece0",
+        "prop/brinecove/rocks-0-5-soft-piece1",
+        "prop/brinecove/rocks-0-5-soft-piece2",
+        "prop/brinecove/rocks-0-5-soft-piece3"
       ]
     },
     "object/brinecove/rocks-0-6": {
@@ -2983,9 +3251,13 @@
         "SM_BC_Rocks_0_6_Soft"
       ],
       "id": "object/brinecove/rocks-0-6",
-      "model": "adopted/brinecove/rocks-0-6",
+      "model": [
+        "prop/brinecove/rocks-0-6",
+        "prop/brinecove/rocks-0-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-0-6"
+        "prop/brinecove/rocks-0-6",
+        "prop/brinecove/rocks-0-6-soft"
       ]
     },
     "object/brinecove/rocks-1-0": {
@@ -2994,9 +3266,13 @@
         "SM_BC_Rocks_1_0_Soft"
       ],
       "id": "object/brinecove/rocks-1-0",
-      "model": "adopted/brinecove/rocks-1-0",
+      "model": [
+        "prop/brinecove/rocks-1-0",
+        "prop/brinecove/rocks-1-0-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-1-0"
+        "prop/brinecove/rocks-1-0",
+        "prop/brinecove/rocks-1-0-soft"
       ]
     },
     "object/brinecove/rocks-1-1": {
@@ -3005,9 +3281,13 @@
         "SM_BC_Rocks_1_1_Soft"
       ],
       "id": "object/brinecove/rocks-1-1",
-      "model": "adopted/brinecove/rocks-1-1",
+      "model": [
+        "prop/brinecove/rocks-1-1",
+        "prop/brinecove/rocks-1-1-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-1-1"
+        "prop/brinecove/rocks-1-1",
+        "prop/brinecove/rocks-1-1-soft"
       ]
     },
     "object/brinecove/rocks-1-2": {
@@ -3016,9 +3296,13 @@
         "SM_BC_Rocks_1_2_Soft"
       ],
       "id": "object/brinecove/rocks-1-2",
-      "model": "adopted/brinecove/rocks-1-2",
+      "model": [
+        "prop/brinecove/rocks-1-2",
+        "prop/brinecove/rocks-1-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-1-2"
+        "prop/brinecove/rocks-1-2",
+        "prop/brinecove/rocks-1-2-soft"
       ]
     },
     "object/brinecove/rocks-1-3": {
@@ -3027,9 +3311,13 @@
         "SM_BC_Rocks_1_3_Soft"
       ],
       "id": "object/brinecove/rocks-1-3",
-      "model": "adopted/brinecove/rocks-1-3",
+      "model": [
+        "prop/brinecove/rocks-1-3",
+        "prop/brinecove/rocks-1-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-1-3"
+        "prop/brinecove/rocks-1-3",
+        "prop/brinecove/rocks-1-3-soft"
       ]
     },
     "object/brinecove/rocks-1-5": {
@@ -3038,9 +3326,13 @@
         "SM_BC_Rocks_1_5_Soft"
       ],
       "id": "object/brinecove/rocks-1-5",
-      "model": "adopted/brinecove/rocks-1-5",
+      "model": [
+        "prop/brinecove/rocks-1-5",
+        "prop/brinecove/rocks-1-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-1-5"
+        "prop/brinecove/rocks-1-5",
+        "prop/brinecove/rocks-1-5-soft"
       ]
     },
     "object/brinecove/rocks-1-6": {
@@ -3049,9 +3341,13 @@
         "SM_BC_Rocks_1_6_Soft"
       ],
       "id": "object/brinecove/rocks-1-6",
-      "model": "adopted/brinecove/rocks-1-6",
+      "model": [
+        "prop/brinecove/rocks-1-6",
+        "prop/brinecove/rocks-1-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-1-6"
+        "prop/brinecove/rocks-1-6",
+        "prop/brinecove/rocks-1-6-soft"
       ]
     },
     "object/brinecove/rocks-2-2": {
@@ -3060,9 +3356,13 @@
         "SM_BC_Rocks_2_2_Soft"
       ],
       "id": "object/brinecove/rocks-2-2",
-      "model": "adopted/brinecove/rocks-2-2",
+      "model": [
+        "prop/brinecove/rocks-2-2",
+        "prop/brinecove/rocks-2-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-2-2"
+        "prop/brinecove/rocks-2-2",
+        "prop/brinecove/rocks-2-2-soft"
       ]
     },
     "object/brinecove/rocks-2-3": {
@@ -3071,9 +3371,13 @@
         "SM_BC_Rocks_2_3_Soft"
       ],
       "id": "object/brinecove/rocks-2-3",
-      "model": "adopted/brinecove/rocks-2-3",
+      "model": [
+        "prop/brinecove/rocks-2-3",
+        "prop/brinecove/rocks-2-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-2-3"
+        "prop/brinecove/rocks-2-3",
+        "prop/brinecove/rocks-2-3-soft"
       ]
     },
     "object/brinecove/rocks-2-4": {
@@ -3082,9 +3386,13 @@
         "SM_BC_Rocks_2_4_Soft"
       ],
       "id": "object/brinecove/rocks-2-4",
-      "model": "adopted/brinecove/rocks-2-4",
+      "model": [
+        "prop/brinecove/rocks-2-4",
+        "prop/brinecove/rocks-2-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-2-4"
+        "prop/brinecove/rocks-2-4",
+        "prop/brinecove/rocks-2-4-soft"
       ]
     },
     "object/brinecove/rocks-2-5": {
@@ -3093,9 +3401,13 @@
         "SM_BC_Rocks_2_5_Soft"
       ],
       "id": "object/brinecove/rocks-2-5",
-      "model": "adopted/brinecove/rocks-2-5",
+      "model": [
+        "prop/brinecove/rocks-2-5",
+        "prop/brinecove/rocks-2-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-2-5"
+        "prop/brinecove/rocks-2-5",
+        "prop/brinecove/rocks-2-5-soft"
       ]
     },
     "object/brinecove/rocks-2-6": {
@@ -3104,9 +3416,13 @@
         "SM_BC_Rocks_2_6_Soft"
       ],
       "id": "object/brinecove/rocks-2-6",
-      "model": "adopted/brinecove/rocks-2-6",
+      "model": [
+        "prop/brinecove/rocks-2-6",
+        "prop/brinecove/rocks-2-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-2-6"
+        "prop/brinecove/rocks-2-6",
+        "prop/brinecove/rocks-2-6-soft"
       ]
     },
     "object/brinecove/rocks-3-2": {
@@ -3115,9 +3431,13 @@
         "SM_BC_Rocks_3_2_Soft"
       ],
       "id": "object/brinecove/rocks-3-2",
-      "model": "adopted/brinecove/rocks-3-2",
+      "model": [
+        "prop/brinecove/rocks-3-2",
+        "prop/brinecove/rocks-3-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-3-2"
+        "prop/brinecove/rocks-3-2",
+        "prop/brinecove/rocks-3-2-soft"
       ]
     },
     "object/brinecove/rocks-3-4": {
@@ -3126,9 +3446,13 @@
         "SM_BC_Rocks_3_4_Soft"
       ],
       "id": "object/brinecove/rocks-3-4",
-      "model": "adopted/brinecove/rocks-3-4",
+      "model": [
+        "prop/brinecove/rocks-3-4",
+        "prop/brinecove/rocks-3-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-3-4"
+        "prop/brinecove/rocks-3-4",
+        "prop/brinecove/rocks-3-4-soft"
       ]
     },
     "object/brinecove/rocks-3-5": {
@@ -3137,9 +3461,13 @@
         "SM_BC_Rocks_3_5_Soft"
       ],
       "id": "object/brinecove/rocks-3-5",
-      "model": "adopted/brinecove/rocks-3-5",
+      "model": [
+        "prop/brinecove/rocks-3-5",
+        "prop/brinecove/rocks-3-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-3-5"
+        "prop/brinecove/rocks-3-5",
+        "prop/brinecove/rocks-3-5-soft"
       ]
     },
     "object/brinecove/rocks-3-6": {
@@ -3148,9 +3476,13 @@
         "SM_BC_Rocks_3_6_Soft"
       ],
       "id": "object/brinecove/rocks-3-6",
-      "model": "adopted/brinecove/rocks-3-6",
+      "model": [
+        "prop/brinecove/rocks-3-6",
+        "prop/brinecove/rocks-3-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-3-6"
+        "prop/brinecove/rocks-3-6",
+        "prop/brinecove/rocks-3-6-soft"
       ]
     },
     "object/brinecove/rocks-4-1": {
@@ -3159,9 +3491,13 @@
         "SM_BC_Rocks_4_1_Soft"
       ],
       "id": "object/brinecove/rocks-4-1",
-      "model": "adopted/brinecove/rocks-4-1",
+      "model": [
+        "prop/brinecove/rocks-4-1",
+        "prop/brinecove/rocks-4-1-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-4-1"
+        "prop/brinecove/rocks-4-1",
+        "prop/brinecove/rocks-4-1-soft"
       ]
     },
     "object/brinecove/rocks-4-2": {
@@ -3170,9 +3506,13 @@
         "SM_BC_Rocks_4_2_Soft"
       ],
       "id": "object/brinecove/rocks-4-2",
-      "model": "adopted/brinecove/rocks-4-2",
+      "model": [
+        "prop/brinecove/rocks-4-2",
+        "prop/brinecove/rocks-4-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-4-2"
+        "prop/brinecove/rocks-4-2",
+        "prop/brinecove/rocks-4-2-soft"
       ]
     },
     "object/brinecove/rocks-4-4": {
@@ -3181,9 +3521,13 @@
         "SM_BC_Rocks_4_4_Soft"
       ],
       "id": "object/brinecove/rocks-4-4",
-      "model": "adopted/brinecove/rocks-4-4",
+      "model": [
+        "prop/brinecove/rocks-4-4",
+        "prop/brinecove/rocks-4-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-4-4"
+        "prop/brinecove/rocks-4-4",
+        "prop/brinecove/rocks-4-4-soft"
       ]
     },
     "object/brinecove/rocks-4-5": {
@@ -3192,9 +3536,13 @@
         "SM_BC_Rocks_4_5_Soft"
       ],
       "id": "object/brinecove/rocks-4-5",
-      "model": "adopted/brinecove/rocks-4-5",
+      "model": [
+        "prop/brinecove/rocks-4-5",
+        "prop/brinecove/rocks-4-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-4-5"
+        "prop/brinecove/rocks-4-5",
+        "prop/brinecove/rocks-4-5-soft"
       ]
     },
     "object/brinecove/rocks-4-6": {
@@ -3203,9 +3551,13 @@
         "SM_BC_Rocks_4_6_Soft"
       ],
       "id": "object/brinecove/rocks-4-6",
-      "model": "adopted/brinecove/rocks-4-6",
+      "model": [
+        "prop/brinecove/rocks-4-6",
+        "prop/brinecove/rocks-4-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-4-6"
+        "prop/brinecove/rocks-4-6",
+        "prop/brinecove/rocks-4-6-soft"
       ]
     },
     "object/brinecove/rocks-5-2": {
@@ -3214,9 +3566,13 @@
         "SM_BC_Rocks_5_2_Soft"
       ],
       "id": "object/brinecove/rocks-5-2",
-      "model": "adopted/brinecove/rocks-5-2",
+      "model": [
+        "prop/brinecove/rocks-5-2",
+        "prop/brinecove/rocks-5-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-5-2"
+        "prop/brinecove/rocks-5-2",
+        "prop/brinecove/rocks-5-2-soft"
       ]
     },
     "object/brinecove/rocks-5-3": {
@@ -3225,9 +3581,13 @@
         "SM_BC_Rocks_5_3_Soft"
       ],
       "id": "object/brinecove/rocks-5-3",
-      "model": "adopted/brinecove/rocks-5-3",
+      "model": [
+        "prop/brinecove/rocks-5-3",
+        "prop/brinecove/rocks-5-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-5-3"
+        "prop/brinecove/rocks-5-3",
+        "prop/brinecove/rocks-5-3-soft"
       ]
     },
     "object/brinecove/rocks-5-4": {
@@ -3236,9 +3596,13 @@
         "SM_BC_Rocks_5_4_Soft"
       ],
       "id": "object/brinecove/rocks-5-4",
-      "model": "adopted/brinecove/rocks-5-4",
+      "model": [
+        "prop/brinecove/rocks-5-4",
+        "prop/brinecove/rocks-5-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-5-4"
+        "prop/brinecove/rocks-5-4",
+        "prop/brinecove/rocks-5-4-soft"
       ]
     },
     "object/brinecove/rocks-5-5": {
@@ -3247,9 +3611,13 @@
         "SM_BC_Rocks_5_5_Soft"
       ],
       "id": "object/brinecove/rocks-5-5",
-      "model": "adopted/brinecove/rocks-5-5",
+      "model": [
+        "prop/brinecove/rocks-5-5",
+        "prop/brinecove/rocks-5-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-5-5"
+        "prop/brinecove/rocks-5-5",
+        "prop/brinecove/rocks-5-5-soft"
       ]
     },
     "object/brinecove/rocks-5-6": {
@@ -3258,9 +3626,13 @@
         "SM_BC_Rocks_5_6_Soft"
       ],
       "id": "object/brinecove/rocks-5-6",
-      "model": "adopted/brinecove/rocks-5-6",
+      "model": [
+        "prop/brinecove/rocks-5-6",
+        "prop/brinecove/rocks-5-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-5-6"
+        "prop/brinecove/rocks-5-6",
+        "prop/brinecove/rocks-5-6-soft"
       ]
     },
     "object/brinecove/rocks-6-0": {
@@ -3269,9 +3641,13 @@
         "SM_BC_Rocks_6_0_Soft"
       ],
       "id": "object/brinecove/rocks-6-0",
-      "model": "adopted/brinecove/rocks-6-0",
+      "model": [
+        "prop/brinecove/rocks-6-0",
+        "prop/brinecove/rocks-6-0-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-6-0"
+        "prop/brinecove/rocks-6-0",
+        "prop/brinecove/rocks-6-0-soft"
       ]
     },
     "object/brinecove/rocks-6-1": {
@@ -3283,9 +3659,19 @@
         "SM_BC_Rocks_6_1_Soft_Piece3"
       ],
       "id": "object/brinecove/rocks-6-1",
-      "model": "adopted/brinecove/rocks-6-1",
+      "model": [
+        "prop/brinecove/rocks-6-1",
+        "prop/brinecove/rocks-6-1-soft-piece0",
+        "prop/brinecove/rocks-6-1-soft-piece1",
+        "prop/brinecove/rocks-6-1-soft-piece2",
+        "prop/brinecove/rocks-6-1-soft-piece3"
+      ],
       "models": [
-        "adopted/brinecove/rocks-6-1"
+        "prop/brinecove/rocks-6-1",
+        "prop/brinecove/rocks-6-1-soft-piece0",
+        "prop/brinecove/rocks-6-1-soft-piece1",
+        "prop/brinecove/rocks-6-1-soft-piece2",
+        "prop/brinecove/rocks-6-1-soft-piece3"
       ]
     },
     "object/brinecove/rocks-6-2": {
@@ -3297,9 +3683,19 @@
         "SM_BC_Rocks_6_2_Soft_Piece3"
       ],
       "id": "object/brinecove/rocks-6-2",
-      "model": "adopted/brinecove/rocks-6-2",
+      "model": [
+        "prop/brinecove/rocks-6-2",
+        "prop/brinecove/rocks-6-2-soft-piece0",
+        "prop/brinecove/rocks-6-2-soft-piece1",
+        "prop/brinecove/rocks-6-2-soft-piece2",
+        "prop/brinecove/rocks-6-2-soft-piece3"
+      ],
       "models": [
-        "adopted/brinecove/rocks-6-2"
+        "prop/brinecove/rocks-6-2",
+        "prop/brinecove/rocks-6-2-soft-piece0",
+        "prop/brinecove/rocks-6-2-soft-piece1",
+        "prop/brinecove/rocks-6-2-soft-piece2",
+        "prop/brinecove/rocks-6-2-soft-piece3"
       ]
     },
     "object/brinecove/rocks-6-3": {
@@ -3308,9 +3704,13 @@
         "SM_BC_Rocks_6_3_Soft"
       ],
       "id": "object/brinecove/rocks-6-3",
-      "model": "adopted/brinecove/rocks-6-3",
+      "model": [
+        "prop/brinecove/rocks-6-3",
+        "prop/brinecove/rocks-6-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-6-3"
+        "prop/brinecove/rocks-6-3",
+        "prop/brinecove/rocks-6-3-soft"
       ]
     },
     "object/brinecove/rocks-6-4": {
@@ -3319,9 +3719,13 @@
         "SM_BC_Rocks_6_4_Soft"
       ],
       "id": "object/brinecove/rocks-6-4",
-      "model": "adopted/brinecove/rocks-6-4",
+      "model": [
+        "prop/brinecove/rocks-6-4",
+        "prop/brinecove/rocks-6-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-6-4"
+        "prop/brinecove/rocks-6-4",
+        "prop/brinecove/rocks-6-4-soft"
       ]
     },
     "object/brinecove/rocks-6-5": {
@@ -3330,9 +3734,13 @@
         "SM_BC_Rocks_6_5_Soft"
       ],
       "id": "object/brinecove/rocks-6-5",
-      "model": "adopted/brinecove/rocks-6-5",
+      "model": [
+        "prop/brinecove/rocks-6-5",
+        "prop/brinecove/rocks-6-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-6-5"
+        "prop/brinecove/rocks-6-5",
+        "prop/brinecove/rocks-6-5-soft"
       ]
     },
     "object/brinecove/rocks-6-6": {
@@ -3341,9 +3749,13 @@
         "SM_BC_Rocks_6_6_Soft"
       ],
       "id": "object/brinecove/rocks-6-6",
-      "model": "adopted/brinecove/rocks-6-6",
+      "model": [
+        "prop/brinecove/rocks-6-6",
+        "prop/brinecove/rocks-6-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-6-6"
+        "prop/brinecove/rocks-6-6",
+        "prop/brinecove/rocks-6-6-soft"
       ]
     },
     "object/brinecove/rocks-7-3": {
@@ -3352,9 +3764,13 @@
         "SM_BC_Rocks_7_3_Soft"
       ],
       "id": "object/brinecove/rocks-7-3",
-      "model": "adopted/brinecove/rocks-7-3",
+      "model": [
+        "prop/brinecove/rocks-7-3",
+        "prop/brinecove/rocks-7-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-7-3"
+        "prop/brinecove/rocks-7-3",
+        "prop/brinecove/rocks-7-3-soft"
       ]
     },
     "object/brinecove/rocks-7-4": {
@@ -3363,9 +3779,13 @@
         "SM_BC_Rocks_7_4_Soft"
       ],
       "id": "object/brinecove/rocks-7-4",
-      "model": "adopted/brinecove/rocks-7-4",
+      "model": [
+        "prop/brinecove/rocks-7-4",
+        "prop/brinecove/rocks-7-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-7-4"
+        "prop/brinecove/rocks-7-4",
+        "prop/brinecove/rocks-7-4-soft"
       ]
     },
     "object/brinecove/rocks-7-5": {
@@ -3374,9 +3794,13 @@
         "SM_BC_Rocks_7_5_Soft"
       ],
       "id": "object/brinecove/rocks-7-5",
-      "model": "adopted/brinecove/rocks-7-5",
+      "model": [
+        "prop/brinecove/rocks-7-5",
+        "prop/brinecove/rocks-7-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-7-5"
+        "prop/brinecove/rocks-7-5",
+        "prop/brinecove/rocks-7-5-soft"
       ]
     },
     "object/brinecove/rocks-7-6": {
@@ -3385,9 +3809,13 @@
         "SM_BC_Rocks_7_6_Soft"
       ],
       "id": "object/brinecove/rocks-7-6",
-      "model": "adopted/brinecove/rocks-7-6",
+      "model": [
+        "prop/brinecove/rocks-7-6",
+        "prop/brinecove/rocks-7-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/rocks-7-6"
+        "prop/brinecove/rocks-7-6",
+        "prop/brinecove/rocks-7-6-soft"
       ]
     },
     "object/brinecove/ships-nightjar-sloop": {
@@ -3397,9 +3825,43 @@
         "SM_BC_Ships_5_3"
       ],
       "id": "object/brinecove/ships-nightjar-sloop",
-      "model": "adopted/brinecove/ships-nightjar-sloop",
+      "model": [
+        "prop/brinecove/ships-4-2",
+        "prop/brinecove/ships-4-3",
+        "prop/brinecove/ships-5-3"
+      ],
       "models": [
-        "adopted/brinecove/ships-nightjar-sloop"
+        "prop/brinecove/ships-4-2",
+        "prop/brinecove/ships-4-3",
+        "prop/brinecove/ships-5-3"
+      ]
+    },
+    "object/brinecove/shipyard-yard": {
+      "groups": [
+        "SM_BC_ShipyardYard"
+      ],
+      "id": "object/brinecove/shipyard-yard",
+      "model": "prop/brinecove/shipyard-yard",
+      "models": [
+        "prop/brinecove/shipyard-yard"
+      ]
+    },
+    "object/brinecove/sloop-east": {
+      "groups": [
+        "SM_BC_SloopEast",
+        "SM_BC_Hero_GalleonHull_cell_-1_-1#547",
+        "SM_BC_Hero_GalleonHull_cell_-1_0#548",
+        "SM_BC_Hero_GalleonHull_cell_0_-1#549",
+        "SM_BC_Hero_GalleonHull_cell_0_0#550"
+      ],
+      "id": "object/brinecove/sloop-east",
+      "model": [
+        "prop/brinecove/sloop-east",
+        "adopted/brinecove/hero-galleon-hull"
+      ],
+      "models": [
+        "prop/brinecove/sloop-east",
+        "adopted/brinecove/hero-galleon-hull"
       ]
     },
     "object/brinecove/shipyard-yard": {
@@ -3506,9 +3968,13 @@
         "SM_BC_TownLower_1_2_Soft"
       ],
       "id": "object/brinecove/townlower-1-2",
-      "model": "adopted/brinecove/townlower-1-2",
+      "model": [
+        "prop/brinecove/town-lower-1-2",
+        "prop/brinecove/town-lower-1-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-1-2"
+        "prop/brinecove/town-lower-1-2",
+        "prop/brinecove/town-lower-1-2-soft"
       ]
     },
     "object/brinecove/townlower-1-3": {
@@ -3517,9 +3983,13 @@
         "SM_BC_TownLower_1_3_Soft"
       ],
       "id": "object/brinecove/townlower-1-3",
-      "model": "adopted/brinecove/townlower-1-3",
+      "model": [
+        "prop/brinecove/town-lower-1-3",
+        "prop/brinecove/town-lower-1-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-1-3"
+        "prop/brinecove/town-lower-1-3",
+        "prop/brinecove/town-lower-1-3-soft"
       ]
     },
     "object/brinecove/townlower-2-3": {
@@ -3528,9 +3998,13 @@
         "SM_BC_TownLower_2_3_Soft"
       ],
       "id": "object/brinecove/townlower-2-3",
-      "model": "adopted/brinecove/townlower-2-3",
+      "model": [
+        "prop/brinecove/town-lower-2-3",
+        "prop/brinecove/town-lower-2-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-2-3"
+        "prop/brinecove/town-lower-2-3",
+        "prop/brinecove/town-lower-2-3-soft"
       ]
     },
     "object/brinecove/townlower-2-4": {
@@ -3556,9 +4030,47 @@
         "SM_BC_TownLower_2_4_Soft"
       ],
       "id": "object/brinecove/townlower-2-4",
-      "model": "adopted/brinecove/townlower-2-4",
+      "model": [
+        "prop/brinecove/town-lower-2-4-piece00",
+        "prop/brinecove/town-lower-2-4-piece01",
+        "prop/brinecove/town-lower-2-4-piece02",
+        "prop/brinecove/town-lower-2-4-piece030",
+        "prop/brinecove/town-lower-2-4-piece031",
+        "prop/brinecove/town-lower-2-4-piece032",
+        "prop/brinecove/town-lower-2-4-piece033",
+        "prop/brinecove/town-lower-2-4-piece10",
+        "prop/brinecove/town-lower-2-4-piece110",
+        "prop/brinecove/town-lower-2-4-piece111",
+        "prop/brinecove/town-lower-2-4-piece112",
+        "prop/brinecove/town-lower-2-4-piece113",
+        "prop/brinecove/town-lower-2-4-piece12",
+        "prop/brinecove/town-lower-2-4-piece13",
+        "prop/brinecove/town-lower-2-4-piece20",
+        "prop/brinecove/town-lower-2-4-piece21",
+        "prop/brinecove/town-lower-2-4-piece30",
+        "prop/brinecove/town-lower-2-4-piece31",
+        "prop/brinecove/town-lower-2-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-2-4"
+        "prop/brinecove/town-lower-2-4-piece00",
+        "prop/brinecove/town-lower-2-4-piece01",
+        "prop/brinecove/town-lower-2-4-piece02",
+        "prop/brinecove/town-lower-2-4-piece030",
+        "prop/brinecove/town-lower-2-4-piece031",
+        "prop/brinecove/town-lower-2-4-piece032",
+        "prop/brinecove/town-lower-2-4-piece033",
+        "prop/brinecove/town-lower-2-4-piece10",
+        "prop/brinecove/town-lower-2-4-piece110",
+        "prop/brinecove/town-lower-2-4-piece111",
+        "prop/brinecove/town-lower-2-4-piece112",
+        "prop/brinecove/town-lower-2-4-piece113",
+        "prop/brinecove/town-lower-2-4-piece12",
+        "prop/brinecove/town-lower-2-4-piece13",
+        "prop/brinecove/town-lower-2-4-piece20",
+        "prop/brinecove/town-lower-2-4-piece21",
+        "prop/brinecove/town-lower-2-4-piece30",
+        "prop/brinecove/town-lower-2-4-piece31",
+        "prop/brinecove/town-lower-2-4-soft"
       ]
     },
     "object/brinecove/townlower-3-3": {
@@ -3566,9 +4078,9 @@
         "SM_BC_TownLower_3_3"
       ],
       "id": "object/brinecove/townlower-3-3",
-      "model": "adopted/brinecove/townlower-3-3",
+      "model": "prop/brinecove/town-lower-3-3",
       "models": [
-        "adopted/brinecove/townlower-3-3"
+        "prop/brinecove/town-lower-3-3"
       ]
     },
     "object/brinecove/townlower-3-4": {
@@ -3592,9 +4104,43 @@
         "SM_BC_TownLower_3_4_Soft"
       ],
       "id": "object/brinecove/townlower-3-4",
-      "model": "adopted/brinecove/townlower-3-4",
+      "model": [
+        "prop/brinecove/town-lower-3-4-piece000",
+        "prop/brinecove/town-lower-3-4-piece001",
+        "prop/brinecove/town-lower-3-4-piece002",
+        "prop/brinecove/town-lower-3-4-piece003",
+        "prop/brinecove/town-lower-3-4-piece01",
+        "prop/brinecove/town-lower-3-4-piece02",
+        "prop/brinecove/town-lower-3-4-piece030",
+        "prop/brinecove/town-lower-3-4-piece031",
+        "prop/brinecove/town-lower-3-4-piece032",
+        "prop/brinecove/town-lower-3-4-piece033",
+        "prop/brinecove/town-lower-3-4-piece10",
+        "prop/brinecove/town-lower-3-4-piece11",
+        "prop/brinecove/town-lower-3-4-piece12",
+        "prop/brinecove/town-lower-3-4-piece13",
+        "prop/brinecove/town-lower-3-4-piece2",
+        "prop/brinecove/town-lower-3-4-piece3",
+        "prop/brinecove/town-lower-3-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-3-4"
+        "prop/brinecove/town-lower-3-4-piece000",
+        "prop/brinecove/town-lower-3-4-piece001",
+        "prop/brinecove/town-lower-3-4-piece002",
+        "prop/brinecove/town-lower-3-4-piece003",
+        "prop/brinecove/town-lower-3-4-piece01",
+        "prop/brinecove/town-lower-3-4-piece02",
+        "prop/brinecove/town-lower-3-4-piece030",
+        "prop/brinecove/town-lower-3-4-piece031",
+        "prop/brinecove/town-lower-3-4-piece032",
+        "prop/brinecove/town-lower-3-4-piece033",
+        "prop/brinecove/town-lower-3-4-piece10",
+        "prop/brinecove/town-lower-3-4-piece11",
+        "prop/brinecove/town-lower-3-4-piece12",
+        "prop/brinecove/town-lower-3-4-piece13",
+        "prop/brinecove/town-lower-3-4-piece2",
+        "prop/brinecove/town-lower-3-4-piece3",
+        "prop/brinecove/town-lower-3-4-soft"
       ]
     },
     "object/brinecove/townlower-4-3": {
@@ -3602,9 +4148,9 @@
         "SM_BC_TownLower_4_3"
       ],
       "id": "object/brinecove/townlower-4-3",
-      "model": "adopted/brinecove/townlower-4-3",
+      "model": "prop/brinecove/town-lower-4-3",
       "models": [
-        "adopted/brinecove/townlower-4-3"
+        "prop/brinecove/town-lower-4-3"
       ]
     },
     "object/brinecove/townlower-4-4": {
@@ -3622,9 +4168,31 @@
         "SM_BC_TownLower_4_4_Soft"
       ],
       "id": "object/brinecove/townlower-4-4",
-      "model": "adopted/brinecove/townlower-4-4",
+      "model": [
+        "prop/brinecove/town-lower-4-4-piece01",
+        "prop/brinecove/town-lower-4-4-piece02",
+        "prop/brinecove/town-lower-4-4-piece03",
+        "prop/brinecove/town-lower-4-4-piece10",
+        "prop/brinecove/town-lower-4-4-piece11",
+        "prop/brinecove/town-lower-4-4-piece12",
+        "prop/brinecove/town-lower-4-4-piece13",
+        "prop/brinecove/town-lower-4-4-piece2",
+        "prop/brinecove/town-lower-4-4-piece30",
+        "prop/brinecove/town-lower-4-4-piece31",
+        "prop/brinecove/town-lower-4-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-4-4"
+        "prop/brinecove/town-lower-4-4-piece01",
+        "prop/brinecove/town-lower-4-4-piece02",
+        "prop/brinecove/town-lower-4-4-piece03",
+        "prop/brinecove/town-lower-4-4-piece10",
+        "prop/brinecove/town-lower-4-4-piece11",
+        "prop/brinecove/town-lower-4-4-piece12",
+        "prop/brinecove/town-lower-4-4-piece13",
+        "prop/brinecove/town-lower-4-4-piece2",
+        "prop/brinecove/town-lower-4-4-piece30",
+        "prop/brinecove/town-lower-4-4-piece31",
+        "prop/brinecove/town-lower-4-4-soft"
       ]
     },
     "object/brinecove/townlower-5-3": {
@@ -3633,9 +4201,13 @@
         "SM_BC_TownLower_5_3_Soft"
       ],
       "id": "object/brinecove/townlower-5-3",
-      "model": "adopted/brinecove/townlower-5-3",
+      "model": [
+        "prop/brinecove/town-lower-5-3",
+        "prop/brinecove/town-lower-5-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-5-3"
+        "prop/brinecove/town-lower-5-3",
+        "prop/brinecove/town-lower-5-3-soft"
       ]
     },
     "object/brinecove/townlower-5-4": {
@@ -3656,9 +4228,37 @@
         "SM_BC_TownLower_5_4_Soft"
       ],
       "id": "object/brinecove/townlower-5-4",
-      "model": "adopted/brinecove/townlower-5-4",
+      "model": [
+        "prop/brinecove/town-lower-5-4-piece000",
+        "prop/brinecove/town-lower-5-4-piece001",
+        "prop/brinecove/town-lower-5-4-piece002",
+        "prop/brinecove/town-lower-5-4-piece003",
+        "prop/brinecove/town-lower-5-4-piece01",
+        "prop/brinecove/town-lower-5-4-piece02",
+        "prop/brinecove/town-lower-5-4-piece03",
+        "prop/brinecove/town-lower-5-4-piece10",
+        "prop/brinecove/town-lower-5-4-piece12",
+        "prop/brinecove/town-lower-5-4-piece13",
+        "prop/brinecove/town-lower-5-4-piece2",
+        "prop/brinecove/town-lower-5-4-piece30",
+        "prop/brinecove/town-lower-5-4-piece31",
+        "prop/brinecove/town-lower-5-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-5-4"
+        "prop/brinecove/town-lower-5-4-piece000",
+        "prop/brinecove/town-lower-5-4-piece001",
+        "prop/brinecove/town-lower-5-4-piece002",
+        "prop/brinecove/town-lower-5-4-piece003",
+        "prop/brinecove/town-lower-5-4-piece01",
+        "prop/brinecove/town-lower-5-4-piece02",
+        "prop/brinecove/town-lower-5-4-piece03",
+        "prop/brinecove/town-lower-5-4-piece10",
+        "prop/brinecove/town-lower-5-4-piece12",
+        "prop/brinecove/town-lower-5-4-piece13",
+        "prop/brinecove/town-lower-5-4-piece2",
+        "prop/brinecove/town-lower-5-4-piece30",
+        "prop/brinecove/town-lower-5-4-piece31",
+        "prop/brinecove/town-lower-5-4-soft"
       ]
     },
     "object/brinecove/townlower-6-2": {
@@ -3667,9 +4267,13 @@
         "SM_BC_TownLower_6_2_Soft"
       ],
       "id": "object/brinecove/townlower-6-2",
-      "model": "adopted/brinecove/townlower-6-2",
+      "model": [
+        "prop/brinecove/town-lower-6-2",
+        "prop/brinecove/town-lower-6-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-6-2"
+        "prop/brinecove/town-lower-6-2",
+        "prop/brinecove/town-lower-6-2-soft"
       ]
     },
     "object/brinecove/townlower-6-3": {
@@ -3678,9 +4282,13 @@
         "SM_BC_TownLower_6_3_Soft"
       ],
       "id": "object/brinecove/townlower-6-3",
-      "model": "adopted/brinecove/townlower-6-3",
+      "model": [
+        "prop/brinecove/town-lower-6-3",
+        "prop/brinecove/town-lower-6-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/townlower-6-3"
+        "prop/brinecove/town-lower-6-3",
+        "prop/brinecove/town-lower-6-3-soft"
       ]
     },
     "object/brinecove/townupper-2-4": {
@@ -3699,9 +4307,33 @@
         "SM_BC_TownUpper_2_4_Soft"
       ],
       "id": "object/brinecove/townupper-2-4",
-      "model": "adopted/brinecove/townupper-2-4",
+      "model": [
+        "prop/brinecove/town-upper-2-4-piece20",
+        "prop/brinecove/town-upper-2-4-piece21",
+        "prop/brinecove/town-upper-2-4-piece22",
+        "prop/brinecove/town-upper-2-4-piece230",
+        "prop/brinecove/town-upper-2-4-piece231",
+        "prop/brinecove/town-upper-2-4-piece232",
+        "prop/brinecove/town-upper-2-4-piece233",
+        "prop/brinecove/town-upper-2-4-piece30",
+        "prop/brinecove/town-upper-2-4-piece31",
+        "prop/brinecove/town-upper-2-4-piece32",
+        "prop/brinecove/town-upper-2-4-piece33",
+        "prop/brinecove/town-upper-2-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-2-4"
+        "prop/brinecove/town-upper-2-4-piece20",
+        "prop/brinecove/town-upper-2-4-piece21",
+        "prop/brinecove/town-upper-2-4-piece22",
+        "prop/brinecove/town-upper-2-4-piece230",
+        "prop/brinecove/town-upper-2-4-piece231",
+        "prop/brinecove/town-upper-2-4-piece232",
+        "prop/brinecove/town-upper-2-4-piece233",
+        "prop/brinecove/town-upper-2-4-piece30",
+        "prop/brinecove/town-upper-2-4-piece31",
+        "prop/brinecove/town-upper-2-4-piece32",
+        "prop/brinecove/town-upper-2-4-piece33",
+        "prop/brinecove/town-upper-2-4-soft"
       ]
     },
     "object/brinecove/townupper-2-5": {
@@ -3715,9 +4347,23 @@
         "SM_BC_TownUpper_2_5_Soft"
       ],
       "id": "object/brinecove/townupper-2-5",
-      "model": "adopted/brinecove/townupper-2-5",
+      "model": [
+        "prop/brinecove/town-upper-2-5-piece0",
+        "prop/brinecove/town-upper-2-5-piece10",
+        "prop/brinecove/town-upper-2-5-piece11",
+        "prop/brinecove/town-upper-2-5-piece12",
+        "prop/brinecove/town-upper-2-5-piece13",
+        "prop/brinecove/town-upper-2-5-piece3",
+        "prop/brinecove/town-upper-2-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-2-5"
+        "prop/brinecove/town-upper-2-5-piece0",
+        "prop/brinecove/town-upper-2-5-piece10",
+        "prop/brinecove/town-upper-2-5-piece11",
+        "prop/brinecove/town-upper-2-5-piece12",
+        "prop/brinecove/town-upper-2-5-piece13",
+        "prop/brinecove/town-upper-2-5-piece3",
+        "prop/brinecove/town-upper-2-5-soft"
       ]
     },
     "object/brinecove/townupper-3-4": {
@@ -3743,9 +4389,47 @@
         "SM_BC_TownUpper_3_4_Soft"
       ],
       "id": "object/brinecove/townupper-3-4",
-      "model": "adopted/brinecove/townupper-3-4",
+      "model": [
+        "prop/brinecove/town-upper-3-4-piece0",
+        "prop/brinecove/town-upper-3-4-piece20",
+        "prop/brinecove/town-upper-3-4-piece21",
+        "prop/brinecove/town-upper-3-4-piece220",
+        "prop/brinecove/town-upper-3-4-piece221",
+        "prop/brinecove/town-upper-3-4-piece222",
+        "prop/brinecove/town-upper-3-4-piece223",
+        "prop/brinecove/town-upper-3-4-piece230",
+        "prop/brinecove/town-upper-3-4-piece231",
+        "prop/brinecove/town-upper-3-4-piece232",
+        "prop/brinecove/town-upper-3-4-piece233",
+        "prop/brinecove/town-upper-3-4-piece30",
+        "prop/brinecove/town-upper-3-4-piece31",
+        "prop/brinecove/town-upper-3-4-piece320",
+        "prop/brinecove/town-upper-3-4-piece321",
+        "prop/brinecove/town-upper-3-4-piece322",
+        "prop/brinecove/town-upper-3-4-piece323",
+        "prop/brinecove/town-upper-3-4-piece33",
+        "prop/brinecove/town-upper-3-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-3-4"
+        "prop/brinecove/town-upper-3-4-piece0",
+        "prop/brinecove/town-upper-3-4-piece20",
+        "prop/brinecove/town-upper-3-4-piece21",
+        "prop/brinecove/town-upper-3-4-piece220",
+        "prop/brinecove/town-upper-3-4-piece221",
+        "prop/brinecove/town-upper-3-4-piece222",
+        "prop/brinecove/town-upper-3-4-piece223",
+        "prop/brinecove/town-upper-3-4-piece230",
+        "prop/brinecove/town-upper-3-4-piece231",
+        "prop/brinecove/town-upper-3-4-piece232",
+        "prop/brinecove/town-upper-3-4-piece233",
+        "prop/brinecove/town-upper-3-4-piece30",
+        "prop/brinecove/town-upper-3-4-piece31",
+        "prop/brinecove/town-upper-3-4-piece320",
+        "prop/brinecove/town-upper-3-4-piece321",
+        "prop/brinecove/town-upper-3-4-piece322",
+        "prop/brinecove/town-upper-3-4-piece323",
+        "prop/brinecove/town-upper-3-4-piece33",
+        "prop/brinecove/town-upper-3-4-soft"
       ]
     },
     "object/brinecove/townupper-3-5": {
@@ -3760,9 +4444,25 @@
         "SM_BC_TownUpper_3_5_Soft"
       ],
       "id": "object/brinecove/townupper-3-5",
-      "model": "adopted/brinecove/townupper-3-5",
+      "model": [
+        "prop/brinecove/town-upper-3-5-piece00",
+        "prop/brinecove/town-upper-3-5-piece01",
+        "prop/brinecove/town-upper-3-5-piece02",
+        "prop/brinecove/town-upper-3-5-piece03",
+        "prop/brinecove/town-upper-3-5-piece1",
+        "prop/brinecove/town-upper-3-5-piece2",
+        "prop/brinecove/town-upper-3-5-piece3",
+        "prop/brinecove/town-upper-3-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-3-5"
+        "prop/brinecove/town-upper-3-5-piece00",
+        "prop/brinecove/town-upper-3-5-piece01",
+        "prop/brinecove/town-upper-3-5-piece02",
+        "prop/brinecove/town-upper-3-5-piece03",
+        "prop/brinecove/town-upper-3-5-piece1",
+        "prop/brinecove/town-upper-3-5-piece2",
+        "prop/brinecove/town-upper-3-5-piece3",
+        "prop/brinecove/town-upper-3-5-soft"
       ]
     },
     "object/brinecove/townupper-4-4": {
@@ -3789,9 +4489,49 @@
         "SM_BC_TownUpper_4_4_Soft"
       ],
       "id": "object/brinecove/townupper-4-4",
-      "model": "adopted/brinecove/townupper-4-4",
+      "model": [
+        "prop/brinecove/town-upper-4-4-piece0",
+        "prop/brinecove/town-upper-4-4-piece1",
+        "prop/brinecove/town-upper-4-4-piece20",
+        "prop/brinecove/town-upper-4-4-piece21",
+        "prop/brinecove/town-upper-4-4-piece22",
+        "prop/brinecove/town-upper-4-4-piece230",
+        "prop/brinecove/town-upper-4-4-piece231",
+        "prop/brinecove/town-upper-4-4-piece232",
+        "prop/brinecove/town-upper-4-4-piece233",
+        "prop/brinecove/town-upper-4-4-piece30",
+        "prop/brinecove/town-upper-4-4-piece31",
+        "prop/brinecove/town-upper-4-4-piece320",
+        "prop/brinecove/town-upper-4-4-piece321",
+        "prop/brinecove/town-upper-4-4-piece322",
+        "prop/brinecove/town-upper-4-4-piece323",
+        "prop/brinecove/town-upper-4-4-piece330",
+        "prop/brinecove/town-upper-4-4-piece331",
+        "prop/brinecove/town-upper-4-4-piece332",
+        "prop/brinecove/town-upper-4-4-piece333",
+        "prop/brinecove/town-upper-4-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-4-4"
+        "prop/brinecove/town-upper-4-4-piece0",
+        "prop/brinecove/town-upper-4-4-piece1",
+        "prop/brinecove/town-upper-4-4-piece20",
+        "prop/brinecove/town-upper-4-4-piece21",
+        "prop/brinecove/town-upper-4-4-piece22",
+        "prop/brinecove/town-upper-4-4-piece230",
+        "prop/brinecove/town-upper-4-4-piece231",
+        "prop/brinecove/town-upper-4-4-piece232",
+        "prop/brinecove/town-upper-4-4-piece233",
+        "prop/brinecove/town-upper-4-4-piece30",
+        "prop/brinecove/town-upper-4-4-piece31",
+        "prop/brinecove/town-upper-4-4-piece320",
+        "prop/brinecove/town-upper-4-4-piece321",
+        "prop/brinecove/town-upper-4-4-piece322",
+        "prop/brinecove/town-upper-4-4-piece323",
+        "prop/brinecove/town-upper-4-4-piece330",
+        "prop/brinecove/town-upper-4-4-piece331",
+        "prop/brinecove/town-upper-4-4-piece332",
+        "prop/brinecove/town-upper-4-4-piece333",
+        "prop/brinecove/town-upper-4-4-soft"
       ]
     },
     "object/brinecove/townupper-4-5": {
@@ -3809,9 +4549,31 @@
         "SM_BC_TownUpper_4_5_Soft"
       ],
       "id": "object/brinecove/townupper-4-5",
-      "model": "adopted/brinecove/townupper-4-5",
+      "model": [
+        "prop/brinecove/town-upper-4-5-piece00",
+        "prop/brinecove/town-upper-4-5-piece01",
+        "prop/brinecove/town-upper-4-5-piece02",
+        "prop/brinecove/town-upper-4-5-piece03",
+        "prop/brinecove/town-upper-4-5-piece10",
+        "prop/brinecove/town-upper-4-5-piece11",
+        "prop/brinecove/town-upper-4-5-piece12",
+        "prop/brinecove/town-upper-4-5-piece13",
+        "prop/brinecove/town-upper-4-5-piece2",
+        "prop/brinecove/town-upper-4-5-piece3",
+        "prop/brinecove/town-upper-4-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-4-5"
+        "prop/brinecove/town-upper-4-5-piece00",
+        "prop/brinecove/town-upper-4-5-piece01",
+        "prop/brinecove/town-upper-4-5-piece02",
+        "prop/brinecove/town-upper-4-5-piece03",
+        "prop/brinecove/town-upper-4-5-piece10",
+        "prop/brinecove/town-upper-4-5-piece11",
+        "prop/brinecove/town-upper-4-5-piece12",
+        "prop/brinecove/town-upper-4-5-piece13",
+        "prop/brinecove/town-upper-4-5-piece2",
+        "prop/brinecove/town-upper-4-5-piece3",
+        "prop/brinecove/town-upper-4-5-soft"
       ]
     },
     "object/brinecove/townupper-5-4": {
@@ -3830,9 +4592,33 @@
         "SM_BC_TownUpper_5_4_Soft"
       ],
       "id": "object/brinecove/townupper-5-4",
-      "model": "adopted/brinecove/townupper-5-4",
+      "model": [
+        "prop/brinecove/town-upper-5-4-piece20",
+        "prop/brinecove/town-upper-5-4-piece21",
+        "prop/brinecove/town-upper-5-4-piece220",
+        "prop/brinecove/town-upper-5-4-piece221",
+        "prop/brinecove/town-upper-5-4-piece222",
+        "prop/brinecove/town-upper-5-4-piece223",
+        "prop/brinecove/town-upper-5-4-piece23",
+        "prop/brinecove/town-upper-5-4-piece30",
+        "prop/brinecove/town-upper-5-4-piece31",
+        "prop/brinecove/town-upper-5-4-piece32",
+        "prop/brinecove/town-upper-5-4-piece33",
+        "prop/brinecove/town-upper-5-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-5-4"
+        "prop/brinecove/town-upper-5-4-piece20",
+        "prop/brinecove/town-upper-5-4-piece21",
+        "prop/brinecove/town-upper-5-4-piece220",
+        "prop/brinecove/town-upper-5-4-piece221",
+        "prop/brinecove/town-upper-5-4-piece222",
+        "prop/brinecove/town-upper-5-4-piece223",
+        "prop/brinecove/town-upper-5-4-piece23",
+        "prop/brinecove/town-upper-5-4-piece30",
+        "prop/brinecove/town-upper-5-4-piece31",
+        "prop/brinecove/town-upper-5-4-piece32",
+        "prop/brinecove/town-upper-5-4-piece33",
+        "prop/brinecove/town-upper-5-4-soft"
       ]
     },
     "object/brinecove/townupper-5-5": {
@@ -3846,9 +4632,23 @@
         "SM_BC_TownUpper_5_5_Soft"
       ],
       "id": "object/brinecove/townupper-5-5",
-      "model": "adopted/brinecove/townupper-5-5",
+      "model": [
+        "prop/brinecove/town-upper-5-5-piece00",
+        "prop/brinecove/town-upper-5-5-piece01",
+        "prop/brinecove/town-upper-5-5-piece02",
+        "prop/brinecove/town-upper-5-5-piece03",
+        "prop/brinecove/town-upper-5-5-piece1",
+        "prop/brinecove/town-upper-5-5-piece2",
+        "prop/brinecove/town-upper-5-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/townupper-5-5"
+        "prop/brinecove/town-upper-5-5-piece00",
+        "prop/brinecove/town-upper-5-5-piece01",
+        "prop/brinecove/town-upper-5-5-piece02",
+        "prop/brinecove/town-upper-5-5-piece03",
+        "prop/brinecove/town-upper-5-5-piece1",
+        "prop/brinecove/town-upper-5-5-piece2",
+        "prop/brinecove/town-upper-5-5-soft"
       ]
     },
     "object/brinecove/understory-0-2": {
@@ -3857,9 +4657,13 @@
         "SM_BC_Understory_0_2_Soft"
       ],
       "id": "object/brinecove/understory-0-2",
-      "model": "adopted/brinecove/understory-0-2",
+      "model": [
+        "prop/brinecove/understory-0-2",
+        "prop/brinecove/understory-0-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-0-2"
+        "prop/brinecove/understory-0-2",
+        "prop/brinecove/understory-0-2-soft"
       ]
     },
     "object/brinecove/understory-0-3": {
@@ -3867,9 +4671,9 @@
         "SM_BC_Understory_0_3_Soft"
       ],
       "id": "object/brinecove/understory-0-3",
-      "model": "adopted/brinecove/understory-0-3",
+      "model": "prop/brinecove/understory-0-3-soft",
       "models": [
-        "adopted/brinecove/understory-0-3"
+        "prop/brinecove/understory-0-3-soft"
       ]
     },
     "object/brinecove/understory-0-4": {
@@ -3877,9 +4681,9 @@
         "SM_BC_Understory_0_4_Soft"
       ],
       "id": "object/brinecove/understory-0-4",
-      "model": "adopted/brinecove/understory-0-4",
+      "model": "prop/brinecove/understory-0-4-soft",
       "models": [
-        "adopted/brinecove/understory-0-4"
+        "prop/brinecove/understory-0-4-soft"
       ]
     },
     "object/brinecove/understory-0-5": {
@@ -3888,9 +4692,13 @@
         "SM_BC_Understory_0_5_Soft"
       ],
       "id": "object/brinecove/understory-0-5",
-      "model": "adopted/brinecove/understory-0-5",
+      "model": [
+        "prop/brinecove/understory-0-5",
+        "prop/brinecove/understory-0-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-0-5"
+        "prop/brinecove/understory-0-5",
+        "prop/brinecove/understory-0-5-soft"
       ]
     },
     "object/brinecove/understory-1-1": {
@@ -3899,9 +4707,13 @@
         "SM_BC_Understory_1_1_Soft"
       ],
       "id": "object/brinecove/understory-1-1",
-      "model": "adopted/brinecove/understory-1-1",
+      "model": [
+        "prop/brinecove/understory-1-1",
+        "prop/brinecove/understory-1-1-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-1-1"
+        "prop/brinecove/understory-1-1",
+        "prop/brinecove/understory-1-1-soft"
       ]
     },
     "object/brinecove/understory-1-2": {
@@ -3910,9 +4722,13 @@
         "SM_BC_Understory_1_2_Soft"
       ],
       "id": "object/brinecove/understory-1-2",
-      "model": "adopted/brinecove/understory-1-2",
+      "model": [
+        "prop/brinecove/understory-1-2",
+        "prop/brinecove/understory-1-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-1-2"
+        "prop/brinecove/understory-1-2",
+        "prop/brinecove/understory-1-2-soft"
       ]
     },
     "object/brinecove/understory-1-3": {
@@ -3921,9 +4737,13 @@
         "SM_BC_Understory_1_3_Soft"
       ],
       "id": "object/brinecove/understory-1-3",
-      "model": "adopted/brinecove/understory-1-3",
+      "model": [
+        "prop/brinecove/understory-1-3",
+        "prop/brinecove/understory-1-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-1-3"
+        "prop/brinecove/understory-1-3",
+        "prop/brinecove/understory-1-3-soft"
       ]
     },
     "object/brinecove/understory-1-4": {
@@ -3932,9 +4752,13 @@
         "SM_BC_Understory_1_4_Soft"
       ],
       "id": "object/brinecove/understory-1-4",
-      "model": "adopted/brinecove/understory-1-4",
+      "model": [
+        "prop/brinecove/understory-1-4",
+        "prop/brinecove/understory-1-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-1-4"
+        "prop/brinecove/understory-1-4",
+        "prop/brinecove/understory-1-4-soft"
       ]
     },
     "object/brinecove/understory-1-5": {
@@ -3943,9 +4767,13 @@
         "SM_BC_Understory_1_5_Soft"
       ],
       "id": "object/brinecove/understory-1-5",
-      "model": "adopted/brinecove/understory-1-5",
+      "model": [
+        "prop/brinecove/understory-1-5",
+        "prop/brinecove/understory-1-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-1-5"
+        "prop/brinecove/understory-1-5",
+        "prop/brinecove/understory-1-5-soft"
       ]
     },
     "object/brinecove/understory-1-6": {
@@ -3954,9 +4782,13 @@
         "SM_BC_Understory_1_6_Soft"
       ],
       "id": "object/brinecove/understory-1-6",
-      "model": "adopted/brinecove/understory-1-6",
+      "model": [
+        "prop/brinecove/understory-1-6",
+        "prop/brinecove/understory-1-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-1-6"
+        "prop/brinecove/understory-1-6",
+        "prop/brinecove/understory-1-6-soft"
       ]
     },
     "object/brinecove/understory-2-2": {
@@ -3965,9 +4797,13 @@
         "SM_BC_Understory_2_2_Soft"
       ],
       "id": "object/brinecove/understory-2-2",
-      "model": "adopted/brinecove/understory-2-2",
+      "model": [
+        "prop/brinecove/understory-2-2",
+        "prop/brinecove/understory-2-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-2-2"
+        "prop/brinecove/understory-2-2",
+        "prop/brinecove/understory-2-2-soft"
       ]
     },
     "object/brinecove/understory-2-3": {
@@ -3976,9 +4812,13 @@
         "SM_BC_Understory_2_3_Soft"
       ],
       "id": "object/brinecove/understory-2-3",
-      "model": "adopted/brinecove/understory-2-3",
+      "model": [
+        "prop/brinecove/understory-2-3",
+        "prop/brinecove/understory-2-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-2-3"
+        "prop/brinecove/understory-2-3",
+        "prop/brinecove/understory-2-3-soft"
       ]
     },
     "object/brinecove/understory-2-4": {
@@ -3987,9 +4827,13 @@
         "SM_BC_Understory_2_4_Soft"
       ],
       "id": "object/brinecove/understory-2-4",
-      "model": "adopted/brinecove/understory-2-4",
+      "model": [
+        "prop/brinecove/understory-2-4",
+        "prop/brinecove/understory-2-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-2-4"
+        "prop/brinecove/understory-2-4",
+        "prop/brinecove/understory-2-4-soft"
       ]
     },
     "object/brinecove/understory-2-5": {
@@ -3998,9 +4842,13 @@
         "SM_BC_Understory_2_5_Soft"
       ],
       "id": "object/brinecove/understory-2-5",
-      "model": "adopted/brinecove/understory-2-5",
+      "model": [
+        "prop/brinecove/understory-2-5",
+        "prop/brinecove/understory-2-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-2-5"
+        "prop/brinecove/understory-2-5",
+        "prop/brinecove/understory-2-5-soft"
       ]
     },
     "object/brinecove/understory-2-6": {
@@ -4009,9 +4857,13 @@
         "SM_BC_Understory_2_6_Soft"
       ],
       "id": "object/brinecove/understory-2-6",
-      "model": "adopted/brinecove/understory-2-6",
+      "model": [
+        "prop/brinecove/understory-2-6",
+        "prop/brinecove/understory-2-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-2-6"
+        "prop/brinecove/understory-2-6",
+        "prop/brinecove/understory-2-6-soft"
       ]
     },
     "object/brinecove/understory-3-4": {
@@ -4020,9 +4872,13 @@
         "SM_BC_Understory_3_4_Soft"
       ],
       "id": "object/brinecove/understory-3-4",
-      "model": "adopted/brinecove/understory-3-4",
+      "model": [
+        "prop/brinecove/understory-3-4",
+        "prop/brinecove/understory-3-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-3-4"
+        "prop/brinecove/understory-3-4",
+        "prop/brinecove/understory-3-4-soft"
       ]
     },
     "object/brinecove/understory-3-5": {
@@ -4031,9 +4887,13 @@
         "SM_BC_Understory_3_5_Soft"
       ],
       "id": "object/brinecove/understory-3-5",
-      "model": "adopted/brinecove/understory-3-5",
+      "model": [
+        "prop/brinecove/understory-3-5",
+        "prop/brinecove/understory-3-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-3-5"
+        "prop/brinecove/understory-3-5",
+        "prop/brinecove/understory-3-5-soft"
       ]
     },
     "object/brinecove/understory-3-6": {
@@ -4042,9 +4902,13 @@
         "SM_BC_Understory_3_6_Soft"
       ],
       "id": "object/brinecove/understory-3-6",
-      "model": "adopted/brinecove/understory-3-6",
+      "model": [
+        "prop/brinecove/understory-3-6",
+        "prop/brinecove/understory-3-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-3-6"
+        "prop/brinecove/understory-3-6",
+        "prop/brinecove/understory-3-6-soft"
       ]
     },
     "object/brinecove/understory-4-4": {
@@ -4053,9 +4917,13 @@
         "SM_BC_Understory_4_4_Soft"
       ],
       "id": "object/brinecove/understory-4-4",
-      "model": "adopted/brinecove/understory-4-4",
+      "model": [
+        "prop/brinecove/understory-4-4",
+        "prop/brinecove/understory-4-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-4-4"
+        "prop/brinecove/understory-4-4",
+        "prop/brinecove/understory-4-4-soft"
       ]
     },
     "object/brinecove/understory-4-5": {
@@ -4064,9 +4932,13 @@
         "SM_BC_Understory_4_5_Soft"
       ],
       "id": "object/brinecove/understory-4-5",
-      "model": "adopted/brinecove/understory-4-5",
+      "model": [
+        "prop/brinecove/understory-4-5",
+        "prop/brinecove/understory-4-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-4-5"
+        "prop/brinecove/understory-4-5",
+        "prop/brinecove/understory-4-5-soft"
       ]
     },
     "object/brinecove/understory-4-6": {
@@ -4075,9 +4947,13 @@
         "SM_BC_Understory_4_6_Soft"
       ],
       "id": "object/brinecove/understory-4-6",
-      "model": "adopted/brinecove/understory-4-6",
+      "model": [
+        "prop/brinecove/understory-4-6",
+        "prop/brinecove/understory-4-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-4-6"
+        "prop/brinecove/understory-4-6",
+        "prop/brinecove/understory-4-6-soft"
       ]
     },
     "object/brinecove/understory-5-2": {
@@ -4085,9 +4961,9 @@
         "SM_BC_Understory_5_2"
       ],
       "id": "object/brinecove/understory-5-2",
-      "model": "adopted/brinecove/understory-5-2",
+      "model": "prop/brinecove/understory-5-2",
       "models": [
-        "adopted/brinecove/understory-5-2"
+        "prop/brinecove/understory-5-2"
       ]
     },
     "object/brinecove/understory-5-3": {
@@ -4096,9 +4972,13 @@
         "SM_BC_Understory_5_3_Soft"
       ],
       "id": "object/brinecove/understory-5-3",
-      "model": "adopted/brinecove/understory-5-3",
+      "model": [
+        "prop/brinecove/understory-5-3",
+        "prop/brinecove/understory-5-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-5-3"
+        "prop/brinecove/understory-5-3",
+        "prop/brinecove/understory-5-3-soft"
       ]
     },
     "object/brinecove/understory-5-4": {
@@ -4107,9 +4987,13 @@
         "SM_BC_Understory_5_4_Soft"
       ],
       "id": "object/brinecove/understory-5-4",
-      "model": "adopted/brinecove/understory-5-4",
+      "model": [
+        "prop/brinecove/understory-5-4",
+        "prop/brinecove/understory-5-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-5-4"
+        "prop/brinecove/understory-5-4",
+        "prop/brinecove/understory-5-4-soft"
       ]
     },
     "object/brinecove/understory-5-5": {
@@ -4118,9 +5002,13 @@
         "SM_BC_Understory_5_5_Soft"
       ],
       "id": "object/brinecove/understory-5-5",
-      "model": "adopted/brinecove/understory-5-5",
+      "model": [
+        "prop/brinecove/understory-5-5",
+        "prop/brinecove/understory-5-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-5-5"
+        "prop/brinecove/understory-5-5",
+        "prop/brinecove/understory-5-5-soft"
       ]
     },
     "object/brinecove/understory-5-6": {
@@ -4129,9 +5017,13 @@
         "SM_BC_Understory_5_6_Soft"
       ],
       "id": "object/brinecove/understory-5-6",
-      "model": "adopted/brinecove/understory-5-6",
+      "model": [
+        "prop/brinecove/understory-5-6",
+        "prop/brinecove/understory-5-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-5-6"
+        "prop/brinecove/understory-5-6",
+        "prop/brinecove/understory-5-6-soft"
       ]
     },
     "object/brinecove/understory-6-0": {
@@ -4140,9 +5032,13 @@
         "SM_BC_Understory_6_0_Soft"
       ],
       "id": "object/brinecove/understory-6-0",
-      "model": "adopted/brinecove/understory-6-0",
+      "model": [
+        "prop/brinecove/understory-6-0",
+        "prop/brinecove/understory-6-0-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-6-0"
+        "prop/brinecove/understory-6-0",
+        "prop/brinecove/understory-6-0-soft"
       ]
     },
     "object/brinecove/understory-6-1": {
@@ -4151,9 +5047,13 @@
         "SM_BC_Understory_6_1_Soft"
       ],
       "id": "object/brinecove/understory-6-1",
-      "model": "adopted/brinecove/understory-6-1",
+      "model": [
+        "prop/brinecove/understory-6-1",
+        "prop/brinecove/understory-6-1-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-6-1"
+        "prop/brinecove/understory-6-1",
+        "prop/brinecove/understory-6-1-soft"
       ]
     },
     "object/brinecove/understory-6-2": {
@@ -4162,9 +5062,13 @@
         "SM_BC_Understory_6_2_Soft"
       ],
       "id": "object/brinecove/understory-6-2",
-      "model": "adopted/brinecove/understory-6-2",
+      "model": [
+        "prop/brinecove/understory-6-2",
+        "prop/brinecove/understory-6-2-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-6-2"
+        "prop/brinecove/understory-6-2",
+        "prop/brinecove/understory-6-2-soft"
       ]
     },
     "object/brinecove/understory-6-3": {
@@ -4173,9 +5077,13 @@
         "SM_BC_Understory_6_3_Soft"
       ],
       "id": "object/brinecove/understory-6-3",
-      "model": "adopted/brinecove/understory-6-3",
+      "model": [
+        "prop/brinecove/understory-6-3",
+        "prop/brinecove/understory-6-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-6-3"
+        "prop/brinecove/understory-6-3",
+        "prop/brinecove/understory-6-3-soft"
       ]
     },
     "object/brinecove/understory-6-4": {
@@ -4184,9 +5092,13 @@
         "SM_BC_Understory_6_4_Soft"
       ],
       "id": "object/brinecove/understory-6-4",
-      "model": "adopted/brinecove/understory-6-4",
+      "model": [
+        "prop/brinecove/understory-6-4",
+        "prop/brinecove/understory-6-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-6-4"
+        "prop/brinecove/understory-6-4",
+        "prop/brinecove/understory-6-4-soft"
       ]
     },
     "object/brinecove/understory-6-5": {
@@ -4195,9 +5107,13 @@
         "SM_BC_Understory_6_5_Soft"
       ],
       "id": "object/brinecove/understory-6-5",
-      "model": "adopted/brinecove/understory-6-5",
+      "model": [
+        "prop/brinecove/understory-6-5",
+        "prop/brinecove/understory-6-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-6-5"
+        "prop/brinecove/understory-6-5",
+        "prop/brinecove/understory-6-5-soft"
       ]
     },
     "object/brinecove/understory-6-6": {
@@ -4206,9 +5122,13 @@
         "SM_BC_Understory_6_6_Soft"
       ],
       "id": "object/brinecove/understory-6-6",
-      "model": "adopted/brinecove/understory-6-6",
+      "model": [
+        "prop/brinecove/understory-6-6",
+        "prop/brinecove/understory-6-6-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-6-6"
+        "prop/brinecove/understory-6-6",
+        "prop/brinecove/understory-6-6-soft"
       ]
     },
     "object/brinecove/understory-7-3": {
@@ -4217,9 +5137,13 @@
         "SM_BC_Understory_7_3_Soft"
       ],
       "id": "object/brinecove/understory-7-3",
-      "model": "adopted/brinecove/understory-7-3",
+      "model": [
+        "prop/brinecove/understory-7-3",
+        "prop/brinecove/understory-7-3-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-7-3"
+        "prop/brinecove/understory-7-3",
+        "prop/brinecove/understory-7-3-soft"
       ]
     },
     "object/brinecove/understory-7-4": {
@@ -4228,9 +5152,13 @@
         "SM_BC_Understory_7_4_Soft"
       ],
       "id": "object/brinecove/understory-7-4",
-      "model": "adopted/brinecove/understory-7-4",
+      "model": [
+        "prop/brinecove/understory-7-4",
+        "prop/brinecove/understory-7-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-7-4"
+        "prop/brinecove/understory-7-4",
+        "prop/brinecove/understory-7-4-soft"
       ]
     },
     "object/brinecove/understory-7-5": {
@@ -4239,9 +5167,13 @@
         "SM_BC_Understory_7_5_Soft"
       ],
       "id": "object/brinecove/understory-7-5",
-      "model": "adopted/brinecove/understory-7-5",
+      "model": [
+        "prop/brinecove/understory-7-5",
+        "prop/brinecove/understory-7-5-soft"
+      ],
       "models": [
-        "adopted/brinecove/understory-7-5"
+        "prop/brinecove/understory-7-5",
+        "prop/brinecove/understory-7-5-soft"
       ]
     },
     "object/brinecove/waterfall-canyon": {
@@ -4263,9 +5195,39 @@
         "SM_BC_Landmarks_6_4_Soft"
       ],
       "id": "object/brinecove/waterfall-canyon",
-      "model": "adopted/brinecove/waterfall-canyon",
+      "model": [
+        "prop/brinecove/landmarks-5-3",
+        "prop/brinecove/landmarks-5-3-soft-piece1",
+        "prop/brinecove/landmarks-5-3-soft-piece3",
+        "prop/brinecove/landmarks-5-4",
+        "prop/brinecove/landmarks-5-4-soft",
+        "prop/brinecove/landmarks-6-3",
+        "prop/brinecove/landmarks-6-3-soft-piece0",
+        "prop/brinecove/landmarks-6-3-soft-piece1",
+        "prop/brinecove/landmarks-6-3-soft-piece20",
+        "prop/brinecove/landmarks-6-3-soft-piece21",
+        "prop/brinecove/landmarks-6-3-soft-piece22",
+        "prop/brinecove/landmarks-6-3-soft-piece23",
+        "prop/brinecove/landmarks-6-3-soft-piece3",
+        "prop/brinecove/landmarks-6-4",
+        "prop/brinecove/landmarks-6-4-soft"
+      ],
       "models": [
-        "adopted/brinecove/waterfall-canyon"
+        "prop/brinecove/landmarks-5-3",
+        "prop/brinecove/landmarks-5-3-soft-piece1",
+        "prop/brinecove/landmarks-5-3-soft-piece3",
+        "prop/brinecove/landmarks-5-4",
+        "prop/brinecove/landmarks-5-4-soft",
+        "prop/brinecove/landmarks-6-3",
+        "prop/brinecove/landmarks-6-3-soft-piece0",
+        "prop/brinecove/landmarks-6-3-soft-piece1",
+        "prop/brinecove/landmarks-6-3-soft-piece20",
+        "prop/brinecove/landmarks-6-3-soft-piece21",
+        "prop/brinecove/landmarks-6-3-soft-piece22",
+        "prop/brinecove/landmarks-6-3-soft-piece23",
+        "prop/brinecove/landmarks-6-3-soft-piece3",
+        "prop/brinecove/landmarks-6-4",
+        "prop/brinecove/landmarks-6-4-soft"
       ]
     },
     "object/brinecove/wreck": {

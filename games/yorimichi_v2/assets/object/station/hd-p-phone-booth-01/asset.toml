@@ -6,7 +6,7 @@ id = "object/station/hd-p-phone-booth-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-phone-booth"]
+references = ["prop/hidamari-props/phone-booth"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/6/09/EXRRJAFULGY692KYRXJP19"

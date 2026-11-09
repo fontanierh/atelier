@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-kei-truck-03",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-kei-truck": "cd8241d3493441f79d047789ceead2fc985ab3b6324d1b604c8a64be2a68a4e7"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/0R/G70TDUVL4SQAY1OUUSQILF.uasset": "fe0cfc3095b73a4437a010b69f5832225f66ea285e86ea27538030cc1589b404"

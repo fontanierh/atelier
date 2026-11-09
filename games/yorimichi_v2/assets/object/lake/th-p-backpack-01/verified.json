@@ -1,8 +1,6 @@
 {
   "asset": "object/lake/th-p-backpack-01",
-  "dependencies": {
-    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/3L/711ZL3GPLD76GSMH26LLE5.uasset": "f47c945f91663ac2cf488da764db49adae127a0d9163afef76bb53b83b4456a2"

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/kei-car",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_kei_car.uasset": "c81bc403ef3bfbbe96a45b945fb393e5d72412389475d1e28f8010bece7f5948"
+  },
+  "input_fingerprint": "a18251e0dd4fc8e36ecbb5624eb73fa306824bcacc59fe67f8766071ff800961",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_kei_car": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

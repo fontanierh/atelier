@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/pole-lamp-14",
-  "dependencies": {
-    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/RU/K68OTEJKIFDFQPVLHJHB2Q.uasset": "835ff4f36281d057467e84aabf3a66a07e8c0e4307c308b22de241fe8a34d3bf"

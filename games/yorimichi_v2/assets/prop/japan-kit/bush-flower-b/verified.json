@@ -1,0 +1,42 @@
+{
+  "asset": "prop/japan-kit/bush-flower-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Bush_Flower_B.uasset": "fd0c938584fb4bad53c2a581e25849da774dd4196388f7ca363912cf25e5066d"
+  },
+  "input_fingerprint": "214f71dbcbf42c5c8823becb1308bf64f5124f27eebc2bfa1765ae310720d0e3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Bush_Flower_B": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.07999999821186066,
+          0.02500000037252903
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.07999999821186066,
+          0.02500000037252903
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

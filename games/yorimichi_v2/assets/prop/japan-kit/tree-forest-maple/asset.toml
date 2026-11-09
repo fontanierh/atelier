@@ -1,0 +1,43 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Forest_Maple: one Japan mesh, LOD0-LOD4 (3680 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-forest-maple"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-forest-maple"
+references = ["adopted/japan/foliagelods/tree-forest-maple", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-forest-maple"]
+
+[[sources]]
+path = "src/Tree_Forest_Maple.fbx"
+sha256 = "bebb5f41dddccbd48d89ef8f7ffdb983bcf881c8f47733889184dee20a6bc2fa"
+
+[[sources]]
+path = "src/Tree_Forest_Maple_LOD1.fbx"
+sha256 = "ac4bd50ec032170bcf0290e82998138bbaaf21f060b8e98de3211dc8115b5aaf"
+
+[[sources]]
+path = "src/Tree_Forest_Maple_LOD2.fbx"
+sha256 = "9095dbedea05325fe8ff6a2ba2a1dc3c3ca9ab649df5f5b270720e33ed208356"
+
+[[sources]]
+path = "src/Tree_Forest_Maple_LOD3.fbx"
+sha256 = "7c080d7299e342f7c6e34ab0d7626642edfe46f8d790f6f2c05390b45d98206c"
+
+[[sources]]
+path = "src/Tree_Forest_Maple_LOD4.fbx"
+sha256 = "adde9daa016be55f9841c46d637d17531a4bd4da747b5dc571224972dfed9259"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Forest_Maple.fbx", 1.0, 3680, [0, 1]], ["src/Tree_Forest_Maple_LOD1.fbx", 0.23999999463558197, 1098, [0, 1]], ["src/Tree_Forest_Maple_LOD2.fbx", 0.07500000298023224, 306, [0, 1]], ["src/Tree_Forest_Maple_LOD3.fbx", 0.017999999225139618, 14, [2, 0]], ["src/Tree_Forest_Maple_LOD4.fbx", 0.005400000140070915, 12, [3]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafMaple", "/Game/Japan/Materials/MI_LeafMaple"], ["Tree_Forest_Maple_Impostor", "/Game/Japan/Materials/MI_Tree_Forest_Maple_Impostor"], ["Tree_Forest_Maple_Crown", "/Game/Japan/FoliageLODs/MI_Tree_Forest_Maple_Crown"]]
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Forest_Maple"

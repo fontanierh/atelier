@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-stone-lantern-08",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-stone-lantern": "928398466d658697804d3ac0970195ea0e5bacea91ef901523992e5d63e8066f"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/HR/TCOXQ8LS3POD0XMM9JS5A5.uasset": "313fe7e5bc387924c43b5a58d55ec3f80f18cffa438828175f8d636c76a44e35"

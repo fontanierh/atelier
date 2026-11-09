@@ -1,0 +1,320 @@
+{
+ "about": "The Japan props as saved in V2 (unreal/Scripts/report_meshes.py, read-only editor.run): the one slot, its material, the render triangles of the single LOD, the collision trace flag and the imported UCX hull count. tools/migrate/recover.py japan/props checks them against the donor export. Every prop has one LOD, no Nanite and single-sided complex geometry.",
+ "meshes": {
+  "/Game/Japan/Assets/HD_P_ac_unit": {
+   "slot": "HD_P_ac_unit",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_ac_unit",
+   "triangles": 11454,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_bicycle": {
+   "slot": "HD_P_bicycle",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle",
+   "triangles": 12154,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HD_P_bicycle_shelter": {
+   "slot": "HD_P_bicycle_shelter",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle_shelter",
+   "triangles": 10785,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_bonsai_shelf": {
+   "slot": "HD_P_bonsai_shelf",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_bonsai_shelf",
+   "triangles": 9684,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_bus_stop": {
+   "slot": "HD_P_bus_stop",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop",
+   "triangles": 9842,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_curve_mirror": {
+   "slot": "HD_P_curve_mirror",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_curve_mirror",
+   "triangles": 10728,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HD_P_drink_crates": {
+   "slot": "HD_P_drink_crates",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_drink_crates",
+   "triangles": 12352,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_fire_buckets": {
+   "slot": "HD_P_fire_buckets",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_fire_buckets",
+   "triangles": 11348,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_garbage_station": {
+   "slot": "HD_P_garbage_station",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_garbage_station",
+   "triangles": 10722,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_hokora": {
+   "slot": "HD_P_hokora",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_hokora",
+   "triangles": 8890,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_jizo": {
+   "slot": "HD_P_jizo",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_jizo",
+   "triangles": 11837,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_kei_car": {
+   "slot": "HD_P_kei_car",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_car",
+   "triangles": 12294,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_kei_truck": {
+   "slot": "HD_P_kei_truck",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_kei_truck",
+   "triangles": 12097,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_komainu": {
+   "slot": "HD_P_komainu",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_komainu",
+   "triangles": 12890,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_lantern_sign": {
+   "slot": "HD_P_lantern_sign",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_lantern_sign",
+   "triangles": 12084,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_laundry_stand": {
+   "slot": "HD_P_laundry_stand",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_laundry_stand",
+   "triangles": 11874,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HD_P_phone_booth": {
+   "slot": "HD_P_phone_booth",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_phone_booth",
+   "triangles": 12018,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_planter_box": {
+   "slot": "HD_P_planter_box",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_planter_box",
+   "triangles": 9006,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_postbox": {
+   "slot": "HD_P_postbox",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_postbox",
+   "triangles": 11435,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_potted_plants": {
+   "slot": "HD_P_potted_plants",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_potted_plants",
+   "triangles": 10814,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HD_P_produce_stand": {
+   "slot": "HD_P_produce_stand",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_produce_stand",
+   "triangles": 10618,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_propane_tanks": {
+   "slot": "HD_P_propane_tanks",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_propane_tanks",
+   "triangles": 12121,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_sake_barrels": {
+   "slot": "HD_P_sake_barrels",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_sake_barrels",
+   "triangles": 9919,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_scooter": {
+   "slot": "HD_P_scooter",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_scooter",
+   "triangles": 11396,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HD_P_stone_lantern": {
+   "slot": "HD_P_stone_lantern",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_stone_lantern",
+   "triangles": 12824,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_street_bench": {
+   "slot": "HD_P_street_bench",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_street_bench",
+   "triangles": 12398,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_tanuki": {
+   "slot": "HD_P_tanuki",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_tanuki",
+   "triangles": 11662,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_taxi": {
+   "slot": "HD_P_taxi",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_taxi",
+   "triangles": 12293,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_town_bus": {
+   "slot": "HD_P_town_bus",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_town_bus",
+   "triangles": 11476,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_vending_machine": {
+   "slot": "HD_P_vending_machine",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_vending_machine",
+   "triangles": 12292,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_water_basin": {
+   "slot": "HD_P_water_basin",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_water_basin",
+   "triangles": 9637,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/HD_P_yatai": {
+   "slot": "HD_P_yatai",
+   "material": "/Game/Japan/Hidamari/Materials/MI_HD_P_yatai",
+   "triangles": 11099,
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_backpack": {
+   "slot": "TH_P_backpack",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_backpack",
+   "triangles": 8777,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/TH_P_barrel": {
+   "slot": "TH_P_barrel",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_barrel",
+   "triangles": 8985,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_basket": {
+   "slot": "TH_P_basket",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_basket",
+   "triangles": 9453,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/TH_P_bell": {
+   "slot": "TH_P_bell",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_bell",
+   "triangles": 9130,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/TH_P_bookshelf": {
+   "slot": "TH_P_bookshelf",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_bookshelf",
+   "triangles": 8474,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_crate_desk": {
+   "slot": "TH_P_crate_desk",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_crate_desk",
+   "triangles": 8859,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_futon": {
+   "slot": "TH_P_futon",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_futon",
+   "triangles": 9567,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/TH_P_globe": {
+   "slot": "TH_P_globe",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_globe",
+   "triangles": 8778,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/TH_P_kamado": {
+   "slot": "TH_P_kamado",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_kamado",
+   "triangles": 8774,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_log_table": {
+   "slot": "TH_P_log_table",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_log_table",
+   "triangles": 7450,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_planter": {
+   "slot": "TH_P_planter",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_planter",
+   "triangles": 5823,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_stump_kettle": {
+   "slot": "TH_P_stump_kettle",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_stump_kettle",
+   "triangles": 8438,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/TH_P_telescope": {
+   "slot": "TH_P_telescope",
+   "material": "/Game/Japan/Treehouse/Materials/MI_TH_P_telescope",
+   "triangles": 8635,
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  }
+ }
+}

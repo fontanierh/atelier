@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse-props/backpack",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/TH_P_backpack.uasset": "3f95b8aa87118946789e225bb93c965dbb7cf4ebfe04ae5ae521d83bf082715d"
+  },
+  "input_fingerprint": "4621b442dc00cb4697d93f102b09820173db450fb02c9a1fd2913ef69ee27d7c",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/TH_P_backpack": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

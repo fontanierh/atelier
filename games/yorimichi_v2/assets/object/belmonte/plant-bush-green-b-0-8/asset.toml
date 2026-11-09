@@ -6,7 +6,7 @@ id = "object/belmonte/plant-bush-green-b-0-8"
 kind = "placement"
 authority = "editor"
 owner = "region/w16-belmonte"
-references = ["adopted/japan/assets/bush"]
+references = ["prop/japan-kit/bush-flower-a", "prop/japan-kit/bush-flower-b", "prop/japan-kit/bush-green-a", "prop/japan-kit/bush-green-b", "prop/japan-kit/bush-ochre-a", "prop/japan-kit/bush-ochre-b"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/4/EW/U08Q3OYL93T9ME92E25KQX"
