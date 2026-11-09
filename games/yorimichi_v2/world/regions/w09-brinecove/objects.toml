@@ -67,6 +67,18 @@ model = "prop/brinecove/fish-shed"
 about = "the fish shed, cut from its fused tile (468 triangles)"
 
 [[objects]]
+id = "object/brinecove/crane-west-soft"
+group = "SM_BC_CraneWest_Soft"
+model = "prop/brinecove/crane-west-soft"
+about = "the crane west Soft fragment, the part of its object in the fused Soft tile Harbor_2_3_Soft (30 triangles)"
+
+[[objects]]
+id = "object/brinecove/fish-shed-soft"
+group = "SM_BC_FishShed_Soft"
+model = "prop/brinecove/fish-shed-soft"
+about = "the fish shed Soft fragment, the part of its object in the fused Soft tile Harbor_5_3_Soft (30 triangles)"
+
+[[objects]]
 id = "object/brinecove/market-auction-block"
 group = "SM_BC_MarketAuctionBlock"
 model = "prop/brinecove/market-auction-block"
@@ -3261,5 +3273,3 @@ model = ["prop/brinecove/landmarks-5-3", "prop/brinecove/landmarks-5-3-soft-piec
 about = "Brine Cove waterfall-canyon (15 groups)"
 
 # Not saved, by reason:
-# no record: SM_BC_CraneWest_Soft (/Game/Brinecove/Meshes/SM_BC_CraneWest_Soft)
-# no record: SM_BC_FishShed_Soft (/Game/Brinecove/Meshes/SM_BC_FishShed_Soft)

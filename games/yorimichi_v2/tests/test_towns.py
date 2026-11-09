@@ -215,9 +215,8 @@ def test_reasons_are_the_runtime_ones(state):
     assert {key for key, _ in bm['blocked']['outside']} == {f'SM_BM_BVV_Village_{n}' for n in range(1, 9)}
     assert bm['blocked']['no record'] == []
     _, _, _, bc = state['brinecove']
-    # Brine Cove batch 1 cut these remainders from their fused tiles; the next Brine Cove batch saves them as objects.
-    assert bc['blocked']['outside'] == [] and {key for key, _ in bc['blocked']['no record']} == {
-        'SM_BC_CraneWest_Soft', 'SM_BC_FishShed_Soft'}
+    # Brine Cove batch 1's two Soft remainders are saved as their own objects, so no group lacks a record.
+    assert bc['blocked']['outside'] == [] and bc['blocked']['no record'] == []
 
 
 def test_shared_mesh_names_are_saved_by_key(state):
