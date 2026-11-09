@@ -586,3 +586,183 @@ def test_villageatomic_follows_the_parent_collision_policy_in_a_one_record_famil
     assert len(changed['created']) == 3 and changed['deleted'] == ['adopted/experiments/villageatomic']
     again = recover.apply(game, recover.build_plan(game, 'experiments/villageatomic', donor), donor)
     assert again['created'] == []
+
+
+def japan_adopted(game: Path, record_id: str, *packages: str):
+    """A source-less adopted record owning the given packages."""
+    outputs = ''.join(f'\n[[outputs]]\npackage = "{p}"\n' for p in packages)
+    record(game, record_id, f'''schema = 1
+id = "{record_id}"
+kind = "adopted"
+authority = "editor"
+owner = "shared/{record_id}"
+provenance = "test"
+license = "test"
+{outputs}''')
+
+
+def atomic(donor: Path, step: str, pieces: dict, **per_piece):
+    """A donor atomic step: assets/manifest.json plus one FBX per piece (pieces: name -> triangles, slots)."""
+    exports = []
+    for name, (triangles, slots) in pieces.items():
+        data = f'{name} fbx'.encode()
+        write(donor / 'atomic_regions' / step / 'assets' / f'{name}.fbx', data)
+        exports.append({'asset': name, 'primary': f'{name}.fbx', 'sha256': sha(data), 'triangles': triangles,
+                        'metadata': {'collision_hulls': 0, 'slots': slots,
+                                     'uv_channels': ['UVMap', 'Piece1', 'Piece2', 'Piece3', 'Piece4']
+                                     if per_piece.get('bake') else ['UVMap']}})
+    write(donor / 'atomic_regions' / step / 'assets' / 'manifest.json',
+          json.dumps({'schema': 1, 'complete': True, 'exports': exports}))
+
+
+def japan_donor(tmp_path):
+    """Every atomic step the Japan planners read, empty unless a test fills it."""
+    donor = tmp_path / 'donor'
+    for step in ('vehicle_bike', 'vehicle_sailboat', 'zeppelin', 'mega', 'treehouse_surfaces', 'southwest', 'lake'):
+        atomic(donor, step, {})
+    write(donor / 'bike/import-report.json', json.dumps({'parts': {}}))
+    return donor
+
+
+def test_lake_binds_water_to_its_own_material_and_a_one_record_family_is_recovered(tmp_path):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    japan_adopted(game, 'adopted/japan/lake', '/Game/Japan/Lake/Pieces/Lake_Cabin', '/Game/Japan/Lake/Pieces/Lake_Water')
+    japan_adopted(game, 'adopted/japan/materials/base-materials', '/Game/Japan/Materials/M_Village',
+            '/Game/Japan/Materials/M_ForestLakeWater')
+    atomic(donor, 'lake', {'Lake_Cabin': (20910, ['LakePalette']), 'Lake_Water': (160, ['LakePalette'])})
+    plan = recover.build_plan(game, 'japan/lake', donor)
+    cabin, water = sorted(plan.generated, key=lambda g: g.id)
+    assert (cabin.id, water.id) == ('prop/lake/cabin', 'prop/lake/water')
+    assert cabin.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 20910,
+                              'collision': 'complex'}
+    assert water.settings['slot_materials'] == ['/Game/Japan/Materials/M_ForestLakeWater']
+    assert cabin.references == ['adopted/japan/materials/base-materials'] and cabin.origin == 'adopted/japan/lake'
+    assert plan.kept['adopted/japan/lake'] == []
+    changed = recover.apply(game, plan, donor)
+    assert sorted(changed['created']) == ['prop/lake/cabin', 'prop/lake/water'] and changed['deleted'] == ['adopted/japan/lake']
+    assert (game / 'assets/prop/lake/water/src/Lake_Water.fbx').read_bytes() == b'Lake_Water fbx'
+
+
+def test_a_lake_piece_with_other_slots_or_a_missing_material_is_reported_not_guessed(tmp_path):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    japan_adopted(game, 'adopted/japan/lake', '/Game/Japan/Lake/Pieces/Lake_Cabin', '/Game/Japan/Lake/Pieces/Lake_Water')
+    japan_adopted(game, 'adopted/japan/materials/base-materials', '/Game/Japan/Materials/M_Village')
+    atomic(donor, 'lake', {'Lake_Cabin': (20910, ['Other']), 'Lake_Water': (160, ['LakePalette'])})
+    plan = recover.build_plan(game, 'japan/lake', donor)
+    assert plan.generated == []
+    assert any('Lake_Cabin' in u and 'slots differ' in u for u in plan.unmapped_outputs)
+    assert any('Lake_Water' in u and 'M_ForestLakeWater' in u for u in plan.unmapped_outputs)
+    assert plan.kept['adopted/japan/lake'] == ['/Game/Japan/Lake/Pieces/Lake_Cabin', '/Game/Japan/Lake/Pieces/Lake_Water']
+
+
+def test_vehicle_and_kit_meshes_bind_the_materials_of_the_donor_imports(tmp_path):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    assets = '/Game/Japan/Assets'
+    japan_adopted(game, 'adopted/japan/assets/bike', f'{assets}/BK_Frame', f'{assets}/BK_WheelFront')
+    japan_adopted(game, 'adopted/japan/assets/sailboat', f'{assets}/SB_Sail', f'{assets}/SB_Hull')
+    japan_adopted(game, 'adopted/japan/assets/zeppelin', f'{assets}/ZP_Airship', f'{assets}/ZP_Gate')
+    japan_adopted(game, 'adopted/japan/assets/mega-park-pieces', f'{assets}/Mega_Ramp', f'{assets}/Mega_Trim')
+    japan_adopted(game, 'adopted/japan/assets/treehouse', f'{assets}/TH_P_bell')
+    japan_adopted(game, 'adopted/japan/assets/rock', f'{assets}/Rock_A')
+    japan_adopted(game, 'adopted/japan/materials/base-materials', *(f'/Game/Japan/Materials/{m}' for m in (
+        'M_Village', 'M_Bike', 'M_SailboatCloth', 'M_SailboatWake', 'M_ZeppelinFabric')))
+    atomic(donor, 'vehicle_bike', {'BK_Frame': (25666, ['BikePalette']), 'BK_WheelFront': (26060, ['BikePalette'])})
+    # Unreal drops duplicate points of a vehicle part: the report's count is the one the import keeps.
+    write(donor / 'bike/import-report.json', json.dumps({'parts': {'BK_Frame': {'source_triangles': 25666, 'triangles': 25094},
+                                                                   'BK_WheelFront': {'source_triangles': 26060, 'triangles': 26060}}}))
+    atomic(donor, 'vehicle_sailboat', {'SB_Sail': (324, ['SailboatPalette']), 'SB_Hull': (1028, ['SailboatPalette'])})
+    atomic(donor, 'zeppelin', {'ZP_Airship': (13688, ['ZeppelinPalette', 'ZeppelinFabric']), 'ZP_Gate': (528, ['ZeppelinPalette'])})
+    atomic(donor, 'mega', {'Mega_Ramp': (22462, ['MegaPalette']), 'Mega_Trim': (44, ['MegaPalette'])})
+    plan = recover.build_plan(game, 'japan/assets', donor)
+    by_id = {g.id: g for g in plan.generated}
+    assert sorted(by_id) == ['prop/bike/frame', 'prop/mega/ramp', 'prop/mega/trim', 'prop/sailboat/hull',
+                             'prop/sailboat/sail', 'prop/zeppelin/airship', 'prop/zeppelin/gate']
+    assert by_id['prop/bike/frame'].settings == {'slot_materials': ['/Game/Japan/Materials/M_Bike'], 'triangles': 25094}
+    assert by_id['prop/sailboat/sail'].settings['slot_materials'] == ['/Game/Japan/Materials/M_SailboatCloth']
+    assert by_id['prop/sailboat/hull'].settings['slot_materials'] == ['/Game/Japan/Materials/M_Village']
+    assert by_id['prop/zeppelin/airship'].settings['slot_map'] == {
+        'ZeppelinPalette': '/Game/Japan/Materials/M_Village', 'ZeppelinFabric': '/Game/Japan/Materials/M_ZeppelinFabric'}
+    assert by_id['prop/zeppelin/gate'].settings['collision'] == 'complex'
+    # The look-only trim keeps no physics shape; the ramp is complex-as-simple.
+    assert (by_id['prop/mega/trim'].settings['collision'], by_id['prop/mega/trim'].settings['boxes']) == ('boxes', [])
+    assert by_id['prop/mega/ramp'].settings['collision'] == 'complex'
+    reasons = ' '.join(plan.unmapped_outputs)
+    assert 'BK_WheelFront' in reasons and 'allow_cpu_access' in reasons      # the importer cannot set CPU access
+    assert 'TH_P_bell' in reasons and 'report_meshes' in reasons and 'Rock_A' in reasons
+    assert plan.kept['adopted/japan/assets/sailboat'] == []
+    assert plan.kept['adopted/japan/assets/bike'] == [f'{assets}/BK_WheelFront']
+
+
+def test_a_bike_report_that_disagrees_with_the_export_stops_the_plan(tmp_path):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    japan_adopted(game, 'adopted/japan/assets/bike', '/Game/Japan/Assets/BK_Frame')
+    japan_adopted(game, 'adopted/japan/materials/base-materials', '/Game/Japan/Materials/M_Bike')
+    atomic(donor, 'vehicle_bike', {'BK_Frame': (25666, ['BikePalette'])})
+    write(donor / 'bike/import-report.json', json.dumps({'parts': {'BK_Frame': {'source_triangles': 100, 'triangles': 90}}}))
+    with pytest.raises(recover.RecoverError, match='disagree'):
+        recover.build_plan(game, 'japan/assets', donor)
+
+
+def test_treehouse_surfaces_bind_each_slot_and_keep_the_bake_and_collision_of_their_parent(tmp_path):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    mats = '/Game/Japan/Treehouse/Materials'
+    japan_adopted(game, 'adopted/japan/treehouse/dressing-m2-2', '/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_2_Piece0')
+    japan_adopted(game, 'adopted/japan/treehouse/structure-m1-1', '/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-1_1')
+    japan_adopted(game, 'adopted/japan/assets/treehouse', '/Game/Japan/Assets/TH_Trunks', '/Game/Japan/Assets/TH_Frame')
+    japan_adopted(game, 'adopted/japan/treehouse/surface-flat', f'{mats}/MI_TH_flat', '/Game/Japan/Treehouse/Textures/T_TH_flat')
+    japan_adopted(game, 'adopted/japan/treehouse/surfaces', *(f'{mats}/MI_TH_{s}' for s in ('rope', 'wood_plank', 'trunk')))
+    atomic(donor, 'treehouse_surfaces', {
+        'TH_Dressing_cell_-2_2_Piece0': (14226, ['TH_flat', 'TH_rope']),
+        'TH_Structure_cell_-1_1': (9638, ['TH_wood_plank']),
+        'TH_Frame': (30584, ['TH_rope', 'TH_wood_plank']),
+        'TH_Trunks': (7140, ['TH_bark'])}, bake=True)
+    # Only the dressing and the frame carry the five-channel bake, so give the others one channel.
+    manifest = donor / 'atomic_regions/treehouse_surfaces/assets/manifest.json'
+    data = json.loads(manifest.read_text())
+    for row in data['exports']:
+        if not row['asset'].startswith(('TH_Dressing', 'TH_Frame')):
+            row['metadata']['uv_channels'] = ['UVMap']
+    manifest.write_text(json.dumps(data))
+    # The trunks' bark binds MI_TH_trunk (not MI_TH_bark), as the donor's import_surfaces does.
+    japan_adopted(game, 'adopted/japan/treehouse/surface-trunk', f'{mats}/MI_TH_trunk')
+    treehouse = {g.id: g for g in recover.build_plan(game, 'japan/treehouse', donor).generated}
+    assert sorted(treehouse) == ['prop/treehouse/dressing-cell-m2-2-piece0', 'prop/treehouse/structure-cell-m1-1']
+    dressing = treehouse['prop/treehouse/dressing-cell-m2-2-piece0']
+    assert dressing.package == '/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-2_2_Piece0'
+    assert dressing.settings['slot_map'] == {'TH_flat': f'{mats}/MI_TH_flat', 'TH_rope': f'{mats}/MI_TH_rope'}
+    assert dressing.settings['full_precision_uvs'] is True and dressing.settings['boxes'] == []
+    structure = treehouse['prop/treehouse/structure-cell-m1-1']
+    assert 'full_precision_uvs' not in structure.settings and structure.settings['collision'] == 'complex'
+    plan = recover.build_plan(game, 'japan/assets', donor)
+    kit = {g.id: g for g in plan.generated}
+    assert sorted(kit) == ['prop/treehouse/frame', 'prop/treehouse/trunks']
+    assert kit['prop/treehouse/trunks'].settings['slot_map'] == {'TH_bark': f'{mats}/MI_TH_trunk'}
+    assert kit['prop/treehouse/frame'].settings['full_precision_uvs'] is True
+
+
+def test_world_textures_import_with_the_factory_defaults_and_the_region_textures_stay_open(tmp_path):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    japan_adopted(game, 'adopted/japan/textures/sky-water', '/Game/Japan/Textures/T_water', '/Game/Japan/Textures/T_white')
+    japan_adopted(game, 'adopted/japan/textures/plaza-harbor', '/Game/Japan/Textures/T_Harbor_timber')
+    write(donor / 'textures/T_water.jpg', b'water jpg')
+    write(donor / 'textures/T_white.png', b'white png')
+    plan = recover.build_plan(game, 'japan/textures', donor)
+    assert sorted((g.id, g.source.name, g.settings) for g in plan.generated) == [
+        ('texture/japan/water', 'T_water.jpg', {}), ('texture/japan/white', 'T_white.png', {})]
+    assert any('T_Harbor_timber' in u for u in plan.unmapped_outputs)
+    assert plan.kept['adopted/japan/textures/plaza-harbor'] == ['/Game/Japan/Textures/T_Harbor_timber']
+    recover.apply(game, plan, donor)
+    loaded = records.load_asset(game / 'assets/texture/japan/water/asset.toml')
+    assert loaded.recipe['importer'] == 'texture' and loaded.sources[0].path == 'src/T_water.jpg'
+
+
+def test_southwest_pieces_use_the_village_material_and_complex_collision(tmp_path):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    japan_adopted(game, 'adopted/japan/southwest', '/Game/Japan/Southwest/Pieces/SW_Boat', '/Game/Japan/Southwest/Pieces/Tree_PineLean_A')
+    japan_adopted(game, 'adopted/japan/materials/base-materials', '/Game/Japan/Materials/M_Village')
+    atomic(donor, 'southwest', {'SW_Boat': (692, ['Southwest_Palette']), 'Tree_PineLean_A': (300, ['Southwest_Palette']),
+                                'SW_Gone': (10, ['Southwest_Palette'])})
+    plan = recover.build_plan(game, 'japan/southwest', donor)
+    assert sorted(g.id for g in plan.generated) == ['prop/southwest/boat', 'prop/southwest/tree-pine-lean-a']
+    assert all(g.settings['collision'] == 'complex' for g in plan.generated)
+    assert any('SW_Gone' in u for u in plan.unmapped_outputs)       # a piece no record holds is reported

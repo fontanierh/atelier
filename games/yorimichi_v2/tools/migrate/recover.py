@@ -561,6 +561,205 @@ FAMILIES.update({'skatepark': plan_skatepark, 'megapark': plan_megapark, 'swordc
                  'experiments/villageatomic': plan_villageatomic})
 
 
+# --- Japan families (bike, sailboat, zeppelin, mega, treehouse, southwest, lake, textures) --------------------------------
+# DONOR_OUT for these is the donor's whole build/yorimichi folder: each step writes atomic_regions/STEP/assets/manifest.json
+# (one FBX per piece with its sha256, triangles and authored slots) and the legacy folders (bike/, treehouse/, ...) keep
+# the importers' reports. The donor imports named here are unreal/Scripts/import_{bike,sailboat,zeppelin,mega,
+# treehouse,southwest,forest_lake}.py and treehouse_atomic_native.py.
+JAPAN_VILLAGE = '/Game/Japan/Materials/M_Village'     # the painted kit material the donor binds to most Japan meshes
+JAPAN_COMPLEX = {'collision': 'complex'}
+JAPAN_RENDER_ONLY = {'collision': 'boxes', 'boxes': []}   # the donor's simple-as-complex with no shape (a look-only mesh)
+TREEHOUSE_SURFACES = ('TH_Structure', 'TH_Dressing', 'TH_Frame', 'TH_Trunks')
+
+
+def atomic_rows(donor: Path, step: str) -> list[tuple[dict, Path]]:
+    """(manifest row, FBX) of each export of a donor atomic step: atomic_regions/STEP/assets/manifest.json."""
+    base = donor / 'atomic_regions' / step / 'assets'
+    manifest = _json(base / 'manifest.json')
+    if manifest.get('complete') is not True:
+        raise RecoverError(f'{step}: the donor export manifest is not complete')
+    return [(row, base / row['primary']) for row in manifest['exports']]
+
+
+def japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, package, rid, binding, collision, about,
+               triangles=None, **settings):
+    """One generated static mesh of a Japan family. `binding` is a list of materials (slot_materials, slot by slot) or
+    a dict slot name -> material (slot_map). The piece is recovered only when its package is in a source-less record of
+    the family and every material is owned by some record."""
+    label = f'{path.relative_to(donor)}'
+    if package not in owner:
+        unmapped.append(f'{label} (its package is not in a source-less record of this family)')
+        return
+    materials = sorted(set(binding.values() if isinstance(binding, dict) else binding))
+    missing = [m for m in materials if m not in all_owner]
+    if missing:
+        unmapped.append(f'{label} (material {missing[0]} owned by no record)')
+        return
+    generated.append(Generated(
+        id=rid, kind='static-mesh', owner=rid.replace('prop/', 'shared/', 1), package=package, source=path,
+        settings={('slot_map' if isinstance(binding, dict) else 'slot_materials'): binding,
+                  'triangles': triangles or row['triangles'], **collision, **settings},
+        references=sorted({all_owner[m] for m in materials}), about=about, expected_sha=row['sha256']))
+
+
+def _not_planned(owner: dict[str, str], generated: list[Generated], prefix: str, reason: str) -> list[str]:
+    """One exception line for the adopted packages named `prefix...` that no generated record took."""
+    taken = {g.package for g in generated}
+    names = sorted(p.rsplit('/', 1)[-1] for p in owner if p.rsplit('/', 1)[-1].startswith(prefix) and p not in taken)
+    return [f'{len(names)} package(s) {prefix}*: {reason} ({", ".join(names)})'] if names else []
+
+
+def plan_japan_assets(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The donor's vehicle and kit meshes in /Game/Japan/Assets: the bike (11 parts), sailboat (5), zeppelin (10),
+    mega ramp (3) and the tree house frame and trunks (2). Each one's single slot binds the material the donor's import
+    script sets (M_Bike, M_SailboatCloth / M_SailboatWake, M_ZeppelinFabric on the airship's fabric slot, else M_Village).
+    The bike's triangle count is the donor import report's (Unreal merges duplicate points of the vehicle parts, so it
+    is lower than the export's, down to 76 % on the crank); the two wheels need CPU access, which the importer cannot set.
+    Not planned: the tree house props (UCX hulls with simple-as-complex), Hidamari props (donor-made LODs), and the trees,
+    bushes, houses, rocks and other kit meshes, which other donor generators write."""
+    generated, unmapped = [], []
+
+    def add(row, path, tail, binding, collision, about, **more):
+        name = row['asset']
+        japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, f'/Game/Japan/Assets/{name}',
+                   f'prop/{tail}', binding, collision, about, **more)
+
+    bike = _json(donor / 'bike' / 'import-report.json')['parts']
+    for row, path in atomic_rows(donor, 'vehicle_bike'):
+        name = row['asset']
+        if name in ('BK_WheelFront', 'BK_WheelRear'):
+            unmapped.append(f'{path.relative_to(donor)} ({name}: the donor sets allow_cpu_access on the wheels; '
+                            'the V2 importer has no such setting)')
+            continue
+        if bike[name]['source_triangles'] != row['triangles']:
+            raise RecoverError(f'{name}: the bike import report and the export disagree on the source triangles')
+        add(row, path, f'bike/{ident(name[len("BK_"):])}', ['/Game/Japan/Materials/M_Bike'], {},
+            f'{name}: a bike part ({bike[name]["triangles"]} triangles after the import)', triangles=bike[name]['triangles'])
+    sailboat = {'SB_Sail': '/Game/Japan/Materials/M_SailboatCloth', 'SB_Wake': '/Game/Japan/Materials/M_SailboatWake'}
+    for row, path in atomic_rows(donor, 'vehicle_sailboat'):
+        name = row['asset']
+        add(row, path, f'sailboat/{ident(name[len("SB_"):])}', [sailboat.get(name, JAPAN_VILLAGE)], {},
+            f'{name}: a sailboat part ({row["triangles"]} triangles)')
+    airship = {'ZeppelinPalette': JAPAN_VILLAGE, 'ZeppelinFabric': '/Game/Japan/Materials/M_ZeppelinFabric'}
+    for row, path in atomic_rows(donor, 'zeppelin'):
+        name, slots = row['asset'], row['metadata']['slots']
+        binding = {slot: airship[slot] for slot in slots} if name == 'ZP_Airship' else [JAPAN_VILLAGE] * len(slots)
+        add(row, path, f'zeppelin/{ident(name[len("ZP_"):])}', binding, JAPAN_COMPLEX,
+            f'{name}: a zeppelin piece ({row["triangles"]} triangles)')
+    for row, path in atomic_rows(donor, 'mega'):
+        name = row['asset']      # import_mega.py: Mega_Trim is look only, so it keeps no physics mesh
+        add(row, path, f'mega/{ident(name[len("Mega_"):])}', [JAPAN_VILLAGE],
+            JAPAN_RENDER_ONLY if name == 'Mega_Trim' else JAPAN_COMPLEX, f'{name}: a mega ramp piece ({row["triangles"]} triangles)')
+    for row, path in atomic_rows(donor, 'treehouse_surfaces'):
+        if row['asset'] in ('TH_Frame', 'TH_Trunks'):
+            treehouse_surface(add, row, path)
+    unmapped += _not_planned(owner, generated, 'TH_P_', 'tree house props: simple-as-complex collision from authored UCX '
+                             'hulls and a per-prop slot table, which the importer cannot reproduce; needs report_meshes')
+    unmapped += _not_planned(owner, generated, 'HD_P_', 'Hidamari props: donor-made LODs and default-trace collision with '
+                             'hulls; the importer has no such steps; needs report_meshes')
+    rest = [p.rsplit('/', 1)[-1] for p in sorted(owner) if p not in {g.package for g in generated}
+            and not p.rsplit('/', 1)[-1].startswith(('TH_P_', 'HD_P_', 'BK_Wheel'))]
+    if rest:
+        unmapped.append(f'{len(rest)} package(s) of other donor generators (foliage, houses, props, sky): {", ".join(rest)}')
+    return Plan('japan/assets', generated, unmapped, {})
+
+
+def treehouse_slot_map(slots: list[str], parent: str) -> dict[str, str]:
+    """The donor's import_surfaces binding: slot TH_<slug> takes MI_TH_<slug>; the trunks' bark takes MI_TH_trunk."""
+    return {slot: '/Game/Japan/Treehouse/Materials/' + ('MI_TH_trunk' if parent == 'TH_Trunks' and slot == 'TH_bark'
+                                                        else 'MI_' + slot) for slot in slots}
+
+
+def treehouse_surface(add, row, path):
+    """One tree house surface mesh (structure, dressing, frame, trunks). Dressing keeps no physics shape (simple-as-
+    complex, none authored); the others use their own triangles. Frame and dressing keep full-precision UVs because their
+    channels 1-4 carry the piece bake (treehouse_atomic_native.finish_uv_precision)."""
+    name = row['asset']
+    parent = next(p for p in TREEHOUSE_SURFACES if name.startswith(p))
+    uv_channels = row['metadata']['uv_channels']
+    if len(uv_channels) != (5 if parent in ('TH_Frame', 'TH_Dressing') else 1):
+        raise RecoverError(f'{name}: unexpected UV channels {uv_channels}')
+    more = {'full_precision_uvs': True} if parent in ('TH_Frame', 'TH_Dressing') else {}
+    tail = 'frame' if parent == 'TH_Frame' else 'trunks' if parent == 'TH_Trunks' else ident(name[len('TH_'):])
+    add(row, path, f'treehouse/{tail}', treehouse_slot_map(row['metadata']['slots'], parent),
+        JAPAN_RENDER_ONLY if parent == 'TH_Dressing' else JAPAN_COMPLEX,
+        f'{name}: a tree house surface ({row["triangles"]} triangles, {len(row["metadata"]["slots"])} slots)', **more)
+
+
+def plan_japan_treehouse(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The tree house structure and dressing cells (/Game/Japan/Treehouse/StructurePieces and Pieces), from the donor's
+    treehouse_surfaces step. The surface textures (T_TH_*) stay editor-owned: the donor sets a 1024 texture size and the
+    world texture group, which the importer cannot, and the materials have no importer."""
+    generated, unmapped = [], []
+
+    def add(row, path, tail, binding, collision, about, **more):
+        name = row['asset']
+        folder = 'StructurePieces' if name.startswith('TH_Structure') else 'Pieces'
+        japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, f'/Game/Japan/Treehouse/{folder}/{name}',
+                   f'prop/{tail}', binding, collision, about, **more)
+
+    for row, path in atomic_rows(donor, 'treehouse_surfaces'):
+        if row['asset'] not in ('TH_Frame', 'TH_Trunks'):
+            treehouse_surface(add, row, path)
+    textures = sorted(p.rsplit('/', 1)[-1] for p in owner if '/Textures/' in p)
+    if textures:
+        unmapped.append(f'{len(textures)} texture(s) {", ".join(textures)}: the donor imports them at 1024 px in the world '
+                        'texture group (import_treehouse.py texture()); the importer has neither setting')
+    return Plan('japan/treehouse', generated, unmapped, {})
+
+
+def plan_japan_southwest(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The south-west detour (southwest step, import_southwest.py): 31 pieces, each with the one Southwest_Palette slot on
+    M_Village and complex collision. None has an authored hull (the donor clears any stale ones)."""
+    generated, unmapped = [], []
+    for row, path in atomic_rows(donor, 'southwest'):
+        name = row['asset']
+        if row['metadata']['collision_hulls'] or row['metadata']['slots'] != ['Southwest_Palette']:
+            unmapped.append(f'{path.relative_to(donor)} (hulls or slots differ from the donor import)')
+            continue
+        tail = ident(name[len('SW_'):] if name.startswith('SW_') else name)
+        japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, f'/Game/Japan/Southwest/Pieces/{name}',
+                   f'prop/southwest/{tail}', [JAPAN_VILLAGE], JAPAN_COMPLEX, f'{name}: a south-west piece ({row["triangles"]} triangles)')
+    return Plan('japan/southwest', generated, unmapped, {})
+
+
+def plan_japan_lake(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The forest lake pieces (lake step, import_forest_lake.py): one LakePalette slot, M_ForestLakeWater on the water and
+    M_Village on the rest, half-precision UVs and complex collision."""
+    generated, unmapped = [], []
+    for row, path in atomic_rows(donor, 'lake'):
+        name = row['asset']
+        if row['metadata']['collision_hulls'] or row['metadata']['slots'] != ['LakePalette']:
+            unmapped.append(f'{path.relative_to(donor)} (hulls or slots differ from the donor import)')
+            continue
+        material = '/Game/Japan/Materials/M_ForestLakeWater' if name == 'Lake_Water' else JAPAN_VILLAGE
+        japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, f'/Game/Japan/Lake/Pieces/{name}',
+                   f'prop/lake/{ident(name[len("Lake_"):])}', [material], JAPAN_COMPLEX, f'{name}: a lake piece ({row["triangles"]} triangles)')
+    return Plan('japan/lake', generated, unmapped, {})
+
+
+def plan_japan_textures(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The world textures the donor's gen_textures.py writes (textures/T_*.png|jpg, imported with the texture factory's
+    defaults by shared_materials.py). The plaza and harbour textures come from region folders, not this build output, and
+    the donor sets mirror addressing, a 1024 size and power-of-two stretch on them, which the importer cannot."""
+    generated, unmapped = [], []
+    for package in sorted(owner):
+        name = package.rsplit('/', 1)[-1]
+        files = sorted((donor / 'textures').glob(f'{name}.*'))
+        if name.startswith(('T_Arcade_', 'T_Harbor_')) or len(files) != 1:
+            unmapped.append(f'{name} (no donor file in textures/, or mirror/1024/power-of-two settings the importer lacks)')
+            continue
+        generated.append(Generated(
+            id=f'texture/japan/{slug(name[2:])}', kind='texture', owner=f'shared/japan/{slug(name[2:])}', package=package,
+            source=files[0], settings={}, about=f'{name}: a world texture (donor {files[0].name})'))
+    return Plan('japan/textures', generated, unmapped, {})
+
+
+FAMILIES.update({'japan/assets': plan_japan_assets, 'japan/treehouse': plan_japan_treehouse,
+                 'japan/southwest': plan_japan_southwest, 'japan/lake': plan_japan_lake,
+                 'japan/textures': plan_japan_textures})
+
+
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
     if family not in FAMILIES:
         raise RecoverError(f'unknown family {family!r}; known: {", ".join(sorted(FAMILIES))}')
