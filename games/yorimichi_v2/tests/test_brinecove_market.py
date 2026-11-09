@@ -180,3 +180,67 @@ def test_donor_market_is_matched_completely_and_stalls_do_not_overlap_batch1():
     assert len(counts) == 21 and counts['market-stall-06'] == 4752
     done = market.compute(donor / 'brinecove' / 'glb', src, list(market.BATCHES['market1']), {'market-well', 'market-auction-block'})
     assert done['problems'] == []
+
+
+def test_town_batches_are_disjoint_sized_and_named():
+    towns = {k: v for k, v in market.BATCHES.items() if k.startswith('town')}
+    assert list(towns) == [f'town{n}' for n in range(1, 10)]
+    flat = [n for v in towns.values() for n in v]
+    assert len(flat) == len(set(flat)) == 7 + 258
+    assert all(n.startswith(('town-lower-', 'town-upper-')) for n in flat)
+    assert all(25 <= len(v) <= 45 for k, v in towns.items() if k != 'town1')
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_town_batches_cover_every_donor_lot_once_and_chain_without_conflict():
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    glb = donor / 'brinecove' / 'glb'
+    lots = set()
+    for component in ('TownLower', 'TownUpper'):
+        lots |= {o for owners in market.generated_owners(glb, src, component)['owner'].values() for o in owners if o}
+    batched = [n for k, v in market.BATCHES.items() if k.startswith('town') for n in v]
+    assert sorted(batched) == sorted(lots)
+    taken: set = set()
+    for name in [k for k in market.BATCHES if k.startswith('town')]:       # each batch against what the earlier ones left
+        done = market.compute(glb, src, list(market.BATCHES[name]), set(taken))
+        assert done['problems'] == [], name
+        taken |= set(market.BATCHES[name])
+
+
+TOML = '''[[objects]]
+id = "object/a"
+groups = ["SM_BC_T_1", "SM_BC_T_2"]
+model = "adopted/a"
+about = "a"
+
+[[objects]]
+id = "object/b"
+group = "SM_BC_T_1"
+model = "adopted/b"
+about = "b"
+
+[[objects]]
+id = "object/c"
+groups = ["SM_BC_T_3"]
+model = "adopted/c"
+about = "c"
+'''
+
+
+def test_drop_group_edits_group_lists_and_drops_empty_objects():
+    out = market.drop_group(TOML, 'SM_BC_T_1')
+    assert 'groups = ["SM_BC_T_2"]' in out and 'object/b' not in out and 'object/c' in out
+    assert market.drop_group(out, 'SM_BC_T_1') == out                            # idempotent
+    assert 'object/a' not in market.drop_group(out, 'SM_BC_T_2')
+
+
+def test_drop_saved_group():
+    body = {'schema': 1, 'objects': {'a': {'groups': ['x', 'y']}, 'b': {'groups': ['x']}, 'c': {'model': 'm'}}}
+    out = market.drop_saved_group(body, 'x')
+    assert out['objects'] == {'a': {'groups': ['y']}, 'c': {'model': 'm'}}
+    assert market.drop_saved_group(out, 'x') == out
+
+
+def test_emptied_lists_tiles_with_no_remainder():
+    assert market.emptied({'remainders': {'B': None, 'A': {'triangles': 3}, 'C': None}}) == ['B', 'C']

@@ -68,3 +68,43 @@ uv run python games/yorimichi_v2/tools/content/check.py
 `brinecove_split_apply.py check` (batch 1) compares each tile's remainder with batch 1's expectation, so it reports a
 difference for tiles a later batch has cut further (`Market_4_4_Piece003` after `market1`, `Market_4_4_Soft` after `market2`). Run it before applying
 the next batch; the newer batch's `check` is the proof for those tiles.
+
+## Town batches (town2 to town9)
+
+`town1` is the 7 single-tile lots. The other 258 lots (129 lower, 129 upper) are `town2` to `town9`, in this order. Lots are
+grouped by the 256 m cell their triangles mostly lie in, then adjusted by a local search that minimises tiles cut by more
+than one batch, with 25 to 45 lots per batch. Every lot is cut cleanly; none had to stay in its tile. Each batch is planned
+against what the earlier ones left, so apply them in order. Counts are measured, with every earlier batch subtracted.
+
+| Batch | Level | Lots | Triangles | Tiles remade | Tiles emptied | Cells |
+|---|---|---|---|---|---|---|
+| `town2` | lower | 25 | 179,946 | 9 hard + 1 Soft | 0 | 4_4 |
+| `town3` | lower | 31 | 199,801 | 14 hard + 2 Soft | 6 | 4_4, 5_4 |
+| `town4` | lower | 45 | 313,907 | 27 hard + 5 Soft | 8 | 2_4, 3_4, 5_3, 6_2, 6_3 |
+| `town5` | lower | 28 | 170,292 | 14 hard + 4 Soft | 11 | 1_2, 1_3, 2_3, 2_4 |
+| `town6` | upper | 33 | 205,225 | 26 hard + 2 Soft | 6 | 2_4, 3_4 |
+| `town7` | upper | 30 | 188,163 | 14 hard + 2 Soft | 2 | 4_5, 5_5 |
+| `town8` | upper | 26 | 152,529 | 12 hard + 3 Soft | 4 | 2_4, 2_5, 3_5 |
+| `town9` | upper | 40 | 244,621 | 27 hard + 3 Soft | 5 | 4_4, 5_4, 5_5 |
+
+Tiles cut by two of these batches (two remainder reimports): `TownLower_4_4_Piece11` and `TownLower_4_4_Soft` (town2, town3),
+`TownLower_2_4_Piece30` and `TownLower_2_4_Soft` (town4, town5), `TownUpper_2_4_Soft` (town6, town8), `TownUpper_5_5_Soft`
+(town7, town9). `town1` shares six hard tiles with town2 and town4. The contract test checks that `town1` to `town9`
+cover every lot of `list --components TownLower,TownUpper` exactly once and that the nine plans chain without conflict.
+
+### Emptied tiles: retire in two stages
+
+A town tile is often made only of lots, so a batch can take every triangle (no remainder). `apply` leaves such a tile's
+record, package and runtime group in place and `apply` never deletes, so until it is retired the old tile and the new parts
+are both drawn. After the import and `check`, retire it:
+
+```
+$CMD retire --batch townN --donor $D --claim TASK --stage groups   # drops the groups from objects.toml, objects.saved.json, runtime
+# delete the printed placements' actors and records (an object cannot change its groups after it was saved), then
+uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only <those ids>
+$CMD retire --batch townN --donor $D --claim TASK --stage records  # deletes the emptied tile records and package files
+$CMD check --batch townN --donor $D --retired
+```
+
+`paths` lists both stages and the affected placements (`townlower-*` and `townupper-*` cell objects). Retiring all the
+town batches' emptied tiles in one pass per placement, after town9, saves re-saving the same actors repeatedly.
