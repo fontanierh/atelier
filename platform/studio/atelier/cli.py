@@ -9,6 +9,7 @@
     atelier build <game> [step ...]    restore checkpoints and build changed tasks; --plan --explain
     atelier play <game> [--profile P] [--memory-gib N] [-- game args]   launch the game under the render lock and memory guard
     atelier playtest <game> [--tag T] [--download-only] [-- launcher args]   play the latest GitHub release, downloading it if needed
+    atelier playtest <game> --app PATH [-- game args]   play a local packaged .app under the same lock and guard
     atelier stream <game> start|stop|status|build-web   Unreal: stream the game to a phone, a handheld or a browser
     atelier live [--session ID] state|py|shot|sessions   Unreal: talk to a running game through its live bridge
     atelier qa [--session ID] <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
@@ -258,6 +259,7 @@ def make_parser():
     p = sub.add_parser('playtest'); p.add_argument('game')
     p.add_argument('--tag', help='this release instead of the latest')
     p.add_argument('--download-only', action='store_true', help='download and unpack it, without playing')
+    p.add_argument('--app', type=Path, help='play this local packaged .app instead of a release (package acceptance)')
     p.add_argument('--memory-gib', type=float, default=None, help='memory guard limit, as for play')
     p.add_argument('extra', nargs='*', help='launcher arguments, after --')
     p = sub.add_parser('release', help='publish an existing independently verified package')
@@ -410,6 +412,8 @@ def main(argv=None):
         return play(args.game, args.profile, args.set, args.extra, args.memory_gib)
     if args.command == 'playtest':
         from . import playtest
+        if args.app:
+            return playtest.play_app(args.game, args.app, args.extra, game_limit(args.memory_gib))
         return playtest.main(args.game, args.tag, args.download_only, args.extra, game_limit(args.memory_gib))
     if args.command == 'release':
         from . import release
