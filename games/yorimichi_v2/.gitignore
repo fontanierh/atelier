@@ -33,3 +33,5 @@ unreal/Content/FoxHunter/
 unreal/Content/SwordTrainer/
 unreal/Content/Wanderer/
 unreal/Content/CraterPark/
+# Restricted originals (tools/restricted/originals.py): pinned in restricted.originals.json, fetched, never staged.
+restricted-originals/
