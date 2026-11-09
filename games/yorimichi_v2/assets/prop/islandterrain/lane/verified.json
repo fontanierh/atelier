@@ -1,0 +1,34 @@
+{
+  "asset": "prop/islandterrain/lane",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Lane.uasset": "e5a8edce2785e405beb58c290abe35c5eff8230d8df395f201a0964e5c127169"
+  },
+  "input_fingerprint": "b1c610d9ea2eafafd594aedf9e85b35863cf9d89efdab7646ff729c2198e23bf",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/IslandTerrain/v1_atomic/Lane": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

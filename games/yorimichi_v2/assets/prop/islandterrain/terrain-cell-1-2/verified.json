@@ -1,0 +1,34 @@
+{
+  "asset": "prop/islandterrain/terrain-cell-1-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/IslandTerrain/v1_atomic/Terrain_cell_1_2.uasset": "a8173e253198b3ea4de5f3c33cd21b3a16128556180e63c3ffea85f48f2def0a"
+  },
+  "input_fingerprint": "196c1c15a2d8a029c70f9fff22b69b7336f4a4440d6ca0705c902e7ab4a368b2",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/IslandTerrain/v1_atomic/Terrain_cell_1_2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
