@@ -901,6 +901,9 @@ def main(argv=None) -> int:
                     if not emptied(plan):
                         print(f'{batch}: no emptied tile, nothing to retire')
                         continue
+                    if args.retire_stage == 'groups' and groups_retired(game, plan):
+                        print(f'{batch}: groups stage already done')
+                        continue
                     step = retire(game, plan, args.claim, batch, args.retire_stage, donor)
                     done['written'] += step['written']
                     done['deleted'] += step['deleted']
