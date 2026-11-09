@@ -413,6 +413,7 @@ def plan_skatepark(game: Path, donor: Path, owner: dict[str, str], all_owner: di
             continue
         if board:
             slots = {'slot_materials': [SKATEPARK_BOARD_MATERIAL]}
+            cpu = {}                     # the donor sets allow_cpu_access on the pier parts, not the board
             collision, refs = 'none', [all_owner[SKATEPARK_BOARD_MATERIAL]]
         else:
             surfaces = {slot: f'{SKATEPARK_ROOT}/Materials/M_{slot}' for slot in build['material_slots'][name]}
@@ -420,12 +421,12 @@ def plan_skatepark(game: Path, donor: Path, owner: dict[str, str], all_owner: di
             if missing:
                 unmapped.append(f'{rel} (material {missing[0]} owned by no record)')
                 continue
-            slots = {'slot_map': surfaces}
+            slots, cpu = {'slot_map': surfaces}, {'allow_cpu_access': True}   # cooked riding snapshots need positions
             collision, refs = ('complex' if blocks[name] else 'none'), sorted({all_owner[m] for m in surfaces.values()})
         tail = ident(name[len('SM_'):])
         generated.append(Generated(
             id=f'prop/skatepark/{tail}', kind='static-mesh', owner=f'shared/skatepark/{tail}', package=package,
-            source=donor / rel, settings={**slots, 'triangles': build['meshes'][name]['triangles'], 'collision': collision},
+            source=donor / rel, settings={**slots, 'triangles': build['meshes'][name]['triangles'], 'collision': collision, **cpu},
             references=refs, about=f'{name}: one skate park mesh ({build["meshes"][name]["triangles"]} triangles)',
             expected_sha=digest))
     for path in sorted((donor / 'textures').glob('*.png')):
@@ -458,7 +459,8 @@ def plan_megapark(game: Path, donor: Path, owner: dict[str, str], all_owner: dic
             owner=f'shared/megapark/{"seam" if materials else "seam-collision"}', package=package,
             source=donor / 'fbx' / row['primary'],
             settings={**({'slot_map': materials} if materials else {}), 'triangles': row['triangles'],
-                      'collision': 'complex', 'full_precision_uvs': True},
+                      'collision': 'complex', 'full_precision_uvs': True,
+                      'allow_cpu_access': True, 'double_sided': False},      # import_megapark.py: one_sided, finish_mesh
             references=sorted({all_owner[m] for m in materials.values()}),
             about=f'{name}: the {"render" if materials else "collision"} mesh of the park seam ({row["triangles"]} triangles)',
             expected_sha=row['sha256']))
@@ -478,7 +480,7 @@ def plan_swordcamp(game: Path, donor: Path, owner: dict[str, str], all_owner: di
         raise RecoverError(f'{material} is owned by no record')
     generated.append(_texture_record(
         'texture/swordcamp/atlas', '/Game/SwordCamp/Textures/T_SwordCampAtlas', donor / 'swordcamp_atlas.jpg',
-        {'srgb': True}, 'T_SwordCampAtlas: the Sunburst colour atlas of every Sword Camp mesh (donor swordcamp_atlas.jpg)'))
+        {'srgb': True, 'max_texture_size': 2048, 'lod_group': 'TEXTUREGROUP_WORLD'}, 'T_SwordCampAtlas: the Sunburst colour atlas of every Sword Camp mesh (donor swordcamp_atlas.jpg)'))
     for row in manifest['exports']:
         name, hulls = row['asset'], row['metadata']['collision_hulls']
         package = f'/Game/SwordCamp/Assets/{name}'
@@ -510,7 +512,8 @@ def plan_fx(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str,
             unmapped.append(f'{name}.png (its package is not in a source-less fx record)')
             continue
         generated.append(_texture_record(
-            f'texture/fx/{slug(name[len("T_FX_"):])}', package, donor / f'{name}.png', {'srgb': False},
+            f'texture/fx/{slug(name[len("T_FX_"):])}', package, donor / f'{name}.png',
+            {'srgb': False, 'lod_group': 'TEXTUREGROUP_EFFECTS'},
             f'{name}: a combat effect sprite mask (donor texture {name}.png)'))
     return Plan('fx', generated, unmapped, {})
 

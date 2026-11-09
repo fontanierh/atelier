@@ -479,9 +479,10 @@ def test_skatepark_binds_slots_by_name_and_reuses_the_steel_maps_for_painted(tmp
     assert len(by_id) == 7
     path, planting, deck = (by_id[f'prop/skatepark/{n}'] for n in ('skate-path', 'skate-park-planting', 'skate-deck'))
     assert path.settings == {'slot_map': {'Pier_concrete': f'{root}/Materials/M_Pier_concrete',
-                                          'Pier_steel': f'{root}/Materials/M_Pier_steel'}, 'triangles': 10, 'collision': 'complex'}
+                                          'Pier_steel': f'{root}/Materials/M_Pier_steel'}, 'triangles': 10, 'collision': 'complex',
+                                          'allow_cpu_access': True}
     assert planting.settings['collision'] == 'none'                      # a floor paint piece has no shapes
-    assert deck.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 6, 'collision': 'none'}
+    assert deck.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 6, 'collision': 'none'}     # no cpu access
     assert deck.references == ['adopted/japan/materials/base-materials']
     # The donor's 'painted' surface is the steel maps under the painted names; colour maps are sRGB, normals are not.
     painted = by_id['texture/skatepark/pier-painted-normal']
@@ -512,8 +513,9 @@ def test_megapark_seam_recovers_both_seam_meshes_and_ignores_the_sections(tmp_pa
     render, collision = sorted(plan.generated, key=lambda g: g.id)
     assert (render.id, collision.id) == ('prop/megapark/seam', 'prop/megapark/seam-collision')
     assert render.settings == {'slot_map': {'M_aa_Seam': f'{root}/Materials/MI_aa_Seam'}, 'triangles': 8,
-                               'collision': 'complex', 'full_precision_uvs': True}
-    assert 'slot_map' not in collision.settings and collision.references == []
+                               'collision': 'complex', 'full_precision_uvs': True, 'allow_cpu_access': True,
+                               'double_sided': False}
+    assert collision.settings['double_sided'] is False and 'slot_map' not in collision.settings and collision.references == []
     assert plan.kept['adopted/megapark/seam'] == [f'{root}/Materials/MI_aa_Seam']     # the material instance stays editor-owned
     assert plan.kept['adopted/megapark/cell-x150-zm450'] == [f'{root}/Meshes/SM_MP_0123']
 
@@ -531,7 +533,8 @@ def test_swordcamp_solid_props_keep_their_hull_and_the_atlas_is_srgb(tmp_path):
         write(donor / f'fbx/{name}.fbx', name)
     plan = recover.build_plan(game, 'swordcamp', donor)
     by_id = {g.id: g for g in plan.generated}
-    assert by_id['texture/swordcamp/atlas'].settings == {'srgb': True}
+    assert by_id['texture/swordcamp/atlas'].settings == {'srgb': True, 'max_texture_size': 2048,
+                                                              'lod_group': 'TEXTUREGROUP_WORLD'}
     assert by_id['prop/swordcamp/camp-bales'].settings == {'slot_materials': ['/Game/SwordCamp/Materials/M_SwordCamp'],
                                                            'triangles': 20, 'collision': 'simple_and_complex', 'hulls': 1}
     assert by_id['prop/swordcamp/ronin-katana'].settings['collision'] == 'none'
@@ -551,7 +554,7 @@ def test_fx_recovers_the_sprite_textures_only(tmp_path):
                                                                  '/Game/FX/Textures/T_FX_Gone.T_FX_Gone']}))
     plan = recover.build_plan(game, 'fx', donor)
     (glow,) = plan.generated
-    assert (glow.id, glow.kind, glow.settings) == ('texture/fx/glow', 'texture', {'srgb': False})
+    assert (glow.id, glow.kind, glow.settings) == ('texture/fx/glow', 'texture', {'srgb': False, 'lod_group': 'TEXTUREGROUP_EFFECTS'})
     assert any('T_FX_Gone' in u for u in plan.unmapped_outputs)
     assert plan.kept == {'adopted/fx/textures': [], 'adopted/fx/loose_files': ['/Game/FX/M_FX_Additive']}
 
