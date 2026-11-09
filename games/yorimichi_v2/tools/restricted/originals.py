@@ -10,6 +10,7 @@
   code (`donor_state`). The clip links that data and the importer's code (CLIP_CODE), so it can be keyed again.
 - embedded: a texture with no source file of its own, made by its character's mesh import; it links that folder's
   imported skeletal-mesh originals.
+- reported / scripted (the open Adventure packages, `open_packages`): see `link_open`.
 - authored: no import record and an editor-made class (material, Blueprint, blend space, data asset, ...), from the
   asset registry (unreal/Scripts/report_classes.py, read-only editor.run).
 
@@ -58,7 +59,10 @@ AUTHORED_CLASSES = {'Material', 'MaterialInstanceConstant', 'MaterialFunction', 
                     'SoundCue', 'AnimBoneCompressionSettings', 'AnimCurveCompressionSettings', 'MirrorDataTable',
                     'SkateMotionBank', 'SkateMotionData', 'WandererDefinition', 'FoxHunterDefinition',
                     'JapanFootstepSet'}
-ROUTES = {'imported', 'keyed', 'embedded', 'authored'}
+ROUTES = {'imported', 'keyed', 'embedded', 'authored', 'reported', 'scripted'}
+ADVENTURE = 'build/yorimichi/adventure'
+ADVENTURE_SCRIPTS = 'games/yorimichi/unreal/Scripts'
+OPEN_RECORDS = ('adopted/adventure/reference', 'adopted/adventure/loose_files', 'adopted/japan/animation')
 
 
 def import_sources(data: bytes) -> list[tuple[str, str]]:
@@ -163,6 +167,98 @@ def scan(game: Path, donor: Path, classes: dict[str, str], content: Path | None 
             'packages': packages, 'originals': dict(sorted(originals.items())), 'problems': problems}
 
 
+def _glb_names(path: Path) -> tuple[set, set, set]:
+    """(material names, image names, animation names) of a glTF binary: what an Interchange import makes assets of."""
+    data = path.read_bytes()
+    length = int.from_bytes(data[12:16], 'little')
+    doc = json.loads(data[20:20 + length])
+    return ({m.get('name') for m in doc.get('materials', [])}, {i.get('name') for i in doc.get('images', [])},
+            {a.get('name') for a in doc.get('animations', [])})
+
+
+def link_open(game: Path, donor: Path, content: Path | None = None) -> dict:
+    """The open Adventure and animation packages (OPEN_RECORDS: adopted records with no sources) that the restricted
+    lock does not pin, linked to what made them. {'open_packages', 'originals', 'problems'}; the keys are Content-relative
+    package files like the restricted ones.
+
+    - reported: named by the donor's Adventure import report (unreal_import.json) as a character's mesh, skeleton or clip
+      (or its sword and glider equipment); made from that character's glb. The pins are the glb and the report.
+    - embedded: a material, texture or skeleton the import of the sword or glider glb made; the glb names it.
+    - scripted: an editor-made master or settings asset that a donor Unreal script creates by name; the pin is the
+      script. It is neither editor-owned nor restricted: recovering it means running that script, replacing it means
+      authoring it anew.
+
+    With hydrated package bytes (`content`) a package whose import data names a file must name the glb pinned here."""
+    report = json.loads((donor / ADVENTURE / 'unreal_import.json').read_text())['characters']
+    export = {c['name']: c for c in json.loads((donor / ADVENTURE / 'export.json').read_text())['characters']}
+    content, problems, packages, cache = content or game / 'unreal' / 'Content', [], {}, {}
+    pins: dict[str, dict] = {}
+
+    def pin(rel_tail: str) -> str:
+        _, sha, size = _digest(donor / rel_tail, cache)
+        pins[rel_tail] = {'sha256': sha, 'size': size}
+        return rel_tail
+
+    report_pin = pin(f'{ADVENTURE}/unreal_import.json')
+    reported: dict[str, tuple[str, list[str]]] = {}      # package -> (class, originals)
+    embedded: dict[str, tuple[str, list[str]]] = {}
+    for character in report:
+        glb = pin(f"{ADVENTURE}/{export[character['name']]['glb']}")
+        reported[character['mesh'].split('.')[0]] = ('SkeletalMesh', [glb, report_pin])
+        reported[character['skeleton'].split('.')[0]] = ('Skeleton', [glb, report_pin])
+        for clip in character['clips'].values():
+            reported[clip['path'].split('.')[0]] = ('AnimSequence', [glb, report_pin])
+        for slot, item in export[character['name']].get('moves', {}).get('equipment', {}).items():
+            gear = character['moves']['equipment'][slot]
+            piece = pin(f"{ADVENTURE}/{item['glb']}")
+            reported[gear['mesh'].split('.')[0]] = ('SkeletalMesh' if 'clip' in gear else 'StaticMesh', [piece, report_pin])
+            if 'clip' in gear:
+                reported[gear['clip'].split('.')[0]] = ('AnimSequence', [piece, report_pin])
+                skeleton = gear['mesh'].split('.')[0].replace('/SK_', '/SKEL_')
+                embedded[skeleton] = ('Skeleton', [piece])
+            materials, images, _ = _glb_names(donor / ADVENTURE / item['glb'])
+            folder = gear['mesh'].rsplit('/', 1)[0]
+            for name in sorted(materials):
+                embedded[f'{folder}/{name}'] = ('MaterialInstanceConstant', [piece])
+            for name in sorted(images):
+                embedded[f'{folder}/{name}'] = ('Texture2D', [piece])
+    scripted = {
+        '/Game/Adventure/M_AdventureCharacter': ('Material', 'import_adventure.py', "master('M_AdventureCharacter'"),
+        '/Game/Adventure/M_AdventureCharacterMasked': ('Material', 'import_adventure.py', "master('M_AdventureCharacterMasked'"),
+        '/Game/Japan/Animation/CharacterCompression': ('AnimBoneCompressionSettings', 'animation_compression.py',
+                                                      "'CharacterCompression'")}
+    for package, (kind, script, needle) in scripted.items():
+        path = donor / ADVENTURE_SCRIPTS / script
+        if not path.is_file() or needle not in path.read_text():
+            problems.append(f'{package}: the donor script {script} does not create it')
+            continue
+        packages[package] = {'route': 'scripted', 'class': kind,
+                             'originals': [pin(f'{ADVENTURE_SCRIPTS}/{script}')]}
+    owned = []
+    for record_id in OPEN_RECORDS:
+        owned += [o.package for o in records.load_asset(game / 'assets' / record_id / 'asset.toml').outputs]
+    for package in owned:
+        if package in packages:
+            continue
+        for route, table in (('reported', reported), ('embedded', embedded)):
+            if package in table:
+                kind, files = table[package]
+                packages[package] = {'route': route, 'class': kind, 'originals': files}
+                break
+        else:
+            problems.append(f'{package}: named by no donor Adventure report, glb or script (recover or replace)')
+    for package, entry in sorted(packages.items()):
+        file = content / (package[len('/Game/'):] + '.uasset')
+        if file.is_file() and not records.is_lfs_pointer(file):
+            for recorded, md5 in import_sources(file.read_bytes()):
+                want = [o for o in entry.get('originals', []) if o.endswith('.glb')]
+                if not any(recorded.replace('\\', '/').endswith(o.split('/', 3)[-1]) and _digest(donor / o, cache)[0] == md5
+                           for o in want):
+                    problems.append(f'{package}: its import data names {Path(recorded).name}, not the pinned glb')
+    return {'open_packages': {p[len('/Game/'):] + '.uasset': e for p, e in sorted(packages.items())},
+            'originals': pins, 'problems': problems}
+
+
 def check(game: Path) -> list[str]:
     """Every pinned restricted package is linked, every link is a valid route, every linked original is pinned."""
     restricted = records.load_restricted(game)
@@ -195,8 +291,23 @@ def check(game: Path) -> list[str]:
             problems.append(f'{original}: not a donor-relative path')
         if not re.fullmatch(r'[0-9a-f]{64}', str(pin_.get('sha256', ''))) or not isinstance(pin_.get('size'), int):
             problems.append(f'{original}: pin without sha256 and size')
+    opened = data.get('open_packages', {})
+    for rel, entry in sorted(opened.items()):
+        if entry.get('route') not in ROUTES or not entry.get('originals'):
+            problems.append(f'{rel}: open package with route {entry.get("route")!r} and no original')
+        for original in entry.get('originals', []):
+            used.add(original)
+            if original not in originals:
+                problems.append(f'{rel}: original {original} is not pinned')
+    owned = set()
+    for record_id in OPEN_RECORDS if opened else ():
+        toml = game / 'assets' / record_id / 'asset.toml'
+        owned |= {o.package[len('/Game/'):] + '.uasset' for o in records.load_asset(toml).outputs} if toml.is_file() else set()
+    if opened:
+        problems += [f'{rel}: owned by an open record but not linked' for rel in sorted(owned - set(opened))]
+        problems += [f'{rel}: linked but owned by no open record' for rel in sorted(set(opened) - owned)]
     problems += [f'{original}: pinned but linked by no package' for original in sorted(set(originals) - used)]
-    problems += [f'scan problem: {p}' for p in data.get('problems', [])]
+    problems += [f'scan problem: {p}' for p in data.get('problems', []) + data.get('open_problems', [])]
     return problems
 
 
@@ -237,6 +348,10 @@ def fetch(game: Path, source: Path | None = None, *, echo=print) -> tuple[int, l
 
 
 def main(argv=None) -> int:
+    """@cc [owner:fontanierh,label:correctness] original-link-evidence-preservation
+    A restricted scan MUST preserve prior open links and unresolved open problems, including an empty failed
+    open result. Only a new link-open result MAY replace those problems, including clearing them on success.
+    """
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     sub = parser.add_subparsers(dest='command', required=True)
     put = sub.add_parser('scan', help=f'link every pinned restricted package and pin its originals ({LINKS})')
@@ -244,6 +359,9 @@ def main(argv=None) -> int:
     put.add_argument('--classes', required=True, type=Path,
                      help='package -> class JSON from unreal/Scripts/report_classes.py')
     put.add_argument('--content', type=Path, help='a Content folder holding the fetched restricted packages')
+    opn = sub.add_parser('link-open', help='link the open Adventure and animation packages and pin their originals')
+    opn.add_argument('--donor', required=True, type=Path, help='the donor checkout holding build/ and games/')
+    opn.add_argument('--content', type=Path, help='a Content folder holding the hydrated packages (optional hash check)')
     sub.add_parser('check', help='every pinned restricted package linked, every linked original pinned')
     get = sub.add_parser('fetch', help='copy the pinned originals in, verified against their pins')
     get.add_argument('--source', type=Path, help=f'restricted originals storage (default: ${SOURCE_ENV})')
@@ -254,6 +372,12 @@ def main(argv=None) -> int:
         if args.command == 'scan':
             data = scan(game, args.donor.resolve(), json.loads(args.classes.read_text()),
                         args.content.resolve() if args.content else None)
+            previous = json.loads((game / LINKS).read_text()) if (game / LINKS).is_file() else {}
+            if 'open_packages' in previous or 'open_problems' in previous:
+                # Open evidence belongs to link-open, including a failure that linked no packages.
+                data['open_packages'] = previous.get('open_packages', {})
+                data['open_problems'] = previous.get('open_problems', [])
+                data['originals'] = dict(sorted({**previous['originals'], **data['originals']}.items()))
             records.write_json(game / LINKS, data)
             routes = {}
             for entry in data['packages'].values():
@@ -263,6 +387,21 @@ def main(argv=None) -> int:
             for problem in data['problems'][:20]:
                 print(f'  {problem}', file=sys.stderr)
             return 1 if data['problems'] else 0
+        if args.command == 'link-open':
+            data = json.loads((game / LINKS).read_text())
+            found = link_open(game, args.donor.resolve(), args.content.resolve() if args.content else None)
+            data['originals'] = dict(sorted({**data['originals'], **found['originals']}.items()))
+            data['open_packages'] = found['open_packages']
+            data['open_problems'] = found['problems']
+            records.write_json(game / LINKS, data)
+            routes = {}
+            for entry in data['open_packages'].values():
+                routes[entry['route']] = routes.get(entry['route'], 0) + 1
+            print(f'{len(data["open_packages"])} open package(s) linked {dict(sorted(routes.items()))}, '
+                  f'{len(found["originals"])} original(s) pinned, {len(found["problems"])} problem(s)')
+            for problem in found['problems']:
+                print(f'  {problem}', file=sys.stderr)
+            return 1 if found['problems'] else 0
         if args.command == 'check':
             problems = check(game)
             for problem in problems[:40]:
