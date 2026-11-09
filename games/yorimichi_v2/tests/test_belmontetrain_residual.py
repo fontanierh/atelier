@@ -18,6 +18,8 @@ def loaded():
     return {name: records.load_asset(FOLDER / name / 'asset.toml') for name in RESIDUAL}
 
 
+# Note: this pins the state before the LOD retirement. tools/migrate/belmontetrain_lods.py --claim removes the 14
+# standalone LOD1/LOD2 meshes (SM_B count 14 -> 0, 473 -> 459 packages); after that run, update these two numbers.
 def test_the_seven_records_hold_473_packages_and_no_source_or_recipe():
     assets = loaded()
     assert sum(len(a.outputs) for a in assets.values()) == 473

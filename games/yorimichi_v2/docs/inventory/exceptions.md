@@ -69,19 +69,16 @@ records), so none of the 473 packages has a planner row. Plan mode writes nothin
 
 | Kind | Packages | Donor evidence (checked) | Verdict |
 |---|---:|---|---|
-| `Source/SM_BT_<V>/SM_BT_<V>_LOD1` and `_LOD2` meshes | 14 | Each level GLB is pinned by the donor's `import-report.json` sha256 (14 of 14). The donor counts triangles per node placement: a mesh placed by several nodes counts once per placement. Counted that way, all 14 levels match the committed root chain's triangles and material names (sets). The earlier six-LOD1 disagreement was this instancing, not door leaves (refuted: tender has no doors and is short by 1,160 = 2 × 580) | **Prepared, needs import.** `recover.py belmontetrain` now plans all 14 with the donor GLB as source (`prop/belmontetrain/<unit>-lod1|lod2`). Not written. The committed slot order differs from the GLB's order for some vehicles; the planner keeps the committed order. Collision and the import result still need an editor run |
+| `Source/SM_BT_<V>/SM_BT_<V>_LOD1` and `_LOD2` meshes | 14 | Each level GLB is pinned by the donor's `import-report.json` sha256 (14 of 14). The donor counts triangles per node placement: a mesh placed by several nodes counts once per placement. Counted that way, all 14 levels match the committed root chain's triangles and material names (sets). The earlier six-LOD1 disagreement was this instancing, not door leaves (refuted: tender has no doors and is short by 1,160 = 2 × 580) | **Retired, not imported.** These are unused donor leftovers. The vehicle records `assets/prop/belmontetrain/<v>/` pin the full LOD chain from the GLB sources, and `unreal/Scripts/import_asset.py` imports LOD1 and LOD2 as transient meshes, attaches them and deletes them. Nothing references the packages (`tools/migrate/belmontetrain_lods.py --check` proves it). The claimed `belmontetrain_lods.py --claim TASK` step removes them from the seven records, `verified.json` and `units.json`, and deletes the 14 `.uasset` files. `recover.py belmontetrain`'s `-lod1|lod2` rows must not be applied: they would recreate the records |
 | `M_BT_*` material instances in `Source/SM_BT_<V>/LOD0..2` | 321 | Each GLB material slot (321 across all levels of all seven vehicles) binds by name to exactly one residual material package in the same LOD folder: 321 of 321 | **Prepared.** The binding closes by name, but the instance parameters and the source texture links still need an editor read, and no committed facts exist to compare them with |
 | `T_BT_*` textures | 138 (27 names) | The donor has an image for all 138 packages. `T_BT_Walnut1` (10 packages, LOD0 and LOD1 of five vehicles) is not a separate image: in each of those ten GLBs two glTF textures share the one `T_BT_Walnut` image (sha256 `82a95ac294…`), and Interchange names the second texture `T_BT_Walnut1`. Its original is that image. No committed texture facts (size, format) are saved | **Prepared** for all 138 packages: the donor image is the candidate source, with `generator/source/world/train/textures.py` as its generator (`T_BT_Walnut1` from its `T_BT_Walnut` entry). Verifying needs an editor import compared with the committed packages, and accepted content is not re-imported |
 
 Adding `[[sources]]` to these records would change their import fingerprints and make `check.py` report `STALE_IMPORT`,
 so the records stay as they are until a verified import closes them. The count and the texture coverage are pinned by
-`tests/test_belmontetrain_residual.py`.
+`tests/test_belmontetrain_residual.py`. The LOD retirement takes 14 packages out of them (473 to 459);
+the count is updated once it has run.
 
-Next steps, not run here. (1) `recover.py belmontetrain --donor <belmonte-train folder> --apply` writes the 14 mesh
-records and removes their packages from the residual records (this adds `[[sources]]`, so their packages need an
-import). (2) `tools/import/run.py <id> --plan` for each of the 14 ids below, then a claimed import of them. Claim scopes:
-`shared/belmontetrain/<unit>` for each unit (baggage-van, brake-van, first-class, locomotive, restaurant, second-class,
-tender). The 14 ids: `prop/belmontetrain/<unit>-lod1` and `-lod2` for each of the seven units. Textures remain prepared,
+Next steps, not run here. (1) `tools/migrate/belmontetrain_lods.py --claim TASK` retires the 14 unused LOD meshes (see the row above). It is a retirement, not an import, and it runs under the seven `shared/belmontetrain/<unit>` scopes. (2) Textures remain prepared,
 for the 128 donor-backed ids, after the generator's own source record is pinned.
 
 Brine Cove's source-preservation route at `5f2d21fbd1` is prepared but not applied on main. It is due after town9;
