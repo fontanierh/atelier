@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/town-lower-back-e4-0",
+  "dependencies": {
+    "prop/brinecove/town-lower-back-e4-0": "7407914786ea0fa4ada3c1948e063e51b389a09aaa2c9ab57271ddbbac36c369"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/O1/IVCCOEWGP1ZRZNTKO7M3GR.uasset": "f9dbe688caa23aa74840f910ff13f722b24bb0a05456a5fc23663322484b6883"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
