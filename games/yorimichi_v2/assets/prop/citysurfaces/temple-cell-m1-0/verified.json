@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/temple-cell-m1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Temple_cell_-1_0.uasset": "5ad556b1cf3adf2ec068d97e12c7a1a7f0fa8bd882193274c48a9a2bce9d47fe"
+  },
+  "input_fingerprint": "f40ab1643cf50517fb5884e6756e1a36ebd086fef49ace036015994d054a18d4",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Temple_cell_-1_0": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

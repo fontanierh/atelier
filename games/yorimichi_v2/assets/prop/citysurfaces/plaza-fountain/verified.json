@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/plaza-fountain",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaFountain.uasset": "c3b96c65298be09a0f149d5274a8bde6c4a86f95aa98e3020c4234fb5965a409"
+  },
+  "input_fingerprint": "ac355ab044c1838ce7ee0d90ab537fa589b3f1df16c696574037df44d8ff01fd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaFountain": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

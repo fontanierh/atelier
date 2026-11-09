@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/arcade-gate",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeGate.uasset": "16790263e49a71cdd81dd0aa1dc596330ab8c317d1d15243c9ca9b996549923b"
+  },
+  "input_fingerprint": "d74c3494f39e6c0aa75419dca88e8b78b1ad4d5e78e7168b9798dd4aabd1e0ba",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeGate": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

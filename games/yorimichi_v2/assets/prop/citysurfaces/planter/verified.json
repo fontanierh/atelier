@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/planter",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Planter.uasset": "a2e2497210d35ec238e123b4f9d04384302c40ec1a98144c7a239acf9097fa10"
+  },
+  "input_fingerprint": "6095dad81c6b135f74110f7530cd794d72d4dd058fa7d8513ed4001d0970f220",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Planter": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

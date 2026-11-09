@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/streets-cell-7-1-piece3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_7_1_Piece3.uasset": "d2db01e9b6d11161f8ed532aa921b064458a42b66a7f4ea52643c056b17eeb78"
+  },
+  "input_fingerprint": "3e3418b7cbc81d394cfa7c2de0942d8f2706983da02f8f7f0c494e69d422a401",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_7_1_Piece3": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

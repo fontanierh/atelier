@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/plaza-shop-sides-corner",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_PlazaShopSidesCorner.uasset": "039b90348d1a54300167f7fa71718eed38033dddbfd88daf00cce280fb1c4d6c"
+  },
+  "input_fingerprint": "289f412e88fc55d501f35cedac0fed6aef5385d48c14656bac1e063ee1e347b9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaShopSidesCorner": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

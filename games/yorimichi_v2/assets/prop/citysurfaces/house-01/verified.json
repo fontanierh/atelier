@@ -1,0 +1,42 @@
+{
+  "asset": "prop/citysurfaces/house-01",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_House_01.uasset": "d5c8234a64d4a1fe32ca1f7453fd6fd1fc81835c2f45ec0530f9409f19b57b94"
+  },
+  "input_fingerprint": "105f68ec8de051798bbf878190d6499b2de6456b9dae5f5f84d0dccbbbacf2c1",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_House_01": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          0.4000000059604645,
+          0.11999999731779099
+        ],
+        "screen_sizes": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          0.4000000059604645,
+          0.11999999731779099
+        ],
+        "screen_sizes": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
