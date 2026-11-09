@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-painted-normal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_painted_normal.uasset": "c2ecab41de0a8ba777430fd564fb9c9602562ce4f48dbcc17c1daf731ea4da25"
+  },
+  "input_fingerprint": "59ac0be291455ed62223f7fb19cd5c6230005954a81b114ca95dba9d815b1510",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-ceramic-albedo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_ceramic_albedo.uasset": "448993a15174297eaff4dcfdced3efa30d8d6b47b484d5dc99c99e7182348b8f"
+  },
+  "input_fingerprint": "83679a54e5133f6202c1819de7f5400288d96c38b64bf8d9430ed83f0a906816",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

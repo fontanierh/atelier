@@ -1,0 +1,12 @@
+{
+  "asset": "texture/fx/spark",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/Textures/T_FX_Spark.uasset": "f77cd9ce82861055f9ed3d3075c9e2a1307c02b0ea6ea4a26b003b7a07d6c307"
+  },
+  "input_fingerprint": "160752d733734ba777e35c7e92a4233862b2e4e0e6140db3de4df4dac693aacd",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

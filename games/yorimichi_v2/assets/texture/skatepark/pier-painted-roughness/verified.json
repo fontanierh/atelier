@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-painted-roughness",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_painted_roughness.uasset": "392f52d1f4a8495fe3528b377c798d90b0dab0965011af6804413c2ab5456db5"
+  },
+  "input_fingerprint": "97e7aa79b57a474b1bc724e8466fae39858fad95e7ba77f085c6b74e0d0ee584",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/sky",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_sky.uasset": "c9f11b7fbf6d3163a33379fb28bf9bab6f2fa147f588a4aa29b679177939831d"
+  },
+  "input_fingerprint": "1142a5428a9ec9b70856c22847519e3df7aa3f639019e9556f510c740a50f59c",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

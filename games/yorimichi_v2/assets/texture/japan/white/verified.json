@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/white",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_white.uasset": "fa44ac26cba6870c552851c3a8cb36e2a7852fa91d4dbcc211b9b03ad8aa928e"
+  },
+  "input_fingerprint": "e93193de8bfcfaefab6e80f37498b10caf47c8cfe2555bf9db854d382af5d983",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

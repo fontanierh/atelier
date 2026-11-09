@@ -1,0 +1,12 @@
+{
+  "asset": "texture/fx/trail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/Textures/T_FX_Trail.uasset": "1d2b508c87b7589ef68eb068517f10ad3cf19abaaa9d750ce39be3c5d1fa1f9f"
+  },
+  "input_fingerprint": "ef94b5ee41bbccf6eca36e3ef2866c36ae0e0dd0c95bb0ee52416cdc881ae684",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

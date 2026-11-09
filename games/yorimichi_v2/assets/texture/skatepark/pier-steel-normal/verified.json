@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-steel-normal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_steel_normal.uasset": "7aa050deb2dfe16ee0015620c768486a43adea5a4917f96e0ace2466a37f3ffb"
+  },
+  "input_fingerprint": "5a6ea1488b8d845bfd4b2ea27fa866ddb7c18ebe45267f415a8cbb391c215896",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}
