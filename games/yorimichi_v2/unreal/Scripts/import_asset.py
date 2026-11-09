@@ -8,10 +8,15 @@ absolute path of this checkout (CONTRACTS yorimichi-v2-portable-records).
 """
 import json
 import os
+import sys
 from pathlib import Path
 
 import unreal as U
-import lod_preservation
+
+# A one-asset import runs this file in its own commandlet, which does not put unreal/Scripts on the path (the
+# editor session does): its helper modules beside it must import either way.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import lod_preservation  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
 LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
