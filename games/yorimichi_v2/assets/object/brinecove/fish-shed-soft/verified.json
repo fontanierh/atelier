@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/fish-shed-soft",
+  "dependencies": {
+    "prop/brinecove/fish-shed-soft": "c47bf499c70e17a69f37b8881b5fee0274c1d06c436c52b38251046e02558bc1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/1F/VHPW9NM6MS28OK7P3XU617.uasset": "96287fc5a8c7818dcd4c774dacdf6e76ad8da98bd71cdd9e9143c078b1be769e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

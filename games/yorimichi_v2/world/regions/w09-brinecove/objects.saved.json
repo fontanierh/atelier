@@ -40,6 +40,16 @@
         "prop/brinecove/crane-west"
       ]
     },
+    "object/brinecove/crane-west-soft": {
+      "groups": [
+        "SM_BC_CraneWest_Soft"
+      ],
+      "id": "object/brinecove/crane-west-soft",
+      "model": "prop/brinecove/crane-west-soft",
+      "models": [
+        "prop/brinecove/crane-west-soft"
+      ]
+    },
     "object/brinecove/fish-shed": {
       "groups": [
         "SM_BC_FishShed"
@@ -48,6 +58,16 @@
       "model": "prop/brinecove/fish-shed",
       "models": [
         "prop/brinecove/fish-shed"
+      ]
+    },
+    "object/brinecove/fish-shed-soft": {
+      "groups": [
+        "SM_BC_FishShed_Soft"
+      ],
+      "id": "object/brinecove/fish-shed-soft",
+      "model": "prop/brinecove/fish-shed-soft",
+      "models": [
+        "prop/brinecove/fish-shed-soft"
       ]
     },
     "object/brinecove/fort": {
