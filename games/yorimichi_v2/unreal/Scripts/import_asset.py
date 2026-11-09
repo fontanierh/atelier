@@ -41,7 +41,15 @@ def _fbx_static_mesh(settings):
                     build_nanite=bool(settings.get('nanite', False)),
                     normal_import_method=U.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS,
                     vertex_color_import_option=U.VertexColorImportOption.REPLACE))
+    if settings.get('collision') == 'simple_and_complex':
+        data.set_editor_property('one_convex_hull_per_ucx', True)   # each authored UCX_ node is one hull
     return ui
+
+
+def _legacy_fbx(settings):
+    """True when the record imports authored UCX hulls: only the legacy FBX importer brings them in (the donor's
+    importers turn Interchange off for FBX; an Interchange reimport here leaves the mesh with no shapes)."""
+    return settings.get('collision') == 'simple_and_complex'
 
 
 def _gltf_static_mesh(name):
@@ -217,7 +225,14 @@ def main():
                 # An FBX reimport appends its UCX hulls to the saved ones: start from none.
                 _static_mesh_editor().remove_collisions(existing)
             before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
-            asset = _import(source, package, options)
+            legacy = source.lower().endswith('.fbx') and _legacy_fbx(settings)
+            if legacy:
+                U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
+            try:
+                asset = _import(source, package, options)
+            finally:
+                if legacy:
+                    U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 1')
             _apply_material_slots(asset, plan)
             _apply_mesh_settings(asset, settings)
             after = lod_preservation.preserve(_static_mesh_editor(), asset, before, settings.get('lods'),
