@@ -1,0 +1,21 @@
+{
+  "asset": "object/brinecove/townupper-4-5",
+  "dependencies": {
+    "prop/brinecove/town-upper-4-5-piece00": "91e3d7a0f5669a857e2cbd29753533a3a285f4af6bb5f57f8c45a4e92f9af9b0",
+    "prop/brinecove/town-upper-4-5-piece01": "ac12742efdd9cf00befcff6a6fc15a876d7016588fbf2c6225b2975458170636",
+    "prop/brinecove/town-upper-4-5-piece02": "ad1f9306e5c2f0aef818618146c879647fbe10e84bb7fa52af81e69a4143e1ff",
+    "prop/brinecove/town-upper-4-5-piece03": "c2364c29620a131f569a37cf23923dbdbc25acb0461a6e3558b3cd1e70b62c33",
+    "prop/brinecove/town-upper-4-5-piece10": "2942641e7176abf24f1a19f2093e184fb079ed5ced6d4af652c78c2ce2b8b7cb",
+    "prop/brinecove/town-upper-4-5-piece11": "9227765691af4fcc96ddd85f7436d5d76ad850771d8a83a8ac7f16d95a49a0f6",
+    "prop/brinecove/town-upper-4-5-piece12": "ba9578c9b4b47f4ae69af47823c0c3d333712edc60e2bef4e8e167507491d7fe",
+    "prop/brinecove/town-upper-4-5-piece13": "eeec2a3dd93b76ab335f9cca86535632a4d0712ccb2b2058d51d69dc0aaadd9e",
+    "prop/brinecove/town-upper-4-5-piece2": "c0e879fc670d855518eead5b0a8132f906c799609d03eae4d3291c2527265121",
+    "prop/brinecove/town-upper-4-5-soft": "709efa7cc9ad52dfd1c439c5eb325739ec4558d6487d3d4fe601800a3e4d688f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/C2/UW0N9B1ZA7VAQI9I24BG0M.uasset": "c1ad6fd21765b0e030ce6cbff0bcb6e6b2dc9a1c0d0a1be425c895fd0035d8f6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,25 @@
+{
+  "asset": "object/brinecove/townlower-3-4",
+  "dependencies": {
+    "prop/brinecove/town-lower-3-4-piece002": "fa11afc8ed45ad5919cb456abb4e33c083ba1d48baf5af32cbc76725fed82079",
+    "prop/brinecove/town-lower-3-4-piece003": "e4cd3369135c1da3c8cdc31fc3cfef5ee2379020b16ac709eb3603790ecb7db1",
+    "prop/brinecove/town-lower-3-4-piece01": "9f6e75380091ea0d4760b2ab5d435fa908f7e25ffc6f741985240e4b2d4e5010",
+    "prop/brinecove/town-lower-3-4-piece02": "b36d5658e4324faa1fe4eb92a1eb022d140cf2126f7b03e31351c8b808c76b33",
+    "prop/brinecove/town-lower-3-4-piece030": "9a8f8b5312ebb676a71f6fbc4426a0d29ff014ef3b9b52f31bdb92de9f1a6832",
+    "prop/brinecove/town-lower-3-4-piece031": "3e714b030b64c6e02cc2cd093077630f46d09af56763faf53f643347ed506e3f",
+    "prop/brinecove/town-lower-3-4-piece032": "999a1ae9820f7f76950ab49d50d76437ed2241ba714b7cd301632afe15a0ddfd",
+    "prop/brinecove/town-lower-3-4-piece033": "75896b6ac740a4d613f463f1200acc4045124af81c061d134c3e7f5d62b2b01d",
+    "prop/brinecove/town-lower-3-4-piece10": "2a7d8345be3b19f3ddf2042d416d95cc9b7daea547b3ed0e036b3cb54c23d820",
+    "prop/brinecove/town-lower-3-4-piece12": "17b3fc0247126b4fa9d3f4c65ee13d293a1ecba41e8ab1e4b8484992e1069289",
+    "prop/brinecove/town-lower-3-4-piece13": "f4307d59b4c732f662057f9e4464ebb79c323f1e6bfd430704a2e4a0649fe145",
+    "prop/brinecove/town-lower-3-4-piece2": "3345cb26e0fe32dd940c26254fcb3dd48fa7a220ba995f272454fa7db38cefee",
+    "prop/brinecove/town-lower-3-4-piece3": "8dbc0e459d619d4037b8a16fb9451c632670947e919715082b8cc81205e5b204",
+    "prop/brinecove/town-lower-3-4-soft": "5e831a022d8a2ea4003a3c0ce9bfa865bd69241380f11e4242ca212cb36f58d0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/LZ/NFZYDIJLMNZ1HL6RSO2LJS.uasset": "4a03f04247c6a0d4d5e2f640da317fc7191d900e2dc25485fa6644d345197c78"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -7497,13 +7497,9 @@
         "SM_BC_TownLower_1_2"
       ],
       "id": "object/brinecove/townlower-1-2",
-      "model": [
-        "prop/brinecove/town-lower-1-2",
-        "prop/brinecove/town-lower-1-2-soft"
-      ],
+      "model": "prop/brinecove/town-lower-1-2",
       "models": [
-        "prop/brinecove/town-lower-1-2",
-        "prop/brinecove/town-lower-1-2-soft"
+        "prop/brinecove/town-lower-1-2"
       ]
     },
     "object/brinecove/townlower-1-3": {
@@ -7511,13 +7507,9 @@
         "SM_BC_TownLower_1_3"
       ],
       "id": "object/brinecove/townlower-1-3",
-      "model": [
-        "prop/brinecove/town-lower-1-3",
-        "prop/brinecove/town-lower-1-3-soft"
-      ],
+      "model": "prop/brinecove/town-lower-1-3",
       "models": [
-        "prop/brinecove/town-lower-1-3",
-        "prop/brinecove/town-lower-1-3-soft"
+        "prop/brinecove/town-lower-1-3"
       ]
     },
     "object/brinecove/townlower-2-3": {
@@ -7525,13 +7517,9 @@
         "SM_BC_TownLower_2_3"
       ],
       "id": "object/brinecove/townlower-2-3",
-      "model": [
-        "prop/brinecove/town-lower-2-3",
-        "prop/brinecove/town-lower-2-3-soft"
-      ],
+      "model": "prop/brinecove/town-lower-2-3",
       "models": [
-        "prop/brinecove/town-lower-2-3",
-        "prop/brinecove/town-lower-2-3-soft"
+        "prop/brinecove/town-lower-2-3"
       ]
     },
     "object/brinecove/townlower-2-4": {
@@ -7548,43 +7536,23 @@
       ],
       "id": "object/brinecove/townlower-2-4",
       "model": [
-        "prop/brinecove/town-lower-2-4-piece00",
         "prop/brinecove/town-lower-2-4-piece01",
-        "prop/brinecove/town-lower-2-4-piece02",
-        "prop/brinecove/town-lower-2-4-piece030",
-        "prop/brinecove/town-lower-2-4-piece031",
-        "prop/brinecove/town-lower-2-4-piece032",
-        "prop/brinecove/town-lower-2-4-piece033",
         "prop/brinecove/town-lower-2-4-piece10",
-        "prop/brinecove/town-lower-2-4-piece110",
-        "prop/brinecove/town-lower-2-4-piece111",
         "prop/brinecove/town-lower-2-4-piece112",
         "prop/brinecove/town-lower-2-4-piece113",
         "prop/brinecove/town-lower-2-4-piece12",
         "prop/brinecove/town-lower-2-4-piece13",
-        "prop/brinecove/town-lower-2-4-piece20",
-        "prop/brinecove/town-lower-2-4-piece21",
         "prop/brinecove/town-lower-2-4-piece30",
         "prop/brinecove/town-lower-2-4-piece31",
         "prop/brinecove/town-lower-2-4-soft"
       ],
       "models": [
-        "prop/brinecove/town-lower-2-4-piece00",
         "prop/brinecove/town-lower-2-4-piece01",
-        "prop/brinecove/town-lower-2-4-piece02",
-        "prop/brinecove/town-lower-2-4-piece030",
-        "prop/brinecove/town-lower-2-4-piece031",
-        "prop/brinecove/town-lower-2-4-piece032",
-        "prop/brinecove/town-lower-2-4-piece033",
         "prop/brinecove/town-lower-2-4-piece10",
-        "prop/brinecove/town-lower-2-4-piece110",
-        "prop/brinecove/town-lower-2-4-piece111",
         "prop/brinecove/town-lower-2-4-piece112",
         "prop/brinecove/town-lower-2-4-piece113",
         "prop/brinecove/town-lower-2-4-piece12",
         "prop/brinecove/town-lower-2-4-piece13",
-        "prop/brinecove/town-lower-2-4-piece20",
-        "prop/brinecove/town-lower-2-4-piece21",
         "prop/brinecove/town-lower-2-4-piece30",
         "prop/brinecove/town-lower-2-4-piece31",
         "prop/brinecove/town-lower-2-4-soft"
@@ -7619,8 +7587,6 @@
       ],
       "id": "object/brinecove/townlower-3-4",
       "model": [
-        "prop/brinecove/town-lower-3-4-piece000",
-        "prop/brinecove/town-lower-3-4-piece001",
         "prop/brinecove/town-lower-3-4-piece002",
         "prop/brinecove/town-lower-3-4-piece003",
         "prop/brinecove/town-lower-3-4-piece01",
@@ -7630,7 +7596,6 @@
         "prop/brinecove/town-lower-3-4-piece032",
         "prop/brinecove/town-lower-3-4-piece033",
         "prop/brinecove/town-lower-3-4-piece10",
-        "prop/brinecove/town-lower-3-4-piece11",
         "prop/brinecove/town-lower-3-4-piece12",
         "prop/brinecove/town-lower-3-4-piece13",
         "prop/brinecove/town-lower-3-4-piece2",
@@ -7638,8 +7603,6 @@
         "prop/brinecove/town-lower-3-4-soft"
       ],
       "models": [
-        "prop/brinecove/town-lower-3-4-piece000",
-        "prop/brinecove/town-lower-3-4-piece001",
         "prop/brinecove/town-lower-3-4-piece002",
         "prop/brinecove/town-lower-3-4-piece003",
         "prop/brinecove/town-lower-3-4-piece01",
@@ -7649,7 +7612,6 @@
         "prop/brinecove/town-lower-3-4-piece032",
         "prop/brinecove/town-lower-3-4-piece033",
         "prop/brinecove/town-lower-3-4-piece10",
-        "prop/brinecove/town-lower-3-4-piece11",
         "prop/brinecove/town-lower-3-4-piece12",
         "prop/brinecove/town-lower-3-4-piece13",
         "prop/brinecove/town-lower-3-4-piece2",
@@ -7714,13 +7676,9 @@
         "SM_BC_TownLower_5_3"
       ],
       "id": "object/brinecove/townlower-5-3",
-      "model": [
-        "prop/brinecove/town-lower-5-3",
-        "prop/brinecove/town-lower-5-3-soft"
-      ],
+      "model": "prop/brinecove/town-lower-5-3",
       "models": [
-        "prop/brinecove/town-lower-5-3",
-        "prop/brinecove/town-lower-5-3-soft"
+        "prop/brinecove/town-lower-5-3"
       ]
     },
     "object/brinecove/townlower-5-4": {
@@ -7736,35 +7694,23 @@
       ],
       "id": "object/brinecove/townlower-5-4",
       "model": [
-        "prop/brinecove/town-lower-5-4-piece000",
-        "prop/brinecove/town-lower-5-4-piece001",
         "prop/brinecove/town-lower-5-4-piece002",
         "prop/brinecove/town-lower-5-4-piece003",
         "prop/brinecove/town-lower-5-4-piece01",
         "prop/brinecove/town-lower-5-4-piece02",
         "prop/brinecove/town-lower-5-4-piece03",
         "prop/brinecove/town-lower-5-4-piece10",
-        "prop/brinecove/town-lower-5-4-piece12",
-        "prop/brinecove/town-lower-5-4-piece13",
         "prop/brinecove/town-lower-5-4-piece2",
-        "prop/brinecove/town-lower-5-4-piece30",
-        "prop/brinecove/town-lower-5-4-piece31",
         "prop/brinecove/town-lower-5-4-soft"
       ],
       "models": [
-        "prop/brinecove/town-lower-5-4-piece000",
-        "prop/brinecove/town-lower-5-4-piece001",
         "prop/brinecove/town-lower-5-4-piece002",
         "prop/brinecove/town-lower-5-4-piece003",
         "prop/brinecove/town-lower-5-4-piece01",
         "prop/brinecove/town-lower-5-4-piece02",
         "prop/brinecove/town-lower-5-4-piece03",
         "prop/brinecove/town-lower-5-4-piece10",
-        "prop/brinecove/town-lower-5-4-piece12",
-        "prop/brinecove/town-lower-5-4-piece13",
         "prop/brinecove/town-lower-5-4-piece2",
-        "prop/brinecove/town-lower-5-4-piece30",
-        "prop/brinecove/town-lower-5-4-piece31",
         "prop/brinecove/town-lower-5-4-soft"
       ]
     },
@@ -7773,13 +7719,9 @@
         "SM_BC_TownLower_6_2"
       ],
       "id": "object/brinecove/townlower-6-2",
-      "model": [
-        "prop/brinecove/town-lower-6-2",
-        "prop/brinecove/town-lower-6-2-soft"
-      ],
+      "model": "prop/brinecove/town-lower-6-2",
       "models": [
-        "prop/brinecove/town-lower-6-2",
-        "prop/brinecove/town-lower-6-2-soft"
+        "prop/brinecove/town-lower-6-2"
       ]
     },
     "object/brinecove/townlower-6-3": {
@@ -7787,13 +7729,9 @@
         "SM_BC_TownLower_6_3"
       ],
       "id": "object/brinecove/townlower-6-3",
-      "model": [
-        "prop/brinecove/town-lower-6-3",
-        "prop/brinecove/town-lower-6-3-soft"
-      ],
+      "model": "prop/brinecove/town-lower-6-3",
       "models": [
-        "prop/brinecove/town-lower-6-3",
-        "prop/brinecove/town-lower-6-3-soft"
+        "prop/brinecove/town-lower-6-3"
       ]
     },
     "object/brinecove/townupper-2-4": {
@@ -7806,13 +7744,6 @@
       ],
       "id": "object/brinecove/townupper-2-4",
       "model": [
-        "prop/brinecove/town-upper-2-4-piece20",
-        "prop/brinecove/town-upper-2-4-piece21",
-        "prop/brinecove/town-upper-2-4-piece22",
-        "prop/brinecove/town-upper-2-4-piece230",
-        "prop/brinecove/town-upper-2-4-piece231",
-        "prop/brinecove/town-upper-2-4-piece232",
-        "prop/brinecove/town-upper-2-4-piece233",
         "prop/brinecove/town-upper-2-4-piece30",
         "prop/brinecove/town-upper-2-4-piece31",
         "prop/brinecove/town-upper-2-4-piece32",
@@ -7820,13 +7751,6 @@
         "prop/brinecove/town-upper-2-4-soft"
       ],
       "models": [
-        "prop/brinecove/town-upper-2-4-piece20",
-        "prop/brinecove/town-upper-2-4-piece21",
-        "prop/brinecove/town-upper-2-4-piece22",
-        "prop/brinecove/town-upper-2-4-piece230",
-        "prop/brinecove/town-upper-2-4-piece231",
-        "prop/brinecove/town-upper-2-4-piece232",
-        "prop/brinecove/town-upper-2-4-piece233",
         "prop/brinecove/town-upper-2-4-piece30",
         "prop/brinecove/town-upper-2-4-piece31",
         "prop/brinecove/town-upper-2-4-piece32",
@@ -7844,21 +7768,17 @@
       ],
       "id": "object/brinecove/townupper-2-5",
       "model": [
-        "prop/brinecove/town-upper-2-5-piece0",
         "prop/brinecove/town-upper-2-5-piece10",
         "prop/brinecove/town-upper-2-5-piece11",
         "prop/brinecove/town-upper-2-5-piece12",
         "prop/brinecove/town-upper-2-5-piece13",
-        "prop/brinecove/town-upper-2-5-piece3",
         "prop/brinecove/town-upper-2-5-soft"
       ],
       "models": [
-        "prop/brinecove/town-upper-2-5-piece0",
         "prop/brinecove/town-upper-2-5-piece10",
         "prop/brinecove/town-upper-2-5-piece11",
         "prop/brinecove/town-upper-2-5-piece12",
         "prop/brinecove/town-upper-2-5-piece13",
-        "prop/brinecove/town-upper-2-5-piece3",
         "prop/brinecove/town-upper-2-5-soft"
       ]
     },
@@ -7945,7 +7865,6 @@
         "prop/brinecove/town-upper-3-5-piece02",
         "prop/brinecove/town-upper-3-5-piece03",
         "prop/brinecove/town-upper-3-5-piece1",
-        "prop/brinecove/town-upper-3-5-piece2",
         "prop/brinecove/town-upper-3-5-piece3",
         "prop/brinecove/town-upper-3-5-soft"
       ],
@@ -7955,7 +7874,6 @@
         "prop/brinecove/town-upper-3-5-piece02",
         "prop/brinecove/town-upper-3-5-piece03",
         "prop/brinecove/town-upper-3-5-piece1",
-        "prop/brinecove/town-upper-3-5-piece2",
         "prop/brinecove/town-upper-3-5-piece3",
         "prop/brinecove/town-upper-3-5-soft"
       ]
@@ -8053,7 +7971,6 @@
         "prop/brinecove/town-upper-4-5-piece12",
         "prop/brinecove/town-upper-4-5-piece13",
         "prop/brinecove/town-upper-4-5-piece2",
-        "prop/brinecove/town-upper-4-5-piece3",
         "prop/brinecove/town-upper-4-5-soft"
       ],
       "models": [
@@ -8066,7 +7983,6 @@
         "prop/brinecove/town-upper-4-5-piece12",
         "prop/brinecove/town-upper-4-5-piece13",
         "prop/brinecove/town-upper-4-5-piece2",
-        "prop/brinecove/town-upper-4-5-piece3",
         "prop/brinecove/town-upper-4-5-soft"
       ]
     },
@@ -8090,10 +8006,6 @@
         "prop/brinecove/town-upper-5-4-piece222",
         "prop/brinecove/town-upper-5-4-piece223",
         "prop/brinecove/town-upper-5-4-piece23",
-        "prop/brinecove/town-upper-5-4-piece30",
-        "prop/brinecove/town-upper-5-4-piece31",
-        "prop/brinecove/town-upper-5-4-piece32",
-        "prop/brinecove/town-upper-5-4-piece33",
         "prop/brinecove/town-upper-5-4-soft"
       ],
       "models": [
@@ -8104,10 +8016,6 @@
         "prop/brinecove/town-upper-5-4-piece222",
         "prop/brinecove/town-upper-5-4-piece223",
         "prop/brinecove/town-upper-5-4-piece23",
-        "prop/brinecove/town-upper-5-4-piece30",
-        "prop/brinecove/town-upper-5-4-piece31",
-        "prop/brinecove/town-upper-5-4-piece32",
-        "prop/brinecove/town-upper-5-4-piece33",
         "prop/brinecove/town-upper-5-4-soft"
       ]
     },
@@ -8125,8 +8033,6 @@
         "prop/brinecove/town-upper-5-5-piece01",
         "prop/brinecove/town-upper-5-5-piece02",
         "prop/brinecove/town-upper-5-5-piece03",
-        "prop/brinecove/town-upper-5-5-piece1",
-        "prop/brinecove/town-upper-5-5-piece2",
         "prop/brinecove/town-upper-5-5-soft"
       ],
       "models": [
@@ -8134,8 +8040,6 @@
         "prop/brinecove/town-upper-5-5-piece01",
         "prop/brinecove/town-upper-5-5-piece02",
         "prop/brinecove/town-upper-5-5-piece03",
-        "prop/brinecove/town-upper-5-5-piece1",
-        "prop/brinecove/town-upper-5-5-piece2",
         "prop/brinecove/town-upper-5-5-soft"
       ]
     },

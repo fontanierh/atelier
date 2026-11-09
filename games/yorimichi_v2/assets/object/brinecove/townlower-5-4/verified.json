@@ -1,0 +1,19 @@
+{
+  "asset": "object/brinecove/townlower-5-4",
+  "dependencies": {
+    "prop/brinecove/town-lower-5-4-piece002": "bb69281907ed16baf7b7d7d2a9ab8cc238f9a633fdbfc8df056c86ae18b68842",
+    "prop/brinecove/town-lower-5-4-piece003": "f3d517221879ebc282fbb578bdbf9d13adffd2e0a968da62ad8c70aadeef1ab8",
+    "prop/brinecove/town-lower-5-4-piece01": "c1211c92f03d647e088adfcf20523fe890c06a75f583294d060e8cd173ea3e7d",
+    "prop/brinecove/town-lower-5-4-piece02": "90151cddb5a82129775da57b385aebd4306bedde5417aa82d0c95e059d55baa8",
+    "prop/brinecove/town-lower-5-4-piece03": "9abf2f8ba7020b5ca7977556c54c731a600d72ebf219ffddf30ec9ab310677c2",
+    "prop/brinecove/town-lower-5-4-piece10": "3e1ee86da64543fe9ab0866a8bd52892a7d86f6ade716139fa9a873a1d358f36",
+    "prop/brinecove/town-lower-5-4-piece2": "dd35a7d5a8fd785191103b88396b4a9fd2631f9023049e7dd9f8612343b1481a",
+    "prop/brinecove/town-lower-5-4-soft": "e8c3d8929f3e019e3c37cbd733feb2870bb9d52c28256f2f67afdc2c313c7ef1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/LF/MDNJQXX4KTJASK766ON2NB.uasset": "4cc3b8189f72318d04c5bfad4232fb940c230585c69cca91cbacc6db7a34bc10"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
