@@ -413,12 +413,9 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
         donor_sha = records.sha256_file(glb_dir / f'SM_BC_{stem}.glb')
         if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
             settings = dict(asset.recipe['settings'])
-            if len(settings['slot_materials']) != len(model['materials']):
-                raise apply_.SplitError(f'{stem}: the record binds {len(settings["slot_materials"])} slots, '
-                                        f'the donor mesh has {len(model["materials"])}')
             tiles[stem] = {'record': asset.id, 'owner': asset.owner, 'references': list(asset.references),
                            'package': asset.outputs[0].package, 'settings': settings,
-                           'material_package': dict(zip(model['materials'], settings['slot_materials'])),
+                           'material_package': apply_.material_packages(model['materials'], settings['slot_materials']),
                            'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
         elif stem in saved or asset is not None:
             raise apply_.SplitError(f'{stem}: carved in the old form, its remainder is the committed source; run '

@@ -74,6 +74,17 @@ class SplitError(RuntimeError):
     pass
 
 
+
+def material_packages(materials: list[str], slots: list[str]) -> dict[str, str]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-tile-slots-by-name
+    The material package of each donor material of a carved tile, by name (`BC_x` -> `MATERIALS + MI_BC_x`). A remainder
+    binds only the materials it kept, so its slots are fewer than the fused original's and cannot be paired by position;
+    a material the remainder dropped resolves to its package in the same folder, which its part records bind."""
+    by_name = {s.rsplit('/', 1)[1]: s for s in slots}
+    if len(by_name) != len(slots) or set(by_name) - {f'MI_{m}' for m in materials}:
+        raise SplitError(f'the record slots {sorted(by_name)} do not name the donor materials {materials}')
+    return {m: by_name.get(f'MI_{m}', f'{MATERIALS}MI_{m}') for m in materials}
+
 def pascal(name: str) -> str:
     return ''.join(part.title() for part in name.split('-'))
 
@@ -146,11 +157,9 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None, ass
         if asset is not None and asset.sources and asset.sources[0].sha256 == donor_sha:
             settings = dict(asset.recipe['settings'])
             slots = settings['slot_materials']
-            if len(slots) != len(model['materials']):
-                raise SplitError(f'{stem}: the record binds {len(slots)} slots, the donor mesh has {len(model["materials"])}')
             tiles[stem] = {'record': asset.id, 'owner': asset.owner, 'references': list(asset.references),
                            'package': asset.outputs[0].package, 'settings': settings,
-                           'material_package': dict(zip(model['materials'], slots)),
+                           'material_package': material_packages(model['materials'], slots),
                            'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
         elif stem in saved or asset is not None:
             # A tile carved in the old form holds its remainder as its source: convert it before another split.

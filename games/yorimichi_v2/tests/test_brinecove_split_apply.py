@@ -622,3 +622,13 @@ def test_journal_recovery_refuses_legacy_scopeless_journal(interrupted_split, mo
     with pytest.raises(apply.SplitError, match='no valid owning scopes'):
         apply.run_step(case.game, {}, 'RECOVER')
     assert snapshot(case.game) == before
+
+
+def test_a_remainder_binds_its_kept_materials_by_name():
+    # A carved remainder keeps fewer slots than the fused original: the slots pair by name, a dropped one keeps its package.
+    packages = apply.material_packages(['BC_canvas', 'BC_canvas_gold', 'BC_wood'],
+                                       [apply.MATERIALS + 'MI_BC_canvas', apply.MATERIALS + 'MI_BC_wood'])
+    assert packages == {'BC_canvas': apply.MATERIALS + 'MI_BC_canvas', 'BC_canvas_gold': apply.MATERIALS + 'MI_BC_canvas_gold',
+                        'BC_wood': apply.MATERIALS + 'MI_BC_wood'}
+    with pytest.raises(apply.SplitError):
+        apply.material_packages(['BC_wood'], [apply.MATERIALS + 'MI_BC_stone'])
