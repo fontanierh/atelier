@@ -34,3 +34,11 @@ def test_texture_registry_covers_21_of_the_27_texture_names():
     assert names & registry == names - {'T_BT_BaggageVanInterior', 'T_BT_BrakeVanInterior', 'T_BT_FirstClassInterior',
                                         'T_BT_RestaurantInterior', 'T_BT_SecondClassInterior', 'T_BT_Walnut1'}
     assert len(names & registry) == 21
+
+
+def test_every_walnut1_sits_beside_the_walnut_it_duplicates():
+    # Interchange names the second glTF texture of the one T_BT_Walnut image T_BT_Walnut1; its original is that image.
+    packages = {o.package for a in loaded().values() for o in a.outputs}
+    twins = sorted(p for p in packages if p.endswith('/T_BT_Walnut1'))
+    assert len(twins) == 10
+    assert all(p[:-1] in packages and re.search(r'/LOD[01]/', p) for p in twins)
