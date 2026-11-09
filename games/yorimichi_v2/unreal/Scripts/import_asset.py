@@ -70,6 +70,18 @@ def _apply_mesh_settings(asset, settings):
             if loaded is None:
                 raise RuntimeError(f'material {material} for slot {index} does not exist')
             asset.set_material(index, loaded)
+    slot_map = settings.get('slot_map')
+    if slot_map is not None:
+        # Each imported slot binds by its authored name (the donor's city importer); a slot the record does not
+        # name is a broken source or record, never left on a default material.
+        for index, slot in enumerate(asset.get_editor_property('static_materials')):
+            key = str(slot.get_editor_property('imported_material_slot_name'))
+            if key not in slot_map:
+                raise RuntimeError(f'{asset.get_path_name()} has slot {key}, which the record does not bind')
+            loaded = EAL.load_asset(slot_map[key])
+            if loaded is None:
+                raise RuntimeError(f'material {slot_map[key]} for slot {key} does not exist')
+            asset.set_material(index, loaded)
     if settings.get('full_precision_uvs'):
         U.load_module('StaticMeshEditor')
         editor = U.get_editor_subsystem(U.StaticMeshEditorSubsystem)

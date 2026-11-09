@@ -245,9 +245,23 @@ def plan_belmonte(game: Path, donor: Path, owner: dict[str, str], all_owner: dic
 CITY_DESTINATION = '/Game/Experiments/CitySurfaces/v1_128m'
 
 
+def city_slot_materials(slots: list[str]) -> dict[str, str]:
+    """The donor's binding of a piece's authored slots (city_tile_products.py material_paths): HDS_road binds
+    MI_Road, every other HDS_<slug> the Hidamari MI_HD_<slug>."""
+    out = {}
+    for name in slots:
+        if not re.fullmatch(r'HDS_[a-z][a-z0-9_]*', name):
+            raise RecoverError(f'unsupported city material slot {name!r}')
+        slug = name.removeprefix('HDS_')
+        out[name] = '/Game/Japan/Materials/MI_Road' if slug == 'road' else f'/Game/Japan/Hidamari/Materials/MI_HD_{slug}'
+    return out
+
+
 def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
     """The donor's city surface partition (city_surface_tiles/v1_128m: manifest.json, import-report.json): one FBX per
-    tile piece, one material per piece (the report's binding, the donor's piece_material_paths). The donor sets
+    tile piece. A source with one authored slot binds the report's material; one with several binds each imported
+    slot by its authored name (city_slot_materials, the donor's piece_material_paths), as a piece may hold only some
+    of its source's slots. The donor sets
     full-precision UVs on every piece and picks collision per source: complex-as-simple for a source without authored
     UCX hulls, simple-and-complex (hulls imported, each piece's own count checked) for one with them."""
     manifest, report = _json(donor / 'manifest.json'), _json(donor / 'import-report.json')
@@ -257,24 +271,33 @@ def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner:
         for tile in source['tiles']:
             piece = tile['name']
             package = f'{CITY_DESTINATION}/{piece}'
-            if package not in owner:
+            tail = ident(piece[len('HD_'):]) if piece.startswith('HD_') else ident(piece)
+            # A piece this family already recovered is planned again, so a corrected recipe reaches its record.
+            if package not in owner and all_owner.get(package) != f'prop/citysurfaces/{tail}':
                 unmapped.append(f'{name}/{piece}.fbx (its package is not in a source-less city surface record)')
                 continue
             row = bound.get(piece)
             material = row['material'].split('.', 1)[0] if row else ''
-            if not material or material not in all_owner:
-                unmapped.append(f'{name}/{piece}.fbx (material {material or "unbound"} owned by no record)')
+            authored = source.get('source_material_slots') or []
+            materials = sorted(set(city_slot_materials(authored).values())) if len(authored) > 1 else [material]
+            orphans = [m for m in materials if not m or m not in all_owner]
+            if orphans:
+                unmapped.append(f'{name}/{piece}.fbx (material {orphans[0] or "unbound"} owned by no record)')
                 continue
-            if row['triangles'] != tile['triangles']:
-                raise RecoverError(f'{piece}: manifest and import report disagree on its triangles')
-            tail = ident(piece[len('HD_'):]) if piece.startswith('HD_') else ident(piece)
+            # The report is what Unreal kept; it drops a few degenerate slivers of a UCX-hull source. The record keeps
+            # the source's count, and the importer accepts down to 98 % of it, so the report must be in that window.
+            if not tile['triangles'] * .98 <= row['triangles'] <= tile['triangles']:
+                raise RecoverError(f'{piece}: the import report has {row["triangles"]} triangles, outside 98-100 % '
+                                   f'of the source {tile["triangles"]}')
             generated.append(Generated(
                 id=f'prop/citysurfaces/{tail}', kind='static-mesh', owner=f'shared/citysurfaces/{tail}',
                 package=package, source=donor / name / f'{piece}.fbx',
-                settings={'slot_materials': [material], 'triangles': tile['triangles'], 'full_precision_uvs': True,
+                settings={**({'slot_map': city_slot_materials(authored)} if len(authored) > 1
+                             else {'slot_materials': [material]}),
+                          'triangles': tile['triangles'], 'full_precision_uvs': True,
                           **({'collision': 'simple_and_complex', 'hulls': tile['collision_hulls']}
                              if source['source_collision_hulls'] else {'collision': 'complex'})},
-                references=[all_owner[material]],
+                references=sorted({all_owner[m] for m in materials}),
                 about=f'{piece}: one city surface piece of {name} ({tile["triangles"]} triangles)',
                 expected_sha=tile['sha256']))
     return Plan('experiments/citysurfaces', generated, unmapped, {})
@@ -332,7 +355,9 @@ def _record_text(gen: Generated, source_name: str, digest: str) -> str:
     lines += ['', '[[sources]]', f'path = "src/{source_name}"', f'sha256 = "{digest}"', '',
               '[recipe]', f'importer = "{gen.kind}"', 'version = 1', '', '[recipe.settings]']
     for key, value in gen.settings.items():
-        if isinstance(value, list):
+        if isinstance(value, dict):
+            lines.append(f'{key} = {{' + ', '.join(f'{k} = "{v}"' for k, v in value.items()) + '}')
+        elif isinstance(value, list):
             lines.append(f'{key} = [' + ', '.join(f'"{v}"' for v in value) + ']')
         elif isinstance(value, bool):
             lines.append(f'{key} = {"true" if value else "false"}')

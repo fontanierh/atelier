@@ -328,13 +328,25 @@ license = "test"
 [[outputs]]
 package = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt"
 ''')
+    record(game, 'adopted/japan/road', '''schema = 1
+id = "adopted/japan/road"
+kind = "adopted"
+authority = "editor"
+owner = "shared/japan/road"
+provenance = "test"
+license = "test"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Road"
+''')
     fbx = {'HD_Street_0': b'street fbx', 'HD_Arcade_0': b'arcade fbx', 'HD_Sea': b'sea fbx'}
     for name, data in fbx.items():
         write(donor / name.rsplit('_', 1)[0].replace('HD_Sea', 'HD_Sea') / f'{name}.fbx', data)
     tile = lambda name, hulls=0: {'name': name, 'sha256': sha(fbx[name]), 'triangles': 12, 'collision_hulls': hulls}
     write(donor / 'manifest.json', json.dumps({'sources': {
         'HD_Street': {'source_collision_hulls': 0, 'tiles': [tile('HD_Street_0')]},
-        'HD_Arcade': {'source_collision_hulls': 2, 'tiles': [tile('HD_Arcade_0', 2)]},
+        'HD_Arcade': {'source_collision_hulls': 2, 'tiles': [tile('HD_Arcade_0', 2)],
+                      'source_material_slots': ['HDS_asphalt', 'HDS_road']},
         'HD_Sea': {'source_collision_hulls': 0, 'tiles': [tile('HD_Sea')]}}}))
     bind = lambda name: [{'name': name, 'triangles': 12, 'asset': f'{dest}/{name}.{name}',
                           'material': '/Game/Japan/Hidamari/Materials/MI_HD_asphalt.MI_HD_asphalt'}]
@@ -349,5 +361,13 @@ package = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt"
     # A hull source's pieces import their UCX hulls, each with its own count; a piece no record holds is reported.
     assert arcade.id == 'prop/citysurfaces/arcade-0'
     assert (arcade.settings['collision'], arcade.settings['hulls']) == ('simple_and_complex', 2)
+    # A source with several authored slots binds each by name (the donor's material_paths), never the report's one.
+    assert arcade.settings['slot_map'] == {'HDS_asphalt': '/Game/Japan/Hidamari/Materials/MI_HD_asphalt',
+                                           'HDS_road': '/Game/Japan/Materials/MI_Road'}
+    assert 'slot_materials' not in arcade.settings
+    assert arcade.references == ['adopted/japan/materials', 'adopted/japan/road']
     assert any('HD_Sea' in u for u in plan.unmapped_outputs)
     assert plan.kept['adopted/experiments/citysurfaces/v1-128m/street'] == []
+    recover.apply(game, plan, donor)
+    loaded = records.load_asset(game / 'assets/prop/citysurfaces/arcade-0/asset.toml')
+    assert loaded.recipe['settings']['slot_map']['HDS_road'] == '/Game/Japan/Materials/MI_Road'
