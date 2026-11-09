@@ -1,0 +1,42 @@
+{
+  "asset": "prop/belmontetrain/baggage-van",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/SM_BT_BaggageVan.uasset": "3ac99a00782ce9219a88355bab2534955f892f61a26a01411d3d8b1cdacf75b3"
+  },
+  "input_fingerprint": "9592c476c19b7530738e4d4f48d58e0b39d5c9a70811966fdc5e9316986cbe58",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/SM_BT_BaggageVan": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

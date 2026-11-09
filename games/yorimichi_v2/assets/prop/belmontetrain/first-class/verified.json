@@ -1,0 +1,42 @@
+{
+  "asset": "prop/belmontetrain/first-class",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/SM_BT_FirstClass.uasset": "bd54c1ed0b648350ac372b0e6319056ca786223203bcc7dfb4ca5bb3eec1a2f6"
+  },
+  "input_fingerprint": "9fa47c1181bcc1c393fd8c4fe3e7fd505a73364687d69357d204e5465506b74a",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/SM_BT_FirstClass": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

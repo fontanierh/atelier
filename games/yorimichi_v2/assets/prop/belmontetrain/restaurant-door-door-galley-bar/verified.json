@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/restaurant-door-door-galley-bar",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Restaurant_door_galley_bar.uasset": "34a85be2d195a0da3676bc3abe889a76723bde5e6e973fbe25be388d1c481003"
+  },
+  "input_fingerprint": "3299ce38f4bceeb06988c456498bb10d30b749390360d80c97fefd38bb630af1",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_Restaurant_door_galley_bar": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

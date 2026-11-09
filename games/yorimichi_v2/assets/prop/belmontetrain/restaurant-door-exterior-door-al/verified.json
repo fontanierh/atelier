@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/restaurant-door-exterior-door-al",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Restaurant_exterior_door_al.uasset": "5ca6c1325c184ba12463f9ab5752687ddf065321818b27bbab419cb13137ad05"
+  },
+  "input_fingerprint": "95c368f583f4d4e967d9003216560f998129bbebf4252d9569e606e337e8833c",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_Restaurant_exterior_door_al": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

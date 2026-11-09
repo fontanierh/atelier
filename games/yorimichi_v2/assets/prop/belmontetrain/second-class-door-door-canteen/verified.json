@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/second-class-door-door-canteen",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_SecondClass_door_canteen.uasset": "e1da742ef5fc94b4712cb720ff8984fd342f544900d855d3d506151afec9f70a"
+  },
+  "input_fingerprint": "2099054da5a4a58a0eb8b35e3855d5ff7eccb63c5a4bd679ac4e2df0dc56d480",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_SecondClass_door_canteen": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

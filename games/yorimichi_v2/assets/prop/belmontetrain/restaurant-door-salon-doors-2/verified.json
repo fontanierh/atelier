@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/restaurant-door-salon-doors-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Restaurant_salon_doors_2.uasset": "b80ec4288633404b5eacb9a96b71ee212a9beab893817b28a8aac83d0d3e64f2"
+  },
+  "input_fingerprint": "f224b652170c1673c3de60d362692c14ad5a3a628d39a9972a97d933bf2d12f6",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_Restaurant_salon_doors_2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

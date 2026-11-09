@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/baggage-van-door-exterior-door-gl",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_BaggageVan_exterior_door_gl.uasset": "daa61832f869ec6219c5138c40725730783a8c79705b27c51f6f13a3548b0500"
+  },
+  "input_fingerprint": "47e686e266006e49c22e0433c600014beb24d53881acd9b3cdb471b3800927b9",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_exterior_door_gl": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

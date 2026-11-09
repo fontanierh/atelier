@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/restaurant-door-bulkhead-door-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Restaurant_bulkhead_door_b.uasset": "e40a3e2f99655b7f32d83c88f6fb254d92f89f5e9051b09e2d460498a55316b5"
+  },
+  "input_fingerprint": "b787668f147a29e25f0bb5fac99ffb3385095d8c6240b8218dc387b5180e11a7",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_Restaurant_bulkhead_door_b": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

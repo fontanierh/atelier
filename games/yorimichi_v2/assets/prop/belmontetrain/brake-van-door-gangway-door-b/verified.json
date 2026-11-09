@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/brake-van-door-gangway-door-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_BrakeVan_gangway_door_b.uasset": "13241ea46a9cc01b9c68a4ddf472597c8532dec59ba1745cd7ea953fe683a862"
+  },
+  "input_fingerprint": "94555eb534ed3e83005c94bf60129645e40a1cb9e3ddda253698798ff91508b5",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_gangway_door_b": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

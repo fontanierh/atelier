@@ -1,0 +1,42 @@
+{
+  "asset": "prop/belmontetrain/tender",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/SM_BT_Tender.uasset": "428f62387ec56ccb7cf0671b806a42f57b8ab11c33595b82b7bb420add7a552b"
+  },
+  "input_fingerprint": "2a8a510461a62ffadd98e659b0a93aeb478caa5d2a9676f9df6b5c6182b5dbbb",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/SM_BT_Tender": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

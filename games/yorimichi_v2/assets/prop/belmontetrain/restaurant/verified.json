@@ -1,0 +1,42 @@
+{
+  "asset": "prop/belmontetrain/restaurant",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/SM_BT_Restaurant.uasset": "d17098cfed95ac52726547689c901fc008561e84e50f2e3b630ed7e7b9da4a06"
+  },
+  "input_fingerprint": "a1c5e375d0fe768c586636f3b3383fc7aa9b2507ad213f8eddd2ee4fd63f448a",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/SM_BT_Restaurant": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.6000000238418579,
+          0.15000000596046448
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

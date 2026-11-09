@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/first-class-door-door-luggage",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_FirstClass_door_luggage.uasset": "65c1076999d5aeab58d3b40f3d85626bb847204473b936936c8dabee02632aa2"
+  },
+  "input_fingerprint": "5655640edb37569c10035ffb1165a1fac867ac7e1a2d140f5a17c726ae6d1686",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_luggage": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

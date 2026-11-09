@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/locomotive-door-cab-r",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_Locomotive_cab_r.uasset": "46f38f8db996e64f7767f96fbacdb13604ee17a061e55593392929052300052c"
+  },
+  "input_fingerprint": "0797ff6b17f5a4385fa5ecb26e258eaf9444d4bdd6a3101ea1b924f54bf0ca6b",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_Locomotive_cab_r": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

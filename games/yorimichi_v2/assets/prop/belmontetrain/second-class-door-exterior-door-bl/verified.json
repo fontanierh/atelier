@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/second-class-door-exterior-door-bl",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_SecondClass_exterior_door_bl.uasset": "200672780409a970906471804b7e1cfff506c80858a3d5cc61c82fab98bf3f23"
+  },
+  "input_fingerprint": "e73459ac6f3bba1647f0b44d302391e18c2c96947df16a16ed0d2359df69547b",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_SecondClass_exterior_door_bl": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

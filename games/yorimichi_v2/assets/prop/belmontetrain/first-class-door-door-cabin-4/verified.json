@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/first-class-door-door-cabin-4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_FirstClass_door_cabin_4.uasset": "a7f43c6d50557be9f3fb40ea702519a4f962fc2c2881a9f0cf34321748dce400"
+  },
+  "input_fingerprint": "7a26233a332ad9785729df04d6ed46514734d4bd55e5d0d9e3fc6095f5d07732",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_cabin_4": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

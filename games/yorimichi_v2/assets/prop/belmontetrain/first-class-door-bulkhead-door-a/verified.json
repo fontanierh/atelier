@@ -1,0 +1,34 @@
+{
+  "asset": "prop/belmontetrain/first-class-door-bulkhead-door-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Doors/SM_BTD_FirstClass_bulkhead_door_a.uasset": "c333dc5cfa0540f2daffb4a0172ec76b9dd5df8358799ffcba3291a7f857f71a"
+  },
+  "input_fingerprint": "b222cfc51ac9fb4e5da26876c265097dbefb91b1f5e0027f0d131495fb769caa",
+  "kind": "imported",
+  "lods": {
+    "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_bulkhead_door_a": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
