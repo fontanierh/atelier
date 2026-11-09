@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/market-well-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_MarketWell_Soft.uasset": "9beee45d49d3ce9365ff241779734eb6103b626d8c228e2bc6b2ea7f93e56e3a"
+  },
+  "input_fingerprint": "3a47cf959802adc040fdbfdb31da9407c5d21b57a5e6e6e1bf85343456068a6f",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_MarketWell_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

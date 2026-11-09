@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/net-rack-west",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_NetRackWest.uasset": "d9b81014cf3d097fbc1f2767f9627e26d567190e90f8830f1380badc7f74e7f4"
+  },
+  "input_fingerprint": "88cc0c6c83ffd572173c31021e258499195b63ed16959030a2a3a6edc6fd3ede",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_NetRackWest": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

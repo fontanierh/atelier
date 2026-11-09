@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/cannon-west",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_CannonWest.uasset": "d03279c5e93b0f36436724d5e76342cbd9d561f844f8d22bce90745d8d18026b"
+  },
+  "input_fingerprint": "ddb2340e7d0500af678da53b16e93a16e5cf5119ffd45dd950ba8d5570c9c5a6",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_CannonWest": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

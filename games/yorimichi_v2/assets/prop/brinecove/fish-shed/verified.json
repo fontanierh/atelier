@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/fish-shed",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_FishShed.uasset": "d229563ba5f3a38e991c49842a6423f9451b7f09e9044d9f19bbd870b9c47250"
+  },
+  "input_fingerprint": "75a94c8f94f0807c194d5c9f7ddd4705e176b084d77043504682919654846bca",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_FishShed": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
