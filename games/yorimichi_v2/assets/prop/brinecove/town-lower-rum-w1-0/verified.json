@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-rum-w1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerRumW10.uasset": "6b29ff82df41604d3528817541351e9461eeb7d5c476b2aa678a5b2611c87173"
+  },
+  "input_fingerprint": "f0c94192df70ef4ae4293371224f64512d7d406954b1a29ffca34ede12aefbbc",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerRumW10": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
