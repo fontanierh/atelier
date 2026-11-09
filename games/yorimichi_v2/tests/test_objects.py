@@ -197,6 +197,11 @@ def test_a_split_object_leaves_its_area_patch_for_an_actor_of_its_own(game):
 
     assert objects.claim_paths(game, ['region/w07-harbour'])['lock'] == [f'games/yorimichi_v2/{area_rel}',
                                                                          f'games/yorimichi_v2/{other_rel}']
+    manifest = f'games/yorimichi_v2/{objects.MANIFEST["region/w00-island"]}'
+    assert objects.claim_paths(game, ['region/w07-harbour'], environment='region/w00-island')['lock'] == sorted(
+        [f'games/yorimichi_v2/{area_rel}', f'games/yorimichi_v2/{other_rel}', manifest])
+    with pytest.raises(objects.ObjectError, match='owns no map manifest'):
+        objects.claim_paths(game, ['region/w07-harbour'], environment='region/w07-harbour')
     made = objects.migrate(game, ['region/w07-harbour'], 'region/w00-island', None, editor=run, out=game / 'out',
                            echo=lambda *_: None)
     package = f'/Game/{house_rel[len("unreal/Content/"):-len(".uasset")]}'
@@ -260,3 +265,9 @@ def test_a_building_cut_into_cells_takes_all_its_cell_patches(game):
     (harbour / 'objects.toml').write_text(entry + entry.split('\n\n', 1)[1].replace('station-building', 'station-again'))
     with pytest.raises(objects.ObjectError, match='listed twice'):
         objects.load_objects(records.discover(game)[1][[r.id for r in records.discover(game)[1]].index('region/w07-harbour')])
+
+
+def test_each_manifest_actor_is_a_verified_file_of_its_region():
+    for region, package in objects.MANIFEST.items():
+        verified = objects.GAME / 'world/regions' / region.split('/', 1)[1] / 'actors.verified.json'
+        assert package in records.load_verified(verified)['files'], region
