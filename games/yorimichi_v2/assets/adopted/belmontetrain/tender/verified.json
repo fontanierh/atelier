@@ -3,7 +3,6 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/BelmonteTrain/SM_BT_Tender.uasset": "dfe99b43585b879b3ae90923fe5b331772e2fb92edb8db155a478938fa2ee288",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD0/M_BT_Brass.uasset": "c6eef696dca4ffbb0be1c6433fdcbd3668dcbd2eff5c64be9ca4a278921c6e77",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD0/M_BT_Coal.uasset": "8e1928b90a00378c7ed42fd3969bb1b332e85daab13339f7909a70bea23fec3c",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD0/M_BT_Crest.uasset": "ddf17b92be99fad52ad65bfcfec7f147c2bf20aca64039753d392a62f68783c4",

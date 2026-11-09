@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_Locomotive_cab_r: a locomotive door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/locomotive-door-cab-r"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/locomotive"
+references = ["adopted/belmontetrain/locomotive"]
+
+[[sources]]
+path = "src/SM_BTD_Locomotive_cab_r.glb"
+sha256 = "4f45515faa5e7f6bcf03ea9bc4236d8a383517fe25e326bd6217ca55c2a3a875"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_Locomotive_cab_r.glb", 2.0, 162, [0, 1, 2]]]
+slots = [["M_BT_LocoBlack", "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_LocoBlack"], ["M_BT_Walnut", "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Walnut"], ["M_BT_Glass", "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Glass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_Locomotive_cab_r"

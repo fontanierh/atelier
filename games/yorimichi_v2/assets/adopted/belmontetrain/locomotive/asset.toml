@@ -10,15 +10,6 @@ license = "owner-published (docs/DECISIONS.md D05 group 1)"
 references = ["adopted/belmontetrain/generator"]
 
 [[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_Locomotive_cab_l"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_Locomotive_cab_r"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/SM_BT_Locomotive"
-
-[[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/M_BT_Brass"
 
 [[outputs]]

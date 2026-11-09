@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_BrakeVan_gate_al: a brake-van door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/brake-van-door-gate-al"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/brake-van"
+references = ["adopted/belmontetrain/brake-van"]
+
+[[sources]]
+path = "src/SM_BTD_BrakeVan_gate_al.glb"
+sha256 = "945698c662e1a27f5db435aa07c20b9a65e0cee5f3d391f38ef898cd790a62a7"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_BrakeVan_gate_al.glb", 2.0, 160, [0]]]
+slots = [["M_BT_Brass", "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Brass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_BrakeVan_gate_al"

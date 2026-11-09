@@ -10,57 +10,6 @@ license = "owner-published (docs/DECISIONS.md D05 group 1)"
 references = ["adopted/belmontetrain/generator"]
 
 [[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_bulkhead_door_a"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_bulkhead_door_b"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_cabin_1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_cabin_2"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_cabin_3"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_cabin_4"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_luggage"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_pantry"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_wc_a"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_door_wc_b"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_exterior_door_al"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_exterior_door_ar"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_exterior_door_bl"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_exterior_door_br"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_gangway_door_a"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_gangway_door_b"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/SM_BT_FirstClass"
-
-[[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/M_BT_Brass"
 
 [[outputs]]

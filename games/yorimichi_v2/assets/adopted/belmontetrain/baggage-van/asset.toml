@@ -10,45 +10,6 @@ license = "owner-published (docs/DECISIONS.md D05 group 1)"
 references = ["adopted/belmontetrain/generator"]
 
 [[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_1l_1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_1l_2"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_1r_1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_1r_2"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_2l_1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_2l_2"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_2r_1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_cargo_door_2r_2"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_door_hold"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_exterior_door_gl"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_exterior_door_gr"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Doors/SM_BTD_BaggageVan_gangway_door_a"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/SM_BT_BaggageVan"
-
-[[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_BaggageVan/LOD0/M_BT_Brass"
 
 [[outputs]]

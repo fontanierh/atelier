@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BTD_FirstClass_exterior_door_bl: a first-class door leaf.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/belmontetrain/first-class-door-exterior-door-bl"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/belmontetrain/first-class"
+references = ["adopted/belmontetrain/first-class"]
+
+[[sources]]
+path = "src/SM_BTD_FirstClass_exterior_door_bl.glb"
+sha256 = "36b90a6f1b6cb7a78d3069c090d3f84d2ac8edd4018ca040d77fa8151f9b93ad"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/SM_BTD_FirstClass_exterior_door_bl.glb", 2.0, 576, [0, 1, 2, 3, 4]]]
+slots = [["M_BT_LiveryBlue", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_LiveryBlue"], ["M_BT_LiveryIvory", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_LiveryIvory"], ["M_BT_Walnut", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Walnut"], ["M_BT_Brass", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Brass"], ["M_BT_Glass", "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Glass"]]
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Doors/SM_BTD_FirstClass_exterior_door_bl"
