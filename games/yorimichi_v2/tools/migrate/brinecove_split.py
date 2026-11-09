@@ -61,11 +61,12 @@ def read_glb(path: Path) -> dict:
 
 
 def triangles(model: dict):
-    """Yield (material_index, (p0, p1, p2)) for every triangle."""
+    """Yield (material name, (p0, p1, p2)) for every triangle, in the order write_subset and merge_models count them."""
     for prim in model['prims']:
+        name = model['materials'][prim['material']] if prim['material'] >= 0 else ''
         pos, idx = prim['positions'], prim['indices']
         for i in range(0, len(idx) - 2, 3):
-            yield prim['material'], (pos[idx[i]], pos[idx[i + 1]], pos[idx[i + 2]])
+            yield name, (pos[idx[i]], pos[idx[i + 1]], pos[idx[i + 2]])
 
 
 def _key(p):
@@ -138,14 +139,13 @@ def extent(box) -> float:
     return max(hi[0] - lo[0], hi[2] - lo[2])
 
 
-def assign_anchored(tris: list, comps: list[list[int]], anchors: dict[str, dict],
-                    materials: list[str] | None = None) -> dict[str, list[int]]:
+def assign_anchored(tris: list, comps: list[list[int]], anchors: dict[str, dict]) -> dict[str, list[int]]:
     """Give each component to the nearest anchored object it lies within.
 
     anchors[name] = {'x', 'y': layout metres (the generator's frame; the GLB ground plane is (x, -y)),
     'radius': metres, 'max_extent': longest allowed component side (a quay, floor or terrain slab is longer and is
     never an object part), 'min_height': lowest vertex a part may start at (the slab it stands on is lower),
-    'exclude_materials': material names the object never uses (the floor's setts and kerbs; needs `materials`)}.
+    'exclude_materials': material names the object never uses (the floor's setts and kerbs)}.
     A component that no anchor claims stays in the remainder ''. Ties go to the nearer anchor, then the name."""
     out: dict[str, list[int]] = {name: [] for name in anchors}
     out[''] = []
@@ -156,8 +156,7 @@ def assign_anchored(tris: list, comps: list[list[int]], anchors: dict[str, dict]
         for name, a in sorted(anchors.items()):
             if extent(box) > a.get('max_extent', 30.0) or box[0][1] < a.get('min_height', -1e9):
                 continue
-            if materials and a.get('exclude_materials') and any(
-                    materials[tris[t][0]] in a['exclude_materials'] for t in comp):
+            if a.get('exclude_materials') and any(tris[t][0] in a['exclude_materials'] for t in comp):
                 continue
             d = ((cx - a['x']) ** 2 + (cz + a['y']) ** 2) ** 0.5
             if d <= a['radius'] and (best is None or d < best[0]):
@@ -166,10 +165,43 @@ def assign_anchored(tris: list, comps: list[list[int]], anchors: dict[str, dict]
     return out
 
 
-def write_subset(model: dict, members, path: Path) -> int:
+def merge_models(parts: list[tuple[dict, list[int]]]) -> dict:
+    """One model from triangles of several tile models (each `(model, ordinals)`), materials joined by name, so an object
+    that spans tiles becomes a single mesh in the shared tile frame. Vertices are copied unchanged."""
+    names, docs, prims = [], [], {}
+    for model, members in parts:
+        chosen, n = set(members), 0
+        for prim in model['prims']:
+            name = model['materials'][prim['material']] if prim['material'] >= 0 else ''
+            for k in range(0, len(prim['indices']) - 2, 3):
+                if n in chosen:
+                    if name not in names:
+                        names.append(name)
+                        docs.append(model.get('material_docs', [{}] * len(model['materials']))[prim['material']]
+                                    if prim['material'] >= 0 else {'name': name})
+                    out = prims.setdefault(name, {'positions': [], 'indices': [], 'NORMAL': [], 'TEXCOORD_0': []})
+                    for j in range(3):
+                        i = prim['indices'][k + j]
+                        out['indices'].append(len(out['positions']))
+                        out['positions'].append(prim['positions'][i])
+                        for key in ('NORMAL', 'TEXCOORD_0'):
+                            if key in prim:
+                                out[key].append(prim[key][i])
+                n += 1
+    merged = []
+    for name in names:
+        prim = {'material': names.index(name), **prims[name]}
+        for key in ('NORMAL', 'TEXCOORD_0'):
+            if not prim[key]:
+                del prim[key]
+        merged.append(prim)
+    return {'materials': names, 'material_docs': docs, 'prims': merged}
+
+
+def write_subset(model: dict, members, path: Path) -> list[str]:
     """Write the triangles with these ordinals (the order `triangles` yields them) as a binary glTF that keeps every
-    source vertex position, normal and UV unchanged and the source's material list, so a part renders as its triangles
-    did in the tile. Returns the triangle count written. Vertices are not shared between triangles."""
+    source vertex position, normal and UV unchanged. The material list is the used materials in first-use order (what the
+    Unreal import turns into slots); the names are returned in that order. Vertices are not shared between triangles."""
     chosen = set(members)
     refs, n = [], 0
     for pi, prim in enumerate(model['prims']):
@@ -195,6 +227,8 @@ def write_subset(model: dict, members, path: Path) -> int:
     by_prim: dict = defaultdict(list)
     for pi, k in refs:
         by_prim[pi].append(k)
+    used: list[int] = []        # source material indices in first-use order
+    docs = model.get('material_docs') or [{'name': m} for m in model['materials']]
     for pi in sorted(by_prim):
         prim = model['prims'][pi]
         order = [prim['indices'][k + j] for k in by_prim[pi] for j in range(3)]
@@ -204,16 +238,18 @@ def write_subset(model: dict, members, path: Path) -> int:
         if 'TEXCOORD_0' in prim:
             attrs['TEXCOORD_0'] = add([prim['TEXCOORD_0'][i] for i in order], 'f', 5126, 'VEC2')
         index = add([(i,) for i in range(len(order))], 'I', 5125, 'SCALAR')
-        primitives.append({'attributes': attrs, 'indices': index, 'material': prim['material']})
+        if prim['material'] not in used:
+            used.append(prim['material'])
+        primitives.append({'attributes': attrs, 'indices': index, 'material': used.index(prim['material'])})
     doc = {'asset': {'version': '2.0', 'generator': 'brinecove_split'}, 'scene': 0, 'scenes': [{'nodes': [0]}],
            'nodes': [{'mesh': 0, 'name': Path(path).stem}], 'meshes': [{'name': Path(path).stem, 'primitives': primitives}],
-           'materials': model.get('material_docs') or [{'name': m} for m in model['materials']],
+           'materials': [docs[m] for m in used],
            'accessors': accessors, 'bufferViews': views, 'buffers': [{'byteLength': len(blob)}]}
     text = json.dumps(doc, separators=(',', ':')).encode()
     text += b' ' * (-len(text) % 4)
     body = struct.pack('<II', len(text), 0x4E4F534A) + text + struct.pack('<II', len(blob), 0x004E4942) + blob
     Path(path).write_bytes(b'glTF' + struct.pack('<II', 2, 12 + len(body)) + body)
-    return len(refs)
+    return [model['materials'][m] for m in used]
 
 
 def signature(tris: list, members) -> dict:
@@ -255,7 +291,7 @@ def report(glb: Path, objects: dict[str, list] | None = None, min_tris: int = 1)
             continue
         lo, hi = bounds(tris, comp)
         rows.append({'triangles': len(comp), 'min': [round(v, 3) for v in lo], 'max': [round(v, 3) for v in hi],
-                     'materials': sorted({model['materials'][tris[t][0]] for t in comp})})
+                     'materials': sorted({tris[t][0] for t in comp})})
     out = {'glb': glb.name, 'triangles': len(tris), 'components': len(comps), 'top': rows}
     if objects:
         owned = assign(tris, comps, objects)
@@ -293,26 +329,43 @@ OBJECTS: dict[str, dict] = {
 }
 
 
-def plan_batch(glb_dir: Path, objects: dict[str, dict] | None = None, out_dir: Path | None = None) -> dict:
-    """Split every donor tile GLB the batch touches; per object triangles, bounds, source tiles and materials, plus the
-    partition check of each tile (the object parts and the remainder are exactly the tile's triangles)."""
-    objects = objects or OBJECTS
+def is_soft(stem: str) -> bool:
+    return stem.endswith('_Soft')
+
+
+def wanted_tiles(glb_dir: Path, objects: dict[str, dict]) -> list[str]:
     stems = sorted({p.stem[len('SM_BC_'):] for p in Path(glb_dir).glob('SM_BC_*.glb')})
-    wanted = [s for s in stems if any(s.startswith(t) if t.endswith('_') else s == t
-                                      for o in objects.values() for t in o['tiles'])]
-    result = {name: {'triangles': 0, 'tiles': {}, 'materials': set(), 'min': None, 'max': None} for name in objects}
-    problems = []
-    for stem in wanted:
+    return [s for s in stems if any(s.startswith(t) if t.endswith('_') else s == t
+                                    for o in objects.values() for t in o['tiles'])]
+
+
+def compute(glb_dir: Path, objects: dict[str, dict] | None = None) -> dict:
+    """Split every donor tile the batch touches: {'models': {tile: model}, 'tris': {tile: [triangles]},
+    'owned': {tile: {object or '': [ordinals]}}, 'problems': [...]}. The remainder ('') plus the parts is each tile's triangles."""
+    objects = objects or OBJECTS
+    out = {'models': {}, 'tris': {}, 'owned': {}, 'problems': []}
+    for stem in wanted_tiles(glb_dir, objects):
         model = read_glb(Path(glb_dir) / f'SM_BC_{stem}.glb')
         tris = list(triangles(model))
-        comps = components(tris)
         allowed = {n: {k: v for k, v in o.items() if k != 'tiles'} for n, o in objects.items()
                    if any(stem.startswith(t) if t.endswith('_') else stem == t for t in o['tiles'])}
-        owned = assign_anchored(tris, comps, allowed, model['materials'])
+        owned = assign_anchored(tris, components(tris), allowed)
+        out['problems'] += [f'{stem}: {p}' for p in verify_partition(tris, [[tris[t] for t in m] for m in owned.values()])]
+        out['models'][stem], out['tris'][stem], out['owned'][stem] = model, tris, owned
+    return out
+
+
+def plan_batch(glb_dir: Path, objects: dict[str, dict] | None = None, out_dir: Path | None = None) -> dict:
+    """Per object triangles, bounds, source tiles and materials, plus the partition check of each tile. With `out_dir`
+    also writes `<object>/<tile>.glb` and `_rest/<tile>.glb` (per-tile pieces; apply joins an object's tiles)."""
+    objects = objects or OBJECTS
+    done = compute(glb_dir, objects)
+    result = {name: {'triangles': 0, 'tiles': {}, 'materials': set(), 'min': None, 'max': None} for name in objects}
+    for stem, owned in done['owned'].items():
+        tris, model = done['tris'][stem], done['models'][stem]
         if out_dir is not None and owned.get(''):
             (Path(out_dir) / '_rest').mkdir(parents=True, exist_ok=True)
             write_subset(model, owned[''], Path(out_dir) / '_rest' / f'SM_BC_{stem}.glb')
-        problems += [f'{stem}: {p}' for p in verify_partition(tris, [[tris[t] for t in m] for m in owned.values()])]
         for name, members in owned.items():
             if not name or not members:
                 continue
@@ -320,17 +373,15 @@ def plan_batch(glb_dir: Path, objects: dict[str, dict] | None = None, out_dir: P
             r = result[name]
             r['triangles'] += len(members)
             if out_dir is not None:
-                # <object>/<tile>.glb: the object's part of that tile; the controller joins an object's parts
-                # into one mesh with one node, and writes the tile's remainder as `_rest/<tile>.glb`.
                 (Path(out_dir) / name).mkdir(parents=True, exist_ok=True)
                 write_subset(model, members, Path(out_dir) / name / f'SM_BC_{stem}.glb')
             r['tiles'][stem] = len(members)
-            r['materials'] |= {model['materials'][tris[t][0]] for t in members}
+            r['materials'] |= {tris[t][0] for t in members}
             r['min'] = lo if r['min'] is None else tuple(min(a, b) for a, b in zip(r['min'], lo))
             r['max'] = hi if r['max'] is None else tuple(max(a, b) for a, b in zip(r['max'], hi))
     for r in result.values():
         r['materials'] = sorted(r['materials'])
-    return {'objects': result, 'problems': problems}
+    return {'objects': result, 'problems': done['problems']}
 
 
 def main(argv=None) -> int:
