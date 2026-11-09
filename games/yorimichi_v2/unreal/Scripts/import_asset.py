@@ -341,10 +341,11 @@ def main():
             # The chain the package had before this import; a new package has none.
             # A new package is checked first: loading a missing one logs an error, which fails the session's exit.
             existing = EAL.load_asset(package) if EAL.does_asset_exist(package) else None
+            # Read before any edit: removing collisions rebuilds the mesh, whose screen sizes then read 0 until built.
+            before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
             if existing is not None and settings.get('collision') == 'simple_and_complex':
                 # An FBX reimport appends its UCX hulls to the saved ones: start from none.
                 _static_mesh_editor().remove_collisions(existing)
-            before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
             slots = settings.get('slot_materials')
             if (existing is not None and slots is not None
                     and len(existing.get_editor_property('static_materials')) != len(slots)):
