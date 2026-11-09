@@ -1,5 +1,55 @@
 {
   "objects": {
+    "object/brinecove/cannon-east": {
+      "groups": [
+        "SM_BC_CannonEast"
+      ],
+      "id": "object/brinecove/cannon-east",
+      "model": "prop/brinecove/cannon-east",
+      "models": [
+        "prop/brinecove/cannon-east"
+      ]
+    },
+    "object/brinecove/cannon-west": {
+      "groups": [
+        "SM_BC_CannonWest"
+      ],
+      "id": "object/brinecove/cannon-west",
+      "model": "prop/brinecove/cannon-west",
+      "models": [
+        "prop/brinecove/cannon-west"
+      ]
+    },
+    "object/brinecove/crane-east": {
+      "groups": [
+        "SM_BC_CraneEast"
+      ],
+      "id": "object/brinecove/crane-east",
+      "model": "prop/brinecove/crane-east",
+      "models": [
+        "prop/brinecove/crane-east"
+      ]
+    },
+    "object/brinecove/crane-west": {
+      "groups": [
+        "SM_BC_CraneWest"
+      ],
+      "id": "object/brinecove/crane-west",
+      "model": "prop/brinecove/crane-west",
+      "models": [
+        "prop/brinecove/crane-west"
+      ]
+    },
+    "object/brinecove/fish-shed": {
+      "groups": [
+        "SM_BC_FishShed"
+      ],
+      "id": "object/brinecove/fish-shed",
+      "model": "prop/brinecove/fish-shed",
+      "models": [
+        "prop/brinecove/fish-shed"
+      ]
+    },
     "object/brinecove/fort": {
       "groups": [
         "SM_BC_Landmarks_3_5"
@@ -789,6 +839,51 @@
       "model": "adopted/brinecove/market-4-4",
       "models": [
         "adopted/brinecove/market-4-4"
+      ]
+    },
+    "object/brinecove/market-auction-block": {
+      "groups": [
+        "SM_BC_MarketAuctionBlock"
+      ],
+      "id": "object/brinecove/market-auction-block",
+      "model": "prop/brinecove/market-auction-block",
+      "models": [
+        "prop/brinecove/market-auction-block"
+      ]
+    },
+    "object/brinecove/market-well": {
+      "groups": [
+        "SM_BC_MarketWell",
+        "SM_BC_MarketWell_Soft"
+      ],
+      "id": "object/brinecove/market-well",
+      "model": [
+        "prop/brinecove/market-well",
+        "prop/brinecove/market-well-soft"
+      ],
+      "models": [
+        "prop/brinecove/market-well",
+        "prop/brinecove/market-well-soft"
+      ]
+    },
+    "object/brinecove/net-rack-east": {
+      "groups": [
+        "SM_BC_NetRackEast"
+      ],
+      "id": "object/brinecove/net-rack-east",
+      "model": "prop/brinecove/net-rack-east",
+      "models": [
+        "prop/brinecove/net-rack-east"
+      ]
+    },
+    "object/brinecove/net-rack-west": {
+      "groups": [
+        "SM_BC_NetRackWest"
+      ],
+      "id": "object/brinecove/net-rack-west",
+      "model": "prop/brinecove/net-rack-west",
+      "models": [
+        "prop/brinecove/net-rack-west"
       ]
     },
     "object/brinecove/pirate-queen-statue": {
@@ -2545,6 +2640,16 @@
         "adopted/brinecove/props-5-4"
       ]
     },
+    "object/brinecove/quay-anchor": {
+      "groups": [
+        "SM_BC_QuayAnchor"
+      ],
+      "id": "object/brinecove/quay-anchor",
+      "model": "prop/brinecove/quay-anchor",
+      "models": [
+        "prop/brinecove/quay-anchor"
+      ]
+    },
     "object/brinecove/rocks-0-1": {
       "groups": [
         "SM_BC_Rocks_0_1",
@@ -3029,6 +3134,16 @@
       "model": "adopted/brinecove/ships-nightjar-sloop",
       "models": [
         "adopted/brinecove/ships-nightjar-sloop"
+      ]
+    },
+    "object/brinecove/shipyard-yard": {
+      "groups": [
+        "SM_BC_ShipyardYard"
+      ],
+      "id": "object/brinecove/shipyard-yard",
+      "model": "prop/brinecove/shipyard-yard",
+      "models": [
+        "prop/brinecove/shipyard-yard"
       ]
     },
     "object/brinecove/townlower-1-2": {

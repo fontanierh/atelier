@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/quay-anchor",
+  "dependencies": {
+    "prop/brinecove/quay-anchor": "39266e4f57ecdd2df489c4f9152c6635f87d8dbf2a34154d7cc32f894d4dafaa"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/AP/LGKQK84P7WBJA3C105PFTS.uasset": "19e5ed9a12e3a00b08f2897b32d7ded05c30a1a6f65a3d8ef1b6a4c2232030a1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

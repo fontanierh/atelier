@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/cannon-east",
+  "dependencies": {
+    "prop/brinecove/cannon-east": "e2f013d5b0da9cd12fc301e0665df862483a6e0de0a83fce93646758a4236716"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/8K/MUE8HINOS2XNS2XGTVGQA5.uasset": "fe0fbf5a50f410596a097665bd185b767ef66186ca5a59381c665f22926b7700"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

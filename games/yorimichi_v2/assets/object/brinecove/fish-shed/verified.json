@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/fish-shed",
+  "dependencies": {
+    "prop/brinecove/fish-shed": "c4f40b7eba37f2179dffb19ba064288e32991b07de681be3f77a175aea4358e1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/8A/D0TH7RK0OO02NRDVE38WQA.uasset": "043e28d61737dc0b0e6d88a4832baca0f53e6c05606d1e8f3e12e3f0774de1d0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
