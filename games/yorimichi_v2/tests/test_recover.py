@@ -300,7 +300,7 @@ def test_partition_honours_a_units_map_below_a_folder_with_few_packages():
     assert list(found) == ['adopted/experiments/islandterrain/v1-atomic/generator']
 
 
-def test_city_surfaces_recover_pieces_of_hull_free_sources_only(tmp_path):
+def test_city_surfaces_recover_every_piece_with_its_collision(tmp_path):
     game, donor = tmp_path / 'game', tmp_path / 'donor'
     dest = '/Game/Experiments/CitySurfaces/v1_128m'
     record(game, 'adopted/experiments/citysurfaces/v1-128m/street', f'''schema = 1
@@ -341,12 +341,13 @@ package = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt"
     write(donor / 'import-report.json', json.dumps({'HD_Street': bind('HD_Street_0'), 'HD_Arcade': bind('HD_Arcade_0'),
                                                     'HD_Sea': bind('HD_Sea')}))
     plan = recover.build_plan(game, 'experiments/citysurfaces', donor)
-    (street,) = plan.generated
+    street, arcade = sorted(plan.generated, key=lambda g: g.id, reverse=True)
     assert street.id == 'prop/citysurfaces/street-0' and street.package == f'{dest}/HD_Street_0'
     assert street.settings == {'slot_materials': ['/Game/Japan/Hidamari/Materials/MI_HD_asphalt'], 'triangles': 12,
                                'collision': 'complex', 'full_precision_uvs': True}
     assert street.references == ['adopted/japan/materials']
-    # A hull source stays open (no V2 UCX import); a piece no adopted record holds is reported, not guessed.
-    assert any('HD_Arcade_0' in u and 'UCX' in u for u in plan.unmapped_outputs)
+    # A hull source's pieces import their UCX hulls, each with its own count; a piece no record holds is reported.
+    assert arcade.id == 'prop/citysurfaces/arcade-0'
+    assert (arcade.settings['collision'], arcade.settings['hulls']) == ('simple_and_complex', 2)
     assert any('HD_Sea' in u for u in plan.unmapped_outputs)
-    assert plan.kept['adopted/experiments/citysurfaces/v1-128m/street'] == [f'{dest}/HD_Arcade_0']
+    assert plan.kept['adopted/experiments/citysurfaces/v1-128m/street'] == []

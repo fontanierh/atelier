@@ -79,6 +79,18 @@ def _apply_mesh_settings(asset, settings):
     if settings.get('collision') == 'complex':
         body = asset.get_editor_property('body_setup')
         _set(body, dict(collision_trace_flag=U.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE, double_sided_geometry=True))
+    elif settings.get('collision') == 'simple_and_complex':
+        # The source's authored UCX hulls are the simple collision (import_city_surface_tiles.py); a piece declared
+        # with none keeps no shapes. The hull count must be the source's: a stale or missing hull is a broken import.
+        editor = _static_mesh_editor()
+        _set(asset.get_editor_property('body_setup'),
+             dict(collision_trace_flag=U.CollisionTraceFlag.CTF_USE_SIMPLE_AND_COMPLEX))
+        hulls = int(settings.get('hulls', 0))
+        if hulls == 0 and (editor.get_simple_collision_count(asset) or editor.get_convex_collision_count(asset)):
+            editor.remove_collisions(asset)
+        count = editor.get_simple_collision_count(asset) + editor.get_convex_collision_count(asset)
+        if count != hulls:
+            raise RuntimeError(f'{asset.get_path_name()} has {count} collision shapes, the source {hulls}')
     if 'triangles' in settings:
         # Unreal drops a few degenerate slivers from a procedural kit; more than 2 % is a broken import.
         count, wanted = asset.get_num_triangles(0), int(settings['triangles'])
@@ -184,6 +196,9 @@ def main():
                 options = None
             # The chain the package had before this import; a new package has none.
             existing = EAL.load_asset(package)
+            if existing is not None and settings.get('collision') == 'simple_and_complex':
+                # An FBX reimport appends its UCX hulls to the saved ones: start from none.
+                _static_mesh_editor().remove_collisions(existing)
             before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
             asset = _import(source, package, options)
             _apply_material_slots(asset, plan)

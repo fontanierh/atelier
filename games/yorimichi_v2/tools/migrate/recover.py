@@ -249,8 +249,7 @@ def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner:
     """The donor's city surface partition (city_surface_tiles/v1_128m: manifest.json, import-report.json): one FBX per
     tile piece, one material per piece (the report's binding, the donor's piece_material_paths). The donor sets
     full-precision UVs on every piece and picks collision per source: complex-as-simple for a source without authored
-    UCX hulls, simple-and-complex (hulls imported) for one with them. The V2 importer has no UCX import, so every
-    piece of a hull source stays open in its adopted record."""
+    UCX hulls, simple-and-complex (hulls imported, each piece's own count checked) for one with them."""
     manifest, report = _json(donor / 'manifest.json'), _json(donor / 'import-report.json')
     generated, unmapped = [], []
     for name, source in manifest['sources'].items():
@@ -260,9 +259,6 @@ def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner:
             package = f'{CITY_DESTINATION}/{piece}'
             if package not in owner:
                 unmapped.append(f'{name}/{piece}.fbx (its package is not in a source-less city surface record)')
-                continue
-            if source['source_collision_hulls']:
-                unmapped.append(f'{name}/{piece}.fbx (source {name} has UCX hulls: no V2 simple-and-complex import)')
                 continue
             row = bound.get(piece)
             material = row['material'].split('.', 1)[0] if row else ''
@@ -275,8 +271,9 @@ def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner:
             generated.append(Generated(
                 id=f'prop/citysurfaces/{tail}', kind='static-mesh', owner=f'shared/citysurfaces/{tail}',
                 package=package, source=donor / name / f'{piece}.fbx',
-                settings={'slot_materials': [material], 'triangles': tile['triangles'], 'collision': 'complex',
-                          'full_precision_uvs': True},
+                settings={'slot_materials': [material], 'triangles': tile['triangles'], 'full_precision_uvs': True,
+                          **({'collision': 'simple_and_complex', 'hulls': tile['collision_hulls']}
+                             if source['source_collision_hulls'] else {'collision': 'complex'})},
                 references=[all_owner[material]],
                 about=f'{piece}: one city surface piece of {name} ({tile["triangles"]} triangles)',
                 expected_sha=tile['sha256']))
