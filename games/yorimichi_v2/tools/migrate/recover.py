@@ -531,7 +531,6 @@ def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner
     manifest = _json(donor / 'assets' / 'manifest.json')
     parents = _json(donor.parents[1] / 'village' / 'atomic-manifest.json')['parents']
     policy = {piece['name']: group['collision'] for group in parents.values() for piece in group['pieces']}
-    native = {piece['name']: piece['native_triangles'] for group in parents.values() for piece in group['pieces']}
     generated, unmapped = [], []
     if VILLAGE_MATERIAL not in all_owner:
         raise RecoverError(f'{VILLAGE_MATERIAL} is owned by no record')
@@ -542,15 +541,15 @@ def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner
             unmapped.append(f'assets/{row["primary"]} (not a VillagePalette piece of a source-less village record)')
             continue
         hulls = row['metadata']['collision_hulls']
-        # The donor's legacy FBX import drops the ground's one degenerate triangle (native_triangles 13647 of 13648); the
-        # Interchange import keeps it, so the ground is imported through the legacy importer, as the donor does.
-        collision = ({'collision': 'complex', 'legacy_fbx': True} if policy[name] == 'complex_as_simple'
+        # The ground keeps its one degenerate source triangle (13648; the donor's legacy import drops it, but that path
+        # does not convert units like the Interchange import does), inside the importer's 98-100 % window.
+        collision = ({'collision': 'complex'} if policy[name] == 'complex_as_simple'
                      else {'collision': 'simple_and_complex', 'hulls': hulls})
         tail = ident(name[len('Village_'):])
         generated.append(Generated(
             id=f'prop/villageatomic/{tail}', kind='static-mesh', owner=f'shared/villageatomic/{tail}', package=package,
             source=donor / 'assets' / row['primary'],
-            settings={'slot_materials': [VILLAGE_MATERIAL], 'triangles': native[name], **collision},
+            settings={'slot_materials': [VILLAGE_MATERIAL], 'triangles': row['triangles'], **collision},
             references=[all_owner[VILLAGE_MATERIAL]],
             about=f'{name}: one village piece ({row["triangles"]} triangles, {hulls} collision hulls)',
             expected_sha=row['sha256']))
