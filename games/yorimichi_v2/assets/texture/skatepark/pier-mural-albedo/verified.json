@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-mural-albedo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_mural_albedo.uasset": "5f5b147aaa3544032f8203219ddc9972b815e1a380ca778d831e0041b798b0ea"
+  },
+  "input_fingerprint": "acf9835b1ac49044b6e27b2735f0f352df7a8c18649991930a0e1ffeb2126841",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

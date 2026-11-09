@@ -20,6 +20,7 @@ version = 1
 slot_map = {TH_moss = "/Game/Japan/Treehouse/Materials/MI_TH_moss", TH_plaster = "/Game/Japan/Treehouse/Materials/MI_TH_plaster", TH_shingle = "/Game/Japan/Treehouse/Materials/MI_TH_shingle", TH_tile = "/Game/Japan/Treehouse/Materials/MI_TH_tile", TH_wood_plank = "/Game/Japan/Treehouse/Materials/MI_TH_wood_plank", TH_wood_timber = "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber"}
 triangles = 18054
 collision = "complex"
+double_sided = false
 
 [[outputs]]
 package = "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece13"

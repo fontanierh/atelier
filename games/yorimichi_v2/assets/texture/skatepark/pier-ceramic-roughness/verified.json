@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-ceramic-roughness",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_ceramic_roughness.uasset": "2a2a44a46c7710be135af221389fcdb6030799517896fcf4b9e98879a74aaa56"
+  },
+  "input_fingerprint": "4d56f63595fa9f6ad386f361b39069106c8bfed1d0cab85da61fbca6c1765f02",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

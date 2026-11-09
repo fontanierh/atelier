@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-steel-roughness",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_steel_roughness.uasset": "0425097c4ba940984b36b7fcded617fe3ea3fd4b670cebd5d417262f169471bb"
+  },
+  "input_fingerprint": "efce451334a0a22ae0d84036760e961fc189925141e2622f5938448435e6a797",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

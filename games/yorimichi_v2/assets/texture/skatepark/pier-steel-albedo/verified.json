@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-steel-albedo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_steel_albedo.uasset": "f894db30e07b93b0fa4b469392dffb075712054b10deb5607a241ef34e184af9"
+  },
+  "input_fingerprint": "a3ae29886aac3561eddf10bac282d9ce44c5849c694e57c4fcd4c0b35b8f66b6",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

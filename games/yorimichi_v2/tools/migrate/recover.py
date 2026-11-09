@@ -531,6 +531,7 @@ def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner
     manifest = _json(donor / 'assets' / 'manifest.json')
     parents = _json(donor.parents[1] / 'village' / 'atomic-manifest.json')['parents']
     policy = {piece['name']: group['collision'] for group in parents.values() for piece in group['pieces']}
+    native = {piece['name']: piece['native_triangles'] for group in parents.values() for piece in group['pieces']}
     generated, unmapped = [], []
     if VILLAGE_MATERIAL not in all_owner:
         raise RecoverError(f'{VILLAGE_MATERIAL} is owned by no record')
@@ -541,13 +542,15 @@ def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner
             unmapped.append(f'assets/{row["primary"]} (not a VillagePalette piece of a source-less village record)')
             continue
         hulls = row['metadata']['collision_hulls']
-        collision = ({'collision': 'complex'} if policy[name] == 'complex_as_simple'
+        # The donor's legacy FBX import drops the ground's one degenerate triangle (native_triangles 13647 of 13648); the
+        # Interchange import keeps it, so the ground is imported through the legacy importer, as the donor does.
+        collision = ({'collision': 'complex', 'legacy_fbx': True} if policy[name] == 'complex_as_simple'
                      else {'collision': 'simple_and_complex', 'hulls': hulls})
         tail = ident(name[len('Village_'):])
         generated.append(Generated(
             id=f'prop/villageatomic/{tail}', kind='static-mesh', owner=f'shared/villageatomic/{tail}', package=package,
             source=donor / 'assets' / row['primary'],
-            settings={'slot_materials': [VILLAGE_MATERIAL], 'triangles': row['triangles'], **collision},
+            settings={'slot_materials': [VILLAGE_MATERIAL], 'triangles': native[name], **collision},
             references=[all_owner[VILLAGE_MATERIAL]],
             about=f'{name}: one village piece ({row["triangles"]} triangles, {hulls} collision hulls)',
             expected_sha=row['sha256']))
@@ -760,6 +763,12 @@ FAMILIES.update({'japan/assets': plan_japan_assets, 'japan/treehouse': plan_japa
                  'japan/textures': plan_japan_textures})
 
 
+# Families whose old packages have single-sided complex collision (the donor never sets double_sided): their complex
+# recipes say so, as the importer's default for a complex record is double-sided (the city and earlier families keep it).
+SINGLE_SIDED = {'skatepark', 'megapark', 'swordcamp', 'fx', 'experiments/villageatomic', 'japan/assets', 'japan/treehouse',
+                'japan/southwest', 'japan/lake', 'japan/textures'}
+
+
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
     if family not in FAMILIES:
         raise RecoverError(f'unknown family {family!r}; known: {", ".join(sorted(FAMILIES))}')
@@ -774,6 +783,10 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
                 gen.origin = 'applied'
             else:
                 raise RecoverError(f'{gen.package} is in no adopted {family} record; nothing to recover there')
+    if family in SINGLE_SIDED:
+        for gen in plan.generated:
+            if gen.settings.get('collision') == 'complex':
+                gen.settings.setdefault('double_sided', False)
     ids = [g.id for g in plan.generated]
     packages = [g.package for g in plan.generated]
     if len(set(ids)) != len(ids) or len(set(packages)) != len(packages):
@@ -864,7 +877,7 @@ def _drop_verified(path: Path, packages: set[str]) -> None:
         path.unlink()
 
 
-def apply(game: Path, plan: Plan, donor: Path) -> dict:
+def apply(game: Path, plan: Plan, donor: Path, settle: bool = False) -> dict:
     """Write the generated records and shrink the adopted ones. Returns what changed (empty when already applied)."""
     changed = {'created': [], 'shrunk': [], 'deleted': []}
     gen_packages = {g.package for g in plan.generated}
@@ -915,7 +928,47 @@ def apply(game: Path, plan: Plan, donor: Path) -> dict:
             _drop_verified(folder / 'verified.json', gen_packages & before)
         changed['shrunk'].append(record_id)
     changed['retargeted'] = _retarget(game, plan, moved_from)
+    if settle:
+        changed['settled'] = _settle(game, plan.family)
     return changed
+
+
+def _settle(game: Path, family: str) -> list[str]:
+    """Give the family's adopted records the form adoption's repartition would: when generated records took packages out
+    of a folder, the one adopted record left may now belong in the parent unit (adopted/fx/loose_files -> adopted/fx,
+    since /Game/FX holds only its seven loose packages). Only that single-record move is done here, with the
+    repartition's own unit text; the real-game repartition test stays clean."""
+    sys.path.insert(0, str(HERE))
+    import adopt
+    report = adopt.repartition(game, check_only=True)
+    settled = []
+    for gone in report['delete']:
+        if not (gone.startswith(f'assets/adopted/{family}/') and gone.endswith('asset.toml')):
+            continue
+        old = records.load_asset(game / gone)
+        packages = [o.package for o in old.outputs]
+        units = adopt.partition(packages, packages[0].split('/')[2], groups=adopt.load_groups(game / adopt.GROUPS.relative_to(adopt.GAME)))
+        if len(units) != 1:
+            continue
+        ((unit_id, (owner, about, members)),) = units.items()
+        if sorted(members) != sorted(packages) or unit_id == old.id:
+            continue
+        folder = game / 'assets' / unit_id
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / 'asset.toml').write_text(adopt.record_text(unit_id, owner, about, members, old.license, old.provenance, (),
+                                                             old.references))
+        if old.verified.is_file():
+            body = _json(old.verified)
+            body['asset'] = unit_id
+            records.write_json(folder / 'verified.json', body)
+            old.verified.unlink()
+        old.record.unlink()
+        parent = old.record.parent
+        while parent != game / 'assets' and parent.is_dir() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
+        settled.append(unit_id)
+    return settled
 
 
 def _used_bytes(game: Path, asset) -> bytes | None:
@@ -1008,8 +1061,8 @@ def main(argv=None) -> int:
         plan = build_plan(args.game.resolve(), args.family, args.donor.resolve())
         print(report(plan))
         if args.apply:
-            changed = apply(args.game.resolve(), plan, args.donor.resolve())
-            print(f'applied: created {len(changed["created"])}, shrunk {len(changed["shrunk"])}, '
+            changed = apply(args.game.resolve(), plan, args.donor.resolve(), settle=True)
+            print(f'applied: created {len(changed["created"])}, shrunk {len(changed["shrunk"])}, settled {len(changed.get("settled", []))}, '
                   f'deleted {len(changed["deleted"])}, retargeted {len(changed["retargeted"])}')
     except (RecoverError, RecordError) as error:
         print(f'recover failed: {error}', file=sys.stderr)

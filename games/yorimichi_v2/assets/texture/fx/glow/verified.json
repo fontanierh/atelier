@@ -1,0 +1,12 @@
+{
+  "asset": "texture/fx/glow",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/Textures/T_FX_Glow.uasset": "c2087578f24dfb25f51ed7daee89beb346b8479e8be4b4c44b48ef3a11abc5a1"
+  },
+  "input_fingerprint": "3ee7b316f96da34fe7f8d50d8776aef66f7329d2047bbaf83b9b0aa321f37661",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

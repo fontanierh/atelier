@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-ceramic-normal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_ceramic_normal.uasset": "7585371b9f57ea1af1fcc09970ea6d67f4d2ca4cbd02f32dc56a5613ac07b7d8"
+  },
+  "input_fingerprint": "fd73ab9e98465df16bbd505193444583c99f757f68cd74a430b871c457151fb6",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

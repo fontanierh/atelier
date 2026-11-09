@@ -20,6 +20,7 @@ version = 1
 slot_map = {TH_bark = "/Game/Japan/Treehouse/Materials/MI_TH_trunk"}
 triangles = 7140
 collision = "complex"
+double_sided = false
 
 [[outputs]]
 package = "/Game/Japan/Assets/TH_Trunks"
