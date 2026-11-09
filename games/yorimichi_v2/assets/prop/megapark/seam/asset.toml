@@ -1,0 +1,28 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_MP_Seam: the render mesh of the park seam (399 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/megapark/seam"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/megapark/seam"
+references = ["adopted/megapark/seam"]
+
+[[sources]]
+path = "src/SM_MP_Seam.fbx"
+sha256 = "7896d4f023b28f84c76406388a0fe266003073e3b2383441a2849d5a386dd6b1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {M_3fc3174182abbed4_Seam = "/Game/MegaPark/Materials/MI_3fc3174182abbed4_Seam", M_4cef5bb305cb09eb_Seam = "/Game/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam", M_b4686eeb54647811_Seam = "/Game/MegaPark/Materials/MI_b4686eeb54647811_Seam"}
+triangles = 399
+collision = "complex"
+full_precision_uvs = true
+allow_cpu_access = true
+double_sided = false
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/SM_MP_Seam"

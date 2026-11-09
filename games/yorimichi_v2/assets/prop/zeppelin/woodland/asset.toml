@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_Woodland: a zeppelin piece (13526 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/woodland"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/woodland"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_Woodland.fbx"
+sha256 = "5cad2afc5296eb5b6194cbcc4ffd015b04f7f43dba73e7436c947192b322c797"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 13526
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_Woodland"

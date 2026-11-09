@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_basalt_normal: the normal map of the basalt pier surface (donor texture basalt-normal.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-basalt-normal"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-basalt-normal"
+
+[[sources]]
+path = "src/basalt-normal.png"
+sha256 = "eea5e230cc60da2759ab5249f32aadfc5fa5a0c5617a5ebda4628a59824e2649"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_NORMALMAP"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_basalt_normal"

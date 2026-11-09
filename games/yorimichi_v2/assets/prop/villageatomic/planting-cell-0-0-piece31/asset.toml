@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Village_Planting_cell_0_0_Piece31: one village piece (18380 triangles, 0 collision hulls).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/villageatomic/planting-cell-0-0-piece31"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/villageatomic/planting-cell-0-0-piece31"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Village_Planting_cell_0_0_Piece31.fbx"
+sha256 = "684bbd3784a6bd4205d2eb1cccb38463983818aec1a3c08ccc66b8c455cbcc83"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 18380
+collision = "simple_and_complex"
+hulls = 0
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Planting_cell_0_0_Piece31"

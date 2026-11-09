@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BK_Steer_BasketFoot: a bike part (6544 triangles after the import).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/bike/steer-basket-foot"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/bike/steer-basket-foot"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/BK_Steer_BasketFoot.fbx"
+sha256 = "d9590e372fdf2f50b2b9c07e668d5837e9438cde8d06f0353bef823227cbdb86"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Bike"]
+triangles = 6544
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Steer_BasketFoot"

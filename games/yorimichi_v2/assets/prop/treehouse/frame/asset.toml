@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_Frame: a tree house surface (30584 triangles, 3 slots).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse/frame"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse/frame"
+references = ["adopted/japan/treehouse/surface-rope", "adopted/japan/treehouse/surface-wood-plank", "adopted/japan/treehouse/surface-wood-timber"]
+
+[[sources]]
+path = "src/TH_Frame.fbx"
+sha256 = "81fe471625caab8fe18803c7fde53fe0d7e2e83298f7d06cb0714beedb1b24ab"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {TH_rope = "/Game/Japan/Treehouse/Materials/MI_TH_rope", TH_wood_plank = "/Game/Japan/Treehouse/Materials/MI_TH_wood_plank", TH_wood_timber = "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber"}
+triangles = 30584
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_Frame"

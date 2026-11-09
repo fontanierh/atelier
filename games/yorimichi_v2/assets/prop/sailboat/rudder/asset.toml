@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SB_Rudder: a sailboat part (84 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/sailboat/rudder"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/sailboat/rudder"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SB_Rudder.fbx"
+sha256 = "27c48eaaffb519c24ce0d33bce97dbc4a5e1073834b13aea1d35c31aeeeb3684"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 84
+
+[[outputs]]
+package = "/Game/Japan/Assets/SB_Rudder"

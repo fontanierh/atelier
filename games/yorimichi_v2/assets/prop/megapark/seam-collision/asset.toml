@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): UC_MP_Seam: the collision mesh of the park seam (399 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/megapark/seam-collision"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/megapark/seam-collision"
+
+[[sources]]
+path = "src/UC_MP_Seam.fbx"
+sha256 = "867965c560953ae604d7ac01b568e696e1aaeede5a00adad1af88f38aab528ff"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+triangles = 399
+collision = "complex"
+full_precision_uvs = true
+allow_cpu_access = true
+double_sided = false
+
+[[outputs]]
+package = "/Game/MegaPark/Meshes/UC_MP_Seam"

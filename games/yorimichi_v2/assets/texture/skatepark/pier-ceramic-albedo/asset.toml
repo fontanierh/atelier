@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_ceramic_albedo: the albedo map of the ceramic pier surface (donor texture ceramic-albedo.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-ceramic-albedo"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-ceramic-albedo"
+
+[[sources]]
+path = "src/ceramic-albedo.png"
+sha256 = "953ce935cf4c831eb092ac26f0ea9a6a98c33d55047fbe0cd11732e122314e0d"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_ceramic_albedo"

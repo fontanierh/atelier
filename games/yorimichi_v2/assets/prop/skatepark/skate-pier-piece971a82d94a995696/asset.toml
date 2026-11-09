@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_SkatePier_Piece971a82d94a995696: one skate park mesh (19609 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/skatepark/skate-pier-piece971a82d94a995696"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/skatepark/skate-pier-piece971a82d94a995696"
+references = ["adopted/skatepark/materials"]
+
+[[sources]]
+path = "src/SM_SkatePier_Piece971a82d94a995696.fbx"
+sha256 = "6c8dff3bbb691a76380ce3cd27bc8ac0e148d130ed0a462e0e8a42b0776a030b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Pier_concrete = "/Game/SkatePark/Materials/M_Pier_concrete", Pier_basalt = "/Game/SkatePark/Materials/M_Pier_basalt", Pier_painted = "/Game/SkatePark/Materials/M_Pier_painted"}
+triangles = 19609
+collision = "complex"
+allow_cpu_access = true
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkatePier_Piece971a82d94a995696"

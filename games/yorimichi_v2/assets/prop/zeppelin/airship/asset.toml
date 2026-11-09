@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_Airship: a zeppelin piece (13688 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/airship"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/airship"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_Airship.fbx"
+sha256 = "b4f76090deed2572b7d8af7d71e80befd456fcdb7a26235e007c6ba4ca94b18a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {ZeppelinPalette = "/Game/Japan/Materials/M_Village", ZeppelinFabric = "/Game/Japan/Materials/M_ZeppelinFabric"}
+triangles = 13688
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_Airship"

@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Mega_Trail: a mega ramp piece (1920 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/mega/trail"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/mega/trail"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Mega_Trail.fbx"
+sha256 = "ebef6c676439bf694cbe90150fc3c14d6080794017d7b16a8d2ace64b544dabd"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 1920
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Mega_Trail"

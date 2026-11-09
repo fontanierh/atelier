@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_Gangway: a zeppelin piece (360 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/gangway"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/gangway"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_Gangway.fbx"
+sha256 = "b395cb31001ef961d9d1c872cdff18aa29e42dc4a4a3f56459772448c25c0b58"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 360
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_Gangway"

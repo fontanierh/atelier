@@ -1,8 +1,6 @@
 {
   "asset": "object/swcoast/dock",
-  "dependencies": {
-    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/06/O9H06T2ZF0504VKYBJE36C.uasset": "ea4c6e5eefac2c7e69e28ca414b1370346d2d03a380162e3cc8461540e4467a8"

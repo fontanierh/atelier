@@ -3,15 +3,6 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/BK_Crank.uasset": "eb9d5d64dd89d87b8148ad0100f5fc837b34a41e0bb64c67bae53a1ef91b5aad",
-    "unreal/Content/Japan/Assets/BK_Frame.uasset": "f7114aa71204522d3d801311626302efdb71833a5274140ac5f7297030ef73c8",
-    "unreal/Content/Japan/Assets/BK_Kickstand.uasset": "f28b731a85617610dd6ab52701d68bb5e62c7720965e01d18f519d02d2df59f5",
-    "unreal/Content/Japan/Assets/BK_Pedal.uasset": "2368bcf6c9c61dbb9a5ca019e2078e5b74eb4da9e38f1d98aafface3df305ac2",
-    "unreal/Content/Japan/Assets/BK_RackBoard.uasset": "74cd79bc38245b21b8b183b1ca1cfd0f555ee7bbccc819350caaecd9dc10b903",
-    "unreal/Content/Japan/Assets/BK_Steer_BasketFoot.uasset": "acb535b3f0ef8b02d80b18a472272a36e5881fcaa1576da57876b459b6394f96",
-    "unreal/Content/Japan/Assets/BK_Steer_BasketRim.uasset": "fc57845ec75de130537e6a1157e4e97466c54f6f14de334c92e7b04e41db52bb",
-    "unreal/Content/Japan/Assets/BK_Steer_BasketShell.uasset": "8cb97427958d097bc3fe4379b0ebf3362d9630eb9f7b46fd6619807e7883b5cc",
-    "unreal/Content/Japan/Assets/BK_Steer_Core.uasset": "2fa7aebf78d8940ee10e172a38571f47ab8dc1dc13720c1db5632eae32c54a73",
     "unreal/Content/Japan/Assets/BK_WheelFront.uasset": "b90179e51612c6b0cd4b37b52cda34c21e8a099b751c2e27749ed024cdb59412",
     "unreal/Content/Japan/Assets/BK_WheelRear.uasset": "d85f79aa2176fee863d789eb65a5801474b6402ce94067ab2c7906998d444c23"
   },

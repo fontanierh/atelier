@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SW_Temple: a south-west piece (16759 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/temple"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/temple"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SW_Temple.fbx"
+sha256 = "5b6813c5b55355cb66f4f218490190210cbddaa7ae64842eab7d66d32e45f3ec"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 16759
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Temple"

@@ -1,8 +1,6 @@
 {
   "asset": "object/village/cottage-a",
-  "dependencies": {
-    "adopted/experiments/villageatomic": "acd763d7dfeb5ab989212f9fe8d7c4fbff9617a122faacb40cf1c05d82034721"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/0H/1PBHQARUW8XZXJQKUGJAH5.uasset": "070307cbdfc6a0ae9efa40008bf3531f54c42daec6556e6db6f2aaf71f54528f"

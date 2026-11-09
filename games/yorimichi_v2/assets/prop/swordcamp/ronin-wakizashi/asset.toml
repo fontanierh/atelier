@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_RoninWakizashi: one Sword Camp mesh (2372 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/swordcamp/ronin-wakizashi"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/swordcamp/ronin-wakizashi"
+references = ["adopted/swordcamp/materials"]
+
+[[sources]]
+path = "src/SM_RoninWakizashi.fbx"
+sha256 = "f5737c51a361cf727dd80c65b21f9778c470ceeb64883d797159d0eae6fdd6a8"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/SwordCamp/Materials/M_SwordCamp"]
+triangles = 2372
+collision = "none"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninWakizashi"

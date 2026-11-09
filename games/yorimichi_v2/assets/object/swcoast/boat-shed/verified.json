@@ -1,8 +1,6 @@
 {
   "asset": "object/swcoast/boat-shed",
-  "dependencies": {
-    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/47/H4LHEB2WJK8IJAXQMPJZJ4.uasset": "0498c0cf45f1df137a9bf07b0507629f07099067bc3b447de88206de25e31c76"

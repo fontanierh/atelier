@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_concrete_normal: the normal map of the concrete pier surface (donor texture concrete-normal.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-concrete-normal"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-concrete-normal"
+
+[[sources]]
+path = "src/concrete-normal.png"
+sha256 = "d261ecf5177b66db0b9a2c5bc8f112124431f80c1145caef8d42413df16640b3"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_NORMALMAP"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_concrete_normal"

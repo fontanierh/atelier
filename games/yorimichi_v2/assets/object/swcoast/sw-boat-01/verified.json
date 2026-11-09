@@ -1,8 +1,6 @@
 {
   "asset": "object/swcoast/sw-boat-01",
-  "dependencies": {
-    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/2E/XF6CCW53XUUHMWXVRD3EQ7.uasset": "400e17d8723d663d02e50c3872ae5b7e6b592019f75419526090aafcd4b7a29b"

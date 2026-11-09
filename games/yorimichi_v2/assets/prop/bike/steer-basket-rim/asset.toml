@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BK_Steer_BasketRim: a bike part (22080 triangles after the import).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/bike/steer-basket-rim"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/bike/steer-basket-rim"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/BK_Steer_BasketRim.fbx"
+sha256 = "e1ccd5bac72369267404e1aee736d858610602342e6b25eed8bc17c14a961d5d"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Bike"]
+triangles = 22080
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Steer_BasketRim"

@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SW_StoneStairs: a south-west piece (5196 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/stone-stairs"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/stone-stairs"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SW_StoneStairs.fbx"
+sha256 = "99aefdacb182e719a3695af0198fc8769b4261b233d38a04b1e49cd89be28d9a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 5196
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_StoneStairs"

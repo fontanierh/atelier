@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BK_Frame: a bike part (25094 triangles after the import).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/bike/frame"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/bike/frame"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/BK_Frame.fbx"
+sha256 = "fafe9c988e02bb78d9befd1b73e977f0a825ff1a85a0450c795f9894ee04e743"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Bike"]
+triangles = 25094
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Frame"

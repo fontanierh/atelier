@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Village_Threshold: one village piece (475 triangles, 4 collision hulls).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/villageatomic/threshold"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/villageatomic/threshold"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Village_Threshold.fbx"
+sha256 = "2fe7686a68ea50a3b22ad613055c43691eb242d1b9aeeb7320706747822a1ce8"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 475
+collision = "simple_and_complex"
+hulls = 4
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Threshold"

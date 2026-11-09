@@ -1,8 +1,6 @@
 {
   "asset": "object/swterrace/stone-stairs",
-  "dependencies": {
-    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/NB/89A98ALUEAIN1BHX02SRA5.uasset": "388f6736d41ca8f1ec3616ed03e8ceb8d2bd64594675631dec82114a1816b732"

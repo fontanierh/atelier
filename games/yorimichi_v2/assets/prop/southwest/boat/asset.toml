@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SW_Boat: a south-west piece (692 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/boat"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/boat"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SW_Boat.fbx"
+sha256 = "53c8c9bca70b19b36c8a201bb967ac26f4c43e56e2a95c04c0c117229e113ac6"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 692
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Boat"

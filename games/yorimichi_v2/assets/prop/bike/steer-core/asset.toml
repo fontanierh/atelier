@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BK_Steer_Core: a bike part (21052 triangles after the import).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/bike/steer-core"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/bike/steer-core"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/BK_Steer_Core.fbx"
+sha256 = "532e77691e7c3d4d60708028f2c06caf22c6718df20a9f53e410917e8f2a2154"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Bike"]
+triangles = 21052
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Steer_Core"

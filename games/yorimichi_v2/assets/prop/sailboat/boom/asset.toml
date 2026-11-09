@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SB_Boom: a sailboat part (12 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/sailboat/boom"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/sailboat/boom"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SB_Boom.fbx"
+sha256 = "e63aa7719f4afcc5edefde165748e15d79e43fec1e5714954c26b5f5e4694e74"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 12
+
+[[outputs]]
+package = "/Game/Japan/Assets/SB_Boom"

@@ -6,7 +6,7 @@ id = "object/swcoast/dock"
 kind = "placement"
 authority = "editor"
 owner = "region/w08-southwest-coast"
-references = ["adopted/japan/southwest"]
+references = ["prop/southwest/dock"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/06/O9H06T2ZF0504VKYBJE36C"

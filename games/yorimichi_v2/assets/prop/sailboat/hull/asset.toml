@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SB_Hull: a sailboat part (1028 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/sailboat/hull"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/sailboat/hull"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SB_Hull.fbx"
+sha256 = "f8d5654349eceeb188151546c8567c1b65f28b046d6b67dc390fdc142e0f7162"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 1028
+
+[[outputs]]
+package = "/Game/Japan/Assets/SB_Hull"

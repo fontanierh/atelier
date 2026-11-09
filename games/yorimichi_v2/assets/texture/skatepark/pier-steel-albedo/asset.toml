@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_steel_albedo: the albedo map of the steel pier surface (donor texture steel-albedo.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-steel-albedo"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-steel-albedo"
+
+[[sources]]
+path = "src/steel-albedo.png"
+sha256 = "dda7f35c1af9798d9c1b718844aa93f5268aaf772348f2b723b8ad81b7822878"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_steel_albedo"

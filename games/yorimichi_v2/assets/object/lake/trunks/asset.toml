@@ -6,7 +6,7 @@ id = "object/lake/trunks"
 kind = "placement"
 authority = "editor"
 owner = "region/w06-lake-treehouse"
-references = ["adopted/japan/assets/treehouse"]
+references = ["prop/treehouse/trunks"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/E/TO/0E5DZ4M1HDDT6JCWS43DXP"

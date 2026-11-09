@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_FX_Trail: a combat effect sprite mask (donor texture T_FX_Trail.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/fx/trail"
+kind = "texture"
+authority = "generated"
+owner = "shared/fx/trail"
+
+[[sources]]
+path = "src/T_FX_Trail.png"
+sha256 = "530a8fdf6f8cdf249e37e0910a6278685a59495927ef6657f712d6c3cb6dc1b5"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+lod_group = "TEXTUREGROUP_EFFECTS"
+
+[[outputs]]
+package = "/Game/FX/Textures/T_FX_Trail"

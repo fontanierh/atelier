@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SW_Boulder_B: a south-west piece (24 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/boulder-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/boulder-b"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SW_Boulder_B.fbx"
+sha256 = "0d4dc484db90a4e4ba32b000d740ea89a5ce9508d8590afc77db93ec7855a8fc"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 24
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Boulder_B"

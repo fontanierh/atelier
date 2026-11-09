@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_basalt_roughness: the roughness map of the basalt pier surface (donor texture basalt-roughness.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-basalt-roughness"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-basalt-roughness"
+
+[[sources]]
+path = "src/basalt-roughness.png"
+sha256 = "b76458141fc14b84b74b28922e21120bac71ce63bc2ca8b75a8ef8e4f41afd5b"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_basalt_roughness"

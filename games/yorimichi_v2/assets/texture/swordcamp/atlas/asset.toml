@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_SwordCampAtlas: the Sunburst colour atlas of every Sword Camp mesh (donor swordcamp_atlas.jpg).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/swordcamp/atlas"
+kind = "texture"
+authority = "generated"
+owner = "shared/swordcamp/atlas"
+
+[[sources]]
+path = "src/swordcamp_atlas.jpg"
+sha256 = "8669a9d5ac484ee3aac7c4adb9d178c145810e4ed69d0350ad3c89b0bf08a9a7"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+max_texture_size = 2048
+lod_group = "TEXTUREGROUP_WORLD"
+
+[[outputs]]
+package = "/Game/SwordCamp/Textures/T_SwordCampAtlas"

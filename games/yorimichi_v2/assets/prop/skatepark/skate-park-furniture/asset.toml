@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_SkateParkFurniture: one skate park mesh (4370 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/skatepark/skate-park-furniture"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/skatepark/skate-park-furniture"
+references = ["adopted/skatepark/materials"]
+
+[[sources]]
+path = "src/SM_SkateParkFurniture.fbx"
+sha256 = "4b7c6317c0fb709b8fc59158cd7ec325537ec648619706709240069614bbcd72"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Pier_concrete = "/Game/SkatePark/Materials/M_Pier_concrete", Pier_steel = "/Game/SkatePark/Materials/M_Pier_steel", Pier_wood = "/Game/SkatePark/Materials/M_Pier_wood", Pier_basalt = "/Game/SkatePark/Materials/M_Pier_basalt", Pier_mural = "/Game/SkatePark/Materials/M_Pier_mural"}
+triangles = 4370
+collision = "complex"
+allow_cpu_access = true
+
+[[outputs]]
+package = "/Game/SkatePark/SM_SkateParkFurniture"

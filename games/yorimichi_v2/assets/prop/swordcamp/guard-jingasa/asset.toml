@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_GuardJingasa: one Sword Camp mesh (2896 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/swordcamp/guard-jingasa"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/swordcamp/guard-jingasa"
+references = ["adopted/swordcamp/materials"]
+
+[[sources]]
+path = "src/SM_GuardJingasa.fbx"
+sha256 = "645142d5b5513d781084b60a5cf0394792a8ee6ba7ce2acdccd86fe1b9c84961"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/SwordCamp/Materials/M_SwordCamp"]
+triangles = 2896
+collision = "none"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_GuardJingasa"

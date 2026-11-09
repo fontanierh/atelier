@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_steel_roughness: the roughness map of the steel pier surface (donor texture steel-roughness.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-steel-roughness"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-steel-roughness"
+
+[[sources]]
+path = "src/steel-roughness.png"
+sha256 = "dc1b8208f4f1ba535cac486e6db60df179c3266430d48e7cca92c21c0b640ed0"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_steel_roughness"

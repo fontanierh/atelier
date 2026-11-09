@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_RoninKasa: one Sword Camp mesh (3784 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/swordcamp/ronin-kasa"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/swordcamp/ronin-kasa"
+references = ["adopted/swordcamp/materials"]
+
+[[sources]]
+path = "src/SM_RoninKasa.fbx"
+sha256 = "15f4de0d9909440bab3b413ec38912c4b6cfdb296b2ebb8c55f7a199533410cd"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/SwordCamp/Materials/M_SwordCamp"]
+triangles = 3784
+collision = "none"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninKasa"

@@ -1,0 +1,21 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_cloudmask: a world texture (donor T_cloudmask.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/japan/cloudmask"
+kind = "texture"
+authority = "generated"
+owner = "shared/japan/cloudmask"
+
+[[sources]]
+path = "src/T_cloudmask.png"
+sha256 = "aeafa4ee9d7c380398d59513fd7082d3c69ffeea672820afab87da5a31838bf5"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_cloudmask"

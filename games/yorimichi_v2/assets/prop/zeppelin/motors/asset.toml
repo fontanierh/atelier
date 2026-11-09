@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_Motors: a zeppelin piece (576 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/motors"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/motors"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_Motors.fbx"
+sha256 = "e3ef7688f9c9ddd66ca11ec12f7bcc1e77bdbd6b7f7410d4ff51d24a05ee2fee"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 576
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_Motors"

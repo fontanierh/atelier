@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_City: a zeppelin piece (13526 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/city"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/city"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_City.fbx"
+sha256 = "6356f5ccb627427bfbdf2d051045d0b89199f56b76d8e3bc4475781f69208edc"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 13526
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_City"

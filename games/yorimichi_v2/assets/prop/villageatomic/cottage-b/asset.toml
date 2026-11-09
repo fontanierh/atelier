@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Village_CottageB: one village piece (9336 triangles, 4 collision hulls).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/villageatomic/cottage-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/villageatomic/cottage-b"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Village_CottageB.fbx"
+sha256 = "23c4a357b6dfc312ec1e3cc563aa67b59b2bc079ec10c1f7c66921f67348149a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 9336
+collision = "simple_and_complex"
+hulls = 4
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_CottageB"

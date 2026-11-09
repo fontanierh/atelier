@@ -6,7 +6,7 @@ id = "object/swcoast/sw-boat-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w08-southwest-coast"
-references = ["adopted/japan/southwest"]
+references = ["prop/southwest/boat"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/2E/XF6CCW53XUUHMWXVRD3EQ7"

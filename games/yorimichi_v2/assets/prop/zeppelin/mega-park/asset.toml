@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_MegaPark: a zeppelin piece (17930 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/mega-park"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/mega-park"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_MegaPark.fbx"
+sha256 = "0e6a740c3ba4f583e13b269e92bfc6a1c48efecd3983c165030d8e2fdb84b623"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 17930
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_MegaPark"

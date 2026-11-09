@@ -6,7 +6,7 @@ id = "object/start/fisher-house-b"
 kind = "placement"
 authority = "editor"
 owner = "region/w01-start"
-references = ["adopted/japan/southwest"]
+references = ["prop/southwest/fisher-house-b"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/D/PN/NQITE825MJ3I7ZGW3038M9"

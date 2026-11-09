@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SW_Island_cell_1_1: a south-west piece (702 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/island-cell-1-1"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/island-cell-1-1"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SW_Island_cell_1_1.fbx"
+sha256 = "0358a463c303e96487ace3357dd129727ede5a1eac0daf9e4f3ce99d271f54fe"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 702
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_Island_cell_1_1"

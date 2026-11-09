@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_steel_normal: the normal map of the steel pier surface (donor texture steel-normal.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-steel-normal"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-steel-normal"
+
+[[sources]]
+path = "src/steel-normal.png"
+sha256 = "8de558fddbecc93c489b88cdc790a541daebaf5a265a586a3008b9ad8419c5e2"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_NORMALMAP"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_steel_normal"

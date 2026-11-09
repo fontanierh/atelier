@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BK_Kickstand: a bike part (956 triangles after the import).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/bike/kickstand"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/bike/kickstand"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/BK_Kickstand.fbx"
+sha256 = "dec05aaafc2f09ce3b7215e4ba12c8c407e4a13777ab702906e3f47534452c1a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Bike"]
+triangles = 956
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Kickstand"

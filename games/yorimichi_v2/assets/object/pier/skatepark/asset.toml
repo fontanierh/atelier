@@ -6,7 +6,7 @@ id = "object/pier/skatepark"
 kind = "placement"
 authority = "editor"
 owner = "region/w04-pier-approach"
-references = ["adopted/skatepark/loose_files"]
+references = ["prop/skatepark/skate-park-decals", "prop/skatepark/skate-park-features-piece950cf888b3474602", "prop/skatepark/skate-park-features-piece971a82d94a995696", "prop/skatepark/skate-park-features-piecec24187871c53d9be", "prop/skatepark/skate-park-features-piececc8d0ff98be9477a", "prop/skatepark/skate-park-features-pieced3acce5cb1ec6427", "prop/skatepark/skate-park-features-piecedf883a6e8f7c7b66", "prop/skatepark/skate-park-features-piecee27af474601aada7", "prop/skatepark/skate-park-features-piecefa03a0dfce6ed909", "prop/skatepark/skate-park-furniture", "prop/skatepark/skate-park-planting", "prop/skatepark/skate-path", "prop/skatepark/skate-pier-piece4b95388381a8f337", "prop/skatepark/skate-pier-piece971a82d94a995696", "prop/skatepark/skate-pier-piececc8d0ff98be9477a", "prop/skatepark/skate-pier-pieced3acce5cb1ec6427", "prop/skatepark/skate-pier-pilings"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/D/ZL/LNKMHWS0X3RJIE67ZGULPS"

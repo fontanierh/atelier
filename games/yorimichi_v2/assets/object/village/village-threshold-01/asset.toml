@@ -6,7 +6,7 @@ id = "object/village/village-threshold-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w02-village"
-references = ["adopted/experiments/villageatomic"]
+references = ["prop/villageatomic/threshold"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/5/1J/8Z8B90AIASJ7XJIL5HVI99"

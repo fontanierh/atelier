@@ -6,7 +6,7 @@ id = "object/swordcamp/jinmaku"
 kind = "placement"
 authority = "editor"
 owner = "region/w13-swordcamp"
-references = ["adopted/swordcamp/assets"]
+references = ["prop/swordcamp/camp-jinmaku"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/I2/791A3MOGK44IUHMNK5FQ1M"

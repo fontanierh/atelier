@@ -1,8 +1,6 @@
 {
   "asset": "object/start/fisher-house-b",
-  "dependencies": {
-    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/PN/NQITE825MJ3I7ZGW3038M9.uasset": "dc0d94d9e2d9e85d84cff8234efb1ea99acdec911e76188648b7f04830927e1a"

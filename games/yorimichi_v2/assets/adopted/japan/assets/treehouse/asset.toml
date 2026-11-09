@@ -9,9 +9,6 @@ provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DEC
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 
 [[outputs]]
-package = "/Game/Japan/Assets/TH_Frame"
-
-[[outputs]]
 package = "/Game/Japan/Assets/TH_P_backpack"
 
 [[outputs]]
@@ -49,6 +46,3 @@ package = "/Game/Japan/Assets/TH_P_stump_kettle"
 
 [[outputs]]
 package = "/Game/Japan/Assets/TH_P_telescope"
-
-[[outputs]]
-package = "/Game/Japan/Assets/TH_Trunks"

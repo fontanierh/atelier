@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Mega_Ramp: a mega ramp piece (22462 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/mega/ramp"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/mega/ramp"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Mega_Ramp.fbx"
+sha256 = "b8f82ee0e9f6036f3312e517c5c2a72b9c8cc40cfd34ac27dcea94e1d4559db7"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 22462
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Mega_Ramp"
