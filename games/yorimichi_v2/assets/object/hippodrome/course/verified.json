@@ -1,7 +1,12 @@
 {
   "asset": "object/hippodrome/course",
   "dependencies": {
-    "adopted/hippodrome/loose_files": "98dc9fa9bd9d7f3d4006b826b021699fb8a56c6e13761279cef31e94f7cec836"
+    "prop/hippodrome/ground": "74f294748c4f001f1cb21666162877b1b95a0d83609eb1554df130d2d62fb980",
+    "prop/hippodrome/lane": "c3dab12a03facc5038f329fccaa280054922abdbf31da5d3d3d5911951a01fbf",
+    "prop/hippodrome/lane-skirt": "3b531171c70256ecd9123a2d5430fcc4441a5f441a9bdace3a482009e4022038",
+    "prop/hippodrome/rails": "9d416c06cae1028f95ceef032abffa0b0974b4bed7b5805d384e4195c78f5559",
+    "prop/hippodrome/skirt": "28a5cd4b89f3780cb3bf199046226c32efb21dc28e31b22a947a0d8bd6997a5e",
+    "prop/hippodrome/track": "00823a5564d41ed2367b15e51b5a018ee28dc60def93a374ebce7008d6606464"
   },
   "engine": "5.8.2-56702186",
   "files": {
