@@ -1,10 +1,10 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: packages directly in /Game/FX
+# Ownership unit: /Game/FX
 schema = 1
-id = "adopted/fx/loose_files"
+id = "adopted/fx"
 kind = "adopted"
 authority = "editor"
-owner = "shared/fx/loose_files"
+owner = "shared/fx"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 
