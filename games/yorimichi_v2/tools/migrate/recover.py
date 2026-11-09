@@ -55,6 +55,11 @@ class Generated:
     origin: str = ''              # the adopted record that held the package
     about: str = ''
     expected_sha: str | None = None   # the donor report's sha256 of the file, when it names one
+    lod_sources: list[Path] = field(default_factory=list)   # LOD1.. donor files of a per-LOD-source chain
+    expected: dict[str, str] = field(default_factory=dict)  # file name -> the donor report's sha256 (lod_sources)
+
+    def files(self) -> list[Path]:
+        return [self.source, *self.lod_sources]
 
 
 @dataclass
@@ -303,8 +308,65 @@ def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner:
     return Plan('experiments/citysurfaces', generated, unmapped, {})
 
 
+TRAIN_SAVED = HERE / 'saved' / 'belmontetrain.json'
+
+
+def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The donor's Belmonte train (belmonte-train: service/service.json, service/import-report.json, the Train Builder's
+    GLBs; import_belmonte_train.py): each vehicle from its LOD0-LOD2 files with its fixed boxes as simple-as-complex
+    collision, and each door leaf (one LOD, no shapes). Their materials and textures stay editor-owned in the adopted
+    records (the plan's separated responsibilities). The furniture records already carry their authored models and
+    are not source-less, so they are not part of this family's recovery. The donor
+    made the slots while importing, so each recipe names the saved slot table and LOD sections
+    (saved/belmontetrain.json, read from the committed packages), which the import must reproduce exactly."""
+    service, report = _json(donor / 'service' / 'service.json'), _json(donor / 'service' / 'import-report.json')
+    saved = _json(TRAIN_SAVED)['meshes']
+    generated, unmapped = [], []
+
+    def add(package, rid, scope, files, about, collision, expected=None):
+        if package not in owner:
+            unmapped.append(f'{files[0].relative_to(donor)} (its package is not in a source-less train record)')
+            return
+        mesh = saved[package]
+        materials = [material for _, material in mesh['slots']]
+        missing = sorted({m for m in materials if m not in all_owner})
+        if missing:
+            unmapped.append(f'{files[0].relative_to(donor)} (materials owned by no record: {", ".join(missing[:3])})')
+            return
+        chain = [[f'src/{f.name}', *lod] for f, lod in zip(files, mesh['lods'], strict=True)]
+        generated.append(Generated(
+            id=rid, kind='static-mesh', owner=scope, package=package, source=files[0], lod_sources=files[1:],
+            settings={'lod_chain': chain, 'slots': mesh['slots'], **collision},
+            references=sorted({all_owner[m] for m in materials}), about=about, expected=expected or {}))
+
+    for vehicle in service['consist']['vehicles']:
+        name, package = vehicle['name'], vehicle['mesh'].split('.', 1)[0]
+        unit = owner.get(package, '').rsplit('/', 1)[-1] or slug(name[len('SM_BT_'):])
+        files = [(donor / level).resolve() for level in vehicle['levels']]
+        boxes = [[float(v) for v in box] for box in vehicle['collision']]
+        held = saved[package]['boxes'] if package in saved else []
+        as_saved = [[(b[0] + b[3]) / 2, (b[1] + b[4]) / 2, (b[2] + b[5]) / 2, b[3] - b[0], b[4] - b[1], b[5] - b[2]]
+                    for b in boxes]
+        if len(held) != len(boxes) or any(abs(a - b) > .01 for x, y in zip(held, as_saved) for a, b in zip(x, y)):
+            raise RecoverError(f'{name}: the donor\'s {len(boxes)} collision boxes are not the saved {len(held)}')
+        add(package, f'prop/belmontetrain/{unit}', f'shared/belmontetrain/{unit}', files,
+            f'{name}: the {unit} vehicle, LOD0-LOD{len(files) - 1}, {len(boxes)} collision boxes',
+            {'collision': 'boxes', 'boxes': boxes}, report['vehicles'].get(name, {}).get('sources'))
+        for door in vehicle['doors']:
+            for leaf in door['leaves']:
+                if not leaf.get('glb'):
+                    continue
+                leaf_package = leaf['mesh'].split('.', 1)[0]
+                tail = slug(leaf_package.rsplit('/', 1)[1][len(f'SM_BTD_{name[len("SM_BT_"):]}_'):])
+                add(leaf_package, f'prop/belmontetrain/{unit}-door-{tail}', f'shared/belmontetrain/{unit}',
+                    [(donor / leaf['glb']).resolve()], f'{leaf_package.rsplit("/", 1)[1]}: a {unit} door leaf',
+                    {'collision': 'boxes', 'boxes': []})
+    return Plan('belmontetrain', generated, unmapped, {})
+
+
 FAMILIES = {'hippodrome': plan_hippodrome, 'belmonte': plan_belmonte, 'experiments/islandterrain': plan_island,
-            'brinecove': plan_brinecove, 'experiments/citysurfaces': plan_citysurfaces}
+            'brinecove': plan_brinecove, 'experiments/citysurfaces': plan_citysurfaces,
+            'belmontetrain': plan_belmontetrain}
 
 
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
@@ -326,13 +388,16 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
     if len(set(ids)) != len(ids) or len(set(packages)) != len(packages):
         raise RecoverError('two generated records share an ID or a package')
     for gen in plan.generated:
-        if not gen.source.is_file():
-            raise RecoverError(f'donor file {gen.source.name} is missing')
+        for path in gen.files():
+            if not path.is_file():
+                raise RecoverError(f'donor file {path.name} is missing')
     # Every donor file must be the bytes the donor's report names (hippodrome: build-report sha256), or nothing is written.
     for gen in plan.generated:
-        if gen.expected_sha and records.sha256_file(gen.source) != gen.expected_sha:
-            raise RecoverError(f'{gen.source.name} differs from the donor report ({gen.expected_sha[:12]}); '
-                               'rebuild the donor first')
+        wanted = {gen.source.name: gen.expected_sha, **gen.expected}
+        for path in gen.files():
+            if wanted.get(path.name) and records.sha256_file(path) != wanted[path.name]:
+                raise RecoverError(f'{path.name} differs from the donor report ({wanted[path.name][:12]}); '
+                                   'rebuild the donor first')
     kept = {}
     generated_packages = set(packages)
     for path in records.record_paths(game):
@@ -344,7 +409,17 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
     return plan
 
 
-def _record_text(gen: Generated, source_name: str, digest: str) -> str:
+def _toml(value) -> str:
+    if isinstance(value, dict):     # an inline table: slot_map = {HDS_paint = "...", ...}
+        return '{' + ', '.join(f'{k} = {_toml(v)}' for k, v in value.items()) + '}'
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    if isinstance(value, (list, tuple)):
+        return '[' + ', '.join(_toml(v) for v in value) + ']'
+    return json.dumps(value)        # a string, int or float: the same text in TOML
+
+
+def _record_text(gen: Generated, digests: list[tuple[str, str]]) -> str:
     lines = [f'# Recovered from the donor generator (tools/migrate/recover.py): {gen.about}.',
              '# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and',
              '# verified by tools/import/run.py, never edited by hand.',
@@ -352,19 +427,10 @@ def _record_text(gen: Generated, source_name: str, digest: str) -> str:
              f'owner = "{gen.owner}"']
     if gen.references:
         lines.append('references = [' + ', '.join(f'"{r}"' for r in gen.references) + ']')
-    lines += ['', '[[sources]]', f'path = "src/{source_name}"', f'sha256 = "{digest}"', '',
-              '[recipe]', f'importer = "{gen.kind}"', 'version = 1', '', '[recipe.settings]']
-    for key, value in gen.settings.items():
-        if isinstance(value, dict):
-            lines.append(f'{key} = {{' + ', '.join(f'{k} = "{v}"' for k, v in value.items()) + '}')
-        elif isinstance(value, list):
-            lines.append(f'{key} = [' + ', '.join(f'"{v}"' for v in value) + ']')
-        elif isinstance(value, bool):
-            lines.append(f'{key} = {"true" if value else "false"}')
-        elif isinstance(value, int):
-            lines.append(f'{key} = {value}')
-        else:
-            lines.append(f'{key} = "{value}"')
+    for name, digest in digests:
+        lines += ['', '[[sources]]', f'path = "src/{name}"', f'sha256 = "{digest}"']
+    lines += ['', '[recipe]', f'importer = "{gen.kind}"', 'version = 1', '', '[recipe.settings]']
+    lines += [f'{key} = {_toml(value)}' for key, value in gen.settings.items()]
     lines += ['', '[[outputs]]', f'package = "{gen.package}"', '']
     return '\n'.join(lines)
 
@@ -414,15 +480,16 @@ def apply(game: Path, plan: Plan, donor: Path) -> dict:
     moved_from: dict[str, set[str]] = {}   # shrunk or deleted record -> the packages it lost to generated records
     for gen in plan.generated:
         folder = game / 'assets' / gen.id
-        src = folder / 'src' / gen.source.name
-        digest = records.sha256_file(gen.source)
-        text = _record_text(gen, gen.source.name, digest)
-        if (folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text and src.is_file():
+        digests = [(path.name, records.sha256_file(path)) for path in gen.files()]
+        text = _record_text(gen, digests)
+        if ((folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text
+                and all((folder / 'src' / path.name).is_file() for path in gen.files())):
             continue
         if folder.exists() and any(folder.iterdir()) and not (folder / 'asset.toml').is_file():
             raise RecoverError(f'{folder} exists and is not a record of this tool; refusing to write over it')
-        src.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(gen.source, src)
+        (folder / 'src').mkdir(parents=True, exist_ok=True)
+        for path in gen.files():
+            shutil.copy2(path, folder / 'src' / path.name)
         (folder / 'asset.toml').write_text(text)
         changed['created'].append(gen.id)
     for record_id, left in sorted(plan.kept.items()):

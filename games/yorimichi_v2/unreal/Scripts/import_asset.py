@@ -20,6 +20,7 @@ import lod_preservation  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
 LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
+TRANSIENT = '/Game/V2Import/Transient'   # a lod_chain's further levels, imported here and never saved
 EAL = U.EditorAssetLibrary
 TOOLS = U.AssetToolsHelpers.get_asset_tools()
 
@@ -52,9 +53,10 @@ def _legacy_fbx(settings):
     return settings.get('collision') == 'simple_and_complex'
 
 
-def _gltf_static_mesh(name):
+def _gltf_static_mesh(name, collision=True):
     """glTF geometry only, the original region importers' Interchange route: every primitive combined into one mesh
-    with its material slots, and no material or texture created (the record binds its own, slot_materials)."""
+    with its material slots, and no material or texture created (the record binds its own, slot_materials).
+    `collision` False imports no shapes at all (the record sets its own boxes, or keeps none)."""
     generic = U.InterchangeGenericAssetsPipeline()
     generic.set_editor_property('asset_name', name)
     material = generic.get_editor_property('material_pipeline')
@@ -63,6 +65,8 @@ def _gltf_static_mesh(name):
     mesh = generic.get_editor_property('mesh_pipeline')
     _set(mesh, dict(import_static_meshes=True, import_skeletal_meshes=False, build_nanite=False,
                     combine_static_meshes_behavior=U.InterchangeCombineStaticMeshesBehavior.ALL))
+    if not collision:
+        _set(mesh, dict(collision=False, import_collision_according_to_mesh_name=False))
     generic.get_editor_property('animation_pipeline').set_editor_property('import_animations', False)
     stack = U.InterchangePipelineStackOverride()
     stack.add_pipeline(generic)
@@ -116,6 +120,18 @@ def _apply_mesh_settings(asset, settings):
         count = editor.get_simple_collision_count(asset) + editor.get_convex_collision_count(asset)
         if count != hulls:
             raise RuntimeError(f'{asset.get_path_name()} has {count} collision shapes, the source {hulls}')
+    elif settings.get('collision') == 'boxes':
+        # The donor's fixed boxes ([min x, y, z, max x, y, z], mesh space, cm), used as complex collision
+        # (import_belmonte_train.py); an empty list leaves a render-only part with no shapes.
+        boxes = [_box(b) for b in settings.get('boxes', [])]
+        count = U.BelmonteTrainImportLibrary.set_simple_boxes(asset, boxes)
+        if count != len(boxes):
+            raise RuntimeError(f'{asset.get_path_name()} took {count} collision boxes, the record {len(boxes)}')
+        asset.set_editor_property('lod_for_collision', 0)
+    elif settings.get('collision') == 'none':
+        editor = _static_mesh_editor()
+        if editor.get_simple_collision_count(asset) or editor.get_convex_collision_count(asset):
+            editor.remove_collisions(asset)
     if 'triangles' in settings:
         # Unreal drops a few degenerate slivers from a procedural kit; more than 2 % is a broken import.
         count, wanted = asset.get_num_triangles(0), int(settings['triangles'])
@@ -203,20 +219,96 @@ def _reduction_options(lods):
     return options
 
 
+def _box(values):
+    box = U.Box()
+    box.min, box.max, box.is_valid = U.Vector(*values[:3]), U.Vector(*values[3:]), True
+    return box
+
+
+def _material_path(slot):
+    material = slot.get_editor_property('material_interface')
+    return material.get_path_name().split('.', 1)[0] if material else None
+
+
+def _build_lod_chain(asset, settings, resolve):
+    """One source per LOD (settings `lod_chain`: [[source, screen, triangles, [section slots]], ...], LOD0 first, and
+    `slots`: [[imported slot name, material], ...] in slot order), as the donor's train built it
+    (import_belmonte_train.py with_lods). LOD0 is the package's own import. Each further level is imported as a
+    transient mesh that is never saved, its sections bound to the record's materials, then attached with slot reuse:
+    a section on a material the mesh already has takes that slot, any other a new one, so the slot table comes out in
+    the donor's order. The slot table, each level's section slots and triangles must then be the record's exactly."""
+    editor = _static_mesh_editor()
+    chain, slots = settings['lod_chain'], settings['slots']
+    materials = []
+    for _, path in slots:
+        loaded = EAL.load_asset(path)
+        if loaded is None:
+            raise RuntimeError(f'material {path} does not exist')
+        materials.append(loaded)
+
+    def bind(mesh, sections):
+        if mesh.get_num_sections(0) != len(sections):
+            raise RuntimeError(f'{mesh.get_path_name()} has {mesh.get_num_sections(0)} sections, the record '
+                               f'{len(sections)}')
+        bound = {}
+        for section, slot in enumerate(sections):
+            index = editor.get_lod_material_slot(mesh, 0, section)
+            if bound.setdefault(index, slot) != slot:
+                raise RuntimeError(f'{mesh.get_path_name()} slot {index} holds sections of two record slots')
+            mesh.set_material(index, materials[slot])
+
+    if asset.get_num_lods() > 1:
+        editor.remove_lods(asset)
+    bind(asset, chain[0][3])
+    for level, (source, _, _, sections) in enumerate(chain[1:], 1):
+        name = f'{asset.get_name()}_LOD{level}'
+        lod = _import(resolve(source), f'{TRANSIENT}/{name}', _gltf_static_mesh(name, collision=False))
+        bind(lod, sections)
+        if editor.set_lod_from_static_mesh(asset, level, lod, 0, True) != level:
+            raise RuntimeError(f'{asset.get_path_name()}: LOD{level} from {source} was not attached')
+    if len(chain) > 1:
+        editor.set_lod_screen_sizes(asset, [screen for _, screen, _, _ in chain])
+    got = [[str(m.get_editor_property('imported_material_slot_name')), _material_path(m)]
+           for m in asset.get_editor_property('static_materials')]
+    if got != [list(s) for s in slots]:
+        raise RuntimeError(f'{asset.get_path_name()} has slots {got}, the record {slots}')
+    if asset.get_num_lods() != len(chain):
+        raise RuntimeError(f'{asset.get_path_name()} has {asset.get_num_lods()} LODs, the record {len(chain)}')
+    for level, (source, _, triangles, sections) in enumerate(chain):
+        actual = [editor.get_lod_material_slot(asset, level, s) for s in range(asset.get_num_sections(level))]
+        if actual != list(sections) or asset.get_num_triangles(level) != triangles:
+            raise RuntimeError(f'{asset.get_path_name()} LOD{level} has sections {actual} and '
+                               f'{asset.get_num_triangles(level)} triangles, the record {sections} and {triangles}')
+
+
 def main():
     if not U.V2SaveGuard.is_active():
         raise RuntimeError('the V2 save guard is not active (V2_SAVE_ALLOW); an import runs only through its build step')
     plan = json.loads(open(os.environ['V2_IMPORT_PLAN']).read())
     settings = plan['settings']
-    if len(plan['sources']) != len(plan['packages']):
+    jobs = list(zip(plan['sources'], plan['portable_sources'], plan['packages']))
+    resolve = None
+    if 'lod_chain' in settings:
+        # One package from one source per LOD: the chain names them (record-relative), LOD0 first.
+        by_name = {portable.rsplit('/src/', 1)[-1]: source
+                   for source, portable in zip(plan['sources'], plan['portable_sources'])}
+        resolve = lambda rel: by_name[rel.removeprefix('src/')]  # noqa: E731
+        first = settings['lod_chain'][0][0].removeprefix('src/')
+        if len(plan['packages']) != 1 or sorted(by_name) != sorted(c[0].removeprefix('src/')
+                                                                   for c in settings['lod_chain']):
+            raise RuntimeError('a lod_chain plan is one package and exactly the sources its chain names')
+        jobs = [(by_name[first], next(p for p in plan['portable_sources'] if p.endswith('/src/' + first)),
+                 plan['packages'][0])]
+    elif len(plan['sources']) != len(plan['packages']):
         raise RuntimeError('a V2 import plan pairs each source with one package')
     lod_results = {}
-    for source, portable, package in zip(plan['sources'], plan['portable_sources'], plan['packages']):
+    for source, portable, package in jobs:
         if plan['importer'] == 'static-mesh':
             if source.lower().endswith('.fbx'):
                 options = _fbx_static_mesh(settings)
             elif source.lower().endswith(('.glb', '.gltf')):
-                options = _gltf_static_mesh(package.rsplit('/', 1)[1])
+                options = _gltf_static_mesh(package.rsplit('/', 1)[1],
+                                            collision=settings.get('collision') not in ('boxes', 'none'))
             else:
                 options = None
             # The chain the package had before this import; a new package has none.
@@ -233,6 +325,8 @@ def main():
             finally:
                 if legacy:
                     U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 1')
+            if resolve is not None:
+                _build_lod_chain(asset, settings, resolve)
             _apply_material_slots(asset, plan)
             _apply_mesh_settings(asset, settings)
             after = lod_preservation.preserve(_static_mesh_editor(), asset, before, settings.get('lods'),
