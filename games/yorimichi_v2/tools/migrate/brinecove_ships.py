@@ -419,7 +419,7 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
                                   scopes=info['scopes'])
     except apply.authority.Unauthorized as error:
         raise SplitError(str(error)) from None
-    return apply.execute(game, ops, lockable=lockable)
+    return apply.execute(game, ops, scopes=info['scopes'], lockable=lockable)
 
 
 # --- check -------------------------------------------------------------------------------------------------------------

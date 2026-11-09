@@ -251,3 +251,19 @@ def test_the_command_line_parses():
     with pytest.raises(SystemExit) as done:
         market.main(['--help'])
     assert done.value.code == 0
+
+
+def test_retire_writes_under_the_scopes_it_authorized(monkeypatch, tmp_path):
+    """The shared execute takes the authorized scopes (keyword-only); a retire without them is a TypeError."""
+    import brinecove_split_apply as apply_
+    calls = {}
+    monkeypatch.setattr(market, 'check', lambda *a, **k: [])
+    monkeypatch.setattr(market, 'retire_compute', lambda *a, **k: {'writes': {}, 'deletes': []})
+    monkeypatch.setattr(market, 'retire_touched', lambda *a, **k: {'paths': ['p'], 'scopes': ['region/w09-brinecove']})
+    monkeypatch.setattr(market, 'affected_placements', lambda *a, **k: [])
+    monkeypatch.setattr(apply_.authority, 'authorize', lambda paths, claim, what, scopes: calls.setdefault('auth', scopes))
+    monkeypatch.setattr(apply_, 'execute', lambda game, ops, *, scopes, lockable=None: calls.setdefault('scopes', scopes))
+    for stage in ('groups', 'records'):
+        calls.clear()
+        market.retire(tmp_path, {}, 'TASK', 'market1', stage, echo=lambda *_: None)
+        assert calls['scopes'] == calls['auth'] == ['region/w09-brinecove']

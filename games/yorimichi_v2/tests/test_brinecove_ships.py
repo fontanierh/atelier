@@ -225,3 +225,19 @@ def test_objects_toml_pairs_each_rig_with_its_hull_and_drops_the_shared_hero_ent
     assert 'ships-nightjar-sloop' not in final and final.index('# --- Generated') < len(final)
     claimed = [g for o in tomllib.loads(final)['objects'] for g in ([o['group']] if 'group' in o else o['groups'])]
     assert len(claimed) == len(set(claimed))                                                # every group is listed once
+
+
+def test_run_step_writes_under_the_scopes_it_authorized(monkeypatch, tmp_path):
+    """The shared execute takes the authorized scopes (keyword-only) and the step's lockable test."""
+    calls = {}
+    lockable = object()
+    monkeypatch.setattr(ships.apply.Journal, 'recover', lambda self, claim: [])
+    monkeypatch.setattr(ships, 'compute', lambda *a, **k: {'writes': {}, 'deletes': []})
+    monkeypatch.setattr(ships, 'touched', lambda *a, **k: {'paths': ['p'], 'scopes': ['region/w09-brinecove']})
+    monkeypatch.setattr(ships.apply.authority, 'authorize', lambda paths, claim, what, scopes: calls.setdefault('auth', scopes))
+    monkeypatch.setattr(ships.apply, 'execute',
+                        lambda game, ops, *, scopes, lockable: calls.update(scopes=scopes, lockable=lockable))
+    for retire in (False, True):
+        calls.clear()
+        ships.run_step(tmp_path, {}, 'TASK', retire=retire, lockable=lockable, echo=lambda *_: None)
+        assert calls['scopes'] == calls['auth'] == ['region/w09-brinecove'] and calls['lockable'] is lockable
