@@ -172,14 +172,27 @@ Blocked (unknown). Parent and texture references come from the real package byte
 | `MI_Sky` | `sky-wind` | Prepared | `M_Sky` | none | shared_materials.py build_materials |
 | `MI_Water` | `water` | Prepared | `M_Painted` | `T_water` | shared_materials.py build_materials |
 
-Blocked: `MI_LeafAmber` and `MI_LeafCrimson`. No donor script builds either instance. The treehouse trees
-(`world/regions/treehouse/trees.py`) write their `T_leaf_*` PNGs, and `canopy.py` maps both slots to `LeafMaple`, so
-no committed generator makes these instances. Their origin is unknown. They are not relabelled as editor originals.
+Blocked: `MI_LeafAmber` and `MI_LeafCrimson` are **used**: `assets/prop/japan-kit/tree-canopy-amber/asset.toml` and
+`tree-canopy-crimson/asset.toml` (recipe `slot_map`, line 20) bind their `LeafMaple` slot to them. No donor script found
+builds the instances, so their original is not found. The image inputs are the treehouse generator's
+`T_leaf_amber.png` and `T_leaf_crimson.png` (`world/regions/treehouse/trees.py`, listed above). The status is
+**used; original script not found**. Recovery: a bounded editor read of parent and parameters, then a faithful,
+recorded recipe, compared with the accepted package before adoption. They are not relabelled as editor originals.
 
 Native reads still needed (none run here): (1) an editor read of the 41 Prepared packages against their generators,
 grouped as 32 from `shared_materials.py`, 5 from the other scripts, and 4 Tuscan leaves from `import_forest.py`;
-(2) the texture imports above, compared with the saved parents; (3) for the 2 Blocked packages, the save history of
-the editor session that wrote them. Counts are pinned by `tests/test_japan_materials_sources.py`.
+(2) the texture imports above, compared with the saved parents; (3) for the 2 used packages, a bounded editor read of
+parent and parameters through `unreal/Scripts/report_materials.py`, not run here:
+
+```sh
+V2_EDITOR_READ_ONLY=1 V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/report_materials.py \
+  V2_REPORT_PACKAGES="$(tr '\n' ' ' < $PWD/games/yorimichi_v2/docs/inventory/japan-materials-packages.txt)" \
+  V2_REPORT_OUT=$PWD/build/yorimichi_v2/reports/japan-materials.json \
+  ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run
+```
+
+The output is one JSON row per package (parent, saved overrides, effective parameters); it saves nothing. Then a recipe
+is compared with the accepted package. Counts are pinned by `tests/test_japan_materials_sources.py`.
 
 Brine Cove's source-preservation route at `5f2d21fbd1` is prepared but not applied on main. It is due after town9;
 see [sources.md](sources.md). It fixes preservation of fused originals without changing accepted package bytes.
