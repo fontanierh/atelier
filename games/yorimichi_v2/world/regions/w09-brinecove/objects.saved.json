@@ -101,37 +101,6 @@
         "adopted/brinecove/hero-galleon-hull"
       ]
     },
-    "object/brinecove/galleon-adventure-hull": {
-      "groups": [
-        "SM_BC_Hero_GalleonHull_cell_-1_-1#70",
-        "SM_BC_Hero_GalleonHull_cell_-1_0#71",
-        "SM_BC_Hero_GalleonHull_cell_0_-1#72",
-        "SM_BC_Hero_GalleonHull_cell_0_0#73"
-      ],
-      "id": "object/brinecove/galleon-adventure-hull",
-      "model": "adopted/brinecove/hero-galleon-hull",
-      "models": [
-        "adopted/brinecove/hero-galleon-hull"
-      ]
-    },
-    "object/brinecove/galleon-nightjar": {
-      "groups": [
-        "SM_BC_GalleonNightjar",
-        "SM_BC_Hero_GalleonHull_cell_-1_-1#543",
-        "SM_BC_Hero_GalleonHull_cell_-1_0#544",
-        "SM_BC_Hero_GalleonHull_cell_0_-1#545",
-        "SM_BC_Hero_GalleonHull_cell_0_0#546"
-      ],
-      "id": "object/brinecove/galleon-nightjar",
-      "model": [
-        "prop/brinecove/galleon-nightjar",
-        "adopted/brinecove/hero-galleon-hull"
-      ],
-      "models": [
-        "prop/brinecove/galleon-nightjar",
-        "adopted/brinecove/hero-galleon-hull"
-      ]
-    },
     "object/brinecove/ground-0-0": {
       "groups": [
         "SM_BC_Ground_0_0"
@@ -975,111 +944,6 @@
         "prop/brinecove/market-4-4-piece023",
         "prop/brinecove/market-4-4-piece03",
         "prop/brinecove/market-4-4-soft"
-      ]
-    },
-    "object/brinecove/market-auction-block": {
-      "groups": [
-        "SM_BC_MarketAuctionBlock"
-      ],
-      "id": "object/brinecove/market-auction-block",
-      "model": "prop/brinecove/market-auction-block",
-      "models": [
-        "prop/brinecove/market-auction-block"
-      ]
-    },
-    "object/brinecove/market-stall-01": {
-      "groups": [
-        "SM_BC_MarketStall01"
-      ],
-      "id": "object/brinecove/market-stall-01",
-      "model": "prop/brinecove/market-stall-01",
-      "models": [
-        "prop/brinecove/market-stall-01"
-      ]
-    },
-    "object/brinecove/market-stall-02": {
-      "groups": [
-        "SM_BC_MarketStall02"
-      ],
-      "id": "object/brinecove/market-stall-02",
-      "model": "prop/brinecove/market-stall-02",
-      "models": [
-        "prop/brinecove/market-stall-02"
-      ]
-    },
-    "object/brinecove/market-stall-06": {
-      "groups": [
-        "SM_BC_MarketStall06"
-      ],
-      "id": "object/brinecove/market-stall-06",
-      "model": "prop/brinecove/market-stall-06",
-      "models": [
-        "prop/brinecove/market-stall-06"
-      ]
-    },
-    "object/brinecove/market-stall-07": {
-      "groups": [
-        "SM_BC_MarketStall07"
-      ],
-      "id": "object/brinecove/market-stall-07",
-      "model": "prop/brinecove/market-stall-07",
-      "models": [
-        "prop/brinecove/market-stall-07"
-      ]
-    },
-    "object/brinecove/market-stall-08": {
-      "groups": [
-        "SM_BC_MarketStall08"
-      ],
-      "id": "object/brinecove/market-stall-08",
-      "model": "prop/brinecove/market-stall-08",
-      "models": [
-        "prop/brinecove/market-stall-08"
-      ]
-    },
-    "object/brinecove/market-stall-09": {
-      "groups": [
-        "SM_BC_MarketStall09"
-      ],
-      "id": "object/brinecove/market-stall-09",
-      "model": "prop/brinecove/market-stall-09",
-      "models": [
-        "prop/brinecove/market-stall-09"
-      ]
-    },
-    "object/brinecove/market-well": {
-      "groups": [
-        "SM_BC_MarketWell",
-        "SM_BC_MarketWell_Soft"
-      ],
-      "id": "object/brinecove/market-well",
-      "model": [
-        "prop/brinecove/market-well",
-        "prop/brinecove/market-well-soft"
-      ],
-      "models": [
-        "prop/brinecove/market-well",
-        "prop/brinecove/market-well-soft"
-      ]
-    },
-    "object/brinecove/net-rack-east": {
-      "groups": [
-        "SM_BC_NetRackEast"
-      ],
-      "id": "object/brinecove/net-rack-east",
-      "model": "prop/brinecove/net-rack-east",
-      "models": [
-        "prop/brinecove/net-rack-east"
-      ]
-    },
-    "object/brinecove/net-rack-west": {
-      "groups": [
-        "SM_BC_NetRackWest"
-      ],
-      "id": "object/brinecove/net-rack-west",
-      "model": "prop/brinecove/net-rack-west",
-      "models": [
-        "prop/brinecove/net-rack-west"
       ]
     },
     "object/brinecove/market-auction-block": {
@@ -3142,16 +3006,6 @@
         "prop/brinecove/quay-anchor"
       ]
     },
-    "object/brinecove/quay-anchor": {
-      "groups": [
-        "SM_BC_QuayAnchor"
-      ],
-      "id": "object/brinecove/quay-anchor",
-      "model": "prop/brinecove/quay-anchor",
-      "models": [
-        "prop/brinecove/quay-anchor"
-      ]
-    },
     "object/brinecove/rocks-0-1": {
       "groups": [
         "SM_BC_Rocks_0_1",
@@ -3834,34 +3688,6 @@
         "prop/brinecove/ships-4-2",
         "prop/brinecove/ships-4-3",
         "prop/brinecove/ships-5-3"
-      ]
-    },
-    "object/brinecove/shipyard-yard": {
-      "groups": [
-        "SM_BC_ShipyardYard"
-      ],
-      "id": "object/brinecove/shipyard-yard",
-      "model": "prop/brinecove/shipyard-yard",
-      "models": [
-        "prop/brinecove/shipyard-yard"
-      ]
-    },
-    "object/brinecove/sloop-east": {
-      "groups": [
-        "SM_BC_SloopEast",
-        "SM_BC_Hero_GalleonHull_cell_-1_-1#547",
-        "SM_BC_Hero_GalleonHull_cell_-1_0#548",
-        "SM_BC_Hero_GalleonHull_cell_0_-1#549",
-        "SM_BC_Hero_GalleonHull_cell_0_0#550"
-      ],
-      "id": "object/brinecove/sloop-east",
-      "model": [
-        "prop/brinecove/sloop-east",
-        "adopted/brinecove/hero-galleon-hull"
-      ],
-      "models": [
-        "prop/brinecove/sloop-east",
-        "adopted/brinecove/hero-galleon-hull"
       ]
     },
     "object/brinecove/shipyard-yard": {

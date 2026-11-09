@@ -642,7 +642,7 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
     if stage == 'groups':
         echo('placements to delete (actor and record) and save again with migrate/objects.py: ' +
              ', '.join(affected_placements(game, plan)))
-    return apply_.execute(game, ops)
+    return apply_.execute(game, ops, scopes=info['scopes'])
 
 
 def selection(batch: str, only: str | None) -> list[str]:
