@@ -239,3 +239,77 @@ def test_a_donor_tile_nothing_was_cut_from_is_untouched(tmp_path, monkeypatch):
     result = sources.convert(tmp_path / 'game', RID, {carve.sha256(original)})
     assert result['status'] == 'untouched' and result['writes'] == {}
     assert 'derive' not in (folder / 'asset.toml').read_text()
+
+
+def expectation(game: Path, committed: bytes) -> None:
+    """A split expectation on the tree that lists the record's committed remainder."""
+    region = game / 'world' / 'regions' / 'w09-brinecove'
+    region.mkdir(parents=True, exist_ok=True)
+    (region / 'split-batch1.json').write_text(json.dumps({'tiles': {'Test': {
+        'record': RID, 'remainder': {'sha256': carve.sha256(committed), 'triangles': 3}}}}))
+
+
+def test_tampered_original_is_refused_by_its_first_pin(tmp_path, monkeypatch):
+    original = original_bytes()
+    tampered = original.replace(b'\x00\x00\x80\x3f', b'\x00\x00\x00\x40', 1)    # one coordinate changed
+    assert tampered != original
+
+    def fake_git(*args):
+        if args[0] == 'show' and args[1].endswith('asset.toml'):
+            return f'[[sources]]\npath = "src/{NAME}"\nsha256 = "{carve.sha256(original)}"\n'.encode()
+        if args[0] == 'show':
+            return tampered
+        return b'abc123\n'
+    monkeypatch.setattr(sources, 'git', fake_git)
+    with pytest.raises(sources.ConvertError, match='does not match its pin'):
+        sources.original_of(f'games/yorimichi_v2/assets/{RID}', 'abc123')
+    monkeypatch.setattr(sources.apply.authority, 'authorize', lambda *a, **k: None)
+    game = tmp_path / 'game'
+    legacy_folder(game, committed_remainder())
+    result = sources.convert(game, RID, {carve.sha256(committed_remainder())})
+    assert result['status'] == 'refused' and 'does not match its pin' in result['why']
+
+
+def test_interrupted_conversion_is_recovered_then_converted(tmp_path, monkeypatch):
+    original = original_bytes()
+    committed = committed_remainder()
+    monkeypatch.setattr(sources, 'git', lambda *args: b'abc123\n')
+    monkeypatch.setattr(sources, 'original_of', lambda rel, commit: (NAME, carve.sha256(original), original))
+    monkeypatch.setattr(sources.apply.authority, 'authorize', lambda *a, **k: None)
+    game = tmp_path / 'game'
+    folder = legacy_folder(game, committed)
+    expectation(game, committed)
+    legacy_text = (folder / 'asset.toml').read_text()
+    # an earlier run was interrupted after its journal began: the record holds a partly converted file
+    apply_journal = sources.apply.Journal(game)
+    apply_journal.begin([f'assets/{RID}/asset.toml'], scopes=[[f'asset/{RID}', 'shared/test/carved']])
+    (folder / 'asset.toml').write_text('partly converted, not a record')
+    restored, results, written = sources.claimed(game, 'T')
+    assert restored == [f'assets/{RID}/asset.toml'] and written == 3
+    assert results[0]['status'] == 'converted'
+    assert not apply_journal.dir.exists()                                 # the retry closed its own journal
+    new = records.load_asset(folder / 'asset.toml')
+    assert new.derive is not None and carve.derive(folder, new.derive) == committed
+    assert legacy_text != (folder / 'asset.toml').read_text()
+
+
+def test_retry_without_a_valid_claim_refuses_and_keeps_the_journal(tmp_path, monkeypatch):
+    original = original_bytes()
+    committed = committed_remainder()
+    monkeypatch.setattr(sources, 'git', lambda *args: b'abc123\n')
+    monkeypatch.setattr(sources, 'original_of', lambda rel, commit: (NAME, carve.sha256(original), original))
+
+    def refuse(*args, **kwargs):
+        raise sources.apply.authority.Unauthorized('no valid claim')
+    monkeypatch.setattr(sources.apply.authority, 'authorize', refuse)
+    game = tmp_path / 'game'
+    folder = legacy_folder(game, committed)
+    expectation(game, committed)
+    journal = sources.apply.Journal(game)
+    journal.begin([f'assets/{RID}/asset.toml'], scopes=[[f'asset/{RID}', 'shared/test/carved']])
+    (folder / 'asset.toml').write_text('partly converted, not a record')
+    with pytest.raises(sources.apply.SplitError):
+        sources.claimed(game, 'WRONG')
+    assert journal.manifest.is_file()                                     # the journal survives the refusal
+    assert (folder / 'asset.toml').read_text() == 'partly converted, not a record'
+    assert journal.dir.joinpath('before', f'assets/{RID}/asset.toml').is_file()

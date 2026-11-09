@@ -76,6 +76,9 @@ def original_of(asset_dir_rel: str, commit: str) -> tuple[str, str, bytes]:
         if not store.is_file():
             raise ConvertError(f'the original {oid[:12]} is not in the local LFS store (git lfs pull --include it)')
         raw = store.read_bytes()
+    if carve.sha256(raw) != source['sha256']:                           # the removed geometry is only in these bytes
+        raise ConvertError(f'the first pinned original {source["path"]} at {commit[:10]} does not match its pin: '
+                           f'the bytes are {carve.sha256(raw)[:12]}, the pin {source["sha256"][:12]}')
     return Path(source['path']).name, source['sha256'], raw
 
 
@@ -200,6 +203,14 @@ def write(game: Path, results: list[dict], claim: str) -> int:
     return len(done['written'])
 
 
+def claimed(game: Path, claim: str) -> tuple[list[str], list[dict], int]:
+    """The mutating run. An interrupted earlier run's journal is recovered first, under this claim, before anything is
+    read or planned: a refused recovery raises SplitError with the journal and its partial files intact."""
+    restored = apply.Journal(game).recover(claim)
+    results = [convert(game, rid, info['shas']) for rid, info in sorted(carved_records(game).items())]
+    return restored, results, write(game, results, claim)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--check', action='store_true', help='prove each record and write nothing (the default)')
@@ -208,7 +219,16 @@ def main(argv=None) -> int:
     if args.check and args.claim:
         parser.error('use --check or --claim, not both')
     game = GAME
-    results = [convert(game, rid, info['shas']) for rid, info in sorted(carved_records(game).items())]
+    if args.claim:
+        try:
+            restored, results, written = claimed(game, args.claim)
+        except (apply.authority.Unauthorized, apply.SplitError, OSError) as error:
+            print(f'conversion refused (any interrupted journal is kept): {error}', file=sys.stderr)
+            return 1
+        if restored:
+            print(f'restored {len(restored)} file(s) from an interrupted conversion')
+    else:
+        results = [convert(game, rid, info['shas']) for rid, info in sorted(carved_records(game).items())]
     for r in results:
         if r['status'] in ('done', 'untouched') and not r['why']:
             continue
@@ -217,11 +237,7 @@ def main(argv=None) -> int:
     print(f'tile records listed by a split: {len(results)}; carved and reproduce byte-identically: {counts["converted"]}; '
           f'refused: {counts["refused"]}; already in the derived form: {counts["done"]}; untouched: {counts["untouched"]}')
     if args.claim:
-        try:
-            print(f'wrote {write(game, results, args.claim)} file(s)')
-        except (apply.authority.Unauthorized, apply.SplitError, OSError) as error:
-            print(f'write refused: {error}', file=sys.stderr)
-            return 1
+        print(f'wrote {written} file(s)')
     return 1 if counts['refused'] else 0
 
 
