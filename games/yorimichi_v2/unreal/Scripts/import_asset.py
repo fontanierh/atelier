@@ -270,12 +270,22 @@ def _build_lod_chain(asset, settings, resolve):
     if asset.get_num_lods() > 1:
         editor.remove_lods(asset)
     bind(asset, chain[0][3])
+    transient = []
     for level, (source, _, _, sections) in enumerate(chain[1:], 1):
         name = f'{asset.get_name()}_LOD{level}'
         lod = _import(resolve(source), f'{TRANSIENT}/{name}', _gltf_static_mesh(name, collision=False))
+        transient.append(lod.get_outermost())
         bind(lod, sections)
         if editor.set_lod_from_static_mesh(asset, level, lod, 0, True) != level:
             raise RuntimeError(f'{asset.get_path_name()}: LOD{level} from {source} was not attached')
+    # The attached levels are copies: unload the transient meshes, so a batch session ends the job with no dirty package.
+    lod = None
+    if transient:
+        U.PackageTools.unload_packages(transient)
+    left = [p.get_name() for p in U.EditorLoadingAndSavingUtils.get_dirty_content_packages()
+            if p.get_name().startswith(TRANSIENT)]
+    if left:
+        raise RuntimeError(f'{asset.get_path_name()}: transient LOD packages {left} are still loaded')
     if len(chain) > 1:
         editor.set_lod_screen_sizes(asset, [screen for _, screen, _, _ in chain])
     got = [[str(m.get_editor_property('imported_material_slot_name')), _material_path(m)]
