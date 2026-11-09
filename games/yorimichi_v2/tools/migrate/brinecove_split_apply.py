@@ -114,10 +114,10 @@ def slot_of(tiles: dict, stems: list[str], material: str) -> str:
     return found.pop()
 
 
-def build(game: Path, donor: Path, stage: Path, objects: dict | None = None) -> dict:
+def build(game: Path, donor: Path, stage: Path, objects: dict | None = None, assigner=None) -> dict:
     """Split the donor tiles into the stage folder and return the whole plan (pure data, nothing in the game changes)."""
     glb_dir = donor / 'brinecove' / 'glb'
-    done = split.compute(glb_dir, objects)
+    done = split.compute(glb_dir, objects, assigner)
     if done['problems']:
         raise SplitError('the partition does not hold: ' + '; '.join(done['problems'][:3]))
     objects = objects or split.OBJECTS
