@@ -6,7 +6,8 @@
   the file; `scan` finds it in the donor checkout by its repository-relative tail and accepts it only with that MD5.
 - keyed: the donor's skate clip importer (games/yorimichi/unreal/Scripts/skate_ride/import_clips.py) keyed
   /Game/SkateRide/Clips/B<bank>/<CLIP> from the simulation bundle's clip file, rig and bank metadata, with no import
-  record; the clip must be in the donor's import state, whose fingerprint covers every bundle file (`donor_state`).
+  record; the clip must be in the donor's import state, whose fingerprint covers every bundle file and the importer's
+  code (`donor_state`). The clip links that data and the importer's code (CLIP_CODE), so it can be keyed again.
 - embedded: a texture with no source file of its own, made by its character's mesh import; it links that folder's
   imported skeletal-mesh originals.
 - authored: no import record and an editor-made class (material, Blueprint, blend space, data asset, ...), from the
@@ -46,6 +47,11 @@ TAIL = re.compile(r'(?:^|/)((?:build|games|source)/)')
 CLIP = re.compile(r'^SkateRide/Clips/B(\d+)/([^/]+)\.uasset$')
 BUNDLE = 'build/yorimichi/skate-simulation/package'
 CLIP_STATE = 'build/yorimichi/skate-ride/import-state.json'
+# The clip importer's code, also part of the donor fingerprint (import_clips.py fingerprint()), and the build-folder
+# helper it runs: a keyed clip's reconstruction source beside its data.
+CLIP_CODE = ['games/yorimichi/unreal/Scripts/skate_ride/import_clips.py',
+             'games/yorimichi/unreal/Scripts/skate_ride/simulation.py',
+             'games/yorimichi/unreal/Scripts/skate_ride/rider_mesh.py', 'games/yorimichi/world/yori.py']
 IMPORTED_CLASSES = {'AnimSequence', 'SoundWave', 'StaticMesh', 'SkeletalMesh', 'Texture2D'}
 AUTHORED_CLASSES = {'Material', 'MaterialInstanceConstant', 'MaterialFunction', 'Blueprint', 'AnimBlueprint',
                     'BlendSpace', 'BlendSpace1D', 'AnimMontage', 'Skeleton', 'PhysicsAsset', 'SoundAttenuation',
@@ -125,7 +131,7 @@ def scan(game: Path, donor: Path, classes: dict[str, str], content: Path | None 
         if clip and kind == 'AnimSequence':
             bank, name = clip.groups()
             files = [f'{BUNDLE}/animation/clips/{bank}/{name}.skate', f'{BUNDLE}/animation/rig.skate',
-                     f'{BUNDLE}/metadata/bank-{bank}.skate']
+                     f'{BUNDLE}/metadata/bank-{bank}.skate', *CLIP_CODE]
             if package not in clip_assets or not all((donor / f).is_file() for f in files):
                 problems.append(f'{rel}: a skate clip the donor import state or bundle does not hold')
                 continue
@@ -178,6 +184,8 @@ def check(game: Path) -> list[str]:
                 problems.append(f'{rel}: authored, but {entry.get("class")} is not an editor-made class')
         elif not entry.get('originals'):
             problems.append(f'{rel}: {route} with no original')
+        elif route == 'keyed' and not set(CLIP_CODE) <= set(entry['originals']):
+            problems.append(f'{rel}: keyed without the importer code it was keyed by')
         for original in entry.get('originals', []):
             used.add(original)
             if original not in originals:
