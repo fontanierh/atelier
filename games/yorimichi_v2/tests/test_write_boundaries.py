@@ -3,7 +3,9 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -78,6 +80,77 @@ def test_a_directly_selected_import_rechecks_its_plan(tmp_path, monkeypatch, wri
     plan.write_text(json.dumps(good))
     with pytest.raises(authority.Unauthorized, match='not the bootstrap writer'):
         recipe._authorize_import(None, io.StringIO())
+
+
+def settle(game):
+    """Date every file a minute back: a record written just now is never kept (authority.SETTLED_NS)."""
+    past = time.time_ns() - 60 * 10**9
+    for path in game.rglob('*'):
+        os.utime(path, ns=(past, past))
+
+
+@pytest.fixture
+def batch(tmp_path, monkeypatch, writer):
+    """A batch of import jobs on the bench record, under claim T3 holding its owner scope, counting discoveries."""
+    game = tmp_path / 'game'
+    bench_record(game)
+    settle(game)
+    monkeypatch.setattr(recipe, 'GAME', game)
+    monkeypatch.setattr(authority, '_RECORDS', [])
+    import records
+    reads = []
+    real = records.discover
+    monkeypatch.setattr(records, 'discover', lambda g: reads.append(g) or real(g))
+    fake = FakeClaims(scopes=['region/w04-skatepark'])
+    monkeypatch.setattr(authority.subprocess, 'run', fake)
+    plan = tmp_path / 'plan.json'
+    plan.write_text(json.dumps({'asset': 'prop/bench', 'importer': 'static-mesh', 'version': 1, 'claim': 'T3',
+                                'packages': ['/Game/Props/SM_Bench'], 'write_paths': []}))
+    monkeypatch.setenv('V2_IMPORT_PLAN', str(plan))
+    return type('Batch', (), {'game': game, 'reads': reads, 'claims': fake, 'allow': tmp_path / 'save-allow.txt',
+                              'job': staticmethod(lambda: recipe._authorize_import(None, io.StringIO()))})
+
+
+def test_a_batch_reads_the_records_once_and_still_checks_every_job(batch):
+    batch.job()
+    batch.allow.unlink()
+    batch.job()
+    assert len(batch.reads) == 1                        # the second job reuses the first job's reading
+    assert len(batch.claims.checks) == 2 and batch.allow.is_file()   # the live claim check and save list: every job
+
+
+def test_a_record_changed_between_jobs_is_read_again_and_enforced(batch):
+    batch.job()
+    record = batch.game / 'assets/props/bench/asset.toml'
+    text = record.read_text()
+    record.write_text(text.replace('region/w04-skatepark', 'region/w05-skatepark'))   # same size, new owner
+    with pytest.raises(authority.Unauthorized, match='no active scope covering asset/prop/bench or region/w05-skatepark'):
+        batch.job()
+    assert len(batch.reads) == 2
+    record.write_text(text)
+    batch.job()
+    batch.job()
+    assert len(batch.reads) == 4                        # a just-written record is read again, never kept
+
+
+def test_a_destination_newly_owned_by_another_record_is_refused(batch):
+    batch.job()
+    other = batch.game / 'assets/props/thief'
+    other.mkdir()
+    (other / 'asset.toml').write_text('schema = 1\nid = "prop/thief"\nkind = "static-mesh"\nauthority = "editor"\n'
+                                      'owner = "region/w09-docks"\n[[outputs]]\npackage = "/Game/Props/SM_Bench"\n')
+    with pytest.raises(RuntimeError, match='destination is owned by .*asset/prop/thief'):
+        batch.job()
+    shutil.rmtree(other)
+    batch.job()
+    region = batch.game / 'world/regions/w09-docks'
+    region.mkdir(parents=True)
+    (region / 'region.toml').write_text('schema = 1\nid = "region/w09-docks"\nbounds_cm = [0, 0, 1, 1]\nmaps = []\n')
+    (region / 'actors.verified.json').write_text(json.dumps({
+        'schema': 1, 'kind': 'editor-saved', 'engine': 'test',
+        'files': {'unreal/Content/Props/SM_Bench.uexp': '0' * 64}}))   # an actor package's companions are its region's
+    with pytest.raises(RuntimeError, match=r"destination is owned by \['region/w09-docks'\]"):
+        batch.job()
 
 
 def test_migration_is_bootstrap_only(monkeypatch, writer):

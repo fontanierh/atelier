@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import tomllib
 from dataclasses import dataclass, field
@@ -444,6 +445,37 @@ def record_paths(game: Path) -> list[Path]:
     paths = sorted((game / 'assets').glob('**/asset.toml'))
     folders = {p.parent for p in paths}
     return [p for p in paths if not any(parent in folders for parent in p.parent.parents)]
+
+
+def record_files(game: Path) -> list[tuple]:
+    """(game-relative path, size, mtime_ns, ctime_ns, inode) of every file discover() and region ownership read: each
+    asset.toml under assets/ (a nested one too, which record_paths filters), each region.toml and actors.verified.json.
+    A cheap stamp of the records (stat only, no parsing): writing, creating, deleting or moving any of them changes it."""
+    root = str(game) + os.sep
+    found = []
+    stack = [str(game / 'assets')]
+    while stack:
+        try:
+            entries = list(os.scandir(stack.pop()))
+        except FileNotFoundError:
+            continue
+        for entry in entries:
+            if entry.is_dir(follow_symlinks=False):   # as glob('**') walks: symlinked folders are not entered
+                stack.append(entry.path)
+            elif entry.name == 'asset.toml':
+                found.append(entry.path)
+    regions = game / 'world' / 'regions'
+    if regions.is_dir():
+        found += [str(folder / name) for folder in regions.iterdir() for name in ('region.toml', 'actors.verified.json')]
+    stamps = []
+    for path in found:
+        try:
+            st = os.stat(path)
+        except (FileNotFoundError, NotADirectoryError):   # absent (or deleted since the listing), as discover() finds it
+            continue
+        stamps.append((path.removeprefix(root).replace(os.sep, '/'), st.st_size, st.st_mtime_ns, st.st_ctime_ns,
+                       st.st_ino))
+    return sorted(stamps)
 
 
 def discover(game: Path) -> tuple[list[Asset], list[Region]]:
