@@ -351,3 +351,70 @@ package = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt"
     assert (arcade.settings['collision'], arcade.settings['hulls']) == ('simple_and_complex', 2)
     assert any('HD_Sea' in u for u in plan.unmapped_outputs)
     assert plan.kept['adopted/experiments/citysurfaces/v1-128m/street'] == []
+
+
+def test_train_vehicles_recover_their_lod_chain_slots_and_boxes(tmp_path, monkeypatch):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    root = '/Game/BelmonteTrain'
+    mat0, mat1 = f'{root}/Source/SM_BT_Tender/LOD0/M_BT_Brass', f'{root}/Source/SM_BT_Tender/LOD1/M_BT_Brass'
+    record(game, 'adopted/belmontetrain/tender', f'''schema = 1
+id = "adopted/belmontetrain/tender"
+kind = "adopted"
+authority = "editor"
+owner = "shared/belmontetrain/tender"
+provenance = "test"
+license = "test"
+
+[[outputs]]
+package = "{root}/SM_BT_Tender"
+
+[[outputs]]
+package = "{root}/Doors/SM_BTD_Tender_side_l"
+
+[[outputs]]
+package = "{mat0}"
+
+[[outputs]]
+package = "{mat1}"
+''')
+    glb = {'service/glb/SM_BT_Tender_LOD0.glb': b'lod0', 'tender/SM_BT_Tender_LOD1.glb': b'lod1',
+           'service/glb/doors/SM_BTD_Tender_side_l.glb': b'door'}
+    for rel, data in glb.items():
+        write(donor / rel, data)
+    box = [-10.0, -5.0, 0.0, 10.0, 5.0, 4.0]
+    leaf = {'mesh': f'{root}/Doors/SM_BTD_Tender_side_l.SM_BTD_Tender_side_l',
+            'glb': 'service/glb/doors/SM_BTD_Tender_side_l.glb'}
+    vehicle = {'name': 'SM_BT_Tender', 'mesh': f'{root}/SM_BT_Tender.SM_BT_Tender', 'collision': [box],
+               'levels': ['service/glb/SM_BT_Tender_LOD0.glb', 'tender/SM_BT_Tender_LOD1.glb'],
+               'doors': [{'leaves': [leaf, {'mesh': 'unmodelled'}]}]}
+    write(donor / 'service/service.json', json.dumps({'consist': {'vehicles': [vehicle]}, 'furniture': {}}))
+    write(donor / 'service/import-report.json', json.dumps({'vehicles': {'SM_BT_Tender': {'sources': {
+        'SM_BT_Tender_LOD0.glb': sha(b'lod0'), 'SM_BT_Tender_LOD1.glb': sha(b'lod1')}}}}))
+    saved = {f'{root}/SM_BT_Tender': {'slots': [['M_BT_Brass', mat0], ['M_BT_Brass_2', mat1]],
+                                      'lods': [[1.0, 12, [0]], [0.6, 4, [1]]], 'boxes': [[0, 0, 2, 20, 10, 4]]},
+             f'{root}/Doors/SM_BTD_Tender_side_l': {'slots': [['M_BT_Brass', mat1]], 'lods': [[2.0, 2, [0]]],
+                                                    'boxes': []}}
+    monkeypatch.setattr(recover, 'TRAIN_SAVED', write(tmp_path / 'saved.json', json.dumps({'meshes': saved})))
+    plan = recover.build_plan(game, 'belmontetrain', donor)
+    tender, door = sorted(plan.generated, key=lambda g: g.id)
+    assert (tender.id, door.id) == ('prop/belmontetrain/tender', 'prop/belmontetrain/tender-door-side-l')
+    assert tender.owner == door.owner == 'shared/belmontetrain/tender'
+    # The chain names each level's own source, so the LOD order is in the recipe (and its fingerprint).
+    assert tender.settings == {'lod_chain': [['src/SM_BT_Tender_LOD0.glb', 1.0, 12, [0]],
+                                             ['src/SM_BT_Tender_LOD1.glb', 0.6, 4, [1]]],
+                               'slots': saved[f'{root}/SM_BT_Tender']['slots'], 'collision': 'boxes', 'boxes': [box]}
+    assert door.settings['boxes'] == [] and door.references == ['adopted/belmontetrain/tender']
+    assert plan.kept['adopted/belmontetrain/tender'] == [mat0, mat1]
+    recover.apply(game, plan, donor)
+    asset = records.load_asset(game / 'assets/prop/belmontetrain/tender/asset.toml')
+    assert [s.path for s in asset.sources] == ['src/SM_BT_Tender_LOD0.glb', 'src/SM_BT_Tender_LOD1.glb']
+    assert asset.recipe['settings']['lod_chain'][1] == ['src/SM_BT_Tender_LOD1.glb', 0.6, 4, [1]]
+    assert asset.recipe['settings']['boxes'] == [box]
+    assert (game / 'assets/prop/belmontetrain/tender/src/SM_BT_Tender_LOD1.glb').read_bytes() == b'lod1'
+    again = recover.apply(game, recover.build_plan(game, 'belmontetrain', donor), donor)
+    assert again['created'] == [] and again['shrunk'] == []
+    # A donor box that is not the saved one stops the plan: the recipe would move the collision.
+    vehicle['collision'] = [[-10.0, -5.0, 0.0, 10.0, 5.0, 9.0]]
+    write(donor / 'service/service.json', json.dumps({'consist': {'vehicles': [vehicle]}, 'furniture': {}}))
+    with pytest.raises(recover.RecoverError, match='collision boxes'):
+        recover.build_plan(game, 'belmontetrain', donor)
