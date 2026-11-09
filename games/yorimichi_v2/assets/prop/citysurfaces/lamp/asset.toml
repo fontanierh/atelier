@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Lamp: one city surface piece of HD_Lamp (264 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/lamp"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/lamp"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_Lamp.fbx"
+sha256 = "147510908770aa774765f6348aa212bb00c8158ea781ad56ba51ddaada205a90"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 264
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Lamp"

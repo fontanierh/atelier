@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Terrain_cell_5_0_Piece0: one city surface piece of HD_Terrain (10300 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/terrain-cell-5-0-piece0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/terrain-cell-5-0-piece0"
+references = ["adopted/japan/hidamari/surface-asphalt"]
+
+[[sources]]
+path = "src/HD_Terrain_cell_5_0_Piece0.fbx"
+sha256 = "b4ef7bccd63449dc0a93b719418667fe127366deb82d96db4b02258e24d8ee1f"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_asphalt"]
+triangles = 10300
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Terrain_cell_5_0_Piece0"

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Planter: one city surface piece of HD_Planter (552 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/planter"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/planter"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_Planter.fbx"
+sha256 = "dc60e54def0b9ec7dff2a329c90a5711d9ea89477206a06b62d40eb9be3ef875"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 552
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Planter"

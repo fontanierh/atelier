@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Harbor_cell_3_-2: one city surface piece of HD_Harbor (14228 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/harbor-cell-3-m2"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/harbor-cell-3-m2"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_Harbor_cell_3_-2.fbx"
+sha256 = "d5154ef2ddadc2702b70c403ae390f428a832f0022f1d7ad359e7fcce992c905"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Harbor"]
+triangles = 14228
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_3_-2"

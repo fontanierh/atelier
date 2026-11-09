@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Streets_cell_4_2: one city surface piece of HD_Streets (12326 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/streets-cell-4-2"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/streets-cell-4-2"
+references = ["adopted/japan/hidamari/surface-asphalt"]
+
+[[sources]]
+path = "src/HD_Streets_cell_4_2.fbx"
+sha256 = "4200c93be899177b998ecb27d284c0ab5d993e66b5deab5a7065f1bb40878bbe"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_asphalt"]
+triangles = 12326
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Streets_cell_4_2"

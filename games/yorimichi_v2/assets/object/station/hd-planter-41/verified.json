@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-planter-41",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/planter": "ead738866b4de59621da50d34cd1b34863f459acd1437bf69072eac25f52880c"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/LT/SW0VKWIH0GAWCKBHJ4J6MS.uasset": "7b4e3a69e78ab0e0691288ab6aec4a18ba711250bc20159f53c6e25bad7c588e"

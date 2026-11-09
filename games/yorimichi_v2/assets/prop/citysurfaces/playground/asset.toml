@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Playground: one city surface piece of HD_Playground (132 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/playground"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/playground"
+references = ["adopted/japan/hidamari/surface-metal"]
+
+[[sources]]
+path = "src/HD_Playground.fbx"
+sha256 = "9b7e334cf116eb18162b2b505ce831b6822bbf1b8dde67c0e83e6a6ff7c76db7"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_metal"]
+triangles = 132
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Playground"

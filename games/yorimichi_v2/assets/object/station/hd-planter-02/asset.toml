@@ -6,7 +6,7 @@ id = "object/station/hd-planter-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/experiments/citysurfaces/v1-128m/planter"]
+references = ["prop/citysurfaces/planter"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/A/LO/98WUX4W59FRHQL2X0X74GO"

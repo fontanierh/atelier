@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_HD_Mound: one city surface piece of Bush_HD_Mound (4966 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/bush-hd-mound"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/bush-hd-mound"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Bush_HD_Mound.fbx"
+sha256 = "4672563151a120ab875ce0d1e2ff91e5636d692f6ac618ba1be8250fea6cac7a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 4966
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Mound"

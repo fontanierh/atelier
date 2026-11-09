@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_ArcadeLanterns: one city surface piece of HD_ArcadeLanterns (23786 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/arcade-lanterns"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/arcade-lanterns"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_ArcadeLanterns.fbx"
+sha256 = "491c9408f43cb23f627938900ac78fa854504f7342522c52ba4817b74f36f4ab"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Arcade"]
+triangles = 23786
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeLanterns"

@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-bollard-17",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/bollard": "cd6a7a2e6046c2120ef2838b8e68b6b96320103959c7ec81b1c7f096582db44f"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/MQ/8AEQNUABEENVP3WCM3CUGR.uasset": "ad9e45c8e7ad51e049cfd2f5ff2064b46f6d787f4f6c0a3e0465b82bc600977b"

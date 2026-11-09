@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_PlazaShopSides: one city surface piece of HD_PlazaShopSides (4802 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/plaza-shop-sides"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/plaza-shop-sides"
+references = ["adopted/japan/hidamari/surface-flat"]
+
+[[sources]]
+path = "src/HD_PlazaShopSides.fbx"
+sha256 = "fa458a41981eacdb330edf923a6d761d29923889ab5ba99c950c5468447e2ee9"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_flat"]
+triangles = 4802
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaShopSides"

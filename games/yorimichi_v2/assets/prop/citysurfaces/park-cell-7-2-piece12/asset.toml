@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_Park_cell_7_2_Piece12: one city surface piece of HD_Park (6267 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/park-cell-7-2-piece12"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/park-cell-7-2-piece12"
+references = ["adopted/japan/hidamari/surface-earth"]
+
+[[sources]]
+path = "src/HD_Park_cell_7_2_Piece12.fbx"
+sha256 = "d6f1c994b2804c438c6b206cf09041b94c553412726fd683b817c22b1c1610fc"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_earth"]
+triangles = 6267
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Park_cell_7_2_Piece12"

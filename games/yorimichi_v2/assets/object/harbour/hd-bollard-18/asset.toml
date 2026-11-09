@@ -6,7 +6,7 @@ id = "object/harbour/hd-bollard-18"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/experiments/citysurfaces/v1-128m/bollard"]
+references = ["prop/citysurfaces/bollard"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/RW/117LCQV2KWS7TNSV63IRE8"

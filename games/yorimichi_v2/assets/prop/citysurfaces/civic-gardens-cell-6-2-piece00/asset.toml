@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_CivicGardens_cell_6_2_Piece00: one city surface piece of HD_CivicGardens (18343 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/civic-gardens-cell-6-2-piece00"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/civic-gardens-cell-6-2-piece00"
+references = ["adopted/japan/hidamari/surface-earth"]
+
+[[sources]]
+path = "src/HD_CivicGardens_cell_6_2_Piece00.fbx"
+sha256 = "727340e22e9c3f1e888ecf3e81e35e4dbca1f8773dadeabd74d20e4944044c74"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_earth"]
+triangles = 18343
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_6_2_Piece00"

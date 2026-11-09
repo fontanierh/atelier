@@ -6,7 +6,7 @@ id = "object/harbour/hd-planter-56"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/experiments/citysurfaces/v1-128m/planter"]
+references = ["prop/citysurfaces/planter"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/1/BM/LAMJAQC6RVR6FFVHQ86PTX"
