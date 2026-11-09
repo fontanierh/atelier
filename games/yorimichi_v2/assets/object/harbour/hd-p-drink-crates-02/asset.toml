@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-drink-crates-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-drink-crates"]
+references = ["prop/hidamari-props/drink-crates"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/D/7L/9LKF05H99MG5MFYTBO6NF4"

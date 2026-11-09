@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_postbox: a street prop (11447 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/postbox"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/postbox"
+references = ["adopted/japan/hidamari/prop-postbox"]
+
+[[sources]]
+path = "src/HD_P_postbox.fbx"
+sha256 = "fdf0a592f6dfaddc3458641d46eb3e8469b41fe448eef1fb08aacb3b24c3e096"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_postbox"]
+triangles = 11447
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_postbox"

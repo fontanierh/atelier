@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_CampBales: one Sword Camp mesh (4476 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/swordcamp/camp-bales"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/swordcamp/camp-bales"
+references = ["adopted/swordcamp/materials"]
+
+[[sources]]
+path = "src/SM_CampBales.fbx"
+sha256 = "9852e4850ce86433077f2d747f73f7162a6e9a980f8d725bda0c59911651fc31"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/SwordCamp/Materials/M_SwordCamp"]
+triangles = 4476
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_CampBales"

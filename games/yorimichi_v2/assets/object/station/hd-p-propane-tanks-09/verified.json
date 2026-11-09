@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-propane-tanks-09",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-propane-tanks": "9f8614cfd4ff9a968b7780446f6ff0723e50a8e56e035ee9b700ae240e5778b1"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/AT/KU6R422O52XNQWG1KMR1FI.uasset": "e75ab73a204730e37a4d595ebecdbc9c54aae226d97ebb3963600ba90a471872"

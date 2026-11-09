@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_Trail: a zeppelin piece (1336 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/trail"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/trail"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_Trail.fbx"
+sha256 = "ab4dbc649404f298e2dee488bc1178a51b918dec6eac42f1d9a9b41b87e3f50e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 1336
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_Trail"

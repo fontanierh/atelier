@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-basalt-normal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_basalt_normal.uasset": "a1c2d625d9191b81e61f6617390f36ae0340799dff5274ec4ba5feb0e0f231a0"
+  },
+  "input_fingerprint": "6e27c65c39efa9456551d8378d71b5efa00bd763386e352e7dbd58aba4939d7a",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

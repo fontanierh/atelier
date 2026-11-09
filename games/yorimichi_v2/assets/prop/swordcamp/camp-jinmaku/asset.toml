@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_CampJinmaku: one Sword Camp mesh (5984 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/swordcamp/camp-jinmaku"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/swordcamp/camp-jinmaku"
+references = ["adopted/swordcamp/materials"]
+
+[[sources]]
+path = "src/SM_CampJinmaku.fbx"
+sha256 = "6171f221141594af9d4331defa95c9e80ff55cf2772c770fba5839bf2f6d492c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/SwordCamp/Materials/M_SwordCamp"]
+triangles = 5984
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_CampJinmaku"

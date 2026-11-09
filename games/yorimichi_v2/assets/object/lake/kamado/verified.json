@@ -1,8 +1,6 @@
 {
   "asset": "object/lake/kamado",
-  "dependencies": {
-    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/3X/772N3K1VDHJAJ0LS6L5VPX.uasset": "108596539ac9bc330b6ddfa8b7dbc2a5634c4e954a135a79fc79d9043fa0df4a"

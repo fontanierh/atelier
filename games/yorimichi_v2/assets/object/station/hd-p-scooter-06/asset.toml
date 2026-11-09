@@ -6,7 +6,7 @@ id = "object/station/hd-p-scooter-06"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-scooter"]
+references = ["prop/hidamari-props/scooter"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/8/8Z/GLK44PHNKU2WNKAH7E07II"

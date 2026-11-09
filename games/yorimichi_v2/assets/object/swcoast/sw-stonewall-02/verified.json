@@ -1,8 +1,6 @@
 {
   "asset": "object/swcoast/sw-stonewall-02",
-  "dependencies": {
-    "adopted/japan/southwest": "fd3beba528c6b7c78db6c6a020ea3cdc114d50268e5b1cf422f53b08aa088840"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/ND/SF5PVVB2LS0TF2HS65SIFU.uasset": "bbb0c9b7d2f0a363e114d8488fe90c9f5da19569c9aa095bcde0f24645b5ae57"

@@ -1,0 +1,21 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_white: a world texture (donor T_white.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/japan/white"
+kind = "texture"
+authority = "generated"
+owner = "shared/japan/white"
+
+[[sources]]
+path = "src/T_white.png"
+sha256 = "b68de61392c506377e0d673fa36e239a47b67e603bdcb9cbf61d4ddbcd9722ff"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_white"

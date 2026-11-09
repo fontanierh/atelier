@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Lake_Cabin: a lake piece (20910 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/lake/cabin"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/lake/cabin"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Lake_Cabin.fbx"
+sha256 = "95e400526332a68bdaee9ba9906fd903569ffadeac2ac2942e06e8945189a60f"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 20910
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Lake/Pieces/Lake_Cabin"

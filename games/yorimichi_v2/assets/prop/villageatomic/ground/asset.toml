@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Village_Ground: one village piece (13648 triangles, 0 collision hulls).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/villageatomic/ground"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/villageatomic/ground"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Village_Ground.fbx"
+sha256 = "4a3604f443c622966ab0b6645c41204fb8febc5b375656d221789411693318db"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 13648
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Ground"

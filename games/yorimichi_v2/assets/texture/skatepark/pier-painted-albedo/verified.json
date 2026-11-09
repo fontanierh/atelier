@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-painted-albedo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_painted_albedo.uasset": "ecb68bdd18dfcbdd07110b2633ca96f5bda0baa9a9118ae465049dade40892ba"
+  },
+  "input_fingerprint": "570c19c6758012fd40c01556f07ff7eb0d67355ca035c6a2cc1b08f19ef116a6",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

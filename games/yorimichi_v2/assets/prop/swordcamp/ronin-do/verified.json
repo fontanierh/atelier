@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/ronin-do",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_RoninDo.uasset": "dd59c9121ef95d5b6dbc1ef1b632f73c0d200f755d4c9dbbc6194f1f281c29ef"
+  },
+  "input_fingerprint": "069b93bb7830525e0c9e50fedf19d9ccf6763dbfca2110b4250c50f982811d48",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_RoninDo": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

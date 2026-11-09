@@ -1,0 +1,205 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_ships.py (docs/inventory/brinecove-ships.md): the Nightjar and the sloop parts cut by the generator's ship boundary, and the retired ship tiles.",
+  "generator_triangles": {
+    "galleon-adventure": 9328,
+    "galleon-nightjar": 7600,
+    "sloop-east": 9328
+  },
+  "hull": {
+    "model": "adopted/brinecove/hero-galleon-hull",
+    "objects": {
+      "galleon-adventure": "galleon-adventure-hull",
+      "galleon-nightjar": "galleon-nightjar",
+      "sloop-east": "sloop-east"
+    },
+    "ships": {
+      "galleon-adventure": [
+        -44.0,
+        -70.0
+      ],
+      "galleon-nightjar": [
+        40.0,
+        -132.0
+      ],
+      "sloop-east": [
+        252.0,
+        -72.0
+      ]
+    }
+  },
+  "parts": {
+    "prop/brinecove/galleon-nightjar": {
+      "materials": [
+        "BC_cream",
+        "BC_flag_black",
+        "BC_metal",
+        "BC_rope",
+        "BC_flag_red",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        54.0147,
+        46.1978,
+        164.6112
+      ],
+      "mesh": "SM_BC_GalleonNightjar",
+      "min": [
+        26.9401,
+        7.6978,
+        84.2654
+      ],
+      "object": "galleon-nightjar",
+      "package": "/Game/Brinecove/Meshes/SM_BC_GalleonNightjar",
+      "sha256": "7232ea58bb4a663c71fa87295cc19edbc32b5fb2de69c4b398b6305800bcc24f",
+      "soft": false,
+      "tiles": [
+        "Ships_4_2",
+        "Ships_4_3"
+      ],
+      "triangles": 7600
+    },
+    "prop/brinecove/sloop-east": {
+      "materials": [
+        "BC_cream",
+        "BC_flag_black",
+        "BC_flag_red",
+        "BC_metal",
+        "BC_rope",
+        "BC_sail",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        257.175,
+        18.2491,
+        91.8651
+      ],
+      "mesh": "SM_BC_SloopEast",
+      "min": [
+        246.825,
+        2.4991,
+        58.3874
+      ],
+      "object": "sloop-east",
+      "package": "/Game/Brinecove/Meshes/SM_BC_SloopEast",
+      "sha256": "eb829dfb95121623402a4d584857dec4f49361b8a97713f9f782f77b8f7851aa",
+      "soft": false,
+      "tiles": [
+        "Ships_4_3",
+        "Ships_5_3"
+      ],
+      "triangles": 9328
+    }
+  },
+  "schema": 1,
+  "shares": {
+    "Ships_4_2": {
+      "prop/brinecove/galleon-nightjar": 172
+    },
+    "Ships_4_3": {
+      "prop/brinecove/galleon-nightjar": 7428,
+      "prop/brinecove/sloop-east": 6540
+    },
+    "Ships_5_3": {
+      "prop/brinecove/sloop-east": 2788
+    }
+  },
+  "tiles": {
+    "Ships_4_2": {
+      "original": {
+        "material_package": {
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_black": "/Game/Brinecove/Materials/MI_BC_flag_black",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope"
+        },
+        "owner": "shared/brinecove/ships-4-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_black",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope"
+          ],
+          "triangles": 172
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Ships_4_2",
+      "record": "prop/brinecove/ships-4-2",
+      "remainder": null,
+      "source_triangles": 172
+    },
+    "Ships_4_3": {
+      "original": {
+        "material_package": {
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_flag_black": "/Game/Brinecove/Materials/MI_BC_flag_black",
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark"
+        },
+        "owner": "shared/brinecove/ships-4-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_flag_black",
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark"
+          ],
+          "triangles": 13968
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Ships_4_3",
+      "record": "prop/brinecove/ships-4-3",
+      "remainder": null,
+      "source_triangles": 13968
+    },
+    "Ships_5_3": {
+      "original": {
+        "material_package": {
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark"
+        },
+        "owner": "shared/brinecove/ships-5-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark"
+          ],
+          "triangles": 2788
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Ships_5_3",
+      "record": "prop/brinecove/ships-5-3",
+      "remainder": null,
+      "source_triangles": 2788
+    }
+  }
+}

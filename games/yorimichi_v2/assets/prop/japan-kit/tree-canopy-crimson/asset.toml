@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Canopy_Crimson: one Japan mesh (2568 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-canopy-crimson"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-canopy-crimson"
+references = ["adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Canopy_Crimson.fbx"
+sha256 = "df86bfb6c554cb69ee7f8dc1f16b56e2c3fdfae5333549bf2ff9b2ca165363e3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Bark = "/Game/Japan/Materials/MI_Bark", LeafMaple = "/Game/Japan/Materials/MI_LeafCrimson"}
+triangles = 2568
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Canopy_Crimson"

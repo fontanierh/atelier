@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-yatai-01",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-yatai": "e5b3c58c07f4ebafa3b62e5c2235e3930f98c44063450aeb0eaef41a8cf0832a"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/F/1C/94SD834X7TNISKBTKXAU19.uasset": "281a9dfee269692b598f130d917df6f6deb55cd48da57ef854f18b591cd81391"

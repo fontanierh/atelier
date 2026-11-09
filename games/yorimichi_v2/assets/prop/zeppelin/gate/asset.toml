@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_Gate: a zeppelin piece (528 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/gate"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/gate"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_Gate.fbx"
+sha256 = "8479778c2bdac7d58e99923c545c41f0ab4b31a229fd8dfd93eee7b15ef1d493"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 528
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_Gate"

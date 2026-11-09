@@ -1,0 +1,2188 @@
+{
+ "about": "The other Japan kit meshes as saved in V2 (unreal/Scripts/report_meshes.py, read-only editor.run): each slot (imported name, material) in index order, each LOD (screen size, triangles, section slots), the collision trace flag and the imported UCX hull count. tools/migrate/recover.py japan/kit writes them into the recipes. Every mesh is single-sided and without Nanite.",
+ "meshes": {
+  "/Game/Japan/Assets/BirdBody": {
+   "slots": [
+    [
+     "Feather",
+     "/Game/Japan/Materials/MI_Feather"
+    ],
+    [
+     "Vermilion",
+     "/Game/Japan/Materials/MI_Vermilion"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     108,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/BirdWingL": {
+   "slots": [
+    [
+     "Feather",
+     "/Game/Japan/Materials/MI_Feather"
+    ],
+    [
+     "FeatherDark",
+     "/Game/Japan/Materials/MI_FeatherDark"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     8,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/BirdWingR": {
+   "slots": [
+    [
+     "Feather",
+     "/Game/Japan/Materials/MI_Feather"
+    ],
+    [
+     "FeatherDark",
+     "/Game/Japan/Materials/MI_FeatherDark"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     8,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Bush_Flower_A": {
+   "slots": [
+    [
+     "Flower",
+     "/Game/Japan/Materials/MI_Flower"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     240,
+     [
+      0
+     ]
+    ],
+    [
+     0.07999999821186066,
+     80,
+     [
+      0
+     ]
+    ],
+    [
+     0.02500000037252903,
+     30,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Bush_Flower_B": {
+   "slots": [
+    [
+     "Flower",
+     "/Game/Japan/Materials/MI_Flower"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     240,
+     [
+      0
+     ]
+    ],
+    [
+     0.07999999821186066,
+     80,
+     [
+      0
+     ]
+    ],
+    [
+     0.02500000037252903,
+     30,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Bush_Green_A": {
+   "slots": [
+    [
+     "LeafSmall",
+     "/Game/Japan/Materials/MI_LeafSmall"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     308,
+     [
+      0
+     ]
+    ],
+    [
+     0.07999999821186066,
+     104,
+     [
+      0
+     ]
+    ],
+    [
+     0.02500000037252903,
+     40,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Bush_Green_B": {
+   "slots": [
+    [
+     "LeafSmall",
+     "/Game/Japan/Materials/MI_LeafSmall"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     220,
+     [
+      0
+     ]
+    ],
+    [
+     0.07999999821186066,
+     74,
+     [
+      0
+     ]
+    ],
+    [
+     0.02500000037252903,
+     28,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Bush_Ochre_A": {
+   "slots": [
+    [
+     "LeafOchreSmall",
+     "/Game/Japan/Materials/MI_LeafOchreSmall"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     330,
+     [
+      0
+     ]
+    ],
+    [
+     0.07999999821186066,
+     110,
+     [
+      0
+     ]
+    ],
+    [
+     0.02500000037252903,
+     42,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Bush_Ochre_B": {
+   "slots": [
+    [
+     "LeafOchreSmall",
+     "/Game/Japan/Materials/MI_LeafOchreSmall"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     242,
+     [
+      0
+     ]
+    ],
+    [
+     0.07999999821186066,
+     82,
+     [
+      0
+     ]
+    ],
+    [
+     0.02500000037252903,
+     32,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Grass_A": {
+   "slots": [
+    [
+     "Grass",
+     "/Game/Japan/Materials/MI_Grass"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     40,
+     [
+      0
+     ]
+    ],
+    [
+     0.10000000149011612,
+     24,
+     [
+      0
+     ]
+    ],
+    [
+     0.03500000014901161,
+     8,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Grass_B": {
+   "slots": [
+    [
+     "Grass",
+     "/Game/Japan/Materials/MI_Grass"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     40,
+     [
+      0
+     ]
+    ],
+    [
+     0.10000000149011612,
+     24,
+     [
+      0
+     ]
+    ],
+    [
+     0.03500000014901161,
+     8,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Guardrail": {
+   "slots": [
+    [
+     "Paint",
+     "/Game/Japan/Materials/MI_Paint"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     36,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HouseLot_1": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ],
+    [
+     "Ground",
+     "/Game/Japan/Materials/MI_Ground"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     4024,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HouseLot_2": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ],
+    [
+     "Ground",
+     "/Game/Japan/Materials/MI_Ground"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2849,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HouseLot_3": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ],
+    [
+     "Ground",
+     "/Game/Japan/Materials/MI_Ground"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2810,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HouseLot_4": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ],
+    [
+     "Ground",
+     "/Game/Japan/Materials/MI_Ground"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     4108,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/HouseLot_5": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ],
+    [
+     "Ground",
+     "/Game/Japan/Materials/MI_Ground"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2818,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/House_A": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     5807,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX",
+   "hulls": 5
+  },
+  "/Game/Japan/Assets/House_B": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     3989,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX",
+   "hulls": 5
+  },
+  "/Game/Japan/Assets/House_C": {
+   "slots": [
+    [
+     "Village",
+     "/Game/Japan/Materials/M_Village"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     6409,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX",
+   "hulls": 4
+  },
+  "/Game/Japan/Assets/Leaf": {
+   "slots": [
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafMaple"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Litter": {
+   "slots": [
+    [
+     "Litter",
+     "/Game/Japan/Materials/MI_Litter"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Pole": {
+   "slots": [
+    [
+     "Concrete",
+     "/Game/Japan/Materials/MI_Concrete"
+    ],
+    [
+     "Wood",
+     "/Game/Japan/Materials/MI_Wood"
+    ],
+    [
+     "Metal",
+     "/Game/Japan/Materials/MI_Metal"
+    ],
+    [
+     "Paint",
+     "/Game/Japan/Materials/MI_Paint"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     216,
+     [
+      0,
+      1,
+      2,
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Pole_Lamp": {
+   "slots": [
+    [
+     "Concrete",
+     "/Game/Japan/Materials/MI_Concrete"
+    ],
+    [
+     "Wood",
+     "/Game/Japan/Materials/MI_Wood"
+    ],
+    [
+     "Metal",
+     "/Game/Japan/Materials/MI_Metal"
+    ],
+    [
+     "Paint",
+     "/Game/Japan/Materials/MI_Paint"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     240,
+     [
+      0,
+      1,
+      2,
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Rock_A": {
+   "slots": [
+    [
+     "Rock",
+     "/Game/Japan/Materials/MI_Rock"
+    ],
+    [
+     "Moss",
+     "/Game/Japan/Materials/MI_Moss"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     49,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Rock_B": {
+   "slots": [
+    [
+     "Rock",
+     "/Game/Japan/Materials/MI_Rock"
+    ],
+    [
+     "Moss",
+     "/Game/Japan/Materials/MI_Moss"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     49,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Rock_C": {
+   "slots": [
+    [
+     "Rock",
+     "/Game/Japan/Materials/MI_Rock"
+    ],
+    [
+     "Moss",
+     "/Game/Japan/Materials/MI_Moss"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     49,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/SkyDome": {
+   "slots": [
+    [
+     "Sky",
+     "/Game/Japan/Materials/MI_Sky"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2208,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Torii": {
+   "slots": [
+    [
+     "Vermilion",
+     "/Game/Japan/Materials/MI_Vermilion"
+    ],
+    [
+     "Tile",
+     "/Game/Japan/Materials/MI_Tile"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     120,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Broad_A": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafSmall",
+     "/Game/Japan/Materials/MI_LeafSmall"
+    ],
+    [
+     "Tree_Broad_A_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Broad_A/MI_Tree_Broad_A_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     4480,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.2199999988079071,
+     1530,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.09000000357627869,
+     480,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.03500000014901161,
+     168,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     90,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Broad_B": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafSmall",
+     "/Game/Japan/Materials/MI_LeafSmall"
+    ],
+    [
+     "Tree_Broad_B_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Broad_B/MI_Tree_Broad_B_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     4480,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.2199999988079071,
+     1530,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.09000000357627869,
+     480,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.03500000014901161,
+     168,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     90,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Broad_C": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafSmall",
+     "/Game/Japan/Materials/MI_LeafSmall"
+    ],
+    [
+     "Tree_Broad_C_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Broad_C/MI_Tree_Broad_C_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     4484,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.2199999988079071,
+     1532,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.09000000357627869,
+     480,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.03500000014901161,
+     168,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     90,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Caldera_BlackPine_A": {
+   "slots": [
+    [
+     "Tree_Caldera_BlackPine_A",
+     "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_A"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     11028,
+     [
+      0
+     ]
+    ],
+    [
+     0.25,
+     3308,
+     [
+      0
+     ]
+    ],
+    [
+     0.10000000149011612,
+     1100,
+     [
+      0
+     ]
+    ],
+    [
+     0.03999999910593033,
+     330,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Caldera_BlackPine_B": {
+   "slots": [
+    [
+     "Tree_Caldera_BlackPine_B",
+     "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_BlackPine_B"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     10799,
+     [
+      0
+     ]
+    ],
+    [
+     0.25,
+     3238,
+     [
+      0
+     ]
+    ],
+    [
+     0.10000000149011612,
+     1077,
+     [
+      0
+     ]
+    ],
+    [
+     0.03999999910593033,
+     321,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Caldera_Cedar_A": {
+   "slots": [
+    [
+     "Tree_Caldera_Cedar_A",
+     "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_A"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     7196,
+     [
+      0
+     ]
+    ],
+    [
+     0.25,
+     2158,
+     [
+      0
+     ]
+    ],
+    [
+     0.10000000149011612,
+     717,
+     [
+      0
+     ]
+    ],
+    [
+     0.03999999910593033,
+     343,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Caldera_Cedar_B": {
+   "slots": [
+    [
+     "Tree_Caldera_Cedar_B",
+     "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_B"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     7315,
+     [
+      0
+     ]
+    ],
+    [
+     0.25,
+     2194,
+     [
+      0
+     ]
+    ],
+    [
+     0.10000000149011612,
+     730,
+     [
+      0
+     ]
+    ],
+    [
+     0.03999999910593033,
+     216,
+     [
+      0
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Canopy_Amber": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafAmber"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2544,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Canopy_Crimson": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafCrimson"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2568,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Canopy_Ginkgo": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafGinkgo"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2344,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Canopy_Maple": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafMaple"
+    ]
+   ],
+   "lods": [
+    [
+     2.0,
+     2664,
+     [
+      0,
+      1
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Cedar_A": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafCedar",
+     "/Game/Japan/Materials/MI_LeafCedar"
+    ],
+    [
+     "Tree_Cedar_A_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Cedar_A/MI_Tree_Cedar_A_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3656,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.18000000715255737,
+     1254,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07000000029802322,
+     444,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.02500000037252903,
+     232,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     120,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Cedar_B": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafCedar",
+     "/Game/Japan/Materials/MI_LeafCedar"
+    ],
+    [
+     "Tree_Cedar_B_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Cedar_B/MI_Tree_Cedar_B_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3656,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.18000000715255737,
+     1254,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07000000029802322,
+     444,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.02500000037252903,
+     232,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     120,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Forest_Ginkgo": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafGinkgo",
+     "/Game/Japan/Materials/MI_LeafGinkgo"
+    ],
+    [
+     "Tree_Forest_Ginkgo_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Forest_Ginkgo_Impostor"
+    ],
+    [
+     "Tree_Forest_Ginkgo_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Forest_Ginkgo_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3684,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     1096,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     304,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/Tree_Forest_Maple": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafMaple"
+    ],
+    [
+     "Tree_Forest_Maple_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Forest_Maple_Impostor"
+    ],
+    [
+     "Tree_Forest_Maple_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Forest_Maple_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3680,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     1098,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     306,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/Tree_Forest_Oak": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafSmall",
+     "/Game/Japan/Materials/MI_LeafSmall"
+    ],
+    [
+     "Tree_Forest_Oak_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Forest_Oak_Impostor"
+    ],
+    [
+     "Tree_Forest_Oak_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Forest_Oak_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     4480,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     1298,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     372,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/Tree_Forest_Pine": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafPine",
+     "/Game/Japan/Materials/MI_LeafPine"
+    ],
+    [
+     "Tree_Forest_Pine_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Forest_Pine_Impostor"
+    ],
+    [
+     "Tree_Forest_Pine_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Forest_Pine_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3920,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     1326,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     354,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/Tree_Ginkgo": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafGinkgo",
+     "/Game/Japan/Materials/MI_LeafGinkgo"
+    ],
+    [
+     "Tree_Ginkgo_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Ginkgo/MI_Tree_Ginkgo_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3682,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.2199999988079071,
+     1264,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.09000000357627869,
+     390,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.03500000014901161,
+     138,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     76,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Maple_A": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafMaple"
+    ],
+    [
+     "Tree_Maple_A_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Maple_A/MI_Tree_Maple_A_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3678,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.2199999988079071,
+     1262,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.09000000357627869,
+     390,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.03500000014901161,
+     138,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     76,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Maple_B": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafMaple",
+     "/Game/Japan/Materials/MI_LeafMaple"
+    ],
+    [
+     "Tree_Maple_B_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Maple_B/MI_Tree_Maple_B_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3680,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.2199999988079071,
+     1264,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.09000000357627869,
+     390,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.03500000014901161,
+     138,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     76,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_DEFAULT",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Pine_A": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafPine",
+     "/Game/Japan/Materials/MI_LeafPine"
+    ],
+    [
+     "Tree_Pine_A_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Pine_A/MI_Tree_Pine_A_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3920,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.18000000715255737,
+     1374,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07000000029802322,
+     444,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.02500000037252903,
+     232,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     120,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Pine_B": {
+   "slots": [
+    [
+     "Bark",
+     "/Game/Japan/Materials/MI_Bark"
+    ],
+    [
+     "LeafPine",
+     "/Game/Japan/Materials/MI_LeafPine"
+    ],
+    [
+     "Tree_Pine_B_Crown",
+     "/Game/Japan/FoliageLODs/Tree_Pine_B/MI_Tree_Pine_B_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3920,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.18000000715255737,
+     1374,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07000000029802322,
+     444,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.02500000037252903,
+     232,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.012000000104308128,
+     120,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.003599999938160181,
+     12,
+     [
+      2
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "hulls": 0
+  },
+  "/Game/Japan/Assets/Tree_Tuscan_Cypress": {
+   "slots": [
+    [
+     "BarkTuscan",
+     "/Game/Japan/Materials/MI_BarkTuscan"
+    ],
+    [
+     "LeafCypress",
+     "/Game/Japan/Materials/MI_LeafCypress"
+    ],
+    [
+     "Tree_Tuscan_Cypress_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Tuscan_Cypress_Impostor"
+    ],
+    [
+     "Tree_Tuscan_Cypress_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Cypress_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     4456,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     1266,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     376,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/Tree_Tuscan_Oak": {
+   "slots": [
+    [
+     "BarkTuscan",
+     "/Game/Japan/Materials/MI_BarkTuscan"
+    ],
+    [
+     "LeafOak",
+     "/Game/Japan/Materials/MI_LeafOak"
+    ],
+    [
+     "Tree_Tuscan_Oak_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Tuscan_Oak_Impostor"
+    ],
+    [
+     "Tree_Tuscan_Oak_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Oak_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     4572,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     1360,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     374,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/Tree_Tuscan_Olive": {
+   "slots": [
+    [
+     "BarkOlive",
+     "/Game/Japan/Materials/MI_BarkOlive"
+    ],
+    [
+     "LeafOlive",
+     "/Game/Japan/Materials/MI_LeafOlive"
+    ],
+    [
+     "Tree_Tuscan_Olive_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Tuscan_Olive_Impostor"
+    ],
+    [
+     "Tree_Tuscan_Olive_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Olive_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     3526,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     934,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     302,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  },
+  "/Game/Japan/Assets/Tree_Tuscan_Pine": {
+   "slots": [
+    [
+     "BarkTuscan",
+     "/Game/Japan/Materials/MI_BarkTuscan"
+    ],
+    [
+     "LeafStonePine",
+     "/Game/Japan/Materials/MI_LeafStonePine"
+    ],
+    [
+     "Tree_Tuscan_Pine_Impostor",
+     "/Game/Japan/Materials/MI_Tree_Tuscan_Pine_Impostor"
+    ],
+    [
+     "Tree_Tuscan_Pine_Crown",
+     "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Pine_Crown"
+    ]
+   ],
+   "lods": [
+    [
+     1.0,
+     4480,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.23999999463558197,
+     1298,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.07500000298023224,
+     372,
+     [
+      0,
+      1
+     ]
+    ],
+    [
+     0.017999999225139618,
+     14,
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     0.005400000140070915,
+     12,
+     [
+      3
+     ]
+    ]
+   ],
+   "trace": "CTF_USE_SIMPLE_AS_COMPLEX",
+   "hulls": 1
+  }
+ }
+}

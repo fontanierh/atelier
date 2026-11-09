@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SB_Sail: a sailboat part (324 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/sailboat/sail"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/sailboat/sail"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SB_Sail.fbx"
+sha256 = "80d97397a750f03895f221ea93f8e8f2d237f37db099a741d87443e8d7f06bb3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_SailboatCloth"]
+triangles = 324
+
+[[outputs]]
+package = "/Game/Japan/Assets/SB_Sail"

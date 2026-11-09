@@ -1,0 +1,34 @@
+{
+  "asset": "prop/villageatomic/details",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Details.uasset": "480e2290a4a5a01e1c8052d96935aa6bd6e283f2dd575a7b5682911daf18d202"
+  },
+  "input_fingerprint": "f07016e7ae76632dbc33ff9924b89684fca7954b8b2ba381994b43f3321a7434",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/VillageAtomic/v1_atomic/Village_Details": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Village_Sign: one village piece (126 triangles, 1 collision hulls).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/villageatomic/sign"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/villageatomic/sign"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Village_Sign.fbx"
+sha256 = "13077ab8678459a1264323c1ab9d07654a9d607a573d291296b783f2b0a5670e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 126
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Sign"

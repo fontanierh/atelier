@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_ceramic_roughness: the roughness map of the ceramic pier surface (donor texture ceramic-roughness.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-ceramic-roughness"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-ceramic-roughness"
+
+[[sources]]
+path = "src/ceramic-roughness.png"
+sha256 = "f4e7bfe307b2d0f338b78fdda4759871e55f343d1cb3de04206a511276a227c4"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_ceramic_roughness"

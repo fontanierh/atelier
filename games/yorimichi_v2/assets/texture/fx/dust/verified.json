@@ -1,0 +1,12 @@
+{
+  "asset": "texture/fx/dust",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/Textures/T_FX_Dust.uasset": "913cdd6865602dfb55b377c65d0479db195a4d337e99f5d60f3bed6bd2dea576"
+  },
+  "input_fingerprint": "786499235794d5893d190bfb8fb9d2b87cf4ff53cd62d3f80735b46beff1ecb3",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

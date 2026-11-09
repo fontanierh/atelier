@@ -1,8 +1,6 @@
 {
   "asset": "object/pier/house-lot-3",
-  "dependencies": {
-    "adopted/japan/assets/houselot": "d2ccbb311ff279ffdbb36d2e73bb9b6c9cd7fa12a5ec3b9e9922f74c8973e114"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/HX/2G1NH9QZGP5WYHY29FW08I.uasset": "baebb2b25530cc36925744e439c6cbbd227c3ef467a9d57940d7771cc96e2adb"

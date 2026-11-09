@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_potted_plants: a street prop (10815 triangles, 0 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/potted-plants"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/potted-plants"
+references = ["adopted/japan/hidamari/prop-potted-plants"]
+
+[[sources]]
+path = "src/HD_P_potted_plants.fbx"
+sha256 = "1c7d09231010a87bf47c6991e6fd3478643a5dbfc3fc586c6205d713bd5a8a69"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_potted_plants"]
+triangles = 10815
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_potted_plants"

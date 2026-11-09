@@ -9,23 +9,23 @@ data = ""
 [[objects]]
 id = "object/swordcamp/fire-pit"
 static = ["SM_CampFirePit"]
-model = "adopted/swordcamp/assets"
+model = "prop/swordcamp/camp-fire-pit"
 about = "the Ronin camp's fire pit, at the camp centre, by which the camp captain sits"
 
 [[objects]]
 id = "object/swordcamp/jinmaku"
 static = ["SM_CampJinmaku"]
-model = "adopted/swordcamp/assets"
+model = "prop/swordcamp/camp-jinmaku"
 about = "the Ronin camp's jinmaku curtain, about six metres behind the fire, away from the road"
 
 [[objects]]
 id = "object/swordcamp/weapon-rack"
 static = ["SM_CampWeaponRack"]
-model = "adopted/swordcamp/assets"
+model = "prop/swordcamp/camp-weapon-rack"
 about = "the Ronin camp's weapon rack, beside the fire on its left, a little behind it"
 
 [[objects]]
 id = "object/swordcamp/bales"
 static = ["SM_CampBales"]
-model = "adopted/swordcamp/assets"
+model = "prop/swordcamp/camp-bales"
 about = "the Ronin camp's straw bales, behind and to the right of the fire"

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Village_Edges: one village piece (7860 triangles, 89 collision hulls).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/villageatomic/edges"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/villageatomic/edges"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Village_Edges.fbx"
+sha256 = "68585ad5d584b0bf6f71ee1c7d2025bf410ccaa572cc594e7ab83c2fca8546be"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 7860
+collision = "simple_and_complex"
+hulls = 89
+
+[[outputs]]
+package = "/Game/Experiments/VillageAtomic/v1_atomic/Village_Edges"

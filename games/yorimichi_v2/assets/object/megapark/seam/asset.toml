@@ -6,7 +6,7 @@ id = "object/megapark/seam"
 kind = "placement"
 authority = "editor"
 owner = "region/w11-megapark"
-references = ["adopted/megapark/seam"]
+references = ["prop/megapark/seam", "prop/megapark/seam-collision"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/9/1E/ZMITYDA0SIC19EKTFW8J5K"

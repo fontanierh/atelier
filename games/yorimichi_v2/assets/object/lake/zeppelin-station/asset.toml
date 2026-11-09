@@ -6,7 +6,7 @@ id = "object/lake/zeppelin-station"
 kind = "placement"
 authority = "editor"
 owner = "region/w06-lake-treehouse"
-references = ["adopted/japan/assets/zeppelin"]
+references = ["prop/zeppelin/woodland"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/4/DP/UC41C1NEINY8NRQ1HW8CQZ"

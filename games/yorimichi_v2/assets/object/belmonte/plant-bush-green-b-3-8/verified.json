@@ -1,8 +1,6 @@
 {
   "asset": "object/belmonte/plant-bush-green-b-3-8",
-  "dependencies": {
-    "adopted/japan/assets/bush": "14f1a09510e6f15a58b5e242ec02434731aa982429f6354a8305ef6b4cb25ee2"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/LI/RGTJZXGIKJ4HIFFOLWGC47.uasset": "9685c38208e2d418159cac74333874681bc280674971975e5e6cd5645335fadb"

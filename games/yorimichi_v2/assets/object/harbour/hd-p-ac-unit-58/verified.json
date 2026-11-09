@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-ac-unit-58",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-ac-unit": "bac8508c9005c446a0f3cc0855af6e353069ff46cc5ef9870236df7365f795d6"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/4H/EOLWZS8ACUMF3F5B38F5EX.uasset": "7ab659fe65198f1b2cbbfa0311369b8960b485e2e5bc6f05bdd50741df12bbba"

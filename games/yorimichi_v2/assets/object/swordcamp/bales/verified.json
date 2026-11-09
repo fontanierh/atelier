@@ -1,8 +1,6 @@
 {
   "asset": "object/swordcamp/bales",
-  "dependencies": {
-    "adopted/swordcamp/assets": "a49109bdbf13dd73922213a547cb8a544e5db7a09ab33247494e39f86e49ac79"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/P7/TINGYEPD9P7YUUG01NBP2B.uasset": "b4960693f1a51800e93df58f9efe079ec222c46a08347185627dc137e40fe799"

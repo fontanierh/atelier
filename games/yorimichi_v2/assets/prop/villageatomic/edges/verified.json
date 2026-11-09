@@ -1,0 +1,34 @@
+{
+  "asset": "prop/villageatomic/edges",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Edges.uasset": "5029623da9bc2edf454b9c330eb0c3be27659a7238485f9ea2769fd8ee738704"
+  },
+  "input_fingerprint": "4e39b3be1f1b58101d6765af4d8102051d3ad861e887476fd145b38a9e182207",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/VillageAtomic/v1_atomic/Village_Edges": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

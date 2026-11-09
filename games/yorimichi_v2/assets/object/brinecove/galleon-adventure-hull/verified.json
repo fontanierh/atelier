@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/galleon-adventure-hull",
+  "dependencies": {
+    "adopted/brinecove/hero-galleon-hull": "ea876c28893347c6f89a1ab80f8926616410c51370ab5b78e10c187bd455bfe2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/1X/62OOOZM4RBCF1HNHAIUGY4.uasset": "8ad0bc34faf04d43dc83bd6a44f4f377dfb41ba8a62f6d94c39afc56f76066c4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

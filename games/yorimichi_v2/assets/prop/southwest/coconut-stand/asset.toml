@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SW_CoconutStand: a south-west piece (4768 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/coconut-stand"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/coconut-stand"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SW_CoconutStand.fbx"
+sha256 = "469e713ff3e8aae760d4a36283136a23c94ff60d69492405c32c4b35add0a953"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 4768
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_CoconutStand"

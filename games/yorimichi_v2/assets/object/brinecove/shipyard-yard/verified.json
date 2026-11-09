@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/shipyard-yard",
+  "dependencies": {
+    "prop/brinecove/shipyard-yard": "aadea9b0c4f226529585d2e792bab14cdb8ea74db45fbec9120bb154a00cf216"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/XW/D36GFY57MKGMQXXQ90ANXL.uasset": "500f449b14e982f20bb215931f7071101408ce436b29e73e99ddb03490b7a7e0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

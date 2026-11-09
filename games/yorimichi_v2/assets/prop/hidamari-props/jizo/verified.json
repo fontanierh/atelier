@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/jizo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_jizo.uasset": "769560c1ab6110bfe6c60512cec6483fae5123320ca1bafef9093be097a2018c"
+  },
+  "input_fingerprint": "4a833f317e05ecf4041ab2e0fa791a96e1eccf4ac8ae8057bba0393dac02a2f8",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_jizo": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

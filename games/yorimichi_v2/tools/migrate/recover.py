@@ -541,6 +541,8 @@ def plan_villageatomic(game: Path, donor: Path, owner: dict[str, str], all_owner
             unmapped.append(f'assets/{row["primary"]} (not a VillagePalette piece of a source-less village record)')
             continue
         hulls = row['metadata']['collision_hulls']
+        # The ground keeps its one degenerate source triangle (13648; the donor's legacy import drops it, but that path
+        # does not convert units like the Interchange import does), inside the importer's 98-100 % window.
         collision = ({'collision': 'complex'} if policy[name] == 'complex_as_simple'
                      else {'collision': 'simple_and_complex', 'hulls': hulls})
         tail = ident(name[len('Village_'):])
@@ -587,7 +589,7 @@ def japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, package,
     a dict slot name -> material (slot_map). The piece is recovered only when its package is in a source-less record of
     the family and every material is owned by some record."""
     label = f'{path.relative_to(donor)}'
-    if package not in owner:
+    if package not in owner and all_owner.get(package) != rid:    # a piece this family already recovered is planned again
         unmapped.append(f'{label} (its package is not in a source-less record of this family)')
         return
     materials = sorted(set(binding.values() if isinstance(binding, dict) else binding))
@@ -760,10 +762,168 @@ FAMILIES.update({'japan/assets': plan_japan_assets, 'japan/treehouse': plan_japa
                  'japan/textures': plan_japan_textures})
 
 
+# --- Japan props (the tree house and Hidamari street props, /Game/Japan/Assets/TH_P_* and HD_P_*) -----------------------
+PROPS_SAVED = HERE / 'saved' / 'japanprops.json'
+FAMILY_SCOPE = {'japan/props': 'japan/assets'}      # a family that recovers part of another's source-less records
+
+
+def plan_japan_props(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The 45 street and tree house props from the donor's hidamari_props and treehouse_props steps (one FBX each, a
+    UCX hull where the export names one). Their slot, material, triangles and collision flag are the saved V2 packages'
+    (saved/japanprops.json, from report_meshes.py): one slot, one LOD, no Nanite, single-sided geometry. The recipe
+    holds the saved hull count and flag; the donor export must agree on hulls, slot and triangles.
+
+    The saved trace flag (CTF_USE_DEFAULT on 27 hulled props, CTF_USE_SIMPLE_AS_COMPLEX on the other 18) is set with
+    `collision_trace`, which the importer applies after the collision mode's own flag. The 11 hull-less props use boxes=[]."""
+    saved = _json(PROPS_SAVED)['meshes']
+    generated, unmapped = [], []
+    for step, prefix, scope in (('hidamari_props', 'HD_P_', 'hidamari-props'), ('treehouse_props', 'TH_P_', 'treehouse-props')):
+        for row, path in atomic_rows(donor, step):
+            name = row['asset']
+            package = f'/Game/Japan/Assets/{name}'
+            if not name.startswith(prefix):
+                continue                 # the caldera conifers share the step: other records
+            mesh = saved.get(package)
+            tail_id = f'prop/{scope}/{ident(name[len(prefix):])}'
+            if mesh is None or (package not in owner and all_owner.get(package) != tail_id):
+                unmapped.append(f'{path.relative_to(donor)} (its package is not a source-less japan/assets prop)')
+                continue
+            if (row['metadata']['slots'] != [mesh['slot']] or row['metadata']['collision_hulls'] != mesh['hulls']
+                    or not row['triangles'] * .98 <= mesh['triangles'] <= row['triangles']):
+                raise RecoverError(f'{name}: the donor export and the saved package disagree on slot, hulls or triangles')
+            collision = ({'collision': 'simple_and_complex', 'hulls': mesh['hulls']} if mesh['hulls']
+                         else {'collision': 'boxes', 'boxes': []})
+            collision['collision_trace'] = mesh['trace']          # the saved flag, applied after the mode's own
+            japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, package,
+                       f'prop/{scope}/{ident(name[len(prefix):])}', [mesh['material']], collision,
+                       f'{name}: a {"street" if prefix == "HD_P_" else "tree house"} prop ({row["triangles"]} triangles, '
+                       f'{mesh["hulls"]} hull)')
+    return Plan('japan/props', generated, unmapped, {})
+
+
+FAMILIES.update({'japan/props': plan_japan_props})
+
+
+# Families whose old packages have single-sided complex collision (the donor never sets double_sided): their complex
+# recipes say so, as the importer's default for a complex record is double-sided (the city and earlier families keep it).
+SINGLE_SIDED = {'skatepark', 'megapark', 'swordcamp', 'fx', 'experiments/villageatomic', 'japan/assets', 'japan/treehouse',
+                'japan/southwest', 'japan/lake', 'japan/textures'}
+
+
+# --- Japan kit (birds, rocks, houses, poles, torii and the trees and foliage of /Game/Japan/Assets) ------------------------
+KIT_SAVED = HERE / 'saved' / 'japankit.json'
+KIT_STEPS = ('props', 'houses', 'treehouse_trees', 'hidamari_props', 'forest')
+FAMILY_SCOPE['japan/kit'] = 'japan/assets'
+
+
+def kit_rows(donor: Path) -> dict[str, tuple[dict, Path]]:
+    """name -> (export row, FBX) of every donor piece the kit can come from: the atomic steps and the foliage export."""
+    rows = {}
+    for step in KIT_STEPS:
+        for row, path in atomic_rows(donor, step):
+            rows.setdefault(row['asset'], (row, path))
+    folder = donor / 'exports' / 'world.foliage.export'
+    for export in sorted(folder.glob('*/export.json')):
+        row = _json(export)
+        rows.setdefault(row['asset'], (row, export.parent / row['primary']))
+    return rows
+
+
+def kit_collision(mesh: dict) -> dict:
+    """The saved collision, flag included: hulls are the donor's UCX nodes, complex stays single-sided, a mesh with no
+    shape keeps none (the flag alone says default or simple-as-complex)."""
+    trace, hulls = mesh['trace'], mesh['hulls']
+    if hulls:
+        collision = {'collision': 'simple_and_complex', 'hulls': hulls}
+    elif trace == 'CTF_USE_COMPLEX_AS_SIMPLE':
+        collision = {'collision': 'complex', 'double_sided': False}
+    else:
+        collision = {'collision': 'boxes', 'boxes': []} if trace == 'CTF_USE_SIMPLE_AS_COMPLEX' else {'collision': 'none'}
+    return {**collision, 'collision_trace': trace}
+
+
+def _plan_kit(donor: Path, owner: dict[str, str], all_owner: dict[str, str], foliage: bool, family: str) -> Plan:
+    """The other /Game/Japan/Assets meshes (55): one record per mesh, from the donor export of that name and the saved V2
+    package (saved/japankit.json, from report_meshes.py): slot table, collision and, for the trees and foliage with
+    LODs, the chain (one donor FBX per level, `lod_chain` as the Belmonte train). The donor export must agree with the
+    saved package on slot names, hulls and triangles; a package the donor does not export is reported."""
+    saved = _json(KIT_SAVED)['meshes']
+    rows = kit_rows(donor)
+    generated, unmapped = [], []
+    for package, mesh in sorted(saved.items()):
+        name = package.rsplit('/', 1)[-1]
+        rid = f'prop/japan-kit/{ident(name)}'
+        if package not in owner and all_owner.get(package) != rid:
+            continue                                 # held by another record (already recovered elsewhere)
+        if name not in rows:
+            unmapped.append(f'{name} (no donor export of that name)')
+            continue
+        row, path = rows[name]
+        if (path.parent.parent.name == 'world.foliage.export') != foliage:
+            continue                                 # the other batch: foliage is the 18 chains of the foliage export
+        names = [slot[0] for slot in mesh['slots']]
+        # Every slot the donor export has is in the saved table (which may add the far-LOD crown card's slot).
+        if not set(row['metadata']['slots']) <= set(names):
+            raise RecoverError(f'{name}: the donor slots {row["metadata"]["slots"]} are not the saved {names}')
+        # A saved package with no hull imported through the non-hull modes, which drop the export's UCX node (the
+        # foliage trees export one trunk hull the donor's own import discarded).
+        if row['metadata']['collision_hulls'] != mesh['hulls'] and mesh['hulls']:
+            raise RecoverError(f'{name}: the donor export and the saved package disagree on hulls')
+        top = mesh['lods'][0][1]
+        if not row['triangles'] * .98 <= top <= row['triangles']:
+            raise RecoverError(f'{name}: the donor export and the saved package disagree on triangles')
+        collision = kit_collision(mesh)
+        if len(mesh['lods']) == 1:
+            binding = ({'slot_map': {slot: material for slot, material in mesh['slots']}} if len(names) > 1
+                       else {'slot_materials': [mesh['slots'][0][1]]})
+            japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, package, rid, binding['slot_map']
+                       if 'slot_map' in binding else binding['slot_materials'], collision,
+                       f'{name}: one Japan mesh ({top} triangles)', triangles=top)
+            continue
+        levels = [(row, path)]
+        for level in range(1, len(mesh['lods'])):
+            if f'{name}_LOD{level}' not in rows:
+                break
+            levels.append(rows[f'{name}_LOD{level}'])
+        if len(levels) != len(mesh['lods']):
+            unmapped.append(f'{name} (the donor exports {len(levels)} of its {len(mesh["lods"])} LODs)')
+            continue
+        chain = [[f'src/{p.name}', screen, triangles, sections]
+                 for (_, p), (screen, triangles, sections) in zip(levels, mesh['lods'], strict=True)]
+        materials = sorted({m for _, m in mesh['slots']})
+        if [m for m in materials if m not in all_owner]:
+            unmapped.append(f'{name} (material owned by no record)')
+            continue
+        generated.append(Generated(
+            id=rid, kind='static-mesh', owner=rid.replace('prop/', 'shared/', 1), package=package, source=path,
+            lod_sources=[p for _, p in levels[1:]], settings={'lod_chain': chain, 'slots': mesh['slots'], **collision},
+            references=sorted({all_owner[m] for m in materials}),
+            about=f'{name}: one Japan mesh, LOD0-LOD{len(levels) - 1} ({top} triangles at LOD0)',
+            expected={p.name: r['sha256'] for r, p in levels}))
+    return Plan(family, generated, unmapped, {})
+
+
+def plan_japan_kit(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The 37 kit meshes that are not foliage: birds, rocks, houses, poles, torii, sky dome and the canopy, forest, Tuscan
+    and caldera trees (the trees with LODs as chains). See _plan_kit."""
+    return _plan_kit(donor, owner, all_owner, False, 'japan/kit')
+
+
+def plan_japan_foliage(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The 18 foliage meshes (bushes, grass, broad, cedar, ginkgo, maple and pine trees), each a LOD chain from the
+    donor's foliage export (LOD1-LOD5 files)."""
+    return _plan_kit(donor, owner, all_owner, True, 'japan/foliage')
+
+
+FAMILY_SCOPE['japan/foliage'] = 'japan/assets'
+FAMILIES.update({'japan/kit': plan_japan_kit, 'japan/foliage': plan_japan_foliage})
+
+
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
     if family not in FAMILIES:
         raise RecoverError(f'unknown family {family!r}; known: {", ".join(sorted(FAMILIES))}')
-    owner = adopted_packages(game, family)
+    scope = FAMILY_SCOPE.get(family, family)
+    owner = adopted_packages(game, scope)
     plan = FAMILIES[family](game, donor, owner, record_owners(game))
     for gen in plan.generated:
         gen.origin = owner.get(gen.package, '')
@@ -773,7 +933,11 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
             if asset_toml.is_file() and f'package = "{gen.package}"' in asset_toml.read_text():
                 gen.origin = 'applied'
             else:
-                raise RecoverError(f'{gen.package} is in no adopted {family} record; nothing to recover there')
+                raise RecoverError(f'{gen.package} is in no adopted {scope} record; nothing to recover there')
+    if family in SINGLE_SIDED:
+        for gen in plan.generated:
+            if gen.settings.get('collision') == 'complex':
+                gen.settings.setdefault('double_sided', False)
     ids = [g.id for g in plan.generated]
     packages = [g.package for g in plan.generated]
     if len(set(ids)) != len(ids) or len(set(packages)) != len(packages):
@@ -793,7 +957,7 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
     generated_packages = set(packages)
     for path in records.record_paths(game):
         asset = records.load_asset(path)
-        if in_family(asset.id, family):
+        if in_family(asset.id, scope):
             left = [o.package for o in asset.outputs if o.package not in generated_packages]
             kept[asset.id] = left
     plan.kept = kept
@@ -864,7 +1028,7 @@ def _drop_verified(path: Path, packages: set[str]) -> None:
         path.unlink()
 
 
-def apply(game: Path, plan: Plan, donor: Path) -> dict:
+def apply(game: Path, plan: Plan, donor: Path, settle: bool = False) -> dict:
     """Write the generated records and shrink the adopted ones. Returns what changed (empty when already applied)."""
     changed = {'created': [], 'shrunk': [], 'deleted': []}
     gen_packages = {g.package for g in plan.generated}
@@ -915,7 +1079,47 @@ def apply(game: Path, plan: Plan, donor: Path) -> dict:
             _drop_verified(folder / 'verified.json', gen_packages & before)
         changed['shrunk'].append(record_id)
     changed['retargeted'] = _retarget(game, plan, moved_from)
+    if settle:
+        changed['settled'] = _settle(game, plan.family)
     return changed
+
+
+def _settle(game: Path, family: str) -> list[str]:
+    """Give the family's adopted records the form adoption's repartition would: when generated records took packages out
+    of a folder, the one adopted record left may now belong in the parent unit (adopted/fx/loose_files -> adopted/fx,
+    since /Game/FX holds only its seven loose packages). Only that single-record move is done here, with the
+    repartition's own unit text; the real-game repartition test stays clean."""
+    sys.path.insert(0, str(HERE))
+    import adopt
+    report = adopt.repartition(game, check_only=True)
+    settled = []
+    for gone in report['delete']:
+        if not (gone.startswith(f'assets/adopted/{family}/') and gone.endswith('asset.toml')):
+            continue
+        old = records.load_asset(game / gone)
+        packages = [o.package for o in old.outputs]
+        units = adopt.partition(packages, packages[0].split('/')[2], groups=adopt.load_groups(game / adopt.GROUPS.relative_to(adopt.GAME)))
+        if len(units) != 1:
+            continue
+        ((unit_id, (owner, about, members)),) = units.items()
+        if sorted(members) != sorted(packages) or unit_id == old.id:
+            continue
+        folder = game / 'assets' / unit_id
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / 'asset.toml').write_text(adopt.record_text(unit_id, owner, about, members, old.license, old.provenance, (),
+                                                             old.references))
+        if old.verified.is_file():
+            body = _json(old.verified)
+            body['asset'] = unit_id
+            records.write_json(folder / 'verified.json', body)
+            old.verified.unlink()
+        old.record.unlink()
+        parent = old.record.parent
+        while parent != game / 'assets' and parent.is_dir() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
+        settled.append(unit_id)
+    return settled
 
 
 def _used_bytes(game: Path, asset) -> bytes | None:
@@ -1008,8 +1212,8 @@ def main(argv=None) -> int:
         plan = build_plan(args.game.resolve(), args.family, args.donor.resolve())
         print(report(plan))
         if args.apply:
-            changed = apply(args.game.resolve(), plan, args.donor.resolve())
-            print(f'applied: created {len(changed["created"])}, shrunk {len(changed["shrunk"])}, '
+            changed = apply(args.game.resolve(), plan, args.donor.resolve(), settle=True)
+            print(f'applied: created {len(changed["created"])}, shrunk {len(changed["shrunk"])}, settled {len(changed.get("settled", []))}, '
                   f'deleted {len(changed["deleted"])}, retargeted {len(changed["retargeted"])}')
     except (RecoverError, RecordError) as error:
         print(f'recover failed: {error}', file=sys.stderr)

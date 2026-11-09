@@ -1,8 +1,6 @@
 {
   "asset": "object/start/house-lot-2",
-  "dependencies": {
-    "adopted/japan/assets/houselot": "d2ccbb311ff279ffdbb36d2e73bb9b6c9cd7fa12a5ec3b9e9922f74c8973e114"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/B2/7VCWUGUGJTTB1H3GTK5X9Z.uasset": "a84f54b562978955ebb217cb684528ccf2ec24cb2a2f0f534ea15d114e16de7e"

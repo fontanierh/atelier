@@ -1,8 +1,6 @@
 {
   "asset": "object/lake/th-p-futon-02",
-  "dependencies": {
-    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/5V/VDLHLSGJCLVG0EM02DLHDF.uasset": "fcfe7f1f0312605be90046f8ae9cc6f15e1a34bbc66310567f2da09814ad6c21"

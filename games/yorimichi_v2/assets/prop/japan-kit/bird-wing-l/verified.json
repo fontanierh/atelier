@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/bird-wing-l",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/BirdWingL.uasset": "7577d03509b97f67a3c581095bab255e4c2c4941c8c2fe0a61fe6e4b5e9ce921"
+  },
+  "input_fingerprint": "2cf826b85304a73570ecbc5a0d6d83bb1574a34adae2d751d21cc1c11f6b95d9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/BirdWingL": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

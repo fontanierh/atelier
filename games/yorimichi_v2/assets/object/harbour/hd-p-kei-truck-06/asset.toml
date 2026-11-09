@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-kei-truck-06"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-kei-truck"]
+references = ["prop/hidamari-props/kei-truck"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/3N/K5YSGOLKRWK2CJ59BBECSE"

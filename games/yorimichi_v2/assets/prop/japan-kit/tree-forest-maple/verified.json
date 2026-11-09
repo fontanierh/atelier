@@ -1,0 +1,50 @@
+{
+  "asset": "prop/japan-kit/tree-forest-maple",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Forest_Maple.uasset": "b14659058f0d4f73a6fff69a4bfd753131d085af269b109bf41dac726e5eb114"
+  },
+  "input_fingerprint": "a4b1baead580a1d330336a7a8bca2ca043ab900df84f411b6037b43c84f719c3",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Forest_Maple": {
+      "after": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      },
+      "before": {
+        "count": 5,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.23999999463558197,
+          0.07500000298023224,
+          0.017999999225139618,
+          0.005400000140070915
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

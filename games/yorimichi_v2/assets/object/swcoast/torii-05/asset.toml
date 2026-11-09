@@ -6,7 +6,7 @@ id = "object/swcoast/torii-05"
 kind = "placement"
 authority = "editor"
 owner = "region/w08-southwest-coast"
-references = ["adopted/japan/assets/torii"]
+references = ["prop/japan-kit/torii"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/Y0/ZQJYGJV9XMSS4RW3CJYJW9"

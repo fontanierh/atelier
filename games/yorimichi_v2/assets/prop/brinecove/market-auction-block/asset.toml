@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_MarketAuctionBlock: the market auction block, cut from the fused tile(s) Market_3_4_Piece130 (132 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/market-auction-block"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/market-auction-block"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_MarketAuctionBlock.glb"
+sha256 = "ec97e3a9729e20d196edb26c6cbd0e97aa9c3199ac9c34c62320e6829f4ee6ee"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_planks", "/Game/Brinecove/Materials/MI_BC_roof_teal", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 132
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_MarketAuctionBlock"

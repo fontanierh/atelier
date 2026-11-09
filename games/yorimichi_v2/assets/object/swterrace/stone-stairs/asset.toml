@@ -6,7 +6,7 @@ id = "object/swterrace/stone-stairs"
 kind = "placement"
 authority = "editor"
 owner = "region/w08-southwest-terrace"
-references = ["adopted/japan/southwest"]
+references = ["prop/southwest/stone-stairs"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/NB/89A98ALUEAIN1BHX02SRA5"

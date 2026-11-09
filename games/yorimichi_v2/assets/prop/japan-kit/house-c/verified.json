@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/house-c",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/House_C.uasset": "8bf40ac582a39522fc72deae08c514d152b1808a2a839d8aebda3621898c76ea"
+  },
+  "input_fingerprint": "348d346d210bc4b3cfa4f944f53200b0f7f3ffa84e1049c45bf7a4883ad0a26e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/House_C": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

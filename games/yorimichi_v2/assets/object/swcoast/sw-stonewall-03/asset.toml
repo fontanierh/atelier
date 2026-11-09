@@ -6,7 +6,7 @@ id = "object/swcoast/sw-stonewall-03"
 kind = "placement"
 authority = "editor"
 owner = "region/w08-southwest-coast"
-references = ["adopted/japan/southwest"]
+references = ["prop/southwest/stone-wall"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/4/YF/EVO2WHX4PR2MAXU9NKLR4F"

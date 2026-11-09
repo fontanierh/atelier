@@ -1,8 +1,6 @@
 {
   "asset": "object/village/garden",
-  "dependencies": {
-    "adopted/experiments/villageatomic": "acd763d7dfeb5ab989212f9fe8d7c4fbff9617a122faacb40cf1c05d82034721"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/4J/II6MJ5LHJWB7941F3Q9A7M.uasset": "c4fef62b10f068dd3024b848171fa049482e232c0990570d9be02f4816491f59"

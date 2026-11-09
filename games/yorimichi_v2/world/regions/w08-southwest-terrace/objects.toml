@@ -7,13 +7,13 @@ data = ""
 [[objects]]
 id = "object/swterrace/fisher-house-a"
 patch = "8786ba3e73a25ee6"
-model = "adopted/japan/southwest"
+model = "prop/southwest/fisher-house-a"
 about = "fisher house A"
 
 [[objects]]
 id = "object/swterrace/stone-stairs"
 patch = "518fb0312fd77083"
-model = "adopted/japan/southwest"
+model = "prop/southwest/stone-stairs"
 about = "the stone stairs"
 
 # Split entries (Yorimichi V2 object prep): placed instances left in the area patches, each one actor of its own.
@@ -21,5 +21,5 @@ about = "the stone stairs"
 [[objects]]
 id = "object/swterrace/pole-01"
 split = {key = "Pole", at = [-282.53, -92.12]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 1 of 1 in w08-southwest-terrace, placed at (-282.53, -92.12) m"

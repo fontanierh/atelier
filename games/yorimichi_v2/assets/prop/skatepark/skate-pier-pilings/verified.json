@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-pier-pilings",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/SM_SkatePierPilings.uasset": "26f30d6cac568417079167a14be271824ea8e6750b788930b838fc9bbada492a"
+  },
+  "input_fingerprint": "1d1d16e287fb05c00517ad1e370daa7aebe143891d07ff13c97560d22d55e023",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/SM_SkatePierPilings": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

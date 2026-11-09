@@ -1,13 +1,6 @@
 {
   "asset": "object/megapark/trees-cell-x150-zm750",
-  "dependencies": {
-    "adopted/japan/assets/bush": "14f1a09510e6f15a58b5e242ec02434731aa982429f6354a8305ef6b4cb25ee2",
-    "adopted/japan/assets/tree-broad": "3af3398a678a8a6a457e5ce60190a3ba7bc1600e49fb6cb78d822435250170f7",
-    "adopted/japan/assets/tree-cedar": "08027d128ee1bc674b180ef9f0087300957d67ba3666ac813fa89ae23edeb6a9",
-    "adopted/japan/assets/tree-ginkgo": "86aefb268cfbd5fb187e768c08524a8295631e561283470abdc7e0d7078d8f04",
-    "adopted/japan/assets/tree-maple": "42c5537c025b8beb46681f5dcbaeca8f6c14969148c92a5ead485c95218ec6eb",
-    "adopted/japan/assets/tree-pine": "5d755a6347910144c74d9ecea94862811c91c14040c0a11e98f7a78139c1c6b7"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/9X/JW448G24Q5UHP9LIAHPXZ2.uasset": "8023778181c13b50ff115b1e55735c5cd3a6cf093f8afa3c5232f1dfcc4952f0"

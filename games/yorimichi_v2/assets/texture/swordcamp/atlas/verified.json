@@ -1,0 +1,12 @@
+{
+  "asset": "texture/swordcamp/atlas",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Textures/T_SwordCampAtlas.uasset": "44ebc123e917cfdaad296539652c40ef5771c2cfeaecd0ffb073eac49222031b"
+  },
+  "input_fingerprint": "6817596d3cedb39a7342f83425720dc0c0f5d5365a3deb6de9ccc2e2fbb81758",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

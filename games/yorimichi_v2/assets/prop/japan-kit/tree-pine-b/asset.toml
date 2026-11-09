@@ -1,0 +1,47 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Pine_B: one Japan mesh, LOD0-LOD5 (3920 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-pine-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-pine-b"
+references = ["adopted/japan/foliagelods/tree-pine-b", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Pine_B.fbx"
+sha256 = "92f57fab52e7a2fbfa5799b4989afb4053918329e4638aaab7c9125da8c8bac4"
+
+[[sources]]
+path = "src/Tree_Pine_B_LOD1.fbx"
+sha256 = "1e25c93ebf3fc323c5ec1eecc583b80e10aec5aa6512cdc03cb65f7dd7263df6"
+
+[[sources]]
+path = "src/Tree_Pine_B_LOD2.fbx"
+sha256 = "22a653b61fa0a91ac5da64229befb21a8f637bf3770ac6691af465c206f51266"
+
+[[sources]]
+path = "src/Tree_Pine_B_LOD3.fbx"
+sha256 = "7cd1d5c5d628db04a28ce4d130b651be7a72a57e8dc54102928f72b2b79da975"
+
+[[sources]]
+path = "src/Tree_Pine_B_LOD4.fbx"
+sha256 = "f2e6c08c9eb95832eb8681a2a1e43b05f93b5aaebc523602744e43a802c9be1b"
+
+[[sources]]
+path = "src/Tree_Pine_B_LOD5.fbx"
+sha256 = "f7902cbd75de327581eb20ffb8ec52ed94e5f03a52958d86d3f240a1aaf9d071"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Pine_B.fbx", 1.0, 3920, [0, 1]], ["src/Tree_Pine_B_LOD1.fbx", 0.18000000715255737, 1374, [0, 1]], ["src/Tree_Pine_B_LOD2.fbx", 0.07000000029802322, 444, [0, 1]], ["src/Tree_Pine_B_LOD3.fbx", 0.02500000037252903, 232, [0, 1]], ["src/Tree_Pine_B_LOD4.fbx", 0.012000000104308128, 120, [0, 1]], ["src/Tree_Pine_B_LOD5.fbx", 0.003599999938160181, 12, [2]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafPine", "/Game/Japan/Materials/MI_LeafPine"], ["Tree_Pine_B_Crown", "/Game/Japan/FoliageLODs/Tree_Pine_B/MI_Tree_Pine_B_Crown"]]
+collision = "complex"
+double_sided = false
+collision_trace = "CTF_USE_COMPLEX_AS_SIMPLE"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Pine_B"

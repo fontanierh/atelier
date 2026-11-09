@@ -480,7 +480,7 @@ def test_skatepark_binds_slots_by_name_and_reuses_the_steel_maps_for_painted(tmp
     path, planting, deck = (by_id[f'prop/skatepark/{n}'] for n in ('skate-path', 'skate-park-planting', 'skate-deck'))
     assert path.settings == {'slot_map': {'Pier_concrete': f'{root}/Materials/M_Pier_concrete',
                                           'Pier_steel': f'{root}/Materials/M_Pier_steel'}, 'triangles': 10, 'collision': 'complex',
-                                          'allow_cpu_access': True}
+                                          'allow_cpu_access': True, 'double_sided': False}
     assert planting.settings['collision'] == 'none'                      # a floor paint piece has no shapes
     assert deck.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 6, 'collision': 'none'}     # no cpu access
     assert deck.references == ['adopted/japan/materials/base-materials']
@@ -572,14 +572,16 @@ def test_villageatomic_follows_the_parent_collision_policy_in_a_one_record_famil
     for name in names:
         write(donor / f'assets/{name}.fbx', name)
     write(tmp_path / 'build' / 'village' / 'atomic-manifest.json', json.dumps({'parents': {
-        'Village_Sign': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Sign'}]},
-        'Village_Ground': {'collision': 'complex_as_simple', 'pieces': [{'name': 'Village_Ground'}]},
-        'Village_Planting': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Planting_cell_0_0'}]}}}))
+        'Village_Sign': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Sign', 'native_triangles': 30}]},
+        'Village_Ground': {'collision': 'complex_as_simple', 'pieces': [{'name': 'Village_Ground', 'native_triangles': 29}]},
+        'Village_Planting': {'collision': 'simple_and_complex', 'pieces': [{'name': 'Village_Planting_cell_0_0', 'native_triangles': 30}]}}}))
     plan = recover.build_plan(game, 'experiments/villageatomic', donor)
     by_id = {g.id: g for g in plan.generated}
     assert by_id['prop/villageatomic/sign'].settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 30,
                                                          'collision': 'simple_and_complex', 'hulls': 1}
-    assert by_id['prop/villageatomic/ground'].settings['collision'] == 'complex'
+    # The ground keeps the source triangle count (no legacy_fbx: that path does not convert units), single-sided.
+    assert by_id['prop/villageatomic/ground'].settings == {
+        'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 30, 'collision': 'complex', 'double_sided': False}
     assert by_id['prop/villageatomic/planting-cell-0-0'].settings['hulls'] == 0       # a render-only leaf keeps no shapes
     assert plan.kept == {'adopted/experiments/villageatomic': []}
     changed = recover.apply(game, plan, donor)
@@ -633,7 +635,7 @@ def test_lake_binds_water_to_its_own_material_and_a_one_record_family_is_recover
     plan = recover.build_plan(game, 'japan/lake', donor)
     cabin, water = sorted(plan.generated, key=lambda g: g.id)
     assert (cabin.id, water.id) == ('prop/lake/cabin', 'prop/lake/water')
-    assert cabin.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 20910,
+    assert cabin.settings == {'slot_materials': ['/Game/Japan/Materials/M_Village'], 'triangles': 20910, 'double_sided': False,
                               'collision': 'complex'}
     assert water.settings['slot_materials'] == ['/Game/Japan/Materials/M_ForestLakeWater']
     assert cabin.references == ['adopted/japan/materials/base-materials'] and cabin.origin == 'adopted/japan/lake'
@@ -766,3 +768,89 @@ def test_southwest_pieces_use_the_village_material_and_complex_collision(tmp_pat
     assert sorted(g.id for g in plan.generated) == ['prop/southwest/boat', 'prop/southwest/tree-pine-lean-a']
     assert all(g.settings['collision'] == 'complex' for g in plan.generated)
     assert any('SW_Gone' in u for u in plan.unmapped_outputs)       # a piece no record holds is reported
+
+
+def test_japan_props_take_the_saved_collision_and_stop_on_a_donor_disagreement(tmp_path, monkeypatch):
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    assets = '/Game/Japan/Assets'
+    adopted(game, 'japan/assets/hd-p-bus-stop', [f'{assets}/HD_P_bus_stop'])
+    adopted(game, 'japan/assets/treehouse', [f'{assets}/TH_P_bell', f'{assets}/TH_P_globe'])
+    adopted(game, 'japan/hidamari/prop-bus-stop', ['/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop'])
+    adopted(game, 'japan/treehouse/prop-bell', ['/Game/Japan/Treehouse/Materials/MI_TH_P_bell',
+                                              '/Game/Japan/Treehouse/Materials/MI_TH_P_globe'])
+    saved = tmp_path / 'saved.json'
+    mesh = lambda slot, material, trace, hulls, triangles: {'slot': slot, 'material': material, 'triangles': triangles,
+                                                           'trace': trace, 'hulls': hulls}
+    saved.write_text(json.dumps({'meshes': {
+        f'{assets}/HD_P_bus_stop': mesh('HD_P_bus_stop', '/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop',
+                                        'CTF_USE_DEFAULT', 1, 9842),
+        f'{assets}/TH_P_bell': mesh('TH_P_bell', '/Game/Japan/Treehouse/Materials/MI_TH_P_bell',
+                                    'CTF_USE_SIMPLE_AS_COMPLEX', 0, 9130),
+        f'{assets}/TH_P_globe': mesh('TH_P_globe', '/Game/Japan/Treehouse/Materials/MI_TH_P_globe',
+                                     'CTF_USE_SIMPLE_AS_COMPLEX', 0, 100)}}))
+    monkeypatch.setattr(recover, 'PROPS_SAVED', saved)
+    atomic(donor, 'hidamari_props', {'HD_P_bus_stop': (9855, ['HD_P_bus_stop']), 'Tree_Caldera_A': (5, ['x'])})
+    atomic(donor, 'treehouse_props', {'TH_P_bell': (9130, ['TH_P_bell']), 'TH_P_globe': (100, ['TH_P_globe'])})
+    manifest = donor / 'atomic_regions/hidamari_props/assets/manifest.json'
+    data = json.loads(manifest.read_text())
+    data['exports'][0]['metadata']['collision_hulls'] = 1
+    manifest.write_text(json.dumps(data))
+    plan = recover.build_plan(game, 'japan/props', donor)
+    by_id = {g.id: g for g in plan.generated}
+    assert sorted(by_id) == ['prop/hidamari-props/bus-stop', 'prop/treehouse-props/bell', 'prop/treehouse-props/globe']
+    assert by_id['prop/hidamari-props/bus-stop'].settings == {
+        'slot_materials': ['/Game/Japan/Hidamari/Materials/MI_HD_P_bus_stop'], 'triangles': 9855,
+        'collision': 'simple_and_complex', 'hulls': 1, 'collision_trace': 'CTF_USE_DEFAULT'}
+    assert by_id['prop/treehouse-props/bell'].settings['collision_trace'] == 'CTF_USE_SIMPLE_AS_COMPLEX'
+    assert by_id['prop/treehouse-props/bell'].settings['boxes'] == []        # a look-only prop keeps no shape
+    assert plan.kept['adopted/japan/assets/treehouse'] == []
+    # A donor hull count that is not the saved one would move the collision.
+    data['exports'][0]['metadata']['collision_hulls'] = 2
+    manifest.write_text(json.dumps(data))
+    with pytest.raises(recover.RecoverError, match='disagree'):
+        recover.build_plan(game, 'japan/props', donor)
+
+
+def test_japan_kit_matches_the_saved_collision_flag_and_builds_lod_chains(tmp_path, monkeypatch):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    assets = '/Game/Japan/Assets'
+    adopted(game, 'japan/assets/rock', [f'{assets}/Rock_A', f'{assets}/Tree_Oak'])
+    adopted(game, 'japan/assets/house', [f'{assets}/House_A'])
+    adopted(game, 'japan/materials/m', ['/Game/Japan/Materials/MI_Rock', '/Game/Japan/Materials/MI_Moss',
+                                       '/Game/Japan/Materials/M_Village', '/Game/Japan/Materials/MI_Bark',
+                                       '/Game/Japan/Materials/MI_Leaf'])
+    mesh = lambda slots, lods, trace, hulls: {'slots': slots, 'lods': lods, 'trace': trace, 'hulls': hulls}
+    mat = lambda n: f'/Game/Japan/Materials/{n}'
+    saved = tmp_path / 'saved.json'
+    saved.write_text(json.dumps({'meshes': {
+        f'{assets}/Rock_A': mesh([['Rock', mat('MI_Rock')], ['Moss', mat('MI_Moss')]], [[2.0, 49, [0, 1]]], 'CTF_USE_DEFAULT', 0),
+        f'{assets}/House_A': mesh([['Village', mat('M_Village')]], [[2.0, 100, [0]]], 'CTF_USE_SIMPLE_AND_COMPLEX', 5),
+        f'{assets}/Tree_Oak': mesh([['Bark', mat('MI_Bark')], ['Leaf', mat('MI_Leaf')]],
+                                   [[1.0, 400, [0, 1]], [0.2, 90, [0, 1]]], 'CTF_USE_COMPLEX_AS_SIMPLE', 0)}}))
+    monkeypatch.setattr(recover, 'KIT_SAVED', saved)
+    atomic(donor, 'props', {'Rock_A': (49, ['Rock', 'Moss'])})
+    atomic(donor, 'houses', {'House_A': (100, ['Village'])})
+    atomic(donor, 'forest', {'Tree_Oak': (400, ['Bark', 'Leaf']), 'Tree_Oak_LOD1': (90, ['Bark', 'Leaf'])})
+    for step in recover.KIT_STEPS:
+        if not (donor / 'atomic_regions' / step).exists():
+            atomic(donor, step, {})
+    houses = donor / 'atomic_regions/houses/assets/manifest.json'
+    data = json.loads(houses.read_text())
+    data['exports'][0]['metadata']['collision_hulls'] = 5
+    houses.write_text(json.dumps(data))
+    plan = recover.build_plan(game, 'japan/kit', donor)
+    by_id = {g.id: g for g in plan.generated}
+    assert sorted(by_id) == ['prop/japan-kit/house-a', 'prop/japan-kit/rock-a', 'prop/japan-kit/tree-oak']
+    assert by_id['prop/japan-kit/rock-a'].settings == {
+        'slot_map': {'Rock': mat('MI_Rock'), 'Moss': mat('MI_Moss')}, 'triangles': 49, 'collision': 'none',
+        'collision_trace': 'CTF_USE_DEFAULT'}
+    assert by_id['prop/japan-kit/house-a'].settings['hulls'] == 5
+    tree = by_id['prop/japan-kit/tree-oak']
+    assert tree.settings['lod_chain'] == [['src/Tree_Oak.fbx', 1.0, 400, [0, 1]], ['src/Tree_Oak_LOD1.fbx', 0.2, 90, [0, 1]]]
+    assert (tree.settings['collision'], tree.settings['double_sided']) == ('complex', False)
+    assert [p.name for p in tree.files()] == ['Tree_Oak.fbx', 'Tree_Oak_LOD1.fbx']
+    # A donor hull count that is not the saved one would move the collision.
+    data['exports'][0]['metadata']['collision_hulls'] = 4
+    houses.write_text(json.dumps(data))
+    with pytest.raises(recover.RecoverError, match='hulls'):
+        recover.build_plan(game, 'japan/kit', donor)

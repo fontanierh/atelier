@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the quay anchor, cut from its fused tile (2052 triangles).
+# Its placement is this actor package; its model is prop/brinecove/quay-anchor. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/quay-anchor"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/quay-anchor"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/2/AP/LGKQK84P7WBJA3C105PFTS"

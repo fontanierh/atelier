@@ -1,0 +1,39 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Caldera_Cedar_B: one Japan mesh, LOD0-LOD3 (7315 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-caldera-cedar-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-caldera-cedar-b"
+references = ["adopted/japan/hidamari/tree-caldera-cedar-b"]
+
+[[sources]]
+path = "src/Tree_Caldera_Cedar_B.fbx"
+sha256 = "ccae7661c398220383f54f37463cd61ce9cdfa04f4c7df424b268c92950931f1"
+
+[[sources]]
+path = "src/Tree_Caldera_Cedar_B_LOD1.fbx"
+sha256 = "35ccaf2679b4b7ca3bb923d8b35699a55b2bd084250ee63add7356e324727290"
+
+[[sources]]
+path = "src/Tree_Caldera_Cedar_B_LOD2.fbx"
+sha256 = "ebad6098d6440e7fd6248bfe68becf4c4e010398618f75684b074568d242c784"
+
+[[sources]]
+path = "src/Tree_Caldera_Cedar_B_LOD3.fbx"
+sha256 = "94082e6a9dfc56953c53ec0ed103f4d5dc93a8e03604b7b1a7b954dcad21131d"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Caldera_Cedar_B.fbx", 1.0, 7315, [0]], ["src/Tree_Caldera_Cedar_B_LOD1.fbx", 0.25, 2194, [0]], ["src/Tree_Caldera_Cedar_B_LOD2.fbx", 0.10000000149011612, 730, [0]], ["src/Tree_Caldera_Cedar_B_LOD3.fbx", 0.03999999910593033, 216, [0]]]
+slots = [["Tree_Caldera_Cedar_B", "/Game/Japan/Hidamari/Materials/MI_Tree_Caldera_Cedar_B"]]
+collision = "boxes"
+boxes = []
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Caldera_Cedar_B"

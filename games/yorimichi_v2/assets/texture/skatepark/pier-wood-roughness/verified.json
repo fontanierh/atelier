@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-wood-roughness",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_wood_roughness.uasset": "13ae5bef1f95447326a4b2f28042126d477655faaa5b791815e973d310a576fb"
+  },
+  "input_fingerprint": "8cb0da650a6cf69f04e36e62fc1f0553ff4a5c37d6bd66b9ef125854343dd868",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

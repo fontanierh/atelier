@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-basalt-albedo",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_basalt_albedo.uasset": "448a42f8d840bb1f3cabefe488d9f56197e90702be1711d09efb7c85c9fc6fc9"
+  },
+  "input_fingerprint": "a549e5484c14e0e4285c889255ec88244ec2d4c50adb4187909e595f2bf7f0b2",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

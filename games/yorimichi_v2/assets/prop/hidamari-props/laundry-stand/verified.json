@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/laundry-stand",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_laundry_stand.uasset": "bc9b24f3ab7af38e7d053279ca6bcdbc2e69f0bc8165f50d39610e779af7e54e"
+  },
+  "input_fingerprint": "40504801e5cdde4c271b775ae14d2cf2de3f80265dae56a306aa70cb12ca8624",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_laundry_stand": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

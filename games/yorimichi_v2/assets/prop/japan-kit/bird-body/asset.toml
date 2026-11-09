@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BirdBody: one Japan mesh (108 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/bird-body"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/bird-body"
+references = ["adopted/japan/materials/buildings", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/BirdBody.fbx"
+sha256 = "291b105bed6ca09f5d68dccf543471acd5c68fe47898e42a8b9e6012bbdbe70c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Feather = "/Game/Japan/Materials/MI_Feather", Vermilion = "/Game/Japan/Materials/MI_Vermilion"}
+triangles = 108
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BirdBody"

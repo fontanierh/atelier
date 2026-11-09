@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SW_FisherHouseA: a south-west piece (3852 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/fisher-house-a"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/fisher-house-a"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/SW_FisherHouseA.fbx"
+sha256 = "31e03f7e59fe5988ac4903ee4e98006f1636678de486122dee5967e631e465a4"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 3852
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/SW_FisherHouseA"

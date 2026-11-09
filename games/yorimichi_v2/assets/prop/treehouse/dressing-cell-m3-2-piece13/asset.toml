@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_Dressing_cell_-3_2_Piece13: a tree house surface (7927 triangles, 6 slots).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse/dressing-cell-m3-2-piece13"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse/dressing-cell-m3-2-piece13"
+references = ["adopted/japan/treehouse/surface-flat", "adopted/japan/treehouse/surface-glass", "adopted/japan/treehouse/surface-moss", "adopted/japan/treehouse/surface-paper", "adopted/japan/treehouse/surface-rope", "adopted/japan/treehouse/surface-wood-timber"]
+
+[[sources]]
+path = "src/TH_Dressing_cell_-3_2_Piece13.fbx"
+sha256 = "d8ea92c01a10e4478917fedf5208379c7ef862ea11a52df04d092e16ec7cb403"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {TH_flat = "/Game/Japan/Treehouse/Materials/MI_TH_flat", TH_glass = "/Game/Japan/Treehouse/Materials/MI_TH_glass", TH_moss = "/Game/Japan/Treehouse/Materials/MI_TH_moss", TH_paper = "/Game/Japan/Treehouse/Materials/MI_TH_paper", TH_rope = "/Game/Japan/Treehouse/Materials/MI_TH_rope", TH_wood_timber = "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber"}
+triangles = 7927
+collision = "boxes"
+boxes = []
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece13"

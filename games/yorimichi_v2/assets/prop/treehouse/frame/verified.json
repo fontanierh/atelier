@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse/frame",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/TH_Frame.uasset": "c2e0ecd5b7646291bda2936862d823177b6a033a3d2c8dca9a8215ff588840b1"
+  },
+  "input_fingerprint": "c5537dd8ecbcf790502d3e8d8074f6a9ad09ced0c1c322287bcb11d72a7b3fa8",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/TH_Frame": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

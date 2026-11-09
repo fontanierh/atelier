@@ -6,7 +6,7 @@ id = "object/station/hd-p-vending-machine-07"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-vending-machine"]
+references = ["prop/hidamari-props/vending-machine"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/5/SM/RNX59471T38DKWD8NRB8ZR"

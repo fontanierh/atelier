@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): ZP_Belmonte: a zeppelin piece (14264 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/zeppelin/belmonte"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/zeppelin/belmonte"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/ZP_Belmonte.fbx"
+sha256 = "7a4123af04f7ef8212c2952ee6d9fa1c61e76487953df0f99e97f0aa03a2340f"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 14264
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Assets/ZP_Belmonte"

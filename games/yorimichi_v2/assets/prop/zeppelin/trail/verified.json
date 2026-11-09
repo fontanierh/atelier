@@ -1,0 +1,34 @@
+{
+  "asset": "prop/zeppelin/trail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/ZP_Trail.uasset": "fc383d3eb284af5055d7abe7644defbd9e5d431bf6bbd5fb13a3690e530cc29f"
+  },
+  "input_fingerprint": "1d94bd630da1a8c77c033b606cdd2e007ab6c9836aa5b564dd56467b8f08271e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/ZP_Trail": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

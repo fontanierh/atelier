@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/market-well",
+  "dependencies": {
+    "prop/brinecove/market-well": "f0c3a18997ac0bfbe6d67991f572b18056c44fae28f3d0f2726c4abf7d475675",
+    "prop/brinecove/market-well-soft": "c92d6dca304f1af83ccd5b858833b6d459f772ea1d3de3089dfca3ff534b56c9"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/GA/Z5TJ5OU43DY6QXLPRZUJRD.uasset": "e0cb4e8d284c0de8cb4362978efa4f7498210b999be6d96336dd9b4f247f9c4f"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

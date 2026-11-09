@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_ceramic_normal: the normal map of the ceramic pier surface (donor texture ceramic-normal.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-ceramic-normal"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-ceramic-normal"
+
+[[sources]]
+path = "src/ceramic-normal.png"
+sha256 = "f220a918e2eece11e13eb344a0c8be2cf95ffc5ca8a71d475ea6db8d5cb57fe6"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_NORMALMAP"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_ceramic_normal"

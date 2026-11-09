@@ -6,7 +6,7 @@ id = "object/station/hd-p-town-bus-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-town-bus"]
+references = ["prop/hidamari-props/town-bus"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/75/LIUSO63VOLXAFJ2AYA7SUS"

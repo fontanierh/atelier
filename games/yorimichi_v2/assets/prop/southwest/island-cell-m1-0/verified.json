@@ -1,0 +1,34 @@
+{
+  "asset": "prop/southwest/island-cell-m1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Southwest/Pieces/SW_Island_cell_-1_0.uasset": "122e5e33f6a37a96fd243ead52d001f9a1c71da4b9ae5fbc794606e2ff4e1e05"
+  },
+  "input_fingerprint": "665694d12c3261a1e224d5615c1b75b2bf722bc53a181fda86f7aa8b7fac2f92",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Southwest/Pieces/SW_Island_cell_-1_0": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

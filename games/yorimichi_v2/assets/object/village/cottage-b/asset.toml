@@ -6,7 +6,7 @@ id = "object/village/cottage-b"
 kind = "placement"
 authority = "editor"
 owner = "region/w02-village"
-references = ["adopted/experiments/villageatomic"]
+references = ["prop/villageatomic/cottage-b"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/4/10/OH0YII02CAB7OY4HT94AH9"

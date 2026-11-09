@@ -1,0 +1,34 @@
+{
+  "asset": "prop/villageatomic/cottage-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_CottageA.uasset": "576b6a7a73b27ef877cb02f69c02951f4112f63134d2f6069386680279f3016a"
+  },
+  "input_fingerprint": "64ecc7d71486e454c85b7e83b6626da4d7ffaa594b8d505cd69c1fbfcf81cf4d",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/VillageAtomic/v1_atomic/Village_CottageA": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

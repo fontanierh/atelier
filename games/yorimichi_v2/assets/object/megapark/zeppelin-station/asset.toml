@@ -6,7 +6,7 @@ id = "object/megapark/zeppelin-station"
 kind = "placement"
 authority = "editor"
 owner = "region/w11-megapark"
-references = ["adopted/japan/assets/zeppelin"]
+references = ["prop/zeppelin/mega-park"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/1/8W/0POXB3YO9H0L041AMWNZ8X"

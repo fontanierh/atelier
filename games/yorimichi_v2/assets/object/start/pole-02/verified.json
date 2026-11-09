@@ -1,8 +1,6 @@
 {
   "asset": "object/start/pole-02",
-  "dependencies": {
-    "adopted/japan/assets/pole": "0f1ac9dd6a4807020c823f6a50c69ceec6dc8e1f4df4f9586c49041936bbf9de"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/D2/67EMLAZVRNS8SNY1LAP1KV.uasset": "959d1cbf502dec33ebd1423e8453b6a6406c7669b0ccae9d23f9570b88cedffc"

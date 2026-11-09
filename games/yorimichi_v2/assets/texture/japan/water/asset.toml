@@ -1,0 +1,21 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_water: a world texture (donor T_water.jpg).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/japan/water"
+kind = "texture"
+authority = "generated"
+owner = "shared/japan/water"
+
+[[sources]]
+path = "src/T_water.jpg"
+sha256 = "ac69c14388f5a9fc83b0cc02c8b686d42c717afaac802bb4f5b4f3a0a7cfd62a"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_water"

@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/guardrail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Guardrail.uasset": "792bdcfbe2f809934c0f857d0be6247eea802b3d034cb60dc3ae23384e3dec15"
+  },
+  "input_fingerprint": "95ebf34d37ef50477632edaf2a58f73be029fde04600f10d58fe824ee126ed4e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Guardrail": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

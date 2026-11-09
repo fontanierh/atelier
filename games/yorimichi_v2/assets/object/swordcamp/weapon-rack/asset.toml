@@ -6,7 +6,7 @@ id = "object/swordcamp/weapon-rack"
 kind = "placement"
 authority = "editor"
 owner = "region/w13-swordcamp"
-references = ["adopted/swordcamp/assets"]
+references = ["prop/swordcamp/camp-weapon-rack"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/2H/45TD3WPWERHLMAQ0J9JSIA"

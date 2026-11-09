@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-hokora-01",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-hokora": "ffb59d2016ff17aaf0e41782e2e018f0c25dd8e61d83ba8d32c828055a994f45"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/03/HLTO07HSMCVPATW2OL1IA0.uasset": "6e876b2244fedb5156c8cc16e69bde09606c413bee61f44e134b3ef7ba669063"

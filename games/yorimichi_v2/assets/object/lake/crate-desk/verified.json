@@ -1,8 +1,6 @@
 {
   "asset": "object/lake/crate-desk",
-  "dependencies": {
-    "adopted/japan/assets/treehouse": "a05cb41cf0b01cc7904a046c49e78e00fba4ac3fa7496d10d339996a232eb500"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/7B/Z1UWO4QSF0WNMHREZCR1CY.uasset": "36052a95fde4e6970f2e1ea960df7e342cacdce569e310c4ef153dc39d10da05"

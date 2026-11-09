@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-stone-lantern-06"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-stone-lantern"]
+references = ["prop/hidamari-props/stone-lantern"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/4Y/2MYUJG40TZGOX7F4YNIUUD"

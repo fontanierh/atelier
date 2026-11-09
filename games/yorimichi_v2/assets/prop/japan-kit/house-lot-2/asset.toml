@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HouseLot_2: one Japan mesh (2849 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/house-lot-2"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/house-lot-2"
+references = ["adopted/japan/materials/base-materials", "adopted/japan/materials/ground"]
+
+[[sources]]
+path = "src/HouseLot_2.fbx"
+sha256 = "12766fcb2a1b1760328c502426d1edf8237c2306696c29fb631311c90da43236"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Village = "/Game/Japan/Materials/M_Village", Ground = "/Game/Japan/Materials/MI_Ground"}
+triangles = 2849
+collision = "complex"
+double_sided = false
+collision_trace = "CTF_USE_COMPLEX_AS_SIMPLE"
+
+[[outputs]]
+package = "/Game/Japan/Assets/HouseLot_2"

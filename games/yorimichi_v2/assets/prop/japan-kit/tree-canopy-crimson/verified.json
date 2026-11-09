@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/tree-canopy-crimson",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Canopy_Crimson.uasset": "4296b7594d13a4453d902b18ac028b66ec6f7145448f7b31363883e82f962422"
+  },
+  "input_fingerprint": "d9ccbc8da17dc0de1c3d14f0692c774b6b80b5cc666311c3eb85a15e636d33a6",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Canopy_Crimson": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,8 +1,6 @@
 {
   "asset": "object/swordcamp/weapon-rack",
-  "dependencies": {
-    "adopted/swordcamp/assets": "a49109bdbf13dd73922213a547cb8a544e5db7a09ab33247494e39f86e49ac79"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/2H/45TD3WPWERHLMAQ0J9JSIA.uasset": "72bce717157d0a1c3ae75f7990b5537d9893c070f04f3195ff373e73130c6dd2"

@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_wood_normal: the normal map of the wood pier surface (donor texture wood-normal.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-wood-normal"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-wood-normal"
+
+[[sources]]
+path = "src/wood-normal.png"
+sha256 = "99eb08bacaa46c545854586c92f59bb363cfacbc55e8fb0938ecbd096b9ef48d"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = false
+compression = "TC_NORMALMAP"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_wood_normal"

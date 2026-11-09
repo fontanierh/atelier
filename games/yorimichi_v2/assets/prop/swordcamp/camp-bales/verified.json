@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/camp-bales",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_CampBales.uasset": "b1540af3533f736b87b3d02e3096d00b20eadef00f1bb023728db396519724ed"
+  },
+  "input_fingerprint": "96a80d3be91aa62626b52ee2b24902d2c73f4f0c1520b7da5433daffe2010bd6",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_CampBales": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_RoninKatana: one Sword Camp mesh (1028 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/swordcamp/ronin-katana"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/swordcamp/ronin-katana"
+references = ["adopted/swordcamp/materials"]
+
+[[sources]]
+path = "src/SM_RoninKatana.fbx"
+sha256 = "47ac58260fd874c49adf2ec610f3ad8dc5649f97ba017751e522153552f62234"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/SwordCamp/Materials/M_SwordCamp"]
+triangles = 1028
+collision = "none"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninKatana"

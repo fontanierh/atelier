@@ -6,7 +6,7 @@ id = "object/station/zeppelin-station"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/zeppelin"]
+references = ["prop/zeppelin/city"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/4W/A57VZCVWT85HS0DXZ595ZU"

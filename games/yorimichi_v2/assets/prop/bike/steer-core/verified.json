@@ -1,0 +1,34 @@
+{
+  "asset": "prop/bike/steer-core",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/BK_Steer_Core.uasset": "5566117cf1ea362a48217e7982d2e666cb3e73fda99b5f87fa9d913febb2853c"
+  },
+  "input_fingerprint": "143d9928cf811bc198945d3ffe2d57a63981ebdfbf00890f2196df5191b8e7f1",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/BK_Steer_Core": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

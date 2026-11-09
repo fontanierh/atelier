@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_Structure_cell_-1_1: a tree house surface (31380 triangles, 10 slots).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse/structure-cell-m1-1"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse/structure-cell-m1-1"
+references = ["adopted/japan/treehouse/surface-bark", "adopted/japan/treehouse/surface-hull", "adopted/japan/treehouse/surface-iron", "adopted/japan/treehouse/surface-moss", "adopted/japan/treehouse/surface-plaster", "adopted/japan/treehouse/surface-shingle", "adopted/japan/treehouse/surface-tile", "adopted/japan/treehouse/surface-wood-pale", "adopted/japan/treehouse/surface-wood-plank", "adopted/japan/treehouse/surface-wood-timber"]
+
+[[sources]]
+path = "src/TH_Structure_cell_-1_1.fbx"
+sha256 = "a1497d06de428383d5cfcece9e2347fcfbf2a52a6e8c2e984d71a06caf75aada"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {TH_bark = "/Game/Japan/Treehouse/Materials/MI_TH_bark", TH_hull = "/Game/Japan/Treehouse/Materials/MI_TH_hull", TH_iron = "/Game/Japan/Treehouse/Materials/MI_TH_iron", TH_moss = "/Game/Japan/Treehouse/Materials/MI_TH_moss", TH_plaster = "/Game/Japan/Treehouse/Materials/MI_TH_plaster", TH_shingle = "/Game/Japan/Treehouse/Materials/MI_TH_shingle", TH_tile = "/Game/Japan/Treehouse/Materials/MI_TH_tile", TH_wood_pale = "/Game/Japan/Treehouse/Materials/MI_TH_wood_pale", TH_wood_plank = "/Game/Japan/Treehouse/Materials/MI_TH_wood_plank", TH_wood_timber = "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber"}
+triangles = 31380
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-1_1"

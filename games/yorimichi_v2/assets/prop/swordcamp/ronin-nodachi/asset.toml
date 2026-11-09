@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_RoninNodachi: one Sword Camp mesh (1028 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/swordcamp/ronin-nodachi"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/swordcamp/ronin-nodachi"
+references = ["adopted/swordcamp/materials"]
+
+[[sources]]
+path = "src/SM_RoninNodachi.fbx"
+sha256 = "28b51287e4ddae531dbbd59661cdb89bf337b09664493aa79a0071f0d2ee66a0"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/SwordCamp/Materials/M_SwordCamp"]
+triangles = 1028
+collision = "none"
+
+[[outputs]]
+package = "/Game/SwordCamp/Assets/SM_RoninNodachi"

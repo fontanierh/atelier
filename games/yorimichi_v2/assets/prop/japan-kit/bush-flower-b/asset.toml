@@ -1,0 +1,34 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Bush_Flower_B: one Japan mesh, LOD0-LOD2 (240 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/bush-flower-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/bush-flower-b"
+references = ["adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Bush_Flower_B.fbx"
+sha256 = "bc52d2a837e90c079dd69471cdce682f529801d45f9b6e9c7be297cc253384d7"
+
+[[sources]]
+path = "src/Bush_Flower_B_LOD1.fbx"
+sha256 = "6243fd007fa9537313852302421ad343e3a2aa3dc90b53ba840a756a132beb01"
+
+[[sources]]
+path = "src/Bush_Flower_B_LOD2.fbx"
+sha256 = "ad90e9a4ff5c6b4f35c654ca43640cdf233375dc69162cfa7aced2c22fc8239c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Bush_Flower_B.fbx", 1.0, 240, [0]], ["src/Bush_Flower_B_LOD1.fbx", 0.07999999821186066, 80, [0]], ["src/Bush_Flower_B_LOD2.fbx", 0.02500000037252903, 30, [0]]]
+slots = [["Flower", "/Game/Japan/Materials/MI_Flower"]]
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Bush_Flower_B"

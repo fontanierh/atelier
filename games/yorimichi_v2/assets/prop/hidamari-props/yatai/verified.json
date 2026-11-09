@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/yatai",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_yatai.uasset": "c0cd10690863abba80817465a262170bea6b32d9036e9787eed0ad653d42a1fa"
+  },
+  "input_fingerprint": "e030d7ec9128b1213fbe3914d26818dcdfd9b1d2397add62b9ea4500d4ade521",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_yatai": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

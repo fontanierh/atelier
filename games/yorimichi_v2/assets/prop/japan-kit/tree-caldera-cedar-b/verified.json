@@ -1,0 +1,46 @@
+{
+  "asset": "prop/japan-kit/tree-caldera-cedar-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Tree_Caldera_Cedar_B.uasset": "f37041bb4cdd634f6652cadbc4a0687cc072d2f031abeacd6eb21a9b09d4fb42"
+  },
+  "input_fingerprint": "89013c52883d9ab86a3b3474e975f5a430520399c92cd63fe9d18335c70ec150",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Tree_Caldera_Cedar_B": {
+      "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.25,
+          0.10000000149011612,
+          0.03999999910593033
+        ]
+      },
+      "before": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.25,
+          0.10000000149011612,
+          0.03999999910593033
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

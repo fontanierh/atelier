@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-phone-booth-01",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-phone-booth": "51292e8271223ba9d3c95ebe1cced14d3c429374c7b111726d3ad00d5645a81b"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/09/EXRRJAFULGY692KYRXJP19.uasset": "d9a5688ce2928d487bd4fe607fa07f20b193ae555ce1c74f7ac7911b379af063"

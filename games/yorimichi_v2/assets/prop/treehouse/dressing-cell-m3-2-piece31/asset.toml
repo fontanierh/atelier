@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_Dressing_cell_-3_2_Piece31: a tree house surface (12861 triangles, 13 slots).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse/dressing-cell-m3-2-piece31"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse/dressing-cell-m3-2-piece31"
+references = ["adopted/japan/treehouse/surface-canvas", "adopted/japan/treehouse/surface-cushion", "adopted/japan/treehouse/surface-flat", "adopted/japan/treehouse/surface-glass", "adopted/japan/treehouse/surface-indigo", "adopted/japan/treehouse/surface-kite", "adopted/japan/treehouse/surface-moss", "adopted/japan/treehouse/surface-noren-cream", "adopted/japan/treehouse/surface-pane", "adopted/japan/treehouse/surface-paper", "adopted/japan/treehouse/surface-rope", "adopted/japan/treehouse/surface-straw", "adopted/japan/treehouse/surface-wood-timber"]
+
+[[sources]]
+path = "src/TH_Dressing_cell_-3_2_Piece31.fbx"
+sha256 = "5a04bc174876111f478f8c19e78ad4a42863d68f223e09a43286a0ee30ca46bf"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {TH_canvas = "/Game/Japan/Treehouse/Materials/MI_TH_canvas", TH_cushion = "/Game/Japan/Treehouse/Materials/MI_TH_cushion", TH_flat = "/Game/Japan/Treehouse/Materials/MI_TH_flat", TH_glass = "/Game/Japan/Treehouse/Materials/MI_TH_glass", TH_indigo = "/Game/Japan/Treehouse/Materials/MI_TH_indigo", TH_kite = "/Game/Japan/Treehouse/Materials/MI_TH_kite", TH_moss = "/Game/Japan/Treehouse/Materials/MI_TH_moss", TH_noren_cream = "/Game/Japan/Treehouse/Materials/MI_TH_noren_cream", TH_pane = "/Game/Japan/Treehouse/Materials/MI_TH_pane", TH_paper = "/Game/Japan/Treehouse/Materials/MI_TH_paper", TH_rope = "/Game/Japan/Treehouse/Materials/MI_TH_rope", TH_straw = "/Game/Japan/Treehouse/Materials/MI_TH_straw", TH_wood_timber = "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber"}
+triangles = 12861
+collision = "boxes"
+boxes = []
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece31"

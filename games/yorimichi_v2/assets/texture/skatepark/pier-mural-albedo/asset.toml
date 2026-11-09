@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_mural_albedo: the albedo map of the mural pier surface (donor texture mural-albedo.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-mural-albedo"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-mural-albedo"
+
+[[sources]]
+path = "src/mural-albedo.png"
+sha256 = "2a104666e1b22c91acddc0c110cf188e1652529a46f8329e02dfc4fc1735ae49"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_mural_albedo"

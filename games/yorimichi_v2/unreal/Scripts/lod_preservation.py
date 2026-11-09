@@ -45,8 +45,9 @@ def preserve(editor, mesh, before, lods, make_options) -> dict:
         return after
     check_plan(lods, before['count'])
     if lods is None:
-        raise LodError(f'the import dropped the LOD chain ({after["count"]} of {before["count"]} LODs) and the recipe '
-                       'names no reduction plan to restore it')
+        raise LodError(f'the import dropped the LOD chain ({after["count"]} of {before["count"]} LODs, screens '
+                       f'{after["screen_sizes"]}, before {before["screen_sizes"]}) and the recipe names no reduction '
+                       'plan to restore it')
     editor.set_lods(mesh, make_options(lods))
     editor.set_lod_screen_sizes(mesh, [screen for _, screen in lods])
     after = read(editor, mesh)

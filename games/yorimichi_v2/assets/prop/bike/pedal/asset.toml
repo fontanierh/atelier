@@ -1,0 +1,24 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BK_Pedal: a bike part (896 triangles after the import).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/bike/pedal"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/bike/pedal"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/BK_Pedal.fbx"
+sha256 = "5a43d675ef661ba94c84e3622e67f14e9298ff414a816d9db279d112dd1c80e1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Bike"]
+triangles = 896
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_Pedal"

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_NetRackEast: the net rack east, cut from the fused tile(s) Props_5_3 (672 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/net-rack-east"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/net-rack-east"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_NetRackEast.glb"
+sha256 = "2889a869ab5af5c2ef04b2bbc5893f17ad37954ae7a4b103e5ef5401d6f39c45"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 672
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_NetRackEast"

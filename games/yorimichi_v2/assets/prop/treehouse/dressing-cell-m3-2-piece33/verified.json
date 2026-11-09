@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse/dressing-cell-m3-2-piece33",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece33.uasset": "fd6bd00e6edb98403cc386b1acf149c472db01fc99d442c3a243e88c7c6008c6"
+  },
+  "input_fingerprint": "d8bbfb82ff893b9d628ff2d8a8dcf8c81dc4d0f8323830668164ed47eba4d84b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Treehouse/Pieces/TH_Dressing_cell_-3_2_Piece33": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

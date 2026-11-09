@@ -10,12 +10,3 @@ license = "owner-published (docs/DECISIONS.md D05 group 1)"
 
 [[outputs]]
 package = "/Game/SkatePark/Board/M_BoardDissolve"
-
-[[outputs]]
-package = "/Game/SkatePark/Board/SM_SkateDeck"
-
-[[outputs]]
-package = "/Game/SkatePark/Board/SM_SkateTruck"
-
-[[outputs]]
-package = "/Game/SkatePark/Board/SM_SkateWheel"

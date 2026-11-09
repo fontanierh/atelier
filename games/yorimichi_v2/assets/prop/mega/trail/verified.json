@@ -1,0 +1,34 @@
+{
+  "asset": "prop/mega/trail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Mega_Trail.uasset": "d00487788206ff66aed658b5be3ba040587c7ea99ff2006cb8830b4ab822c57b"
+  },
+  "input_fingerprint": "592beaab47d23fed9e0b44c22e01f994345d502f3ed325f88f85320446996a9a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Mega_Trail": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,8 +1,6 @@
 {
   "asset": "object/pier/skatepark",
-  "dependencies": {
-    "adopted/skatepark/loose_files": "054b4709701b34653d0be5c24518a662629d421dd54d8f380a4f665d460d84bb"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/ZL/LNKMHWS0X3RJIE67ZGULPS.uasset": "1f84f45d46eb8b3a0a08ca3542cda04cf05294ad8451e00ee0e2d1b7962c098a"

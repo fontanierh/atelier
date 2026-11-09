@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/street-bench",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_street_bench.uasset": "a3c32561653675b7f14bd5f5bff53ff8ea6a4e8f43ac992e4b879b1bece68218"
+  },
+  "input_fingerprint": "7b16defe31c221f0a0119bc675350ad54ab0b0a2c12fa5f4e5c38213dcc7697a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_street_bench": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

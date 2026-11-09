@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-truck",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Board/SM_SkateTruck.uasset": "3ecf67747f7d8ca3bd0d4d085c94ad1381a58f0403d7f796c8737159240b9b73"
+  },
+  "input_fingerprint": "e454b0957382b16e7de93d36cc1b9afa0c3a54e0f79b81795ceda8920e36a89e",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/Board/SM_SkateTruck": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

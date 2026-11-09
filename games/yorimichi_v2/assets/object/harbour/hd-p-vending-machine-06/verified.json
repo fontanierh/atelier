@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-vending-machine-06",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-vending-machine": "d9487fa56b7a10587abf419115aaeba6e0cc771e5b6adc5469fcddbd195b2cb4"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/16/GTB5G9ZWR2GSYYMP478Z4P.uasset": "4913997642bbce151210ff9e6959b8a8846191d6abd460987c8fa33f61c78472"

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Lake_Shore: a lake piece (852 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/lake/shore"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/lake/shore"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Lake_Shore.fbx"
+sha256 = "a7ae41f5a2852d70a3b2e6927faee8b3ebd3a5c4700af41bf16748943e34ddb9"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 852
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Lake/Pieces/Lake_Shore"

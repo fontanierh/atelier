@@ -1,0 +1,34 @@
+{
+  "asset": "prop/japan-kit/pole",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Pole.uasset": "95ba2004f395996833785324e8d7a31922702b66bc984a18708e12a85e3400f1"
+  },
+  "input_fingerprint": "a5afc91020c64e1efabc69fad922ce6ef86ca65c2f12fec47ebec096d4c8efc9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Pole": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

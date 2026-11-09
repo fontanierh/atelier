@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-tanuki-03",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-tanuki": "ee713f505d0686d557c98af92b5d852aad7e30ee31dc549893f6a1be48645295"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/VK/K4SQCQPEFBGFMG41VDYMAL.uasset": "bbf55d8a54c6e6bdfd100c09d1bfb1083586b93594236997625fb91fc0f3faf4"

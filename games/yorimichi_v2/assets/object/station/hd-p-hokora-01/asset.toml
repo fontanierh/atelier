@@ -6,7 +6,7 @@ id = "object/station/hd-p-hokora-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-hokora"]
+references = ["prop/hidamari-props/hokora"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/2/03/HLTO07HSMCVPATW2OL1IA0"

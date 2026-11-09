@@ -1,0 +1,34 @@
+{
+  "asset": "prop/southwest/fisher-house-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Southwest/Pieces/SW_FisherHouseA.uasset": "f2ea052b3d5369d159e4d36d37d2e4ff9fccd0d13f0a49b241a0dc65e6f056a8"
+  },
+  "input_fingerprint": "f68cfa9c797e3de54caeb8fb74a0eae7135350b3dedf45ba7d7c5920bba9741c",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Southwest/Pieces/SW_FisherHouseA": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

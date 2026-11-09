@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-bicycle-10",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-bicycle": "9e59661e238e19a040387ff7ffba9ef03b7f09375378b3bdddabc6790d1286a4"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/5D/SA8WBWBD09CQK2AZZZ39AA.uasset": "96fac28c7c4283b63a024e185837c8b5987d89144d2a942b86fe8fc87b84c532"

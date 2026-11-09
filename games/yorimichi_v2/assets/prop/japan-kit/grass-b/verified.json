@@ -1,0 +1,42 @@
+{
+  "asset": "prop/japan-kit/grass-b",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Grass_B.uasset": "7b7ec3f601cc5532d04a79a94d5b18a2a3cf546a17973fbe7ecf1c09a0669d8c"
+  },
+  "input_fingerprint": "2e60999d3f177b8239e25ac64f7e860534a2cf97825573c3efe61e5f2b4558a1",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Grass_B": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.10000000149011612,
+          0.03500000014901161
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.10000000149011612,
+          0.03500000014901161
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

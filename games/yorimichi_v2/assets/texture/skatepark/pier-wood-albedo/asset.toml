@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_wood_albedo: the albedo map of the wood pier surface (donor texture wood-albedo.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-wood-albedo"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-wood-albedo"
+
+[[sources]]
+path = "src/wood-albedo.png"
+sha256 = "65124c32f2cd7b3b5bd1b2b1f954ce4fcf7fe727e0f2019d3f6ebfb03d33966f"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_wood_albedo"

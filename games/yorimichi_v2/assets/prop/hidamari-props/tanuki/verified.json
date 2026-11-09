@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/tanuki",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_tanuki.uasset": "a5d7221e2d2ff5aeb38974e90bd46ca5eb4b666350c7d64fa229fb75cee411bb"
+  },
+  "input_fingerprint": "bd0cb58db2c2ef10334c7acbe02e74703447370afdcb0840b4ec7bd382295210",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_tanuki": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

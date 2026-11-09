@@ -6,7 +6,7 @@ id = "object/lake/stump-kettle"
 kind = "placement"
 authority = "editor"
 owner = "region/w06-lake-treehouse"
-references = ["adopted/japan/assets/treehouse"]
+references = ["prop/treehouse-props/backpack", "prop/treehouse-props/barrel", "prop/treehouse-props/basket", "prop/treehouse-props/bell", "prop/treehouse-props/bookshelf", "prop/treehouse-props/crate-desk", "prop/treehouse-props/futon", "prop/treehouse-props/globe", "prop/treehouse-props/kamado", "prop/treehouse-props/log-table", "prop/treehouse-props/planter", "prop/treehouse-props/stump-kettle", "prop/treehouse-props/telescope"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/A/5X/GGFTBZHB4L7TAT6X7JQLJW"

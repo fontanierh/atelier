@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/camp-jinmaku",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_CampJinmaku.uasset": "65771c1e23db9604776f21015c97f0d9b112fce63c4ce6e4d2ce639482954b00"
+  },
+  "input_fingerprint": "da0af5d6df7c5a80b6dca5e1a20d040417a8789563a852b8d1726cd63adc6997",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_CampJinmaku": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

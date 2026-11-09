@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-komainu-02",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-komainu": "46c1c597750b72ff2b19bd3a18b0fe77de5a6c41471ffec8ade15fd356334442"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/3X/S6Y78C2S2KN5RNKPV48S4V.uasset": "aa4885997ade95e57966ece474353d684a1575f2698447f1de7f5fc9b6f87190"

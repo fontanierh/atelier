@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-concrete-normal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_concrete_normal.uasset": "a0e8e7c34e050b511ea5cbe77d0c750341fcb085a891027e13fbe8045cf25394"
+  },
+  "input_fingerprint": "b64ce1aca49df3540025eb4a2d8222b3c5a151f6c8335a8ca2424e4167f5680b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

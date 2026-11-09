@@ -1,0 +1,34 @@
+{
+  "asset": "prop/lake/cabin",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Lake/Pieces/Lake_Cabin.uasset": "13d87bf0ed7f1016320675ec7c1a29cbf60ba00400cf5b5fe549ffe329d5e4b7"
+  },
+  "input_fingerprint": "9f9f590e62d0710ad9154f4e6b2bf60ba7600e7c14f6ec82469442e3a83b8827",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Lake/Pieces/Lake_Cabin": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

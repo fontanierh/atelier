@@ -1,0 +1,34 @@
+{
+  "asset": "prop/zeppelin/mega-park",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/ZP_MegaPark.uasset": "3d5295dbe43acbdaead43acddaf88cb1f4133cb2cc0d15a83f0ef7ebf5732977"
+  },
+  "input_fingerprint": "1073b74fcf49f7254d876c864e44cfbbae6e0535399006f83210f0ac72bf870e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/ZP_MegaPark": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

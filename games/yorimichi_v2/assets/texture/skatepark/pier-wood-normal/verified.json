@@ -1,0 +1,12 @@
+{
+  "asset": "texture/skatepark/pier-wood-normal",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Textures/T_Pier_wood_normal.uasset": "585157e3bd0595db8ae9df99e8af3aa69916dbd321584c8db3a99712aeea9e75"
+  },
+  "input_fingerprint": "9c04dc6d9a99603c503606c781d0ba545224ef28935f4b76b0f0393713ad227f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

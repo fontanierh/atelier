@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/ronin-sode",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_RoninSode.uasset": "191c88f76e6f8f429d4470ed3526f6e3fc75fcd67e9716c2b422157a36360e61"
+  },
+  "input_fingerprint": "04f5c9487392b1999970cf68046777580abdc05d600662bb5bcaa7a6192c6f4f",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_RoninSode": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

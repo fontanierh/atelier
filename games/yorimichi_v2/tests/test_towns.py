@@ -42,13 +42,18 @@ def owners():
 
 
 @pytest.fixture(scope='module')
+def units():
+    return towns.saved_units(ROOT)
+
+
+@pytest.fixture(scope='module')
 def clearance():
     need(towns.CLEARANCE)
     return towns.clearance_segments()
 
 
 @pytest.fixture(scope='module')
-def state(owners, clearance):
+def state(owners, units, clearance):
     """{tag: (text, head, runtime data, classification of the groups the region's existing objects do not save)}."""
     out = {}
     for tag in TAGS:
@@ -57,7 +62,7 @@ def state(owners, clearance):
         head = towns.split_head(text)
         data = json.loads(runtime.read_text())
         taken = {item['id'] for item in tomllib.loads(head).get('objects', [])}
-        result = towns.classify(tag, data, towns.covered_groups(head), owners, taken, clearance)
+        result = towns.classify(tag, data, towns.covered_groups(head), owners, taken, clearance, units[tag])
         out[tag] = (text, head, data, result)
     return out
 
@@ -161,12 +166,13 @@ def test_pieces_are_cut_only_for_groups_over_the_limit(state, tag, clearance):
 
 
 @pytest.mark.parametrize('tag', TAGS)
-def test_models_are_adopted_records_that_own_the_mesh(state, tag):
+def test_models_are_records_that_own_the_mesh(state, tag):
+    """An adopted record, or the record a recovery made in its place, owns each generated object's meshes."""
     text, _, data, _ = state[tag]
     adopted = {}
     for path in (ROOT / 'assets').rglob('asset.toml'):
         record = tomllib.loads(path.read_text())
-        if record.get('kind') == 'adopted':
+        if record.get('kind') != 'placement':
             adopted[record['id']] = {o['package'] for o in record.get('outputs', [])}
     by_key = dict(zip(towns.group_keys(data), data['groups']))
     for item in generated_objects(text):
@@ -188,9 +194,9 @@ def test_object_ids_and_records_are_well_formed(state, tag):
 
 
 @pytest.mark.parametrize('tag', TAGS)
-def test_rerun_is_idempotent(state, tag, owners, clearance):
+def test_rerun_is_idempotent(state, tag, owners, units, clearance):
     text, head, data, _ = state[tag]
-    again, _ = towns.render(tag, towns.split_head(text), data, owners)
+    again, _ = towns.render(tag, towns.split_head(text), data, owners, units[tag])
     assert again == text
 
 
@@ -209,12 +215,15 @@ def test_reasons_are_the_runtime_ones(state):
     assert {key for key, _ in bm['blocked']['outside']} == {f'SM_BM_BVV_Village_{n}' for n in range(1, 9)}
     assert bm['blocked']['no record'] == []
     _, _, _, bc = state['brinecove']
-    assert bc['blocked']['outside'] == [] and bc['blocked']['no record'] == []
+    # Brine Cove batch 1 cut these remainders from their fused tiles; the next Brine Cove batch saves them as objects.
+    assert bc['blocked']['outside'] == [] and {key for key, _ in bc['blocked']['no record']} == {
+        'SM_BC_CraneWest_Soft', 'SM_BC_FishShed_Soft'}
 
 
 def test_shared_mesh_names_are_saved_by_key(state):
     text, _, data, _ = state['brinecove']
     shared = {k for k in towns.group_keys(data) if '#' in k}
-    assert len(shared) == 18
-    saved = {g.split('@', 1)[0] for g in all_groups(text[text.index(towns.MARKER):]) if '#' in g}
+    # 18 cover-plant groups, plus four hero-hull cells per ship that the ship objects own above the marker.
+    assert len(shared) == 30
+    saved = {g.split('@', 1)[0] for g in all_groups(text) if '#' in g}
     assert saved == shared

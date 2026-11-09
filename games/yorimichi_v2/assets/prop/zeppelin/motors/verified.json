@@ -1,0 +1,34 @@
+{
+  "asset": "prop/zeppelin/motors",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/ZP_Motors.uasset": "0da24c0c86bbc593998040df4a189e9f518841d1b32c86be863eb4ffb55cc154"
+  },
+  "input_fingerprint": "3147bdcaa4427c62854b99967aa6ac578265e9e1da3e65ece7d66a9cba9c9776",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/ZP_Motors": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

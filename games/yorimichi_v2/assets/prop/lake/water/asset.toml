@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Lake_Water: a lake piece (160 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/lake/water"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/lake/water"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Lake_Water.fbx"
+sha256 = "4646d5f66ffc8bdd0da9611f5714b418472c319bb0e440c69a4b9c90a4aacf41"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_ForestLakeWater"]
+triangles = 160
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Lake/Pieces/Lake_Water"

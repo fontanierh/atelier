@@ -1,0 +1,34 @@
+{
+  "asset": "prop/treehouse/structure-cell-m2-1-piece11",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece11.uasset": "fc4f8e262183b14c8f7d0a9787dcb01ee0d9267977685d563d1cf4aef98d4e54"
+  },
+  "input_fingerprint": "6ff298a907f8bd9c9eace71ee1b79929c5cf5bb6f42804d3c3299d1c12dcd1bb",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-2_1_Piece11": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-water-basin-01"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-water-basin"]
+references = ["prop/hidamari-props/water-basin"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/6H/OFU14YLGXDMSEM8D1E5QKN"

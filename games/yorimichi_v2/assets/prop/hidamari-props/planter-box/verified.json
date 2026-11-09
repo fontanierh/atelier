@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/planter-box",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_planter_box.uasset": "9eda64172f453634f90e5d2b0dd425f5431f428868824190bbf8f04d69803f93"
+  },
+  "input_fingerprint": "27ac1cf17144783bab226848aefb8ed61a678db3367d83d697fef0fd8b0c71aa",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_planter_box": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

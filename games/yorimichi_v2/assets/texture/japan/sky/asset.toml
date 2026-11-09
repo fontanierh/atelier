@@ -1,0 +1,21 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_sky: a world texture (donor T_sky.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/japan/sky"
+kind = "texture"
+authority = "generated"
+owner = "shared/japan/sky"
+
+[[sources]]
+path = "src/T_sky.png"
+sha256 = "accae01fb894cd8607c6305d3a4cd252ca737a3043651e5ad8f7b6411a298b38"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_sky"

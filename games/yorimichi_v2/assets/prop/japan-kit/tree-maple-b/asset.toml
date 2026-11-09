@@ -1,0 +1,46 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Maple_B: one Japan mesh, LOD0-LOD5 (3680 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-maple-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-maple-b"
+references = ["adopted/japan/foliagelods/tree-maple-b", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Maple_B.fbx"
+sha256 = "e0801c45cc937c83123629cacee32ce9eef82dd56c463c7e9fd416682d9a84c9"
+
+[[sources]]
+path = "src/Tree_Maple_B_LOD1.fbx"
+sha256 = "44dd794c4deb7562c32500b800f952b800be84f6455f37f8e82b57793e904bf3"
+
+[[sources]]
+path = "src/Tree_Maple_B_LOD2.fbx"
+sha256 = "644dd0f94d9de5f2f529beb7134493ea80e5ee703896f7220c5fcb36c2e42d64"
+
+[[sources]]
+path = "src/Tree_Maple_B_LOD3.fbx"
+sha256 = "0dabd2a66a855efe86549000bd4e484e77d7aaff4f29f0a9c830bb67693326a4"
+
+[[sources]]
+path = "src/Tree_Maple_B_LOD4.fbx"
+sha256 = "4a9a1901f1e62dcf6e27990a1b2b9adad1d83bb8fea0487c3819c6b04f506eb5"
+
+[[sources]]
+path = "src/Tree_Maple_B_LOD5.fbx"
+sha256 = "eb831e7543dffdd5ca80b6e820219b9c468b6c60f16d4a87fbe59eb9a5999371"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Maple_B.fbx", 1.0, 3680, [0, 1]], ["src/Tree_Maple_B_LOD1.fbx", 0.2199999988079071, 1264, [0, 1]], ["src/Tree_Maple_B_LOD2.fbx", 0.09000000357627869, 390, [0, 1]], ["src/Tree_Maple_B_LOD3.fbx", 0.03500000014901161, 138, [0, 1]], ["src/Tree_Maple_B_LOD4.fbx", 0.012000000104308128, 76, [0, 1]], ["src/Tree_Maple_B_LOD5.fbx", 0.003599999938160181, 12, [2]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafMaple", "/Game/Japan/Materials/MI_LeafMaple"], ["Tree_Maple_B_Crown", "/Game/Japan/FoliageLODs/Tree_Maple_B/MI_Tree_Maple_B_Crown"]]
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Maple_B"

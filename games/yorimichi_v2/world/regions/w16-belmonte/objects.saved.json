@@ -1061,9 +1061,25 @@
         "SM_BM_NorthApron_Piece3"
       ],
       "id": "object/belmonte/north-apron",
-      "model": "adopted/belmonte/north-apron",
+      "model": [
+        "prop/belmonte/north-apron-piece00",
+        "prop/belmonte/north-apron-piece01",
+        "prop/belmonte/north-apron-piece02",
+        "prop/belmonte/north-apron-piece10",
+        "prop/belmonte/north-apron-piece11",
+        "prop/belmonte/north-apron-piece13",
+        "prop/belmonte/north-apron-piece2",
+        "prop/belmonte/north-apron-piece3"
+      ],
       "models": [
-        "adopted/belmonte/north-apron"
+        "prop/belmonte/north-apron-piece00",
+        "prop/belmonte/north-apron-piece01",
+        "prop/belmonte/north-apron-piece02",
+        "prop/belmonte/north-apron-piece10",
+        "prop/belmonte/north-apron-piece11",
+        "prop/belmonte/north-apron-piece13",
+        "prop/belmonte/north-apron-piece2",
+        "prop/belmonte/north-apron-piece3"
       ]
     },
     "object/belmonte/north-country": {
@@ -1178,9 +1194,225 @@
         "SM_BM_NorthCountry_Piece333"
       ],
       "id": "object/belmonte/north-country",
-      "model": "adopted/belmonte/north-country",
+      "model": [
+        "prop/belmonte/north-country-piece000",
+        "prop/belmonte/north-country-piece001",
+        "prop/belmonte/north-country-piece002",
+        "prop/belmonte/north-country-piece003",
+        "prop/belmonte/north-country-piece01",
+        "prop/belmonte/north-country-piece020",
+        "prop/belmonte/north-country-piece0210",
+        "prop/belmonte/north-country-piece0211",
+        "prop/belmonte/north-country-piece0212",
+        "prop/belmonte/north-country-piece0213",
+        "prop/belmonte/north-country-piece022",
+        "prop/belmonte/north-country-piece0230",
+        "prop/belmonte/north-country-piece0231",
+        "prop/belmonte/north-country-piece0232",
+        "prop/belmonte/north-country-piece0233",
+        "prop/belmonte/north-country-piece03",
+        "prop/belmonte/north-country-piece10",
+        "prop/belmonte/north-country-piece110",
+        "prop/belmonte/north-country-piece111",
+        "prop/belmonte/north-country-piece1120",
+        "prop/belmonte/north-country-piece1121",
+        "prop/belmonte/north-country-piece1122",
+        "prop/belmonte/north-country-piece1123",
+        "prop/belmonte/north-country-piece113",
+        "prop/belmonte/north-country-piece12",
+        "prop/belmonte/north-country-piece1300",
+        "prop/belmonte/north-country-piece1301",
+        "prop/belmonte/north-country-piece1302",
+        "prop/belmonte/north-country-piece1303",
+        "prop/belmonte/north-country-piece131",
+        "prop/belmonte/north-country-piece1320",
+        "prop/belmonte/north-country-piece1321",
+        "prop/belmonte/north-country-piece1322",
+        "prop/belmonte/north-country-piece1323",
+        "prop/belmonte/north-country-piece133",
+        "prop/belmonte/north-country-piece200",
+        "prop/belmonte/north-country-piece2010",
+        "prop/belmonte/north-country-piece2011",
+        "prop/belmonte/north-country-piece2012",
+        "prop/belmonte/north-country-piece2013",
+        "prop/belmonte/north-country-piece202",
+        "prop/belmonte/north-country-piece2030",
+        "prop/belmonte/north-country-piece2031",
+        "prop/belmonte/north-country-piece2032",
+        "prop/belmonte/north-country-piece2033",
+        "prop/belmonte/north-country-piece210",
+        "prop/belmonte/north-country-piece211",
+        "prop/belmonte/north-country-piece2120",
+        "prop/belmonte/north-country-piece2121",
+        "prop/belmonte/north-country-piece2122",
+        "prop/belmonte/north-country-piece2123",
+        "prop/belmonte/north-country-piece2130",
+        "prop/belmonte/north-country-piece2131",
+        "prop/belmonte/north-country-piece2132",
+        "prop/belmonte/north-country-piece2133",
+        "prop/belmonte/north-country-piece220",
+        "prop/belmonte/north-country-piece2210",
+        "prop/belmonte/north-country-piece2211",
+        "prop/belmonte/north-country-piece2212",
+        "prop/belmonte/north-country-piece2213",
+        "prop/belmonte/north-country-piece222",
+        "prop/belmonte/north-country-piece223",
+        "prop/belmonte/north-country-piece2300",
+        "prop/belmonte/north-country-piece2301",
+        "prop/belmonte/north-country-piece2302",
+        "prop/belmonte/north-country-piece2303",
+        "prop/belmonte/north-country-piece2310",
+        "prop/belmonte/north-country-piece2311",
+        "prop/belmonte/north-country-piece2312",
+        "prop/belmonte/north-country-piece2313",
+        "prop/belmonte/north-country-piece232",
+        "prop/belmonte/north-country-piece233",
+        "prop/belmonte/north-country-piece301",
+        "prop/belmonte/north-country-piece3020",
+        "prop/belmonte/north-country-piece3021",
+        "prop/belmonte/north-country-piece3022",
+        "prop/belmonte/north-country-piece3023",
+        "prop/belmonte/north-country-piece3030",
+        "prop/belmonte/north-country-piece3031",
+        "prop/belmonte/north-country-piece3032",
+        "prop/belmonte/north-country-piece3033",
+        "prop/belmonte/north-country-piece3100",
+        "prop/belmonte/north-country-piece3101",
+        "prop/belmonte/north-country-piece3102",
+        "prop/belmonte/north-country-piece3103",
+        "prop/belmonte/north-country-piece311",
+        "prop/belmonte/north-country-piece3120",
+        "prop/belmonte/north-country-piece3121",
+        "prop/belmonte/north-country-piece3122",
+        "prop/belmonte/north-country-piece3123",
+        "prop/belmonte/north-country-piece313",
+        "prop/belmonte/north-country-piece3200",
+        "prop/belmonte/north-country-piece3201",
+        "prop/belmonte/north-country-piece3202",
+        "prop/belmonte/north-country-piece3203",
+        "prop/belmonte/north-country-piece3210",
+        "prop/belmonte/north-country-piece3211",
+        "prop/belmonte/north-country-piece3212",
+        "prop/belmonte/north-country-piece3213",
+        "prop/belmonte/north-country-piece322",
+        "prop/belmonte/north-country-piece323",
+        "prop/belmonte/north-country-piece3300",
+        "prop/belmonte/north-country-piece3301",
+        "prop/belmonte/north-country-piece3302",
+        "prop/belmonte/north-country-piece3303",
+        "prop/belmonte/north-country-piece331",
+        "prop/belmonte/north-country-piece332",
+        "prop/belmonte/north-country-piece333"
+      ],
       "models": [
-        "adopted/belmonte/north-country"
+        "prop/belmonte/north-country-piece000",
+        "prop/belmonte/north-country-piece001",
+        "prop/belmonte/north-country-piece002",
+        "prop/belmonte/north-country-piece003",
+        "prop/belmonte/north-country-piece01",
+        "prop/belmonte/north-country-piece020",
+        "prop/belmonte/north-country-piece0210",
+        "prop/belmonte/north-country-piece0211",
+        "prop/belmonte/north-country-piece0212",
+        "prop/belmonte/north-country-piece0213",
+        "prop/belmonte/north-country-piece022",
+        "prop/belmonte/north-country-piece0230",
+        "prop/belmonte/north-country-piece0231",
+        "prop/belmonte/north-country-piece0232",
+        "prop/belmonte/north-country-piece0233",
+        "prop/belmonte/north-country-piece03",
+        "prop/belmonte/north-country-piece10",
+        "prop/belmonte/north-country-piece110",
+        "prop/belmonte/north-country-piece111",
+        "prop/belmonte/north-country-piece1120",
+        "prop/belmonte/north-country-piece1121",
+        "prop/belmonte/north-country-piece1122",
+        "prop/belmonte/north-country-piece1123",
+        "prop/belmonte/north-country-piece113",
+        "prop/belmonte/north-country-piece12",
+        "prop/belmonte/north-country-piece1300",
+        "prop/belmonte/north-country-piece1301",
+        "prop/belmonte/north-country-piece1302",
+        "prop/belmonte/north-country-piece1303",
+        "prop/belmonte/north-country-piece131",
+        "prop/belmonte/north-country-piece1320",
+        "prop/belmonte/north-country-piece1321",
+        "prop/belmonte/north-country-piece1322",
+        "prop/belmonte/north-country-piece1323",
+        "prop/belmonte/north-country-piece133",
+        "prop/belmonte/north-country-piece200",
+        "prop/belmonte/north-country-piece2010",
+        "prop/belmonte/north-country-piece2011",
+        "prop/belmonte/north-country-piece2012",
+        "prop/belmonte/north-country-piece2013",
+        "prop/belmonte/north-country-piece202",
+        "prop/belmonte/north-country-piece2030",
+        "prop/belmonte/north-country-piece2031",
+        "prop/belmonte/north-country-piece2032",
+        "prop/belmonte/north-country-piece2033",
+        "prop/belmonte/north-country-piece210",
+        "prop/belmonte/north-country-piece211",
+        "prop/belmonte/north-country-piece2120",
+        "prop/belmonte/north-country-piece2121",
+        "prop/belmonte/north-country-piece2122",
+        "prop/belmonte/north-country-piece2123",
+        "prop/belmonte/north-country-piece2130",
+        "prop/belmonte/north-country-piece2131",
+        "prop/belmonte/north-country-piece2132",
+        "prop/belmonte/north-country-piece2133",
+        "prop/belmonte/north-country-piece220",
+        "prop/belmonte/north-country-piece2210",
+        "prop/belmonte/north-country-piece2211",
+        "prop/belmonte/north-country-piece2212",
+        "prop/belmonte/north-country-piece2213",
+        "prop/belmonte/north-country-piece222",
+        "prop/belmonte/north-country-piece223",
+        "prop/belmonte/north-country-piece2300",
+        "prop/belmonte/north-country-piece2301",
+        "prop/belmonte/north-country-piece2302",
+        "prop/belmonte/north-country-piece2303",
+        "prop/belmonte/north-country-piece2310",
+        "prop/belmonte/north-country-piece2311",
+        "prop/belmonte/north-country-piece2312",
+        "prop/belmonte/north-country-piece2313",
+        "prop/belmonte/north-country-piece232",
+        "prop/belmonte/north-country-piece233",
+        "prop/belmonte/north-country-piece301",
+        "prop/belmonte/north-country-piece3020",
+        "prop/belmonte/north-country-piece3021",
+        "prop/belmonte/north-country-piece3022",
+        "prop/belmonte/north-country-piece3023",
+        "prop/belmonte/north-country-piece3030",
+        "prop/belmonte/north-country-piece3031",
+        "prop/belmonte/north-country-piece3032",
+        "prop/belmonte/north-country-piece3033",
+        "prop/belmonte/north-country-piece3100",
+        "prop/belmonte/north-country-piece3101",
+        "prop/belmonte/north-country-piece3102",
+        "prop/belmonte/north-country-piece3103",
+        "prop/belmonte/north-country-piece311",
+        "prop/belmonte/north-country-piece3120",
+        "prop/belmonte/north-country-piece3121",
+        "prop/belmonte/north-country-piece3122",
+        "prop/belmonte/north-country-piece3123",
+        "prop/belmonte/north-country-piece313",
+        "prop/belmonte/north-country-piece3200",
+        "prop/belmonte/north-country-piece3201",
+        "prop/belmonte/north-country-piece3202",
+        "prop/belmonte/north-country-piece3203",
+        "prop/belmonte/north-country-piece3210",
+        "prop/belmonte/north-country-piece3211",
+        "prop/belmonte/north-country-piece3212",
+        "prop/belmonte/north-country-piece3213",
+        "prop/belmonte/north-country-piece322",
+        "prop/belmonte/north-country-piece323",
+        "prop/belmonte/north-country-piece3300",
+        "prop/belmonte/north-country-piece3301",
+        "prop/belmonte/north-country-piece3302",
+        "prop/belmonte/north-country-piece3303",
+        "prop/belmonte/north-country-piece331",
+        "prop/belmonte/north-country-piece332",
+        "prop/belmonte/north-country-piece333"
       ]
     },
     "object/belmonte/osteria": {
@@ -1220,9 +1452,9 @@
         "Bush_Flower_A"
       ],
       "id": "object/belmonte/plant-bush-flower-a",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-flower-a",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-flower-a"
       ]
     },
     "object/belmonte/plant-bush-green-b-0-10": {
@@ -1239,9 +1471,9 @@
         "Bush_Green_B@3_42"
       ],
       "id": "object/belmonte/plant-bush-green-b-0-10",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-0-11": {
@@ -1249,9 +1481,9 @@
         "Bush_Green_B@0_44"
       ],
       "id": "object/belmonte/plant-bush-green-b-0-11",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-0-7": {
@@ -1263,9 +1495,9 @@
         "Bush_Green_B@3_31"
       ],
       "id": "object/belmonte/plant-bush-green-b-0-7",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-0-8": {
@@ -1284,9 +1516,9 @@
         "Bush_Green_B@3_35"
       ],
       "id": "object/belmonte/plant-bush-green-b-0-8",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-0-9": {
@@ -1307,9 +1539,9 @@
         "Bush_Green_B@3_39"
       ],
       "id": "object/belmonte/plant-bush-green-b-0-9",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-1-10": {
@@ -1326,9 +1558,9 @@
         "Bush_Green_B@7_43"
       ],
       "id": "object/belmonte/plant-bush-green-b-1-10",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-1-11": {
@@ -1337,9 +1569,9 @@
         "Bush_Green_B@7_44"
       ],
       "id": "object/belmonte/plant-bush-green-b-1-11",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-1-7": {
@@ -1353,9 +1585,9 @@
         "Bush_Green_B@7_31"
       ],
       "id": "object/belmonte/plant-bush-green-b-1-7",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-1-8": {
@@ -1376,9 +1608,9 @@
         "Bush_Green_B@7_35"
       ],
       "id": "object/belmonte/plant-bush-green-b-1-8",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-1-9": {
@@ -1397,9 +1629,9 @@
         "Bush_Green_B@7_39"
       ],
       "id": "object/belmonte/plant-bush-green-b-1-9",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-2-10": {
@@ -1417,9 +1649,9 @@
         "Bush_Green_B@11_43"
       ],
       "id": "object/belmonte/plant-bush-green-b-2-10",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-2-11": {
@@ -1428,9 +1660,9 @@
         "Bush_Green_B@11_44"
       ],
       "id": "object/belmonte/plant-bush-green-b-2-11",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-2-7": {
@@ -1443,9 +1675,9 @@
         "Bush_Green_B@11_31"
       ],
       "id": "object/belmonte/plant-bush-green-b-2-7",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-2-8": {
@@ -1464,9 +1696,9 @@
         "Bush_Green_B@11_35"
       ],
       "id": "object/belmonte/plant-bush-green-b-2-8",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-2-9": {
@@ -1487,9 +1719,9 @@
         "Bush_Green_B@11_38"
       ],
       "id": "object/belmonte/plant-bush-green-b-2-9",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-3-8": {
@@ -1498,9 +1730,9 @@
         "Bush_Green_B@12_35"
       ],
       "id": "object/belmonte/plant-bush-green-b-3-8",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-3-9": {
@@ -1508,9 +1740,9 @@
         "Bush_Green_B@12_36"
       ],
       "id": "object/belmonte/plant-bush-green-b-3-9",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-m1-10": {
@@ -1527,9 +1759,9 @@
         "Bush_Green_B@-1_42"
       ],
       "id": "object/belmonte/plant-bush-green-b-m1-10",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-m1-11": {
@@ -1538,9 +1770,9 @@
         "Bush_Green_B@-1_44"
       ],
       "id": "object/belmonte/plant-bush-green-b-m1-11",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-m1-7": {
@@ -1553,9 +1785,9 @@
         "Bush_Green_B@-1_31"
       ],
       "id": "object/belmonte/plant-bush-green-b-m1-7",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-m1-8": {
@@ -1573,9 +1805,9 @@
         "Bush_Green_B@-1_34"
       ],
       "id": "object/belmonte/plant-bush-green-b-m1-8",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-bush-green-b-m1-9": {
@@ -1594,9 +1826,9 @@
         "Bush_Green_B@-1_39"
       ],
       "id": "object/belmonte/plant-bush-green-b-m1-9",
-      "model": "adopted/japan/assets/bush",
+      "model": "prop/japan-kit/bush-green-b",
       "models": [
-        "adopted/japan/assets/bush"
+        "prop/japan-kit/bush-green-b"
       ]
     },
     "object/belmonte/plant-grass-a": {
@@ -1604,9 +1836,9 @@
         "Grass_A"
       ],
       "id": "object/belmonte/plant-grass-a",
-      "model": "adopted/japan/assets/grass",
+      "model": "prop/japan-kit/grass-a",
       "models": [
-        "adopted/japan/assets/grass"
+        "prop/japan-kit/grass-a"
       ]
     },
     "object/belmonte/plant-tree-forest-ginkgo": {
@@ -1614,9 +1846,9 @@
         "Tree_Forest_Ginkgo"
       ],
       "id": "object/belmonte/plant-tree-forest-ginkgo",
-      "model": "adopted/japan/assets/tree-forest",
+      "model": "prop/japan-kit/tree-forest-ginkgo",
       "models": [
-        "adopted/japan/assets/tree-forest"
+        "prop/japan-kit/tree-forest-ginkgo"
       ]
     },
     "object/belmonte/plant-tree-forest-maple": {
@@ -1624,9 +1856,9 @@
         "Tree_Forest_Maple"
       ],
       "id": "object/belmonte/plant-tree-forest-maple",
-      "model": "adopted/japan/assets/tree-forest",
+      "model": "prop/japan-kit/tree-forest-maple",
       "models": [
-        "adopted/japan/assets/tree-forest"
+        "prop/japan-kit/tree-forest-maple"
       ]
     },
     "object/belmonte/plant-tree-forest-pine": {
@@ -1634,9 +1866,9 @@
         "Tree_Forest_Pine"
       ],
       "id": "object/belmonte/plant-tree-forest-pine",
-      "model": "adopted/japan/assets/tree-forest",
+      "model": "prop/japan-kit/tree-forest-pine",
       "models": [
-        "adopted/japan/assets/tree-forest"
+        "prop/japan-kit/tree-forest-pine"
       ]
     },
     "object/belmonte/plant-tree-tuscan-cypress": {
@@ -1644,9 +1876,9 @@
         "Tree_Tuscan_Cypress"
       ],
       "id": "object/belmonte/plant-tree-tuscan-cypress",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-cypress",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-cypress"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-0-10": {
@@ -1667,9 +1899,9 @@
         "Tree_Tuscan_Oak@3_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-0-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-0-11": {
@@ -1684,9 +1916,9 @@
         "Tree_Tuscan_Oak@3_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-0-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-0-7": {
@@ -1709,9 +1941,9 @@
         "Tree_Tuscan_Oak@3_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-0-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-0-8": {
@@ -1734,9 +1966,9 @@
         "Tree_Tuscan_Oak@3_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-0-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-0-9": {
@@ -1753,9 +1985,9 @@
         "Tree_Tuscan_Oak@3_37"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-0-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-1-10": {
@@ -1778,9 +2010,9 @@
         "Tree_Tuscan_Oak@7_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-1-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-1-11": {
@@ -1795,9 +2027,9 @@
         "Tree_Tuscan_Oak@7_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-1-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-1-7": {
@@ -1820,9 +2052,9 @@
         "Tree_Tuscan_Oak@7_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-1-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-1-8": {
@@ -1845,9 +2077,9 @@
         "Tree_Tuscan_Oak@7_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-1-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-1-9": {
@@ -1866,9 +2098,9 @@
         "Tree_Tuscan_Oak@7_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-1-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-2-10": {
@@ -1891,9 +2123,9 @@
         "Tree_Tuscan_Oak@11_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-2-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-2-11": {
@@ -1908,9 +2140,9 @@
         "Tree_Tuscan_Oak@11_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-2-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-2-7": {
@@ -1933,9 +2165,9 @@
         "Tree_Tuscan_Oak@11_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-2-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-2-8": {
@@ -1958,9 +2190,9 @@
         "Tree_Tuscan_Oak@11_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-2-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-2-9": {
@@ -1983,9 +2215,9 @@
         "Tree_Tuscan_Oak@11_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-2-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-3-10": {
@@ -2000,9 +2232,9 @@
         "Tree_Tuscan_Oak@13_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-3-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-3-11": {
@@ -2012,9 +2244,9 @@
         "Tree_Tuscan_Oak@13_44"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-3-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-3-7": {
@@ -2029,9 +2261,9 @@
         "Tree_Tuscan_Oak@13_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-3-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-3-8": {
@@ -2046,9 +2278,9 @@
         "Tree_Tuscan_Oak@13_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-3-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-3-9": {
@@ -2060,9 +2292,9 @@
         "Tree_Tuscan_Oak@13_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-3-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m1-10": {
@@ -2085,9 +2317,9 @@
         "Tree_Tuscan_Oak@-1_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m1-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m1-11": {
@@ -2102,9 +2334,9 @@
         "Tree_Tuscan_Oak@-1_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m1-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m1-7": {
@@ -2127,9 +2359,9 @@
         "Tree_Tuscan_Oak@-1_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m1-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m1-8": {
@@ -2152,9 +2384,9 @@
         "Tree_Tuscan_Oak@-1_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m1-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m1-9": {
@@ -2177,9 +2409,9 @@
         "Tree_Tuscan_Oak@-1_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m1-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m2-10": {
@@ -2194,9 +2426,9 @@
         "Tree_Tuscan_Oak@-5_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m2-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m2-11": {
@@ -2206,9 +2438,9 @@
         "Tree_Tuscan_Oak@-5_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m2-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m2-7": {
@@ -2222,9 +2454,9 @@
         "Tree_Tuscan_Oak@-5_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m2-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m2-8": {
@@ -2238,9 +2470,9 @@
         "Tree_Tuscan_Oak@-5_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m2-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-oak-m2-9": {
@@ -2255,9 +2487,9 @@
         "Tree_Tuscan_Oak@-5_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-oak-m2-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-oak",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-oak"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-0-10": {
@@ -2273,9 +2505,9 @@
         "Tree_Tuscan_Olive@3_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-0-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-0-11": {
@@ -2290,9 +2522,9 @@
         "Tree_Tuscan_Olive@3_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-0-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-0-7": {
@@ -2315,9 +2547,9 @@
         "Tree_Tuscan_Olive@3_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-0-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-0-8": {
@@ -2339,9 +2571,9 @@
         "Tree_Tuscan_Olive@3_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-0-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-0-9": {
@@ -2361,9 +2593,9 @@
         "Tree_Tuscan_Olive@3_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-0-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-1-10": {
@@ -2381,9 +2613,9 @@
         "Tree_Tuscan_Olive@7_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-1-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-1-11": {
@@ -2398,9 +2630,9 @@
         "Tree_Tuscan_Olive@7_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-1-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-1-7": {
@@ -2423,9 +2655,9 @@
         "Tree_Tuscan_Olive@7_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-1-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-1-8": {
@@ -2447,9 +2679,9 @@
         "Tree_Tuscan_Olive@7_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-1-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-1-9": {
@@ -2471,9 +2703,9 @@
         "Tree_Tuscan_Olive@7_38"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-1-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-2-10": {
@@ -2486,9 +2718,9 @@
         "Tree_Tuscan_Olive@11_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-2-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-2-11": {
@@ -2503,9 +2735,9 @@
         "Tree_Tuscan_Olive@11_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-2-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-2-7": {
@@ -2527,9 +2759,9 @@
         "Tree_Tuscan_Olive@11_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-2-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-2-8": {
@@ -2546,9 +2778,9 @@
         "Tree_Tuscan_Olive@11_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-2-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-2-9": {
@@ -2569,9 +2801,9 @@
         "Tree_Tuscan_Olive@11_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-2-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-3-10": {
@@ -2586,9 +2818,9 @@
         "Tree_Tuscan_Olive@13_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-3-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-3-11": {
@@ -2598,9 +2830,9 @@
         "Tree_Tuscan_Olive@13_44"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-3-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-3-7": {
@@ -2615,9 +2847,9 @@
         "Tree_Tuscan_Olive@13_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-3-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-3-8": {
@@ -2632,9 +2864,9 @@
         "Tree_Tuscan_Olive@13_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-3-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-3-9": {
@@ -2647,9 +2879,9 @@
         "Tree_Tuscan_Olive@13_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-3-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m1-10": {
@@ -2668,9 +2900,9 @@
         "Tree_Tuscan_Olive@-1_41"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m1-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m1-11": {
@@ -2685,9 +2917,9 @@
         "Tree_Tuscan_Olive@-1_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m1-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m1-7": {
@@ -2710,9 +2942,9 @@
         "Tree_Tuscan_Olive@-1_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m1-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m1-8": {
@@ -2731,9 +2963,9 @@
         "Tree_Tuscan_Olive@-1_33"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m1-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m1-9": {
@@ -2755,9 +2987,9 @@
         "Tree_Tuscan_Olive@-1_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m1-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m2-10": {
@@ -2772,9 +3004,9 @@
         "Tree_Tuscan_Olive@-5_43"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m2-10",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m2-11": {
@@ -2785,9 +3017,9 @@
         "Tree_Tuscan_Olive@-5_45"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m2-11",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m2-7": {
@@ -2800,9 +3032,9 @@
         "Tree_Tuscan_Olive@-5_31"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m2-7",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m2-8": {
@@ -2816,9 +3048,9 @@
         "Tree_Tuscan_Olive@-5_35"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m2-8",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-olive-m2-9": {
@@ -2833,9 +3065,9 @@
         "Tree_Tuscan_Olive@-5_39"
       ],
       "id": "object/belmonte/plant-tree-tuscan-olive-m2-9",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-olive",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-olive"
       ]
     },
     "object/belmonte/plant-tree-tuscan-pine": {
@@ -2843,9 +3075,9 @@
         "Tree_Tuscan_Pine"
       ],
       "id": "object/belmonte/plant-tree-tuscan-pine",
-      "model": "adopted/japan/assets/tree-tuscan",
+      "model": "prop/japan-kit/tree-tuscan-pine",
       "models": [
-        "adopted/japan/assets/tree-tuscan"
+        "prop/japan-kit/tree-tuscan-pine"
       ]
     },
     "object/belmonte/ponte": {

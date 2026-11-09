@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-park-furniture",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/SM_SkateParkFurniture.uasset": "1f6c107327709b91721eb5a8e2148f3ce1d0dd161f0d672b1ba550c37a934e19"
+  },
+  "input_fingerprint": "8f7c1918b3c6ff607e2b2e5b4087b509717c53648dcfea8dca72461651a719ff",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/SM_SkateParkFurniture": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

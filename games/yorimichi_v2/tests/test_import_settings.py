@@ -12,6 +12,7 @@ def test_absent_settings_change_nothing():
     for settings in ({}, {'collision': 'complex', 'triangles': 3, 'full_precision_uvs': True}):
         assert s.allow_cpu_access(settings) is None and s.double_sided(settings) is True
         assert s.max_texture_size(settings) is None and s.lod_group(settings) is None
+        assert s.legacy_fbx(settings) is False
 
 
 def test_present_settings_are_read():
@@ -27,3 +28,16 @@ def test_present_settings_are_read():
 def test_malformed_values_are_refused(call, settings):
     with pytest.raises(s.SettingError):
         call(settings)
+
+
+def test_legacy_fbx_is_read():
+    assert s.legacy_fbx({'legacy_fbx': True}) is True
+    with pytest.raises(s.SettingError):
+        s.legacy_fbx({'legacy_fbx': 'yes'})
+
+
+def test_collision_trace_is_absent_by_default_and_checked():
+    assert s.collision_trace({}) is None
+    assert s.collision_trace({'collision_trace': 'CTF_USE_DEFAULT'}) == 'CTF_USE_DEFAULT'
+    with pytest.raises(s.SettingError):
+        s.collision_trace({'collision_trace': 'DEFAULT'})

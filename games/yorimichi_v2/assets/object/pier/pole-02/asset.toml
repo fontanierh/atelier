@@ -6,7 +6,7 @@ id = "object/pier/pole-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w04-pier-approach"
-references = ["adopted/japan/assets/pole"]
+references = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/3/FH/YB2FZ5EA1BD13IO0LR1QVY"

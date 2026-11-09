@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/ronin-kasa",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_RoninKasa.uasset": "e4927a5eb145d1721da4ba71fb5fc064d2f093662e586a531c43ee293064c085"
+  },
+  "input_fingerprint": "695c5187d2f1e724d0f8d6366c4dc030f0323e4f412bf9770006cdb0aff8af7c",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_RoninKasa": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

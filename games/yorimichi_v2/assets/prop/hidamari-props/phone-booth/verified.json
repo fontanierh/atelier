@@ -1,0 +1,34 @@
+{
+  "asset": "prop/hidamari-props/phone-booth",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/HD_P_phone_booth.uasset": "64c0006a95148916f4c36e225f486f92acc7a0a46a62fe5324a277b87cb14a1b"
+  },
+  "input_fingerprint": "b4f5d66580c7058a28d3519f5a51e18adb64e005a550a2fc54d89d43b8a426f7",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/HD_P_phone_booth": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

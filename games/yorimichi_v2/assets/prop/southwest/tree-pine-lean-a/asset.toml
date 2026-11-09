@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_PineLean_A: a south-west piece (432 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/southwest/tree-pine-lean-a"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/southwest/tree-pine-lean-a"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/Tree_PineLean_A.fbx"
+sha256 = "5652e0f51c887881f3d4f7c6dcc4f021dd926deceb09bf6a13cfb2ad1e7bb8c3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 432
+collision = "complex"
+double_sided = false
+
+[[outputs]]
+package = "/Game/Japan/Southwest/Pieces/Tree_PineLean_A"

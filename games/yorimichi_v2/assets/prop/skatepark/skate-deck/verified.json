@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-deck",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Board/SM_SkateDeck.uasset": "38d0391c20b511e8a4b9106aed9b7f805ee5c5ba0a5764152b12491048743e4d"
+  },
+  "input_fingerprint": "0ecb4cc7fb84fdb4935b9a0a99584c50421994763253993c4f03ba2f20b6e02b",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/Board/SM_SkateDeck": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

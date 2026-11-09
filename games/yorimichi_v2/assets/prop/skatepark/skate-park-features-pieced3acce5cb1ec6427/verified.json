@@ -1,0 +1,34 @@
+{
+  "asset": "prop/skatepark/skate-park-features-pieced3acce5cb1ec6427",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/SM_SkateParkFeatures_Pieced3acce5cb1ec6427.uasset": "dec57be7e32f75287029d934e7a891c5b1057cfd258a58d05d320ed06f5864d2"
+  },
+  "input_fingerprint": "9e5397b1cda12a74468830098463ab9109f0c93398cbe9d391b639ec2416e37c",
+  "kind": "imported",
+  "lods": {
+    "/Game/SkatePark/SM_SkateParkFeatures_Pieced3acce5cb1ec6427": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

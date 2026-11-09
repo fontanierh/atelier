@@ -1,0 +1,34 @@
+{
+  "asset": "prop/sailboat/wake",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SB_Wake.uasset": "276ad6d27b0cc2efb8d55eb71035770b7d6b6963e5a78acc8868b4080ed33bc1"
+  },
+  "input_fingerprint": "49837d3dcaf11c724ddd20258fdee021576da99c92052f0b591c56423fc8f413",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/SB_Wake": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

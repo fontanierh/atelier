@@ -1,0 +1,34 @@
+{
+  "asset": "prop/swordcamp/guard-jingasa",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Assets/SM_GuardJingasa.uasset": "ff364aed293366747556e28cbb047006867c6f2d098940740c746a8c6d8bdc4b"
+  },
+  "input_fingerprint": "25c736238552917614149580964e95a46f465e1b33ce5d08fa0efca0ef6023cc",
+  "kind": "imported",
+  "lods": {
+    "/Game/SwordCamp/Assets/SM_GuardJingasa": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

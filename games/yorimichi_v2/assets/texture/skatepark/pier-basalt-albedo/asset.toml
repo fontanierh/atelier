@@ -1,0 +1,23 @@
+# Recovered from the donor generator (tools/migrate/recover.py): T_Pier_basalt_albedo: the albedo map of the basalt pier surface (donor texture basalt-albedo.png).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/skatepark/pier-basalt-albedo"
+kind = "texture"
+authority = "generated"
+owner = "shared/skatepark/pier-basalt-albedo"
+
+[[sources]]
+path = "src/basalt-albedo.png"
+sha256 = "441f1f986934b21229bf62f35523deb91e637752ded273f4988f210225b196ca"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+
+[[outputs]]
+package = "/Game/SkatePark/Textures/T_Pier_basalt_albedo"

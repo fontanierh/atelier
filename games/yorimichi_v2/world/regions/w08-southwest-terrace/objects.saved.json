@@ -3,9 +3,13 @@
     "object/swterrace/pole-01": {
       "groups": [],
       "id": "object/swterrace/pole-01",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [

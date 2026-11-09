@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_P_barrel: a tree house prop (8985 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse-props/barrel"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse-props/barrel"
+references = ["adopted/japan/treehouse/prop-barrel"]
+
+[[sources]]
+path = "src/TH_P_barrel.fbx"
+sha256 = "724f1d567fe2a4bacd44f6f1828b2a7474539d64e120a15a30045b1582489dd6"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_barrel"]
+triangles = 8985
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_P_barrel"

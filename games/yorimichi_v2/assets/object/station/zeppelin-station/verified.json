@@ -1,8 +1,6 @@
 {
   "asset": "object/station/zeppelin-station",
-  "dependencies": {
-    "adopted/japan/assets/zeppelin": "68917ea1113cddbfa1331cd0f54cf9e52dc75aa8783dcfce79f4474673bded6a"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/4W/A57VZCVWT85HS0DXZ595ZU.uasset": "3e00f6a197dc582dbacec305ee0a7282d764707ff68311ed92b2c0ab9b61a3f7"

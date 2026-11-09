@@ -1,0 +1,34 @@
+{
+  "asset": "prop/sailboat/hull",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/SB_Hull.uasset": "ce9fa8c5a5c53c65bf0b55bbd4650830a2f067b452419bf84ce03c7e3d64ac6a"
+  },
+  "input_fingerprint": "590b23aefc04862473b8ee9d39fa7b01a88c956c558c51beb5324e2928ace263",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/SB_Hull": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-bicycle-shelter-01",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-bicycle-shelter": "bd79cc8f4a8a1061a1e71adc32e99b10050de7c57853b1006cff7a59f79186fd"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/VG/FSWNCAEXZRIJUSD4N0Y9UY.uasset": "35566248fe05754ffea3b1960aabcb46dd2499d1c79613bd536cf78020ac6678"

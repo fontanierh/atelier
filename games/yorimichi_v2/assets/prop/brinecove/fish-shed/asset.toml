@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_FishShed: the fish shed, cut from the fused tile(s) Harbor_5_3 (468 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/fish-shed"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/fish-shed"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_FishShed.glb"
+sha256 = "07c32e773a8fe0c80f39b8980577d427cd4e7d05dd203243aa4794bc935efc03"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_planks", "/Game/Brinecove/Materials/MI_BC_roof_terra", "/Game/Brinecove/Materials/MI_BC_sail_stripe", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 468
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_FishShed"

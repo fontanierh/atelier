@@ -10,5 +10,5 @@ data = ""
 [[objects]]
 id = "object/megaramp/ramp"
 static = ["Mega_Ramp", "Mega_Trim"]
-model = "adopted/japan/assets/mega-park-pieces"
+model = ["prop/mega/ramp", "prop/mega/trim"]
 about = "the mini Mega ramp in the clearing: the ridden Mega_Ramp and its look-only Mega_Trim seams, at world.json's mega origin"

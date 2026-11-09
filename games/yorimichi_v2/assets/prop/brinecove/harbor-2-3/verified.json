@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_Harbor_2_3.uasset": "c0becf18b7953e9abd1465332343c8d585bed81563bf2e70333c110a8264bf02"
+    "unreal/Content/Brinecove/Meshes/SM_BC_Harbor_2_3.uasset": "907e1924624d1fdc2492b581c9f8d655c1f15e821ff8c315564241bf1c97a011"
   },
-  "input_fingerprint": "528d329a20e85423c816a98b165f62ad878487941b03bb06acde31e9b9b25c04",
+  "input_fingerprint": "bc1697228da0fbe8277677b820315e011482cdd394ce657274bdc846faf366b7",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_Harbor_2_3": {
