@@ -6,7 +6,7 @@ id = "prop/citysurfaces/arcade-roof"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/arcade-roof"
-references = ["adopted/japan/hidamari/surface-paint"]
+references = ["adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-timber"]
 
 [[sources]]
 path = "src/HD_ArcadeRoof.fbx"
@@ -17,10 +17,10 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_paint"]
+slot_map = {HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
 triangles = 672
-collision = "complex"
 full_precision_uvs = true
+collision = "complex"
 
 [[outputs]]
 package = "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeRoof"

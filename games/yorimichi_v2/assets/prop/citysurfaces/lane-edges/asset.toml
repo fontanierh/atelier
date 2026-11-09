@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_LaneEdges: one city surface piece of HD_LaneEdges (29300 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/lane-edges"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/lane-edges"
+references = ["adopted/japan/hidamari/surface-blockwall", "adopted/japan/hidamari/surface-moss", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-siding", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_LaneEdges.fbx"
+sha256 = "1078e17faa8f7a0aa5656ed860a909cc9fe0f6540f3e78169589ee72609e717a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_blockwall = "/Game/Japan/Hidamari/Materials/MI_HD_blockwall", HDS_moss = "/Game/Japan/Hidamari/Materials/MI_HD_moss", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_siding = "/Game/Japan/Hidamari/Materials/MI_HD_siding", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 29300
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 378
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_LaneEdges"

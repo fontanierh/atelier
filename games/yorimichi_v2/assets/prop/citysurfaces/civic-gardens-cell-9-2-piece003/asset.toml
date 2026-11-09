@@ -6,7 +6,7 @@ id = "prop/citysurfaces/civic-gardens-cell-9-2-piece003"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/civic-gardens-cell-9-2-piece003"
-references = ["adopted/japan/hidamari/surface-earth"]
+references = ["adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-grass", "adopted/japan/hidamari/surface-gravel", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-moss", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-sidewalk", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber"]
 
 [[sources]]
 path = "src/HD_CivicGardens_cell_9_2_Piece003.fbx"
@@ -17,10 +17,10 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_earth"]
+slot_map = {HDS_earth = "/Game/Japan/Hidamari/Materials/MI_HD_earth", HDS_flat = "/Game/Japan/Hidamari/Materials/MI_HD_flat", HDS_grass = "/Game/Japan/Hidamari/Materials/MI_HD_grass", HDS_gravel = "/Game/Japan/Hidamari/Materials/MI_HD_gravel", HDS_metal = "/Game/Japan/Hidamari/Materials/MI_HD_metal", HDS_moss = "/Game/Japan/Hidamari/Materials/MI_HD_moss", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_sidewalk = "/Game/Japan/Hidamari/Materials/MI_HD_sidewalk", HDS_stone = "/Game/Japan/Hidamari/Materials/MI_HD_stone", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
 triangles = 4096
-collision = "complex"
 full_precision_uvs = true
+collision = "complex"
 
 [[outputs]]
 package = "/Game/Experiments/CitySurfaces/v1_128m/HD_CivicGardens_cell_9_2_Piece003"

@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-shop-05-05",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/shop-05": "d3a42e1096037c7f1bcad6f051f62d4ac57f11255dcec55cdfed61272970ceef"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/63/YOA7HCG6HN83HSLR5FP6GT.uasset": "104c0623f583f91245341e8998daf11ad86df54e6386676c4348f870a81911da"

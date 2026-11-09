@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_PlazaTreeGold_cell_-1_0: one city surface piece of HD_PlazaTreeGold (16280 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/plaza-tree-gold-cell-m1-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/plaza-tree-gold-cell-m1-0"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_PlazaTreeGold_cell_-1_0.fbx"
+sha256 = "63498750f74ccbbff5e5398a7d223f0965b9d33033ea3948d714b30e9e9428d3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Arcade"]
+triangles = 16280
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 0
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaTreeGold_cell_-1_0"

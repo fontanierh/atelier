@@ -6,7 +6,7 @@ id = "prop/citysurfaces/terrain-cell-9-m3"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/terrain-cell-9-m3"
-references = ["adopted/japan/hidamari/surface-asphalt"]
+references = ["adopted/japan/hidamari/surface-asphalt", "adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-flagstone", "adopted/japan/hidamari/surface-grass", "adopted/japan/hidamari/surface-gravel", "adopted/japan/hidamari/surface-sidewalk"]
 
 [[sources]]
 path = "src/HD_Terrain_cell_9_-3.fbx"
@@ -17,10 +17,10 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_asphalt"]
+slot_map = {HDS_asphalt = "/Game/Japan/Hidamari/Materials/MI_HD_asphalt", HDS_concrete = "/Game/Japan/Hidamari/Materials/MI_HD_concrete", HDS_earth = "/Game/Japan/Hidamari/Materials/MI_HD_earth", HDS_flagstone = "/Game/Japan/Hidamari/Materials/MI_HD_flagstone", HDS_grass = "/Game/Japan/Hidamari/Materials/MI_HD_grass", HDS_gravel = "/Game/Japan/Hidamari/Materials/MI_HD_gravel", HDS_sidewalk = "/Game/Japan/Hidamari/Materials/MI_HD_sidewalk"}
 triangles = 1738
-collision = "complex"
 full_precision_uvs = true
+collision = "complex"
 
 [[outputs]]
 package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Terrain_cell_9_-3"

@@ -19,8 +19,8 @@ version = 1
 [recipe.settings]
 slot_materials = ["/Game/Japan/Materials/M_Harbor"]
 triangles = 13427
-collision = "complex"
 full_precision_uvs = true
+collision = "complex"
 
 [[outputs]]
 package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Harbor_cell_5_-1_Piece1"

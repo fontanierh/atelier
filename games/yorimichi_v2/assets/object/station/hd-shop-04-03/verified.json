@@ -1,11 +1,6 @@
 {
   "asset": "object/station/hd-shop-04-03",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/shop-04-0-0": "e58ba9e2f4dc00734e5a24e249b55d0bcb6a5ac886219dedbe43dbdf0557f81d",
-    "adopted/experiments/citysurfaces/v1-128m/shop-04-0-m1": "3026dbce5ccf115d4337e38b4c63c73df05c152b27c6b445b8a78f05298e0b98",
-    "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-0": "963b266220c7745ab2c8a17b96a176d9aff966fa26316bde0e97d904b88225bc",
-    "adopted/experiments/citysurfaces/v1-128m/shop-04-m1-m1": "b3c9a3138c1c860083e3cebdda0255df86363c00eafc13db6dcb7503e70cea60"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/H9/G3UE4H36FFI7PO1X01PA5V.uasset": "74e54c3a58f1155ba80aa897a981239c14abf258b5dedb446a7de3f18f2ec1da"

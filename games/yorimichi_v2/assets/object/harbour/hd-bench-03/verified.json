@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-bench-03",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/bench": "6a41ba8352b6c139363d31b0dd85e2dc264f94afd3a3ef8f11898476cc6c80e0"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/NU/PLEVGW718FTQ2I7PH0B7VD.uasset": "6e917a5126a67f6b53c4e04cd25f6aae53e910331b3f1990301bb0f4aa9d769c"

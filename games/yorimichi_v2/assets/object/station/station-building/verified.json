@@ -1,11 +1,6 @@
 {
   "asset": "object/station/station-building",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/station-0-0": "2ca93f32f938fe9063f612d887dd1fb944f2a7e3e075d7d3bf14047edb8123a9",
-    "adopted/experiments/citysurfaces/v1-128m/station-0-m1": "28929daa8fdef7afbc517bdf921ee5754c3eae29acaef587eb661552a1d4f44d",
-    "adopted/experiments/citysurfaces/v1-128m/station-m1-0": "7d09c4472daf8e221cd652d639814606837d154b335f25256837b3f15633258f",
-    "adopted/experiments/citysurfaces/v1-128m/station-m1-m1": "734cad2c76cf2dae59d084c85e17081821a40cd5194ddaf30c21ea9ad8b6d904"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/K8/NISBP59GCG2FROYGZFN1RN.uasset": "80e93e96f1d5ccf851c73b2f5eabeca17f826b272b68b0f36597b020b8994dbe",

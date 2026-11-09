@@ -6,7 +6,7 @@ id = "prop/citysurfaces/playground"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/playground"
-references = ["adopted/japan/hidamari/surface-metal"]
+references = ["adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-timber"]
 
 [[sources]]
 path = "src/HD_Playground.fbx"
@@ -17,10 +17,10 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_metal"]
+slot_map = {HDS_metal = "/Game/Japan/Hidamari/Materials/MI_HD_metal", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
 triangles = 132
-collision = "complex"
 full_precision_uvs = true
+collision = "complex"
 
 [[outputs]]
 package = "/Game/Experiments/CitySurfaces/v1_128m/HD_Playground"

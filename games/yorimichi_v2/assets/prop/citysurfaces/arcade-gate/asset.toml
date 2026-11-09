@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_ArcadeGate: one city surface piece of HD_ArcadeGate (3256 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/arcade-gate"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/arcade-gate"
+references = ["adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_ArcadeGate.fbx"
+sha256 = "21a1191fea437eacfbceb9585cca36913f5f2323de85c7c4aee0375c4101a20b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_flat = "/Game/Japan/Hidamari/Materials/MI_HD_flat", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 3256
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 2
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeGate"

@@ -6,7 +6,7 @@ id = "object/harbour/hd-house-03-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/experiments/citysurfaces/v1-128m/house-03"]
+references = ["prop/citysurfaces/house-03"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/QL/9BPGVDWZISMVIYXRLRWNIE"

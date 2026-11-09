@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_ParkGrounds: one city surface piece of HD_ParkGrounds (3276 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/park-grounds"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/park-grounds"
+references = ["adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-gravel", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber"]
+
+[[sources]]
+path = "src/HD_ParkGrounds.fbx"
+sha256 = "0803fe6a72223f0d809b3aacf38988a4bb09c28af99c3a1025adb486b74dfe39"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_concrete = "/Game/Japan/Hidamari/Materials/MI_HD_concrete", HDS_earth = "/Game/Japan/Hidamari/Materials/MI_HD_earth", HDS_gravel = "/Game/Japan/Hidamari/Materials/MI_HD_gravel", HDS_metal = "/Game/Japan/Hidamari/Materials/MI_HD_metal", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_stone = "/Game/Japan/Hidamari/Materials/MI_HD_stone", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
+triangles = 3276
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 10
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_ParkGrounds"

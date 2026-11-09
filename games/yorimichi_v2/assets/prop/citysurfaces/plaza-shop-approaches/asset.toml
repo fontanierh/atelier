@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_PlazaShopApproaches: one city surface piece of HD_PlazaShopApproaches (15644 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citysurfaces/plaza-shop-approaches"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/citysurfaces/plaza-shop-approaches"
+references = ["adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-sidewalk", "adopted/japan/hidamari/surface-stone"]
+
+[[sources]]
+path = "src/HD_PlazaShopApproaches.fbx"
+sha256 = "8c153724968664edc8e4d3e47ee5fd7e4c16500e99f84235de670433693699a5"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {HDS_concrete = "/Game/Japan/Hidamari/Materials/MI_HD_concrete", HDS_sidewalk = "/Game/Japan/Hidamari/Materials/MI_HD_sidewalk", HDS_stone = "/Game/Japan/Hidamari/Materials/MI_HD_stone"}
+triangles = 15644
+full_precision_uvs = true
+collision = "simple_and_complex"
+hulls = 137
+
+[[outputs]]
+package = "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaShopApproaches"

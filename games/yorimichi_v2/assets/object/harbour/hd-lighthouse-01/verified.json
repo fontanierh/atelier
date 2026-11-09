@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-lighthouse-01",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/lighthouse": "daf89a49bfe675308bc037d1cd7e030dca56ec80cf294ac142168ee057795e59"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/4J/XUIL9RFOWAWO1A760YWG8E.uasset": "dfb5d30a172a1e25d5d5c75439666376cec52e0d4dfcf38d0bf19389a0591f0e"

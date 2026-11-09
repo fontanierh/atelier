@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-house-01-14",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/house-01": "cd15c3cbb80cf1f4b86a400a3597c2397782c10aafe58e0dc06b8daa6cb8d6e8"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/95/UM2I01EK9XU6Z7DVAXPEGL.uasset": "85d70fef84c9a3a4ad8e54f4ffdf37bad49422d2b061470bdb644e70d366ead3"

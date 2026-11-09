@@ -6,7 +6,7 @@ id = "prop/citysurfaces/plaza-shop-sides-corner"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/plaza-shop-sides-corner"
-references = ["adopted/japan/hidamari/surface-flat"]
+references = ["adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber"]
 
 [[sources]]
 path = "src/HD_PlazaShopSidesCorner.fbx"
@@ -17,10 +17,10 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_flat"]
+slot_map = {HDS_flat = "/Game/Japan/Hidamari/Materials/MI_HD_flat", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_stone = "/Game/Japan/Hidamari/Materials/MI_HD_stone", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
 triangles = 4802
-collision = "complex"
 full_precision_uvs = true
+collision = "complex"
 
 [[outputs]]
 package = "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaShopSidesCorner"

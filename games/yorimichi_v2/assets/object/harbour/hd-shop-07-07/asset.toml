@@ -6,7 +6,7 @@ id = "object/harbour/hd-shop-07-07"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/experiments/citysurfaces/v1-128m/shop-07"]
+references = ["prop/citysurfaces/shop-07"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/C/KH/DTNQKA11I0A9QRR8RS6I3A"

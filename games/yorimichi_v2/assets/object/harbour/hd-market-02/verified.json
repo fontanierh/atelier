@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-market-02",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/market": "61ec7e509248e5d962f8fcbfaf1445b863bd9453e847254093ef4a18d3a70f32"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/EU/OGIE41GG9PHCBIN0S3HQFG.uasset": "45ee1c6deaf894f4447061191c8987d37f02998cbc7f7ee607f4db6acf7af72f"

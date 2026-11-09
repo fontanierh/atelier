@@ -19,8 +19,8 @@ version = 1
 [recipe.settings]
 slot_materials = ["/Game/Japan/Materials/M_PlazaPaving"]
 triangles = 142
-collision = "complex"
 full_precision_uvs = true
+collision = "complex"
 
 [[outputs]]
 package = "/Game/Experiments/CitySurfaces/v1_128m/HD_PlazaFloor_cell_6_0"

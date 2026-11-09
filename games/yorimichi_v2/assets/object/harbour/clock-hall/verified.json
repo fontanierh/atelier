@@ -1,11 +1,6 @@
 {
   "asset": "object/harbour/clock-hall",
-  "dependencies": {
-    "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-0": "56d16f0687002c5aa167f9c6a55811cb9ba9c72cae82e69c6f1a3af968d2161c",
-    "adopted/experiments/citysurfaces/v1-128m/clock-hall-0-m1": "1551059a3725c894ddb6cec8f862ce746186ea34e5794cdb25c1478246c2df2d",
-    "adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-0": "9bb54259446ef43f06e3ba4710f240bedb0d3df576ba97ce5c70de34993b5ce2",
-    "adopted/experiments/citysurfaces/v1-128m/clock-hall-m1-m1": "61c290b00c79daa3a33df12ad9d58e7c71a57f3c253a2b77c295ecd031b1f65c"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/XD/SUQ4EMTH9QQPXLYG4IEWHN.uasset": "5ff54796dc24eca42357f2ed91ffbec7cc4df88e36a8933bc989100e46baef0f",
