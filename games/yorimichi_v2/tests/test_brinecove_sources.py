@@ -229,3 +229,13 @@ def test_split_tools_write_the_selection_and_never_the_remainder_into_src(tmp_pa
 def test_a_tile_in_the_old_form_cannot_be_materialized(tmp_path):
     with pytest.raises(carve.CarveError):
         carve.materialize(SimpleNamespace(id=RID, derive=None), tmp_path)
+
+
+def test_a_donor_tile_nothing_was_cut_from_is_untouched(tmp_path, monkeypatch):
+    original = original_bytes()
+    monkeypatch.setattr(sources, 'git', lambda *args: b'abc123\n')
+    monkeypatch.setattr(sources, 'original_of', lambda rel, commit: (NAME, carve.sha256(original), original))
+    folder = legacy_folder(tmp_path / 'game', original)                 # the committed "remainder" is the whole tile
+    result = sources.convert(tmp_path / 'game', RID, {carve.sha256(original)})
+    assert result['status'] == 'untouched' and result['writes'] == {}
+    assert 'derive' not in (folder / 'asset.toml').read_text()

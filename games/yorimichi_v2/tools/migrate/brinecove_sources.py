@@ -151,6 +151,9 @@ def convert(game: Path, rid: str, shas: set[str]) -> dict:
         total = sum(1 for _ in triangles(model))
         kept = kept_ordinals(model, parse_glb(remainder_bytes, remainder_rel))
         prove(original, name, kept, total, remainder_sha)
+        if kept == list(range(total)):                                  # nothing removed: the donor tile, as recovered
+            result.update(status='untouched', why='no triangle removed: the record is the donor tile as recovered')
+            return result
         selection_rel = carve.selection_name(name)
         selection = carve.selection_text(total, kept).encode()
         verified = folder / 'verified.json'
@@ -207,12 +210,12 @@ def main(argv=None) -> int:
     game = GAME
     results = [convert(game, rid, info['shas']) for rid, info in sorted(carved_records(game).items())]
     for r in results:
-        if r['status'] == 'done':
+        if r['status'] in ('done', 'untouched') and not r['why']:
             continue
         print(f'{r["status"].upper():10} {r["id"]}: {r["why"]}')
-    counts = {s: sum(1 for r in results if r['status'] == s) for s in ('converted', 'refused', 'done')}
-    print(f'carved tile records: {len(results)}; reproduce byte-identically: {counts["converted"]}; '
-          f'refused: {counts["refused"]}; already in the derived form: {counts["done"]}')
+    counts = {s: sum(1 for r in results if r['status'] == s) for s in ('converted', 'refused', 'done', 'untouched')}
+    print(f'tile records listed by a split: {len(results)}; carved and reproduce byte-identically: {counts["converted"]}; '
+          f'refused: {counts["refused"]}; already in the derived form: {counts["done"]}; untouched: {counts["untouched"]}')
     if args.claim:
         try:
             print(f'wrote {write(game, results, args.claim)} file(s)')
