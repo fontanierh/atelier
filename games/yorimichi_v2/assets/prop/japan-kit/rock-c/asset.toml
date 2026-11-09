@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Rock_C: one Japan mesh (49 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/rock-c"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/rock-c"
+references = ["adopted/japan/materials/ground", "adopted/japan/materials/rock-concrete"]
+
+[[sources]]
+path = "src/Rock_C.fbx"
+sha256 = "7b80dba33e1ec4929927f6adcb31da56cb15e57dec371526ce35c0ce59bfcdcd"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Rock = "/Game/Japan/Materials/MI_Rock", Moss = "/Game/Japan/Materials/MI_Moss"}
+triangles = 49
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Rock_C"

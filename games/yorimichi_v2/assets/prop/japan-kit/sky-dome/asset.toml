@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SkyDome: one Japan mesh (2208 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/sky-dome"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/sky-dome"
+references = ["adopted/japan/materials/sky-wind"]
+
+[[sources]]
+path = "src/SkyDome.fbx"
+sha256 = "4d370c978d914c6a0c6524393ba7bde60233cb0426268fe43efd9ba0cc288a67"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_Sky"]
+triangles = 2208
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/SkyDome"

@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): House_C: one Japan mesh (6409 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/house-c"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/house-c"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/House_C.fbx"
+sha256 = "ecd754709c0bdc9c7279dbabb3f1f1567e491852e4c2996d7a0b0c2c4770fb36"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Village"]
+triangles = 6409
+collision = "simple_and_complex"
+hulls = 4
+collision_trace = "CTF_USE_SIMPLE_AND_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/House_C"

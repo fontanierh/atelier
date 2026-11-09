@@ -6,7 +6,7 @@ id = "object/start/house-b"
 kind = "placement"
 authority = "editor"
 owner = "region/w01-start"
-references = ["adopted/japan/assets/house"]
+references = ["prop/japan-kit/house-a", "prop/japan-kit/house-b", "prop/japan-kit/house-c"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/1/WH/AC9BXRPHFYF6ZIKCHTCH2D"

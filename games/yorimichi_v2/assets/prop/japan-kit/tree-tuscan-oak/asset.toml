@@ -1,0 +1,43 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Tuscan_Oak: one Japan mesh, LOD0-LOD4 (4572 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-tuscan-oak"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-tuscan-oak"
+references = ["adopted/japan/foliagelods/tree-tuscan-oak", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-tuscan-oak"]
+
+[[sources]]
+path = "src/Tree_Tuscan_Oak.fbx"
+sha256 = "79936b050f37dec431a559463f7a03659dc98d3f7ce832b513d5075102924274"
+
+[[sources]]
+path = "src/Tree_Tuscan_Oak_LOD1.fbx"
+sha256 = "d0ea29330555cef25c72eaa8a34e99aba34d2304a93fd23d0905be7f61b6f084"
+
+[[sources]]
+path = "src/Tree_Tuscan_Oak_LOD2.fbx"
+sha256 = "bcddb4d4d3a91ae0cbc2f35cf55405e34a69d6d4fbc35e7106d95ad1ddab2c2a"
+
+[[sources]]
+path = "src/Tree_Tuscan_Oak_LOD3.fbx"
+sha256 = "9a02218081893d49849a94e98ee4a3207ef64f04081a523aa81bafcdb9f63d3f"
+
+[[sources]]
+path = "src/Tree_Tuscan_Oak_LOD4.fbx"
+sha256 = "28fc9ae3b6fd4eceabf5f4eb50d8b6d57df8b67c8fe9cf4fb867fb2f4bce67d6"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Tuscan_Oak.fbx", 1.0, 4572, [0, 1]], ["src/Tree_Tuscan_Oak_LOD1.fbx", 0.23999999463558197, 1360, [0, 1]], ["src/Tree_Tuscan_Oak_LOD2.fbx", 0.07500000298023224, 374, [0, 1]], ["src/Tree_Tuscan_Oak_LOD3.fbx", 0.017999999225139618, 14, [2, 0]], ["src/Tree_Tuscan_Oak_LOD4.fbx", 0.005400000140070915, 12, [3]]]
+slots = [["BarkTuscan", "/Game/Japan/Materials/MI_BarkTuscan"], ["LeafOak", "/Game/Japan/Materials/MI_LeafOak"], ["Tree_Tuscan_Oak_Impostor", "/Game/Japan/Materials/MI_Tree_Tuscan_Oak_Impostor"], ["Tree_Tuscan_Oak_Crown", "/Game/Japan/FoliageLODs/MI_Tree_Tuscan_Oak_Crown"]]
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Tuscan_Oak"

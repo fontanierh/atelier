@@ -6,7 +6,7 @@ id = "object/belmonte/plant-tree-tuscan-olive-m2-9"
 kind = "placement"
 authority = "editor"
 owner = "region/w16-belmonte"
-references = ["adopted/japan/assets/tree-tuscan"]
+references = ["prop/japan-kit/tree-tuscan-cypress", "prop/japan-kit/tree-tuscan-oak", "prop/japan-kit/tree-tuscan-olive", "prop/japan-kit/tree-tuscan-pine"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/PJ/J3L0CWBHHR7BXSNA2BB973"

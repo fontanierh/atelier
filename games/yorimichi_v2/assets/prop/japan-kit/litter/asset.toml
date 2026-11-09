@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Litter: one Japan mesh (2 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/litter"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/litter"
+references = ["adopted/japan/materials/ground"]
+
+[[sources]]
+path = "src/Litter.fbx"
+sha256 = "ff5bcee8bfc6376092d2eb24d7138ec3bc8f94a5d02e2064a6d80a34657fe3e5"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_Litter"]
+triangles = 2
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Litter"

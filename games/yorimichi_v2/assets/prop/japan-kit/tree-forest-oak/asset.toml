@@ -1,0 +1,43 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Forest_Oak: one Japan mesh, LOD0-LOD4 (4480 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-forest-oak"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-forest-oak"
+references = ["adopted/japan/foliagelods/tree-forest-oak", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-forest-oak"]
+
+[[sources]]
+path = "src/Tree_Forest_Oak.fbx"
+sha256 = "061aed8cde541f490b1f09951ad8fdb903fa11775c48d22e8ec5d7580eb764d7"
+
+[[sources]]
+path = "src/Tree_Forest_Oak_LOD1.fbx"
+sha256 = "f35732a40385cdafd76db6307164435f3460b8ed2c55231e842384b5e8bec8fa"
+
+[[sources]]
+path = "src/Tree_Forest_Oak_LOD2.fbx"
+sha256 = "9384e975aa2b37eab821eb04b2468d36de71dd40d050350873de32cc2751a02b"
+
+[[sources]]
+path = "src/Tree_Forest_Oak_LOD3.fbx"
+sha256 = "941a54d71e7e5d1fc3baefdfa7c373e6a13371c87644f4670263bc490d81aafe"
+
+[[sources]]
+path = "src/Tree_Forest_Oak_LOD4.fbx"
+sha256 = "7bbbfb86537518be99a0565ec70584c3e00a7bd6c29119ed67316f5ec011d235"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Forest_Oak.fbx", 1.0, 4480, [0, 1]], ["src/Tree_Forest_Oak_LOD1.fbx", 0.23999999463558197, 1298, [0, 1]], ["src/Tree_Forest_Oak_LOD2.fbx", 0.07500000298023224, 372, [0, 1]], ["src/Tree_Forest_Oak_LOD3.fbx", 0.017999999225139618, 14, [2, 0]], ["src/Tree_Forest_Oak_LOD4.fbx", 0.005400000140070915, 12, [3]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafSmall", "/Game/Japan/Materials/MI_LeafSmall"], ["Tree_Forest_Oak_Impostor", "/Game/Japan/Materials/MI_Tree_Forest_Oak_Impostor"], ["Tree_Forest_Oak_Crown", "/Game/Japan/FoliageLODs/MI_Tree_Forest_Oak_Crown"]]
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Forest_Oak"

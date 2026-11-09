@@ -810,3 +810,48 @@ def test_japan_props_take_the_saved_collision_and_stop_on_a_donor_disagreement(t
     manifest.write_text(json.dumps(data))
     with pytest.raises(recover.RecoverError, match='disagree'):
         recover.build_plan(game, 'japan/props', donor)
+
+
+def test_japan_kit_matches_the_saved_collision_flag_and_builds_lod_chains(tmp_path, monkeypatch):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    assets = '/Game/Japan/Assets'
+    adopted(game, 'japan/assets/rock', [f'{assets}/Rock_A', f'{assets}/Tree_Oak'])
+    adopted(game, 'japan/assets/house', [f'{assets}/House_A'])
+    adopted(game, 'japan/materials/m', ['/Game/Japan/Materials/MI_Rock', '/Game/Japan/Materials/MI_Moss',
+                                       '/Game/Japan/Materials/M_Village', '/Game/Japan/Materials/MI_Bark',
+                                       '/Game/Japan/Materials/MI_Leaf'])
+    mesh = lambda slots, lods, trace, hulls: {'slots': slots, 'lods': lods, 'trace': trace, 'hulls': hulls}
+    mat = lambda n: f'/Game/Japan/Materials/{n}'
+    saved = tmp_path / 'saved.json'
+    saved.write_text(json.dumps({'meshes': {
+        f'{assets}/Rock_A': mesh([['Rock', mat('MI_Rock')], ['Moss', mat('MI_Moss')]], [[2.0, 49, [0, 1]]], 'CTF_USE_DEFAULT', 0),
+        f'{assets}/House_A': mesh([['Village', mat('M_Village')]], [[2.0, 100, [0]]], 'CTF_USE_SIMPLE_AND_COMPLEX', 5),
+        f'{assets}/Tree_Oak': mesh([['Bark', mat('MI_Bark')], ['Leaf', mat('MI_Leaf')]],
+                                   [[1.0, 400, [0, 1]], [0.2, 90, [0, 1]]], 'CTF_USE_COMPLEX_AS_SIMPLE', 0)}}))
+    monkeypatch.setattr(recover, 'KIT_SAVED', saved)
+    atomic(donor, 'props', {'Rock_A': (49, ['Rock', 'Moss'])})
+    atomic(donor, 'houses', {'House_A': (100, ['Village'])})
+    atomic(donor, 'forest', {'Tree_Oak': (400, ['Bark', 'Leaf']), 'Tree_Oak_LOD1': (90, ['Bark', 'Leaf'])})
+    for step in recover.KIT_STEPS:
+        if not (donor / 'atomic_regions' / step).exists():
+            atomic(donor, step, {})
+    houses = donor / 'atomic_regions/houses/assets/manifest.json'
+    data = json.loads(houses.read_text())
+    data['exports'][0]['metadata']['collision_hulls'] = 5
+    houses.write_text(json.dumps(data))
+    plan = recover.build_plan(game, 'japan/kit', donor)
+    by_id = {g.id: g for g in plan.generated}
+    assert sorted(by_id) == ['prop/japan-kit/house-a', 'prop/japan-kit/rock-a', 'prop/japan-kit/tree-oak']
+    assert by_id['prop/japan-kit/rock-a'].settings == {
+        'slot_map': {'Rock': mat('MI_Rock'), 'Moss': mat('MI_Moss')}, 'triangles': 49, 'collision': 'none',
+        'collision_trace': 'CTF_USE_DEFAULT'}
+    assert by_id['prop/japan-kit/house-a'].settings['hulls'] == 5
+    tree = by_id['prop/japan-kit/tree-oak']
+    assert tree.settings['lod_chain'] == [['src/Tree_Oak.fbx', 1.0, 400, [0, 1]], ['src/Tree_Oak_LOD1.fbx', 0.2, 90, [0, 1]]]
+    assert (tree.settings['collision'], tree.settings['double_sided']) == ('complex', False)
+    assert [p.name for p in tree.files()] == ['Tree_Oak.fbx', 'Tree_Oak_LOD1.fbx']
+    # A donor hull count that is not the saved one would move the collision.
+    data['exports'][0]['metadata']['collision_hulls'] = 4
+    houses.write_text(json.dumps(data))
+    with pytest.raises(recover.RecoverError, match='hulls'):
+        recover.build_plan(game, 'japan/kit', donor)

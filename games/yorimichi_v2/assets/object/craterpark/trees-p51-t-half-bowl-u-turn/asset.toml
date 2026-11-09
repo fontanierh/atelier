@@ -6,7 +6,7 @@ id = "object/craterpark/trees-p51-t-half-bowl-u-turn"
 kind = "placement"
 authority = "editor"
 owner = "region/w12-craterpark"
-references = ["adopted/japan/assets/tree-caldera"]
+references = ["prop/japan-kit/tree-caldera-black-pine-a", "prop/japan-kit/tree-caldera-black-pine-b", "prop/japan-kit/tree-caldera-cedar-a", "prop/japan-kit/tree-caldera-cedar-b"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/8/78/QVVR64JG68PFW2S5WPRXIR"

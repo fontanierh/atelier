@@ -6,7 +6,7 @@ id = "object/belmonte/plant-tree-forest-maple"
 kind = "placement"
 authority = "editor"
 owner = "region/w16-belmonte"
-references = ["adopted/japan/assets/tree-forest"]
+references = ["prop/japan-kit/tree-forest-ginkgo", "prop/japan-kit/tree-forest-maple", "prop/japan-kit/tree-forest-oak", "prop/japan-kit/tree-forest-pine"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/1/C4/FKN5SAAUETFLHX9GRSG91G"

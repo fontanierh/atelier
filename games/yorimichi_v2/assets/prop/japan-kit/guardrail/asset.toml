@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Guardrail: one Japan mesh (36 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/guardrail"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/guardrail"
+references = ["adopted/japan/materials/buildings"]
+
+[[sources]]
+path = "src/Guardrail.fbx"
+sha256 = "cc4cf3735698c86896fa7ef6c93d7df63b365e51ad99fb7a39b72776426bd78c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/MI_Paint"]
+triangles = 36
+collision = "complex"
+double_sided = false
+collision_trace = "CTF_USE_COMPLEX_AS_SIMPLE"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Guardrail"

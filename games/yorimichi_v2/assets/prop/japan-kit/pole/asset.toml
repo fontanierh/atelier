@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Pole: one Japan mesh (216 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/pole"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/pole"
+references = ["adopted/japan/materials/buildings", "adopted/japan/materials/rock-concrete"]
+
+[[sources]]
+path = "src/Pole.fbx"
+sha256 = "d989bebb2d2b9cc3724b11d8614f18fc2ab0699e215675bc27751de51f522d06"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Concrete = "/Game/Japan/Materials/MI_Concrete", Wood = "/Game/Japan/Materials/MI_Wood", Metal = "/Game/Japan/Materials/MI_Metal", Paint = "/Game/Japan/Materials/MI_Paint"}
+triangles = 216
+collision = "complex"
+double_sided = false
+collision_trace = "CTF_USE_COMPLEX_AS_SIMPLE"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Pole"

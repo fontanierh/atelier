@@ -1,0 +1,43 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Forest_Ginkgo: one Japan mesh, LOD0-LOD4 (3684 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-forest-ginkgo"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-forest-ginkgo"
+references = ["adopted/japan/foliagelods/tree-forest-ginkgo", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-forest-ginkgo"]
+
+[[sources]]
+path = "src/Tree_Forest_Ginkgo.fbx"
+sha256 = "49656ba6117fadf4b023ccfe157f8a161c0f7175e38493a9110b020b1c0a757f"
+
+[[sources]]
+path = "src/Tree_Forest_Ginkgo_LOD1.fbx"
+sha256 = "2ea1c35ecbaeaa99de4b4a44aa859aeb4fcf2875474e74d362351bfc6406b14d"
+
+[[sources]]
+path = "src/Tree_Forest_Ginkgo_LOD2.fbx"
+sha256 = "72a996d7c9870c23b9e2eba14fb6195b9a6c31abda44002cb6c2f1430ed2df6f"
+
+[[sources]]
+path = "src/Tree_Forest_Ginkgo_LOD3.fbx"
+sha256 = "9c2ba42e6395c5c4e729e9f56ccde5cc0e661f5d597c31b27f0d2b3140c6f49d"
+
+[[sources]]
+path = "src/Tree_Forest_Ginkgo_LOD4.fbx"
+sha256 = "8fa5a601c0daafca1a34875ef9c3ca73f7d43e7d7b437bafb30e838bffa18e2d"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Forest_Ginkgo.fbx", 1.0, 3684, [0, 1]], ["src/Tree_Forest_Ginkgo_LOD1.fbx", 0.23999999463558197, 1096, [0, 1]], ["src/Tree_Forest_Ginkgo_LOD2.fbx", 0.07500000298023224, 304, [0, 1]], ["src/Tree_Forest_Ginkgo_LOD3.fbx", 0.017999999225139618, 14, [2, 0]], ["src/Tree_Forest_Ginkgo_LOD4.fbx", 0.005400000140070915, 12, [3]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafGinkgo", "/Game/Japan/Materials/MI_LeafGinkgo"], ["Tree_Forest_Ginkgo_Impostor", "/Game/Japan/Materials/MI_Tree_Forest_Ginkgo_Impostor"], ["Tree_Forest_Ginkgo_Crown", "/Game/Japan/FoliageLODs/MI_Tree_Forest_Ginkgo_Crown"]]
+collision = "simple_and_complex"
+hulls = 1
+collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Forest_Ginkgo"

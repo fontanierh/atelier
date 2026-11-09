@@ -6,7 +6,7 @@ id = "object/harbour/pole-lamp-25"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/pole"]
+references = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/C/8V/96Z7DICQ241JQLGE73YW8H"

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BirdWingR: one Japan mesh (8 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/bird-wing-r"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/bird-wing-r"
+references = ["adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/BirdWingR.fbx"
+sha256 = "fda64bc61bd68171864196e4ed5d4482f3f3af4b29a99279b32fa5d88091f326"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Feather = "/Game/Japan/Materials/MI_Feather", FeatherDark = "/Game/Japan/Materials/MI_FeatherDark"}
+triangles = 8
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/BirdWingR"

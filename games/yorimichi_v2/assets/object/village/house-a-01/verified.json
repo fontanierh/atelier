@@ -1,8 +1,6 @@
 {
   "asset": "object/village/house-a-01",
-  "dependencies": {
-    "adopted/japan/assets/house": "4ab7372e7dafec6053758a946133d1d7d94480168a902e281565c1b86720ee43"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/W5/LFUSORN9M8PWFKTJ0BWQBY.uasset": "a15831a09bfb2bee46d1d47c1e28c586cf58abb8c704c6adea21f5432b74028e"

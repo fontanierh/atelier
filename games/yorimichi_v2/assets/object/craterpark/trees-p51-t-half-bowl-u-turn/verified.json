@@ -1,8 +1,6 @@
 {
   "asset": "object/craterpark/trees-p51-t-half-bowl-u-turn",
-  "dependencies": {
-    "adopted/japan/assets/tree-caldera": "fe1f9348001b4c2789fdd5c40e3aa76e5b7898690067db19ca612c8cc21c22a3"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/78/QVVR64JG68PFW2S5WPRXIR.uasset": "b45eb3f372053bb17c66a84c2248342ca9a291eb5c1d083b8955b8f645bedbef"

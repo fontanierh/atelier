@@ -1,0 +1,27 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Torii: one Japan mesh (120 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/torii"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/torii"
+references = ["adopted/japan/materials/buildings"]
+
+[[sources]]
+path = "src/Torii.fbx"
+sha256 = "bcace5c8acf4a9b0489fed57e2d1781956780d5b36e9029521e157b55f3310f5"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_map = {Vermilion = "/Game/Japan/Materials/MI_Vermilion", Tile = "/Game/Japan/Materials/MI_Tile"}
+triangles = 120
+collision = "complex"
+double_sided = false
+collision_trace = "CTF_USE_COMPLEX_AS_SIMPLE"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Torii"
