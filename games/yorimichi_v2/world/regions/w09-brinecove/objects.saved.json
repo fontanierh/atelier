@@ -7742,19 +7742,13 @@
     },
     "object/brinecove/townlower-5-4": {
       "groups": [
-        "SM_BC_TownLower_5_4_Piece000",
-        "SM_BC_TownLower_5_4_Piece001",
         "SM_BC_TownLower_5_4_Piece002",
         "SM_BC_TownLower_5_4_Piece003",
         "SM_BC_TownLower_5_4_Piece01",
         "SM_BC_TownLower_5_4_Piece02",
         "SM_BC_TownLower_5_4_Piece03",
         "SM_BC_TownLower_5_4_Piece10",
-        "SM_BC_TownLower_5_4_Piece12",
-        "SM_BC_TownLower_5_4_Piece13",
         "SM_BC_TownLower_5_4_Piece2",
-        "SM_BC_TownLower_5_4_Piece30",
-        "SM_BC_TownLower_5_4_Piece31",
         "SM_BC_TownLower_5_4_Soft"
       ],
       "id": "object/brinecove/townlower-5-4",

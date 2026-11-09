@@ -2980,7 +2980,7 @@ about = "Brine Cove townlower-5-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-5-4"
-groups = ["SM_BC_TownLower_5_4_Piece000", "SM_BC_TownLower_5_4_Piece001", "SM_BC_TownLower_5_4_Piece002", "SM_BC_TownLower_5_4_Piece003", "SM_BC_TownLower_5_4_Piece01", "SM_BC_TownLower_5_4_Piece02", "SM_BC_TownLower_5_4_Piece03", "SM_BC_TownLower_5_4_Piece10", "SM_BC_TownLower_5_4_Piece12", "SM_BC_TownLower_5_4_Piece13", "SM_BC_TownLower_5_4_Piece2", "SM_BC_TownLower_5_4_Piece30", "SM_BC_TownLower_5_4_Piece31", "SM_BC_TownLower_5_4_Soft"]
+groups = ["SM_BC_TownLower_5_4_Piece002", "SM_BC_TownLower_5_4_Piece003", "SM_BC_TownLower_5_4_Piece01", "SM_BC_TownLower_5_4_Piece02", "SM_BC_TownLower_5_4_Piece03", "SM_BC_TownLower_5_4_Piece10", "SM_BC_TownLower_5_4_Piece2", "SM_BC_TownLower_5_4_Soft"]
 model = ["prop/brinecove/town-lower-5-4-piece000", "prop/brinecove/town-lower-5-4-piece001", "prop/brinecove/town-lower-5-4-piece002", "prop/brinecove/town-lower-5-4-piece003", "prop/brinecove/town-lower-5-4-piece01", "prop/brinecove/town-lower-5-4-piece02", "prop/brinecove/town-lower-5-4-piece03", "prop/brinecove/town-lower-5-4-piece10", "prop/brinecove/town-lower-5-4-piece12", "prop/brinecove/town-lower-5-4-piece13", "prop/brinecove/town-lower-5-4-piece2", "prop/brinecove/town-lower-5-4-piece30", "prop/brinecove/town-lower-5-4-piece31", "prop/brinecove/town-lower-5-4-soft"]
 about = "Brine Cove townlower-5-4 (14 groups)"
 
