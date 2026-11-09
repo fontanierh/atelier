@@ -121,7 +121,8 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None) -> 
     if done['problems']:
         raise SplitError('the partition does not hold: ' + '; '.join(done['problems'][:3]))
     objects = objects or split.OBJECTS
-    untouched = [s for s, owned in done['owned'].items() if not any(m for n, m in owned.items() if n)]
+    prior = json.loads((game / EXPECTED).read_text())['tiles'] if (game / EXPECTED).is_file() else {}
+    untouched = [s for s, owned in done['owned'].items() if not any(m for n, m in owned.items() if n) and s not in prior]
     for s in untouched:                  # a tile no object takes anything from keeps its record and its bytes
         for key in ('models', 'tris', 'owned'):
             del done[key][s]
@@ -175,7 +176,15 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None) -> 
     for stem, owned in done['owned'].items():
         rest = owned.get('', [])
         entry = tiles[stem]
-        if rest:
+        if not any(m for n, m in owned.items() if n):
+            # An earlier run cut this tile and no object takes anything from it now: it goes back to the donor's bytes.
+            path = stage / 'rest' / f'SM_BC_{stem}.glb'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(glb_dir / f'SM_BC_{stem}.glb', path)
+            remainders[stem] = {'file': path, 'sha256': sha_of(path), 'triangles': entry['triangles'],
+                                'materials': list(entry['material_package']), 'slots': list(entry['settings']['slot_materials']),
+                                'restored': True}
+        elif rest:
             path = stage / 'rest' / f'SM_BC_{stem}.glb'
             path.parent.mkdir(parents=True, exist_ok=True)
             used = split.write_subset(done['models'][stem], rest, path)
@@ -183,7 +192,19 @@ def build(game: Path, donor: Path, stage: Path, objects: dict | None = None) -> 
                                 'slots': [slot_of(tiles, [stem], m) for m in used]}
         else:
             remainders[stem] = None
-    return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage}
+    # A rerun on a tree that already holds an earlier split: parts of a selected object that no longer exist are stale
+    # (their records, packages and runtime groups go at the retire step), and an object whose groups changed must be
+    # saved again (objects.py refuses a changed definition; its record and actor go at the retire step too).
+    previous = json.loads((game / EXPECTED).read_text())['parts'] if (game / EXPECTED).is_file() else {}
+    stale = [{'record': rid, 'mesh': q['mesh'], 'package': q['package'], 'object': q['object']}
+             for rid, q in sorted(previous.items()) if q['object'] in objects and rid not in {p['record'] for p in parts.values()}]
+    resave = []
+    for obj in objects:
+        before = sorted(q['mesh'] for q in previous.values() if q['object'] == obj)
+        now = sorted(p['mesh'] for p in parts.values() if p['object'] == obj)
+        if before and before != now and (game / 'assets' / 'object' / 'brinecove' / obj / 'asset.toml').is_file():
+            resave.append(f'object/brinecove/{obj}')
+    return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'stale': stale, 'resave': resave}
 
 
 def expected(plan: dict) -> dict:
@@ -225,10 +246,11 @@ def tile_generated(stem: str, tile: dict, rem: dict) -> recover.Generated:
     for key in ('collision', 'full_precision_uvs'):             # the order recover.py writes them in
         if key in tile['settings']:
             settings[key] = tile['settings'][key]
+    about = (f'SM_BC_{stem}: one Brine Cove mesh ({rem["triangles"]} triangles)' if rem.get('restored') else
+             f'SM_BC_{stem}: one Brine Cove mesh, what remains after batch 1 took its objects ({rem["triangles"]} triangles)')
     return recover.Generated(
         id=tile['record'], kind='static-mesh', owner=tile['owner'], package=tile['package'], source=rem['file'],
-        settings=settings, references=list(tile['references']),
-        about=f'SM_BC_{stem}: one Brine Cove mesh, what remains after batch 1 took its objects ({rem["triangles"]} triangles)')
+        settings=settings, references=list(tile['references']), about=about)
 
 
 def record_files(gen: recover.Generated) -> tuple[str, str]:
@@ -291,10 +313,11 @@ def edit_runtime(data: dict, plan: dict, retire: bool = False) -> dict:
     by_asset = {g['asset'].rsplit('/', 1)[1].split('.')[0]: g for g in data['groups']}
     added, groups = [], []
     new_names = {p['mesh'] for p in plan['parts'].values()}
+    stale_names = {q['mesh'] for q in plan.get('stale', [])} if retire else set()
     for g in data['groups']:
         name = g['asset'].rsplit('/', 1)[1].split('.')[0]
-        if name in new_names:
-            continue                     # a rerun: rebuilt below
+        if name in new_names or name in stale_names:
+            continue                     # a rerun: rebuilt below (a stale part's group goes at retire)
         stem = name[len('SM_BC_'):]
         if stem in plan['remainders']:
             rem = plan['remainders'][stem]
@@ -349,56 +372,89 @@ def runtime_input(game: Path) -> dict:
     return data
 
 
-def touched(game: Path, plan: dict, retire: bool = False) -> dict:
+def record_set(game: Path, rid: str, package: str, name: str) -> list[str]:
+    """A generated record's files and its package files: what changing it touches (the import writes verified.json)."""
+    return [f'assets/{rid}/asset.toml', f'assets/{rid}/src/{name}', f'assets/{rid}/verified.json',
+            *package_rels(game, package)]
+
+
+def removal_targets(game: Path, plan: dict) -> dict:
+    """What `retire` removes: retired tiles and stale parts (records and packages), the retired ship object and the objects
+    that must be saved again (records and actor packages), as {'records': [(id, owner, [packages])], 'objects': [id]}."""
+    records_, objects = [], []
+    for stem, rem in plan['remainders'].items():
+        if rem is None:
+            tile = plan['tiles'][stem]
+            records_.append((tile['record'], tile['owner'], [tile['package']]))
+    for q in plan.get('stale', []):
+        records_.append((q['record'], 'shared/brinecove/' + q['record'].rsplit('/', 1)[1], [q['package']]))
+    if any(r is None for r in plan['remainders'].values()) and (game / 'assets' / RETIRED_OBJECT / 'asset.toml').is_file():
+        objects.append(RETIRED_OBJECT)
+    objects += [o for o in plan.get('resave', []) if (game / 'assets' / o / 'asset.toml').is_file()]
+    return {'records': records_, 'objects': objects}
+
+
+def folder_files(game: Path, rid: str) -> list[str]:
+    folder = game / 'assets' / rid
+    return [p.relative_to(game).as_posix() for p in sorted(folder.rglob('*')) if p.is_file()] if folder.is_dir() else []
+
+
+def touched(game: Path, plan: dict, retire: bool = False, ops: dict | None = None) -> dict:
     """The complete set a step writes, creates or deletes, as repository-relative paths, with the claim scopes owning
-    them. Apply's set includes the generated package files of every record it creates or changes (the import writes
-    them, so the claim must hold them first); retire's set is the retired tiles' and actor's files."""
+    them. Apply's set is exactly what changes: the files of every record whose text or source changes, those records'
+    generated package files (the import writes them, so the claim must hold them first), and the placement and data
+    files that change. Retire's set is the removed records, packages and actors and the files edited around them."""
     region = f'region/{REGION}'
     paths, scopes = set(), {region}
     add = lambda rel: paths.add(f'{GAME_REL}/{rel}')   # noqa: E731
     if not retire:
+        ops = ops if ops is not None else compute(game, plan)
+        changed = set(ops['writes'])
         for p in plan['parts'].values():
-            scopes.add((f'asset/{p["record"]}', 'shared/brinecove/' + p['record'].rsplit('/', 1)[1]))
-            for rel in (f'assets/{p["record"]}/asset.toml', f'assets/{p["record"]}/src/{p["mesh"]}.glb',
-                        f'assets/{p["record"]}/verified.json', *package_rels(game, p['package'])):
-                add(rel)
-        for stem, rem in plan['remainders'].items():
-            if rem is None:
-                continue
-            tile = plan['tiles'][stem]
-            scopes.add((f'asset/{tile["record"]}', tile['owner']))
-            for rel in (f'assets/{tile["record"]}/asset.toml', f'assets/{tile["record"]}/src/SM_BC_{stem}.glb',
-                        f'assets/{tile["record"]}/verified.json', *package_rels(game, tile['package'])):
-                add(rel)
-        for rel in (f'world/regions/{REGION}/objects.toml', EXPECTED, f'unreal/Content/{RUNTIME}', LOCK):
-            add(rel)
-        return {'paths': sorted(paths), 'scopes': scopes}
-    for stem, rem in plan['remainders'].items():
-        if rem is not None:
-            continue
-        tile = plan['tiles'][stem]
-        scopes.add((f'asset/{tile["record"]}', tile['owner']))
-        folder = game / 'assets' / tile['record']
-        for path in sorted(folder.rglob('*')) if folder.is_dir() else []:
-            if path.is_file():
-                add(path.relative_to(game).as_posix())
-        for rel in package_rels(game, tile['package']):
-            add(rel)
-    retired = [s for s, r in plan['remainders'].items() if r is None]
-    if retired:
-        folder = game / 'assets' / RETIRED_OBJECT
-        scopes.add((f'asset/{RETIRED_OBJECT}', region))
-        for path in sorted(folder.rglob('*')) if folder.is_dir() else []:
-            if path.is_file():
-                add(path.relative_to(game).as_posix())
-        if (folder / 'asset.toml').is_file():
-            for output in records.load_asset(folder / 'asset.toml').outputs:
-                for rel in package_rels(game, output.package):
+            if any(k.startswith(f'assets/{p["record"]}/') for k in changed):
+                scopes.add((f'asset/{p["record"]}', 'shared/brinecove/' + p['record'].rsplit('/', 1)[1]))
+                for rel in record_set(game, p['record'], p['package'], f'{p["mesh"]}.glb'):
                     add(rel)
-        for rel in (f'world/regions/{REGION}/objects.toml', f'world/regions/{REGION}/objects.saved.json',
-                    f'unreal/Content/{RUNTIME}', LOCK):
+        for stem, rem in plan['remainders'].items():
+            tile = plan['tiles'][stem]
+            if rem is not None and any(k.startswith(f'assets/{tile["record"]}/') for k in changed):
+                scopes.add((f'asset/{tile["record"]}', tile['owner']))
+                for rel in record_set(game, tile['record'], tile['package'], f'SM_BC_{stem}.glb'):
+                    add(rel)
+        for rel in changed:
+            if not rel.startswith('assets/'):
+                add(rel)
+        return {'paths': sorted(paths), 'scopes': scopes}
+    targets = removal_targets(game, plan)
+    for rid, owner, packages in targets['records']:
+        scopes.add((f'asset/{rid}', owner))
+        for rel in folder_files(game, rid):
             add(rel)
+        for package in packages:
+            for rel in package_rels(game, package):
+                add(rel)
+    for oid in targets['objects']:
+        scopes.add((f'asset/{oid}', region))
+        for rel in folder_files(game, oid):
+            add(rel)
+        for output in records.load_asset(game / 'assets' / oid / 'asset.toml').outputs:
+            for rel in package_rels(game, output.package):
+                add(rel)
+    edited = ops['writes'] if ops is not None else compute(game, plan, True)['writes']
+    for rel in edited:
+        add(rel)
     return {'paths': sorted(paths), 'scopes': scopes}
+
+
+def objects_step(game: Path, plan: dict) -> dict:
+    """The files objects.py writes when it saves the batch's actors, and the scopes it needs: it takes ONE active claim
+    covering this region and the environment region (w00-island, whose manifest lists the saved groups)."""
+    ids = sorted({f'object/brinecove/{p["object"]}' for p in plan['parts'].values()})
+    paths = [f'{GAME_REL}/world/regions/{REGION}/objects.saved.json']
+    for oid in ids:
+        paths += [f'{GAME_REL}/assets/{oid}/asset.toml', f'{GAME_REL}/assets/{oid}/verified.json']
+    paths += [f'{GAME_REL}/world/regions/w00-island/actors.verified.json']
+    return {'paths': sorted(set(paths)), 'scopes': {f'region/{REGION}', 'region/w00-island'}}
 
 
 def compute(game: Path, plan: dict, retire: bool = False) -> dict:
@@ -423,31 +479,45 @@ def compute(game: Path, plan: dict, retire: bool = False) -> dict:
         put(EXPECTED, (json.dumps(expected(plan), indent=2, sort_keys=True) + '\n').encode())
         new_runtime = edit_runtime(runtime, plan)
     else:
+        targets = removal_targets(game, plan)
         new_runtime = edit_runtime(runtime, plan, retire=True)
-        put(f'world/regions/{REGION}/objects.toml',
-            edit_objects_toml((region / 'objects.toml').read_text(), plan, retire=True).encode())
+        if any(r is None for r in plan['remainders'].values()):
+            put(f'world/regions/{REGION}/objects.toml',
+                edit_objects_toml((region / 'objects.toml').read_text(), plan, retire=True).encode())
+        gone = {rid for rid, _, _ in targets['records']}
         for stem, rem in plan['remainders'].items():
-            if rem is not None:
-                continue
-            tile = plan['tiles'][stem]
-            others = [a.id for a in (records.load_asset(q) for q in records.record_paths(game))
-                      if tile['record'] in a.references + a.input_dependencies and a.id != RETIRED_OBJECT]
+            if rem is None:
+                tile = plan['tiles'][stem]
+                others = [a.id for a in (records.load_asset(q) for q in records.record_paths(game))
+                          if tile['record'] in a.references + a.input_dependencies and a.id not in targets['objects']]
+                if others:
+                    raise SplitError(f'{tile["record"]} is retired but {others} still reference it')
+        for q in plan.get('stale', []):
+            others = [a.id for a in (records.load_asset(x) for x in records.record_paths(game))
+                      if q['record'] in a.references and a.id not in targets['objects'] and a.id != q['record']]
             if others:
-                raise SplitError(f'{tile["record"]} is retired but {others} still reference it')
-        deletes += [p[len(GAME_REL) + 1:] for p in touched(game, plan, True)['paths']
-                    if (game / p[len(GAME_REL) + 1:]).is_file() and not p.endswith(('objects.toml', 'objects.saved.json',
-                                                                                     RUNTIME, LOCK))]
+                raise SplitError(f'{q["record"]} is stale but {others} still reference it')
+        for rid, _, packages in targets['records']:
+            deletes += folder_files(game, rid)
+            for package in packages:
+                deletes += [rel for rel in package_rels(game, package) if (game / rel).exists()]
+        for oid in targets['objects']:
+            deletes += folder_files(game, oid)
+            for output in records.load_asset(game / 'assets' / oid / 'asset.toml').outputs:
+                deletes += [rel for rel in package_rels(game, output.package) if (game / rel).exists()]
         saved = region / 'objects.saved.json'
-        if saved.is_file():
+        if saved.is_file() and targets['objects']:
             body = json.loads(saved.read_text())
-            if RETIRED_OBJECT in body.get('objects', {}) and any(r is None for r in plan['remainders'].values()):
-                del body['objects'][RETIRED_OBJECT]
+            dropped = [o for o in targets['objects'] if o in body.get('objects', {})]
+            for o in dropped:
+                del body['objects'][o]
+            if dropped:
                 put(f'world/regions/{REGION}/objects.saved.json', (json.dumps(body, indent=2, sort_keys=True) + '\n').encode())
     new_bytes = json.dumps(new_runtime, separators=(',', ':')).encode()
     if new_runtime != runtime:
         put(f'unreal/Content/{RUNTIME}', new_bytes)
         put(LOCK, lock_text(game, new_bytes).encode())
-    return {'writes': writes, 'deletes': deletes}
+    return {'writes': writes, 'deletes': sorted(set(deletes))}
 
 
 class Journal:
@@ -538,7 +608,9 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
     if recovered:
         echo(f'restored {len(recovered)} file(s) from an interrupted run')
     ops = compute(game, plan, retire)
-    info = touched(game, plan, retire)
+    if not ops['writes'] and not ops['deletes']:
+        return {'written': [], 'deleted': []}                 # nothing differs: nothing to claim, nothing written
+    info = touched(game, plan, retire, ops)
     try:
         authority.authorize(info['paths'], claim, 'Brine Cove split ' + ('retire' if retire else 'apply'),
                             scopes=info['scopes'])
@@ -553,7 +625,7 @@ def group_names(data: dict) -> list[str]:
     return [g['asset'].rsplit('/', 1)[1].split('.')[0] for g in data['groups']]
 
 
-def check(game: Path, donor: Path | None = None, retired: bool = False) -> list[str]:
+def check(game: Path, donor: Path | None = None, retired: bool = False, records_only: bool = False) -> list[str]:
     """Problems with the applied batch, from the repository alone (the donor adds the vertex-level partition proof)."""
     problems = []
     exp = json.loads((game / EXPECTED).read_text())
@@ -600,7 +672,8 @@ def check(game: Path, donor: Path | None = None, retired: bool = False) -> list[
         rem = (tile['remainder'] or {}).get('triangles', 0)
         if rem + sum(exp['shares'].get(stem, {}).values()) != tile['source_triangles']:
             problems.append(f'{stem}: remainder plus parts is not the tile')
-    problems += check_placements(game, exp, retired)
+    if not records_only:
+        problems += check_placements(game, exp, retired)
     if donor is not None:
         problems += check_against_donor(game, donor, exp)
     return problems
@@ -690,13 +763,14 @@ def main(argv=None) -> int:
     parser.add_argument('--stage', type=Path, default=DEFAULT_STAGE)
     parser.add_argument('--only', help='comma-separated objects (default: all but the held-back ships)')
     parser.add_argument('--claim', help='the active claim (task ID) that must cover the touched set')
+    parser.add_argument('--records', action='store_true', help='check: records, sources and receipts only (before the placements are saved again)')
     parser.add_argument('--json', action='store_true', help='paths: print {"paths": [...], "scopes": [...]}')
     parser.add_argument('--game', type=Path, default=GAME, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     game = args.game.resolve()
     try:
         if args.command == 'check':
-            problems = check(game, args.donor)
+            problems = check(game, args.donor, records_only=args.records)
             for p in problems:
                 print(p)
             print(f'{"FAIL" if problems else "OK"}: {len(problems)} problem(s)')
@@ -709,19 +783,25 @@ def main(argv=None) -> int:
         if args.command == 'plan':
             print(report(plan))
         elif args.command == 'paths':
-            info = touched(game, plan, retire=False)
-            retired = touched(game, plan, retire=True)
-            scopes = sorted(s if isinstance(s, str) else ' or '.join(s) for s in info['scopes'] | retired['scopes'])
+            apply_set, retire_set = touched(game, plan, False), touched(game, plan, True)
+            step = objects_step(game, plan)
+            scopes = sorted({x if isinstance(x, str) else ' or '.join(x)
+                             for x in apply_set['scopes'] | retire_set['scopes'] | step['scopes']})
             if args.json:
-                print(json.dumps({'apply': info['paths'], 'retire': retired['paths'], 'scopes': scopes}, indent=2))
+                print(json.dumps({'apply': apply_set['paths'], 'retire': retire_set['paths'], 'objects': step['paths'],
+                                  'scopes': scopes}, indent=2))
             else:
-                print('# apply: write, create or (for the package files, by the import) overwrite')
-                print('\n'.join(info['paths']))
-                print('# retire: delete (after a passing import and check)')
-                print('\n'.join(retired['paths']))
+                print('# apply: write or create (package files are overwritten by their import)')
+                print('\n'.join(apply_set['paths']))
+                print('# retire: delete or edit, after the import and `check --records` pass')
+                print('\n'.join(retire_set['paths']))
+                print('# objects.py step: the files it writes (the new actor packages are named by the editor step)')
+                print('\n'.join(step['paths']))
+                print('# ONE claim must hold all three lists and every scope below (objects.py needs both regions):')
+                print('\n'.join('#   ' + x for x in scopes))
         else:
             if retire:
-                problems = check(game, args.donor, retired=False)
+                problems = check(game, args.donor, records_only=True)
                 if problems:
                     raise SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))
             print(report(plan))

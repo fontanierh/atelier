@@ -284,3 +284,86 @@ def test_a_failed_write_restores_every_file(tmp_path, monkeypatch):
         apply.run_step(game, small_plan(tmp_path), 'T', lockable=lambda g, rels: [])
     monkeypatch.setattr(Path, 'write_bytes', real)
     assert snapshot(game) == before and not (game / apply.JOURNAL).exists()
+
+
+def test_paths_list_only_what_changes(tmp_path, monkeypatch):
+    allow(monkeypatch)
+    game = mini_game(tmp_path)
+    plan = small_plan(tmp_path)
+    apply.run_step(game, plan, 'T', lockable=lambda g, rels: [])
+    assert apply.touched(game, plan)['paths'] == []                 # applied and unchanged: nothing to claim
+    assert apply.run_step(game, plan, 'T') == {'written': [], 'deleted': []}   # and no claim check, no write
+    plan['remainders']['Props_3_3']['file'].write_bytes(b'glTF-rest-2')        # the remainder changes
+    plan['remainders']['Props_3_3']['triangles'] = 4
+    paths = set(apply.touched(game, plan)['paths'])
+    g = apply.GAME_REL
+    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.glb' in paths
+    assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset' in paths
+    assert not any('cannon-west' in p for p in paths)               # the unchanged part is not touched
+
+
+def stale_plan(tmp_path, game):
+    plan = small_plan(tmp_path)
+    plan['stale'] = [{'record': 'prop/brinecove/crane-west-soft', 'mesh': 'SM_BC_CraneWest_Soft',
+                      'package': apply.MESHES + 'SM_BC_CraneWest_Soft', 'object': 'crane-west'}]
+    plan['resave'] = ['object/brinecove/crane-west']
+    (game / 'assets/prop/brinecove/crane-west-soft/src').mkdir(parents=True)
+    (game / 'assets/prop/brinecove/crane-west-soft/asset.toml').write_text(
+        'schema = 1\nid = "prop/brinecove/crane-west-soft"\nkind = "static-mesh"\nauthority = "generated"\n'
+        'owner = "shared/brinecove/crane-west-soft"\n[[sources]]\npath = "src/x.glb"\nsha256 = "' + '0' * 64 + '"\n'
+        '[recipe]\nimporter = "static-mesh"\nversion = 1\n[[outputs]]\npackage = "/Game/Brinecove/Meshes/SM_BC_CraneWest_Soft"\n')
+    (game / 'assets/prop/brinecove/crane-west-soft/src/x.glb').write_bytes(b'x')
+    (game / 'assets/object/brinecove/crane-west').mkdir(parents=True)
+    (game / 'assets/object/brinecove/crane-west/asset.toml').write_text(
+        'schema = 1\nid = "object/brinecove/crane-west"\nkind = "placement"\nauthority = "editor"\n'
+        'owner = "region/w09-brinecove"\n[[outputs]]\npackage = "/Game/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR"\n')
+    pkg = game / 'unreal/Content/Brinecove/Meshes'
+    pkg.mkdir(parents=True, exist_ok=True)
+    (pkg / 'SM_BC_CraneWest_Soft.uasset').write_bytes(b'soft')
+    actor = game / 'unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB'
+    actor.mkdir(parents=True)
+    (actor / 'ACTOR.uasset').write_bytes(b'actor')
+    (game / 'world/regions/w09-brinecove/objects.saved.json').write_text(
+        json.dumps({'schema': 1, 'objects': {'object/brinecove/crane-west': {'id': 'x'}, 'object/brinecove/other': {}}}))
+    return plan
+
+
+def test_apply_keeps_stale_parts_and_retire_removes_them_with_the_resaved_object(tmp_path, monkeypatch):
+    allow(monkeypatch)
+    game = mini_game(tmp_path)
+    plan = stale_plan(tmp_path, game)
+    apply.run_step(game, plan, 'T', lockable=lambda g, rels: [])
+    assert (game / 'assets/prop/brinecove/crane-west-soft/asset.toml').is_file()          # apply deletes nothing
+    assert (game / 'unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset').is_file()
+    info = apply.touched(game, plan, retire=True)
+    g = apply.GAME_REL
+    assert {f'{g}/assets/prop/brinecove/crane-west-soft/asset.toml', f'{g}/assets/object/brinecove/crane-west/asset.toml',
+            f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset',
+            f'{g}/unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR.uasset',
+            f'{g}/world/regions/w09-brinecove/objects.saved.json'} <= set(info['paths'])
+    done = apply.run_step(game, plan, 'T', retire=True, lockable=lambda g, rels: [])
+    assert not (game / 'assets/prop/brinecove/crane-west-soft').exists() or not any(
+        (game / 'assets/prop/brinecove/crane-west-soft').rglob('*.*'))
+    assert not (game / 'unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset').exists()
+    assert not (game / 'unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR.uasset').exists()
+    saved = json.loads((game / 'world/regions/w09-brinecove/objects.saved.json').read_text())['objects']
+    assert list(saved) == ['object/brinecove/other']                                       # only the resaved object left it
+    assert 'SM_BC_CraneWest_Soft' not in apply.group_names(
+        json.loads((game / 'unreal/Content/Data/brinecove/runtime.json').read_text()))
+    assert done['deleted']
+
+
+def test_objects_step_needs_one_claim_with_both_regions(tmp_path):
+    step = apply.objects_step(mini_game(tmp_path), small_plan(tmp_path))
+    assert step['scopes'] == {'region/w09-brinecove', 'region/w00-island'}
+    assert f'{apply.GAME_REL}/world/regions/w09-brinecove/objects.saved.json' in step['paths']
+
+
+def test_a_tile_nothing_takes_from_any_more_goes_back_to_its_donor_record_text():
+    tile = {'record': 'prop/brinecove/harbor-2-3-soft', 'owner': 'shared/brinecove/harbor-2-3-soft',
+            'package': '/Game/Brinecove/Meshes/SM_BC_Harbor_2_3_Soft', 'references': ['adopted/brinecove/materials'],
+            'settings': {'slot_materials': [apply.MATERIALS + 'MI_BC_palm_frond'], 'triangles': 90, 'full_precision_uvs': True}}
+    rem = {'file': Path('x.glb'), 'triangles': 90, 'slots': tile['settings']['slot_materials'], 'restored': True}
+    gen = apply.tile_generated('Harbor_2_3_Soft', tile, rem)
+    assert gen.about == 'SM_BC_Harbor_2_3_Soft: one Brine Cove mesh (90 triangles)'
+    assert list(gen.settings) == ['slot_materials', 'triangles', 'full_precision_uvs']
