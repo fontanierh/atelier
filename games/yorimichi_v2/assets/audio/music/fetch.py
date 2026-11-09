@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Fetch and verify the Yorimichi V2 music bundle (the donor's pinned bundle, shared through its cache) into the Atelier cache.
 
-Run by atelier fetch yorimichi. The committed music.lock.json names the bundle
-URL, its SHA-256 and every contained file. Nothing is written into the checkout;
-the game build imports from the cache.
+Run explicitly with `uv run python games/yorimichi_v2/assets/audio/music/fetch.py`,
+or by the packaged launcher through game.toml [release.music]. The committed music.lock.json
+names the bundle URL, its SHA-256 and every contained file. Nothing is written into the checkout;
+the optional music stays in the verified cache and is staged into the app container by the launcher.
 """
 import argparse
 import hashlib

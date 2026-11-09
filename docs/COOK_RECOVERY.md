@@ -1,5 +1,12 @@
 # Recovering interrupted cook certification
 
+**Scope:** the cook-certification examples below belong to the retired Yorimichi V1 generated-content recipe.
+They are recovery implementation/reference material, not a V2 migration task or a reason to rerun retired tests.
+V2 currently has an explicit `unreal.package` step, not the separate `unreal.cook` recipe shown here; do not assume
+these recording/recovery flags are supported by that route. Use the
+[V2 package guide](../games/yorimichi_v2/docs/PACKAGE.md) for current packaging and preserve its completed work.
+The shared Mac UAT/Zen lifetime behavior described next also applies to the ordinary package launcher.
+
 An opt-in local journal can preserve a successfully guarded cook when certification is interrupted while
 hashing its archived app. Recovery repeats certification, then the normal package assembly consumes that
 certified cook. It does not run UAT again, touch stamps, restore a native cache or certify gameplay.
@@ -18,7 +25,10 @@ does not discard an established sponsor. `logs/<step>.guard/zen-lifecycle.json` 
 sponsor, health checks and result.
 This applies to default and experimental cooking alike; it changes neither engine files nor UAT arguments.
 
-Enable recording **before** the original cook, in its own checkout under normal admission:
+## Legacy recording and certification route
+
+For an explicitly supported generated-content recipe, recording is enabled **before** its original cook,
+in its own checkout under normal admission. The following V1 command is historical:
 
 ```sh
 nice -n 10 uv run atelier build yorimichi unreal.cook --record-cook-recovery
@@ -88,7 +98,8 @@ Source changes, changed prerequisites, inputs, tools, SDK selection or consumed 
 Verified named portable products may be restored prerequisites when the current action key and complete
 actual byte records match. Manually touched or unproven native prerequisites still refuse.
 Some older reuse donors carry inherited `touched` certificates too; the donor path alone is not proof.
-Before recording, inspect and rebuild only those selected prerequisites through the ordinary builder:
+In that legacy recording workflow, inspect and rebuild only the selected prerequisites through its ordinary
+builder. This does not authorize regenerating V2 committed content:
 
 ```sh
 uv run atelier build yorimichi STEP... --rebuild-touched --plan --explain
@@ -102,7 +113,7 @@ It preserves current proven steps, action keys, caches and normal per-child guar
 certificate into a success. Inspect the downstream plan afterward and coordinate any required imports
 before the cook. This is separate from recording/recovery and cannot combine with force or touch.
 
-After an interruption, preserve the evidence and current archive. Recheck Holding, Waiting, actual capacity
+After an interruption of a supported recorded cook, preserve the evidence and current archive. Recheck Holding, Waiting, actual capacity
 mode, charged/uncertain work and the supervisor before the next admitted child. Use the printed ID:
 
 ```sh

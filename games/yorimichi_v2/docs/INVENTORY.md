@@ -1,99 +1,134 @@
 # Inventory
 
-Every feature and world row V2 must restore, from [plan §11](../../../docs/YORIMICHI_V2_PLAN.md). This page is the
-status index. Source evidence for each row, including old file and package locations, runtime loads, candidate
-checks and known gaps, is in [inventory/features.md](inventory/features.md) and [inventory/world.md](inventory/world.md).
-Both were read from the source baseline `7eec0f98dd` (DECISIONS D01).
+**Current checkpoint: 2026-11-09, main `3027366ced` ([PR #786](https://github.com/fontanierh/atelier/pull/786)).**
+This is the status index for the full original-game port.
+The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
+[world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
 
-**Status:** `not started`, `in progress`, `blocked`, `ready for review`, `accepted` (with the merge revision and
-evidence), or `deferred by owner`. A row is accepted only with revision-bound evidence; a film or a compile alone
-never accepts a row. **Baseline:** the source's state: implemented, partial (some of it is unverified or only
-proposed), or disabled.
+## How to read status
 
-## Facts that shape the whole port
+- **Ported** means the implementation and its committed inputs are present in V2. It does not certify every
+  gameplay interaction, appearance or source-recovery requirement.
+- **Saved** means committed placements/packages have owner records and receipts. A record for a fused tile
+  is not proof that every useful object inside it is independently editable.
+- **Packaged** names the revision that was cooked. Unmerged follow-ups are not included in that package.
+- **Verified** applies only to the specific check and revision cited. Final human gameplay, visual and
+  multiplayer acceptance is still open; the owner will playtest with his brother after construction.
+  Human-editor and second-machine proofs remain separate from same-host automation and do not block migration.
 
-- **The island is built at runtime.** The saved map `/Game/Japan/Maps/Slice` holds only terrain cells, background
-  hills, the road set, lighting and the PlayerStart. `AJapanGameMode::BeginPlay` spawns `AJapanWorld`, which reads
-  `Content/Data/world.json` and `hidamari/city.json` on every start. It places about 390k instanced trees, props
-  and region pieces, plus the sea and sky, and spawns about 15 region and service actors. V2 converts the static
-  part once, into saved One File Per Actor actors with stable IDs. It then removes those spawners and keeps the
-  dynamic services (plan §6).
-- **Runtime clean-ups must be baked in:** pier clearance, the Ronin camp clearing and the floating-tree trace
-  (inventory/world.md §0).
-- **Excluded code is tangled into the player:** the kart is a default sub-object of `AWandererCharacter`
-  (`CreateDefaultSubobject<UDrivingComponent>("CarRide")`). Removing it changes a serialized class: the saved
-  character Blueprints must be load-tested (plan §4).
-- **V2 needs its own identity:** a different `ProjectName` so its Saved state (settings, markers, racing saves)
-  cannot overwrite the original game's, and a network build ID computed from V2's own folders.
-- **ElectraPlayer stays:** the music library plays MP3 through it (`JapanMusic.cpp:194`).
-- **Rights:** see DECISIONS D05. The owner cleared Mega Park's assets on 2026-11-08, so it is ported in full;
-  Sonniss-derived sounds go to restricted storage.
+## What is already delivered
+
+| Scope | Main / package at `3027366ced` | Evidence and limits |
+| --- | --- | --- |
+| Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region records contain 2,450 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
+| Recovered models | 1,048 city records, 67 train records, ten families with 141 meshes and 29 textures, and 100 Japan props are merged. | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786); source completeness and remaining fused objects are tracked below. |
+| Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
+| Brine Cove individual objects | Eleven small props, three ship objects and six market stalls have saved placements in main. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
+| Desktop package | Built from `3027366ced` on 2026-11-09; package command succeeded. Implementer reports all automated package checks passing. | [Package guide](PACKAGE.md). Human gameplay, input, travel, sound and persistence checks are not claimed complete. |
+| Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
+
+## Active work after this checkpoint
+
+[Draft PR #787](https://github.com/fontanierh/atelier/pull/787) contains the next Brine Cove checkpoint. At its
+`ac513cf127` snapshot, 15 additional market stalls and seven town1 objects are saved on the branch, not in main.
+Town2–town9 are unfinished. The first town2 import attempt was rolled back after a package-name collision; it is
+not accepted content. The naming/ownership preflight was corrected, the accepted town1 package was restored,
+and a retry follows the refreshed claims. Do not add provisional import counts to the saved total.
+
+Remaining construction work:
+
+- Complete and save the remaining town batches, save the two small-prop soft fragments, and retire old ship/town
+  tiles only after their replacements are accepted and saved under the matching claims.
+- Apply the prepared source-preservation route at the stopped boundary after town9: retain the full fused
+  originals and recorded carve selections, derive remainders under `build/yorimichi_v2/`, and preserve accepted
+  package bytes. The current main carving route still has this known source-preservation gap.
+- Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
+  [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
+- Integrate the accepted follow-ups and produce the next useful package checkpoint. Keep the existing package
+  available while this proceeds. Final owner-led playtesting follows construction.
+
+## Runtime and ownership facts
+
+- The donor built most scenery at runtime. V2's `/Game/V2/Maps/Slice` now covers the island through saved
+  World Partition scenery and stable ownership records. The map name and `slice` profile are historical names,
+  not a coastal-only content limit. Dynamic services remain; `JapanWorld` consults the saved manifest instead
+  of duplicating covered scenery. Some fused scenery still needs finer object/source ownership.
+- The kart component, phone profile and phone streaming are removed from the V2 runtime. Four character
+  Blueprints were cleaned after the serialized component change. Exclusions are listed below.
+- V2 has its own project/build identity and `com.atelier.yorimichiv2` package identity. ElectraPlayer remains
+  because the optional music library uses it. See [PACKAGE](PACKAGE.md) for current fetch/play commands.
+- Mega Park rights were cleared by the owner on 2026-11-08; it is included. Restricted originals, including
+  restricted sound sources, keep their pinned private route rather than being copied into public Git.
 
 ## Gameplay and shared systems
 
-| ID | Coverage | Area | Baseline | Depends on | V2 status |
+| ID | Coverage | Area | Donor baseline | Depends on | Current V2 implementation / remaining proof |
 | --- | --- | --- | --- | --- | --- |
-| F01 | Cairo, Modori, Nox, Paul: rigs, textures, clothes, equipment | Player and characters | implemented | — | not started |
-| F02 | Walk, run, sprint, jumps, crouch, climb, swim, glide, wave, interact | Player and characters | implemented | F01 | not started |
-| F03 | Chase camera, see-through, first-person seats, collisions | Presentation | implemented | F02 | not started |
-| F04 | Sword combat | Combat | implemented | F01, F02 | not started |
-| F05 | Fox hunter, Kaede's trainer, Ronin camp | Combat | implemented (offline only) | F04, W01, W13 | not started |
-| F06 | Flick-It skating | Skating | implemented | F01, Skate plugin | not started |
-| F07 | Board carry/stow, markers, ride record/replay | Skating | partial: no player UI for replay | F06 | not started |
-| F08 | Bike | Travel | implemented | F01, W00 | not started |
-| F09 | Sailboat | Travel | implemented | F01, W00 | not started |
-| F10 | Horse: six breeds, tack, appearance | Travel | implemented | F01 | not started |
-| F11 | Zeppelin: **four** stations (Woodland, Hidamari, Mega Park, Belmonte) | Travel | implemented | W19 | not started |
-| F12 | Belmonte train, stations, interior, seats | Travel | implemented | W16, W20 | not started |
-| F13 | Ferry | Travel | implemented | W17 | not started |
-| F14 | Gondola | Travel | implemented | W18 | not started |
-| F15 | Horse racing, calendar, broadcasts, saves | Racing | implemented | F10, W15, W16 | not started |
-| F16 | Villagers and ambient actors | Player and characters | implemented: movement only, no interactions found | W02, W07 | not started |
-| F17 | Desktop menus, English text, hints, settings | Presentation | implemented: the phone profile must be removed | — | not started |
-| F18 | Painted world map, travel points | Presentation | implemented | W00–W20 | not started |
-| F19 | Footsteps, combat and vehicle sounds | Presentation | partial: no train or sailboat sounds found | D05 restricted audio | not started |
-| F20 | Zone music director, optional library | Presentation | implemented | external music release | not started |
-| F21 | Painterly materials, sky, sea, foliage, effects | World | implemented | W00 | not started |
-| F22 | Multiplayer | Network | partial: local two-process tests only | F02–F14 | not started |
-| F23 | Live bridge, QA, dev tools | Presentation/Dev | implemented: single port 8830 | P2-C | not started |
-| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | not started |
-| F25 | Crater Park tower hoist | Travel | implemented | W12 | not started |
-| F26 | Mega Park standalone level and game mode | World | implemented | W11 | blocked (D05) |
-| F27 | In-game Dev mode and notes | Presentation/Dev | implemented | F17 | not started |
-| F28 | Friends sessions over Tailscale | Network | implemented | F22 | not started |
-| F29 | Hair spring, cloth, seat correctives | Player and characters | implemented | F01 | not started |
-| F30 | Train departure boards | Travel | implemented | F12 | not started |
-| F31 | Kei cars as static car-park dressing (not driving) | World | implemented | W11 | blocked (D05) |
-| F32 | Trailer, benchmark and building-review modes | Presentation/Dev | implemented | F23 | not started |
+| F01 | Cairo, Modori, Nox, Paul: rigs, textures, clothes, equipment | Player and characters | implemented | — | Ported: [Player](../unreal/Source/Yorimichi/Player/) and character packages; four character Blueprints cleaned of the excluded kart component. Human appearance/animation checks remain. |
+| F02 | Walk, run, sprint, jumps, crouch, climb, swim, glide, wave, interact | Player and characters | implemented | F01 | Ported: [Player](../unreal/Source/Yorimichi/Player/). Earlier walk/skate route evidence is in [PARITY](PARITY.md); full movement playtest remains. |
+| F03 | Chase camera, see-through, first-person seats, collisions | Presentation | implemented | F02 | Ported: Player, Presentation and seat camera code. Human camera/occlusion checks remain. |
+| F04 | Sword combat | Combat | implemented | F01, F02 | Ported: [Combat](../unreal/Source/Yorimichi/Combat/). Gameplay playtest remains. |
+| F05 | Fox hunter, Kaede's trainer, Ronin camp | Combat | implemented (offline only) | F04, W01, W13 | Ported: FoxHunter and SwordTrainer spawn from JapanGameMode; camp scenery saved in W13. Keep the baseline offline-only limitations. |
+| F06 | Flick-It skating | Skating | implemented | F01, Skate plugin | Ported: [Skating](../unreal/Source/Yorimichi/Skating/), shared Skate plugin and clips. Earlier route evidence is limited to its recorded revision. |
+| F07 | Board carry/stow, markers, ride record/replay | Skating | partial: no player UI for replay | F06 | Ported baseline behavior: board/markers/replay code. A new player replay UI is outside this port. |
+| F08 | Bike | Travel | implemented | F01, W00 | Ported: [BikeComponent](../unreal/Source/Yorimichi/Travel/BikeComponent.cpp) and recovered bike inputs. Ride playtest remains. |
+| F09 | Sailboat | Travel | implemented | F01, W00 | Ported: [SailboatComponent](../unreal/Source/Yorimichi/Travel/SailboatComponent.cpp) and recovered boat inputs. Sailing playtest remains. |
+| F10 | Horse: six breeds, tack, appearance | Travel | implemented | F01 | Ported: [HorseComponent](../unreal/Source/Yorimichi/Travel/HorseComponent.cpp), roster and restricted originals route. Breed/tack playtest remains. |
+| F11 | Zeppelin: **four** stations (Woodland, Hidamari, Mega Park, Belmonte) | Travel | implemented | W19 | Ported: [ZeppelinService](../unreal/Source/Yorimichi/Travel/ZeppelinService.cpp), four stations and saved station scenery. Ride playtest remains. |
+| F12 | Belmonte train, stations, interior, seats | Travel | implemented | W16, W20 | Ported: [BelmonteTrainService](../unreal/Source/Yorimichi/Travel/BelmonteTrainService.cpp), 67 recovered train records, saved W20 stations/track. Boarding/seats playtest remains. |
+| F13 | Ferry | Travel | implemented | W17 | Ported: [FerryService](../unreal/Source/Yorimichi/Travel/FerryService.cpp); terminals saved in W17. Ride playtest remains. |
+| F14 | Gondola | Travel | implemented | W18 | Ported: [GondolaService](../unreal/Source/Yorimichi/Travel/GondolaService.cpp); fixed stations/pylons saved in W18. Ride playtest remains. |
+| F15 | Horse racing, calendar, broadcasts, saves | Racing | implemented | F10, W15, W16 | Ported: [Racing](../unreal/Source/Yorimichi/Racing/) and [HorseRacing](../unreal/Plugins/HorseRacing/). Race/save playtest remains; proposed betting/stables are not added. |
+| F16 | Villagers and ambient actors | Player and characters | implemented: movement only, no interactions found | W02, W07 | Ported: [VillageLife](../unreal/Source/Yorimichi/World/VillageLife.cpp). Baseline movement retained; new villager interactions are not claimed. |
+| F17 | Desktop menus, English text, hints, settings | Presentation | implemented: the phone profile must be removed | — | Ported: [Presentation](../unreal/Source/Yorimichi/Presentation/); phone profile removed. Human menu/settings checks remain. |
+| F18 | Painted world map, travel points | Presentation | implemented | W00–W20 | Ported: [JapanMap](../unreal/Source/Yorimichi/Presentation/JapanMap.cpp), atlas and runtime map data. Human travel/map checks remain. |
+| F19 | Footsteps, combat and vehicle sounds | Presentation | partial: no train or sailboat sounds found | D05 restricted audio | Ported sound code and restricted audio packages/original links. Listening checks remain; baseline train/sailboat sound gaps are not claimed fixed. |
+| F20 | Zone music director, optional library | Presentation | implemented | external music release | Ported: [JapanMusic](../unreal/Source/Yorimichi/Presentation/JapanMusic.cpp) and optional pinned music fetch/launcher route. See [PACKAGE](PACKAGE.md). |
+| F21 | Painterly materials, sky, sea, foliage, effects | World | implemented | W00 | Ported: saved environment/scenery and dynamic effects. Whole-island comparison evidence is in [PARITY](PARITY.md); it is not final visual acceptance. |
+| F22 | Multiplayer | Network | partial: local two-process tests only | F02–F14 | Ported: [Network](../unreal/Source/Yorimichi/Network/). Cross-machine gameplay acceptance remains; owner will test live with his brother after construction. |
+| F23 | Live bridge, QA, dev tools | Presentation/Dev | implemented: single port 8830 | P2-C | Ported: [Dev](../unreal/Source/Yorimichi/Dev/) and session-targeted LiveBridge. Native packaged build has no Python input route; see [PACKAGE](PACKAGE.md). |
+| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | Packaged checkpoint at `3027366ced`; V2 identity and staged runtime files checked. Human save/persistence checks remain. |
+| F25 | Crater Park tower hoist | Travel | implemented | W12 | Ported: [CraterParkTower](../unreal/Source/Yorimichi/Travel/CraterParkTower.cpp). Hoist playtest remains. |
+| F26 | Mega Park standalone level and game mode | World | implemented | W11 | Ported: [standalone profile](../game.toml) and Mega Park map/game mode. Rights cleared; standalone playtest remains. |
+| F27 | In-game Dev mode and notes | Presentation/Dev | implemented | F17 | Ported: [DevNotes](../unreal/Source/Yorimichi/Dev/DevNotes.cpp). Human notes/export checks remain. |
+| F28 | Friends sessions over Tailscale | Network | implemented | F22 | Ported: [JapanSession](../unreal/Source/Yorimichi/Network/JapanSession.cpp) and Tailscale adapter. Live two-person acceptance remains with F22. |
+| F29 | Hair spring, cloth, seat correctives | Player and characters | implemented | F01 | Ported character presentation code and linked rig/animation inputs. Human hair/cloth/seat checks remain. |
+| F30 | Train departure boards | Travel | implemented | F12 | Ported: [BelmonteTrainBoards](../unreal/Source/Yorimichi/Travel/BelmonteTrainBoards.cpp). In-game board readability/schedule checks remain. |
+| F31 | Kei cars as static car-park dressing (not driving) | World | implemented | W11 | Ported static Mega Park dressing; rights cleared. These cars are scenery, distinct from excluded go-kart driving. |
+| F32 | Trailer, benchmark and building-review modes | Presentation/Dev | implemented | F23 | Ported [Dev](../unreal/Source/Yorimichi/Dev/) modes. Available tools do not imply every diagnostic mode has been exercised on this package. |
 
 Only proposals exist for the canteen lady, the tide-reader and player betting or stables. They are not
-migration requirements (plan §11).
+migration requirements. Baseline partial behavior is not silently counted as a new V2 feature.
 
 ## Every world region and connection
 
-| ID | Area | Baseline reaches the game by | V2 status |
-| --- | --- | --- | --- |
-| W00 | Island foundation: terrain, coast, sea, background, roads | saved Slice map (terrain cells, road set) plus runtime sea and sky | not started |
-| W01 | Start, coastal road, houses | runtime `world.json` | not started (P3 slice) |
-| W02 | Momiji Hamlet village | runtime | not started |
-| W03 | Mini Mega ramp | runtime `AMegaRamp` | not started |
-| W04 | Sunset Pier skate plaza | runtime `ASkatePark` from `park.json` | not started (P3 slice) |
-| W05 | Forest | runtime | not started |
-| W06 | Forest lake | runtime | not started |
-| W07 | Hidamari | runtime (`city.json`, city surface tiles) | not started |
-| W08 | Southwest | runtime | not started |
-| W09 | Brinecove | runtime `ABelmonteRegion` | not started |
-| W10 | Tree house | runtime pieces | not started |
-| W11 | Super Ultra Mega Park and its own map | runtime plus its own level | blocked: rights (D05) |
-| W12 | Volcano and Crater Park | runtime | not started (license to record, D05) |
-| W13 | Sword camp | runtime | not started |
-| W14 | Hidamari stable | **disabled at baseline** (`AHidamariStable::bEnabled = false`) | not started (keeps the baseline state; DECISIONS D06) |
-| W15 | Hippodrome | runtime | not started |
-| W16 | Belmonte | runtime | not started |
-| W17 | Ferry route | runtime services | not started |
-| W18 | Gondola route | runtime services | not started |
-| W19 | Zeppelin route (four stations) | runtime | not started |
-| W20 | Railway and cross-region routes | runtime track and train | not started |
+All rows below have current V2 coverage; gameplay and appearance still need the final human playtest. Saved
+terrain/scatter patches are valid area owners. A patch that bundles several useful objects still needs splitting.
+W10 shares W06's region scope; W19's stations belong to their host regions, so there are no separate W10/W19 folders.
+
+| ID | Area | Current saved coverage / remaining work |
+| --- | --- | --- |
+| W00 | Island foundation: terrain, coast, sea, background, roads | Saved [island environment](../world/regions/w00-island/) and region scenery; source recovery merged. |
+| W01 | Start, coastal road, houses | Saved [start](../world/regions/w01-start/) scenery and object placements; earlier route proof in PARITY. |
+| W02 | Momiji Hamlet village | Saved [village](../world/regions/w02-village/) scenery/objects; ambient life remains dynamic. |
+| W03 | Mini Mega ramp | Saved [mini ramp](../world/regions/w03-mega/); family source recovery merged. |
+| W04 | Sunset Pier skate plaza | Saved [pier approach](../world/regions/w04-pier-approach/) and skate-park content; family source recovery merged. |
+| W05 | Forest | Saved across five `w05-forest-*` scopes in [regions](../world/regions/); scatter stays grouped for rendering/editing. |
+| W06 | Forest lake | Saved [lake/treehouse](../world/regions/w06-lake-treehouse/) scenery/objects. |
+| W07 | Hidamari | Saved [harbour](../world/regions/w07-hidamari-harbour/) and [station](../world/regions/w07-hidamari-station/) scenery/objects; 1,048 city source records recovered. |
+| W08 | Southwest | Saved across coast, terrace and isle-east scopes in [regions](../world/regions/); recovered models in main. |
+| W09 | Brine Cove | Saved [region](../world/regions/w09-brinecove/), small props, ships and market1. Fused town/market splitting, soft fragments, retirements and source preservation continue in #787. |
+| W10 | Tree house | Saved under [W06](../world/regions/w06-lake-treehouse/); recovered models in main. |
+| W11 | Super Ultra Mega Park and its own map | Saved [island region](../world/regions/w11-megapark/) and standalone map/profile; rights cleared. |
+| W12 | Volcano and Crater Park | Saved [Crater Park](../world/regions/w12-craterpark/) plus three volcano scopes; restricted original routes linked. |
+| W13 | Sword camp | Saved [camp](../world/regions/w13-swordcamp/) props; trainers/squad stay dynamic. Clearing verification remains recorded in [D10](DECISIONS.md). |
+| W14 | Hidamari stable | [Site](../world/regions/w14-hidamari-stable/) retained; stable remains disabled as in the donor (`bEnabled = false`, D06). |
+| W15 | Hippodrome | Saved [hippodrome](../world/regions/w15-hippodrome/) scenery/objects; racing service stays dynamic. |
+| W16 | Belmonte | Saved [town/estates/courses](../world/regions/w16-belmonte/) and object placements; broader useful-object/source exceptions still tracked. |
+| W17 | Ferry route | Saved [terminals](../world/regions/w17-ferry/); ships remain dynamic. |
+| W18 | Gondola route | Saved [stations/pylons](../world/regions/w18-gondola/); cabins/ropes remain dynamic. |
+| W19 | Zeppelin route (four stations) | Saved station scenery in Woodland/W06, Hidamari/W07, Mega Park/W11 and Belmonte/W16; moving service remains dynamic. |
+| W20 | Railway and cross-region routes | Saved [railway](../world/regions/w20-railway/); 67 train source records recovered, moving train retained. |
 
 ## Explicit exclusions
 
@@ -103,3 +138,15 @@ migration requirements (plan §11).
 | X02 | Go-kart driving | Not ported. `Driving` disabled; `CarRide`, `JapanKartGrip`, kart HUD, animation and live hooks, and `/Game/Japan/Kart` stay out of V2 | deferred by owner |
 | X03 | Browser and mobile ports, Hakuba rendering experiments | Not implemented | deferred by owner |
 | X04 | New gameplay, engine upgrade, new art direction | Separate future work | deferred by owner |
+
+## Keeping the status current
+
+A content or behavior PR updates this index and its affected README, workflow notes, TODOs and comments in the
+same change. Record the revision and distinguish prepared, imported, saved, merged, packaged and human-verified
+work. Never promote a provisional receipt or an ownership map to accepted content. When a follow-up lands,
+replace its pending row with the merged evidence rather than leaving contradictory status in another page.
+
+The baseline inventories, dated measurements and decision history remain evidence of their named revisions;
+their historical findings are not current blockers unless repeated here or in the current exceptions list.
+Files under `assets/adopted/**/source/**` are pinned donor inputs, including embedded README/TODO/comments.
+Preserve their bytes and provenance; current V2 instructions live in this documentation, not in rewritten originals.

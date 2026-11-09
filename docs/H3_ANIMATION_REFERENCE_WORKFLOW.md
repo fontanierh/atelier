@@ -1,5 +1,12 @@
 # Animation reference videos: H3 Max at 480p
 
+This shared authoring guidance remains applicable. Links into `games/yorimichi` below are donor/reference
+examples from the retired V1 project, not current V2 build commands. For V2, retain approved references and
+recoverable rig/animation inputs in the asset's recorded source route (including restricted storage where
+required); use its claimed targeted authoring route rather than rebuilding the old character pipeline. See the
+[V2 README](../games/yorimichi_v2/README.md) and [inventory](../games/yorimichi_v2/docs/INVENTORY.md).
+Blender preparation still uses normal admission, memory guards and an owned checkout.
+
 A reference video shows a move on the character before anyone animates it. The image-to-video model gets a render of
 the approved character and a precise prompt, and returns six seconds of motion to study: contacts, timing, travel,
 rotation. The skeletal animation itself is always authored locally in Blender on the character's rig, checked on the
@@ -65,7 +72,7 @@ against a concrete observed failure, keep the other inputs fixed when comparing,
 take is only partly right, use the clearly useful poses and author the missing mechanics locally. Human review is the
 creative acceptance step.
 
-For example, Yorimichi's [`fox_hunter_animref.py`](../games/yorimichi/assets/characters/tools/fox_hunter_animref.py)
+As a historical donor example, Yorimichi V1's [`fox_hunter_animref.py`](../games/yorimichi/assets/characters/tools/fox_hunter_animref.py)
 follows these rules: it renders the starting frames and writes one revision folder per action with the shared
 appearance paragraph.
 
@@ -123,5 +130,6 @@ on a real phone.
 Name which phases and poses of the accepted video are useful and which need correction. The approved character's
 proportions and rig stay authoritative: solve the game timing, root ownership and contacts explicitly, and compare the
 equipped model in motion. Keep the prompt, inputs, original video, review and findings together in the revision folder
-(Yorimichi keeps its existing characters' revisions in the prototype archive, under `$YORIMICHI_ARCHIVE`), and the
-code that reproduces them in this repository.
+(the V1 references used the prototype archive under `$YORIMICHI_ARCHIVE`), and the code that reproduces them
+in this repository. For V2, an archive location alone is not source closure: link and pin the required inputs
+through the current asset records or restricted-originals manifest.

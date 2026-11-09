@@ -12,8 +12,14 @@ game with Blender, Unreal Engine 5.8 and generative models.</p>
 ---
 
 Atelier is a toolkit for making games with AI agents. Scripts and committed asset sources describe the meshes, rigs,
-clips, worlds and materials; `atelier build` turns them into an Unreal game. Agents run every step from the terminal,
-including the game itself while it plays.
+clips, worlds and materials. The active game is [Yorimichi V2](games/yorimichi_v2/README.md), whose editable
+Unreal content is committed in Git LFS: normal build/play validates and compiles, while preparation, imports and
+packaging are explicit. The sandbox still demonstrates generated-content builds. Agents drive these workflows
+from the terminal, including the game itself while it plays.
+
+[The V2 inventory](games/yorimichi_v2/docs/INVENTORY.md) records current coverage and unfinished work.
+`games/yorimichi` (V1), Hakuba and the `build-v2` experiment are retained references, not active game/test targets.
+Platform streaming remains available to other games; phone streaming and go-kart driving are excluded from V2.
 
 ## What you can do with it
 
@@ -116,9 +122,9 @@ Where to go next, in the order most games grow:
 
 ## Workflows
 
-Every workflow below runs from the terminal, so an agent can drive it end to end. Several of the authoring tools
-(characters, props, the fox motion lab) still live with Yorimichi, the game they were built for; a new game copies
-the ones it needs.
+Every workflow below runs from the terminal, so an agent can drive it end to end. Several authoring examples
+(characters, props, the fox motion lab) refer to the preserved V1 donor tools. They illustrate the platform;
+V2 authors use its recorded targeted routes and claims, and do not rerun the retired game's build or test suites.
 
 ### A character from a prompt
 
@@ -440,18 +446,20 @@ a fox-masked hunter with a sword. Its models, rigs, animation, world and code we
   a zeppelin line;
 - **three skate parks**: the skate pier, Super Ultra Mega Park and Crater Park;
 - **sounds** cut and levelled automatically: footsteps by surface, combat cues with hit-stop and sparks;
-- **phone play** through the streaming plugin.
+- **phone play in the original demonstration**, through the streaming plugin; excluded from V2.
 
-The clone contains the game's model, texture, collision and animation sources in
-[its asset library](games/yorimichi/assets/README.md), so a build needs no AI credentials; `atelier fetch` downloads
-the sound masters:
+The media and character-source links above document the original game. Development now targets
+[Yorimichi V2](games/yorimichi_v2/README.md), preserving its desktop gameplay and appearance while moving to
+committed editable content and targeted authoring. A packaged checkpoint is available; full object splitting,
+source recovery and final human playtesting remain tracked in [the inventory](games/yorimichi_v2/docs/INVENTORY.md).
 
 ```sh
-uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
-uv run atelier fetch yorimichi          # downloads the sound masters
-uv run atelier build yorimichi          # world, characters, sounds, effects, compile, Unreal import
-uv run atelier play yorimichi           # native 1440 window
+git lfs pull                                  # hydrate committed public content
+uv run python games/yorimichi_v2/assets/audio/music/fetch.py  # optional music only
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2   # validate and compile; no asset imports
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --memory-gib 22   # whole-island native 1440 window
 ```
 
-The [Yorimichi README](games/yorimichi/README.md) covers the rest: play profiles, QA scenarios, the world and its
-regions, the characters, the controls, packaging and the game's docs.
+First follow the [V2 setup and restricted-content instructions](games/yorimichi_v2/README.md).
+Missing required content fails explicitly; normal build/play never silently regenerates it.
+The [original Yorimichi README](games/yorimichi/README.md) remains donor/history reference only.

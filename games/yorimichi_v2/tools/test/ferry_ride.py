@@ -1,6 +1,6 @@
-"""Cross on the ferry in the running slice game through its live bridge and check it (plan P4: transport plays).
+"""Cross on the ferry in the running V2 game through its live bridge and check it (plan P4: transport plays).
 
-    uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen      # first, and wait for the world
+    ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --profile slice --memory-gib 22 -- -RenderOffscreen      # first, and wait for the world
     uv run python games/yorimichi_v2/tools/test/ferry_ride.py --session ID --out OUT [--start hidamari]
 
 With a screenshot and a state line at each step: 1. ferry_go --start (the ship comes alongside, its brow down);

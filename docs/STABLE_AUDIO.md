@@ -1,6 +1,14 @@
 # Stable Audio sound effect experiments
 
-Stable Audio 3 is the current Stable Audio family checked on 2026-10-18. Start
+**Experiment context:** the catalog and `build/yorimichi/` examples below belong to the retained V1 sound-review
+experiment. They are not adopted V2 audio or required work for the port. The shared review tooling can prepare
+new candidates when separately requested; keep those in the intended game's ignored build directory and use
+normal guards for inference. V2 currently uses its recovered/pinned audio through the
+[V2 content workflow](../games/yorimichi_v2/README.md#restricted-content-and-recoverable-originals), with remaining
+work in [INVENTORY.md](../games/yorimichi_v2/docs/INVENTORY.md). Do not rerun retired game tests or regenerate
+accepted sounds merely to refresh this experiment.
+
+Stable Audio 3 is the family tested for this experiment on 2026-10-18. Start
 with its sound effect specialist, **Small-SFX**, using the official **MLX**
 runtime on Apple silicon. This is an offline authoring tool: the game does not
 load the model, and experimental takes are not accepted game assets.
@@ -63,7 +71,7 @@ is a separate decision. No paid API is used for this local experiment.
 
 ## Review library
 
-The game-owned catalog is
+The historical V1 experiment catalog is
 `games/yorimichi/assets/audio/stable_audio_review.json`: 48 descriptions, each
 with four explicit seeds, for **192 candidate takes**.
 
@@ -149,8 +157,8 @@ shared across devices until exported.
 Before adopting a take, listen for material identity, transient timing, unwanted
 voices, background music, distortion and repetitive patterns. Trim one-shots,
 author seamless loops where appropriate, set playback gain and mono/spatial
-behavior, then add selected sources and provenance through the existing audio
-bank/build/import pipeline. The experiment deliberately performs none of those
+behavior, then add selected sources and provenance through the target game's owned audio route. For V2, that
+means its asset records and explicitly claimed targeted import, not a normal-build generation step. The experiment deliberately performs none of those
 production acceptance steps automatically.
 
 ## Contact samples and skating loops

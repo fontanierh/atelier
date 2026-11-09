@@ -1,8 +1,16 @@
-# Yorimichi V2 inventory: the world (W00–W20)
+# Yorimichi donor world baseline (W00–W20)
+
+**Historical source reference, not V2 implementation status.** This file records the original donor baseline
+`7eec0f98dd`. Present-tense descriptions, line numbers, source gaps and proposed checks below refer to that donor.
+The current V2 status is [INVENTORY](../INVENTORY.md); current sources and object boundaries are tracked in
+[sources.md](sources.md) and [exceptions.md](exceptions.md). V2 now has committed saved scenery, recovered assets
+and a package; do not read the donor's runtime-spawn design as a statement that migration has not started.
+Old donor test/build commands are evidence references, not instructions to re-enable retired suites or regenerate
+accepted V2 content. Human and multiplayer playtesting follows construction under the owner's current direction.
 
 Source: `the baseline checkout` (baseline 7eec0f98dd). Paths below are relative to
 `games/yorimichi/` unless they start with `platform/` or `docs/`. Everything here was read only; no builds were run.
-Instance counts come from an existing build output, `~/dev/atelier-sk2-bv1/build/yorimichi/world.json`
+Instance counts come from an existing build output, `build/yorimichi/world.json`
 (written 2026-10-30 at revision 7ca4d926d4, **not** the baseline). Treat them as approximate scale only and
 recount them at the donor revision.
 

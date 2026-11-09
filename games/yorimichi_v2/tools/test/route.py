@@ -1,6 +1,6 @@
-"""Play the slice's walk/skate route in the running slice game and check it (plan P3: the slice plays).
+"""Play the original coastal walk/skate check in the running V2 game (the historical P3 route).
 
-    uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen      # first, and wait for the world
+    ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --profile slice --memory-gib 22 -- -RenderOffscreen      # first, and wait for the world
     uv run python games/yorimichi_v2/tools/test/route.py --session ID --out build/yorimichi_v2/route
 
 Through the game's live bridge (YorimichiLive.Drive, SkateToggle, SkatePlace, SkateInput) Cairo walks 5 s down the

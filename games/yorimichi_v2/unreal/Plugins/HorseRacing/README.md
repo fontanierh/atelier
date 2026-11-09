@@ -1,9 +1,9 @@
 # Yorimichi horse racing rules
 
-`AtelierHorseRacing` is a game-owned plugin in `games/yorimichi/unreal/Plugins/HorseRacing`.
+`AtelierHorseRacing` is a game-owned plugin in `games/yorimichi_v2/unreal/Plugins/HorseRacing`.
 It contains Yorimichi's stateless seeded draws, continuous racing calendar, horse values and
-breed inheritance. Rules stay separate from actors, UI and rendering assets. Race outcomes
-and ownership services are separate integrations. The plugin/module names, exported APIs,
+breed inheritance. Rules stay separate from actors, UI and rendering assets. The rules also own race outcomes and world/save state; the game's `RacingService` integrates those rules
+with runtime authority, actors and presentation. The plugin/module names, exported APIs,
 reflected type paths and automation test names remain unchanged by the ownership move.
 
 `HRRandom` preserves the reference UTF-16 hash and JSON-string seed/tag keys. Use

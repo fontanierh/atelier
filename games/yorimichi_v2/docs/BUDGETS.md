@@ -1,4 +1,9 @@
-# Yorimichi V2 slice budgets (plan §15)
+# Yorimichi V2 measured slice budgets
+
+These are historical measurements of the November 7 slice, not current whole-game timings or a gate on the
+full port. Reuse this evidence; run a new focused measurement only for a material changed behavior or unresolved
+performance issue. Current production/package progress is in [INVENTORY.md](INVENTORY.md) and
+[PACKAGE.md](PACKAGE.md).
 
 Measured on 2026-11-07 on the reference Mac (Apple M1 Max) in the compiled asset workspace, with
 `tools/test/budgets.py`. Each operation had one declared warm-up, then five timed runs. The resource-queue wait

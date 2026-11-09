@@ -1,7 +1,12 @@
 # Brine Cove market stalls and town houses as individual objects (G4a, market and town)
 
+Snapshot: **main `3027366ced` (2026-11-09)**. `market1` has six accepted saved stalls on main.
+[PR #787](https://github.com/fontanierh/atelier/pull/787), snapshot `ac513cf127`, adds the other 15 stalls and
+seven saved `town1` objects. `town2`–`town9` remain pending: the initial town2 import was reverted after a name
+collision, so its 58 import completions are not accepted content. Current overall status: [INVENTORY](../INVENTORY.md).
+
 Tool: `tools/migrate/brinecove_market.py` (tests `tests/test_brinecove_market.py`). It continues
-`brinecove-split.md`: same apply, claim, journal and check machinery (`brinecove_split_apply.py`, used unchanged), a new
+`brinecove-split.md`: shared apply, claim, journal and check machinery (`brinecove_split_apply.py`), with a new
 way of deciding which triangle belongs to which object.
 
 ## How the boundary is found
@@ -21,7 +26,7 @@ A radius cannot separate the stalls: `procedural/market.py` jitters each stall w
 
 Nothing in the donor is modified. Earlier batches (every other `split-*.json` in the region folder, batch 1's radius cuts
 included) are subtracted first; a triangle that belongs to a stall but was already taken by an earlier batch is an error
-(none today: the well and auction block took no stall triangles).
+(none in the recorded plan: the well and auction block took no stall triangles).
 
 Objects: 21 stalls (`market-stall-01..19` in `L.MARKET_STALLS` order, and the two south-edge stalls
 `market-stall-south-west/east`), and one object per dense lot of the lower and upper town, named `town-lower-<key>` and
@@ -40,28 +45,33 @@ at a time; **rerun `plan`/`paths` after the previous batch is applied** (the rem
 | `market3` | stalls 15 to 19 and the two south-edge stalls (the south ones leave 62 and 76 triangles in `Market_3_3`, `Market_4_3`) | 13 tiles |
 | `town1` | lower-town lots hall--1-2-1, back-e2-0, back-w1-0, back-w4-0, mid-e1-1, rum-e2-0, rum-e2-1 (all houses inside one hard tile) | TownLower_2_4_Piece12, 3_4_Piece02, 3_4_Piece12, 4_4_Piece10, 4_4_Piece12, 4_4_Piece2 |
 
-`--only a,b` takes any other subset. Town lots beyond `town1` need no new code; they are listed by `list`.
+`--only a,b` takes another subset; town lots are listed by `list`. The follow-up planner rejects duplicate package
+owners before mutation and distinguishes negative-coordinate lots from their non-negative twins. This fix is in
+PR #787, not main at this snapshot; do not run the remaining town plan on the older naming rule. Accepted names stay stable.
 
 ## Ownership after a batch
 
 Same as batch 1. Each part becomes `prop/brinecove/<object>` (`-soft` for a part cut from a Soft tile; no collision),
-render, complex collision and LOD copied from the tile; each touched tile record keeps its remainder (new source,
+render, complex collision and LOD copied from the tile; each touched tile record on this revision keeps its remainder (new source,
 sha256, triangle count and slot list). A new `object/brinecove/<object>` placement (identity transform, same flags as the
 tile) is added to `objects.toml`; the existing `object/brinecove/market-3-4`, `market-4-4`, `market-3-3`, `market-4-3`
 and `townlower-*` placements keep their groups and now draw the remainders.
 
+The source-preservation conversion is prepared separately and lands after town9; see [sources.md](sources.md).
+Its full originals and carve selections replace in-place source mutation without reimporting unchanged accepted bytes.
+
 ## Controller sequence
 
 ```
-D=<donor build/yorimichi>; CMD="uv run python games/yorimichi_v2/tools/migrate/brinecove_market.py"
+D=<donor build/yorimichi>; bc_market() { uv run python games/yorimichi_v2/tools/migrate/brinecove_market.py "$@"; }
 git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
-$CMD plan  --batch market1 --donor $D          # parts, remainders, tile arithmetic
-$CMD paths --batch market1 --donor $D          # claim exactly the 'apply' list (--json for the scopes)
-$CMD apply --batch market1 --donor $D --claim TASK
-IDS=$(git status --porcelain games/yorimichi_v2/assets/prop/brinecove | sed -n 's#.*assets/\(prop/brinecove/[^/]*\)/asset.toml#\1#p' | sort -u)
-uv run python games/yorimichi_v2/tools/import/run.py $IDS --claim TASK --batch 8
-uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only <the new object ids>
-$CMD check --batch market1 --donor $D          # counts, bounds, drawn once, and donor tile = parts + remainder + earlier parts
+bc_market plan  --batch market1 --donor "$D"          # parts, remainders, tile arithmetic
+bc_market paths --batch market1 --donor "$D"          # claim exactly the 'apply' list (--json for the scopes)
+bc_market apply --batch market1 --donor "$D" --claim TASK
+# Use the explicit changed record IDs from this batch plan.
+uv run python games/yorimichi_v2/tools/import/run.py ID... --claim TASK --batch 8
+uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only OBJECT_IDS
+bc_market check --batch market1 --donor "$D"          # counts, bounds, drawn once, and donor tile = parts + remainder + earlier parts
 uv run python games/yorimichi_v2/tools/content/check.py
 ```
 
@@ -96,15 +106,19 @@ cover every lot of `list --components TownLower,TownUpper` exactly once and that
 
 A town tile is often made only of lots, so a batch can take every triangle (no remainder). `apply` leaves such a tile's
 record, package and runtime group in place and `apply` never deletes, so until it is retired the old tile and the new parts
-are both drawn. After the import and `check`, retire it:
+are both drawn. After accepted imports, saved replacement objects and `check`, retire it under the same complete claim:
 
 ```
-$CMD retire --batch townN --donor $D --claim TASK --retire-stage groups   # drops the groups from objects.toml, objects.saved.json, runtime
+bc_market retire --batch townN --donor "$D" --claim TASK --retire-stage groups   # drops the groups from objects.toml, objects.saved.json, runtime
 # delete the printed placements' actors and records (an object cannot change its groups after it was saved), then
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only <those ids>
-$CMD retire --batch townN --donor $D --claim TASK --retire-stage records  # deletes the emptied tile records and package files
-$CMD check --batch townN --donor $D --retired
+bc_market retire --batch townN --donor "$D" --claim TASK --retire-stage records  # deletes the emptied tile records and package files
+bc_market check --batch townN --donor "$D" --retired
 ```
 
 `paths` lists both stages and the affected placements (`townlower-*` and `townupper-*` cell objects). Retiring all the
 town batches' emptied tiles in one pass per placement, after town9, saves re-saving the same actors repeatedly.
+
+Before applying a batch, the claim base must match the accepted integration base and cover every touched package
+and companion. A stale claim is repaired with completed work preserved; it is not a reason to repeat accepted imports.
+Retirements use the authorized journal path/scope set and refuse unrelated or stale ownership.

@@ -1,6 +1,6 @@
-"""Check a region's saved objects in the running slice game: each exactly once, as its saved actor (audit A1).
+"""Check a region's saved objects in the running V2 game: each exactly once, as its saved actor (audit A1).
 
-    uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen      # first, and wait for the world
+    ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --profile slice --memory-gib 22 -- -RenderOffscreen      # first, and wait for the world
     uv run python games/yorimichi_v2/tools/test/saved_objects.py --session ID --region w09-brinecove --zone brinecove_quay
 
 The objects are the region's objects.toml (tools/migrate/objects.py). After travelling to --zone and --settle seconds

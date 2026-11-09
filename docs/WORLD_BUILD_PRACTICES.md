@@ -1,7 +1,9 @@
 # World build practices
 
-> Generator and build-graph practice for games that generate their world (yorimichi). Yorimichi V2 follows
-> [its plan](YORIMICHI_V2_PLAN.md) instead; the geometry rules here (ground, seams, closure) remain useful reference.
+> The geometry rules here (ground, seams, closure and traversal) also apply to Yorimichi V2. The generator/build-graph
+> sections describe generated-content workflows such as the sandbox and the retired V1 donor; they do not make
+> V2's normal build regenerate its world. Use the [V2 guide](../games/yorimichi_v2/README.md) for its targeted authoring
+> routes and [inventory](../games/yorimichi_v2/docs/INVENTORY.md) for current migration status.
 
 This guide has two halves. [Keep the world whole](#keep-the-world-whole) covers how regions, terrain and
 built pieces must fit together so playtests stop finding holes, gaps, floating objects and invisible faces.

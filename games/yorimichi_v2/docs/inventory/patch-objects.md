@@ -1,7 +1,17 @@
-# Objects that promote an existing area patch
+# Promoting a saved area patch to an object
+
+Snapshot: **main `3027366ced` (2026-11-09)**. This page describes the first 31 promotion candidates and their
+selection rule, not the current whole-game placement count or a list of work still to start. Current records use
+recovered model IDs; `tools/migrate/object_models.py` retargets `model`/`models` in both definitions and saved
+receipts without re-saving unchanged actors. [INVENTORY](../INVENTORY.md) is the current status index.
+
+A real patch that still bundles several useful objects remains unfinished. The original one-worldwide-instance
+filter below was a conservative first-batch choice, not a permanent exemption for repeated useful objects.
+
+## Initial promotion set
 
 `world/regions/<region>/objects.toml` entries with `patch = "<V2Id>"` take the area-patch actor `AV2ScenePatch` that already
-holds exactly one object, instead of splitting a patch in the editor (see `patch-split-plan.md`). 31 entries in six regions,
+holds exactly one object, instead of splitting a patch in the editor. `tools/migrate/objects.py split` handles selected members of a broader patch. 31 entries in six regions,
 tags unique across regions (`start`, `village`, `pier`, `lake`, `swcoast`, `swterrace`; `brinecove` and `belmonte` already exist).
 Each file has `data = ""` (no runtime file).
 
@@ -23,10 +33,10 @@ An entry is listed only when all of these hold:
 | w08-southwest-coast | `swcoast` | 5 | `SW_BoatShed`, `SW_CoconutStand`, `SW_Dock`, `SW_DryingRack`, `SW_Temple` |
 | w08-southwest-terrace | `swterrace` | 2 | `SW_FisherHouseA`, `SW_StoneStairs` |
 
-Models: `adopted/japan/assets/houselot`, `.../house`, `adopted/japan/southwest`, `adopted/experiments/villageatomic`,
-`adopted/japan/lake`, `adopted/japan/assets/treehouse`.
+The original model references were broad adopted records. Read the current `objects.toml` model references;
+the recovered per-model records on main supersede those old IDs.
 
-## Excluded
+## Excluded from the initial promotion batch
 
 | Region | Key | Reason |
 |---|---|---|
@@ -43,7 +53,7 @@ Models: `adopted/japan/assets/houselot`, `.../house`, `adopted/japan/southwest`,
 | w06 | `TH_Structure` (5 patches), `TH_Dressing` (16), `TH_P_backpack`, `TH_P_bell`, `TH_P_bookshelf` (2 each) | the key has more than one patch or instance |
 | all six | every `Tree_*`, `Bush_*`, `Grass*`, `Litter`, `Rock_*`, `Pole` | scatter |
 
-## Doubts
+## Limits of the initial selection
 
 - The instance count per patch is derived from the source data, not read from the actor package (binary). A patch whose
   cell-split lost or added an instance would not show here; the promote tool should check `ExpectedMembers` has one instance.
@@ -52,5 +62,5 @@ Models: `adopted/japan/assets/houselot`, `.../house`, `adopted/japan/southwest`,
 - The lake and tree house keys have placements at the origin (pieces carry their own bounds); the owner point comes
   from the mesh bounds, so the world.json row is not inside the region box. The patch is still the key's only one.
 - `HouseLot_*` meshes are the lot around a house (grounds), not the house; the house `House_A/B/C` is a separate key.
-- Several entries share a model record with many other objects (`japan/assets/house`, `japan/southwest`,
-  `experiments/villageatomic`, `japan/assets/treehouse`): the record is broader than the object.
+- Model ownership and placement ownership are separate. Recovered model records resolve the earlier broad-model
+  references; a saved patch still needs a genuine useful-object membership check before promotion.
