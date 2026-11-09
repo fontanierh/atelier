@@ -1,4 +1,4 @@
-# Brine Cove split batch 1: 13 objects out of the fused harbour, ship, prop and market tiles
+# Brine Cove split batch 1: 11 small props out of the fused harbour, prop and market tiles (ships held back)
 
 Group G4a of `exceptions.md`. Each object below is carved out of a fused tile mesh without changing a vertex, a material
 or a transform. The split is **planned and proven in pure Python on the donor's exported GLBs**
@@ -105,38 +105,40 @@ planner change to `tools/migrate/recover.py` and `objects.py` (not made here: wo
 
 ## Implementation (done): `tools/migrate/brinecove_split_apply.py`
 
-One tool, three commands. `DONOR` is the donor's `build/yorimichi` folder (read only). Tests:
-`tests/test_brinecove_split.py` (reader, components, anchors, partition, writer) and `tests/test_brinecove_split_apply.py`
-(objects.toml and runtime-file edits, names, expectation shape).
+One tool. `DONOR` is the donor's `build/yorimichi` folder (read only). Tests: `tests/test_brinecove_split.py` (reader,
+components, anchors, partition, writer) and `tests/test_brinecove_split_apply.py` (edits, touched set, refusal paths, journal).
 
-- `plan --donor DONOR`: splits into the stage folder (`build/yorimichi_v2/brinecove-split`, never committed) and prints
-  each part (triangles, bytes, tiles) and each tile's remainder. Nothing in the game changes.
-- `apply --donor DONOR`: the same split, then
-  - **records**: one generated record per part, `assets/prop/brinecove/<object>` (`<object>-soft` for a part cut from a
-    Soft tile), package `/Game/Brinecove/Meshes/SM_BC_<Object>[_Soft]`. Its source is the part GLB copied into the
-    record's `src/` and pinned by sha256 (the layout recover.py uses for copied donor sources; the donor folder is never
-    referenced). The recipe is the tile's own: `static-mesh`, `collision = "complex"` (none for Soft parts),
-    `full_precision_uvs`, `triangles`, and `slot_materials` for the part's used materials in first-use order.
-  - **tile records**: the 12 touched tiles take their remainder as the new source (new sha256, triangles and slot list);
-    the three ship tiles are empty and are retired with their package files.
-  - **placements**: `objects.toml` gains the 13 objects in its hand-written head (`group` = the part mesh, or `groups`
-    = hard + Soft part); the generated tail's `ships-nightjar-sloop` entry, its record, its `objects.saved.json` entry
-    and its actor package are removed. The runtime scenery file (`unreal/Content/Data/brinecove/runtime.json`, must
-    be hydrated) gets one group per part copied from the tile group (same flags, identity transform), the remainders'
-    material lists, and no group for retired tiles; `runtime-data.lock.json` is rewritten. `--skip-runtime` leaves the data
-    file alone (it then must be edited by a second `apply` before the objects are saved).
-  - **expectation**: `world/regions/w09-brinecove/split-batch1.json` (per part and per tile: triangles, bounds, hashes,
-    original settings, the tile's source triangles and each object's share). A rerun changes nothing (tested on a copy).
-- `check [--donor DONOR]`: pure Python, after the import. Proves record, source hash, triangle count and bounds of every part
-  against the expectation; remainder + shares = the tile for every tile; that each part mesh is a group of exactly one object
-  and once in the runtime file with identity transforms; that retired tiles and the retired object are gone; that every
-  record is imported (`verified.json`). With `--donor` it also proves, at vertex level, that all parts plus all remainders are
-  exactly the donor tiles' triangles.
+**Scope.** The default batch is the 11 complete small props: both cranes, the fish shed, both net racks, both cannons, the
+quay anchor, the market well, the auction block and the shipyard yard (with their Soft parts: 14 part records). `galleon-nightjar`
+and `sloop-east` are held back until the Nightjar's hull follows its upperworks: the three ship tiles and the
+`ships-nightjar-sloop` actor stay as they are. `--only a,b` picks any subset (including the ships).
 
-### What the split writes (donor export of 2026-11-07, run on the scratch stage)
+| Command | Does |
+|---|---|
+| `plan --donor DONOR` | splits into the stage folder (`build/yorimichi_v2/brinecove-split`, never committed) and prints each part and remainder |
+| `paths --donor DONOR [--json]` | prints the complete touched sets (apply, then retire) and the claim scopes |
+| `apply --donor DONOR --claim TASK` | preflight, claim check, then write; never deletes |
+| `check [--donor DONOR]` | after the import: triangles, bounds, hashes, partition, drawn once |
+| `retire --donor DONOR --claim TASK --only ...` | deletes retired tile records and packages and the retired actor; refuses unless `check` passes |
 
-28 files, 9.5 MB: 16 part meshes (4 KB to 1.0 MB, e.g. `SM_BC_GalleonNightjar.glb` 827,064 bytes, `SM_BC_SloopEast.glb`
-1,014,504, `SM_BC_ShipyardYard.glb` 1,037,708, each cannon 299,632) and 12 remainders (7.6 KB to 1.5 MB).
+**What `apply` writes** (only after every check passed): one generated record per part, `assets/prop/brinecove/<object>`
+(`<object>-soft` for a part cut from a Soft tile, which has no collision), source = the part GLB copied into its `src/` and
+pinned by sha256 (the layout recover.py uses), recipe = the tile's own; each touched tile record with its remainder as the new
+source; the objects.toml head with the objects; `split-batch1.json` (the expectation); the runtime scenery file (a group per
+part, the remainders' material lists) and `runtime-data.lock.json`.
+
+**Preflight, then mutation.** Before the first byte is written, `apply`: reads the hydrated runtime file (a pointer or invalid
+JSON refuses), finishes all splitting into the stage folder, computes every output in memory, and requires the claim to cover
+the whole touched set through `authority.authorize` (the path `objects.py` and `run.py` use: the claim's scopes plus a live
+check that its verified locks cover exactly these paths). Any failure refuses with the tree unchanged (tested byte for
+byte). Then it journals every file it will write (`unreal/Saved/BrinecoveSplitJournal`, the import journal's model),
+makes writable only the touched files that Git marks `lockable` (what git-lfs does for a locked file; read-only
+unlockable files stay read-only and the write fails and rolls back), writes, and closes the journal. A failure restores every
+file; a crash is restored at the start of the next run. A rerun with nothing to change writes nothing.
+
+**Nothing is deleted by `apply`.** Replaced tile packages are overwritten by their import; retired packages (the three ship
+tiles' and the actor's, only if the ships are in the batch) stay in place until the replacements are accepted. `retire`
+then deletes them, with the retired actor's entries in `objects.toml`, `objects.saved.json` and the runtime file.
 
 ### Controller sequence
 
@@ -145,19 +147,21 @@ DONOR=build/yorimichi                      # the donor export the records were r
 CMD="uv run python games/yorimichi_v2/tools/migrate/brinecove_split_apply.py"
 git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
 $CMD plan  --donor $DONOR                  # read the plan
-$CMD apply --donor $DONOR                  # records, remainders, placements, runtime file, expectation
-for id in $(git status --porcelain games/yorimichi_v2/assets/prop/brinecove | sed -n 's#.*assets/\(prop/brinecove/[^/]*\)/asset.toml#\1#p'); do
-  uv run python games/yorimichi_v2/tools/import/run.py $id    # under the controller's guard, one record at a time
-done
+$CMD paths --donor $DONOR                  # the exact touched set and scopes: claim exactly the 'apply' list first
+$CMD apply --donor $DONOR --claim TASK     # preflight, claim check, journal, write; refuses with no change on any failure
+IDS=$(git status --porcelain games/yorimichi_v2/assets/prop/brinecove | sed -n 's#.*assets/\(prop/brinecove/[^/]*\)/asset.toml#\1#p' | sort -u)
+uv run python games/yorimichi_v2/tools/import/run.py $IDS --claim TASK --batch 8     # one claimed warm batch
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island \
-  --claim TASK --only <the 13 new object ids>                  # saves the 13 new actors; kept actors are untouched
+  --claim TASK --only <the new object ids>                     # saves the new actors; kept actors are untouched
 $CMD check --donor $DONOR                  # triangles, bounds, partition, drawn-once
 uv run python games/yorimichi_v2/tools/content/check.py
+# only when ships are included (--only): after the check passes, claim the 'retire' list from `paths`, then
+$CMD retire --donor $DONOR --claim TASK --only galleon-nightjar,sloop-east,...
 ```
 
 Remainder actors that were saved before the split keep working: a remainder keeps its package name, so its actor shows the
 new remainder after the re-import. Where a remainder lost a material, its slot list shrinks (listed by `plan`), so those
-actors (`harbor-2-3`, `harbor-5-3`, `harbor-5-4`, the three `props-*` and the two `market-*` objects) must be checked for
+actors (`harbor-2-3`, `harbor-5-3`, `harbor-5-4`, the four `props-*` and the two `market-*` objects) must be checked for
 material overrides copied from the old runtime list; `saved_objects.py` (below) shows any slot mismatch as a miss.
 
 ### Importer changes: none needed
