@@ -63,6 +63,22 @@ Bounds of each object as cut (metres, glTF axes, x/y/z with y up):
 Tile mesh totals for the remainder arithmetic: `Ships_4_3` 13,968 = 7,428 nightjar + 6,540 sloop; `Ships_5_3` 2,788 is all
 sloop; `Ships_4_2` 172 is all nightjar. The other tiles keep the rest as `_rest`.
 
+## Source form of a carved tile (derived remainder)
+
+A carved tile never commits its remainder. Its record keeps the fused original as its first pinned source (the bytes
+`tools/migrate/recover.py` produced from the donor generator, before any carve), and `src/SM_BC_<tile>.carve.json` beside
+it lists the triangles the remainder keeps and removes (half-open ranges of triangle ordinals). The `[derive]` table of
+`asset.toml` names the two (`tools/content/carve.py`). The targeted import derives the remainder under
+`build/yorimichi_v2/derived/<record>/` from the two and imports it; the import fingerprint covers both hashes. A normal build
+never writes it.
+
+The split tools write only a tile's selection and its `[[sources]]`; the cut-out parts keep their own committed part GLB as
+before. Tile records in the old form (remainder committed as the source) are converted once by
+`tools/migrate/brinecove_sources.py --check` (proof, no claim) and `--claim TASK` (write). The conversion takes the original
+from the record's first commit in git history (read from the local LFS store, checked against the first pin), finds the kept
+triangles by matching the committed remainder to the original, and requires the derived remainder to be byte-identical
+(sha256) to the committed one. The record's import stays current, so no package is rewritten and no placement moves.
+
 ## Render, collision and LOD ownership
 
 From `runtime.json` `groups` and the tile records' `[recipe.settings]`:

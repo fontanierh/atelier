@@ -32,6 +32,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS / 'content'))
 sys.path.insert(0, str(TOOLS.parent / 'unreal' / 'Scripts'))
 import authority  # noqa: E402
+import carve  # noqa: E402
 import lod_preservation  # noqa: E402
 import records  # noqa: E402
 from records import RecordError  # noqa: E402
@@ -39,6 +40,7 @@ from records import RecordError  # noqa: E402
 GAME = TOOLS.parent
 REPO = GAME.parents[1]
 JOURNAL = Path('unreal/Saved/ImportJournal')
+BUILD = REPO / 'build' / 'yorimichi_v2'   # where a carved record's derived remainder is written (carve.materialize)
 IMPORTERS = {   # asset kind -> importer name and version understood by unreal/Scripts/import_asset.py
     'static-mesh': ('static-mesh', 1),
     'texture': ('texture', 1),
@@ -212,17 +214,25 @@ def write_plan(game, asset, by_id, kind, claim, write_set, plan_file: Path):
     """The import plan the editor step re-checks at its write boundary (build.py _authorize_import)."""
     allowed = {records.content_relative(game, f) for f in write_set}
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
+    sources = carve.plan_sources(asset, BUILD)      # a carved record's one source is its derived remainder
     plan_file.write_text(json.dumps({
         'asset': asset.id, 'kind': asset.kind, 'importer': kind[0], 'version': kind[1],
         'settings': asset.recipe.get('settings', {}),
-        'sources': [str((asset.folder / s.path).resolve()) for s in asset.sources],
-        'portable_sources': ['games/yorimichi_v2/' + records.content_relative(game, asset.folder / s.path)
-                             for s in asset.sources],
+        'sources': [str(p.resolve()) for p in sources],
+        'portable_sources': [_portable(game, p) for p in sources],
         'packages': [o.package for o in asset.outputs if o.writer == 'generated'],
         'references': {dep: [o.package for o in by_id[dep].outputs] for dep in asset.references + asset.input_dependencies},
         'claim': claim,
         'write_paths': sorted(f'games/yorimichi_v2/{rel}' for rel in allowed),
     }, indent=2))
+
+
+def _portable(game: Path, path: Path) -> str:
+    """A source's repository-relative name: under the game, or under the build folder for a derived remainder."""
+    path = path.resolve()
+    if path.is_relative_to(game.resolve()):
+        return 'games/yorimichi_v2/' + records.content_relative(game, path)
+    return 'build/yorimichi_v2/' + path.relative_to(BUILD.resolve()).as_posix()
 
 
 def read_lod_result(plan_file: Path, asset) -> dict | None:

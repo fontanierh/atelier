@@ -71,6 +71,7 @@ class Asset:
     license: str | None = None
     provenance: str | None = None
     validation: list[str] = field(default_factory=list)
+    derive: dict | None = None    # [derive]: the remainder is derived from sources[0] and sources[1] (tools/content/carve.py)
 
     @property
     def record(self) -> Path:
@@ -156,7 +157,8 @@ def _portable(value: str, where: Path, key: str) -> str:
 
 
 ASSET_KEYS = {'schema', 'id', 'kind', 'authority', 'owner', 'sources', 'recipe', 'references', 'input_dependencies',
-              'outputs', 'license', 'provenance', 'validation'}
+              'outputs', 'license', 'provenance', 'validation', 'derive'}
+DERIVE_KEYS = {'kind', 'version', 'original', 'selection'}
 REGION_KEYS = {'schema', 'id', 'bounds_cm', 'neighbours', 'maps', 'shared', 'about', 'patch_m'}
 
 
@@ -195,6 +197,16 @@ def load_asset(path: Path) -> Asset:
         if not HEX64.match(digest):
             raise RecordError(f'{path}: source {rel} sha256 must be 64 lower-case hex digits')
         sources.append(Source(rel, digest))
+    derive = data.get('derive')
+    if derive is not None:
+        # A carved tile: sources are [original, selection], and the importer's source is the derived remainder.
+        _known(derive, DERIVE_KEYS, path, '[derive]')
+        if derive.get('kind') != 'carve' or derive.get('version') != 1:
+            raise RecordError(f'{path}: [derive] must be kind "carve" version 1')
+        names = [_need(derive, 'original', path), _need(derive, 'selection', path)]
+        if authority != 'generated' or [s.path for s in sources] != names:
+            raise RecordError(f'{path}: [derive] needs generated authority and sources exactly {names}')
+        derive = dict(derive)
     recipe = data.get('recipe')
     if authority in ('generated', 'split'):
         if not isinstance(recipe, dict) or not isinstance(recipe.get('importer'), str) \
@@ -228,7 +240,7 @@ def load_asset(path: Path) -> Asset:
                 raise RecordError(f'{path}: {key} entry {dep!r} is not an asset ID')
     return Asset(asset_id, kind, authority, owner, path.parent.resolve(), sources, recipe,
                  list(data.get('references', [])), list(data.get('input_dependencies', [])), outputs,
-                 data.get('license'), data.get('provenance'), list(data.get('validation', [])))
+                 data.get('license'), data.get('provenance'), list(data.get('validation', [])), derive)
 
 
 def load_region(path: Path) -> Region:
@@ -429,6 +441,8 @@ def input_fingerprint(asset: Asset, dependency_fingerprints: dict[str, str]) -> 
                     zip(asset.sources, [o for o in asset.outputs if o.writer == 'generated'])],
         'input_dependencies': {dep: dependency_fingerprints.get(dep, 'missing')
                                for dep in sorted(asset.input_dependencies)},
+        # Only a carved record carries it, so every other record's fingerprint is unchanged.
+        **({'derive': asset.derive} if asset.derive else {}),
     }
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 

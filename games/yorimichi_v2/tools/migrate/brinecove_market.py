@@ -385,9 +385,11 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
                                         f'the donor mesh has {len(model["materials"])}')
             tiles[stem] = {'record': asset.id, 'owner': asset.owner, 'references': list(asset.references),
                            'package': asset.outputs[0].package, 'settings': settings,
-                           'material_package': dict(zip(model['materials'], settings['slot_materials']))}
-        elif stem in saved:
-            tiles[stem] = {**saved[stem]['original'], 'record': saved[stem]['record'], 'package': saved[stem]['package']}
+                           'material_package': dict(zip(model['materials'], settings['slot_materials'])),
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        elif stem in saved or asset is not None:
+            raise apply_.SplitError(f'{stem}: carved in the old form, its remainder is the committed source; run '
+                                    'tools/migrate/brinecove_sources.py --claim TASK first')
         else:
             raise apply_.SplitError(f'{stem}: the record neither pins the donor mesh nor appears in an earlier split-*.json')
         tiles[stem]['triangles'] = len(done['tris'][stem]) - done['prior'][stem]
@@ -422,7 +424,8 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
             path.parent.mkdir(parents=True, exist_ok=True)
             used = split.write_subset(done['models'][stem], rest, path)
             remainders[stem] = {'file': path, 'sha256': apply_.sha_of(path), 'triangles': len(rest), 'materials': used,
-                                'slots': [apply_.slot_of(tiles, [stem], m) for m in used]}
+                                'slots': [apply_.slot_of(tiles, [stem], m) for m in used],
+                                'kept': sorted(rest), 'total': len(done['tris'][stem])}
         else:
             remainders[stem] = None
     return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
@@ -454,7 +457,6 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False) -> 
     for stem in exp['tiles']:
         sources += list(split.triangles(split.read_glb(glb_dir / f'SM_BC_{stem}.glb')))
     files = [game / 'assets' / rid / 'src' / f'{p["mesh"]}.glb' for rid, p in exp['parts'].items()]
-    files += [game / 'assets' / t['record'] / 'src' / f'SM_BC_{s}.glb' for s, t in exp['tiles'].items() if t['remainder']]
     for other in prior_files(region, f'split-{batch}.json'):          # earlier batches' parts cut from the same tiles
         old = json.loads(other.read_text())
         files += [game / 'assets' / rid / 'src' / f'{p["mesh"]}.glb' for rid, p in old['parts'].items()
@@ -463,6 +465,15 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False) -> 
         if not f.is_file() or records.is_lfs_pointer(f):
             return problems + [f'{f.name}: not hydrated, the donor proof is skipped']
         pieces.append(list(split.triangles(split.read_glb(f))))
+    for s, t in exp['tiles'].items():                                   # the remainders are derived, never read from src
+        if t['remainder']:
+            asset = records.load_asset(game / 'assets' / t['record'] / 'asset.toml')
+            if asset.derive is None:
+                return problems + [f'{t["record"]}: carved in the old form, the donor proof is skipped']
+            try:
+                pieces.append(list(split.triangles(apply_.carve.remainder_model(asset.folder, asset.derive))))
+            except (OSError, ValueError, apply_.carve.CarveError):
+                return problems + [f'{t["record"]}: original or selection not hydrated, the donor proof is skipped']
     # earlier parts may also cover tiles outside this batch; keep only triangles that the donor tiles above contain
     source_set = {tuple(sorted(split._key(p) for p in c)) for _, c in sources}
     pieces = [[t for t in piece if tuple(sorted(split._key(p) for p in t[1])) in source_set] for piece in pieces]
