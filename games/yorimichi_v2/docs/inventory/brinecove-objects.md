@@ -1,8 +1,8 @@
 # Brine Cove fixed objects: donor boundaries and current migration
 
 Current snapshot: **main `3027366ced` (2026-11-09)**. Eleven small-prop placements, three new ship/hull
-placements and six market stalls are saved on main. Another 15 market stalls and 199 town placements (town1–7) are
-saved on [PR #787](https://github.com/fontanierh/atelier/pull/787); town8–9 and old-tile retirement remain pending.
+placements and six market stalls are saved on main. Another 15 market stalls, all 265 town placements and the two harbour Soft
+fragments are saved on [PR #787](https://github.com/fontanierh/atelier/pull/787), which also retires the old ship and town tiles.
 See [brinecove-split.md](brinecove-split.md), [brinecove-ships.md](brinecove-ships.md) and
 [brinecove-market.md](brinecove-market.md) for the implemented routes. [INVENTORY](../INVENTORY.md) owns current status.
 

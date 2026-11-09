@@ -38,11 +38,10 @@ ownership map alone does not establish the original of an imported asset.
 
 - Finish source closure for the open material, texture, procedural plant and residual package families identified
   in [exceptions.md](exceptions.md). Do not rerun completed mesh imports just to change a tally.
-- **Brine Cove carving still rewrites committed remainder GLBs on this main revision.** The source-preservation
-  follow-up at `5f2d21fbd1` retains the fused original and a recorded triangle selection, then derives the remainder
-  under `build/yorimichi_v2/` during targeted import. Its preparation and focused checks are complete according to
-  the author; the conversion is **not merged or applied** here. It is scheduled at the stopped boundary after town9
-  in [PR #787](https://github.com/fontanierh/atelier/pull/787). Accepted package bytes and placements must be preserved.
+- **Brine Cove carved tiles keep their fused original** ([PR #787](https://github.com/fontanierh/atelier/pull/787)).
+  Each of the 148 carved tile records pins the fused original and a recorded triangle selection; the remainder is
+  derived under `build/yorimichi_v2/` during targeted import and reproduces the accepted remainder byte-identically.
+  Accepted package bytes and placements were preserved; the two untouched harbour Soft tiles stay as recovered.
 - Source recovery and independently editable placements are different deliverables. Continue the useful-object
   splits even where the source has already been recovered.
 

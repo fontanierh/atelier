@@ -2,9 +2,9 @@
 
 Snapshot: **main `3027366ced` (2026-11-09)**. `market1` has six accepted saved stalls on main.
 [PR #787](https://github.com/fontanierh/atelier/pull/787), snapshot `824ce50094`, adds the other 15 stalls and
-199 saved town objects (`town1` 7, `town2` 25, `town3` 31, `town4` 45, `town5` 28, `town6` 33, `town7` 30). `town8`
-and `town9` remain pending. The initial town2 import was reverted after a name collision and redone; its first 58
-import completions are not accepted content. Current overall status: [INVENTORY](../INVENTORY.md).
+all 265 saved town objects (`town1` 7, `town2` 25, `town3` 31, `town4` 45, `town5` 28, `town6` 33, `town7` 30,
+`town8` 26, `town9` 40), and the 42 emptied town tiles are retired. The initial town2 import was reverted after a name
+collision and redone; its first 58 import completions are not accepted content. Current overall status: [INVENTORY](../INVENTORY.md).
 
 Tool: `tools/migrate/brinecove_market.py` (tests `tests/test_brinecove_market.py`). It continues
 `brinecove-split.md`: shared apply, claim, journal and check machinery (`brinecove_split_apply.py`), with a new
@@ -58,8 +58,8 @@ sha256, triangle count and slot list). A new `object/brinecove/<object>` placeme
 tile) is added to `objects.toml`; the existing `object/brinecove/market-3-4`, `market-4-4`, `market-3-3`, `market-4-3`
 and `townlower-*` placements keep their groups and now draw the remainders.
 
-The source-preservation conversion is prepared separately and lands after town9; see [sources.md](sources.md).
-Its full originals and carve selections replace in-place source mutation without reimporting unchanged accepted bytes.
+The source-preservation conversion ran after town9 ([sources.md](sources.md)): full originals and carve selections
+replace in-place source mutation, and no accepted package was re-imported.
 
 ## Controller sequence
 

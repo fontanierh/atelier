@@ -33,10 +33,9 @@ Parts retain the tile's world-space frame; saved placements use the same transfo
 Hard parts keep complex collision, Soft parts have none. Slot tables are rebuilt when a changed source has a
 new material count; the importer no longer assumes every carved source keeps the original slot table.
 
-On this main revision, `brinecove_split_apply.py` writes carved part/remainder sources into their asset records.
-That source mutation is a recorded remaining defect. The prepared source-preservation follow-up keeps the fused
-original plus a selection and derives output under `build/yorimichi_v2/`; it has not yet been applied here.
-See [sources.md](sources.md). Do not mistake the existing record for complete recoverability of the fused original.
+Carved tile records keep the fused original plus a selection, and the remainder derives under `build/yorimichi_v2/`
+(see the section below and [sources.md](sources.md)). #787 converted the 148 records carved in the old form; the split
+tools read a converted tile's fused-original facts from its first split's saved expectation.
 
 ## Source form of a carved tile (derived remainder)
 
