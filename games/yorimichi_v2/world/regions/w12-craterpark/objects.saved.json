@@ -1733,10 +1733,14 @@
       "groups": [],
       "id": "object/craterpark/trees-collision-mixed",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "collision-mixed"
     },
@@ -1744,10 +1748,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-3-3",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-3-3"
     },
@@ -1755,10 +1765,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-3-4",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-3-4"
     },
@@ -1766,10 +1782,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-4-2",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-4-2"
     },
@@ -1777,10 +1799,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-4-3",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-4-3"
     },
@@ -1788,10 +1816,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-4-4",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-4-4"
     },
@@ -1799,10 +1833,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-4-5",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-4-5"
     },
@@ -1810,10 +1850,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-5-2",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-5-2"
     },
@@ -1821,10 +1867,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-5-3",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-5-3"
     },
@@ -1832,10 +1884,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-5-4",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-5-4"
     },
@@ -1843,10 +1901,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-5-5",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-5-5"
     },
@@ -1854,10 +1918,10 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-6-2",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "trees": "crater-floor-6-2"
     },
@@ -1865,10 +1929,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-6-3",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-6-3"
     },
@@ -1876,10 +1946,16 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-6-4",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-6-4"
     },
@@ -1887,10 +1963,14 @@
       "groups": [],
       "id": "object/craterpark/trees-crater-floor-6-5",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "crater-floor-6-5"
     },
@@ -1898,10 +1978,10 @@
       "groups": [],
       "id": "object/craterpark/trees-p309-kicker-run-up",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "trees": "p309-kicker-run-up"
     },
@@ -1909,10 +1989,12 @@
       "groups": [],
       "id": "object/craterpark/trees-p311-mega-air-landing",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "trees": "p311-mega-air-landing"
     },
@@ -1920,10 +2002,12 @@
       "groups": [],
       "id": "object/craterpark/trees-p43-turn-t1",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "p43-turn-t1"
     },
@@ -1931,10 +2015,12 @@
       "groups": [],
       "id": "object/craterpark/trees-p45-flow-bowl",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-b",
+        "prop/japan-kit/tree-caldera-cedar-b"
       ],
       "trees": "p45-flow-bowl"
     },
@@ -1942,10 +2028,12 @@
       "groups": [],
       "id": "object/craterpark/trees-p51-t-half-bowl-u-turn",
       "model": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "models": [
-        "adopted/japan/assets/tree-caldera"
+        "prop/japan-kit/tree-caldera-black-pine-a",
+        "prop/japan-kit/tree-caldera-cedar-a"
       ],
       "trees": "p51-t-half-bowl-u-turn"
     }

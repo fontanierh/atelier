@@ -56,15 +56,16 @@ def test_camp_has_one_object_per_prop_in_its_own_region(discovered):
 
 
 def test_models_are_records_that_own_the_meshes(discovered):
-    """Every static object's model is an adopted record whose outputs include the object's packages."""
+    """Every static object's model is one record, or several, whose outputs together include the object's packages."""
     owned = {}
     for path in (ROOT / 'assets').rglob('asset.toml'):
         data = tomllib.loads(path.read_text())
         owned[data.get('id')] = {o['package'] for o in data.get('outputs', [])}
     for rid in (RAMP_REGION, CAMP_REGION):
         for item in static_objects(discovered, rid):
-            packages = owned.get(item['model'])
-            assert packages is not None, f'{item["id"]}: no record {item["model"]}'
+            missing = [m for m in objects.models(item) if m not in owned]
+            assert not missing, f'{item["id"]}: no record {missing}'
+            packages = set().union(*(owned[m] for m in objects.models(item)))
             root = '/Game/Japan/Assets' if item['static'][0].startswith('Mega_') else '/Game/SwordCamp/Assets'
             for mesh in item['static']:
                 assert f'{root}/{mesh}' in packages, f'{item["id"]}: {mesh} is not an output of {item["model"]}'

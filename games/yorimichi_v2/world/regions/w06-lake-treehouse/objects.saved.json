@@ -3,9 +3,35 @@
     "object/lake/th-p-backpack-01": {
       "groups": [],
       "id": "object/lake/th-p-backpack-01",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -18,9 +44,35 @@
     "object/lake/th-p-backpack-02": {
       "groups": [],
       "id": "object/lake/th-p-backpack-02",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -33,9 +85,35 @@
     "object/lake/th-p-backpack-03": {
       "groups": [],
       "id": "object/lake/th-p-backpack-03",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -48,9 +126,35 @@
     "object/lake/th-p-bell-01": {
       "groups": [],
       "id": "object/lake/th-p-bell-01",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -63,9 +167,35 @@
     "object/lake/th-p-bell-02": {
       "groups": [],
       "id": "object/lake/th-p-bell-02",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -78,9 +208,35 @@
     "object/lake/th-p-bookshelf-01": {
       "groups": [],
       "id": "object/lake/th-p-bookshelf-01",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -93,9 +249,35 @@
     "object/lake/th-p-bookshelf-02": {
       "groups": [],
       "id": "object/lake/th-p-bookshelf-02",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -108,9 +290,35 @@
     "object/lake/th-p-bookshelf-03": {
       "groups": [],
       "id": "object/lake/th-p-bookshelf-03",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -123,9 +331,35 @@
     "object/lake/th-p-bookshelf-04": {
       "groups": [],
       "id": "object/lake/th-p-bookshelf-04",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -138,9 +372,35 @@
     "object/lake/th-p-bookshelf-05": {
       "groups": [],
       "id": "object/lake/th-p-bookshelf-05",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -153,9 +413,35 @@
     "object/lake/th-p-bookshelf-06": {
       "groups": [],
       "id": "object/lake/th-p-bookshelf-06",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -168,9 +454,35 @@
     "object/lake/th-p-futon-01": {
       "groups": [],
       "id": "object/lake/th-p-futon-01",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -183,9 +495,35 @@
     "object/lake/th-p-futon-02": {
       "groups": [],
       "id": "object/lake/th-p-futon-02",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -198,9 +536,35 @@
     "object/lake/th-p-futon-03": {
       "groups": [],
       "id": "object/lake/th-p-futon-03",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -213,9 +577,35 @@
     "object/lake/th-p-planter-01": {
       "groups": [],
       "id": "object/lake/th-p-planter-01",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -228,9 +618,35 @@
     "object/lake/th-p-planter-02": {
       "groups": [],
       "id": "object/lake/th-p-planter-02",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -243,9 +659,35 @@
     "object/lake/th-p-planter-03": {
       "groups": [],
       "id": "object/lake/th-p-planter-03",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [
@@ -258,9 +700,35 @@
     "object/lake/th-p-planter-04": {
       "groups": [],
       "id": "object/lake/th-p-planter-04",
-      "model": "adopted/japan/assets/treehouse",
+      "model": [
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
+      ],
       "models": [
-        "adopted/japan/assets/treehouse"
+        "prop/treehouse-props/backpack",
+        "prop/treehouse-props/barrel",
+        "prop/treehouse-props/basket",
+        "prop/treehouse-props/bell",
+        "prop/treehouse-props/bookshelf",
+        "prop/treehouse-props/crate-desk",
+        "prop/treehouse-props/futon",
+        "prop/treehouse-props/globe",
+        "prop/treehouse-props/kamado",
+        "prop/treehouse-props/log-table",
+        "prop/treehouse-props/planter",
+        "prop/treehouse-props/stump-kettle",
+        "prop/treehouse-props/telescope"
       ],
       "split": {
         "at": [

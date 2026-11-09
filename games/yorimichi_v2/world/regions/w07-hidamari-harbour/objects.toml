@@ -2336,2677 +2336,2677 @@ about = "HD_Lighthouse 1 of 1 in w07-hidamari-harbour, placed at (440.0, -225.0)
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-01"
 split = {key = "HD_P_ac_unit", at = [436.63, 176.451]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 1 of 75 in w07-hidamari-harbour, placed at (436.63, 176.451) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-02"
 split = {key = "HD_P_ac_unit", at = [445.37, 190.543]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 2 of 75 in w07-hidamari-harbour, placed at (445.37, 190.543) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-03"
 split = {key = "HD_P_ac_unit", at = [448.04, -53.987]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 3 of 75 in w07-hidamari-harbour, placed at (448.04, -53.987) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-04"
 split = {key = "HD_P_ac_unit", at = [448.26, -39.48]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 4 of 75 in w07-hidamari-harbour, placed at (448.26, -39.48) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-05"
 split = {key = "HD_P_ac_unit", at = [449.2, 265.987]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 5 of 75 in w07-hidamari-harbour, placed at (449.2, 265.987) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-06"
 split = {key = "HD_P_ac_unit", at = [468.27, 281.047]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 6 of 75 in w07-hidamari-harbour, placed at (468.27, 281.047) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-07"
 split = {key = "HD_P_ac_unit", at = [471.04, -53.23]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 7 of 75 in w07-hidamari-harbour, placed at (471.04, -53.23) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-08"
 split = {key = "HD_P_ac_unit", at = [471.13, 176.765]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 8 of 75 in w07-hidamari-harbour, placed at (471.13, 176.765) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-09"
 split = {key = "HD_P_ac_unit", at = [471.26, -39.775]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 9 of 75 in w07-hidamari-harbour, placed at (471.26, -39.775) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-10"
 split = {key = "HD_P_ac_unit", at = [479.52, 266.693]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 10 of 75 in w07-hidamari-harbour, placed at (479.52, 266.693) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-11"
 split = {key = "HD_P_ac_unit", at = [479.77, 280.928]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 11 of 75 in w07-hidamari-harbour, placed at (479.77, 280.928) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-12"
 split = {key = "HD_P_ac_unit", at = [482.76, -39.251]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 12 of 75 in w07-hidamari-harbour, placed at (482.76, -39.251) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-13"
 split = {key = "HD_P_ac_unit", at = [489.96, -53.217]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 13 of 75 in w07-hidamari-harbour, placed at (489.96, -53.217) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-14"
 split = {key = "HD_P_ac_unit", at = [491.27, 280.323]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 14 of 75 in w07-hidamari-harbour, placed at (491.27, 280.323) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-15"
 split = {key = "HD_P_ac_unit", at = [494.13, 175.984]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 15 of 75 in w07-hidamari-harbour, placed at (494.13, 175.984) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-16"
 split = {key = "HD_P_ac_unit", at = [501.46, -53.373]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 16 of 75 in w07-hidamari-harbour, placed at (501.46, -53.373) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-17"
 split = {key = "HD_P_ac_unit", at = [502.87, 190.887]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 17 of 75 in w07-hidamari-harbour, placed at (502.87, 190.887) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-18"
 split = {key = "HD_P_ac_unit", at = [505.76, -39.243]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 18 of 75 in w07-hidamari-harbour, placed at (505.76, -39.243) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-19"
 split = {key = "HD_P_ac_unit", at = [514.02, 266.791]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 19 of 75 in w07-hidamari-harbour, placed at (514.02, 266.791) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-20"
 split = {key = "HD_P_ac_unit", at = [514.27, 280.741]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 20 of 75 in w07-hidamari-harbour, placed at (514.27, 280.741) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-21"
 split = {key = "HD_P_ac_unit", at = [514.37, 190.273]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 21 of 75 in w07-hidamari-harbour, placed at (514.37, 190.273) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-22"
 split = {key = "HD_P_ac_unit", at = [517.26, -38.952]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 22 of 75 in w07-hidamari-harbour, placed at (517.26, -38.952) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-23"
 split = {key = "HD_P_ac_unit", at = [525.52, 266.491]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 23 of 75 in w07-hidamari-harbour, placed at (525.52, 266.491) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-24"
 split = {key = "HD_P_ac_unit", at = [525.77, 280.282]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 24 of 75 in w07-hidamari-harbour, placed at (525.77, 280.282) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-25"
 split = {key = "HD_P_ac_unit", at = [525.87, 190.4]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 25 of 75 in w07-hidamari-harbour, placed at (525.87, 190.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-26"
 split = {key = "HD_P_ac_unit", at = [528.76, -39.759]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 26 of 75 in w07-hidamari-harbour, placed at (528.76, -39.759) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-27"
 split = {key = "HD_P_ac_unit", at = [533.32, -53.382]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 27 of 75 in w07-hidamari-harbour, placed at (533.32, -53.382) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-28"
 split = {key = "HD_P_ac_unit", at = [537.02, 266.344]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 28 of 75 in w07-hidamari-harbour, placed at (537.02, 266.344) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-29"
 split = {key = "HD_P_ac_unit", at = [537.27, 280.378]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 29 of 75 in w07-hidamari-harbour, placed at (537.27, 280.378) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-30"
 split = {key = "HD_P_ac_unit", at = [537.37, 190.402]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 30 of 75 in w07-hidamari-harbour, placed at (537.37, 190.402) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-31"
 split = {key = "HD_P_ac_unit", at = [544.36, -38.966]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 31 of 75 in w07-hidamari-harbour, placed at (544.36, -38.966) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-32"
 split = {key = "HD_P_ac_unit", at = [573.28, 176.422]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 32 of 75 in w07-hidamari-harbour, placed at (573.28, 176.422) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-33"
 split = {key = "HD_P_ac_unit", at = [580.87, 190.448]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 33 of 75 in w07-hidamari-harbour, placed at (580.87, 190.448) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-34"
 split = {key = "HD_P_ac_unit", at = [581.86, -39.07]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 34 of 75 in w07-hidamari-harbour, placed at (581.86, -39.07) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-35"
 split = {key = "HD_P_ac_unit", at = [584.32, -53.548]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 35 of 75 in w07-hidamari-harbour, placed at (584.32, -53.548) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-36"
 split = {key = "HD_P_ac_unit", at = [584.78, 175.942]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 36 of 75 in w07-hidamari-harbour, placed at (584.78, 175.942) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-37"
 split = {key = "HD_P_ac_unit", at = [592.37, 191.013]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 37 of 75 in w07-hidamari-harbour, placed at (592.37, 191.013) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-38"
 split = {key = "HD_P_ac_unit", at = [598.46, -38.938]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 38 of 75 in w07-hidamari-harbour, placed at (598.46, -38.938) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-39"
 split = {key = "HD_P_ac_unit", at = [609.96, -38.905]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 39 of 75 in w07-hidamari-harbour, placed at (609.96, -38.905) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-40"
 split = {key = "HD_P_ac_unit", at = [611.38, 190.936]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 40 of 75 in w07-hidamari-harbour, placed at (611.38, 190.936) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-41"
 split = {key = "HD_P_ac_unit", at = [614.67, -53.808]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 41 of 75 in w07-hidamari-harbour, placed at (614.67, -53.808) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-42"
 split = {key = "HD_P_ac_unit", at = [616.09, 176.365]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 42 of 75 in w07-hidamari-harbour, placed at (616.09, 176.365) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-43"
 split = {key = "HD_P_ac_unit", at = [621.46, -39.656]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 43 of 75 in w07-hidamari-harbour, placed at (621.46, -39.656) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-44"
 split = {key = "HD_P_ac_unit", at = [632.51, -53.544]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 44 of 75 in w07-hidamari-harbour, placed at (632.51, -53.544) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-45"
 split = {key = "HD_P_ac_unit", at = [637.43, -39.061]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 45 of 75 in w07-hidamari-harbour, placed at (637.43, -39.061) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-46"
 split = {key = "HD_P_ac_unit", at = [638.79, 190.347]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 46 of 75 in w07-hidamari-harbour, placed at (638.79, 190.347) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-47"
 split = {key = "HD_P_ac_unit", at = [655.51, -53.489]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 47 of 75 in w07-hidamari-harbour, placed at (655.51, -53.489) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-48"
 split = {key = "HD_P_ac_unit", at = [671.93, -39.138]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 48 of 75 in w07-hidamari-harbour, placed at (671.93, -39.138) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-49"
 split = {key = "HD_P_ac_unit", at = [701.51, -53.421]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 49 of 75 in w07-hidamari-harbour, placed at (701.51, -53.421) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-50"
 split = {key = "HD_P_ac_unit", at = [745.01, -53.635]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 50 of 75 in w07-hidamari-harbour, placed at (745.01, -53.635) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-51"
 split = {key = "HD_P_ac_unit", at = [753.93, -39.322]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 51 of 75 in w07-hidamari-harbour, placed at (753.93, -39.322) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-52"
 split = {key = "HD_P_ac_unit", at = [765.43, -39.468]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 52 of 75 in w07-hidamari-harbour, placed at (765.43, -39.468) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-53"
 split = {key = "HD_P_ac_unit", at = [768.01, -53.567]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 53 of 75 in w07-hidamari-harbour, placed at (768.01, -53.567) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-54"
 split = {key = "HD_P_ac_unit", at = [776.93, -39.741]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 54 of 75 in w07-hidamari-harbour, placed at (776.93, -39.741) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-55"
 split = {key = "HD_P_ac_unit", at = [788.43, -39.595]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 55 of 75 in w07-hidamari-harbour, placed at (788.43, -39.595) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-56"
 split = {key = "HD_P_ac_unit", at = [797.28, -53.384]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 56 of 75 in w07-hidamari-harbour, placed at (797.28, -53.384) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-57"
 split = {key = "HD_P_ac_unit", at = [799.93, -39.269]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 57 of 75 in w07-hidamari-harbour, placed at (799.93, -39.269) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-58"
 split = {key = "HD_P_ac_unit", at = [808.78, -54.076]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 58 of 75 in w07-hidamari-harbour, placed at (808.78, -54.076) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-59"
 split = {key = "HD_P_ac_unit", at = [816.7, -39.162]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 59 of 75 in w07-hidamari-harbour, placed at (816.7, -39.162) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-60"
 split = {key = "HD_P_ac_unit", at = [822.29, 190.812]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 60 of 75 in w07-hidamari-harbour, placed at (822.29, 190.812) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-61"
 split = {key = "HD_P_ac_unit", at = [826.24, 176.109]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 61 of 75 in w07-hidamari-harbour, placed at (826.24, 176.109) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-62"
 split = {key = "HD_P_ac_unit", at = [828.2, -39.412]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 62 of 75 in w07-hidamari-harbour, placed at (828.2, -39.412) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-63"
 split = {key = "HD_P_ac_unit", at = [833.79, 190.412]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 63 of 75 in w07-hidamari-harbour, placed at (833.79, 190.412) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-64"
 split = {key = "HD_P_ac_unit", at = [837.74, 176.502]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 64 of 75 in w07-hidamari-harbour, placed at (837.74, 176.502) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-65"
 split = {key = "HD_P_ac_unit", at = [838.05, 280.47]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 65 of 75 in w07-hidamari-harbour, placed at (838.05, 280.47) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-66"
 split = {key = "HD_P_ac_unit", at = [845.29, 190.545]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 66 of 75 in w07-hidamari-harbour, placed at (845.29, 190.545) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-67"
 split = {key = "HD_P_ac_unit", at = [853.32, 265.985]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 67 of 75 in w07-hidamari-harbour, placed at (853.32, 265.985) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-68"
 split = {key = "HD_P_ac_unit", at = [856.79, 190.5]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 68 of 75 in w07-hidamari-harbour, placed at (856.79, 190.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-69"
 split = {key = "HD_P_ac_unit", at = [857.03, 176.002]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 69 of 75 in w07-hidamari-harbour, placed at (857.03, 176.002) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-70"
 split = {key = "HD_P_ac_unit", at = [868.29, 190.83]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 70 of 75 in w07-hidamari-harbour, placed at (868.29, 190.83) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-71"
 split = {key = "HD_P_ac_unit", at = [868.53, 176.733]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 71 of 75 in w07-hidamari-harbour, placed at (868.53, 176.733) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-72"
 split = {key = "HD_P_ac_unit", at = [877.78, -53.219]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 72 of 75 in w07-hidamari-harbour, placed at (877.78, -53.219) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-73"
 split = {key = "HD_P_ac_unit", at = [884.1, 176.616]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 73 of 75 in w07-hidamari-harbour, placed at (884.1, 176.616) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-74"
 split = {key = "HD_P_ac_unit", at = [889.28, -53.631]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 74 of 75 in w07-hidamari-harbour, placed at (889.28, -53.631) m"
 
 [[objects]]
 id = "object/harbour/hd-p-ac-unit-75"
 split = {key = "HD_P_ac_unit", at = [891.29, 190.479]}
-model = "adopted/japan/assets/hd-p-ac-unit"
+model = "prop/hidamari-props/ac-unit"
 about = "HD_P_ac_unit 75 of 75 in w07-hidamari-harbour, placed at (891.29, 190.479) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-01"
 split = {key = "HD_P_bicycle", at = [450.36, -51.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 1 of 26 in w07-hidamari-harbour, placed at (450.36, -51.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-02"
 split = {key = "HD_P_bicycle", at = [457.44, -41.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 2 of 26 in w07-hidamari-harbour, placed at (457.44, -41.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-03"
 split = {key = "HD_P_bicycle", at = [468.5, 150.6]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 3 of 26 in w07-hidamari-harbour, placed at (468.5, 150.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-04"
 split = {key = "HD_P_bicycle", at = [477.55, 188.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 4 of 26 in w07-hidamari-harbour, placed at (477.55, 188.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-05"
 split = {key = "HD_P_bicycle", at = [480.44, -41.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 5 of 26 in w07-hidamari-harbour, placed at (480.44, -41.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-06"
 split = {key = "HD_P_bicycle", at = [503.78, -51.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 6 of 26 in w07-hidamari-harbour, placed at (503.78, -51.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-07"
 split = {key = "HD_P_bicycle", at = [512.05, 188.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 7 of 26 in w07-hidamari-harbour, placed at (512.05, 188.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-08"
 split = {key = "HD_P_bicycle", at = [522.5, -79.4]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 8 of 26 in w07-hidamari-harbour, placed at (522.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-09"
 split = {key = "HD_P_bicycle", at = [522.5, 64.4]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 9 of 26 in w07-hidamari-harbour, placed at (522.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-10"
 split = {key = "HD_P_bicycle", at = [522.5, 324.4]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 10 of 26 in w07-hidamari-harbour, placed at (522.5, 324.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-11"
 split = {key = "HD_P_bicycle", at = [527.84, 268.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 11 of 26 in w07-hidamari-harbour, placed at (527.84, 268.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-12"
 split = {key = "HD_P_bicycle", at = [542.04, -41.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 12 of 26 in w07-hidamari-harbour, placed at (542.04, -41.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-13"
 split = {key = "HD_P_bicycle", at = [575.14, -51.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 13 of 26 in w07-hidamari-harbour, placed at (575.14, -51.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-14"
 split = {key = "HD_P_bicycle", at = [575.6, 178.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 14 of 26 in w07-hidamari-harbour, placed at (575.6, 178.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-15"
 split = {key = "HD_P_bicycle", at = [590.05, 188.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 15 of 26 in w07-hidamari-harbour, placed at (590.05, 188.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-16"
 split = {key = "HD_P_bicycle", at = [603.5, 4.4]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 16 of 26 in w07-hidamari-harbour, placed at (603.5, 4.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-17"
 split = {key = "HD_P_bicycle", at = [603.5, 219.4]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 17 of 26 in w07-hidamari-harbour, placed at (603.5, 219.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-18"
 split = {key = "HD_P_bicycle", at = [607.64, -41.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 18 of 26 in w07-hidamari-harbour, placed at (607.64, -41.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-19"
 split = {key = "HD_P_bicycle", at = [619.14, -41.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 19 of 26 in w07-hidamari-harbour, placed at (619.14, -41.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-20"
 split = {key = "HD_P_bicycle", at = [630.5, 25.6]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 20 of 26 in w07-hidamari-harbour, placed at (630.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-21"
 split = {key = "HD_P_bicycle", at = [636.47, 188.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 21 of 26 in w07-hidamari-harbour, placed at (636.47, 188.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-22"
 split = {key = "HD_P_bicycle", at = [641.41, 178.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 22 of 26 in w07-hidamari-harbour, placed at (641.41, 178.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-23"
 split = {key = "HD_P_bicycle", at = [680.83, -51.9]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 23 of 26 in w07-hidamari-harbour, placed at (680.83, -51.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-24"
 split = {key = "HD_P_bicycle", at = [792.5, 85.6]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 24 of 26 in w07-hidamari-harbour, placed at (792.5, 85.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-25"
 split = {key = "HD_P_bicycle", at = [797.61, -41.1]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 25 of 26 in w07-hidamari-harbour, placed at (797.61, -41.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bicycle-26"
 split = {key = "HD_P_bicycle", at = [873.5, 129.4]}
-model = "adopted/japan/assets/hd-p-bicycle"
+model = "prop/hidamari-props/bicycle"
 about = "HD_P_bicycle 26 of 26 in w07-hidamari-harbour, placed at (873.5, 129.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-01"
 split = {key = "HD_P_bonsai_shelf", at = [519.25, 178.25]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 1 of 8 in w07-hidamari-harbour, placed at (519.25, 178.25) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-02"
 split = {key = "HD_P_bonsai_shelf", at = [523.65, 278.75]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 2 of 8 in w07-hidamari-harbour, placed at (523.65, 278.75) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-03"
 split = {key = "HD_P_bonsai_shelf", at = [579.74, -41.25]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 3 of 8 in w07-hidamari-harbour, placed at (579.74, -41.25) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-04"
 split = {key = "HD_P_bonsai_shelf", at = [616.79, -51.75]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 4 of 8 in w07-hidamari-harbour, placed at (616.79, -51.75) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-05"
 split = {key = "HD_P_bonsai_shelf", at = [758.63, -51.75]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 5 of 8 in w07-hidamari-harbour, placed at (758.63, -51.75) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-06"
 split = {key = "HD_P_bonsai_shelf", at = [854.67, 188.75]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 6 of 8 in w07-hidamari-harbour, placed at (854.67, 188.75) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-07"
 split = {key = "HD_P_bonsai_shelf", at = [870.65, 178.25]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 7 of 8 in w07-hidamari-harbour, placed at (870.65, 178.25) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bonsai-shelf-08"
 split = {key = "HD_P_bonsai_shelf", at = [889.17, 188.75]}
-model = "adopted/japan/assets/hd-p-bonsai-shelf"
+model = "prop/hidamari-props/bonsai-shelf"
 about = "HD_P_bonsai_shelf 8 of 8 in w07-hidamari-harbour, placed at (889.17, 188.75) m"
 
 [[objects]]
 id = "object/harbour/hd-p-bus-stop-01"
 split = {key = "HD_P_bus_stop", at = [373.3, 136.7]}
-model = "adopted/japan/assets/hd-p-bus-stop"
+model = "prop/hidamari-props/bus-stop"
 about = "HD_P_bus_stop 1 of 1 in w07-hidamari-harbour, placed at (373.3, 136.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-01"
 split = {key = "HD_P_curve_mirror", at = [436.15, 276.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 1 of 18 in w07-hidamari-harbour, placed at (436.15, 276.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-02"
 split = {key = "HD_P_curve_mirror", at = [436.25, 186.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 2 of 18 in w07-hidamari-harbour, placed at (436.25, 186.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-03"
 split = {key = "HD_P_curve_mirror", at = [439.14, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 3 of 18 in w07-hidamari-harbour, placed at (439.14, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-04"
 split = {key = "HD_P_curve_mirror", at = [537.55, 276.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 4 of 18 in w07-hidamari-harbour, placed at (537.55, 276.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-05"
 split = {key = "HD_P_curve_mirror", at = [537.65, 186.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 5 of 18 in w07-hidamari-harbour, placed at (537.65, 186.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-06"
 split = {key = "HD_P_curve_mirror", at = [544.64, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 6 of 18 in w07-hidamari-harbour, placed at (544.64, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-07"
 split = {key = "HD_P_curve_mirror", at = [571.75, 186.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 7 of 18 in w07-hidamari-harbour, placed at (571.75, 186.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-08"
 split = {key = "HD_P_curve_mirror", at = [572.74, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 8 of 18 in w07-hidamari-harbour, placed at (572.74, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-09"
 split = {key = "HD_P_curve_mirror", at = [637.71, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 9 of 18 in w07-hidamari-harbour, placed at (637.71, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-10"
 split = {key = "HD_P_curve_mirror", at = [639.07, 186.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 10 of 18 in w07-hidamari-harbour, placed at (639.07, 186.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-11"
 split = {key = "HD_P_curve_mirror", at = [662.81, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 11 of 18 in w07-hidamari-harbour, placed at (662.81, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-12"
 split = {key = "HD_P_curve_mirror", at = [683.71, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 12 of 18 in w07-hidamari-harbour, placed at (683.71, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-13"
 split = {key = "HD_P_curve_mirror", at = [744.81, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 13 of 18 in w07-hidamari-harbour, placed at (744.81, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-14"
 split = {key = "HD_P_curve_mirror", at = [813.17, 186.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 14 of 18 in w07-hidamari-harbour, placed at (813.17, 186.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-15"
 split = {key = "HD_P_curve_mirror", at = [828.48, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 15 of 18 in w07-hidamari-harbour, placed at (828.48, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-16"
 split = {key = "HD_P_curve_mirror", at = [828.93, 276.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 16 of 18 in w07-hidamari-harbour, placed at (828.93, 276.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-17"
 split = {key = "HD_P_curve_mirror", at = [861.33, 276.8]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 17 of 18 in w07-hidamari-harbour, placed at (861.33, 276.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-curve-mirror-18"
 split = {key = "HD_P_curve_mirror", at = [880.81, -43.2]}
-model = "adopted/japan/assets/hd-p-curve-mirror"
+model = "prop/hidamari-props/curve-mirror"
 about = "HD_P_curve_mirror 18 of 18 in w07-hidamari-harbour, placed at (880.81, -43.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-drink-crates-01"
 split = {key = "HD_P_drink_crates", at = [468.5, 240.6]}
-model = "adopted/japan/assets/hd-p-drink-crates"
+model = "prop/hidamari-props/drink-crates"
 about = "HD_P_drink_crates 1 of 7 in w07-hidamari-harbour, placed at (468.5, 240.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-drink-crates-02"
 split = {key = "HD_P_drink_crates", at = [628.0, -104.5]}
-model = "adopted/japan/assets/hd-p-drink-crates"
+model = "prop/hidamari-props/drink-crates"
 about = "HD_P_drink_crates 2 of 7 in w07-hidamari-harbour, placed at (628.0, -104.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-drink-crates-03"
 split = {key = "HD_P_drink_crates", at = [657.5, -79.4]}
-model = "adopted/japan/assets/hd-p-drink-crates"
+model = "prop/hidamari-props/drink-crates"
 about = "HD_P_drink_crates 3 of 7 in w07-hidamari-harbour, placed at (657.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-drink-crates-04"
 split = {key = "HD_P_drink_crates", at = [684.5, 4.4]}
-model = "adopted/japan/assets/hd-p-drink-crates"
+model = "prop/hidamari-props/drink-crates"
 about = "HD_P_drink_crates 4 of 7 in w07-hidamari-harbour, placed at (684.5, 4.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-drink-crates-05"
 split = {key = "HD_P_drink_crates", at = [765.5, 25.6]}
-model = "adopted/japan/assets/hd-p-drink-crates"
+model = "prop/hidamari-props/drink-crates"
 about = "HD_P_drink_crates 5 of 7 in w07-hidamari-harbour, placed at (765.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-drink-crates-06"
 split = {key = "HD_P_drink_crates", at = [819.5, 64.4]}
-model = "adopted/japan/assets/hd-p-drink-crates"
+model = "prop/hidamari-props/drink-crates"
 about = "HD_P_drink_crates 6 of 7 in w07-hidamari-harbour, placed at (819.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-drink-crates-07"
 split = {key = "HD_P_drink_crates", at = [873.5, 85.6]}
-model = "adopted/japan/assets/hd-p-drink-crates"
+model = "prop/hidamari-props/drink-crates"
 about = "HD_P_drink_crates 7 of 7 in w07-hidamari-harbour, placed at (873.5, 85.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-fire-buckets-01"
 split = {key = "HD_P_fire_buckets", at = [495.5, 150.6]}
-model = "adopted/japan/assets/hd-p-fire-buckets"
+model = "prop/hidamari-props/fire-buckets"
 about = "HD_P_fire_buckets 1 of 2 in w07-hidamari-harbour, placed at (495.5, 150.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-fire-buckets-02"
 split = {key = "HD_P_fire_buckets", at = [846.5, 324.4]}
-model = "adopted/japan/assets/hd-p-fire-buckets"
+model = "prop/hidamari-props/fire-buckets"
 about = "HD_P_fire_buckets 2 of 2 in w07-hidamari-harbour, placed at (846.5, 324.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-garbage-station-01"
 split = {key = "HD_P_garbage_station", at = [630.5, -79.4]}
-model = "adopted/japan/assets/hd-p-garbage-station"
+model = "prop/hidamari-props/garbage-station"
 about = "HD_P_garbage_station 1 of 6 in w07-hidamari-harbour, placed at (630.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-garbage-station-02"
 split = {key = "HD_P_garbage_station", at = [657.5, 4.4]}
-model = "adopted/japan/assets/hd-p-garbage-station"
+model = "prop/hidamari-props/garbage-station"
 about = "HD_P_garbage_station 2 of 6 in w07-hidamari-harbour, placed at (657.5, 4.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-garbage-station-03"
 split = {key = "HD_P_garbage_station", at = [684.5, 25.6]}
-model = "adopted/japan/assets/hd-p-garbage-station"
+model = "prop/hidamari-props/garbage-station"
 about = "HD_P_garbage_station 3 of 6 in w07-hidamari-harbour, placed at (684.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-garbage-station-04"
 split = {key = "HD_P_garbage_station", at = [690.0, -105.0]}
-model = "adopted/japan/assets/hd-p-garbage-station"
+model = "prop/hidamari-props/garbage-station"
 about = "HD_P_garbage_station 4 of 6 in w07-hidamari-harbour, placed at (690.0, -105.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-garbage-station-05"
 split = {key = "HD_P_garbage_station", at = [792.5, 64.4]}
-model = "adopted/japan/assets/hd-p-garbage-station"
+model = "prop/hidamari-props/garbage-station"
 about = "HD_P_garbage_station 5 of 6 in w07-hidamari-harbour, placed at (792.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-garbage-station-06"
 split = {key = "HD_P_garbage_station", at = [846.5, 85.6]}
-model = "adopted/japan/assets/hd-p-garbage-station"
+model = "prop/hidamari-props/garbage-station"
 about = "HD_P_garbage_station 6 of 6 in w07-hidamari-harbour, placed at (846.5, 85.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-hokora-01"
 split = {key = "HD_P_hokora", at = [452.55, 178.9]}
-model = "adopted/japan/assets/hd-p-hokora"
+model = "prop/hidamari-props/hokora"
 about = "HD_P_hokora 1 of 5 in w07-hidamari-harbour, placed at (452.55, 178.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-hokora-02"
 split = {key = "HD_P_hokora", at = [487.05, 178.9]}
-model = "adopted/japan/assets/hd-p-hokora"
+model = "prop/hidamari-props/hokora"
 about = "HD_P_hokora 2 of 5 in w07-hidamari-harbour, placed at (487.05, 178.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-hokora-03"
 split = {key = "HD_P_hokora", at = [489.84, -41.9]}
-model = "adopted/japan/assets/hd-p-hokora"
+model = "prop/hidamari-props/hokora"
 about = "HD_P_hokora 3 of 5 in w07-hidamari-harbour, placed at (489.84, -41.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-hokora-04"
 split = {key = "HD_P_hokora", at = [845.13, 278.1]}
-model = "adopted/japan/assets/hd-p-hokora"
+model = "prop/hidamari-props/hokora"
 about = "HD_P_hokora 4 of 5 in w07-hidamari-harbour, placed at (845.13, 278.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-hokora-05"
 split = {key = "HD_P_hokora", at = [875.37, 188.1]}
-model = "adopted/japan/assets/hd-p-hokora"
+model = "prop/hidamari-props/hokora"
 about = "HD_P_hokora 5 of 5 in w07-hidamari-harbour, placed at (875.37, 188.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-jizo-01"
 split = {key = "HD_P_jizo", at = [355.11, 117.91]}
-model = "adopted/japan/assets/hd-p-jizo"
+model = "prop/hidamari-props/jizo"
 about = "HD_P_jizo 1 of 5 in w07-hidamari-harbour, placed at (355.11, 117.91) m"
 
 [[objects]]
 id = "object/harbour/hd-p-jizo-02"
 split = {key = "HD_P_jizo", at = [357.09, 119.89]}
-model = "adopted/japan/assets/hd-p-jizo"
+model = "prop/hidamari-props/jizo"
 about = "HD_P_jizo 2 of 5 in w07-hidamari-harbour, placed at (357.09, 119.89) m"
 
 [[objects]]
 id = "object/harbour/hd-p-jizo-03"
 split = {key = "HD_P_jizo", at = [587.0, 266.0]}
-model = "adopted/japan/assets/hd-p-jizo"
+model = "prop/hidamari-props/jizo"
 about = "HD_P_jizo 3 of 5 in w07-hidamari-harbour, placed at (587.0, 266.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-jizo-04"
 split = {key = "HD_P_jizo", at = [588.2, 266.0]}
-model = "adopted/japan/assets/hd-p-jizo"
+model = "prop/hidamari-props/jizo"
 about = "HD_P_jizo 4 of 5 in w07-hidamari-harbour, placed at (588.2, 266.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-jizo-05"
 split = {key = "HD_P_jizo", at = [706.0, 283.0]}
-model = "adopted/japan/assets/hd-p-jizo"
+model = "prop/hidamari-props/jizo"
 about = "HD_P_jizo 5 of 5 in w07-hidamari-harbour, placed at (706.0, 283.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-01"
 split = {key = "HD_P_kei_car", at = [439.12, 268.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 1 of 15 in w07-hidamari-harbour, placed at (439.12, 268.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-02"
 split = {key = "HD_P_kei_car", at = [455.35, 278.6]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 2 of 15 in w07-hidamari-harbour, placed at (455.35, 278.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-03"
 split = {key = "HD_P_kei_car", at = [461.05, 178.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 3 of 15 in w07-hidamari-harbour, placed at (461.05, 178.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-04"
 split = {key = "HD_P_kei_car", at = [512.85, 278.6]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 4 of 15 in w07-hidamari-harbour, placed at (512.85, 278.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-05"
 split = {key = "HD_P_kei_car", at = [527.34, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 5 of 15 in w07-hidamari-harbour, placed at (527.34, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-06"
 split = {key = "HD_P_kei_car", at = [538.44, 268.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 6 of 15 in w07-hidamari-harbour, placed at (538.44, 268.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-07"
 split = {key = "HD_P_kei_car", at = [579.45, 188.6]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 7 of 15 in w07-hidamari-harbour, placed at (579.45, 188.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-08"
 split = {key = "HD_P_kei_car", at = [746.43, -51.6]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 8 of 15 in w07-hidamari-harbour, placed at (746.43, -51.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-09"
 split = {key = "HD_P_kei_car", at = [764.01, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 9 of 15 in w07-hidamari-harbour, placed at (764.01, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-10"
 split = {key = "HD_P_kei_car", at = [787.01, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 10 of 15 in w07-hidamari-harbour, placed at (787.01, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-11"
 split = {key = "HD_P_kei_car", at = [815.28, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 11 of 15 in w07-hidamari-harbour, placed at (815.28, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-12"
 split = {key = "HD_P_kei_car", at = [836.63, 278.6]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 12 of 15 in w07-hidamari-harbour, placed at (836.63, 278.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-13"
 split = {key = "HD_P_kei_car", at = [839.16, 178.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 13 of 15 in w07-hidamari-harbour, placed at (839.16, 178.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-14"
 split = {key = "HD_P_kei_car", at = [859.63, 278.6]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 14 of 15 in w07-hidamari-harbour, placed at (859.63, 278.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-car-15"
 split = {key = "HD_P_kei_car", at = [885.52, 178.4]}
-model = "adopted/japan/assets/hd-p-kei-car"
+model = "prop/hidamari-props/kei-car"
 about = "HD_P_kei_car 15 of 15 in w07-hidamari-harbour, placed at (885.52, 178.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-01"
 split = {key = "HD_P_kei_truck", at = [446.84, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 1 of 16 in w07-hidamari-harbour, placed at (446.84, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-02"
 split = {key = "HD_P_kei_truck", at = [469.44, 268.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 2 of 16 in w07-hidamari-harbour, placed at (469.44, 268.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-03"
 split = {key = "HD_P_kei_truck", at = [478.35, 278.6]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 3 of 16 in w07-hidamari-harbour, placed at (478.35, 278.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-04"
 split = {key = "HD_P_kei_truck", at = [501.45, 188.6]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 4 of 16 in w07-hidamari-harbour, placed at (501.45, 188.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-05"
 split = {key = "HD_P_kei_truck", at = [520.0, -108.0]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 5 of 16 in w07-hidamari-harbour, placed at (520.0, -108.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-06"
 split = {key = "HD_P_kei_truck", at = [585.74, -51.6]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 6 of 16 in w07-hidamari-harbour, placed at (585.74, -51.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-07"
 split = {key = "HD_P_kei_truck", at = [625.87, 188.6]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 7 of 16 in w07-hidamari-harbour, placed at (625.87, 188.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-08"
 split = {key = "HD_P_kei_truck", at = [633.93, -51.6]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 8 of 16 in w07-hidamari-harbour, placed at (633.93, -51.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-09"
 split = {key = "HD_P_kei_truck", at = [662.0, -106.0]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 9 of 16 in w07-hidamari-harbour, placed at (662.0, -106.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-10"
 split = {key = "HD_P_kei_truck", at = [670.51, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 10 of 16 in w07-hidamari-harbour, placed at (670.51, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-11"
 split = {key = "HD_P_kei_truck", at = [682.01, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 11 of 16 in w07-hidamari-harbour, placed at (682.01, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-12"
 split = {key = "HD_P_kei_truck", at = [752.51, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 12 of 16 in w07-hidamari-harbour, placed at (752.51, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-13"
 split = {key = "HD_P_kei_truck", at = [820.87, 188.6]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 13 of 16 in w07-hidamari-harbour, placed at (820.87, 188.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-14"
 split = {key = "HD_P_kei_truck", at = [826.78, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 14 of 16 in w07-hidamari-harbour, placed at (826.78, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-15"
 split = {key = "HD_P_kei_truck", at = [827.66, 178.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 15 of 16 in w07-hidamari-harbour, placed at (827.66, 178.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-kei-truck-16"
 split = {key = "HD_P_kei_truck", at = [888.51, -41.4]}
-model = "adopted/japan/assets/hd-p-kei-truck"
+model = "prop/hidamari-props/kei-truck"
 about = "HD_P_kei_truck 16 of 16 in w07-hidamari-harbour, placed at (888.51, -41.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-komainu-01"
 split = {key = "HD_P_komainu", at = [595.2, 262.0]}
-model = "adopted/japan/assets/hd-p-komainu"
+model = "prop/hidamari-props/komainu"
 about = "HD_P_komainu 1 of 2 in w07-hidamari-harbour, placed at (595.2, 262.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-komainu-02"
 split = {key = "HD_P_komainu", at = [604.8, 262.0]}
-model = "adopted/japan/assets/hd-p-komainu"
+model = "prop/hidamari-props/komainu"
 about = "HD_P_komainu 2 of 2 in w07-hidamari-harbour, placed at (604.8, 262.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-01"
 split = {key = "HD_P_lantern_sign", at = [495.5, 129.4]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 1 of 8 in w07-hidamari-harbour, placed at (495.5, 129.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-02"
 split = {key = "HD_P_lantern_sign", at = [522.5, 240.6]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 2 of 8 in w07-hidamari-harbour, placed at (522.5, 240.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-03"
 split = {key = "HD_P_lantern_sign", at = [522.5, 345.6]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 3 of 8 in w07-hidamari-harbour, placed at (522.5, 345.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-04"
 split = {key = "HD_P_lantern_sign", at = [630.5, 150.6]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 4 of 8 in w07-hidamari-harbour, placed at (630.5, 150.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-05"
 split = {key = "HD_P_lantern_sign", at = [765.5, -79.4]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 5 of 8 in w07-hidamari-harbour, placed at (765.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-06"
 split = {key = "HD_P_lantern_sign", at = [792.5, 4.4]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 6 of 8 in w07-hidamari-harbour, placed at (792.5, 4.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-07"
 split = {key = "HD_P_lantern_sign", at = [819.5, 25.6]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 7 of 8 in w07-hidamari-harbour, placed at (819.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-lantern-sign-08"
 split = {key = "HD_P_lantern_sign", at = [873.5, 64.4]}
-model = "adopted/japan/assets/hd-p-lantern-sign"
+model = "prop/hidamari-props/lantern-sign"
 about = "HD_P_lantern_sign 8 of 8 in w07-hidamari-harbour, placed at (873.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-01"
 split = {key = "HD_P_laundry_stand", at = [450.84, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 1 of 37 in w07-hidamari-harbour, placed at (450.84, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-02"
 split = {key = "HD_P_laundry_stand", at = [468.46, -55.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 2 of 37 in w07-hidamari-harbour, placed at (468.46, -55.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-03"
 split = {key = "HD_P_laundry_stand", at = [470.85, 282.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 3 of 37 in w07-hidamari-harbour, placed at (470.85, 282.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-04"
 split = {key = "HD_P_laundry_stand", at = [479.96, -55.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 4 of 37 in w07-hidamari-harbour, placed at (479.96, -55.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-05"
 split = {key = "HD_P_laundry_stand", at = [482.35, 282.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 5 of 37 in w07-hidamari-harbour, placed at (482.35, 282.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-06"
 split = {key = "HD_P_laundry_stand", at = [496.84, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 6 of 37 in w07-hidamari-harbour, placed at (496.84, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-07"
 split = {key = "HD_P_laundry_stand", at = [505.35, 282.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 7 of 37 in w07-hidamari-harbour, placed at (505.35, 282.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-08"
 split = {key = "HD_P_laundry_stand", at = [510.38, -55.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 8 of 37 in w07-hidamari-harbour, placed at (510.38, -55.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-09"
 split = {key = "HD_P_laundry_stand", at = [511.44, 264.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 9 of 37 in w07-hidamari-harbour, placed at (511.44, 264.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-10"
 split = {key = "HD_P_laundry_stand", at = [514.55, 174.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 10 of 37 in w07-hidamari-harbour, placed at (514.55, 174.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-11"
 split = {key = "HD_P_laundry_stand", at = [519.84, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 11 of 37 in w07-hidamari-harbour, placed at (519.84, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-12"
 split = {key = "HD_P_laundry_stand", at = [526.05, 174.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 12 of 37 in w07-hidamari-harbour, placed at (526.05, 174.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-13"
 split = {key = "HD_P_laundry_stand", at = [528.45, 192.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 13 of 37 in w07-hidamari-harbour, placed at (528.45, 192.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-14"
 split = {key = "HD_P_laundry_stand", at = [534.44, 264.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 14 of 37 in w07-hidamari-harbour, placed at (534.44, 264.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-15"
 split = {key = "HD_P_laundry_stand", at = [545.94, 264.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 15 of 37 in w07-hidamari-harbour, placed at (545.94, 264.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-16"
 split = {key = "HD_P_laundry_stand", at = [571.95, 192.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 16 of 37 in w07-hidamari-harbour, placed at (571.95, 192.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-17"
 split = {key = "HD_P_laundry_stand", at = [581.74, -55.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 17 of 37 in w07-hidamari-harbour, placed at (581.74, -55.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-18"
 split = {key = "HD_P_laundry_stand", at = [583.45, 192.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 18 of 37 in w07-hidamari-harbour, placed at (583.45, 192.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-19"
 split = {key = "HD_P_laundry_stand", at = [589.54, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 19 of 37 in w07-hidamari-harbour, placed at (589.54, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-20"
 split = {key = "HD_P_laundry_stand", at = [593.7, 174.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 20 of 37 in w07-hidamari-harbour, placed at (593.7, 174.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-21"
 split = {key = "HD_P_laundry_stand", at = [602.46, 192.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 21 of 37 in w07-hidamari-harbour, placed at (602.46, 192.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-22"
 split = {key = "HD_P_laundry_stand", at = [612.54, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 22 of 37 in w07-hidamari-harbour, placed at (612.54, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-23"
 split = {key = "HD_P_laundry_stand", at = [628.51, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 23 of 37 in w07-hidamari-harbour, placed at (628.51, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-24"
 split = {key = "HD_P_laundry_stand", at = [641.43, -55.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 24 of 37 in w07-hidamari-harbour, placed at (641.43, -55.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-25"
 split = {key = "HD_P_laundry_stand", at = [648.01, 174.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 25 of 37 in w07-hidamari-harbour, placed at (648.01, 174.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-26"
 split = {key = "HD_P_laundry_stand", at = [753.93, -55.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 26 of 37 in w07-hidamari-harbour, placed at (753.93, -55.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-27"
 split = {key = "HD_P_laundry_stand", at = [768.01, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 27 of 37 in w07-hidamari-harbour, placed at (768.01, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-28"
 split = {key = "HD_P_laundry_stand", at = [779.51, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 28 of 37 in w07-hidamari-harbour, placed at (779.51, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-29"
 split = {key = "HD_P_laundry_stand", at = [791.01, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 29 of 37 in w07-hidamari-harbour, placed at (791.01, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-30"
 split = {key = "HD_P_laundry_stand", at = [807.78, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 30 of 37 in w07-hidamari-harbour, placed at (807.78, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-31"
 split = {key = "HD_P_laundry_stand", at = [817.7, -55.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 31 of 37 in w07-hidamari-harbour, placed at (817.7, -55.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-32"
 split = {key = "HD_P_laundry_stand", at = [819.28, -37.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 32 of 37 in w07-hidamari-harbour, placed at (819.28, -37.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-33"
 split = {key = "HD_P_laundry_stand", at = [829.13, 282.7]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 33 of 37 in w07-hidamari-harbour, placed at (829.13, 282.7) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-34"
 split = {key = "HD_P_laundry_stand", at = [835.16, 174.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 34 of 37 in w07-hidamari-harbour, placed at (835.16, 174.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-35"
 split = {key = "HD_P_laundry_stand", at = [846.66, 174.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 35 of 37 in w07-hidamari-harbour, placed at (846.66, 174.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-36"
 split = {key = "HD_P_laundry_stand", at = [862.24, 264.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 36 of 37 in w07-hidamari-harbour, placed at (862.24, 264.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-laundry-stand-37"
 split = {key = "HD_P_laundry_stand", at = [865.95, 174.3]}
-model = "adopted/japan/assets/hd-p-laundry-stand"
+model = "prop/hidamari-props/laundry-stand"
 about = "HD_P_laundry_stand 37 of 37 in w07-hidamari-harbour, placed at (865.95, 174.3) m"
 
 [[objects]]
 id = "object/harbour/hd-p-planter-box-01"
 split = {key = "HD_P_planter_box", at = [603.5, -79.4]}
-model = "adopted/japan/assets/hd-p-planter-box"
+model = "prop/hidamari-props/planter-box"
 about = "HD_P_planter_box 1 of 4 in w07-hidamari-harbour, placed at (603.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-planter-box-02"
 split = {key = "HD_P_planter_box", at = [657.5, 25.6]}
-model = "adopted/japan/assets/hd-p-planter-box"
+model = "prop/hidamari-props/planter-box"
 about = "HD_P_planter_box 2 of 4 in w07-hidamari-harbour, placed at (657.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-planter-box-03"
 split = {key = "HD_P_planter_box", at = [765.5, 64.4]}
-model = "adopted/japan/assets/hd-p-planter-box"
+model = "prop/hidamari-props/planter-box"
 about = "HD_P_planter_box 3 of 4 in w07-hidamari-harbour, placed at (765.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-planter-box-04"
 split = {key = "HD_P_planter_box", at = [819.5, 85.6]}
-model = "adopted/japan/assets/hd-p-planter-box"
+model = "prop/hidamari-props/planter-box"
 about = "HD_P_planter_box 4 of 4 in w07-hidamari-harbour, placed at (819.5, 85.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-postbox-01"
 split = {key = "HD_P_postbox", at = [468.5, 345.6]}
-model = "adopted/japan/assets/hd-p-postbox"
+model = "prop/hidamari-props/postbox"
 about = "HD_P_postbox 1 of 3 in w07-hidamari-harbour, placed at (468.5, 345.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-postbox-02"
 split = {key = "HD_P_postbox", at = [522.5, 150.6]}
-model = "adopted/japan/assets/hd-p-postbox"
+model = "prop/hidamari-props/postbox"
 about = "HD_P_postbox 2 of 3 in w07-hidamari-harbour, placed at (522.5, 150.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-postbox-03"
 split = {key = "HD_P_postbox", at = [846.5, 219.4]}
-model = "adopted/japan/assets/hd-p-postbox"
+model = "prop/hidamari-props/postbox"
 about = "HD_P_postbox 3 of 3 in w07-hidamari-harbour, placed at (846.5, 219.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-001"
 split = {key = "HD_P_potted_plants", at = [440.41, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 1 of 113 in w07-hidamari-harbour, placed at (440.41, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-002"
 split = {key = "HD_P_potted_plants", at = [440.5, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 2 of 113 in w07-hidamari-harbour, placed at (440.5, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-003"
 split = {key = "HD_P_potted_plants", at = [441.4, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 3 of 113 in w07-hidamari-harbour, placed at (441.4, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-004"
 split = {key = "HD_P_potted_plants", at = [441.5, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 4 of 113 in w07-hidamari-harbour, placed at (441.5, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-005"
 split = {key = "HD_P_potted_plants", at = [441.57, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 5 of 113 in w07-hidamari-harbour, placed at (441.57, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-006"
 split = {key = "HD_P_potted_plants", at = [444.39, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 6 of 113 in w07-hidamari-harbour, placed at (444.39, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-007"
 split = {key = "HD_P_potted_plants", at = [451.91, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 7 of 113 in w07-hidamari-harbour, placed at (451.91, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-008"
 split = {key = "HD_P_potted_plants", at = [452.9, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 8 of 113 in w07-hidamari-harbour, placed at (452.9, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-009"
 split = {key = "HD_P_potted_plants", at = [453.07, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 9 of 113 in w07-hidamari-harbour, placed at (453.07, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-010"
 split = {key = "HD_P_potted_plants", at = [455.89, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 10 of 113 in w07-hidamari-harbour, placed at (455.89, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-011"
 split = {key = "HD_P_potted_plants", at = [463.41, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 11 of 113 in w07-hidamari-harbour, placed at (463.41, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-012"
 split = {key = "HD_P_potted_plants", at = [463.5, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 12 of 113 in w07-hidamari-harbour, placed at (463.5, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-013"
 split = {key = "HD_P_potted_plants", at = [464.4, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 13 of 113 in w07-hidamari-harbour, placed at (464.4, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-014"
 split = {key = "HD_P_potted_plants", at = [464.5, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 14 of 113 in w07-hidamari-harbour, placed at (464.5, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-015"
 split = {key = "HD_P_potted_plants", at = [467.39, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 15 of 113 in w07-hidamari-harbour, placed at (467.39, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-016"
 split = {key = "HD_P_potted_plants", at = [468.5, 25.6]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 16 of 113 in w07-hidamari-harbour, placed at (468.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-017"
 split = {key = "HD_P_potted_plants", at = [468.5, 85.6]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 17 of 113 in w07-hidamari-harbour, placed at (468.5, 85.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-018"
 split = {key = "HD_P_potted_plants", at = [471.89, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 18 of 113 in w07-hidamari-harbour, placed at (471.89, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-019"
 split = {key = "HD_P_potted_plants", at = [474.91, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 19 of 113 in w07-hidamari-harbour, placed at (474.91, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-020"
 split = {key = "HD_P_potted_plants", at = [475.0, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 20 of 113 in w07-hidamari-harbour, placed at (475.0, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-021"
 split = {key = "HD_P_potted_plants", at = [475.9, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 21 of 113 in w07-hidamari-harbour, placed at (475.9, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-022"
 split = {key = "HD_P_potted_plants", at = [476.0, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 22 of 113 in w07-hidamari-harbour, placed at (476.0, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-023"
 split = {key = "HD_P_potted_plants", at = [478.89, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 23 of 113 in w07-hidamari-harbour, placed at (478.89, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-024"
 split = {key = "HD_P_potted_plants", at = [483.39, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 24 of 113 in w07-hidamari-harbour, placed at (483.39, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-025"
 split = {key = "HD_P_potted_plants", at = [487.4, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 25 of 113 in w07-hidamari-harbour, placed at (487.4, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-026"
 split = {key = "HD_P_potted_plants", at = [493.83, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 26 of 113 in w07-hidamari-harbour, placed at (493.83, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-027"
 split = {key = "HD_P_potted_plants", at = [495.5, -79.4]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 27 of 113 in w07-hidamari-harbour, placed at (495.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-028"
 split = {key = "HD_P_potted_plants", at = [495.5, 64.4]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 28 of 113 in w07-hidamari-harbour, placed at (495.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-029"
 split = {key = "HD_P_potted_plants", at = [498.0, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 29 of 113 in w07-hidamari-harbour, placed at (498.0, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-030"
 split = {key = "HD_P_potted_plants", at = [498.9, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 30 of 113 in w07-hidamari-harbour, placed at (498.9, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-031"
 split = {key = "HD_P_potted_plants", at = [499.0, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 31 of 113 in w07-hidamari-harbour, placed at (499.0, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-032"
 split = {key = "HD_P_potted_plants", at = [501.89, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 32 of 113 in w07-hidamari-harbour, placed at (501.89, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-033"
 split = {key = "HD_P_potted_plants", at = [505.33, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 33 of 113 in w07-hidamari-harbour, placed at (505.33, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-034"
 split = {key = "HD_P_potted_plants", at = [506.39, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 34 of 113 in w07-hidamari-harbour, placed at (506.39, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-035"
 split = {key = "HD_P_potted_plants", at = [509.5, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 35 of 113 in w07-hidamari-harbour, placed at (509.5, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-036"
 split = {key = "HD_P_potted_plants", at = [510.4, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 36 of 113 in w07-hidamari-harbour, placed at (510.4, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-037"
 split = {key = "HD_P_potted_plants", at = [510.5, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 37 of 113 in w07-hidamari-harbour, placed at (510.5, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-038"
 split = {key = "HD_P_potted_plants", at = [513.39, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 38 of 113 in w07-hidamari-harbour, placed at (513.39, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-039"
 split = {key = "HD_P_potted_plants", at = [517.89, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 39 of 113 in w07-hidamari-harbour, placed at (517.89, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-040"
 split = {key = "HD_P_potted_plants", at = [521.0, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 40 of 113 in w07-hidamari-harbour, placed at (521.0, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-041"
 split = {key = "HD_P_potted_plants", at = [521.9, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 41 of 113 in w07-hidamari-harbour, placed at (521.9, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-042"
 split = {key = "HD_P_potted_plants", at = [522.0, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 42 of 113 in w07-hidamari-harbour, placed at (522.0, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-043"
 split = {key = "HD_P_potted_plants", at = [522.5, 4.4]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 43 of 113 in w07-hidamari-harbour, placed at (522.5, 4.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-044"
 split = {key = "HD_P_potted_plants", at = [522.5, 129.4]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 44 of 113 in w07-hidamari-harbour, placed at (522.5, 129.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-045"
 split = {key = "HD_P_potted_plants", at = [524.89, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 45 of 113 in w07-hidamari-harbour, placed at (524.89, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-046"
 split = {key = "HD_P_potted_plants", at = [529.39, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 46 of 113 in w07-hidamari-harbour, placed at (529.39, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-047"
 split = {key = "HD_P_potted_plants", at = [533.4, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 47 of 113 in w07-hidamari-harbour, placed at (533.4, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-048"
 split = {key = "HD_P_potted_plants", at = [533.5, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 48 of 113 in w07-hidamari-harbour, placed at (533.5, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-049"
 split = {key = "HD_P_potted_plants", at = [537.19, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 49 of 113 in w07-hidamari-harbour, placed at (537.19, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-050"
 split = {key = "HD_P_potted_plants", at = [537.65, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 50 of 113 in w07-hidamari-harbour, placed at (537.65, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-051"
 split = {key = "HD_P_potted_plants", at = [540.49, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 51 of 113 in w07-hidamari-harbour, placed at (540.49, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-052"
 split = {key = "HD_P_potted_plants", at = [540.89, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 52 of 113 in w07-hidamari-harbour, placed at (540.89, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-053"
 split = {key = "HD_P_potted_plants", at = [576.69, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 53 of 113 in w07-hidamari-harbour, placed at (576.69, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-054"
 split = {key = "HD_P_potted_plants", at = [577.0, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 54 of 113 in w07-hidamari-harbour, placed at (577.0, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-055"
 split = {key = "HD_P_potted_plants", at = [577.15, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 55 of 113 in w07-hidamari-harbour, placed at (577.15, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-056"
 split = {key = "HD_P_potted_plants", at = [577.99, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 56 of 113 in w07-hidamari-harbour, placed at (577.99, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-057"
 split = {key = "HD_P_potted_plants", at = [588.19, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 57 of 113 in w07-hidamari-harbour, placed at (588.19, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-058"
 split = {key = "HD_P_potted_plants", at = [588.5, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 58 of 113 in w07-hidamari-harbour, placed at (588.5, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-059"
 split = {key = "HD_P_potted_plants", at = [588.65, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 59 of 113 in w07-hidamari-harbour, placed at (588.65, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-060"
 split = {key = "HD_P_potted_plants", at = [594.59, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 60 of 113 in w07-hidamari-harbour, placed at (594.59, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-061"
 split = {key = "HD_P_potted_plants", at = [599.69, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 61 of 113 in w07-hidamari-harbour, placed at (599.69, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-062"
 split = {key = "HD_P_potted_plants", at = [603.5, 25.6]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 62 of 113 in w07-hidamari-harbour, placed at (603.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-063"
 split = {key = "HD_P_potted_plants", at = [606.09, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 63 of 113 in w07-hidamari-harbour, placed at (606.09, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-064"
 split = {key = "HD_P_potted_plants", at = [607.51, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 64 of 113 in w07-hidamari-harbour, placed at (607.51, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-065"
 split = {key = "HD_P_potted_plants", at = [617.59, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 65 of 113 in w07-hidamari-harbour, placed at (617.59, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-066"
 split = {key = "HD_P_potted_plants", at = [618.54, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 66 of 113 in w07-hidamari-harbour, placed at (618.54, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-067"
 split = {key = "HD_P_potted_plants", at = [619.96, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 67 of 113 in w07-hidamari-harbour, placed at (619.96, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-068"
 split = {key = "HD_P_potted_plants", at = [623.42, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 68 of 113 in w07-hidamari-harbour, placed at (623.42, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-069"
 split = {key = "HD_P_potted_plants", at = [633.56, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 69 of 113 in w07-hidamari-harbour, placed at (633.56, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-070"
 split = {key = "HD_P_potted_plants", at = [634.92, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 70 of 113 in w07-hidamari-harbour, placed at (634.92, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-071"
 split = {key = "HD_P_potted_plants", at = [636.38, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 71 of 113 in w07-hidamari-harbour, placed at (636.38, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-072"
 split = {key = "HD_P_potted_plants", at = [642.96, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 72 of 113 in w07-hidamari-harbour, placed at (642.96, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-073"
 split = {key = "HD_P_potted_plants", at = [647.88, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 73 of 113 in w07-hidamari-harbour, placed at (647.88, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-074"
 split = {key = "HD_P_potted_plants", at = [659.38, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 74 of 113 in w07-hidamari-harbour, placed at (659.38, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-075"
 split = {key = "HD_P_potted_plants", at = [668.06, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 75 of 113 in w07-hidamari-harbour, placed at (668.06, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-076"
 split = {key = "HD_P_potted_plants", at = [679.56, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 76 of 113 in w07-hidamari-harbour, placed at (679.56, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-077"
 split = {key = "HD_P_potted_plants", at = [682.38, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 77 of 113 in w07-hidamari-harbour, placed at (682.38, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-078"
 split = {key = "HD_P_potted_plants", at = [693.88, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 78 of 113 in w07-hidamari-harbour, placed at (693.88, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-079"
 split = {key = "HD_P_potted_plants", at = [705.38, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 79 of 113 in w07-hidamari-harbour, placed at (705.38, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-080"
 split = {key = "HD_P_potted_plants", at = [748.88, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 80 of 113 in w07-hidamari-harbour, placed at (748.88, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-081"
 split = {key = "HD_P_potted_plants", at = [750.06, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 81 of 113 in w07-hidamari-harbour, placed at (750.06, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-082"
 split = {key = "HD_P_potted_plants", at = [760.38, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 82 of 113 in w07-hidamari-harbour, placed at (760.38, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-083"
 split = {key = "HD_P_potted_plants", at = [761.56, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 83 of 113 in w07-hidamari-harbour, placed at (761.56, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-084"
 split = {key = "HD_P_potted_plants", at = [765.5, 85.6]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 84 of 113 in w07-hidamari-harbour, placed at (765.5, 85.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-085"
 split = {key = "HD_P_potted_plants", at = [771.88, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 85 of 113 in w07-hidamari-harbour, placed at (771.88, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-086"
 split = {key = "HD_P_potted_plants", at = [773.06, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 86 of 113 in w07-hidamari-harbour, placed at (773.06, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-087"
 split = {key = "HD_P_potted_plants", at = [783.38, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 87 of 113 in w07-hidamari-harbour, placed at (783.38, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-088"
 split = {key = "HD_P_potted_plants", at = [784.56, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 88 of 113 in w07-hidamari-harbour, placed at (784.56, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-089"
 split = {key = "HD_P_potted_plants", at = [796.06, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 89 of 113 in w07-hidamari-harbour, placed at (796.06, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-090"
 split = {key = "HD_P_potted_plants", at = [801.15, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 90 of 113 in w07-hidamari-harbour, placed at (801.15, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-091"
 split = {key = "HD_P_potted_plants", at = [812.65, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 91 of 113 in w07-hidamari-harbour, placed at (812.65, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-092"
 split = {key = "HD_P_potted_plants", at = [812.83, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 92 of 113 in w07-hidamari-harbour, placed at (812.83, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-093"
 split = {key = "HD_P_potted_plants", at = [818.42, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 93 of 113 in w07-hidamari-harbour, placed at (818.42, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-094"
 split = {key = "HD_P_potted_plants", at = [824.33, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 94 of 113 in w07-hidamari-harbour, placed at (824.33, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-095"
 split = {key = "HD_P_potted_plants", at = [829.92, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 95 of 113 in w07-hidamari-harbour, placed at (829.92, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-096"
 split = {key = "HD_P_potted_plants", at = [830.11, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 96 of 113 in w07-hidamari-harbour, placed at (830.11, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-097"
 split = {key = "HD_P_potted_plants", at = [834.18, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 97 of 113 in w07-hidamari-harbour, placed at (834.18, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-098"
 split = {key = "HD_P_potted_plants", at = [841.42, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 98 of 113 in w07-hidamari-harbour, placed at (841.42, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-099"
 split = {key = "HD_P_potted_plants", at = [841.61, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 99 of 113 in w07-hidamari-harbour, placed at (841.61, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-100"
 split = {key = "HD_P_potted_plants", at = [846.5, 129.4]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 100 of 113 in w07-hidamari-harbour, placed at (846.5, 129.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-101"
 split = {key = "HD_P_potted_plants", at = [846.5, 150.6]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 101 of 113 in w07-hidamari-harbour, placed at (846.5, 150.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-102"
 split = {key = "HD_P_potted_plants", at = [846.5, 345.6]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 102 of 113 in w07-hidamari-harbour, placed at (846.5, 345.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-103"
 split = {key = "HD_P_potted_plants", at = [852.92, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 103 of 113 in w07-hidamari-harbour, placed at (852.92, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-104"
 split = {key = "HD_P_potted_plants", at = [857.18, 278.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 104 of 113 in w07-hidamari-harbour, placed at (857.18, 278.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-105"
 split = {key = "HD_P_potted_plants", at = [857.19, 268.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 105 of 113 in w07-hidamari-harbour, placed at (857.19, 268.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-106"
 split = {key = "HD_P_potted_plants", at = [860.9, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 106 of 113 in w07-hidamari-harbour, placed at (860.9, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-107"
 split = {key = "HD_P_potted_plants", at = [864.42, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 107 of 113 in w07-hidamari-harbour, placed at (864.42, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-108"
 split = {key = "HD_P_potted_plants", at = [872.4, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 108 of 113 in w07-hidamari-harbour, placed at (872.4, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-109"
 split = {key = "HD_P_potted_plants", at = [881.65, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 109 of 113 in w07-hidamari-harbour, placed at (881.65, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-110"
 split = {key = "HD_P_potted_plants", at = [886.06, -41.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 110 of 113 in w07-hidamari-harbour, placed at (886.06, -41.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-111"
 split = {key = "HD_P_potted_plants", at = [887.42, 188.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 111 of 113 in w07-hidamari-harbour, placed at (887.42, 188.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-112"
 split = {key = "HD_P_potted_plants", at = [887.97, 178.2]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 112 of 113 in w07-hidamari-harbour, placed at (887.97, 178.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-potted-plants-113"
 split = {key = "HD_P_potted_plants", at = [893.15, -51.8]}
-model = "adopted/japan/assets/hd-p-potted-plants"
+model = "prop/hidamari-props/potted-plants"
 about = "HD_P_potted_plants 113 of 113 in w07-hidamari-harbour, placed at (893.15, -51.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-produce-stand-01"
 split = {key = "HD_P_produce_stand", at = [590.0, -103.5]}
-model = "adopted/japan/assets/hd-p-produce-stand"
+model = "prop/hidamari-props/produce-stand"
 about = "HD_P_produce_stand 1 of 4 in w07-hidamari-harbour, placed at (590.0, -103.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-produce-stand-02"
 split = {key = "HD_P_produce_stand", at = [611.0, -103.5]}
-model = "adopted/japan/assets/hd-p-produce-stand"
+model = "prop/hidamari-props/produce-stand"
 about = "HD_P_produce_stand 2 of 4 in w07-hidamari-harbour, placed at (611.0, -103.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-produce-stand-03"
 split = {key = "HD_P_produce_stand", at = [721.0, -103.5]}
-model = "adopted/japan/assets/hd-p-produce-stand"
+model = "prop/hidamari-props/produce-stand"
 about = "HD_P_produce_stand 3 of 4 in w07-hidamari-harbour, placed at (721.0, -103.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-produce-stand-04"
 split = {key = "HD_P_produce_stand", at = [741.0, -103.5]}
-model = "adopted/japan/assets/hd-p-produce-stand"
+model = "prop/hidamari-props/produce-stand"
 about = "HD_P_produce_stand 4 of 4 in w07-hidamari-harbour, placed at (741.0, -103.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-01"
 split = {key = "HD_P_propane_tanks", at = [436.4, 280.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 1 of 41 in w07-hidamari-harbour, placed at (436.4, 280.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-02"
 split = {key = "HD_P_propane_tanks", at = [445.41, -53.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 2 of 41 in w07-hidamari-harbour, placed at (445.41, -53.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-03"
 split = {key = "HD_P_propane_tanks", at = [446.57, 266.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 3 of 41 in w07-hidamari-harbour, placed at (446.57, 266.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-04"
 split = {key = "HD_P_propane_tanks", at = [447.9, 280.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 4 of 41 in w07-hidamari-harbour, placed at (447.9, 280.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-05"
 split = {key = "HD_P_propane_tanks", at = [456.91, -53.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 5 of 41 in w07-hidamari-harbour, placed at (456.91, -53.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-06"
 split = {key = "HD_P_propane_tanks", at = [459.4, 280.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 6 of 41 in w07-hidamari-harbour, placed at (459.4, 280.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-07"
 split = {key = "HD_P_propane_tanks", at = [459.5, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 7 of 41 in w07-hidamari-harbour, placed at (459.5, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-08"
 split = {key = "HD_P_propane_tanks", at = [462.39, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 8 of 41 in w07-hidamari-harbour, placed at (462.39, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-09"
 split = {key = "HD_P_propane_tanks", at = [468.5, 176.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 9 of 41 in w07-hidamari-harbour, placed at (468.5, 176.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-10"
 split = {key = "HD_P_propane_tanks", at = [471.0, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 10 of 41 in w07-hidamari-harbour, placed at (471.0, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-11"
 split = {key = "HD_P_propane_tanks", at = [476.89, 266.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 11 of 41 in w07-hidamari-harbour, placed at (476.89, 266.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-12"
 split = {key = "HD_P_propane_tanks", at = [488.39, 266.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 12 of 41 in w07-hidamari-harbour, placed at (488.39, 266.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-13"
 split = {key = "HD_P_propane_tanks", at = [503.0, 176.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 13 of 41 in w07-hidamari-harbour, placed at (503.0, 176.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-14"
 split = {key = "HD_P_propane_tanks", at = [517.0, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 14 of 41 in w07-hidamari-harbour, placed at (517.0, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-15"
 split = {key = "HD_P_propane_tanks", at = [528.4, 280.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 15 of 41 in w07-hidamari-harbour, placed at (528.4, 280.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-16"
 split = {key = "HD_P_propane_tanks", at = [535.49, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 16 of 41 in w07-hidamari-harbour, placed at (535.49, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-17"
 split = {key = "HD_P_propane_tanks", at = [542.65, 176.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 17 of 41 in w07-hidamari-harbour, placed at (542.65, 176.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-18"
 split = {key = "HD_P_propane_tanks", at = [572.99, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 18 of 41 in w07-hidamari-harbour, placed at (572.99, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-19"
 split = {key = "HD_P_propane_tanks", at = [582.15, 176.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 19 of 41 in w07-hidamari-harbour, placed at (582.15, 176.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-20"
 split = {key = "HD_P_propane_tanks", at = [593.19, -53.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 20 of 41 in w07-hidamari-harbour, placed at (593.19, -53.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-21"
 split = {key = "HD_P_propane_tanks", at = [601.09, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 21 of 41 in w07-hidamari-harbour, placed at (601.09, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-22"
 split = {key = "HD_P_propane_tanks", at = [604.69, -53.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 22 of 41 in w07-hidamari-harbour, placed at (604.69, -53.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-23"
 split = {key = "HD_P_propane_tanks", at = [618.42, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 23 of 41 in w07-hidamari-harbour, placed at (618.42, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-24"
 split = {key = "HD_P_propane_tanks", at = [623.54, -53.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 24 of 41 in w07-hidamari-harbour, placed at (623.54, -53.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-25"
 split = {key = "HD_P_propane_tanks", at = [663.06, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 25 of 41 in w07-hidamari-harbour, placed at (663.06, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-26"
 split = {key = "HD_P_propane_tanks", at = [664.38, -53.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 26 of 41 in w07-hidamari-harbour, placed at (664.38, -53.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-27"
 split = {key = "HD_P_propane_tanks", at = [745.06, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 27 of 41 in w07-hidamari-harbour, placed at (745.06, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-28"
 split = {key = "HD_P_propane_tanks", at = [756.56, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 28 of 41 in w07-hidamari-harbour, placed at (756.56, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-29"
 split = {key = "HD_P_propane_tanks", at = [776.88, -53.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 29 of 41 in w07-hidamari-harbour, placed at (776.88, -53.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-30"
 split = {key = "HD_P_propane_tanks", at = [813.42, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 30 of 41 in w07-hidamari-harbour, placed at (813.42, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-31"
 split = {key = "HD_P_propane_tanks", at = [824.92, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 31 of 41 in w07-hidamari-harbour, placed at (824.92, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-32"
 split = {key = "HD_P_propane_tanks", at = [836.42, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 32 of 41 in w07-hidamari-harbour, placed at (836.42, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-33"
 split = {key = "HD_P_propane_tanks", at = [847.92, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 33 of 41 in w07-hidamari-harbour, placed at (847.92, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-34"
 split = {key = "HD_P_propane_tanks", at = [852.18, 280.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 34 of 41 in w07-hidamari-harbour, placed at (852.18, 280.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-35"
 split = {key = "HD_P_propane_tanks", at = [859.42, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 35 of 41 in w07-hidamari-harbour, placed at (859.42, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-36"
 split = {key = "HD_P_propane_tanks", at = [877.4, 176.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 36 of 41 in w07-hidamari-harbour, placed at (877.4, 176.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-37"
 split = {key = "HD_P_propane_tanks", at = [881.06, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 37 of 41 in w07-hidamari-harbour, placed at (881.06, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-38"
 split = {key = "HD_P_propane_tanks", at = [882.42, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 38 of 41 in w07-hidamari-harbour, placed at (882.42, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-39"
 split = {key = "HD_P_propane_tanks", at = [892.56, -39.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 39 of 41 in w07-hidamari-harbour, placed at (892.56, -39.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-40"
 split = {key = "HD_P_propane_tanks", at = [892.97, 176.8]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 40 of 41 in w07-hidamari-harbour, placed at (892.97, 176.8) m"
 
 [[objects]]
 id = "object/harbour/hd-p-propane-tanks-41"
 split = {key = "HD_P_propane_tanks", at = [893.92, 190.2]}
-model = "adopted/japan/assets/hd-p-propane-tanks"
+model = "prop/hidamari-props/propane-tanks"
 about = "HD_P_propane_tanks 41 of 41 in w07-hidamari-harbour, placed at (893.92, 190.2) m"
 
 [[objects]]
 id = "object/harbour/hd-p-sake-barrels-01"
 split = {key = "HD_P_sake_barrels", at = [468.5, 219.4]}
-model = "adopted/japan/assets/hd-p-sake-barrels"
+model = "prop/hidamari-props/sake-barrels"
 about = "HD_P_sake_barrels 1 of 5 in w07-hidamari-harbour, placed at (468.5, 219.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-sake-barrels-02"
 split = {key = "HD_P_sake_barrels", at = [625.0, -104.5]}
-model = "adopted/japan/assets/hd-p-sake-barrels"
+model = "prop/hidamari-props/sake-barrels"
 about = "HD_P_sake_barrels 2 of 5 in w07-hidamari-harbour, placed at (625.0, -104.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-sake-barrels-03"
 split = {key = "HD_P_sake_barrels", at = [792.5, -79.4]}
-model = "adopted/japan/assets/hd-p-sake-barrels"
+model = "prop/hidamari-props/sake-barrels"
 about = "HD_P_sake_barrels 3 of 5 in w07-hidamari-harbour, placed at (792.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-sake-barrels-04"
 split = {key = "HD_P_sake_barrels", at = [846.5, 25.6]}
-model = "adopted/japan/assets/hd-p-sake-barrels"
+model = "prop/hidamari-props/sake-barrels"
 about = "HD_P_sake_barrels 4 of 5 in w07-hidamari-harbour, placed at (846.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-sake-barrels-05"
 split = {key = "HD_P_sake_barrels", at = [846.5, 240.6]}
-model = "adopted/japan/assets/hd-p-sake-barrels"
+model = "prop/hidamari-props/sake-barrels"
 about = "HD_P_sake_barrels 5 of 5 in w07-hidamari-harbour, placed at (846.5, 240.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-01"
 split = {key = "HD_P_scooter", at = [451.42, 268.1]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 1 of 14 in w07-hidamari-harbour, placed at (451.42, 268.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-02"
 split = {key = "HD_P_scooter", at = [495.5, 240.6]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 2 of 14 in w07-hidamari-harbour, placed at (495.5, 240.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-03"
 split = {key = "HD_P_scooter", at = [496.35, 178.1]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 3 of 14 in w07-hidamari-harbour, placed at (496.35, 178.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-04"
 split = {key = "HD_P_scooter", at = [535.05, 278.9]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 4 of 14 in w07-hidamari-harbour, placed at (535.05, 278.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-05"
 split = {key = "HD_P_scooter", at = [598.04, -51.9]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 5 of 14 in w07-hidamari-harbour, placed at (598.04, -51.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-06"
 split = {key = "HD_P_scooter", at = [609.16, 188.9]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 6 of 14 in w07-hidamari-harbour, placed at (609.16, 188.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-07"
 split = {key = "HD_P_scooter", at = [635.21, -41.1]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 7 of 14 in w07-hidamari-harbour, placed at (635.21, -41.1) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-08"
 split = {key = "HD_P_scooter", at = [684.5, -79.4]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 8 of 14 in w07-hidamari-harbour, placed at (684.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-09"
 split = {key = "HD_P_scooter", at = [765.5, 4.4]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 9 of 14 in w07-hidamari-harbour, placed at (765.5, 4.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-10"
 split = {key = "HD_P_scooter", at = [792.5, 25.6]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 10 of 14 in w07-hidamari-harbour, placed at (792.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-11"
 split = {key = "HD_P_scooter", at = [799.5, -51.9]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 11 of 14 in w07-hidamari-harbour, placed at (799.5, -51.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-12"
 split = {key = "HD_P_scooter", at = [831.57, 188.9]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 12 of 14 in w07-hidamari-harbour, placed at (831.57, 188.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-13"
 split = {key = "HD_P_scooter", at = [846.5, 64.4]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 13 of 14 in w07-hidamari-harbour, placed at (846.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-scooter-14"
 split = {key = "HD_P_scooter", at = [880.0, -51.9]}
-model = "adopted/japan/assets/hd-p-scooter"
+model = "prop/hidamari-props/scooter"
 about = "HD_P_scooter 14 of 14 in w07-hidamari-harbour, placed at (880.0, -51.9) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-01"
 split = {key = "HD_P_stone_lantern", at = [357.938, 120.738]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 1 of 15 in w07-hidamari-harbour, placed at (357.938, 120.738) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-02"
 split = {key = "HD_P_stone_lantern", at = [594.5, 252.5]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 2 of 15 in w07-hidamari-harbour, placed at (594.5, 252.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-03"
 split = {key = "HD_P_stone_lantern", at = [605.5, 252.5]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 3 of 15 in w07-hidamari-harbour, placed at (605.5, 252.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-04"
 split = {key = "HD_P_stone_lantern", at = [683.0, 281.5]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 4 of 15 in w07-hidamari-harbour, placed at (683.0, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-05"
 split = {key = "HD_P_stone_lantern", at = [687.1, 245.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 5 of 15 in w07-hidamari-harbour, placed at (687.1, 245.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-06"
 split = {key = "HD_P_stone_lantern", at = [687.1, 251.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 6 of 15 in w07-hidamari-harbour, placed at (687.1, 251.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-07"
 split = {key = "HD_P_stone_lantern", at = [687.1, 257.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 7 of 15 in w07-hidamari-harbour, placed at (687.1, 257.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-08"
 split = {key = "HD_P_stone_lantern", at = [687.1, 263.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 8 of 15 in w07-hidamari-harbour, placed at (687.1, 263.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-09"
 split = {key = "HD_P_stone_lantern", at = [692.9, 245.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 9 of 15 in w07-hidamari-harbour, placed at (692.9, 245.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-10"
 split = {key = "HD_P_stone_lantern", at = [692.9, 251.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 10 of 15 in w07-hidamari-harbour, placed at (692.9, 251.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-11"
 split = {key = "HD_P_stone_lantern", at = [692.9, 257.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 11 of 15 in w07-hidamari-harbour, placed at (692.9, 257.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-12"
 split = {key = "HD_P_stone_lantern", at = [692.9, 263.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 12 of 15 in w07-hidamari-harbour, placed at (692.9, 263.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-13"
 split = {key = "HD_P_stone_lantern", at = [697.0, 281.5]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 13 of 15 in w07-hidamari-harbour, placed at (697.0, 281.5) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-14"
 split = {key = "HD_P_stone_lantern", at = [777.0, 288.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 14 of 15 in w07-hidamari-harbour, placed at (777.0, 288.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-stone-lantern-15"
 split = {key = "HD_P_stone_lantern", at = [790.0, 282.0]}
-model = "adopted/japan/assets/hd-p-stone-lantern"
+model = "prop/hidamari-props/stone-lantern"
 about = "HD_P_stone_lantern 15 of 15 in w07-hidamari-harbour, placed at (790.0, 282.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-street-bench-01"
 split = {key = "HD_P_street_bench", at = [468.5, 129.4]}
-model = "adopted/japan/assets/hd-p-street-bench"
+model = "prop/hidamari-props/street-bench"
 about = "HD_P_street_bench 1 of 4 in w07-hidamari-harbour, placed at (468.5, 129.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-street-bench-02"
 split = {key = "HD_P_street_bench", at = [495.5, 345.6]}
-model = "adopted/japan/assets/hd-p-street-bench"
+model = "prop/hidamari-props/street-bench"
 about = "HD_P_street_bench 2 of 4 in w07-hidamari-harbour, placed at (495.5, 345.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-street-bench-03"
 split = {key = "HD_P_street_bench", at = [603.5, 150.6]}
-model = "adopted/japan/assets/hd-p-street-bench"
+model = "prop/hidamari-props/street-bench"
 about = "HD_P_street_bench 3 of 4 in w07-hidamari-harbour, placed at (603.5, 150.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-street-bench-04"
 split = {key = "HD_P_street_bench", at = [873.5, 219.4]}
-model = "adopted/japan/assets/hd-p-street-bench"
+model = "prop/hidamari-props/street-bench"
 about = "HD_P_street_bench 4 of 4 in w07-hidamari-harbour, placed at (873.5, 219.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-tanuki-01"
 split = {key = "HD_P_tanuki", at = [468.5, 324.4]}
-model = "adopted/japan/assets/hd-p-tanuki"
+model = "prop/hidamari-props/tanuki"
 about = "HD_P_tanuki 1 of 3 in w07-hidamari-harbour, placed at (468.5, 324.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-tanuki-02"
 split = {key = "HD_P_tanuki", at = [495.5, 219.4]}
-model = "adopted/japan/assets/hd-p-tanuki"
+model = "prop/hidamari-props/tanuki"
 about = "HD_P_tanuki 2 of 3 in w07-hidamari-harbour, placed at (495.5, 219.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-tanuki-03"
 split = {key = "HD_P_tanuki", at = [873.5, 25.6]}
-model = "adopted/japan/assets/hd-p-tanuki"
+model = "prop/hidamari-props/tanuki"
 about = "HD_P_tanuki 3 of 3 in w07-hidamari-harbour, placed at (873.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-vending-machine-01"
 split = {key = "HD_P_vending_machine", at = [468.5, -79.4]}
-model = "adopted/japan/assets/hd-p-vending-machine"
+model = "prop/hidamari-props/vending-machine"
 about = "HD_P_vending_machine 1 of 7 in w07-hidamari-harbour, placed at (468.5, -79.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-vending-machine-02"
 split = {key = "HD_P_vending_machine", at = [468.5, 64.4]}
-model = "adopted/japan/assets/hd-p-vending-machine"
+model = "prop/hidamari-props/vending-machine"
 about = "HD_P_vending_machine 2 of 7 in w07-hidamari-harbour, placed at (468.5, 64.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-vending-machine-03"
 split = {key = "HD_P_vending_machine", at = [495.5, 4.4]}
-model = "adopted/japan/assets/hd-p-vending-machine"
+model = "prop/hidamari-props/vending-machine"
 about = "HD_P_vending_machine 3 of 7 in w07-hidamari-harbour, placed at (495.5, 4.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-vending-machine-04"
 split = {key = "HD_P_vending_machine", at = [495.5, 324.4]}
-model = "adopted/japan/assets/hd-p-vending-machine"
+model = "prop/hidamari-props/vending-machine"
 about = "HD_P_vending_machine 4 of 7 in w07-hidamari-harbour, placed at (495.5, 324.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-vending-machine-05"
 split = {key = "HD_P_vending_machine", at = [522.5, 25.6]}
-model = "adopted/japan/assets/hd-p-vending-machine"
+model = "prop/hidamari-props/vending-machine"
 about = "HD_P_vending_machine 5 of 7 in w07-hidamari-harbour, placed at (522.5, 25.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-vending-machine-06"
 split = {key = "HD_P_vending_machine", at = [522.5, 85.6]}
-model = "adopted/japan/assets/hd-p-vending-machine"
+model = "prop/hidamari-props/vending-machine"
 about = "HD_P_vending_machine 6 of 7 in w07-hidamari-harbour, placed at (522.5, 85.6) m"
 
 [[objects]]
 id = "object/harbour/hd-p-vending-machine-07"
 split = {key = "HD_P_vending_machine", at = [522.5, 219.4]}
-model = "adopted/japan/assets/hd-p-vending-machine"
+model = "prop/hidamari-props/vending-machine"
 about = "HD_P_vending_machine 7 of 7 in w07-hidamari-harbour, placed at (522.5, 219.4) m"
 
 [[objects]]
 id = "object/harbour/hd-p-water-basin-01"
 split = {key = "HD_P_water_basin", at = [612.5, 265.0]}
-model = "adopted/japan/assets/hd-p-water-basin"
+model = "prop/hidamari-props/water-basin"
 about = "HD_P_water_basin 1 of 1 in w07-hidamari-harbour, placed at (612.5, 265.0) m"
 
 [[objects]]
 id = "object/harbour/hd-p-yatai-01"
 split = {key = "HD_P_yatai", at = [705.0, -104.0]}
-model = "adopted/japan/assets/hd-p-yatai"
+model = "prop/hidamari-props/yatai"
 about = "HD_P_yatai 1 of 1 in w07-hidamari-harbour, placed at (705.0, -104.0) m"
 
 [[objects]]
@@ -5372,703 +5372,703 @@ about = "HD_Shrine 1 of 1 in w07-hidamari-harbour, placed at (600.0, 280.0) m"
 [[objects]]
 id = "object/harbour/pole-01"
 split = {key = "Pole", at = [413.5, -79.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 1 of 90 in w07-hidamari-harbour, placed at (413.5, -79.0) m"
 
 [[objects]]
 id = "object/harbour/pole-02"
 split = {key = "Pole", at = [413.5, -37.5]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 2 of 90 in w07-hidamari-harbour, placed at (413.5, -37.5) m"
 
 [[objects]]
 id = "object/harbour/pole-03"
 split = {key = "Pole", at = [413.5, 4.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 3 of 90 in w07-hidamari-harbour, placed at (413.5, 4.0) m"
 
 [[objects]]
 id = "object/harbour/pole-04"
 split = {key = "Pole", at = [413.5, 26.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 4 of 90 in w07-hidamari-harbour, placed at (413.5, 26.0) m"
 
 [[objects]]
 id = "object/harbour/pole-05"
 split = {key = "Pole", at = [413.5, 64.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 5 of 90 in w07-hidamari-harbour, placed at (413.5, 64.0) m"
 
 [[objects]]
 id = "object/harbour/pole-06"
 split = {key = "Pole", at = [413.5, 86.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 6 of 90 in w07-hidamari-harbour, placed at (413.5, 86.0) m"
 
 [[objects]]
 id = "object/harbour/pole-07"
 split = {key = "Pole", at = [413.5, 129.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 7 of 90 in w07-hidamari-harbour, placed at (413.5, 129.0) m"
 
 [[objects]]
 id = "object/harbour/pole-08"
 split = {key = "Pole", at = [413.5, 151.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 8 of 90 in w07-hidamari-harbour, placed at (413.5, 151.0) m"
 
 [[objects]]
 id = "object/harbour/pole-09"
 split = {key = "Pole", at = [413.5, 185.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 9 of 90 in w07-hidamari-harbour, placed at (413.5, 185.0) m"
 
 [[objects]]
 id = "object/harbour/pole-10"
 split = {key = "Pole", at = [413.5, 219.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 10 of 90 in w07-hidamari-harbour, placed at (413.5, 219.0) m"
 
 [[objects]]
 id = "object/harbour/pole-11"
 split = {key = "Pole", at = [413.5, 241.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 11 of 90 in w07-hidamari-harbour, placed at (413.5, 241.0) m"
 
 [[objects]]
 id = "object/harbour/pole-12"
 split = {key = "Pole", at = [413.5, 282.5]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 12 of 90 in w07-hidamari-harbour, placed at (413.5, 282.5) m"
 
 [[objects]]
 id = "object/harbour/pole-13"
 split = {key = "Pole", at = [413.5, 324.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 13 of 90 in w07-hidamari-harbour, placed at (413.5, 324.0) m"
 
 [[objects]]
 id = "object/harbour/pole-14"
 split = {key = "Pole", at = [418.5, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 14 of 90 in w07-hidamari-harbour, placed at (418.5, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-15"
 split = {key = "Pole", at = [418.5, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 15 of 90 in w07-hidamari-harbour, placed at (418.5, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-16"
 split = {key = "Pole", at = [418.5, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 16 of 90 in w07-hidamari-harbour, placed at (418.5, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-17"
 split = {key = "Pole", at = [418.5, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 17 of 90 in w07-hidamari-harbour, placed at (418.5, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-18"
 split = {key = "Pole", at = [418.5, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 18 of 90 in w07-hidamari-harbour, placed at (418.5, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-19"
 split = {key = "Pole", at = [418.5, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 19 of 90 in w07-hidamari-harbour, placed at (418.5, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-20"
 split = {key = "Pole", at = [485.0, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 20 of 90 in w07-hidamari-harbour, placed at (485.0, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-21"
 split = {key = "Pole", at = [485.0, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 21 of 90 in w07-hidamari-harbour, placed at (485.0, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-22"
 split = {key = "Pole", at = [485.0, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 22 of 90 in w07-hidamari-harbour, placed at (485.0, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-23"
 split = {key = "Pole", at = [485.0, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 23 of 90 in w07-hidamari-harbour, placed at (485.0, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-24"
 split = {key = "Pole", at = [485.0, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 24 of 90 in w07-hidamari-harbour, placed at (485.0, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-25"
 split = {key = "Pole", at = [485.0, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 25 of 90 in w07-hidamari-harbour, placed at (485.0, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-26"
 split = {key = "Pole", at = [518.25, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 26 of 90 in w07-hidamari-harbour, placed at (518.25, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-27"
 split = {key = "Pole", at = [518.25, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 27 of 90 in w07-hidamari-harbour, placed at (518.25, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-28"
 split = {key = "Pole", at = [518.25, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 28 of 90 in w07-hidamari-harbour, placed at (518.25, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-29"
 split = {key = "Pole", at = [518.25, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 29 of 90 in w07-hidamari-harbour, placed at (518.25, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-30"
 split = {key = "Pole", at = [518.25, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 30 of 90 in w07-hidamari-harbour, placed at (518.25, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-31"
 split = {key = "Pole", at = [518.25, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 31 of 90 in w07-hidamari-harbour, placed at (518.25, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-32"
 split = {key = "Pole", at = [563.5, -79.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 32 of 90 in w07-hidamari-harbour, placed at (563.5, -79.0) m"
 
 [[objects]]
 id = "object/harbour/pole-33"
 split = {key = "Pole", at = [563.5, -37.5]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 33 of 90 in w07-hidamari-harbour, placed at (563.5, -37.5) m"
 
 [[objects]]
 id = "object/harbour/pole-34"
 split = {key = "Pole", at = [563.5, 4.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 34 of 90 in w07-hidamari-harbour, placed at (563.5, 4.0) m"
 
 [[objects]]
 id = "object/harbour/pole-35"
 split = {key = "Pole", at = [563.5, 26.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 35 of 90 in w07-hidamari-harbour, placed at (563.5, 26.0) m"
 
 [[objects]]
 id = "object/harbour/pole-36"
 split = {key = "Pole", at = [563.5, 64.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 36 of 90 in w07-hidamari-harbour, placed at (563.5, 64.0) m"
 
 [[objects]]
 id = "object/harbour/pole-37"
 split = {key = "Pole", at = [563.5, 86.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 37 of 90 in w07-hidamari-harbour, placed at (563.5, 86.0) m"
 
 [[objects]]
 id = "object/harbour/pole-38"
 split = {key = "Pole", at = [563.5, 129.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 38 of 90 in w07-hidamari-harbour, placed at (563.5, 129.0) m"
 
 [[objects]]
 id = "object/harbour/pole-39"
 split = {key = "Pole", at = [563.5, 151.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 39 of 90 in w07-hidamari-harbour, placed at (563.5, 151.0) m"
 
 [[objects]]
 id = "object/harbour/pole-40"
 split = {key = "Pole", at = [563.5, 185.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 40 of 90 in w07-hidamari-harbour, placed at (563.5, 185.0) m"
 
 [[objects]]
 id = "object/harbour/pole-41"
 split = {key = "Pole", at = [563.5, 219.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 41 of 90 in w07-hidamari-harbour, placed at (563.5, 219.0) m"
 
 [[objects]]
 id = "object/harbour/pole-42"
 split = {key = "Pole", at = [563.5, 241.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 42 of 90 in w07-hidamari-harbour, placed at (563.5, 241.0) m"
 
 [[objects]]
 id = "object/harbour/pole-43"
 split = {key = "Pole", at = [563.5, 282.5]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 43 of 90 in w07-hidamari-harbour, placed at (563.5, 282.5) m"
 
 [[objects]]
 id = "object/harbour/pole-44"
 split = {key = "Pole", at = [563.5, 324.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 44 of 90 in w07-hidamari-harbour, placed at (563.5, 324.0) m"
 
 [[objects]]
 id = "object/harbour/pole-45"
 split = {key = "Pole", at = [568.5, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 45 of 90 in w07-hidamari-harbour, placed at (568.5, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-46"
 split = {key = "Pole", at = [568.5, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 46 of 90 in w07-hidamari-harbour, placed at (568.5, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-47"
 split = {key = "Pole", at = [568.5, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 47 of 90 in w07-hidamari-harbour, placed at (568.5, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-48"
 split = {key = "Pole", at = [568.5, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 48 of 90 in w07-hidamari-harbour, placed at (568.5, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-49"
 split = {key = "Pole", at = [568.5, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 49 of 90 in w07-hidamari-harbour, placed at (568.5, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-50"
 split = {key = "Pole", at = [568.5, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 50 of 90 in w07-hidamari-harbour, placed at (568.5, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-51"
 split = {key = "Pole", at = [598.6, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 51 of 90 in w07-hidamari-harbour, placed at (598.6, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-52"
 split = {key = "Pole", at = [598.6, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 52 of 90 in w07-hidamari-harbour, placed at (598.6, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-53"
 split = {key = "Pole", at = [598.6, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 53 of 90 in w07-hidamari-harbour, placed at (598.6, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-54"
 split = {key = "Pole", at = [598.6, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 54 of 90 in w07-hidamari-harbour, placed at (598.6, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-55"
 split = {key = "Pole", at = [598.6, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 55 of 90 in w07-hidamari-harbour, placed at (598.6, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-56"
 split = {key = "Pole", at = [658.8, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 56 of 90 in w07-hidamari-harbour, placed at (658.8, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-57"
 split = {key = "Pole", at = [658.8, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 57 of 90 in w07-hidamari-harbour, placed at (658.8, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-58"
 split = {key = "Pole", at = [658.8, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 58 of 90 in w07-hidamari-harbour, placed at (658.8, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-59"
 split = {key = "Pole", at = [658.8, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 59 of 90 in w07-hidamari-harbour, placed at (658.8, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-60"
 split = {key = "Pole", at = [688.9, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 60 of 90 in w07-hidamari-harbour, placed at (688.9, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-61"
 split = {key = "Pole", at = [688.9, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 61 of 90 in w07-hidamari-harbour, placed at (688.9, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-62"
 split = {key = "Pole", at = [688.9, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 62 of 90 in w07-hidamari-harbour, placed at (688.9, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-63"
 split = {key = "Pole", at = [688.9, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 63 of 90 in w07-hidamari-harbour, placed at (688.9, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-64"
 split = {key = "Pole", at = [734.3, -79.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 64 of 90 in w07-hidamari-harbour, placed at (734.3, -79.0) m"
 
 [[objects]]
 id = "object/harbour/pole-65"
 split = {key = "Pole", at = [734.3, -37.5]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 65 of 90 in w07-hidamari-harbour, placed at (734.3, -37.5) m"
 
 [[objects]]
 id = "object/harbour/pole-66"
 split = {key = "Pole", at = [734.3, 4.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 66 of 90 in w07-hidamari-harbour, placed at (734.3, 4.0) m"
 
 [[objects]]
 id = "object/harbour/pole-67"
 split = {key = "Pole", at = [734.3, 26.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 67 of 90 in w07-hidamari-harbour, placed at (734.3, 26.0) m"
 
 [[objects]]
 id = "object/harbour/pole-68"
 split = {key = "Pole", at = [734.3, 64.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 68 of 90 in w07-hidamari-harbour, placed at (734.3, 64.0) m"
 
 [[objects]]
 id = "object/harbour/pole-69"
 split = {key = "Pole", at = [734.3, 86.0]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 69 of 90 in w07-hidamari-harbour, placed at (734.3, 86.0) m"
 
 [[objects]]
 id = "object/harbour/pole-70"
 split = {key = "Pole", at = [741.0, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 70 of 90 in w07-hidamari-harbour, placed at (741.0, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-71"
 split = {key = "Pole", at = [741.0, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 71 of 90 in w07-hidamari-harbour, placed at (741.0, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-72"
 split = {key = "Pole", at = [741.0, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 72 of 90 in w07-hidamari-harbour, placed at (741.0, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-73"
 split = {key = "Pole", at = [741.0, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 73 of 90 in w07-hidamari-harbour, placed at (741.0, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-74"
 split = {key = "Pole", at = [741.0, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 74 of 90 in w07-hidamari-harbour, placed at (741.0, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-75"
 split = {key = "Pole", at = [775.1, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 75 of 90 in w07-hidamari-harbour, placed at (775.1, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-76"
 split = {key = "Pole", at = [775.1, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 76 of 90 in w07-hidamari-harbour, placed at (775.1, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-77"
 split = {key = "Pole", at = [775.1, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 77 of 90 in w07-hidamari-harbour, placed at (775.1, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-78"
 split = {key = "Pole", at = [775.1, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 78 of 90 in w07-hidamari-harbour, placed at (775.1, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-79"
 split = {key = "Pole", at = [809.2, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 79 of 90 in w07-hidamari-harbour, placed at (809.2, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-80"
 split = {key = "Pole", at = [843.3, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 80 of 90 in w07-hidamari-harbour, placed at (843.3, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-81"
 split = {key = "Pole", at = [843.3, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 81 of 90 in w07-hidamari-harbour, placed at (843.3, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-82"
 split = {key = "Pole", at = [843.3, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 82 of 90 in w07-hidamari-harbour, placed at (843.3, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-83"
 split = {key = "Pole", at = [843.3, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 83 of 90 in w07-hidamari-harbour, placed at (843.3, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-84"
 split = {key = "Pole", at = [843.3, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 84 of 90 in w07-hidamari-harbour, placed at (843.3, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-85"
 split = {key = "Pole", at = [843.3, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 85 of 90 in w07-hidamari-harbour, placed at (843.3, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-86"
 split = {key = "Pole", at = [877.4, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 86 of 90 in w07-hidamari-harbour, placed at (877.4, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-87"
 split = {key = "Pole", at = [877.4, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 87 of 90 in w07-hidamari-harbour, placed at (877.4, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-88"
 split = {key = "Pole", at = [877.4, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 88 of 90 in w07-hidamari-harbour, placed at (877.4, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-89"
 split = {key = "Pole", at = [877.4, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 89 of 90 in w07-hidamari-harbour, placed at (877.4, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-90"
 split = {key = "Pole", at = [877.4, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole 90 of 90 in w07-hidamari-harbour, placed at (877.4, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-01"
 split = {key = "Pole_Lamp", at = [451.75, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 1 of 27 in w07-hidamari-harbour, placed at (451.75, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-02"
 split = {key = "Pole_Lamp", at = [451.75, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 2 of 27 in w07-hidamari-harbour, placed at (451.75, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-03"
 split = {key = "Pole_Lamp", at = [451.75, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 3 of 27 in w07-hidamari-harbour, placed at (451.75, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-04"
 split = {key = "Pole_Lamp", at = [451.75, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 4 of 27 in w07-hidamari-harbour, placed at (451.75, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-05"
 split = {key = "Pole_Lamp", at = [451.75, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 5 of 27 in w07-hidamari-harbour, placed at (451.75, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-06"
 split = {key = "Pole_Lamp", at = [451.75, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 6 of 27 in w07-hidamari-harbour, placed at (451.75, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-07"
 split = {key = "Pole_Lamp", at = [551.5, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 7 of 27 in w07-hidamari-harbour, placed at (551.5, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-08"
 split = {key = "Pole_Lamp", at = [551.5, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 8 of 27 in w07-hidamari-harbour, placed at (551.5, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-09"
 split = {key = "Pole_Lamp", at = [551.5, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 9 of 27 in w07-hidamari-harbour, placed at (551.5, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-10"
 split = {key = "Pole_Lamp", at = [551.5, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 10 of 27 in w07-hidamari-harbour, placed at (551.5, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-11"
 split = {key = "Pole_Lamp", at = [551.5, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 11 of 27 in w07-hidamari-harbour, placed at (551.5, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-12"
 split = {key = "Pole_Lamp", at = [551.5, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 12 of 27 in w07-hidamari-harbour, placed at (551.5, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-13"
 split = {key = "Pole_Lamp", at = [628.7, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 13 of 27 in w07-hidamari-harbour, placed at (628.7, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-14"
 split = {key = "Pole_Lamp", at = [628.7, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 14 of 27 in w07-hidamari-harbour, placed at (628.7, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-15"
 split = {key = "Pole_Lamp", at = [628.7, 135.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 15 of 27 in w07-hidamari-harbour, placed at (628.7, 135.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-16"
 split = {key = "Pole_Lamp", at = [628.7, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 16 of 27 in w07-hidamari-harbour, placed at (628.7, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-17"
 split = {key = "Pole_Lamp", at = [628.7, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 17 of 27 in w07-hidamari-harbour, placed at (628.7, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-18"
 split = {key = "Pole_Lamp", at = [719.0, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 18 of 27 in w07-hidamari-harbour, placed at (719.0, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-19"
 split = {key = "Pole_Lamp", at = [719.0, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 19 of 27 in w07-hidamari-harbour, placed at (719.0, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-20"
 split = {key = "Pole_Lamp", at = [719.0, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 20 of 27 in w07-hidamari-harbour, placed at (719.0, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-21"
 split = {key = "Pole_Lamp", at = [719.0, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 21 of 27 in w07-hidamari-harbour, placed at (719.0, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-22"
 split = {key = "Pole_Lamp", at = [775.1, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 22 of 27 in w07-hidamari-harbour, placed at (775.1, 70.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-23"
 split = {key = "Pole_Lamp", at = [809.2, -94.3]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 23 of 27 in w07-hidamari-harbour, placed at (809.2, -94.3) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-24"
 split = {key = "Pole_Lamp", at = [809.2, 10.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 24 of 27 in w07-hidamari-harbour, placed at (809.2, 10.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-25"
 split = {key = "Pole_Lamp", at = [809.2, 225.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 25 of 27 in w07-hidamari-harbour, placed at (809.2, 225.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-26"
 split = {key = "Pole_Lamp", at = [809.2, 330.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 26 of 27 in w07-hidamari-harbour, placed at (809.2, 330.7) m"
 
 [[objects]]
 id = "object/harbour/pole-lamp-27"
 split = {key = "Pole_Lamp", at = [877.4, 70.7]}
-model = "adopted/japan/assets/pole"
+model = ["prop/japan-kit/pole", "prop/japan-kit/pole-lamp"]
 about = "Pole_Lamp 27 of 27 in w07-hidamari-harbour, placed at (877.4, 70.7) m"
 
 [[objects]]
@@ -6100,7 +6100,7 @@ about = "HD_ArcadeRoof 1 of 1 in w07-hidamari-harbour, placed at (660.0, 75.0) m
 [[objects]]
 id = "object/harbour/zeppelin-trail"
 patch = "028fae5694d6f2a6"
-model = "adopted/japan/assets/zeppelin"
+model = "prop/zeppelin/trail"
 about = "the zeppelin trail piece (ZP_Trail)"
 
 # A building cut into cells: its cell patches each hold a piece of it alone; promoted together, bytes unchanged.

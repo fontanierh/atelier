@@ -15,19 +15,19 @@ about = "the broken, unfinished galleon hull on the western rocks"
 [[objects]]
 id = "object/brinecove/galleon-adventure"
 group = "SM_BC_Ships_3_3"
-model = "adopted/brinecove/galleon-adventure"
+model = "prop/brinecove/ships-3-3"
 about = "the galleon Adventure moored in the harbour: rig, deck and guns (its hull is a shared hero model)"
 
 [[objects]]
 id = "object/brinecove/lighthouse"
 group = "SM_BC_Landmarks_1_3"
-model = "adopted/brinecove/lighthouse"
+model = ["prop/brinecove/landmarks-1-3", "prop/brinecove/landmarks-1-3-soft"]
 about = "the lighthouse on the western headland (its planting is the separate SM_BC_Landmarks_1_3_Soft group)"
 
 [[objects]]
 id = "object/brinecove/fort"
 group = "SM_BC_Landmarks_3_5"
-model = "adopted/brinecove/fort"
+model = "prop/brinecove/landmarks-3-5"
 about = "the hillside fort: curtain walls, towers, keep, gatehouse and courtyard"
 
 [[objects]]
@@ -161,397 +161,397 @@ about = "the market stall 09, cut from its fused tile (4484 triangles)"
 [[objects]]
 id = "object/brinecove/ground-0-0"
 group = "SM_BC_Ground_0_0"
-model = "adopted/brinecove/ground-0-0"
+model = "prop/brinecove/ground-0-0"
 about = "Brine Cove ground-0-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-0-1"
 group = "SM_BC_Ground_0_1"
-model = "adopted/brinecove/ground-0-1"
+model = "prop/brinecove/ground-0-1"
 about = "Brine Cove ground-0-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-0-2"
 group = "SM_BC_Ground_0_2"
-model = "adopted/brinecove/ground-0-2"
+model = "prop/brinecove/ground-0-2"
 about = "Brine Cove ground-0-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-0-3"
 group = "SM_BC_Ground_0_3"
-model = "adopted/brinecove/ground-0-3"
+model = "prop/brinecove/ground-0-3"
 about = "Brine Cove ground-0-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-0-4"
 group = "SM_BC_Ground_0_4"
-model = "adopted/brinecove/ground-0-4"
+model = "prop/brinecove/ground-0-4"
 about = "Brine Cove ground-0-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-0-5"
 group = "SM_BC_Ground_0_5"
-model = "adopted/brinecove/ground-0-5"
+model = "prop/brinecove/ground-0-5"
 about = "Brine Cove ground-0-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-0-6"
 group = "SM_BC_Ground_0_6"
-model = "adopted/brinecove/ground-0-6"
+model = "prop/brinecove/ground-0-6"
 about = "Brine Cove ground-0-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-1-0"
 group = "SM_BC_Ground_1_0"
-model = "adopted/brinecove/ground-1-0"
+model = "prop/brinecove/ground-1-0"
 about = "Brine Cove ground-1-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-1-1"
 group = "SM_BC_Ground_1_1"
-model = "adopted/brinecove/ground-1-1"
+model = "prop/brinecove/ground-1-1"
 about = "Brine Cove ground-1-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-1-2"
 group = "SM_BC_Ground_1_2"
-model = "adopted/brinecove/ground-1-2"
+model = "prop/brinecove/ground-1-2"
 about = "Brine Cove ground-1-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-1-3"
 group = "SM_BC_Ground_1_3"
-model = "adopted/brinecove/ground-1-3"
+model = "prop/brinecove/ground-1-3"
 about = "Brine Cove ground-1-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-1-4"
 group = "SM_BC_Ground_1_4"
-model = "adopted/brinecove/ground-1-4"
+model = "prop/brinecove/ground-1-4"
 about = "Brine Cove ground-1-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-1-5"
 group = "SM_BC_Ground_1_5"
-model = "adopted/brinecove/ground-1-5"
+model = "prop/brinecove/ground-1-5"
 about = "Brine Cove ground-1-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-1-6"
 group = "SM_BC_Ground_1_6"
-model = "adopted/brinecove/ground-1-6"
+model = "prop/brinecove/ground-1-6"
 about = "Brine Cove ground-1-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-2-0"
 group = "SM_BC_Ground_2_0"
-model = "adopted/brinecove/ground-2-0"
+model = "prop/brinecove/ground-2-0"
 about = "Brine Cove ground-2-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-2-1"
 group = "SM_BC_Ground_2_1"
-model = "adopted/brinecove/ground-2-1"
+model = "prop/brinecove/ground-2-1"
 about = "Brine Cove ground-2-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-2-2"
 group = "SM_BC_Ground_2_2"
-model = "adopted/brinecove/ground-2-2"
+model = "prop/brinecove/ground-2-2"
 about = "Brine Cove ground-2-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-2-3"
 group = "SM_BC_Ground_2_3"
-model = "adopted/brinecove/ground-2-3"
+model = "prop/brinecove/ground-2-3"
 about = "Brine Cove ground-2-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-2-4"
 group = "SM_BC_Ground_2_4"
-model = "adopted/brinecove/ground-2-4"
+model = "prop/brinecove/ground-2-4"
 about = "Brine Cove ground-2-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-2-5"
 group = "SM_BC_Ground_2_5"
-model = "adopted/brinecove/ground-2-5"
+model = "prop/brinecove/ground-2-5"
 about = "Brine Cove ground-2-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-2-6"
 group = "SM_BC_Ground_2_6"
-model = "adopted/brinecove/ground-2-6"
+model = "prop/brinecove/ground-2-6"
 about = "Brine Cove ground-2-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-3-0"
 group = "SM_BC_Ground_3_0"
-model = "adopted/brinecove/ground-3-0"
+model = "prop/brinecove/ground-3-0"
 about = "Brine Cove ground-3-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-3-1"
 group = "SM_BC_Ground_3_1"
-model = "adopted/brinecove/ground-3-1"
+model = "prop/brinecove/ground-3-1"
 about = "Brine Cove ground-3-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-3-2"
 group = "SM_BC_Ground_3_2"
-model = "adopted/brinecove/ground-3-2"
+model = "prop/brinecove/ground-3-2"
 about = "Brine Cove ground-3-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-3-3"
 group = "SM_BC_Ground_3_3"
-model = "adopted/brinecove/ground-3-3"
+model = "prop/brinecove/ground-3-3"
 about = "Brine Cove ground-3-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-3-4"
 group = "SM_BC_Ground_3_4"
-model = "adopted/brinecove/ground-3-4"
+model = "prop/brinecove/ground-3-4"
 about = "Brine Cove ground-3-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-3-5"
 group = "SM_BC_Ground_3_5"
-model = "adopted/brinecove/ground-3-5"
+model = "prop/brinecove/ground-3-5"
 about = "Brine Cove ground-3-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-3-6"
 group = "SM_BC_Ground_3_6"
-model = "adopted/brinecove/ground-3-6"
+model = "prop/brinecove/ground-3-6"
 about = "Brine Cove ground-3-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-4-0"
 group = "SM_BC_Ground_4_0"
-model = "adopted/brinecove/ground-4-0"
+model = "prop/brinecove/ground-4-0"
 about = "Brine Cove ground-4-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-4-1"
 group = "SM_BC_Ground_4_1"
-model = "adopted/brinecove/ground-4-1"
+model = "prop/brinecove/ground-4-1"
 about = "Brine Cove ground-4-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-4-2"
 group = "SM_BC_Ground_4_2"
-model = "adopted/brinecove/ground-4-2"
+model = "prop/brinecove/ground-4-2"
 about = "Brine Cove ground-4-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-4-3"
 group = "SM_BC_Ground_4_3"
-model = "adopted/brinecove/ground-4-3"
+model = "prop/brinecove/ground-4-3"
 about = "Brine Cove ground-4-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-4-4"
 group = "SM_BC_Ground_4_4"
-model = "adopted/brinecove/ground-4-4"
+model = "prop/brinecove/ground-4-4"
 about = "Brine Cove ground-4-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-4-5"
 group = "SM_BC_Ground_4_5"
-model = "adopted/brinecove/ground-4-5"
+model = "prop/brinecove/ground-4-5"
 about = "Brine Cove ground-4-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-4-6"
 group = "SM_BC_Ground_4_6"
-model = "adopted/brinecove/ground-4-6"
+model = "prop/brinecove/ground-4-6"
 about = "Brine Cove ground-4-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-5-0"
 group = "SM_BC_Ground_5_0"
-model = "adopted/brinecove/ground-5-0"
+model = "prop/brinecove/ground-5-0"
 about = "Brine Cove ground-5-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-5-1"
 group = "SM_BC_Ground_5_1"
-model = "adopted/brinecove/ground-5-1"
+model = "prop/brinecove/ground-5-1"
 about = "Brine Cove ground-5-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-5-2"
 group = "SM_BC_Ground_5_2"
-model = "adopted/brinecove/ground-5-2"
+model = "prop/brinecove/ground-5-2"
 about = "Brine Cove ground-5-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-5-3"
 group = "SM_BC_Ground_5_3"
-model = "adopted/brinecove/ground-5-3"
+model = "prop/brinecove/ground-5-3"
 about = "Brine Cove ground-5-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-5-4"
 group = "SM_BC_Ground_5_4"
-model = "adopted/brinecove/ground-5-4"
+model = "prop/brinecove/ground-5-4"
 about = "Brine Cove ground-5-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-5-5"
 group = "SM_BC_Ground_5_5"
-model = "adopted/brinecove/ground-5-5"
+model = "prop/brinecove/ground-5-5"
 about = "Brine Cove ground-5-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-5-6"
 group = "SM_BC_Ground_5_6"
-model = "adopted/brinecove/ground-5-6"
+model = "prop/brinecove/ground-5-6"
 about = "Brine Cove ground-5-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-6-0"
 group = "SM_BC_Ground_6_0"
-model = "adopted/brinecove/ground-6-0"
+model = "prop/brinecove/ground-6-0"
 about = "Brine Cove ground-6-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-6-1"
 group = "SM_BC_Ground_6_1"
-model = "adopted/brinecove/ground-6-1"
+model = "prop/brinecove/ground-6-1"
 about = "Brine Cove ground-6-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-6-2"
 group = "SM_BC_Ground_6_2"
-model = "adopted/brinecove/ground-6-2"
+model = "prop/brinecove/ground-6-2"
 about = "Brine Cove ground-6-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-6-3"
 group = "SM_BC_Ground_6_3"
-model = "adopted/brinecove/ground-6-3"
+model = "prop/brinecove/ground-6-3"
 about = "Brine Cove ground-6-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-6-4"
 group = "SM_BC_Ground_6_4"
-model = "adopted/brinecove/ground-6-4"
+model = "prop/brinecove/ground-6-4"
 about = "Brine Cove ground-6-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-6-5"
 group = "SM_BC_Ground_6_5"
-model = "adopted/brinecove/ground-6-5"
+model = "prop/brinecove/ground-6-5"
 about = "Brine Cove ground-6-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-6-6"
 group = "SM_BC_Ground_6_6"
-model = "adopted/brinecove/ground-6-6"
+model = "prop/brinecove/ground-6-6"
 about = "Brine Cove ground-6-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-7-0"
 group = "SM_BC_Ground_7_0"
-model = "adopted/brinecove/ground-7-0"
+model = "prop/brinecove/ground-7-0"
 about = "Brine Cove ground-7-0 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-7-1"
 group = "SM_BC_Ground_7_1"
-model = "adopted/brinecove/ground-7-1"
+model = "prop/brinecove/ground-7-1"
 about = "Brine Cove ground-7-1 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-7-2"
 group = "SM_BC_Ground_7_2"
-model = "adopted/brinecove/ground-7-2"
+model = "prop/brinecove/ground-7-2"
 about = "Brine Cove ground-7-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-7-3"
 group = "SM_BC_Ground_7_3"
-model = "adopted/brinecove/ground-7-3"
+model = "prop/brinecove/ground-7-3"
 about = "Brine Cove ground-7-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-7-4"
 group = "SM_BC_Ground_7_4"
-model = "adopted/brinecove/ground-7-4"
+model = "prop/brinecove/ground-7-4"
 about = "Brine Cove ground-7-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-7-5"
 group = "SM_BC_Ground_7_5"
-model = "adopted/brinecove/ground-7-5"
+model = "prop/brinecove/ground-7-5"
 about = "Brine Cove ground-7-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/ground-7-6"
 group = "SM_BC_Ground_7_6"
-model = "adopted/brinecove/ground-7-6"
+model = "prop/brinecove/ground-7-6"
 about = "Brine Cove ground-7-6 (1 group)"
 
 [[objects]]
 id = "object/brinecove/harbor-2-3"
 groups = ["SM_BC_Harbor_2_3", "SM_BC_Harbor_2_3_Soft"]
-model = "adopted/brinecove/harbor-2-3"
+model = ["prop/brinecove/harbor-2-3", "prop/brinecove/harbor-2-3-soft"]
 about = "Brine Cove harbor-2-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/harbor-2-4"
 group = "SM_BC_Harbor_2_4"
-model = "adopted/brinecove/harbor-2-4"
+model = "prop/brinecove/harbor-2-4"
 about = "Brine Cove harbor-2-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/harbor-3-2"
 group = "SM_BC_Harbor_3_2"
-model = "adopted/brinecove/harbor-3-2"
+model = "prop/brinecove/harbor-3-2"
 about = "Brine Cove harbor-3-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/harbor-3-3"
 groups = ["SM_BC_Harbor_3_3", "SM_BC_Harbor_3_3_Soft"]
-model = "adopted/brinecove/harbor-3-3"
+model = ["prop/brinecove/harbor-3-3", "prop/brinecove/harbor-3-3-soft"]
 about = "Brine Cove harbor-3-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/harbor-3-4"
 group = "SM_BC_Harbor_3_4"
-model = "adopted/brinecove/harbor-3-4"
+model = "prop/brinecove/harbor-3-4"
 about = "Brine Cove harbor-3-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/harbor-4-2"
 group = "SM_BC_Harbor_4_2"
-model = "adopted/brinecove/harbor-4-2"
+model = "prop/brinecove/harbor-4-2"
 about = "Brine Cove harbor-4-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/harbor-4-3"
 groups = ["SM_BC_Harbor_4_3", "SM_BC_Harbor_4_3_Soft"]
-model = "adopted/brinecove/harbor-4-3"
+model = ["prop/brinecove/harbor-4-3", "prop/brinecove/harbor-4-3-soft"]
 about = "Brine Cove harbor-4-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/harbor-4-4"
 group = "SM_BC_Harbor_4_4"
-model = "adopted/brinecove/harbor-4-4"
+model = "prop/brinecove/harbor-4-4"
 about = "Brine Cove harbor-4-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/harbor-5-3"
 groups = ["SM_BC_Harbor_5_3", "SM_BC_Harbor_5_3_Soft"]
-model = "adopted/brinecove/harbor-5-3"
+model = ["prop/brinecove/harbor-5-3", "prop/brinecove/harbor-5-3-soft"]
 about = "Brine Cove harbor-5-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/harbor-5-4"
 group = "SM_BC_Harbor_5_4"
-model = "adopted/brinecove/harbor-5-4"
+model = "prop/brinecove/harbor-5-4"
 about = "Brine Cove harbor-5-4 (1 group)"
 
 [[objects]]
@@ -563,31 +563,31 @@ about = "Brine Cove hero-harbor-capstan (1 group)"
 [[objects]]
 id = "object/brinecove/lighthouse-planting"
 group = "SM_BC_Landmarks_1_3_Soft"
-model = "adopted/brinecove/lighthouse"
+model = "prop/brinecove/landmarks-1-3-soft"
 about = "Brine Cove lighthouse-planting (1 group)"
 
 [[objects]]
 id = "object/brinecove/market-3-3"
 group = "SM_BC_Market_3_3"
-model = "adopted/brinecove/market-3-3"
+model = "prop/brinecove/market-3-3"
 about = "Brine Cove market-3-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/market-3-4"
 groups = ["SM_BC_Market_3_4_Piece10", "SM_BC_Market_3_4_Piece110", "SM_BC_Market_3_4_Piece111", "SM_BC_Market_3_4_Piece112", "SM_BC_Market_3_4_Piece113", "SM_BC_Market_3_4_Piece12", "SM_BC_Market_3_4_Piece130", "SM_BC_Market_3_4_Piece131", "SM_BC_Market_3_4_Piece132", "SM_BC_Market_3_4_Piece133", "SM_BC_Market_3_4_Soft"]
-model = "adopted/brinecove/market-3-4"
+model = ["prop/brinecove/market-3-4-piece10", "prop/brinecove/market-3-4-piece110", "prop/brinecove/market-3-4-piece111", "prop/brinecove/market-3-4-piece112", "prop/brinecove/market-3-4-piece113", "prop/brinecove/market-3-4-piece12", "prop/brinecove/market-3-4-piece130", "prop/brinecove/market-3-4-piece131", "prop/brinecove/market-3-4-piece132", "prop/brinecove/market-3-4-piece133", "prop/brinecove/market-3-4-soft"]
 about = "Brine Cove market-3-4 (11 groups)"
 
 [[objects]]
 id = "object/brinecove/market-4-3"
 groups = ["SM_BC_Market_4_3", "SM_BC_Market_4_3_Soft"]
-model = "adopted/brinecove/market-4-3"
+model = ["prop/brinecove/market-4-3", "prop/brinecove/market-4-3-soft"]
 about = "Brine Cove market-4-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/market-4-4"
 groups = ["SM_BC_Market_4_4_Piece000", "SM_BC_Market_4_4_Piece001", "SM_BC_Market_4_4_Piece002", "SM_BC_Market_4_4_Piece003", "SM_BC_Market_4_4_Piece010", "SM_BC_Market_4_4_Piece011", "SM_BC_Market_4_4_Piece012", "SM_BC_Market_4_4_Piece013", "SM_BC_Market_4_4_Piece020", "SM_BC_Market_4_4_Piece021", "SM_BC_Market_4_4_Piece022", "SM_BC_Market_4_4_Piece023", "SM_BC_Market_4_4_Piece03", "SM_BC_Market_4_4_Soft"]
-model = "adopted/brinecove/market-4-4"
+model = ["prop/brinecove/market-4-4-piece000", "prop/brinecove/market-4-4-piece001", "prop/brinecove/market-4-4-piece002", "prop/brinecove/market-4-4-piece003", "prop/brinecove/market-4-4-piece010", "prop/brinecove/market-4-4-piece011", "prop/brinecove/market-4-4-piece012", "prop/brinecove/market-4-4-piece013", "prop/brinecove/market-4-4-piece020", "prop/brinecove/market-4-4-piece021", "prop/brinecove/market-4-4-piece022", "prop/brinecove/market-4-4-piece023", "prop/brinecove/market-4-4-piece03", "prop/brinecove/market-4-4-soft"]
 about = "Brine Cove market-4-4 (14 groups)"
 
 [[objects]]
@@ -899,685 +899,687 @@ about = "Brine Cove plant-small (3 groups)"
 [[objects]]
 id = "object/brinecove/props-2-2"
 group = "SM_BC_Props_2_2"
-model = "adopted/brinecove/props-2-2"
+model = "prop/brinecove/props-2-2"
 about = "Brine Cove props-2-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-2-3"
 group = "SM_BC_Props_2_3"
-model = "adopted/brinecove/props-2-3"
+model = "prop/brinecove/props-2-3"
 about = "Brine Cove props-2-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-2-4"
 groups = ["SM_BC_Props_2_4", "SM_BC_Props_2_4_Soft"]
-model = "adopted/brinecove/props-2-4"
+model = ["prop/brinecove/props-2-4", "prop/brinecove/props-2-4-soft"]
 about = "Brine Cove props-2-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/props-3-2"
 group = "SM_BC_Props_3_2"
-model = "adopted/brinecove/props-3-2"
+model = "prop/brinecove/props-3-2"
 about = "Brine Cove props-3-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-3-3"
 group = "SM_BC_Props_3_3"
-model = "adopted/brinecove/props-3-3"
+model = "prop/brinecove/props-3-3"
 about = "Brine Cove props-3-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-3-4"
 groups = ["SM_BC_Props_3_4", "SM_BC_Props_3_4_Soft"]
-model = "adopted/brinecove/props-3-4"
+model = ["prop/brinecove/props-3-4", "prop/brinecove/props-3-4-soft"]
 about = "Brine Cove props-3-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/props-3-5"
 group = "SM_BC_Props_3_5"
-model = "adopted/brinecove/props-3-5"
+model = "prop/brinecove/props-3-5"
 about = "Brine Cove props-3-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-4-2"
 group = "SM_BC_Props_4_2"
-model = "adopted/brinecove/props-4-2"
+model = "prop/brinecove/props-4-2"
 about = "Brine Cove props-4-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-4-3"
 group = "SM_BC_Props_4_3"
-model = "adopted/brinecove/props-4-3"
+model = "prop/brinecove/props-4-3"
 about = "Brine Cove props-4-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-4-4"
 groups = ["SM_BC_Props_4_4", "SM_BC_Props_4_4_Soft"]
-model = "adopted/brinecove/props-4-4"
+model = ["prop/brinecove/props-4-4", "prop/brinecove/props-4-4-soft"]
 about = "Brine Cove props-4-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/props-4-5"
 group = "SM_BC_Props_4_5"
-model = "adopted/brinecove/props-4-5"
+model = "prop/brinecove/props-4-5"
 about = "Brine Cove props-4-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-5-2"
 group = "SM_BC_Props_5_2"
-model = "adopted/brinecove/props-5-2"
+model = "prop/brinecove/props-5-2"
 about = "Brine Cove props-5-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-5-3"
 group = "SM_BC_Props_5_3"
-model = "adopted/brinecove/props-5-3"
+model = "prop/brinecove/props-5-3"
 about = "Brine Cove props-5-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-5-4"
 groups = ["SM_BC_Props_5_4", "SM_BC_Props_5_4_Soft"]
-model = "adopted/brinecove/props-5-4"
+model = ["prop/brinecove/props-5-4", "prop/brinecove/props-5-4-soft"]
 about = "Brine Cove props-5-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-0-1"
 groups = ["SM_BC_Rocks_0_1", "SM_BC_Rocks_0_1_Soft"]
-model = "adopted/brinecove/rocks-0-1"
+model = ["prop/brinecove/rocks-0-1", "prop/brinecove/rocks-0-1-soft"]
 about = "Brine Cove rocks-0-1 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-0-2"
 groups = ["SM_BC_Rocks_0_2", "SM_BC_Rocks_0_2_Soft"]
-model = "adopted/brinecove/rocks-0-2"
+model = ["prop/brinecove/rocks-0-2", "prop/brinecove/rocks-0-2-soft"]
 about = "Brine Cove rocks-0-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-0-3"
 groups = ["SM_BC_Rocks_0_3", "SM_BC_Rocks_0_3_Soft"]
-model = "adopted/brinecove/rocks-0-3"
+model = ["prop/brinecove/rocks-0-3", "prop/brinecove/rocks-0-3-soft"]
 about = "Brine Cove rocks-0-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-0-4"
 groups = ["SM_BC_Rocks_0_4", "SM_BC_Rocks_0_4_Soft_Piece0", "SM_BC_Rocks_0_4_Soft_Piece1", "SM_BC_Rocks_0_4_Soft_Piece2", "SM_BC_Rocks_0_4_Soft_Piece3"]
-model = "adopted/brinecove/rocks-0-4"
+model = ["prop/brinecove/rocks-0-4", "prop/brinecove/rocks-0-4-soft-piece0", "prop/brinecove/rocks-0-4-soft-piece1", "prop/brinecove/rocks-0-4-soft-piece2", "prop/brinecove/rocks-0-4-soft-piece3"]
 about = "Brine Cove rocks-0-4 (5 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-0-5"
 groups = ["SM_BC_Rocks_0_5", "SM_BC_Rocks_0_5_Soft_Piece0", "SM_BC_Rocks_0_5_Soft_Piece1", "SM_BC_Rocks_0_5_Soft_Piece2", "SM_BC_Rocks_0_5_Soft_Piece3"]
-model = "adopted/brinecove/rocks-0-5"
+model = ["prop/brinecove/rocks-0-5", "prop/brinecove/rocks-0-5-soft-piece0", "prop/brinecove/rocks-0-5-soft-piece1", "prop/brinecove/rocks-0-5-soft-piece2", "prop/brinecove/rocks-0-5-soft-piece3"]
 about = "Brine Cove rocks-0-5 (5 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-0-6"
 groups = ["SM_BC_Rocks_0_6", "SM_BC_Rocks_0_6_Soft"]
-model = "adopted/brinecove/rocks-0-6"
+model = ["prop/brinecove/rocks-0-6", "prop/brinecove/rocks-0-6-soft"]
 about = "Brine Cove rocks-0-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-1-0"
 groups = ["SM_BC_Rocks_1_0", "SM_BC_Rocks_1_0_Soft"]
-model = "adopted/brinecove/rocks-1-0"
+model = ["prop/brinecove/rocks-1-0", "prop/brinecove/rocks-1-0-soft"]
 about = "Brine Cove rocks-1-0 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-1-1"
 groups = ["SM_BC_Rocks_1_1", "SM_BC_Rocks_1_1_Soft"]
-model = "adopted/brinecove/rocks-1-1"
+model = ["prop/brinecove/rocks-1-1", "prop/brinecove/rocks-1-1-soft"]
 about = "Brine Cove rocks-1-1 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-1-2"
 groups = ["SM_BC_Rocks_1_2", "SM_BC_Rocks_1_2_Soft"]
-model = "adopted/brinecove/rocks-1-2"
+model = ["prop/brinecove/rocks-1-2", "prop/brinecove/rocks-1-2-soft"]
 about = "Brine Cove rocks-1-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-1-3"
 groups = ["SM_BC_Rocks_1_3", "SM_BC_Rocks_1_3_Soft"]
-model = "adopted/brinecove/rocks-1-3"
+model = ["prop/brinecove/rocks-1-3", "prop/brinecove/rocks-1-3-soft"]
 about = "Brine Cove rocks-1-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-1-5"
 groups = ["SM_BC_Rocks_1_5", "SM_BC_Rocks_1_5_Soft"]
-model = "adopted/brinecove/rocks-1-5"
+model = ["prop/brinecove/rocks-1-5", "prop/brinecove/rocks-1-5-soft"]
 about = "Brine Cove rocks-1-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-1-6"
 groups = ["SM_BC_Rocks_1_6", "SM_BC_Rocks_1_6_Soft"]
-model = "adopted/brinecove/rocks-1-6"
+model = ["prop/brinecove/rocks-1-6", "prop/brinecove/rocks-1-6-soft"]
 about = "Brine Cove rocks-1-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-2-2"
 groups = ["SM_BC_Rocks_2_2", "SM_BC_Rocks_2_2_Soft"]
-model = "adopted/brinecove/rocks-2-2"
+model = ["prop/brinecove/rocks-2-2", "prop/brinecove/rocks-2-2-soft"]
 about = "Brine Cove rocks-2-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-2-3"
 groups = ["SM_BC_Rocks_2_3", "SM_BC_Rocks_2_3_Soft"]
-model = "adopted/brinecove/rocks-2-3"
+model = ["prop/brinecove/rocks-2-3", "prop/brinecove/rocks-2-3-soft"]
 about = "Brine Cove rocks-2-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-2-4"
 groups = ["SM_BC_Rocks_2_4", "SM_BC_Rocks_2_4_Soft"]
-model = "adopted/brinecove/rocks-2-4"
+model = ["prop/brinecove/rocks-2-4", "prop/brinecove/rocks-2-4-soft"]
 about = "Brine Cove rocks-2-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-2-5"
 groups = ["SM_BC_Rocks_2_5", "SM_BC_Rocks_2_5_Soft"]
-model = "adopted/brinecove/rocks-2-5"
+model = ["prop/brinecove/rocks-2-5", "prop/brinecove/rocks-2-5-soft"]
 about = "Brine Cove rocks-2-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-2-6"
 groups = ["SM_BC_Rocks_2_6", "SM_BC_Rocks_2_6_Soft"]
-model = "adopted/brinecove/rocks-2-6"
+model = ["prop/brinecove/rocks-2-6", "prop/brinecove/rocks-2-6-soft"]
 about = "Brine Cove rocks-2-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-3-2"
 groups = ["SM_BC_Rocks_3_2", "SM_BC_Rocks_3_2_Soft"]
-model = "adopted/brinecove/rocks-3-2"
+model = ["prop/brinecove/rocks-3-2", "prop/brinecove/rocks-3-2-soft"]
 about = "Brine Cove rocks-3-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-3-4"
 groups = ["SM_BC_Rocks_3_4", "SM_BC_Rocks_3_4_Soft"]
-model = "adopted/brinecove/rocks-3-4"
+model = ["prop/brinecove/rocks-3-4", "prop/brinecove/rocks-3-4-soft"]
 about = "Brine Cove rocks-3-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-3-5"
 groups = ["SM_BC_Rocks_3_5", "SM_BC_Rocks_3_5_Soft"]
-model = "adopted/brinecove/rocks-3-5"
+model = ["prop/brinecove/rocks-3-5", "prop/brinecove/rocks-3-5-soft"]
 about = "Brine Cove rocks-3-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-3-6"
 groups = ["SM_BC_Rocks_3_6", "SM_BC_Rocks_3_6_Soft"]
-model = "adopted/brinecove/rocks-3-6"
+model = ["prop/brinecove/rocks-3-6", "prop/brinecove/rocks-3-6-soft"]
 about = "Brine Cove rocks-3-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-4-1"
 groups = ["SM_BC_Rocks_4_1", "SM_BC_Rocks_4_1_Soft"]
-model = "adopted/brinecove/rocks-4-1"
+model = ["prop/brinecove/rocks-4-1", "prop/brinecove/rocks-4-1-soft"]
 about = "Brine Cove rocks-4-1 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-4-2"
 groups = ["SM_BC_Rocks_4_2", "SM_BC_Rocks_4_2_Soft"]
-model = "adopted/brinecove/rocks-4-2"
+model = ["prop/brinecove/rocks-4-2", "prop/brinecove/rocks-4-2-soft"]
 about = "Brine Cove rocks-4-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-4-4"
 groups = ["SM_BC_Rocks_4_4", "SM_BC_Rocks_4_4_Soft"]
-model = "adopted/brinecove/rocks-4-4"
+model = ["prop/brinecove/rocks-4-4", "prop/brinecove/rocks-4-4-soft"]
 about = "Brine Cove rocks-4-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-4-5"
 groups = ["SM_BC_Rocks_4_5", "SM_BC_Rocks_4_5_Soft"]
-model = "adopted/brinecove/rocks-4-5"
+model = ["prop/brinecove/rocks-4-5", "prop/brinecove/rocks-4-5-soft"]
 about = "Brine Cove rocks-4-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-4-6"
 groups = ["SM_BC_Rocks_4_6", "SM_BC_Rocks_4_6_Soft"]
-model = "adopted/brinecove/rocks-4-6"
+model = ["prop/brinecove/rocks-4-6", "prop/brinecove/rocks-4-6-soft"]
 about = "Brine Cove rocks-4-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-5-2"
 groups = ["SM_BC_Rocks_5_2", "SM_BC_Rocks_5_2_Soft"]
-model = "adopted/brinecove/rocks-5-2"
+model = ["prop/brinecove/rocks-5-2", "prop/brinecove/rocks-5-2-soft"]
 about = "Brine Cove rocks-5-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-5-3"
 groups = ["SM_BC_Rocks_5_3", "SM_BC_Rocks_5_3_Soft"]
-model = "adopted/brinecove/rocks-5-3"
+model = ["prop/brinecove/rocks-5-3", "prop/brinecove/rocks-5-3-soft"]
 about = "Brine Cove rocks-5-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-5-4"
 groups = ["SM_BC_Rocks_5_4", "SM_BC_Rocks_5_4_Soft"]
-model = "adopted/brinecove/rocks-5-4"
+model = ["prop/brinecove/rocks-5-4", "prop/brinecove/rocks-5-4-soft"]
 about = "Brine Cove rocks-5-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-5-5"
 groups = ["SM_BC_Rocks_5_5", "SM_BC_Rocks_5_5_Soft"]
-model = "adopted/brinecove/rocks-5-5"
+model = ["prop/brinecove/rocks-5-5", "prop/brinecove/rocks-5-5-soft"]
 about = "Brine Cove rocks-5-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-5-6"
 groups = ["SM_BC_Rocks_5_6", "SM_BC_Rocks_5_6_Soft"]
-model = "adopted/brinecove/rocks-5-6"
+model = ["prop/brinecove/rocks-5-6", "prop/brinecove/rocks-5-6-soft"]
 about = "Brine Cove rocks-5-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-6-0"
 groups = ["SM_BC_Rocks_6_0", "SM_BC_Rocks_6_0_Soft"]
-model = "adopted/brinecove/rocks-6-0"
+model = ["prop/brinecove/rocks-6-0", "prop/brinecove/rocks-6-0-soft"]
 about = "Brine Cove rocks-6-0 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-6-1"
 groups = ["SM_BC_Rocks_6_1", "SM_BC_Rocks_6_1_Soft_Piece0", "SM_BC_Rocks_6_1_Soft_Piece1", "SM_BC_Rocks_6_1_Soft_Piece2", "SM_BC_Rocks_6_1_Soft_Piece3"]
-model = "adopted/brinecove/rocks-6-1"
+model = ["prop/brinecove/rocks-6-1", "prop/brinecove/rocks-6-1-soft-piece0", "prop/brinecove/rocks-6-1-soft-piece1", "prop/brinecove/rocks-6-1-soft-piece2", "prop/brinecove/rocks-6-1-soft-piece3"]
 about = "Brine Cove rocks-6-1 (5 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-6-2"
 groups = ["SM_BC_Rocks_6_2", "SM_BC_Rocks_6_2_Soft_Piece0", "SM_BC_Rocks_6_2_Soft_Piece1", "SM_BC_Rocks_6_2_Soft_Piece2", "SM_BC_Rocks_6_2_Soft_Piece3"]
-model = "adopted/brinecove/rocks-6-2"
+model = ["prop/brinecove/rocks-6-2", "prop/brinecove/rocks-6-2-soft-piece0", "prop/brinecove/rocks-6-2-soft-piece1", "prop/brinecove/rocks-6-2-soft-piece2", "prop/brinecove/rocks-6-2-soft-piece3"]
 about = "Brine Cove rocks-6-2 (5 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-6-3"
 groups = ["SM_BC_Rocks_6_3", "SM_BC_Rocks_6_3_Soft"]
-model = "adopted/brinecove/rocks-6-3"
+model = ["prop/brinecove/rocks-6-3", "prop/brinecove/rocks-6-3-soft"]
 about = "Brine Cove rocks-6-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-6-4"
 groups = ["SM_BC_Rocks_6_4", "SM_BC_Rocks_6_4_Soft"]
-model = "adopted/brinecove/rocks-6-4"
+model = ["prop/brinecove/rocks-6-4", "prop/brinecove/rocks-6-4-soft"]
 about = "Brine Cove rocks-6-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-6-5"
 groups = ["SM_BC_Rocks_6_5", "SM_BC_Rocks_6_5_Soft"]
-model = "adopted/brinecove/rocks-6-5"
+model = ["prop/brinecove/rocks-6-5", "prop/brinecove/rocks-6-5-soft"]
 about = "Brine Cove rocks-6-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-6-6"
 groups = ["SM_BC_Rocks_6_6", "SM_BC_Rocks_6_6_Soft"]
-model = "adopted/brinecove/rocks-6-6"
+model = ["prop/brinecove/rocks-6-6", "prop/brinecove/rocks-6-6-soft"]
 about = "Brine Cove rocks-6-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-7-3"
 groups = ["SM_BC_Rocks_7_3", "SM_BC_Rocks_7_3_Soft"]
-model = "adopted/brinecove/rocks-7-3"
+model = ["prop/brinecove/rocks-7-3", "prop/brinecove/rocks-7-3-soft"]
 about = "Brine Cove rocks-7-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-7-4"
 groups = ["SM_BC_Rocks_7_4", "SM_BC_Rocks_7_4_Soft"]
-model = "adopted/brinecove/rocks-7-4"
+model = ["prop/brinecove/rocks-7-4", "prop/brinecove/rocks-7-4-soft"]
 about = "Brine Cove rocks-7-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-7-5"
 groups = ["SM_BC_Rocks_7_5", "SM_BC_Rocks_7_5_Soft"]
-model = "adopted/brinecove/rocks-7-5"
+model = ["prop/brinecove/rocks-7-5", "prop/brinecove/rocks-7-5-soft"]
 about = "Brine Cove rocks-7-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-7-6"
 groups = ["SM_BC_Rocks_7_6", "SM_BC_Rocks_7_6_Soft"]
-model = "adopted/brinecove/rocks-7-6"
+model = ["prop/brinecove/rocks-7-6", "prop/brinecove/rocks-7-6-soft"]
 about = "Brine Cove rocks-7-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/ships-nightjar-sloop"
 groups = ["SM_BC_Ships_4_2", "SM_BC_Ships_4_3", "SM_BC_Ships_5_3"]
-model = "adopted/brinecove/ships-nightjar-sloop"
+model = ["prop/brinecove/ships-4-2", "prop/brinecove/ships-4-3", "prop/brinecove/ships-5-3"]
 about = "Brine Cove ships-nightjar-sloop (3 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-1-2"
 groups = ["SM_BC_TownLower_1_2", "SM_BC_TownLower_1_2_Soft"]
-model = "adopted/brinecove/townlower-1-2"
+model = ["prop/brinecove/town-lower-1-2", "prop/brinecove/town-lower-1-2-soft"]
 about = "Brine Cove townlower-1-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-1-3"
 groups = ["SM_BC_TownLower_1_3", "SM_BC_TownLower_1_3_Soft"]
-model = "adopted/brinecove/townlower-1-3"
+model = ["prop/brinecove/town-lower-1-3", "prop/brinecove/town-lower-1-3-soft"]
 about = "Brine Cove townlower-1-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-2-3"
 groups = ["SM_BC_TownLower_2_3", "SM_BC_TownLower_2_3_Soft"]
-model = "adopted/brinecove/townlower-2-3"
+model = ["prop/brinecove/town-lower-2-3", "prop/brinecove/town-lower-2-3-soft"]
 about = "Brine Cove townlower-2-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-2-4"
 groups = ["SM_BC_TownLower_2_4_Piece00", "SM_BC_TownLower_2_4_Piece01", "SM_BC_TownLower_2_4_Piece02", "SM_BC_TownLower_2_4_Piece030", "SM_BC_TownLower_2_4_Piece031", "SM_BC_TownLower_2_4_Piece032", "SM_BC_TownLower_2_4_Piece033", "SM_BC_TownLower_2_4_Piece10", "SM_BC_TownLower_2_4_Piece110", "SM_BC_TownLower_2_4_Piece111", "SM_BC_TownLower_2_4_Piece112", "SM_BC_TownLower_2_4_Piece113", "SM_BC_TownLower_2_4_Piece12", "SM_BC_TownLower_2_4_Piece13", "SM_BC_TownLower_2_4_Piece20", "SM_BC_TownLower_2_4_Piece21", "SM_BC_TownLower_2_4_Piece30", "SM_BC_TownLower_2_4_Piece31", "SM_BC_TownLower_2_4_Soft"]
-model = "adopted/brinecove/townlower-2-4"
+model = ["prop/brinecove/town-lower-2-4-piece00", "prop/brinecove/town-lower-2-4-piece01", "prop/brinecove/town-lower-2-4-piece02", "prop/brinecove/town-lower-2-4-piece030", "prop/brinecove/town-lower-2-4-piece031", "prop/brinecove/town-lower-2-4-piece032", "prop/brinecove/town-lower-2-4-piece033", "prop/brinecove/town-lower-2-4-piece10", "prop/brinecove/town-lower-2-4-piece110", "prop/brinecove/town-lower-2-4-piece111", "prop/brinecove/town-lower-2-4-piece112", "prop/brinecove/town-lower-2-4-piece113", "prop/brinecove/town-lower-2-4-piece12", "prop/brinecove/town-lower-2-4-piece13", "prop/brinecove/town-lower-2-4-piece20", "prop/brinecove/town-lower-2-4-piece21", "prop/brinecove/town-lower-2-4-piece30", "prop/brinecove/town-lower-2-4-piece31", "prop/brinecove/town-lower-2-4-soft"]
 about = "Brine Cove townlower-2-4 (19 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-3-3"
 group = "SM_BC_TownLower_3_3"
-model = "adopted/brinecove/townlower-3-3"
+model = "prop/brinecove/town-lower-3-3"
 about = "Brine Cove townlower-3-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-3-4"
 groups = ["SM_BC_TownLower_3_4_Piece000", "SM_BC_TownLower_3_4_Piece001", "SM_BC_TownLower_3_4_Piece002", "SM_BC_TownLower_3_4_Piece003", "SM_BC_TownLower_3_4_Piece01", "SM_BC_TownLower_3_4_Piece02", "SM_BC_TownLower_3_4_Piece030", "SM_BC_TownLower_3_4_Piece031", "SM_BC_TownLower_3_4_Piece032", "SM_BC_TownLower_3_4_Piece033", "SM_BC_TownLower_3_4_Piece10", "SM_BC_TownLower_3_4_Piece11", "SM_BC_TownLower_3_4_Piece12", "SM_BC_TownLower_3_4_Piece13", "SM_BC_TownLower_3_4_Piece2", "SM_BC_TownLower_3_4_Piece3", "SM_BC_TownLower_3_4_Soft"]
-model = "adopted/brinecove/townlower-3-4"
+model = ["prop/brinecove/town-lower-3-4-piece000", "prop/brinecove/town-lower-3-4-piece001", "prop/brinecove/town-lower-3-4-piece002", "prop/brinecove/town-lower-3-4-piece003", "prop/brinecove/town-lower-3-4-piece01", "prop/brinecove/town-lower-3-4-piece02", "prop/brinecove/town-lower-3-4-piece030", "prop/brinecove/town-lower-3-4-piece031", "prop/brinecove/town-lower-3-4-piece032", "prop/brinecove/town-lower-3-4-piece033", "prop/brinecove/town-lower-3-4-piece10", "prop/brinecove/town-lower-3-4-piece11", "prop/brinecove/town-lower-3-4-piece12", "prop/brinecove/town-lower-3-4-piece13", "prop/brinecove/town-lower-3-4-piece2", "prop/brinecove/town-lower-3-4-piece3", "prop/brinecove/town-lower-3-4-soft"]
 about = "Brine Cove townlower-3-4 (17 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-4-3"
 group = "SM_BC_TownLower_4_3"
-model = "adopted/brinecove/townlower-4-3"
+model = "prop/brinecove/town-lower-4-3"
 about = "Brine Cove townlower-4-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/townlower-4-4"
 groups = ["SM_BC_TownLower_4_4_Piece01", "SM_BC_TownLower_4_4_Piece02", "SM_BC_TownLower_4_4_Piece03", "SM_BC_TownLower_4_4_Piece10", "SM_BC_TownLower_4_4_Piece11", "SM_BC_TownLower_4_4_Piece12", "SM_BC_TownLower_4_4_Piece13", "SM_BC_TownLower_4_4_Piece2", "SM_BC_TownLower_4_4_Piece30", "SM_BC_TownLower_4_4_Piece31", "SM_BC_TownLower_4_4_Soft"]
-model = "adopted/brinecove/townlower-4-4"
+model = ["prop/brinecove/town-lower-4-4-piece01", "prop/brinecove/town-lower-4-4-piece02", "prop/brinecove/town-lower-4-4-piece03", "prop/brinecove/town-lower-4-4-piece10", "prop/brinecove/town-lower-4-4-piece11", "prop/brinecove/town-lower-4-4-piece12", "prop/brinecove/town-lower-4-4-piece13", "prop/brinecove/town-lower-4-4-piece2", "prop/brinecove/town-lower-4-4-piece30", "prop/brinecove/town-lower-4-4-piece31", "prop/brinecove/town-lower-4-4-soft"]
 about = "Brine Cove townlower-4-4 (11 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-5-3"
 groups = ["SM_BC_TownLower_5_3", "SM_BC_TownLower_5_3_Soft"]
-model = "adopted/brinecove/townlower-5-3"
+model = ["prop/brinecove/town-lower-5-3", "prop/brinecove/town-lower-5-3-soft"]
 about = "Brine Cove townlower-5-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-5-4"
 groups = ["SM_BC_TownLower_5_4_Piece000", "SM_BC_TownLower_5_4_Piece001", "SM_BC_TownLower_5_4_Piece002", "SM_BC_TownLower_5_4_Piece003", "SM_BC_TownLower_5_4_Piece01", "SM_BC_TownLower_5_4_Piece02", "SM_BC_TownLower_5_4_Piece03", "SM_BC_TownLower_5_4_Piece10", "SM_BC_TownLower_5_4_Piece12", "SM_BC_TownLower_5_4_Piece13", "SM_BC_TownLower_5_4_Piece2", "SM_BC_TownLower_5_4_Piece30", "SM_BC_TownLower_5_4_Piece31", "SM_BC_TownLower_5_4_Soft"]
-model = "adopted/brinecove/townlower-5-4"
+model = ["prop/brinecove/town-lower-5-4-piece000", "prop/brinecove/town-lower-5-4-piece001", "prop/brinecove/town-lower-5-4-piece002", "prop/brinecove/town-lower-5-4-piece003", "prop/brinecove/town-lower-5-4-piece01", "prop/brinecove/town-lower-5-4-piece02", "prop/brinecove/town-lower-5-4-piece03", "prop/brinecove/town-lower-5-4-piece10", "prop/brinecove/town-lower-5-4-piece12", "prop/brinecove/town-lower-5-4-piece13", "prop/brinecove/town-lower-5-4-piece2", "prop/brinecove/town-lower-5-4-piece30", "prop/brinecove/town-lower-5-4-piece31", "prop/brinecove/town-lower-5-4-soft"]
 about = "Brine Cove townlower-5-4 (14 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-6-2"
 groups = ["SM_BC_TownLower_6_2", "SM_BC_TownLower_6_2_Soft"]
-model = "adopted/brinecove/townlower-6-2"
+model = ["prop/brinecove/town-lower-6-2", "prop/brinecove/town-lower-6-2-soft"]
 about = "Brine Cove townlower-6-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/townlower-6-3"
 groups = ["SM_BC_TownLower_6_3", "SM_BC_TownLower_6_3_Soft"]
-model = "adopted/brinecove/townlower-6-3"
+model = ["prop/brinecove/town-lower-6-3", "prop/brinecove/town-lower-6-3-soft"]
 about = "Brine Cove townlower-6-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-2-4"
 groups = ["SM_BC_TownUpper_2_4_Piece20", "SM_BC_TownUpper_2_4_Piece21", "SM_BC_TownUpper_2_4_Piece22", "SM_BC_TownUpper_2_4_Piece230", "SM_BC_TownUpper_2_4_Piece231", "SM_BC_TownUpper_2_4_Piece232", "SM_BC_TownUpper_2_4_Piece233", "SM_BC_TownUpper_2_4_Piece30", "SM_BC_TownUpper_2_4_Piece31", "SM_BC_TownUpper_2_4_Piece32", "SM_BC_TownUpper_2_4_Piece33", "SM_BC_TownUpper_2_4_Soft"]
-model = "adopted/brinecove/townupper-2-4"
+model = ["prop/brinecove/town-upper-2-4-piece20", "prop/brinecove/town-upper-2-4-piece21", "prop/brinecove/town-upper-2-4-piece22", "prop/brinecove/town-upper-2-4-piece230", "prop/brinecove/town-upper-2-4-piece231", "prop/brinecove/town-upper-2-4-piece232", "prop/brinecove/town-upper-2-4-piece233", "prop/brinecove/town-upper-2-4-piece30", "prop/brinecove/town-upper-2-4-piece31", "prop/brinecove/town-upper-2-4-piece32", "prop/brinecove/town-upper-2-4-piece33", "prop/brinecove/town-upper-2-4-soft"]
 about = "Brine Cove townupper-2-4 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-2-5"
 groups = ["SM_BC_TownUpper_2_5_Piece0", "SM_BC_TownUpper_2_5_Piece10", "SM_BC_TownUpper_2_5_Piece11", "SM_BC_TownUpper_2_5_Piece12", "SM_BC_TownUpper_2_5_Piece13", "SM_BC_TownUpper_2_5_Piece3", "SM_BC_TownUpper_2_5_Soft"]
-model = "adopted/brinecove/townupper-2-5"
+model = ["prop/brinecove/town-upper-2-5-piece0", "prop/brinecove/town-upper-2-5-piece10", "prop/brinecove/town-upper-2-5-piece11", "prop/brinecove/town-upper-2-5-piece12", "prop/brinecove/town-upper-2-5-piece13", "prop/brinecove/town-upper-2-5-piece3", "prop/brinecove/town-upper-2-5-soft"]
 about = "Brine Cove townupper-2-5 (7 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-3-4"
 groups = ["SM_BC_TownUpper_3_4_Piece0", "SM_BC_TownUpper_3_4_Piece20", "SM_BC_TownUpper_3_4_Piece21", "SM_BC_TownUpper_3_4_Piece220", "SM_BC_TownUpper_3_4_Piece221", "SM_BC_TownUpper_3_4_Piece222", "SM_BC_TownUpper_3_4_Piece223", "SM_BC_TownUpper_3_4_Piece230", "SM_BC_TownUpper_3_4_Piece231", "SM_BC_TownUpper_3_4_Piece232", "SM_BC_TownUpper_3_4_Piece233", "SM_BC_TownUpper_3_4_Piece30", "SM_BC_TownUpper_3_4_Piece31", "SM_BC_TownUpper_3_4_Piece320", "SM_BC_TownUpper_3_4_Piece321", "SM_BC_TownUpper_3_4_Piece322", "SM_BC_TownUpper_3_4_Piece323", "SM_BC_TownUpper_3_4_Piece33", "SM_BC_TownUpper_3_4_Soft"]
-model = "adopted/brinecove/townupper-3-4"
+model = ["prop/brinecove/town-upper-3-4-piece0", "prop/brinecove/town-upper-3-4-piece20", "prop/brinecove/town-upper-3-4-piece21", "prop/brinecove/town-upper-3-4-piece220", "prop/brinecove/town-upper-3-4-piece221", "prop/brinecove/town-upper-3-4-piece222", "prop/brinecove/town-upper-3-4-piece223", "prop/brinecove/town-upper-3-4-piece230", "prop/brinecove/town-upper-3-4-piece231", "prop/brinecove/town-upper-3-4-piece232", "prop/brinecove/town-upper-3-4-piece233", "prop/brinecove/town-upper-3-4-piece30", "prop/brinecove/town-upper-3-4-piece31", "prop/brinecove/town-upper-3-4-piece320", "prop/brinecove/town-upper-3-4-piece321", "prop/brinecove/town-upper-3-4-piece322", "prop/brinecove/town-upper-3-4-piece323", "prop/brinecove/town-upper-3-4-piece33", "prop/brinecove/town-upper-3-4-soft"]
 about = "Brine Cove townupper-3-4 (19 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-3-5"
 groups = ["SM_BC_TownUpper_3_5_Piece00", "SM_BC_TownUpper_3_5_Piece01", "SM_BC_TownUpper_3_5_Piece02", "SM_BC_TownUpper_3_5_Piece03", "SM_BC_TownUpper_3_5_Piece1", "SM_BC_TownUpper_3_5_Piece2", "SM_BC_TownUpper_3_5_Piece3", "SM_BC_TownUpper_3_5_Soft"]
-model = "adopted/brinecove/townupper-3-5"
+model = ["prop/brinecove/town-upper-3-5-piece00", "prop/brinecove/town-upper-3-5-piece01", "prop/brinecove/town-upper-3-5-piece02", "prop/brinecove/town-upper-3-5-piece03", "prop/brinecove/town-upper-3-5-piece1", "prop/brinecove/town-upper-3-5-piece2", "prop/brinecove/town-upper-3-5-piece3", "prop/brinecove/town-upper-3-5-soft"]
 about = "Brine Cove townupper-3-5 (8 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-4-4"
 groups = ["SM_BC_TownUpper_4_4_Piece0", "SM_BC_TownUpper_4_4_Piece1", "SM_BC_TownUpper_4_4_Piece20", "SM_BC_TownUpper_4_4_Piece21", "SM_BC_TownUpper_4_4_Piece22", "SM_BC_TownUpper_4_4_Piece230", "SM_BC_TownUpper_4_4_Piece231", "SM_BC_TownUpper_4_4_Piece232", "SM_BC_TownUpper_4_4_Piece233", "SM_BC_TownUpper_4_4_Piece30", "SM_BC_TownUpper_4_4_Piece31", "SM_BC_TownUpper_4_4_Piece320", "SM_BC_TownUpper_4_4_Piece321", "SM_BC_TownUpper_4_4_Piece322", "SM_BC_TownUpper_4_4_Piece323", "SM_BC_TownUpper_4_4_Piece330", "SM_BC_TownUpper_4_4_Piece331", "SM_BC_TownUpper_4_4_Piece332", "SM_BC_TownUpper_4_4_Piece333", "SM_BC_TownUpper_4_4_Soft"]
-model = "adopted/brinecove/townupper-4-4"
+model = ["prop/brinecove/town-upper-4-4-piece0", "prop/brinecove/town-upper-4-4-piece1", "prop/brinecove/town-upper-4-4-piece20", "prop/brinecove/town-upper-4-4-piece21", "prop/brinecove/town-upper-4-4-piece22", "prop/brinecove/town-upper-4-4-piece230", "prop/brinecove/town-upper-4-4-piece231", "prop/brinecove/town-upper-4-4-piece232", "prop/brinecove/town-upper-4-4-piece233", "prop/brinecove/town-upper-4-4-piece30", "prop/brinecove/town-upper-4-4-piece31", "prop/brinecove/town-upper-4-4-piece320", "prop/brinecove/town-upper-4-4-piece321", "prop/brinecove/town-upper-4-4-piece322", "prop/brinecove/town-upper-4-4-piece323", "prop/brinecove/town-upper-4-4-piece330", "prop/brinecove/town-upper-4-4-piece331", "prop/brinecove/town-upper-4-4-piece332", "prop/brinecove/town-upper-4-4-piece333", "prop/brinecove/town-upper-4-4-soft"]
 about = "Brine Cove townupper-4-4 (20 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-4-5"
 groups = ["SM_BC_TownUpper_4_5_Piece00", "SM_BC_TownUpper_4_5_Piece01", "SM_BC_TownUpper_4_5_Piece02", "SM_BC_TownUpper_4_5_Piece03", "SM_BC_TownUpper_4_5_Piece10", "SM_BC_TownUpper_4_5_Piece11", "SM_BC_TownUpper_4_5_Piece12", "SM_BC_TownUpper_4_5_Piece13", "SM_BC_TownUpper_4_5_Piece2", "SM_BC_TownUpper_4_5_Piece3", "SM_BC_TownUpper_4_5_Soft"]
-model = "adopted/brinecove/townupper-4-5"
+model = ["prop/brinecove/town-upper-4-5-piece00", "prop/brinecove/town-upper-4-5-piece01", "prop/brinecove/town-upper-4-5-piece02", "prop/brinecove/town-upper-4-5-piece03", "prop/brinecove/town-upper-4-5-piece10", "prop/brinecove/town-upper-4-5-piece11", "prop/brinecove/town-upper-4-5-piece12", "prop/brinecove/town-upper-4-5-piece13", "prop/brinecove/town-upper-4-5-piece2", "prop/brinecove/town-upper-4-5-piece3", "prop/brinecove/town-upper-4-5-soft"]
 about = "Brine Cove townupper-4-5 (11 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-5-4"
 groups = ["SM_BC_TownUpper_5_4_Piece20", "SM_BC_TownUpper_5_4_Piece21", "SM_BC_TownUpper_5_4_Piece220", "SM_BC_TownUpper_5_4_Piece221", "SM_BC_TownUpper_5_4_Piece222", "SM_BC_TownUpper_5_4_Piece223", "SM_BC_TownUpper_5_4_Piece23", "SM_BC_TownUpper_5_4_Piece30", "SM_BC_TownUpper_5_4_Piece31", "SM_BC_TownUpper_5_4_Piece32", "SM_BC_TownUpper_5_4_Piece33", "SM_BC_TownUpper_5_4_Soft"]
-model = "adopted/brinecove/townupper-5-4"
+model = ["prop/brinecove/town-upper-5-4-piece20", "prop/brinecove/town-upper-5-4-piece21", "prop/brinecove/town-upper-5-4-piece220", "prop/brinecove/town-upper-5-4-piece221", "prop/brinecove/town-upper-5-4-piece222", "prop/brinecove/town-upper-5-4-piece223", "prop/brinecove/town-upper-5-4-piece23", "prop/brinecove/town-upper-5-4-piece30", "prop/brinecove/town-upper-5-4-piece31", "prop/brinecove/town-upper-5-4-piece32", "prop/brinecove/town-upper-5-4-piece33", "prop/brinecove/town-upper-5-4-soft"]
 about = "Brine Cove townupper-5-4 (12 groups)"
 
 [[objects]]
 id = "object/brinecove/townupper-5-5"
 groups = ["SM_BC_TownUpper_5_5_Piece00", "SM_BC_TownUpper_5_5_Piece01", "SM_BC_TownUpper_5_5_Piece02", "SM_BC_TownUpper_5_5_Piece03", "SM_BC_TownUpper_5_5_Piece1", "SM_BC_TownUpper_5_5_Piece2", "SM_BC_TownUpper_5_5_Soft"]
-model = "adopted/brinecove/townupper-5-5"
+model = ["prop/brinecove/town-upper-5-5-piece00", "prop/brinecove/town-upper-5-5-piece01", "prop/brinecove/town-upper-5-5-piece02", "prop/brinecove/town-upper-5-5-piece03", "prop/brinecove/town-upper-5-5-piece1", "prop/brinecove/town-upper-5-5-piece2", "prop/brinecove/town-upper-5-5-soft"]
 about = "Brine Cove townupper-5-5 (7 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-0-2"
 groups = ["SM_BC_Understory_0_2", "SM_BC_Understory_0_2_Soft"]
-model = "adopted/brinecove/understory-0-2"
+model = ["prop/brinecove/understory-0-2", "prop/brinecove/understory-0-2-soft"]
 about = "Brine Cove understory-0-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-0-3"
 group = "SM_BC_Understory_0_3_Soft"
-model = "adopted/brinecove/understory-0-3"
+model = "prop/brinecove/understory-0-3-soft"
 about = "Brine Cove understory-0-3 (1 group)"
 
 [[objects]]
 id = "object/brinecove/understory-0-4"
 group = "SM_BC_Understory_0_4_Soft"
-model = "adopted/brinecove/understory-0-4"
+model = "prop/brinecove/understory-0-4-soft"
 about = "Brine Cove understory-0-4 (1 group)"
 
 [[objects]]
 id = "object/brinecove/understory-0-5"
 groups = ["SM_BC_Understory_0_5", "SM_BC_Understory_0_5_Soft"]
-model = "adopted/brinecove/understory-0-5"
+model = ["prop/brinecove/understory-0-5", "prop/brinecove/understory-0-5-soft"]
 about = "Brine Cove understory-0-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-1-1"
 groups = ["SM_BC_Understory_1_1", "SM_BC_Understory_1_1_Soft"]
-model = "adopted/brinecove/understory-1-1"
+model = ["prop/brinecove/understory-1-1", "prop/brinecove/understory-1-1-soft"]
 about = "Brine Cove understory-1-1 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-1-2"
 groups = ["SM_BC_Understory_1_2", "SM_BC_Understory_1_2_Soft"]
-model = "adopted/brinecove/understory-1-2"
+model = ["prop/brinecove/understory-1-2", "prop/brinecove/understory-1-2-soft"]
 about = "Brine Cove understory-1-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-1-3"
 groups = ["SM_BC_Understory_1_3", "SM_BC_Understory_1_3_Soft"]
-model = "adopted/brinecove/understory-1-3"
+model = ["prop/brinecove/understory-1-3", "prop/brinecove/understory-1-3-soft"]
 about = "Brine Cove understory-1-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-1-4"
 groups = ["SM_BC_Understory_1_4", "SM_BC_Understory_1_4_Soft"]
-model = "adopted/brinecove/understory-1-4"
+model = ["prop/brinecove/understory-1-4", "prop/brinecove/understory-1-4-soft"]
 about = "Brine Cove understory-1-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-1-5"
 groups = ["SM_BC_Understory_1_5", "SM_BC_Understory_1_5_Soft"]
-model = "adopted/brinecove/understory-1-5"
+model = ["prop/brinecove/understory-1-5", "prop/brinecove/understory-1-5-soft"]
 about = "Brine Cove understory-1-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-1-6"
 groups = ["SM_BC_Understory_1_6", "SM_BC_Understory_1_6_Soft"]
-model = "adopted/brinecove/understory-1-6"
+model = ["prop/brinecove/understory-1-6", "prop/brinecove/understory-1-6-soft"]
 about = "Brine Cove understory-1-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-2-2"
 groups = ["SM_BC_Understory_2_2", "SM_BC_Understory_2_2_Soft"]
-model = "adopted/brinecove/understory-2-2"
+model = ["prop/brinecove/understory-2-2", "prop/brinecove/understory-2-2-soft"]
 about = "Brine Cove understory-2-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-2-3"
 groups = ["SM_BC_Understory_2_3", "SM_BC_Understory_2_3_Soft"]
-model = "adopted/brinecove/understory-2-3"
+model = ["prop/brinecove/understory-2-3", "prop/brinecove/understory-2-3-soft"]
 about = "Brine Cove understory-2-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-2-4"
 groups = ["SM_BC_Understory_2_4", "SM_BC_Understory_2_4_Soft"]
-model = "adopted/brinecove/understory-2-4"
+model = ["prop/brinecove/understory-2-4", "prop/brinecove/understory-2-4-soft"]
 about = "Brine Cove understory-2-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-2-5"
 groups = ["SM_BC_Understory_2_5", "SM_BC_Understory_2_5_Soft"]
-model = "adopted/brinecove/understory-2-5"
+model = ["prop/brinecove/understory-2-5", "prop/brinecove/understory-2-5-soft"]
 about = "Brine Cove understory-2-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-2-6"
 groups = ["SM_BC_Understory_2_6", "SM_BC_Understory_2_6_Soft"]
-model = "adopted/brinecove/understory-2-6"
+model = ["prop/brinecove/understory-2-6", "prop/brinecove/understory-2-6-soft"]
 about = "Brine Cove understory-2-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-3-4"
 groups = ["SM_BC_Understory_3_4", "SM_BC_Understory_3_4_Soft"]
-model = "adopted/brinecove/understory-3-4"
+model = ["prop/brinecove/understory-3-4", "prop/brinecove/understory-3-4-soft"]
 about = "Brine Cove understory-3-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-3-5"
 groups = ["SM_BC_Understory_3_5", "SM_BC_Understory_3_5_Soft"]
-model = "adopted/brinecove/understory-3-5"
+model = ["prop/brinecove/understory-3-5", "prop/brinecove/understory-3-5-soft"]
 about = "Brine Cove understory-3-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-3-6"
 groups = ["SM_BC_Understory_3_6", "SM_BC_Understory_3_6_Soft"]
-model = "adopted/brinecove/understory-3-6"
+model = ["prop/brinecove/understory-3-6", "prop/brinecove/understory-3-6-soft"]
 about = "Brine Cove understory-3-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-4-4"
 groups = ["SM_BC_Understory_4_4", "SM_BC_Understory_4_4_Soft"]
-model = "adopted/brinecove/understory-4-4"
+model = ["prop/brinecove/understory-4-4", "prop/brinecove/understory-4-4-soft"]
 about = "Brine Cove understory-4-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-4-5"
 groups = ["SM_BC_Understory_4_5", "SM_BC_Understory_4_5_Soft"]
-model = "adopted/brinecove/understory-4-5"
+model = ["prop/brinecove/understory-4-5", "prop/brinecove/understory-4-5-soft"]
 about = "Brine Cove understory-4-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-4-6"
 groups = ["SM_BC_Understory_4_6", "SM_BC_Understory_4_6_Soft"]
-model = "adopted/brinecove/understory-4-6"
+model = ["prop/brinecove/understory-4-6", "prop/brinecove/understory-4-6-soft"]
 about = "Brine Cove understory-4-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-5-2"
 group = "SM_BC_Understory_5_2"
-model = "adopted/brinecove/understory-5-2"
+model = "prop/brinecove/understory-5-2"
 about = "Brine Cove understory-5-2 (1 group)"
 
 [[objects]]
 id = "object/brinecove/understory-5-3"
 groups = ["SM_BC_Understory_5_3", "SM_BC_Understory_5_3_Soft"]
-model = "adopted/brinecove/understory-5-3"
+model = ["prop/brinecove/understory-5-3", "prop/brinecove/understory-5-3-soft"]
 about = "Brine Cove understory-5-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-5-4"
 groups = ["SM_BC_Understory_5_4", "SM_BC_Understory_5_4_Soft"]
-model = "adopted/brinecove/understory-5-4"
+model = ["prop/brinecove/understory-5-4", "prop/brinecove/understory-5-4-soft"]
 about = "Brine Cove understory-5-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-5-5"
 groups = ["SM_BC_Understory_5_5", "SM_BC_Understory_5_5_Soft"]
-model = "adopted/brinecove/understory-5-5"
+model = ["prop/brinecove/understory-5-5", "prop/brinecove/understory-5-5-soft"]
 about = "Brine Cove understory-5-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-5-6"
 groups = ["SM_BC_Understory_5_6", "SM_BC_Understory_5_6_Soft"]
-model = "adopted/brinecove/understory-5-6"
+model = ["prop/brinecove/understory-5-6", "prop/brinecove/understory-5-6-soft"]
 about = "Brine Cove understory-5-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-6-0"
 groups = ["SM_BC_Understory_6_0", "SM_BC_Understory_6_0_Soft"]
-model = "adopted/brinecove/understory-6-0"
+model = ["prop/brinecove/understory-6-0", "prop/brinecove/understory-6-0-soft"]
 about = "Brine Cove understory-6-0 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-6-1"
 groups = ["SM_BC_Understory_6_1", "SM_BC_Understory_6_1_Soft"]
-model = "adopted/brinecove/understory-6-1"
+model = ["prop/brinecove/understory-6-1", "prop/brinecove/understory-6-1-soft"]
 about = "Brine Cove understory-6-1 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-6-2"
 groups = ["SM_BC_Understory_6_2", "SM_BC_Understory_6_2_Soft"]
-model = "adopted/brinecove/understory-6-2"
+model = ["prop/brinecove/understory-6-2", "prop/brinecove/understory-6-2-soft"]
 about = "Brine Cove understory-6-2 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-6-3"
 groups = ["SM_BC_Understory_6_3", "SM_BC_Understory_6_3_Soft"]
-model = "adopted/brinecove/understory-6-3"
+model = ["prop/brinecove/understory-6-3", "prop/brinecove/understory-6-3-soft"]
 about = "Brine Cove understory-6-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-6-4"
 groups = ["SM_BC_Understory_6_4", "SM_BC_Understory_6_4_Soft"]
-model = "adopted/brinecove/understory-6-4"
+model = ["prop/brinecove/understory-6-4", "prop/brinecove/understory-6-4-soft"]
 about = "Brine Cove understory-6-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-6-5"
 groups = ["SM_BC_Understory_6_5", "SM_BC_Understory_6_5_Soft"]
-model = "adopted/brinecove/understory-6-5"
+model = ["prop/brinecove/understory-6-5", "prop/brinecove/understory-6-5-soft"]
 about = "Brine Cove understory-6-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-6-6"
 groups = ["SM_BC_Understory_6_6", "SM_BC_Understory_6_6_Soft"]
-model = "adopted/brinecove/understory-6-6"
+model = ["prop/brinecove/understory-6-6", "prop/brinecove/understory-6-6-soft"]
 about = "Brine Cove understory-6-6 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-7-3"
 groups = ["SM_BC_Understory_7_3", "SM_BC_Understory_7_3_Soft"]
-model = "adopted/brinecove/understory-7-3"
+model = ["prop/brinecove/understory-7-3", "prop/brinecove/understory-7-3-soft"]
 about = "Brine Cove understory-7-3 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-7-4"
 groups = ["SM_BC_Understory_7_4", "SM_BC_Understory_7_4_Soft"]
-model = "adopted/brinecove/understory-7-4"
+model = ["prop/brinecove/understory-7-4", "prop/brinecove/understory-7-4-soft"]
 about = "Brine Cove understory-7-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/understory-7-5"
 groups = ["SM_BC_Understory_7_5", "SM_BC_Understory_7_5_Soft"]
-model = "adopted/brinecove/understory-7-5"
+model = ["prop/brinecove/understory-7-5", "prop/brinecove/understory-7-5-soft"]
 about = "Brine Cove understory-7-5 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/waterfall-canyon"
 groups = ["SM_BC_Landmarks_5_3", "SM_BC_Landmarks_5_3_Soft_Piece1", "SM_BC_Landmarks_5_3_Soft_Piece3", "SM_BC_Landmarks_5_4", "SM_BC_Landmarks_5_4_Soft", "SM_BC_Landmarks_6_3", "SM_BC_Landmarks_6_3_Soft_Piece0", "SM_BC_Landmarks_6_3_Soft_Piece1", "SM_BC_Landmarks_6_3_Soft_Piece20", "SM_BC_Landmarks_6_3_Soft_Piece21", "SM_BC_Landmarks_6_3_Soft_Piece22", "SM_BC_Landmarks_6_3_Soft_Piece23", "SM_BC_Landmarks_6_3_Soft_Piece3", "SM_BC_Landmarks_6_4", "SM_BC_Landmarks_6_4_Soft"]
-model = "adopted/brinecove/waterfall-canyon"
+model = ["prop/brinecove/landmarks-5-3", "prop/brinecove/landmarks-5-3-soft-piece1", "prop/brinecove/landmarks-5-3-soft-piece3", "prop/brinecove/landmarks-5-4", "prop/brinecove/landmarks-5-4-soft", "prop/brinecove/landmarks-6-3", "prop/brinecove/landmarks-6-3-soft-piece0", "prop/brinecove/landmarks-6-3-soft-piece1", "prop/brinecove/landmarks-6-3-soft-piece20", "prop/brinecove/landmarks-6-3-soft-piece21", "prop/brinecove/landmarks-6-3-soft-piece22", "prop/brinecove/landmarks-6-3-soft-piece23", "prop/brinecove/landmarks-6-3-soft-piece3", "prop/brinecove/landmarks-6-4", "prop/brinecove/landmarks-6-4-soft"]
 about = "Brine Cove waterfall-canyon (15 groups)"
 
 # Not saved, by reason:
+# no record: SM_BC_CraneWest_Soft (/Game/Brinecove/Meshes/SM_BC_CraneWest_Soft)
+# no record: SM_BC_FishShed_Soft (/Game/Brinecove/Meshes/SM_BC_FishShed_Soft)

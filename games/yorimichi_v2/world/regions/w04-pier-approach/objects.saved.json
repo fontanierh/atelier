@@ -3,9 +3,15 @@
     "object/pier/house-c-01": {
       "groups": [],
       "id": "object/pier/house-c-01",
-      "model": "adopted/japan/assets/house",
+      "model": [
+        "prop/japan-kit/house-a",
+        "prop/japan-kit/house-b",
+        "prop/japan-kit/house-c"
+      ],
       "models": [
-        "adopted/japan/assets/house"
+        "prop/japan-kit/house-a",
+        "prop/japan-kit/house-b",
+        "prop/japan-kit/house-c"
       ],
       "split": {
         "at": [
@@ -33,9 +39,13 @@
     "object/pier/pole-01": {
       "groups": [],
       "id": "object/pier/pole-01",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [
@@ -48,9 +58,13 @@
     "object/pier/pole-02": {
       "groups": [],
       "id": "object/pier/pole-02",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [
@@ -63,9 +77,13 @@
     "object/pier/pole-03": {
       "groups": [],
       "id": "object/pier/pole-03",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [
@@ -78,9 +96,13 @@
     "object/pier/pole-lamp-01": {
       "groups": [],
       "id": "object/pier/pole-lamp-01",
-      "model": "adopted/japan/assets/pole",
+      "model": [
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
+      ],
       "models": [
-        "adopted/japan/assets/pole"
+        "prop/japan-kit/pole",
+        "prop/japan-kit/pole-lamp"
       ],
       "split": {
         "at": [

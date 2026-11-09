@@ -153,9 +153,9 @@
     "object/swcoast/sw-boat-01": {
       "groups": [],
       "id": "object/swcoast/sw-boat-01",
-      "model": "adopted/japan/southwest",
+      "model": "prop/southwest/boat",
       "models": [
-        "adopted/japan/southwest"
+        "prop/southwest/boat"
       ],
       "split": {
         "at": [
@@ -168,9 +168,9 @@
     "object/swcoast/sw-boat-02": {
       "groups": [],
       "id": "object/swcoast/sw-boat-02",
-      "model": "adopted/japan/southwest",
+      "model": "prop/southwest/boat",
       "models": [
-        "adopted/japan/southwest"
+        "prop/southwest/boat"
       ],
       "split": {
         "at": [
@@ -183,9 +183,9 @@
     "object/swcoast/sw-stonewall-01": {
       "groups": [],
       "id": "object/swcoast/sw-stonewall-01",
-      "model": "adopted/japan/southwest",
+      "model": "prop/southwest/stone-wall",
       "models": [
-        "adopted/japan/southwest"
+        "prop/southwest/stone-wall"
       ],
       "split": {
         "at": [
@@ -198,9 +198,9 @@
     "object/swcoast/sw-stonewall-02": {
       "groups": [],
       "id": "object/swcoast/sw-stonewall-02",
-      "model": "adopted/japan/southwest",
+      "model": "prop/southwest/stone-wall",
       "models": [
-        "adopted/japan/southwest"
+        "prop/southwest/stone-wall"
       ],
       "split": {
         "at": [
@@ -213,9 +213,9 @@
     "object/swcoast/sw-stonewall-03": {
       "groups": [],
       "id": "object/swcoast/sw-stonewall-03",
-      "model": "adopted/japan/southwest",
+      "model": "prop/southwest/stone-wall",
       "models": [
-        "adopted/japan/southwest"
+        "prop/southwest/stone-wall"
       ],
       "split": {
         "at": [
@@ -228,9 +228,9 @@
     "object/swcoast/torii-01": {
       "groups": [],
       "id": "object/swcoast/torii-01",
-      "model": "adopted/japan/assets/torii",
+      "model": "prop/japan-kit/torii",
       "models": [
-        "adopted/japan/assets/torii"
+        "prop/japan-kit/torii"
       ],
       "split": {
         "at": [
@@ -243,9 +243,9 @@
     "object/swcoast/torii-02": {
       "groups": [],
       "id": "object/swcoast/torii-02",
-      "model": "adopted/japan/assets/torii",
+      "model": "prop/japan-kit/torii",
       "models": [
-        "adopted/japan/assets/torii"
+        "prop/japan-kit/torii"
       ],
       "split": {
         "at": [
@@ -258,9 +258,9 @@
     "object/swcoast/torii-03": {
       "groups": [],
       "id": "object/swcoast/torii-03",
-      "model": "adopted/japan/assets/torii",
+      "model": "prop/japan-kit/torii",
       "models": [
-        "adopted/japan/assets/torii"
+        "prop/japan-kit/torii"
       ],
       "split": {
         "at": [
@@ -273,9 +273,9 @@
     "object/swcoast/torii-04": {
       "groups": [],
       "id": "object/swcoast/torii-04",
-      "model": "adopted/japan/assets/torii",
+      "model": "prop/japan-kit/torii",
       "models": [
-        "adopted/japan/assets/torii"
+        "prop/japan-kit/torii"
       ],
       "split": {
         "at": [
@@ -288,9 +288,9 @@
     "object/swcoast/torii-05": {
       "groups": [],
       "id": "object/swcoast/torii-05",
-      "model": "adopted/japan/assets/torii",
+      "model": "prop/japan-kit/torii",
       "models": [
-        "adopted/japan/assets/torii"
+        "prop/japan-kit/torii"
       ],
       "split": {
         "at": [
