@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/north-approach",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthApproach.uasset": "c9a350379c1bdd7c92ea35811fe381b77abea01fc43e854f48e7baea487b57f2"
+  },
+  "input_fingerprint": "4c6f22f18932a5fd43d2b2a1e21ff946125f9c035f4a849272cff70b7ac3728b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthApproach": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

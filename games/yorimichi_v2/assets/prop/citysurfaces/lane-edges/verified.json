@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/lane-edges",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_LaneEdges.uasset": "38e8bb543b4086227041a262db4ba1e929b516b730f392d103644ab07f0d8978"
+  },
+  "input_fingerprint": "db4030d05cf5eed02440ba6d0e00c961e0b74668050de17f30b46efc83e6f4ae",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_LaneEdges": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

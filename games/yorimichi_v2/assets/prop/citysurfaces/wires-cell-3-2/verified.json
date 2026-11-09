@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/wires-cell-3-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_3_2.uasset": "11770e4f10399f524ac1a04d8c79dbc08ab0cf789034466bcb91c95e9f2feff9"
+  },
+  "input_fingerprint": "8b7edfaf6ee3ac6fbf794a3915a4e2496d825c860a9ee96f2bdebe2a8bf0bea5",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Wires_cell_3_2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

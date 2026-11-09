@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/arcade-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeRoof.uasset": "359b6a9c41bb6fea1a06061b97b57f507b26cce3e1bc56087e79d448e3e31877"
+  },
+  "input_fingerprint": "f83c44faa6bf8582f9aee56e4b00531b898e4a528d058c81ec1646541b78b798",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeRoof": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
