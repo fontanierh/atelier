@@ -339,6 +339,13 @@ def main():
                 # An FBX reimport appends its UCX hulls to the saved ones: start from none.
                 _static_mesh_editor().remove_collisions(existing)
             before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
+            slots = settings.get('slot_materials')
+            if (existing is not None and slots is not None
+                    and len(existing.get_editor_property('static_materials')) != len(slots)):
+                # The source has a different material set (a split took a material): a reimport keeps the old slot
+                # table, so the import starts from no package; its LOD settings were read above and are kept.
+                EAL.delete_loaded_asset(existing)
+                existing = None
             legacy = source.lower().endswith('.fbx') and _legacy_fbx(settings)
             if legacy:
                 U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
