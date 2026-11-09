@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownUpperEdge01_Soft: the town upper edge 0 1, cut from the fused tile(s) TownUpper_2_4_Soft (108 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-upper-edge-0-1-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-upper-edge-0-1-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownUpperEdge01_Soft.glb"
+sha256 = "d8329758c8af8a68fe2b7bb59ebdfc7b04920c51088797d7bb0fe1df454698e1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_palm_frond"]
+triangles = 108
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownUpperEdge01_Soft"
