@@ -3,7 +3,1008 @@
   "donor_state": {
     "skate_clips": "c172586d3f8702fd039716bfbbf48db1ea34d2de3a2c1c82cc0c9d3df18090f3"
   },
+  "open_packages": {
+    "Adventure/M_AdventureCharacter.uasset": {
+      "class": "Material",
+      "originals": [
+        "games/yorimichi/unreal/Scripts/import_adventure.py"
+      ],
+      "route": "scripted"
+    },
+    "Adventure/M_AdventureCharacterMasked.uasset": {
+      "class": "Material",
+      "originals": [
+        "games/yorimichi/unreal/Scripts/import_adventure.py"
+      ],
+      "route": "scripted"
+    },
+    "Adventure/Reference/A_Reference_A_Pose_Sword_Wait.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_AirToWall.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Jump_Off_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Ed_Edge_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Jump_L_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Jump_R_FootR.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Jump_UL_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Jump_UR_FootR.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Jump_U_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_D.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_DL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_DR.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_R.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_U.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_UL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Move_UR.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Off_Tired_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Climb_Wall_Wait_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Equip_Float_Off.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Equip_Float_On.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Equip_Float_On_Fall.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Equip_Sword_Off_Natural.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Equip_Sword_On_Natural.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Fall.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Float_Float.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Float_Float_B.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Float_Float_F.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Float_Float_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Float_Float_R.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_B.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_B_Standup.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_F.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_F_Standup.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_L_Standup.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_R.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_L_R_Standup.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_Land.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_Land_Stand.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_M_B.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_M_F.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_M_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_M_R.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_S_B.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_S_F.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_S_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Damage_S_R.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Jump_B_Ed.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Jump_B_St.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Run_B.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Run_F.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Run_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Run_R.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Step_L_Ed.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Step_L_St.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Step_R_Ed.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Step_R_St.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Wait.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Walk_B.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Walk_F.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Walk_L.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Lockon_Walk_R.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Move_Dash.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Move_Run.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Move_Run_Jump_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Move_Run_Jump_FootR.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Move_Run_Land_ToRun_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Move_Run_Land_ToRun_FootR.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Move_Walk.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Wait.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Wait_Jump.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Nml_Wait_Land.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Rolldown.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Squat_Move_Run.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Squat_Move_Walk.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Squat_Wait_FootL.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Swim_Die.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Swim_Ed_Edge_0cm.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Swim_Ed_Edge_50cm.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Swim_Move_Dash.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Swim_Move_Slow_F.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Swim_Wait.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Charge.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Dash.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Fall.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Fall_Ed.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Fall_St.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Jump_F_Ed.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Jump_F_St.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Jump_Loop.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Just.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Just_Rush1.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Just_Rush2.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Just_Rush3.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Just_Rush4.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Just_Rush5.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_Ninja.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_S1.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_S2.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_S3.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Attack_SF.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Charge.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Charge_Wait.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Guard_Break.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Guard_Hit.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Guard_Just.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Guard_Wait.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/A_Reference_Sword_Move_Run_Upper.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/Glider/A_ReferenceGlider_Float.uasset": {
+      "class": "AnimSequence",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceGlider.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/Glider/Item_Parastole2_Alb.uasset": {
+      "class": "Texture2D",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceGlider.glb"
+      ],
+      "route": "embedded"
+    },
+    "Adventure/Reference/Glider/Item_Parastole2_Nrm.uasset": {
+      "class": "Texture2D",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceGlider.glb"
+      ],
+      "route": "embedded"
+    },
+    "Adventure/Reference/Glider/Mt_Parastole.uasset": {
+      "class": "MaterialInstanceConstant",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceGlider.glb"
+      ],
+      "route": "embedded"
+    },
+    "Adventure/Reference/Glider/SKEL_ReferenceGlider.uasset": {
+      "class": "Skeleton",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceGlider.glb"
+      ],
+      "route": "embedded"
+    },
+    "Adventure/Reference/Glider/SK_ReferenceGlider.uasset": {
+      "class": "SkeletalMesh",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceGlider.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/SKEL_Reference.uasset": {
+      "class": "Skeleton",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/SK_Reference.uasset": {
+      "class": "SkeletalMesh",
+      "originals": [
+        "build/yorimichi/adventure/glb/Reference.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/Sword/Mt_Sword_001.uasset": {
+      "class": "MaterialInstanceConstant",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceSword.glb"
+      ],
+      "route": "embedded"
+    },
+    "Adventure/Reference/Sword/SM_ReferenceSword.uasset": {
+      "class": "StaticMesh",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceSword.glb",
+        "build/yorimichi/adventure/unreal_import.json"
+      ],
+      "route": "reported"
+    },
+    "Adventure/Reference/Sword/Weapon_Sword_001_Alb.uasset": {
+      "class": "Texture2D",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceSword.glb"
+      ],
+      "route": "embedded"
+    },
+    "Adventure/Reference/Sword/Weapon_Sword_001_Nrm.uasset": {
+      "class": "Texture2D",
+      "originals": [
+        "build/yorimichi/adventure/glb/ReferenceSword.glb"
+      ],
+      "route": "embedded"
+    },
+    "Japan/Animation/CharacterCompression.uasset": {
+      "class": "AnimBoneCompressionSettings",
+      "originals": [
+        "games/yorimichi/unreal/Scripts/animation_compression.py"
+      ],
+      "route": "scripted"
+    }
+  },
+  "open_problems": [],
   "originals": {
+    "build/yorimichi/adventure/glb/Reference.glb": {
+      "sha256": "ff13dbcd76eeb3bcc0e36affd9ead75f17e67352e3f415c542c76456d0193f8f",
+      "size": 23397344
+    },
+    "build/yorimichi/adventure/glb/ReferenceGlider.glb": {
+      "sha256": "fc70dc11187bc07f7681331f5181236473e9a13c35ded803cb62f2d574c8a260",
+      "size": 180684
+    },
+    "build/yorimichi/adventure/glb/ReferenceSword.glb": {
+      "sha256": "c4ce9e37c6111f11d3e1f40f1eac6e3d93dce7d5e47ad7cceebd8c7f4da93ef4",
+      "size": 98228
+    },
+    "build/yorimichi/adventure/unreal_import.json": {
+      "sha256": "91debf584189706e8793abcb80096f5dd0f9eb958793aa6bc0048579a189696c",
+      "size": 115166
+    },
     "build/yorimichi/audio/bike/bell/bell_01.wav": {
       "sha256": "db84265cb853a16846d185d6760e352dc92e54eafe4988597a03709f7a00dbe3",
       "size": 115244
@@ -24307,6 +25308,14 @@
     "games/yorimichi/assets/horses/coats/variants/kestrel/sorrel.png": {
       "sha256": "b1c7eff4712dbe5b6dfefd40a518b4819054b4b3d9b45fcc15caf55d7bd1f566",
       "size": 1308605
+    },
+    "games/yorimichi/unreal/Scripts/animation_compression.py": {
+      "sha256": "44a0e33ae377d7af687baff9dcb1fc0a9afc30dab8ae27ca512c629596c8c834",
+      "size": 2722
+    },
+    "games/yorimichi/unreal/Scripts/import_adventure.py": {
+      "sha256": "db091444d8b2c2253a8ed08d70bc8ba9ef9e918f5f7fd0e61a3fce12c2781446",
+      "size": 15984
     },
     "games/yorimichi/unreal/Scripts/skate_ride/import_clips.py": {
       "sha256": "2742e4c802be804a9970706201c48e590b9b1467f6180ece58f72368eb29f123",
