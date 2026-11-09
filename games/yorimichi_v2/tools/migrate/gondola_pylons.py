@@ -335,13 +335,15 @@ def main(argv=None) -> int:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--check', action='store_true', help='print the state of the tree; writes nothing')
     mode.add_argument('--paths', action='store_true', help='print the paths and scopes a claim must cover, and exit')
-    mode.add_argument('--claim', metavar='TASK', help='prepare under this claim (step 1)')
     mode.add_argument('--retire', action='store_true', help='retire the groups; with --claim TASK (step 3)')
+    parser.add_argument('--claim', metavar='TASK', help='claims task: alone, prepare (step 1); with --retire, retire (step 3)')
     parser.add_argument('--print', action='store_true', help='with --check, print the planned objects.toml diff')
     args = parser.parse_args(argv)
     try:
         data = runtime(GAME)
         taken = select(data)
+        if args.claim and (args.check or args.paths):
+            raise PylonError('--check and --paths write nothing and take no --claim')
         if args.paths:
             print(json.dumps(claim_paths(GAME, taken), indent=1))
             return 0

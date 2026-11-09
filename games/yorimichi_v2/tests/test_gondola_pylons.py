@@ -234,3 +234,17 @@ def test_a_claim_that_does_not_hold_the_steps_refuses_before_any_write(data, tmp
     with pytest.raises(pylons.PylonError, match='no claim'):
         pylons.prepare(tmp_path, pylons.select(data), 'OTHER', lockable=lambda g, r: [], echo=lambda *_: None)
     assert tree_bytes(tmp_path) == before
+
+
+def test_the_command_line_dispatches_each_step(monkeypatch):
+    """--retire takes --claim (step 3); --claim alone prepares (step 1); --check and --paths take none."""
+    calls = []
+    monkeypatch.setattr(pylons, 'runtime', lambda game: {})
+    monkeypatch.setattr(pylons, 'select', lambda data: [])
+    monkeypatch.setattr(pylons, 'retire', lambda game, taken, claim: calls.append(('retire', claim)))
+    monkeypatch.setattr(pylons, 'prepare', lambda game, taken, claim: calls.append(('prepare', claim)))
+    assert pylons.main(['--retire', '--claim', 'TASK']) == 0
+    assert pylons.main(['--claim', 'TASK']) == 0
+    assert calls == [('retire', 'TASK'), ('prepare', 'TASK')]
+    assert pylons.main(['--retire']) == 1
+    assert pylons.main(['--check', '--claim', 'TASK']) == 1
