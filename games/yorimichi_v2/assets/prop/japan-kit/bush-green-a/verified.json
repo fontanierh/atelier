@@ -1,0 +1,42 @@
+{
+  "asset": "prop/japan-kit/bush-green-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Bush_Green_A.uasset": "c7813b21ae617e55f5786edfdf0362559b680cde3f2a99b3e6859a4919777be2"
+  },
+  "input_fingerprint": "acb2f197c5ce7678ed38bd91a38c4934e936bb7a8869610933cb2dff179d96f0",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Bush_Green_A": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.07999999821186066,
+          0.02500000037252903
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.07999999821186066,
+          0.02500000037252903
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

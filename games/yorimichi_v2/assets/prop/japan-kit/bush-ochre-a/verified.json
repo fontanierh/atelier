@@ -1,0 +1,42 @@
+{
+  "asset": "prop/japan-kit/bush-ochre-a",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/Bush_Ochre_A.uasset": "ee8c6eeee113c104938fc6233b85496fa172191a38c48582b886c00a7f5a1dd7"
+  },
+  "input_fingerprint": "d0d12292ef7500d381ad717c51943daa66d9dbdc436245ee75452d3e7b4304a0",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/Bush_Ochre_A": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.07999999821186066,
+          0.02500000037252903
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.07999999821186066,
+          0.02500000037252903
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
