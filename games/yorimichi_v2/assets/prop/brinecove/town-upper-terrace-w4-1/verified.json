@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-terrace-w4-1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperTerraceW41.uasset": "702e53498002b3323486a313165b6d7122854d18a746946ce963160cf9f7d71e"
+  },
+  "input_fingerprint": "fd4ac6ce2184c01077cfd629cf5a92df757c3580868a665d211f08296c6e3df4",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperTerraceW41": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
