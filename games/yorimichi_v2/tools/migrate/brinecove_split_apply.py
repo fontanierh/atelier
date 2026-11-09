@@ -724,6 +724,7 @@ def check(game: Path, donor: Path | None = None, retired: bool = False, records_
     """Problems with the applied batch, from the repository alone (the donor adds the vertex-level partition proof)."""
     problems = []
     exp = json.loads((game / EXPECTED).read_text())
+    retired = retired or exp.get('retired', False)
     for rid, part in exp['parts'].items():
         folder = game / 'assets' / rid
         if not (folder / 'asset.toml').is_file():
@@ -810,7 +811,7 @@ def check_placements(game: Path, exp: dict, retired: bool = False) -> list[str]:
     if dup:
         problems.append(f'groups listed by more than one object: {dict(list(dup.items())[:3])}')
     if retired and any(t['remainder'] is None for t in exp['tiles'].values()) and (
-            RETIRED_OBJECT in {i['id'] for i in listed} or (game / 'assets' / RETIRED_OBJECT).exists()):
+            RETIRED_OBJECT in {i['id'] for i in listed} or (game / 'assets' / RETIRED_OBJECT / 'asset.toml').is_file()):
         problems.append(f'{RETIRED_OBJECT} is not retired')
     for part in exp['parts'].values():
         if len(groups.get(part['mesh'], [])) != 1:

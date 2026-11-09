@@ -538,3 +538,18 @@ def test_cli_handoff_preserves_pending_removals_until_success(cli_batch, monkeyp
     saved = json.loads((case.game / apply.EXPECTED).read_text())
     assert saved['pending'] == {'stale': [], 'resave': []} and saved['retired'] is True
     assert case.run('apply', 'cannon-west') == 0        # the next batch is now allowed
+
+
+def test_cli_check_uses_completed_ship_retirement(cli_batch):
+    case = cli_batch
+    case.actor(apply.RETIRED_OBJECT)
+    assert case.run('apply', 'sloop-east') == 0
+    case.accept()
+    assert case.run('retire', 'sloop-east') == 0
+    assert (case.game / 'assets' / apply.RETIRED_OBJECT).is_dir()   # empty record folders are harmless
+    assert case.run('check', 'sloop-east') == 0
+    runtime = case.game / 'unreal/Content/Data/brinecove/runtime.json'
+    body = json.loads(runtime.read_text())
+    body['groups'].append(group('SM_BC_Ships_4_3'))               # a retired tile drawn again is still a defect
+    runtime.write_text(json.dumps(body))
+    assert case.run('check', 'sloop-east') == 1
