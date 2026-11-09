@@ -801,19 +801,6 @@
         "prop/brinecove/harbor-5-4"
       ]
     },
-    "object/brinecove/hero-galleon-hull": {
-      "groups": [
-        "SM_BC_Hero_GalleonHull_cell_-1_-1",
-        "SM_BC_Hero_GalleonHull_cell_-1_0",
-        "SM_BC_Hero_GalleonHull_cell_0_-1",
-        "SM_BC_Hero_GalleonHull_cell_0_0"
-      ],
-      "id": "object/brinecove/hero-galleon-hull",
-      "model": "adopted/brinecove/hero-galleon-hull",
-      "models": [
-        "adopted/brinecove/hero-galleon-hull"
-      ]
-    },
     "object/brinecove/hero-harbor-capstan": {
       "groups": [
         "SM_BC_Hero_HarborCapstan"
@@ -3690,24 +3677,6 @@
       "models": [
         "prop/brinecove/rocks-7-6",
         "prop/brinecove/rocks-7-6-soft"
-      ]
-    },
-    "object/brinecove/ships-nightjar-sloop": {
-      "groups": [
-        "SM_BC_Ships_4_2",
-        "SM_BC_Ships_4_3",
-        "SM_BC_Ships_5_3"
-      ],
-      "id": "object/brinecove/ships-nightjar-sloop",
-      "model": [
-        "prop/brinecove/ships-4-2",
-        "prop/brinecove/ships-4-3",
-        "prop/brinecove/ships-5-3"
-      ],
-      "models": [
-        "prop/brinecove/ships-4-2",
-        "prop/brinecove/ships-4-3",
-        "prop/brinecove/ships-5-3"
       ]
     },
     "object/brinecove/shipyard-yard": {
