@@ -1,0 +1,81 @@
+{
+  "about": "Which triangles of the fused original the remainder keeps (kept) and removes (removed), as half-open ranges of triangle ordinals in glb_subset.triangles order. tools/content/carve.py derives the remainder.",
+  "kept": [
+    [
+      0,
+      20
+    ],
+    [
+      180,
+      192
+    ],
+    [
+      432,
+      444
+    ],
+    [
+      540,
+      552
+    ],
+    [
+      780,
+      1650
+    ],
+    [
+      2668,
+      2688
+    ],
+    [
+      3006,
+      3102
+    ],
+    [
+      3766,
+      4030
+    ],
+    [
+      7142,
+      7166
+    ]
+  ],
+  "removed": [
+    [
+      20,
+      180
+    ],
+    [
+      192,
+      432
+    ],
+    [
+      444,
+      540
+    ],
+    [
+      552,
+      780
+    ],
+    [
+      1650,
+      2668
+    ],
+    [
+      2688,
+      3006
+    ],
+    [
+      3102,
+      3766
+    ],
+    [
+      4030,
+      7142
+    ],
+    [
+      7166,
+      11252
+    ]
+  ],
+  "schema": 1,
+  "triangles": 11252
+}

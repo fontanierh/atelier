@@ -10,7 +10,17 @@ references = ["adopted/brinecove/materials"]
 
 [[sources]]
 path = "src/SM_BC_TownUpper_4_4_Piece320.glb"
-sha256 = "2b44e1da1f5f7ec8db454e8b4a167e774c72cea8f53821a186834b23b20d8e34"
+sha256 = "417ce6ec0e11b3af1430e8b2278e2a37a65ef913e141faa5cc5fc8d578d31602"
+
+[[sources]]
+path = "src/SM_BC_TownUpper_4_4_Piece320.carve.json"
+sha256 = "2b8df683069ba8385e05a09fc3481640c5ce474a154c9355f9673e875df61636"
+
+[derive]
+kind = "carve"
+version = 1
+original = "src/SM_BC_TownUpper_4_4_Piece320.glb"
+selection = "src/SM_BC_TownUpper_4_4_Piece320.carve.json"
 
 [recipe]
 importer = "static-mesh"

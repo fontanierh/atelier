@@ -5,7 +5,7 @@
   "files": {
     "unreal/Content/Brinecove/Meshes/SM_BC_TownUpper_3_5_Soft.uasset": "299c73fd32acfab7a1299cff5d0159d7c5f24a6e7369e47d9d2aa606ba51f0c1"
   },
-  "input_fingerprint": "8d496db63de33d59d6a08c0dc3a88f5800bcb5379a42fa5704c143e1cf095ca6",
+  "input_fingerprint": "5b5de6457f6221b0a62f303824be70f3cdebc202a9b498f185119e134dd5bc69",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownUpper_3_5_Soft": {
