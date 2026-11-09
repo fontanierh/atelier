@@ -326,13 +326,6 @@ def main():
     lod_results = {}
     for source, portable, package in jobs:
         if plan['importer'] == 'static-mesh':
-            if source.lower().endswith('.fbx'):
-                options = _fbx_static_mesh(settings)
-            elif source.lower().endswith(('.glb', '.gltf')):
-                options = _gltf_static_mesh(package.rsplit('/', 1)[1],
-                                            collision=settings.get('collision') not in ('boxes', 'none'))
-            else:
-                options = None
             # The chain the package had before this import; a new package has none.
             existing = EAL.load_asset(package)
             if existing is not None and settings.get('collision') == 'simple_and_complex':
@@ -346,6 +339,14 @@ def main():
                 # table, so the import starts from no package; its LOD settings were read above and are kept.
                 EAL.delete_loaded_asset(existing)
                 existing = None
+            # Made after any delete above: its garbage collection would free a pipeline made earlier.
+            if source.lower().endswith('.fbx'):
+                options = _fbx_static_mesh(settings)
+            elif source.lower().endswith(('.glb', '.gltf')):
+                options = _gltf_static_mesh(package.rsplit('/', 1)[1],
+                                            collision=settings.get('collision') not in ('boxes', 'none'))
+            else:
+                options = None
             legacy = source.lower().endswith('.fbx') and _legacy_fbx(settings)
             if legacy:
                 U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
