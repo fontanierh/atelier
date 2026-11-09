@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLowerRumW41: the town lower rum w4 1, cut from the fused tile(s) TownLower_3_4_Piece001, TownLower_3_4_Piece003 (6884 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/town-lower-rum-w4-1"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/town-lower-rum-w4-1"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_TownLowerRumW41.glb"
+sha256 = "2aeb9e078c3ff0d93ce038e5c22cf9b913d2e074061bbd6336b4aead0fc61882"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_blossom", "/Game/Brinecove/Materials/MI_BC_blossom_pale", "/Game/Brinecove/Materials/MI_BC_canvas", "/Game/Brinecove/Materials/MI_BC_canvas_red", "/Game/Brinecove/Materials/MI_BC_canvas_teal", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_glass", "/Game/Brinecove/Materials/MI_BC_glass_warm", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_jungle", "/Game/Brinecove/Materials/MI_BC_jungle_light", "/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_plaster", "/Game/Brinecove/Materials/MI_BC_roof_slate", "/Game/Brinecove/Materials/MI_BC_shutter_green", "/Game/Brinecove/Materials/MI_BC_shutter_red", "/Game/Brinecove/Materials/MI_BC_shutter_teal", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 6884
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_TownLowerRumW41"

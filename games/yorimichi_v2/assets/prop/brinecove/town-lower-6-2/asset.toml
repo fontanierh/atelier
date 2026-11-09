@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLower_6_2: one Brine Cove mesh (6748 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLower_6_2: one Brine Cove mesh, what remains after batch 1 took its objects (130 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -10,15 +10,15 @@ references = ["adopted/brinecove/materials"]
 
 [[sources]]
 path = "src/SM_BC_TownLower_6_2.glb"
-sha256 = "53aed86c733d000d07edeaabec92de55e2d296e5503a6242d0df8b1f8612a12e"
+sha256 = "e51915ed5092c7a329d8c262c8a288a79957624ddd810cffe62c7cdf398dcfcf"
 
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_canvas", "/Game/Brinecove/Materials/MI_BC_canvas_red", "/Game/Brinecove/Materials/MI_BC_canvas_teal", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_glass", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_planks", "/Game/Brinecove/Materials/MI_BC_roof_straw", "/Game/Brinecove/Materials/MI_BC_roof_teal", "/Game/Brinecove/Materials/MI_BC_roof_terra_light", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_sage_wall", "/Game/Brinecove/Materials/MI_BC_sail", "/Game/Brinecove/Materials/MI_BC_shutter_blue", "/Game/Brinecove/Materials/MI_BC_shutter_teal", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
-triangles = 6748
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 130
 collision = "complex"
 full_precision_uvs = true
 

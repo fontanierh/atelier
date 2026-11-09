@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLower_3_4_Piece032: one Brine Cove mesh (1970 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_TownLower_3_4_Piece032: one Brine Cove mesh, what remains after batch 1 took its objects (362 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -10,15 +10,15 @@ references = ["adopted/brinecove/materials"]
 
 [[sources]]
 path = "src/SM_BC_TownLower_3_4_Piece032.glb"
-sha256 = "4cf9a6fa0def8bb32273908d04b07898d48f5d6c4e13b41a3888173a130ba14f"
+sha256 = "3dee00564709118258694aac5c452f97dcc1f05190202fd41b742b7db2525e70"
 
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_blossom", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_glass", "/Game/Brinecove/Materials/MI_BC_glass_warm", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_roof_terra", "/Game/Brinecove/Materials/MI_BC_rose_wall", "/Game/Brinecove/Materials/MI_BC_shutter_red", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
-triangles = 1970
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_blossom", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_stone_light"]
+triangles = 362
 collision = "complex"
 full_precision_uvs = true
 

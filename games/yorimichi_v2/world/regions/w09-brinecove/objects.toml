@@ -624,6 +624,276 @@ groups = ["SM_BC_TownLowerSlope1231", "SM_BC_TownLowerSlope1231_Soft"]
 model = ["prop/brinecove/town-lower-slope-1-2-3-1", "prop/brinecove/town-lower-slope-1-2-3-1-soft"]
 about = "the town lower slope 1 2 3 1, cut from its fused tile (4968 triangles)"
 
+[[objects]]
+id = "object/brinecove/town-lower-back-w1-1"
+groups = ["SM_BC_TownLowerBackW11", "SM_BC_TownLowerBackW11_Soft"]
+model = ["prop/brinecove/town-lower-back-w1-1", "prop/brinecove/town-lower-back-w1-1-soft"]
+about = "the town lower back w1 1, cut from its fused tile (6681 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w1-2"
+groups = ["SM_BC_TownLowerBackW12", "SM_BC_TownLowerBackW12_Soft"]
+model = ["prop/brinecove/town-lower-back-w1-2", "prop/brinecove/town-lower-back-w1-2-soft"]
+about = "the town lower back w1 2, cut from its fused tile (8724 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w2-0"
+groups = ["SM_BC_TownLowerBackW20", "SM_BC_TownLowerBackW20_Soft"]
+model = ["prop/brinecove/town-lower-back-w2-0", "prop/brinecove/town-lower-back-w2-0-soft"]
+about = "the town lower back w2 0, cut from its fused tile (7472 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w2-1"
+groups = ["SM_BC_TownLowerBackW21", "SM_BC_TownLowerBackW21_Soft"]
+model = ["prop/brinecove/town-lower-back-w2-1", "prop/brinecove/town-lower-back-w2-1-soft"]
+about = "the town lower back w2 1, cut from its fused tile (9268 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w2-2"
+groups = ["SM_BC_TownLowerBackW22", "SM_BC_TownLowerBackW22_Soft"]
+model = ["prop/brinecove/town-lower-back-w2-2", "prop/brinecove/town-lower-back-w2-2-soft"]
+about = "the town lower back w2 2, cut from its fused tile (7152 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w3-0"
+group = "SM_BC_TownLowerBackW30"
+model = "prop/brinecove/town-lower-back-w3-0"
+about = "the town lower back w3 0, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w3-1"
+group = "SM_BC_TownLowerBackW31"
+model = "prop/brinecove/town-lower-back-w3-1"
+about = "the town lower back w3 1, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w4-1"
+groups = ["SM_BC_TownLowerBackW41", "SM_BC_TownLowerBackW41_Soft"]
+model = ["prop/brinecove/town-lower-back-w4-1", "prop/brinecove/town-lower-back-w4-1-soft"]
+about = "the town lower back w4 1, cut from its fused tile (11857 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w5-0"
+groups = ["SM_BC_TownLowerBackW50", "SM_BC_TownLowerBackW50_Soft"]
+model = ["prop/brinecove/town-lower-back-w5-0", "prop/brinecove/town-lower-back-w5-0-soft"]
+about = "the town lower back w5 0, cut from its fused tile (8317 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w5-1"
+groups = ["SM_BC_TownLowerBackW51", "SM_BC_TownLowerBackW51_Soft"]
+model = ["prop/brinecove/town-lower-back-w5-1", "prop/brinecove/town-lower-back-w5-1-soft"]
+about = "the town lower back w5 1, cut from its fused tile (9192 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-back-w5-2"
+groups = ["SM_BC_TownLowerBackW52", "SM_BC_TownLowerBackW52_Soft"]
+model = ["prop/brinecove/town-lower-back-w5-2", "prop/brinecove/town-lower-back-w5-2-soft"]
+about = "the town lower back w5 2, cut from its fused tile (7300 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-0-0"
+groups = ["SM_BC_TownLowerHall100", "SM_BC_TownLowerHall100_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-0-0", "prop/brinecove/town-lower-hall--1-0-0-soft"]
+about = "the town lower hall  1 0 0, cut from its fused tile (4972 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-0-1"
+groups = ["SM_BC_TownLowerHall101", "SM_BC_TownLowerHall101_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-0-1", "prop/brinecove/town-lower-hall--1-0-1-soft"]
+about = "the town lower hall  1 0 1, cut from its fused tile (4913 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-1-0"
+groups = ["SM_BC_TownLowerHall110", "SM_BC_TownLowerHall110_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-1-0", "prop/brinecove/town-lower-hall--1-1-0-soft"]
+about = "the town lower hall  1 1 0, cut from its fused tile (7768 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-1-1"
+groups = ["SM_BC_TownLowerHall111", "SM_BC_TownLowerHall111_Soft"]
+model = ["prop/brinecove/town-lower-hall--1-1-1", "prop/brinecove/town-lower-hall--1-1-1-soft"]
+about = "the town lower hall  1 1 1, cut from its fused tile (4992 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-hall--1-2-0"
+group = "SM_BC_TownLowerHall120"
+model = "prop/brinecove/town-lower-hall--1-2-0"
+about = "the town lower hall  1 2 0, cut from its fused tile (4496 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w1-0"
+groups = ["SM_BC_TownLowerMidW10", "SM_BC_TownLowerMidW10_Soft"]
+model = ["prop/brinecove/town-lower-mid-w1-0", "prop/brinecove/town-lower-mid-w1-0-soft"]
+about = "the town lower mid w1 0, cut from its fused tile (8088 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w1-1"
+groups = ["SM_BC_TownLowerMidW11", "SM_BC_TownLowerMidW11_Soft"]
+model = ["prop/brinecove/town-lower-mid-w1-1", "prop/brinecove/town-lower-mid-w1-1-soft"]
+about = "the town lower mid w1 1, cut from its fused tile (6564 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w1-2"
+groups = ["SM_BC_TownLowerMidW12", "SM_BC_TownLowerMidW12_Soft"]
+model = ["prop/brinecove/town-lower-mid-w1-2", "prop/brinecove/town-lower-mid-w1-2-soft"]
+about = "the town lower mid w1 2, cut from its fused tile (6240 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w2-0"
+groups = ["SM_BC_TownLowerMidW20", "SM_BC_TownLowerMidW20_Soft"]
+model = ["prop/brinecove/town-lower-mid-w2-0", "prop/brinecove/town-lower-mid-w2-0-soft"]
+about = "the town lower mid w2 0, cut from its fused tile (9593 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w2-1"
+groups = ["SM_BC_TownLowerMidW21", "SM_BC_TownLowerMidW21_Soft"]
+model = ["prop/brinecove/town-lower-mid-w2-1", "prop/brinecove/town-lower-mid-w2-1-soft"]
+about = "the town lower mid w2 1, cut from its fused tile (9504 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w3-0"
+groups = ["SM_BC_TownLowerMidW30", "SM_BC_TownLowerMidW30_Soft"]
+model = ["prop/brinecove/town-lower-mid-w3-0", "prop/brinecove/town-lower-mid-w3-0-soft"]
+about = "the town lower mid w3 0, cut from its fused tile (6680 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w3-1"
+groups = ["SM_BC_TownLowerMidW31", "SM_BC_TownLowerMidW31_Soft"]
+model = ["prop/brinecove/town-lower-mid-w3-1", "prop/brinecove/town-lower-mid-w3-1-soft"]
+about = "the town lower mid w3 1, cut from its fused tile (7468 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w3-2"
+groups = ["SM_BC_TownLowerMidW32", "SM_BC_TownLowerMidW32_Soft"]
+model = ["prop/brinecove/town-lower-mid-w3-2", "prop/brinecove/town-lower-mid-w3-2-soft"]
+about = "the town lower mid w3 2, cut from its fused tile (9020 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w4-0"
+groups = ["SM_BC_TownLowerMidW40", "SM_BC_TownLowerMidW40_Soft"]
+model = ["prop/brinecove/town-lower-mid-w4-0", "prop/brinecove/town-lower-mid-w4-0-soft"]
+about = "the town lower mid w4 0, cut from its fused tile (7069 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-mid-w4-1"
+groups = ["SM_BC_TownLowerMidW41", "SM_BC_TownLowerMidW41_Soft"]
+model = ["prop/brinecove/town-lower-mid-w4-1", "prop/brinecove/town-lower-mid-w4-1-soft"]
+about = "the town lower mid w4 1, cut from its fused tile (7420 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w2-0"
+groups = ["SM_BC_TownLowerRumW20", "SM_BC_TownLowerRumW20_Soft"]
+model = ["prop/brinecove/town-lower-rum-w2-0", "prop/brinecove/town-lower-rum-w2-0-soft"]
+about = "the town lower rum w2 0, cut from its fused tile (6908 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w2-1"
+groups = ["SM_BC_TownLowerRumW21", "SM_BC_TownLowerRumW21_Soft"]
+model = ["prop/brinecove/town-lower-rum-w2-1", "prop/brinecove/town-lower-rum-w2-1-soft"]
+about = "the town lower rum w2 1, cut from its fused tile (8768 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w2-2"
+groups = ["SM_BC_TownLowerRumW22", "SM_BC_TownLowerRumW22_Soft"]
+model = ["prop/brinecove/town-lower-rum-w2-2", "prop/brinecove/town-lower-rum-w2-2-soft"]
+about = "the town lower rum w2 2, cut from its fused tile (8676 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w3-0"
+groups = ["SM_BC_TownLowerRumW30", "SM_BC_TownLowerRumW30_Soft"]
+model = ["prop/brinecove/town-lower-rum-w3-0", "prop/brinecove/town-lower-rum-w3-0-soft"]
+about = "the town lower rum w3 0, cut from its fused tile (11668 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w3-1"
+groups = ["SM_BC_TownLowerRumW31", "SM_BC_TownLowerRumW31_Soft"]
+model = ["prop/brinecove/town-lower-rum-w3-1", "prop/brinecove/town-lower-rum-w3-1-soft"]
+about = "the town lower rum w3 1, cut from its fused tile (8420 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w3-2"
+groups = ["SM_BC_TownLowerRumW32", "SM_BC_TownLowerRumW32_Soft"]
+model = ["prop/brinecove/town-lower-rum-w3-2", "prop/brinecove/town-lower-rum-w3-2-soft"]
+about = "the town lower rum w3 2, cut from its fused tile (10688 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w4-0"
+groups = ["SM_BC_TownLowerRumW40", "SM_BC_TownLowerRumW40_Soft"]
+model = ["prop/brinecove/town-lower-rum-w4-0", "prop/brinecove/town-lower-rum-w4-0-soft"]
+about = "the town lower rum w4 0, cut from its fused tile (7369 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w4-1"
+groups = ["SM_BC_TownLowerRumW41", "SM_BC_TownLowerRumW41_Soft"]
+model = ["prop/brinecove/town-lower-rum-w4-1", "prop/brinecove/town-lower-rum-w4-1-soft"]
+about = "the town lower rum w4 1, cut from its fused tile (6884 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w4-2"
+groups = ["SM_BC_TownLowerRumW42", "SM_BC_TownLowerRumW42_Soft"]
+model = ["prop/brinecove/town-lower-rum-w4-2", "prop/brinecove/town-lower-rum-w4-2-soft"]
+about = "the town lower rum w4 2, cut from its fused tile (5232 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w5-0"
+group = "SM_BC_TownLowerRumW50"
+model = "prop/brinecove/town-lower-rum-w5-0"
+about = "the town lower rum w5 0, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w5-1"
+group = "SM_BC_TownLowerRumW51"
+model = "prop/brinecove/town-lower-rum-w5-1"
+about = "the town lower rum w5 1, cut from its fused tile (276 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w6-0"
+groups = ["SM_BC_TownLowerRumW60", "SM_BC_TownLowerRumW60_Soft"]
+model = ["prop/brinecove/town-lower-rum-w6-0", "prop/brinecove/town-lower-rum-w6-0-soft"]
+about = "the town lower rum w6 0, cut from its fused tile (7868 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-rum-w6-1"
+groups = ["SM_BC_TownLowerRumW61", "SM_BC_TownLowerRumW61_Soft"]
+model = ["prop/brinecove/town-lower-rum-w6-1", "prop/brinecove/town-lower-rum-w6-1-soft"]
+about = "the town lower rum w6 1, cut from its fused tile (7224 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e1"
+groups = ["SM_BC_TownLowerShoreE1", "SM_BC_TownLowerShoreE1_Soft"]
+model = ["prop/brinecove/town-lower-shore-e1", "prop/brinecove/town-lower-shore-e1-soft"]
+about = "the town lower shore e1, cut from its fused tile (6616 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e2"
+groups = ["SM_BC_TownLowerShoreE2", "SM_BC_TownLowerShoreE2_Soft"]
+model = ["prop/brinecove/town-lower-shore-e2", "prop/brinecove/town-lower-shore-e2-soft"]
+about = "the town lower shore e2, cut from its fused tile (6688 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e3"
+groups = ["SM_BC_TownLowerShoreE3", "SM_BC_TownLowerShoreE3_Soft"]
+model = ["prop/brinecove/town-lower-shore-e3", "prop/brinecove/town-lower-shore-e3-soft"]
+about = "the town lower shore e3, cut from its fused tile (6616 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e4"
+groups = ["SM_BC_TownLowerShoreE4", "SM_BC_TownLowerShoreE4_Soft"]
+model = ["prop/brinecove/town-lower-shore-e4", "prop/brinecove/town-lower-shore-e4-soft"]
+about = "the town lower shore e4, cut from its fused tile (6652 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e5"
+groups = ["SM_BC_TownLowerShoreE5", "SM_BC_TownLowerShoreE5_Soft"]
+model = ["prop/brinecove/town-lower-shore-e5", "prop/brinecove/town-lower-shore-e5-soft"]
+about = "the town lower shore e5, cut from its fused tile (6400 triangles)"
+
+[[objects]]
+id = "object/brinecove/town-lower-shore-e6"
+groups = ["SM_BC_TownLowerShoreE6", "SM_BC_TownLowerShoreE6_Soft"]
+model = ["prop/brinecove/town-lower-shore-e6", "prop/brinecove/town-lower-shore-e6-soft"]
+about = "the town lower shore e6, cut from its fused tile (4496 triangles)"
+
 # --- Generated by tools/migrate/towns.py: every other runtime group of the region (rerun to regenerate) ---
 
 [[objects]]
