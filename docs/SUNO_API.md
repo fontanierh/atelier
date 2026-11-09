@@ -1,8 +1,15 @@
 # Suno music API
 
+**Historical integration reference:** this documents the retained Yorimichi V1 client and its recorded service
+flow; it is not a newly verified API specification or an active V2 generation requirement. V2 uses the existing
+pinned soundtrack release through `games/yorimichi_v2/assets/audio/music/fetch.py`, declared under
+`[release.music]` (not `[fetch].scripts`). See the [V2 README](../games/yorimichi_v2/README.md#optional-music).
+Do not regenerate the soundtrack or run retired V1 tests for the port. Existing credential and paid-call ledger
+rules below remain in force if new music generation is separately requested.
+
 Suno has no public self-serve developer API. The consumer web app talks to an internal REST API, and a subscribed
 account can use that same API to generate instrumental music for games. This page documents the flow used by the
-working client at `games/yorimichi/tools/suno_client.py`. The endpoints are internal and can change without notice.
+historical client at `games/yorimichi/tools/suno_client.py`. The endpoints are internal and can change without notice.
 
 ## Credentials
 
@@ -172,7 +179,7 @@ Convert for review if useful:
 ffmpeg -v error -i track.m4a -codec:a libmp3lame -q:a 2 track.mp3
 ```
 
-## Working client
+## Historical V1 client
 
 `games/yorimichi/tools/suno_client.py` (mode 700) implements the whole flow and rotates the cookie into `.env`:
 
@@ -195,6 +202,7 @@ generation request; a recorded or uncertain prompt is never resubmitted automati
   library deliberately leaves that palette for lofi, percussion and other moods.
 - Validate the decrypted file with `ffprobe`. Keep the model, prompt, clip id and credit cost in a provenance file.
 - Keep the decrypted M4A masters and MP3 review copies under `build/<game>/music/` while under review. Publish the
-  MP3s, manifests and catalog as a release asset; the optional game build selects and imports only what it needs.
+  MP3s, manifests and catalog as a release asset through the authorized publication workflow. V2 fetches its
+  pinned optional music bundle separately; its normal build does not generate or import that soundtrack.
 - Tag every track with `category`, `style_family`, `energy`, `intent`, `mood`, `use`, `bpm_target`, `loop` and clip
   provenance. A flat dump of files is not enough for a runtime that has to choose music by context.

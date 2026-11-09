@@ -1,8 +1,12 @@
 # Brine Cove ships: Nightjar, sloop and per-instance hero hulls
 
+Snapshot: **main `3027366ced` (2026-11-09)**. The three placements below are saved. Retirement of the three
+old ship tiles and obsolete grouped placements is still pending in [PR #787](https://github.com/fontanierh/atelier/pull/787).
+The shared hull mesh is reusable model data; each ship now has its own hull instance. See [INVENTORY](../INVENTORY.md).
+
 Tool: `tools/migrate/brinecove_ships.py` (tests `tests/test_brinecove_ships.py`). Pure Python, no Blender or Unreal.
-It reuses `brinecove_split.py` / `brinecove_split_apply.py` (two minimal shared changes: an optional `assigner` argument on
-`split.compute` and `apply.build`, default unchanged).
+It reuses `brinecove_split.py` / `brinecove_split_apply.py` with a ship-specific triangle assigner and the shared
+claimed journal/accepted-import retirement checks.
 
 ## Boundary: the generator, not a radius
 
@@ -35,7 +39,7 @@ in place with the first (Adventure) transform and appends the other 8 as single-
 earlier group changes position (plant group keys are positional, `towns.group_keys`: `mesh#index` for repeated names). Keys are
 computed from the final runtime file at apply time and written to `objects.toml`; `check` re-derives them. The old
 `object/brinecove/hero-galleon-hull` entry leaves `objects.toml` at apply (its plain keys no longer exist); its record and actor
-retire later.
+retire only after the replacement imports and saved objects are accepted. That cleanup is not yet complete on this snapshot.
 
 ## Retires (after the import, `objects.py` and a passing `check`)
 
@@ -48,20 +52,25 @@ retire later.
 
 ```
 DONOR=build/yorimichi                                  # generator found at DONOR/../../games/yorimichi/world/regions (or --generator DIR)
-CMD="uv run python games/yorimichi_v2/tools/migrate/brinecove_ships.py"
+bc_ships() { uv run python games/yorimichi_v2/tools/migrate/brinecove_ships.py "$@"; }
 git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
-$CMD plan  --donor $DONOR
-$CMD paths --donor $DONOR --json            # claim exactly 'apply' first, then 'objects_step', later 'retire'
-$CMD apply --donor $DONOR --claim TASK
+bc_ships plan  --donor "$DONOR"
+bc_ships paths --donor "$DONOR" --json            # claim exactly 'apply' first, then 'objects_step', later 'retire'
+bc_ships apply --donor "$DONOR" --claim TASK
 uv run python games/yorimichi_v2/tools/import/run.py prop/brinecove/galleon-nightjar prop/brinecove/sloop-east --claim TASK
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK \
-  --only object/brinecove/galleon-nightjar,object/brinecove/sloop-east,object/brinecove/galleon-adventure-hull
-$CMD check --donor $DONOR
-uv run python games/yorimichi_v2/tools/test/saved_objects.py --zone <the Brine Cove ship zone>      # each ship and hull drawn once
-$CMD retire --donor $DONOR --claim TASK     # refuses unless check passes; then rerun towns.py (below)
+  --only object/brinecove/galleon-nightjar --only object/brinecove/sloop-east \
+  --only object/brinecove/galleon-adventure-hull
+bc_ships check --donor "$DONOR"
+uv run python games/yorimichi_v2/tools/test/saved_objects.py --session ID --region w09-brinecove --zone brinecove_quay      # each ship and hull drawn once
+bc_ships retire --donor "$DONOR" --claim TASK     # refuses unless check passes; then rerun towns.py (below)
 uv run python games/yorimichi_v2/tools/migrate/towns.py
 uv run python games/yorimichi_v2/tools/content/check.py
 ```
 
 Retiring the three tile groups (positions 239 to 243) shifts every later group index by 3, so the positional plant keys in the
 generated `objects.toml` tail change; rerun `towns.py` after `retire`. The tool recomputes the hull keys itself in `retire`.
+
+Retirement and journal recovery use the complete claimed path and scope set; they refuse before mutation when
+ownership is stale or incomplete. Keep the original fused sources recoverable: the separate source-preservation
+conversion described in [sources.md](sources.md) is prepared but has not yet landed.

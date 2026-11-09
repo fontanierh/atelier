@@ -1,4 +1,12 @@
-# Yorimichi V2 inventory — features (F01–F24, X01–X04)
+# Yorimichi donor feature baseline (F01–F32, X01–X04)
+
+**Historical source reference, not V2 implementation status.** This file records the original donor baseline
+`7eec0f98dd`. Present-tense descriptions, line numbers, source gaps and proposed checks below refer to that donor.
+The current V2 status is [INVENTORY](../INVENTORY.md); current sources and object boundaries are tracked in
+[sources.md](sources.md) and [exceptions.md](exceptions.md). V2 now has committed saved scenery, recovered assets
+and a package; do not read the donor's runtime-spawn design as a statement that migration has not started.
+Old donor test/build commands are evidence references, not instructions to re-enable retired suites or regenerate
+accepted V2 content. Human and multiplayer playtesting follows construction under the owner's current direction.
 
 Source: `the baseline checkout` at baseline `7eec0f98dd` (read-only). All paths are
 relative to `games/yorimichi/` unless they start with `platform/`. "Src/" = `unreal/Source/Yorimichi/`.

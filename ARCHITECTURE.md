@@ -5,9 +5,10 @@ Engine 5.8 or on Bevy; the `atelier` command is the same for both, and [engines]
 
 ```
 games/            each game: world, characters, look, sounds, tuning, its own C++ module
-  yorimichi/      the full game
+  yorimichi_v2/   the active Unreal game, with committed editable Content and targeted authoring
+  yorimichi/      retired V1 donor/reference; its old build and tests are not the V2 workflow
   sandbox/        a plain game made only of platform parts, and the Unreal template for `atelier new`
-  hakuba/         a Bevy game, all Rust
+  hakuba/         retired Bevy experiment retained as reference
 platform/
   studio/         the `atelier` command and Python package: build, play, live, QA, AI helpers, review
   engine/Plugins/ Unreal plugins any game can switch on
@@ -36,10 +37,10 @@ build/            ignored: everything a build generates, per game
 | Motion helpers | `platform/web/motion` | Three.js helpers that capture a rig's rest pose, apply generated motion to an existing skin and close authored loops |
 | Agent board | `platform/harness/web`, `platform/harness/world` | Rust coordination server, React web UI and world view |
 
-Systems that only one game uses stay in that game. In Yorimichi these are the player character (on-foot movement,
+Systems that only one game uses stay in that game. In Yorimichi V2 these are the player character (on-foot movement,
 actions, camera), sword combat and the fox hunter, the sailboat, the bike, the horse, the zeppelin, the mini-mega
 ramp, footsteps, the world map, preferences and the HUD. Horse racing rules are owned by
-`games/yorimichi/unreal/Plugins/HorseRacing`; the plugin and module names stay stable for
+`games/yorimichi_v2/unreal/Plugins/HorseRacing`; the plugin and module names stay stable for
 Unreal discovery and reflected type compatibility.
 
 ## Rules
@@ -70,6 +71,12 @@ Unreal discovery and reflected type compatibility.
   ([platform/conventions/units.md](platform/conventions/units.md)). One converter: `atelier.conventions.to_unreal`.
 
 ## Build products
+
+Yorimichi V2 commits its editable Unreal packages in Git LFS. Its normal build validates and compiles;
+explicit targeted import/save routes own package changes, with claims and verification records. It does not
+use whole-game generation/reuse as an authoring substitute. The [V2 README](games/yorimichi_v2/README.md)
+and [inventory](games/yorimichi_v2/docs/INVENTORY.md) describe its current workflow and remaining migration.
+The generated-product mechanisms below remain relevant to the sandbox and other retained platform uses.
 
 The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build
 plans, historical phase timings, certified-output differences and retained-log DDC diagnostics, file-hash
