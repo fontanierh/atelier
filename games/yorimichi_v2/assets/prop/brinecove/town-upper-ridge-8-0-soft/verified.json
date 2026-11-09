@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-upper-ridge-8-0-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperRidge80_Soft.uasset": "ef0e5387d5438e872d0e7e166df2a24c50a1a349dd612f302083b40295e5c551"
+  },
+  "input_fingerprint": "5f0cbd921805709ff25592ca8967f1e88c598cc4d9cae1f745416c97e10cb687",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge80_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
