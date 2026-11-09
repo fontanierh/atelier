@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-upper-slope--1-0-5-1",
+  "dependencies": {
+    "prop/brinecove/town-upper-slope--1-0-5-1": "109701d92b67e8548d5c225683296582cf890ec844204dd89dc04b13b06bf890",
+    "prop/brinecove/town-upper-slope--1-0-5-1-soft": "f8d23603d2ea6bae239ad081c77cf7c73cc06d7b923e73d60b563716a27feed1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/QE/0WCDZRYM73V0KPCEE68Y10.uasset": "9ae81403d5e304c6e7f9a33138e62311f8c25a284fcd0860018a2ef4833df1ad"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

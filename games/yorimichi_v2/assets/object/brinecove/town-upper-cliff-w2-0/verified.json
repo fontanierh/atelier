@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-upper-cliff-w2-0",
+  "dependencies": {
+    "prop/brinecove/town-upper-cliff-w2-0": "203155c3bef2cc515301d624cb41af57811137c42a7f32ead864b6d50ec91f64",
+    "prop/brinecove/town-upper-cliff-w2-0-soft": "e1f1f56d39645bcf00ac6b9e7f7a3c1bcdf2a2b98a604d6b726397106ecba129"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/D9/I806K481U4U4GDQUKOG9SV.uasset": "5e4f265ac7d9bb9c2335506ff223be15de4700675b88c716c627531499757c68"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

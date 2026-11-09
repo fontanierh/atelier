@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/town-upper-edge-1-0",
+  "dependencies": {
+    "prop/brinecove/town-upper-edge-1-0": "b03bf638ce3a47705998107b6d9b6f8279a1bdde686647883d856c21a7e7756f",
+    "prop/brinecove/town-upper-edge-1-0-soft": "7bb3ae322e7b9a54830d58aef186dc9e748448957c587db02b09c3da48ac3339"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/G0/TRAYRE5BRBMBF94MYRSEBW.uasset": "54ab164f2b8b99ecb0be611b6eff251d6874588d6de66f8558fe14519f6644d6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
