@@ -110,6 +110,10 @@ def _apply_mesh_settings(asset, settings):
     if cpu is not None:
         asset.set_editor_property('allow_cpu_access', cpu)   # cooked riding snapshots and LOD checks read positions on the CPU
     if settings.get('collision') == 'complex':
+        # Complex-as-simple keeps no simple shapes (no saved package has any): drop the UCX hull an FBX source carries.
+        editor = _static_mesh_editor()
+        if editor.get_simple_collision_count(asset) or editor.get_convex_collision_count(asset):
+            editor.remove_collisions(asset)
         body = asset.get_editor_property('body_setup')
         _set(body, dict(collision_trace_flag=U.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE,
                         double_sided_geometry=import_settings.double_sided(settings)))
@@ -293,7 +297,13 @@ def _build_lod_chain(asset, settings, resolve):
     if left:
         raise RuntimeError(f'{asset.get_path_name()}: transient LOD packages {left} are still loaded')
     if len(chain) > 1:
-        editor.set_lod_screen_sizes(asset, [screen for _, screen, _, _ in chain])
+        # The legacy FBX import leaves the mesh computing its own screen sizes, which would replace the record's.
+        asset.set_editor_property('auto_compute_lod_screen_size', False)
+        screens = [screen for _, screen, _, _ in chain]
+        editor.set_lod_screen_sizes(asset, screens)
+        got = [float(s) for s in editor.get_lod_screen_sizes(asset)][:len(chain)]
+        if len(got) != len(chain) or any(abs(a - b) > 1e-3 for a, b in zip(got, screens)):
+            raise RuntimeError(f'{asset.get_path_name()} has LOD screen sizes {got}, the record {screens}')
     got = [[str(m.get_editor_property('imported_material_slot_name')), _material_path(m)]
            for m in asset.get_editor_property('static_materials')]
     if got != [list(s) for s in slots]:
