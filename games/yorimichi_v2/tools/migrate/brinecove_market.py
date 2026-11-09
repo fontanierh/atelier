@@ -467,12 +467,33 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
     return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
 
 
+def recarved_later(game: Path, batch: str, problem: str) -> bool:
+    """@cc [owner:fontanierh,label:correctness] brinecove-recarved-remainder
+    A tile that a later batch cut again has that batch's remainder: this batch's expected remainder (sha, triangles) is
+    stale by design and is not a problem here. The later batch's check owns the remainder; the donor proof below still
+    partitions the tile with every batch's parts and the current remainder."""
+    apply_ = set_batch(batch)
+    order = list(BATCHES)
+    region = game / 'world' / 'regions' / apply_.REGION
+    exp = json.loads((game / apply_.EXPECTED).read_text())
+    later = set()
+    for name in order[order.index(batch) + 1:]:
+        path = region / f'split-{name}.json'
+        if path.is_file():
+            later |= set(json.loads(path.read_text())['tiles'])
+    stems = set(exp['tiles']) & later
+    records = {exp['tiles'][s]['record'] for s in stems}
+    return (any(problem in (f'{r}: remainder differs from the expectation', f'{r}: derived remainder differs from the expectation')
+                for r in records) or any(problem == f'{s}: remainder plus parts is not the tile' for s in stems))
+
+
 def check(game: Path, donor: Path | None, batch: str, retired: bool = False, groups: bool = False) -> list[str]:
     """apply's repository checks for this batch, plus the vertex-level proof when the donor is given: donor tile =
     this batch's parts + its remainder + the earlier batches' parts of the same tile.
     `groups`: the groups stage is done (emptied tiles have no runtime group); `retired`: the records stage is done too."""
     apply_ = set_batch(batch)
     problems = apply_.check(game, None)            # apply's own `retired` mode also tests the ships' actor: not used
+    problems = [p for p in problems if not recarved_later(game, batch, p)]
     if retired or groups:
         exp = json.loads((game / apply_.EXPECTED).read_text())
         gone = [s for s, t in exp['tiles'].items() if t['remainder'] is None]
