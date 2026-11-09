@@ -125,3 +125,135 @@ def test_fetch_copies_each_original_only_as_its_pinned_bytes(world, tmp_path):
 def test_the_committed_links_cover_every_pinned_restricted_package():
     # The contract on the real game: CI holds the lock and the links, never the bytes.
     assert originals.check(ROOT) == []
+
+
+def _glb(materials=(), images=(), animations=()) -> bytes:
+    body = json.dumps({'materials': [{'name': n} for n in materials], 'images': [{'name': n} for n in images],
+                       'animations': [{'name': n} for n in animations]}).encode()
+    body += b' ' * (-len(body) % 4)
+    return b'glTF' + (2).to_bytes(4, 'little') + (20 + len(body)).to_bytes(4, 'little') + len(body).to_bytes(4, 'little') + b'JSON' + body
+
+
+@pytest.fixture
+def adventure(tmp_path):
+    """Three open adopted records, and a donor holding the Adventure report, a character glb, a glider glb and the scripts."""
+    game, donor = tmp_path / 'game', tmp_path / 'donor'
+    outputs = {'adopted/adventure/reference': ['Reference/SK_Reference', 'Reference/SKEL_Reference',
+                                              'Reference/A_Reference_Idle', 'Reference/Glider/SK_ReferenceGlider',
+                                              'Reference/Glider/SKEL_ReferenceGlider', 'Reference/Glider/Mt_Parastole',
+                                              'Reference/Glider/Item_Parastole2_Alb', 'Reference/Mystery'],
+               'adopted/adventure/loose_files': ['M_AdventureCharacter'],
+               'adopted/japan/animation': ['../Japan/Animation/CharacterCompression']}
+    for record_id, names in outputs.items():
+        text = (f'schema = 1\nid = "{record_id}"\nkind = "adopted"\nauthority = "editor"\nowner = "shared/x"\n'
+                'provenance = "t"\nlicense = "t"\n')
+        text += ''.join(f'\n[[outputs]]\npackage = "/Game/Adventure/{n}"\n' if not n.startswith('..') else
+                        f'\n[[outputs]]\npackage = "/Game/{n[3:]}"\n' for n in names)
+        write(game / 'assets' / record_id / 'asset.toml', text.encode())
+    base = donor / originals.ADVENTURE
+    write(base / 'glb/Reference.glb', _glb(animations=['Idle']))
+    write(base / 'glb/ReferenceGlider.glb', _glb(['Mt_Parastole'], ['Item_Parastole2_Alb'], ['Float']))
+    write(base / 'export.json', json.dumps({'characters': [{'name': 'Reference', 'glb': 'glb/Reference.glb', 'moves': {
+        'equipment': {'glider': {'glb': 'glb/ReferenceGlider.glb', 'clip': 'Float'}}}}]}).encode())
+    write(base / 'unreal_import.json', json.dumps({'characters': [{
+        'name': 'Reference', 'mesh': '/Game/Adventure/Reference/SK_Reference.SK_Reference',
+        'skeleton': '/Game/Adventure/Reference/SKEL_Reference.SKEL_Reference',
+        'clips': {'Idle': {'path': '/Game/Adventure/Reference/A_Reference_Idle.A_Reference_Idle'}},
+        'moves': {'equipment': {'glider': {
+            'mesh': '/Game/Adventure/Reference/Glider/SK_ReferenceGlider.SK_ReferenceGlider',
+            'clip': '/Game/Adventure/Reference/Glider/A_ReferenceGlider_Float.A_ReferenceGlider_Float'}}}}]}).encode())
+    scripts = donor / originals.ADVENTURE_SCRIPTS
+    write(scripts / 'import_adventure.py', b"masters = {False: master('M_AdventureCharacter', False)}")
+    write(scripts / 'animation_compression.py', b"name = 'CharacterCompression'")
+    return game, donor
+
+
+def test_open_adventure_packages_link_to_the_glb_report_or_script_that_makes_them(adventure):
+    game, donor = adventure
+    found = originals.link_open(game, donor)
+    packages = found['open_packages']
+    route = lambda rel: (packages[rel]['route'], packages[rel]['class'])
+    assert route('Adventure/Reference/A_Reference_Idle.uasset') == ('reported', 'AnimSequence')
+    assert route('Adventure/Reference/SK_Reference.uasset') == ('reported', 'SkeletalMesh')
+    assert route('Adventure/Reference/Glider/SKEL_ReferenceGlider.uasset') == ('embedded', 'Skeleton')
+    assert route('Adventure/Reference/Glider/Mt_Parastole.uasset') == ('embedded', 'MaterialInstanceConstant')
+    assert route('Adventure/Reference/Glider/Item_Parastole2_Alb.uasset') == ('embedded', 'Texture2D')
+    assert route('Adventure/M_AdventureCharacter.uasset') == ('scripted', 'Material')
+    assert route('Japan/Animation/CharacterCompression.uasset') == ('scripted', 'AnimBoneCompressionSettings')
+    assert packages['Adventure/Reference/A_Reference_Idle.uasset']['originals'] == [
+        'build/yorimichi/adventure/glb/Reference.glb', 'build/yorimichi/adventure/unreal_import.json']
+    # What nothing in the donor makes is reported, never relabelled as editor-owned.
+    assert 'Adventure/Reference/Mystery.uasset' not in packages
+    assert any('Mystery' in p and 'recover or replace' in p for p in found['problems'])
+    assert 'games/yorimichi/unreal/Scripts/import_adventure.py' in found['originals']
+
+
+def test_open_links_are_checked_against_their_records_and_pins(adventure):
+    game, donor = adventure
+    found = originals.link_open(game, donor)
+    records.write_json(game / originals.LINKS, {'schema': 1, 'packages': {}, 'originals': found['originals'],
+                                                'open_packages': found['open_packages'], 'problems': []})
+    restricted = game / 'restricted.toml'
+    shutil.copy(ROOT / 'restricted.toml', restricted)
+    records.write_json(game / 'restricted.lock.json', {'schema': 1, 'files': {}})
+    problems = originals.check(game)
+    assert problems == ['Adventure/Reference/Mystery.uasset: owned by an open record but not linked']
+    del found['originals']['build/yorimichi/adventure/unreal_import.json']
+    records.write_json(game / originals.LINKS, {'schema': 1, 'packages': {}, 'originals': found['originals'],
+                                                'open_packages': found['open_packages'], 'problems': []})
+    assert any('unreal_import.json is not pinned' in p for p in originals.check(game))
+
+
+def test_a_hydrated_package_that_names_another_file_is_refused(adventure):
+    game, donor = adventure
+    content = game / 'unreal/Content'
+    glb = (donor / originals.ADVENTURE / 'glb/Reference.glb').read_bytes()
+    write(content / 'Adventure/Reference/A_Reference_Idle.uasset',
+          tag('../../x/build/yorimichi/adventure/glb/Reference.glb', glb))
+    assert not any('Idle' in p for p in originals.link_open(game, donor)['problems'])
+    write(content / 'Adventure/Reference/A_Reference_Idle.uasset', tag('../../x/build/yorimichi/adventure/glb/Other.glb', glb))
+    assert any('Idle' in p and 'not the pinned glb' in p for p in originals.link_open(game, donor)['problems'])
+
+
+@pytest.mark.parametrize('has_open_link', [True, False], ids=['linked-mismatch', 'empty-failure'])
+def test_restricted_rescan_preserves_open_failure_until_link_open_succeeds(world, tmp_path, monkeypatch, has_open_link):
+    game, donor, classes = world
+    classes_file = tmp_path / 'classes.json'
+    records.write_json(classes_file, classes)
+    scan = ['--game', str(game), 'scan', '--donor', str(donor), '--classes', str(classes_file)]
+    link = ['--game', str(game), 'link-open', '--donor', str(donor)]
+    check = ['--game', str(game), 'check']
+    assert originals.main(scan) == 0
+
+    record_id = 'adopted/adventure/reference'
+    package = 'Adventure/Reference/A_Reference_Idle.uasset'
+    write(game / 'assets' / record_id / 'asset.toml', '''schema = 1
+id = "adopted/adventure/reference"
+kind = "adopted"
+authority = "editor"
+owner = "shared/x"
+provenance = "test"
+license = "test"
+[[outputs]]
+package = "/Game/Adventure/Reference/A_Reference_Idle"
+'''.encode())
+    monkeypatch.setattr(originals, 'OPEN_RECORDS', (record_id,))
+    linked = {package: {'route': 'reported', 'class': 'AnimSequence',
+                       'originals': ['build/yorimichi/paul/fbx/SK_Paul.glb']}}
+    opened = linked if has_open_link else {}
+    problem = f'{package}: its import data names Other.glb, not the pinned glb'
+    result = {'open_packages': opened, 'originals': {}, 'problems': [problem]}
+    # The collector's mismatch check is covered above; exercise its persisted CLI result across commands here.
+    monkeypatch.setattr(originals, 'link_open', lambda *args: result)
+    assert originals.main(link) == 1
+    assert originals.main(scan) == 0             # this command only rescans the restricted packages
+    saved = json.loads((game / originals.LINKS).read_text())
+    assert saved['open_packages'] == opened and saved['open_problems'] == [problem]
+    assert f'scan problem: {problem}' in originals.check(game)
+    assert originals.main(check) == 1
+
+    result['open_packages'] = linked
+    result['problems'] = []                    # a successful new open result replaces the old failure
+    assert originals.main(link) == 0
+    assert json.loads((game / originals.LINKS).read_text())['open_problems'] == []
+    assert originals.main(check) == 0
