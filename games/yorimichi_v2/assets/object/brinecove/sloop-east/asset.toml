@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the sloop east: rig and flags cut from the fused ship tiles (9328 triangles, by the generator's ship boundary) and its own hero hull instance.
+# Its placement is this actor package; its model is prop/brinecove/sloop-east, adopted/brinecove/hero-galleon-hull. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/sloop-east"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/sloop-east", "adopted/brinecove/hero-galleon-hull"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/A/J1/UZ2I39KH60Z3INFBPE2JXG"

@@ -70,6 +70,37 @@
         "adopted/brinecove/galleon-adventure"
       ]
     },
+    "object/brinecove/galleon-adventure-hull": {
+      "groups": [
+        "SM_BC_Hero_GalleonHull_cell_-1_-1#70",
+        "SM_BC_Hero_GalleonHull_cell_-1_0#71",
+        "SM_BC_Hero_GalleonHull_cell_0_-1#72",
+        "SM_BC_Hero_GalleonHull_cell_0_0#73"
+      ],
+      "id": "object/brinecove/galleon-adventure-hull",
+      "model": "adopted/brinecove/hero-galleon-hull",
+      "models": [
+        "adopted/brinecove/hero-galleon-hull"
+      ]
+    },
+    "object/brinecove/galleon-nightjar": {
+      "groups": [
+        "SM_BC_GalleonNightjar",
+        "SM_BC_Hero_GalleonHull_cell_-1_-1#543",
+        "SM_BC_Hero_GalleonHull_cell_-1_0#544",
+        "SM_BC_Hero_GalleonHull_cell_0_-1#545",
+        "SM_BC_Hero_GalleonHull_cell_0_0#546"
+      ],
+      "id": "object/brinecove/galleon-nightjar",
+      "model": [
+        "prop/brinecove/galleon-nightjar",
+        "adopted/brinecove/hero-galleon-hull"
+      ],
+      "models": [
+        "prop/brinecove/galleon-nightjar",
+        "adopted/brinecove/hero-galleon-hull"
+      ]
+    },
     "object/brinecove/ground-0-0": {
       "groups": [
         "SM_BC_Ground_0_0"
@@ -3144,6 +3175,24 @@
       "model": "prop/brinecove/shipyard-yard",
       "models": [
         "prop/brinecove/shipyard-yard"
+      ]
+    },
+    "object/brinecove/sloop-east": {
+      "groups": [
+        "SM_BC_SloopEast",
+        "SM_BC_Hero_GalleonHull_cell_-1_-1#547",
+        "SM_BC_Hero_GalleonHull_cell_-1_0#548",
+        "SM_BC_Hero_GalleonHull_cell_0_-1#549",
+        "SM_BC_Hero_GalleonHull_cell_0_0#550"
+      ],
+      "id": "object/brinecove/sloop-east",
+      "model": [
+        "prop/brinecove/sloop-east",
+        "adopted/brinecove/hero-galleon-hull"
+      ],
+      "models": [
+        "prop/brinecove/sloop-east",
+        "adopted/brinecove/hero-galleon-hull"
       ]
     },
     "object/brinecove/townlower-1-2": {

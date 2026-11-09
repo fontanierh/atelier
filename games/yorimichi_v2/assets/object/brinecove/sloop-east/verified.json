@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/sloop-east",
+  "dependencies": {
+    "adopted/brinecove/hero-galleon-hull": "ea876c28893347c6f89a1ab80f8926616410c51370ab5b78e10c187bd455bfe2",
+    "prop/brinecove/sloop-east": "2f876ff533e3239a84b205f7c4b5c40fdd7d953c9c972f0df1ab4595f8752aee"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/J1/UZ2I39KH60Z3INFBPE2JXG.uasset": "c8a8ea82d42bf728b3bf30ac40a7cf0608ce46ff47f5ca3be2c6e5a88903e4a0"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/galleon-nightjar",
+  "dependencies": {
+    "adopted/brinecove/hero-galleon-hull": "ea876c28893347c6f89a1ab80f8926616410c51370ab5b78e10c187bd455bfe2",
+    "prop/brinecove/galleon-nightjar": "be729f9e4819ba2d36f29ef2bc9feb2071feac84e9be858ea931d50bf75c80ea"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/S2/DQOJ6IWWVS5ICHT0LZXYUC.uasset": "be44a6c88a1c496519efc71cf28948ecb417b4633dd7b6b833f77bf1fcdc4cc6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
