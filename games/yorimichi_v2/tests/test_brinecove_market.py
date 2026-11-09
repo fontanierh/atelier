@@ -304,3 +304,136 @@ def test_a_part_never_takes_another_records_package(tmp_path):
     with pytest.raises(apply_.SplitError, match='both name the package'):
         market.check_packages(tmp_path, {1: part, 2: {**part, 'record': 'prop/brinecove/other'}})
     market.check_packages(tmp_path, {1: {**part, 'record': 'prop/brinecove/town-lower-hall--1-2-1'}})
+
+
+# --- the placements stage: found after the groups stage, deleted once, idempotent ---------------------------------------------
+
+PLACEMENT = 'object/brinecove/townlower-1-2'
+PACKAGE = '/Game/__ExternalActors__/V2/Maps/Slice/1/H9/PLACEMENT01'
+
+
+def placement_game(tmp_path: Path, record_refs: list[str], objects_toml: str = '') -> Path:
+    """A minimal game: one saved placement record (the real record's shape) and the region's objects.toml."""
+    import brinecove_split_apply as apply_
+    folder = tmp_path / 'assets' / 'object' / 'brinecove' / 'townlower-1-2'
+    folder.mkdir(parents=True)
+    refs = ', '.join(f'"{r}"' for r in record_refs)
+    (folder / 'asset.toml').write_text(
+        'schema = 1\n'
+        f'id = "{PLACEMENT}"\nkind = "placement"\nauthority = "editor"\nowner = "region/{apply_.REGION}"\n'
+        f'references = [{refs}]\n\n[[outputs]]\npackage = "{PACKAGE}"\n')
+    (folder / 'verified.json').write_text('{}\n')
+    region = tmp_path / 'world' / 'regions' / apply_.REGION
+    region.mkdir(parents=True)
+    (region / 'objects.toml').write_text(objects_toml)
+    return tmp_path
+
+
+def emptied_plan(stem: str, record: str) -> dict:
+    return {'remainders': {stem: None}, 'tiles': {stem: {'record': record, 'owner': 'region/w09-brinecove',
+                                                        'package': '/Game/Brinecove/Meshes/SM_BC_X'}}}
+
+
+def test_placements_are_found_from_their_records_after_the_groups_stage(tmp_path):
+    """The groups stage drops the emptied group from objects.toml; the record still names the tile, so the placement is found."""
+    game = placement_game(tmp_path, ['prop/brinecove/town-lower-1-2', 'prop/brinecove/town-lower-1-2-soft'],
+                          objects_toml='[[objects]]\nid = "' + PLACEMENT + '"\ngroups = ["SM_BC_TownLower_1_2_Piece00"]\n')
+    plan = emptied_plan('TownLower_1_2', 'prop/brinecove/town-lower-1-2')
+    assert market.affected_placements(game, plan) == [PLACEMENT]
+    other = emptied_plan('TownLower_9_9', 'prop/brinecove/town-lower-9-9')
+    assert market.affected_placements(game, other) == []                   # a record of another tile is not touched
+
+
+def test_placements_listed_only_in_objects_toml_are_found_before_the_groups_stage(tmp_path):
+    game = placement_game(tmp_path, [], objects_toml='[[objects]]\nid = "' + PLACEMENT + '"\ngroups = ["SM_BC_TownLower_1_2"]\n')
+    assert market.affected_placements(game, emptied_plan('TownLower_1_2', 'prop/brinecove/town-lower-1-2')) == [PLACEMENT]
+
+
+def test_a_placement_on_two_batches_is_listed_once(tmp_path):
+    game = placement_game(tmp_path, ['prop/brinecove/town-lower-1-2', 'prop/brinecove/town-lower-2-2'])
+    plans = [('town2', emptied_plan('TownLower_1_2', 'prop/brinecove/town-lower-1-2')),
+             ('town3', emptied_plan('TownLower_2_2', 'prop/brinecove/town-lower-2-2'))]
+    assert market.placement_ids(game, plans) == [PLACEMENT]
+
+
+def test_placements_touch_the_record_folder_and_its_packages_then_nothing(tmp_path):
+    """Deletes are the placement's folder files and its actor package files that exist; a rerun finds nothing to delete."""
+    game = placement_game(tmp_path, ['prop/brinecove/town-lower-1-2'])
+    info = market.placements_touched(game, [PLACEMENT])
+    assert f'games/yorimichi_v2/assets/object/brinecove/townlower-1-2/asset.toml' in info['paths']
+    assert f'games/yorimichi_v2/assets/object/brinecove/townlower-1-2/verified.json' in info['paths']
+    assert ('asset/' + PLACEMENT, 'region/w09-brinecove') in info['scopes']
+    assert all(p.startswith('games/yorimichi_v2/') for p in info['paths'])
+    # a package file that exists is deleted; the absent companions are not listed as deletes
+    package = (tmp_path / 'unreal' / 'Content' / PACKAGE.removeprefix('/Game/')).with_suffix('.umap')
+    package.parent.mkdir(parents=True)
+    package.write_bytes(b'x')
+    ops = market.placements_compute(game, market.placements_touched(game, [PLACEMENT]))
+    assert ops['writes'] == {}
+    assert 'games/yorimichi_v2' not in ''.join(ops['deletes'])               # the game-relative form, not the repo's
+    assert set(ops['deletes']) >= {'assets/object/brinecove/townlower-1-2/asset.toml',
+                                   'assets/object/brinecove/townlower-1-2/verified.json',
+                                   'unreal/Content/__ExternalActors__/V2/Maps/Slice/1/H9/PLACEMENT01.umap'}
+    for rel in ops['deletes']:
+        (game / rel).unlink()
+    assert market.affected_placements(game, emptied_plan('TownLower_1_2', 'prop/brinecove/town-lower-1-2')) == []
+    assert market.placements_compute(game, market.placements_touched(game, [PLACEMENT]))['deletes'] == []
+
+
+def test_batches_with_nothing_emptied_are_a_no_op(monkeypatch, tmp_path):
+    import brinecove_split_apply as apply_
+    monkeypatch.setattr(market, 'check', lambda *a, **k: pytest.fail('checked a batch with nothing emptied'))
+    monkeypatch.setattr(apply_, 'execute', lambda *a, **k: pytest.fail('wrote a batch with nothing emptied'))
+    plan = {'remainders': {'A': {'triangles': 3}}, 'tiles': {}}
+    assert market.retire_placements(tmp_path, [('market1', plan)], 'TASK', None, echo=lambda *_: None) == {'written': [], 'deleted': []}
+
+
+def test_placements_refuse_before_the_groups_stage(monkeypatch, tmp_path):
+    import brinecove_split_apply as apply_
+    monkeypatch.setattr(apply_, 'EXPECTED', apply_.EXPECTED)   # set_batch points it at the batch; restore after
+    monkeypatch.setattr(market, 'check', lambda *a, **k: [])
+    monkeypatch.setattr(apply_, 'require_applied_plan', lambda game, plan: None)
+    monkeypatch.setattr(market, 'groups_retired', lambda game, plan: False)
+    monkeypatch.setattr(apply_, 'execute', lambda *a, **k: pytest.fail('deleted before the groups stage'))
+    plan = emptied_plan('TownLower_1_2', 'prop/brinecove/town-lower-1-2')
+    with pytest.raises(apply_.SplitError, match='groups stage is not done'):
+        market.retire_placements(tmp_path, [('town2', plan)], 'TASK', None, echo=lambda *_: None)
+
+
+def test_groups_stage_done_is_read_from_objects_toml_and_runtime(tmp_path):
+    import brinecove_split_apply as apply_
+    game = placement_game(tmp_path, [], objects_toml='[[objects]]\nid = "x"\ngroups = ["SM_BC_TownLower_1_2"]\n')
+    runtime = tmp_path / 'unreal' / 'Content' / apply_.RUNTIME
+    runtime.parent.mkdir(parents=True)
+    runtime.write_text(json.dumps({'groups': [{'asset': '/Game/Brinecove/Meshes/SM_BC_TownLower_1_2.SM_BC_TownLower_1_2'}]}))
+    plan = emptied_plan('TownLower_1_2', 'prop/brinecove/town-lower-1-2')
+    assert market.groups_retired(game, plan) is False
+    (game / 'world' / 'regions' / apply_.REGION / 'objects.toml').write_text('')
+    assert market.groups_retired(game, plan) is False                       # the runtime file still draws it
+    runtime.write_text(json.dumps({'groups': []}))
+    assert market.groups_retired(game, plan) is True
+
+
+def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch, tmp_path):
+    """After the groups stage the emptied tile record still exists: only the records stage (`retired`) may demand its removal."""
+    import brinecove_split_apply as apply_
+    monkeypatch.setattr(apply_, 'EXPECTED', apply_.EXPECTED)   # set_batch points it at the batch; restore after
+    monkeypatch.setattr(apply_, 'check', lambda game, donor: [])
+    region = tmp_path / 'world' / 'regions' / apply_.REGION
+    region.mkdir(parents=True)
+    (region / 'split-market1.json').write_text(json.dumps({'tiles': {'A': {'remainder': None, 'record': 'prop/x'}}, 'parts': {}}))
+    (tmp_path / 'assets' / 'prop' / 'x').mkdir(parents=True)
+    (tmp_path / 'assets' / 'prop' / 'x' / 'asset.toml').write_text('schema = 1\n')
+    runtime = tmp_path / 'unreal' / 'Content' / apply_.RUNTIME
+    runtime.parent.mkdir(parents=True)
+    runtime.write_text(json.dumps({'groups': []}))
+    assert market.check(tmp_path, None, 'market1', groups=True) == []
+    assert any('should be retired' in p for p in market.check(tmp_path, None, 'market1', retired=True))
+
+
+def test_batch_names_all_lists_and_checks_names():
+    names = market.batch_names('all')
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-1] == 'town9' and len(names) == 12
+    assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
+    with pytest.raises(market.MarketError, match='unknown batch town99'):
+        market.batch_names('town99')
