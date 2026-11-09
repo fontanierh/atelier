@@ -1,0 +1,34 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Grass_B: one Japan mesh, LOD0-LOD2 (40 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/grass-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/grass-b"
+references = ["adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Grass_B.fbx"
+sha256 = "888b299d89f34fe935d14e7309358e0877dd260a3a7ae48705c1d8bcbb62f42f"
+
+[[sources]]
+path = "src/Grass_B_LOD1.fbx"
+sha256 = "ed5dba3e2d98416008281ef0298592094c96706eef0ddc47abc54ac35b398bb1"
+
+[[sources]]
+path = "src/Grass_B_LOD2.fbx"
+sha256 = "ec0d6ea8b75e9142b52e047e66c06e85c4cc18f62a2c5e903ef29a0d8db40167"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Grass_B.fbx", 1.0, 40, [0]], ["src/Grass_B_LOD1.fbx", 0.10000000149011612, 24, [0]], ["src/Grass_B_LOD2.fbx", 0.03500000014901161, 8, [0]]]
+slots = [["Grass", "/Game/Japan/Materials/MI_Grass"]]
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Grass_B"

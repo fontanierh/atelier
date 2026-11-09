@@ -1,8 +1,6 @@
 {
   "asset": "object/belmonte/plant-bush-flower-a",
-  "dependencies": {
-    "adopted/japan/assets/bush": "14f1a09510e6f15a58b5e242ec02434731aa982429f6354a8305ef6b4cb25ee2"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/T1/KD4G5AY3MC135ZC6LI2M02.uasset": "f41a106f57248da2883f6ca2282144c4ddc668ad3f6b6a9eea1a2eb6c760d68f"

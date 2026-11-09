@@ -1,0 +1,47 @@
+# Recovered from the donor generator (tools/migrate/recover.py): Tree_Broad_B: one Japan mesh, LOD0-LOD5 (4480 triangles at LOD0).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/japan-kit/tree-broad-b"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/japan-kit/tree-broad-b"
+references = ["adopted/japan/foliagelods/tree-broad-b", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+
+[[sources]]
+path = "src/Tree_Broad_B.fbx"
+sha256 = "b6ae90fefe716dafb2b09421ace206fbcc8438e3b65e26320e5e8fc3ea829511"
+
+[[sources]]
+path = "src/Tree_Broad_B_LOD1.fbx"
+sha256 = "cd6c9ca49f3599db59ce6d2c0a9e1dc84baa125cc68f89b5ef0bb0485e9e18f7"
+
+[[sources]]
+path = "src/Tree_Broad_B_LOD2.fbx"
+sha256 = "739fea2519a943697fd003f8d8a8d51bf85a84bd55a1946ea2e4606ac457e03b"
+
+[[sources]]
+path = "src/Tree_Broad_B_LOD3.fbx"
+sha256 = "96321f8ea6f997c188974c27f322152b91b8668ce4758c3c2d9fc6914809a947"
+
+[[sources]]
+path = "src/Tree_Broad_B_LOD4.fbx"
+sha256 = "fd45d4274685f699e7d5391ee1197938e2ce79e6ceeb65718e3e532590ae9ab2"
+
+[[sources]]
+path = "src/Tree_Broad_B_LOD5.fbx"
+sha256 = "8ca2a53fb5dd8a27e8a19712a2c2be14f4490f4407a9c98de94c5916c3c2f6e2"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/Tree_Broad_B.fbx", 1.0, 4480, [0, 1]], ["src/Tree_Broad_B_LOD1.fbx", 0.2199999988079071, 1530, [0, 1]], ["src/Tree_Broad_B_LOD2.fbx", 0.09000000357627869, 480, [0, 1]], ["src/Tree_Broad_B_LOD3.fbx", 0.03500000014901161, 168, [0, 1]], ["src/Tree_Broad_B_LOD4.fbx", 0.012000000104308128, 90, [0, 1]], ["src/Tree_Broad_B_LOD5.fbx", 0.003599999938160181, 12, [2]]]
+slots = [["Bark", "/Game/Japan/Materials/MI_Bark"], ["LeafSmall", "/Game/Japan/Materials/MI_LeafSmall"], ["Tree_Broad_B_Crown", "/Game/Japan/FoliageLODs/Tree_Broad_B/MI_Tree_Broad_B_Crown"]]
+collision = "complex"
+double_sided = false
+collision_trace = "CTF_USE_COMPLEX_AS_SIMPLE"
+
+[[outputs]]
+package = "/Game/Japan/Assets/Tree_Broad_B"
